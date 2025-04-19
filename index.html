@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="./src/styles/main.css">
+    <link rel="stylesheet" href="./src/styles/btn.css">
+    <link rel="stylesheet" href="./src/styles/tooltip.css">
+    <!-- ios support -->
+    <link rel="apple-touch-icon" href="public/icons/icon-512x512.png" />
+    <meta name="apple-mobile-web-app-status-bar" content="#db4938" />
+    <meta name="theme-color" content="#db4938" />
+    <title>Anoria</title>
+</head>
+<body>
+<div class="no-game">
+    <div>
+        <p>Nous sommes navré, mais ce jeu n'est pas encore accessible sur cette taille d'écran</p>
+    </div>
+</div>
+<div id="root-window" class="root-window">
+    <div id="game-window" class="game-window">
+        <div
+        id="pwa-toast"
+        role="alert"
+        aria-labelledby="toast-message"
+      >
+        <div class="message">
+          <span id="toast-message"></span>
+        </div>
+        <div class="buttons">
+          <button id="pwa-refresh" type="button">
+            Reload
+          </button>
+          <button id="pwa-close" type="button">
+            Close
+          </button>
+        </div>
+      </div>
+        <div id='loader' class="loader"></div>
+
+        <div id="pause-overlay" class="pause-overlay">
+            <button type="button" id="play-btn" data-action="play" class="toolbar-btn bubbly-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play">
+                    <polygon points="6 3 20 12 6 21 6 3"/>
+                </svg>
+            </button>
+        </div>
+
+        <div id="info-building-overlay" class="info-building-overlay">
+            <div class="info-building__header">
+                <div>
+                    <h2>Informations</h2>
+                </div>
+                <div class="panel-close-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="m15 9-6 6"/>
+                        <path d="m9 9 6 6"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="info-building__body">
+
+            </div>
+
+        </div>
+
+        <div id="over-overlay" class="over-overlay">
+            <div class="over-overlay__text">
+                <h1>Vous avez été viré de votre poste</h1>
+                <p>En effet, vous avez laissé vos citoyens mourir de faim ! Des poursuites ont été engagé contre vous par la cour internationale de justice.</p>
+                <p> Certes, en tant que dictateur cela ne vous touche pas beaucoup mais sachez aussi : vous êtes ruiné !</p>
+            </div>
+            <button type="button" id="play-again-btn" data-action="play-again" class="toolbar-btn bubbly-button">
+               Rejouer
+            </button>
+        </div>
+
+        <section id="toolbar" class="toolbar">
+
+            <button type="button" id="pause-btn" data-action="pause" class="toolbar-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause">
+                    <rect x="14" y="4" width="4" height="16" rx="1"/>
+                    <rect x="6" y="4" width="4" height="16" rx="1"/>
+                </svg>
+            </button>
+
+        <div class="toolbar__container">
+
+            <button type="button" id="faster-btn" class="toolbar-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rabbit"><path d="M13 16a3 3 0 0 1 2.24 5"/><path d="M18 12h.01"/><path d="M18 21h-8a4 4 0 0 1-4-4 7 7 0 0 1 7-7h.2L9.6 6.4a1 1 0 1 1 2.8-2.8L15.8 7h.2c3.3 0 6 2.7 6 6v1a2 2 0 0 1-2 2h-1a3 3 0 0 0-3 3"/>
+                <path d="M20 8.54V4a2 2 0 1 0-4 0v3"/><path d="M7.612 12.524a3 3 0 1 0-1.6 4.3"/></svg>
+            </button>
+
+            <button type="button" id="slower-btn" class="toolbar-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-snail"><path d="M2 13a6 6 0 1 0 12 0 4 4 0 1 0-8 0 2 2 0 0 0 4 0"/>
+                    <circle cx="10" cy="13" r="8"/><path d="M2 21h12c4.4 0 8-3.6 8-8V7a2 2 0 1 0-4 0v6"/><path d="M18 3 19.1 5.2"/><path d="M22 3 20.9 5.2"/></svg>
+            </button>
+        </div>
+
+        <div class="toolbar__container">
+            <button type="button" id="bulldoze-btn" data-toolid="bulldoze" class="toolbar-btn bulldoze-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eraser">
+                    <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/>
+                    <path d="M22 21H7"/><path d="m5 11 9 9"/>
+                </svg>
+            </button>
+            <button type="button" id="select-btn" data-toolid="select-object" class="toolbar-btn selected">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-mouse-pointer">
+                    <path d="M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/>
+                    <path d="m12 12 4 10 1.7-4.3L22 16Z"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="toolbar__container">
+            <button type="button" id="residential-btn" class="toolbar-btn" data-group="residential">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home">
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+            </button>
+            <button type="button" id="market-btn" class="toolbar-btn" data-group="markets">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-store"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="toolbar__container">
+        <button type="button" id="farm-btn" class="toolbar-btn" data-group="farms">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wheat">
+                <path d="M2 22 16 8"/><path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                <path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 15l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                <path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 11l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                <path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/>
+                <path d="M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
+                <path d="M15.47 13.47 17 15l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
+                <path d="M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
+            </svg>
+        </button>
+        <button type="button" id="others-btn" data-toolid="others" data-group="others" class="toolbar-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse">
+                <path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/>
+                <path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="12" x="6" y="10"/></svg>
+        </button>
+
+        </div>
+
+        <button type="button" id="roads-btn" data-toolid="roads" class="toolbar-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-route">
+                <circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/>
+                <circle cx="18" cy="5" r="3"/>
+            </svg>
+        </button>
+
+
+      </section>
+
+        <section class="info-panel-wrapper">
+            <div class="delay-ui-wrapper">
+                <div class="delay-ui"></div>
+            </div>
+
+            <div class="info-panel">
+                <section class="info-box">
+                    <article class="clock-box">
+                  <span class="clock-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock-4"><circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alarm-clock-off">
+                        <path d="M6.87 6.87a8 8 0 1 0 11.26 11.26"/><path d="M19.9 14.25a8 8 0 0 0-9.15-9.15"/><path d="m22 6-3-3"/><path d="M6.26 18.67 4 21"/><path d="m2 2 20 20"/><path d="M4 4 2 6"/>
+                    </svg>
+                  </span>
+                        <div class="display-time"></div>
+                    </article>
+                    <article class="delay-box">
+                    <span class="delay-icon">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alarm-clock"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M6.38 18.7 4 21"/><path d="M17.64 18.67 20 21"/>
+                         </svg>
+                      </span>
+                        <div class="display-delay"></div>
+                    </article>
+                    <article class="speed-box">
+                        <div class="display-speed"></div>
+                    </article>
+                </section>
+
+                <section class="info-box">
+                    <article class="pop-box">
+                 <span class="info-box pop-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </span>
+                        <div class="display-pop"></div>
+                    </article>
+                </section>
+
+                <section class="info-box">
+                    <article class="food-box">
+                 <span class="food-icon">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-apple">
+                    <path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z"/>
+                    <path d="M10 2c1 .5 2 2 2 5"/>
+                   </svg>
+                </span>
+                        <div class="display-food"></div>
+                    </article>
+                    <article class="starve-box">
+                    <span class="bone-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bone">
+                            <path d="M17 10c.7-.7 1.69 0 2.5 0a2.5 2.5 0 1 0 0-5 .5.5 0 0 1-.5-.5 2.5 2.5 0 1 0-5 0c0 .81.7 1.8 0 2.5l-7 7c-.7.7-1.69 0-2.5 0a2.5 2.5 0 0 0 0 5c.28 0 .5.22.5.5a2.5 2.5 0 1 0 5 0c0-.81-.7-1.8 0-2.5Z"/>
+                        </svg>
+                    </span>
+                        <div class="display-starve"></div>
+                    </article>
+                </section>
+
+
+                <section class="info-box">
+                    <article class="budget-box">
+                <span class="budget-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-euro">
+                          <path d="M4 10h12"/><path d="M4 14h9"/>
+                          <path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/>
+                        </svg>
+                  </span>
+                        <div class="display-funds"></div>
+                    </article>
+
+                    <article class="debt-box">
+                <span class="debt-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-landmark"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/>
+                    </svg>
+                </span>
+                        <div class="display-debt"></div>
+                    </article>
+                </section>
+            </div>
+        </section>
+
+
+
+        <div id="panel-layout" class="panel-layout">
+
+            <div class="panel-inner-wrapper">
+                <div class="panel-close-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="m15 9-6 6"/>
+                        <path d="m9 9 6 6"/>
+                    </svg>
+                </div>
+                <div id="panel-inner" class="panel-inner"></div>
+            </div>
+      </div>
+
+    </div>
+</div>
+<footer>
+    <a title="crédits" href="https://github.com/ExploryKod/Anoria/blob/main/src/credits.md" >Crédits</a>
+    <span>Projet de Amaury Franssen - 2024 &copy; Tout droit réservé </span>
+</footer>
+
+<script type="module" src="/src/main.js"></script>
+<script type="module" src="/src/js/game/game.js"></script>
+<script type="module" src="/src/js/ui/buttons.js"></script>
+
+</body>
+</html>

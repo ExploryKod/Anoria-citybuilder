@@ -1,0 +1,16 @@
+{
+  "short_name": "Anoriapp",
+  "name": "Anoria",
+  "theme_color": "#e7e41b",
+  "background_color": "#aa3838",
+  "id": "anoria-app-awy",
+  "description": "Anoria is a mini city builder experience using three js",
+  "display_override": [
+    "standalone",
+    "browser",
+    "window-controls-overlay"
+  ],
+  "categories": [
+    "games"
+  ]
+}
