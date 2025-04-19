@@ -20,8 +20,7 @@ models
 
 /public/ios
 /public/windows11
-/public/resources/lowpoly
-!public/resources/lowpoly/village_town_assets_v2.glb
+
 
 # Editor directories and files
 .vscode/*
