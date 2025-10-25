@@ -204,7 +204,7 @@
 
 
                 <section class="info-box">
-                    <article class="budget-box" id="realtime-budget-btn">
+                    <article class="budget-box">
                 <span class="budget-icon">
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-euro">
                           <path d="M4 10h12"/><path d="M4 14h9"/>
@@ -214,12 +214,12 @@
                         <div class="display-funds"></div>
                     </article>
 
-                    <article class="debt-box">
+                    <article class="budget-box" id="realtime-budget-btn">
                 <span class="debt-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-landmark"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/>
                     </svg>
                 </span>
-                        <div class="display-debt"></div>
+                        <div>Consulter en temps réel</div>
                     </article>
                 </section>
             </div>
@@ -261,10 +261,90 @@
             </div>
         </div>
         <div class="realtime-budget-content">
+            <!-- Fonds principaux -->
             <div class="realtime-funds-display">
                 <div class="realtime-funds-label">Fonds Disponibles</div>
                 <div class="realtime-funds-amount" id="realtime-funds">0€</div>
             </div>
+
+            <!-- Santé financière -->
+            <div class="realtime-health-section">
+                <div class="realtime-health-label">État Financier</div>
+                <div class="realtime-health-status" id="realtime-health-status">En cours...</div>
+                <div class="realtime-health-message" id="realtime-health-message">Analyse en cours...</div>
+            </div>
+
+            <!-- Détails financiers -->
+            <!-- Informations générales -->
+            <div class="realtime-info-section">
+                <div class="realtime-info-grid">
+                    <div class="realtime-info-item">
+                        <div class="realtime-info-label">Tour Actuel</div>
+                        <div class="realtime-info-value" id="realtime-turn"><span>0</span></div>
+                    </div>
+                    <div class="realtime-info-item">
+                        <div class="realtime-info-label">Population</div>
+                        <div class="realtime-info-value" id="realtime-population"><span>0</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Détail des finances -->
+            <div class="realtime-details-section">
+                <div class="realtime-details-grid">
+                    <div class="realtime-detail-item">
+                        <div class="realtime-detail-label">Revenus Totaux</div>
+                        <div class="realtime-detail-value" id="realtime-income">0€</div>
+                    </div>
+                    <div class="realtime-detail-item">
+                        <div class="realtime-detail-label">Dépenses Totales</div>
+                        <div class="realtime-detail-value" id="realtime-expenses">0€</div>
+                    </div>
+                    <div class="realtime-detail-item">
+                        <div class="realtime-detail-label">Flux Net</div>
+                        <div class="realtime-detail-value" id="realtime-netflow">0€</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Détail des revenus -->
+            <div class="realtime-revenue-section">
+                <div class="realtime-revenue-label">Détail des Revenus</div>
+                <div class="realtime-revenue-grid">
+                    <div class="realtime-revenue-item">
+                        <div class="realtime-revenue-source">🏛️ Impôts (10€/hab)</div>
+                        <div class="realtime-revenue-amount" id="realtime-taxes">0€</div>
+                    </div>
+                    <div class="realtime-revenue-item">
+                        <div class="realtime-revenue-source">💰 Autres revenus</div>
+                        <div class="realtime-revenue-amount" id="realtime-other-income">0€</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Détail des dépenses -->
+            <div class="realtime-expense-section">
+                <div class="realtime-expense-label">Détail des Dépenses</div>
+                <div class="realtime-expense-grid">
+                    <div class="realtime-expense-item">
+                        <div class="realtime-expense-source">🏗️ Maintenance bâtiments (2€/bât)</div>
+                        <div class="realtime-expense-amount" id="realtime-building-maintenance">0€</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Investissements -->
+            <div class="realtime-investment-section">
+                <div class="realtime-investment-label">Investissements</div>
+                <div class="realtime-investment-grid">
+                    <div class="realtime-investment-item">
+                        <div class="realtime-investment-source">🏠 Immobilisations corporelles</div>
+                        <div class="realtime-investment-amount" id="realtime-investments">0€</div>
+                    </div>
+                </div>
+            </div>
+
+
             <div class="realtime-update-info">
                 <small>Mise à jour en temps réel</small>
             </div>

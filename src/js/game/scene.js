@@ -505,13 +505,18 @@ export function createScene(housesStore, gameStore, assetManager) {
             }
         }
 
-        // Daily budget operations - only expenses for now, no income
+        // Daily budget operations - expenses and income
         try {
             if (window.budgetManager) {
-                // Add daily expenses (maintenance, salaries)
-                const dailyExpenses = Math.floor(totalPop * 0.2) + (buildingCounts.total * 2);
-                if (dailyExpenses > 0) {
-                    await window.budgetManager.addDailyExpense(dailyExpenses, "Maintenance et salaires");
+                // Add taxes (10€ per citizen per turn)
+                if (totalPop > 0) {
+                    await window.budgetManager.addTaxes(totalPop);
+                }
+                
+                // Add building maintenance expenses only
+                const buildingAmount = buildingCounts.total * 2; // Building maintenance cost
+                if (buildingAmount > 0) {
+                    await window.budgetManager.addBuildingMaintenance(buildingAmount);
                 }
                 
                 // Update turn

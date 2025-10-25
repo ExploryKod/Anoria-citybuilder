@@ -27,7 +27,12 @@ class BudgetManager {
             netFlow: 0,
             turn: 0,
             dailyIncome: 0,
-            dailyExpenses: 0
+            dailyExpenses: 0,
+            totalTaxes: 0,
+            totalMaintenance: 0,
+            totalSalaries: 0,
+            totalBuildingMaintenance: 0,
+            totalInvestments: 0
         };
         
         await this.db.budget.add(initialBudget);
@@ -47,6 +52,34 @@ class BudgetManager {
         if (!budget) {
             console.log('No budget found, initializing...');
             return await this.initialize();
+        }
+        
+        // Migration: Add new fields if they don't exist
+        let needsUpdate = false;
+        if (budget.totalTaxes === undefined) {
+            budget.totalTaxes = 0;
+            needsUpdate = true;
+        }
+        if (budget.totalMaintenance === undefined) {
+            budget.totalMaintenance = 0;
+            needsUpdate = true;
+        }
+        if (budget.totalSalaries === undefined) {
+            budget.totalSalaries = 0;
+            needsUpdate = true;
+        }
+        if (budget.totalBuildingMaintenance === undefined) {
+            budget.totalBuildingMaintenance = 0;
+            needsUpdate = true;
+        }
+        if (budget.totalInvestments === undefined) {
+            budget.totalInvestments = 0;
+            needsUpdate = true;
+        }
+        
+        if (needsUpdate) {
+            await this.db.budget.put(budget);
+            console.log('Migrated budget: added expense tracking fields');
         }
         
         return budget;
@@ -104,7 +137,17 @@ class BudgetManager {
 
         try {
             budget.funds = currentFunds - amount;
-            budget.expenses = currentExpenses + amount;
+            
+            // Distinguish between investments and regular expenses
+            if (reason.includes('Building:') || reason.includes('building')) {
+                // This is an investment (building purchase)
+                budget.totalInvestments += amount;
+                // Don't add to regular expenses for investments
+            } else {
+                // This is a regular expense
+                budget.expenses = currentExpenses + amount;
+            }
+            
             budget.netFlow = currentIncome - budget.expenses;
             
             await this.db.budget.put(budget);
@@ -171,14 +214,32 @@ class BudgetManager {
     }
 
     /**
-     * Add daily income (taxes, sales, etc.) - DISABLED FOR NOW
+     * Add daily income (taxes, sales, etc.)
      * @param {number} amount - Daily income amount
      * @param {string} source - Source of income
      */
     async addDailyIncome(amount, source = "daily_income") {
-        // Income is disabled for now - always 0
-        console.log(`Income disabled: ${amount}€ from ${source} (not added)`);
-        return await this.getCurrentBudget();
+        const budget = await this.getCurrentBudget();
+        
+        // Validate input amount
+        if (typeof amount !== 'number' || isNaN(amount) || !isFinite(amount)) {
+            console.error(`Invalid daily income amount: ${amount} (type: ${typeof amount})`);
+            return budget; // Return current budget without changes
+        }
+        
+        // Use budget values directly (they should be valid now)
+        const currentFunds = budget.funds;
+        const currentIncome = budget.income;
+        const currentDailyIncome = budget.dailyIncome;
+        
+        budget.funds = currentFunds + amount;
+        budget.income = currentIncome + amount;
+        budget.dailyIncome = currentDailyIncome + amount;
+        budget.netFlow = budget.income - budget.expenses;
+        
+        await this.db.budget.put(budget);
+        console.log(`Daily income added: +${amount}€ from ${source}. New funds: ${budget.funds}€`);
+        return budget;
     }
 
     /**
@@ -210,6 +271,93 @@ class BudgetManager {
         return budget;
     }
 
+
+    /**
+     * Add building maintenance expenses only
+     * @param {number} amount - Building maintenance cost
+     */
+    async addBuildingMaintenance(amount) {
+        const budget = await this.getCurrentBudget();
+        
+        // Validate input amount
+        if (typeof amount !== 'number' || isNaN(amount) || !isFinite(amount)) {
+            console.error(`Invalid building maintenance amount: ${amount}`);
+            return budget;
+        }
+        
+        if (amount > 0) {
+            // Update budget
+            budget.funds -= amount;
+            budget.expenses += amount;
+            budget.dailyExpenses += amount;
+            
+            // Update detailed tracking
+            budget.totalBuildingMaintenance += amount;
+            budget.netFlow = budget.income - budget.expenses;
+            
+            await this.db.budget.put(budget);
+            console.log(`Building maintenance added: ${amount}€`);
+        }
+        
+        return budget;
+    }
+
+    /**
+     * Add taxes based on population (10€ per citizen per turn)
+     * @param {number} population - Current population count
+     * @returns {Promise<Object>} Updated budget
+     */
+    async addTaxes(population) {
+        const taxRate = 10; // 10€ per citizen per turn
+        const taxAmount = population * taxRate;
+        
+        if (taxAmount > 0) {
+            const budget = await this.getCurrentBudget();
+            
+            // Add to daily income
+            budget.funds += taxAmount;
+            budget.income += taxAmount;
+            budget.dailyIncome += taxAmount;
+            budget.totalTaxes += taxAmount; // Track total taxes collected
+            budget.netFlow = budget.income - budget.expenses;
+            
+            await this.db.budget.put(budget);
+            console.log(`Taxes added: +${taxAmount}€ from ${population} citizens. Total taxes: ${budget.totalTaxes}€`);
+            return budget;
+        }
+        
+        return await this.getCurrentBudget();
+    }
+
+    /**
+     * Get detailed income breakdown
+     * @returns {Promise<Object>} Income breakdown with taxes and other sources
+     */
+    async getIncomeBreakdown() {
+        const budget = await this.getCurrentBudget();
+        
+        return {
+            totalIncome: budget.income || 0,
+            dailyIncome: budget.dailyIncome || 0,
+            taxes: budget.totalTaxes || 0, // Total taxes collected over all turns
+            otherIncome: (budget.income || 0) - (budget.totalTaxes || 0) // Other income sources
+        };
+    }
+
+    /**
+     * Get detailed expense breakdown
+     * @returns {Promise<Object>} Expense breakdown with different categories
+     */
+    async getExpenseBreakdown() {
+        const budget = await this.getCurrentBudget();
+        
+        return {
+            totalExpenses: budget.expenses || 0,
+            dailyExpenses: budget.dailyExpenses || 0,
+            buildingMaintenance: budget.totalBuildingMaintenance || 0,
+            investments: budget.totalInvestments || 0
+        };
+    }
 
     /**
      * Force reinitialize budget (useful for fixing corrupted data)

@@ -871,6 +871,7 @@ window.onload = async () => {
         });
     }
     
+    window.gameStore = gameStore;
     window.game = createGame(housesStore, gameStore, assetManager);
     window.setActiveTool = (e) => {
         getButtonsUnactive(e)
@@ -908,27 +909,14 @@ function initRealtimeBudgetPopup() {
         e.stopPropagation(); // Prevent event bubbling
         e.preventDefault(); // Prevent default behavior
         
-        // Don't open if we're in a modal or other popup context
-        if (document.querySelector('.modal.active') || document.querySelector('.info-object-overlay.active')) {
-            return;
-        }
+        // Budget panel can now be opened even when other modals are active
         
         // Only toggle if clicking directly on the budget box or its children
         if (e.target === realtimeBudgetBtn || realtimeBudgetBtn.contains(e.target)) {
             realtimeBudgetPanel.classList.toggle('active');
             if (realtimeBudgetPanel.classList.contains('active')) {
-                // Disable pointer events on 3D scene when budget panel opens
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                    canvas.classList.add('pointer-events-disabled');
-                }
+                // Budget panel doesn't disable 3D scene interactions since it's positioned on the side
                 updateRealtimeBudget();
-            } else {
-                // Re-enable pointer events on 3D scene when budget panel closes
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                    canvas.classList.remove('pointer-events-disabled');
-                }
             }
         }
     });
@@ -936,22 +924,14 @@ function initRealtimeBudgetPopup() {
     // Close popup on close button click
     realtimeBudgetCloseBtn.addEventListener('click', () => {
         realtimeBudgetPanel.classList.remove('active');
-        // Re-enable pointer events on 3D scene when budget panel closes
-        const canvas = document.querySelector('canvas');
-        if (canvas) {
-            canvas.classList.remove('pointer-events-disabled');
-        }
+        // No need to manage pointer events since budget panel doesn't interfere with 3D scene
     });
 
     // Close popup when clicking outside
     realtimeBudgetPanel.addEventListener('click', (e) => {
         if (e.target === realtimeBudgetPanel) {
             realtimeBudgetPanel.classList.remove('active');
-            // Re-enable pointer events on 3D scene when budget panel closes
-            const canvas = document.querySelector('canvas');
-            if (canvas) {
-                canvas.classList.remove('pointer-events-disabled');
-            }
+            // No need to manage pointer events since budget panel doesn't interfere with 3D scene
         }
     });
 
@@ -962,34 +942,62 @@ function initRealtimeBudgetPopup() {
         }
     }, 1000);
 
-    // Close real-time budget popup when other modals are opened
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                const target = mutation.target;
-                if (target.classList.contains('modal') || target.classList.contains('info-object-overlay')) {
-                    if (target.classList.contains('active') && realtimeBudgetPanel.classList.contains('active')) {
-                        realtimeBudgetPanel.classList.remove('active');
-                    }
-                }
-            }
-        });
-    });
-
-    // Observe modal elements for class changes
-    const modalElements = document.querySelectorAll('.modal, .info-object-overlay');
-    modalElements.forEach(element => {
-        observer.observe(element, { attributes: true, attributeFilter: ['class'] });
-    });
+    // Note: Removed automatic closing when other modals open
+    // The budget panel now stays open when building modals are active
 }
 
 async function updateRealtimeBudget() {
     const realtimeFundsEl = document.getElementById('realtime-funds');
-    if (!realtimeFundsEl) return;
+    const realtimeIncomeEl = document.getElementById('realtime-income');
+    const realtimeExpensesEl = document.getElementById('realtime-expenses');
+    const realtimeNetflowEl = document.getElementById('realtime-netflow');
+    const realtimeTurnEl = document.getElementById('realtime-turn');
+    const realtimePopulationEl = document.getElementById('realtime-population');
+    const realtimeHealthStatusEl = document.getElementById('realtime-health-status');
+    const realtimeHealthMessageEl = document.getElementById('realtime-health-message');
+    const realtimeTaxesEl = document.getElementById('realtime-taxes');
+    const realtimeOtherIncomeEl = document.getElementById('realtime-other-income');
+    const realtimeBuildingMaintenanceEl = document.getElementById('realtime-building-maintenance');
+    const realtimeInvestmentsEl = document.getElementById('realtime-investments');
+
+    if (!realtimeFundsEl) {
+        console.warn('Realtime budget elements not found');
+        return;
+    }
 
     try {
+        
         if (window.budgetManager) {
             const budgetData = await window.budgetManager.getCurrentBudget();
+            const financialHealth = await window.budgetManager.getFinancialHealth();
+            const incomeBreakdown = await window.budgetManager.getIncomeBreakdown();
+            const expenseBreakdown = await window.budgetManager.getExpenseBreakdown();
+            
+            // Get population data from game table
+            let population = null;
+            let populationError = false;
+            if (window.gameStore) {
+                try {
+                    population = await window.gameStore.getLatestGameItemByField('population');
+                    if (population === null || population === undefined) {
+                        // Keep previous value if available, otherwise show loading
+                        const currentPop = realtimePopulationEl ? realtimePopulationEl.textContent : '0';
+                        if (currentPop === 'Chargement...' || currentPop === '0') {
+                            population = '0'; // Show 0 instead of "Chargement..."
+                        } else {
+                            population = currentPop; // Keep previous value
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching population:', error);
+                    population = 'Erreur';
+                    populationError = true;
+                }
+            } else {
+                population = '0'; // Show 0 instead of "Chargement..."
+            }
+            
+            // Mettre à jour les fonds principaux
             const funds = budgetData.funds || 0;
             realtimeFundsEl.textContent = `${funds.toLocaleString('fr-FR')}€`;
             
@@ -1004,13 +1012,165 @@ async function updateRealtimeBudget() {
                 realtimeFundsEl.style.color = 'var(--cta)';
                 realtimeFundsEl.style.animation = 'pulse 2s infinite';
             }
+            
+            // Mettre à jour les détails financiers
+            if (realtimeIncomeEl) {
+                const income = budgetData.income || 0;
+                realtimeIncomeEl.textContent = `${income.toLocaleString('fr-FR')}€`;
+            }
+            if (realtimeExpensesEl) {
+                const expenses = budgetData.expenses || 0;
+                realtimeExpensesEl.textContent = `${expenses.toLocaleString('fr-FR')}€`;
+            }
+            if (realtimeNetflowEl) {
+                const netFlow = (budgetData.income || 0) - (budgetData.expenses || 0);
+                realtimeNetflowEl.textContent = `${netFlow.toLocaleString('fr-FR')}€`;
+                // Colorer le flux net selon s'il est positif ou négatif
+                if (netFlow > 0) {
+                    realtimeNetflowEl.style.color = 'var(--success)';
+                } else if (netFlow < 0) {
+                    realtimeNetflowEl.style.color = 'var(--danger)';
+                } else {
+                    realtimeNetflowEl.style.color = 'var(--cta)';
+                }
+            }
+            // Mettre à jour les informations générales
+            if (realtimeTurnEl) {
+                const turnSpan = realtimeTurnEl.querySelector('span');
+                if (turnSpan) {
+                    turnSpan.textContent = budgetData.turn || 0;
+                } else {
+                    realtimeTurnEl.textContent = budgetData.turn || 0;
+                }
+            }
+            if (realtimePopulationEl) {
+                const populationSpan = realtimePopulationEl.querySelector('span');
+                if (populationSpan) {
+                    populationSpan.textContent = population.toString();
+                    
+                    // Style différent selon l'état
+                    if (populationError) {
+                        populationSpan.style.color = '#ff6b6b'; // Rouge pour erreur
+                        realtimePopulationEl.title = 'Erreur lors du chargement de la population';
+                    } else {
+                        populationSpan.style.color = '#fff'; // Blanc pour valeur normale
+                        realtimePopulationEl.title = 'Population actuelle';
+                    }
+                } else {
+                    realtimePopulationEl.textContent = population.toString();
+                }
+            }
+            
+            // Mettre à jour la santé financière
+            if (realtimeHealthStatusEl && realtimeHealthMessageEl) {
+                realtimeHealthStatusEl.textContent = getHealthStatusText(financialHealth.status);
+                realtimeHealthMessageEl.textContent = financialHealth.message;
+                
+                // Appliquer la classe CSS appropriée
+                realtimeHealthStatusEl.className = 'realtime-health-status ' + financialHealth.status;
+            }
+            
+            // Mettre à jour les détails des revenus
+            if (realtimeTaxesEl) {
+                const taxes = incomeBreakdown.taxes || 0;
+                realtimeTaxesEl.textContent = `${taxes.toLocaleString('fr-FR')}€`;
+            }
+            if (realtimeOtherIncomeEl) {
+                const otherIncome = incomeBreakdown.otherIncome || 0;
+                realtimeOtherIncomeEl.textContent = `${otherIncome.toLocaleString('fr-FR')}€`;
+            }
+            
+            // Mettre à jour les détails des dépenses
+            if (realtimeBuildingMaintenanceEl) {
+                const buildingMaintenance = expenseBreakdown.buildingMaintenance || 0;
+                realtimeBuildingMaintenanceEl.textContent = `${buildingMaintenance.toLocaleString('fr-FR')}€`;
+            }
+            if (realtimeInvestmentsEl) {
+                const investments = expenseBreakdown.investments || 0;
+                realtimeInvestmentsEl.textContent = `${investments.toLocaleString('fr-FR')}€`;
+            }
         } else {
-            realtimeFundsEl.textContent = 'Chargement...';
-            realtimeFundsEl.style.color = 'var(--grey)';
+            // Valeurs par défaut si le budget manager n'est pas disponible
+            realtimeFundsEl.textContent = 'Non disponible';
+            realtimeFundsEl.style.color = '#ff6b6b';
+            realtimeFundsEl.title = 'Budget manager non initialisé';
+            
+            if (realtimeIncomeEl) {
+                realtimeIncomeEl.textContent = 'N/A';
+                realtimeIncomeEl.style.color = '#ffa726';
+            }
+            if (realtimeExpensesEl) {
+                realtimeExpensesEl.textContent = 'N/A';
+                realtimeExpensesEl.style.color = '#ffa726';
+            }
+            if (realtimeNetflowEl) {
+                realtimeNetflowEl.textContent = 'N/A';
+                realtimeNetflowEl.style.color = '#ffa726';
+            }
+            if (realtimeTurnEl) {
+                const turnSpan = realtimeTurnEl.querySelector('span');
+                if (turnSpan) {
+                    turnSpan.textContent = 'N/A';
+                    turnSpan.style.color = '#ffa726';
+                } else {
+                    realtimeTurnEl.textContent = 'N/A';
+                }
+            }
+            if (realtimePopulationEl) {
+                const populationSpan = realtimePopulationEl.querySelector('span');
+                if (populationSpan) {
+                    populationSpan.textContent = 'N/A';
+                    populationSpan.style.color = '#ffa726';
+                    realtimePopulationEl.title = 'Budget manager non initialisé';
+                } else {
+                    realtimePopulationEl.textContent = 'N/A';
+                }
+            }
+            if (realtimeHealthStatusEl) realtimeHealthStatusEl.textContent = 'Non disponible';
+            if (realtimeHealthMessageEl) realtimeHealthMessageEl.textContent = 'Budget manager non initialisé';
+            if (realtimeTaxesEl) {
+                realtimeTaxesEl.textContent = 'N/A';
+                realtimeTaxesEl.style.color = '#ffa726';
+            }
+            if (realtimeOtherIncomeEl) {
+                realtimeOtherIncomeEl.textContent = 'N/A';
+                realtimeOtherIncomeEl.style.color = '#ffa726';
+            }
+            if (realtimeBuildingMaintenanceEl) {
+                realtimeBuildingMaintenanceEl.textContent = 'N/A';
+                realtimeBuildingMaintenanceEl.style.color = '#ffa726';
+            }
+            if (realtimeInvestmentsEl) {
+                realtimeInvestmentsEl.textContent = 'N/A';
+                realtimeInvestmentsEl.style.color = '#ffa726';
+            }
         }
     } catch (error) {
         console.error('Error updating real-time budget:', error);
         realtimeFundsEl.textContent = 'Erreur';
         realtimeFundsEl.style.color = '#ff6b6b';
+        if (realtimeHealthStatusEl) realtimeHealthStatusEl.textContent = 'Erreur';
+        if (realtimeHealthMessageEl) realtimeHealthMessageEl.textContent = 'Impossible de charger les données';
+        
+        // Show population span even on error
+        if (realtimePopulationEl) {
+            const populationSpan = realtimePopulationEl.querySelector('span');
+            if (populationSpan) {
+                populationSpan.textContent = 'Erreur';
+                populationSpan.style.color = '#ff6b6b';
+                realtimePopulationEl.title = 'Erreur lors du chargement de la population';
+            }
+        }
     }
+}
+
+function getHealthStatusText(status) {
+    const statusMap = {
+        'healthy': 'Sain',
+        'warning': 'Attention',
+        'critical': 'Critique',
+        'excellent': 'Excellent',
+        'deficit': 'Déficitaire'
+    };
+    return statusMap[status] || 'Inconnu';
 }
