@@ -35,8 +35,8 @@ class HouseStore {
     }
 
     /**
-     * Process population based on food availability
-     * Population can only grow if there's food, and resets to 0 if no food
+     * Process population based on food availability and road access
+     * Population can only grow if there's food AND road access, and resets to 0 if no food OR no road access
      * @returns {Promise<Object>} Result with population changes
      */
     async processPopulationFoodLogic() {
@@ -45,17 +45,18 @@ class HouseStore {
         let totalPopulationGained = 0;
         let housesAffected = 0;
 
-        console.log(`🍞 Processing population/food logic for ${houses.length} houses...`);
+        console.log(`🍞🛣️ Processing population/food/road logic for ${houses.length} houses...`);
 
         for (const house of houses) {
             if (house.type && house.type.includes('House')) { // Only process houses
                 const hasFood = house.stocks && house.stocks.food > 0;
+                const hasRoadAccess = house.neighbors && house.neighbors.filter(neighbor => neighbor.name === 'roads').length > 0;
                 const currentPop = house.pop || 0;
                 
-                console.log(`🏠 House ${house.id}: pop=${currentPop}, food=${house.stocks?.food || 0}`);
+                console.log(`🏠 House ${house.id}: pop=${currentPop}, food=${house.stocks?.food || 0}, roads=${house.neighbors?.filter(n => n.name === 'roads').length || 0}`);
                 
-                if (!hasFood) {
-                    // No food - reset population to 0
+                if (!hasFood || !hasRoadAccess) {
+                    // No food OR no road access - reset population to 0
                     if (currentPop > 0) {
                         totalPopulationLost += currentPop;
                         housesAffected++;
@@ -64,24 +65,30 @@ class HouseStore {
                             pop: 0
                         });
                         
-                        console.log(`🚨 House ${house.id}: Population reset to 0 (no food)`);
+                        if (!hasFood && !hasRoadAccess) {
+                            console.log(`🚨 House ${house.id}: Population reset to 0 (no food and no road access)`);
+                        } else if (!hasFood) {
+                            console.log(`🚨 House ${house.id}: Population reset to 0 (no food)`);
+                        } else if (!hasRoadAccess) {
+                            console.log(`🚨 House ${house.id}: Population reset to 0 (no road access)`);
+                        }
                     }
                 } else {
-                    // Has food - population can grow (existing growth logic will handle this)
-                    console.log(`✅ House ${house.id}: Has food, habitants can stay alive`);
+                    // Has food AND road access - population can grow (existing growth logic will handle this)
+                    console.log(`✅ House ${house.id}: Has food and road access, habitants can stay alive`);
                 }
             }
         }
 
-        console.log(`🍞 Population/food result: ${totalPopulationLost} lost, ${housesAffected} houses affected`);
+        console.log(`🍞🛣️ Population/food/road result: ${totalPopulationLost} lost, ${housesAffected} houses affected`);
 
         return {
             totalPopulationLost,
             totalPopulationGained,
             housesAffected,
             message: totalPopulationLost > 0 ? 
-                `${totalPopulationLost} inhabitants lost due to no food in ${housesAffected} houses` : 
-                'All houses with population have food'
+                `${totalPopulationLost} inhabitants lost due to no food or road access in ${housesAffected} houses` : 
+                'All houses with population have food and road access'
         };
     }
 

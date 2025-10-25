@@ -389,28 +389,34 @@ export function createScene(housesStore, gameStore, assetManager) {
                         await housesStore.incrementHouseField(HouseTime, false)
                     }
 
-                    // Check if house has food before allowing population growth
+                    // Check if house has food AND road access before allowing population growth
                     const houseFoodStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks');
+                    const houseNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
                     const hasFood = houseFoodStocks && houseFoodStocks.food > 0;
+                    const hasRoadAccess = houseNeighbors && houseNeighbors.filter(neighbor => neighbor.name === 'roads').length > 0;
                     
-                    if (hasFood) {
-                        // Has food - population can grow (max 2)
+                    if (hasFood && hasRoadAccess) {
+                        // Has food AND road access - population can grow (max 2)
                         const housePop = { name: currentUniqueID, increment: 1, field: 'pop' };
                         await housesStore.incrementHouseField(housePop, {operator: '<=', limit: 2});
-                        console.log(`✅ House ${currentUniqueID}: Population can grow (has food)`);
+                        console.log(`✅ House ${currentUniqueID}: Population can grow (has food and road access)`);
                     } else {
-                        // No food - reset population to 0
+                        // No food OR no road access - reset population to 0
                         const currentPop = await housesStore.getHouseItem(currentUniqueID, 'pop');
                         if (currentPop > 0) {
                             await housesStore.updateHouseFields(currentUniqueID, { pop: 0 });
-                            console.log(`🚨 House ${currentUniqueID}: Population reset to 0 (no food)`);
+                            if (!hasFood && !hasRoadAccess) {
+                                console.log(`🚨 House ${currentUniqueID}: Population reset to 0 (no food and no road access)`);
+                            } else if (!hasFood) {
+                                console.log(`🚨 House ${currentUniqueID}: Population reset to 0 (no food)`);
+                            } else if (!hasRoadAccess) {
+                                console.log(`🚨 House ${currentUniqueID}: Population reset to 0 (no road access)`);
+                            }
                         }
                     }
 
                     const houseTime = await housesStore.getHouseItem(currentUniqueID, 'time');
                     // House time processing
-
-                    const houseNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
 
                     const statutsIconsMeta = {
                         road: {
