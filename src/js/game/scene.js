@@ -223,23 +223,38 @@ export function createScene(housesStore, gameStore, assetManager) {
                             return;
                         }
 
+                        // Initialize stocks if they don't exist - get from database first
+                        if (!buildings[x][y].userData.stocks) {
+                            const existingStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks');
+                            buildings[x][y].userData.stocks = existingStocks || {
+                                food: 0,
+                                cabbage: 0,
+                                wheat: 0,
+                                carrot: 0
+                            };
+                        }
+
                         // Update userData food
                         datas.filter(data => !data.decrease).forEach((data) => {
-                            buildings[x][y].userData.stocks[data.key] += data.number
+                            if (buildings[x][y].userData.stocks[data.key] !== undefined) {
+                                buildings[x][y].userData.stocks[data.key] += data.number
+                            }
                         })
 
                         datas.filter(data => data.decrease).forEach((data) => {
-                            buildings[x][y].userData.stocks[data.key] -= data.number
+                            if (buildings[x][y].userData.stocks[data.key] !== undefined) {
+                                buildings[x][y].userData.stocks[data.key] -= data.number
+                            }
                         })
 
                         // turn by turn values from userData need to be mirrored in indexDB using userData
                         const commerceUserData = {
                             stocks:
                                 {
-                                    food: buildings[x][y].userData.stocks.food,
-                                    carrot: buildings[x][y].userData.stocks.carrot,
-                                    cabbage: buildings[x][y].userData.stocks.cabbage,
-                                    wheat: buildings[x][y].userData.stocks.wheat
+                                    food: buildings[x][y].userData.stocks.food || 0,
+                                    carrot: buildings[x][y].userData.stocks.carrot || 0,
+                                    cabbage: buildings[x][y].userData.stocks.cabbage || 0,
+                                    wheat: buildings[x][y].userData.stocks.wheat || 0
                                 }
                         }
 
@@ -376,16 +391,16 @@ export function createScene(housesStore, gameStore, assetManager) {
                         // Major problem here : is this apply to every house mesh ??
                         if(isRoad > 0) {
                             console.warn('There is one neighbor road at least for: ', buildings[x][y], HouseRoads, isRoad);
-                            assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-roads',
+                            assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
                                 statutsIconsMeta.road.scale, statutsIconsMeta.road.position, false)
                         } else {
                             console.warn('There is no neighbor roads for: ', buildings[x][y], HouseRoads, isRoad);
-                            assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-roads',
+                            assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
                                 statutsIconsMeta.road.scale, statutsIconsMeta.road.position, true)
                         }
                     } else {
                         console.warn('There is no neighbor roads and no object roads for: ', buildings[x][y]);
-                        assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-roads',
+                        assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
                             statutsIconsMeta.road.scale, statutsIconsMeta.road.position, true)
                     }
 
@@ -395,9 +410,9 @@ export function createScene(housesStore, gameStore, assetManager) {
                     const decay = houseTime > 3 && housePop >= 2 && houseStocks.food < housePop
 
                     if(houseStocks.food <= 0) {
-                        assetManager.setStatusSprite(buildings[x][y], textures['nofood'], 'nofood', statutsIconsMeta.food.scale, statutsIconsMeta.food.position, true)
+                        assetManager.setStatusSprite(buildings[x][y], textures['nofood'], 'no-food', statutsIconsMeta.food.scale, statutsIconsMeta.food.position, true)
                     } else {
-                        assetManager.setStatusSprite(buildings[x][y], textures['nofood'], 'nofood', statutsIconsMeta.food.scale, statutsIconsMeta.food.position, false)
+                        assetManager.setStatusSprite(buildings[x][y], textures['nofood'], 'no-food', statutsIconsMeta.food.scale, statutsIconsMeta.food.position, false)
                     }
 
                     if(decay) {
