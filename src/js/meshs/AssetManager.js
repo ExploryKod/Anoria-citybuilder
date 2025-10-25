@@ -251,14 +251,34 @@ class AssetManager extends MeshLoader {
     }
 
     setStatusSprite(mesh, texture, name, scale = {x: 0.7, y: 0.7, z: 1}, position, visible = false) {
-        const isAlreadySprite = mesh.children.find(
-            child => child.type === "Sprite" && child.name === name
-        );
-        const sprite = isAlreadySprite ? isAlreadySprite : this.setSprite(texture, name);
+        console.log(`[AssetManager] Setting status sprite: ${name}, visible: ${visible}, mesh: ${mesh.userData?.id || 'unknown'}`);
+        
+        // Remove existing sprite with the same name first
+        this.removeStatusSprite(mesh, name);
+        
+        const sprite = this.setSprite(texture, name);
         sprite.scale.set(scale.x, scale.y, scale.z);
         sprite.position.set(position.x, position.y, position.z);
         sprite.visible = visible;
         mesh.add(sprite);
+        
+        console.log(`[AssetManager] Status sprite ${name} added to mesh ${mesh.userData?.id || 'unknown'}, visible: ${sprite.visible}`);
+    }
+
+    removeStatusSprite(mesh, name) {
+        const existingSprite = mesh.children.find(
+            child => child.type === "Sprite" && child.name === name
+        );
+        if (existingSprite) {
+            console.log(`[AssetManager] Removing existing sprite: ${name} from mesh ${mesh.userData?.id || 'unknown'}`);
+            mesh.remove(existingSprite);
+            // Dispose of the sprite material to prevent memory leaks
+            if (existingSprite.material) {
+                existingSprite.material.dispose();
+            }
+        } else {
+            console.log(`[AssetManager] No existing sprite found: ${name} on mesh ${mesh.userData?.id || 'unknown'}`);
+        }
     }
 
     setNoRoadSprite(mesh, position, visible = false) {
@@ -266,7 +286,7 @@ class AssetManager extends MeshLoader {
     }
 
     setNoFoodSprite(mesh, position, visible = false) {
-        this.setStatusSprite(mesh, textures['nofood'], 'nofood', {x: 0.6, y: 0.6, z: 1}, position, visible);
+        this.setStatusSprite(mesh, textures['nofood'], 'no-food', {x: 0.6, y: 0.6, z: 1}, position, visible);
     }
 }
 
