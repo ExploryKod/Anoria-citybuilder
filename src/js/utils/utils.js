@@ -73,7 +73,7 @@ function getBuildingZonesNeighbors(data, area=1) {
 export function updateBuildingNeighbors(buildingData, area=1, time=0) {
 
     const { city, buildings, x, y, currentBuildingId, terrain } = buildingData;
-    console.log("Terrain mesh > ", terrain)
+    // Processing terrain mesh
     
     const neighbors =  getBuildingZonesNeighbors(buildingData, area)
     const areaKey = 'area' + '_' + area.toString();
@@ -157,9 +157,8 @@ export function updateBuildingNeighbors(buildingData, area=1, time=0) {
                 [areaKey]: areaObject       
             });
 
-            console.log(`Building zones for area key on time ${time}: ` + areaKey, buildingZones);
+            // Building zones processing
             const areaKeyObj = buildings[x][y].userData.neighborZones[areaKey]
-            console.log(`Area key obj `, areaKeyObj)
             if(areaKeyObj && Object.hasOwn(areaKeyObj, 'time') && areaKeyObj.time === time) {
                 console.warn(`time for area key on time ${time}`)
             }   
@@ -196,36 +195,7 @@ export function updateBuildingNeighbors(buildingData, area=1, time=0) {
     });
 
 
-    console.log(
-        `Building in zones ${area.toString()} on day ${time} for ${currentBuildingId} at x: ${x}, y: ${y} ==> `,
-        buildings[x][y].userData.neighborZones 
-    );
-
-    console.log(
-        `Building neighbors of ${currentBuildingId} at x: ${x}, y: ${y} ==> `,
-        buildings[x][y].userData.neighbors
-    );
-
-    console.log(
-        `Terrain neighbors of ${currentBuildingId} at x: ${x}, y: ${y} ==> `,
-        buildings[x][y].userData.neighborsMeshs
-    );
-
-    console.log(
-        `Neighbors Terrain ids of ${currentBuildingId} at x: ${x}, y: ${y} ==> `,
-        buildings[x][y].userData.neighborsUserDataIds
-    );
-
-    console.log(
-        `Neighbors Terrain Names of ${currentBuildingId} at x: ${x}, y: ${y} ==> `,
-        buildings[x][y].userData.neighborsTerrainNames
-    );
-
-
-    console.log(
-        `Building neighbors Names of ${currentBuildingId} at x: ${x}, y: ${y} ==> `,
-        buildings[x][y].userData.neighborsNames
-    );
+    // Building neighbor data processed
 
 }
 
@@ -304,7 +274,7 @@ export const zoneBordersBuildings = (buildingData, time=0) => {
 
                     temp.push(neighborData);
                 })
-                console.log("[UTILS ZONE BORDERS] buildings meshs", meshs)
+                // Zone borders processing
                 // Filter out null values
             }
             meshs.push(...new Set(temp));

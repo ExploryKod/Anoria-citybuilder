@@ -33,25 +33,25 @@ export function createGame(housesStore, gameStore, assetManager) {
     /* City initialization */
     const city = createCity(16);
 
-    scene.initialize(city).then(r => console.log(r));
+    scene.initialize(city);
 
     // handler function to extract coordinate of an object I click on (data from asset js and using scene js methods)
     scene.onObjectSelected = async (selectedObject) => {
         selectedObject.info = '';
         selectedObject.name = activeToolId !== 'select-object'? activeToolId : selectedObject.name;
-        console.log('the selected Object: ', selectedObject);
+        // Object selected
 
 
         let { x, y } = selectedObject.userData;
         // location of the tile in the data model
         const tile = city.tiles[x][y];
-        console.log('Objet posé sur ce terrain: ', selectedObject.userData)
+        // Object placed on terrain
         if(activeToolId === 'bulldoze') {
             // remove building from that location
             tile.buildingId = undefined;
             await scene.update(city);
         } else if(activeToolId === "select-object") {
-            console.log(`Je sélectionne ${selectedObject.userData.id} à ${x} ${y} >> `, selectedObject.userData)
+            // Object selection
             infoObjectOverlay.classList.toggle('active');
             makeInfoBuildingText("", true)
 
@@ -61,7 +61,7 @@ export function createGame(housesStore, gameStore, assetManager) {
 
 
             if(buildingsObjects.includes(selectedObject.userData.id)) {
-                console.log('******* SELECTING A BUILDING *********', selectedObject.userData.name)
+                // Building selection
                 const uniqueId = makeDbItemId(selectedObject.userData.id, selectedObject.userData.x, selectedObject.userData.y)
                 const buildingPop = await housesStore.getHouseItem(uniqueId, 'pop')
                 const houseRoads = await housesStore.getHouseItem(uniqueId, 'roads');
@@ -128,7 +128,7 @@ export function createGame(housesStore, gameStore, assetManager) {
         } else if(!tile.buildingId) {
             // place building at that location
             tile.buildingId = activeToolId;
-            console.log(`coordonnées et terrain de l\' objet posé ${tile.buildingId}: `, selectedObject.userData)
+            // Object placed on terrain
             let price = 0
 
             const houseID = tile.buildingId + '-' + selectedObject.userData.x + '-' + selectedObject.userData.y
@@ -161,7 +161,7 @@ export function createGame(housesStore, gameStore, assetManager) {
             }
 
             await housesStore.addHouseAndPay(dbHouseData);
-            console.log("GAME - add house and pay complete")
+            // House added and payment complete
             await scene.update(city);
         }
     }
@@ -192,14 +192,14 @@ export function createGame(housesStore, gameStore, assetManager) {
 
         pause() {
            isPause = true;
-            console.log('--pause--') 
+            // Game paused 
             infoPanelClockIcon.style.display = 'none'
             infoPanelNoClockIcon.style.display = 'block'
             displayTime.textContent = 'pause'
         },
 
         play() {
-            console.log('--play--')
+            // Game playing
             isPause = false;
             infoPanelClockIcon.style.display = 'block'
             infoPanelNoClockIcon.style.display = 'none'

@@ -36,7 +36,7 @@ class GameStore {
     async addGameItems(data) {
         try {
             await this.db.game.add(data);
-            console.log(`Game object ${data.name} added successfully.`);
+            // Game object added successfully
         } catch (err) {
             if (err.name === 'ConstraintError') {
                 console.error(`Game object ${data.name} already exists.`);
@@ -53,7 +53,7 @@ class GameStore {
             const gameItem = cursor;
             Object.assign(gameItem, updates);
             await this.db.game.put(gameItem);
-            console.log(`Latest game item updated successfully with changes:`, updates);
+            // Latest game item updated successfully
         } else {
             console.warn('No game items found to update.');
         }
@@ -65,7 +65,7 @@ class GameStore {
         if (gameItem) {
             Object.assign(gameItem, updates);
             await this.db.game.put(gameItem);
-            console.log(`Game item ${name} updated successfully.`);
+            // Game item updated successfully
         } else {
             console.warn(`Game item ${name} not found.`);
         }
@@ -93,19 +93,19 @@ class GameStore {
             }
         }
 
-        console.log("All applicable game items have been updated.");
+        // All applicable game items have been updated
     }
 
     // Deletes a game item by its name.
     async deleteGameItem(name) {
         await this.db.game.delete(name);
-        console.log(`Game item ${name} deleted successfully.`);
+        // Game item deleted successfully
     }
 
     // Clears all game items from the database.
     async clearGameItems() {
         await this.db.game.clear();
-        console.log(`All game items cleared.`);
+        // All game items cleared
     }
 }
 

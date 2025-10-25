@@ -34,6 +34,262 @@ function updateSpeedDisplay() {
     displaySpeed.textContent = `Vitesse du jeu: ${speed} ms`;
 }
 
+function createBudgetElements() {
+    // Create budget button
+    const budgetBtn = document.createElement('button');
+    budgetBtn.type = 'button';
+    budgetBtn.id = 'budget-btn';
+    budgetBtn.setAttribute('data-toolid', 'budget');
+    budgetBtn.className = 'toolbar-btn';
+    budgetBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-euro">
+            <path d="M4 10h12"/><path d="M4 14h9"/>
+            <path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/>
+        </svg>
+    `;
+    
+    // Add to toolbar (after roads button)
+    const roadsBtn = document.getElementById('roads-btn');
+    if (roadsBtn && roadsBtn.parentNode) {
+        roadsBtn.parentNode.insertBefore(budgetBtn, roadsBtn.nextSibling);
+    }
+    
+    // Create budget panel
+    const budgetPanel = document.createElement('div');
+    budgetPanel.id = 'budget-panel';
+    budgetPanel.className = 'budget-panel';
+    
+    // Add inline styles to ensure visibility
+    budgetPanel.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    budgetPanel.innerHTML = `
+        <div class="budget-panel-wrapper">
+            <div class="budget-panel-header">
+                <h2>💰 Budget Tracker</h2>
+                <div class="budget-panel-close-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="m15 9-6 6"/>
+                        <path d="m9 9 6 6"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="budget-panel-content">
+                <div class="budget-summary">
+                    <div class="budget-item">
+                        <span class="budget-label">Current Turn:</span>
+                        <span class="budget-value" id="budget-turn">0</span>
+                    </div>
+                    <div class="budget-item">
+                        <span class="budget-label">Population:</span>
+                        <span class="budget-value" id="budget-population">0</span>
+                    </div>
+                    <div class="budget-item">
+                        <span class="budget-label">Total Buildings:</span>
+                        <span class="budget-value" id="budget-buildings">0</span>
+                    </div>
+                </div>
+                
+                <div class="budget-financial">
+                    <h3>Financial Overview</h3>
+                    <div class="budget-item">
+                        <span class="budget-label">Funds:</span>
+                        <span class="budget-value" id="budget-funds">$0</span>
+                        <span class="budget-change" id="budget-funds-change">+0</span>
+                    </div>
+                    <div class="budget-item">
+                        <span class="budget-label">Debt:</span>
+                        <span class="budget-value" id="budget-debt">$0</span>
+                        <span class="budget-change" id="budget-debt-change">+0</span>
+                    </div>
+                    <div class="budget-item">
+                        <span class="budget-label">Net Worth:</span>
+                        <span class="budget-value" id="budget-networth">$0</span>
+                        <span class="budget-change" id="budget-networth-change">+0</span>
+                    </div>
+                </div>
+
+                <div class="budget-buildings">
+                    <h3>Building Portfolio</h3>
+                    <div class="budget-item">
+                        <span class="budget-label">Total Value:</span>
+                        <span class="budget-value" id="budget-total-value">$0</span>
+                    </div>
+                    <div class="budget-item">
+                        <span class="budget-label">Houses:</span>
+                        <span class="budget-value" id="budget-houses">0</span>
+                    </div>
+                    <div class="budget-item">
+                        <span class="budget-label">Farms:</span>
+                        <span class="budget-value" id="budget-farms">0</span>
+                    </div>
+                    <div class="budget-item">
+                        <span class="budget-label">Markets:</span>
+                        <span class="budget-value" id="budget-markets">0</span>
+                    </div>
+                    <div class="budget-item">
+                        <span class="budget-label">Roads:</span>
+                        <span class="budget-value" id="budget-roads">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add to body
+    document.body.appendChild(budgetPanel);
+    
+    // Add a style element for the active state
+    const style = document.createElement('style');
+    style.textContent = `
+        .budget-panel.active {
+            display: flex !important;
+        }
+        .budget-panel-wrapper {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .budget-panel-header {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .budget-panel-header h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .budget-panel-close-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
+        }
+        .budget-panel-close-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .budget-panel-content {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        .budget-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .budget-item:last-child {
+            border-bottom: none;
+        }
+        .budget-label {
+            font-weight: 500;
+            color: #ccc;
+        }
+        .budget-value {
+            font-weight: 600;
+            font-size: 16px;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    console.log('Budget elements created dynamically');
+}
+
+async function updateBudgetDisplay() {
+    try {
+        // Get current game data
+        const funds = await gameStore.getLatestGameItemByField('funds') || 300;
+        const debt = await gameStore.getLatestGameItemByField('debt') || 0;
+        const population = await housesStore.getGlobalPopulation() || 0;
+        const totalBuildingValue = await housesStore.getGlobalBuildingPrices() || 0;
+        
+        // Get building counts
+        const houses = await housesStore.listAllHouses();
+        const buildingCounts = {
+            houses: 0,
+            farms: 0,
+            markets: 0,
+            roads: 0,
+            total: 0
+        };
+        
+        houses.forEach(house => {
+            const type = house.type;
+            if (type.includes('House')) buildingCounts.houses++;
+            else if (type.includes('Farm')) buildingCounts.farms++;
+            else if (type.includes('Market')) buildingCounts.markets++;
+            else if (type.includes('roads')) buildingCounts.roads++;
+            buildingCounts.total++;
+        });
+        
+        // Update display elements
+        const budgetTurnEl = document.getElementById('budget-turn');
+        const budgetPopulationEl = document.getElementById('budget-population');
+        const budgetBuildingsEl = document.getElementById('budget-buildings');
+        const budgetFundsEl = document.getElementById('budget-funds');
+        const budgetDebtEl = document.getElementById('budget-debt');
+        const budgetNetworthEl = document.getElementById('budget-networth');
+        const budgetTotalValueEl = document.getElementById('budget-total-value');
+        const budgetHousesEl = document.getElementById('budget-houses');
+        const budgetFarmsEl = document.getElementById('budget-farms');
+        const budgetMarketsEl = document.getElementById('budget-markets');
+        const budgetRoadsEl = document.getElementById('budget-roads');
+        const budgetFundsChangeEl = document.getElementById('budget-funds-change');
+        const budgetDebtChangeEl = document.getElementById('budget-debt-change');
+        const budgetNetworthChangeEl = document.getElementById('budget-networth-change');
+        
+        if (budgetTurnEl) budgetTurnEl.textContent = window.game?.currentTurn || 0;
+        if (budgetPopulationEl) budgetPopulationEl.textContent = population;
+        if (budgetBuildingsEl) budgetBuildingsEl.textContent = buildingCounts.total;
+        if (budgetFundsEl) budgetFundsEl.textContent = `$${funds.toLocaleString()}`;
+        if (budgetDebtEl) budgetDebtEl.textContent = `$${debt.toLocaleString()}`;
+        if (budgetNetworthEl) budgetNetworthEl.textContent = `$${(funds - debt).toLocaleString()}`;
+        if (budgetTotalValueEl) budgetTotalValueEl.textContent = `$${totalBuildingValue.toLocaleString()}`;
+        if (budgetHousesEl) budgetHousesEl.textContent = buildingCounts.houses;
+        if (budgetFarmsEl) budgetFarmsEl.textContent = buildingCounts.farms;
+        if (budgetMarketsEl) budgetMarketsEl.textContent = buildingCounts.markets;
+        if (budgetRoadsEl) budgetRoadsEl.textContent = buildingCounts.roads;
+        
+        // Update change indicators (simplified for now)
+        if (budgetFundsChangeEl) budgetFundsChangeEl.textContent = '+0';
+        if (budgetDebtChangeEl) budgetDebtChangeEl.textContent = '+0';
+        if (budgetNetworthChangeEl) budgetNetworthChangeEl.textContent = '+0';
+        
+    } catch (error) {
+        console.error('Error updating budget display:', error);
+    }
+}
+
 // Animation panel buttons
 let animateButton = function(e) {
 
@@ -272,6 +528,25 @@ window.onload = async () => {
     buttonData = assetManager.getButtonData();
     toolIds = assetManager.getToolIds();
 
+    // Debug: Check if budget elements exist
+    console.log('Budget button exists:', !!document.getElementById('budget-btn'));
+    console.log('Budget panel exists:', !!document.getElementById('budget-panel'));
+    console.log('Budget panel close btn exists:', !!document.querySelector('.budget-panel-close-btn'));
+    
+    // Debug: Check all elements with budget in the ID
+    console.log('All budget elements:', document.querySelectorAll('[id*="budget"]'));
+    console.log('All elements with budget class:', document.querySelectorAll('.budget-panel'));
+    
+    // Debug: Check if the HTML is there
+    console.log('HTML contains budget-btn:', document.body.innerHTML.includes('budget-btn'));
+    console.log('HTML contains budget-panel:', document.body.innerHTML.includes('budget-panel'));
+    
+    // Create budget elements dynamically if they don't exist
+    if (!document.getElementById('budget-btn')) {
+        console.log('Creating budget button dynamically...');
+        createBudgetElements();
+    }
+
 
 
 
@@ -344,6 +619,88 @@ window.onload = async () => {
     othersButton.addEventListener('click', toggleModal)
 
     panelLayoutCloseBtn.addEventListener('click', closeModal)
+    
+    // Budget panel functionality - get elements directly to avoid timing issues
+    const budgetBtn = document.getElementById('budget-btn');
+    const budgetPanelEl = document.getElementById('budget-panel');
+    const budgetPanelCloseBtnEl = document.querySelector('.budget-panel-close-btn');
+    
+    console.log('Budget elements found:', {
+        button: budgetBtn,
+        panel: budgetPanelEl,
+        closeBtn: budgetPanelCloseBtnEl
+    });
+    
+    if (budgetBtn) {
+        budgetBtn.addEventListener('click', () => {
+            console.log('Budget button clicked!');
+            console.log('Budget panel element:', budgetPanelEl);
+            console.log('Budget panel classes before:', budgetPanelEl.className);
+            budgetPanelEl.classList.add('active');
+            console.log('Budget panel classes after:', budgetPanelEl.className);
+            console.log('Budget panel computed style display:', window.getComputedStyle(budgetPanelEl).display);
+            updateBudgetDisplay();
+        });
+        console.log('Budget button event listener added');
+    } else {
+        console.warn('Budget button not found in DOM');
+        
+        // Try again after a short delay
+        setTimeout(() => {
+            const retryBudgetBtn = document.getElementById('budget-btn');
+            const retryBudgetPanelEl = document.getElementById('budget-panel');
+            const retryBudgetPanelCloseBtnEl = document.querySelector('.budget-panel-close-btn');
+            
+            console.log('Retry - Budget elements found:', {
+                button: retryBudgetBtn,
+                panel: retryBudgetPanelEl,
+                closeBtn: retryBudgetPanelCloseBtnEl
+            });
+            
+            if (retryBudgetBtn) {
+                retryBudgetBtn.addEventListener('click', () => {
+                    console.log('Budget button clicked (retry)!');
+                    console.log('Budget panel element (retry):', retryBudgetPanelEl);
+                    console.log('Budget panel classes before (retry):', retryBudgetPanelEl.className);
+                    retryBudgetPanelEl.classList.add('active');
+                    console.log('Budget panel classes after (retry):', retryBudgetPanelEl.className);
+                    console.log('Budget panel computed style display (retry):', window.getComputedStyle(retryBudgetPanelEl).display);
+                    updateBudgetDisplay();
+                });
+                console.log('Budget button event listener added on retry');
+            }
+            
+            if (retryBudgetPanelCloseBtnEl) {
+                retryBudgetPanelCloseBtnEl.addEventListener('click', () => {
+                    retryBudgetPanelEl.classList.remove('active');
+                });
+            }
+            
+            if (retryBudgetPanelEl) {
+                retryBudgetPanelEl.addEventListener('click', (e) => {
+                    if (e.target === retryBudgetPanelEl) {
+                        retryBudgetPanelEl.classList.remove('active');
+                    }
+                });
+            }
+        }, 1000);
+    }
+    
+    if (budgetPanelCloseBtnEl) {
+        budgetPanelCloseBtnEl.addEventListener('click', () => {
+            budgetPanelEl.classList.remove('active');
+        });
+    }
+    
+    if (budgetPanelEl) {
+        // Close budget panel when clicking outside
+        budgetPanelEl.addEventListener('click', (e) => {
+            if (e.target === budgetPanelEl) {
+                budgetPanelEl.classList.remove('active');
+            }
+        });
+    }
+    
     window.game = createGame(housesStore, gameStore, assetManager);
     window.setActiveTool = (e) => {
         getButtonsUnactive(e)

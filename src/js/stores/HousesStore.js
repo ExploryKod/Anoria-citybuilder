@@ -41,7 +41,7 @@ class HouseStore {
     async addHouse(data) {
         try {
             await this.db.houses.add(data);
-            console.log(`House ${data.name} added successfully.`);
+            // House added successfully
         } catch (err) {
             console.error(`Error adding house: ${err.message}`);
         }

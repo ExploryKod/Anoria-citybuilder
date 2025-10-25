@@ -11,7 +11,7 @@ db.delete({ disableAutoOpen: false })
             houses: 'name, [name+price]',
             game: 'name',
         });
-        console.log('Database cleared and recreated successfully.');
+        // Database cleared and recreated successfully
     })
     .catch((err) => {
         console.error('Error clearing and recreating the database:', err);

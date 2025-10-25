@@ -35,29 +35,29 @@ export function createCamera(gameWindow) {
    
 
     function onKeyBoardDown(event){
-        // console.log('onKeyBoardDown', event)
+        // Keyboard down event
         if(event.key === KEYBOARD_ZOOM_PLUS){
             isZoomingMore = true;
-            // console.log(isZoomingMore)
+            // Zooming more
         }
         if(event.key === KEYBOARD_ZOOM_MINUS){
             isZoomingLess = true;
-            // console.log(isZoomingLess)
+            // Zooming less
         }
     }
 
     function onKeyBoardUp(event){
-        // console.log('onKeyBoardUp', event)
+        // Keyboard up event
         if(event.key === KEYBOARD_ZOOM_PLUS){
             isZoomingMore = false;
-            // console.log(isZoomingMore)
+            // Zooming more
             cameraRadius += 0.02;
             cameraRadius = Math.min(MAX_CAMERA_RADIUS, Math.max(MIN_CAMERA_RADIUS, cameraRadius));
             updateCameraPosition();
         }
         if(event.key === KEYBOARD_ZOOM_MINUS){
             isZoomingLess = false;
-            // console.log(isZoomingLess)
+            // Zooming less
         }
     }
 
@@ -75,7 +75,7 @@ export function createCamera(gameWindow) {
     }
 
     function onMouseUp(event){
-        // console.log('mouse up');
+        // Mouse up event
         if(event.button === LEFT_MOUSE_BUTTON){
             isLeftMouseDown = false;
         }
@@ -110,7 +110,7 @@ export function createCamera(gameWindow) {
         }
 
         if(isRightMouseDown) {
-            // console.log('zooming');
+            // Zooming
             // 0.01 controls the speed of zooming
             cameraRadius += deltaY * 0.02;
             cameraRadius = Math.min(MAX_CAMERA_RADIUS, Math.max(MIN_CAMERA_RADIUS, cameraRadius));

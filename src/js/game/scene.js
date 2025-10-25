@@ -96,7 +96,7 @@ export function createScene(housesStore, gameStore, assetManager) {
 
     async function update(city, time=0) {
 
-        console.log('=================== TIME TURN ====================== ', time)
+        // Time turn processing
         const gamePlayVersion = 'gameplay_' + time
         const totalPop = await housesStore.getGlobalPopulation();
         let totalImmoExpenses = 0;
@@ -135,7 +135,7 @@ export function createScene(housesStore, gameStore, assetManager) {
 
         for(let x = 0; x < city.size; x++) {
             for(let y = 0; y < city.size; y++) {
-                // console.log(`the city at y ${y}- x ${x} : >>`, city)
+                // Processing city tile
               let currentBuildingId = buildings[x][y]?.userData?.type;
               const currentBuilding = buildings[x][y];
               const newBuildingId = city.tiles[x][y].buildingId;
@@ -149,12 +149,12 @@ export function createScene(housesStore, gameStore, assetManager) {
 
                 /* update userData in indexDB === real userData state from three mesh */
                 const currentUserData = buildings[x][y].userData
-                console.log(`[SCENE] Building current userData at turn ${time}`, currentUserData)
+                // Building userData processing
                 await housesStore.updateHouseFields(currentUniqueID, {})
 
 
 
-                console.log(`*************** CURRENT BUILDING ID (type) ${currentBuildingId} ***** UniqueId: ${currentUniqueID}********************`)
+                // Processing building: ${currentBuildingId}
                 const buildingData = {
                     city,
                     buildings,
@@ -268,7 +268,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                     let farmsNearBy = [];
 
                     if(currentMarket) {
-                        console.log("[SCENE HOUSE] current market from db", currentMarket);
+                        // Processing market data
                         farmsNearBy =  currentMarket?.neighbors.filter(neighbor => neighbor.name.includes("Farms"))
                         marketHouses = currentMarket?.neighbors.filter(neighbor => neighbor.name.includes("House"))
 
@@ -281,15 +281,15 @@ export function createScene(housesStore, gameStore, assetManager) {
                             farmsNearBy.forEach(farm => {
                                 if(farm.name.includes("Farms-Wheat")) {
                                     wheatMarketStocks++;
-                                    console.log(`[SCENE HOUSE] Wheat added to market stocks ${currentBuildingId} by ${farm.name}: `, wheatMarketStocks);
+                                    // Wheat added to market stocks
                                 }
                                 if(farm.name.includes("Farms-Carrot")) {
                                     carrotMarketStocks++;
-                                    console.log(`[SCENE HOUSE] Carrot added to market stocks ${currentBuildingId} by ${farm.name}: `, carrotMarketStocks);
+                                    // Carrot added to market stocks
                                 }
                                 if(farm.name.includes("Farms-Cabbage")) {
                                     cabbageMarketStocks++;
-                                    console.log(`[SCENE HOUSE] Cabbage added to market stocks ${currentBuildingId} by ${farm.name}: `, cabbageMarketStocks);
+                                    // Cabbage added to market stocks
                                 }
                             })
 
@@ -302,7 +302,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                             await updateMarketStocks(buildings, housesStore, datas);
                         }
 
-                        console.log("userdata market stocks before distribution", buildings[x][y].userData.stocks);
+                        // Market stocks before distribution
                         /* Distribute food to house around */
                         let carrotHousesStocks = 0;
                         let cabbageHousesStocks = 0;
@@ -314,12 +314,12 @@ export function createScene(housesStore, gameStore, assetManager) {
                         for (const house of marketHouses) {
                             //await housesStore.updateHouseFields(house.id, {stocks: { food: 1, carrot: 1, cabbage: 0, wheat: 0}})
                             const buildingsUserData = buildings[house.x][house.y].userData
-                            console.log(`[scene] [market] [house] ${buildings[house.x][house.y].name} food userData before distribution`, buildings[house.x][house.y].userData.stocks)
+                            // House food before distribution
                             buildings[house.x][house.y].userData = {...buildingsUserData, stocks: {food: totalHouseFood, carrot: carrotByHouse, cabbage: cabbageByHouse, wheat: wheatByHouse}};
                             carrotHousesStocks += carrotByHouse;
                             cabbageHousesStocks += cabbageByHouse;
                             wheatHousesStocks += wheatByHouse;
-                            console.log(`[scene] [market] [house] ${buildings[house.x][house.y].name} food userData after distribution`, buildings[house.x][house.y].userData.stocks)
+                            // House food after distribution
                         }
                         const foodHousesStocks = cabbageHousesStocks + carrotHousesStocks + wheatHousesStocks;
                         const datas = [
@@ -330,7 +330,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                         ]
                         await updateMarketStocks(buildings, housesStore, datas);
                         //buildings[x][y].userData.stocks = {food: 0 , carrot: carrotStocks, cabbage: cabbageStocks, wheat: 0};
-                        console.log(`userdata market stocks after distribution on turn ${time} to houses from zone`, buildings[x][y].userData.stocks);
+                        // Market stocks after distribution
                     }
                 }
 
@@ -357,7 +357,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                     const currentHouse = await housesStore.getHouse(currentUniqueID);
 
                     if(currentHouse) {
-                        console.log("[SCENE HOUSE] current house from db", currentHouse);
+                        // Processing house data
                     }
 
                     if(time > 0) {
@@ -369,7 +369,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                     await housesStore.incrementHouseField(housePop, {operator: '<=', limit: 2})
 
                     const houseTime = await housesStore.getHouseItem(currentUniqueID, 'time');
-                    console.log('+++ current house time: ', houseTime)
+                    // House time processing
 
                     const houseNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
 
@@ -423,7 +423,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                         /* [refactor] can be replaced by updateBuilding from utils.js */
                         scene.remove(buildings[x][y]);
                         const newUniqueBuildingId = makeDbItemId('House-2Story', x, y);
-                        console.log('new unique building ', newUniqueBuildingId)
+                        // Creating new building
                         const keys = { type : "House-2Story", price: assetsPrices["House-2Story"].price}
                         await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
                         await housesStore.deleteOneHouse(currentUniqueID);
@@ -443,7 +443,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                     isExistingBuilding = housesStore.getHouse(currentBuildingId);
                 }
 
-                console.log(`Building is existing`, isExistingBuilding)
+                // Checking building existence
                 if(!isExistingBuilding) {
                     scene.remove(buildings[x][y]);
                     buildings[x][y] = assetManager.createAsset(newBuildingId, x, y);
@@ -451,10 +451,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                 }
 
                 // Add the new building
-                console.log(`[scenejs update] Building ${newBuildingId} added to map`);
-
-                console.log(`current building caracteristics >>>`, buildings[x][y].userData)
-                console.log(`current building neighbors est >>>`, buildings[x][y].userData.neighborE)
+                // Building added to map
   
                 }
 
@@ -478,7 +475,7 @@ export function createScene(housesStore, gameStore, assetManager) {
         const gameItems = await gameStore.listAllGameItems()
 
         gameItems.filter(item => item).forEach((item) => {
-            console.log(`[SCENE] new item at ${time} `, item.funds)
+            // Processing game item
             const {
                 name,
                 turn,
@@ -508,12 +505,12 @@ export function createScene(housesStore, gameStore, assetManager) {
             displayDebt.textContent = debt.toString() + " $";
         })
 
-        console.log('=================== END TURN ====================== ', time)
+        // End turn processing
 
     }
 
     function setUpLights(citySize) {
-        console.log("City size:", citySize);
+        // Setting up lights for city
 
         // Use the derived formula for light intensity
         const b = Math.log10(0.1) / Math.log10(2); // Exponent
@@ -523,8 +520,7 @@ export function createScene(housesStore, gameStore, assetManager) {
         const AmbientLightIntensity = a * Math.pow(citySize, b);
         const DirectionalLightIntensity = c * Math.pow(citySize, b);
 
-        console.log("Ambient light intensity:", AmbientLightIntensity);
-        console.log("Directional light intensity:", DirectionalLightIntensity);
+        // Light intensity calculated
         const lights = [
             new THREE.AmbientLight(0xffffff, AmbientLightIntensity),
             new THREE.DirectionalLight(0x999999, DirectionalLightIntensity),
@@ -586,14 +582,13 @@ export function createScene(housesStore, gameStore, assetManager) {
         // if any intersection where found (if the array is not empty)
         if(intersections.length > 0) {
             // get the first object (the intersection) of the array of intersections
-            console.log('intersection', intersections);
-            console.log('intersection', intersections[0]);
+            // Processing intersection
             // if(selectedObject) selectedObject.material.emissive.setHex(0);
             selectedObject = intersections[0].object;
             // if(selectedObject.material.length !== undefined) {
                
             // }
-            console.log('selected object scene onMouseD ==>', selectedObject.material)
+            // Object selected
             // console.log('selected object scene is an array ? ==>', selectedObject.material.length)
             //selectedObject.material.emissive.setHex(0xff0000);
 
@@ -619,7 +614,7 @@ function onMouseMove(event) {
     const intersections = raycaster.intersectObjects(scene.children, false);
 
     if(intersections.length) {
-        console.log("interections on mouse move ", intersections[0].object.name)
+        // Mouse move intersection
         hoveredObjectName = intersections[0]?.object?.name || ""
     }
 }
@@ -634,7 +629,7 @@ function onMouseMove(event) {
 
             // If the hovered object has changed
             if (hoveredObject !== intersectedObject) {
-                console.log("[handleHover] hovered object", hoveredObject)
+                // Handling hover object
                 if (hoveredObject) {
                     resetObjectColor(hoveredObject);
                 }
@@ -673,10 +668,10 @@ function onMouseMove(event) {
             // get the first object (the intersection) of the array of intersections
             const selected = intersections[0].object;
             if(selected) {
-                console.log('selected material scene: ===> ', selected.material)
+                // Material selected
             }
             // selected.material.emissive.setHex(0xff0000);
-            console.log('selected Object ==> ', selectedObject);
+            // Object selection complete
         }
 
     }
