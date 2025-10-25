@@ -235,8 +235,12 @@ class AssetManager extends MeshLoader {
     }
 
     setSprite(texture = textures['no-roads'], name) {
+        // Clone the texture to avoid modifying the original
+        const spriteTexture = texture.clone();
+        spriteTexture.flipY = true; // Ensure sprites display correctly
+        
         const spriteMaterial = new THREE.SpriteMaterial({
-            map: texture,
+            map: spriteTexture,
             depthTest: false,
             transparent: true,
             alphaTest: 0.5
@@ -246,7 +250,7 @@ class AssetManager extends MeshLoader {
         return sprite;
     }
 
-    setStatusSprite(mesh, texture, name, scale, position, visible = false) {
+    setStatusSprite(mesh, texture, name, scale = {x: 0.7, y: 0.7, z: 1}, position, visible = false) {
         const isAlreadySprite = mesh.children.find(
             child => child.type === "Sprite" && child.name === name
         );
@@ -255,6 +259,14 @@ class AssetManager extends MeshLoader {
         sprite.position.set(position.x, position.y, position.z);
         sprite.visible = visible;
         mesh.add(sprite);
+    }
+
+    setNoRoadSprite(mesh, position, visible = false) {
+        this.setStatusSprite(mesh, textures['no-roads'], 'no-road', {x: 0.6, y: 0.6, z: 1}, position, visible);
+    }
+
+    setNoFoodSprite(mesh, position, visible = false) {
+        this.setStatusSprite(mesh, textures['nofood'], 'nofood', {x: 0.6, y: 0.6, z: 1}, position, visible);
     }
 }
 

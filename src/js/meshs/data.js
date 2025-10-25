@@ -2,12 +2,12 @@ import * as THREE from "three";
 
 const loader = new THREE.TextureLoader();
 
-export function loadTextures(path) {
+export function loadTextures(path, flipY = false) {
     const texture = loader.load(path)
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(1,1);
-    texture.flipY = false;
+    texture.flipY = flipY;
     return texture;
 }
 
@@ -20,7 +20,7 @@ export const textures = Object.freeze({
     'base' : loadTextures(`/resources/textures/maps/base.png`),
     'specular' : loadTextures(`/resources/textures/maps/specular.png`),
     'grid': loadTextures(`/resources/textures/maps/grid.png`),
-    'nofood': loadTextures(`/resources/textures/status/nofood.png`)
+    'nofood': loadTextures(`/resources/textures/status/nofood.png`, true)
 })
 
 export const assetsPrices = Object.freeze({

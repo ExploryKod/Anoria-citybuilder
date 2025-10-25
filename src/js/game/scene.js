@@ -361,11 +361,11 @@ export function createScene(housesStore, gameStore, assetManager) {
                     const statutsIconsMeta = {
                         road: {
                             position : {x: -1, y: 1, z: 1},
-                            scale : {x: 2, y: 2, z: 2}
+                            scale : {x: 1.2, y: 1.2, z: 1}
                         },
                         food: {
                             position : {x: -0.5, y: 1, z: 0},
-                            scale : {x: 1, y: 1, z: 1},
+                            scale : {x: 1.0, y: 1.0, z: 1},
                         }
                     }
 
