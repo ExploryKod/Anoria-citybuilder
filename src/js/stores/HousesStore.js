@@ -1,4 +1,5 @@
 import db from './db';
+import budgetManager from './BudgetManager.js';
 
 class HouseStore {
     constructor() {
@@ -48,25 +49,21 @@ class HouseStore {
     }
 
     async addHouseAndPay(data) {
-        const gameData = await this.db.game.toArray();
-        const gameFunds = gameData[0]?.funds || 0;
-        const gameDebt = gameData[0]?.debt || 0;
-        const balance = gameFunds - gameDebt;
-
-        if (gameFunds < data.price) {
-            console.warn(`Not enough funds to build house ${data.name}.`);
-            return { success: false, reason: 'insufficient_funds' };
+        // Use the new BudgetManager for proper financial handling
+        const expenseResult = await budgetManager.addExpense(data.price, `Building: ${data.type}`);
+        
+        if (!expenseResult.success) {
+            console.warn(`Cannot build ${data.type}: ${expenseResult.message}`);
+            return expenseResult;
         }
 
         try {
-            gameData[0].funds = gameFunds - data.price;
-            gameData[0].debt = gameDebt + data.price;
-            await this.db.game.put(gameData[0]);
-
             await this.addHouse(data);
-            return { success: true };
+            return { success: true, budget: expenseResult.budget };
         } catch (error) {
-            console.error('Error adding house and processing payment:', error);
+            console.error('Error adding house after payment:', error);
+            // If house creation fails, we should refund the expense
+            await budgetManager.addIncome(data.price, `Refund for failed ${data.type}`);
             return { success: false, reason: 'database_error', error: error };
         }
     }
@@ -80,6 +77,19 @@ class HouseStore {
         if (house && key in house) {
             return house[key];
         }
+        
+        // Return default values for missing keys instead of warning
+        const defaults = {
+            'stocks': { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
+            'neighbors': [],
+            'pop': 0,
+            'roads': 0
+        };
+        
+        if (defaults[key] !== undefined) {
+            return defaults[key];
+        }
+        
         console.warn(`Key ${key} not found in house ${name}`);
         return false;
     }

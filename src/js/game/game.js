@@ -15,6 +15,7 @@ import {
     infoPanelNoClockIcon,
     displaySpeed
 } from '../ui/nodes.js';
+import budgetManager from '../stores/BudgetManager.js';
 
 // Notification system for building placement feedback
 function showInsufficientFundsNotification(buildingType, price) {
@@ -169,6 +170,13 @@ export function createGame(housesStore, gameStore, assetManager) {
     let intervalId = null;
     localStorage.setItem("speed", "4000");
     displayTime.textContent = time.toString() + ' jours';
+    
+    // Initialize budget system
+    budgetManager.initialize(50).then(() => {
+        console.log('Budget system initialized');
+        // Make budgetManager available globally for scene.js
+        window.budgetManager = budgetManager;
+    });
 
 
     /* Scene initialization */
@@ -280,7 +288,14 @@ export function createGame(housesStore, gameStore, assetManager) {
                 HouseRoads = {roads: houseNeighbors.filter(neighbor => neighbor.name === 'roads').length};
             }
             price = getAssetPrice(activeToolId, assetsPrices) || 0
-            let funds = await gameStore.getLatestGameItemByField('funds') || 0
+            
+            // Get funds from BudgetManager instead of game table
+            let funds = 0;
+            if (window.budgetManager) {
+                const budgetData = await window.budgetManager.getCurrentBudget();
+                funds = budgetData.funds;
+            }
+            
             const dbHouseData = {
                 name: houseID,
                 type: activeToolId,

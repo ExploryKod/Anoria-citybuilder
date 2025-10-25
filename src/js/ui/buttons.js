@@ -24,6 +24,7 @@ import {
 import { createGame } from '../game/game.js';
 import gameStore from "../stores/GameStore.js";
 import housesStore from "../stores/HousesStore.js";
+import budgetManager from "../stores/BudgetManager.js";
 import AssetManager from "../meshs/AssetManager.js";
 
 let buttonData;
@@ -104,19 +105,24 @@ function createBudgetElements() {
                 <div class="budget-financial">
                     <h3>Aperçu Financier</h3>
                     <div class="budget-item">
-                        <span class="budget-label">Fonds:</span>
+                        <span class="budget-label">Fonds Disponibles:</span>
                         <span class="budget-value" id="budget-funds">0€</span>
                         <span class="budget-change" id="budget-funds-change">+0</span>
                     </div>
                     <div class="budget-item">
-                        <span class="budget-label">Dette:</span>
-                        <span class="budget-value" id="budget-debt">0€</span>
-                        <span class="budget-change" id="budget-debt-change">+0</span>
+                        <span class="budget-label">Dépenses Totales:</span>
+                        <span class="budget-value" id="budget-expenses">0€</span>
+                        <span class="budget-change" id="budget-expenses-change">+0</span>
                     </div>
                     <div class="budget-item">
-                        <span class="budget-label">Valeur Nette:</span>
-                        <span class="budget-value" id="budget-networth">0€</span>
-                        <span class="budget-change" id="budget-networth-change">+0</span>
+                        <span class="budget-label">Revenus Totaux:</span>
+                        <span class="budget-value" id="budget-income">0€</span>
+                        <span class="budget-change" id="budget-income-change">+0</span>
+                    </div>
+                    <div class="budget-item">
+                        <span class="budget-label">Flux Net:</span>
+                        <span class="budget-value" id="budget-netflow">0€</span>
+                        <span class="budget-change" id="budget-netflow-change">+0</span>
                     </div>
                 </div>
 
@@ -227,16 +233,11 @@ function createBudgetElements() {
 
 async function updateBudgetDisplay() {
     try {
-        // Get current game data
-        let funds = await gameStore.getLatestGameItemByField('funds');
-        if (funds === null || funds === undefined) {
-            funds = 50; // Only use default if no data exists
-        }
+        // Get budget data from BudgetManager
+        const budgetSummary = await budgetManager.getBudgetSummary();
+        const financialHealth = await budgetManager.getFinancialHealth();
         
-        let debt = await gameStore.getLatestGameItemByField('debt');
-        if (debt === null || debt === undefined) {
-            debt = 0; // Only use default if no data exists
-        }
+        // Get other game data
         const population = await housesStore.getGlobalPopulation() || 0;
         const totalBuildingValue = await housesStore.getGlobalBuildingPrices() || 0;
         
@@ -264,33 +265,92 @@ async function updateBudgetDisplay() {
         const budgetPopulationEl = document.getElementById('budget-population');
         const budgetBuildingsEl = document.getElementById('budget-buildings');
         const budgetFundsEl = document.getElementById('budget-funds');
-        const budgetDebtEl = document.getElementById('budget-debt');
-        const budgetNetworthEl = document.getElementById('budget-networth');
+        const budgetExpensesEl = document.getElementById('budget-expenses');
+        const budgetIncomeEl = document.getElementById('budget-income');
+        const budgetNetflowEl = document.getElementById('budget-netflow');
         const budgetTotalValueEl = document.getElementById('budget-total-value');
         const budgetHousesEl = document.getElementById('budget-houses');
         const budgetFarmsEl = document.getElementById('budget-farms');
         const budgetMarketsEl = document.getElementById('budget-markets');
         const budgetRoadsEl = document.getElementById('budget-roads');
-        const budgetFundsChangeEl = document.getElementById('budget-funds-change');
-        const budgetDebtChangeEl = document.getElementById('budget-debt-change');
-        const budgetNetworthChangeEl = document.getElementById('budget-networth-change');
         
-        if (budgetTurnEl) budgetTurnEl.textContent = window.game?.currentTurn || 0;
+        // Update financial data
+        if (budgetTurnEl) budgetTurnEl.textContent = budgetSummary.turn;
         if (budgetPopulationEl) budgetPopulationEl.textContent = population;
         if (budgetBuildingsEl) budgetBuildingsEl.textContent = buildingCounts.total;
-        if (budgetFundsEl) budgetFundsEl.textContent = `${funds.toLocaleString('fr-FR')}€`;
-        if (budgetDebtEl) budgetDebtEl.textContent = `${debt.toLocaleString('fr-FR')}€`;
-        if (budgetNetworthEl) budgetNetworthEl.textContent = `${(funds - debt).toLocaleString('fr-FR')}€`;
-        if (budgetTotalValueEl) budgetTotalValueEl.textContent = `${totalBuildingValue.toLocaleString('fr-FR')}€`;
+        
+        // Financial data with proper type checking
+        if (budgetFundsEl) {
+            if (typeof budgetSummary.funds !== 'number' || isNaN(budgetSummary.funds)) {
+                console.error('Invalid funds value in budget summary:', budgetSummary.funds);
+                budgetFundsEl.textContent = 'Erreur';
+                budgetFundsEl.style.color = '#ff6b6b';
+            } else {
+                budgetFundsEl.textContent = `${budgetSummary.funds.toLocaleString('fr-FR')}€`;
+                budgetFundsEl.style.color = budgetSummary.funds < 0 ? '#ff6b6b' : '#4ade80';
+            }
+        }
+        
+        if (budgetExpensesEl) {
+            if (typeof budgetSummary.expenses !== 'number' || isNaN(budgetSummary.expenses)) {
+                console.error('Invalid expenses value in budget summary:', budgetSummary.expenses);
+                budgetExpensesEl.textContent = 'Erreur';
+            } else {
+                budgetExpensesEl.textContent = `${budgetSummary.expenses.toLocaleString('fr-FR')}€`;
+            }
+        }
+        
+        if (budgetIncomeEl) {
+            budgetIncomeEl.textContent = `0€`; // Income disabled for now
+        }
+        
+        if (budgetNetflowEl) {
+            if (typeof budgetSummary.netFlow !== 'number' || isNaN(budgetSummary.netFlow)) {
+                console.error('Invalid netFlow value in budget summary:', budgetSummary.netFlow);
+                budgetNetflowEl.textContent = 'Erreur';
+                budgetNetflowEl.style.color = '#ff6b6b';
+            } else {
+                budgetNetflowEl.textContent = `${budgetSummary.netFlow.toLocaleString('fr-FR')}€`;
+                budgetNetflowEl.style.color = budgetSummary.netFlow >= 0 ? '#4ade80' : '#ff6b6b';
+            }
+        }
+        
+        // Building data
+        if (budgetTotalValueEl) {
+            if (typeof totalBuildingValue !== 'number' || isNaN(totalBuildingValue)) {
+                console.error('Invalid totalBuildingValue:', totalBuildingValue);
+                budgetTotalValueEl.textContent = 'Erreur';
+            } else {
+                budgetTotalValueEl.textContent = `${totalBuildingValue.toLocaleString('fr-FR')}€`;
+            }
+        }
         if (budgetHousesEl) budgetHousesEl.textContent = buildingCounts.houses;
         if (budgetFarmsEl) budgetFarmsEl.textContent = buildingCounts.farms;
         if (budgetMarketsEl) budgetMarketsEl.textContent = buildingCounts.markets;
         if (budgetRoadsEl) budgetRoadsEl.textContent = buildingCounts.roads;
         
-        // Update change indicators (simplified for now)
-        if (budgetFundsChangeEl) budgetFundsChangeEl.textContent = '+0';
-        if (budgetDebtChangeEl) budgetDebtChangeEl.textContent = '+0';
-        if (budgetNetworthChangeEl) budgetNetworthChangeEl.textContent = '+0';
+        // Add financial health indicator
+        const healthIndicator = document.getElementById('budget-health') || document.createElement('div');
+        if (!document.getElementById('budget-health')) {
+            healthIndicator.id = 'budget-health';
+            healthIndicator.style.cssText = `
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 14px;
+                font-weight: 600;
+                margin-top: 10px;
+                text-align: center;
+            `;
+            document.querySelector('.budget-financial').appendChild(healthIndicator);
+        }
+        
+        healthIndicator.textContent = financialHealth.message;
+        healthIndicator.style.backgroundColor = 
+            financialHealth.status === 'critical' ? '#ff6b6b' :
+            financialHealth.status === 'warning' ? '#ffa726' :
+            financialHealth.status === 'deficit' ? '#ff9800' :
+            financialHealth.status === 'excellent' ? '#4ade80' : '#81c784';
+        healthIndicator.style.color = 'white';
         
     } catch (error) {
         console.error('Error updating budget display:', error);

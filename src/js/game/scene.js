@@ -26,6 +26,7 @@ import {assetsPrices} from "../meshs/data.js";
 const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
 
 export function createScene(housesStore, gameStore, assetManager) {
+    // BudgetManager will be set by the game initialization
 
     const scene = new THREE.Scene();
     // scene.background = new THREE.Color(0x79845);
@@ -91,7 +92,13 @@ export function createScene(housesStore, gameStore, assetManager) {
         displayPop.textContent = '0'
         displayFunds.textContent = '0'
         displayDelay.textContent = '0'
-        displayDebt.textContent = '0'
+        displayDebt.textContent = '' // Hide expenses display to avoid confusion
+        
+        // Hide the entire expenses box to avoid confusion
+        const debtBox = document.querySelector('.debt-box');
+        if (debtBox) {
+            debtBox.style.display = 'none';
+        }
     }
 
     async function update(city, time=0) {
@@ -100,39 +107,38 @@ export function createScene(housesStore, gameStore, assetManager) {
         const gamePlayVersion = 'gameplay_' + time
         const totalPop = await housesStore.getGlobalPopulation();
         let totalImmoExpenses = 0;
-        let funds = await gameStore.getLatestGameItemByField('funds');
-        if (funds === null || funds === undefined) {
-            funds = 50; // Only use default if no data exists
+        
+        // Get budget data from BudgetManager (single source of truth)
+        let budgetData = null;
+        if (window.budgetManager) {
+            budgetData = await window.budgetManager.getCurrentBudget();
         }
+        
+        totalImmoExpenses = await housesStore.getGlobalBuildingPrices() || 0
 
-        let debts = await gameStore.getLatestGameItemByField('debt');
-        if (debts === null || debts === undefined) {
-            debts = 0; // Only use default if no data exists
+        const infoGameplay = {
+            name: time === 0 ? 'gameplay_init' : gamePlayVersion,
+            turn: time,
+            population: totalPop ? totalPop : 0,
+            maxPop: 5000,
+            deads: 0,
+            foodAvailable: 0,
+            foodNeeded: 0,
+            salaries: 0,
+            salesTax: 0.2,
+            citizenTax: 0.2,
+            markets: 0,
+            foodMarkets: 0,
+            goodsMarkets: 0,
+            goodsNeeded: 0,
+            goodsAvailable: 0,
+            foodSales: 0,
+            goodSales: 0,
+            lastImmoExpense: totalImmoExpenses || 0,
+            // Remove budget fields from game table - they're now in budget table
+            // debt: debts,     // ← Removed
+            // funds: funds     // ← Removed
         }
-            totalImmoExpenses = await housesStore.getGlobalBuildingPrices() || 0
-
-            const infoGameplay = {
-                name: time === 0 ? 'gameplay_init' : gamePlayVersion,
-                turn: time,
-                population: totalPop ? totalPop : 0,
-                maxPop: 5000,
-                deads: 0,
-                foodAvailable: 0,
-                foodNeeded: 0,
-                salaries: 0,
-                salesTax: 0.2,
-                citizenTax: 0.2,
-                markets: 0,
-                foodMarkets: 0,
-                goodsMarkets: 0,
-                goodsNeeded: 0,
-                goodsAvailable: 0,
-                foodSales: 0,
-                goodSales: 0,
-                lastImmoExpense: totalImmoExpenses || 0,
-                debt: debts,
-                funds: funds
-            }
 
             await gameStore.clearGameItems();
             await gameStore.addGameItems(infoGameplay);
@@ -476,11 +482,50 @@ export function createScene(housesStore, gameStore, assetManager) {
             displayDelayUI.textContent += ''
         }
 
+        // Calculate building counts for budget operations
+        let buildingCounts = {
+            houses: 0,
+            farms: 0,
+            markets: 0,
+            roads: 0,
+            total: 0
+        };
+        
+        for(let x = 0; x < city.size; x++) {
+            for(let y = 0; y < city.size; y++) {
+                const building = buildings[x][y];
+                if (building && building.userData && building.userData.type) {
+                    const type = building.userData.type;
+                    if (type.includes('House')) buildingCounts.houses++;
+                    else if (type.includes('Farm')) buildingCounts.farms++;
+                    else if (type.includes('Market')) buildingCounts.markets++;
+                    else if (type.includes('roads')) buildingCounts.roads++;
+                    buildingCounts.total++;
+                }
+            }
+        }
+
+        // Daily budget operations - only expenses for now, no income
+        try {
+            if (window.budgetManager) {
+                // Add daily expenses (maintenance, salaries)
+                const dailyExpenses = Math.floor(totalPop * 0.2) + (buildingCounts.total * 2);
+                if (dailyExpenses > 0) {
+                    await window.budgetManager.addDailyExpense(dailyExpenses, "Maintenance et salaires");
+                }
+                
+                // Update turn
+                await window.budgetManager.updateTurn(time);
+            }
+        } catch (error) {
+            console.warn('Budget operations failed:', error);
+        }
+
         //  Display results in UI
         displayDelay.textContent = delay.toString() + ' delai'
         const gameItems = await gameStore.listAllGameItems()
 
-        gameItems.filter(item => item).forEach((item) => {
+        gameItems.filter(item => item).forEach(async (item) => {
             // Processing game item
             const {
                 name,
@@ -500,15 +545,21 @@ export function createScene(housesStore, gameStore, assetManager) {
                 goodsAvailable,
                 foodSales,
                 goodSales,
-                lastImmoExpense,
-                debt,
-                funds
+                lastImmoExpense
             } = item;
+
+            // Get budget data from BudgetManager instead of game table
+            let funds = 0;
+            if (window.budgetManager) {
+                const budgetData = await window.budgetManager.getCurrentBudget();
+                funds = budgetData.funds;
+            }
 
             // Updating the appropriate HTML elements with the data from each item
             displayPop.textContent = population.toString();
             displayFunds.textContent = funds.toString();
-            displayDebt.textContent = debt.toString() + " $";
+            // Hide expenses display to avoid confusion
+            displayDebt.textContent = "";
         })
 
         // End turn processing

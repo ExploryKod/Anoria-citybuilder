@@ -3,13 +3,14 @@ import Dexie from 'dexie';
 
 const db = new Dexie('anoriaDb');
 
-// Delete the database upon initialization
+// Delete the database upon initialization (fresh start each time)
 db.delete({ disableAutoOpen: false })
     .then(() => {
         // Recreate the database with the desired schema
         db.version(1).stores({
             houses: 'name, [name+price]',
             game: 'name',
+            budget: 'name',
         });
         // Database cleared and recreated successfully
     })
