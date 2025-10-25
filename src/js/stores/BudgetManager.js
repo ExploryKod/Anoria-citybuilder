@@ -13,9 +13,9 @@ class BudgetManager {
 
     /**
      * Initialize budget with starting funds
-     * @param {number} startingFunds - Initial funds (default: 50)
+     * @param {number} startingFunds - Initial funds (default: 200)
      */
-    async initialize(startingFunds = 50) {
+    async initialize(startingFunds = 200) {
         console.log('BudgetManager.initialize() called with startingFunds:', startingFunds);
         
         // Since database is cleared each page load, always create fresh budget
@@ -363,7 +363,7 @@ class BudgetManager {
      * Force reinitialize budget (useful for fixing corrupted data)
      * @param {number} startingFunds - Starting funds amount
      */
-    async forceReinitialize(startingFunds = 50) {
+    async forceReinitialize(startingFunds = 200) {
         console.log('Force reinitializing budget...');
         await this.db.budget.clear();
         return await this.initialize(startingFunds);

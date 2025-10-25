@@ -959,6 +959,7 @@ async function updateRealtimeBudget() {
     const realtimeOtherIncomeEl = document.getElementById('realtime-other-income');
     const realtimeBuildingMaintenanceEl = document.getElementById('realtime-building-maintenance');
     const realtimeInvestmentsEl = document.getElementById('realtime-investments');
+    // Starvation alerts removed
 
     if (!realtimeFundsEl) {
         console.warn('Realtime budget elements not found');
@@ -1089,6 +1090,8 @@ async function updateRealtimeBudget() {
                 const investments = expenseBreakdown.investments || 0;
                 realtimeInvestmentsEl.textContent = `${investments.toLocaleString('fr-FR')}€`;
             }
+            
+            // Starvation alerts removed
         } else {
             // Valeurs par défaut si le budget manager n'est pas disponible
             realtimeFundsEl.textContent = 'Non disponible';
@@ -1174,3 +1177,5 @@ function getHealthStatusText(status) {
     };
     return statusMap[status] || 'Inconnu';
 }
+
+// Starvation system removed

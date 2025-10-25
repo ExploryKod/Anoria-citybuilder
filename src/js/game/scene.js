@@ -12,11 +12,7 @@ import {
     bulldozeSelected,
     commerce,
     delayBox,
-    displayDebt,
-    displayDelay,
     displayDelayUI,
-    displayFunds,
-    displayPop,
     firstHouses,
     gameWindow,
     houses
@@ -89,10 +85,15 @@ export function createScene(housesStore, gameStore, assetManager) {
             setUpLights(city.size);
         }
 
-        displayPop.textContent = '0'
-        displayFunds.textContent = '0'
-        displayDelay.textContent = '0'
-        displayDebt.textContent = '' // Hide expenses display to avoid confusion
+        // Update population and funds display in general bar
+        const displayPop = document.querySelector('.display-pop');
+        const displayFunds = document.querySelector('.display-funds');
+        if (displayPop) {
+            displayPop.textContent = '0';
+        }
+        if (displayFunds) {
+            displayFunds.textContent = '0';
+        }
         
         // Hide the entire expenses box to avoid confusion
         const debtBox = document.querySelector('.debt-box');
@@ -324,10 +325,14 @@ export function createScene(housesStore, gameStore, assetManager) {
                         let cabbageByHouse = 1;
                         let totalHouseFood = wheatByHouse + carrotByHouse + cabbageByHouse;
                         for (const house of marketHouses) {
-                            //await housesStore.updateHouseFields(house.id, {stocks: { food: 1, carrot: 1, cabbage: 0, wheat: 0}})
                             const buildingsUserData = buildings[house.x][house.y].userData
                             // House food before distribution
-                            buildings[house.x][house.y].userData = {...buildingsUserData, stocks: {food: totalHouseFood, carrot: carrotByHouse, cabbage: cabbageByHouse, wheat: wheatByHouse}};
+                            const newStocks = {food: totalHouseFood, carrot: carrotByHouse, cabbage: cabbageByHouse, wheat: wheatByHouse};
+                            buildings[house.x][house.y].userData = {...buildingsUserData, stocks: newStocks};
+                            
+                            // Sync stocks with database
+                            await housesStore.updateHouseFields(house.id, {stocks: newStocks});
+                            
                             carrotHousesStocks += carrotByHouse;
                             cabbageHousesStocks += cabbageByHouse;
                             wheatHousesStocks += wheatByHouse;
@@ -349,6 +354,13 @@ export function createScene(housesStore, gameStore, assetManager) {
                 //  only update if current building is a house
                 if(houses.includes(currentBuildingId)) {
 
+                    // Initialize stocks if not present
+                    if(!Object.hasOwn(buildings[x][y], 'userData') || !Object.hasOwn(buildings[x][y].userData, 'stocks')) {
+                        buildings[x][y].userData = {
+                            ...buildings[x][y].userData,
+                            stocks: {food: 0, carrot: 0, cabbage: 0, wheat: 0}
+                        };
+                    }
 
                     // turn by turn values from userData need to be mirrored in indexDB
                     let valuesFromUserData = {}
@@ -377,8 +389,23 @@ export function createScene(housesStore, gameStore, assetManager) {
                         await housesStore.incrementHouseField(HouseTime, false)
                     }
 
-                    const housePop = { name: currentUniqueID, increment: 1, field: 'pop' };
-                    await housesStore.incrementHouseField(housePop, {operator: '<=', limit: 2})
+                    // Check if house has food before allowing population growth
+                    const houseFoodStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks');
+                    const hasFood = houseFoodStocks && houseFoodStocks.food > 0;
+                    
+                    if (hasFood) {
+                        // Has food - population can grow (max 2)
+                        const housePop = { name: currentUniqueID, increment: 1, field: 'pop' };
+                        await housesStore.incrementHouseField(housePop, {operator: '<=', limit: 2});
+                        console.log(`✅ House ${currentUniqueID}: Population can grow (has food)`);
+                    } else {
+                        // No food - reset population to 0
+                        const currentPop = await housesStore.getHouseItem(currentUniqueID, 'pop');
+                        if (currentPop > 0) {
+                            await housesStore.updateHouseFields(currentUniqueID, { pop: 0 });
+                            console.log(`🚨 House ${currentUniqueID}: Population reset to 0 (no food)`);
+                        }
+                    }
 
                     const houseTime = await housesStore.getHouseItem(currentUniqueID, 'time');
                     // House time processing
@@ -418,6 +445,7 @@ export function createScene(housesStore, gameStore, assetManager) {
 
                     /* house evolution to stage 2 */
                     const houseStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks')
+                    const housePop = await housesStore.getHouseItem(currentUniqueID, 'pop')
                     const foodGoal = housePop > 2 && houseStocks.food > housePop * 2
                     const decay = houseTime > 3 && housePop >= 2 && houseStocks.food < housePop
 
@@ -426,7 +454,8 @@ export function createScene(housesStore, gameStore, assetManager) {
                     } else {
                         assetManager.setStatusSprite(buildings[x][y], textures['nofood'], 'no-food', statutsIconsMeta.food.scale, statutsIconsMeta.food.position, false)
                     }
-
+                    
+                  
                     if(decay) {
                         assetManager.changeMeshColor(buildings[x][y],  0X404040)
                     }
@@ -519,6 +548,14 @@ export function createScene(housesStore, gameStore, assetManager) {
                     await window.budgetManager.addBuildingMaintenance(buildingAmount);
                 }
                 
+                // Process population/food logic
+                if (window.housesStore) {
+                    const populationResult = await window.housesStore.processPopulationFoodLogic();
+                    if (populationResult.totalPopulationLost > 0) {
+                        console.warn(`⚠️ ${populationResult.message}`);
+                    }
+                }
+                
                 // Update turn
                 await window.budgetManager.updateTurn(time);
             }
@@ -527,7 +564,7 @@ export function createScene(housesStore, gameStore, assetManager) {
         }
 
         //  Display results in UI
-        displayDelay.textContent = delay.toString() + ' delai'
+        // Display elements removed - using real-time budget panel instead
         const gameItems = await gameStore.listAllGameItems()
 
         gameItems.filter(item => item).forEach(async (item) => {
@@ -560,11 +597,15 @@ export function createScene(housesStore, gameStore, assetManager) {
                 funds = budgetData.funds;
             }
 
-            // Updating the appropriate HTML elements with the data from each item
-            displayPop.textContent = population.toString();
-            displayFunds.textContent = funds.toString();
-            // Hide expenses display to avoid confusion
-            displayDebt.textContent = "";
+            // Update population and funds display in general bar
+            const displayPop = document.querySelector('.display-pop');
+            const displayFunds = document.querySelector('.display-funds');
+            if (displayPop) {
+                displayPop.textContent = population.toString();
+            }
+            if (displayFunds) {
+                displayFunds.textContent = funds.toString();
+            }
         })
 
         // End turn processing

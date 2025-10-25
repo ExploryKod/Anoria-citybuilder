@@ -171,9 +171,9 @@ export function createGame(housesStore, gameStore, assetManager) {
     localStorage.setItem("speed", "4000");
     displayTime.textContent = time.toString() + ' jours';
     
-    // Initialize budget system
-    budgetManager.initialize(50).then(() => {
-        console.log('Budget system initialized');
+    // Initialize budget system - force reinitialize to ensure 200€ starting funds
+    budgetManager.forceReinitialize(200).then(() => {
+        console.log('Budget system initialized with 200€');
         // Make budgetManager available globally for scene.js
         window.budgetManager = budgetManager;
     });

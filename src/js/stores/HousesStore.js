@@ -34,6 +34,57 @@ class HouseStore {
         return houses.reduce((total, house) => total + (house.pop || 0), 0);
     }
 
+    /**
+     * Process population based on food availability
+     * Population can only grow if there's food, and resets to 0 if no food
+     * @returns {Promise<Object>} Result with population changes
+     */
+    async processPopulationFoodLogic() {
+        const houses = await this.listAllHouses();
+        let totalPopulationLost = 0;
+        let totalPopulationGained = 0;
+        let housesAffected = 0;
+
+        console.log(`🍞 Processing population/food logic for ${houses.length} houses...`);
+
+        for (const house of houses) {
+            if (house.type && house.type.includes('House')) { // Only process houses
+                const hasFood = house.stocks && house.stocks.food > 0;
+                const currentPop = house.pop || 0;
+                
+                console.log(`🏠 House ${house.id}: pop=${currentPop}, food=${house.stocks?.food || 0}`);
+                
+                if (!hasFood) {
+                    // No food - reset population to 0
+                    if (currentPop > 0) {
+                        totalPopulationLost += currentPop;
+                        housesAffected++;
+                        
+                        await this.updateHouseFields(house.id, {
+                            pop: 0
+                        });
+                        
+                        console.log(`🚨 House ${house.id}: Population reset to 0 (no food)`);
+                    }
+                } else {
+                    // Has food - population can grow (existing growth logic will handle this)
+                    console.log(`✅ House ${house.id}: Has food, habitants can stay alive`);
+                }
+            }
+        }
+
+        console.log(`🍞 Population/food result: ${totalPopulationLost} lost, ${housesAffected} houses affected`);
+
+        return {
+            totalPopulationLost,
+            totalPopulationGained,
+            housesAffected,
+            message: totalPopulationLost > 0 ? 
+                `${totalPopulationLost} inhabitants lost due to no food in ${housesAffected} houses` : 
+                'All houses with population have food'
+        };
+    }
+
     async getGlobalBuildingPrices() {
         const houses = await this.listAllHouses();
         return houses.reduce((total, house) => total + (house.price || 0), 0);

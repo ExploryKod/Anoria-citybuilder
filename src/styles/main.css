@@ -722,16 +722,43 @@ footer a:hover {
 /* Real-time Budget Popup Styles */
 .realtime-budget-panel {
     position: fixed;
-    top: 0;
+    top: 75px;
     right: -400px;
     width: 350px;
-    height: 100vh;
+    height: calc(100vh - 75px);
+    max-height: 725px;
     background: linear-gradient(135deg, var(--primary) 0%, var(--darkblue) 100%);
     border-left: 3px solid var(--cta);
     box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
     z-index: 1005;
     transition: right 0.3s ease-in-out;
     overflow-y: auto;
+}
+
+/* Custom scrollbar for realtime budget panel */
+.realtime-budget-panel::-webkit-scrollbar {
+    width: 8px;
+}
+
+.realtime-budget-panel::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.realtime-budget-panel::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 4px;
+    transition: background 0.3s ease;
+}
+
+.realtime-budget-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 1);
+}
+
+/* Firefox scrollbar */
+.realtime-budget-panel {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.8) rgba(255, 255, 255, 0.1);
 }
 
 .realtime-budget-panel.active {
@@ -1083,6 +1110,8 @@ footer a:hover {
     color: var(--grey);
     opacity: 0.7;
 }
+
+/* Alerts removed */
 
 .realtime-update-info small {
     font-size: 0.85rem;
