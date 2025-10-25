@@ -100,9 +100,15 @@ export function createScene(housesStore, gameStore, assetManager) {
         const gamePlayVersion = 'gameplay_' + time
         const totalPop = await housesStore.getGlobalPopulation();
         let totalImmoExpenses = 0;
-        let funds = await gameStore.getLatestGameItemByField('funds') || 300;
+        let funds = await gameStore.getLatestGameItemByField('funds');
+        if (funds === null || funds === undefined) {
+            funds = 50; // Only use default if no data exists
+        }
 
-            let debts = await gameStore.getLatestGameItemByField('debt') || 0;
+        let debts = await gameStore.getLatestGameItemByField('debt');
+        if (debts === null || debts === undefined) {
+            debts = 0; // Only use default if no data exists
+        }
             totalImmoExpenses = await housesStore.getGlobalBuildingPrices() || 0
 
             const infoGameplay = {
@@ -123,9 +129,9 @@ export function createScene(housesStore, gameStore, assetManager) {
                 goodsAvailable: 0,
                 foodSales: 0,
                 goodSales: 0,
-                lastImmoExpense: totalImmoExpenses ? totalImmoExpenses : 0,
-                debt: debts ? debts : 0,
-                funds: funds ? funds : 300
+                lastImmoExpense: totalImmoExpenses || 0,
+                debt: debts,
+                funds: funds
             }
 
             await gameStore.clearGameItems();
@@ -209,17 +215,17 @@ export function createScene(housesStore, gameStore, assetManager) {
                     async function updateMarketStocks(buildings, housesStore, datas = [{key: "", number: 0, decrease: false}]) {
 
                         if(!buildings) {
-                            console.warn("Need buildings to update markets stocks")
+                            // console.warn("Need buildings to update markets stocks")
                             return;
                         }
 
                         if(!housesStore) {
-                            console.warn("Need housesStore to update markets stocks")
+                            // console.warn("Need housesStore to update markets stocks")
                             return;
                         }
 
                         if(Array.isArray(datas) && datas.length <= 0) {
-                            console.warn("Need datas array with at least one entry to update markets stocks")
+                            // console.warn("Need datas array with at least one entry to update markets stocks")
                             return;
                         }
 
@@ -390,16 +396,16 @@ export function createScene(housesStore, gameStore, assetManager) {
                         await housesStore.updateHouseFields(currentUniqueID, HouseRoads)
                         // Major problem here : is this apply to every house mesh ??
                         if(isRoad > 0) {
-                            console.warn('There is one neighbor road at least for: ', buildings[x][y], HouseRoads, isRoad);
+                            // console.warn('There is one neighbor road at least for: ', buildings[x][y], HouseRoads, isRoad);
                             assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
                                 statutsIconsMeta.road.scale, statutsIconsMeta.road.position, false)
                         } else {
-                            console.warn('There is no neighbor roads for: ', buildings[x][y], HouseRoads, isRoad);
+                            // console.warn('There is no neighbor roads for: ', buildings[x][y], HouseRoads, isRoad);
                             assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
                                 statutsIconsMeta.road.scale, statutsIconsMeta.road.position, true)
                         }
                     } else {
-                        console.warn('There is no neighbor roads and no object roads for: ', buildings[x][y]);
+                        // console.warn('There is no neighbor roads and no object roads for: ', buildings[x][y]);
                         assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
                             statutsIconsMeta.road.scale, statutsIconsMeta.road.position, true)
                     }

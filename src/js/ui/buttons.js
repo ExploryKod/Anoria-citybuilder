@@ -76,7 +76,7 @@ function createBudgetElements() {
     budgetPanel.innerHTML = `
         <div class="budget-panel-wrapper">
             <div class="budget-panel-header">
-                <h2>💰 Budget Tracker</h2>
+                <h2>💰 Suivi du Budget</h2>
                 <div class="budget-panel-close-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
                         <circle cx="12" cy="12" r="10"/>
@@ -88,7 +88,7 @@ function createBudgetElements() {
             <div class="budget-panel-content">
                 <div class="budget-summary">
                     <div class="budget-item">
-                        <span class="budget-label">Current Turn:</span>
+                        <span class="budget-label">Tour Actuel:</span>
                         <span class="budget-value" id="budget-turn">0</span>
                     </div>
                     <div class="budget-item">
@@ -96,50 +96,50 @@ function createBudgetElements() {
                         <span class="budget-value" id="budget-population">0</span>
                     </div>
                     <div class="budget-item">
-                        <span class="budget-label">Total Buildings:</span>
+                        <span class="budget-label">Total Bâtiments:</span>
                         <span class="budget-value" id="budget-buildings">0</span>
                     </div>
                 </div>
                 
                 <div class="budget-financial">
-                    <h3>Financial Overview</h3>
+                    <h3>Aperçu Financier</h3>
                     <div class="budget-item">
-                        <span class="budget-label">Funds:</span>
-                        <span class="budget-value" id="budget-funds">$0</span>
+                        <span class="budget-label">Fonds:</span>
+                        <span class="budget-value" id="budget-funds">0€</span>
                         <span class="budget-change" id="budget-funds-change">+0</span>
                     </div>
                     <div class="budget-item">
-                        <span class="budget-label">Debt:</span>
-                        <span class="budget-value" id="budget-debt">$0</span>
+                        <span class="budget-label">Dette:</span>
+                        <span class="budget-value" id="budget-debt">0€</span>
                         <span class="budget-change" id="budget-debt-change">+0</span>
                     </div>
                     <div class="budget-item">
-                        <span class="budget-label">Net Worth:</span>
-                        <span class="budget-value" id="budget-networth">$0</span>
+                        <span class="budget-label">Valeur Nette:</span>
+                        <span class="budget-value" id="budget-networth">0€</span>
                         <span class="budget-change" id="budget-networth-change">+0</span>
                     </div>
                 </div>
 
                 <div class="budget-buildings">
-                    <h3>Building Portfolio</h3>
+                    <h3>Portefeuille de Bâtiments</h3>
                     <div class="budget-item">
-                        <span class="budget-label">Total Value:</span>
-                        <span class="budget-value" id="budget-total-value">$0</span>
+                        <span class="budget-label">Valeur Totale:</span>
+                        <span class="budget-value" id="budget-total-value">0€</span>
                     </div>
                     <div class="budget-item">
-                        <span class="budget-label">Houses:</span>
+                        <span class="budget-label">Maisons:</span>
                         <span class="budget-value" id="budget-houses">0</span>
                     </div>
                     <div class="budget-item">
-                        <span class="budget-label">Farms:</span>
+                        <span class="budget-label">Fermes:</span>
                         <span class="budget-value" id="budget-farms">0</span>
                     </div>
                     <div class="budget-item">
-                        <span class="budget-label">Markets:</span>
+                        <span class="budget-label">Marchés:</span>
                         <span class="budget-value" id="budget-markets">0</span>
                     </div>
                     <div class="budget-item">
-                        <span class="budget-label">Roads:</span>
+                        <span class="budget-label">Routes:</span>
                         <span class="budget-value" id="budget-roads">0</span>
                     </div>
                 </div>
@@ -228,8 +228,15 @@ function createBudgetElements() {
 async function updateBudgetDisplay() {
     try {
         // Get current game data
-        const funds = await gameStore.getLatestGameItemByField('funds') || 300;
-        const debt = await gameStore.getLatestGameItemByField('debt') || 0;
+        let funds = await gameStore.getLatestGameItemByField('funds');
+        if (funds === null || funds === undefined) {
+            funds = 50; // Only use default if no data exists
+        }
+        
+        let debt = await gameStore.getLatestGameItemByField('debt');
+        if (debt === null || debt === undefined) {
+            debt = 0; // Only use default if no data exists
+        }
         const population = await housesStore.getGlobalPopulation() || 0;
         const totalBuildingValue = await housesStore.getGlobalBuildingPrices() || 0;
         
@@ -271,10 +278,10 @@ async function updateBudgetDisplay() {
         if (budgetTurnEl) budgetTurnEl.textContent = window.game?.currentTurn || 0;
         if (budgetPopulationEl) budgetPopulationEl.textContent = population;
         if (budgetBuildingsEl) budgetBuildingsEl.textContent = buildingCounts.total;
-        if (budgetFundsEl) budgetFundsEl.textContent = `$${funds.toLocaleString()}`;
-        if (budgetDebtEl) budgetDebtEl.textContent = `$${debt.toLocaleString()}`;
-        if (budgetNetworthEl) budgetNetworthEl.textContent = `$${(funds - debt).toLocaleString()}`;
-        if (budgetTotalValueEl) budgetTotalValueEl.textContent = `$${totalBuildingValue.toLocaleString()}`;
+        if (budgetFundsEl) budgetFundsEl.textContent = `${funds.toLocaleString('fr-FR')}€`;
+        if (budgetDebtEl) budgetDebtEl.textContent = `${debt.toLocaleString('fr-FR')}€`;
+        if (budgetNetworthEl) budgetNetworthEl.textContent = `${(funds - debt).toLocaleString('fr-FR')}€`;
+        if (budgetTotalValueEl) budgetTotalValueEl.textContent = `${totalBuildingValue.toLocaleString('fr-FR')}€`;
         if (budgetHousesEl) budgetHousesEl.textContent = buildingCounts.houses;
         if (budgetFarmsEl) budgetFarmsEl.textContent = buildingCounts.farms;
         if (budgetMarketsEl) budgetMarketsEl.textContent = buildingCounts.markets;

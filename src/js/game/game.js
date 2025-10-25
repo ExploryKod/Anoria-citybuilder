@@ -16,6 +16,150 @@ import {
     displaySpeed
 } from '../ui/nodes.js';
 
+// Notification system for building placement feedback
+function showInsufficientFundsNotification(buildingType, price) {
+    const notification = document.createElement('div');
+    notification.className = 'building-notification insufficient-funds';
+    notification.innerHTML = `
+        <div class="notification-content">
+            <div class="notification-icon">💰</div>
+            <div class="notification-text">
+                <div class="notification-title">Fonds Insuffisants</div>
+                <div class="notification-message">Impossible de construire ${buildingType}. Coût : ${price}€</div>
+            </div>
+        </div>
+    `;
+    
+    // Add styles
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        color: white;
+        padding: 15px 25px;
+        border-radius: 12px;
+        box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+        z-index: 10000;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        max-width: 350px;
+        animation: slideDown 0.3s ease-out;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    `;
+    
+    // Add animation styles
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        @keyframes slideUp {
+            from {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+        }
+        .building-notification .notification-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .building-notification .notification-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .building-notification .notification-text {
+            flex: 1;
+        }
+        .building-notification .notification-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+        .building-notification .notification-message {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+    `;
+    
+    if (!document.querySelector('#building-notification-styles')) {
+        style.id = 'building-notification-styles';
+        document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideUp 0.3s ease-out';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 4000);
+}
+
+function showGenericErrorNotification(buildingType, reason) {
+    const notification = document.createElement('div');
+    notification.className = 'building-notification generic-error';
+    notification.innerHTML = `
+        <div class="notification-content">
+            <div class="notification-icon">⚠️</div>
+            <div class="notification-text">
+                <div class="notification-title">Erreur de Construction</div>
+                <div class="notification-message">Impossible de construire ${buildingType}. ${reason}</div>
+            </div>
+        </div>
+    `;
+    
+    // Add styles
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
+        color: white;
+        padding: 15px 25px;
+        border-radius: 12px;
+        box-shadow: 0 8px 25px rgba(255, 167, 38, 0.3);
+        z-index: 10000;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        max-width: 350px;
+        animation: slideDown 0.3s ease-out;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideUp 0.3s ease-out';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 4000);
+}
+
 export function createGame(housesStore, gameStore, assetManager) {
     let activeToolId = '';
     let time = 0;
@@ -126,23 +270,20 @@ export function createGame(housesStore, gameStore, assetManager) {
             }
             await scene.update(city)
         } else if(!tile.buildingId) {
-            // place building at that location
-            tile.buildingId = activeToolId;
-            // Object placed on terrain
+            // Prepare building data for payment validation
             let price = 0
-
-            const houseID = tile.buildingId + '-' + selectedObject.userData.x + '-' + selectedObject.userData.y
+            const houseID = activeToolId + '-' + selectedObject.userData.x + '-' + selectedObject.userData.y
             const houseStocks = await housesStore.getHouseItem(houseID, 'stocks');
             const houseNeighbors = await housesStore.getHouseItem(houseID, 'neighbors');
             let HouseRoads  = {roads: 0};
             if(houseNeighbors) {
                 HouseRoads = {roads: houseNeighbors.filter(neighbor => neighbor.name === 'roads').length};
             }
-            price = getAssetPrice(tile.buildingId, assetsPrices) || 0
+            price = getAssetPrice(activeToolId, assetsPrices) || 0
             let funds = await gameStore.getLatestGameItemByField('funds') || 0
             const dbHouseData = {
                 name: houseID,
-                type: tile.buildingId,
+                type: activeToolId,
                 neighbors: [],
                 pop: 0,
                 stocks : houseStocks ? houseStocks : {food: 0, cabbage : 0, wheat: 0, carrot: 0},
@@ -160,9 +301,27 @@ export function createGame(housesStore, gameStore, assetManager) {
                 y : selectedObject.userData.y,
             }
 
-            await housesStore.addHouseAndPay(dbHouseData);
-            // House added and payment complete
-            await scene.update(city);
+            // Validate payment BEFORE placing building
+            const paymentResult = await housesStore.addHouseAndPay(dbHouseData);
+            
+            if (paymentResult.success) {
+                // Payment successful - place building visually
+                tile.buildingId = activeToolId;
+                console.log(`Building ${activeToolId} placed successfully at (${selectedObject.userData.x}, ${selectedObject.userData.y})`);
+                await scene.update(city);
+            } else {
+                // Payment failed - show error message
+                console.warn(`Failed to place building: ${paymentResult.reason}`);
+                
+                // Show beautiful popup notification
+                if (paymentResult.reason === 'insufficient_funds') {
+                    showInsufficientFundsNotification(activeToolId, price);
+                } else {
+                    showGenericErrorNotification(activeToolId, paymentResult.reason);
+                }
+                
+                // Building is not placed visually, so no cleanup needed
+            }
         }
     }
 

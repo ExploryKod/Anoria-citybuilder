@@ -55,14 +55,20 @@ class HouseStore {
 
         if (gameFunds < data.price) {
             console.warn(`Not enough funds to build house ${data.name}.`);
-            return;
+            return { success: false, reason: 'insufficient_funds' };
         }
 
-        gameData[0].funds = gameFunds - data.price;
-        gameData[0].debt = gameDebt + data.price;
-        await this.db.game.put(gameData[0]);
+        try {
+            gameData[0].funds = gameFunds - data.price;
+            gameData[0].debt = gameDebt + data.price;
+            await this.db.game.put(gameData[0]);
 
-        await this.addHouse(data);
+            await this.addHouse(data);
+            return { success: true };
+        } catch (error) {
+            console.error('Error adding house and processing payment:', error);
+            return { success: false, reason: 'database_error', error: error };
+        }
     }
 
     async getHouse(name) {
