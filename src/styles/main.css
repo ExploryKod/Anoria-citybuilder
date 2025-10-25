@@ -92,6 +92,11 @@ canvas {
     height: 100vh !important;
 }
 
+/* Disable pointer events on 3D scene when modal is open */
+canvas.pointer-events-disabled {
+    pointer-events: none;
+}
+
 .root-window {
     width: 100%;
     height: 100%;
@@ -291,7 +296,7 @@ canvas {
     transform: translate(-50%, -50%);
     opacity: 1;
     pointer-events: auto;
-    z-index: 2;
+    z-index: 1001;
 }
 
 
@@ -305,7 +310,7 @@ canvas {
     transform: translateX(-50%);
     opacity: 1;
     pointer-events: auto;
-    z-index: 2;
+    z-index: 1001;
 }
 
 
@@ -572,12 +577,13 @@ footer a:hover {
     top: 150px;
     bottom: 0;
     opacity: 0;
+    visibility: hidden;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     align-items: center;
     border-radius: 10px 0 0 10px;
-    transition: all 0.5s ease-in-out;
+    transition: all 0.3s ease-in-out;
     pointer-events: none;
 }
 
@@ -612,9 +618,10 @@ footer a:hover {
 .info-building-overlay.active {
     pointer-events: auto;
     background-color: var(--lightgreen);
-    z-index: 1000;
-    opacity: 1;
+    z-index: 1003;
     right: 0;
+    opacity: 1;
+    visibility: visible;
 }
 
 .info-building-overlay.active button {
@@ -713,4 +720,123 @@ footer a:hover {
     .game-window {
         display: none;
     }
+}
+
+/* Real-time Budget Popup Styles */
+.realtime-budget-panel {
+    position: fixed;
+    top: 0;
+    left: -400px;
+    width: 350px;
+    height: 100vh;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--darkblue) 100%);
+    border-right: 3px solid var(--cta);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+    z-index: 1002;
+    transition: left 0.3s ease-in-out;
+    overflow-y: auto;
+}
+
+.realtime-budget-panel.active {
+    left: 0;
+}
+
+.realtime-budget-wrapper {
+    padding: 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.realtime-budget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--cta);
+}
+
+.realtime-budget-header h3 {
+    color: var(--cta);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.realtime-budget-close-btn {
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    background: rgba(251, 129, 34, 0.1);
+    color: var(--cta);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.realtime-budget-close-btn:hover {
+    background: rgba(251, 129, 34, 0.2);
+    transform: scale(1.1);
+}
+
+.realtime-budget-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.realtime-funds-display {
+    text-align: center;
+    padding: 30px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    border: 2px solid var(--cta);
+    margin-bottom: 20px;
+    min-width: 250px;
+}
+
+.realtime-funds-label {
+    color: var(--grey);
+    font-size: 1rem;
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+
+.realtime-funds-amount {
+    color: var(--cta);
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-shadow: 0 0 10px rgba(251, 129, 34, 0.3);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.realtime-update-info {
+    text-align: center;
+    color: var(--grey);
+    opacity: 0.7;
+}
+
+.realtime-update-info small {
+    font-size: 0.85rem;
+}
+
+/* Make budget box clickable */
+#realtime-budget-btn {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#realtime-budget-btn:hover {
+    transform: scale(1.05);
+    background: rgba(251, 129, 34, 0.1);
 }

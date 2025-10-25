@@ -205,6 +205,17 @@ export function createGame(housesStore, gameStore, assetManager) {
         } else if(activeToolId === "select-object") {
             // Object selection
             infoObjectOverlay.classList.toggle('active');
+            
+            // Manage pointer events on 3D scene when info overlay toggles
+            const canvas = document.querySelector('canvas');
+            if (canvas) {
+                if (infoObjectOverlay.classList.contains('active')) {
+                    canvas.classList.add('pointer-events-disabled');
+                } else {
+                    canvas.classList.remove('pointer-events-disabled');
+                }
+            }
+            
             makeInfoBuildingText("", true)
 
             if(!buildingsObjects.includes(selectedObject.userData.id)) {
@@ -272,8 +283,18 @@ export function createGame(housesStore, gameStore, assetManager) {
             }
            
             if(infoObjectOverlay.classList.contains('active')) {
+                // Disable pointer events on 3D scene when info overlay is active
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    canvas.classList.add('pointer-events-disabled');
+                }
                 window.game.pause()
             } else {
+                // Re-enable pointer events on 3D scene when info overlay is not active
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    canvas.classList.remove('pointer-events-disabled');
+                }
                 window.game.play()
             }
             await scene.update(city)
@@ -324,6 +345,11 @@ export function createGame(housesStore, gameStore, assetManager) {
                 tile.buildingId = activeToolId;
                 console.log(`Building ${activeToolId} placed successfully at (${selectedObject.userData.x}, ${selectedObject.userData.y})`);
                 await scene.update(city);
+                
+                // Resume the game after successful building placement
+                if (window.game) {
+                    window.game.play();
+                }
             } else {
                 // Payment failed - show error message
                 console.warn(`Failed to place building: ${paymentResult.reason}`);
@@ -352,6 +378,13 @@ export function createGame(housesStore, gameStore, assetManager) {
     infoObjectCloseBtn.addEventListener('click', () => {
         if(infoObjectOverlay.classList.contains('active')) {
             infoObjectOverlay.classList.remove('active')
+            
+            // Re-enable pointer events on 3D scene when info overlay closes
+            const canvas = document.querySelector('canvas');
+            if (canvas) {
+                canvas.classList.remove('pointer-events-disabled');
+            }
+            
             window.game.play()
         }
     })

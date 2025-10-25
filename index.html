@@ -204,7 +204,7 @@
 
 
                 <section class="info-box">
-                    <article class="budget-box">
+                    <article class="budget-box" id="realtime-budget-btn">
                 <span class="budget-icon">
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-euro">
                           <path d="M4 10h12"/><path d="M4 14h9"/>
@@ -247,6 +247,30 @@
     <a title="crédits" href="https://github.com/ExploryKod/Anoria/blob/main/src/credits.md" >Crédits</a>
     <span>Projet de Amaury Franssen - 2024 &copy; Tout droit réservé </span>
 </footer>
+
+<!-- Real-time Budget Popup -->
+<div id="realtime-budget-panel" class="realtime-budget-panel">
+    <div class="realtime-budget-wrapper">
+        <div class="realtime-budget-header">
+            <h3>💰 Budget en Temps Réel</h3>
+            <div class="realtime-budget-close-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
+                    <path d="m18 6-12 12"/>
+                    <path d="m6 6 12 12"/>
+                </svg>
+            </div>
+        </div>
+        <div class="realtime-budget-content">
+            <div class="realtime-funds-display">
+                <div class="realtime-funds-label">Fonds Disponibles</div>
+                <div class="realtime-funds-amount" id="realtime-funds">0€</div>
+            </div>
+            <div class="realtime-update-info">
+                <small>Mise à jour en temps réel</small>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script type="module" src="/src/main.js"></script>
 <script type="module" src="/src/js/game/game.js"></script>

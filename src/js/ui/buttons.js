@@ -404,6 +404,17 @@ function closeModal() {
     })
     if(panelLayout.classList.contains('active')) {
         panelLayout.classList.remove('active');
+        
+        // Re-enable pointer events on 3D scene
+        const canvas = document.querySelector('canvas');
+        if (canvas) {
+            canvas.classList.remove('pointer-events-disabled');
+        }
+        
+        // Resume the game when closing building selection modal
+        if (window.game) {
+            window.game.play();
+        }
     }
 }
 
@@ -422,6 +433,28 @@ function toggleModal(e) {
                 loaderButton.classList.add('active');
                 createHousesButtons(buttonData);
                 panelLayout.classList.add('active');
+                
+                // Disable pointer events on 3D scene when modal opens
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    canvas.classList.add('pointer-events-disabled');
+                }
+                
+                // Pause the game when opening building selection modal
+                if (window.game) {
+                    window.game.pause();
+                }
+            } else {
+                // Re-enable pointer events on 3D scene when modal closes
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    canvas.classList.remove('pointer-events-disabled');
+                }
+                
+                // Resume the game when closing building selection modal
+                if (window.game) {
+                    window.game.play();
+                }
             }
 
             break;
@@ -434,6 +467,28 @@ function toggleModal(e) {
                 panelLayout.classList.add('active');
                 e.target.classList.toggle('selected')
                 createFarmsButtons(buttonData);
+                
+                // Disable pointer events on 3D scene when modal opens
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    canvas.classList.add('pointer-events-disabled');
+                }
+                
+                // Pause the game when opening building selection modal
+                if (window.game) {
+                    window.game.pause();
+                }
+            } else {
+                // Re-enable pointer events on 3D scene when modal closes
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    canvas.classList.remove('pointer-events-disabled');
+                }
+                
+                // Resume the game when closing building selection modal
+                if (window.game) {
+                    window.game.play();
+                }
             }
             break;
         case 'markets':
@@ -444,6 +499,28 @@ function toggleModal(e) {
                 panelLayout.classList.add('active');
                 e.target.classList.toggle('selected')
                 createMarketsStallsButtons(buttonData)
+                
+                // Disable pointer events on 3D scene when modal opens
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    canvas.classList.add('pointer-events-disabled');
+                }
+                
+                // Pause the game when opening building selection modal
+                if (window.game) {
+                    window.game.pause();
+                }
+            } else {
+                // Re-enable pointer events on 3D scene when modal closes
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    canvas.classList.remove('pointer-events-disabled');
+                }
+                
+                // Resume the game when closing building selection modal
+                if (window.game) {
+                    window.game.play();
+                }
             }
             break;
         case 'others':
@@ -454,6 +531,28 @@ function toggleModal(e) {
                 panelLayout.classList.add('active');
                 e.target.classList.toggle('selected')
                 createOthersButtons(buttonData)
+                
+                // Disable pointer events on 3D scene when modal opens
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    canvas.classList.add('pointer-events-disabled');
+                }
+                
+                // Pause the game when opening building selection modal
+                if (window.game) {
+                    window.game.pause();
+                }
+            } else {
+                // Re-enable pointer events on 3D scene when modal closes
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    canvas.classList.remove('pointer-events-disabled');
+                }
+                
+                // Resume the game when closing building selection modal
+                if (window.game) {
+                    window.game.play();
+                }
             }
             break;
         default:
@@ -594,29 +693,12 @@ window.onload = async () => {
     await assetManager.initializeBuildings('farms')
     buttonData = assetManager.getButtonData();
     toolIds = assetManager.getToolIds();
-
-    // Debug: Check if budget elements exist
-    console.log('Budget button exists:', !!document.getElementById('budget-btn'));
-    console.log('Budget panel exists:', !!document.getElementById('budget-panel'));
-    console.log('Budget panel close btn exists:', !!document.querySelector('.budget-panel-close-btn'));
-    
-    // Debug: Check all elements with budget in the ID
-    console.log('All budget elements:', document.querySelectorAll('[id*="budget"]'));
-    console.log('All elements with budget class:', document.querySelectorAll('.budget-panel'));
-    
-    // Debug: Check if the HTML is there
-    console.log('HTML contains budget-btn:', document.body.innerHTML.includes('budget-btn'));
-    console.log('HTML contains budget-panel:', document.body.innerHTML.includes('budget-panel'));
     
     // Create budget elements dynamically if they don't exist
     if (!document.getElementById('budget-btn')) {
         console.log('Creating budget button dynamically...');
         createBudgetElements();
     }
-
-
-
-
 
     updateSpeedDisplay();
 
@@ -627,17 +709,38 @@ window.onload = async () => {
     infoObjectCloseBtn.addEventListener('click', () => {
         if(infoObjectOverlay.classList.contains('active')) {
             infoObjectOverlay.classList.remove('active')
+            
+            // Re-enable pointer events on 3D scene when info overlay closes
+            const canvas = document.querySelector('canvas');
+            if (canvas) {
+                canvas.classList.remove('pointer-events-disabled');
+            }
+            
             window.game.play()
         }
     })
 
     playButton.addEventListener('click', () => {
         pauseOverlay.classList.remove('active')
+        
+        // Re-enable pointer events on 3D scene when pause overlay closes
+        const canvas = document.querySelector('canvas');
+        if (canvas) {
+            canvas.classList.remove('pointer-events-disabled');
+        }
+        
         window.game.play()
     })
 
     pauseButton.addEventListener('click', () => {
         pauseOverlay.classList.add('active')
+        
+        // Disable pointer events on 3D scene when pause overlay opens
+        const canvas = document.querySelector('canvas');
+        if (canvas) {
+            canvas.classList.add('pointer-events-disabled');
+        }
+        
         window.game.pause()
     })
 
@@ -773,10 +876,141 @@ window.onload = async () => {
         getButtonsUnactive(e)
         if(e.target.classList.contains('panel-btn')) {
             getButtonsDisabled()
+            // For panel buttons (house selection), just close the modal and set the tool
+            closeModal();
+        } else {
+            // For toolbar buttons, toggle the modal
+            toggleModal(e)
         }
-        toggleModal(e)
         selectedControl = e.currentTarget;
         selectedControl.classList.add('selected');
         window.game.setActiveToolId(e.target.dataset.toolid);
+    }
+
+    // Initialize real-time budget popup
+    initRealtimeBudgetPopup();
+}
+
+// Real-time Budget Popup Functions
+function initRealtimeBudgetPopup() {
+    const realtimeBudgetBtn = document.getElementById('realtime-budget-btn');
+    const realtimeBudgetPanel = document.getElementById('realtime-budget-panel');
+    const realtimeBudgetCloseBtn = document.querySelector('.realtime-budget-close-btn');
+    const realtimeFundsEl = document.getElementById('realtime-funds');
+
+    if (!realtimeBudgetBtn || !realtimeBudgetPanel || !realtimeBudgetCloseBtn || !realtimeFundsEl) {
+        console.warn('Real-time budget popup elements not found');
+        return;
+    }
+
+    // Toggle popup on budget box click
+    realtimeBudgetBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent event bubbling
+        e.preventDefault(); // Prevent default behavior
+        
+        // Don't open if we're in a modal or other popup context
+        if (document.querySelector('.modal.active') || document.querySelector('.info-object-overlay.active')) {
+            return;
+        }
+        
+        // Only toggle if clicking directly on the budget box or its children
+        if (e.target === realtimeBudgetBtn || realtimeBudgetBtn.contains(e.target)) {
+            realtimeBudgetPanel.classList.toggle('active');
+            if (realtimeBudgetPanel.classList.contains('active')) {
+                // Disable pointer events on 3D scene when budget panel opens
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    canvas.classList.add('pointer-events-disabled');
+                }
+                updateRealtimeBudget();
+            } else {
+                // Re-enable pointer events on 3D scene when budget panel closes
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    canvas.classList.remove('pointer-events-disabled');
+                }
+            }
+        }
+    });
+
+    // Close popup on close button click
+    realtimeBudgetCloseBtn.addEventListener('click', () => {
+        realtimeBudgetPanel.classList.remove('active');
+        // Re-enable pointer events on 3D scene when budget panel closes
+        const canvas = document.querySelector('canvas');
+        if (canvas) {
+            canvas.classList.remove('pointer-events-disabled');
+        }
+    });
+
+    // Close popup when clicking outside
+    realtimeBudgetPanel.addEventListener('click', (e) => {
+        if (e.target === realtimeBudgetPanel) {
+            realtimeBudgetPanel.classList.remove('active');
+            // Re-enable pointer events on 3D scene when budget panel closes
+            const canvas = document.querySelector('canvas');
+            if (canvas) {
+                canvas.classList.remove('pointer-events-disabled');
+            }
+        }
+    });
+
+    // Update real-time budget every second when popup is open
+    setInterval(() => {
+        if (realtimeBudgetPanel.classList.contains('active')) {
+            updateRealtimeBudget();
+        }
+    }, 1000);
+
+    // Close real-time budget popup when other modals are opened
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                const target = mutation.target;
+                if (target.classList.contains('modal') || target.classList.contains('info-object-overlay')) {
+                    if (target.classList.contains('active') && realtimeBudgetPanel.classList.contains('active')) {
+                        realtimeBudgetPanel.classList.remove('active');
+                    }
+                }
+            }
+        });
+    });
+
+    // Observe modal elements for class changes
+    const modalElements = document.querySelectorAll('.modal, .info-object-overlay');
+    modalElements.forEach(element => {
+        observer.observe(element, { attributes: true, attributeFilter: ['class'] });
+    });
+}
+
+async function updateRealtimeBudget() {
+    const realtimeFundsEl = document.getElementById('realtime-funds');
+    if (!realtimeFundsEl) return;
+
+    try {
+        if (window.budgetManager) {
+            const budgetData = await window.budgetManager.getCurrentBudget();
+            const funds = budgetData.funds || 0;
+            realtimeFundsEl.textContent = `${funds.toLocaleString('fr-FR')}€`;
+            
+            // Add visual feedback for low funds
+            if (funds < 10) {
+                realtimeFundsEl.style.color = '#ff6b6b';
+                realtimeFundsEl.style.animation = 'pulse 1s infinite';
+            } else if (funds < 50) {
+                realtimeFundsEl.style.color = '#ffa726';
+                realtimeFundsEl.style.animation = 'pulse 2s infinite';
+            } else {
+                realtimeFundsEl.style.color = 'var(--cta)';
+                realtimeFundsEl.style.animation = 'pulse 2s infinite';
+            }
+        } else {
+            realtimeFundsEl.textContent = 'Chargement...';
+            realtimeFundsEl.style.color = 'var(--grey)';
+        }
+    } catch (error) {
+        console.error('Error updating real-time budget:', error);
+        realtimeFundsEl.textContent = 'Erreur';
+        realtimeFundsEl.style.color = '#ff6b6b';
     }
 }
