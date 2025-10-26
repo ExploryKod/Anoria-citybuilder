@@ -727,38 +727,36 @@ footer a:hover {
     width: 350px;
     height: calc(100vh - 75px);
     max-height: 725px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--darkblue) 100%);
+    background: #fafafa;
     border-left: 3px solid var(--cta);
-    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
     z-index: 1005;
     transition: right 0.3s ease-in-out;
     overflow-y: auto;
+    color: var(--primary);
 }
 
 /* Custom scrollbar for realtime budget panel */
 .realtime-budget-panel::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
 }
 
 .realtime-budget-panel::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
+    background: transparent;
 }
 
 .realtime-budget-panel::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 4px;
-    transition: background 0.3s ease;
+    background: var(--cta);
+    border-radius: 3px;
 }
 
 .realtime-budget-panel::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 1);
+    background: var(--cta-05);
 }
 
 /* Firefox scrollbar */
 .realtime-budget-panel {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.8) rgba(255, 255, 255, 0.1);
+    scrollbar-color: var(--cta) transparent;
 }
 
 .realtime-budget-panel.active {
@@ -782,7 +780,7 @@ footer a:hover {
 }
 
 .realtime-budget-header h3 {
-    color: var(--cta);
+    color: var(--primary);
     font-size: 1.4rem;
     font-weight: 600;
     margin: 0;
@@ -791,18 +789,19 @@ footer a:hover {
 .realtime-budget-close-btn {
     cursor: pointer;
     padding: 8px;
-    border-radius: 50%;
-    background: rgba(251, 129, 34, 0.1);
+    border-radius: 10px;
+    background: white;
     color: var(--cta);
-    transition: all 0.2s ease;
+    border: 3px solid var(--cta);
+    transition: all 0.3s ease-in-out;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .realtime-budget-close-btn:hover {
-    background: rgba(251, 129, 34, 0.2);
-    transform: scale(1.1);
+    background: var(--cta);
+    color: white;
 }
 
 .realtime-budget-content {
@@ -816,7 +815,7 @@ footer a:hover {
 .realtime-funds-display {
     text-align: center;
     padding: 30px;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(251, 129, 34, 0.1);
     border-radius: 15px;
     border: 2px solid var(--cta);
     margin-bottom: 20px;
@@ -824,7 +823,7 @@ footer a:hover {
 }
 
 .realtime-funds-label {
-    color: white;
+    color: var(--primary);
     font-size: 1rem;
     margin-bottom: 15px;
     font-weight: 500;
@@ -848,13 +847,13 @@ footer a:hover {
 .realtime-health-section {
     text-align: center;
     padding: 15px;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(251, 129, 34, 0.1);
     border-radius: 10px;
     border: 1px solid rgba(251, 129, 34, 0.3);
 }
 
 .realtime-health-label {
-    color: white;
+    color: var(--primary);
     font-size: 0.9rem;
     margin-bottom: 8px;
     font-weight: 600;
@@ -891,14 +890,14 @@ footer a:hover {
 }
 
 .realtime-health-message {
-    color: white;
+    color: var(--primary);
     font-size: 0.8rem;
     opacity: 0.8;
 }
 
 /* Détails financiers */
 .realtime-details-section {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(251, 129, 34, 0.1);
     border-radius: 10px;
     padding: 15px;
     border: 1px solid rgba(251, 129, 34, 0.2);
@@ -913,12 +912,12 @@ footer a:hover {
 .realtime-detail-item {
     text-align: center;
     padding: 10px;
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(251, 129, 34, 0.05);
     border-radius: 8px;
 }
 
 .realtime-detail-label {
-    color: white;
+    color: var(--primary);
     font-size: 0.8rem;
     margin-bottom: 5px;
     font-weight: 500;
@@ -932,14 +931,14 @@ footer a:hover {
 
 /* Détail des revenus */
 .realtime-revenue-section {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(251, 129, 34, 0.1);
     border-radius: 10px;
     padding: 15px;
     border: 1px solid rgba(40, 167, 69, 0.3);
 }
 
 .realtime-revenue-label {
-    color: white;
+    color: var(--primary);
     font-size: 0.9rem;
     margin-bottom: 10px;
     font-weight: 600;
@@ -957,13 +956,13 @@ footer a:hover {
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(251, 129, 34, 0.05);
     border-radius: 6px;
     border-left: 3px solid var(--success);
 }
 
 .realtime-revenue-source {
-    color: var(--grey);
+    color: var(--primary);
     font-size: 0.8rem;
     font-weight: 500;
 }
@@ -976,14 +975,14 @@ footer a:hover {
 
 /* Détail des dépenses */
 .realtime-expense-section {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(251, 129, 34, 0.1);
     border-radius: 10px;
     padding: 15px;
     border: 1px solid rgba(220, 53, 69, 0.3);
 }
 
 .realtime-expense-label {
-    color: white;
+    color: var(--primary);
     font-size: 0.9rem;
     margin-bottom: 10px;
     font-weight: 600;
@@ -1001,13 +1000,13 @@ footer a:hover {
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(251, 129, 34, 0.05);
     border-radius: 6px;
     border-left: 3px solid var(--danger);
 }
 
 .realtime-expense-source {
-    color: var(--grey);
+    color: var(--primary);
     font-size: 0.8rem;
     font-weight: 500;
 }
@@ -1020,7 +1019,7 @@ footer a:hover {
 
 /* Détail du calcul des intérêts des dettes */
 .realtime-loan-interest-detail-section {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(251, 129, 34, 0.1);
     border-radius: 10px;
     padding: 15px;
     border: 1px solid rgba(255, 193, 7, 0.3);
@@ -1028,7 +1027,7 @@ footer a:hover {
 }
 
 .realtime-loan-interest-detail-label {
-    color: white;
+    color: var(--primary);
     font-size: 0.9rem;
     margin-bottom: 10px;
     font-weight: 600;
@@ -1072,7 +1071,7 @@ footer a:hover {
     flex-direction: column;
     gap: 4px;
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--primary);
 }
 
 .loan-interest-calculation-detail {
@@ -1081,7 +1080,7 @@ footer a:hover {
 }
 
 .loan-interest-calculation-detail-label {
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--primary);
 }
 
 .loan-interest-calculation-detail-value {
@@ -1095,7 +1094,7 @@ footer a:hover {
     justify-content: center;
     gap: 8px;
     padding: 20px;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--primary);
     font-size: 0.85rem;
 }
 
@@ -1109,7 +1108,7 @@ footer a:hover {
 
 /* Informations générales */
 .realtime-info-section {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(251, 129, 34, 0.1);
     border-radius: 10px;
     padding: 15px;
     border: 1px solid rgba(52, 144, 220, 0.3);
@@ -1127,7 +1126,7 @@ footer a:hover {
 }
 
 .realtime-info-label {
-    color: white;
+    color: var(--primary);
     font-size: 0.8rem;
     margin-bottom: 5px;
     font-weight: 600;
@@ -1136,13 +1135,13 @@ footer a:hover {
 }
 
 .realtime-info-value {
-    color: var(--text-primary);
+    color: var(--primary);
     font-size: 1.2rem;
     font-weight: 700;
 }
 
 .realtime-info-value span {
-    color: #fff !important;
+    color: var(--primary) !important;
     font-size: 1.2rem;
     font-weight: 700;
 }
@@ -1150,7 +1149,7 @@ footer a:hover {
 
 /* Investissements */
 .realtime-investment-section {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(251, 129, 34, 0.1);
     border-radius: 10px;
     padding: 15px;
     border: 1px solid rgba(78, 205, 196, 0.3);
@@ -1158,7 +1157,7 @@ footer a:hover {
 }
 
 .realtime-investment-label {
-    color: white;
+    color: var(--primary);
     font-size: 0.9rem;
     margin-bottom: 10px;
     font-weight: 600;
@@ -1176,13 +1175,13 @@ footer a:hover {
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(251, 129, 34, 0.05);
     border-radius: 6px;
     border-left: 3px solid #4ecdc4;
 }
 
 .realtime-investment-source {
-    color: var(--grey);
+    color: var(--primary);
     font-size: 0.8rem;
     font-weight: 500;
 }
@@ -1196,7 +1195,7 @@ footer a:hover {
 
 .realtime-update-info {
     text-align: center;
-    color: white;
+    color: var(--primary);
     opacity: 0.7;
 }
 
@@ -1250,16 +1249,41 @@ footer a:hover {
 
 .budget-states-panel {
     position: fixed;
-    top: 0;
+    top: 75px;
     right: -500px;
     width: 500px;
-    height: 100vh;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-05) 100%);
-    border-left: 2px solid var(--cta);
+    height: calc(100vh - 75px);
+    max-height: 725px;
+    background: #fafafa;
+    border-left: 3px solid var(--cta);
     z-index: 1006;
     transition: right 0.3s ease-in-out;
     overflow-y: auto;
-    max-height: 100vh;
+    color: var(--primary);
+}
+
+/* Custom scrollbar for budget states panel */
+.budget-states-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+.budget-states-panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.budget-states-panel::-webkit-scrollbar-thumb {
+    background: var(--cta);
+    border-radius: 3px;
+}
+
+.budget-states-panel::-webkit-scrollbar-thumb:hover {
+    background: var(--cta-05);
+}
+
+/* Firefox scrollbar for budget states panel */
+.budget-states-panel {
+    scrollbar-width: thin;
+    scrollbar-color: var(--cta) transparent;
 }
 
 .budget-states-panel.active {
@@ -1308,7 +1332,7 @@ footer a:hover {
 
 .statement-label {
     font-size: 0.85rem;
-    color: var(--text-primary);
+    color: var(--primary);
     font-weight: 500;
 }
 
@@ -1316,6 +1340,7 @@ footer a:hover {
     font-size: 0.85rem;
     font-weight: 600;
     text-align: right;
+    color: var(--primary);
 }
 
 .statement-value.positive {
@@ -1402,7 +1427,7 @@ footer a:hover {
 .info-value {
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--primary);
 }
 
 /* Cleanup Notification Styles */
@@ -1488,16 +1513,37 @@ footer a:hover {
     left: -500px;
     width: 500px;
     height: 100vh;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-05) 100%);
-    border-right: 2px solid var(--cta);
+    background: #fafafa;
+    border-right: 3px solid var(--cta);
     z-index: 1004;
     transition: left 0.3s ease-in-out;
     overflow-y: auto;
     max-height: 100vh;
+    color: var(--primary);
 }
 
-.budget-panel.active {
-    left: 0;
+/* Custom scrollbar for budget panel */
+.budget-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+.budget-panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.budget-panel::-webkit-scrollbar-thumb {
+    background: var(--cta);
+    border-radius: 3px;
+}
+
+.budget-panel::-webkit-scrollbar-thumb:hover {
+    background: var(--cta-05);
+}
+
+/* Firefox scrollbar for budget panel */
+.budget-panel {
+    scrollbar-width: thin;
+    scrollbar-color: var(--cta) transparent;
 }
 
 .budget-wrapper {
@@ -1573,7 +1619,7 @@ footer a:hover {
 
 .budget-tab:hover:not(.active) {
     background: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
+    color: var(--primary);
 }
 
 /* Tab Content */
@@ -1637,7 +1683,7 @@ footer a:hover {
 
 .advice-title {
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--primary);
     font-size: 0.95rem;
 }
 
@@ -1667,7 +1713,7 @@ footer a:hover {
 }
 
 .analysis-group h5 {
-    color: var(--text-primary);
+    color: var(--primary);
     font-size: 1rem;
     margin: 0 0 12px 0;
     font-weight: 600;
@@ -1711,7 +1757,7 @@ footer a:hover {
 
 .social-class-label {
     flex: 1;
-    color: var(--text-primary);
+    color: var(--primary);
     font-size: 0.9rem;
     font-weight: 500;
 }
@@ -1745,7 +1791,7 @@ footer a:hover {
 
 .commerce-label {
     flex: 1;
-    color: var(--text-primary);
+    color: var(--primary);
     font-size: 0.9rem;
     font-weight: 500;
 }
@@ -1779,7 +1825,7 @@ footer a:hover {
 
 .field-label {
     flex: 1;
-    color: var(--text-primary);
+    color: var(--primary);
     font-size: 0.9rem;
     font-weight: 500;
 }
@@ -1827,7 +1873,7 @@ footer a:hover {
 
 .loan-input-group label {
     display: block;
-    color: var(--text-primary);
+    color: var(--primary);
     font-size: 0.9rem;
     font-weight: 500;
     margin-bottom: 6px;
@@ -1840,7 +1886,7 @@ footer a:hover {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 6px;
-    color: var(--text-primary);
+    color: var(--primary);
     font-size: 0.9rem;
 }
 
@@ -1905,7 +1951,7 @@ footer a:hover {
 }
 
 .active-loans h5 {
-    color: var(--text-primary);
+    color: var(--primary);
     font-size: 1rem;
     margin: 0 0 12px 0;
     font-weight: 600;
@@ -1972,7 +2018,7 @@ footer a:hover {
 }
 
 .budget-states-header h3 {
-    color: var(--cta);
+    color: var(--primary);
     font-size: 1.5rem;
     font-weight: 700;
     margin: 0;
@@ -1981,13 +2027,19 @@ footer a:hover {
 .budget-states-close-btn {
     cursor: pointer;
     padding: 8px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    transition: background 0.3s ease;
+    border-radius: 10px;
+    background: white;
+    color: var(--cta);
+    border: 3px solid var(--cta);
+    transition: all 0.3s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .budget-states-close-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--cta);
+    color: white;
 }
 
 .budget-states-content {
@@ -2032,8 +2084,8 @@ footer a:hover {
 }
 
 .budget-state-item {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(251, 129, 34, 0.05);
+    border: 1px solid rgba(251, 129, 34, 0.2);
     border-radius: 10px;
     padding: 15px;
     margin-bottom: 10px;
@@ -2041,7 +2093,7 @@ footer a:hover {
 }
 
 .budget-state-item:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(251, 129, 34, 0.1);
     transform: translateY(-2px);
 }
 
@@ -2059,7 +2111,7 @@ footer a:hover {
 }
 
 .budget-state-date {
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--primary);
     font-size: 0.9rem;
 }
 
@@ -2074,7 +2126,7 @@ footer a:hover {
     display: flex;
     justify-content: space-between;
     padding: 5px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(251, 129, 34, 0.2);
 }
 
 .budget-state-detail:last-child {
@@ -2082,7 +2134,7 @@ footer a:hover {
 }
 
 .budget-state-label {
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--primary);
 }
 
 .budget-state-value {
@@ -2093,7 +2145,7 @@ footer a:hover {
 .budget-state-loading {
     text-align: center;
     padding: 40px 20px;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--primary);
 }
 
 .loading-spinner {
@@ -2125,7 +2177,7 @@ footer a:hover {
 }
 
 .summary-content {
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--primary);
     font-size: 0.9rem;
 }
 
@@ -2133,7 +2185,7 @@ footer a:hover {
     display: flex;
     justify-content: space-between;
     padding: 5px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(251, 129, 34, 0.2);
 }
 
 .summary-item:last-child {
@@ -2171,9 +2223,9 @@ footer a:hover {
 }
 
 .budget-panel-header {
-    background: rgba(255,255,255,0.1);
+    background: white;
     padding: 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
+    border-bottom: 2px solid var(--cta);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -2205,30 +2257,50 @@ footer a:hover {
     margin: 0;
     font-size: 24px;
     font-weight: 600;
+    color: var(--primary);
 }
 
 .budget-panel-close-btn {
-    background: rgba(255,255,255,0.2);
-    border: none;
-    color: white;
+    background: white;
+    border: 3px solid var(--cta);
+    color: var(--cta);
     width: 30px;
     height: 30px;
-    border-radius: 50%;
+    border-radius: 10px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.3s ease;
+    transition: all 0.3s ease-in-out;
 }
 
 .budget-panel-close-btn:hover {
-    background: rgba(255,255,255,0.3);
+    background: var(--cta);
+    color: white;
 }
 
+/* Custom scrollbar for budget panel content */
+.budget-panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.budget-panel-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.budget-panel-content::-webkit-scrollbar-thumb {
+    background: var(--cta);
+    border-radius: 3px;
+}
+
+.budget-panel-content::-webkit-scrollbar-thumb:hover {
+    background: var(--cta-05);
+}
+
+/* Firefox scrollbar for budget panel content */
 .budget-panel-content {
-    padding: 20px;
-    max-height: 60vh;
-    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--cta) transparent;
 }
 
 .budget-item {
@@ -2270,33 +2342,37 @@ footer a:hover {
     align-items: center;
     margin-bottom: 20px;
     padding-bottom: 10px;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 2px solid var(--cta);
 }
 
 .balance-sheet-header h3 {
-    color: var(--cta);
+    color: var(--primary);
     margin: 0;
     font-size: 1.3rem;
 }
 
 .balance-sheet-date {
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--primary);
     font-size: 0.9rem;
     font-weight: 500;
 }
 
 .balance-sheet-section {
     margin-bottom: 25px;
+    background: white;
+    border-radius: 8px;
+    border: 2px solid var(--cta);
+    padding: 12px;
 }
 
 .balance-sheet-title {
-    color: #4ade80;
+    color: var(--primary);
     font-size: 1.1rem;
     font-weight: 700;
     margin: 0 0 15px 0;
     padding: 8px 12px;
-    background: rgba(76, 222, 128, 0.1);
-    border-left: 4px solid #4ade80;
+    background: rgba(251, 129, 34, 0.1);
+    border-left: 4px solid var(--cta);
     border-radius: 4px;
 }
 
@@ -2305,12 +2381,12 @@ footer a:hover {
 }
 
 .balance-sheet-subtitle {
-    color: #ffa726;
+    color: var(--primary);
     font-size: 1rem;
     font-weight: 600;
     margin: 0 0 10px 0;
     padding-left: 10px;
-    border-left: 3px solid #ffa726;
+    border-left: 3px solid var(--cta);
 }
 
 .balance-sheet-item {
@@ -2319,9 +2395,9 @@ footer a:hover {
     align-items: center;
     padding: 8px 15px;
     margin-bottom: 5px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(251, 129, 34, 0.05);
     border-radius: 6px;
-    border-left: 3px solid rgba(255, 255, 255, 0.2);
+    border-left: 3px solid var(--cta);
 }
 
 .balance-sheet-subitem {
@@ -2341,7 +2417,7 @@ footer a:hover {
     align-items: center;
     padding: 4px 30px;
     margin-bottom: 2px;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--primary);
     font-size: 0.9rem;
 }
 
@@ -2351,12 +2427,12 @@ footer a:hover {
 
 .balance-sheet-label {
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--primary);
 }
 
 .balance-sheet-value {
     font-weight: 600;
-    color: #fff;
+    color: var(--primary);
     font-size: 1rem;
 }
 
@@ -2366,7 +2442,7 @@ footer a:hover {
 }
 
 .balance-sheet-subdetail .balance-sheet-value {
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--primary);
     font-size: 0.9rem;
 }
 
@@ -2665,10 +2741,28 @@ footer a:hover {
     background: rgba(255,255,255,0.3);
 }
 
+/* Custom scrollbar for loans panel content */
+.loans-panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.loans-panel-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.loans-panel-content::-webkit-scrollbar-thumb {
+    background: var(--cta);
+    border-radius: 3px;
+}
+
+.loans-panel-content::-webkit-scrollbar-thumb:hover {
+    background: var(--cta-05);
+}
+
+/* Firefox scrollbar for loans panel content */
 .loans-panel-content {
-    padding: 20px;
-    max-height: 60vh;
-    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--cta) transparent;
 }
 
 .loans-header {
@@ -2687,7 +2781,7 @@ footer a:hover {
 }
 
 .loans-date {
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--primary);
     font-size: 0.9rem;
     font-weight: 500;
 }
@@ -2781,14 +2875,14 @@ footer a:hover {
 }
 
 .loan-description {
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--primary);
     font-size: 0.9rem;
 }
 
 .loan-details {
     flex: 1;
     text-align: center;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--primary);
     font-size: 0.9rem;
 }
 
@@ -2828,7 +2922,7 @@ footer a:hover {
 
 .loan-input-group label {
     display: block;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--primary);
     font-weight: 500;
     margin-bottom: 5px;
 }
@@ -2863,7 +2957,7 @@ footer a:hover {
     justify-content: space-between;
     align-items: center;
     padding: 5px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(251, 129, 34, 0.2);
 }
 
 .loan-summary-item:last-child {
@@ -2940,7 +3034,7 @@ footer a:hover {
 }
 
 .summary-label {
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--primary);
 }
 
 .summary-value {
