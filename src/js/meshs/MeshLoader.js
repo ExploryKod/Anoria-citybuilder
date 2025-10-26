@@ -41,12 +41,19 @@ class MeshLoader {
      }
      assetNames = []
 
+    // Performance optimization: Cache for parsed tool names
+    cache = new Map();
+
     constructor() {
 
     }
 
     async loadAssets(assetFullName, propertyKey, modelsObj, allAssetsNames, assetNames, toolIds, buttonData) {
         return new Promise((resolve, reject) => {
+            // Performance optimization: Use Set for O(1) lookup instead of array includes
+            const validToolIds = new Set(toolIds[propertyKey] || []);
+            const processedMeshes = new Set(); // Track processed meshes to avoid duplicates
+            
             // Instantiate a loader
             const gltfloader = new GLTFLoader();
 
@@ -107,6 +114,19 @@ class MeshLoader {
                             }
                         }
                         
+                        // Performance optimization: Early exit - skip if mesh already processed
+                        if (processedMeshes.has(child.name)) {
+                            return;
+                        }
+                        
+                        // Performance optimization: Early exit - skip if not a valid tool
+                        if (!validToolIds.has(toolName)) {
+                            return;
+                        }
+                        
+                        // Mark as processed
+                        processedMeshes.add(child.name);
+                        
                         // Debug: log farm assets and windmill
                         if (propertyKey === 'farms' || toolName.toLowerCase().includes('windmill')) {
                             console.log(`[LOADER] Farm mesh: ${child.name}`);
@@ -116,42 +136,37 @@ class MeshLoader {
                             console.log(`[LOADER]   toolName: ${toolName}`);
                             console.log(`[LOADER]   storing in modelsObj[${propertyKey}][${toolName}]`);
                         }
-                        //console.warn("[BUILDING] tool name", toolName)
-                            allAssetsNames.map((asset) => {
-                                if (Object.hasOwn(asset, propertyKey) &&
-                                    Array.isArray(asset[propertyKey]) &&
-                                    Array.isArray(toolIds[propertyKey])) {
-
-                                    const housesArray = asset[propertyKey];
-                                    if (housesArray && toolIds[propertyKey].includes(toolName)) {
-                                        if (propertyKey === 'farms') {
-                                            console.log(`[LOADER] Adding farm to buttonData: ${toolName}`);
-                                            console.log(`[LOADER] modelsObj[${propertyKey}] before:`, Object.keys(modelsObj[propertyKey]));
-                                        }
-                                        buttonData.push({
-                                            text: firstNamePart + ' ' + secondNamePart,
-                                            tool: toolName,
-                                            group: firstNamePart
-                                        })
-                                        assetNames.push(toolName);
-                                        
-                                        // Store the mesh with the toolName as key
-                                        modelsObj[propertyKey][toolName] = child;
-                                        
-                                        if (propertyKey === 'farms') {
-                                            console.log(`[LOADER] modelsObj[${propertyKey}] after:`, Object.keys(modelsObj[propertyKey]));
-                                        }
-                                        
-                                        housesArray.push({
-                                            'fullName': child.userData.name,
-                                            name: toolName,
-                                            'mesh': child
-                                        })
-                                    }
-                                }
-
-                            })
+                        
+                        // Performance optimization: Direct access instead of nested map
+                        const housesArray = allAssetsNames.find(asset => Object.hasOwn(asset, propertyKey))?.[propertyKey];
+                        if (housesArray) {
+                            if (propertyKey === 'farms') {
+                                console.log(`[LOADER] Adding farm to buttonData: ${toolName}`);
+                                console.log(`[LOADER] modelsObj[${propertyKey}] before:`, Object.keys(modelsObj[propertyKey]));
+                            }
+                            
+                            buttonData.push({
+                                text: firstNamePart + ' ' + secondNamePart,
+                                tool: toolName,
+                                group: firstNamePart
+                            });
+                            
+                            assetNames.push(toolName);
+                            
+                            // Store the mesh with the toolName as key
+                            modelsObj[propertyKey][toolName] = child;
+                            
+                            if (propertyKey === 'farms') {
+                                console.log(`[LOADER] modelsObj[${propertyKey}] after:`, Object.keys(modelsObj[propertyKey]));
+                            }
+                            
+                            housesArray.push({
+                                'fullName': child.userData.name,
+                                name: toolName,
+                                'mesh': child
+                            });
                         }
+                    }
                     });
                     resolve(modelsObj);
                 },
