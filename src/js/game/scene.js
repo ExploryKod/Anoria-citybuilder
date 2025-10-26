@@ -632,8 +632,8 @@ export function createScene(housesStore, gameStore, assetManager) {
                         // Clean up old states by age (60+ days)
                         const cleanupResult = await window.budgetManager.cleanupOldBudgetStatesByAge();
                         if (cleanupResult.deleted > 0) {
-                            // Show notification to user
-                            showCleanupNotification(cleanupResult);
+                            // Show notification to user only once
+                            showCleanupNotificationOnce(cleanupResult);
                         }
                     } catch (error) {
                         console.warn('Failed to save budget state:', error);
@@ -865,6 +865,27 @@ function onMouseMove(event) {
     }
 
     /**
+     * Show cleanup notification to user only once
+     * @param {Object} cleanupResult - Result from cleanupOldBudgetStatesByAge
+     */
+    function showCleanupNotificationOnce(cleanupResult) {
+        // Check if user has already seen this notification
+        const hasSeenCleanupNotification = localStorage.getItem('hasSeenCleanupNotification');
+        
+        if (hasSeenCleanupNotification === 'true') {
+            // User has already seen this notification, don't show it again
+            console.log('🧹 Nettoyage automatique effectué (notification déjà vue)');
+            return;
+        }
+        
+        // Mark that user has seen this notification
+        localStorage.setItem('hasSeenCleanupNotification', 'true');
+        
+        // Show the notification
+        showCleanupNotification(cleanupResult);
+    }
+
+    /**
      * Show cleanup notification to user
      * @param {Object} cleanupResult - Result from cleanupOldBudgetStatesByAge
      */
@@ -877,7 +898,7 @@ function onMouseMove(event) {
                 <div class="cleanup-icon">🧹</div>
                 <div class="cleanup-text">
                     <strong>Nettoyage automatique</strong><br>
-                    ${cleanupResult.deleted} état(s) de plus de 60 jours supprimé(s)
+                    Les états financiers de plus de 60 jours seront supprimés
                     ${cleanupResult.deletedTurns ? `<br><small>Tours: ${cleanupResult.deletedTurns.join(', ')}</small>` : ''}
                 </div>
                 <button class="cleanup-close" onclick="this.parentElement.parentElement.remove()">×</button>
