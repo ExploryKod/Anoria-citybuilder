@@ -1,4 +1,5 @@
 import db from './db';
+import budgetManager from './BudgetManager.js';
 
 class HouseStore {
     constructor() {
@@ -33,36 +34,123 @@ class HouseStore {
         return houses.reduce((total, house) => total + (house.pop || 0), 0);
     }
 
+    /**
+     * Process population based on food availability and road access
+     * Population can only grow if there's food AND road access, and resets to 0 if no food OR no road access
+     * @returns {Promise<Object>} Result with population changes
+     */
+    async processPopulationFoodLogic() {
+        const houses = await this.listAllHouses();
+        let totalPopulationLost = 0;
+        let totalPopulationGained = 0;
+        let housesAffected = 0;
+
+        console.log(`🍞🛣️ Processing population/food/road logic for ${houses.length} houses...`);
+
+        for (const house of houses) {
+            if (house.type && house.type.includes('House')) { // Only process houses
+                const hasFood = house.stocks && house.stocks.food > 0;
+                const hasRoadAccess = house.neighbors && house.neighbors.filter(neighbor => neighbor.name === 'roads').length > 0;
+                const currentPop = house.pop || 0;
+                
+                console.log(`🏠 House ${house.id}: pop=${currentPop}, food=${house.stocks?.food || 0}, roads=${house.neighbors?.filter(n => n.name === 'roads').length || 0}`);
+                
+                if (!hasFood || !hasRoadAccess) {
+                    // No food OR no road access - reset population to 0
+                    if (currentPop > 0) {
+                        totalPopulationLost += currentPop;
+                        housesAffected++;
+                        
+                        await this.updateHouseFields(house.id, {
+                            pop: 0
+                        });
+                        
+                        if (!hasFood && !hasRoadAccess) {
+                            console.log(`🚨 House ${house.id}: Population reset to 0 (no food and no road access)`);
+                        } else if (!hasFood) {
+                            console.log(`🚨 House ${house.id}: Population reset to 0 (no food)`);
+                        } else if (!hasRoadAccess) {
+                            console.log(`🚨 House ${house.id}: Population reset to 0 (no road access)`);
+                        }
+                    }
+                } else {
+                    // Has food AND road access - population can grow (existing growth logic will handle this)
+                    console.log(`✅ House ${house.id}: Has food and road access, habitants can stay alive`);
+                }
+            }
+        }
+
+        console.log(`🍞🛣️ Population/food/road result: ${totalPopulationLost} lost, ${housesAffected} houses affected`);
+
+        return {
+            totalPopulationLost,
+            totalPopulationGained,
+            housesAffected,
+            message: totalPopulationLost > 0 ? 
+                `${totalPopulationLost} inhabitants lost due to no food or road access in ${housesAffected} houses` : 
+                'All houses with population have food and road access'
+        };
+    }
+
     async getGlobalBuildingPrices() {
         const houses = await this.listAllHouses();
         return houses.reduce((total, house) => total + (house.price || 0), 0);
     }
 
+    async getBuildingPricesByType() {
+        const houses = await this.listAllHouses();
+        const pricesByType = {};
+
+        houses.forEach(house => {
+            // Extract base type from name (e.g., "House-Red-1" -> "House-Red", "Road-1" -> "Road")
+            let houseType;
+            if (house.name.includes('House-')) {
+                houseType = house.name.split('-').slice(0, 2).join('-');
+            } else if (house.name.includes('Farm-')) {
+                houseType = house.name.split('-').slice(0, 2).join('-');
+            } else if (house.name.includes('Market')) {
+                houseType = 'Market';
+            } else if (house.name.includes('roads')) {
+                houseType = 'roads';
+            } else {
+                houseType = house.name.split('-')[0];
+            }
+            
+            if (!pricesByType[houseType]) {
+                pricesByType[houseType] = house.price || 0;
+            }
+        });
+
+        return pricesByType;
+    }
+
     async addHouse(data) {
         try {
             await this.db.houses.add(data);
-            console.log(`House ${data.name} added successfully.`);
+            // House added successfully
         } catch (err) {
             console.error(`Error adding house: ${err.message}`);
         }
     }
 
     async addHouseAndPay(data) {
-        const gameData = await this.db.game.toArray();
-        const gameFunds = gameData[0]?.funds || 0;
-        const gameDebt = gameData[0]?.debt || 0;
-        const balance = gameFunds - gameDebt;
-
-        if (gameFunds < data.price) {
-            console.warn(`Not enough funds to build house ${data.name}.`);
-            return;
+        // Use the new BudgetManager for proper financial handling
+        const expenseResult = await budgetManager.addExpense(data.price, `Building: ${data.type}`);
+        
+        if (!expenseResult.success) {
+            console.warn(`Cannot build ${data.type}: ${expenseResult.message}`);
+            return expenseResult;
         }
 
-        gameData[0].funds = gameFunds - data.price;
-        gameData[0].debt = gameDebt + data.price;
-        await this.db.game.put(gameData[0]);
-
-        await this.addHouse(data);
+        try {
+            await this.addHouse(data);
+            return { success: true, budget: expenseResult.budget };
+        } catch (error) {
+            console.error('Error adding house after payment:', error);
+            // If house creation fails, we should refund the expense
+            await budgetManager.addIncome(data.price, `Refund for failed ${data.type}`);
+            return { success: false, reason: 'database_error', error: error };
+        }
     }
 
     async getHouse(name) {
@@ -74,6 +162,19 @@ class HouseStore {
         if (house && key in house) {
             return house[key];
         }
+        
+        // Return default values for missing keys instead of warning
+        const defaults = {
+            'stocks': { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
+            'neighbors': [],
+            'pop': 0,
+            'roads': 0
+        };
+        
+        if (defaults[key] !== undefined) {
+            return defaults[key];
+        }
+        
         console.warn(`Key ${key} not found in house ${name}`);
         return false;
     }

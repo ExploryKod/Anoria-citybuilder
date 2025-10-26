@@ -40,9 +40,9 @@ export function coloredAbuildingOnHover(intersections, data={color: 0xff0000, de
 
                    if(Object.hasOwn(hoveredObject.userData, 'neighborsMeshs')) {
                         neighborsHoveredObjects = hoveredObject.userData.neighborsMeshs
-                        console.log(" [coloredABuildingOnHover] the neighbors mesh of hovered", neighborsHoveredObjects)
+                        // Processing neighbors mesh
                         neighborsHoveredObjects.forEach((neighborsHoveredObject) => {
-                            console.log(" [coloredABuildingOnHover] a neighbor object", neighborsHoveredObject)
+                            // Processing neighbor object
                             setColorOnMaterialArray(neighborsHoveredObject, 0x000000)
                         })
                   } 
@@ -66,15 +66,15 @@ export function coloredAbuildingOnHover(intersections, data={color: 0xff0000, de
                 // Iterate over the array of MeshLambertMaterial objects
                     hoveredObject.material.filter((material) => isMaterialTypeFound(material, types)).forEach((material) => {
                         if (material.emissive) {
-                            console.log("[coloredABuildingOnHover]  LAMBERT hovered -- material emissive", material)
+                            // Material emissive processing
                     
                             // Reset to the original emissive color stored in userData
                             material.emissive.setHex(0x3333CC)
                             if(Object.hasOwn(hoveredObject.userData, 'neighborsMeshs')) {
                                 neighborsHoveredObjects = hoveredObject.userData.neighborsMeshs
-                                console.log(" [coloredABuildingOnHover] the neighbors mesh of hovered", neighborsHoveredObjects)
+                                // Processing neighbors mesh
                                 neighborsHoveredObjects.forEach((neighborsHoveredObject) => {
-                                    console.log(" [coloredABuildingOnHover] a neighbor object", neighborsHoveredObject)
+                                    // Processing neighbor object
                                     setColorOnMaterialArray(neighborsHoveredObject, 0x000000)
                                 })
                             } 
@@ -114,13 +114,13 @@ export function coloredAbuildingOnHover(intersections, data={color: 0xff0000, de
 
                     if(Object.hasOwn(hoveredObject.userData, 'neighborsMeshs')) {
                         neighborsHoveredObjects = hoveredObject.userData.neighborsMeshs
-                        console.log(" [coloredABuildingOnHover] the neighbors mesh of hovered", neighborsHoveredObjects)
+                        // Processing neighbors mesh
                         neighborsHoveredObjects.forEach((neighborsHoveredObject) => {
-                            console.log(" [coloredABuildingOnHover] a neighbor object", neighborsHoveredObject)
+                            // Processing neighbor object
                             setColorOnMaterialArray(neighborsHoveredObject, 0x3333CC)
                         })
                     } 
-                    console.log("WE ", hoveredObject.userData.neighborZones)
+                    // Processing neighbor zones
                     // if (Object.hasOwn(hoveredObject.userData, 'neighborZones')) {
                     //     if(Object.hasOwn(hoveredObject.userData.neighborZones, areaKey)) {
                     //         const area2 = hoveredObject.userData.neighborZones[areaKey]
@@ -191,7 +191,7 @@ function setColorOnMaterialArray(object3D, color) {
             // Iterate over the array of MeshLambertMaterial objects
             object3D.material.filter((material) => isMaterialTypeFound(material, types)).forEach((material) => {
                 if (material.emissive) {
-                    console.log("[coloredABuildingOnHover] [setColorOnMeshLambertMaterialArray] SET COLOR ON ", material)
+                    // Setting color on material
                       // Reset to the original emissive color stored in userData
                       material.emissive.setHex(color)
                 }
@@ -208,7 +208,7 @@ function setColorOnMaterialArray(object3D, color) {
             }
 
             if(isMaterialTypeFound(object3D.material, types) ) {
-                console.log("[coloredABuildingOnHover] [setColorOnMeshLambertMaterialArray] SET ONE COLOR ON MESHSTANDARD", object3D.material)
+                // Setting color on mesh standard material
                 // Reset to the original emissive color stored in userData
                 object3D.material.emissive.setHex(color)
             }
@@ -257,20 +257,19 @@ function setPropertiesOnMaterialArray(object3D, properties, instance = THREE.Mes
 export function coloredAZoneOnHover(intersections, color = 0x3333CC) {
    neighborsHoveredObjects
     if (intersections.length > 0) {
-        console.log("colored azone on hover", intersections)
+        // Zone hover processing
 
         const intersectedObject = intersections[0].object;
 
         if (intersectedObject !== hoveredObject) {
-            console.log("!= ZONE hovered -- intersected obj", intersectedObject ?? "");
-            console.log("!= ZONE hovered -- hovered obj", hoveredObject ?? "");
+            // Zone hover object changed
 
             // Reset the emissive color of the previously hovered object
             if (hoveredObject && Array.isArray(hoveredObject.material)) {
                 // Iterate over the array of MeshLambertMaterial objects
                 hoveredObject.material.filter((material) => isMaterialTypeFound(material, types)).forEach((material) => {
                     if (material.emissive) {
-                        console.log("zone hovered -- material emissive", material)
+                        // Zone material emissive processing
                  
                           // Reset to the original emissive color stored in userData
                           material.emissive.setHex(0x3333CC)
@@ -285,7 +284,7 @@ export function coloredAZoneOnHover(intersections, color = 0x3333CC) {
             if (!hoveredObject.userData.originalEmissive && Array.isArray(hoveredObject.material)) {
                 // Get the RGB values from the first material's emissive color
                 const emissiveColor = hoveredObject.material[0].emissive.getHex(); // Returns an object { r, g, b }
-                console.log("MY EMISSIVE COLOR", emissiveColor)
+                // Emissive color processing
                 // Store the RGB values in userData
                 hoveredObject.userData.originalEmissive = emissiveColor;  // Store the original emissive color as RGB values in userData
                  
@@ -297,7 +296,7 @@ export function coloredAZoneOnHover(intersections, color = 0x3333CC) {
             if (Array.isArray(hoveredObject.material)) {
                 hoveredObject.material.forEach((material) => {
                     if (isMaterialTypeFound(material, types)  && material.emissive) {
-                        console.log("zone hovered -- material emissive to change color", material)
+                        // Zone material color change
                         material = material.clone(); // Clone the material for manipulation
                           // Reset to the original emissive color stored in userData
                           material.emissive.setHex(0x3333CC);
@@ -310,7 +309,7 @@ export function coloredAZoneOnHover(intersections, color = 0x3333CC) {
         if (hoveredObject && Array.isArray(hoveredObject.material)) {
             hoveredObject.material.forEach((material) => {
                 if (isMaterialTypeFound(material, types)  && material.emissive) {
-                    console.log("zone hovered RSET -- material emissive to reset color", material)
+                    // Zone material color reset
                       // Reset to the original emissive color stored in userData
                       material.emissive.setHex(0x000000);
                 }
@@ -358,19 +357,19 @@ export function handleColorOnSelectedObject(selectedObject, hexValue=0xff0000) {
     let colors = []
 
     selectedObject.traverse(function (node) {
-        console.log("the selected node", node)
+        // Processing selected node
         
         /* Change some colors of the selected building */
         if(node.material) {
 
             if (Array.isArray(node.material)) {
-                console.log("node has material array", node)
+                // Node has material array
                 node.material.forEach((material) => {
-                    console.log("** node item ", material)
+                    // Processing node material
                     /* Ground of a building become red */
                     if (isMaterialTypeFound(material, types) ) {
                         // NO need to clone it here
-                        console.log('**** meshlambert material item', material);
+                        // Mesh lambert material processing
                         material.emissive.setHex(hexValue) 
                         hex = material.emissive.getHexString();
                         color = material.emissive.getStyle();
@@ -382,9 +381,9 @@ export function handleColorOnSelectedObject(selectedObject, hexValue=0xff0000) {
 
             /* A selected building have a transparent red added using emissive three js property */
             if(isMaterialTypeFound(node.material, types)) {
-                console.log(`**** meshstandard material transparent red item for ${selectedObject} at ${x}-${y} coordinates`, node.material);
+                // Mesh standard material processing
                 // y is z in position key of the node
-                console.log("[MESH] (f)handleColor node", node)
+                // Processing mesh node
                 const nodeX = node.position.x
                 const nodeY = node.position.z
                 if(nodeX === x && nodeY === y) {
@@ -439,7 +438,7 @@ export function resetHoveredObject(hoveredObject) {
     }
 
 export function applyHoverColor(object, color, texture="") {
-    console.log("[asset] [meshUtils] hover object applycolor : ", object, texture);
+    // Applying hover color
     
     if(!object.userData.isBuilding && !object.name === 'grass') {
         object.material = materials[texture] || new THREE.MeshLambertMaterial
@@ -463,7 +462,7 @@ export function applyHoverColor(object, color, texture="") {
         console.warn(`[asset] applyHoverColor on material alone ${object.name}`)
         object.material.emissive.setHex(0xff0000);
     }
-    console.log("[asset] hover object applycolor new object : ", object, texture);
+    // Hover color applied
 }
 
 export function resetObjectColor(object) {

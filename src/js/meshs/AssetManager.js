@@ -45,7 +45,7 @@ class AssetManager extends MeshLoader {
     #isObject3DByName(name, group, modelsObj) {
         if(Object.hasOwn(modelsObj, group)) {
             let mesh = modelsObj[group];
-            console.log("the mesh is ", mesh[name]);
+            // Checking mesh availability
             if(mesh[name]?.isObject3D) {
                 mesh = modelsObj[group][name].clone();
                 return mesh;
@@ -124,8 +124,7 @@ class AssetManager extends MeshLoader {
     }
 
     #createBuilding(x, y, z, size, meshName, objectsData) {
-        console.log("button objectsData", objectsData, meshName, size);
-        console.log("the meshs are now", this.#getModelsObj('houses'));
+        // Creating building
         const placerPos = new THREE.Vector3(x, y, z);
         const object3D = objectsData[meshName].clone();
 
@@ -184,7 +183,7 @@ class AssetManager extends MeshLoader {
                 break;
 
             default:
-                console.log(`default choice for ${buildingId}`);
+                // Default terrain choice
         }
 
         return mesh;
@@ -251,8 +250,6 @@ class AssetManager extends MeshLoader {
     }
 
     setStatusSprite(mesh, texture, name, scale = {x: 0.7, y: 0.7, z: 1}, position, visible = false) {
-        console.log(`[AssetManager] Setting status sprite: ${name}, visible: ${visible}, mesh: ${mesh.userData?.id || 'unknown'}`);
-        
         // Remove existing sprite with the same name first
         this.removeStatusSprite(mesh, name);
         
@@ -261,8 +258,6 @@ class AssetManager extends MeshLoader {
         sprite.position.set(position.x, position.y, position.z);
         sprite.visible = visible;
         mesh.add(sprite);
-        
-        console.log(`[AssetManager] Status sprite ${name} added to mesh ${mesh.userData?.id || 'unknown'}, visible: ${sprite.visible}`);
     }
 
     removeStatusSprite(mesh, name) {
@@ -270,14 +265,11 @@ class AssetManager extends MeshLoader {
             child => child.type === "Sprite" && child.name === name
         );
         if (existingSprite) {
-            console.log(`[AssetManager] Removing existing sprite: ${name} from mesh ${mesh.userData?.id || 'unknown'}`);
             mesh.remove(existingSprite);
             // Dispose of the sprite material to prevent memory leaks
             if (existingSprite.material) {
                 existingSprite.material.dispose();
             }
-        } else {
-            console.log(`[AssetManager] No existing sprite found: ${name} on mesh ${mesh.userData?.id || 'unknown'}`);
         }
     }
 

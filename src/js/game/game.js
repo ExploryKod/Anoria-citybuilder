@@ -15,6 +15,151 @@ import {
     infoPanelNoClockIcon,
     displaySpeed
 } from '../ui/nodes.js';
+import budgetManager from '../stores/BudgetManager.js';
+
+// Notification system for building placement feedback
+function showInsufficientFundsNotification(buildingType, price) {
+    const notification = document.createElement('div');
+    notification.className = 'building-notification insufficient-funds';
+    notification.innerHTML = `
+        <div class="notification-content">
+            <div class="notification-icon">💰</div>
+            <div class="notification-text">
+                <div class="notification-title">Fonds Insuffisants</div>
+                <div class="notification-message">Impossible de construire ${buildingType}. Coût : ${price}€</div>
+            </div>
+        </div>
+    `;
+    
+    // Add styles
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        color: white;
+        padding: 15px 25px;
+        border-radius: 12px;
+        box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+        z-index: 10000;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        max-width: 350px;
+        animation: slideDown 0.3s ease-out;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    `;
+    
+    // Add animation styles
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        @keyframes slideUp {
+            from {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+        }
+        .building-notification .notification-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .building-notification .notification-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .building-notification .notification-text {
+            flex: 1;
+        }
+        .building-notification .notification-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+        .building-notification .notification-message {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+    `;
+    
+    if (!document.querySelector('#building-notification-styles')) {
+        style.id = 'building-notification-styles';
+        document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideUp 0.3s ease-out';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 4000);
+}
+
+function showGenericErrorNotification(buildingType, reason) {
+    const notification = document.createElement('div');
+    notification.className = 'building-notification generic-error';
+    notification.innerHTML = `
+        <div class="notification-content">
+            <div class="notification-icon">⚠️</div>
+            <div class="notification-text">
+                <div class="notification-title">Erreur de Construction</div>
+                <div class="notification-message">Impossible de construire ${buildingType}. ${reason}</div>
+            </div>
+        </div>
+    `;
+    
+    // Add styles
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
+        color: white;
+        padding: 15px 25px;
+        border-radius: 12px;
+        box-shadow: 0 8px 25px rgba(255, 167, 38, 0.3);
+        z-index: 10000;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        max-width: 350px;
+        animation: slideDown 0.3s ease-out;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideUp 0.3s ease-out';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 4000);
+}
 
 export function createGame(housesStore, gameStore, assetManager) {
     let activeToolId = '';
@@ -25,6 +170,13 @@ export function createGame(housesStore, gameStore, assetManager) {
     let intervalId = null;
     localStorage.setItem("speed", "4000");
     displayTime.textContent = time.toString() + ' jours';
+    
+    // Initialize budget system - force reinitialize to ensure 200€ starting funds
+    budgetManager.forceReinitialize(200).then(() => {
+        console.log('Budget system initialized with 200€');
+        // Make budgetManager available globally for scene.js
+        window.budgetManager = budgetManager;
+    });
 
 
     /* Scene initialization */
@@ -33,26 +185,37 @@ export function createGame(housesStore, gameStore, assetManager) {
     /* City initialization */
     const city = createCity(16);
 
-    scene.initialize(city).then(r => console.log(r));
+    scene.initialize(city);
 
     // handler function to extract coordinate of an object I click on (data from asset js and using scene js methods)
     scene.onObjectSelected = async (selectedObject) => {
         selectedObject.info = '';
         selectedObject.name = activeToolId !== 'select-object'? activeToolId : selectedObject.name;
-        console.log('the selected Object: ', selectedObject);
+        // Object selected
 
 
         let { x, y } = selectedObject.userData;
         // location of the tile in the data model
         const tile = city.tiles[x][y];
-        console.log('Objet posé sur ce terrain: ', selectedObject.userData)
+        // Object placed on terrain
         if(activeToolId === 'bulldoze') {
             // remove building from that location
             tile.buildingId = undefined;
             await scene.update(city);
         } else if(activeToolId === "select-object") {
-            console.log(`Je sélectionne ${selectedObject.userData.id} à ${x} ${y} >> `, selectedObject.userData)
+            // Object selection
             infoObjectOverlay.classList.toggle('active');
+            
+            // Manage pointer events on 3D scene when info overlay toggles
+            const canvas = document.querySelector('canvas');
+            if (canvas) {
+                if (infoObjectOverlay.classList.contains('active')) {
+                    canvas.classList.add('pointer-events-disabled');
+                } else {
+                    canvas.classList.remove('pointer-events-disabled');
+                }
+            }
+            
             makeInfoBuildingText("", true)
 
             if(!buildingsObjects.includes(selectedObject.userData.id)) {
@@ -61,7 +224,7 @@ export function createGame(housesStore, gameStore, assetManager) {
 
 
             if(buildingsObjects.includes(selectedObject.userData.id)) {
-                console.log('******* SELECTING A BUILDING *********', selectedObject.userData.name)
+                // Building selection
                 const uniqueId = makeDbItemId(selectedObject.userData.id, selectedObject.userData.x, selectedObject.userData.y)
                 const buildingPop = await housesStore.getHouseItem(uniqueId, 'pop')
                 const houseRoads = await housesStore.getHouseItem(uniqueId, 'roads');
@@ -120,29 +283,43 @@ export function createGame(housesStore, gameStore, assetManager) {
             }
            
             if(infoObjectOverlay.classList.contains('active')) {
+                // Disable pointer events on 3D scene when info overlay is active
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    canvas.classList.add('pointer-events-disabled');
+                }
                 window.game.pause()
             } else {
+                // Re-enable pointer events on 3D scene when info overlay is not active
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    canvas.classList.remove('pointer-events-disabled');
+                }
                 window.game.play()
             }
             await scene.update(city)
         } else if(!tile.buildingId) {
-            // place building at that location
-            tile.buildingId = activeToolId;
-            console.log(`coordonnées et terrain de l\' objet posé ${tile.buildingId}: `, selectedObject.userData)
+            // Prepare building data for payment validation
             let price = 0
-
-            const houseID = tile.buildingId + '-' + selectedObject.userData.x + '-' + selectedObject.userData.y
+            const houseID = activeToolId + '-' + selectedObject.userData.x + '-' + selectedObject.userData.y
             const houseStocks = await housesStore.getHouseItem(houseID, 'stocks');
             const houseNeighbors = await housesStore.getHouseItem(houseID, 'neighbors');
             let HouseRoads  = {roads: 0};
             if(houseNeighbors) {
                 HouseRoads = {roads: houseNeighbors.filter(neighbor => neighbor.name === 'roads').length};
             }
-            price = getAssetPrice(tile.buildingId, assetsPrices) || 0
-            let funds = await gameStore.getLatestGameItemByField('funds') || 0
+            price = getAssetPrice(activeToolId, assetsPrices) || 0
+            
+            // Get funds from BudgetManager instead of game table
+            let funds = 0;
+            if (window.budgetManager) {
+                const budgetData = await window.budgetManager.getCurrentBudget();
+                funds = budgetData.funds;
+            }
+            
             const dbHouseData = {
                 name: houseID,
-                type: tile.buildingId,
+                type: activeToolId,
                 neighbors: [],
                 pop: 0,
                 stocks : houseStocks ? houseStocks : {food: 0, cabbage : 0, wheat: 0, carrot: 0},
@@ -160,9 +337,32 @@ export function createGame(housesStore, gameStore, assetManager) {
                 y : selectedObject.userData.y,
             }
 
-            await housesStore.addHouseAndPay(dbHouseData);
-            console.log("GAME - add house and pay complete")
-            await scene.update(city);
+            // Validate payment BEFORE placing building
+            const paymentResult = await housesStore.addHouseAndPay(dbHouseData);
+            
+            if (paymentResult.success) {
+                // Payment successful - place building visually
+                tile.buildingId = activeToolId;
+                console.log(`Building ${activeToolId} placed successfully at (${selectedObject.userData.x}, ${selectedObject.userData.y})`);
+                await scene.update(city);
+                
+                // Resume the game after successful building placement
+                if (window.game) {
+                    window.game.play();
+                }
+            } else {
+                // Payment failed - show error message
+                console.warn(`Failed to place building: ${paymentResult.reason}`);
+                
+                // Show beautiful popup notification
+                if (paymentResult.reason === 'insufficient_funds') {
+                    showInsufficientFundsNotification(activeToolId, price);
+                } else {
+                    showGenericErrorNotification(activeToolId, paymentResult.reason);
+                }
+                
+                // Building is not placed visually, so no cleanup needed
+            }
         }
     }
 
@@ -178,6 +378,13 @@ export function createGame(housesStore, gameStore, assetManager) {
     infoObjectCloseBtn.addEventListener('click', () => {
         if(infoObjectOverlay.classList.contains('active')) {
             infoObjectOverlay.classList.remove('active')
+            
+            // Re-enable pointer events on 3D scene when info overlay closes
+            const canvas = document.querySelector('canvas');
+            if (canvas) {
+                canvas.classList.remove('pointer-events-disabled');
+            }
+            
             window.game.play()
         }
     })
@@ -192,14 +399,14 @@ export function createGame(housesStore, gameStore, assetManager) {
 
         pause() {
            isPause = true;
-            console.log('--pause--') 
+            // Game paused 
             infoPanelClockIcon.style.display = 'none'
             infoPanelNoClockIcon.style.display = 'block'
             displayTime.textContent = 'pause'
         },
 
         play() {
-            console.log('--play--')
+            // Game playing
             isPause = false;
             infoPanelClockIcon.style.display = 'block'
             infoPanelNoClockIcon.style.display = 'none'

@@ -62,7 +62,7 @@ gltfloader.load(
         gltf.asset; // Object
 
         gltf.scene.traverse(function (child) {
-            // console.log(child);
+            // Processing child mesh
             if (child instanceof THREE.Mesh) {
                 // Market Stall Red.002_Material.005_0
                 assetFullName = child.name
@@ -140,7 +140,7 @@ gltfloader.load(
     // called while loading is progressing
     function ( xhr ) {
 
-        // console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+        // Loading progress
 
     },
     // called when loading has errors

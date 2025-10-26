@@ -81,6 +81,6 @@ function getVicinityTile(x, y, tiles, size) {
     if (y < size - 1) {
         neighbors.push(getTile(x, y + 1, tiles, size));
     }
-    console.log('Vicinity tiles ', neighbors)
+    // Vicinity tiles processed
     return neighbors;
 }

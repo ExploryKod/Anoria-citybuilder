@@ -156,6 +156,24 @@
             </svg>
         </button>
 
+        <button type="button" id="budget-btn" data-toolid="budget" class="toolbar-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-3">
+                <path d="M3 3v18h18"/>
+                <path d="M18 17V9"/>
+                <path d="M13 17V5"/>
+                <path d="M8 17v-3"/>
+            </svg>
+        </button>
+
+        <button type="button" id="loans-btn" data-toolid="loans" class="toolbar-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-hand-coins">
+                <path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/>
+                <path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/>
+                <path d="m2 16 6 6"/>
+                <circle cx="16" cy="9" r="2.9"/>
+                <circle cx="6" cy="5" r="3"/>
+            </svg>
+        </button>
 
       </section>
 
@@ -201,25 +219,6 @@
                     </article>
                 </section>
 
-                <section class="info-box">
-                    <article class="food-box">
-                 <span class="food-icon">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-apple">
-                    <path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z"/>
-                    <path d="M10 2c1 .5 2 2 2 5"/>
-                   </svg>
-                </span>
-                        <div class="display-food"></div>
-                    </article>
-                    <article class="starve-box">
-                    <span class="bone-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bone">
-                            <path d="M17 10c.7-.7 1.69 0 2.5 0a2.5 2.5 0 1 0 0-5 .5.5 0 0 1-.5-.5 2.5 2.5 0 1 0-5 0c0 .81.7 1.8 0 2.5l-7 7c-.7.7-1.69 0-2.5 0a2.5 2.5 0 0 0 0 5c.28 0 .5.22.5.5a2.5 2.5 0 1 0 5 0c0-.81-.7-1.8 0-2.5Z"/>
-                        </svg>
-                    </span>
-                        <div class="display-starve"></div>
-                    </article>
-                </section>
 
 
                 <section class="info-box">
@@ -232,13 +231,21 @@
                   </span>
                         <div class="display-funds"></div>
                     </article>
-
-                    <article class="debt-box">
-                <span class="debt-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-landmark"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/>
-                    </svg>
-                </span>
-                        <div class="display-debt"></div>
+                </section>
+                <section class="info-box realtime-budget-box"  id="realtime-budget-btn" >
+                    <article class="budget-box">
+                        <div>Mon Budget</div>
+                    </article>
+                </section>
+                <section class="info-box budget-states-box" id="budget-states-btn">
+                    <article class="budget-box">
+                        <span class="budget-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 3v18h18"/>
+                                <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
+                            </svg>
+                        </span>
+                        <div>États Budget</div>
                     </article>
                 </section>
             </div>
@@ -266,6 +273,541 @@
     <a title="crédits" href="https://github.com/ExploryKod/Anoria/blob/main/src/credits.md" >Crédits</a>
     <span>Projet de Amaury Franssen - 2024 &copy; Tout droit réservé </span>
 </footer>
+
+<!-- Real-time Budget Popup -->
+<div id="realtime-budget-panel" class="realtime-budget-panel">
+    <div class="realtime-budget-wrapper">
+        <div class="realtime-budget-header">
+            <h3>💰 Budget en Temps Réel</h3>
+            <div class="realtime-budget-close-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
+                    <path d="m18 6-12 12"/>
+                    <path d="m6 6 12 12"/>
+                </svg>
+            </div>
+        </div>
+        <div class="realtime-budget-content">
+            <!-- Fonds principaux -->
+            <div class="realtime-funds-display">
+                <div class="realtime-funds-label">Fonds Disponibles</div>
+                <div class="realtime-funds-amount" id="realtime-funds">0€</div>
+            </div>
+
+            <!-- Santé financière -->
+            <div class="realtime-health-section">
+                <div class="realtime-health-label">État Financier</div>
+                <div class="realtime-health-status" id="realtime-health-status">En cours...</div>
+                <div class="realtime-health-message" id="realtime-health-message">Analyse en cours...</div>
+            </div>
+
+            <!-- Détails financiers -->
+            <!-- Informations générales -->
+            <div class="realtime-info-section">
+                <div class="realtime-info-grid">
+                    <div class="realtime-info-item">
+                        <div class="realtime-info-label">Tour Actuel</div>
+                        <div class="realtime-info-value" id="realtime-turn"><span>0</span></div>
+                    </div>
+                    <div class="realtime-info-item">
+                        <div class="realtime-info-label">Population</div>
+                        <div class="realtime-info-value" id="realtime-population"><span>0</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Détail des finances -->
+            <div class="realtime-details-section">
+                <div class="realtime-details-grid">
+                    <div class="realtime-detail-item">
+                        <div class="realtime-detail-label">Revenus Totaux</div>
+                        <div class="realtime-detail-value" id="realtime-income">0€</div>
+                    </div>
+                    <div class="realtime-detail-item">
+                        <div class="realtime-detail-label">Dépenses Totales</div>
+                        <div class="realtime-detail-value" id="realtime-expenses">0€</div>
+                    </div>
+                    <div class="realtime-detail-item">
+                        <div class="realtime-detail-label">Flux Net</div>
+                        <div class="realtime-detail-value" id="realtime-netflow">0€</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Détail des revenus -->
+            <div class="realtime-revenue-section">
+                <div class="realtime-revenue-label">Détail des Revenus</div>
+                <div class="realtime-revenue-grid">
+                    <div class="realtime-revenue-item">
+                        <div class="realtime-revenue-source">🏛️ Impôts (10€/hab)</div>
+                        <div class="realtime-revenue-amount" id="realtime-taxes">0€</div>
+                    </div>
+                    <div class="realtime-revenue-item">
+                        <div class="realtime-revenue-source">💰 Autres revenus</div>
+                        <div class="realtime-revenue-amount" id="realtime-other-income">0€</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Détail des dépenses -->
+            <div class="realtime-expense-section">
+                <div class="realtime-expense-label">Détail des Dépenses</div>
+                <div class="realtime-expense-grid">
+                    <div class="realtime-expense-item">
+                        <div class="realtime-expense-source">🏗️ Maintenance bâtiments (2€/bât)</div>
+                        <div class="realtime-expense-amount" id="realtime-building-maintenance">0€</div>
+                    </div>
+                    <div class="realtime-expense-item">
+                        <div class="realtime-expense-source">💰 Intérêts dettes</div>
+                        <div class="realtime-expense-amount" id="realtime-loan-interest">0€</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Détail du calcul des intérêts des dettes -->
+            <div class="realtime-loan-interest-detail-section">
+                <div class="realtime-loan-interest-detail-label">📊 Calcul des Intérêts des Dettes</div>
+                <div class="realtime-loan-interest-detail-content" id="realtime-loan-interest-detail">
+                    <div class="no-loans-message">
+                        <span class="no-loans-icon">📭</span>
+                        <span class="no-loans-text">Aucun prêt actif</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Investissements -->
+            <div class="realtime-investment-section">
+                <div class="realtime-investment-label">Investissements</div>
+                <div class="realtime-investment-grid">
+                    <div class="realtime-investment-item">
+                        <div class="realtime-investment-source">🏠 Immobilisations corporelles</div>
+                        <div class="realtime-investment-amount" id="realtime-investments">0€</div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="realtime-update-info">
+                <small>Mise à jour en temps réel</small>
+            </div>
+            
+            <!-- Starvation alerts removed -->
+        </div>
+    </div>
+    </div>
+
+
+    <!-- Budget Panel -->
+    <div id="budget-panel" class="budget-panel">
+        <div class="budget-panel-wrapper">
+            <div class="budget-panel-header">
+                <h2>💰 Bilan</h2>
+                <div class="budget-health-indicator" id="budget-health-indicator">
+                    <span class="health-status">Finance saine</span>
+                </div>
+                <div class="budget-panel-close-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="m15 9-6 6"/>
+                        <path d="m9 9 6 6"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="budget-panel-content">
+                <!-- Bilan Comptable -->
+                <div class="balance-sheet">
+                    <div class="balance-sheet-header">
+                        <div class="balance-sheet-date" id="balance-sheet-date">Tour 0 (état du passif et de l'actif au 0e tour)</div>
+                    </div>
+                    
+                    <!-- ACTIF -->
+                    <div class="balance-sheet-section">
+                        <h4 class="balance-sheet-title">ACTIF</h4>
+                        
+                        <!-- Actif Immobilisé -->
+                        <div class="balance-sheet-group">
+                            <h5 class="balance-sheet-subtitle">ACTIF IMMOBILISÉ</h5>
+                            
+                            <!-- Immobilisations Corporelles Brutes -->
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">🏗️ Immobilisations corporelles brutes</div>
+                                <div class="balance-sheet-value" id="total-buildings-gross-value">0€</div>
+                            </div>
+                            
+                            <!-- Amortissements -->
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">📉 Amortissements</div>
+                                <div class="balance-sheet-value" id="total-depreciation-value">0€</div>
+                            </div>
+                            
+                            <!-- Immobilisations Corporelles Nettes -->
+                            <div class="balance-sheet-item balance-sheet-net">
+                                <div class="balance-sheet-label">🏗️ Immobilisations corporelles nettes</div>
+                                <div class="balance-sheet-value" id="total-buildings-net-value">0€</div>
+                            </div>
+                            
+                            <!-- Détail des bâtiments -->
+                            <div class="balance-sheet-detail">
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">🏠 Logements</div>
+                                    <div class="balance-sheet-value" id="total-houses-value">0€</div>
+                                </div>
+                                <div class="balance-sheet-subdetail">
+                                    <div class="balance-sheet-label">• Maisons populaires (rouge)</div>
+                                    <div class="balance-sheet-value" id="red-houses-value">0€</div>
+                                </div>
+                                <div class="balance-sheet-subdetail">
+                                    <div class="balance-sheet-label">• Maisons moyennes (bleu)</div>
+                                    <div class="balance-sheet-value" id="blue-houses-value">0€</div>
+                                </div>
+                                <div class="balance-sheet-subdetail">
+                                    <div class="balance-sheet-label">• Maisons aisées (violet)</div>
+                                    <div class="balance-sheet-value" id="purple-houses-value">0€</div>
+                                </div>
+                            </div>
+                            
+                            <div class="balance-sheet-detail">
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">🌾 Exploitations agricoles</div>
+                                    <div class="balance-sheet-value" id="total-farms-value">0€</div>
+                                </div>
+                                <div class="balance-sheet-subdetail">
+                                    <div class="balance-sheet-label">• Champs de choux</div>
+                                    <div class="balance-sheet-value" id="cabbage-fields-value">0€</div>
+                                </div>
+                                <div class="balance-sheet-subdetail">
+                                    <div class="balance-sheet-label">• Champs de blé</div>
+                                    <div class="balance-sheet-value" id="wheat-fields-value">0€</div>
+                                </div>
+                                <div class="balance-sheet-subdetail">
+                                    <div class="balance-sheet-label">• Champs de carottes</div>
+                                    <div class="balance-sheet-value" id="carrot-fields-value">0€</div>
+                                </div>
+                            </div>
+                            
+                            <div class="balance-sheet-detail">
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">🏪 Commerces</div>
+                                    <div class="balance-sheet-value" id="total-markets-value">0€</div>
+                                </div>
+                                <div class="balance-sheet-subdetail">
+                                    <div class="balance-sheet-label">• Marchés de nourriture</div>
+                                    <div class="balance-sheet-value" id="food-markets-value">0€</div>
+                                </div>
+                            </div>
+                            
+                            <div class="balance-sheet-detail">
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">🛣️ Infrastructures</div>
+                                    <div class="balance-sheet-value" id="total-roads-value">0€</div>
+                                </div>
+                                <div class="balance-sheet-subdetail">
+                                    <div class="balance-sheet-label">• Réseau routier</div>
+                                    <div class="balance-sheet-value" id="roads-value">0€</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Actif Circulant -->
+                        <div class="balance-sheet-group">
+                            <h5 class="balance-sheet-subtitle">ACTIF CIRCULANT</h5>
+                            
+                            <!-- Stocks Bruts -->
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">📦 Stocks bruts</div>
+                                <div class="balance-sheet-value" id="inventory-gross-value">0€</div>
+                            </div>
+                            
+                            <!-- Provisions pour dépréciation des stocks -->
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">📉 Provisions stocks</div>
+                                <div class="balance-sheet-value" id="inventory-provisions-value">0€</div>
+                            </div>
+                            
+                            <!-- Stocks Nets -->
+                            <div class="balance-sheet-item balance-sheet-net">
+                                <div class="balance-sheet-label">📦 Stocks nets</div>
+                                <div class="balance-sheet-value" id="inventory-net-value">0€</div>
+                            </div>
+                            
+                            <!-- Créances -->
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">📋 Créances clients</div>
+                                <div class="balance-sheet-value" id="receivables-value">0€</div>
+                            </div>
+                            
+                            <!-- Trésorerie -->
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">💰 Trésorerie</div>
+                                <div class="balance-sheet-value" id="cash-value">0€</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Total Actif -->
+                        <div class="balance-sheet-total">
+                            <div class="balance-sheet-label">TOTAL ACTIF</div>
+                            <div class="balance-sheet-value" id="total-assets">0€</div>
+                        </div>
+                    </div>
+                    
+                    <!-- PASSIF -->
+                    <div class="balance-sheet-section">
+                        <h4 class="balance-sheet-title">PASSIF</h4>
+                        
+                        <!-- Capitaux Propres -->
+                        <div class="balance-sheet-group">
+                            <h5 class="balance-sheet-subtitle">CAPITAUX PROPRES</h5>
+                            
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">🏛️ Capital municipal</div>
+                                <div class="balance-sheet-value" id="municipal-capital">200€</div>
+                            </div>
+                            
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">📈 Réserves</div>
+                                <div class="balance-sheet-value" id="reserves">0€</div>
+                            </div>
+                            
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">💰 Résultat net</div>
+                                <div class="balance-sheet-value" id="net-result">0€</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Provisions pour Risques et Charges -->
+                        <div class="balance-sheet-group">
+                            <h5 class="balance-sheet-subtitle">PROVISIONS POUR RISQUES ET CHARGES</h5>
+                            
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">⚠️ Provisions pour risques</div>
+                                <div class="balance-sheet-value" id="risk-provisions">0€</div>
+                            </div>
+                            
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">🔧 Provisions pour charges</div>
+                                <div class="balance-sheet-value" id="charge-provisions">0€</div>
+                            </div>
+                        </div>
+                        
+                    <!-- Dettes -->
+                    <div class="balance-sheet-group">
+                        <h5 class="balance-sheet-subtitle">DETTES</h5>
+                        
+                        <div class="balance-sheet-item">
+                            <div class="balance-sheet-label">🏦 Emprunts bancaires</div>
+                            <div class="balance-sheet-value" id="bank-loans-debt">0€</div>
+                        </div>
+                        
+                        <div class="balance-sheet-item">
+                            <div class="balance-sheet-label">🏪 Emprunts commerciaux</div>
+                            <div class="balance-sheet-value" id="commercial-loans-debt">0€</div>
+                        </div>
+                        
+                        <div class="balance-sheet-item">
+                            <div class="balance-sheet-label">⚡ Charges à payer</div>
+                            <div class="balance-sheet-value" id="accrued-expenses">0€</div>
+                        </div>
+                        
+                        <div class="balance-sheet-item">
+                            <div class="balance-sheet-label">🏪 Dettes fournisseurs</div>
+                            <div class="balance-sheet-value" id="supplier-debts">0€</div>
+                        </div>
+                        
+                        <div class="balance-sheet-item">
+                            <div class="balance-sheet-label">🏛️ Dettes sociales et fiscales</div>
+                            <div class="balance-sheet-value" id="social-fiscal-debts">0€</div>
+                        </div>
+                    </div>
+                        
+                        <!-- Total Passif -->
+                        <div class="balance-sheet-total">
+                            <div class="balance-sheet-label">TOTAL PASSIF</div>
+                            <div class="balance-sheet-value" id="total-liabilities">0€</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loans Panel -->
+    <div id="loans-panel" class="loans-panel">
+        <div class="loans-panel-wrapper">
+            <div class="loans-panel-header">
+                <h2>🏦 Prêts Bancaires</h2>
+                <div class="loans-health-indicator" id="loans-health-indicator">
+                    <span class="health-status">Finance saine</span>
+                </div>
+                <div class="loans-panel-close-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="m15 9-6 6"/>
+                        <path d="m9 9 6 6"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="loans-panel-content">
+                <!-- Loan System -->
+                <div class="loans-system">
+                    <div class="loans-header">
+                        <h3>💰 Système de Prêts</h3>
+                        <div class="loans-date" id="loans-date">Tour 0</div>
+                    </div>
+                    
+                    <!-- Financial Health Impact -->
+                    <div class="loans-health-section">
+                        <h4>📊 Impact de votre santé financière</h4>
+                        <div class="health-impact" id="health-impact">
+                            <div class="health-status-good">
+                                <span class="health-icon">✅</span>
+                                <span class="health-text">Finance saine - Taux préférentiels disponibles</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Available Loans -->
+                    <div class="loans-available">
+                        <h4>🏦 Prêts Disponibles</h4>
+                        
+                        <!-- Bank Loans -->
+                        <div class="loan-category">
+                            <h5>🏛️ Prêts Bancaires</h5>
+                            <div class="loan-options" id="bank-loans">
+                                <div class="loan-option">
+                                    <div class="loan-info">
+                                        <div class="loan-name">Prêt Standard</div>
+                                        <div class="loan-description">Prêt classique pour projets municipaux</div>
+                                    </div>
+                                    <div class="loan-details">
+                                        <div class="loan-amount">Montant: 100€ - 1000€</div>
+                                        <div class="loan-rate" id="bank-rate">Taux: 5%</div>
+                                        <div class="loan-duration">Durée: 10-20 tours</div>
+                                    </div>
+                                    <button class="loan-select-btn" data-loan-type="bank">Contracter</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Commercial Loans -->
+                        <div class="loan-category">
+                            <h5>🏪 Prêts Commerciaux</h5>
+                            <div class="loan-options" id="commercial-loans">
+                                <div class="loan-option">
+                                    <div class="loan-info">
+                                        <div class="loan-name">Prêt Commercial</div>
+                                        <div class="loan-description">Prêt pour développement économique</div>
+                                    </div>
+                                    <div class="loan-details">
+                                        <div class="loan-amount">Montant: 200€ - 2000€</div>
+                                        <div class="loan-rate" id="commercial-rate">Taux: 7%</div>
+                                        <div class="loan-duration">Durée: 15-30 tours</div>
+                                    </div>
+                                    <button class="loan-select-btn" data-loan-type="commercial">Contracter</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Loan Form -->
+                    <div class="loan-form-section" id="loan-form-section" style="display: none;">
+                        <h4>📝 Contrat de Prêt</h4>
+                        <div class="loan-form">
+                            <div class="loan-input-group">
+                                <label for="loan-amount-input">Montant du prêt (€)</label>
+                                <input type="number" id="loan-amount-input" min="100" max="2000" step="50" value="500">
+                            </div>
+                            
+                            <div class="loan-input-group">
+                                <label for="loan-duration-input">Durée (tours)</label>
+                                <select id="loan-duration-input">
+                                    <option value="10">10 tours</option>
+                                    <option value="15">15 tours</option>
+                                    <option value="20">20 tours</option>
+                                    <option value="25">25 tours</option>
+                                    <option value="30">30 tours</option>
+                                </select>
+                            </div>
+
+                            <div class="loan-summary">
+                                <div class="loan-summary-item">
+                                    <span>Montant emprunté :</span>
+                                    <span id="loan-principal-display">500€</span>
+                                </div>
+                                <div class="loan-summary-item">
+                                    <span>Taux d'intérêt :</span>
+                                    <span id="loan-rate-display">5%</span>
+                                </div>
+                                <div class="loan-summary-item">
+                                    <span>Intérêts totaux :</span>
+                                    <span id="loan-interest-display">25€</span>
+                                </div>
+                                <div class="loan-summary-item total">
+                                    <span>Total à rembourser :</span>
+                                    <span id="loan-total-display">525€</span>
+                                </div>
+                            </div>
+
+                            <div class="loan-form-buttons">
+                                <button class="loan-cancel-btn" id="loan-cancel-btn">Annuler</button>
+                                <button class="loan-contract-btn" id="loan-contract-btn">Contracter le prêt</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Active Loans -->
+                    <div class="active-loans-section">
+                        <h4>📋 Prêts Actifs</h4>
+                        <div class="active-loans" id="active-loans-list">
+                            <div class="no-loans">
+                                <span class="no-loans-icon">📭</span>
+                                <span class="no-loans-text">Aucun prêt actif</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Budget States Popup -->
+<div id="budget-states-panel" class="budget-states-panel">
+    <div class="budget-states-wrapper">
+        <div class="budget-states-header">
+            <h3>📊 États de Budget</h3>
+            <div class="budget-states-close-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
+                    <path d="M18 6L6 18"/>
+                    <path d="M6 6l12 12"/>
+                </svg>
+            </div>
+        </div>
+        
+        <div class="budget-states-content">
+            <!-- Filter buttons for different periods -->
+            <div class="budget-states-filters">
+                <button class="budget-filter-btn active" data-period="3">3 jours</button>
+                <button class="budget-filter-btn" data-period="6">6 jours</button>
+                <button class="budget-filter-btn" data-period="9">9 jours</button>
+                <button class="budget-filter-btn" data-period="all">Tous</button>
+            </div>
+            
+            <!-- Budget states list -->
+            <div class="budget-states-list" id="budget-states-list">
+                <div class="budget-state-loading">
+                    <div class="loading-spinner"></div>
+                    <p>Chargement des états de budget...</p>
+                </div>
+            </div>
+            
+            <!-- Summary section -->
+            <div class="budget-states-summary" id="budget-states-summary">
+                <h4>Résumé de la période</h4>
+                <div class="summary-content" id="summary-content">
+                    <p>Aucune donnée disponible</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script type="module" src="/src/main.js"></script>
 <script type="module" src="/src/js/game/game.js"></script>
