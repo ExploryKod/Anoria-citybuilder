@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { textures } from './data.js';
-import MeshLoader from "./MeshLoader.js";
+import MeshLoader from "./MeshLoaderOptimized.js";
 
 class AssetManager extends MeshLoader {
     #geometry = new THREE.BoxGeometry(1, 1, 1);
