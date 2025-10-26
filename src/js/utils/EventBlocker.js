@@ -27,7 +27,8 @@ class EventBlocker {
         const {
             blockCanvas = true,
             canvasSelectors = ['canvas'],
-            onBlock = null
+            onBlock = null,
+            excludeSelectors = []
         } = options;
 
         this.blockedEvents = [...events];

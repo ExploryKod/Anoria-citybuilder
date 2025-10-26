@@ -25,38 +25,38 @@ export const textures = Object.freeze({
 
 export const assetsPrices = Object.freeze({
     // Zones
-    'grass': { price: 0, category: 'zones' },
-    'roads': { price: 5, category: 'zones' },
+    'grass': { price: 0, category: 'zones', gridSize: 1 },
+    'roads': { price: 5, category: 'zones', gridSize: 1 },
 
     // Houses
-    'House-Blue': { price: 10, category: 'houses' },
-    'House-Red': { price: 10, category: 'houses' },
-    'House-Purple': { price: 10, category: 'houses' },
-    'House-2Story': { price: 20, category: 'houses' },
+    'House-Blue': { price: 10, category: 'houses', gridSize: 1 },
+    'House-Red': { price: 10, category: 'houses', gridSize: 1 },
+    'House-Purple': { price: 10, category: 'houses', gridSize: 1 },
+    'House-2Story': { price: 20, category: 'houses', gridSize: 1 },
 
     // Tombs
-    'Tombstone-1': { price: 2, category: 'tombs' },
-    'Tombstone-2': { price: 4, category: 'tombs' },
-    'Tombstone-3': { price: 8, category: 'tombs' },
+    'Tombstone-1': { price: 2, category: 'tombs', gridSize: 1 },
+    'Tombstone-2': { price: 4, category: 'tombs', gridSize: 1 },
+    'Tombstone-3': { price: 8, category: 'tombs', gridSize: 1 },
 
     // Farms
-    'Farm-Wheat': { price: 10, category: 'farms' },
-    'Farm-Carrot': { price: 20, category: 'farms' },
-    'Farm-Cabbage': { price: 30, category: 'farms' },
-    'Windmill-001': { price: 50, category: 'farms' },
-    'Barn-001': { price: 40, category: 'farms' },
+    'Farm-Wheat': { price: 10, category: 'farms', gridSize: 1 },
+    'Farm-Carrot': { price: 20, category: 'farms', gridSize: 1 },
+    'Farm-Cabbage': { price: 30, category: 'farms', gridSize: 1 },
+    'Windmill-001': { price: 50, category: 'farms', gridSize: 2 },
+    'Barn-001': { price: 40, category: 'farms', gridSize: 1 },
 
     // Markets
-    'Market-Stall': { price: 10, category: 'markets' },
+    'Market-Stall': { price: 10, category: 'markets', gridSize: 1 },
     
     // Infrastructure
-    'Well-001': { price: 15, category: 'infrastructure' },
-    'Fountain-001': { price: 25, category: 'infrastructure' },
-    'Streetlight-001': { price: 5, category: 'infrastructure' },
+    'Well-001': { price: 15, category: 'infrastructure', gridSize: 1 },
+    'Fountain-001': { price: 25, category: 'infrastructure', gridSize: 1 },
+    'Streetlight-001': { price: 5, category: 'infrastructure', gridSize: 1 },
     
     // Public Buildings
-    'Chapel-001': { price: 60, category: 'public' },
-    'Church-002': { price: 100, category: 'public' }
+    'Chapel-001': { price: 60, category: 'public', gridSize: 2 },
+    'Church-002': { price: 100, category: 'public', gridSize: 3 }
 });
 
 export const wantedHouses = [

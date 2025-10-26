@@ -453,6 +453,36 @@ getAssetPrice('house', null);             // Returns null, warns about invalid a
 getAssetPrice(undefined, prices);         // Returns undefined, warns about missing buildingId
 */
 
+// Check if an area is available for a building of the specified size
+export function isAreaAvailableForBuilding(city, x, y, gridSize) {
+    if (gridSize === undefined || gridSize === null || gridSize < 1) {
+        console.warn('[isAreaAvailableForBuilding] Invalid gridSize:', gridSize);
+        return false;
+    }
+    
+    // Check if all tiles in the area are within bounds and unoccupied
+    for (let dx = 0; dx < gridSize; dx++) {
+        for (let dy = 0; dy < gridSize; dy++) {
+            const checkX = x + dx;
+            const checkY = y + dy;
+            
+            // Check bounds
+            if (checkX >= city.size || checkY >= city.size) {
+                return false;
+            }
+            
+            // Check if tile is occupied
+            if (city.tiles[checkX] && city.tiles[checkX][checkY]) {
+                if (city.tiles[checkX][checkY].buildingId !== undefined) {
+                    return false;
+                }
+            }
+        }
+    }
+    
+    return true;
+}
+
 // Get all buildings in a category
 export function getAssetsByCategory(category, assets) {
     return Object.entries(assets)

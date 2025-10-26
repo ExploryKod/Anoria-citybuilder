@@ -537,22 +537,39 @@ export function createScene(housesStore, gameStore, assetManager) {
 
                   // if data model has changed as user add a new building, update the mesh 
             if(newBuildingId && (newBuildingId !== currentBuildingId)) {
-                //remove the initial building if needed
-                let isExistingBuilding;
-                if(currentBuildingId) {
-                    isExistingBuilding = housesStore.getHouse(currentBuildingId);
+                // Check if this is the origin tile for multi-tile buildings
+                // We only create a building at the origin (top-left) tile
+                const buildingData = assetsPrices[newBuildingId];
+                const gridSize = buildingData?.gridSize || 1;
+                
+                let isOriginTile = true;
+                if (gridSize > 1) {
+                    // Check if there's already a building at (x-1, y) or (x, y-1) with the same ID
+                    // If yes, this is NOT the origin tile
+                    if ((x > 0 && city.tiles[x-1][y].buildingId === newBuildingId) ||
+                        (y > 0 && city.tiles[x][y-1].buildingId === newBuildingId)) {
+                        isOriginTile = false;
+                    }
                 }
+                
+                // Only create the mesh if this is the origin tile
+                if (isOriginTile) {
+                    //remove the initial building if needed
+                    let isExistingBuilding;
+                    if(currentBuildingId) {
+                        isExistingBuilding = housesStore.getHouse(currentBuildingId);
+                    }
 
-                // Checking building existence
-                if(!isExistingBuilding) {
-                    scene.remove(buildings[x][y]);
-                    buildings[x][y] = assetManager.createAsset(newBuildingId, x, y);
-                    scene.add(buildings[x][y]);
+                    // Checking building existence
+                    if(!isExistingBuilding) {
+                        scene.remove(buildings[x][y]);
+                        buildings[x][y] = assetManager.createAsset(newBuildingId, x, y);
+                        scene.add(buildings[x][y]);
+                    }
+
+                    // Add the new building
+                    // Building added to map
                 }
-
-                // Add the new building
-                // Building added to map
-  
                 }
 
               // -- FIN DE LA SOUS-BOUCLE Y ----
@@ -761,6 +778,12 @@ export function createScene(housesStore, gameStore, assetManager) {
     const objectsNames = ['grass', 'roads', 'House-Red', 'House-Purple', 'House-Blue', 'Market-Stall']
 
     function onMouseDown(event){
+        // Block interaction if a popup is open
+        if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+            console.log('Mouse interaction blocked: popup is open');
+            return;
+        }
+        
         camera.onMouseDown(event);
         // Raycasting need y and x axis as + on the terrain (plan) (y-1,y1,x1,x-1)
         mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
@@ -790,10 +813,20 @@ export function createScene(housesStore, gameStore, assetManager) {
     }
 
     function onMouseUp(event){
+        // Block interaction if a popup is open
+        if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+            return;
+        }
+        
         camera.onMouseUp(event);
     }
 
 function onMouseMove(event) {
+    // Block interaction if a popup is open
+    if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+        return;
+    }
+    
     camera.onMouseMove(event);
 
     // Update the mouse coordinates for raycasting

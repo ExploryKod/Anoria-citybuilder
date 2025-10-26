@@ -1,10 +1,9 @@
 /**
  * PopupManager - Gestionnaire unifié pour toutes les popups
- * Utilise EventBlocker pour gérer les événements de manière cohérente
+ * Utilise pointer-events CSS pour désactiver les interactions avec le canvas 3D
  */
 class PopupManager {
     constructor() {
-        this.eventBlocker = new EventBlocker();
         this.activePopups = new Set();
         this.popupConfigs = new Map();
         
@@ -174,8 +173,16 @@ class PopupManager {
             // Appliquer la configuration du popup
             const config = this.popupConfigs.get(popupId);
             if (config) {
-                if (config.shouldBlockEvents) {
-                    this.eventBlocker.blockEvents(config.eventsToBlock, config.canvasSelectors);
+                // Désactiver les pointer-events sur le canvas
+                if (config.canvasSelectors && config.canvasSelectors.length > 0) {
+                    config.canvasSelectors.forEach(selector => {
+                        const elements = document.querySelectorAll(selector);
+                        elements.forEach(element => {
+                            if (!element.classList.contains('pointer-events-disabled')) {
+                                element.classList.add('pointer-events-disabled');
+                            }
+                        });
+                    });
                 }
                 if (config.shouldPauseGame && window.game && typeof window.game.pause === 'function') {
                     window.game.pause();
@@ -196,14 +203,16 @@ class PopupManager {
         console.log(`PopupManager: Opening ${popupId} with config:`, config);
         this.activePopups.add(popupId);
 
-        // Bloquer les événements si nécessaire
-        if (config.shouldBlockEvents && config.eventsToBlock.length > 0) {
-            this.eventBlocker.blockEvents(config.eventsToBlock, {
-                blockCanvas: config.canvasSelectors.length > 0,
-                canvasSelectors: config.canvasSelectors,
-                onBlock: (eventType, e) => {
-                    console.log(`${popupId} blocked event: ${eventType}`);
-                }
+        // Désactiver les pointer-events sur le canvas
+        if (config.canvasSelectors && config.canvasSelectors.length > 0) {
+            config.canvasSelectors.forEach(selector => {
+                const elements = document.querySelectorAll(selector);
+                elements.forEach(element => {
+                    if (!element.classList.contains('pointer-events-disabled')) {
+                        element.classList.add('pointer-events-disabled');
+                        console.log(`Added pointer-events-disabled to ${selector}`);
+                    }
+                });
             });
         }
 
@@ -232,17 +241,17 @@ class PopupManager {
 
         this.activePopups.delete(popupId);
 
-        // Réactiver les événements si nécessaire
-        if (config.shouldBlockEvents && this.eventBlocker.isEventsBlocked()) {
-            // Vérifier s'il y a d'autres popups actives qui nécessitent le blocage
-            const hasOtherBlockingPopups = Array.from(this.activePopups).some(id => {
-                const otherConfig = this.popupConfigs.get(id);
-                return otherConfig && otherConfig.shouldBlockEvents;
+        // Réactiver les pointer-events sur le canvas
+        if (config.canvasSelectors && config.canvasSelectors.length > 0) {
+            config.canvasSelectors.forEach(selector => {
+                const elements = document.querySelectorAll(selector);
+                elements.forEach(element => {
+                    if (element.classList.contains('pointer-events-disabled')) {
+                        element.classList.remove('pointer-events-disabled');
+                        console.log(`Removed pointer-events-disabled from ${selector}`);
+                    }
+                });
             });
-
-            if (!hasOtherBlockingPopups) {
-                this.eventBlocker.unblockEvents();
-            }
         }
 
         // Reprendre le jeu si nécessaire
@@ -326,7 +335,13 @@ class PopupManager {
      */
     cleanup() {
         this.closeAllPopups();
-        this.eventBlocker.cleanup();
+        // Réactiver les pointer-events sur tous les canvas si nécessaire
+        const canvasElements = document.querySelectorAll('canvas');
+        canvasElements.forEach(element => {
+            if (element.classList.contains('pointer-events-disabled')) {
+                element.classList.remove('pointer-events-disabled');
+            }
+        });
         console.log('PopupManager cleanup completed');
     }
 
@@ -334,10 +349,11 @@ class PopupManager {
      * S'assurer que les événements ne sont pas bloqués au démarrage
      */
     ensureEventsUnblocked() {
-        if (this.eventBlocker.isEventsBlocked()) {
-            console.log('Events were blocked at startup, unblocking them');
-            this.eventBlocker.unblockEvents();
-        }
+        // Vérifier et réactiver les pointer-events si nécessaire
+        const canvasElements = document.querySelectorAll('canvas.pointer-events-disabled');
+        canvasElements.forEach(element => {
+            element.classList.remove('pointer-events-disabled');
+        });
     }
 }
 

@@ -64,7 +64,7 @@ class MeshLoaderOptimized {
         'farms': { size: 1 },
         'markets': { size: 0.7 },
         'infrastructure': { size: 0.8 },
-        'public': { size: 1.2 },
+        'public': { size: 0.8 },
         'nature': { size: 0.5 }
     }
 

@@ -127,9 +127,10 @@ class HouseStore {
     async addHouse(data) {
         try {
             await this.db.houses.add(data);
-            // House added successfully
+            return { success: true };
         } catch (err) {
             console.error(`Error adding house: ${err.message}`);
+            return { success: false, error: err.message };
         }
     }
 
@@ -142,15 +143,16 @@ class HouseStore {
             return expenseResult;
         }
 
-        try {
-            await this.addHouse(data);
-            return { success: true, budget: expenseResult.budget };
-        } catch (error) {
-            console.error('Error adding house after payment:', error);
+        const addHouseResult = await this.addHouse(data);
+        
+        if (!addHouseResult.success) {
+            console.error('Error adding house after payment:', addHouseResult.error);
             // If house creation fails, we should refund the expense
             await budgetManager.addIncome(data.price, `Refund for failed ${data.type}`);
-            return { success: false, reason: 'database_error', error: error };
+            return { success: false, reason: 'database_error', error: addHouseResult.error };
         }
+        
+        return { success: true, budget: expenseResult.budget };
     }
 
     async getHouse(name) {
