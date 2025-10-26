@@ -1,3 +1,24 @@
+/* City Map Button Styles */
+.city-map-box {
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    border: 3px solid #fff !important;
+    background: var(--cta);
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+.city-map-box:hover {
+    transform: translateY(-2px);
+    background: #fff;
+}
+
+.city-map-box.active {
+    transform: translateY(0px);
+    background: #fff;
+}
+
 /* City Map Popup Styles */
 .city-map-panel {
     position: fixed;
@@ -166,6 +187,58 @@
     font-weight: 600;
     font-size: 0.85rem;
     min-width: 60px;
+}
+
+/* Coordinate label cell in corner */
+.city-grid-table .coord-label-cell {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    border: 2px solid #64748b;
+    padding: 8px;
+    text-align: left;
+    min-width: 50px;
+}
+
+.coord-label-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+}
+
+.coord-label-x {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border-left: 3px solid #3b82f6;
+}
+
+.coord-label-y {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border-left: 3px solid #10b981;
+}
+
+/* X headers (rows) */
+.city-grid-table tbody th.x-header {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+    border-right: 2px solid #3b82f6;
+    font-weight: 700;
+}
+
+/* Y headers (columns) */
+.city-grid-table thead th.y-header {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border-bottom: 2px solid #10b981;
+    font-weight: 700;
 }
 
 .city-grid-table td {

@@ -1645,17 +1645,19 @@ async function generateCityMap() {
         });
         
         // Create the HTML table with full city grid (0 to citySize-1)
-        let tableHTML = '<table class="city-grid-table"><thead><tr><th></th>';
+        // First header cell shows coordinate system info
+        let tableHTML = '<table class="city-grid-table"><thead><tr>';
+        tableHTML += '<th class="coord-label-cell"><span class="coord-label-x">X ↕</span><span class="coord-label-y">↔ Y</span></th>';
         
-        // Add column headers (y coordinates)
+        // Add column headers (y coordinates) 
         for (let y = 0; y < citySize; y++) {
-            tableHTML += `<th>${y}</th>`;
+            tableHTML += `<th class="y-header">${y}</th>`;
         }
         tableHTML += '</tr></thead><tbody>';
         
         // Add rows (x coordinates)
         for (let x = 0; x < citySize; x++) {
-            tableHTML += `<tr><th>${x}</th>`;
+            tableHTML += `<tr><th class="x-header">${x}</th>`;
             
             for (let y = 0; y < citySize; y++) {
                 const key = `${x},${y}`;
