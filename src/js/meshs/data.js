@@ -32,19 +32,23 @@ export const assetsPrices = Object.freeze({
     'House-Blue': { price: 10, category: 'houses', gridSize: 1 },
     'House-Red': { price: 10, category: 'houses', gridSize: 1 },
     'House-Purple': { price: 10, category: 'houses', gridSize: 1 },
-    'House-2Story': { price: 20, category: 'houses', gridSize: 1 },
+    
+    // Palaces
+    'House-2Story': { price: 20, category: 'palaces', gridSize: 1 },
 
     // Tombs
     'Tombstone-1': { price: 2, category: 'tombs', gridSize: 1 },
     'Tombstone-2': { price: 4, category: 'tombs', gridSize: 1 },
     'Tombstone-3': { price: 8, category: 'tombs', gridSize: 1 },
 
-    // Farms
+    // Farms (only fields)
     'Farm-Wheat': { price: 10, category: 'farms', gridSize: 1 },
     'Farm-Carrot': { price: 20, category: 'farms', gridSize: 1 },
     'Farm-Cabbage': { price: 30, category: 'farms', gridSize: 1 },
-    'Windmill-001': { price: 50, category: 'farms', gridSize: 2 },
-    'Barn-001': { price: 40, category: 'farms', gridSize: 1 },
+    
+    // Industry (agricultural industry)
+    'Windmill-001': { price: 50, category: 'industry', gridSize: 2 },
+    'Barn-001': { price: 40, category: 'industry', gridSize: 3 },
 
     // Markets
     'Market-Stall': { price: 10, category: 'markets', gridSize: 1 },
@@ -114,5 +118,18 @@ export const meshNameMapping = {
     // Chapel and Church
     'Chapel': 'Chapel-001',
     'Chapel001': 'Chapel-001',
-    'Church002': 'Church-002'
+    'Church002': 'Church-002',
+    
+    // House 2 Story variants
+    'House_2Story': 'House-2Story',
+    'House_2Story_Purple': 'House-2Story',
+    'House_2Story_Purple001': 'House-2Story',
+    'House_2Story_Purple002': 'House-2Story',
+    'House_2Story_Purple003': 'House-2Story',
+    'House_2Story_Purple004': 'House-2Story',
+    'House_2Story_Purple005': 'House-2Story',
+    'House_2Story_Purple006': 'House-2Story',
+    'House_2Story_Purple007': 'House-2Story',
+    'House_2Story_Purple008': 'House-2Story',
+    'House_2Story_Purple009': 'House-2Story'
 };

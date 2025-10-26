@@ -17,6 +17,13 @@
         "House_Red_Material005_0",
         "House_Red001_Material005_0",
         "House_Purple_Material005_0",
+        "House003_Material005_0"
+      ]
+    },
+    
+    "palaces": {
+      "description": "Palaces and noble residences",
+      "mesh_names": [
         "House_2Story_Purple_Material005_0",
         "House_2Story_Purple001_Material005_0",
         "House_2Story_Purple002_Material005_0",
@@ -26,8 +33,7 @@
         "House_2Story_Purple006_Material005_0",
         "House_2Story_Purple007_Material005_0",
         "House_2Story_Purple008_Material005_0",
-        "House_2Story_Purple009_Material005_0",
-        "House003_Material005_0"
+        "House_2Story_Purple009_Material005_0"
       ]
     },
     
@@ -78,12 +84,6 @@
         "Farm_Wheat016_Material005_0",
         "Farm_Wheat017_Material005_0",
         "Farm_Wheat018_Material005_0",
-        "Windmill_Material005_0",
-        "Windmill001_Material005_0",
-        "Windmill002_Material005_0",
-        "Windmill003_Material005_0",
-        "Barn_Material005_0",
-        "Barn001_Material005_0",
         "Hay_Bale_Material005_0",
         "Hay_Bale001_Material005_0",
         "Hay_Bale002_Material005_0",
@@ -123,6 +123,18 @@
         "Hay_Pile005_Material005_0",
         "Hay_Pile006_Material005_0",
         "Hay_Pile007_Material005_0"
+      ]
+    },
+    
+    "industry": {
+      "description": "Agricultural industry buildings",
+      "mesh_names": [
+        "Windmill_Material005_0",
+        "Windmill001_Material005_0",
+        "Windmill002_Material005_0",
+        "Windmill003_Material005_0",
+        "Barn_Material005_0",
+        "Barn001_Material005_0"
       ]
     },
     

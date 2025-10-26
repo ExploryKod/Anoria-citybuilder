@@ -3,14 +3,15 @@ import {
     displaySpeed,
     speedChangeIndicator,
     farmsButton,
+    industryButton,
     fasterButton,
     housesButton,
+    palacesButton,
     infrastructureButton,
     infoObjectCloseBtn,
     infoObjectOverlay,
     loaderButton,
     marketButton,
-    othersButton,
     panelLayout,
     panelLayoutCloseBtn,
     panelLayoutInner,
@@ -496,6 +497,27 @@ function toggleModal(e) {
                 }
             }
             break;
+        case 'industry':
+            getButtonsUnactive()
+            getButtonsDisabled()
+            panelLayoutInner.classList.add('loading-objects')
+            if(!panelLayout.classList.contains('active')) {
+                loaderButton.classList.add('active');
+                panelLayout.classList.add('active');
+                e.target.classList.toggle('selected')
+                createIndustryButtons(buttonData);
+                
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('panel-layout');
+                }
+            } else {
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('panel-layout');
+                }
+            }
+            break;
         case 'markets':
             getButtonsUnactive()
             getButtonsDisabled()
@@ -556,14 +578,14 @@ function toggleModal(e) {
                 }
             }
             break;
-        case 'others':
+        case 'palaces':
             getButtonsUnactive()
             getButtonsDisabled()
             panelLayoutInner.classList.add('loading-objects')
             if(!panelLayout.classList.contains('active')) {
                 panelLayout.classList.add('active');
                 e.target.classList.toggle('selected')
-                createOthersButtons(buttonData)
+                createPalacesButtons(buttonData)
                 
                 // Utiliser PopupManager pour gérer les événements
                 if (window.popupManager) {
@@ -590,18 +612,31 @@ function createHousesButtons(buttonData) {
             <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
             <polyline points="9 22 9 12 15 12 15 22"/>
         </svg>`
-    const svgBigHouse = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-castle"><path d="M22 20v-9H2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2Z"/><path d="M18 11V4H6v7"/><path d="M15 22v-4a3 3 0 0 0-3-3v0a3 3 0 0 0-3 3v4"/><path d="M22 11V9"/><path d="M2 11V9"/><path d="M6 4V2"/><path d="M18 4V2"/><path d="M10 4V2"/><path d="M14 4V2"/>
-                        </svg>`
     let buttonsDuplicate = [];
     buttonData.filter(buttonInfo => houseToolIDs.includes(buttonInfo.tool)).forEach(buttonInfo => {
         if (!buttonsDuplicate.includes(buttonInfo.tool)) {
             buttonsDuplicate.push(buttonInfo.tool);
-            if(buttonInfo.tool === 'House-2Story') {
-                makeNewButton(buttonInfo, svgBigHouse)
-            } else {
-                makeNewButton(buttonInfo, svg)
-            }
+            makeNewButton(buttonInfo, svg)
+        }
 
+    });
+}
+
+function createPalacesButtons(buttonData) {
+    console.log('[PALACES] Creating palace buttons with buttonData:', buttonData);
+    console.log('[PALACES] toolIds.palaces:', toolIds.palaces);
+    panelLayoutInner.innerHTML = ''
+    const palaceToolIDs = toolIds.palaces || [];
+    const svgBigHouse = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-castle"><path d="M22 20v-9H2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2Z"/><path d="M18 11V4H6v7"/><path d="M15 22v-4a3 3 0 0 0-3-3v0a3 3 0 0 0-3 3v4"/><path d="M22 11V9"/><path d="M2 11V9"/><path d="M6 4V2"/><path d="M18 4V2"/><path d="M10 4V2"/><path d="M14 4V2"/>
+                        </svg>`
+    let buttonsDuplicate = [];
+    const filteredButtons = buttonData.filter(buttonInfo => palaceToolIDs.includes(buttonInfo.tool));
+    console.log('[PALACES] Filtered buttons:', filteredButtons);
+    filteredButtons.forEach(buttonInfo => {
+        if (!buttonsDuplicate.includes(buttonInfo.tool)) {
+            buttonsDuplicate.push(buttonInfo.tool);
+            console.log('[PALACES] Creating button for:', buttonInfo.tool);
+            makeNewButton(buttonInfo, svgBigHouse)
         }
 
     });
@@ -646,10 +681,6 @@ function createFarmsButtons(buttonData) {
     const svgCabbage = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             class="lucide lucide-leafy-green"><path d="M2 22c1.25-.987 2.27-1.975 3.9-2.2a5.56 5.56 0 0 1 3.8 1.5 4 4 0 0 0 6.187-2.353 3.5 3.5 0 0 0 3.69-5.116A3.5 3.5 0 0 0 20.95 8 3.5 3.5 0 1 0 16 3.05a3.5 3.5 0 0 0-5.831 1.373 3.5 3.5 0 0 0-5.116 3.69 4 4 0 0 0-2.348 6.155C3.499 15.42 4.409 16.712 4.2 18.1 3.926 19.743 3.014 20.732 2 22"/><path d="M2 22 17 7"/>
                             </svg>`
-    const svgFarmTools = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-tractor"><path d="m10 11 11 .9a1 1 0 0 1 .8 1.1l-.665 4.158a1 1 0 0 1-.988.842H20"/><path d="M16 18h-5"/><path d="M18 5a1 1 0 0 0-1 1v5.573"/><path d="M3 4h8.129a1 1 0 0 1 .99.863L13 11.246"/><path d="M4 11V4"/><path d="M7 15h.01"/><path d="M8 10.1V4"/><circle cx="18" cy="18" r="2"/><circle cx="7" cy="15" r="5"/>
-                            </svg>`
-    const svgWindmill = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cog"><circle cx="12" cy="12" r="3"/><path d="M12 5L7 7l2 5M12 5l5 2-2 5M7 17l2-5M17 17l-2-5M7 7L2 7l5 10M17 7l5 0-5 10"/></svg>`
-    const svgBarn = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="12" x="6" y="10"/></svg>`
     let buttonsDuplicate = [];
     buttonData.filter(buttonInfo => farmToolIDs.includes(buttonInfo.tool)).forEach(buttonInfo => {
         if (!buttonsDuplicate.includes(buttonInfo.tool)) {
@@ -660,12 +691,32 @@ function createFarmsButtons(buttonData) {
                 makeNewButton(buttonInfo, svgWheat)
             } else if (buttonInfo.tool === 'Farm-Cabbage') {
                 makeNewButton(buttonInfo, svgCabbage)
-            } else if (buttonInfo.tool === 'Windmill-001') {
+            } else {
+                makeNewButton(buttonInfo, svgCabbage)
+            }
+        }
+    });
+}
+
+function createIndustryButtons(buttonData) {
+    console.log('[INDUSTRY] Creating industry buttons with buttonData:', buttonData);
+    console.log('[INDUSTRY] toolIds.industry:', toolIds.industry);
+    panelLayoutInner.innerHTML = ''
+    const industryToolIDs = toolIds.industry || [];
+
+    const svgWindmill = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cog"><circle cx="12" cy="12" r="3"/><path d="M12 5L7 7l2 5M12 5l5 2-2 5M7 17l2-5M17 17l-2-5M7 7L2 7l5 10M17 7l5 0-5 10"/></svg>`
+    const svgBarn = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="12" x="6" y="10"/></svg>`
+    
+    let buttonsDuplicate = [];
+    buttonData.filter(buttonInfo => industryToolIDs.includes(buttonInfo.tool)).forEach(buttonInfo => {
+        if (!buttonsDuplicate.includes(buttonInfo.tool)) {
+            buttonsDuplicate.push(buttonInfo.tool);
+            if (buttonInfo.tool === 'Windmill-001') {
                 makeNewButton(buttonInfo, svgWindmill)
             } else if (buttonInfo.tool === 'Barn-001') {
                 makeNewButton(buttonInfo, svgBarn)
             } else {
-                makeNewButton(buttonInfo, svgFarmTools);
+                makeNewButton(buttonInfo, svgBarn)
             }
         }
     });
@@ -769,8 +820,10 @@ window.onload = async () => {
     let selectedControl = document.getElementById('bulldoze-btn');
     await assetManager.initializeTerrains()
     await assetManager.initializeBuildings('houses')
+    await assetManager.initializeBuildings('palaces')
     await assetManager.initializeBuildings('markets')
     await assetManager.initializeBuildings('farms')
+    await assetManager.initializeBuildings('industry')
     await assetManager.initializeBuildings('infrastructure')
     await assetManager.initializeBuildings('public')
     buttonData = assetManager.getButtonData();
@@ -886,12 +939,14 @@ window.onload = async () => {
     })
 
     housesButton.addEventListener('click', toggleModal)
+    
+    palacesButton.addEventListener('click', toggleModal)
 
     farmsButton.addEventListener('click', toggleModal)
+    
+    industryButton.addEventListener('click', toggleModal)
 
     marketButton.addEventListener('click', toggleModal)
-
-    othersButton.addEventListener('click', toggleModal)
     
     infrastructureButton.addEventListener('click', toggleModal)
     

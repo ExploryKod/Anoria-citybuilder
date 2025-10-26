@@ -28,12 +28,14 @@ class MeshLoaderOptimized {
 
     toolIds = {
         zones: ['grass', 'roads'],
-        houses: ['House-Blue', 'House-Red', 'House-Purple', 'House-2Story'],
+        houses: ['House-Blue', 'House-Red', 'House-Purple'],
         tombs: ['Tombstone-1', 'Tombstone-2', 'Tombstone-3'],
-        farms: ['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage', 'Windmill-001', 'Barn-001'],
+        farms: ['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage'],
+        industry: ['Windmill-001', 'Barn-001'],
         markets: ['Market-Stall'],
         infrastructure: ['Well-001', 'Fountain-001', 'Streetlight-001'],
         public: ['Chapel-001', 'Church-002'],
+        palaces: ['House-2Story'],
         nature: []
     }
 
@@ -41,9 +43,11 @@ class MeshLoaderOptimized {
         { houses: [] },
         { nature: [] },
         { farms: [] },
+        { industry: [] },
         { markets: [] },
         { infrastructure: [] },
         { public: [] },
+        { palaces: [] },
         { other: [] }
     ];
 
@@ -52,9 +56,11 @@ class MeshLoaderOptimized {
         'houses': {},
         'tombs': {},
         'farms': {},
+        'industry': {},
         'markets': {},
         'infrastructure': {},
         'public': {},
+        'palaces': {},
         'nature': {}
     }
 
@@ -62,9 +68,11 @@ class MeshLoaderOptimized {
         'houses': { size: 0.5 },
         'tombs': { size: 0.5 },
         'farms': { size: 1 },
+        'industry': { size: 1 },
         'markets': { size: 0.7 },
         'infrastructure': { size: 0.8 },
         'public': { size: 0.8 },
+        'palaces': { size: 0.5 },
         'nature': { size: 0.5 }
     }
 
@@ -78,8 +86,12 @@ class MeshLoaderOptimized {
         this.categoryMeshSets = {
             houses: new Set(),
             farms: new Set(),
+            industry: new Set(),
             markets: new Set(),
-            tombs: new Set()
+            tombs: new Set(),
+            infrastructure: new Set(),
+            public: new Set(),
+            palaces: new Set()
         };
     }
 
@@ -103,10 +115,12 @@ class MeshLoaderOptimized {
         this.categoryMeshSets = {
             houses: new Set(),
             farms: new Set(),
+            industry: new Set(),
             markets: new Set(),
             tombs: new Set(),
             infrastructure: new Set(),
-            public: new Set()
+            public: new Set(),
+            palaces: new Set()
         };
 
         // Build catalog mappings
@@ -134,9 +148,17 @@ class MeshLoaderOptimized {
         // Remove _MaterialXXX_X suffix
         const baseName = meshName.split('_Material')[0];
         
-        // Check if base name or any variant needs special mapping
-        for (const [variant, mappedName] of Object.entries(meshNameMapping)) {
-            if (baseName === variant || baseName.startsWith(variant)) {
+        // Check if base name or any variant needs special mapping (check BEFORE standard parsing)
+        // Sort mappings by length (descending) to check most specific first
+        const sortedMappings = Object.entries(meshNameMapping).sort((a, b) => b[0].length - a[0].length);
+        
+        for (const [variant, mappedName] of sortedMappings) {
+            // Check exact match
+            if (baseName === variant) {
+                return mappedName;
+            }
+            // Check if it starts with variant (for numbered variants like House_2Story_Purple001)
+            if (baseName.startsWith(variant)) {
                 return mappedName;
             }
         }
@@ -227,6 +249,11 @@ class MeshLoaderOptimized {
                         // Only process if it matches the requested category
                         if (category !== propertyKey) {
                             return;
+                        }
+                        
+                        // Debug log for palaces
+                        if (propertyKey === 'palaces') {
+                            console.log('[PALACES] Found palace mesh:', meshName, '→ tool:', toolName);
                         }
 
                         // Parse mesh name parts for button text

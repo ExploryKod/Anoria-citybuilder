@@ -5,10 +5,12 @@ import {wantedHouses} from "./data.js";
 
 const toolIds = {
     zones: ['grass', 'roads'],
-    houses: ['House-Blue', 'House-Red', 'House-Purple', 'House-2Story'],
+    houses: ['House-Blue', 'House-Red', 'House-Purple'],
     tombs:  ['Tombstone-1', 'Tombstone-2', 'Tombstone-3'],
-    farms: ['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage', 'Windmill-001'],
+    farms: ['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage'],
+    industry: ['Windmill-001', 'Barn-001'],
     markets: ['Market-Stall'],
+    palaces: ['House-2Story'],
     nature : []
 }
 
@@ -16,7 +18,9 @@ let allAssetsNames = [
     {houses: []},
     {nature: []},
     {farms: []},
+    {industry: []},
     {markets: []},
+    {palaces: []},
     {other: []}
 ];
 

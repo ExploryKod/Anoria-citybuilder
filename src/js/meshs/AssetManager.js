@@ -194,13 +194,17 @@ class AssetManager extends MeshLoader {
             case 'houses':
                 return this.modelsObj['houses'];
             case 'farms':
-                return this.modelsObj['farms']
+                return this.modelsObj['farms'];
+            case 'industry':
+                return this.modelsObj['industry'];
             case 'markets':
                 return this.modelsObj['markets'];
             case 'infrastructure':
                 return this.modelsObj['infrastructure'];
             case 'public':
                 return this.modelsObj['public'];
+            case 'palaces':
+                return this.modelsObj['palaces'];
             default:
                 throw new Error(`Unknown model type: ${type}`);
         }
