@@ -562,12 +562,14 @@ export function createScene(housesStore, gameStore, assetManager) {
         // --- FIN BOUCLE SUR LA VILLE X ET Y----
 
         // Gestion de la barre des délais
-        if(delay > 0 && delay < 80) {
-            delayBox.style.opacity = 1
-            displayDelayUI.textContent += '****'
-        } else {
-            delayBox.style.opacity = 0.5
-            displayDelayUI.textContent += ''
+        if(delayBox && displayDelayUI) {
+            if(delay > 0 && delay < 80) {
+                delayBox.style.opacity = 1
+                displayDelayUI.textContent += '****'
+            } else {
+                delayBox.style.opacity = 0.5
+                displayDelayUI.textContent += ''
+            }
         }
 
         // Calculate building counts for budget operations

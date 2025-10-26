@@ -43,6 +43,7 @@ export const assetsPrices = Object.freeze({
     'Farm-Wheat': { price: 10, category: 'farms' },
     'Farm-Carrot': { price: 20, category: 'farms' },
     'Farm-Cabbage': { price: 30, category: 'farms' },
+    'Windmill-001': { price: 50, category: 'farms' },
 
     // Markets
     'Market-Stall': { price: 10, category: 'markets' }
@@ -54,3 +55,17 @@ export const wantedHouses = [
     'House-Purple',
     'House-2Story'
 ]
+
+// Mapping of GLB mesh names to tool names
+export const meshNameMapping = {
+    'Windmill': 'Windmill-001',  // Main windmill
+    'Windmill-001': 'Windmill-001',  // Windmill.001
+    'Windmill-002': 'Windmill-001',  // Windmill.002
+    'Windmill-003': 'Windmill-001',  // Windmill.003
+    // Legacy mappings
+    'Windmill-1': 'Windmill-001',
+    'Windmill_1': 'Windmill-001',
+    'Windmill_001': 'Windmill-001',
+    'Windmill_1_': 'Windmill-001',
+    'Windmill1': 'Windmill-001',
+};
