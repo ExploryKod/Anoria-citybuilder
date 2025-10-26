@@ -30,8 +30,10 @@ class MeshLoaderOptimized {
         zones: ['grass', 'roads'],
         houses: ['House-Blue', 'House-Red', 'House-Purple', 'House-2Story'],
         tombs: ['Tombstone-1', 'Tombstone-2', 'Tombstone-3'],
-        farms: ['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage', 'Windmill-001'],
+        farms: ['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage', 'Windmill-001', 'Barn-001'],
         markets: ['Market-Stall'],
+        infrastructure: ['Well-001', 'Fountain-001', 'Streetlight-001'],
+        public: ['Chapel-001', 'Church-002'],
         nature: []
     }
 
@@ -40,6 +42,8 @@ class MeshLoaderOptimized {
         { nature: [] },
         { farms: [] },
         { markets: [] },
+        { infrastructure: [] },
+        { public: [] },
         { other: [] }
     ];
 
@@ -49,6 +53,8 @@ class MeshLoaderOptimized {
         'tombs': {},
         'farms': {},
         'markets': {},
+        'infrastructure': {},
+        'public': {},
         'nature': {}
     }
 
@@ -57,6 +63,8 @@ class MeshLoaderOptimized {
         'tombs': { size: 0.5 },
         'farms': { size: 1 },
         'markets': { size: 0.7 },
+        'infrastructure': { size: 0.8 },
+        'public': { size: 1.2 },
         'nature': { size: 0.5 }
     }
 
@@ -96,7 +104,9 @@ class MeshLoaderOptimized {
             houses: new Set(),
             farms: new Set(),
             markets: new Set(),
-            tombs: new Set()
+            tombs: new Set(),
+            infrastructure: new Set(),
+            public: new Set()
         };
 
         // Build catalog mappings
@@ -121,20 +131,18 @@ class MeshLoaderOptimized {
      * Parse mesh name to tool name (same logic as before but extracted for reuse)
      */
     _parseMeshNameToToolName(meshName) {
-        // Handle Windmill specially
-        if (meshName.toLowerCase().includes('windmill')) {
-            const baseName = meshName.split('_Material')[0];
-            let toolName = baseName.replace(/\./g, '-');
-            
-            // Apply mapping
-            if (meshNameMapping[toolName]) {
-                return meshNameMapping[toolName];
+        // Remove _MaterialXXX_X suffix
+        const baseName = meshName.split('_Material')[0];
+        
+        // Check if base name or any variant needs special mapping
+        for (const [variant, mappedName] of Object.entries(meshNameMapping)) {
+            if (baseName === variant || baseName.startsWith(variant)) {
+                return mappedName;
             }
-            return toolName;
         }
         
-        // Standard parsing for other objects
-        const normalized = meshName.replace(/[._\s]/g, '_');
+        // Standard parsing for objects like Farm_Wheat, House_Blue, etc.
+        const normalized = baseName.replace(/[.\s]/g, '_');
         const parts = normalized.split('_');
         let toolName = `${parts[0]}-${parts[1] || ''}`;
         
@@ -226,10 +234,6 @@ class MeshLoaderOptimized {
                         const firstNamePart = normalized.split('_')[0];
                         const secondNamePart = normalized.split('_')[1] || '';
 
-                        // Debug logging for farms
-                        if (propertyKey === 'farms') {
-                            console.log(`[OPTIMIZED LOADER] Processing: ${meshName} → ${toolName}`);
-                        }
 
                         // Store mesh
                         modelsObj[propertyKey][toolName] = child;

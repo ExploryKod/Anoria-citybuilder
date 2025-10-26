@@ -203,7 +203,7 @@ canvas.pointer-events-disabled {
 }
 
 .toolbar .toolbar__container .toolbar-btn {
-    max-width: 40%;
+    max-width: max(40%, 35px);
     height: auto;
     display: flex;
     align-items: center;

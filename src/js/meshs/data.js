@@ -44,9 +44,19 @@ export const assetsPrices = Object.freeze({
     'Farm-Carrot': { price: 20, category: 'farms' },
     'Farm-Cabbage': { price: 30, category: 'farms' },
     'Windmill-001': { price: 50, category: 'farms' },
+    'Barn-001': { price: 40, category: 'farms' },
 
     // Markets
-    'Market-Stall': { price: 10, category: 'markets' }
+    'Market-Stall': { price: 10, category: 'markets' },
+    
+    // Infrastructure
+    'Well-001': { price: 15, category: 'infrastructure' },
+    'Fountain-001': { price: 25, category: 'infrastructure' },
+    'Streetlight-001': { price: 5, category: 'infrastructure' },
+    
+    // Public Buildings
+    'Chapel-001': { price: 60, category: 'public' },
+    'Church-002': { price: 100, category: 'public' }
 });
 
 export const wantedHouses = [
@@ -64,8 +74,45 @@ export const wantedHouses = [
 // - Windmill003_Material005_0 → becomes "Windmill003"
 // We map all these to "Windmill-001" for consistency
 export const meshNameMapping = {
-    'Windmill': 'Windmill-001',      // Windmill_Material005_0 (main windmill, no number)
-    'Windmill001': 'Windmill-001',    // Windmill001_Material005_0
-    'Windmill002': 'Windmill-001',    // Windmill002_Material005_0
-    'Windmill003': 'Windmill-001',    // Windmill003_Material005_0
+    // Windmill variants
+    'Windmill': 'Windmill-001',
+    'Windmill001': 'Windmill-001',
+    'Windmill002': 'Windmill-001',
+    'Windmill003': 'Windmill-001',
+    
+    // Barn variants
+    'Barn': 'Barn-001',
+    'Barn001': 'Barn-001',
+    
+    // Well variants
+    'Well': 'Well-001',
+    'Well001': 'Well-001',
+    
+    // Fountain variants
+    'Fountain': 'Fountain-001',
+    'Fountain001': 'Fountain-001',
+    
+    // Streetlight variants (001-017 all map to Streetlight-001)
+    'Streetlight': 'Streetlight-001',
+    'Streetlight001': 'Streetlight-001',
+    'Streetlight002': 'Streetlight-001',
+    'Streetlight003': 'Streetlight-001',
+    'Streetlight004': 'Streetlight-001',
+    'Streetlight005': 'Streetlight-001',
+    'Streetlight006': 'Streetlight-001',
+    'Streetlight007': 'Streetlight-001',
+    'Streetlight008': 'Streetlight-001',
+    'Streetlight009': 'Streetlight-001',
+    'Streetlight010': 'Streetlight-001',
+    'Streetlight011': 'Streetlight-001',
+    'Streetlight012': 'Streetlight-001',
+    'Streetlight013': 'Streetlight-001',
+    'Streetlight014': 'Streetlight-001',
+    'Streetlight016': 'Streetlight-001',
+    'Streetlight017': 'Streetlight-001',
+    
+    // Chapel and Church
+    'Chapel': 'Chapel-001',
+    'Chapel001': 'Chapel-001',
+    'Church002': 'Church-002'
 };

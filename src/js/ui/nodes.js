@@ -48,6 +48,8 @@ export const housesButton = document.getElementById('residential-btn');
 export const farmsButton = document.getElementById('farm-btn');
 export const marketButton = document.getElementById('market-btn');
 export const othersButton = document.getElementById('others-btn');
+export const infrastructureButton = document.getElementById('infrastructure-btn');
+export const publicButton = document.getElementById('public-btn');
 
 export const panelLayoutCloseBtn = document.querySelector('.panel-layout .panel-close-btn')
 

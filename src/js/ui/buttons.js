@@ -5,6 +5,7 @@ import {
     farmsButton,
     fasterButton,
     housesButton,
+    infrastructureButton,
     infoObjectCloseBtn,
     infoObjectOverlay,
     loaderButton,
@@ -16,6 +17,7 @@ import {
     pauseButton,
     pauseOverlay,
     playButton,
+    publicButton,
     replayButton,
     roadButton,
     selectButton,
@@ -514,6 +516,46 @@ function toggleModal(e) {
                 }
             }
             break;
+        case 'infrastructure':
+            getButtonsUnactive()
+            getButtonsDisabled()
+            panelLayoutInner.classList.add('loading-objects')
+            if(!panelLayout.classList.contains('active')) {
+                panelLayout.classList.add('active');
+                e.target.classList.toggle('selected')
+                createInfrastructureButtons(buttonData)
+                
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('panel-layout');
+                }
+            } else {
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('panel-layout');
+                }
+            }
+            break;
+        case 'public':
+            getButtonsUnactive()
+            getButtonsDisabled()
+            panelLayoutInner.classList.add('loading-objects')
+            if(!panelLayout.classList.contains('active')) {
+                panelLayout.classList.add('active');
+                e.target.classList.toggle('selected')
+                createPublicButtons(buttonData)
+                
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('panel-layout');
+                }
+            } else {
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('panel-layout');
+                }
+            }
+            break;
         case 'others':
             getButtonsUnactive()
             getButtonsDisabled()
@@ -607,6 +649,7 @@ function createFarmsButtons(buttonData) {
     const svgFarmTools = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-tractor"><path d="m10 11 11 .9a1 1 0 0 1 .8 1.1l-.665 4.158a1 1 0 0 1-.988.842H20"/><path d="M16 18h-5"/><path d="M18 5a1 1 0 0 0-1 1v5.573"/><path d="M3 4h8.129a1 1 0 0 1 .99.863L13 11.246"/><path d="M4 11V4"/><path d="M7 15h.01"/><path d="M8 10.1V4"/><circle cx="18" cy="18" r="2"/><circle cx="7" cy="15" r="5"/>
                             </svg>`
     const svgWindmill = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cog"><circle cx="12" cy="12" r="3"/><path d="M12 5L7 7l2 5M12 5l5 2-2 5M7 17l2-5M17 17l-2-5M7 7L2 7l5 10M17 7l5 0-5 10"/></svg>`
+    const svgBarn = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="12" x="6" y="10"/></svg>`
     let buttonsDuplicate = [];
     buttonData.filter(buttonInfo => farmToolIDs.includes(buttonInfo.tool)).forEach(buttonInfo => {
         if (!buttonsDuplicate.includes(buttonInfo.tool)) {
@@ -619,6 +662,8 @@ function createFarmsButtons(buttonData) {
                 makeNewButton(buttonInfo, svgCabbage)
             } else if (buttonInfo.tool === 'Windmill-001') {
                 makeNewButton(buttonInfo, svgWindmill)
+            } else if (buttonInfo.tool === 'Barn-001') {
+                makeNewButton(buttonInfo, svgBarn)
             } else {
                 makeNewButton(buttonInfo, svgFarmTools);
             }
@@ -642,6 +687,57 @@ function createOthersButtons(buttonData) {
         if (!buttonsDuplicate.includes(buttonInfo.tool)) {
             buttonsDuplicate.push(buttonInfo.tool);
             makeNewButton(buttonInfo, makeTumbSVG(tumbColors[0][buttonInfo.tool]));
+        }
+    });
+}
+
+function createInfrastructureButtons(buttonData) {
+    panelLayoutInner.innerHTML = '';
+    const infrastructureToolIDs = toolIds.infrastructure || [];
+
+    // Réutiliser des SVG existants
+    const svgWell = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-droplet"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4.5-4-6.5c-.5 2-1.5 3.9-3 5.5S5 13 5 15a7 7 0 0 0 7 7z"/></svg>`;
+    const svgFountain = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>`;
+    const svgStreetlight = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lamp"><path d="M8 2h8l4 10H4L8 2Z"/><path d="M12 12v6"/><path d="M8 22v-2c0-1.1.9-2 2-2h4a2 2 0 0 1 2 2v2H8Z"/></svg>`;
+
+    let buttonsDuplicate = [];
+    buttonData.filter(buttonInfo => infrastructureToolIDs.includes(buttonInfo.tool)).forEach(buttonInfo => {
+        if (!buttonsDuplicate.includes(buttonInfo.tool)) {
+            buttonsDuplicate.push(buttonInfo.tool);
+            if (buttonInfo.tool === 'Well-001') {
+                makeNewButton(buttonInfo, svgWell);
+            } else if (buttonInfo.tool === 'Fountain-001') {
+                makeNewButton(buttonInfo, svgFountain);
+            } else if (buttonInfo.tool === 'Streetlight-001') {
+                makeNewButton(buttonInfo, svgStreetlight);
+            } else {
+                makeNewButton(buttonInfo, svgWell); // Default
+            }
+        }
+    });
+}
+
+function createPublicButtons(buttonData) {
+    panelLayoutInner.innerHTML = '';
+    const publicToolIDs = toolIds.public || [];
+
+    // Réutiliser le même SVG que les maisons (temporaire)
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>`
+    const svgBigHouse = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-castle"><path d="M22 20v-9H2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2Z"/><path d="M18 11V4H6v7"/><path d="M15 22v-4a3 3 0 0 0-3-3v0a3 3 0 0 0-3 3v4"/><path d="M22 11V9"/><path d="M2 11V9"/><path d="M6 4V2"/><path d="M18 4V2"/><path d="M10 4V2"/><path d="M14 4V2"/>
+                        </svg>`
+
+    let buttonsDuplicate = [];
+    buttonData.filter(buttonInfo => publicToolIDs.includes(buttonInfo.tool)).forEach(buttonInfo => {
+        if (!buttonsDuplicate.includes(buttonInfo.tool)) {
+            buttonsDuplicate.push(buttonInfo.tool);
+            if (buttonInfo.tool === 'Church-002') {
+                makeNewButton(buttonInfo, svgBigHouse);
+            } else {
+                makeNewButton(buttonInfo, svg);
+            }
         }
     });
 }
@@ -675,6 +771,8 @@ window.onload = async () => {
     await assetManager.initializeBuildings('houses')
     await assetManager.initializeBuildings('markets')
     await assetManager.initializeBuildings('farms')
+    await assetManager.initializeBuildings('infrastructure')
+    await assetManager.initializeBuildings('public')
     buttonData = assetManager.getButtonData();
     toolIds = assetManager.getToolIds();
     
@@ -794,6 +892,10 @@ window.onload = async () => {
     marketButton.addEventListener('click', toggleModal)
 
     othersButton.addEventListener('click', toggleModal)
+    
+    infrastructureButton.addEventListener('click', toggleModal)
+    
+    publicButton.addEventListener('click', toggleModal)
 
     panelLayoutCloseBtn.addEventListener('click', closeModal)
     
