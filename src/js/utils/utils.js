@@ -88,7 +88,8 @@ export function updateBuildingNeighbors(buildingData, area=1, time=0) {
         neighbors.terrainW
     ]
 
-    const allBuildingsInZone = allTerrainMeshInZone.filter((mesh) => mesh.name !== 'grass')
+    // Filter out undefined values first, then check for grass
+    const allBuildingsInZone = allTerrainMeshInZone.filter((mesh) => mesh && mesh.name && mesh.name !== 'grass')
 
     const areaObject = {areaKey : areaKey, time: time, allTerrainMeshInZone : allTerrainMeshInZone}
 
@@ -125,14 +126,14 @@ export function updateBuildingNeighbors(buildingData, area=1, time=0) {
       // Add all neighbors to a single array for convenience
       Object.assign(buildings[x][y].userData, {
         neighborsNames: [
-            neighbors.neighborNorth.buildingId,
-            neighbors.neighborNorthWest.buildingId,
-            neighbors.neighborNorthEast.buildingId,
-            neighbors.neighborEast.buildingId,
-            neighbors.neighborSouthEast.buildingId,
-            neighbors.neighborSouthWest.buildingId,
-            neighbors.neighborSouth.buildingId,
-            neighbors.neighborWest.buildingId,
+            neighbors.neighborNorth?.buildingId,
+            neighbors.neighborNorthWest?.buildingId,
+            neighbors.neighborNorthEast?.buildingId,
+            neighbors.neighborEast?.buildingId,
+            neighbors.neighborSouthEast?.buildingId,
+            neighbors.neighborSouthWest?.buildingId,
+            neighbors.neighborSouth?.buildingId,
+            neighbors.neighborWest?.buildingId,
         ],
     });
 
@@ -170,14 +171,14 @@ export function updateBuildingNeighbors(buildingData, area=1, time=0) {
 
     Object.assign(buildings[x][y].userData, {
         neighborsTerrainNames: [
-            neighbors.terrainN.name,
-            neighbors.terrainNW.name,
-            neighbors.terrainNE.name,
-            neighbors.terrainE.name,
-            neighbors.terrainSE.name,
-            neighbors.terrainSW.name,
-            neighbors.terrainS.name,
-            neighbors.terrainW.name
+            neighbors.terrainN?.name,
+            neighbors.terrainNW?.name,
+            neighbors.terrainNE?.name,
+            neighbors.terrainE?.name,
+            neighbors.terrainSE?.name,
+            neighbors.terrainSW?.name,
+            neighbors.terrainS?.name,
+            neighbors.terrainW?.name
         ]
     });
 
@@ -339,12 +340,18 @@ export function getBuildingNeighbors(building, neighbors=[]) {
  */
 export function makeDbItemId(currentBuildingId, x, y) {
 
-    if(!currentBuildingId) {
+    if(!currentBuildingId || typeof currentBuildingId !== 'string') {
         console.warn('there is no current building suitable id', currentBuildingId);
         return false;
     }
 
-    if(x && y && currentBuildingId.length > 0) {
+    // Check if x and y are valid numbers
+    if((x === undefined || x === null || isNaN(x)) || (y === undefined || y === null || isNaN(y))) {
+        console.warn('there is no current building suitable id or x/y suitable coordinates', {x, y, currentBuildingId});
+        return false;
+    }
+
+    if(currentBuildingId.length > 0) {
         return currentBuildingId + '-' + x + '-' + y;
     } else {
         console.warn('there is no current building suitable id or x/y suitable coordinates')

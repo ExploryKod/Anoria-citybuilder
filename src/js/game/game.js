@@ -209,8 +209,11 @@ export function createGame(housesStore, gameStore, assetManager) {
                 for (let dy = 0; dy < gridSize; dy++) {
                     const tileX = x + dx;
                     const tileY = y + dy;
-                    if (city.tiles[tileX] && city.tiles[tileX][tileY]) {
-                        city.tiles[tileX][tileY].buildingId = undefined;
+                    // Check bounds before accessing tiles (important for edge cases)
+                    if (tileX >= 0 && tileX < city.size && tileY >= 0 && tileY < city.size) {
+                        if (city.tiles[tileX] && city.tiles[tileX][tileY]) {
+                            city.tiles[tileX][tileY].buildingId = undefined;
+                        }
                     }
                 }
             }
