@@ -166,10 +166,17 @@ export function createScene(housesStore, gameStore, assetManager) {
               const newBuildingId = city.tiles[x][y].buildingId;
               const buildingInfo =  city.tiles[x][y];
 
-              const isInCityLimits = x+1 < city.size && y+1 < city.size && x-1 > 0 && y-1 > 0
+              // Check bounds for neighbor processing (avoid accessing out-of-bounds neighbors)
+              const isInCityLimits = x >= 0 && x < city.size && y >= 0 && y < city.size;
+              // Check if building is on edge (need special handling for neighbors)
+              const isOnEdge = x === 0 || x === city.size - 1 || y === 0 || y === city.size - 1;
 
               if(currentBuildingId && isInCityLimits) {
                 const currentUniqueID =  makeDbItemId(currentBuildingId, x, y)
+                // Skip if makeDbItemId returned false (invalid building ID or coordinates)
+                if(!currentUniqueID) {
+                    continue;
+                }
                 await housesStore.updateHouseFields(currentUniqueID, {worldTime: time})
 
                 /* update userData in indexDB === real userData state from three mesh */
