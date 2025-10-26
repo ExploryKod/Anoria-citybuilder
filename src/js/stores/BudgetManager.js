@@ -26,6 +26,7 @@ class BudgetManager {
         const initialBudget = {
             name: 'budget_current',
             funds: startingFunds,
+            initialFunds: startingFunds, // Store initial funds separately for capital social
             expenses: 0,
             income: 0,
             netFlow: 0,
@@ -140,6 +141,10 @@ class BudgetManager {
         }
         if (budget.totalLoanInterestExpenses === undefined) {
             budget.totalLoanInterestExpenses = 0;
+            needsUpdate = true;
+        }
+        if (budget.initialFunds === undefined) {
+            budget.initialFunds = budget.funds; // Use current funds as initial funds for existing budgets
             needsUpdate = true;
         }
         
@@ -646,6 +651,8 @@ class BudgetManager {
             totalTaxes: budget.totalTaxes,
             totalBuildingMaintenance: budget.totalBuildingMaintenance,
             totalInvestments: budget.totalInvestments,
+            totalLoanInterestExpenses: budget.totalLoanInterestExpenses || 0,
+            totalLoanRepayments: budget.totalLoanRepayments || 0,
             population: additionalData.population || 0,
             buildingCounts: additionalData.buildingCounts || {},
             financialHealth: financialHealth
@@ -674,8 +681,52 @@ class BudgetManager {
     async getBudgetStates() {
         const allBudgets = await this.db.budget.toArray();
         // Filter only budget states (not the main budget)
-        return allBudgets.filter(budget => budget.name.startsWith('budget_turn_'))
+        const budgetStates = allBudgets.filter(budget => budget.name.startsWith('budget_turn_'))
                          .sort((a, b) => b.turn - a.turn);
+        
+        // Migrate existing budget states to include loan fields
+        let needsMigration = false;
+        for (const state of budgetStates) {
+            if (state.totalLoanInterestExpenses === undefined) {
+                state.totalLoanInterestExpenses = 0;
+                needsMigration = true;
+            }
+            if (state.totalLoanRepayments === undefined) {
+                state.totalLoanRepayments = 0;
+                needsMigration = true;
+            }
+        }
+        
+        if (needsMigration) {
+            console.log('Migrating budget states to include loan fields');
+            for (const state of budgetStates) {
+                await this.db.budget.put(state);
+            }
+        }
+        
+        // Recalculate expenses for existing states to include loan interest
+        let needsRecalculation = false;
+        for (const state of budgetStates) {
+            const calculatedExpenses = (state.totalBuildingMaintenance || 0) + 
+                                     (state.totalLoanInterestExpenses || 0) + 
+                                     (state.totalLoanRepayments || 0);
+            
+            if (state.expenses !== calculatedExpenses && calculatedExpenses > 0) {
+                console.log(`Recalculating expenses for turn ${state.turn}: ${state.expenses}€ → ${calculatedExpenses}€`);
+                state.expenses = calculatedExpenses;
+                state.netFlow = (state.income || 0) - state.expenses;
+                needsRecalculation = true;
+            }
+        }
+        
+        if (needsRecalculation) {
+            console.log('Recalculating budget states expenses');
+            for (const state of budgetStates) {
+                await this.db.budget.put(state);
+            }
+        }
+        
+        return budgetStates;
     }
 
     /**

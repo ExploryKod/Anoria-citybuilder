@@ -618,7 +618,12 @@ export function createScene(housesStore, gameStore, assetManager) {
                 // Update turn
                 await window.budgetManager.updateTurn(time);
                 
-                // Save budget state every 3 turns
+                // Process loan payments BEFORE saving budget state
+                if (window.processLoanPayments) {
+                    await window.processLoanPayments();
+                }
+                
+                // Save budget state every 3 turns (AFTER loan payments)
                 if (time % 3 === 0 && time > 0) {
                     try {
                         const additionalData = {

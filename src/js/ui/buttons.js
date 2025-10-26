@@ -114,13 +114,18 @@ async function updateBudgetDisplay() {
         const marketsValue = typeof marketPrice === 'number' ? buildingAnalysis.foodMarkets * marketPrice : 0;
         const roadsValue = typeof roadPrice === 'number' ? buildingAnalysis.roads * roadPrice : 0;
         
-        // Calculate depreciation (amortissements) - 2% per turn for buildings
-        const depreciationRate = 0.02; // 2% per turn
-        const totalDepreciation = Math.round(totalBuildingValue * depreciationRate * (currentBudget.turn || 0));
+        // Calculate depreciation (amortissements) - based on actual game mechanics
+        // For now, no depreciation until we implement building aging mechanics
+        const totalDepreciation = 0; // No depreciation system implemented yet
         
         // Calculate provisions for risks and charges
-        const riskProvisions = Math.round(totalBuildingValue * 0.01); // 1% of building value
-        const chargeProvisions = Math.round(currentBudget.funds * 0.05); // 5% of cash for charges
+        // For now, no provisions until we implement risk management mechanics
+        const riskProvisions = 0; // No risk provisions system implemented yet
+        const chargeProvisions = 0; // No charge provisions system implemented yet
+        
+        // Calculate additional assets (according to French standards)
+        const intangibleAssets = 0; // No intangible assets for now (software, patents, etc.)
+        const financialAssets = 0; // No financial assets for now (securities, guarantees, etc.)
         
         // Calculate net values
         const totalBuildingsNet = totalBuildingValue - totalDepreciation;
@@ -131,9 +136,38 @@ async function updateBudgetDisplay() {
         
         // Update Balance Sheet - ACTIF
         updateBalanceSheetElement('balance-sheet-date', `Tour ${currentBudget.turn || 0} (état du passif et de l'actif au ${currentBudget.turn || 0}e tour)`);
+        
+        // Update detailed intangible assets (all 0€ for now - not implemented)
+        updateBalanceSheetElement('intangible-assets-value', `${intangibleAssets.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('establishment-costs', '0€');
+        updateBalanceSheetElement('rd-costs', '0€');
+        updateBalanceSheetElement('patents-licenses', '0€');
+        updateBalanceSheetElement('goodwill', '0€');
+        updateBalanceSheetElement('software-rights', '0€');
+        updateBalanceSheetElement('other-intangible', '0€');
+        updateBalanceSheetElement('intangible-in-progress', '0€');
+        updateBalanceSheetElement('intangible-advances', '0€');
+        
+        // Update detailed tangible assets
         updateBalanceSheetElement('total-buildings-gross-value', `${totalBuildingValue.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('land-value', '0€'); // No land system implemented
+        updateBalanceSheetElement('constructions-value', `${totalBuildingValue.toLocaleString('fr-FR')}€`); // All buildings are constructions
+        updateBalanceSheetElement('technical-equipment', '0€'); // No technical equipment system
+        updateBalanceSheetElement('other-tangible', '0€');
+        updateBalanceSheetElement('tangible-in-progress', '0€');
+        updateBalanceSheetElement('tangible-advances', '0€');
+        
         updateBalanceSheetElement('total-depreciation-value', `${totalDepreciation.toLocaleString('fr-FR')}€`);
         updateBalanceSheetElement('total-buildings-net-value', `${totalBuildingsNet.toLocaleString('fr-FR')}€`);
+        
+        // Update detailed financial assets (all 0€ for now - not implemented)
+        updateBalanceSheetElement('financial-assets-value', `${financialAssets.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('equity-interests', '0€');
+        updateBalanceSheetElement('participation-receivables', '0€');
+        updateBalanceSheetElement('portfolio-securities', '0€');
+        updateBalanceSheetElement('other-securities', '0€');
+        updateBalanceSheetElement('loans-granted', '0€'); // Prêts accordés (not implemented)
+        updateBalanceSheetElement('other-financial', '0€');
         updateBalanceSheetElement('total-houses-value', `${totalHousesValue.toLocaleString('fr-FR')}€`);
         updateBalanceSheetElement('red-houses-value', typeof housePrices.red === 'number' ? `${redHousesValue.toLocaleString('fr-FR')}€` : 'N/A');
         updateBalanceSheetElement('blue-houses-value', typeof housePrices.blue === 'number' ? `${blueHousesValue.toLocaleString('fr-FR')}€` : 'N/A');
@@ -147,15 +181,41 @@ async function updateBudgetDisplay() {
         updateBalanceSheetElement('total-roads-value', typeof roadPrice === 'number' ? `${roadsValue.toLocaleString('fr-FR')}€` : 'N/A');
         updateBalanceSheetElement('roads-value', typeof roadPrice === 'number' ? `${roadsValue.toLocaleString('fr-FR')}€` : 'N/A');
         
-        // Update cash and inventory
-        updateBalanceSheetElement('inventory-gross-value', `${inventoryGross.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('inventory-provisions-value', `${inventoryProvisions.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('inventory-net-value', `${inventoryNet.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('receivables-value', `${receivables.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('cash-value', `${currentBudget.funds.toLocaleString('fr-FR')}€`);
+        // Update detailed current assets (all 0€ for now - not implemented)
+        updateBalanceSheetElement('stocks-work-in-progress', '0€');
+        updateBalanceSheetElement('raw-materials', '0€');
+        updateBalanceSheetElement('work-in-progress', '0€');
+        updateBalanceSheetElement('finished-products', '0€');
+        updateBalanceSheetElement('merchandise', '0€');
+        updateBalanceSheetElement('advances-on-orders', '0€');
         
-        // Calculate total assets (net values)
-        const totalAssets = totalBuildingsNet + inventoryNet + receivables + currentBudget.funds;
+        // Update receivables details
+        updateBalanceSheetElement('total-receivables', `${receivables.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('client-receivables', '0€');
+        updateBalanceSheetElement('other-receivables', '0€');
+        updateBalanceSheetElement('called-unpaid-capital', '0€');
+        
+        // Update marketable securities
+        updateBalanceSheetElement('marketable-securities', '0€');
+        updateBalanceSheetElement('own-shares', '0€');
+        updateBalanceSheetElement('other-securities', '0€');
+        
+        // Update treasury and cash
+        updateBalanceSheetElement('treasury-instruments', '0€');
+        updateBalanceSheetElement('cash-value', `${currentBudget.funds.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('prepaid-expenses', '0€');
+        
+        // Calculate total current assets
+        const totalCurrentAssets = receivables + currentBudget.funds;
+        updateBalanceSheetElement('total-current-assets', `${totalCurrentAssets.toLocaleString('fr-FR')}€`);
+        
+        // Update additional sections (all 0€ for now)
+        updateBalanceSheetElement('deferred-charges', '0€');
+        updateBalanceSheetElement('loan-redemption-premiums', '0€');
+        updateBalanceSheetElement('conversion-differences', '0€');
+        
+        // Calculate total assets (net values) - updated structure
+        const totalAssets = intangibleAssets + totalBuildingsNet + financialAssets + totalCurrentAssets + 0; // +0 for deferred charges, premiums, conversion differences
         updateBalanceSheetElement('total-assets', `${totalAssets.toLocaleString('fr-FR')}€`);
         
         // Calculate loan debts from budget
@@ -172,8 +232,11 @@ async function updateBudgetDisplay() {
         });
         
         // Update Balance Sheet - PASSIF
-        updateBalanceSheetElement('municipal-capital', '200€'); // Capital initial
-        updateBalanceSheetElement('reserves', '0€'); // Pas de réserves pour l'instant
+        // Capital social: Only arbitrary value allowed - initial mayor's funds from budget store
+        const shareCapital = currentBudget.initialFunds || currentBudget.funds; // Use initial funds from budget store
+        updateBalanceSheetElement('share-capital', `${shareCapital.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('legal-reserves', '0€'); // No legal reserves system implemented yet
+        updateBalanceSheetElement('carried-forward', '0€'); // No carried forward system implemented yet
         updateBalanceSheetElement('net-result', `${currentBudget.netFlow.toLocaleString('fr-FR')}€`);
         
         // Update provisions
@@ -183,12 +246,23 @@ async function updateBudgetDisplay() {
         // Update debts
         updateBalanceSheetElement('bank-loans-debt', `${bankLoansDebt.toLocaleString('fr-FR')}€`);
         updateBalanceSheetElement('commercial-loans-debt', `${commercialLoansDebt.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('accrued-expenses', `${(currentBudget.totalLoanInterestExpenses || 0).toLocaleString('fr-FR')}€`); // Intérêts des dettes
         updateBalanceSheetElement('supplier-debts', '0€'); // Pas de dettes fournisseurs pour l'instant
         updateBalanceSheetElement('social-fiscal-debts', '0€'); // Pas de dettes sociales/fiscales pour l'instant
         
+        // Calculate accrued expenses (charges à payer) - includes loan interest and building maintenance
+        const accruedExpenses = (currentBudget.totalLoanInterestExpenses || 0) + (currentBudget.totalBuildingMaintenance || 0);
+        updateBalanceSheetElement('accrued-expenses', `${accruedExpenses.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('loan-interest-expenses', `${(currentBudget.totalLoanInterestExpenses || 0).toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('building-maintenance-expenses', `${(currentBudget.totalBuildingMaintenance || 0).toLocaleString('fr-FR')}€`);
+        
+        // Calculate debt totals
+        const financialDebtsTotal = bankLoansDebt + commercialLoansDebt;
+        const operatingDebtsTotal = accruedExpenses; // Include both loan interest and building maintenance
+        updateBalanceSheetElement('financial-debts-total', `${financialDebtsTotal.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('operating-debts-total', `${operatingDebtsTotal.toLocaleString('fr-FR')}€`);
+        
         // Calculate total liabilities
-        const totalLiabilities = 200 + currentBudget.netFlow + riskProvisions + chargeProvisions + bankLoansDebt + commercialLoansDebt + (currentBudget.totalLoanInterestExpenses || 0);
+        const totalLiabilities = shareCapital + currentBudget.netFlow + riskProvisions + chargeProvisions + bankLoansDebt + commercialLoansDebt + accruedExpenses;
         updateBalanceSheetElement('total-liabilities', `${totalLiabilities.toLocaleString('fr-FR')}€`);
         
         // Verify balance sheet equation: ACTIF = PASSIF
@@ -226,6 +300,9 @@ async function updateBudgetDisplay() {
         // Update real-time budget display
         updateRealtimeBudget();
         
+        // Initialize balance sheet filters
+        initBalanceSheetFilters();
+        
     } catch (error) {
         console.error('Error updating budget display:', error);
     }
@@ -236,6 +313,67 @@ function updateBalanceSheetElement(elementId, value) {
     if (element) {
         element.textContent = value;
     }
+}
+
+// Initialize balance sheet filters
+function initBalanceSheetFilters() {
+    const filterButtons = document.querySelectorAll('.balance-filter-btn');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const filter = button.getAttribute('data-filter');
+            
+            // Remove active class from all buttons
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Add active class to clicked button
+            button.classList.add('active');
+            
+            // Apply filter
+            applyBalanceSheetFilter(filter);
+        });
+    });
+}
+
+// Apply balance sheet filter
+function applyBalanceSheetFilter(filter) {
+    const actifSection = document.querySelector('.balance-sheet-actif');
+    const passifSection = document.querySelector('.balance-sheet-passif');
+    const totalActif = document.querySelector('.balance-sheet-total-actif');
+    const totalPassif = document.querySelector('.balance-sheet-total-passif');
+    
+    // Reset all sections to visible
+    actifSection?.classList.remove('hidden');
+    passifSection?.classList.remove('hidden');
+    totalActif?.classList.remove('hidden');
+    totalPassif?.classList.remove('hidden');
+    
+    switch(filter) {
+        case 'actif':
+            // Show only Actif section
+            passifSection?.classList.add('hidden');
+            totalPassif?.classList.add('hidden');
+            break;
+            
+        case 'passif':
+            // Show only Passif section
+            actifSection?.classList.add('hidden');
+            totalActif?.classList.add('hidden');
+            break;
+            
+        case 'totaux':
+            // Show only totals
+            actifSection?.classList.add('hidden');
+            passifSection?.classList.add('hidden');
+            break;
+            
+        case 'all':
+        default:
+            // Show everything (already visible)
+            break;
+    }
+    
+    console.log(`Balance sheet filter applied: ${filter}`);
 }
 
 // Animation panel buttons
@@ -1446,17 +1584,29 @@ function displayBudgetStates(states, container) {
                         <span class="statement-label">Intérêts dettes</span>
                         <span class="statement-value negative">-${(state.totalLoanInterestExpenses || 0).toLocaleString('fr-FR')}€</span>
                     </div>
+                    <div class="statement-subnote">
+                        <small>💡 Intérêts des prêts bancaires et commerciaux contractés</small>
+                    </div>
                     <div class="statement-line">
                         <span class="statement-label">Remboursements prêts</span>
                         <span class="statement-value negative">-${(state.totalLoanRepayments || 0).toLocaleString('fr-FR')}€</span>
                     </div>
+                    <div class="statement-subnote">
+                        <small>💡 Remboursement du capital des prêts (principal)</small>
+                    </div>
                     <div class="statement-line">
                         <span class="statement-label">Autres charges</span>
-                        <span class="statement-value negative">-${((expenses || 0) - (state.totalBuildingMaintenance || 0) - (state.totalLoanInterestExpenses || 0) - (state.totalLoanRepayments || 0)).toLocaleString('fr-FR')}€</span>
+                        <span class="statement-value negative">-${Math.max(0, (expenses || 0) - (state.totalBuildingMaintenance || 0) - (state.totalLoanInterestExpenses || 0) - (state.totalLoanRepayments || 0)).toLocaleString('fr-FR')}€</span>
+                    </div>
+                    <div class="statement-subnote">
+                        <small>💡 Autres dépenses non catégorisées (salaires, services, etc.)</small>
                     </div>
                     <div class="statement-line total-line">
                         <span class="statement-label">TOTAL CHARGES</span>
                         <span class="statement-value total negative">-${expenses.toLocaleString('fr-FR')}€</span>
+                    </div>
+                    <div class="statement-note">
+                        <small>💡 Vérification: Maintenance (${state.totalBuildingMaintenance || 0}€) + Intérêts (${state.totalLoanInterestExpenses || 0}€) + Remboursements (${state.totalLoanRepayments || 0}€) + Autres (${Math.max(0, (expenses || 0) - (state.totalBuildingMaintenance || 0) - (state.totalLoanInterestExpenses || 0) - (state.totalLoanRepayments || 0))}€) = ${(state.totalBuildingMaintenance || 0) + (state.totalLoanInterestExpenses || 0) + (state.totalLoanRepayments || 0) + Math.max(0, (expenses || 0) - (state.totalBuildingMaintenance || 0) - (state.totalLoanInterestExpenses || 0) - (state.totalLoanRepayments || 0))}€</small>
                     </div>
                 </div>
                 
@@ -1466,6 +1616,9 @@ function displayBudgetStates(states, container) {
                         <span class="statement-value result ${netFlow >= 0 ? 'positive' : 'negative'}">
                             ${netFlow >= 0 ? '+' : ''}${netFlow.toLocaleString('fr-FR')}€
                         </span>
+                    </div>
+                    <div class="statement-note">
+                        <small>💡 Ce résultat doit correspondre au "Résultat de l'exercice" du bilan</small>
                     </div>
                 </div>
             </div>
@@ -2385,6 +2538,9 @@ async function processLoanPayments() {
 
 // Initialize loan payment system
 function initLoanPaymentSystem() {
+    // Expose processLoanPayments globally for scene.js
+    window.processLoanPayments = processLoanPayments;
+    
     // Process loan payments every turn
     if (window.game && window.game.onTurnEnd) {
         const originalOnTurnEnd = window.game.onTurnEnd;
