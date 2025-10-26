@@ -80,14 +80,19 @@ class MeshLoader {
                         
                         let toolName;
                         if (isWindmill) {
-                            // Special handling for Windmill: extract the actual name like "Windmill.001"
-                            const baseName = child.name.split('_Material')[0].split('_')[0];
-                            toolName = baseName.replace(/\./g, '-'); // "Windmill.001" -> "Windmill-001"
+                            // Special handling for Windmill: extract the actual name like "Windmill" or "Windmill001"
+                            // child.name format: "Windmill_Material005_0" or "Windmill001_Material005_0"
+                            // Extract base name: remove "_MaterialXXX_X" suffix
+                            let baseName = child.name.split('_Material')[0];
                             
-                            // Check mapping for Windmill variants
+                            // Now baseName is either "Windmill" or "Windmill001" (no dots!)
+                            // Convert to standardized format
+                            toolName = baseName.replace(/\./g, '-'); // Handle any dots if present
+                            
+                            // Apply mapping to normalize all variants to "Windmill-001"
                             if (meshNameMapping[toolName]) {
                                 const mappedName = meshNameMapping[toolName];
-                                console.log(`[LOADER] Mapping Windmill ${toolName} → ${mappedName}`);
+                                console.log(`[LOADER] Mapping Windmill variant: ${toolName} → ${mappedName}`);
                                 toolName = mappedName;
                             }
                         } else {

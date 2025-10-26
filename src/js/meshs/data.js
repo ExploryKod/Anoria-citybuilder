@@ -57,15 +57,15 @@ export const wantedHouses = [
 ]
 
 // Mapping of GLB mesh names to tool names
+// From the GLTF export, we have mesh names like:
+// - Windmill_Material005_0 → becomes "Windmill" (no number)
+// - Windmill001_Material005_0 → becomes "Windmill001"
+// - Windmill002_Material005_0 → becomes "Windmill002"
+// - Windmill003_Material005_0 → becomes "Windmill003"
+// We map all these to "Windmill-001" for consistency
 export const meshNameMapping = {
-    'Windmill': 'Windmill-001',  // Main windmill
-    'Windmill-001': 'Windmill-001',  // Windmill.001
-    'Windmill-002': 'Windmill-001',  // Windmill.002
-    'Windmill-003': 'Windmill-001',  // Windmill.003
-    // Legacy mappings
-    'Windmill-1': 'Windmill-001',
-    'Windmill_1': 'Windmill-001',
-    'Windmill_001': 'Windmill-001',
-    'Windmill_1_': 'Windmill-001',
-    'Windmill1': 'Windmill-001',
+    'Windmill': 'Windmill-001',      // Windmill_Material005_0 (main windmill, no number)
+    'Windmill001': 'Windmill-001',    // Windmill001_Material005_0
+    'Windmill002': 'Windmill-001',    // Windmill002_Material005_0
+    'Windmill003': 'Windmill-001',    // Windmill003_Material005_0
 };
