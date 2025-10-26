@@ -146,10 +146,22 @@ export function createScene(housesStore, gameStore, assetManager) {
 
         // --- BOUCLE SUR LA VILLE ----
 
+        // Define status icons metadata for all buildings
+        const statutsIconsMeta = {
+            road: {
+                position : {x: -1, y: 1, z: 1},
+                scale : {x: 1.2, y: 1.2, z: 1}
+            },
+            food: {
+                position : {x: -0.5, y: 1, z: 0},
+                scale : {x: 1.0, y: 1.0, z: 1}
+            }
+        };
+
         for(let x = 0; x < city.size; x++) {
             for(let y = 0; y < city.size; y++) {
                 // Processing city tile
-              let currentBuildingId = buildings[x][y]?.userData?.type;
+              let currentBuildingId = buildings[x][y]?.userData?.type || buildings[x][y]?.userData?.id;
               const currentBuilding = buildings[x][y];
               const newBuildingId = city.tiles[x][y].buildingId;
               const buildingInfo =  city.tiles[x][y];
@@ -191,6 +203,15 @@ export function createScene(housesStore, gameStore, assetManager) {
                         const uniqueBuildingId = makeDbItemId(currentBuildingId, x, y);
                         if(houses.includes(currentBuildingId)) {
                             await housesStore.deleteOneHouse(uniqueBuildingId)
+                            console.log(`🏠 House ${currentBuildingId} deleted at (${x}, ${y})`);
+                        } else if(currentBuildingId === 'roads') {
+                            // Roads are now stored in database like other buildings
+                            await housesStore.deleteOneHouse(uniqueBuildingId)
+                            console.log(`🛣️ Road deleted at (${x}, ${y})`);
+                        } else {
+                            // Other building types (farms, markets, etc.)
+                            await housesStore.deleteOneHouse(uniqueBuildingId)
+                            console.log(`🏗️ Building ${currentBuildingId} deleted at (${x}, ${y})`);
                         }
                         scene.remove(buildings[x][y]);
                         buildings[x][y] = undefined;
@@ -211,6 +232,40 @@ export function createScene(housesStore, gameStore, assetManager) {
                 if(commerce.includes(currentBuildingId)) {
                     const marketTime = { name: currentUniqueID, increment: 1, field: 'time' };
                     await housesStore.incrementHouseField(marketTime, false)
+
+                    // Check road access for markets
+                    const marketNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
+                    if(marketNeighbors) {
+                        const isRoad = marketNeighbors.filter(neighbor => neighbor.name === 'roads').length;
+                        const MarketRoads = {roads : marketNeighbors.filter(neighbor => neighbor.name === 'roads').length};
+                        await housesStore.updateHouseFields(currentUniqueID, MarketRoads);
+                        
+                        // Adjust icon scale for markets (smaller than houses)
+                        const marketRoadScale = {
+                            x: statutsIconsMeta.road.scale.x * 0.714, // 0.5/0.7 ratio
+                            y: statutsIconsMeta.road.scale.y * 0.714,
+                            z: statutsIconsMeta.road.scale.z * 0.714
+                        };
+                        
+                        if(isRoad > 0) {
+                            // Market has road access
+                            assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
+                                marketRoadScale, statutsIconsMeta.road.position, false);
+                        } else {
+                            // Market has no road access
+                            assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
+                                marketRoadScale, statutsIconsMeta.road.position, true);
+                        }
+                    } else {
+                        // Market has no neighbors (no road access)
+                        const marketRoadScale = {
+                            x: statutsIconsMeta.road.scale.x * 0.714, // 0.5/0.7 ratio
+                            y: statutsIconsMeta.road.scale.y * 0.714,
+                            z: statutsIconsMeta.road.scale.z * 0.714
+                        };
+                        assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
+                            marketRoadScale, statutsIconsMeta.road.position, true);
+                    }
 
                     /**
                      * Update market stocks of food in userData and in DB
@@ -281,78 +336,87 @@ export function createScene(housesStore, gameStore, assetManager) {
                     let farmsNearBy = [];
 
                     if(currentMarket) {
-                        // Processing market data
-                        farmsNearBy =  currentMarket?.neighbors.filter(neighbor => neighbor.name.includes("Farms"))
-                        marketHouses = currentMarket?.neighbors.filter(neighbor => neighbor.name.includes("House"))
+                        // Check if market has road access before processing
+                        const hasRoadAccess = currentMarket.neighbors && currentMarket.neighbors.filter(neighbor => neighbor.name === 'roads').length > 0;
+                        
+                        if (hasRoadAccess) {
+                            // Market has road access - process normally
+                            console.log(`✅ Market ${currentUniqueID}: Has road access, can distribute food`);
+                            farmsNearBy =  currentMarket?.neighbors.filter(neighbor => neighbor.name.includes("Farms"))
+                            marketHouses = currentMarket?.neighbors.filter(neighbor => neighbor.name.includes("House"))
 
-                        let carrotMarketStocks = 0;
-                        let cabbageMarketStocks = 0;
-                        let wheatMarketStocks = 0;
+                            let carrotMarketStocks = 0;
+                            let cabbageMarketStocks = 0;
+                            let wheatMarketStocks = 0;
 
-                        if(farmsNearBy.length > 0) {
+                            if(farmsNearBy.length > 0) {
 
-                            farmsNearBy.forEach(farm => {
-                                if(farm.name.includes("Farms-Wheat")) {
-                                    wheatMarketStocks++;
-                                    // Wheat added to market stocks
-                                }
-                                if(farm.name.includes("Farms-Carrot")) {
-                                    carrotMarketStocks++;
-                                    // Carrot added to market stocks
-                                }
-                                if(farm.name.includes("Farms-Cabbage")) {
-                                    cabbageMarketStocks++;
-                                    // Cabbage added to market stocks
-                                }
-                            })
+                                farmsNearBy.forEach(farm => {
+                                    if(farm.name.includes("Farms-Wheat")) {
+                                        wheatMarketStocks++;
+                                        // Wheat added to market stocks
+                                    }
+                                    if(farm.name.includes("Farms-Carrot")) {
+                                        carrotMarketStocks++;
+                                        // Carrot added to market stocks
+                                    }
+                                    if(farm.name.includes("Farms-Cabbage")) {
+                                        cabbageMarketStocks++;
+                                        // Cabbage added to market stocks
+                                    }
+                                })
 
+                                const datas = [
+                                    {key: 'cabbage', number:  carrotMarketStocks, decrease: false},
+                                    {key: 'carrot', number:  cabbageMarketStocks, decrease: false},
+                                    {key: 'wheat', number: wheatMarketStocks, decrease: false},
+                                    {key: 'food', number: 3, decrease: false}
+                                ]
+                                await updateMarketStocks(buildings, housesStore, datas);
+                            }
+                        }
+
+                            // Market stocks before distribution
+                            /* Distribute food to house around */
+                            let carrotHousesStocks = 0;
+                            let cabbageHousesStocks = 0;
+                            let wheatHousesStocks = 0;
+                            let wheatByHouse = 1;
+                            let carrotByHouse = 1;
+                            let cabbageByHouse = 1;
+                            let totalHouseFood = wheatByHouse + carrotByHouse + cabbageByHouse;
+                            for (const house of marketHouses) {
+                                const buildingsUserData = buildings[house.x][house.y].userData
+                                // House food before distribution
+                                const newStocks = {food: totalHouseFood, carrot: carrotByHouse, cabbage: cabbageByHouse, wheat: wheatByHouse};
+                                buildings[house.x][house.y].userData = {...buildingsUserData, stocks: newStocks};
+                                
+                                // Sync stocks with database
+                                await housesStore.updateHouseFields(house.id, {stocks: newStocks});
+                                
+                                carrotHousesStocks += carrotByHouse;
+                                cabbageHousesStocks += cabbageByHouse;
+                                wheatHousesStocks += wheatByHouse;
+                                // House food after distribution
+                            }
+                            const foodHousesStocks = cabbageHousesStocks + carrotHousesStocks + wheatHousesStocks;
                             const datas = [
-                                {key: 'cabbage', number:  carrotMarketStocks, decrease: false},
-                                {key: 'carrot', number:  cabbageMarketStocks, decrease: false},
-                                {key: 'wheat', number: wheatMarketStocks, decrease: false},
-                                {key: 'food', number: 3, decrease: false}
+                                {key: 'cabbage', number: cabbageHousesStocks, decrease: true},
+                                {key: 'carrot', number: carrotHousesStocks, decrease: true},
+                                {key: 'wheat', number: wheatHousesStocks, decrease: true},
+                                {key: 'food', number: foodHousesStocks, decrease: true}
                             ]
                             await updateMarketStocks(buildings, housesStore, datas);
+                            //buildings[x][y].userData.stocks = {food: 0 , carrot: carrotStocks, cabbage: cabbageStocks, wheat: 0};
+                            // Market stocks after distribution
+                        } else {
+                            // Market has no road access - cannot distribute food
+                            console.log(`🚨 Market ${currentUniqueID}: No road access, cannot distribute food`);
                         }
-
-                        // Market stocks before distribution
-                        /* Distribute food to house around */
-                        let carrotHousesStocks = 0;
-                        let cabbageHousesStocks = 0;
-                        let wheatHousesStocks = 0;
-                        let wheatByHouse = 1;
-                        let carrotByHouse = 1;
-                        let cabbageByHouse = 1;
-                        let totalHouseFood = wheatByHouse + carrotByHouse + cabbageByHouse;
-                        for (const house of marketHouses) {
-                            const buildingsUserData = buildings[house.x][house.y].userData
-                            // House food before distribution
-                            const newStocks = {food: totalHouseFood, carrot: carrotByHouse, cabbage: cabbageByHouse, wheat: wheatByHouse};
-                            buildings[house.x][house.y].userData = {...buildingsUserData, stocks: newStocks};
-                            
-                            // Sync stocks with database
-                            await housesStore.updateHouseFields(house.id, {stocks: newStocks});
-                            
-                            carrotHousesStocks += carrotByHouse;
-                            cabbageHousesStocks += cabbageByHouse;
-                            wheatHousesStocks += wheatByHouse;
-                            // House food after distribution
-                        }
-                        const foodHousesStocks = cabbageHousesStocks + carrotHousesStocks + wheatHousesStocks;
-                        const datas = [
-                            {key: 'cabbage', number: cabbageHousesStocks, decrease: true},
-                            {key: 'carrot', number: carrotHousesStocks, decrease: true},
-                            {key: 'wheat', number: wheatHousesStocks, decrease: true},
-                            {key: 'food', number: foodHousesStocks, decrease: true}
-                        ]
-                        await updateMarketStocks(buildings, housesStore, datas);
-                        //buildings[x][y].userData.stocks = {food: 0 , carrot: carrotStocks, cabbage: cabbageStocks, wheat: 0};
-                        // Market stocks after distribution
                     }
-                }
 
                 //  only update if current building is a house
-                if(houses.includes(currentBuildingId)) {
+                if(houses.includes(currentBuildingId) && buildings[x][y]) {
 
                     // Initialize stocks if not present
                     if(!Object.hasOwn(buildings[x][y], 'userData') || !Object.hasOwn(buildings[x][y].userData, 'stocks')) {
@@ -365,7 +429,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                     // turn by turn values from userData need to be mirrored in indexDB
                     let valuesFromUserData = {}
 
-                    if(Object.hasOwn(buildings[x][y], 'userData') && Object.hasOwn(buildings[x][y].userData, 'stocks')) {
+                    if(buildings[x][y] && Object.hasOwn(buildings[x][y], 'userData') && Object.hasOwn(buildings[x][y].userData, 'stocks')) {
                         valuesFromUserData = {
                             stocks:
                                 {
@@ -417,17 +481,6 @@ export function createScene(housesStore, gameStore, assetManager) {
 
                     const houseTime = await housesStore.getHouseItem(currentUniqueID, 'time');
                     // House time processing
-
-                    const statutsIconsMeta = {
-                        road: {
-                            position : {x: -1, y: 1, z: 1},
-                            scale : {x: 1.2, y: 1.2, z: 1}
-                        },
-                        food: {
-                            position : {x: -0.5, y: 1, z: 0},
-                            scale : {x: 1.0, y: 1.0, z: 1},
-                        }
-                    }
 
                     if(houseNeighbors) {
                         const isRoad = houseNeighbors.filter(neighbor => neighbor.name === 'roads').length
@@ -564,6 +617,28 @@ export function createScene(housesStore, gameStore, assetManager) {
                 
                 // Update turn
                 await window.budgetManager.updateTurn(time);
+                
+                // Save budget state every 3 turns
+                if (time % 3 === 0 && time > 0) {
+                    try {
+                        const additionalData = {
+                            population: totalPop,
+                            buildingCounts: buildingCounts
+                        };
+                        
+                        await window.budgetManager.saveBudgetState(time, additionalData);
+                        console.log(`📊 Budget state saved for turn ${time} (every 3 turns)`);
+                        
+                        // Clean up old states by age (60+ days)
+                        const cleanupResult = await window.budgetManager.cleanupOldBudgetStatesByAge();
+                        if (cleanupResult.deleted > 0) {
+                            // Show notification to user
+                            showCleanupNotification(cleanupResult);
+                        }
+                    } catch (error) {
+                        console.warn('Failed to save budget state:', error);
+                    }
+                }
             }
         } catch (error) {
             console.warn('Budget operations failed:', error);
@@ -789,6 +864,36 @@ function onMouseMove(event) {
         camera.onKeyBoardUp(event);
     }
 
+    /**
+     * Show cleanup notification to user
+     * @param {Object} cleanupResult - Result from cleanupOldBudgetStatesByAge
+     */
+    function showCleanupNotification(cleanupResult) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = 'cleanup-notification';
+        notification.innerHTML = `
+            <div class="cleanup-content">
+                <div class="cleanup-icon">🧹</div>
+                <div class="cleanup-text">
+                    <strong>Nettoyage automatique</strong><br>
+                    ${cleanupResult.deleted} état(s) de plus de 60 jours supprimé(s)
+                    ${cleanupResult.deletedTurns ? `<br><small>Tours: ${cleanupResult.deletedTurns.join(', ')}</small>` : ''}
+                </div>
+                <button class="cleanup-close" onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
+        `;
+
+        // Add to page
+        document.body.appendChild(notification);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 5000);
+    }
 
     // make the game know the object userData I selected (to reach x and y position of the object or its id from asset
     return {

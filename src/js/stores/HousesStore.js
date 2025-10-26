@@ -97,6 +97,33 @@ class HouseStore {
         return houses.reduce((total, house) => total + (house.price || 0), 0);
     }
 
+    async getBuildingPricesByType() {
+        const houses = await this.listAllHouses();
+        const pricesByType = {};
+
+        houses.forEach(house => {
+            // Extract base type from name (e.g., "House-Red-1" -> "House-Red", "Road-1" -> "Road")
+            let houseType;
+            if (house.name.includes('House-')) {
+                houseType = house.name.split('-').slice(0, 2).join('-');
+            } else if (house.name.includes('Farm-')) {
+                houseType = house.name.split('-').slice(0, 2).join('-');
+            } else if (house.name.includes('Market')) {
+                houseType = 'Market';
+            } else if (house.name.includes('roads')) {
+                houseType = 'roads';
+            } else {
+                houseType = house.name.split('-')[0];
+            }
+            
+            if (!pricesByType[houseType]) {
+                pricesByType[houseType] = house.price || 0;
+            }
+        });
+
+        return pricesByType;
+    }
+
     async addHouse(data) {
         try {
             await this.db.houses.add(data);

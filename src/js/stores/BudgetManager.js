@@ -18,7 +18,11 @@ class BudgetManager {
     async initialize(startingFunds = 200) {
         console.log('BudgetManager.initialize() called with startingFunds:', startingFunds);
         
-        // Since database is cleared each page load, always create fresh budget
+        // Clear any existing budget data to ensure fresh start
+        await this.db.budget.clear();
+        console.log('Budget table cleared');
+        
+        // Create fresh budget
         const initialBudget = {
             name: 'budget_current',
             funds: startingFunds,
@@ -32,14 +36,69 @@ class BudgetManager {
             totalMaintenance: 0,
             totalSalaries: 0,
             totalBuildingMaintenance: 0,
-            totalInvestments: 0
+            totalInvestments: 0,
+            totalLoanInterestExpenses: 0, // Interest expenses as separate category
+            // Loan-related fields
+            loans: [], // Array of active loans
+            loanDebt: 0,
+            totalLoanInterest: 0,
+            totalLoanRepayments: 0
         };
         
         await this.db.budget.add(initialBudget);
         console.log('Budget initialized with fresh data:', initialBudget);
+        
         return initialBudget;
     }
 
+    /**
+     * Calculate loan totals from budget loans array
+     * @param {Object} budget - Budget object
+     */
+    async calculateLoanTotals(budget) {
+        if (!budget.loans || !Array.isArray(budget.loans)) {
+            budget.loans = [];
+            budget.loanDebt = 0;
+            budget.totalLoanInterest = 0;
+            budget.totalLoanRepayments = 0;
+            budget.totalLoanInterestExpenses = 0;
+            return;
+        }
+        
+        let totalLoanDebt = 0;
+        let totalLoanInterest = 0;
+        let totalLoanRepayments = 0;
+        let totalLoanInterestExpenses = 0;
+        
+        budget.loans.forEach(loan => {
+            totalLoanDebt += loan.amount || 0;
+            totalLoanInterest += loan.interest || 0;
+            
+            // Calculate total repayments based on remaining turns
+            const paidTurns = (loan.duration || 0) - (loan.remainingTurns || 0);
+            const monthlyPayment = Math.round((loan.total || 0) / (loan.duration || 1));
+            totalLoanRepayments += monthlyPayment * paidTurns;
+            
+            // Calculate accrued interest (interest that should be paid but hasn't been paid yet)
+            const accruedInterest = Math.round(loan.amount * (loan.interestRate / 100) / loan.duration);
+            totalLoanInterestExpenses += accruedInterest;
+        });
+        
+        budget.loanDebt = totalLoanDebt;
+        budget.totalLoanInterest = totalLoanInterest;
+        budget.totalLoanRepayments = totalLoanRepayments;
+        budget.totalLoanInterestExpenses = totalLoanInterestExpenses;
+        
+        console.log('Loan totals calculated:', {
+            debt: totalLoanDebt,
+            interest: totalLoanInterest,
+            repayments: totalLoanRepayments,
+            interestExpenses: totalLoanInterestExpenses
+        });
+        
+        // Save the updated budget
+        await this.db.budget.put(budget);
+    }
 
     /**
      * Get current budget state
@@ -53,6 +112,9 @@ class BudgetManager {
             console.log('No budget found, initializing...');
             return await this.initialize();
         }
+        
+        // Calculate loan totals from budget loans array
+        await this.calculateLoanTotals(budget);
         
         // Migration: Add new fields if they don't exist
         let needsUpdate = false;
@@ -74,6 +136,10 @@ class BudgetManager {
         }
         if (budget.totalInvestments === undefined) {
             budget.totalInvestments = 0;
+            needsUpdate = true;
+        }
+        if (budget.totalLoanInterestExpenses === undefined) {
+            budget.totalLoanInterestExpenses = 0;
             needsUpdate = true;
         }
         
@@ -101,6 +167,102 @@ class BudgetManager {
         
         console.log(`Income added: +${amount}€ from ${source}. New funds: ${budget.funds}€`);
         return budget;
+    }
+
+    /**
+     * Add loan to budget (principal amount)
+     * @param {number} amount - Loan principal amount
+     * @param {string} description - Description of loan
+     */
+    async addLoan(amount, description = 'Loan', loanData = null) {
+        const budget = await this.getCurrentBudget();
+        budget.funds += amount;
+        
+        // Initialize loans array if not exists
+        if (!budget.loans) budget.loans = [];
+        
+        // Add loan to budget if loanData provided
+        if (loanData) {
+            budget.loans.push(loanData);
+        }
+        
+        // Recalculate loan totals
+        await this.calculateLoanTotals(budget);
+        
+        console.log(`Loan added: +${amount}€ (${description}). New funds: ${budget.funds}€, Loan debt: ${budget.loanDebt}€`);
+        return budget;
+    }
+
+    /**
+     * Add loan interest expense to budget
+     * @param {number} amount - Interest amount
+     * @param {string} description - Description of interest
+     */
+    async addLoanInterest(amount, description = 'Loan Interest') {
+        const budget = await this.getCurrentBudget();
+        budget.expenses += amount;
+        budget.funds -= amount;
+        budget.netFlow = budget.income - budget.expenses;
+        
+        // Initialize loan interest if not exists
+        if (!budget.totalLoanInterest) budget.totalLoanInterest = 0;
+        budget.totalLoanInterest += amount;
+        
+        // Initialize loan interest expenses if not exists
+        if (!budget.totalLoanInterestExpenses) budget.totalLoanInterestExpenses = 0;
+        budget.totalLoanInterestExpenses += amount;
+        
+        await this.db.budget.put(budget);
+        
+        console.log(`Loan interest added: -${amount}€ (${description}). New funds: ${budget.funds}€`);
+        return budget;
+    }
+
+    /**
+     * Repay loan principal
+     * @param {number} amount - Amount to repay
+     * @param {string} description - Description of repayment
+     */
+    async repayLoan(amount, description = 'Loan Repayment', loanId = null) {
+        const budget = await this.getCurrentBudget();
+        budget.funds -= amount;
+        budget.expenses += amount;
+        budget.netFlow = budget.income - budget.expenses;
+        
+        // Track total loan repayments
+        if (!budget.totalLoanRepayments) budget.totalLoanRepayments = 0;
+        budget.totalLoanRepayments += amount;
+        
+        // Update specific loan if loanId provided
+        if (loanId && budget.loans) {
+            const loan = budget.loans.find(l => l.id === loanId);
+            if (loan) {
+                loan.amount = Math.max(0, loan.amount - amount);
+                loan.remainingTurns--;
+                
+                // Remove loan if fully paid
+                if (loan.remainingTurns <= 0 || loan.amount <= 0) {
+                    budget.loans = budget.loans.filter(l => l.id !== loanId);
+                }
+            }
+        }
+        
+        // Recalculate loan totals
+        await this.calculateLoanTotals(budget);
+        
+        await this.db.budget.put(budget);
+        
+        console.log(`Loan repaid: -${amount}€ (${description}). New funds: ${budget.funds}€, Remaining debt: ${budget.loanDebt}€`);
+        return budget;
+    }
+
+    /**
+     * Get active loans from budget
+     * @returns {Promise<Array>} Array of active loans
+     */
+    async getActiveLoans() {
+        const budget = await this.getCurrentBudget();
+        return budget.loans || [];
     }
 
     /**
@@ -193,7 +355,11 @@ class BudgetManager {
             netFlow: budget.netFlow,
             turn: budget.turn,
             isProfitable: budget.netFlow > 0,
-            isInDebt: budget.funds < 0
+            isInDebt: budget.funds < 0,
+            // Loan information
+            loanDebt: budget.loanDebt || 0,
+            totalLoanInterest: budget.totalLoanInterest || 0,
+            totalLoanRepayments: budget.totalLoanRepayments || 0
         };
     }
 
@@ -366,6 +532,7 @@ class BudgetManager {
     async forceReinitialize(startingFunds = 200) {
         console.log('Force reinitializing budget...');
         await this.db.budget.clear();
+        
         return await this.initialize(startingFunds);
     }
 
@@ -376,28 +543,261 @@ class BudgetManager {
     async getFinancialHealth() {
         const budget = await this.getCurrentBudget();
         
-        let status = "healthy";
-        let message = "Finances are in good shape";
+        // Calculate net flow (daily income - daily expenses)
+        const netFlow = budget.dailyIncome - budget.dailyExpenses;
         
+        let status = "healthy";
+        let message = "Finances saines";
+        
+        // CRITICAL SITUATIONS (highest priority)
         if (budget.funds < 0) {
             status = "critical";
-            message = "City is bankrupt!";
-        } else if (budget.funds < 100) {
+            message = "Faillite !";
+        }
+        // High deficit with low funds
+        else if (netFlow < -30 && budget.funds < 100) {
+            status = "critical";
+            message = "Danger : dépenses excessives";
+        }
+        // Very high deficit regardless of funds
+        else if (netFlow < -50) {
+            status = "critical";
+            message = "Déficit critique";
+        }
+        
+        // WARNING SITUATIONS
+        // Moderate deficit with low funds
+        else if (netFlow < -20 && budget.funds < 100) {
             status = "warning";
-            message = "Low funds - manage expenses carefully";
-        } else if (budget.funds < 200) {
+            message = "Attention : déficit + fonds faibles";
+        }
+        // High deficit with sufficient funds
+        else if (netFlow < -30 && budget.funds >= 100) {
+            status = "warning";
+            message = "Surveillez vos dépenses";
+        }
+        // Low funds with positive flow
+        else if (budget.funds < 50 && netFlow >= 0) {
+            status = "warning";
+            message = "Fonds insuffisants";
+        }
+        
+        // DEFICIT SITUATIONS
+        // Small deficit with low funds
+        else if (netFlow < 0 && budget.funds < 100) {
             status = "deficit";
-            message = "Limited funds - watch spending";
-        } else if (budget.funds > 500) {
+            message = "Déficit + fonds limités";
+        }
+        // Small deficit with sufficient funds
+        else if (netFlow < 0 && budget.funds >= 100) {
+            status = "deficit";
+            message = "Déficitaire";
+        }
+        // Low funds with small positive flow
+        else if (budget.funds < 100 && netFlow >= 0 && netFlow < 20) {
+            status = "deficit";
+            message = "Fonds limités";
+        }
+        
+        // EXCELLENT SITUATIONS
+        // High positive flow
+        else if (netFlow > 100) {
             status = "excellent";
-            message = "Strong financial position";
+            message = "Excellent flux";
+        }
+        // High funds with good flow
+        else if (budget.funds > 500 && netFlow > 50) {
+            status = "excellent";
+            message = "Très solide";
+        }
+        // Very high funds
+        else if (budget.funds > 1000) {
+            status = "excellent";
+            message = "Très prospère";
         }
         
         return {
             status,
             message,
-            budget
+            budget,
+            netFlow
         };
+    }
+
+    /**
+     * Save budget state snapshot (called every 3 turns)
+     * @param {number} turn - Current turn number
+     * @param {Object} additionalData - Additional data (population, building counts, etc.)
+     */
+    async saveBudgetState(turn, additionalData = {}) {
+        const budget = await this.getCurrentBudget();
+        const financialHealth = await this.getFinancialHealth();
+        
+        const budgetState = {
+            name: `budget_turn_${turn}`,
+            turn: turn,
+            date: new Date().toISOString(),
+            funds: budget.funds,
+            income: budget.income,
+            expenses: budget.expenses,
+            netFlow: budget.netFlow,
+            dailyIncome: budget.dailyIncome,
+            dailyExpenses: budget.dailyExpenses,
+            totalTaxes: budget.totalTaxes,
+            totalBuildingMaintenance: budget.totalBuildingMaintenance,
+            totalInvestments: budget.totalInvestments,
+            population: additionalData.population || 0,
+            buildingCounts: additionalData.buildingCounts || {},
+            financialHealth: financialHealth
+        };
+
+        try {
+            await this.db.budget.add(budgetState);
+            console.log(`📊 Budget state saved for turn ${turn}`);
+            return budgetState;
+        } catch (err) {
+            if (err.name === 'ConstraintError') {
+                // Update existing state
+                await this.db.budget.put(budgetState);
+                console.log(`📊 Budget state updated for turn ${turn}`);
+                return budgetState;
+            } else {
+                console.error('Error saving budget state:', err);
+                throw err;
+            }
+        }
+    }
+
+    /**
+     * Get budget states (all saved states)
+     */
+    async getBudgetStates() {
+        const allBudgets = await this.db.budget.toArray();
+        // Filter only budget states (not the main budget)
+        return allBudgets.filter(budget => budget.name.startsWith('budget_turn_'))
+                         .sort((a, b) => b.turn - a.turn);
+    }
+
+    /**
+     * Get budget states every N turns
+     * @param {number} n - Every N turns (default: 3)
+     */
+    async getBudgetStatesEveryNTurns(n = 3) {
+        const allStates = await this.getBudgetStates();
+        return allStates.filter(state => state.turn % n === 0);
+    }
+
+    /**
+     * Get budget states for a specific period
+     * @param {number} startTurn - Start turn
+     * @param {number} endTurn - End turn
+     */
+    async getBudgetStatesForPeriod(startTurn, endTurn) {
+        const allStates = await this.getBudgetStates();
+        return allStates.filter(state => state.turn >= startTurn && state.turn <= endTurn);
+    }
+
+    /**
+     * Get the last N batches of budget states (each batch contains states every M turns)
+     * @param {number} nBatches - Number of batches to retrieve
+     * @param {number} batchSize - Size of each batch (every M turns)
+     * @returns {Promise<Array>} Last N batches of budget states
+     */
+    async getLastNBatches(nBatches, batchSize) {
+        const allStates = await this.getBudgetStates();
+        
+        if (allStates.length === 0) {
+            return [];
+        }
+
+        // Get states that are multiples of batchSize (every M turns)
+        const batchStates = allStates.filter(state => state.turn % batchSize === 0);
+        
+        if (batchStates.length === 0) {
+            return [];
+        }
+
+        // Sort by turn descending to get the most recent first
+        batchStates.sort((a, b) => b.turn - a.turn);
+        
+        // Take the last N batches
+        const lastNBatches = batchStates.slice(0, nBatches);
+        
+        // Sort by turn ascending for display
+        lastNBatches.sort((a, b) => a.turn - b.turn);
+        
+        console.log(`📊 Retrieved last ${nBatches} batches of ${batchSize}-turn periods:`, 
+            lastNBatches.map(s => `Turn ${s.turn}`).join(', '));
+        
+        return lastNBatches;
+    }
+
+    /**
+     * Clean up old budget states (keep only last N)
+     * @param {number} keepLast - Number of states to keep (default: 10)
+     */
+    async cleanupOldBudgetStates(keepLast = 10) {
+        const allStates = await this.getBudgetStates();
+        if (allStates.length > keepLast) {
+            const statesToDelete = allStates.slice(keepLast);
+            for (const state of statesToDelete) {
+                await this.db.budget.delete(state.name);
+            }
+            console.log(`🧹 Cleaned up ${statesToDelete.length} old budget states`);
+        }
+    }
+
+    /**
+     * Clean up budget states older than 60 days (approximately 20 periods of 3 turns)
+     * @returns {Promise<Object>} Cleanup result with count and message
+     */
+    async cleanupOldBudgetStatesByAge() {
+        const allStates = await this.getBudgetStates();
+        const currentTurn = await this.getCurrentTurn();
+        
+        // Calculate the cutoff turn (60 days ≈ 20 periods of 3 turns)
+        const cutoffTurn = currentTurn - 60;
+        
+        // Find states older than 60 days
+        const oldStates = allStates.filter(state => state.turn < cutoffTurn);
+        
+        if (oldStates.length === 0) {
+            return {
+                deleted: 0,
+                message: 'Aucun état ancien à supprimer'
+            };
+        }
+
+        // Delete old states
+        for (const state of oldStates) {
+            await this.db.budget.delete(state.name);
+        }
+
+        const message = `🧹 Nettoyage automatique : ${oldStates.length} état(s) de plus de 60 jours supprimé(s) (tours < ${cutoffTurn})`;
+        console.log(message);
+
+        return {
+            deleted: oldStates.length,
+            message: message,
+            deletedTurns: oldStates.map(s => s.turn).sort((a, b) => a - b)
+        };
+    }
+
+    /**
+     * Get current turn from game store
+     * @returns {Promise<number>} Current turn number
+     */
+    async getCurrentTurn() {
+        try {
+            if (window.gameStore) {
+                const turnData = await window.gameStore.getLatestGameItemByField('turn');
+                return turnData || 0;
+            }
+            return 0;
+        } catch (error) {
+            console.warn('Could not get current turn:', error);
+            return 0;
+        }
     }
 }
 
