@@ -218,6 +218,12 @@ export function createScene(housesStore, gameStore, assetManager) {
                     }
                 }
 
+                // Skip all further processing if building was just removed
+                if(!buildings[x][y]) {
+                    // Building was removed (bulldozed), skip the rest
+                    continue;
+                }
+
                   /* utils for scene updates */
                   function calculateNetStocks(houseFood, housePop) {
                       if(houseFood > 0 && housePop > 0) {
@@ -247,16 +253,16 @@ export function createScene(housesStore, gameStore, assetManager) {
                             z: statutsIconsMeta.road.scale.z * 0.714
                         };
                         
-                        if(isRoad > 0) {
+                        if(isRoad > 0 && buildings[x][y]) {
                             // Market has road access
                             assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
                                 marketRoadScale, statutsIconsMeta.road.position, false);
-                        } else {
+                        } else if(buildings[x][y]) {
                             // Market has no road access
                             assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
                                 marketRoadScale, statutsIconsMeta.road.position, true);
                         }
-                    } else {
+                    } else if(buildings[x][y]) {
                         // Market has no neighbors (no road access)
                         const marketRoadScale = {
                             x: statutsIconsMeta.road.scale.x * 0.714, // 0.5/0.7 ratio
@@ -487,16 +493,16 @@ export function createScene(housesStore, gameStore, assetManager) {
                         const HouseRoads = {roads : houseNeighbors.filter(neighbor => neighbor.name === 'roads').length};
                         await housesStore.updateHouseFields(currentUniqueID, HouseRoads)
                         // Major problem here : is this apply to every house mesh ??
-                        if(isRoad > 0) {
+                        if(isRoad > 0 && buildings[x][y]) {
                             // console.warn('There is one neighbor road at least for: ', buildings[x][y], HouseRoads, isRoad);
                             assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
                                 statutsIconsMeta.road.scale, statutsIconsMeta.road.position, false)
-                        } else {
+                        } else if(buildings[x][y]) {
                             // console.warn('There is no neighbor roads for: ', buildings[x][y], HouseRoads, isRoad);
                             assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
                                 statutsIconsMeta.road.scale, statutsIconsMeta.road.position, true)
                         }
-                    } else {
+                    } else if(buildings[x][y]) {
                         // console.warn('There is no neighbor roads and no object roads for: ', buildings[x][y]);
                         assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
                             statutsIconsMeta.road.scale, statutsIconsMeta.road.position, true)
@@ -508,9 +514,9 @@ export function createScene(housesStore, gameStore, assetManager) {
                     const foodGoal = housePop > 2 && houseStocks.food > housePop * 2
                     const decay = houseTime > 3 && housePop >= 2 && houseStocks.food < housePop
 
-                    if(houseStocks.food <= 0) {
+                    if(houseStocks.food <= 0 && buildings[x][y]) {
                         assetManager.setStatusSprite(buildings[x][y], textures['nofood'], 'no-food', statutsIconsMeta.food.scale, statutsIconsMeta.food.position, true)
-                    } else {
+                    } else if(buildings[x][y]) {
                         assetManager.setStatusSprite(buildings[x][y], textures['nofood'], 'no-food', statutsIconsMeta.food.scale, statutsIconsMeta.food.position, false)
                     }
                     

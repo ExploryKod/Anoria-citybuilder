@@ -255,7 +255,6 @@ export const zoneBordersBuildings = (buildingData, time=0) => {
                     // Calculate the zone based on the maximum delta of x or z
                     const zone = Math.max(deltaX, deltaZ);
                     let neighborData = {
-                        building: theCurrentBuilding + '-' + mesh.position.x + '-' + mesh.position.z,
                         time: time,
                         name: mesh.name,
                         id : mesh.name + '-' + mesh.position.x + '-' + mesh.position.z,

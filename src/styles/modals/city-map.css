@@ -93,28 +93,58 @@
 /* Legend Styles */
 .city-map-legend {
     background: rgba(30, 41, 59, 0.5);
-    padding: 15px 20px;
+    padding: 20px;
     border-radius: 12px;
     border: 1px solid rgba(71, 85, 105, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .city-map-legend h4 {
-    margin: 0 0 10px 0;
+    margin: 0 0 15px 0;
     color: #f1f5f9;
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: 600;
+    text-align: center;
+    padding-bottom: 10px;
+    border-bottom: 2px solid rgba(71, 85, 105, 0.3);
+}
+
+.legend-section {
+    margin-bottom: 15px;
+}
+
+.legend-section:last-child {
+    margin-bottom: 0;
+}
+
+.legend-subtitle {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    padding-left: 5px;
 }
 
 .legend-items {
     display: flex;
     flex-wrap: wrap;
-    gap: 15px;
+    gap: 12px;
 }
 
 .legend-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+}
+
+.legend-status {
+    padding: 4px 8px;
+    background: rgba(51, 65, 85, 0.3);
+    border-radius: 6px;
 }
 
 .legend-code {
@@ -128,9 +158,93 @@
     text-align: center;
 }
 
+.legend-code-small {
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    min-width: 28px;
+    display: inline-block;
+    border-radius: 4px;
+}
+
 .legend-label {
     color: #cbd5e1;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+}
+
+/* Legend color codes */
+.legend-code-small.hb {
+    background: #3b82f6;
+    color: white;
+}
+
+.legend-code-small.hr {
+    background: #ef4444;
+    color: white;
+}
+
+.legend-code-small.hp {
+    background: #a855f7;
+    color: white;
+}
+
+.legend-code-small.m {
+    background: #10b981;
+    color: white;
+}
+
+.legend-code-small.f {
+    background: #f59e0b;
+    color: white;
+}
+
+.legend-code-small.r {
+    background: #64748b;
+    color: white;
+}
+
+.legend-code-small.h2s {
+    background: #ec4899;
+    color: white;
+}
+
+.legend-code-small.wm {
+    background: #f97316;
+    color: white;
+}
+
+.legend-code-small.ba {
+    background: #d97706;
+    color: white;
+}
+
+.legend-code-small.ch {
+    background: #8b5cf6;
+    color: white;
+}
+
+.legend-code-small.cp {
+    background: #a78bfa;
+    color: white;
+}
+
+.legend-code-small.we {
+    background: #06b6d4;
+    color: white;
+}
+
+.legend-code-small.fo {
+    background: #0ea5e9;
+    color: white;
+}
+
+.legend-code-small.to {
+    background: #475569;
+    color: white;
+}
+
+.legend-code-small.grass {
+    background: rgba(100, 116, 139, 0.2);
+    color: #64748b;
 }
 
 /* Grid Styles */
@@ -259,6 +373,30 @@
     background: rgba(51, 65, 85, 0.7);
     transform: scale(1.05);
     z-index: 1;
+}
+
+/* Status indicators */
+.status-indicators {
+    display: flex;
+    gap: 3px;
+    margin-bottom: 4px;
+    justify-content: center;
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: none;
+}
+
+.status-indicator.no-road {
+    background: #eab308;
+}
+
+.status-indicator.no-food {
+    background: #ef4444;
 }
 
 /* Building codes */

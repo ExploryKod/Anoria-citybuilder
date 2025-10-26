@@ -1577,8 +1577,16 @@ function getBuildingCode(type) {
     if (type.includes('House-Blue')) return 'HB';
     if (type.includes('House-Red')) return 'HR';
     if (type.includes('House-Purple')) return 'HP';
+    if (type.includes('House-2Story') || type.includes('House_2Story')) return 'H2S';
     if (type.includes('Market')) return 'M';
     if (type.includes('Farm')) return 'F';
+    if (type.includes('Windmill')) return 'WM';
+    if (type.includes('Barn')) return 'BA';
+    if (type.includes('Church')) return 'CH';
+    if (type.includes('Chapel')) return 'CP';
+    if (type.includes('Well')) return 'WE';
+    if (type.includes('Fountain')) return 'FO';
+    if (type.includes('Tombstone') || type.includes('Tomb')) return 'TO';
     if (type.includes('roads')) return 'R';
     if (type.includes('Road')) return 'R';
     // Default: return first letter of type
@@ -1668,7 +1676,34 @@ async function generateCityMap() {
                     const neighbors = building.neighbors || [];
                     const neighborCodes = getNeighborCodes(neighbors);
                     
+                    // Check if building needs road access (not roads themselves)
+                    const isRoad = building.type.includes('roads') || building.type.includes('Road');
+                    const needsRoadAccess = !isRoad;
+                    
+                    // Check for road access (only for buildings that need it)
+                    const hasRoad = needsRoadAccess ? neighbors.some(neighbor => neighbor.name === 'roads' || neighbor.name === 'Road') : true;
+                    
+                    // Check if building can have food (houses, markets, but not roads, wells, etc.)
+                    const canHaveFood = building.type.includes('House') || building.type.includes('Market') || building.type.includes('Farm');
+                    
+                    // Check for food stocks (only for buildings that can have food)
+                    const stocks = building.stocks || {};
+                    const hasFood = canHaveFood ? (stocks.food > 0 || stocks.wheat > 0 || stocks.carrot > 0 || stocks.cabbage > 0) : true;
+                    
                     tableHTML += `<td class="grid-cell">`;
+                    
+                    // Status indicators
+                    tableHTML += `<div class="status-indicators">`;
+                    // Only show road indicator for buildings that need roads
+                    if (needsRoadAccess && !hasRoad) {
+                        tableHTML += `<span class="status-indicator no-road" title="Pas de route"></span>`;
+                    }
+                    // Only show food indicator for buildings that can have food
+                    if (canHaveFood && !hasFood) {
+                        tableHTML += `<span class="status-indicator no-food" title="Pas de nourriture"></span>`;
+                    }
+                    tableHTML += `</div>`;
+                    
                     tableHTML += `<span class="building-code ${code.toLowerCase()}">${code}</span>`;
                     if (neighborCodes) {
                         tableHTML += `<div class="neighbors-list">${neighborCodes}</div>`;
