@@ -1,0 +1,404 @@
+/* Budget States Panel Styles */
+.budget-states-box {
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    border: 3px solid #fff !important;
+    background: var(--cta);
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+.budget-states-box:hover {
+    transform: translateY(-2px);
+    background: #fff;
+}
+
+.budget-states-box.active {
+    transform: translateY(0px);
+    background: #fff;
+}
+
+.budget-states-panel {
+    position: fixed;
+    top: 75px;
+    right: -500px;
+    width: 500px;
+    height: calc(100vh - 75px);
+    max-height: 725px;
+    background: #fafafa;
+    border-left: 3px solid var(--cta);
+    z-index: 1006;
+    transition: right 0.3s ease-in-out;
+    overflow-y: auto;
+    color: var(--primary);
+}
+
+/* Custom scrollbar for budget states panel */
+.budget-states-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+.budget-states-panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.budget-states-panel::-webkit-scrollbar-thumb {
+    background: var(--cta);
+    border-radius: 3px;
+}
+
+.budget-states-panel::-webkit-scrollbar-thumb:hover {
+    background: var(--cta-05);
+}
+
+/* Firefox scrollbar for budget states panel */
+.budget-states-panel {
+    scrollbar-width: thin;
+    scrollbar-color: var(--cta) transparent;
+}
+
+.budget-states-panel.active {
+    right: 0;
+}
+
+/* Compte de Résultat Styles */
+.budget-income-statement {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 12px 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.statement-section {
+    margin-bottom: 16px;
+}
+
+.statement-section:last-child {
+    margin-bottom: 0;
+}
+
+.statement-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--cta);
+    margin: 0 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 4px;
+}
+
+.statement-line {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.statement-line:last-child {
+    border-bottom: none;
+}
+
+.statement-label {
+    font-size: 0.85rem;
+    color: var(--primary);
+    font-weight: 500;
+    text-align: left;
+}
+
+.statement-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: left;
+    color: var(--primary);
+}
+
+.statement-value.positive {
+    color: #4ade80;
+}
+
+.statement-value.negative {
+    color: #ff6b6b;
+}
+
+.statement-value.total {
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.statement-value.result {
+    font-size: 1rem;
+    font-weight: 800;
+    padding: 8px 12px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.statement-value.result.positive {
+    background: rgba(74, 222, 128, 0.2);
+    border: 1px solid rgba(74, 222, 128, 0.4);
+}
+
+.statement-value.result.negative {
+    background: rgba(255, 107, 107, 0.2);
+    border: 1px solid rgba(255, 107, 107, 0.4);
+}
+
+/* Statement notes and subnotes alignment */
+.statement-subnote,
+.statement-note {
+    text-align: left;
+}
+
+.statement-subnote small,
+.statement-note small {
+    text-align: left;
+    display: block;
+}
+
+.total-line {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 2px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.result-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.result-line {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 12px 12px 12px 0;
+    margin: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 8px;
+}
+
+.budget-state-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.info-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* Budget States Content Styles */
+.budget-states-wrapper {
+    padding: 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.budget-states-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--cta);
+}
+
+.budget-states-header h3 {
+    color: var(--primary);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.budget-states-close-btn {
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 10px;
+    background: white;
+    color: var(--cta);
+    border: 3px solid var(--cta);
+    transition: all 0.3s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.budget-states-close-btn:hover {
+    background: var(--cta);
+    color: white;
+}
+
+.budget-states-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 0 10px;
+}
+
+.budget-states-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(251, 129, 34, 0.1);
+    border-radius: 10px;
+    border: 1px solid rgba(251, 129, 34, 0.2);
+}
+
+.budget-states-filters button {
+    flex: 1;
+    padding: 8px 16px;
+    border: 2px solid var(--cta);
+    border-radius: 8px;
+    background: white;
+    color: var(--cta);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.budget-states-filters button:hover {
+    background: var(--cta);
+    color: white;
+}
+
+.budget-states-filters button.active {
+    background: var(--cta);
+    color: white;
+}
+
+.budget-states-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.budget-state-item {
+    background: rgba(251, 129, 34, 0.05);
+    border: 1px solid rgba(251, 129, 34, 0.2);
+    border-radius: 10px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.budget-state-item:hover {
+    background: rgba(251, 129, 34, 0.1);
+    transform: translateY(-2px);
+}
+
+.budget-state-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.budget-state-turn {
+    font-weight: 700;
+    color: var(--cta);
+    font-size: 1.1rem;
+}
+
+.budget-state-date {
+    color: var(--primary);
+    font-size: 0.9rem;
+}
+
+.budget-state-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.budget-state-detail {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(251, 129, 34, 0.1);
+}
+
+.budget-state-detail:last-child {
+    border-bottom: none;
+}
+
+.budget-state-label {
+    color: var(--primary);
+}
+
+.budget-state-value {
+    color: var(--cta);
+    font-weight: 600;
+}
+
+.budget-state-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--primary);
+    font-size: 0.9rem;
+}
+
+.budget-state-loading::before {
+    content: '';
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--cta);
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.budget-states-summary {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(251, 129, 34, 0.1);
+    border-radius: 10px;
+    border: 1px solid rgba(251, 129, 34, 0.2);
+}
+
+.budget-states-summary h4 {
+    color: var(--primary);
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 10px 0;
+}

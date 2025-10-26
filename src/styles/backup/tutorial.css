@@ -1,0 +1,199 @@
+.tutorial-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) translateX(-100%);
+    max-width: 450px;
+    width: 90%;
+    max-height: 80vh;
+    background: #fafafa;
+    border: 3px solid var(--cta);
+    border-radius: 10px;
+    z-index: 1000;
+    color: var(--primary);
+    font-family: inherit;
+    opacity: 0;
+    transition: all 0.3s ease-in-out;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+}
+
+.tutorial-panel.visible {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateX(0);
+    pointer-events: auto;
+}
+
+.tutorial-panel-wrapper {
+    width: 100%;
+    height: 100%;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.tutorial-panel-header {
+    padding: 16px 20px 12px 20px;
+    border-bottom: 2px solid var(--cta);
+    flex-shrink: 0;
+}
+
+.tutorial-panel-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.tutorial-panel-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.tutorial-steps {
+    flex: 1;
+    padding: 16px 20px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--cta) transparent;
+}
+
+.tutorial-steps::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tutorial-steps::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.tutorial-steps::-webkit-scrollbar-thumb {
+    background: var(--cta);
+    border-radius: 3px;
+}
+
+.tutorial-steps::-webkit-scrollbar-thumb:hover {
+    background: var(--cta-05);
+}
+
+.tutorial-step {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    border: 2px solid var(--cta);
+}
+
+.tutorial-step:last-child {
+    margin-bottom: 0;
+}
+
+.tutorial-step h4 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.tutorial-step p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--primary);
+}
+
+.tutorial-content {
+    padding: 0 20px 16px 20px;
+    flex-shrink: 0;
+}
+
+.tutorial-buttons {
+    padding: 16px 20px;
+    border-top: 2px solid var(--cta);
+    flex-shrink: 0;
+    background: #fafafa;
+}
+
+.tutorial-buttons-wrapper {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.tutorial-buttons button {
+    padding: 8px 16px;
+    border: 3px solid var(--cta);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    min-width: 80px;
+    background-color: var(--cta);
+    color: white;
+}
+
+.tutorial-buttons button:hover {
+    background-color: white;
+    color: var(--cta);
+}
+
+.tutorial-previous-btn,
+.tutorial-next-btn {
+    background-color: var(--cta);
+    color: white;
+}
+
+.tutorial-previous-btn:hover,
+.tutorial-next-btn:hover {
+    background-color: white;
+    color: var(--cta);
+}
+
+.tutorial-skip-btn {
+    background-color: var(--cta);
+    color: white;
+}
+
+.tutorial-skip-btn:hover {
+    background-color: white;
+    color: var(--cta);
+}
+
+.tutorial-close-btn {
+    background-color: white;
+    color: var(--cta);
+}
+
+.tutorial-close-btn:hover {
+    background-color: var(--cta);
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .tutorial-panel {
+        max-width: calc(100vw - 20px);
+        max-height: 90vh;
+    }
+    
+    .tutorial-panel-wrapper {
+        min-height: 350px;
+    }
+    
+    .tutorial-buttons-wrapper {
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .tutorial-buttons button {
+        width: 100%;
+        padding: 10px 16px;
+    }
+}

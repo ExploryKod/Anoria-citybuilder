@@ -10,6 +10,9 @@ class PopupManager {
         
         this.setupPopupConfigs();
         this.setupGlobalEventListeners();
+        
+        // S'assurer que les événements ne sont pas bloqués au démarrage
+        this.ensureEventsUnblocked();
     }
 
     /**
@@ -154,8 +157,33 @@ class PopupManager {
      * Ouvre une popup avec gestion des événements
      */
     openPopup(popupId) {
-        if (this.activePopups.has(popupId)) {
+        // Vérifier l'état réel du DOM plutôt que juste notre Set interne
+        const element = document.getElementById(popupId);
+        const isActuallyActive = element && element.classList.contains('active');
+        
+        if (this.activePopups.has(popupId) && isActuallyActive) {
             console.log(`PopupManager: ${popupId} already active, skipping`);
+            return;
+        }
+        
+        // Si le popup est actif dans le DOM mais pas dans notre Set, on le synchronise
+        if (isActuallyActive && !this.activePopups.has(popupId)) {
+            console.log(`PopupManager: ${popupId} is active in DOM but not in our Set, synchronizing`);
+            this.activePopups.add(popupId);
+            
+            // Appliquer la configuration du popup
+            const config = this.popupConfigs.get(popupId);
+            if (config) {
+                if (config.shouldBlockEvents) {
+                    this.eventBlocker.blockEvents(config.eventsToBlock, config.canvasSelectors);
+                }
+                if (config.shouldPauseGame && window.game && typeof window.game.pause === 'function') {
+                    window.game.pause();
+                }
+                if (config.onOpen) {
+                    config.onOpen();
+                }
+            }
             return;
         }
 
@@ -300,6 +328,16 @@ class PopupManager {
         this.closeAllPopups();
         this.eventBlocker.cleanup();
         console.log('PopupManager cleanup completed');
+    }
+
+    /**
+     * S'assurer que les événements ne sont pas bloqués au démarrage
+     */
+    ensureEventsUnblocked() {
+        if (this.eventBlocker.isEventsBlocked()) {
+            console.log('Events were blocked at startup, unblocking them');
+            this.eventBlocker.unblockEvents();
+        }
     }
 }
 

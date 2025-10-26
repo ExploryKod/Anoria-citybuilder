@@ -1,0 +1,64 @@
+/* Cleanup Notification Styles */
+.cleanup-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+    border: 2px solid #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    z-index: 2000;
+    animation: slideInRight 0.3s ease-out;
+    max-width: 350px;
+}
+
+.cleanup-content {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    gap: 12px;
+}
+
+.cleanup-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.cleanup-text {
+    flex: 1;
+    color: #fff;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.cleanup-text strong {
+    font-weight: 700;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.cleanup-text small {
+    font-size: 0.8rem;
+    opacity: 0.9;
+}
+
+.cleanup-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+}
+
+.cleanup-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}

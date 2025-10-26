@@ -361,12 +361,6 @@ function applyBalanceSheetFilter(filter) {
             totalActif?.classList.add('hidden');
             break;
             
-        case 'totaux':
-            // Show only totals
-            actifSection?.classList.add('hidden');
-            passifSection?.classList.add('hidden');
-            break;
-            
         case 'all':
         default:
             // Show everything (already visible)
@@ -1582,28 +1576,28 @@ function displayBudgetStates(states, container) {
                         <span class="statement-value negative">-${(state.totalLoanInterestExpenses || 0).toLocaleString('fr-FR')}€</span>
                     </div>
                     <div class="statement-subnote">
-                        <small>💡 Intérêts des prêts bancaires et commerciaux contractés</small>
+                        <small>Intérêts des prêts bancaires et commerciaux contractés</small>
                     </div>
                     <div class="statement-line">
                         <span class="statement-label">Remboursements prêts</span>
                         <span class="statement-value negative">-${(state.totalLoanRepayments || 0).toLocaleString('fr-FR')}€</span>
                     </div>
                     <div class="statement-subnote">
-                        <small>💡 Remboursement du capital des prêts (principal)</small>
+                        <small>Remboursement du capital des prêts (principal)</small>
                     </div>
                     <div class="statement-line">
                         <span class="statement-label">Autres charges</span>
                         <span class="statement-value negative">-${Math.max(0, (expenses || 0) - (state.totalBuildingMaintenance || 0) - (state.totalLoanInterestExpenses || 0) - (state.totalLoanRepayments || 0)).toLocaleString('fr-FR')}€</span>
                     </div>
                     <div class="statement-subnote">
-                        <small>💡 Autres dépenses non catégorisées (salaires, services, etc.)</small>
+                        <small>Autres dépenses non catégorisées (salaires, services, etc.)</small>
                     </div>
                     <div class="statement-line total-line">
                         <span class="statement-label">TOTAL CHARGES</span>
                         <span class="statement-value total negative">-${expenses.toLocaleString('fr-FR')}€</span>
                     </div>
                     <div class="statement-note">
-                        <small>💡 Vérification: Maintenance (${state.totalBuildingMaintenance || 0}€) + Intérêts (${state.totalLoanInterestExpenses || 0}€) + Remboursements (${state.totalLoanRepayments || 0}€) + Autres (${Math.max(0, (expenses || 0) - (state.totalBuildingMaintenance || 0) - (state.totalLoanInterestExpenses || 0) - (state.totalLoanRepayments || 0))}€) = ${(state.totalBuildingMaintenance || 0) + (state.totalLoanInterestExpenses || 0) + (state.totalLoanRepayments || 0) + Math.max(0, (expenses || 0) - (state.totalBuildingMaintenance || 0) - (state.totalLoanInterestExpenses || 0) - (state.totalLoanRepayments || 0))}€</small>
+                        <small>Vérification: Maintenance (${state.totalBuildingMaintenance || 0}€) + Intérêts (${state.totalLoanInterestExpenses || 0}€) + Remboursements (${state.totalLoanRepayments || 0}€) + Autres (${Math.max(0, (expenses || 0) - (state.totalBuildingMaintenance || 0) - (state.totalLoanInterestExpenses || 0) - (state.totalLoanRepayments || 0))}€) = ${(state.totalBuildingMaintenance || 0) + (state.totalLoanInterestExpenses || 0) + (state.totalLoanRepayments || 0) + Math.max(0, (expenses || 0) - (state.totalBuildingMaintenance || 0) - (state.totalLoanInterestExpenses || 0) - (state.totalLoanRepayments || 0))}€</small>
                     </div>
                 </div>
                 
@@ -1615,7 +1609,7 @@ function displayBudgetStates(states, container) {
                         </span>
                     </div>
                     <div class="statement-note">
-                        <small>💡 Ce résultat doit correspondre au "Résultat de l'exercice" du bilan</small>
+                        <small>Ce résultat doit correspondre au "Résultat de l'exercice" du bilan</small>
                     </div>
                 </div>
             </div>
@@ -1637,7 +1631,7 @@ function displayBudgetStates(states, container) {
                     </span>
                 </div>
                 <div class="info-item">
-                    <span class="info-label">Dette prêts</span>
+                    <span class="info-label">Prêts</span>
                     <span class="info-value ${(state.loanDebt || 0) > 0 ? 'negative' : ''}">${(state.loanDebt || 0).toLocaleString('fr-FR')}€</span>
                 </div>
             </div>
@@ -1712,7 +1706,7 @@ function displayBudgetSummary(states, container) {
             </div>
             
             <div class="statement-section">
-                <h4 class="statement-title">PRÊTS & DETTES</h4>
+                <h4 class="statement-title">DETTES</h4>
                 <div class="statement-line">
                     <span class="statement-label">Intérêts payés</span>
                     <span class="statement-value negative">-${totalLoanInterest.toLocaleString('fr-FR')}€</span>
