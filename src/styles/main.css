@@ -182,6 +182,26 @@ canvas.pointer-events-disabled {
     gap: 5px;
 }
 
+.toolbar .toolbar__sub-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.toolbar__label {
+    font-size: 10px;
+    color: var(--cta);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.toolbar__buttons {
+    display: flex;
+    gap: 5px;
+}
+
 .toolbar .toolbar__container .toolbar-btn {
     max-width: 40%;
     height: auto;
@@ -505,6 +525,51 @@ canvas.pointer-events-disabled {
     color: white;
     font-size: 16px;
     font-weight: 700;
+}
+
+/* Speed change indicator badge */
+.speed-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.speed-change-indicator {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: white;
+    color: var(--cta);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease-in-out;
+    z-index: 100;
+}
+
+.speed-change-indicator.active {
+    opacity: 1;
+    visibility: visible;
+    animation: popOut 0.3s ease-out;
+}
+
+@keyframes popOut {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 @keyframes glowing {

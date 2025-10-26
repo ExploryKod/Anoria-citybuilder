@@ -168,6 +168,7 @@ export function createGame(housesStore, gameStore, assetManager) {
     let isOver;
     let infos = {};
     let intervalId = null;
+    // Set initial speed within limits (500ms - 20,000ms)
     localStorage.setItem("speed", "4000");
     displayTime.textContent = time.toString() + ' jours';
     
@@ -438,7 +439,7 @@ export function createGame(housesStore, gameStore, assetManager) {
         },
 
         startInterval() {
-            const speed = parseInt(localStorage.getItem('speed')) || 4000;
+            const speed = Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed')) || 4000));
             if (intervalId) clearInterval(intervalId);
             intervalId = setInterval(() => {
                 if (!isPause && !isOver) {
@@ -456,7 +457,7 @@ export function createGame(housesStore, gameStore, assetManager) {
                 game.update(time);
             }
         }
-    }, parseInt(localStorage.getItem('speed')));
+    }, Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed')) || 4000)));
 
     scene.start();
     return game;

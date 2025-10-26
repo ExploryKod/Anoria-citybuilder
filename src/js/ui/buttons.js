@@ -1,6 +1,7 @@
 import {
     bullDozeButton,
     displaySpeed,
+    speedChangeIndicator,
     farmsButton,
     fasterButton,
     housesButton,
@@ -30,9 +31,22 @@ import AssetManager from "../meshs/AssetManager.js";
 let buttonData;
 let toolIds;
 
-function updateSpeedDisplay() {
-    const speed = parseInt(localStorage.getItem('speed'), 10) || 3000;
-    displaySpeed.textContent = `Vitesse du jeu: ${speed} ms`;
+function updateSpeedDisplay(changeDirection = '') {
+    const speedMs = parseInt(localStorage.getItem('speed'), 10) || 3000;
+    
+    // Convert milliseconds to a more user-friendly unit
+    // Show as "X.Yx" format for speeds (where 1x = 1000ms)
+    const speedMultiplier = (1000 / speedMs).toFixed(2);
+    
+    displaySpeed.textContent = `Vitesse: ${speedMultiplier}x`;
+    
+    // Show or hide the speed change indicator badge
+    if (changeDirection) {
+        speedChangeIndicator.textContent = changeDirection;
+        speedChangeIndicator.classList.add('active');
+    } else {
+        speedChangeIndicator.classList.remove('active');
+    }
 }
 
 function createBudgetElements() {
@@ -714,22 +728,46 @@ window.onload = async () => {
 
     fasterButton.addEventListener('click', () => {
         let speed = parseInt(localStorage.getItem('speed'), 10) || 3000;
-        if(speed <= 0) {
-            return
-        }
-
-        speed -= 500;
+        const previousSpeed = speed;
+        
+        // Apply speed limits: minimum 500ms, maximum 20,000ms
+        speed = Math.max(500, speed - 500);
+        
         localStorage.setItem('speed', speed.toString());
         window.game.startInterval()
-        updateSpeedDisplay();
+        
+        // Show '+' indicator badge if speed actually changed
+        const changeDirection = (speed !== previousSpeed) ? '+' : '';
+        updateSpeedDisplay(changeDirection);
+        
+        // Hide indicator after 1 second
+        if (changeDirection) {
+            setTimeout(() => {
+                speedChangeIndicator.classList.remove('active');
+            }, 1000);
+        }
     });
 
     slowerButton.addEventListener('click', () => {
         let speed = parseInt(localStorage.getItem('speed'), 10) || 3000;
-        speed += 500;
+        const previousSpeed = speed;
+        
+        // Apply speed limits: minimum 500ms, maximum 20,000ms
+        speed = Math.min(20000, speed + 500);
+        
         localStorage.setItem('speed', speed.toString());
         window.game.startInterval()
-        updateSpeedDisplay();
+        
+        // Show '−' indicator badge if speed actually changed
+        const changeDirection = (speed !== previousSpeed) ? '−' : '';
+        updateSpeedDisplay(changeDirection);
+        
+        // Hide indicator after 1 second
+        if (changeDirection) {
+            setTimeout(() => {
+                speedChangeIndicator.classList.remove('active');
+            }, 1000);
+        }
     });
 
     bullDozeButton.addEventListener('click', (e) => {
@@ -1341,9 +1379,10 @@ function initBudgetStatesPopup() {
                 if (window.popupManager) {
                     window.popupManager.forceOpenPopup('budget-states-panel');
                 }
-                // Update labels before loading data
+                // Load budget states first
+                await loadBudgetStates('3', true);
+                // Update labels after loading data
                 await updateFilterButtonLabels();
-                loadBudgetStates();
             } else {
                 // Utiliser PopupManager pour gérer les événements
                 if (window.popupManager) {
@@ -1380,12 +1419,12 @@ function initBudgetStatesPopup() {
             // Add active class to clicked button
             btn.classList.add('active');
             
-            // Update labels before loading data
-            await updateFilterButtonLabels();
-            
-            // Load budget states with filter
+            // Load budget states with filter first (no loading state to avoid flash)
             const period = btn.dataset.period;
-            loadBudgetStates(period);
+            await loadBudgetStates(period, false);
+            
+            // Update labels after loading data to avoid hiding buttons prematurely
+            await updateFilterButtonLabels();
         });
     });
 
@@ -1428,9 +1467,14 @@ async function updateFilterButtonLabels() {
                     btn.textContent = `${turn} jours`;
                     btn.dataset.period = turn.toString();
                     btn.style.display = 'block';
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
                 } else {
-                    // Hide button if no state available
-                    btn.style.display = 'none';
+                    // Keep button visible but disabled if no state available
+                    btn.style.display = 'block';
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                    btn.textContent = `${3 + i} jours`; // Fallback text
                 }
             }
         }
@@ -1442,7 +1486,7 @@ async function updateFilterButtonLabels() {
     }
 }
 
-async function loadBudgetStates(period = '3') {
+async function loadBudgetStates(period = '3', showLoading = true) {
     const budgetStatesList = document.getElementById('budget-states-list');
     const summaryContent = document.getElementById('summary-content');
     
@@ -1451,13 +1495,14 @@ async function loadBudgetStates(period = '3') {
         return;
     }
 
-    // Show loading state
-    budgetStatesList.innerHTML = `
-        <div class="budget-state-loading">
-            <div class="loading-spinner"></div>
-            <p>Chargement des états de budget...</p>
-        </div>
-    `;
+    // Only show loading state if explicitly requested (first load)
+    if (showLoading) {
+        budgetStatesList.innerHTML = `
+            <div class="budget-state-loading">
+                <p>Chargement des états de budget...</p>
+            </div>
+        `;
+    }
 
     try {
         if (!window.budgetManager) {
@@ -1631,7 +1676,7 @@ function displayBudgetStates(states, container) {
                     </span>
                 </div>
                 <div class="info-item">
-                    <span class="info-label">Prêts</span>
+                    <span class="info-label"></span>
                     <span class="info-value ${(state.loanDebt || 0) > 0 ? 'negative' : ''}">${(state.loanDebt || 0).toLocaleString('fr-FR')}€</span>
                 </div>
             </div>
@@ -2538,3 +2583,26 @@ function initLoanPaymentSystem() {
         };
     }
 }
+
+// Make loadBudgetStates globally accessible
+window.loadBudgetStates = (period = '3', showLoading = true) => loadBudgetStates(period, showLoading);
+
+// Global refresh function for budget states modal
+async function refreshBudgetStatesModal() {
+    console.log('🔄 Refreshing budget states modal...');
+    
+    // Get current active filter button
+    const activeFilterBtn = document.querySelector('.budget-filter-btn.active');
+    const currentPeriod = activeFilterBtn ? activeFilterBtn.dataset.period : '3';
+    
+    // Reload budget states with current period
+    await loadBudgetStates(currentPeriod, true);
+    
+    // Update filter button labels
+    await updateFilterButtonLabels();
+    
+    console.log('✅ Budget states modal refreshed');
+}
+
+// Make refresh function globally accessible
+window.refreshBudgetStatesModal = refreshBudgetStatesModal;

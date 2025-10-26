@@ -269,7 +269,6 @@
 .budget-states-filters {
     display: flex;
     gap: 10px;
-    margin-bottom: 20px;
     padding: 15px;
     background: rgba(251, 129, 34, 0.1);
     border-radius: 10px;
@@ -365,27 +364,25 @@
 
 .budget-state-loading {
     display: flex;
-    align-items: center;
+    flex-direction: column; 
     justify-content: center;
+    align-items: center;
     padding: 40px;
     color: var(--primary);
     font-size: 0.9rem;
+    gap: 15px;
 }
 
-.budget-state-loading::before {
-    content: '';
-    width: 20px;
-    height: 20px;
-    border: 2px solid var(--cta);
-    border-top: 2px solid transparent;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-right: 10px;
+.budget-state-loading p {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+.budget-state-loading small {
+    color: var(--primary);
+    font-size: 0.9rem;
+    margin: 0;
 }
 
 .budget-states-summary {
@@ -401,4 +398,74 @@
     font-size: 1rem;
     font-weight: 600;
     margin: 0 0 10px 0;
+}
+
+/* Budget Filter Buttons */
+.budget-filter-btn {
+    padding: 8px 16px;
+    border: 3px solid var(--cta);
+    border-radius: 10px;
+    background: white;
+    color: var(--cta);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.budget-filter-btn:hover {
+    background: var(--cta);
+    color: white;
+}
+
+.budget-filter-btn.active {
+    background: var(--cta);
+    color: white;
+}
+
+.budget-filter-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: rgba(251, 129, 34, 0.3);
+    color: rgba(251, 129, 34, 0.7);
+}
+
+.budget-filter-btn:disabled:hover {
+    background: rgba(251, 129, 34, 0.3);
+    color: rgba(251, 129, 34, 0.7);
+}
+
+/* Budget States Refresh Section */
+.budget-states-refresh-section {
+    display: flex;
+    justify-content: center;
+    margin: 8px 0;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(251, 129, 34, 0.1);
+}
+
+.budget-global-refresh-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(251, 129, 34, 0.1);
+    color: var(--cta);
+    border: 1px solid rgba(251, 129, 34, 0.3);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.budget-global-refresh-btn:hover {
+    background: var(--cta);
+    color: white;
+    border-color: var(--cta);
+}
+
+.budget-global-refresh-btn svg {
+    width: 14px;
+    height: 14px;
 }
