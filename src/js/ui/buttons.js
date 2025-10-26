@@ -1095,6 +1095,7 @@ window.onload = async () => {
     }
     
     window.gameStore = gameStore;
+    window.housesStore = housesStore;
     window.game = createGame(housesStore, gameStore, assetManager);
     window.setActiveTool = (e) => {
         getButtonsUnactive(e)
@@ -1119,6 +1120,9 @@ window.onload = async () => {
     
     // Initialize budget states popup
     initBudgetStatesPopup();
+    
+    // Initialize city map popup
+    initCityMapPopup();
     
     // Initialize loans popup
     initLoansPopup();
@@ -1508,6 +1512,206 @@ async function updateLoanInterestDetail(budgetData) {
             <div class="no-loans-message">
                 <span class="no-loans-icon">❌</span>
                 <span class="no-loans-text">Erreur lors du chargement</span>
+            </div>
+        `;
+    }
+}
+
+// City Map Popup Functions
+function initCityMapPopup() {
+    const cityMapBtn = document.getElementById('city-map-btn');
+    const cityMapPanel = document.getElementById('city-map-panel');
+    const cityMapCloseBtn = document.querySelector('.city-map-close-btn');
+
+    if (!cityMapBtn || !cityMapPanel || !cityMapCloseBtn) {
+        console.warn('City map popup elements not found');
+        return;
+    }
+
+    // Toggle popup on button click
+    cityMapBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        
+        cityMapPanel.classList.toggle('active');
+        
+        if (cityMapPanel.classList.contains('active')) {
+            // Use PopupManager to handle events
+            if (window.popupManager) {
+                window.popupManager.forceOpenPopup('city-map-panel');
+            }
+            // Generate the city map grid
+            await generateCityMap();
+        } else {
+            // Use PopupManager to handle events
+            if (window.popupManager) {
+                window.popupManager.forceClosePopup('city-map-panel');
+            }
+        }
+    });
+
+    // Close popup on close button click
+    cityMapCloseBtn.addEventListener('click', () => {
+        cityMapPanel.classList.remove('active');
+        
+        if (window.popupManager) {
+            window.popupManager.forceClosePopup('city-map-panel');
+        }
+    });
+
+    // Close popup when clicking outside
+    cityMapPanel.addEventListener('click', (e) => {
+        if (e.target === cityMapPanel) {
+            cityMapPanel.classList.remove('active');
+            
+            if (window.popupManager) {
+                window.popupManager.forceClosePopup('city-map-panel');
+            }
+        }
+    });
+}
+
+// Function to get building code from type
+function getBuildingCode(type) {
+    if (!type) return '';
+    if (type.includes('House-Blue')) return 'HB';
+    if (type.includes('House-Red')) return 'HR';
+    if (type.includes('House-Purple')) return 'HP';
+    if (type.includes('Market')) return 'M';
+    if (type.includes('Farm')) return 'F';
+    if (type.includes('roads')) return 'R';
+    if (type.includes('Road')) return 'R';
+    // Default: return first letter of type
+    return type.charAt(0).toUpperCase();
+}
+
+// Function to get all neighbor codes for a building
+function getNeighborCodes(neighbors) {
+    if (!neighbors || !Array.isArray(neighbors) || neighbors.length === 0) {
+        return '';
+    }
+    
+    return neighbors.map(neighbor => {
+        const code = getBuildingCode(neighbor.name || neighbor.type);
+        if (neighbor.x !== undefined && neighbor.y !== undefined) {
+            return `${code}(${neighbor.x},${neighbor.y})`;
+        }
+        return code;
+    }).join(' ');
+}
+
+// Function to generate city map grid
+async function generateCityMap() {
+    const cityMapGrid = document.getElementById('city-map-grid');
+    if (!cityMapGrid) return;
+    
+    try {
+        // Show loading
+        cityMapGrid.innerHTML = `
+            <div class="grid-loading">
+                <div class="loading-spinner"></div>
+                <p>Chargement de la carte...</p>
+            </div>
+        `;
+        
+        // Get city dimensions from game - default to 16x16 if not available
+        let citySize = 16;
+        if (window.scene && window.scene.city) {
+            citySize = window.scene.city.size;
+        }
+        
+        // Get all houses from database - use local housesStore or fallback to window
+        let houses = [];
+        try {
+            if (housesStore && typeof housesStore.listAllHouses === 'function') {
+                houses = await housesStore.listAllHouses();
+            } else if (window.housesStore && typeof window.housesStore.listAllHouses === 'function') {
+                houses = await window.housesStore.listAllHouses();
+            } else {
+                throw new Error('housesStore not available');
+            }
+        } catch (error) {
+            console.warn('Could not access housesStore:', error);
+            houses = [];
+        }
+        
+        // Create a map of buildings by position (x,y)
+        const buildingMap = new Map();
+        houses.forEach(house => {
+            if (house.x !== undefined && house.y !== undefined) {
+                const key = `${house.x},${house.y}`;
+                buildingMap.set(key, house);
+            }
+        });
+        
+        // Create the HTML table with full city grid (0 to citySize-1)
+        let tableHTML = '<table class="city-grid-table"><thead><tr><th></th>';
+        
+        // Add column headers (y coordinates)
+        for (let y = 0; y < citySize; y++) {
+            tableHTML += `<th>${y}</th>`;
+        }
+        tableHTML += '</tr></thead><tbody>';
+        
+        // Add rows (x coordinates)
+        for (let x = 0; x < citySize; x++) {
+            tableHTML += `<tr><th>${x}</th>`;
+            
+            for (let y = 0; y < citySize; y++) {
+                const key = `${x},${y}`;
+                const building = buildingMap.get(key);
+                
+                if (building) {
+                    const code = getBuildingCode(building.type);
+                    const neighbors = building.neighbors || [];
+                    const neighborCodes = getNeighborCodes(neighbors);
+                    
+                    tableHTML += `<td class="grid-cell">`;
+                    tableHTML += `<span class="building-code ${code.toLowerCase()}">${code}</span>`;
+                    if (neighborCodes) {
+                        tableHTML += `<div class="neighbors-list">${neighborCodes}</div>`;
+                    }
+                    tableHTML += `</td>`;
+                } else {
+                    // Empty cell (grass) - show a small indicator
+                    tableHTML += `<td class="grid-cell empty-cell">
+                        <span class="building-code grass" style="opacity: 0.3;">G</span>
+                    </td>`;
+                }
+            }
+            
+            tableHTML += '</tr>';
+        }
+        
+        tableHTML += '</tbody></table>';
+        
+        cityMapGrid.innerHTML = tableHTML;
+        
+        console.log('🗺️ City map generated:', {
+            buildings: houses.length,
+            citySize: citySize,
+            gridSize: `${citySize}x${citySize}`
+        });
+        
+    } catch (error) {
+        console.error('Error generating city map:', error);
+        cityMapGrid.innerHTML = `
+            <div class="grid-loading">
+                <p style="font-size: 1.2rem; margin-bottom: 10px;">⚠️ Impossible de charger la carte</p>
+                <p style="font-size: 0.9rem; color: #cbd5e1; margin-bottom: 20px;">
+                    Une erreur s'est produite lors du chargement de la carte de votre ville
+                </p>
+                <div style="background: rgba(239, 68, 68, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3); max-width: 400px;">
+                    <p style="color: #fca5a5; font-size: 0.85rem; margin: 0 0 10px 0;">
+                        <strong>Détails de l'erreur:</strong>
+                    </p>
+                    <p style="color: #fca5a5; font-size: 0.75rem; margin: 0; font-family: monospace;">
+                        ${error.message || 'Erreur inconnue'}
+                    </p>
+                </div>
+                <button onclick="generateCityMap()" style="margin-top: 20px; padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                    🔄 Réessayer
+                </button>
             </div>
         `;
     }
@@ -2748,6 +2952,9 @@ function initLoanPaymentSystem() {
 
 // Make loadBudgetStates globally accessible
 window.loadBudgetStates = (period = '3', showLoading = true) => loadBudgetStates(period, showLoading);
+
+// Make generateCityMap globally accessible
+window.generateCityMap = generateCityMap;
 
 // Global refresh function for budget states modal
 async function refreshBudgetStatesModal() {

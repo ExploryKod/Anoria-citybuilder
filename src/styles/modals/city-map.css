@@ -1,0 +1,288 @@
+/* City Map Popup Styles */
+.city-map-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    overflow: auto;
+    padding: 20px;
+}
+
+.city-map-panel.active {
+    display: flex;
+}
+
+.city-map-wrapper {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    width: 100%;
+    max-width: 1200px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.city-map-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px;
+    background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+    border-bottom: 2px solid #475569;
+}
+
+.city-map-header h3 {
+    margin: 0;
+    color: #f1f5f9;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.city-map-close-btn {
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    color: #94a3b8;
+}
+
+.city-map-close-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #f1f5f9;
+    transform: rotate(90deg);
+}
+
+.city-map-content {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    gap: 20px;
+    overflow-y: auto;
+    max-height: calc(90vh - 80px);
+}
+
+/* Legend Styles */
+.city-map-legend {
+    background: rgba(30, 41, 59, 0.5);
+    padding: 15px 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(71, 85, 105, 0.3);
+}
+
+.city-map-legend h4 {
+    margin: 0 0 10px 0;
+    color: #f1f5f9;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.legend-code {
+    background: #334155;
+    color: #f1f5f9;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    min-width: 35px;
+    text-align: center;
+}
+
+.legend-label {
+    color: #cbd5e1;
+    font-size: 0.9rem;
+}
+
+/* Grid Styles */
+.city-map-grid {
+    background: rgba(15, 23, 42, 0.8);
+    border-radius: 12px;
+    padding: 20px;
+    overflow-x: auto;
+    border: 1px solid rgba(71, 85, 105, 0.3);
+}
+
+.grid-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    color: #94a3b8;
+}
+
+.grid-loading p {
+    margin-top: 15px;
+    font-size: 0.95rem;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(148, 163, 184, 0.2);
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Grid Table */
+.city-grid-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 2px;
+    margin: 0 auto;
+}
+
+.city-grid-table th {
+    background: #334155;
+    color: #f1f5f9;
+    padding: 10px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    min-width: 60px;
+}
+
+.city-grid-table td {
+    background: rgba(51, 65, 85, 0.4);
+    padding: 8px;
+    text-align: center;
+    font-size: 0.75rem;
+    min-width: 60px;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.city-grid-table td:empty {
+    background: rgba(15, 23, 42, 0.5);
+}
+
+.city-grid-table td:hover {
+    background: rgba(51, 65, 85, 0.7);
+    transform: scale(1.05);
+    z-index: 1;
+}
+
+/* Building codes */
+.building-code {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    background: #334155;
+    color: #f1f5f9;
+}
+
+/* House Blue */
+.building-code.hb {
+    background: #3b82f6;
+    color: white;
+}
+
+/* House Red */
+.building-code.hr {
+    background: #ef4444;
+    color: white;
+}
+
+/* House Purple */
+.building-code.hp {
+    background: #a855f7;
+    color: white;
+}
+
+/* Market */
+.building-code.m {
+    background: #10b981;
+    color: white;
+}
+
+/* Farm */
+.building-code.f {
+    background: #f59e0b;
+    color: white;
+}
+
+/* Road */
+.building-code.r {
+    background: #64748b;
+    color: white;
+}
+
+/* Grass (empty cells) */
+.building-code.grass {
+    background: rgba(100, 116, 139, 0.2);
+    color: #64748b;
+    font-size: 0.7rem;
+}
+
+/* Empty cells */
+.city-grid-table td.empty-cell {
+    background: rgba(15, 23, 42, 0.3);
+}
+
+/* Neighbors display */
+.neighbors-list {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+.neighbors-list .neighbor-code {
+    display: inline-block;
+    margin: 1px 2px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    background: rgba(51, 65, 85, 0.6);
+}
+
+/* Scrollbar styling */
+.city-map-content::-webkit-scrollbar,
+.city-map-grid::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.city-map-content::-webkit-scrollbar-track,
+.city-map-grid::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 4px;
+}
+
+.city-map-content::-webkit-scrollbar-thumb,
+.city-map-grid::-webkit-scrollbar-thumb {
+    background: rgba(71, 85, 105, 0.8);
+    border-radius: 4px;
+}
+
+.city-map-content::-webkit-scrollbar-thumb:hover,
+.city-map-grid::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.9);
+}
+

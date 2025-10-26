@@ -91,6 +91,15 @@ class PopupManager {
             onOpen: () => console.log('Budget panel opened'),
             onClose: () => console.log('Budget panel closed')
         });
+
+        this.popupConfigs.set('city-map-panel', {
+            shouldBlockEvents: true,
+            shouldPauseGame: true,
+            eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
+            canvasSelectors: ['canvas'],
+            onOpen: () => console.log('City map panel opened'),
+            onClose: () => console.log('City map panel closed')
+        });
     }
 
     /**

@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="./src/styles/modals/budget-states-content.css">
     <link rel="stylesheet" href="./src/styles/modals/balance-sheet.css">
     <link rel="stylesheet" href="./src/styles/modals/cleanup-notification.css">
+    <link rel="stylesheet" href="./src/styles/modals/city-map.css">
     <!-- ios support -->
     <link rel="apple-touch-icon" href="public/icons/icon-512x512.png" />
     <meta name="apple-mobile-web-app-status-bar" content="#db4938" />
@@ -304,6 +305,19 @@
                             </svg>
                         </span>
                         <div>États Budget</div>
+                    </article>
+                </section>
+                <section class="info-box city-map-box" id="city-map-btn">
+                    <article class="budget-box">
+                        <span class="budget-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2 3v18h18"/>
+                                <path d="M3 2v6h6"/>
+                                <path d="M9 2v6h6"/>
+                                <path d="M15 2v6h6"/>
+                            </svg>
+                        </span>
+                        <div>Carte Ville</div>
                     </article>
                 </section>
             </div>
@@ -1098,6 +1112,58 @@
                 <h4>Résumé de la période</h4>
                 <div class="summary-content" id="summary-content">
                     <p>Aucune donnée disponible</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- City Map Popup -->
+<div id="city-map-panel" class="city-map-panel">
+    <div class="city-map-wrapper">
+        <div class="city-map-header">
+            <h3>🗺️ Carte de la Ville</h3>
+            <div class="city-map-close-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
+                    <path d="M18 6L6 18"/>
+                    <path d="M6 6l12 12"/>
+                </svg>
+            </div>
+        </div>
+        <div class="city-map-content">
+            <div class="city-map-legend">
+                <h4>Légende</h4>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <span class="legend-code">HB</span>
+                        <span class="legend-label">House Blue</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-code">HR</span>
+                        <span class="legend-label">House Red</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-code">HP</span>
+                        <span class="legend-label">House Purple</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-code">M</span>
+                        <span class="legend-label">Market</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-code">F</span>
+                        <span class="legend-label">Farm</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-code">R</span>
+                        <span class="legend-label">Road</span>
+                    </div>
+                </div>
+            </div>
+            <div class="city-map-grid" id="city-map-grid">
+                <div class="grid-loading">
+                    <div class="loading-spinner"></div>
+                    <p>Chargement de la carte...</p>
                 </div>
             </div>
         </div>

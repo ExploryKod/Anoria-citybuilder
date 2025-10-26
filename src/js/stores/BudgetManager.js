@@ -90,12 +90,12 @@ class BudgetManager {
         budget.totalLoanRepayments = totalLoanRepayments;
         budget.totalLoanInterestExpenses = totalLoanInterestExpenses;
         
-        console.log('Loan totals calculated:', {
-            debt: totalLoanDebt,
-            interest: totalLoanInterest,
-            repayments: totalLoanRepayments,
-            interestExpenses: totalLoanInterestExpenses
-        });
+        // console.log('Loan totals calculated:', {
+        //     debt: totalLoanDebt,
+        //     interest: totalLoanInterest,
+        //     repayments: totalLoanRepayments,
+        //     interestExpenses: totalLoanInterestExpenses
+        // });
         
         // Save the updated budget
         await this.db.budget.put(budget);
