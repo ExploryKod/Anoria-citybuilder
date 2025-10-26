@@ -203,15 +203,12 @@ export function createScene(housesStore, gameStore, assetManager) {
                         const uniqueBuildingId = makeDbItemId(currentBuildingId, x, y);
                         if(houses.includes(currentBuildingId)) {
                             await housesStore.deleteOneHouse(uniqueBuildingId)
-                            console.log(`🏠 House ${currentBuildingId} deleted at (${x}, ${y})`);
                         } else if(currentBuildingId === 'roads') {
                             // Roads are now stored in database like other buildings
                             await housesStore.deleteOneHouse(uniqueBuildingId)
-                            console.log(`🛣️ Road deleted at (${x}, ${y})`);
                         } else {
                             // Other building types (farms, markets, etc.)
                             await housesStore.deleteOneHouse(uniqueBuildingId)
-                            console.log(`🏗️ Building ${currentBuildingId} deleted at (${x}, ${y})`);
                         }
                         scene.remove(buildings[x][y]);
                         buildings[x][y] = undefined;
@@ -283,17 +280,14 @@ export function createScene(housesStore, gameStore, assetManager) {
                     async function updateMarketStocks(buildings, housesStore, datas = [{key: "", number: 0, decrease: false}]) {
 
                         if(!buildings) {
-                            // console.warn("Need buildings to update markets stocks")
                             return;
                         }
 
                         if(!housesStore) {
-                            // console.warn("Need housesStore to update markets stocks")
                             return;
                         }
 
                         if(Array.isArray(datas) && datas.length <= 0) {
-                            // console.warn("Need datas array with at least one entry to update markets stocks")
                             return;
                         }
 
@@ -347,7 +341,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                         
                         if (hasRoadAccess) {
                             // Market has road access - process normally
-                            console.log(`✅ Market ${currentUniqueID}: Has road access, can distribute food`);
                             farmsNearBy =  currentMarket?.neighbors.filter(neighbor => neighbor.name.includes("Farms"))
                             marketHouses = currentMarket?.neighbors.filter(neighbor => neighbor.name.includes("House"))
 
@@ -382,8 +375,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                             }
                         }
 
-                            // Market stocks before distribution
-                            /* Distribute food to house around */
                             let carrotHousesStocks = 0;
                             let cabbageHousesStocks = 0;
                             let wheatHousesStocks = 0;
@@ -393,17 +384,14 @@ export function createScene(housesStore, gameStore, assetManager) {
                             let totalHouseFood = wheatByHouse + carrotByHouse + cabbageByHouse;
                             for (const house of marketHouses) {
                                 const buildingsUserData = buildings[house.x][house.y].userData
-                                // House food before distribution
                                 const newStocks = {food: totalHouseFood, carrot: carrotByHouse, cabbage: cabbageByHouse, wheat: wheatByHouse};
                                 buildings[house.x][house.y].userData = {...buildingsUserData, stocks: newStocks};
                                 
-                                // Sync stocks with database
                                 await housesStore.updateHouseFields(house.id, {stocks: newStocks});
                                 
                                 carrotHousesStocks += carrotByHouse;
                                 cabbageHousesStocks += cabbageByHouse;
                                 wheatHousesStocks += wheatByHouse;
-                                // House food after distribution
                             }
                             const foodHousesStocks = cabbageHousesStocks + carrotHousesStocks + wheatHousesStocks;
                             const datas = [
@@ -413,11 +401,8 @@ export function createScene(housesStore, gameStore, assetManager) {
                                 {key: 'food', number: foodHousesStocks, decrease: true}
                             ]
                             await updateMarketStocks(buildings, housesStore, datas);
-                            //buildings[x][y].userData.stocks = {food: 0 , carrot: carrotStocks, cabbage: cabbageStocks, wheat: 0};
-                            // Market stocks after distribution
                         } else {
                             // Market has no road access - cannot distribute food
-                            console.log(`🚨 Market ${currentUniqueID}: No road access, cannot distribute food`);
                         }
                     }
 
@@ -469,19 +454,11 @@ export function createScene(housesStore, gameStore, assetManager) {
                         // Has food AND road access - population can grow (max 2)
                         const housePop = { name: currentUniqueID, increment: 1, field: 'pop' };
                         await housesStore.incrementHouseField(housePop, {operator: '<=', limit: 2});
-                        console.log(`✅ House ${currentUniqueID}: Population can grow (has food and road access)`);
                     } else {
                         // No food OR no road access - reset population to 0
                         const currentPop = await housesStore.getHouseItem(currentUniqueID, 'pop');
                         if (currentPop > 0) {
                             await housesStore.updateHouseFields(currentUniqueID, { pop: 0 });
-                            if (!hasFood && !hasRoadAccess) {
-                                console.log(`🚨 House ${currentUniqueID}: Population reset to 0 (no food and no road access)`);
-                            } else if (!hasFood) {
-                                console.log(`🚨 House ${currentUniqueID}: Population reset to 0 (no food)`);
-                            } else if (!hasRoadAccess) {
-                                console.log(`🚨 House ${currentUniqueID}: Population reset to 0 (no road access)`);
-                            }
                         }
                     }
 
@@ -492,18 +469,15 @@ export function createScene(housesStore, gameStore, assetManager) {
                         const isRoad = houseNeighbors.filter(neighbor => neighbor.name === 'roads').length
                         const HouseRoads = {roads : houseNeighbors.filter(neighbor => neighbor.name === 'roads').length};
                         await housesStore.updateHouseFields(currentUniqueID, HouseRoads)
-                        // Major problem here : is this apply to every house mesh ??
+                        
                         if(isRoad > 0 && buildings[x][y]) {
-                            // console.warn('There is one neighbor road at least for: ', buildings[x][y], HouseRoads, isRoad);
                             assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
                                 statutsIconsMeta.road.scale, statutsIconsMeta.road.position, false)
                         } else if(buildings[x][y]) {
-                            // console.warn('There is no neighbor roads for: ', buildings[x][y], HouseRoads, isRoad);
                             assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
                                 statutsIconsMeta.road.scale, statutsIconsMeta.road.position, true)
                         }
                     } else if(buildings[x][y]) {
-                        // console.warn('There is no neighbor roads and no object roads for: ', buildings[x][y]);
                         assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
                             statutsIconsMeta.road.scale, statutsIconsMeta.road.position, true)
                     }
@@ -526,10 +500,8 @@ export function createScene(housesStore, gameStore, assetManager) {
                     }
 
                     if(houseTime > 3 && foodGoal && firstHouses.includes(currentBuildingId)) {
-                        /* [refactor] can be replaced by updateBuilding from utils.js */
                         scene.remove(buildings[x][y]);
                         const newUniqueBuildingId = makeDbItemId('House-2Story', x, y);
-                        // Creating new building
                         const keys = { type : "House-2Story", price: assetsPrices["House-2Story"].price}
                         await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
                         await housesStore.deleteOneHouse(currentUniqueID);
@@ -574,15 +546,12 @@ export function createScene(housesStore, gameStore, assetManager) {
                     }
 
                     // Add the new building
-                    // Building added to map
                 }
                 }
 
-              // -- FIN DE LA SOUS-BOUCLE Y ----
             }
 
         }
-        // --- FIN BOUCLE SUR LA VILLE X ET Y----
 
         // Gestion de la barre des délais
         if(delayBox && displayDelayUI) {
@@ -657,7 +626,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                         };
                         
                         await window.budgetManager.saveBudgetState(time, additionalData);
-                        console.log(`📊 Budget state saved for turn ${time} (every 3 turns)`);
                         
                         // Clean up old states by age (60+ days)
                         const cleanupResult = await window.budgetManager.cleanupOldBudgetStatesByAge();
@@ -786,7 +754,6 @@ export function createScene(housesStore, gameStore, assetManager) {
     function onMouseDown(event){
         // Block interaction if a popup is open
         if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
-            console.log('Mouse interaction blocked: popup is open');
             return;
         }
         
@@ -809,8 +776,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                
             // }
             // Object selected
-            // console.log('selected object scene is an array ? ==>', selectedObject.material.length)
-            //selectedObject.material.emissive.setHex(0xff0000);
 
             if(this.onObjectSelected) {
                 this.onObjectSelected(selectedObject);
@@ -920,7 +885,6 @@ function onMouseMove(event) {
         
         if (hasSeenCleanupNotification === 'true') {
             // User has already seen this notification, don't show it again
-            console.log('🧹 Nettoyage automatique effectué (notification déjà vue)');
             return;
         }
         

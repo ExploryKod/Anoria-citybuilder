@@ -54,7 +54,6 @@ function updateSpeedDisplay(changeDirection = '') {
 
 function createBudgetElements() {
     // Budget elements are now in static HTML, no need to create them dynamically
-    console.log('Budget elements are now static in HTML');
 }
 
 async function updateBudgetDisplay() {
@@ -111,11 +110,6 @@ async function updateBudgetDisplay() {
         const marketPrice = buildingPrices['Market'] || 'N/A';
         const roadPrice = buildingPrices['roads'] || 'N/A';
         
-        // Debug: Log actual building prices
-        console.log('Actual building prices from housesStore:', buildingPrices);
-        console.log('Building analysis:', buildingAnalysis);
-        console.log('Calculated prices:', { housePrices, farmPrices, marketPrice, roadPrice });
-        console.log('All houses data:', houses.map(h => ({ type: h.type, name: h.name, price: h.price })));
         
         // Calculate detailed values (handle N/A prices)
         const redHousesValue = typeof housePrices.red === 'number' ? buildingAnalysis.redHouses * housePrices.red : 0;
@@ -623,19 +617,15 @@ function createHousesButtons(buttonData) {
 }
 
 function createPalacesButtons(buttonData) {
-    console.log('[PALACES] Creating palace buttons with buttonData:', buttonData);
-    console.log('[PALACES] toolIds.palaces:', toolIds.palaces);
     panelLayoutInner.innerHTML = ''
     const palaceToolIDs = toolIds.palaces || [];
     const svgBigHouse = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-castle"><path d="M22 20v-9H2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2Z"/><path d="M18 11V4H6v7"/><path d="M15 22v-4a3 3 0 0 0-3-3v0a3 3 0 0 0-3 3v4"/><path d="M22 11V9"/><path d="M2 11V9"/><path d="M6 4V2"/><path d="M18 4V2"/><path d="M10 4V2"/><path d="M14 4V2"/>
                         </svg>`
     let buttonsDuplicate = [];
     const filteredButtons = buttonData.filter(buttonInfo => palaceToolIDs.includes(buttonInfo.tool));
-    console.log('[PALACES] Filtered buttons:', filteredButtons);
     filteredButtons.forEach(buttonInfo => {
         if (!buttonsDuplicate.includes(buttonInfo.tool)) {
             buttonsDuplicate.push(buttonInfo.tool);
-            console.log('[PALACES] Creating button for:', buttonInfo.tool);
             makeNewButton(buttonInfo, svgBigHouse)
         }
 
@@ -661,8 +651,6 @@ function createMarketsStallsButtons(buttonData) {
 }
 
 function createFarmsButtons(buttonData) {
-    console.log('[FARMS] Creating farm buttons with buttonData:', buttonData);
-    console.log('[FARMS] toolIds.farms:', toolIds.farms);
     panelLayoutInner.innerHTML = ''
     const farmToolIDs = toolIds.farms || [];
 
@@ -699,8 +687,6 @@ function createFarmsButtons(buttonData) {
 }
 
 function createIndustryButtons(buttonData) {
-    console.log('[INDUSTRY] Creating industry buttons with buttonData:', buttonData);
-    console.log('[INDUSTRY] toolIds.industry:', toolIds.industry);
     panelLayoutInner.innerHTML = ''
     const industryToolIDs = toolIds.industry || [];
 
@@ -959,98 +945,25 @@ window.onload = async () => {
     const budgetPanelEl = document.getElementById('budget-panel');
     const budgetPanelCloseBtnEl = document.querySelector('.budget-panel-close-btn');
     
-    console.log('Budget elements found:', {
-        button: budgetBtn,
-        panel: budgetPanelEl,
-        closeBtn: budgetPanelCloseBtnEl
-    });
-    
     if (budgetBtn) {
         budgetBtn.addEventListener('click', () => {
-            console.log('Budget button clicked!');
-            console.log('Budget panel element:', budgetPanelEl);
-            console.log('Budget panel classes before:', budgetPanelEl.className);
             budgetPanelEl.classList.add('active');
-            console.log('Budget panel classes after:', budgetPanelEl.className);
-            console.log('Budget panel computed style display:', window.getComputedStyle(budgetPanelEl).display);
             
             // Utiliser PopupManager pour gérer les événements
             if (window.popupManager) {
-                console.log('PopupManager available, opening budget-panel');
                 window.popupManager.forceOpenPopup('budget-panel');
             } else {
                 console.warn('PopupManager not available, falling back to manual pause');
                 // Fallback: pause manuel si PopupManager n'est pas disponible
                 if (window.game) {
                     window.game.pause();
-                    console.log('Game paused manually for budget panel');
                 }
             }
             
             updateBudgetDisplay();
         });
-        console.log('Budget button event listener added');
     } else {
         console.warn('Budget button not found in DOM');
-        
-        // Try again after a short delay
-        setTimeout(() => {
-            const retryBudgetBtn = document.getElementById('budget-btn');
-            const retryBudgetPanelEl = document.getElementById('budget-panel');
-            const retryBudgetPanelCloseBtnEl = document.querySelector('.budget-panel-close-btn');
-            
-            console.log('Retry - Budget elements found:', {
-                button: retryBudgetBtn,
-                panel: retryBudgetPanelEl,
-                closeBtn: retryBudgetPanelCloseBtnEl
-            });
-            
-            if (retryBudgetBtn) {
-                retryBudgetBtn.addEventListener('click', () => {
-                    console.log('Budget button clicked (retry)!');
-                    console.log('Budget panel element (retry):', retryBudgetPanelEl);
-                    console.log('Budget panel classes before (retry):', retryBudgetPanelEl.className);
-                    retryBudgetPanelEl.classList.add('active');
-                    console.log('Budget panel classes after (retry):', retryBudgetPanelEl.className);
-                    console.log('Budget panel computed style display (retry):', window.getComputedStyle(retryBudgetPanelEl).display);
-                    
-                    // Pause the game when opening budget panel
-                    if (window.game) {
-                        window.game.pause();
-                        console.log('Game paused for budget panel (retry)');
-                    }
-                    
-                    updateBudgetDisplay();
-                });
-                console.log('Budget button event listener added on retry');
-            }
-            
-            if (retryBudgetPanelCloseBtnEl) {
-                retryBudgetPanelCloseBtnEl.addEventListener('click', () => {
-                    retryBudgetPanelEl.classList.remove('active');
-                    
-                    // Resume the game when closing budget panel
-                    if (window.game) {
-                        window.game.play();
-                        console.log('Game resumed after closing budget panel (retry)');
-                    }
-                });
-            }
-            
-            if (retryBudgetPanelEl) {
-                retryBudgetPanelEl.addEventListener('click', (e) => {
-                    if (e.target === retryBudgetPanelEl) {
-                        retryBudgetPanelEl.classList.remove('active');
-                        
-                        // Resume the game when clicking outside budget panel
-                        if (window.game) {
-                            window.game.play();
-                            console.log('Game resumed after clicking outside budget panel (retry)');
-                        }
-                    }
-                });
-            }
-        }, 1000);
     }
     
     if (budgetPanelCloseBtnEl) {
@@ -1059,14 +972,12 @@ window.onload = async () => {
             
             // Utiliser PopupManager pour gérer les événements
             if (window.popupManager) {
-                console.log('PopupManager available, closing budget-panel');
                 window.popupManager.forceClosePopup('budget-panel');
             } else {
                 console.warn('PopupManager not available, falling back to manual resume');
                 // Fallback: resume manuel si PopupManager n'est pas disponible
                 if (window.game) {
                     window.game.play();
-                    console.log('Game resumed manually after closing budget panel');
                 }
             }
         });
@@ -1080,14 +991,12 @@ window.onload = async () => {
                 
                 // Utiliser PopupManager pour gérer les événements
                 if (window.popupManager) {
-                    console.log('PopupManager available, closing budget-panel (outside click)');
                     window.popupManager.forceClosePopup('budget-panel');
                 } else {
                     console.warn('PopupManager not available, falling back to manual resume (outside click)');
                     // Fallback: resume manuel si PopupManager n'est pas disponible
                     if (window.game) {
                         window.game.play();
-                        console.log('Game resumed manually after clicking outside budget panel');
                     }
                 }
             }
@@ -1724,12 +1633,6 @@ async function generateCityMap() {
         
         cityMapGrid.innerHTML = tableHTML;
         
-        console.log('🗺️ City map generated:', {
-            buildings: houses.length,
-            citySize: citySize,
-            gridSize: `${citySize}x${citySize}`
-        });
-        
     } catch (error) {
         console.error('Error generating city map:', error);
         cityMapGrid.innerHTML = `
@@ -1846,7 +1749,6 @@ async function updateFilterButtonLabels() {
         const allStates = await window.budgetManager.getBudgetStates();
         
         if (allStates.length === 0) {
-            console.log('No budget states available for filter labels');
             return;
         }
 
@@ -1882,8 +1784,6 @@ async function updateFilterButtonLabels() {
             }
         }
 
-        console.log(`📊 Updated filter labels for actual budget states:`, 
-            last3States.map(s => `Turn ${s.turn}`).join(', '));
     } catch (error) {
         console.warn('Error updating filter button labels:', error);
     }
@@ -2211,7 +2111,6 @@ function initUrbanAdviceCenter() {
     const tabContents = document.querySelectorAll('.budget-tab-content');
 
     if (!budgetBtn || !budgetPanel || !budgetCloseBtn) {
-        console.warn('Urban Advice Center elements not found');
         return;
     }
 
@@ -2330,11 +2229,6 @@ async function loadUrbanAnalysis() {
         document.getElementById('wheat-fields').textContent = fieldTypes.wheat;
         document.getElementById('carrot-fields').textContent = fieldTypes.carrot;
 
-        console.log('🏘️ Urban analysis loaded:', {
-            socialClasses,
-            markets: markets.length,
-            fieldTypes
-        });
 
     } catch (error) {
         console.error('Error loading urban analysis:', error);
@@ -2995,7 +2889,6 @@ window.generateCityMap = generateCityMap;
 
 // Global refresh function for budget states modal
 async function refreshBudgetStatesModal() {
-    console.log('🔄 Refreshing budget states modal...');
     
     // Get current active filter button
     const activeFilterBtn = document.querySelector('.budget-filter-btn.active');
@@ -3007,7 +2900,6 @@ async function refreshBudgetStatesModal() {
     // Update filter button labels
     await updateFilterButtonLabels();
     
-    console.log('✅ Budget states modal refreshed');
 }
 
 // Make refresh function globally accessible

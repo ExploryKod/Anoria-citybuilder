@@ -174,7 +174,6 @@ export function createGame(housesStore, gameStore, assetManager) {
     
     // Initialize budget system - force reinitialize to ensure 200€ starting funds
     budgetManager.forceReinitialize(200).then(() => {
-        console.log('Budget system initialized with 200€');
         // Make budgetManager available globally for scene.js
         window.budgetManager = budgetManager;
     });
@@ -215,7 +214,6 @@ export function createGame(housesStore, gameStore, assetManager) {
                     }
                 }
             }
-            console.log(`Building ${buildingId || 'unknown'} removed from (${x}, ${y}) covering ${gridSize}x${gridSize} tiles`);
             await scene.update(city);
         } else if(activeToolId === "select-object") {
             // Object selection
@@ -234,7 +232,7 @@ export function createGame(housesStore, gameStore, assetManager) {
             makeInfoBuildingText("", true)
 
             if(!buildingsObjects.includes(selectedObject.userData.id)) {
-                console.warn("no building here")
+                // Not a building object
             }
 
 
@@ -321,7 +319,6 @@ export function createGame(housesStore, gameStore, assetManager) {
             // Check if area is available for this building
             const { x, y } = selectedObject.userData;
             if (!isAreaAvailableForBuilding(city, x, y, gridSize)) {
-                console.warn(`Cannot place ${activeToolId}: area not available (requires ${gridSize}x${gridSize} tiles)`);
                 showGenericErrorNotification(activeToolId, 'area_not_available');
                 return;
             }
@@ -379,7 +376,6 @@ export function createGame(housesStore, gameStore, assetManager) {
                         }
                     }
                 }
-                console.log(`Building ${activeToolId} placed successfully at (${x}, ${y}) covering ${gridSize}x${gridSize} tiles`);
                 await scene.update(city);
                 
                 // Resume the game after successful building placement
@@ -388,8 +384,6 @@ export function createGame(housesStore, gameStore, assetManager) {
                 }
             } else {
                 // Payment failed - show error message
-                console.warn(`Failed to place building: ${paymentResult.reason}`);
-                
                 // Show beautiful popup notification
                 if (paymentResult.reason === 'insufficient_funds') {
                     showInsufficientFundsNotification(activeToolId, price);
@@ -458,8 +452,6 @@ export function createGame(housesStore, gameStore, assetManager) {
         setInfo(key, info) {
             if(!infos.key) {
                 infos.assign(...infos, {key: info})
-            } else {
-                console.warn('key already exist in info object')
             }
         },
 

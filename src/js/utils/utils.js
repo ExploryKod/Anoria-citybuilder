@@ -160,7 +160,7 @@ export function updateBuildingNeighbors(buildingData, area=1, time=0) {
             // Building zones processing
             const areaKeyObj = buildings[x][y].userData.neighborZones[areaKey]
             if(areaKeyObj && Object.hasOwn(areaKeyObj, 'time') && areaKeyObj.time === time) {
-                console.warn(`time for area key on time ${time}`)
+                // Time already set for this area key
             }   
             
            

@@ -38,8 +38,6 @@ class TutorialManager {
         this.setupEventListeners();
         this.setupDefaultSteps();
         this.isInitialized = true;
-        
-        console.log('Tutorial system initialized');
     }
 
     /**
@@ -137,7 +135,7 @@ class TutorialManager {
     disableThreeJSEvents() {
         this.eventBlocker.blockThreeJSEvents({
             onBlock: (eventType, e) => {
-                console.log(`Three.js event blocked: ${eventType}`);
+                // Event blocked
             }
         });
     }
@@ -168,12 +166,7 @@ class TutorialManager {
         // Mettre le jeu en pause
         if (window.game && typeof window.game.pause === 'function') {
             window.game.pause();
-            console.log('Game paused for tutorial');
-        } else {
-            console.warn('Game object not available for pausing');
         }
-        
-        console.log('Tutorial shown');
     }
 
     /**
@@ -189,12 +182,7 @@ class TutorialManager {
         // Reprendre le jeu
         if (window.game && typeof window.game.play === 'function') {
             window.game.play();
-            console.log('Game resumed after tutorial');
-        } else {
-            console.warn('Game object not available for resuming');
         }
-        
-        console.log('Tutorial hidden');
     }
 
     /**
@@ -202,7 +190,6 @@ class TutorialManager {
      */
     closeTutorial() {
         this.hideTutorial();
-        console.log('Tutorial closed');
     }
 
     /**
@@ -233,7 +220,6 @@ class TutorialManager {
      */
     skipTutorial() {
         this.closeTutorial();
-        console.log('Tutorial skipped');
     }
 
     /**
@@ -328,7 +314,6 @@ class TutorialManager {
      */
     cleanup() {
         this.eventBlocker.cleanup();
-        console.log('Tutorial cleanup completed');
     }
 }
 
@@ -340,13 +325,11 @@ window.tutorialManager = tutorialManager;
 
 // Fonction utilitaire pour démarrer le tutoriel
 window.startTutorial = () => {
-    console.log('startTutorial called');
     tutorialManager.showTutorial();
 };
 
 // Fonction utilitaire pour fermer le tutoriel
 window.closeTutorial = () => {
-    console.log('closeTutorial called');
     tutorialManager.closeTutorial();
 };
 
@@ -354,7 +337,6 @@ window.closeTutorial = () => {
 document.addEventListener('DOMContentLoaded', () => {
     const tutorialBtn = document.getElementById('tutorial-btn');
     if (tutorialBtn) {
-        console.log('Tutorial button found, adding event listener');
         
         // Supprimer tous les event listeners existants
         const newBtn = tutorialBtn.cloneNode(true);
@@ -362,7 +344,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Ajouter notre gestionnaire avec capture pour intercepter avant les autres
         newBtn.addEventListener('click', (e) => {
-            console.log('Tutorial button clicked');
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
@@ -394,4 +375,3 @@ window.addEventListener('beforeunload', () => {
     }
 });
 
-console.log('Tutorial system loaded. Use window.startTutorial() to begin.');
