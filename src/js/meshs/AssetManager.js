@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { textures } from './data.js';
-import MeshLoader from "./MeshLoader.js";
+import MeshLoader from "./MeshLoaderOptimized.js";
 
 class AssetManager extends MeshLoader {
     #geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -194,9 +194,17 @@ class AssetManager extends MeshLoader {
             case 'houses':
                 return this.modelsObj['houses'];
             case 'farms':
-                return this.modelsObj['farms']
+                return this.modelsObj['farms'];
+            case 'industry':
+                return this.modelsObj['industry'];
             case 'markets':
                 return this.modelsObj['markets'];
+            case 'infrastructure':
+                return this.modelsObj['infrastructure'];
+            case 'public':
+                return this.modelsObj['public'];
+            case 'palaces':
+                return this.modelsObj['palaces'];
             default:
                 throw new Error(`Unknown model type: ${type}`);
         }

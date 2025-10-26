@@ -25,27 +25,42 @@ export const textures = Object.freeze({
 
 export const assetsPrices = Object.freeze({
     // Zones
-    'grass': { price: 0, category: 'zones' },
-    'roads': { price: 5, category: 'zones' },
+    'grass': { price: 0, category: 'zones', gridSize: 1 },
+    'roads': { price: 5, category: 'zones', gridSize: 1 },
 
     // Houses
-    'House-Blue': { price: 10, category: 'houses' },
-    'House-Red': { price: 10, category: 'houses' },
-    'House-Purple': { price: 10, category: 'houses' },
-    'House-2Story': { price: 20, category: 'houses' },
+    'House-Blue': { price: 10, category: 'houses', gridSize: 1 },
+    'House-Red': { price: 10, category: 'houses', gridSize: 1 },
+    'House-Purple': { price: 10, category: 'houses', gridSize: 1 },
+    
+    // Palaces
+    'House-2Story': { price: 20, category: 'palaces', gridSize: 1 },
 
     // Tombs
-    'Tombstone-1': { price: 2, category: 'tombs' },
-    'Tombstone-2': { price: 4, category: 'tombs' },
-    'Tombstone-3': { price: 8, category: 'tombs' },
+    'Tombstone-1': { price: 2, category: 'tombs', gridSize: 1 },
+    'Tombstone-2': { price: 4, category: 'tombs', gridSize: 1 },
+    'Tombstone-3': { price: 8, category: 'tombs', gridSize: 1 },
 
-    // Farms
-    'Farm-Wheat': { price: 10, category: 'farms' },
-    'Farm-Carrot': { price: 20, category: 'farms' },
-    'Farm-Cabbage': { price: 30, category: 'farms' },
+    // Farms (only fields)
+    'Farm-Wheat': { price: 10, category: 'farms', gridSize: 1 },
+    'Farm-Carrot': { price: 20, category: 'farms', gridSize: 1 },
+    'Farm-Cabbage': { price: 30, category: 'farms', gridSize: 1 },
+    
+    // Industry (agricultural industry)
+    'Windmill-001': { price: 50, category: 'industry', gridSize: 2 },
+    'Barn-001': { price: 40, category: 'industry', gridSize: 3 },
 
     // Markets
-    'Market-Stall': { price: 10, category: 'markets' }
+    'Market-Stall': { price: 10, category: 'markets', gridSize: 1 },
+    
+    // Infrastructure
+    'Well-001': { price: 15, category: 'infrastructure', gridSize: 1 },
+    'Fountain-001': { price: 25, category: 'infrastructure', gridSize: 1 },
+    'Streetlight-001': { price: 5, category: 'infrastructure', gridSize: 1 },
+    
+    // Public Buildings
+    'Chapel-001': { price: 60, category: 'public', gridSize: 2 },
+    'Church-002': { price: 100, category: 'public', gridSize: 3 }
 });
 
 export const wantedHouses = [
@@ -54,3 +69,67 @@ export const wantedHouses = [
     'House-Purple',
     'House-2Story'
 ]
+
+// Mapping of GLB mesh names to tool names
+// From the GLTF export, we have mesh names like:
+// - Windmill_Material005_0 → becomes "Windmill" (no number)
+// - Windmill001_Material005_0 → becomes "Windmill001"
+// - Windmill002_Material005_0 → becomes "Windmill002"
+// - Windmill003_Material005_0 → becomes "Windmill003"
+// We map all these to "Windmill-001" for consistency
+export const meshNameMapping = {
+    // Windmill variants
+    'Windmill': 'Windmill-001',
+    'Windmill001': 'Windmill-001',
+    'Windmill002': 'Windmill-001',
+    'Windmill003': 'Windmill-001',
+    
+    // Barn variants
+    'Barn': 'Barn-001',
+    'Barn001': 'Barn-001',
+    
+    // Well variants
+    'Well': 'Well-001',
+    'Well001': 'Well-001',
+    
+    // Fountain variants
+    'Fountain': 'Fountain-001',
+    'Fountain001': 'Fountain-001',
+    
+    // Streetlight variants (001-017 all map to Streetlight-001)
+    'Streetlight': 'Streetlight-001',
+    'Streetlight001': 'Streetlight-001',
+    'Streetlight002': 'Streetlight-001',
+    'Streetlight003': 'Streetlight-001',
+    'Streetlight004': 'Streetlight-001',
+    'Streetlight005': 'Streetlight-001',
+    'Streetlight006': 'Streetlight-001',
+    'Streetlight007': 'Streetlight-001',
+    'Streetlight008': 'Streetlight-001',
+    'Streetlight009': 'Streetlight-001',
+    'Streetlight010': 'Streetlight-001',
+    'Streetlight011': 'Streetlight-001',
+    'Streetlight012': 'Streetlight-001',
+    'Streetlight013': 'Streetlight-001',
+    'Streetlight014': 'Streetlight-001',
+    'Streetlight016': 'Streetlight-001',
+    'Streetlight017': 'Streetlight-001',
+    
+    // Chapel and Church
+    'Chapel': 'Chapel-001',
+    'Chapel001': 'Chapel-001',
+    'Church002': 'Church-002',
+    
+    // House 2 Story variants
+    'House_2Story': 'House-2Story',
+    'House_2Story_Purple': 'House-2Story',
+    'House_2Story_Purple001': 'House-2Story',
+    'House_2Story_Purple002': 'House-2Story',
+    'House_2Story_Purple003': 'House-2Story',
+    'House_2Story_Purple004': 'House-2Story',
+    'House_2Story_Purple005': 'House-2Story',
+    'House_2Story_Purple006': 'House-2Story',
+    'House_2Story_Purple007': 'House-2Story',
+    'House_2Story_Purple008': 'House-2Story',
+    'House_2Story_Purple009': 'House-2Story'
+};

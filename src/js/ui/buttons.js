@@ -1,20 +1,24 @@
 import {
     bullDozeButton,
     displaySpeed,
+    speedChangeIndicator,
     farmsButton,
+    industryButton,
     fasterButton,
     housesButton,
+    palacesButton,
+    infrastructureButton,
     infoObjectCloseBtn,
     infoObjectOverlay,
     loaderButton,
     marketButton,
-    othersButton,
     panelLayout,
     panelLayoutCloseBtn,
     panelLayoutInner,
     pauseButton,
     pauseOverlay,
     playButton,
+    publicButton,
     replayButton,
     roadButton,
     selectButton,
@@ -30,9 +34,22 @@ import AssetManager from "../meshs/AssetManager.js";
 let buttonData;
 let toolIds;
 
-function updateSpeedDisplay() {
-    const speed = parseInt(localStorage.getItem('speed'), 10) || 3000;
-    displaySpeed.textContent = `Vitesse du jeu: ${speed} ms`;
+function updateSpeedDisplay(changeDirection = '') {
+    const speedMs = parseInt(localStorage.getItem('speed'), 10) || 3000;
+    
+    // Convert milliseconds to a more user-friendly unit
+    // Show as "X.Yx" format for speeds (where 1x = 1000ms)
+    const speedMultiplier = (1000 / speedMs).toFixed(2);
+    
+    displaySpeed.textContent = `Vitesse: ${speedMultiplier}x`;
+    
+    // Show or hide the speed change indicator badge
+    if (changeDirection) {
+        speedChangeIndicator.textContent = changeDirection;
+        speedChangeIndicator.classList.add('active');
+    } else {
+        speedChangeIndicator.classList.remove('active');
+    }
 }
 
 function createBudgetElements() {
@@ -114,13 +131,18 @@ async function updateBudgetDisplay() {
         const marketsValue = typeof marketPrice === 'number' ? buildingAnalysis.foodMarkets * marketPrice : 0;
         const roadsValue = typeof roadPrice === 'number' ? buildingAnalysis.roads * roadPrice : 0;
         
-        // Calculate depreciation (amortissements) - 2% per turn for buildings
-        const depreciationRate = 0.02; // 2% per turn
-        const totalDepreciation = Math.round(totalBuildingValue * depreciationRate * (currentBudget.turn || 0));
+        // Calculate depreciation (amortissements) - based on actual game mechanics
+        // For now, no depreciation until we implement building aging mechanics
+        const totalDepreciation = 0; // No depreciation system implemented yet
         
         // Calculate provisions for risks and charges
-        const riskProvisions = Math.round(totalBuildingValue * 0.01); // 1% of building value
-        const chargeProvisions = Math.round(currentBudget.funds * 0.05); // 5% of cash for charges
+        // For now, no provisions until we implement risk management mechanics
+        const riskProvisions = 0; // No risk provisions system implemented yet
+        const chargeProvisions = 0; // No charge provisions system implemented yet
+        
+        // Calculate additional assets (according to French standards)
+        const intangibleAssets = 0; // No intangible assets for now (software, patents, etc.)
+        const financialAssets = 0; // No financial assets for now (securities, guarantees, etc.)
         
         // Calculate net values
         const totalBuildingsNet = totalBuildingValue - totalDepreciation;
@@ -131,9 +153,38 @@ async function updateBudgetDisplay() {
         
         // Update Balance Sheet - ACTIF
         updateBalanceSheetElement('balance-sheet-date', `Tour ${currentBudget.turn || 0} (état du passif et de l'actif au ${currentBudget.turn || 0}e tour)`);
+        
+        // Update detailed intangible assets (all 0€ for now - not implemented)
+        updateBalanceSheetElement('intangible-assets-value', `${intangibleAssets.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('establishment-costs', '0€');
+        updateBalanceSheetElement('rd-costs', '0€');
+        updateBalanceSheetElement('patents-licenses', '0€');
+        updateBalanceSheetElement('goodwill', '0€');
+        updateBalanceSheetElement('software-rights', '0€');
+        updateBalanceSheetElement('other-intangible', '0€');
+        updateBalanceSheetElement('intangible-in-progress', '0€');
+        updateBalanceSheetElement('intangible-advances', '0€');
+        
+        // Update detailed tangible assets
         updateBalanceSheetElement('total-buildings-gross-value', `${totalBuildingValue.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('land-value', '0€'); // No land system implemented
+        updateBalanceSheetElement('constructions-value', `${totalBuildingValue.toLocaleString('fr-FR')}€`); // All buildings are constructions
+        updateBalanceSheetElement('technical-equipment', '0€'); // No technical equipment system
+        updateBalanceSheetElement('other-tangible', '0€');
+        updateBalanceSheetElement('tangible-in-progress', '0€');
+        updateBalanceSheetElement('tangible-advances', '0€');
+        
         updateBalanceSheetElement('total-depreciation-value', `${totalDepreciation.toLocaleString('fr-FR')}€`);
         updateBalanceSheetElement('total-buildings-net-value', `${totalBuildingsNet.toLocaleString('fr-FR')}€`);
+        
+        // Update detailed financial assets (all 0€ for now - not implemented)
+        updateBalanceSheetElement('financial-assets-value', `${financialAssets.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('equity-interests', '0€');
+        updateBalanceSheetElement('participation-receivables', '0€');
+        updateBalanceSheetElement('portfolio-securities', '0€');
+        updateBalanceSheetElement('other-securities', '0€');
+        updateBalanceSheetElement('loans-granted', '0€'); // Prêts accordés (not implemented)
+        updateBalanceSheetElement('other-financial', '0€');
         updateBalanceSheetElement('total-houses-value', `${totalHousesValue.toLocaleString('fr-FR')}€`);
         updateBalanceSheetElement('red-houses-value', typeof housePrices.red === 'number' ? `${redHousesValue.toLocaleString('fr-FR')}€` : 'N/A');
         updateBalanceSheetElement('blue-houses-value', typeof housePrices.blue === 'number' ? `${blueHousesValue.toLocaleString('fr-FR')}€` : 'N/A');
@@ -147,15 +198,41 @@ async function updateBudgetDisplay() {
         updateBalanceSheetElement('total-roads-value', typeof roadPrice === 'number' ? `${roadsValue.toLocaleString('fr-FR')}€` : 'N/A');
         updateBalanceSheetElement('roads-value', typeof roadPrice === 'number' ? `${roadsValue.toLocaleString('fr-FR')}€` : 'N/A');
         
-        // Update cash and inventory
-        updateBalanceSheetElement('inventory-gross-value', `${inventoryGross.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('inventory-provisions-value', `${inventoryProvisions.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('inventory-net-value', `${inventoryNet.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('receivables-value', `${receivables.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('cash-value', `${currentBudget.funds.toLocaleString('fr-FR')}€`);
+        // Update detailed current assets (all 0€ for now - not implemented)
+        updateBalanceSheetElement('stocks-work-in-progress', '0€');
+        updateBalanceSheetElement('raw-materials', '0€');
+        updateBalanceSheetElement('work-in-progress', '0€');
+        updateBalanceSheetElement('finished-products', '0€');
+        updateBalanceSheetElement('merchandise', '0€');
+        updateBalanceSheetElement('advances-on-orders', '0€');
         
-        // Calculate total assets (net values)
-        const totalAssets = totalBuildingsNet + inventoryNet + receivables + currentBudget.funds;
+        // Update receivables details
+        updateBalanceSheetElement('total-receivables', `${receivables.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('client-receivables', '0€');
+        updateBalanceSheetElement('other-receivables', '0€');
+        updateBalanceSheetElement('called-unpaid-capital', '0€');
+        
+        // Update marketable securities
+        updateBalanceSheetElement('marketable-securities', '0€');
+        updateBalanceSheetElement('own-shares', '0€');
+        updateBalanceSheetElement('other-securities', '0€');
+        
+        // Update treasury and cash
+        updateBalanceSheetElement('treasury-instruments', '0€');
+        updateBalanceSheetElement('cash-value', `${currentBudget.funds.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('prepaid-expenses', '0€');
+        
+        // Calculate total current assets
+        const totalCurrentAssets = receivables + currentBudget.funds;
+        updateBalanceSheetElement('total-current-assets', `${totalCurrentAssets.toLocaleString('fr-FR')}€`);
+        
+        // Update additional sections (all 0€ for now)
+        updateBalanceSheetElement('deferred-charges', '0€');
+        updateBalanceSheetElement('loan-redemption-premiums', '0€');
+        updateBalanceSheetElement('conversion-differences', '0€');
+        
+        // Calculate total assets (net values) - updated structure
+        const totalAssets = intangibleAssets + totalBuildingsNet + financialAssets + totalCurrentAssets + 0; // +0 for deferred charges, premiums, conversion differences
         updateBalanceSheetElement('total-assets', `${totalAssets.toLocaleString('fr-FR')}€`);
         
         // Calculate loan debts from budget
@@ -172,8 +249,11 @@ async function updateBudgetDisplay() {
         });
         
         // Update Balance Sheet - PASSIF
-        updateBalanceSheetElement('municipal-capital', '200€'); // Capital initial
-        updateBalanceSheetElement('reserves', '0€'); // Pas de réserves pour l'instant
+        // Capital social: Only arbitrary value allowed - initial mayor's funds from budget store
+        const shareCapital = currentBudget.initialFunds || currentBudget.funds; // Use initial funds from budget store
+        updateBalanceSheetElement('share-capital', `${shareCapital.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('legal-reserves', '0€'); // No legal reserves system implemented yet
+        updateBalanceSheetElement('carried-forward', '0€'); // No carried forward system implemented yet
         updateBalanceSheetElement('net-result', `${currentBudget.netFlow.toLocaleString('fr-FR')}€`);
         
         // Update provisions
@@ -183,12 +263,23 @@ async function updateBudgetDisplay() {
         // Update debts
         updateBalanceSheetElement('bank-loans-debt', `${bankLoansDebt.toLocaleString('fr-FR')}€`);
         updateBalanceSheetElement('commercial-loans-debt', `${commercialLoansDebt.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('accrued-expenses', `${(currentBudget.totalLoanInterestExpenses || 0).toLocaleString('fr-FR')}€`); // Intérêts des dettes
         updateBalanceSheetElement('supplier-debts', '0€'); // Pas de dettes fournisseurs pour l'instant
         updateBalanceSheetElement('social-fiscal-debts', '0€'); // Pas de dettes sociales/fiscales pour l'instant
         
+        // Calculate accrued expenses (charges à payer) - includes loan interest and building maintenance
+        const accruedExpenses = (currentBudget.totalLoanInterestExpenses || 0) + (currentBudget.totalBuildingMaintenance || 0);
+        updateBalanceSheetElement('accrued-expenses', `${accruedExpenses.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('loan-interest-expenses', `${(currentBudget.totalLoanInterestExpenses || 0).toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('building-maintenance-expenses', `${(currentBudget.totalBuildingMaintenance || 0).toLocaleString('fr-FR')}€`);
+        
+        // Calculate debt totals
+        const financialDebtsTotal = bankLoansDebt + commercialLoansDebt;
+        const operatingDebtsTotal = accruedExpenses; // Include both loan interest and building maintenance
+        updateBalanceSheetElement('financial-debts-total', `${financialDebtsTotal.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('operating-debts-total', `${operatingDebtsTotal.toLocaleString('fr-FR')}€`);
+        
         // Calculate total liabilities
-        const totalLiabilities = 200 + currentBudget.netFlow + riskProvisions + chargeProvisions + bankLoansDebt + commercialLoansDebt + (currentBudget.totalLoanInterestExpenses || 0);
+        const totalLiabilities = shareCapital + currentBudget.netFlow + riskProvisions + chargeProvisions + bankLoansDebt + commercialLoansDebt + accruedExpenses;
         updateBalanceSheetElement('total-liabilities', `${totalLiabilities.toLocaleString('fr-FR')}€`);
         
         // Verify balance sheet equation: ACTIF = PASSIF
@@ -226,6 +317,9 @@ async function updateBudgetDisplay() {
         // Update real-time budget display
         updateRealtimeBudget();
         
+        // Initialize balance sheet filters
+        initBalanceSheetFilters();
+        
     } catch (error) {
         console.error('Error updating budget display:', error);
     }
@@ -236,6 +330,61 @@ function updateBalanceSheetElement(elementId, value) {
     if (element) {
         element.textContent = value;
     }
+}
+
+// Initialize balance sheet filters
+function initBalanceSheetFilters() {
+    const filterButtons = document.querySelectorAll('.balance-filter-btn');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const filter = button.getAttribute('data-filter');
+            
+            // Remove active class from all buttons
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Add active class to clicked button
+            button.classList.add('active');
+            
+            // Apply filter
+            applyBalanceSheetFilter(filter);
+        });
+    });
+}
+
+// Apply balance sheet filter
+function applyBalanceSheetFilter(filter) {
+    const actifSection = document.querySelector('.balance-sheet-actif');
+    const passifSection = document.querySelector('.balance-sheet-passif');
+    const totalActif = document.querySelector('.balance-sheet-total-actif');
+    const totalPassif = document.querySelector('.balance-sheet-total-passif');
+    
+    // Reset all sections to visible
+    actifSection?.classList.remove('hidden');
+    passifSection?.classList.remove('hidden');
+    totalActif?.classList.remove('hidden');
+    totalPassif?.classList.remove('hidden');
+    
+    switch(filter) {
+        case 'actif':
+            // Show only Actif section
+            passifSection?.classList.add('hidden');
+            totalPassif?.classList.add('hidden');
+            break;
+            
+        case 'passif':
+            // Show only Passif section
+            actifSection?.classList.add('hidden');
+            totalActif?.classList.add('hidden');
+            break;
+            
+        case 'all':
+        default:
+            // Show everything (already visible)
+            break;
+    }
+    
+    console.log(`Balance sheet filter applied: ${filter}`);
 }
 
 // Animation panel buttons
@@ -315,26 +464,14 @@ function toggleModal(e) {
                 createHousesButtons(buttonData);
                 panelLayout.classList.add('active');
                 
-                // Disable pointer events on 3D scene when modal opens
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                    canvas.classList.add('pointer-events-disabled');
-                }
-                
-                // Pause the game when opening building selection modal
-                if (window.game) {
-                    window.game.pause();
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('panel-layout');
                 }
             } else {
-                // Re-enable pointer events on 3D scene when modal closes
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                    canvas.classList.remove('pointer-events-disabled');
-                }
-                
-                // Resume the game when closing building selection modal
-                if (window.game) {
-                    window.game.play();
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('panel-layout');
                 }
             }
 
@@ -349,26 +486,35 @@ function toggleModal(e) {
                 e.target.classList.toggle('selected')
                 createFarmsButtons(buttonData);
                 
-                // Disable pointer events on 3D scene when modal opens
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                    canvas.classList.add('pointer-events-disabled');
-                }
-                
-                // Pause the game when opening building selection modal
-                if (window.game) {
-                    window.game.pause();
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('panel-layout');
                 }
             } else {
-                // Re-enable pointer events on 3D scene when modal closes
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                    canvas.classList.remove('pointer-events-disabled');
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('panel-layout');
                 }
+            }
+            break;
+        case 'industry':
+            getButtonsUnactive()
+            getButtonsDisabled()
+            panelLayoutInner.classList.add('loading-objects')
+            if(!panelLayout.classList.contains('active')) {
+                loaderButton.classList.add('active');
+                panelLayout.classList.add('active');
+                e.target.classList.toggle('selected')
+                createIndustryButtons(buttonData);
                 
-                // Resume the game when closing building selection modal
-                if (window.game) {
-                    window.game.play();
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('panel-layout');
+                }
+            } else {
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('panel-layout');
                 }
             }
             break;
@@ -381,58 +527,74 @@ function toggleModal(e) {
                 e.target.classList.toggle('selected')
                 createMarketsStallsButtons(buttonData)
                 
-                // Disable pointer events on 3D scene when modal opens
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                    canvas.classList.add('pointer-events-disabled');
-                }
-                
-                // Pause the game when opening building selection modal
-                if (window.game) {
-                    window.game.pause();
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('panel-layout');
                 }
             } else {
-                // Re-enable pointer events on 3D scene when modal closes
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                    canvas.classList.remove('pointer-events-disabled');
-                }
-                
-                // Resume the game when closing building selection modal
-                if (window.game) {
-                    window.game.play();
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('panel-layout');
                 }
             }
             break;
-        case 'others':
+        case 'infrastructure':
             getButtonsUnactive()
             getButtonsDisabled()
             panelLayoutInner.classList.add('loading-objects')
             if(!panelLayout.classList.contains('active')) {
                 panelLayout.classList.add('active');
                 e.target.classList.toggle('selected')
-                createOthersButtons(buttonData)
+                createInfrastructureButtons(buttonData)
                 
-                // Disable pointer events on 3D scene when modal opens
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                    canvas.classList.add('pointer-events-disabled');
-                }
-                
-                // Pause the game when opening building selection modal
-                if (window.game) {
-                    window.game.pause();
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('panel-layout');
                 }
             } else {
-                // Re-enable pointer events on 3D scene when modal closes
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                    canvas.classList.remove('pointer-events-disabled');
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('panel-layout');
                 }
+            }
+            break;
+        case 'public':
+            getButtonsUnactive()
+            getButtonsDisabled()
+            panelLayoutInner.classList.add('loading-objects')
+            if(!panelLayout.classList.contains('active')) {
+                panelLayout.classList.add('active');
+                e.target.classList.toggle('selected')
+                createPublicButtons(buttonData)
                 
-                // Resume the game when closing building selection modal
-                if (window.game) {
-                    window.game.play();
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('panel-layout');
+                }
+            } else {
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('panel-layout');
+                }
+            }
+            break;
+        case 'palaces':
+            getButtonsUnactive()
+            getButtonsDisabled()
+            panelLayoutInner.classList.add('loading-objects')
+            if(!panelLayout.classList.contains('active')) {
+                panelLayout.classList.add('active');
+                e.target.classList.toggle('selected')
+                createPalacesButtons(buttonData)
+                
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('panel-layout');
+                }
+            } else {
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('panel-layout');
                 }
             }
             break;
@@ -450,18 +612,31 @@ function createHousesButtons(buttonData) {
             <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
             <polyline points="9 22 9 12 15 12 15 22"/>
         </svg>`
-    const svgBigHouse = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-castle"><path d="M22 20v-9H2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2Z"/><path d="M18 11V4H6v7"/><path d="M15 22v-4a3 3 0 0 0-3-3v0a3 3 0 0 0-3 3v4"/><path d="M22 11V9"/><path d="M2 11V9"/><path d="M6 4V2"/><path d="M18 4V2"/><path d="M10 4V2"/><path d="M14 4V2"/>
-                        </svg>`
     let buttonsDuplicate = [];
     buttonData.filter(buttonInfo => houseToolIDs.includes(buttonInfo.tool)).forEach(buttonInfo => {
         if (!buttonsDuplicate.includes(buttonInfo.tool)) {
             buttonsDuplicate.push(buttonInfo.tool);
-            if(buttonInfo.tool === 'House-2Story') {
-                makeNewButton(buttonInfo, svgBigHouse)
-            } else {
-                makeNewButton(buttonInfo, svg)
-            }
+            makeNewButton(buttonInfo, svg)
+        }
 
+    });
+}
+
+function createPalacesButtons(buttonData) {
+    console.log('[PALACES] Creating palace buttons with buttonData:', buttonData);
+    console.log('[PALACES] toolIds.palaces:', toolIds.palaces);
+    panelLayoutInner.innerHTML = ''
+    const palaceToolIDs = toolIds.palaces || [];
+    const svgBigHouse = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-castle"><path d="M22 20v-9H2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2Z"/><path d="M18 11V4H6v7"/><path d="M15 22v-4a3 3 0 0 0-3-3v0a3 3 0 0 0-3 3v4"/><path d="M22 11V9"/><path d="M2 11V9"/><path d="M6 4V2"/><path d="M18 4V2"/><path d="M10 4V2"/><path d="M14 4V2"/>
+                        </svg>`
+    let buttonsDuplicate = [];
+    const filteredButtons = buttonData.filter(buttonInfo => palaceToolIDs.includes(buttonInfo.tool));
+    console.log('[PALACES] Filtered buttons:', filteredButtons);
+    filteredButtons.forEach(buttonInfo => {
+        if (!buttonsDuplicate.includes(buttonInfo.tool)) {
+            buttonsDuplicate.push(buttonInfo.tool);
+            console.log('[PALACES] Creating button for:', buttonInfo.tool);
+            makeNewButton(buttonInfo, svgBigHouse)
         }
 
     });
@@ -486,6 +661,8 @@ function createMarketsStallsButtons(buttonData) {
 }
 
 function createFarmsButtons(buttonData) {
+    console.log('[FARMS] Creating farm buttons with buttonData:', buttonData);
+    console.log('[FARMS] toolIds.farms:', toolIds.farms);
     panelLayoutInner.innerHTML = ''
     const farmToolIDs = toolIds.farms || [];
 
@@ -504,8 +681,6 @@ function createFarmsButtons(buttonData) {
     const svgCabbage = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             class="lucide lucide-leafy-green"><path d="M2 22c1.25-.987 2.27-1.975 3.9-2.2a5.56 5.56 0 0 1 3.8 1.5 4 4 0 0 0 6.187-2.353 3.5 3.5 0 0 0 3.69-5.116A3.5 3.5 0 0 0 20.95 8 3.5 3.5 0 1 0 16 3.05a3.5 3.5 0 0 0-5.831 1.373 3.5 3.5 0 0 0-5.116 3.69 4 4 0 0 0-2.348 6.155C3.499 15.42 4.409 16.712 4.2 18.1 3.926 19.743 3.014 20.732 2 22"/><path d="M2 22 17 7"/>
                             </svg>`
-    const svgFarmTools = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-tractor"><path d="m10 11 11 .9a1 1 0 0 1 .8 1.1l-.665 4.158a1 1 0 0 1-.988.842H20"/><path d="M16 18h-5"/><path d="M18 5a1 1 0 0 0-1 1v5.573"/><path d="M3 4h8.129a1 1 0 0 1 .99.863L13 11.246"/><path d="M4 11V4"/><path d="M7 15h.01"/><path d="M8 10.1V4"/><circle cx="18" cy="18" r="2"/><circle cx="7" cy="15" r="5"/>
-                            </svg>`
     let buttonsDuplicate = [];
     buttonData.filter(buttonInfo => farmToolIDs.includes(buttonInfo.tool)).forEach(buttonInfo => {
         if (!buttonsDuplicate.includes(buttonInfo.tool)) {
@@ -517,7 +692,31 @@ function createFarmsButtons(buttonData) {
             } else if (buttonInfo.tool === 'Farm-Cabbage') {
                 makeNewButton(buttonInfo, svgCabbage)
             } else {
-                makeNewButton(buttonInfo, svgFarmTools);
+                makeNewButton(buttonInfo, svgCabbage)
+            }
+        }
+    });
+}
+
+function createIndustryButtons(buttonData) {
+    console.log('[INDUSTRY] Creating industry buttons with buttonData:', buttonData);
+    console.log('[INDUSTRY] toolIds.industry:', toolIds.industry);
+    panelLayoutInner.innerHTML = ''
+    const industryToolIDs = toolIds.industry || [];
+
+    const svgWindmill = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cog"><circle cx="12" cy="12" r="3"/><path d="M12 5L7 7l2 5M12 5l5 2-2 5M7 17l2-5M17 17l-2-5M7 7L2 7l5 10M17 7l5 0-5 10"/></svg>`
+    const svgBarn = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="12" x="6" y="10"/></svg>`
+    
+    let buttonsDuplicate = [];
+    buttonData.filter(buttonInfo => industryToolIDs.includes(buttonInfo.tool)).forEach(buttonInfo => {
+        if (!buttonsDuplicate.includes(buttonInfo.tool)) {
+            buttonsDuplicate.push(buttonInfo.tool);
+            if (buttonInfo.tool === 'Windmill-001') {
+                makeNewButton(buttonInfo, svgWindmill)
+            } else if (buttonInfo.tool === 'Barn-001') {
+                makeNewButton(buttonInfo, svgBarn)
+            } else {
+                makeNewButton(buttonInfo, svgBarn)
             }
         }
     });
@@ -539,6 +738,57 @@ function createOthersButtons(buttonData) {
         if (!buttonsDuplicate.includes(buttonInfo.tool)) {
             buttonsDuplicate.push(buttonInfo.tool);
             makeNewButton(buttonInfo, makeTumbSVG(tumbColors[0][buttonInfo.tool]));
+        }
+    });
+}
+
+function createInfrastructureButtons(buttonData) {
+    panelLayoutInner.innerHTML = '';
+    const infrastructureToolIDs = toolIds.infrastructure || [];
+
+    // Réutiliser des SVG existants
+    const svgWell = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-droplet"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4.5-4-6.5c-.5 2-1.5 3.9-3 5.5S5 13 5 15a7 7 0 0 0 7 7z"/></svg>`;
+    const svgFountain = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>`;
+    const svgStreetlight = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lamp"><path d="M8 2h8l4 10H4L8 2Z"/><path d="M12 12v6"/><path d="M8 22v-2c0-1.1.9-2 2-2h4a2 2 0 0 1 2 2v2H8Z"/></svg>`;
+
+    let buttonsDuplicate = [];
+    buttonData.filter(buttonInfo => infrastructureToolIDs.includes(buttonInfo.tool)).forEach(buttonInfo => {
+        if (!buttonsDuplicate.includes(buttonInfo.tool)) {
+            buttonsDuplicate.push(buttonInfo.tool);
+            if (buttonInfo.tool === 'Well-001') {
+                makeNewButton(buttonInfo, svgWell);
+            } else if (buttonInfo.tool === 'Fountain-001') {
+                makeNewButton(buttonInfo, svgFountain);
+            } else if (buttonInfo.tool === 'Streetlight-001') {
+                makeNewButton(buttonInfo, svgStreetlight);
+            } else {
+                makeNewButton(buttonInfo, svgWell); // Default
+            }
+        }
+    });
+}
+
+function createPublicButtons(buttonData) {
+    panelLayoutInner.innerHTML = '';
+    const publicToolIDs = toolIds.public || [];
+
+    // Réutiliser le même SVG que les maisons (temporaire)
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>`
+    const svgBigHouse = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-castle"><path d="M22 20v-9H2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2Z"/><path d="M18 11V4H6v7"/><path d="M15 22v-4a3 3 0 0 0-3-3v0a3 3 0 0 0-3 3v4"/><path d="M22 11V9"/><path d="M2 11V9"/><path d="M6 4V2"/><path d="M18 4V2"/><path d="M10 4V2"/><path d="M14 4V2"/>
+                        </svg>`
+
+    let buttonsDuplicate = [];
+    buttonData.filter(buttonInfo => publicToolIDs.includes(buttonInfo.tool)).forEach(buttonInfo => {
+        if (!buttonsDuplicate.includes(buttonInfo.tool)) {
+            buttonsDuplicate.push(buttonInfo.tool);
+            if (buttonInfo.tool === 'Church-002') {
+                makeNewButton(buttonInfo, svgBigHouse);
+            } else {
+                makeNewButton(buttonInfo, svg);
+            }
         }
     });
 }
@@ -570,8 +820,12 @@ window.onload = async () => {
     let selectedControl = document.getElementById('bulldoze-btn');
     await assetManager.initializeTerrains()
     await assetManager.initializeBuildings('houses')
+    await assetManager.initializeBuildings('palaces')
     await assetManager.initializeBuildings('markets')
     await assetManager.initializeBuildings('farms')
+    await assetManager.initializeBuildings('industry')
+    await assetManager.initializeBuildings('infrastructure')
+    await assetManager.initializeBuildings('public')
     buttonData = assetManager.getButtonData();
     toolIds = assetManager.getToolIds();
     
@@ -605,10 +859,9 @@ window.onload = async () => {
     playButton.addEventListener('click', () => {
         pauseOverlay.classList.remove('active')
         
-        // Re-enable pointer events on 3D scene when pause overlay closes
-        const canvas = document.querySelector('canvas');
-        if (canvas) {
-            canvas.classList.remove('pointer-events-disabled');
+        // Utiliser PopupManager pour gérer les événements
+        if (window.popupManager) {
+            window.popupManager.forceClosePopup('pause-overlay');
         }
         
         window.game.play()
@@ -617,10 +870,9 @@ window.onload = async () => {
     pauseButton.addEventListener('click', () => {
         pauseOverlay.classList.add('active')
         
-        // Disable pointer events on 3D scene when pause overlay opens
-        const canvas = document.querySelector('canvas');
-        if (canvas) {
-            canvas.classList.add('pointer-events-disabled');
+        // Utiliser PopupManager pour gérer les événements
+        if (window.popupManager) {
+            window.popupManager.forceOpenPopup('pause-overlay');
         }
         
         window.game.pause()
@@ -632,22 +884,46 @@ window.onload = async () => {
 
     fasterButton.addEventListener('click', () => {
         let speed = parseInt(localStorage.getItem('speed'), 10) || 3000;
-        if(speed <= 0) {
-            return
-        }
-
-        speed -= 500;
+        const previousSpeed = speed;
+        
+        // Apply speed limits: minimum 500ms, maximum 20,000ms
+        speed = Math.max(500, speed - 500);
+        
         localStorage.setItem('speed', speed.toString());
         window.game.startInterval()
-        updateSpeedDisplay();
+        
+        // Show '+' indicator badge if speed actually changed
+        const changeDirection = (speed !== previousSpeed) ? '+' : '';
+        updateSpeedDisplay(changeDirection);
+        
+        // Hide indicator after 1 second
+        if (changeDirection) {
+            setTimeout(() => {
+                speedChangeIndicator.classList.remove('active');
+            }, 1000);
+        }
     });
 
     slowerButton.addEventListener('click', () => {
         let speed = parseInt(localStorage.getItem('speed'), 10) || 3000;
-        speed += 500;
+        const previousSpeed = speed;
+        
+        // Apply speed limits: minimum 500ms, maximum 20,000ms
+        speed = Math.min(20000, speed + 500);
+        
         localStorage.setItem('speed', speed.toString());
         window.game.startInterval()
-        updateSpeedDisplay();
+        
+        // Show '−' indicator badge if speed actually changed
+        const changeDirection = (speed !== previousSpeed) ? '−' : '';
+        updateSpeedDisplay(changeDirection);
+        
+        // Hide indicator after 1 second
+        if (changeDirection) {
+            setTimeout(() => {
+                speedChangeIndicator.classList.remove('active');
+            }, 1000);
+        }
     });
 
     bullDozeButton.addEventListener('click', (e) => {
@@ -663,12 +939,18 @@ window.onload = async () => {
     })
 
     housesButton.addEventListener('click', toggleModal)
+    
+    palacesButton.addEventListener('click', toggleModal)
 
     farmsButton.addEventListener('click', toggleModal)
+    
+    industryButton.addEventListener('click', toggleModal)
 
     marketButton.addEventListener('click', toggleModal)
-
-    othersButton.addEventListener('click', toggleModal)
+    
+    infrastructureButton.addEventListener('click', toggleModal)
+    
+    publicButton.addEventListener('click', toggleModal)
 
     panelLayoutCloseBtn.addEventListener('click', closeModal)
     
@@ -692,10 +974,17 @@ window.onload = async () => {
             console.log('Budget panel classes after:', budgetPanelEl.className);
             console.log('Budget panel computed style display:', window.getComputedStyle(budgetPanelEl).display);
             
-            // Pause the game when opening budget panel
-            if (window.game) {
-                window.game.pause();
-                console.log('Game paused for budget panel');
+            // Utiliser PopupManager pour gérer les événements
+            if (window.popupManager) {
+                console.log('PopupManager available, opening budget-panel');
+                window.popupManager.forceOpenPopup('budget-panel');
+            } else {
+                console.warn('PopupManager not available, falling back to manual pause');
+                // Fallback: pause manuel si PopupManager n'est pas disponible
+                if (window.game) {
+                    window.game.pause();
+                    console.log('Game paused manually for budget panel');
+                }
             }
             
             updateBudgetDisplay();
@@ -768,10 +1057,17 @@ window.onload = async () => {
         budgetPanelCloseBtnEl.addEventListener('click', () => {
             budgetPanelEl.classList.remove('active');
             
-            // Resume the game when closing budget panel
-            if (window.game) {
-                window.game.play();
-                console.log('Game resumed after closing budget panel');
+            // Utiliser PopupManager pour gérer les événements
+            if (window.popupManager) {
+                console.log('PopupManager available, closing budget-panel');
+                window.popupManager.forceClosePopup('budget-panel');
+            } else {
+                console.warn('PopupManager not available, falling back to manual resume');
+                // Fallback: resume manuel si PopupManager n'est pas disponible
+                if (window.game) {
+                    window.game.play();
+                    console.log('Game resumed manually after closing budget panel');
+                }
             }
         });
     }
@@ -782,16 +1078,24 @@ window.onload = async () => {
             if (e.target === budgetPanelEl) {
                 budgetPanelEl.classList.remove('active');
                 
-                // Resume the game when clicking outside budget panel
-                if (window.game) {
-                    window.game.play();
-                    console.log('Game resumed after clicking outside budget panel');
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    console.log('PopupManager available, closing budget-panel (outside click)');
+                    window.popupManager.forceClosePopup('budget-panel');
+                } else {
+                    console.warn('PopupManager not available, falling back to manual resume (outside click)');
+                    // Fallback: resume manuel si PopupManager n'est pas disponible
+                    if (window.game) {
+                        window.game.play();
+                        console.log('Game resumed manually after clicking outside budget panel');
+                    }
                 }
             }
         });
     }
     
     window.gameStore = gameStore;
+    window.housesStore = housesStore;
     window.game = createGame(housesStore, gameStore, assetManager);
     window.setActiveTool = (e) => {
         getButtonsUnactive(e)
@@ -817,6 +1121,9 @@ window.onload = async () => {
     // Initialize budget states popup
     initBudgetStatesPopup();
     
+    // Initialize city map popup
+    initCityMapPopup();
+    
     // Initialize loans popup
     initLoansPopup();
     
@@ -841,15 +1148,22 @@ function initRealtimeBudgetPopup() {
         e.stopPropagation(); // Prevent event bubbling
         e.preventDefault(); // Prevent default behavior
         
-        // Budget panel can now be opened even when other modals are active
-        
         // Only toggle if clicking directly on the budget box or its children
         if (e.target === realtimeBudgetBtn || realtimeBudgetBtn.contains(e.target)) {
             realtimeBudgetPanel.classList.toggle('active');
             realtimeBudgetBtn.classList.toggle('active'); // Add/remove active class on button
+            
             if (realtimeBudgetPanel.classList.contains('active')) {
-                // Budget panel doesn't disable 3D scene interactions since it's positioned on the side
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('realtime-budget-panel');
+                }
                 updateRealtimeBudget();
+            } else {
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('realtime-budget-panel');
+                }
             }
         }
     });
@@ -858,7 +1172,11 @@ function initRealtimeBudgetPopup() {
     realtimeBudgetCloseBtn.addEventListener('click', () => {
         realtimeBudgetPanel.classList.remove('active');
         realtimeBudgetBtn.classList.remove('active'); // Remove active class from button
-        // No need to manage pointer events since budget panel doesn't interfere with 3D scene
+        
+        // Utiliser PopupManager pour gérer les événements
+        if (window.popupManager) {
+            window.popupManager.forceClosePopup('realtime-budget-panel');
+        }
     });
 
     // Close popup when clicking outside
@@ -1199,6 +1517,243 @@ async function updateLoanInterestDetail(budgetData) {
     }
 }
 
+// City Map Popup Functions
+function initCityMapPopup() {
+    const cityMapBtn = document.getElementById('city-map-btn');
+    const cityMapPanel = document.getElementById('city-map-panel');
+    const cityMapCloseBtn = document.querySelector('.city-map-close-btn');
+
+    if (!cityMapBtn || !cityMapPanel || !cityMapCloseBtn) {
+        console.warn('City map popup elements not found');
+        return;
+    }
+
+    // Toggle popup on button click
+    cityMapBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        
+        cityMapPanel.classList.toggle('active');
+        
+        if (cityMapPanel.classList.contains('active')) {
+            // Use PopupManager to handle events
+            if (window.popupManager) {
+                window.popupManager.forceOpenPopup('city-map-panel');
+            }
+            // Generate the city map grid
+            await generateCityMap();
+        } else {
+            // Use PopupManager to handle events
+            if (window.popupManager) {
+                window.popupManager.forceClosePopup('city-map-panel');
+            }
+        }
+    });
+
+    // Close popup on close button click
+    cityMapCloseBtn.addEventListener('click', () => {
+        cityMapPanel.classList.remove('active');
+        
+        if (window.popupManager) {
+            window.popupManager.forceClosePopup('city-map-panel');
+        }
+    });
+
+    // Close popup when clicking outside
+    cityMapPanel.addEventListener('click', (e) => {
+        if (e.target === cityMapPanel) {
+            cityMapPanel.classList.remove('active');
+            
+            if (window.popupManager) {
+                window.popupManager.forceClosePopup('city-map-panel');
+            }
+        }
+    });
+}
+
+// Function to get building code from type
+function getBuildingCode(type) {
+    if (!type) return '';
+    if (type.includes('House-Blue')) return 'HB';
+    if (type.includes('House-Red')) return 'HR';
+    if (type.includes('House-Purple')) return 'HP';
+    if (type.includes('House-2Story') || type.includes('House_2Story')) return 'H2S';
+    if (type.includes('Market')) return 'M';
+    if (type.includes('Farm')) return 'F';
+    if (type.includes('Windmill')) return 'WM';
+    if (type.includes('Barn')) return 'BA';
+    if (type.includes('Church')) return 'CH';
+    if (type.includes('Chapel')) return 'CP';
+    if (type.includes('Well')) return 'WE';
+    if (type.includes('Fountain')) return 'FO';
+    if (type.includes('Tombstone') || type.includes('Tomb')) return 'TO';
+    if (type.includes('roads')) return 'R';
+    if (type.includes('Road')) return 'R';
+    // Default: return first letter of type
+    return type.charAt(0).toUpperCase();
+}
+
+// Function to get all neighbor codes for a building
+function getNeighborCodes(neighbors) {
+    if (!neighbors || !Array.isArray(neighbors) || neighbors.length === 0) {
+        return '';
+    }
+    
+    return neighbors.map(neighbor => {
+        const code = getBuildingCode(neighbor.name || neighbor.type);
+        if (neighbor.x !== undefined && neighbor.y !== undefined) {
+            return `${code}(${neighbor.x},${neighbor.y})`;
+        }
+        return code;
+    }).join(' ');
+}
+
+// Function to generate city map grid
+async function generateCityMap() {
+    const cityMapGrid = document.getElementById('city-map-grid');
+    if (!cityMapGrid) return;
+    
+    try {
+        // Show loading
+        cityMapGrid.innerHTML = `
+            <div class="grid-loading">
+                <div class="loading-spinner"></div>
+                <p>Chargement de la carte...</p>
+            </div>
+        `;
+        
+        // Get city dimensions from game - default to 16x16 if not available
+        let citySize = 16;
+        if (window.scene && window.scene.city) {
+            citySize = window.scene.city.size;
+        }
+        
+        // Get all houses from database - use local housesStore or fallback to window
+        let houses = [];
+        try {
+            if (housesStore && typeof housesStore.listAllHouses === 'function') {
+                houses = await housesStore.listAllHouses();
+            } else if (window.housesStore && typeof window.housesStore.listAllHouses === 'function') {
+                houses = await window.housesStore.listAllHouses();
+            } else {
+                throw new Error('housesStore not available');
+            }
+        } catch (error) {
+            console.warn('Could not access housesStore:', error);
+            houses = [];
+        }
+        
+        // Create a map of buildings by position (x,y)
+        const buildingMap = new Map();
+        houses.forEach(house => {
+            if (house.x !== undefined && house.y !== undefined) {
+                const key = `${house.x},${house.y}`;
+                buildingMap.set(key, house);
+            }
+        });
+        
+        // Create the HTML table with full city grid (0 to citySize-1)
+        // First header cell shows coordinate system info
+        let tableHTML = '<table class="city-grid-table"><thead><tr>';
+        tableHTML += '<th class="coord-label-cell"><span class="coord-label-x">X ↕</span><span class="coord-label-y">↔ Y</span></th>';
+        
+        // Add column headers (y coordinates) 
+        for (let y = 0; y < citySize; y++) {
+            tableHTML += `<th class="y-header">${y}</th>`;
+        }
+        tableHTML += '</tr></thead><tbody>';
+        
+        // Add rows (x coordinates)
+        for (let x = 0; x < citySize; x++) {
+            tableHTML += `<tr><th class="x-header">${x}</th>`;
+            
+            for (let y = 0; y < citySize; y++) {
+                const key = `${x},${y}`;
+                const building = buildingMap.get(key);
+                
+                if (building) {
+                    const code = getBuildingCode(building.type);
+                    const neighbors = building.neighbors || [];
+                    const neighborCodes = getNeighborCodes(neighbors);
+                    
+                    // Check if building needs road access (not roads themselves)
+                    const isRoad = building.type.includes('roads') || building.type.includes('Road');
+                    const needsRoadAccess = !isRoad;
+                    
+                    // Check for road access (only for buildings that need it)
+                    const hasRoad = needsRoadAccess ? neighbors.some(neighbor => neighbor.name === 'roads' || neighbor.name === 'Road') : true;
+                    
+                    // Check if building can have food (houses, markets, but not roads, wells, etc.)
+                    const canHaveFood = building.type.includes('House') || building.type.includes('Market') || building.type.includes('Farm');
+                    
+                    // Check for food stocks (only for buildings that can have food)
+                    const stocks = building.stocks || {};
+                    const hasFood = canHaveFood ? (stocks.food > 0 || stocks.wheat > 0 || stocks.carrot > 0 || stocks.cabbage > 0) : true;
+                    
+                    tableHTML += `<td class="grid-cell">`;
+                    
+                    // Status indicators
+                    tableHTML += `<div class="status-indicators">`;
+                    // Only show road indicator for buildings that need roads
+                    if (needsRoadAccess && !hasRoad) {
+                        tableHTML += `<span class="status-indicator no-road" title="Pas de route"></span>`;
+                    }
+                    // Only show food indicator for buildings that can have food
+                    if (canHaveFood && !hasFood) {
+                        tableHTML += `<span class="status-indicator no-food" title="Pas de nourriture"></span>`;
+                    }
+                    tableHTML += `</div>`;
+                    
+                    tableHTML += `<span class="building-code ${code.toLowerCase()}">${code}</span>`;
+                    if (neighborCodes) {
+                        tableHTML += `<div class="neighbors-list">${neighborCodes}</div>`;
+                    }
+                    tableHTML += `</td>`;
+                } else {
+                    // Empty cell (grass) - show a small indicator
+                    tableHTML += `<td class="grid-cell empty-cell">
+                        <span class="building-code grass" style="opacity: 0.3;">G</span>
+                    </td>`;
+                }
+            }
+            
+            tableHTML += '</tr>';
+        }
+        
+        tableHTML += '</tbody></table>';
+        
+        cityMapGrid.innerHTML = tableHTML;
+        
+        console.log('🗺️ City map generated:', {
+            buildings: houses.length,
+            citySize: citySize,
+            gridSize: `${citySize}x${citySize}`
+        });
+        
+    } catch (error) {
+        console.error('Error generating city map:', error);
+        cityMapGrid.innerHTML = `
+            <div class="grid-loading">
+                <p style="font-size: 1.2rem; margin-bottom: 10px;">⚠️ Impossible de charger la carte</p>
+                <p style="font-size: 0.9rem; color: #cbd5e1; margin-bottom: 20px;">
+                    Une erreur s'est produite lors du chargement de la carte de votre ville
+                </p>
+                <div style="background: rgba(239, 68, 68, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3); max-width: 400px;">
+                    <p style="color: #fca5a5; font-size: 0.85rem; margin: 0 0 10px 0;">
+                        <strong>Détails de l'erreur:</strong>
+                    </p>
+                    <p style="color: #fca5a5; font-size: 0.75rem; margin: 0; font-family: monospace;">
+                        ${error.message || 'Erreur inconnue'}
+                    </p>
+                </div>
+                <button onclick="generateCityMap()" style="margin-top: 20px; padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                    🔄 Réessayer
+                </button>
+            </div>
+        `;
+    }
+}
+
 // Budget States Popup Functions
 function initBudgetStatesPopup() {
     const budgetStatesBtn = document.getElementById('budget-states-btn');
@@ -1221,10 +1776,21 @@ function initBudgetStatesPopup() {
         if (e.target === budgetStatesBtn || budgetStatesBtn.contains(e.target)) {
             budgetStatesPanel.classList.toggle('active');
             budgetStatesBtn.classList.toggle('active');
+            
             if (budgetStatesPanel.classList.contains('active')) {
-                // Update labels before loading data
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('budget-states-panel');
+                }
+                // Load budget states first
+                await loadBudgetStates('3', true);
+                // Update labels after loading data
                 await updateFilterButtonLabels();
-                loadBudgetStates();
+            } else {
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('budget-states-panel');
+                }
             }
         }
     });
@@ -1233,6 +1799,11 @@ function initBudgetStatesPopup() {
     budgetStatesCloseBtn.addEventListener('click', () => {
         budgetStatesPanel.classList.remove('active');
         budgetStatesBtn.classList.remove('active');
+        
+        // Utiliser PopupManager pour gérer les événements
+        if (window.popupManager) {
+            window.popupManager.forceClosePopup('budget-states-panel');
+        }
     });
 
     // Close popup when clicking outside
@@ -1251,12 +1822,12 @@ function initBudgetStatesPopup() {
             // Add active class to clicked button
             btn.classList.add('active');
             
-            // Update labels before loading data
-            await updateFilterButtonLabels();
-            
-            // Load budget states with filter
+            // Load budget states with filter first (no loading state to avoid flash)
             const period = btn.dataset.period;
-            loadBudgetStates(period);
+            await loadBudgetStates(period, false);
+            
+            // Update labels after loading data to avoid hiding buttons prematurely
+            await updateFilterButtonLabels();
         });
     });
 
@@ -1299,9 +1870,14 @@ async function updateFilterButtonLabels() {
                     btn.textContent = `${turn} jours`;
                     btn.dataset.period = turn.toString();
                     btn.style.display = 'block';
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
                 } else {
-                    // Hide button if no state available
-                    btn.style.display = 'none';
+                    // Keep button visible but disabled if no state available
+                    btn.style.display = 'block';
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                    btn.textContent = `${3 + i} jours`; // Fallback text
                 }
             }
         }
@@ -1313,7 +1889,7 @@ async function updateFilterButtonLabels() {
     }
 }
 
-async function loadBudgetStates(period = '3') {
+async function loadBudgetStates(period = '3', showLoading = true) {
     const budgetStatesList = document.getElementById('budget-states-list');
     const summaryContent = document.getElementById('summary-content');
     
@@ -1322,13 +1898,14 @@ async function loadBudgetStates(period = '3') {
         return;
     }
 
-    // Show loading state
-    budgetStatesList.innerHTML = `
-        <div class="budget-state-loading">
-            <div class="loading-spinner"></div>
-            <p>Chargement des états de budget...</p>
-        </div>
-    `;
+    // Only show loading state if explicitly requested (first load)
+    if (showLoading) {
+        budgetStatesList.innerHTML = `
+            <div class="budget-state-loading">
+                <p>Chargement des états de budget...</p>
+            </div>
+        `;
+    }
 
     try {
         if (!window.budgetManager) {
@@ -1446,17 +2023,29 @@ function displayBudgetStates(states, container) {
                         <span class="statement-label">Intérêts dettes</span>
                         <span class="statement-value negative">-${(state.totalLoanInterestExpenses || 0).toLocaleString('fr-FR')}€</span>
                     </div>
+                    <div class="statement-subnote">
+                        <small>Intérêts des prêts bancaires et commerciaux contractés</small>
+                    </div>
                     <div class="statement-line">
                         <span class="statement-label">Remboursements prêts</span>
                         <span class="statement-value negative">-${(state.totalLoanRepayments || 0).toLocaleString('fr-FR')}€</span>
                     </div>
+                    <div class="statement-subnote">
+                        <small>Remboursement du capital des prêts (principal)</small>
+                    </div>
                     <div class="statement-line">
                         <span class="statement-label">Autres charges</span>
-                        <span class="statement-value negative">-${((expenses || 0) - (state.totalBuildingMaintenance || 0) - (state.totalLoanInterestExpenses || 0) - (state.totalLoanRepayments || 0)).toLocaleString('fr-FR')}€</span>
+                        <span class="statement-value negative">-${Math.max(0, (expenses || 0) - (state.totalBuildingMaintenance || 0) - (state.totalLoanInterestExpenses || 0) - (state.totalLoanRepayments || 0)).toLocaleString('fr-FR')}€</span>
+                    </div>
+                    <div class="statement-subnote">
+                        <small>Autres dépenses non catégorisées (salaires, services, etc.)</small>
                     </div>
                     <div class="statement-line total-line">
                         <span class="statement-label">TOTAL CHARGES</span>
                         <span class="statement-value total negative">-${expenses.toLocaleString('fr-FR')}€</span>
+                    </div>
+                    <div class="statement-note">
+                        <small>Vérification: Maintenance (${state.totalBuildingMaintenance || 0}€) + Intérêts (${state.totalLoanInterestExpenses || 0}€) + Remboursements (${state.totalLoanRepayments || 0}€) + Autres (${Math.max(0, (expenses || 0) - (state.totalBuildingMaintenance || 0) - (state.totalLoanInterestExpenses || 0) - (state.totalLoanRepayments || 0))}€) = ${(state.totalBuildingMaintenance || 0) + (state.totalLoanInterestExpenses || 0) + (state.totalLoanRepayments || 0) + Math.max(0, (expenses || 0) - (state.totalBuildingMaintenance || 0) - (state.totalLoanInterestExpenses || 0) - (state.totalLoanRepayments || 0))}€</small>
                     </div>
                 </div>
                 
@@ -1466,6 +2055,9 @@ function displayBudgetStates(states, container) {
                         <span class="statement-value result ${netFlow >= 0 ? 'positive' : 'negative'}">
                             ${netFlow >= 0 ? '+' : ''}${netFlow.toLocaleString('fr-FR')}€
                         </span>
+                    </div>
+                    <div class="statement-note">
+                        <small>Ce résultat doit correspondre au "Résultat de l'exercice" du bilan</small>
                     </div>
                 </div>
             </div>
@@ -1487,7 +2079,7 @@ function displayBudgetStates(states, container) {
                     </span>
                 </div>
                 <div class="info-item">
-                    <span class="info-label">Dette prêts</span>
+                    <span class="info-label"></span>
                     <span class="info-value ${(state.loanDebt || 0) > 0 ? 'negative' : ''}">${(state.loanDebt || 0).toLocaleString('fr-FR')}€</span>
                 </div>
             </div>
@@ -1562,7 +2154,7 @@ function displayBudgetSummary(states, container) {
             </div>
             
             <div class="statement-section">
-                <h4 class="statement-title">PRÊTS & DETTES</h4>
+                <h4 class="statement-title">DETTES</h4>
                 <div class="statement-line">
                     <span class="statement-label">Intérêts payés</span>
                     <span class="statement-value negative">-${totalLoanInterest.toLocaleString('fr-FR')}€</span>
@@ -1990,10 +2582,9 @@ function initLoansPopup() {
         console.log('Loans button clicked!');
         loansPanel.classList.add('active');
         
-        // Pause the game when opening loans panel
-        if (window.game) {
-            window.game.pause();
-            console.log('Game paused for loans panel');
+        // Utiliser PopupManager pour gérer les événements
+        if (window.popupManager) {
+            window.popupManager.forceOpenPopup('loans-panel');
         }
         
         updateLoansDisplay();
@@ -2003,10 +2594,9 @@ function initLoansPopup() {
     loansCloseBtn.addEventListener('click', () => {
         loansPanel.classList.remove('active');
         
-        // Resume the game when closing loans panel
-        if (window.game) {
-            window.game.play();
-            console.log('Game resumed after closing loans panel');
+        // Utiliser PopupManager pour gérer les événements
+        if (window.popupManager) {
+            window.popupManager.forceClosePopup('loans-panel');
         }
     });
 
@@ -2015,10 +2605,9 @@ function initLoansPopup() {
         if (e.target === loansPanel) {
             loansPanel.classList.remove('active');
             
-            // Resume the game when clicking outside loans panel
-            if (window.game) {
-                window.game.play();
-                console.log('Game resumed after clicking outside loans panel');
+            // Utiliser PopupManager pour gérer les événements
+            if (window.popupManager) {
+                window.popupManager.forceClosePopup('loans-panel');
             }
         }
     });
@@ -2385,6 +2974,9 @@ async function processLoanPayments() {
 
 // Initialize loan payment system
 function initLoanPaymentSystem() {
+    // Expose processLoanPayments globally for scene.js
+    window.processLoanPayments = processLoanPayments;
+    
     // Process loan payments every turn
     if (window.game && window.game.onTurnEnd) {
         const originalOnTurnEnd = window.game.onTurnEnd;
@@ -2394,3 +2986,29 @@ function initLoanPaymentSystem() {
         };
     }
 }
+
+// Make loadBudgetStates globally accessible
+window.loadBudgetStates = (period = '3', showLoading = true) => loadBudgetStates(period, showLoading);
+
+// Make generateCityMap globally accessible
+window.generateCityMap = generateCityMap;
+
+// Global refresh function for budget states modal
+async function refreshBudgetStatesModal() {
+    console.log('🔄 Refreshing budget states modal...');
+    
+    // Get current active filter button
+    const activeFilterBtn = document.querySelector('.budget-filter-btn.active');
+    const currentPeriod = activeFilterBtn ? activeFilterBtn.dataset.period : '3';
+    
+    // Reload budget states with current period
+    await loadBudgetStates(currentPeriod, true);
+    
+    // Update filter button labels
+    await updateFilterButtonLabels();
+    
+    console.log('✅ Budget states modal refreshed');
+}
+
+// Make refresh function globally accessible
+window.refreshBudgetStatesModal = refreshBudgetStatesModal;

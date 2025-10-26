@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {  assetsPrices } from '../meshs/data.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
-import {getAssetPrice, makeDbItemId, makeInfoBuildingText} from '../utils/utils.js';
+import {getAssetPrice, makeDbItemId, makeInfoBuildingText, isAreaAvailableForBuilding} from '../utils/utils.js';
 import {
     displayTime,
     overOverlay,
@@ -168,6 +168,7 @@ export function createGame(housesStore, gameStore, assetManager) {
     let isOver;
     let infos = {};
     let intervalId = null;
+    // Set initial speed within limits (500ms - 20,000ms)
     localStorage.setItem("speed", "4000");
     displayTime.textContent = time.toString() + ' jours';
     
@@ -199,8 +200,22 @@ export function createGame(housesStore, gameStore, assetManager) {
         const tile = city.tiles[x][y];
         // Object placed on terrain
         if(activeToolId === 'bulldoze') {
-            // remove building from that location
-            tile.buildingId = undefined;
+            // Find the building at this location and its size
+            const buildingId = tile.buildingId;
+            const buildingInfo = buildingId ? assetsPrices[buildingId] : null;
+            const gridSize = buildingInfo?.gridSize || 1;
+            
+            // Remove building from all tiles it occupies
+            for (let dx = 0; dx < gridSize; dx++) {
+                for (let dy = 0; dy < gridSize; dy++) {
+                    const tileX = x + dx;
+                    const tileY = y + dy;
+                    if (city.tiles[tileX] && city.tiles[tileX][tileY]) {
+                        city.tiles[tileX][tileY].buildingId = undefined;
+                    }
+                }
+            }
+            console.log(`Building ${buildingId || 'unknown'} removed from (${x}, ${y}) covering ${gridSize}x${gridSize} tiles`);
             await scene.update(city);
         } else if(activeToolId === "select-object") {
             // Object selection
@@ -299,6 +314,18 @@ export function createGame(housesStore, gameStore, assetManager) {
             }
             await scene.update(city)
         } else if(!tile.buildingId) {
+            // Check if building requires multiple tiles
+            const buildingInfo = assetsPrices[activeToolId];
+            const gridSize = buildingInfo?.gridSize || 1;
+            
+            // Check if area is available for this building
+            const { x, y } = selectedObject.userData;
+            if (!isAreaAvailableForBuilding(city, x, y, gridSize)) {
+                console.warn(`Cannot place ${activeToolId}: area not available (requires ${gridSize}x${gridSize} tiles)`);
+                showGenericErrorNotification(activeToolId, 'area_not_available');
+                return;
+            }
+            
             // Prepare building data for payment validation
             let price = 0
             const houseID = activeToolId + '-' + selectedObject.userData.x + '-' + selectedObject.userData.y
@@ -342,8 +369,17 @@ export function createGame(housesStore, gameStore, assetManager) {
             
             if (paymentResult.success) {
                 // Payment successful - place building visually
-                tile.buildingId = activeToolId;
-                console.log(`Building ${activeToolId} placed successfully at (${selectedObject.userData.x}, ${selectedObject.userData.y})`);
+                // Mark all tiles as occupied by this building
+                for (let dx = 0; dx < gridSize; dx++) {
+                    for (let dy = 0; dy < gridSize; dy++) {
+                        const tileX = x + dx;
+                        const tileY = y + dy;
+                        if (city.tiles[tileX] && city.tiles[tileX][tileY]) {
+                            city.tiles[tileX][tileY].buildingId = activeToolId;
+                        }
+                    }
+                }
+                console.log(`Building ${activeToolId} placed successfully at (${x}, ${y}) covering ${gridSize}x${gridSize} tiles`);
                 await scene.update(city);
                 
                 // Resume the game after successful building placement
@@ -438,7 +474,7 @@ export function createGame(housesStore, gameStore, assetManager) {
         },
 
         startInterval() {
-            const speed = parseInt(localStorage.getItem('speed')) || 4000;
+            const speed = Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed')) || 4000));
             if (intervalId) clearInterval(intervalId);
             intervalId = setInterval(() => {
                 if (!isPause && !isOver) {
@@ -456,7 +492,7 @@ export function createGame(housesStore, gameStore, assetManager) {
                 game.update(time);
             }
         }
-    }, parseInt(localStorage.getItem('speed')));
+    }, Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed')) || 4000)));
 
     scene.start();
     return game;

@@ -51,7 +51,7 @@ body {
 }
 .bubbly-button:active {
   transform: scale(0.9);
-  background-color: rgb(229.5, 0, 116.1);
+  background-color: #e60074;
   box-shadow: 0 2px 25px rgba(255, 0, 130, 0.2);
 }
 .bubbly-button.animate:before {
@@ -88,4 +88,3 @@ body {
   }
 }
 
-/*# sourceMappingURL=btn.css.map */

@@ -7,6 +7,19 @@
     <link rel="stylesheet" href="./src/styles/main.css">
     <link rel="stylesheet" href="./src/styles/btn.css">
     <link rel="stylesheet" href="./src/styles/tooltip.css">
+    <link rel="stylesheet" href="./src/styles/tutorial.css">
+    
+    <!-- Modal Styles -->
+    <link rel="stylesheet" href="./src/styles/modals/global.css">
+    <link rel="stylesheet" href="./src/styles/modals/realtime-budget.css">
+    <link rel="stylesheet" href="./src/styles/modals/budget-states.css">
+    <link rel="stylesheet" href="./src/styles/modals/budget-panel.css">
+    <link rel="stylesheet" href="./src/styles/modals/loans-panel.css">
+    <link rel="stylesheet" href="./src/styles/modals/budget-panel-content.css">
+    <link rel="stylesheet" href="./src/styles/modals/budget-states-content.css">
+    <link rel="stylesheet" href="./src/styles/modals/balance-sheet.css">
+    <link rel="stylesheet" href="./src/styles/modals/cleanup-notification.css">
+    <link rel="stylesheet" href="./src/styles/modals/city-map.css">
     <!-- ios support -->
     <link rel="apple-touch-icon" href="public/icons/icon-512x512.png" />
     <meta name="apple-mobile-web-app-status-bar" content="#db4938" />
@@ -88,73 +101,118 @@
             </button>
 
         <div class="toolbar__container">
+            <div class="toolbar__sub-container">
+                <div class="toolbar__label">Vitesse</div>
+                <div class="toolbar__buttons">
+                    <button type="button" id="faster-btn" class="toolbar-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rabbit"><path d="M13 16a3 3 0 0 1 2.24 5"/><path d="M18 12h.01"/><path d="M18 21h-8a4 4 0 0 1-4-4 7 7 0 0 1 7-7h.2L9.6 6.4a1 1 0 1 1 2.8-2.8L15.8 7h.2c3.3 0 6 2.7 6 6v1a2 2 0 0 1-2 2h-1a3 3 0 0 0-3 3"/>
+                        <path d="M20 8.54V4a2 2 0 1 0-4 0v3"/><path d="M7.612 12.524a3 3 0 1 0-1.6 4.3"/></svg>
+                    </button>
 
-            <button type="button" id="faster-btn" class="toolbar-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rabbit"><path d="M13 16a3 3 0 0 1 2.24 5"/><path d="M18 12h.01"/><path d="M18 21h-8a4 4 0 0 1-4-4 7 7 0 0 1 7-7h.2L9.6 6.4a1 1 0 1 1 2.8-2.8L15.8 7h.2c3.3 0 6 2.7 6 6v1a2 2 0 0 1-2 2h-1a3 3 0 0 0-3 3"/>
-                <path d="M20 8.54V4a2 2 0 1 0-4 0v3"/><path d="M7.612 12.524a3 3 0 1 0-1.6 4.3"/></svg>
-            </button>
-
-            <button type="button" id="slower-btn" class="toolbar-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-snail"><path d="M2 13a6 6 0 1 0 12 0 4 4 0 1 0-8 0 2 2 0 0 0 4 0"/>
-                    <circle cx="10" cy="13" r="8"/><path d="M2 21h12c4.4 0 8-3.6 8-8V7a2 2 0 1 0-4 0v6"/><path d="M18 3 19.1 5.2"/><path d="M22 3 20.9 5.2"/></svg>
-            </button>
+                    <button type="button" id="slower-btn" class="toolbar-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-snail"><path d="M2 13a6 6 0 1 0 12 0 4 4 0 1 0-8 0 2 2 0 0 0 4 0"/>
+                            <circle cx="10" cy="13" r="8"/><path d="M2 21h12c4.4 0 8-3.6 8-8V7a2 2 0 1 0-4 0v6"/><path d="M18 3 19.1 5.2"/><path d="M22 3 20.9 5.2"/></svg>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div class="toolbar__container">
-            <button type="button" id="bulldoze-btn" data-toolid="bulldoze" class="toolbar-btn bulldoze-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eraser">
-                    <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/>
-                    <path d="M22 21H7"/><path d="m5 11 9 9"/>
-                </svg>
-            </button>
-            <button type="button" id="select-btn" data-toolid="select-object" class="toolbar-btn selected">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-mouse-pointer">
-                    <path d="M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/>
-                    <path d="m12 12 4 10 1.7-4.3L22 16Z"/>
-                </svg>
-            </button>
+            <div class="toolbar__sub-container">
+                <div class="toolbar__label">Outils</div>
+                <div class="toolbar__buttons">
+                    <button type="button" id="bulldoze-btn" data-toolid="bulldoze" class="toolbar-btn bulldoze-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eraser">
+                            <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/>
+                            <path d="M22 21H7"/><path d="m5 11 9 9"/>
+                        </svg>
+                    </button>
+                    <button type="button" id="select-btn" data-toolid="select-object" class="toolbar-btn selected">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-mouse-pointer">
+                            <path d="M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/>
+                            <path d="m12 12 4 10 1.7-4.3L22 16Z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div class="toolbar__container">
-            <button type="button" id="residential-btn" class="toolbar-btn" data-group="residential">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home">
-                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                    <polyline points="9 22 9 12 15 12 15 22"/>
-                </svg>
-            </button>
-            <button type="button" id="market-btn" class="toolbar-btn" data-group="markets">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-store"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/>
-                </svg>
-            </button>
+            <div class="toolbar__sub-container">
+                <div class="toolbar__label">Habitations</div>
+                <div class="toolbar__buttons">
+                    <button type="button" id="residential-btn" class="toolbar-btn" data-group="residential">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home">
+                            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <polyline points="9 22 9 12 15 12 15 22"/>
+                        </svg>
+                    </button>
+                    <button type="button" id="palace-btn" class="toolbar-btn" data-group="palaces">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-castle-icon lucide-castle"><path d="M10 5V3"/><path d="M14 5V3"/><path d="M15 21v-3a3 3 0 0 0-6 0v3"/><path d="M18 3v8"/><path d="M18 5H6"/><path d="M22 11H2"/><path d="M22 9v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9"/><path d="M6 3v8"/></svg>
+                    </button>
+                  
+                </div>
+            </div>
         </div>
 
         <div class="toolbar__container">
-        <button type="button" id="farm-btn" class="toolbar-btn" data-group="farms">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wheat">
-                <path d="M2 22 16 8"/><path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                <path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 15l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                <path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 11l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                <path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/>
-                <path d="M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                <path d="M15.47 13.47 17 15l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                <path d="M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-            </svg>
-        </button>
-        <button type="button" id="others-btn" data-toolid="others" data-group="others" class="toolbar-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse">
-                <path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/>
-                <path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="12" x="6" y="10"/></svg>
-        </button>
-
+            <div class="toolbar__sub-container">
+                <div class="toolbar__label">Agriculture</div>
+                <div class="toolbar__buttons">
+                    <button type="button" id="farm-btn" class="toolbar-btn" data-group="farms">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wheat">
+                            <path d="M2 22 16 8"/><path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                            <path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 15l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                            <path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 11l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                            <path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/>
+                            <path d="M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
+                            <path d="M15.47 13.47 17 15l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
+                            <path d="M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
+                        </svg>
+                    </button>
+                    <button type="button" id="industry-btn" data-toolid="industry" data-group="industry" class="toolbar-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse">
+                            <path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/>
+                            <path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="12" x="6" y="10"/></svg>
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <button type="button" id="roads-btn" data-toolid="roads" class="toolbar-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-route">
-                <circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/>
-                <circle cx="18" cy="5" r="3"/>
-            </svg>
-        </button>
+        <div class="toolbar__container">
+            <div class="toolbar__sub-container">
+                <div class="toolbar__label">Infrastructure</div>
+                <div class="toolbar__buttons">
+                    <button type="button" id="infrastructure-btn" class="toolbar-btn" data-group="infrastructure">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-utility-pole-icon lucide-utility-pole"><path d="M12 2v20"/><path d="M2 5h20"/><path d="M3 3v2"/><path d="M7 3v2"/><path d="M17 3v2"/><path d="M21 3v2"/><path d="m19 5-7 7-7-7"/></svg>
+                    </button>
+                    <button type="button" id="roads-btn" data-toolid="roads" class="toolbar-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-route">
+                            <circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/>
+                            <circle cx="18" cy="5" r="3"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="toolbar__container">
+            <div class="toolbar__sub-container">
+                <div class="toolbar__label">Services</div>
+                <div class="toolbar__buttons">
+                    <button type="button" id="public-btn" class="toolbar-btn" data-group="public">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-church-icon lucide-church"><path d="M10 9h4"/><path d="M12 7v5"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="m18 9 3.52 2.147a1 1 0 0 1 .48.854V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6.999a1 1 0 0 1 .48-.854L6 9"/><path d="M6 21V7a1 1 0 0 1 .376-.782l5-3.999a1 1 0 0 1 1.249.001l5 4A1 1 0 0 1 18 7v14"/></svg>
+                    </button>
+                    <button type="button" id="market-btn" class="toolbar-btn" data-group="markets">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-store"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/>
+                    </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+   
 
         <button type="button" id="budget-btn" data-toolid="budget" class="toolbar-btn">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-3">
@@ -172,6 +230,13 @@
                 <path d="m2 16 6 6"/>
                 <circle cx="16" cy="9" r="2.9"/>
                 <circle cx="6" cy="5" r="3"/>
+            </svg>
+        </button>
+
+        <button type="button" id="tutorial-btn" data-toolid="tutorial" class="toolbar-btn" title="Démarrer le tutoriel">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
             </svg>
         </button>
 
@@ -195,15 +260,9 @@
                   </span>
                         <div class="display-time"></div>
                     </article>
-                    <article class="delay-box">
-                    <span class="delay-icon">
-                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alarm-clock"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M6.38 18.7 4 21"/><path d="M17.64 18.67 20 21"/>
-                         </svg>
-                      </span>
-                        <div class="display-delay"></div>
-                    </article>
                     <article class="speed-box">
                         <div class="display-speed"></div>
+                        <div class="speed-change-indicator"></div>
                     </article>
                 </section>
 
@@ -246,6 +305,19 @@
                             </svg>
                         </span>
                         <div>États Budget</div>
+                    </article>
+                </section>
+                <section class="info-box city-map-box" id="city-map-btn">
+                    <article class="budget-box">
+                        <span class="budget-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2 3v18h18"/>
+                                <path d="M3 2v6h6"/>
+                                <path d="M9 2v6h6"/>
+                                <path d="M15 2v6h6"/>
+                            </svg>
+                        </span>
+                        <div>Carte Ville</div>
                     </article>
                 </section>
             </div>
@@ -365,7 +437,7 @@
 
             <!-- Détail du calcul des intérêts des dettes -->
             <div class="realtime-loan-interest-detail-section">
-                <div class="realtime-loan-interest-detail-label">📊 Calcul des Intérêts des Dettes</div>
+                <div class="realtime-loan-interest-detail-label">Calcul des Intérêts des Dettes</div>
                 <div class="realtime-loan-interest-detail-content" id="realtime-loan-interest-detail">
                     <div class="no-loans-message">
                         <span class="no-loans-icon">📭</span>
@@ -400,37 +472,122 @@
     <div id="budget-panel" class="budget-panel">
         <div class="budget-panel-wrapper">
             <div class="budget-panel-header">
-                <h2>💰 Bilan</h2>
+                <div class="panel-close-btn-wrapper">
+                    <div class="budget-panel-close-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="m15 9-6 6"/>
+                            <path d="m9 9 6 6"/>
+                        </svg>
+                    </div>
+                </div>
+             
+                <h2>💰 Bilan Comptable</h2>
                 <div class="budget-health-indicator" id="budget-health-indicator">
                     <span class="health-status">Finance saine</span>
                 </div>
-                <div class="budget-panel-close-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="m15 9-6 6"/>
-                        <path d="m9 9 6 6"/>
-                    </svg>
-                </div>
+            
             </div>
             <div class="budget-panel-content">
                 <!-- Bilan Comptable -->
                 <div class="balance-sheet">
                     <div class="balance-sheet-header">
-                        <div class="balance-sheet-date" id="balance-sheet-date">Tour 0 (état du passif et de l'actif au 0e tour)</div>
+                        <div class="balance-sheet-header-content">
+                            <div class="balance-sheet-date" id="balance-sheet-date">Tour 0 (état du passif et de l'actif au 0e tour)</div>
+                            
+                            <!-- Filtres de visualisation -->
+                            <div class="balance-sheet-filters">
+                                <button class="balance-filter-btn" data-filter="all">
+                                    <span class="filter-text">Tout</span>
+                                </button>
+                                <button class="balance-filter-btn active" data-filter="actif">
+                                    <span class="filter-text">Actif</span>
+                                </button>
+                                <button class="balance-filter-btn" data-filter="passif">
+                                    <span class="filter-text">Passif</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     
                     <!-- ACTIF -->
-                    <div class="balance-sheet-section">
+                    <div class="balance-sheet-section balance-sheet-actif" data-section="actif">
                         <h4 class="balance-sheet-title">ACTIF</h4>
                         
                         <!-- Actif Immobilisé -->
                         <div class="balance-sheet-group">
                             <h5 class="balance-sheet-subtitle">ACTIF IMMOBILISÉ</h5>
                             
+                            <!-- Immobilisations Incorporelles -->
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">💻 Immobilisations incorporelles</div>
+                                <div class="balance-sheet-value" id="intangible-assets-value">0€</div>
+                            </div>
+                            <div class="balance-sheet-detail">
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Frais d'établissement</div>
+                                    <div class="balance-sheet-value" id="establishment-costs">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Frais de recherche et développement</div>
+                                    <div class="balance-sheet-value" id="rd-costs">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Concessions, brevets, licences</div>
+                                    <div class="balance-sheet-value" id="patents-licenses">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Fonds commercial</div>
+                                    <div class="balance-sheet-value" id="goodwill">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Logiciels, droits</div>
+                                    <div class="balance-sheet-value" id="software-rights">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Autres</div>
+                                    <div class="balance-sheet-value" id="other-intangible">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Immobilisations incorporelles en cours</div>
+                                    <div class="balance-sheet-value" id="intangible-in-progress">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Avances et acomptes</div>
+                                    <div class="balance-sheet-value" id="intangible-advances">0€</div>
+                                </div>
+                            </div>
+                            
                             <!-- Immobilisations Corporelles Brutes -->
                             <div class="balance-sheet-item">
                                 <div class="balance-sheet-label">🏗️ Immobilisations corporelles brutes</div>
                                 <div class="balance-sheet-value" id="total-buildings-gross-value">0€</div>
+                            </div>
+                            <div class="balance-sheet-detail">
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Terrains</div>
+                                    <div class="balance-sheet-value" id="land-value">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Constructions</div>
+                                    <div class="balance-sheet-value" id="constructions-value">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Installations techniques, matériels</div>
+                                    <div class="balance-sheet-value" id="technical-equipment">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Autres</div>
+                                    <div class="balance-sheet-value" id="other-tangible">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Immobilisations corporelles en cours</div>
+                                    <div class="balance-sheet-value" id="tangible-in-progress">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Avances et acomptes</div>
+                                    <div class="balance-sheet-value" id="tangible-advances">0€</div>
+                                </div>
                             </div>
                             
                             <!-- Amortissements -->
@@ -445,22 +602,22 @@
                                 <div class="balance-sheet-value" id="total-buildings-net-value">0€</div>
                             </div>
                             
-                            <!-- Détail des bâtiments -->
+                            <!-- Détail des Immobilisations Corporelles -->
                             <div class="balance-sheet-detail">
                                 <div class="balance-sheet-subitem">
                                     <div class="balance-sheet-label">🏠 Logements</div>
                                     <div class="balance-sheet-value" id="total-houses-value">0€</div>
                                 </div>
                                 <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">• Maisons populaires (rouge)</div>
+                                    <div class="balance-sheet-label">Maisons populaires (rouge)</div>
                                     <div class="balance-sheet-value" id="red-houses-value">0€</div>
                                 </div>
                                 <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">• Maisons moyennes (bleu)</div>
+                                    <div class="balance-sheet-label">Maisons moyennes (bleu)</div>
                                     <div class="balance-sheet-value" id="blue-houses-value">0€</div>
                                 </div>
                                 <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">• Maisons aisées (violet)</div>
+                                    <div class="balance-sheet-label">Maisons aisées (violet)</div>
                                     <div class="balance-sheet-value" id="purple-houses-value">0€</div>
                                 </div>
                             </div>
@@ -471,15 +628,15 @@
                                     <div class="balance-sheet-value" id="total-farms-value">0€</div>
                                 </div>
                                 <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">• Champs de choux</div>
+                                    <div class="balance-sheet-label">Champs de choux</div>
                                     <div class="balance-sheet-value" id="cabbage-fields-value">0€</div>
                                 </div>
                                 <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">• Champs de blé</div>
+                                    <div class="balance-sheet-label">Champs de blé</div>
                                     <div class="balance-sheet-value" id="wheat-fields-value">0€</div>
                                 </div>
                                 <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">• Champs de carottes</div>
+                                    <div class="balance-sheet-label">Champs de carottes</div>
                                     <div class="balance-sheet-value" id="carrot-fields-value">0€</div>
                                 </div>
                             </div>
@@ -490,7 +647,7 @@
                                     <div class="balance-sheet-value" id="total-markets-value">0€</div>
                                 </div>
                                 <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">• Marchés de nourriture</div>
+                                    <div class="balance-sheet-label">Marchés de nourriture</div>
                                     <div class="balance-sheet-value" id="food-markets-value">0€</div>
                                 </div>
                             </div>
@@ -501,8 +658,40 @@
                                     <div class="balance-sheet-value" id="total-roads-value">0€</div>
                                 </div>
                                 <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">• Réseau routier</div>
+                                    <div class="balance-sheet-label">Réseau routier</div>
                                     <div class="balance-sheet-value" id="roads-value">0€</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Immobilisations Financières -->
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">📈 Immobilisations financières</div>
+                                <div class="balance-sheet-value" id="financial-assets-value">0€</div>
+                            </div>
+                            <div class="balance-sheet-detail">
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Participations</div>
+                                    <div class="balance-sheet-value" id="equity-interests">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Créances rattachées à des participations</div>
+                                    <div class="balance-sheet-value" id="participation-receivables">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Titres immobilisés de l'activité de portefeuille</div>
+                                    <div class="balance-sheet-value" id="portfolio-securities">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Autres titres immobilisés</div>
+                                    <div class="balance-sheet-value" id="other-securities">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Prêts</div>
+                                    <div class="balance-sheet-value" id="loans-granted">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Autres</div>
+                                    <div class="balance-sheet-value" id="other-financial">0€</div>
                                 </div>
                             </div>
                         </div>
@@ -511,46 +700,133 @@
                         <div class="balance-sheet-group">
                             <h5 class="balance-sheet-subtitle">ACTIF CIRCULANT</h5>
                             
-                            <!-- Stocks Bruts -->
+                            <!-- Stocks et en-cours -->
                             <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">📦 Stocks bruts</div>
-                                <div class="balance-sheet-value" id="inventory-gross-value">0€</div>
+                                <div class="balance-sheet-label">📦 Stocks et en-cours</div>
+                                <div class="balance-sheet-value" id="stocks-work-in-progress">0€</div>
+                            </div>
+                            <div class="balance-sheet-detail">
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Matières premières et autres approvisionnements</div>
+                                    <div class="balance-sheet-value" id="raw-materials">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">En cours de production [biens et services]</div>
+                                    <div class="balance-sheet-value" id="work-in-progress">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Produits intermédiaires et finis</div>
+                                    <div class="balance-sheet-value" id="finished-products">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Marchandises</div>
+                                    <div class="balance-sheet-value" id="merchandise">0€</div>
+                                </div>
                             </div>
                             
-                            <!-- Provisions pour dépréciation des stocks -->
+                            <!-- Avances et acomptes versés sur commandes -->
                             <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">📉 Provisions stocks</div>
-                                <div class="balance-sheet-value" id="inventory-provisions-value">0€</div>
-                            </div>
-                            
-                            <!-- Stocks Nets -->
-                            <div class="balance-sheet-item balance-sheet-net">
-                                <div class="balance-sheet-label">📦 Stocks nets</div>
-                                <div class="balance-sheet-value" id="inventory-net-value">0€</div>
+                                <div class="balance-sheet-label">💰 Avances et acomptes versés sur commandes</div>
+                                <div class="balance-sheet-value" id="advances-on-orders">0€</div>
                             </div>
                             
                             <!-- Créances -->
                             <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">📋 Créances clients</div>
-                                <div class="balance-sheet-value" id="receivables-value">0€</div>
+                                <div class="balance-sheet-label">📋 Créances</div>
+                                <div class="balance-sheet-value" id="total-receivables">0€</div>
+                            </div>
+                            <div class="balance-sheet-detail">
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Créances clients et comptes rattachés</div>
+                                    <div class="balance-sheet-value" id="client-receivables">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Autres</div>
+                                    <div class="balance-sheet-value" id="other-receivables">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Capital souscrit - appelé, non versé</div>
+                                    <div class="balance-sheet-value" id="called-unpaid-capital">0€</div>
+                                </div>
                             </div>
                             
-                            <!-- Trésorerie -->
+                            <!-- Valeurs mobilières de placement -->
                             <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">💰 Trésorerie</div>
+                                <div class="balance-sheet-label">📈 Valeurs mobilières de placement</div>
+                                <div class="balance-sheet-value" id="marketable-securities">0€</div>
+                            </div>
+                            <div class="balance-sheet-detail">
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Actions propres</div>
+                                    <div class="balance-sheet-value" id="own-shares">0€</div>
+                                </div>
+                                <div class="balance-sheet-subitem">
+                                    <div class="balance-sheet-label">Autres titres</div>
+                                    <div class="balance-sheet-value" id="other-securities">0€</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Instruments de trésorerie -->
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">💳 Instruments de trésorerie</div>
+                                <div class="balance-sheet-value" id="treasury-instruments">0€</div>
+                            </div>
+                            
+                            <!-- Disponibilités -->
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">💰 Disponibilités</div>
                                 <div class="balance-sheet-value" id="cash-value">0€</div>
+                            </div>
+                            
+                            <!-- Charges constatées d'avance -->
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">📅 Charges constatées d'avance</div>
+                                <div class="balance-sheet-value" id="prepaid-expenses">0€</div>
+                            </div>
+                            
+                            <!-- Total Actif Circulant -->
+                            <div class="balance-sheet-item balance-sheet-subtotal">
+                                <div class="balance-sheet-label">TOTAL ACTIF CIRCULANT</div>
+                                <div class="balance-sheet-value" id="total-current-assets">0€</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Charges à répartir sur plusieurs exercices -->
+                        <div class="balance-sheet-group">
+                            <h5 class="balance-sheet-subtitle">CHARGES À RÉPARTIR SUR PLUSIEURS EXERCICES</h5>
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">Charges à répartir</div>
+                                <div class="balance-sheet-value" id="deferred-charges">0€</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Primes de remboursement des emprunts -->
+                        <div class="balance-sheet-group">
+                            <h5 class="balance-sheet-subtitle">PRIMES DE REMBOURSEMENT DES EMPRUNTS</h5>
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">🏦 Primes de remboursement</div>
+                                <div class="balance-sheet-value" id="loan-redemption-premiums">0€</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Écarts de conversion Actif -->
+                        <div class="balance-sheet-group">
+                            <h5 class="balance-sheet-subtitle">ÉCARTS DE CONVERSION ACTIF</h5>
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">💱 Écarts de conversion</div>
+                                <div class="balance-sheet-value" id="conversion-differences">0€</div>
                             </div>
                         </div>
                         
                         <!-- Total Actif -->
-                        <div class="balance-sheet-total">
+                        <div class="balance-sheet-total balance-sheet-total-actif" data-section="totaux">
                             <div class="balance-sheet-label">TOTAL ACTIF</div>
                             <div class="balance-sheet-value" id="total-assets">0€</div>
                         </div>
                     </div>
                     
                     <!-- PASSIF -->
-                    <div class="balance-sheet-section">
+                    <div class="balance-sheet-section balance-sheet-passif" data-section="passif">
                         <h4 class="balance-sheet-title">PASSIF</h4>
                         
                         <!-- Capitaux Propres -->
@@ -558,17 +834,22 @@
                             <h5 class="balance-sheet-subtitle">CAPITAUX PROPRES</h5>
                             
                             <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">🏛️ Capital municipal</div>
-                                <div class="balance-sheet-value" id="municipal-capital">200€</div>
+                                <div class="balance-sheet-label">🏛️ Capital social</div>
+                                <div class="balance-sheet-value" id="share-capital">0€</div>
                             </div>
                             
                             <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">📈 Réserves</div>
-                                <div class="balance-sheet-value" id="reserves">0€</div>
+                                <div class="balance-sheet-label">📈 Réserves légales</div>
+                                <div class="balance-sheet-value" id="legal-reserves">0€</div>
                             </div>
                             
                             <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">💰 Résultat net</div>
+                                <div class="balance-sheet-label">Report à nouveau</div>
+                                <div class="balance-sheet-value" id="carried-forward">0€</div>
+                            </div>
+                            
+                            <div class="balance-sheet-item">
+                                <div class="balance-sheet-label">💰 Résultat de l'exercice</div>
                                 <div class="balance-sheet-value" id="net-result">0€</div>
                             </div>
                         </div>
@@ -588,38 +869,53 @@
                             </div>
                         </div>
                         
-                    <!-- Dettes -->
-                    <div class="balance-sheet-group">
-                        <h5 class="balance-sheet-subtitle">DETTES</h5>
-                        
-                        <div class="balance-sheet-item">
-                            <div class="balance-sheet-label">🏦 Emprunts bancaires</div>
-                            <div class="balance-sheet-value" id="bank-loans-debt">0€</div>
+                        <!-- Dettes -->
+                        <div class="balance-sheet-group">
+                            <h5 class="balance-sheet-subtitle">DETTES</h5>
+                            
+                            <!-- Dettes Financières -->
+                            <div class="balance-sheet-subitem">
+                                <div class="balance-sheet-label">🏦 Dettes financières</div>
+                                <div class="balance-sheet-value" id="financial-debts-total">0€</div>
+                            </div>
+                            <div class="balance-sheet-subdetail">
+                                <div class="balance-sheet-label">Emprunts bancaires</div>
+                                <div class="balance-sheet-value" id="bank-loans-debt">0€</div>
+                            </div>
+                            <div class="balance-sheet-subdetail">
+                                <div class="balance-sheet-label">Emprunts commerciaux</div>
+                                <div class="balance-sheet-value" id="commercial-loans-debt">0€</div>
+                            </div>
+                            
+                            <!-- Dettes d'Exploitation -->
+                            <div class="balance-sheet-subitem">
+                                <div class="balance-sheet-label">🏪 Dettes d'exploitation</div>
+                                <div class="balance-sheet-value" id="operating-debts-total">0€</div>
+                            </div>
+                            <div class="balance-sheet-subdetail">
+                                <div class="balance-sheet-label">Dettes fournisseurs</div>
+                                <div class="balance-sheet-value" id="supplier-debts">0€</div>
+                            </div>
+                            <div class="balance-sheet-subdetail">
+                                <div class="balance-sheet-label">Dettes fiscales et sociales</div>
+                                <div class="balance-sheet-value" id="social-fiscal-debts">0€</div>
+                            </div>
+                            <div class="balance-sheet-subdetail">
+                                <div class="balance-sheet-label">Charges à payer</div>
+                                <div class="balance-sheet-value" id="accrued-expenses">0€</div>
+                            </div>
+                            <div class="balance-sheet-subdetail">
+                                <div class="balance-sheet-label">  - Intérêts des dettes</div>
+                                <div class="balance-sheet-value" id="loan-interest-expenses">0€</div>
+                            </div>
+                            <div class="balance-sheet-subdetail">
+                                <div class="balance-sheet-label">  - Maintenance bâtiments</div>
+                                <div class="balance-sheet-value" id="building-maintenance-expenses">0€</div>
+                            </div>
                         </div>
-                        
-                        <div class="balance-sheet-item">
-                            <div class="balance-sheet-label">🏪 Emprunts commerciaux</div>
-                            <div class="balance-sheet-value" id="commercial-loans-debt">0€</div>
-                        </div>
-                        
-                        <div class="balance-sheet-item">
-                            <div class="balance-sheet-label">⚡ Charges à payer</div>
-                            <div class="balance-sheet-value" id="accrued-expenses">0€</div>
-                        </div>
-                        
-                        <div class="balance-sheet-item">
-                            <div class="balance-sheet-label">🏪 Dettes fournisseurs</div>
-                            <div class="balance-sheet-value" id="supplier-debts">0€</div>
-                        </div>
-                        
-                        <div class="balance-sheet-item">
-                            <div class="balance-sheet-label">🏛️ Dettes sociales et fiscales</div>
-                            <div class="balance-sheet-value" id="social-fiscal-debts">0€</div>
-                        </div>
-                    </div>
                         
                         <!-- Total Passif -->
-                        <div class="balance-sheet-total">
+                        <div class="balance-sheet-total balance-sheet-total-passif" data-section="totaux">
                             <div class="balance-sheet-label">TOTAL PASSIF</div>
                             <div class="balance-sheet-value" id="total-liabilities">0€</div>
                         </div>
@@ -655,7 +951,7 @@
                     
                     <!-- Financial Health Impact -->
                     <div class="loans-health-section">
-                        <h4>📊 Impact de votre santé financière</h4>
+                        <h4>Impact de votre santé financière</h4>
                         <div class="health-impact" id="health-impact">
                             <div class="health-status-good">
                                 <span class="health-icon">✅</span>
@@ -772,7 +1068,7 @@
 <div id="budget-states-panel" class="budget-states-panel">
     <div class="budget-states-wrapper">
         <div class="budget-states-header">
-            <h3>📊 États de Budget</h3>
+            <h3>États de Budget</h3>
             <div class="budget-states-close-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
                     <path d="M18 6L6 18"/>
@@ -788,6 +1084,19 @@
                 <button class="budget-filter-btn" data-period="6">6 jours</button>
                 <button class="budget-filter-btn" data-period="9">9 jours</button>
                 <button class="budget-filter-btn" data-period="all">Tous</button>
+            </div>
+            
+            <!-- Global refresh button -->
+            <div class="budget-states-refresh-section">
+                <button class="budget-global-refresh-btn" onclick="refreshBudgetStatesModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                        <path d="M21 3v5h-5"/>
+                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                        <path d="M3 21v-5h5"/>
+                    </svg>
+                    Actualiser les états
+                </button>
             </div>
             
             <!-- Budget states list -->
@@ -809,9 +1118,136 @@
     </div>
 </div>
 
+<!-- City Map Popup -->
+<div id="city-map-panel" class="city-map-panel">
+    <div class="city-map-wrapper">
+        <div class="city-map-header">
+            <h3>🗺️ Carte de la Ville</h3>
+            <div class="city-map-close-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
+                    <path d="M18 6L6 18"/>
+                    <path d="M6 6l12 12"/>
+                </svg>
+            </div>
+        </div>
+        <div class="city-map-content">
+            <div class="city-map-legend">
+                <div class="legend-title">
+                    <h4>🗺️ Légende</h4>
+                </div>
+                <div class="legend-items">
+                    <div class="legend-item legend-status">
+                        <span class="status-indicator no-road"></span>
+                        <span class="legend-label">Pas de route</span>
+                    </div>
+                    <div class="legend-item legend-status">
+                        <span class="status-indicator no-food"></span>
+                        <span class="legend-label">Pas de nourriture</span>
+                    </div>
+                </div>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <span class="legend-code legend-code-small hb">HB</span>
+                        <span class="legend-label">Maison Bleue</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-code legend-code-small hr">HR</span>
+                        <span class="legend-label">Maison Rouge</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-code legend-code-small hp">HP</span>
+                        <span class="legend-label">Maison Violette</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-code legend-code-small h2s">H2S</span>
+                        <span class="legend-label">Palace</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-code legend-code-small r">R</span>
+                        <span class="legend-label">Route</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-code legend-code-small m">M</span>
+                        <span class="legend-label">Marché</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-code legend-code-small f">F</span>
+                        <span class="legend-label">Ferme</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-code legend-code-small wm">WM</span>
+                        <span class="legend-label">Moulin</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-code legend-code-small ba">BA</span>
+                        <span class="legend-label">Grange</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-code legend-code-small ch">CH</span>
+                        <span class="legend-label">Église</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-code legend-code-small cp">CP</span>
+                        <span class="legend-label">Chapelle</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-code legend-code-small we">WE</span>
+                        <span class="legend-label">Puit</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-code legend-code-small fo">FO</span>
+                        <span class="legend-label">Fontaine</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-code legend-code-small to">TO</span>
+                        <span class="legend-label">Tombeau</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-code legend-code-small grass">G</span>
+                        <span class="legend-label">Herbe</span>
+                    </div>
+                </div>
+            </div>
+            <div class="city-map-grid" id="city-map-grid">
+                <div class="grid-loading">
+                    <div class="loading-spinner"></div>
+                    <p>Chargement de la carte...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tutorial Panel -->
+<div id="tutorial-panel" class="tutorial-panel">
+    <div class="tutorial-panel-wrapper">
+        <div class="tutorial-panel-header">
+            <h3>🎓 Tutoriel</h3>
+        </div>
+        <div class="tutorial-panel-content">
+            <div class="tutorial-steps">
+                <div class="tutorial-step">
+                </div>
+            </div>
+            <div class="tutorial-content"></div>
+            <div class="tutorial-buttons">
+                <div class="tutorial-buttons-wrapper">
+                    <button class="tutorial-previous-btn">Précédent</button>
+                    <button class="tutorial-next-btn">Suivant</button>
+                    <button class="tutorial-skip-btn">Passer</button>
+                    <button class="tutorial-close-btn">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="module" src="/src/main.js"></script>
 <script type="module" src="/src/js/game/game.js"></script>
+<script type="module" src="/src/js/utils/EventBlocker.js"></script>
+<script type="module" src="/src/js/ui/PopupManager.js"></script>
 <script type="module" src="/src/js/ui/buttons.js"></script>
+<script type="module" src="/src/js/ui/tutorial.js"></script>
 
 </body>
 </html>

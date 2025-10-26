@@ -255,7 +255,6 @@ export const zoneBordersBuildings = (buildingData, time=0) => {
                     // Calculate the zone based on the maximum delta of x or z
                     const zone = Math.max(deltaX, deltaZ);
                     let neighborData = {
-                        building: theCurrentBuilding + '-' + mesh.position.x + '-' + mesh.position.z,
                         time: time,
                         name: mesh.name,
                         id : mesh.name + '-' + mesh.position.x + '-' + mesh.position.z,
@@ -452,6 +451,37 @@ getAssetPrice(123, prices);               // Returns undefined, warns about inva
 getAssetPrice('house', null);             // Returns null, warns about invalid assetsPrices
 getAssetPrice(undefined, prices);         // Returns undefined, warns about missing buildingId
 */
+
+// Check if an area is available for a building of the specified size
+export function isAreaAvailableForBuilding(city, x, y, gridSize) {
+    if (gridSize === undefined || gridSize === null || gridSize < 1) {
+        console.warn('[isAreaAvailableForBuilding] Invalid gridSize:', gridSize);
+        return false;
+    }
+    
+    // Check if all tiles in the area are within bounds and unoccupied
+    for (let dx = 0; dx < gridSize; dx++) {
+        for (let dy = 0; dy < gridSize; dy++) {
+            const checkX = x + dx;
+            const checkY = y + dy;
+            
+            // Check bounds
+            if (checkX >= city.size || checkY >= city.size) {
+                return false;
+            }
+            
+            // Check if tile is occupied
+            if (city.tiles[checkX] && city.tiles[checkX][checkY]) {
+                if (city.tiles[checkX][checkY].buildingId !== undefined) {
+                    console.log(`[isAreaAvailable] Blocked: Tile (${checkX}, ${checkY}) already has building: ${city.tiles[checkX][checkY].buildingId}`);
+                    return false;
+                }
+            }
+        }
+    }
+    
+    return true;
+}
 
 // Get all buildings in a category
 export function getAssetsByCategory(category, assets) {
