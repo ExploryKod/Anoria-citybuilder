@@ -453,26 +453,14 @@ function toggleModal(e) {
                 createHousesButtons(buttonData);
                 panelLayout.classList.add('active');
                 
-                // Disable pointer events on 3D scene when modal opens
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                    canvas.classList.add('pointer-events-disabled');
-                }
-                
-                // Pause the game when opening building selection modal
-                if (window.game) {
-                    window.game.pause();
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('panel-layout');
                 }
             } else {
-                // Re-enable pointer events on 3D scene when modal closes
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                    canvas.classList.remove('pointer-events-disabled');
-                }
-                
-                // Resume the game when closing building selection modal
-                if (window.game) {
-                    window.game.play();
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('panel-layout');
                 }
             }
 
@@ -487,26 +475,14 @@ function toggleModal(e) {
                 e.target.classList.toggle('selected')
                 createFarmsButtons(buttonData);
                 
-                // Disable pointer events on 3D scene when modal opens
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                    canvas.classList.add('pointer-events-disabled');
-                }
-                
-                // Pause the game when opening building selection modal
-                if (window.game) {
-                    window.game.pause();
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('panel-layout');
                 }
             } else {
-                // Re-enable pointer events on 3D scene when modal closes
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                    canvas.classList.remove('pointer-events-disabled');
-                }
-                
-                // Resume the game when closing building selection modal
-                if (window.game) {
-                    window.game.play();
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('panel-layout');
                 }
             }
             break;
@@ -519,26 +495,14 @@ function toggleModal(e) {
                 e.target.classList.toggle('selected')
                 createMarketsStallsButtons(buttonData)
                 
-                // Disable pointer events on 3D scene when modal opens
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                    canvas.classList.add('pointer-events-disabled');
-                }
-                
-                // Pause the game when opening building selection modal
-                if (window.game) {
-                    window.game.pause();
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('panel-layout');
                 }
             } else {
-                // Re-enable pointer events on 3D scene when modal closes
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                    canvas.classList.remove('pointer-events-disabled');
-                }
-                
-                // Resume the game when closing building selection modal
-                if (window.game) {
-                    window.game.play();
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('panel-layout');
                 }
             }
             break;
@@ -551,26 +515,14 @@ function toggleModal(e) {
                 e.target.classList.toggle('selected')
                 createOthersButtons(buttonData)
                 
-                // Disable pointer events on 3D scene when modal opens
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                    canvas.classList.add('pointer-events-disabled');
-                }
-                
-                // Pause the game when opening building selection modal
-                if (window.game) {
-                    window.game.pause();
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('panel-layout');
                 }
             } else {
-                // Re-enable pointer events on 3D scene when modal closes
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                    canvas.classList.remove('pointer-events-disabled');
-                }
-                
-                // Resume the game when closing building selection modal
-                if (window.game) {
-                    window.game.play();
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('panel-layout');
                 }
             }
             break;
@@ -743,10 +695,9 @@ window.onload = async () => {
     playButton.addEventListener('click', () => {
         pauseOverlay.classList.remove('active')
         
-        // Re-enable pointer events on 3D scene when pause overlay closes
-        const canvas = document.querySelector('canvas');
-        if (canvas) {
-            canvas.classList.remove('pointer-events-disabled');
+        // Utiliser PopupManager pour gérer les événements
+        if (window.popupManager) {
+            window.popupManager.forceClosePopup('pause-overlay');
         }
         
         window.game.play()
@@ -755,10 +706,9 @@ window.onload = async () => {
     pauseButton.addEventListener('click', () => {
         pauseOverlay.classList.add('active')
         
-        // Disable pointer events on 3D scene when pause overlay opens
-        const canvas = document.querySelector('canvas');
-        if (canvas) {
-            canvas.classList.add('pointer-events-disabled');
+        // Utiliser PopupManager pour gérer les événements
+        if (window.popupManager) {
+            window.popupManager.forceOpenPopup('pause-overlay');
         }
         
         window.game.pause()
@@ -830,10 +780,17 @@ window.onload = async () => {
             console.log('Budget panel classes after:', budgetPanelEl.className);
             console.log('Budget panel computed style display:', window.getComputedStyle(budgetPanelEl).display);
             
-            // Pause the game when opening budget panel
-            if (window.game) {
-                window.game.pause();
-                console.log('Game paused for budget panel');
+            // Utiliser PopupManager pour gérer les événements
+            if (window.popupManager) {
+                console.log('PopupManager available, opening budget-panel');
+                window.popupManager.forceOpenPopup('budget-panel');
+            } else {
+                console.warn('PopupManager not available, falling back to manual pause');
+                // Fallback: pause manuel si PopupManager n'est pas disponible
+                if (window.game) {
+                    window.game.pause();
+                    console.log('Game paused manually for budget panel');
+                }
             }
             
             updateBudgetDisplay();
@@ -906,10 +863,17 @@ window.onload = async () => {
         budgetPanelCloseBtnEl.addEventListener('click', () => {
             budgetPanelEl.classList.remove('active');
             
-            // Resume the game when closing budget panel
-            if (window.game) {
-                window.game.play();
-                console.log('Game resumed after closing budget panel');
+            // Utiliser PopupManager pour gérer les événements
+            if (window.popupManager) {
+                console.log('PopupManager available, closing budget-panel');
+                window.popupManager.forceClosePopup('budget-panel');
+            } else {
+                console.warn('PopupManager not available, falling back to manual resume');
+                // Fallback: resume manuel si PopupManager n'est pas disponible
+                if (window.game) {
+                    window.game.play();
+                    console.log('Game resumed manually after closing budget panel');
+                }
             }
         });
     }
@@ -920,10 +884,17 @@ window.onload = async () => {
             if (e.target === budgetPanelEl) {
                 budgetPanelEl.classList.remove('active');
                 
-                // Resume the game when clicking outside budget panel
-                if (window.game) {
-                    window.game.play();
-                    console.log('Game resumed after clicking outside budget panel');
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    console.log('PopupManager available, closing budget-panel (outside click)');
+                    window.popupManager.forceClosePopup('budget-panel');
+                } else {
+                    console.warn('PopupManager not available, falling back to manual resume (outside click)');
+                    // Fallback: resume manuel si PopupManager n'est pas disponible
+                    if (window.game) {
+                        window.game.play();
+                        console.log('Game resumed manually after clicking outside budget panel');
+                    }
                 }
             }
         });
@@ -979,15 +950,22 @@ function initRealtimeBudgetPopup() {
         e.stopPropagation(); // Prevent event bubbling
         e.preventDefault(); // Prevent default behavior
         
-        // Budget panel can now be opened even when other modals are active
-        
         // Only toggle if clicking directly on the budget box or its children
         if (e.target === realtimeBudgetBtn || realtimeBudgetBtn.contains(e.target)) {
             realtimeBudgetPanel.classList.toggle('active');
             realtimeBudgetBtn.classList.toggle('active'); // Add/remove active class on button
+            
             if (realtimeBudgetPanel.classList.contains('active')) {
-                // Budget panel doesn't disable 3D scene interactions since it's positioned on the side
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('realtime-budget-panel');
+                }
                 updateRealtimeBudget();
+            } else {
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('realtime-budget-panel');
+                }
             }
         }
     });
@@ -996,7 +974,11 @@ function initRealtimeBudgetPopup() {
     realtimeBudgetCloseBtn.addEventListener('click', () => {
         realtimeBudgetPanel.classList.remove('active');
         realtimeBudgetBtn.classList.remove('active'); // Remove active class from button
-        // No need to manage pointer events since budget panel doesn't interfere with 3D scene
+        
+        // Utiliser PopupManager pour gérer les événements
+        if (window.popupManager) {
+            window.popupManager.forceClosePopup('realtime-budget-panel');
+        }
     });
 
     // Close popup when clicking outside
@@ -1359,10 +1341,20 @@ function initBudgetStatesPopup() {
         if (e.target === budgetStatesBtn || budgetStatesBtn.contains(e.target)) {
             budgetStatesPanel.classList.toggle('active');
             budgetStatesBtn.classList.toggle('active');
+            
             if (budgetStatesPanel.classList.contains('active')) {
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('budget-states-panel');
+                }
                 // Update labels before loading data
                 await updateFilterButtonLabels();
                 loadBudgetStates();
+            } else {
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('budget-states-panel');
+                }
             }
         }
     });
@@ -1371,6 +1363,11 @@ function initBudgetStatesPopup() {
     budgetStatesCloseBtn.addEventListener('click', () => {
         budgetStatesPanel.classList.remove('active');
         budgetStatesBtn.classList.remove('active');
+        
+        // Utiliser PopupManager pour gérer les événements
+        if (window.popupManager) {
+            window.popupManager.forceClosePopup('budget-states-panel');
+        }
     });
 
     // Close popup when clicking outside
@@ -2143,10 +2140,9 @@ function initLoansPopup() {
         console.log('Loans button clicked!');
         loansPanel.classList.add('active');
         
-        // Pause the game when opening loans panel
-        if (window.game) {
-            window.game.pause();
-            console.log('Game paused for loans panel');
+        // Utiliser PopupManager pour gérer les événements
+        if (window.popupManager) {
+            window.popupManager.forceOpenPopup('loans-panel');
         }
         
         updateLoansDisplay();
@@ -2156,10 +2152,9 @@ function initLoansPopup() {
     loansCloseBtn.addEventListener('click', () => {
         loansPanel.classList.remove('active');
         
-        // Resume the game when closing loans panel
-        if (window.game) {
-            window.game.play();
-            console.log('Game resumed after closing loans panel');
+        // Utiliser PopupManager pour gérer les événements
+        if (window.popupManager) {
+            window.popupManager.forceClosePopup('loans-panel');
         }
     });
 
@@ -2168,10 +2163,9 @@ function initLoansPopup() {
         if (e.target === loansPanel) {
             loansPanel.classList.remove('active');
             
-            // Resume the game when clicking outside loans panel
-            if (window.game) {
-                window.game.play();
-                console.log('Game resumed after clicking outside loans panel');
+            // Utiliser PopupManager pour gérer les événements
+            if (window.popupManager) {
+                window.popupManager.forceClosePopup('loans-panel');
             }
         }
     });

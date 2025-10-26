@@ -11,6 +11,9 @@ class TutorialManager {
         this.isVisible = false;
         this.isInitialized = false;
         
+        // Utilisation de EventBlocker par composition
+        this.eventBlocker = new EventBlocker();
+        
         this.init();
     }
 
@@ -129,6 +132,24 @@ class TutorialManager {
     }
 
     /**
+     * Désactive les événements Three.js
+     */
+    disableThreeJSEvents() {
+        this.eventBlocker.blockThreeJSEvents({
+            onBlock: (eventType, e) => {
+                console.log(`Three.js event blocked: ${eventType}`);
+            }
+        });
+    }
+
+    /**
+     * Réactive les événements Three.js
+     */
+    enableThreeJSEvents() {
+        this.eventBlocker.unblockEvents();
+    }
+
+    /**
      * Affiche le tutoriel
      */
     showTutorial() {
@@ -140,6 +161,9 @@ class TutorialManager {
         this.updateDisplay();
         this.panel.classList.add('visible');
         this.isVisible = true;
+        
+        // Désactiver les événements Three.js
+        this.disableThreeJSEvents();
         
         // Mettre le jeu en pause
         if (window.game && typeof window.game.pause === 'function') {
@@ -158,6 +182,9 @@ class TutorialManager {
     hideTutorial() {
         this.panel.classList.remove('visible');
         this.isVisible = false;
+        
+        // Réactiver les événements Three.js
+        this.enableThreeJSEvents();
         
         // Reprendre le jeu
         if (window.game && typeof window.game.play === 'function') {
@@ -295,6 +322,14 @@ class TutorialManager {
     getTotalSteps() {
         return this.steps.length;
     }
+
+    /**
+     * Nettoie les ressources (à appeler en cas d'erreur ou de destruction)
+     */
+    cleanup() {
+        this.eventBlocker.cleanup();
+        console.log('Tutorial cleanup completed');
+    }
 }
 
 // Créer une instance globale
@@ -341,6 +376,21 @@ document.addEventListener('DOMContentLoaded', () => {
         
     } else {
         console.error('Tutorial button not found');
+    }
+});
+
+// Gestion d'erreur globale pour s'assurer que les événements Three.js sont réactivés
+window.addEventListener('error', (e) => {
+    if (window.tutorialManager && window.tutorialManager.eventBlocker.isEventsBlocked()) {
+        console.warn('Error detected while tutorial is open, cleaning up Three.js events');
+        window.tutorialManager.cleanup();
+    }
+});
+
+// Nettoyage lors de la fermeture de la page
+window.addEventListener('beforeunload', () => {
+    if (window.tutorialManager) {
+        window.tutorialManager.cleanup();
     }
 });
 
