@@ -17,6 +17,7 @@ import {
 } from '../ui/nodes.js';
 import budgetManager from '../stores/BudgetManager.js';
 import loaderManager from '../utils/LoaderManager.js';
+import objectivesTracker from '../ui/ObjectivesTracker.js';
 
 // Notification system for building placement feedback
 function showInsufficientFundsNotification(buildingType, price) {
@@ -431,10 +432,15 @@ export function createGame(housesStore, gameStore, assetManager) {
 
     const game = {
 
-        update(time) {
+        async update(time) {
             displayTime.textContent = time + ' jours'
             city.update();
-            scene.update(city, time);
+            await scene.update(city, time);
+            
+            // Vérifier les objectifs à chaque tour
+            if (window.objectivesTracker) {
+                await objectivesTracker.checkObjectives(time);
+            }
         },
 
         pause() {
