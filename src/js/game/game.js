@@ -16,6 +16,7 @@ import {
     displaySpeed
 } from '../ui/nodes.js';
 import budgetManager from '../stores/BudgetManager.js';
+import loaderManager from '../utils/LoaderManager.js';
 
 // Notification system for building placement feedback
 function showInsufficientFundsNotification(buildingType, price) {
@@ -186,7 +187,10 @@ export function createGame(housesStore, gameStore, assetManager) {
     /* City initialization */
     const city = createCity(16);
 
-    scene.initialize(city);
+    scene.initialize(city).then(() => {
+        // Hide Chronos loader modal once scene is initialized with fade-out
+        loaderManager.hide(500);
+    });
 
     // handler function to extract coordinate of an object I click on (data from asset js and using scene js methods)
     scene.onObjectSelected = async (selectedObject) => {
