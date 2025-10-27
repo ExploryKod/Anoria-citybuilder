@@ -69,6 +69,7 @@ export function createScene(housesStore, gameStore, assetManager) {
         buildings = [];
         loadingPromises = [];
 
+        // Wait for all terrain to be created
         for(let x = 0; x < city.size; x++) {
             let column = [];
             for(let y = 0; y < city.size; y++) {
@@ -101,6 +102,14 @@ export function createScene(housesStore, gameStore, assetManager) {
         if (debtBox) {
             debtBox.style.display = 'none';
         }
+
+        // Wait for any remaining promises to complete
+        if (loadingPromises.length > 0) {
+            await Promise.all(loadingPromises);
+        }
+
+        // Add a small delay to ensure all rendering is complete
+        await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     async function update(city, time=0) {

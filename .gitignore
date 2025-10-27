@@ -32,3 +32,6 @@ models
 *.njsproj
 *.sln
 *.sw?
+
+/MenWalking.fbx
+MenWalking.fbx

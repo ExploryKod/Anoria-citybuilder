@@ -11,6 +11,7 @@
     
     <!-- Modal Styles -->
     <link rel="stylesheet" href="./src/styles/modals/global.css">
+    <link rel="stylesheet" href="./src/styles/modals/loader-modal.css">
     <link rel="stylesheet" href="./src/styles/modals/realtime-budget.css">
     <link rel="stylesheet" href="./src/styles/modals/budget-states.css">
     <link rel="stylesheet" href="./src/styles/modals/budget-panel.css">
@@ -36,6 +37,18 @@
 </div>
 <div id="root-window" class="root-window">
     <div id="game-window" class="game-window">
+        <!-- Chronos Loader Modal -->
+        <div id="chronos-loader-modal" class="chronos-loader-modal opaque">
+            <div class="chronos-loader-content">
+                <div class="chronos-loader-icon">⏳</div>
+                <div class="chronos-loader-title">Chronos crée le temps</div>
+                <div class="chronos-loader-message">
+                    Votre monde est bientôt prêt...
+                </div>
+                <div class="chronos-loader-spinner"></div>
+            </div>
+        </div>
+        
         <div
         id="pwa-toast"
         role="alert"
