@@ -183,15 +183,26 @@ canvas.pointer-events-disabled {
 }
 
 .toolbar .toolbar__sub-container {
+    padding: 4px 2px;
+    background-color: transparent;
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: 5px;
 }
 
 .toolbar__label {
+    text-align: left;
     font-size: 10px;
     color: var(--cta);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.manager-label {
+    text-align: left;
+    font-size: 10px;
+    color: #fff;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -234,6 +245,7 @@ canvas.pointer-events-disabled {
 }
 
 .game-window .panel-layout {
+    min-height: 100vh;
     display: flex;
     justify-content: flex-start;
     align-items: center;
@@ -713,41 +725,103 @@ footer a:hover {
 }
 
 #pwa-toast {
-    visibility: hidden;
     position: fixed;
-    right: 50px;
-    top: 60px;
-    margin: 16px;
-    padding: 12px;
-    border: 1px solid #8885;
-    border-radius: 4px;
-    z-index: 1;
-    text-align: left;
-    box-shadow: 3px 4px 5px 0 #8885;
-    display: grid;
-  }
-  #pwa-toast .message {
-    margin-bottom: 8px;
-  }
-  #pwa-toast .buttons {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    max-width: 500px;
+    width: 90%;
+    background: #fafafa;
+    border: 3px solid var(--cta);
+    border-radius: 10px;
+    color: var(--primary);
+    font-family: inherit;
+    opacity: 0;
+    transition: all 0.3s ease-in-out;
+    pointer-events: none;
     display: flex;
-  }
-  #pwa-toast button {
-    border: 1px solid #8885;
-    outline: none;
-    margin-right: 5px;
-    border-radius: 2px;
-    padding: 3px 10px;
-  }
-  #pwa-toast.show {
-    visibility: visible;
-  }
-  button#pwa-refresh {
+    flex-direction: column;
+    padding: 24px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    z-index: 1003;
+    text-align: center;
+}
+
+#pwa-toast .message {
+    margin-bottom: 20px;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--primary);
+}
+
+#pwa-toast #toast-message {
+    font-weight: 600;
+}
+
+#pwa-toast .buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+#pwa-toast button {
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#pwa-close {
+    background: #f3f4f6;
+    color: #666;
+}
+
+#pwa-close:hover {
+    background: #e5e7eb;
+    transform: translateY(-2px);
+}
+
+button#pwa-refresh {
     display: none;
-  }
-  #pwa-toast.show.refresh button#pwa-refresh {
+    background: var(--cta);
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+button#pwa-refresh:hover {
+    background: var(--cta-05);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+#pwa-toast.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    pointer-events: auto;
+}
+
+#pwa-toast.show.refresh button#pwa-refresh {
     display: block;
-  }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    #pwa-toast {
+        max-width: 95%;
+        width: 90%;
+    }
+
+    #pwa-toast .buttons {
+        flex-direction: column;
+    }
+
+    #pwa-toast button {
+        width: 100%;
+    }
+}
 
 @media screen and (max-width: 768px) {
 

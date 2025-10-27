@@ -139,7 +139,25 @@ class AssetManager extends MeshLoader {
 
 
 
-        object3D.userData = {id: meshName, type: meshName, name: meshName, isBuilding: true, x, y, ...this.userData};
+        object3D.userData = {
+            id: meshName, 
+            type: meshName, 
+            name: meshName, 
+            isBuilding: true, 
+            x, 
+            y,
+            neighbors: [],
+            pop: 0,
+            stocks: { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
+            time: 0,
+            roads: 0,
+            stage: 0,
+            stageName: "",
+            price: 0,
+            cityFunds: 0,
+            maintenance: 0,
+            worldTime: 0
+        };
 
         return object3D;
     }
