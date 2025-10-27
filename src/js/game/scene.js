@@ -15,7 +15,8 @@ import {
     displayDelayUI,
     firstHouses,
     gameWindow,
-    houses
+    houses,
+    palaces
 } from '../ui/nodes.js';
 import {assetsPrices} from "../meshs/data.js";
 
@@ -421,8 +422,8 @@ export function createScene(housesStore, gameStore, assetManager) {
                         }
                     }
 
-                //  only update if current building is a house
-                if(houses.includes(currentBuildingId) && buildings[x][y]) {
+                //  only update if current building is a house or palace
+                if((houses.includes(currentBuildingId) || palaces.includes(currentBuildingId)) && buildings[x][y]) {
 
                     // Initialize stocks if not present
                     if(!Object.hasOwn(buildings[x][y], 'userData') || !Object.hasOwn(buildings[x][y].userData, 'stocks')) {
