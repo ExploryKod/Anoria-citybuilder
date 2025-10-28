@@ -604,7 +604,7 @@ canvas.pointer-events-disabled {
   position: fixed;
   top: 20px;
   left: 100px;
-  z-index: 1000;
+  z-index: 10020; /* Z-index plus élevé que la toolbar carousel */
 }
 
 .legend-toggle-btn {
@@ -1037,7 +1037,7 @@ footer a:hover {
 .info-building-overlay.active {
     pointer-events: auto;
     background-color: var(--lightgreen);
-    z-index: 1003;
+    z-index: 10020; /* Z-index plus élevé que la toolbar carousel */
     right: 0;
     opacity: 1;
     visibility: visible;
@@ -1080,7 +1080,7 @@ footer a:hover {
     flex-direction: column;
     padding: 24px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    z-index: 1003;
+    z-index: 10020; /* Z-index plus élevé que la toolbar carousel */
     text-align: center;
 }
 

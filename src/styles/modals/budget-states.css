@@ -37,7 +37,7 @@
     max-height: 725px;
     background: #fafafa;
     border-left: 3px solid var(--cta);
-    z-index: 1006;
+    z-index: 10010; /* Z-index plus élevé que la toolbar carousel */
     transition: right 0.3s ease-in-out;
     overflow-y: auto;
     color: var(--primary);
@@ -500,7 +500,155 @@
     border-color: var(--cta);
 }
 
-.journal-access-btn svg {
-    width: 14px;
-    height: 14px;
+/* Mobile Landscape Responsive Styles */
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    .budget-states-panel {
+        top: 0;
+        right: -100%;
+        width: 100%;
+        height: 100vh;
+        max-height: none;
+        border-left: none;
+        border-bottom: 3px solid var(--cta);
+    }
+
+    .budget-states-panel.active {
+        right: 0;
+    }
+
+    .budget-states-wrapper {
+        padding: 15px;
+    }
+
+    .budget-states-header {
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+    }
+
+    .budget-states-header h3 {
+        font-size: 1.1rem;
+    }
+
+    .budget-states-content {
+        gap: 15px;
+        padding: 0 5px;
+    }
+
+    .budget-states-filters {
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .budget-states-filters button {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .budget-states-list {
+        gap: 10px;
+    }
+
+    .budget-state-item {
+        padding: 12px;
+    }
+
+    .budget-state-header {
+        margin-bottom: 8px;
+    }
+
+    .budget-state-turn {
+        font-size: 1rem;
+    }
+
+    .budget-state-date {
+        font-size: 0.8rem;
+    }
+
+    .budget-state-details {
+        gap: 8px;
+    }
+
+    .budget-state-detail {
+        padding: 4px 0;
+    }
+
+    .budget-state-label {
+        font-size: 0.8rem;
+    }
+
+    .budget-state-value {
+        font-size: 0.8rem;
+    }
+
+    .budget-income-statement {
+        padding: 12px;
+        margin: 8px 0;
+    }
+
+    .statement-title {
+        font-size: 0.8rem;
+        margin-bottom: 6px;
+    }
+
+    .statement-line {
+        padding: 4px 0;
+    }
+
+    .statement-label {
+        font-size: 0.75rem;
+    }
+
+    .statement-value {
+        font-size: 0.75rem;
+    }
+
+    .statement-value.total {
+        font-size: 0.8rem;
+        padding: 3px 6px;
+    }
+
+    .statement-value.result {
+        font-size: 0.9rem;
+        padding: 6px 10px;
+    }
+
+    .budget-state-info {
+        gap: 6px;
+        margin-top: 8px;
+        padding: 8px;
+    }
+
+    .info-label {
+        font-size: 0.7rem;
+        margin-bottom: 3px;
+    }
+
+    .info-value {
+        font-size: 0.8rem;
+    }
+
+    .budget-states-summary {
+        margin-top: 15px;
+        padding: 12px;
+    }
+
+    .budget-states-summary h4 {
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+    .budget-filter-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .budget-global-refresh-btn {
+        padding: 4px 8px;
+        font-size: 0.7rem;
+    }
+
+    .journal-access-btn {
+        padding: 4px 8px;
+        font-size: 0.7rem;
+    }
 }
