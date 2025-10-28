@@ -251,10 +251,7 @@ class MeshLoaderOptimized {
                             return;
                         }
                         
-                        // Debug log for palaces
-                        if (propertyKey === 'palaces') {
-                            console.log('[PALACES] Found palace mesh:', meshName, '→ tool:', toolName);
-                        }
+                        // Found palace mesh
 
                         // Parse mesh name parts for button text
                         const normalized = meshName.replace(/[._\s]/g, '_');

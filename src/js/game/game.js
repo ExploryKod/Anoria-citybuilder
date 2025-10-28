@@ -176,7 +176,6 @@ export function createGame(housesStore, gameStore, assetManager) {
     
     // Initialize budget system - force reinitialize to ensure 200€ starting funds
     budgetManager.forceReinitialize(200).then(() => {
-        console.log('Budget system initialized with 200€');
         // Make budgetManager available globally for scene.js
         window.budgetManager = budgetManager;
     });
@@ -220,7 +219,6 @@ export function createGame(housesStore, gameStore, assetManager) {
                     }
                 }
             }
-            console.log(`Building ${buildingId || 'unknown'} removed from (${x}, ${y}) covering ${gridSize}x${gridSize} tiles`);
             await scene.update(city);
         } else if(activeToolId === "select-object") {
             // Object selection
@@ -384,7 +382,6 @@ export function createGame(housesStore, gameStore, assetManager) {
                         }
                     }
                 }
-                console.log(`Building ${activeToolId} placed successfully at (${x}, ${y}) covering ${gridSize}x${gridSize} tiles`);
                 await scene.update(city);
                 
                 // Resume the game after successful building placement

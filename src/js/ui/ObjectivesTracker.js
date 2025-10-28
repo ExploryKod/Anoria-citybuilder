@@ -11,7 +11,7 @@ class ObjectivesTracker {
             {
                 id: 'budget_challenge_60_days',
                 title: '🏛️ Défi Financier : 60 jours',
-                description: 'Maintenir une gestion financière saine sur 60 jours',
+                description: 'Seuil en spirale : maintenir une gestion financière saine sur 60 jours. Période de grâce de 20 tours après échec.',
                 requirements: [
                     {
                         text: 'Le résultat net ne doit jamais descendre à -20€',
@@ -24,8 +24,8 @@ class ObjectivesTracker {
                         value: null
                     },
                     {
-                        text: 'Les fonds doivent être d\'au moins 600€ au 60e jour',
-                        check: (data) => data.fundsAtDay60 >= 600,
+                        text: 'Les fonds doivent être d\'au moins 600€ à la date cible',
+                        check: (data) => data.fundsAtTargetDay >= 600,
                         value: null
                     }
                 ],
@@ -39,10 +39,23 @@ class ObjectivesTracker {
             maxNetFlow: -Infinity,
             minNetFlowTurn: null, // Tour où le flux net minimum a été atteint
             maxNetFlowTurn: null, // Tour où le flux net maximum a été atteint
-            fundsAtDay60: null,
+            fundsAtTargetDay: null,
             currentDay: 0
         };
 
+        this.objectiveFailed = false; // Indique si l'objectif a échoué (seuil atteint)
+        this.resetCount = 0; // Nombre de fois que l'objectif a été réinitialisé
+        this.lastResetTurn = 0; // Tour du dernier reset (pour tracker depuis le dernier reset uniquement)
+        this.gracePeriod = 20; // Période de grâce de 20 tours après un reset (pour seuil en spirale)
+        this.targetDay = 60; // Date cible pour les fonds (threshold_date - rééchelonnable)
+        
+        // Au démarrage d'un nouveau jeu, réinitialiser complètement l'objectif
+        const objective = this.objectives.find(obj => obj.id === 'budget_challenge_60_days');
+        if (objective) {
+            objective.active = false;
+            objective.completed = false;
+        }
+        
         this.init();
     }
 
@@ -50,7 +63,6 @@ class ObjectivesTracker {
      * Initialise le système de tracking
      */
     init() {
-        console.log('ObjectivesTracker initialized');
     }
 
     /**
@@ -65,21 +77,68 @@ class ObjectivesTracker {
         }
 
         try {
-            // Activer l'objectif au tour 0 (initialisation)
-            if (currentDay === 0) {
-                this.activateObjective('budget_challenge_60_days');
+            // Activer l'objectif au tour 0 (initialisation d'un nouveau jeu)
+            const objective = this.objectives.find(obj => obj.id === 'budget_challenge_60_days');
+            if (currentDay === 0 && objective) {
+                // Toujours réactiver au tour 0 pour un nouveau jeu
+                objective.active = true;
+                objective.completed = false;
             }
 
             // Calculer les données de tracking depuis les états de budget sauvegardés tous les 3 tours (3 intervalles)
             await this.updateTrackingFromBudgetStates(currentDay);
 
-            // Enregistrer les fonds au tour 60 (60 intervalles = 60 jours de jeu)
-            if (currentDay === 60) {
-                await this.saveFundsAtDay60();
+            // Vérifier si le seuil critique a été atteint (flux net < -20)
+            // Pour un seuil en spirale (threshold_spiral), on ignore les échecs pendant la période de grâce
+            // MAIS seulement à partir de la 2e tentative (resetCount > 0)
+            const isInGracePeriod = this.resetCount > 0 && (currentDay - this.lastResetTurn) <= this.gracePeriod;
+            
+            if (!this.objectiveFailed && this.trackingData.minNetFlow < -20 && !isInGracePeriod) {
+                this.objectiveFailed = true;
+                await this.handleObjectiveFailure(currentDay);
             }
 
-            // Vérifier la complétion à partir du tour 60 (60 intervalles = 60 jours)
-            if (currentDay >= 60) {
+            // Enregistrer les fonds à la date cible (seuil à date fixe - threshold_date)
+            if (currentDay === this.targetDay) {
+                await this.saveFundsAtTargetDay();
+                
+                // Vérifier l'échec sur les fonds juste après avoir enregistré
+                if (!this.objectiveFailed && this.trackingData.fundsAtTargetDay < 600) {
+                    console.log(`❌ Échec sur les fonds au tour ${this.targetDay}: ${this.trackingData.fundsAtTargetDay}€ au lieu de 600€ (threshold_date)`);
+                    
+                    // Enregistrer l'échec dans le store
+                    try {
+                        if (window.objectivesStore) {
+                            await window.objectivesStore.recordObjectiveFailure({
+                                objectiveId: 'budget_challenge_60_days',
+                                type: 'threshold_date',
+                                turn: this.targetDay,
+                                reason: 'Fonds insuffisants à la date cible',
+                                details: {
+                                    fundsAtTargetDay: this.trackingData.fundsAtTargetDay,
+                                    requiredFunds: 600,
+                                    targetDay: this.targetDay,
+                                    minNetFlow: this.trackingData.minNetFlow,
+                                    maxNetFlow: this.trackingData.maxNetFlow,
+                                    maxNetFlowTurn: this.trackingData.maxNetFlowTurn,
+                                    resetCount: this.resetCount
+                                }
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error recording threshold_date failure:', error);
+                    }
+                    
+                    // Rééchelonner la date cible (ajouter la période de grâce pour donner le même nombre de jours)
+                    // 60 jours + 20 tours de grâce = 80 tours au total
+                    this.targetDay = currentDay + 80; // 60 + 20 = 80 tours
+                    this.trackingData.fundsAtTargetDay = null; // Réinitialiser pour attendre la nouvelle date
+                    console.log(`📅 Date cible rééchelonnée au tour ${this.targetDay} (dans 80 tours depuis maintenant)`);
+                }
+            }
+
+            // Vérifier la complétion à partir du tour 60 minimum
+            if (currentDay >= 60 && !this.objectiveFailed && currentDay >= this.targetDay && this.trackingData.fundsAtTargetDay !== null && this.trackingData.fundsAtTargetDay >= 600) {
                 await this.verifyObjective('budget_challenge_60_days');
             }
 
@@ -95,8 +154,8 @@ class ObjectivesTracker {
      */
     async updateTrackingFromBudgetStates(currentDay) {
         try {
-            // Récupérer les états de budget pour la période actuelle (sauvegardés tous les 3 intervalles: tours 3, 6, 9, 12, ...)
-            const budgetStates = await window.budgetManager.getBudgetStatesForPeriod(0, currentDay);
+            // Récupérer les états de budget depuis le dernier reset uniquement (pour ne pas inclure les anciennes valeurs échouées)
+            const budgetStates = await window.budgetManager.getBudgetStatesForPeriod(this.lastResetTurn, currentDay);
             
             // Mettre à jour les données de tracking
             this.trackingData.currentDay = currentDay;
@@ -119,7 +178,6 @@ class ObjectivesTracker {
                     }
                 });
                 
-                console.log(`📊 Tracking mis à jour depuis ${budgetStates.length} états de budget (tous les 3 intervalles). Min: ${this.trackingData.minNetFlow}€ au tour ${this.trackingData.minNetFlowTurn}, Max: ${this.trackingData.maxNetFlow}€ au tour ${this.trackingData.maxNetFlowTurn}`);
             }
         } catch (error) {
             console.error('Error updating tracking from budget states:', error);
@@ -127,30 +185,303 @@ class ObjectivesTracker {
     }
 
     /**
-     * Enregistre les fonds au tour 60 depuis les états de budget
-     * Tour 60 = 60 intervalles = 60 jours de jeu
+     * Enregistre les fonds à la date cible depuis les états de budget
+     * Date cible rééchelonnable (threshold_date)
      */
-    async saveFundsAtDay60() {
+    async saveFundsAtTargetDay() {
         try {
-            // Récupérer l'état de budget au tour 60 (ou le plus proche, qui sera le tour 60 lui-même si divisible par 3)
-            const budgetStates = await window.budgetManager.getBudgetStatesForPeriod(57, 60);
+            // Récupérer l'état de budget à la date cible (tour targetDay)
+            const budgetStates = await window.budgetManager.getBudgetStatesForPeriod(this.targetDay - 3, this.targetDay);
             
-            // Trouver l'état le plus proche du jour 60
-            const stateAtDay60 = budgetStates.find(state => state.turn === 60) || 
-                                 budgetStates[budgetStates.length - 1];
+            // Trouver l'état le plus proche de la date cible
+            const stateAtTargetDay = budgetStates.find(state => state.turn === this.targetDay) || 
+                                     budgetStates[budgetStates.length - 1];
             
-            if (stateAtDay60) {
-                this.trackingData.fundsAtDay60 = stateAtDay60.funds || 0;
-                console.log(`📊 Fonds au 60e tour (60 intervalles, depuis état de budget): ${this.trackingData.fundsAtDay60}€`);
+            if (stateAtTargetDay) {
+                this.trackingData.fundsAtTargetDay = stateAtTargetDay.funds || 0;
             } else {
                 // Fallback sur le budget actuel si aucun état n'est trouvé
                 const budget = await window.budgetManager.getCurrentBudget();
-                this.trackingData.fundsAtDay60 = budget.funds || 0;
-                console.log(`📊 Fonds au 60e tour (fallback budget actuel): ${this.trackingData.fundsAtDay60}€`);
+                this.trackingData.fundsAtTargetDay = budget.funds || 0;
             }
         } catch (error) {
-            console.error('Error saving funds at day 60:', error);
+            console.error('Error saving funds at target day:', error);
         }
+    }
+
+    /**
+     * Gère l'échec de l'objectif (seuil critique atteint)
+     * @param {number} currentDay - Tour actuel
+     */
+    async handleObjectiveFailure(currentDay) {
+        // Afficher une modale de rééchelonnement
+        this.showRescheduleModal();
+    }
+
+    /**
+     * Affiche une modale de rééchelonnement de l'objectif
+     */
+    showRescheduleModal() {
+        // Créer l'overlay semi-transparent
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 2, 53, 0.85);
+            z-index: 10001;
+            backdrop-filter: blur(3px);
+        `;
+        
+        const modal = document.createElement('div');
+        modal.className = 'objective-reschedule-modal';
+        modal.innerHTML = `
+            <div class="reschedule-modal-content">
+                <h3>⚠️ Objectif Non Atteint</h3>
+                <div class="reschedule-modal-message">
+                    <p>Le flux net est descendu à <strong>${this.trackingData.minNetFlow}€</strong> au tour ${this.trackingData.minNetFlowTurn}.</p>
+                    <p>L'objectif (seuil en spirale) exigeait que le flux net ne descende jamais en dessous de -20€. ${this.resetCount === 0 ? 'Vous aurez maintenant une période de grâce de 20 tours pour vous remettre en ordre.' : 'Après cette tentative, vous bénéficierez d\'une période de grâce de 20 tours.'}</p>
+                </div>
+                <div class="reschedule-modal-buttons">
+                    <button class="reschedule-btn">Rééchelonner l'objectif</button>
+                    <button class="replay-all-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-ccw">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                            <path d="M3 3v5h5"/>
+                        </svg>
+                        Rejouer
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // Styles inline pour la modale
+        modal.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fafafa;
+            border: 3px solid var(--cta);
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 450px;
+            width: 90%;
+            z-index: 10002;
+            color: var(--primary);
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+        `;
+        
+        // Style du contenu
+        const content = modal.querySelector('.reschedule-modal-content');
+        content.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        `;
+        
+        const heading = modal.querySelector('h3');
+        heading.style.cssText = `
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--cta);
+            border-bottom: 2px solid var(--cta);
+            padding-bottom: 12px;
+        `;
+        
+        const message = modal.querySelector('.reschedule-modal-message');
+        message.style.cssText = `
+            color: var(--primary);
+            font-size: 14px;
+            line-height: 1.5;
+        `;
+        
+        const buttons = modal.querySelector('.reschedule-modal-buttons');
+        buttons.style.cssText = `
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            padding-top: 8px;
+            border-top: 2px solid var(--cta);
+        `;
+        
+        const rescheduleBtn = modal.querySelector('.reschedule-btn');
+        rescheduleBtn.style.cssText = `
+            padding: 10px 24px;
+            border: 3px solid var(--cta);
+            border-radius: 10px;
+            background: var(--cta);
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        `;
+        
+        rescheduleBtn.addEventListener('mouseenter', () => {
+            rescheduleBtn.style.background = 'white';
+            rescheduleBtn.style.color = 'var(--cta)';
+        });
+        
+        rescheduleBtn.addEventListener('mouseleave', () => {
+            rescheduleBtn.style.background = 'var(--cta)';
+            rescheduleBtn.style.color = 'white';
+        });
+        
+        // Style et gestionnaire pour le bouton Rejouer
+        const replayAllBtn = modal.querySelector('.replay-all-btn');
+        replayAllBtn.style.cssText = `
+            padding: 10px 20px;
+            border: 3px solid var(--cta);
+            border-radius: 10px;
+            background: white;
+            color: var(--cta);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        `;
+        
+        replayAllBtn.addEventListener('mouseenter', () => {
+            replayAllBtn.style.background = 'var(--cta)';
+            replayAllBtn.style.color = 'white';
+        });
+        
+        replayAllBtn.addEventListener('mouseleave', () => {
+            replayAllBtn.style.background = 'white';
+            replayAllBtn.style.color = 'var(--cta)';
+        });
+        
+        // Gestionnaire pour rejouer (reload la page)
+        replayAllBtn.addEventListener('click', () => {
+            window.location.href = '/';
+        });
+        
+        document.body.appendChild(overlay);
+        document.body.appendChild(modal);
+        
+        // Gestionnaire pour rééchelonner
+        rescheduleBtn.addEventListener('click', async () => {
+            await this.rescheduleObjective();
+            overlay.remove();
+            modal.remove();
+        });
+        
+        // Désactiver les événements Three.js quand la modale est ouverte
+        if (window.tutorialManager && window.tutorialManager.disableThreeJSEvents) {
+            window.tutorialManager.disableThreeJSEvents();
+        }
+    }
+
+    /**
+     * Rééchelonne l'objectif (remet à zéro les compteurs du tracker uniquement)
+     * Enregistre l'échec dans le store objectives
+     */
+    async rescheduleObjective() {
+        // Enregistrer l'échec dans le store
+        try {
+            if (window.objectivesStore) {
+                await window.objectivesStore.recordObjectiveFailure({
+                    objectiveId: 'budget_challenge_60_days',
+                    type: 'threshold_spiral',
+                    turn: this.trackingData.minNetFlowTurn,
+                    reason: 'Flux net minimum en dessous de -20€',
+                    details: {
+                        minNetFlow: this.trackingData.minNetFlow,
+                        maxNetFlow: this.trackingData.maxNetFlow,
+                        maxNetFlowTurn: this.trackingData.maxNetFlowTurn,
+                        fundsAtTargetDay: this.trackingData.fundsAtTargetDay,
+                        targetDay: this.targetDay,
+                        resetCount: this.resetCount
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error recording objective failure:', error);
+        }
+        
+        // Sauvegarder les données actuelles avant reset
+        const previousData = {
+            minNetFlow: this.trackingData.minNetFlow,
+            maxNetFlow: this.trackingData.maxNetFlow,
+            minNetFlowTurn: this.trackingData.minNetFlowTurn,
+            maxNetFlowTurn: this.trackingData.maxNetFlowTurn
+        };
+        
+        // Reset uniquement les compteurs du tracker
+        this.trackingData = {
+            minNetFlow: Infinity,
+            maxNetFlow: -Infinity,
+            minNetFlowTurn: null,
+            maxNetFlowTurn: null,
+            fundsAtTargetDay: null,
+            currentDay: this.trackingData.currentDay // Garder le tour actuel
+        };
+        
+        // Enregistrer le tour du reset pour tracker uniquement depuis ce tour
+        this.lastResetTurn = this.trackingData.currentDay;
+        
+        // Réinitialiser la date cible (ajouter la période de grâce pour donner le même nombre de jours)
+        // Donc +80 tours (60 jours + 20 tours de grâce) pour compenser la période de grâce au début
+        // Mais seulement si on est déjà passé au-delà du tour 60, sinon on attend toujours le tour 60
+        if (this.trackingData.currentDay >= 60) {
+            this.targetDay = this.trackingData.currentDay + 80; // 60 + 20 = 80 tours
+        } else {
+            this.targetDay = 60;
+        }
+        
+        // Réinitialiser le statut d'échec
+        this.objectiveFailed = false;
+        this.resetCount++;
+        
+        // IMPORTANT : Réactiver l'objectif pour permettre une nouvelle tentative
+        const objective = this.objectives.find(obj => obj.id === 'budget_challenge_60_days');
+        if (objective) {
+            objective.active = true;
+            objective.completed = false;
+        }
+        
+        // Message de confirmation
+        this.showRescheduleSuccess();
+        
+        // Réactiver les événements Three.js
+        if (window.tutorialManager && window.tutorialManager.enableThreeJSEvents) {
+            window.tutorialManager.enableThreeJSEvents();
+        }
+    }
+
+    /**
+     * Affiche un message de succès du rééchelonnement
+     */
+    showRescheduleSuccess() {
+        const notification = document.createElement('div');
+        notification.className = 'objective-reschedule-success';
+        notification.innerHTML = `
+            <div style="padding: 8px 12px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border-radius: 8px; border: 2px solid rgba(255, 255, 255, 0.2);">
+                <strong>✓</strong> Objectif rééchelonné - Nouvelle tentative en cours
+            </div>
+        `;
+        
+        notification.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 10002;
+            animation: slideInRight 0.3s ease-out;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOutRight 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
     }
 
     /**
@@ -161,7 +492,6 @@ class ObjectivesTracker {
         const objective = this.objectives.find(obj => obj.id === objectiveId);
         if (objective) {
             objective.active = true;
-            console.log(`✅ Objective activated: ${objective.title}`);
         }
     }
 
@@ -184,14 +514,20 @@ class ObjectivesTracker {
                 allCompleted = false;
             }
             
-            console.log(`📋 Requirement ${index + 1}: ${requirement.text} - ${result ? '✅' : '❌'}`);
         });
 
         // Vérifier si tous les requirements sont complétés
         if (allCompleted) {
             objective.completed = true;
-            console.log(`🎉 Objective completed: ${objective.title}`);
+            
+            // Enregistrer le succès dans le store
+            await this.recordObjectiveCompletion(objectiveId, this.trackingData.currentDay);
+            
+            // Afficher la notification
             this.showObjectiveCompletion(objective);
+            
+            // Réinitialiser complètement pour qu'il n'y ait plus d'objectif actif
+            this.resetAfterCompletion();
         }
     }
 
@@ -315,6 +651,64 @@ class ObjectivesTracker {
      */
     getTrackingData() {
         return { ...this.trackingData };
+    }
+
+    /**
+     * Enregistre la complétion d'un objectif dans le store
+     * @param {string} objectiveId - ID de l'objectif complété
+     * @param {number} turn - Tour où l'objectif a été complété
+     */
+    async recordObjectiveCompletion(objectiveId, turn) {
+        try {
+            const objective = this.objectives.find(obj => obj.id === objectiveId);
+            
+            if (window.objectivesStore) {
+                await window.objectivesStore.recordObjectiveSuccess({
+                    objectiveId: objectiveId,
+                    turn: turn,
+                    details: {
+                        title: objective?.title || 'Unknown',
+                        description: objective?.description || '',
+                        minNetFlow: this.trackingData.minNetFlow,
+                        maxNetFlow: this.trackingData.maxNetFlow,
+                        fundsAtTargetDay: this.trackingData.fundsAtTargetDay,
+                        resetCount: this.resetCount,
+                        totalAttempts: this.resetCount + 1
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error recording objective completion:', error);
+        }
+    }
+
+    /**
+     * Réinitialise complètement après la complétion d'un objectif
+     * Tout redevient neutre - pas d'objectif actif
+     */
+    resetAfterCompletion() {
+        // Réinitialiser tous les compteurs
+        this.trackingData = {
+            minNetFlow: Infinity,
+            maxNetFlow: -Infinity,
+            minNetFlowTurn: null,
+            maxNetFlowTurn: null,
+            fundsAtTargetDay: null,
+            currentDay: this.trackingData.currentDay // Garder le tour actuel
+        };
+        
+        // Réinitialiser le statut d'échec et les compteurs
+        this.objectiveFailed = false;
+        this.resetCount = 0;
+        this.lastResetTurn = 0;
+        this.targetDay = 60;
+        
+        // Désactiver l'objectif après succès
+        const objective = this.objectives.find(obj => obj.id === 'budget_challenge_60_days');
+        if (objective) {
+            objective.active = false;
+            objective.completed = false;
+        }
     }
 }
 

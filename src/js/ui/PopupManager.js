@@ -24,8 +24,8 @@ class PopupManager {
             shouldPauseGame: true,
             eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
             canvasSelectors: ['canvas'],
-            onOpen: () => console.log('Pause overlay opened'),
-            onClose: () => console.log('Pause overlay closed')
+            onOpen: () => {},
+            onClose: () => {}
         });
 
         this.popupConfigs.set('realtime-budget-panel', {
@@ -33,8 +33,8 @@ class PopupManager {
             shouldPauseGame: false, // Le budget peut rester ouvert pendant le jeu
             eventsToBlock: ['mousedown', 'mouseup', 'mousemove'],
             canvasSelectors: ['canvas'],
-            onOpen: () => console.log('Budget popup opened'),
-            onClose: () => console.log('Budget popup closed')
+            onOpen: () => {},
+            onClose: () => {}
         });
 
         this.popupConfigs.set('budget-states-panel', {
@@ -42,8 +42,8 @@ class PopupManager {
             shouldPauseGame: false,
             eventsToBlock: ['mousedown', 'mouseup', 'mousemove'],
             canvasSelectors: ['canvas'],
-            onOpen: () => console.log('Budget states popup opened'),
-            onClose: () => console.log('Budget states popup closed')
+            onOpen: () => {},
+            onClose: () => {}
         });
 
         this.popupConfigs.set('info-building-overlay', {
@@ -51,8 +51,8 @@ class PopupManager {
             shouldPauseGame: true,
             eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
             canvasSelectors: ['canvas'],
-            onOpen: () => console.log('Building info overlay opened'),
-            onClose: () => console.log('Building info overlay closed')
+            onOpen: () => {},
+            onClose: () => {}
         });
 
         this.popupConfigs.set('over-overlay', {
@@ -60,8 +60,8 @@ class PopupManager {
             shouldPauseGame: true,
             eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
             canvasSelectors: ['canvas'],
-            onOpen: () => console.log('Game over overlay opened'),
-            onClose: () => console.log('Game over overlay closed')
+            onOpen: () => {},
+            onClose: () => {}
         });
 
         // Popups de sélection d'objets (ne pas bloquer les événements)
@@ -70,8 +70,8 @@ class PopupManager {
             shouldPauseGame: true,
             eventsToBlock: [],
             canvasSelectors: [],
-            onOpen: () => console.log('Building selection panel opened'),
-            onClose: () => console.log('Building selection panel closed')
+            onOpen: () => {},
+            onClose: () => {}
         });
 
         this.popupConfigs.set('loans-panel', {
@@ -79,8 +79,8 @@ class PopupManager {
             shouldPauseGame: true,
             eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
             canvasSelectors: ['canvas'],
-            onOpen: () => console.log('Loans panel opened'),
-            onClose: () => console.log('Loans panel closed')
+            onOpen: () => {},
+            onClose: () => {}
         });
 
         this.popupConfigs.set('budget-panel', {
@@ -88,8 +88,8 @@ class PopupManager {
             shouldPauseGame: true,
             eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
             canvasSelectors: ['canvas'],
-            onOpen: () => console.log('Budget panel opened'),
-            onClose: () => console.log('Budget panel closed')
+            onOpen: () => {},
+            onClose: () => {}
         });
 
         this.popupConfigs.set('city-map-panel', {
@@ -97,8 +97,8 @@ class PopupManager {
             shouldPauseGame: true,
             eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
             canvasSelectors: ['canvas'],
-            onOpen: () => console.log('City map panel opened'),
-            onClose: () => console.log('City map panel closed')
+            onOpen: () => {},
+            onClose: () => {}
         });
     }
 
@@ -129,7 +129,6 @@ class PopupManager {
             const element = document.getElementById(popupId);
             if (element) {
                 observer.observe(element, { attributes: true, attributeFilter: ['class'] });
-                console.log(`PopupManager: Observing ${popupId}`, element);
             } else {
                 console.warn(`PopupManager: Element ${popupId} not found`);
             }
@@ -170,13 +169,11 @@ class PopupManager {
         const isActuallyActive = element && element.classList.contains('active');
         
         if (this.activePopups.has(popupId) && isActuallyActive) {
-            console.log(`PopupManager: ${popupId} already active, skipping`);
             return;
         }
         
         // Si le popup est actif dans le DOM mais pas dans notre Set, on le synchronise
         if (isActuallyActive && !this.activePopups.has(popupId)) {
-            console.log(`PopupManager: ${popupId} is active in DOM but not in our Set, synchronizing`);
             this.activePopups.add(popupId);
             
             // Appliquer la configuration du popup
@@ -209,7 +206,6 @@ class PopupManager {
             return;
         }
 
-        console.log(`PopupManager: Opening ${popupId} with config:`, config);
         this.activePopups.add(popupId);
 
         // Désactiver les pointer-events sur le canvas
@@ -219,7 +215,6 @@ class PopupManager {
                 elements.forEach(element => {
                     if (!element.classList.contains('pointer-events-disabled')) {
                         element.classList.add('pointer-events-disabled');
-                        console.log(`Added pointer-events-disabled to ${selector}`);
                     }
                 });
             });
@@ -228,7 +223,6 @@ class PopupManager {
         // Mettre le jeu en pause si nécessaire
         if (config.shouldPauseGame && window.game && typeof window.game.pause === 'function') {
             window.game.pause();
-            console.log(`Game paused for ${popupId}`);
         }
 
         // Callback d'ouverture
@@ -236,7 +230,6 @@ class PopupManager {
             config.onOpen();
         }
 
-        console.log(`Popup opened: ${popupId}`);
     }
 
     /**
@@ -257,7 +250,6 @@ class PopupManager {
                 elements.forEach(element => {
                     if (element.classList.contains('pointer-events-disabled')) {
                         element.classList.remove('pointer-events-disabled');
-                        console.log(`Removed pointer-events-disabled from ${selector}`);
                     }
                 });
             });
@@ -273,7 +265,6 @@ class PopupManager {
 
             if (!hasOtherPausingPopups) {
                 window.game.play();
-                console.log(`Game resumed after ${popupId}`);
             }
         }
 
@@ -282,14 +273,12 @@ class PopupManager {
             config.onClose();
         }
 
-        console.log(`Popup closed: ${popupId}`);
     }
 
     /**
      * Force l'ouverture d'une popup (pour les cas où l'observer ne détecte pas)
      */
     forceOpenPopup(popupId) {
-        console.log(`PopupManager: Force opening ${popupId}`);
         this.openPopup(popupId);
     }
 
@@ -297,7 +286,6 @@ class PopupManager {
      * Force la fermeture d'une popup (pour les cas où l'observer ne détecte pas)
      */
     forceClosePopup(popupId) {
-        console.log(`PopupManager: Force closing ${popupId}`);
         this.closePopup(popupId);
     }
 
@@ -351,7 +339,6 @@ class PopupManager {
                 element.classList.remove('pointer-events-disabled');
             }
         });
-        console.log('PopupManager cleanup completed');
     }
 
     /**
@@ -372,12 +359,7 @@ const popupManager = new PopupManager();
 // Exposer globalement
 window.popupManager = popupManager;
 
-// Vérifier que le PopupManager est bien initialisé
-console.log('PopupManager initialized:', {
-    instance: popupManager,
-    configs: popupManager.popupConfigs.size,
-    activePopups: popupManager.activePopups.size
-});
+// PopupManager initialized
 
 // Gestion d'erreur globale
 window.addEventListener('error', (e) => {
@@ -392,4 +374,4 @@ window.addEventListener('beforeunload', () => {
     popupManager.cleanup();
 });
 
-console.log('PopupManager loaded and ready');
+// PopupManager loaded

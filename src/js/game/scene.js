@@ -213,15 +213,12 @@ export function createScene(housesStore, gameStore, assetManager) {
                         const uniqueBuildingId = makeDbItemId(currentBuildingId, x, y);
                         if(houses.includes(currentBuildingId)) {
                             await housesStore.deleteOneHouse(uniqueBuildingId)
-                            console.log(`🏠 House ${currentBuildingId} deleted at (${x}, ${y})`);
                         } else if(currentBuildingId === 'roads') {
                             // Roads are now stored in database like other buildings
                             await housesStore.deleteOneHouse(uniqueBuildingId)
-                            console.log(`🛣️ Road deleted at (${x}, ${y})`);
                         } else {
                             // Other building types (farms, markets, etc.)
                             await housesStore.deleteOneHouse(uniqueBuildingId)
-                            console.log(`🏗️ Building ${currentBuildingId} deleted at (${x}, ${y})`);
                         }
                         scene.remove(buildings[x][y]);
                         buildings[x][y] = undefined;
@@ -357,7 +354,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                         
                         if (hasRoadAccess) {
                             // Market has road access - process normally
-                            console.log(`✅ Market ${currentUniqueID}: Has road access, can distribute food`);
                             farmsNearBy =  currentMarket?.neighbors.filter(neighbor => neighbor.name.includes("Farms"))
                             marketHouses = currentMarket?.neighbors.filter(neighbor => neighbor.name.includes("House"))
 
@@ -427,7 +423,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                             // Market stocks after distribution
                         } else {
                             // Market has no road access - cannot distribute food
-                            console.log(`🚨 Market ${currentUniqueID}: No road access, cannot distribute food`);
                         }
                     }
 
@@ -479,19 +474,11 @@ export function createScene(housesStore, gameStore, assetManager) {
                         // Has food AND road access - population can grow (max 2)
                         const housePop = { name: currentUniqueID, increment: 1, field: 'pop' };
                         await housesStore.incrementHouseField(housePop, {operator: '<=', limit: 2});
-                        console.log(`✅ House ${currentUniqueID}: Population can grow (has food and road access)`);
                     } else {
                         // No food OR no road access - reset population to 0
                         const currentPop = await housesStore.getHouseItem(currentUniqueID, 'pop');
                         if (currentPop > 0) {
                             await housesStore.updateHouseFields(currentUniqueID, { pop: 0 });
-                            if (!hasFood && !hasRoadAccess) {
-                                console.log(`🚨 House ${currentUniqueID}: Population reset to 0 (no food and no road access)`);
-                            } else if (!hasFood) {
-                                console.log(`🚨 House ${currentUniqueID}: Population reset to 0 (no food)`);
-                            } else if (!hasRoadAccess) {
-                                console.log(`🚨 House ${currentUniqueID}: Population reset to 0 (no road access)`);
-                            }
                         }
                     }
 
@@ -667,7 +654,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                         };
                         
                         await window.budgetManager.saveBudgetState(time, additionalData);
-                        console.log(`📊 Budget state saved for turn ${time} (every 3 turns)`);
                         
                         // Clean up old states by age (60+ days)
                         const cleanupResult = await window.budgetManager.cleanupOldBudgetStatesByAge();
@@ -796,7 +782,6 @@ export function createScene(housesStore, gameStore, assetManager) {
     function onMouseDown(event){
         // Block interaction if a popup is open
         if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
-            console.log('Mouse interaction blocked: popup is open');
             return;
         }
         
@@ -930,7 +915,6 @@ function onMouseMove(event) {
         
         if (hasSeenCleanupNotification === 'true') {
             // User has already seen this notification, don't show it again
-            console.log('🧹 Nettoyage automatique effectué (notification déjà vue)');
             return;
         }
         
