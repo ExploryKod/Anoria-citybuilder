@@ -11,6 +11,7 @@ db.delete({ disableAutoOpen: false })
             houses: 'name, [name+price]',
             game: 'name',
             budget: 'name',
+            objectives: 'name', // Store pour les échecs et succès d'objectifs
         });
         // Database cleared and recreated successfully
     })

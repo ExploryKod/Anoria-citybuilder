@@ -24,6 +24,10 @@ class ObjectivesStore {
         };
 
         try {
+            if (!this.db.objectives) {
+                console.error('Objectives store not available');
+                return failure;
+            }
             await this.db.objectives.add(failure);
             return failure;
         } catch (error) {
@@ -74,6 +78,10 @@ class ObjectivesStore {
         };
 
         try {
+            if (!this.db.objectives) {
+                console.error('Objectives store not available');
+                return success;
+            }
             await this.db.objectives.add(success);
             return success;
         } catch (error) {

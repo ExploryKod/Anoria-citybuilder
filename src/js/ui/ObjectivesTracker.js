@@ -49,10 +49,11 @@ class ObjectivesTracker {
         this.gracePeriod = 20; // Période de grâce de 20 tours après un reset (pour seuil en spirale)
         this.targetDay = 60; // Date cible pour les fonds (threshold_date - rééchelonnable)
         
-        // Au démarrage d'un nouveau jeu, réinitialiser complètement l'objectif
+        // Au démarrage d'un nouveau jeu, l'objectif est inactif par défaut
+        // Il sera activé au tour 0 par checkObjectives(0)
         const objective = this.objectives.find(obj => obj.id === 'budget_challenge_60_days');
         if (objective) {
-            objective.active = false;
+            objective.active = false; // Activé au tour 0
             objective.completed = false;
         }
         
@@ -83,6 +84,11 @@ class ObjectivesTracker {
                 // Toujours réactiver au tour 0 pour un nouveau jeu
                 objective.active = true;
                 objective.completed = false;
+                console.log('🎯 Objective activated at turn 0:', {
+                    id: objective.id,
+                    active: objective.active,
+                    completed: objective.completed
+                });
             }
 
             // Calculer les données de tracking depuis les états de budget sauvegardés tous les 3 tours (3 intervalles)
@@ -137,8 +143,9 @@ class ObjectivesTracker {
                 }
             }
 
-            // Vérifier la complétion à partir du tour 60 minimum
-            if (currentDay >= 60 && !this.objectiveFailed && currentDay >= this.targetDay && this.trackingData.fundsAtTargetDay !== null && this.trackingData.fundsAtTargetDay >= 600) {
+            // Vérifier la complétion uniquement au tour cible de la tentative actuelle
+            // Ne pas vérifier aux tours précédents (ex: tour 60 lors de la 2e tentative)
+            if (currentDay === this.targetDay && !this.objectiveFailed && this.trackingData.fundsAtTargetDay !== null && this.trackingData.fundsAtTargetDay >= 600) {
                 await this.verifyObjective('budget_challenge_60_days');
             }
 
@@ -407,12 +414,11 @@ class ObjectivesTracker {
         }
         
         // Sauvegarder les données actuelles avant reset
-        const previousData = {
-            minNetFlow: this.trackingData.minNetFlow,
-            maxNetFlow: this.trackingData.maxNetFlow,
-            minNetFlowTurn: this.trackingData.minNetFlowTurn,
-            maxNetFlowTurn: this.trackingData.maxNetFlowTurn
-        };
+        const currentDay = this.trackingData.currentDay;
+        const isFirstReset = this.resetCount === 0; // Si resetCount === 0, c'est le 1er reset (= 2e tentative)
+        
+        // Enregistrer le tour du reset pour tracker uniquement depuis ce tour (AVANT de reset)
+        this.lastResetTurn = currentDay;
         
         // Reset uniquement les compteurs du tracker
         this.trackingData = {
@@ -421,24 +427,23 @@ class ObjectivesTracker {
             minNetFlowTurn: null,
             maxNetFlowTurn: null,
             fundsAtTargetDay: null,
-            currentDay: this.trackingData.currentDay // Garder le tour actuel
+            currentDay: currentDay // Garder le tour actuel
         };
-        
-        // Enregistrer le tour du reset pour tracker uniquement depuis ce tour
-        this.lastResetTurn = this.trackingData.currentDay;
-        
-        // Réinitialiser la date cible (ajouter la période de grâce pour donner le même nombre de jours)
-        // Donc +80 tours (60 jours + 20 tours de grâce) pour compenser la période de grâce au début
-        // Mais seulement si on est déjà passé au-delà du tour 60, sinon on attend toujours le tour 60
-        if (this.trackingData.currentDay >= 60) {
-            this.targetDay = this.trackingData.currentDay + 80; // 60 + 20 = 80 tours
-        } else {
-            this.targetDay = 60;
-        }
         
         // Réinitialiser le statut d'échec
         this.objectiveFailed = false;
+        
+        // Incrémenter le resetCount AVANT de calculer la nouvelle cible
         this.resetCount++;
+        
+        // Réinitialiser la date cible selon la tentative
+        // Après le 1er échec (resetCount === 1, donc 2e tentative) : TT2 + 20 + 60
+        // Première tentative (resetCount === 0) : TT1 (0) + 0 + 60 = 60 (déjà initialisé)
+        if (this.resetCount >= 1) {
+            // 2e tentative et suivantes : TT2 + 20 (grâce) + 60 = TT2 + 80
+            this.targetDay = currentDay + 80; // currentDay est le TT2 (tour de départ de la tentative 2)
+        }
+        // Sinon, reste à 60 (première tentative)
         
         // IMPORTANT : Réactiver l'objectif pour permettre une nouvelle tentative
         const objective = this.objectives.find(obj => obj.id === 'budget_challenge_60_days');
