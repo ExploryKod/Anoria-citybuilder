@@ -23,35 +23,45 @@ class PopupManager {
             shouldBlockEvents: true,
             shouldPauseGame: true,
             eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
-            canvasSelectors: ['canvas']
+            canvasSelectors: ['canvas'],
+            onOpen: () => {},
+            onClose: () => {}
         });
 
         this.popupConfigs.set('realtime-budget-panel', {
             shouldBlockEvents: true,
             shouldPauseGame: false, // Le budget peut rester ouvert pendant le jeu
             eventsToBlock: ['mousedown', 'mouseup', 'mousemove'],
-            canvasSelectors: ['canvas']
+            canvasSelectors: ['canvas'],
+            onOpen: () => {},
+            onClose: () => {}
         });
 
         this.popupConfigs.set('budget-states-panel', {
             shouldBlockEvents: true,
             shouldPauseGame: false,
             eventsToBlock: ['mousedown', 'mouseup', 'mousemove'],
-            canvasSelectors: ['canvas']
+            canvasSelectors: ['canvas'],
+            onOpen: () => {},
+            onClose: () => {}
         });
 
         this.popupConfigs.set('info-building-overlay', {
             shouldBlockEvents: true,
             shouldPauseGame: true,
             eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
-            canvasSelectors: ['canvas']
+            canvasSelectors: ['canvas'],
+            onOpen: () => {},
+            onClose: () => {}
         });
 
         this.popupConfigs.set('over-overlay', {
             shouldBlockEvents: true,
             shouldPauseGame: true,
             eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
-            canvasSelectors: ['canvas']
+            canvasSelectors: ['canvas'],
+            onOpen: () => {},
+            onClose: () => {}
         });
 
         // Popups de sélection d'objets (ne pas bloquer les événements)
@@ -59,28 +69,36 @@ class PopupManager {
             shouldBlockEvents: false, // Cette popup permet la sélection d'objets
             shouldPauseGame: true,
             eventsToBlock: [],
-            canvasSelectors: []
+            canvasSelectors: [],
+            onOpen: () => {},
+            onClose: () => {}
         });
 
         this.popupConfigs.set('loans-panel', {
             shouldBlockEvents: true,
             shouldPauseGame: true,
             eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
-            canvasSelectors: ['canvas']
+            canvasSelectors: ['canvas'],
+            onOpen: () => {},
+            onClose: () => {}
         });
 
         this.popupConfigs.set('budget-panel', {
             shouldBlockEvents: true,
             shouldPauseGame: true,
             eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
-            canvasSelectors: ['canvas']
+            canvasSelectors: ['canvas'],
+            onOpen: () => {},
+            onClose: () => {}
         });
 
         this.popupConfigs.set('city-map-panel', {
             shouldBlockEvents: true,
             shouldPauseGame: true,
             eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
-            canvasSelectors: ['canvas']
+            canvasSelectors: ['canvas'],
+            onOpen: () => {},
+            onClose: () => {}
         });
     }
 
@@ -111,6 +129,8 @@ class PopupManager {
             const element = document.getElementById(popupId);
             if (element) {
                 observer.observe(element, { attributes: true, attributeFilter: ['class'] });
+            } else {
+                console.warn(`PopupManager: Element ${popupId} not found`);
             }
         });
     }
@@ -182,6 +202,7 @@ class PopupManager {
 
         const config = this.popupConfigs.get(popupId);
         if (!config) {
+            console.warn(`PopupManager: No config found for ${popupId}`);
             return;
         }
 
@@ -191,23 +212,25 @@ class PopupManager {
         if (config.canvasSelectors && config.canvasSelectors.length > 0) {
             config.canvasSelectors.forEach(selector => {
                 const elements = document.querySelectorAll(selector);
-                    elements.forEach(element => {
-                        if (!element.classList.contains('pointer-events-disabled')) {
-                            element.classList.add('pointer-events-disabled');
-                        }
-                    });
+                elements.forEach(element => {
+                    if (!element.classList.contains('pointer-events-disabled')) {
+                        element.classList.add('pointer-events-disabled');
+                    }
+                });
             });
         }
 
         // Mettre le jeu en pause si nécessaire
         if (config.shouldPauseGame && window.game && typeof window.game.pause === 'function') {
             window.game.pause();
+            console.log(`Game paused for ${popupId}`);
         }
 
         // Callback d'ouverture
         if (config.onOpen) {
             config.onOpen();
         }
+
     }
 
     /**
@@ -250,6 +273,7 @@ class PopupManager {
         if (config.onClose) {
             config.onClose();
         }
+
     }
 
     /**
@@ -336,6 +360,8 @@ const popupManager = new PopupManager();
 // Exposer globalement
 window.popupManager = popupManager;
 
+// PopupManager initialized
+
 // Gestion d'erreur globale
 window.addEventListener('error', (e) => {
     if (popupManager.getActivePopups().length > 0) {
@@ -348,3 +374,5 @@ window.addEventListener('error', (e) => {
 window.addEventListener('beforeunload', () => {
     popupManager.cleanup();
 });
+
+// PopupManager loaded

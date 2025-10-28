@@ -11,6 +11,7 @@
     
     <!-- Modal Styles -->
     <link rel="stylesheet" href="./src/styles/modals/global.css">
+    <link rel="stylesheet" href="./src/styles/modals/loader-modal.css">
     <link rel="stylesheet" href="./src/styles/modals/realtime-budget.css">
     <link rel="stylesheet" href="./src/styles/modals/budget-states.css">
     <link rel="stylesheet" href="./src/styles/modals/budget-panel.css">
@@ -20,6 +21,8 @@
     <link rel="stylesheet" href="./src/styles/modals/balance-sheet.css">
     <link rel="stylesheet" href="./src/styles/modals/cleanup-notification.css">
     <link rel="stylesheet" href="./src/styles/modals/city-map.css">
+    <link rel="stylesheet" href="./src/styles/modals/objectives.css">
+    <link rel="stylesheet" href="./src/styles/modals/reset-confirm.css">
     <!-- ios support -->
     <link rel="apple-touch-icon" href="public/icons/icon-512x512.png" />
     <meta name="apple-mobile-web-app-status-bar" content="#db4938" />
@@ -34,6 +37,18 @@
 </div>
 <div id="root-window" class="root-window">
     <div id="game-window" class="game-window">
+        <!-- Chronos Loader Modal -->
+        <div id="chronos-loader-modal" class="chronos-loader-modal opaque">
+            <div class="chronos-loader-content">
+                <div class="chronos-loader-icon">⏳</div>
+                <div class="chronos-loader-title">Chronos crée le temps</div>
+                <div class="chronos-loader-message">
+                    Votre monde est bientôt prêt...
+                </div>
+                <div class="chronos-loader-spinner"></div>
+            </div>
+        </div>
+        
         <div
         id="pwa-toast"
         role="alert"
@@ -44,10 +59,10 @@
         </div>
         <div class="buttons">
           <button id="pwa-refresh" type="button">
-            Reload
+            Recharger
           </button>
           <button id="pwa-close" type="button">
-            Close
+            Fermer
           </button>
         </div>
       </div>
@@ -93,12 +108,27 @@
 
         <section id="toolbar" class="toolbar">
 
-            <button type="button" id="pause-btn" data-action="pause" class="toolbar-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause">
-                    <rect x="14" y="4" width="4" height="16" rx="1"/>
-                    <rect x="6" y="4" width="4" height="16" rx="1"/>
-                </svg>
-            </button>
+        <div class="toolbar__container">
+            <div class="toolbar__sub-container">
+                    <div class="toolbar__label">Pause / Reset</div>
+                    <div class="toolbar__buttons">
+                        <button type="button" id="pause-btn" data-action="pause" class="toolbar-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause">
+                                <rect x="14" y="4" width="4" height="16" rx="1"/>
+                                <rect x="6" y="4" width="4" height="16" rx="1"/>
+                            </svg>
+                        </button>
+                        <button type="button" id="replay-btn" data-action="replay" class="toolbar-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" 
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+                            class="lucide lucide-rotate-ccw-icon lucide-rotate-ccw">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                            <path d="M3 3v5h5"/>
+                            </svg>
+                        </button>
+                    </div>
+            </div>
+        </div>
 
         <div class="toolbar__container">
             <div class="toolbar__sub-container">
@@ -213,32 +243,53 @@
         </div>
 
    
+        <div class="toolbar__container">
+            <div class="toolbar__sub-container">
+                <div class="manager-label">Gestion</div>
+                <div class="toolbar__buttons">
+                    <button type="button" id="budget-btn" data-toolid="budget" class="toolbar-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-3">
+                            <path d="M3 3v18h18"/>
+                            <path d="M18 17V9"/>
+                            <path d="M13 17V5"/>
+                            <path d="M8 17v-3"/>
+                        </svg>
+                    </button>
 
-        <button type="button" id="budget-btn" data-toolid="budget" class="toolbar-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-3">
-                <path d="M3 3v18h18"/>
-                <path d="M18 17V9"/>
-                <path d="M13 17V5"/>
-                <path d="M8 17v-3"/>
-            </svg>
-        </button>
+                    <button type="button" id="loans-btn" data-toolid="loans" class="toolbar-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-hand-coins">
+                            <path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/>
+                            <path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/>
+                            <path d="m2 16 6 6"/>
+                            <circle cx="16" cy="9" r="2.9"/>
+                            <circle cx="6" cy="5" r="3"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
 
-        <button type="button" id="loans-btn" data-toolid="loans" class="toolbar-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-hand-coins">
-                <path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/>
-                <path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/>
-                <path d="m2 16 6 6"/>
-                <circle cx="16" cy="9" r="2.9"/>
-                <circle cx="6" cy="5" r="3"/>
-            </svg>
-        </button>
 
-        <button type="button" id="tutorial-btn" data-toolid="tutorial" class="toolbar-btn" title="Démarrer le tutoriel">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open">
-                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-            </svg>
-        </button>
+        <div class="toolbar__container">
+            <div class="toolbar__sub-container">
+                <div class="manager-label">Jeu</div>
+                <div class="toolbar__buttons">
+                    <button type="button" id="tutorial-btn" data-toolid="tutorial" class="toolbar-btn" title="Démarrer le tutoriel">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                        </svg>
+                    </button>
+
+                    <button type="button" id="objectives-btn" data-toolid="objectives" class="toolbar-btn" title="Démarrer les objectifs">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-target">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="6"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
 
       </section>
 
@@ -1187,10 +1238,6 @@
                         <span class="legend-label">Église</span>
                     </div>
                     <div class="legend-item">
-                        <span class="legend-code legend-code-small cp">CP</span>
-                        <span class="legend-label">Chapelle</span>
-                    </div>
-                    <div class="legend-item">
                         <span class="legend-code legend-code-small we">WE</span>
                         <span class="legend-label">Puit</span>
                     </div>
@@ -1242,12 +1289,74 @@
     </div>
 </div>
 
+<!-- Reset Confirmation Modal -->
+<div id="reset-confirm-panel" class="reset-confirm-panel">
+    <div class="reset-confirm-panel-wrapper">
+        <div class="reset-confirm-panel-header">
+            <h3>⚠️ Reset Complet</h3>
+        </div>
+        <div class="reset-confirm-panel-content">
+            <div class="reset-confirm-info">
+                <p class="reset-confirm-description">
+                    Cette action va <strong>effacer toutes vos données de jeu</strong> et recharger l'application.
+                </p>
+                <div class="reset-confirm-list">
+                    <div class="reset-confirm-item">
+                        <span class="reset-confirm-icon">🗑️</span>
+                        <span class="reset-confirm-text">Toutes les données seront supprimées (maisons, population, finances)</span>
+                    </div>
+                    <div class="reset-confirm-item">
+                        <span class="reset-confirm-icon">🔄</span>
+                        <span class="reset-confirm-text">Le cache et les service workers seront vidés</span>
+                    </div>
+                    <div class="reset-confirm-item">
+                        <span class="reset-confirm-icon">🆕</span>
+                        <span class="reset-confirm-text">Une nouvelle partie va démarrer</span>
+                    </div>
+                </div>
+                <p class="reset-confirm-warning">
+                    ⚠️ Cette action est <strong>irréversible</strong> !
+                </p>
+            </div>
+            <div class="reset-confirm-buttons">
+                <button class="reset-confirm-cancel-btn">Annuler</button>
+                <button class="reset-confirm-reset-btn">Oui, Reset Complet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tutorial Panel -->
+<div id="objectives-panel" class="objectives-panel">
+    <div class="objectives-panel-wrapper">
+        <div class="objectives-panel-header">
+            <h3>🎯 Objectifs</h3>
+        </div>
+        <div class="objectives-panel-content">
+           
+            <div class="objectives-content"></div>
+            <div class="objectives-buttons">
+                <div class="objectives-buttons-wrapper">
+                    <button class="objectives-previous-btn">Précédent</button>
+                    <button class="objectives-next-btn">Suivant</button>
+                    <button class="objectives-skip-btn">Passer</button>
+                    <button class="objectives-close-btn">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="module" src="/src/main.js"></script>
 <script type="module" src="/src/js/game/game.js"></script>
 <script type="module" src="/src/js/utils/EventBlocker.js"></script>
 <script type="module" src="/src/js/ui/PopupManager.js"></script>
+<script type="module" src="/src/js/stores/ObjectivesStore.js"></script>
+<script type="module" src="/src/js/ui/ObjectivesTracker.js"></script>
 <script type="module" src="/src/js/ui/buttons.js"></script>
 <script type="module" src="/src/js/ui/tutorial.js"></script>
+<script type="module" src="/src/js/ui/objectives.js"></script>
+<script type="module" src="/src/js/ui/objectives-history.js"></script>
 
 </body>
 </html>

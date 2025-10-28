@@ -163,7 +163,7 @@ class BudgetManager {
         budget.netFlow = budget.income - budget.expenses;
         
         await this.db.budget.put(budget);
-        
+
         return budget;
     }
 
@@ -186,7 +186,7 @@ class BudgetManager {
         
         // Recalculate loan totals
         await this.calculateLoanTotals(budget);
-        
+
         return budget;
     }
 
@@ -210,7 +210,7 @@ class BudgetManager {
         budget.totalLoanInterestExpenses += amount;
         
         await this.db.budget.put(budget);
-        
+
         return budget;
     }
 
@@ -247,7 +247,7 @@ class BudgetManager {
         await this.calculateLoanTotals(budget);
         
         await this.db.budget.put(budget);
-        
+
         return budget;
     }
 
@@ -308,7 +308,7 @@ class BudgetManager {
             budget.netFlow = currentIncome - budget.expenses;
             
             await this.db.budget.put(budget);
-            
+
             return {
                 success: true,
                 budget: budget,
@@ -398,7 +398,6 @@ class BudgetManager {
         budget.netFlow = budget.income - budget.expenses;
         
         await this.db.budget.put(budget);
-        
         return budget;
     }
 
@@ -481,7 +480,6 @@ class BudgetManager {
             budget.netFlow = budget.income - budget.expenses;
             
             await this.db.budget.put(budget);
-            
             return budget;
         }
         
@@ -758,7 +756,7 @@ class BudgetManager {
         
         // Sort by turn ascending for display
         lastNBatches.sort((a, b) => a.turn - b.turn);
-        
+
         return lastNBatches;
     }
 

@@ -16,6 +16,8 @@ import {
     displaySpeed
 } from '../ui/nodes.js';
 import budgetManager from '../stores/BudgetManager.js';
+import loaderManager from '../utils/LoaderManager.js';
+import objectivesTracker from '../ui/ObjectivesTracker.js';
 
 // Notification system for building placement feedback
 function showInsufficientFundsNotification(buildingType, price) {
@@ -185,7 +187,10 @@ export function createGame(housesStore, gameStore, assetManager) {
     /* City initialization */
     const city = createCity(16);
 
-    scene.initialize(city);
+    scene.initialize(city).then(() => {
+        // Hide Chronos loader modal once scene is initialized with fade-out
+        loaderManager.hide(500);
+    });
 
     // handler function to extract coordinate of an object I click on (data from asset js and using scene js methods)
     scene.onObjectSelected = async (selectedObject) => {
@@ -424,10 +429,15 @@ export function createGame(housesStore, gameStore, assetManager) {
 
     const game = {
 
-        update(time) {
+        async update(time) {
             displayTime.textContent = time + ' jours'
             city.update();
-            scene.update(city, time);
+            await scene.update(city, time);
+            
+            // Vérifier les objectifs à chaque tour
+            if (window.objectivesTracker) {
+                await objectivesTracker.checkObjectives(time);
+            }
         },
 
         pause() {
@@ -438,12 +448,16 @@ export function createGame(housesStore, gameStore, assetManager) {
             displayTime.textContent = 'pause'
         },
 
-        play() {
+        async play() {
             // Game playing
             isPause = false;
             infoPanelClockIcon.style.display = 'block'
             infoPanelNoClockIcon.style.display = 'none'
             displayTime.textContent = 'play'
+            // Appeler update(0) pour activer l'objectif au tour 0 au démarrage
+            if (window.objectivesTracker) {
+                await objectivesTracker.checkObjectives(0);
+            }
         },
 
         replay() {

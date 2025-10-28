@@ -48,11 +48,11 @@ export function initPWA(app) {
         refreshSW = registerSW({
             immediate: true,
             onOfflineReady() {
-                pwaToastMessage.innerHTML = 'App ready to work offline'
+                pwaToastMessage.innerHTML = '📱 Pour télécharger l\'app : cliquez sur l\'icône d\'ordinateur dans la barre d\'adresse du navigateur (en haut à droite). Elle fonctionnera ensuite hors ligne !'
                 showPwaToast(true)
             },
             onNeedRefresh() {
-                pwaToastMessage.innerHTML = 'New content available, click on reload button to update'
+                pwaToastMessage.innerHTML = '🆕 Une nouvelle version est disponible ! Cliquez sur "Recharger" pour obtenir les dernières améliorations.'
                 showPwaToast(false)
             },
             onRegisteredSW(swUrl, r) {

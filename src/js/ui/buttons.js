@@ -20,6 +20,7 @@ import {
     playButton,
     publicButton,
     replayButton,
+    resetButton,
     roadButton,
     selectButton,
     slowerButton,
@@ -868,6 +869,99 @@ window.onload = async () => {
         window.game.replay()
     })
 
+    resetButton.addEventListener('click', () => {
+        // Show confirmation modal
+        showResetConfirmModal();
+    })
+
+    // Function to show reset confirmation modal
+    function showResetConfirmModal() {
+        const modal = document.getElementById('reset-confirm-panel');
+        if (!modal) {
+            console.error('Reset confirm panel not found');
+            return;
+        }
+        
+        // Prevent duplicate listeners
+        if (modal.classList.contains('listeners-attached')) {
+            modal.classList.add('visible');
+            return;
+        }
+        
+        modal.classList.add('visible');
+        modal.classList.add('listeners-attached');
+        
+        // Get buttons
+        const cancelBtn = modal.querySelector('.reset-confirm-cancel-btn');
+        const resetBtn = modal.querySelector('.reset-confirm-reset-btn');
+        
+        // Cancel button
+        cancelBtn.addEventListener('click', () => {
+            modal.classList.remove('visible');
+        });
+        
+        // Reset button
+        resetBtn.addEventListener('click', async () => {
+            modal.classList.remove('visible');
+            await performReset();
+        });
+        
+        // Close on Escape
+        const handleEscape = (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('visible')) {
+                modal.classList.remove('visible');
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+    }
+
+    // Function to perform the actual reset
+    async function performReset() {
+        // Hard reload - unregister service worker and clear caches
+        try {
+            // Unregister service worker
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (let registration of registrations) {
+                    await registration.unregister();
+                    console.log('Service worker unregistered');
+                }
+            }
+            
+            // Clear all caches
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                for (let cacheName of cacheNames) {
+                    await caches.delete(cacheName);
+                    console.log('Cache deleted:', cacheName);
+                }
+            }
+            
+            // Clear localStorage
+            localStorage.clear();
+            console.log('LocalStorage cleared');
+            
+            // Clear IndexedDB - for all databases
+            if ('indexedDB' in window) {
+                indexedDB.databases().then(databases => {
+                    databases.forEach(db => {
+                        if (db.name) {
+                            indexedDB.deleteDatabase(db.name);
+                            console.log('IndexedDB deleted:', db.name);
+                        }
+                    });
+                });
+            }
+            
+            // Reload the page
+            window.location.reload(true);
+        } catch (error) {
+            console.error('Error during reset:', error);
+            // Fallback: just reload
+            window.location.reload(true);
+        }
+    }
+
     fasterButton.addEventListener('click', () => {
         let speed = parseInt(localStorage.getItem('speed'), 10) || 3000;
         const previousSpeed = speed;
@@ -1492,7 +1586,6 @@ function getBuildingCode(type) {
     if (type.includes('Windmill')) return 'WM';
     if (type.includes('Barn')) return 'BA';
     if (type.includes('Church')) return 'CH';
-    if (type.includes('Chapel')) return 'CP';
     if (type.includes('Well')) return 'WE';
     if (type.includes('Fountain')) return 'FO';
     if (type.includes('Tombstone') || type.includes('Tomb')) return 'TO';
