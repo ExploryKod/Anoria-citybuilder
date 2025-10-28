@@ -480,23 +480,4 @@
     font-size: 0.85rem;
 }
 
-/* Make budget box clickable with button-like appearance */
-.realtime-budget-box {
-    cursor: pointer;
-    transition: all 0.3s ease-in-out;
-    border: 3px solid #fff !important;
-    background: var(--cta);
-    border-radius: 10px;
-    position: relative;
-    overflow: hidden;
-}
-
-.realtime-budget-box:hover {
-    transform: translateY(-2px);
-    background: #fff;
-}
-
-.realtime-budget-box.active {
-    transform: translateY(0px);
-    background: #fff;
-}
+/* Real-time budget box styles now unified in budget-states.css */

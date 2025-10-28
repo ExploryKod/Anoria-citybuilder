@@ -50,47 +50,39 @@ class BudgetManager {
 
     /**
      * Calculate loan totals from budget loans array
+     * Only recalculates current loan debt, NOT the already-paid interest/repayment totals
      * @param {Object} budget - Budget object
      */
     async calculateLoanTotals(budget) {
         if (!budget.loans || !Array.isArray(budget.loans)) {
             budget.loans = [];
             budget.loanDebt = 0;
-            budget.totalLoanInterest = 0;
-            budget.totalLoanRepayments = 0;
-            budget.totalLoanInterestExpenses = 0;
+            // Don't reset totalLoanInterest, totalLoanRepayments, totalLoanInterestExpenses
+            // These are cumulative values that should persist
+            if (budget.totalLoanInterest === undefined) budget.totalLoanInterest = 0;
+            if (budget.totalLoanRepayments === undefined) budget.totalLoanRepayments = 0;
+            if (budget.totalLoanInterestExpenses === undefined) budget.totalLoanInterestExpenses = 0;
             return;
         }
         
         let totalLoanDebt = 0;
-        let totalLoanInterest = 0;
-        let totalLoanRepayments = 0;
-        let totalLoanInterestExpenses = 0;
         
         budget.loans.forEach(loan => {
             totalLoanDebt += loan.amount || 0;
-            totalLoanInterest += loan.interest || 0;
-            
-            // Calculate total repayments based on remaining turns
-            const paidTurns = (loan.duration || 0) - (loan.remainingTurns || 0);
-            const monthlyPayment = Math.round((loan.total || 0) / (loan.duration || 1));
-            totalLoanRepayments += monthlyPayment * paidTurns;
-            
-            // Calculate accrued interest (interest that should be paid but hasn't been paid yet)
-            const accruedInterest = Math.round(loan.amount * (loan.interestRate / 100) / loan.duration);
-            totalLoanInterestExpenses += accruedInterest;
         });
         
         budget.loanDebt = totalLoanDebt;
-        budget.totalLoanInterest = totalLoanInterest;
-        budget.totalLoanRepayments = totalLoanRepayments;
-        budget.totalLoanInterestExpenses = totalLoanInterestExpenses;
+        
+        // Ensure cumulative values are initialized if not exists
+        if (budget.totalLoanInterest === undefined) budget.totalLoanInterest = 0;
+        if (budget.totalLoanRepayments === undefined) budget.totalLoanRepayments = 0;
+        if (budget.totalLoanInterestExpenses === undefined) budget.totalLoanInterestExpenses = 0;
         
         // console.log('Loan totals calculated:', {
         //     debt: totalLoanDebt,
-        //     interest: totalLoanInterest,
-        //     repayments: totalLoanRepayments,
-        //     interestExpenses: totalLoanInterestExpenses
+        //     interest: budget.totalLoanInterest,
+        //     repayments: budget.totalLoanRepayments,
+        //     interestExpenses: budget.totalLoanInterestExpenses
         // });
         
         // Save the updated budget
@@ -158,6 +150,9 @@ class BudgetManager {
     async addIncome(amount, source = "unknown") {
         const budget = await this.getCurrentBudget();
         
+        // Add journal entry
+        await this.addJournalEntry(budget.turn, 'income', amount, source);
+        
         budget.funds += amount;
         budget.income += amount;
         budget.netFlow = budget.income - budget.expenses;
@@ -197,6 +192,10 @@ class BudgetManager {
      */
     async addLoanInterest(amount, description = 'Loan Interest') {
         const budget = await this.getCurrentBudget();
+        
+        // Add journal entry
+        await this.addJournalEntry(budget.turn, 'loan_interest', amount, description);
+        
         budget.expenses += amount;
         budget.funds -= amount;
         budget.netFlow = budget.income - budget.expenses;
@@ -221,6 +220,10 @@ class BudgetManager {
      */
     async repayLoan(amount, description = 'Loan Repayment', loanId = null) {
         const budget = await this.getCurrentBudget();
+        
+        // Add journal entry
+        await this.addJournalEntry(budget.turn, 'loan_repayment', amount, description);
+        
         budget.funds -= amount;
         budget.expenses += amount;
         budget.netFlow = budget.income - budget.expenses;
@@ -295,6 +298,9 @@ class BudgetManager {
         try {
             budget.funds = currentFunds - amount;
             
+            // Add journal entry
+            await this.addJournalEntry(budget.turn, 'expense', amount, reason);
+            
             // Distinguish between investments and regular expenses
             if (reason.includes('Building:') || reason.includes('building')) {
                 // This is an investment (building purchase)
@@ -322,6 +328,79 @@ class BudgetManager {
                 error: error
             };
         }
+    }
+
+    /**
+     * Add journal entry (écriture comptable)
+     * @param {number} turn - Turn number
+     * @param {string} type - Type of entry ('income', 'expense', 'loan_interest', 'loan_repayment', etc.)
+     * @param {number} amount - Amount
+     * @param {string} description - Description
+     */
+    async addJournalEntry(turn, type, amount, description) {
+        try {
+            await this.db.journal.add({
+                turn: turn,
+                date: new Date().toISOString(),
+                type: type,
+                amount: amount,
+                description: description
+            });
+        } catch (error) {
+            console.error('Error adding journal entry:', error);
+        }
+    }
+
+    /**
+     * Get journal entries
+     * @param {number} maxAge - Maximum age in days (optional)
+     * @returns {Promise<Array>} Journal entries
+     */
+    async getJournalEntries(maxAge = null) {
+        let entries = await this.db.journal.toArray();
+        
+        if (maxAge) {
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - maxAge);
+            
+            entries = entries.filter(entry => new Date(entry.date) >= cutoffDate);
+        }
+        
+        // Sort by turn descending, then by date descending
+        return entries.sort((a, b) => {
+            if (a.turn !== b.turn) {
+                return b.turn - a.turn;
+            }
+            return new Date(b.date) - new Date(a.date);
+        });
+    }
+
+    /**
+     * Get journal entries for a specific turn
+     * @param {number} turn - Turn number
+     * @returns {Promise<Array>} Journal entries
+     */
+    async getJournalEntriesForTurn(turn) {
+        return await this.db.journal.where('turn').equals(turn).sortBy('date');
+    }
+
+    /**
+     * Cleanup old journal entries
+     * @param {number} maxAge - Maximum age in days
+     */
+    async cleanupOldJournalEntries(maxAge = 60) {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - maxAge);
+        const cutoffISO = cutoffDate.toISOString();
+        
+        const oldEntries = await this.db.journal.where('date').below(cutoffISO).toArray();
+        
+        if (oldEntries.length > 0) {
+            const ids = oldEntries.map(entry => entry.id);
+            await this.db.journal.bulkDelete(ids);
+        }
+        
+        return { deleted: oldEntries.length };
     }
 
     /**
@@ -445,6 +524,43 @@ class BudgetManager {
         }
         
         if (amount > 0) {
+            // Get building counts from houses in the database for detailed breakdown
+            const houses = await this.db.houses.toArray();
+            const maintenanceBreakdown = {
+                'houses': 0,
+                'farms': 0,
+                'markets': 0,
+                'roads': 0,
+                'infrastructure': 0,
+                'industry': 0,
+                total: 0
+            };
+            
+            houses.forEach(house => {
+                if (!house.type) return;
+                
+                const type = house.type;
+                
+                if (type.includes('House')) {
+                    maintenanceBreakdown.houses += 2;
+                } else if (type.includes('Farm')) {
+                    maintenanceBreakdown.farms += 2;
+                } else if (type.includes('Market')) {
+                    maintenanceBreakdown.markets += 2;
+                } else if (type.includes('roads')) {
+                    maintenanceBreakdown.roads += 2;
+                } else if (type.includes('Well') || type.includes('Fountain') || type.includes('Streetlight')) {
+                    maintenanceBreakdown.infrastructure += 2;
+                } else if (type.includes('Windmill') || type.includes('Barn')) {
+                    maintenanceBreakdown.industry += 2;
+                }
+                
+                maintenanceBreakdown.total += 2;
+            });
+            
+            // Add journal entry
+            await this.addJournalEntry(budget.turn, 'maintenance', amount, 'Maintenance bâtiments');
+            
             // Update budget
             budget.funds -= amount;
             budget.expenses += amount;
@@ -454,6 +570,9 @@ class BudgetManager {
             budget.totalBuildingMaintenance += amount;
             budget.netFlow = budget.income - budget.expenses;
             
+            // Store maintenance breakdown for detailed display
+            budget.maintenanceBreakdown = maintenanceBreakdown;
+            
             await this.db.budget.put(budget);
         }
         
@@ -462,21 +581,55 @@ class BudgetManager {
 
     /**
      * Add taxes based on population (10€ per citizen per turn)
-     * @param {number} population - Current population count
+     * Calculates taxes from houses in the database
      * @returns {Promise<Object>} Updated budget
      */
-    async addTaxes(population) {
-        const taxRate = 10; // 10€ per citizen per turn
-        const taxAmount = population * taxRate;
+    async addTaxes() {
+        // Get all houses from the database
+        const houses = await this.db.houses.toArray();
         
-        if (taxAmount > 0) {
+        // Calculate taxes per house type
+        const taxBreakdown = {
+            'House-Blue': 0,
+            'House-Red': 0,
+            'House-Purple': 0,
+            total: 0,
+            population: 0
+        };
+        
+        houses.forEach(house => {
+            if (house.type && (house.type.includes('House-Blue') || house.type.includes('House-Red') || house.type.includes('House-Purple'))) {
+                const pop = house.pop || 0;
+                const taxPerHouse = pop * 10; // 10€ per citizen
+                
+                if (house.type.includes('House-Blue')) {
+                    taxBreakdown['House-Blue'] += taxPerHouse;
+                } else if (house.type.includes('House-Red')) {
+                    taxBreakdown['House-Red'] += taxPerHouse;
+                } else if (house.type.includes('House-Purple')) {
+                    taxBreakdown['House-Purple'] += taxPerHouse;
+                }
+                
+                taxBreakdown.total += taxPerHouse;
+                taxBreakdown.population += pop;
+            }
+        });
+        
+        if (taxBreakdown.total > 0) {
             const budget = await this.getCurrentBudget();
             
+            // Add journal entry
+            await this.addJournalEntry(budget.turn, 'income', taxBreakdown.total, `Impôts habitants (${taxBreakdown.population} hab.)`);
+            
             // Add to daily income
-            budget.funds += taxAmount;
-            budget.income += taxAmount;
-            budget.dailyIncome += taxAmount;
-            budget.totalTaxes += taxAmount; // Track total taxes collected
+            budget.funds += taxBreakdown.total;
+            budget.income += taxBreakdown.total;
+            budget.dailyIncome += taxBreakdown.total;
+            budget.totalTaxes += taxBreakdown.total; // Track total taxes collected
+            
+            // Store tax breakdown for detailed display
+            budget.taxBreakdown = taxBreakdown;
+            
             budget.netFlow = budget.income - budget.expenses;
             
             await this.db.budget.put(budget);
@@ -638,6 +791,8 @@ class BudgetManager {
             totalInvestments: budget.totalInvestments,
             totalLoanInterestExpenses: budget.totalLoanInterestExpenses || 0,
             totalLoanRepayments: budget.totalLoanRepayments || 0,
+            taxBreakdown: budget.taxBreakdown || null,
+            maintenanceBreakdown: budget.maintenanceBreakdown || null,
             population: additionalData.population || 0,
             buildingCounts: additionalData.buildingCounts || {},
             financialHealth: financialHealth
