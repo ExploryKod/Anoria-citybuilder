@@ -456,6 +456,174 @@ canvas.pointer-events-disabled {
   opacity: 0.5;
 }
 
+/* Button state management */
+.button-disabled {
+  pointer-events: auto !important;
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  filter: grayscale(70%);
+  position: relative;
+}
+
+.button-disabled::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(0, 0, 0, 0.1) 10px,
+    rgba(0, 0, 0, 0.1) 20px
+  );
+  pointer-events: none;
+}
+
+/* Legend dropdown menu */
+.legend-dropdown-container {
+  position: fixed;
+  top: 20px;
+  left: 100px;
+  z-index: 1000;
+}
+
+.legend-toggle-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.legend-toggle-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  color: #333;
+}
+
+.legend-dropdown {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  margin-left: 8px;
+  background: #2d2d2d;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  min-width: 240px;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-10px);
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.legend-dropdown:not(.hidden) {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #e0e0e0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background-color 0.2s ease;
+}
+
+.legend-item:last-child {
+  border-bottom: none;
+}
+
+.legend-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.legend-item.item-disabled {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Styles for disabled icon in legend only (visual demonstration) */
+.legend-icon-wrapper.disabled-icon {
+  opacity: 0.4;
+  filter: grayscale(70%);
+  position: relative;
+}
+
+.legend-icon-wrapper.disabled-icon::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    rgba(0, 0, 0, 0.1) 4px,
+    rgba(0, 0, 0, 0.1) 8px
+  );
+  pointer-events: none;
+}
+
+/* Style for selected house button in legend - showing hover state by default */
+.legend-icon-wrapper.selected-icon {
+  box-shadow: none;
+  background: var(--house-blue-color);
+  color: #fff;
+}
+
+.legend-icon-wrapper.selected-icon svg {
+  stroke: #fff;
+}
+
+.legend-icon-wrapper {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background-color: #fafafa;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #000;
+}
+
+.legend-icon-wrapper svg {
+  stroke: #000;
+}
+
+/* Style for toolbar selected button in legend */
+.legend-icon-wrapper.toolbar-selected-icon {
+  background-color: #009999;
+  border: 3px solid #009999;
+  color: #fff;
+}
+
+.legend-icon-wrapper.toolbar-selected-icon svg {
+  stroke: #fff;
+}
+
+
+.legend-item.selected-house span {
+  color: #e0e0e0;
+}
+
 .clickable {
   pointer-events: auto;
   opacity: 1;
@@ -619,24 +787,30 @@ canvas.pointer-events-disabled {
 }
 
 footer {
+    min-height: 80px;
+    margin: 10px 5px;
+    padding: 10px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     background-color: #000235;
-    color: #fff;
-    min-height: 80px;
+    color: #1D2228;
     position: absolute;
     bottom: 0;
-    right: 0;
     left: 0;
+    right: calc(100vw - 100px);
+    border-radius: 10px;
+    color: #fff;
 }
 
-footer a {
+footer a, footer span {
     font-size: 12px;
     font-weight: 600;
     color: #fff;
     margin: 5px;
 }
+
+
 
 footer a:hover {
     text-decoration: none;

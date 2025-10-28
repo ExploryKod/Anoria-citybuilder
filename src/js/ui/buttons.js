@@ -574,6 +574,12 @@ function toggleModal(e) {
             }
             break;
         case 'palaces':
+            // Check if palace button is disabled
+            if (window.buttonStateManager && !window.buttonStateManager.isEnabled('palace-btn')) {
+                console.log('🏛️ Palace button is disabled');
+                return; // Don't open panel if disabled
+            }
+            
             getButtonsUnactive()
             getButtonsDisabled()
             panelLayoutInner.classList.add('loading-objects')
@@ -791,12 +797,20 @@ function makeNewButton(buttonInfo, svg="") {
     button.innerHTML = svg;
 
     button.addEventListener('click', (e) => {
-        setActiveTool(e);
+        // Check if button is disabled before allowing click
+        if (window.buttonStateManager && window.buttonStateManager.isEnabled(buttonInfo.tool)) {
+            setActiveTool(e);
+        }
     });
 
     panelLayoutInner.appendChild(button);
     panelLayoutInner.classList.remove('loading-objects')
     loaderButton.classList.remove('active')
+    
+    // Register button with ButtonStateManager if available
+    if (window.buttonStateManager) {
+        window.buttonStateManager.registerButton(buttonInfo.tool, button);
+    }
 }
 
 
@@ -824,6 +838,39 @@ window.onload = async () => {
     }
 
     updateSpeedDisplay();
+    
+    // Initialize button states for game start
+    if (window.buttonStateManager) {
+        console.log('✅ ButtonStateManager loaded successfully');
+        
+        // Register category buttons
+        const palaceBtn = document.getElementById('palace-btn');
+        if (palaceBtn) {
+            window.buttonStateManager.registerButton('palace-btn', palaceBtn);
+        }
+        
+        const infrastructureBtn = document.getElementById('infrastructure-btn');
+        if (infrastructureBtn) {
+            window.buttonStateManager.registerButton('infrastructure-btn', infrastructureBtn);
+        }
+        
+        // Disable initial unavailable buildings
+        const initialDisabledBuildings = [
+            'palace-btn',           // Palace category button
+            'House-Red',            // Red house
+            'House-Purple',         // Purple house
+            'Windmill-001',         // Windmill
+            'Church-002',           // Church
+            'infrastructure-btn'    // Infrastructure category button
+        ];
+        
+        initialDisabledBuildings.forEach(buildingId => {
+            window.buttonStateManager.disable(buildingId);
+            console.log(`🚫 Disabled: ${buildingId}`);
+        });
+    } else {
+        console.warn('⚠️ ButtonStateManager not available');
+    }
 
     for (let i = 0; i < bubblyButtons.length; i++) {
         bubblyButtons[i].addEventListener('click', animateButton, false);
@@ -1020,7 +1067,15 @@ window.onload = async () => {
 
     housesButton.addEventListener('click', toggleModal)
     
-    palacesButton.addEventListener('click', toggleModal)
+    palacesButton.addEventListener('click', (e) => {
+        // Check if palace button is disabled before toggling modal
+        if (window.buttonStateManager && !window.buttonStateManager.isEnabled('palace-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+        toggleModal(e);
+    })
 
     farmsButton.addEventListener('click', toggleModal)
     
@@ -1028,11 +1083,37 @@ window.onload = async () => {
 
     marketButton.addEventListener('click', toggleModal)
     
-    infrastructureButton.addEventListener('click', toggleModal)
+    infrastructureButton.addEventListener('click', (e) => {
+        // Check if infrastructure button is disabled before toggling modal
+        if (window.buttonStateManager && !window.buttonStateManager.isEnabled('infrastructure-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+        toggleModal(e);
+    })
     
     publicButton.addEventListener('click', toggleModal)
 
     panelLayoutCloseBtn.addEventListener('click', closeModal)
+    
+    // Legend dropdown functionality
+    const legendToggle = document.getElementById('legend-toggle');
+    const legendDropdown = document.getElementById('legend-dropdown');
+    
+    if (legendToggle && legendDropdown) {
+        legendToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            legendDropdown.classList.toggle('hidden');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.legend-dropdown-container')) {
+                legendDropdown.classList.add('hidden');
+            }
+        });
+    }
     
     // Budget panel functionality - get elements directly to avoid timing issues
     const budgetBtn = document.getElementById('budget-btn');
