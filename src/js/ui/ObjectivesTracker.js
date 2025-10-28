@@ -91,15 +91,22 @@ class ObjectivesTracker {
                 });
             }
 
+            // Calculer la période de grâce - si on est dans la période de grâce, NE RIEN CHECKER
+            const isInGracePeriod = this.resetCount > 0 && (currentDay - this.lastResetTurn) <= this.gracePeriod;
+            
+            // Pendant la période de grâce : AUCUNE vérification, AUCUN tracking
+            if (isInGracePeriod) {
+                console.log(`⏸️ Période de grâce active (tour ${currentDay - this.lastResetTurn}/${this.gracePeriod}) - Aucun tracking ni vérification`);
+                this.trackingData.currentDay = currentDay;
+                return; // Sortir immédiatement, rien à vérifier
+            }
+
             // Calculer les données de tracking depuis les états de budget sauvegardés tous les 3 tours (3 intervalles)
             await this.updateTrackingFromBudgetStates(currentDay);
 
             // Vérifier si le seuil critique a été atteint (flux net < -20)
-            // Pour un seuil en spirale (threshold_spiral), on ignore les échecs pendant la période de grâce
-            // MAIS seulement à partir de la 2e tentative (resetCount > 0)
-            const isInGracePeriod = this.resetCount > 0 && (currentDay - this.lastResetTurn) <= this.gracePeriod;
-            
-            if (!this.objectiveFailed && this.trackingData.minNetFlow < -20 && !isInGracePeriod) {
+            // Pendant la période de grâce, on ne vérifie jamais (déjà géré par le return ci-dessus)
+            if (!this.objectiveFailed && this.trackingData.minNetFlow < -20) {
                 this.objectiveFailed = true;
                 await this.handleObjectiveFailure(currentDay);
             }
@@ -161,8 +168,11 @@ class ObjectivesTracker {
      */
     async updateTrackingFromBudgetStates(currentDay) {
         try {
-            // Récupérer les états de budget depuis le dernier reset uniquement (pour ne pas inclure les anciennes valeurs échouées)
-            const budgetStates = await window.budgetManager.getBudgetStatesForPeriod(this.lastResetTurn, currentDay);
+            // Calculer le début effectif du tracking (début après période de grâce)
+            const gracePeriodStart = this.resetCount > 0 ? this.lastResetTurn + this.gracePeriod : this.lastResetTurn;
+            
+            // Récupérer les états de budget depuis la fin de la période de grâce uniquement
+            const budgetStates = await window.budgetManager.getBudgetStatesForPeriod(gracePeriodStart, currentDay);
             
             // Mettre à jour les données de tracking
             this.trackingData.currentDay = currentDay;
@@ -170,7 +180,10 @@ class ObjectivesTracker {
             // Calculer le flux net min et max depuis les états sauvegardés
             if (budgetStates.length > 0) {
                 budgetStates.forEach(state => {
-                    if (state.netFlow !== undefined) {
+                    // Ignorer les états pendant la période de grâce pour les tentatives après échec
+                    const isAfterGracePeriod = state.turn > gracePeriodStart;
+                    
+                    if (state.netFlow !== undefined && (this.resetCount === 0 || isAfterGracePeriod)) {
                         // Trouver le flux net minimum et son tour
                         if (state.netFlow < this.trackingData.minNetFlow) {
                             this.trackingData.minNetFlow = state.netFlow;
@@ -436,12 +449,16 @@ class ObjectivesTracker {
         // Incrémenter le resetCount AVANT de calculer la nouvelle cible
         this.resetCount++;
         
-        // Réinitialiser la date cible selon la tentative
-        // Après le 1er échec (resetCount === 1, donc 2e tentative) : TT2 + 20 + 60
-        // Première tentative (resetCount === 0) : TT1 (0) + 0 + 60 = 60 (déjà initialisé)
+        // Calculer la date cible depuis le tour de reset
+        // Si échec au tour X :
+        // - Période de grâce : tours X+1 à X+20 (20 tours)
+        // - Tracking commence : tour X+21
+        // - Objectif sur 60 tours : donc cible au tour X+21+60-1 = X+80
+        // Donc : tour_reset + période_grâce (20) + durée_objectif (60) = tour_reset + 80
         if (this.resetCount >= 1) {
-            // 2e tentative et suivantes : TT2 + 20 (grâce) + 60 = TT2 + 80
-            this.targetDay = currentDay + 80; // currentDay est le TT2 (tour de départ de la tentative 2)
+            // 2e tentative et suivantes : tour_reset + 80
+            this.targetDay = currentDay + 81; // +1 pour commencer après le tour de grâce
+            console.log(`🎯 Nouvelle cible calculée: tour ${this.targetDay} (reset au tour ${currentDay} + 20 grâce + 61 jours)`);
         }
         // Sinon, reste à 60 (première tentative)
         
@@ -541,6 +558,29 @@ class ObjectivesTracker {
      * @param {Object} objective - Objectif complété
      */
     showObjectiveCompletion(objective) {
+        // Déverrouiller House-Purple quand l'objectif est complété
+        if (window.buttonStateManager) {
+            window.buttonStateManager.enable('House-Purple');
+            console.log('✅ House-Purple déverrouillé grâce à l\'objectif !');
+            
+            // Animation pour attirer l'attention sur le bouton déverrouillé
+            setTimeout(() => {
+                // Trouver le bouton dans le panel (si le panel residential est ouvert)
+                const purpleBtn = document.getElementById('House-Purple');
+                if (purpleBtn) {
+                    purpleBtn.classList.add('building-unlocked');
+                    
+                    // Scroll vers le bouton si dans un container scrollable
+                    purpleBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    
+                    // Retirer la classe après l'animation
+                    setTimeout(() => {
+                        purpleBtn.classList.remove('building-unlocked');
+                    }, 1000);
+                }
+            }, 500);
+        }
+        
         // Créer une notification
         const notification = document.createElement('div');
         notification.className = 'objective-completion-notification';
@@ -550,6 +590,7 @@ class ObjectivesTracker {
                 <div class="notification-text">
                     <div class="notification-title">Objectif Réussi !</div>
                     <div class="notification-message">${objective.title}</div>
+                    <div class="unlock-message" style="margin-top: 10px; font-size: 12px; font-weight: 600; color: #ffd700; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">🏰 Maison Violette déverrouillée !</div>
                 </div>
             </div>
         `;
