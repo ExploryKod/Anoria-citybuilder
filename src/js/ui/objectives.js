@@ -20,12 +20,12 @@ class ObjectivesManager {
     /**
      * Initialise le système de tutoriel
      */
-    init() {
+    async init() {
         if (this.isInitialized) return;
         
         // Attendre que le DOM soit chargé
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => this.init());
+            document.addEventListener('DOMContentLoaded', async () => await this.init());
             return;
         }
         
@@ -36,7 +36,7 @@ class ObjectivesManager {
         }
 
         this.setupEventListeners();
-        this.setupDefaultSteps();
+        await this.setupDefaultSteps();
         this.isInitialized = true;
     }
 
@@ -74,7 +74,7 @@ class ObjectivesManager {
     }
 
     /**
-     * Configure les étapes par défaut (objectifs)
+     * Configure le contenu (objectifs)
      */
     async setupDefaultSteps() {
         // Charger les objectifs depuis le tracker
@@ -82,28 +82,23 @@ class ObjectivesManager {
             const objectives = window.objectivesTracker.objectives;
             const activeObjectives = objectives.filter(obj => obj.active && !obj.completed);
             
-            // Vérifier s'il y a un historique (échecs ou succès)
-            let hasHistory = false;
-            try {
-                if (window.objectivesStore && window.objectivesStore.db && window.objectivesStore.db.objectives) {
-                    const allRecords = await window.objectivesStore.getAllFailures();
-                    hasHistory = allRecords && Array.isArray(allRecords) && allRecords.length > 0;
-                }
-            } catch (error) {
-                console.error('Error checking history:', error);
-                hasHistory = false;
-            }
+            console.log('📋 setupDefaultSteps - Objectives state:', {
+                total: objectives.length,
+                active: objectives.filter(obj => obj.active).length,
+                completed: objectives.filter(obj => obj.completed).length,
+                activeObjectivesCount: activeObjectives.length
+            });
             
             // Initialiser les étapes
             this.steps = [];
             
             if (activeObjectives.length > 0) {
-                // Afficher les objectifs actifs
-                const objectiveSteps = await Promise.all(activeObjectives.map(async obj => ({
-                    title: obj.title,
-                    content: await this.createObjectiveContent(obj)
-                })));
-                this.steps = this.steps.concat(objectiveSteps);
+                // Afficher le premier objectif actif uniquement
+                const firstObjective = activeObjectives[0];
+                this.steps.push({
+                    title: firstObjective.title,
+                    content: await this.createObjectiveContent(firstObjective)
+                });
             } else {
                 // Aucun objectif actif - afficher un message neutre
                 this.steps.push({
@@ -116,27 +111,14 @@ class ObjectivesManager {
                             <p style="margin-bottom: 30px; font-size: 14px; color: var(--primary); opacity: 0.7;">
                                 Votre ville continue de fonctionner normalement.
                             </p>
-                            ${hasHistory ? `
-                                <button id="show-history-btn" style="background: var(--cta); color: white; border: none; border-radius: 10px; padding: 12px 24px; cursor: pointer; font-weight: 600; font-size: 14px; margin-right: 10px;">
-                                    📜 Voir l'historique des objectifs
-                                </button>
-                            ` : ''}
                         </div>
                     `
                 });
             }
-            
-            // Toujours ajouter l'historique si disponible (après rééchelonnement ou après succès)
-            if (hasHistory) {
-                this.steps.push({
-                    title: '📜 Historique',
-                    content: '<div id="history-content">Chargement de l\'historique...</div>'
-                });
-            }
         } else {
             // Fallback si le tracker n'est pas disponible
-        this.steps = [
-            {
+            this.steps = [
+                {
                     title: '🎯 Objectifs',
                     content: '<p>Les objectifs sont en cours de chargement...</p>'
                 }
@@ -178,7 +160,7 @@ class ObjectivesManager {
             
             // Calculer la période de grâce (uniquement pour les tentatives après échec)
             const turnsSinceReset = trackingData.currentDay - (window.objectivesTracker?.lastResetTurn || 0);
-            const isInGracePeriod = resetCount > 0 && turnsSinceReset <= (window.objectivesTracker?.gracePeriod || 20);
+            const isInGracePeriod = resetCount > 0 && turnsSinceReset >= 0 && turnsSinceReset <= (window.objectivesTracker?.gracePeriod || 20);
             
             html += `<div style="background: rgba(251, 129, 34, 0.05); border-radius: 8px; padding: 12px; margin-top: 12px; border: 1px solid rgba(251, 129, 34, 0.2);">`;
             html += '<strong style="color: var(--cta); display: block; margin-bottom: 8px;">État actuel :</strong>';
@@ -195,7 +177,14 @@ class ObjectivesManager {
             if (trackingData.currentDay !== undefined) {
                 html += `<p style="margin: 4px 0; color: var(--primary);"><strong>Tour actuel :</strong> ${trackingData.currentDay}</p>`;
             }
-            if (trackingData.minNetFlow !== Infinity) {
+            if (isInGracePeriod) {
+                // Pendant la période de grâce, afficher "Grâcié" en vert
+                html += `<p style="margin: 4px 0; color: var(--primary);">
+                    <strong>Flux net minimum :</strong> 
+                    <span style="color: #28a745; font-weight: 600;">Grâcié</span>
+                    ✅
+                </p>`;
+            } else if (trackingData.minNetFlow !== Infinity) {
                 const isValid = trackingData.minNetFlow >= -20;
                 const statusColor = isValid ? '#28a745' : '#dc3545';
                 const statusIcon = isValid ? '✅' : '❌';
@@ -213,7 +202,14 @@ class ObjectivesManager {
                 </p>`;
             }
             
-            if (trackingData.maxNetFlow !== -Infinity) {
+            if (isInGracePeriod) {
+                // Pendant la période de grâce, afficher "Grâcié" en vert
+                html += `<p style="margin: 4px 0; color: var(--primary);">
+                    <strong>Flux net maximum :</strong> 
+                    <span style="color: #28a745; font-weight: 600;">Grâcié</span>
+                    ✅
+                </p>`;
+            } else if (trackingData.maxNetFlow !== -Infinity) {
                 const isValid = trackingData.maxNetFlow >= 100;
                 const statusColor = isValid ? '#28a745' : '#dc3545';
                 const statusIcon = isValid ? '✅' : '❌';
@@ -231,7 +227,8 @@ class ObjectivesManager {
             }
                 // Afficher les fonds max atteints et le nombre de tours restants
                 const currentTargetDay = window.objectivesTracker?.targetDay || 60;
-                const turnsRemaining = currentTargetDay - trackingData.currentDay;
+                const lastResetTurn = window.objectivesTracker?.lastResetTurn || 0;
+                const isFirstAttempt = resetCount === 0; // Première tentative = pas de rééchelonnement
                 
                 if (trackingData.fundsAtTargetDay !== null) {
                     const isValid = trackingData.fundsAtTargetDay >= 600;
@@ -244,8 +241,19 @@ class ObjectivesManager {
                         <span style="font-size: 0.85em; opacity: 0.7;"> (cible: 600€ au tour ${currentTargetDay})</span>
                     </p>`;
                 } else if (currentTargetDay >= trackingData.currentDay) {
+                    // Message différent selon si c'est la première tentative ou une tentative rééchelonnée
+                    let targetMessage;
+                    if (isFirstAttempt) {
+                        // Première tentative : tour 0 + 0 (pas de grâce) + 60 tours = tour 60
+                        targetMessage = `dans 60 tours (tour 60)`;
+                    } else {
+                        // Tentatives suivantes : tour de départ + 20 (grâce) + 60 (objectif)
+                        const targetTour = lastResetTurn + 20 + 60;
+                        targetMessage = `dans 60 tours après période de grâce (tour ${targetTour})`;
+                    }
+                    
                     html += `<p style="margin: 4px 0; color: var(--primary); font-style: italic; opacity: 0.7;">
-                        <strong>Fonds max atteints :</strong> En attente... (cible dans ${turnsRemaining} tours au tour ${currentTargetDay})
+                        <strong>Fonds max atteints :</strong> En attente... (cible ${targetMessage})
                     </p>`;
                 } else {
                     html += `<p style="margin: 4px 0; color: #ffc107; font-style: italic;">
@@ -278,10 +286,12 @@ class ObjectivesManager {
                 html += `</p>`;
             }
             
-            // Indiquer si la date cible a été rééchelonnée
-            if (targetDayWasRescheduled) {
+            // Indiquer si la date cible a été rééchelonnée (uniquement pour les tentatives suivantes)
+            if (resetCount > 0 && targetDayWasRescheduled) {
                 html += `<p style="margin: 4px 0 0 0; color: var(--primary); font-size: 0.85em; line-height: 1.4;">`;
-                html += `<strong style="color: var(--cta);">📅</strong> Date cible rééchelonnée au tour <strong>${targetDay}</strong> (seuil à date fixe - dans 80 tours depuis la dernière tentative).`;
+                const startOfAttempt = window.objectivesTracker?.lastResetTurn || 0;
+                const targetTour = startOfAttempt + 20 + 60; // T2T + 20 (grâce) + 60 (objectif)
+                html += `<strong style="color: var(--cta);">📅</strong> Date cible rééchelonnée au tour <strong>${targetTour}</strong> (départ: tour ${startOfAttempt} + 20 tours de grâce + 60 tours objectif).`;
                 html += `</p>`;
             }
             
@@ -307,6 +317,25 @@ class ObjectivesManager {
             }
             
             html += '</div>';
+        }
+        
+        // Ajouter un bouton pour accéder à l'historique si disponible
+        // Toujours disponible à partir de la 2e tentative (resetCount >= 1)
+        try {
+            const resetCount = window.objectivesTracker?.resetCount || 0;
+            
+            // Toujours afficher le bouton d'historique dès la 2e tentative
+            if (resetCount >= 1) {
+                html += `
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button id="show-history-btn" style="background: var(--cta); color: white; border: none; border-radius: 10px; padding: 12px 24px; cursor: pointer; font-weight: 600; font-size: 14px;">
+                            📜 Voir l'historique des objectifs
+                        </button>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error checking history:', error);
         }
 
         return html;
@@ -377,38 +406,21 @@ class ObjectivesManager {
         this.hideObjectives();
     }
 
-    /**
-     * Passe à l'étape suivante
-     */
+    // Ces méthodes ne sont plus utilisées car il n'y a pas d'étapes
     nextStep() {
-        if (this.currentStep < this.steps.length - 1) {
-            this.currentStep++;
-            this.updateDisplay();
-        } else {
-            // Dernière étape - fermer le tutoriel
-            this.closeObjectives();
-        }
+        // Ne rien faire
     }
 
-    /**
-     * Revient à l'étape précédente
-     */
     previousStep() {
-        if (this.currentStep > 0) {
-            this.currentStep--;
-            this.updateDisplay();
-        }
+        // Ne rien faire
     }
 
-    /**
-     * Passe le tutoriel
-     */
     skipObjectives() {
-        this.closeObjectives();
+        // Ne rien faire
     }
 
     /**
-     * Met à jour l'affichage de l'étape actuelle
+     * Met à jour l'affichage du contenu
      */
     async updateDisplay() {
         const step = this.steps[this.currentStep];
@@ -420,33 +432,33 @@ class ObjectivesManager {
             header.textContent = step.title;
         }
 
-        // Mettre à jour le contenu (de manière asynchrone si nécessaire)
+        // Mettre à jour le contenu
         const content = this.panel.querySelector('.objectives-content');
         if (content) {
             if (typeof step.content === 'function') {
                 content.innerHTML = await step.content();
             } else {
-            content.innerHTML = step.content;
+                content.innerHTML = step.content;
+            }
+            
+            // Ajouter le gestionnaire pour le bouton d'historique
+            const historyBtn = content.querySelector('#show-history-btn');
+            if (historyBtn) {
+                historyBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    console.log('History button clicked');
+                    if (window.objectivesHistory && window.objectivesHistory.showHistory) {
+                        console.log('Calling window.objectivesHistory.showHistory()');
+                        window.objectivesHistory.showHistory();
+                    } else {
+                        console.warn('window.objectivesHistory not available');
+                    }
+                });
             }
         }
 
-        // Mettre à jour les boutons
+        // Mettre à jour les boutons - tout cacher sauf "Fermer"
         this.updateButtons();
-        
-        // Ajouter le gestionnaire pour le bouton d'historique si présent
-        const historyBtn = content.querySelector('#show-history-btn');
-        if (historyBtn) {
-            historyBtn.addEventListener('click', () => {
-                if (window.objectivesHistory) {
-                    window.objectivesHistory.showHistory();
-                }
-            });
-        }
-        
-        // Charger l'historique si on est sur l'étape historique
-        if (step.title === '📜 Historique') {
-            this.loadHistoryContent();
-        }
     }
     
     /**
@@ -524,23 +536,15 @@ class ObjectivesManager {
         const nextBtn = this.panel.querySelector('.objectives-next-btn');
         const skipBtn = this.panel.querySelector('.objectives-skip-btn');
 
-        // Bouton précédent
+        // Cacher tous les boutons sauf "Fermer"
         if (previousBtn) {
-            previousBtn.style.display = this.currentStep > 0 ? 'block' : 'none';
+            previousBtn.style.display = 'none';
         }
-
-        // Bouton suivant
         if (nextBtn) {
-            if (this.currentStep === this.steps.length - 1) {
-                nextBtn.textContent = 'Terminer';
-            } else {
-                nextBtn.textContent = 'Suivant';
-            }
+            nextBtn.style.display = 'none';
         }
-
-        // Bouton passer (toujours visible sauf à la dernière étape)
         if (skipBtn) {
-            skipBtn.style.display = this.currentStep === this.steps.length - 1 ? 'none' : 'block';
+            skipBtn.style.display = 'none';
         }
     }
 

@@ -48,63 +48,34 @@
 }
 
 .objectives-panel-content {
+    padding: 16px 20px;
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
     min-height: 0;
-}
-
-.objectives-steps {
-    flex: 1;
-    padding: 16px 20px;
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
     scrollbar-color: var(--cta) transparent;
 }
 
-.objectives-steps::-webkit-scrollbar {
+
+
+.objectives-panel-content::-webkit-scrollbar {
     width: 6px;
 }
 
-.objectives-steps::-webkit-scrollbar-track {
+.objectives-panel-content::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.objectives-steps::-webkit-scrollbar-thumb {
+.objectives-panel-content::-webkit-scrollbar-thumb {
     background: var(--cta);
     border-radius: 3px;
 }
 
-.objectives-steps::-webkit-scrollbar-thumb:hover {
+.objectives-panel-content::-webkit-scrollbar-thumb:hover {
     background: var(--cta-05);
-}
-
-.objectives-step {
-    margin-bottom: 16px;
-    padding: 12px;
-    background: white;
-    border-radius: 8px;
-    border: 2px solid var(--cta);
-}
-
-.objectives-step:last-child {
-    margin-bottom: 0;
-}
-
-.objectives-step h4 {
-    margin: 0 0 8px 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--primary);
-}
-
-.objectives-step p {
-    margin: 0;
-    font-size: 14px;
-    line-height: 1.4;
-    color: var(--primary);
 }
 
 .objectives-content {

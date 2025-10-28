@@ -448,12 +448,16 @@ export function createGame(housesStore, gameStore, assetManager) {
             displayTime.textContent = 'pause'
         },
 
-        play() {
+        async play() {
             // Game playing
             isPause = false;
             infoPanelClockIcon.style.display = 'block'
             infoPanelNoClockIcon.style.display = 'none'
             displayTime.textContent = 'play'
+            // Appeler update(0) pour activer l'objectif au tour 0 au démarrage
+            if (window.objectivesTracker) {
+                await objectivesTracker.checkObjectives(0);
+            }
         },
 
         replay() {
