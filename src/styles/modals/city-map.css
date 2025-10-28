@@ -1,23 +1,4 @@
-/* City Map Button Styles */
-.city-map-box {
-    cursor: pointer;
-    transition: all 0.3s ease-in-out;
-    border: 3px solid #fff !important;
-    background: var(--cta);
-    border-radius: 10px;
-    position: relative;
-    overflow: hidden;
-}
-
-.city-map-box:hover {
-    transform: translateY(-2px);
-    background: #fff;
-}
-
-.city-map-box.active {
-    transform: translateY(0px);
-    background: #fff;
-}
+/* City map box styles now unified in budget-states.css */
 
 /* City Map Popup Styles */
 .city-map-panel {

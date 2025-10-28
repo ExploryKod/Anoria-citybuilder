@@ -1,0 +1,263 @@
+/* Journal Panel Styles */
+.journal-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.journal-panel.active {
+    display: flex !important;
+}
+
+.journal-wrapper {
+    background: #fafafa;
+    color: var(--primary);
+    border-radius: 15px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    width: 90%;
+    max-width: 1000px;
+    max-height: 85vh;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+}
+
+.journal-header {
+    background: white;
+    padding: 20px;
+    border-bottom: 2px solid var(--cta);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.journal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    color: var(--primary);
+}
+
+.journal-close-btn {
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.journal-close-btn:hover {
+    background: #f0f0f0;
+}
+
+.journal-close-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+}
+
+.journal-content {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.journal-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.journal-filter-btn {
+    padding: 8px 16px;
+    border: 1px solid var(--cta);
+    background: white;
+    color: var(--cta);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.journal-filter-btn:hover {
+    background: #f0f0f0;
+}
+
+.journal-filter-btn.active {
+    background: var(--cta);
+    color: white;
+}
+
+.journal-refresh-section {
+    margin-bottom: 20px;
+}
+
+.journal-refresh-btn {
+    padding: 10px 20px;
+    background: var(--cta);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.journal-refresh-btn:hover {
+    background: #009999;
+}
+
+.journal-loading {
+    text-align: center;
+    padding: 40px;
+}
+
+.loading-spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--cta);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.journal-list {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.journal-entry {
+    border-bottom: 1px solid #e9ecef;
+    padding: 16px;
+    transition: background-color 0.2s ease;
+}
+
+.journal-entry:hover {
+    background: #f8f9fa;
+}
+
+.journal-entry:last-child {
+    border-bottom: none;
+}
+
+.journal-entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.journal-entry-type {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.journal-entry-type.income {
+    background: #d4edda;
+    color: #155724;
+}
+
+.journal-entry-type.expense {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.journal-entry-type.maintenance {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.journal-entry-type.loan_interest {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.journal-entry-type.loan_repayment {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.journal-entry-amount {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.journal-entry-amount.positive {
+    color: #28a745;
+}
+
+.journal-entry-amount.negative {
+    color: #dc3545;
+}
+
+.journal-entry-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.journal-entry-description {
+    flex: 1;
+}
+
+.journal-entry-turn {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.no-journal-entries {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.no-journal-entries-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.no-journal-entries-text {
+    font-size: 16px;
+}
+
+.journal-turn-group {
+    margin-bottom: 20px;
+}
+
+.journal-turn-header {
+    margin: 0 0 10px 0;
+    padding: 10px 16px;
+    background: var(--cta);
+    color: white;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+

@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="./src/styles/modals/balance-sheet.css">
     <link rel="stylesheet" href="./src/styles/modals/cleanup-notification.css">
     <link rel="stylesheet" href="./src/styles/modals/city-map.css">
+    <link rel="stylesheet" href="./src/styles/modals/journal.css">
     <link rel="stylesheet" href="./src/styles/modals/objectives.css">
     <link rel="stylesheet" href="./src/styles/modals/reset-confirm.css">
     <!-- ios support -->
@@ -436,7 +437,18 @@
                                 <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
                             </svg>
                         </span>
-                        <div>États Budget</div>
+                        <div>Compte de Résultat</div>
+                    </article>
+                </section>
+                <section class="info-box journal-box" id="journal-btn">
+                    <article class="budget-box">
+                        <span class="budget-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open">
+                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                            </svg>
+                        </span>
+                        <div>Journal</div>
                     </article>
                 </section>
                 <section class="info-box city-map-box" id="city-map-btn">
@@ -1200,7 +1212,7 @@
 <div id="budget-states-panel" class="budget-states-panel">
     <div class="budget-states-wrapper">
         <div class="budget-states-header">
-            <h3>États de Budget</h3>
+            <h3>Compte de Résultat</h3>
             <div class="budget-states-close-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
                     <path d="M18 6L6 18"/>
@@ -1227,7 +1239,7 @@
                         <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
                         <path d="M3 21v-5h5"/>
                     </svg>
-                    Actualiser les états
+                    Actualiser
                 </button>
             </div>
             
@@ -1244,6 +1256,49 @@
                 <h4>Résumé de la période</h4>
                 <div class="summary-content" id="summary-content">
                     <p>Aucune donnée disponible</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Journal des Écritures Panel -->
+<div id="journal-panel" class="journal-panel">
+    <div class="journal-wrapper">
+        <div class="journal-header">
+            <h3>📔 Journal des Écritures</h3>
+            <div class="journal-close-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
+                    <path d="M18 6L6 18"/>
+                    <path d="M6 6l12 12"/>
+                </svg>
+            </div>
+        </div>
+        
+        <div class="journal-content">
+            <div class="journal-filters">
+                <button class="journal-filter-btn active" data-period="all">Tout l'historique</button>
+                <button class="journal-filter-btn" data-period="7">7 derniers jours</button>
+                <button class="journal-filter-btn" data-period="30">30 derniers jours</button>
+                <button class="journal-filter-btn" data-period="60">60 derniers jours</button>
+            </div>
+            
+            <div class="journal-refresh-section">
+                <button class="journal-refresh-btn" id="journal-refresh-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                        <path d="M21 3v5h-5"/>
+                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                        <path d="M3 21v-5h5"/>
+                    </svg>
+                    Actualiser le journal
+                </button>
+            </div>
+            
+            <div class="journal-list" id="journal-list">
+                <div class="journal-loading">
+                    <div class="loading-spinner"></div>
+                    <p>Chargement du journal...</p>
                 </div>
             </div>
         </div>

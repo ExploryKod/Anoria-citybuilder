@@ -1,5 +1,8 @@
-/* Budget States Panel Styles */
-.budget-states-box {
+/* Budget States Panel Styles - Common toolbar button styles */
+.budget-states-box,
+.journal-box,
+.realtime-budget-box,
+.city-map-box {
     cursor: pointer;
     transition: all 0.3s ease-in-out;
     border: 3px solid #fff !important;
@@ -9,12 +12,18 @@
     overflow: hidden;
 }
 
-.budget-states-box:hover {
+.budget-states-box:hover,
+.journal-box:hover,
+.realtime-budget-box:hover,
+.city-map-box:hover {
     transform: translateY(-2px);
     background: #fff;
 }
 
-.budget-states-box.active {
+.budget-states-box.active,
+.journal-box.active,
+.realtime-budget-box.active,
+.city-map-box.active {
     transform: translateY(0px);
     background: #fff;
 }
@@ -466,6 +475,32 @@
 }
 
 .budget-global-refresh-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.journal-access-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(0, 153, 153, 0.1);
+    color: var(--cta);
+    border: 1px solid rgba(0, 153, 153, 0.3);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.journal-access-btn:hover {
+    background: var(--cta);
+    color: white;
+    border-color: var(--cta);
+}
+
+.journal-access-btn svg {
     width: 14px;
     height: 14px;
 }
