@@ -45,15 +45,11 @@ class HouseStore {
         let totalPopulationGained = 0;
         let housesAffected = 0;
 
-        console.log(`🍞🛣️ Processing population/food/road logic for ${houses.length} houses...`);
-
         for (const house of houses) {
             if (house.type && house.type.includes('House')) { // Only process houses
                 const hasFood = house.stocks && house.stocks.food > 0;
                 const hasRoadAccess = house.neighbors && house.neighbors.filter(neighbor => neighbor.name === 'roads').length > 0;
                 const currentPop = house.pop || 0;
-                
-                console.log(`🏠 House ${house.id}: pop=${currentPop}, food=${house.stocks?.food || 0}, roads=${house.neighbors?.filter(n => n.name === 'roads').length || 0}`);
                 
                 if (!hasFood || !hasRoadAccess) {
                     // No food OR no road access - reset population to 0
@@ -64,23 +60,10 @@ class HouseStore {
                         await this.updateHouseFields(house.id, {
                             pop: 0
                         });
-                        
-                        if (!hasFood && !hasRoadAccess) {
-                            console.log(`🚨 House ${house.id}: Population reset to 0 (no food and no road access)`);
-                        } else if (!hasFood) {
-                            console.log(`🚨 House ${house.id}: Population reset to 0 (no food)`);
-                        } else if (!hasRoadAccess) {
-                            console.log(`🚨 House ${house.id}: Population reset to 0 (no road access)`);
-                        }
                     }
-                } else {
-                    // Has food AND road access - population can grow (existing growth logic will handle this)
-                    console.log(`✅ House ${house.id}: Has food and road access, habitants can stay alive`);
                 }
             }
         }
-
-        console.log(`🍞🛣️ Population/food/road result: ${totalPopulationLost} lost, ${housesAffected} houses affected`);
 
         return {
             totalPopulationLost,

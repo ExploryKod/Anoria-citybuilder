@@ -44,7 +44,6 @@ class EventBlocker {
                 if (onBlock) {
                     onBlock(eventType, e);
                 } else {
-                    console.log(`Event blocked: ${eventType}`);
                 }
                 
                 return false;
@@ -68,7 +67,6 @@ class EventBlocker {
         }
 
         this.isBlocked = true;
-        console.log(`Events blocked: ${events.join(', ')}`);
     }
 
     /**
@@ -96,7 +94,6 @@ class EventBlocker {
         this.blockedEvents = [];
         this.isBlocked = false;
 
-        console.log('Events unblocked');
     }
 
     /**
@@ -123,7 +120,6 @@ class EventBlocker {
             blockCanvas: true,
             canvasSelectors: ['canvas'],
             onBlock: (eventType, e) => {
-                console.log(`Three.js event blocked: ${eventType}`);
             },
             ...options
         };
@@ -141,7 +137,6 @@ class EventBlocker {
             blockCanvas: true,
             canvasSelectors: ['canvas', '.game-area', '.game-canvas'],
             onBlock: (eventType, e) => {
-                console.log(`Game event blocked: ${eventType}`);
             },
             ...options
         };
@@ -158,7 +153,6 @@ class EventBlocker {
         const formOptions = {
             blockCanvas: false,
             onBlock: (eventType, e) => {
-                console.log(`Form event blocked: ${eventType}`);
             },
             ...options
         };
@@ -173,7 +167,6 @@ class EventBlocker {
         if (this.isBlocked) {
             this.unblockEvents();
         }
-        console.log('EventBlocker cleanup completed');
     }
 
     /**

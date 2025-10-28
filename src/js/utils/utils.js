@@ -473,7 +473,6 @@ export function isAreaAvailableForBuilding(city, x, y, gridSize) {
             // Check if tile is occupied
             if (city.tiles[checkX] && city.tiles[checkX][checkY]) {
                 if (city.tiles[checkX][checkY].buildingId !== undefined) {
-                    console.log(`[isAreaAvailable] Blocked: Tile (${checkX}, ${checkY}) already has building: ${city.tiles[checkX][checkY].buildingId}`);
                     return false;
                 }
             }

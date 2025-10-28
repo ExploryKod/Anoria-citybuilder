@@ -16,11 +16,8 @@ class BudgetManager {
      * @param {number} startingFunds - Initial funds (default: 200)
      */
     async initialize(startingFunds = 200) {
-        console.log('BudgetManager.initialize() called with startingFunds:', startingFunds);
-        
         // Clear any existing budget data to ensure fresh start
         await this.db.budget.clear();
-        console.log('Budget table cleared');
         
         // Create fresh budget
         const initialBudget = {
@@ -47,7 +44,6 @@ class BudgetManager {
         };
         
         await this.db.budget.add(initialBudget);
-        console.log('Budget initialized with fresh data:', initialBudget);
         
         return initialBudget;
     }
@@ -110,7 +106,6 @@ class BudgetManager {
         const budget = budgetData[0];
         
         if (!budget) {
-            console.log('No budget found, initializing...');
             return await this.initialize();
         }
         
@@ -150,7 +145,6 @@ class BudgetManager {
         
         if (needsUpdate) {
             await this.db.budget.put(budget);
-            console.log('Migrated budget: added expense tracking fields');
         }
         
         return budget;
@@ -170,7 +164,6 @@ class BudgetManager {
         
         await this.db.budget.put(budget);
         
-        console.log(`Income added: +${amount}€ from ${source}. New funds: ${budget.funds}€`);
         return budget;
     }
 
@@ -194,7 +187,6 @@ class BudgetManager {
         // Recalculate loan totals
         await this.calculateLoanTotals(budget);
         
-        console.log(`Loan added: +${amount}€ (${description}). New funds: ${budget.funds}€, Loan debt: ${budget.loanDebt}€`);
         return budget;
     }
 
@@ -219,7 +211,6 @@ class BudgetManager {
         
         await this.db.budget.put(budget);
         
-        console.log(`Loan interest added: -${amount}€ (${description}). New funds: ${budget.funds}€`);
         return budget;
     }
 
@@ -257,7 +248,6 @@ class BudgetManager {
         
         await this.db.budget.put(budget);
         
-        console.log(`Loan repaid: -${amount}€ (${description}). New funds: ${budget.funds}€, Remaining debt: ${budget.loanDebt}€`);
         return budget;
     }
 
@@ -319,7 +309,6 @@ class BudgetManager {
             
             await this.db.budget.put(budget);
             
-            console.log(`Expense added: -${amount}€ for ${reason}. Remaining funds: ${budget.funds}€`);
             return {
                 success: true,
                 budget: budget,
@@ -409,7 +398,6 @@ class BudgetManager {
         budget.netFlow = budget.income - budget.expenses;
         
         await this.db.budget.put(budget);
-        console.log(`Daily income added: +${amount}€ from ${source}. New funds: ${budget.funds}€`);
         return budget;
     }
 
@@ -467,7 +455,6 @@ class BudgetManager {
             budget.netFlow = budget.income - budget.expenses;
             
             await this.db.budget.put(budget);
-            console.log(`Building maintenance added: ${amount}€`);
         }
         
         return budget;
@@ -493,7 +480,6 @@ class BudgetManager {
             budget.netFlow = budget.income - budget.expenses;
             
             await this.db.budget.put(budget);
-            console.log(`Taxes added: +${taxAmount}€ from ${population} citizens. Total taxes: ${budget.totalTaxes}€`);
             return budget;
         }
         
@@ -535,7 +521,6 @@ class BudgetManager {
      * @param {number} startingFunds - Starting funds amount
      */
     async forceReinitialize(startingFunds = 200) {
-        console.log('Force reinitializing budget...');
         await this.db.budget.clear();
         
         return await this.initialize(startingFunds);
@@ -660,13 +645,11 @@ class BudgetManager {
 
         try {
             await this.db.budget.add(budgetState);
-            console.log(`📊 Budget state saved for turn ${turn}`);
             return budgetState;
         } catch (err) {
             if (err.name === 'ConstraintError') {
                 // Update existing state
                 await this.db.budget.put(budgetState);
-                console.log(`📊 Budget state updated for turn ${turn}`);
                 return budgetState;
             } else {
                 console.error('Error saving budget state:', err);
@@ -698,7 +681,6 @@ class BudgetManager {
         }
         
         if (needsMigration) {
-            console.log('Migrating budget states to include loan fields');
             for (const state of budgetStates) {
                 await this.db.budget.put(state);
             }
@@ -712,7 +694,6 @@ class BudgetManager {
                                      (state.totalLoanRepayments || 0);
             
             if (state.expenses !== calculatedExpenses && calculatedExpenses > 0) {
-                console.log(`Recalculating expenses for turn ${state.turn}: ${state.expenses}€ → ${calculatedExpenses}€`);
                 state.expenses = calculatedExpenses;
                 state.netFlow = (state.income || 0) - state.expenses;
                 needsRecalculation = true;
@@ -720,7 +701,6 @@ class BudgetManager {
         }
         
         if (needsRecalculation) {
-            console.log('Recalculating budget states expenses');
             for (const state of budgetStates) {
                 await this.db.budget.put(state);
             }
@@ -777,9 +757,6 @@ class BudgetManager {
         // Sort by turn ascending for display
         lastNBatches.sort((a, b) => a.turn - b.turn);
         
-        console.log(`📊 Retrieved last ${nBatches} batches of ${batchSize}-turn periods:`, 
-            lastNBatches.map(s => `Turn ${s.turn}`).join(', '));
-        
         return lastNBatches;
     }
 
@@ -794,7 +771,6 @@ class BudgetManager {
             for (const state of statesToDelete) {
                 await this.db.budget.delete(state.name);
             }
-            console.log(`🧹 Cleaned up ${statesToDelete.length} old budget states`);
         }
     }
 
