@@ -791,12 +791,20 @@ function makeNewButton(buttonInfo, svg="") {
     button.innerHTML = svg;
 
     button.addEventListener('click', (e) => {
-        setActiveTool(e);
+        // Check if button is disabled before allowing click
+        if (window.buttonStateManager && window.buttonStateManager.isEnabled(buttonInfo.tool)) {
+            setActiveTool(e);
+        }
     });
 
     panelLayoutInner.appendChild(button);
     panelLayoutInner.classList.remove('loading-objects')
     loaderButton.classList.remove('active')
+    
+    // Register button with ButtonStateManager if available
+    if (window.buttonStateManager) {
+        window.buttonStateManager.registerButton(buttonInfo.tool, button);
+    }
 }
 
 
@@ -824,6 +832,14 @@ window.onload = async () => {
     }
 
     updateSpeedDisplay();
+    
+    // Test button state manager integration
+    if (window.buttonStateManager) {
+        console.log('✅ ButtonStateManager loaded successfully');
+        console.log('📝 Usage: window.buttonStateManager.disable("House-2Story") to test');
+    } else {
+        console.warn('⚠️ ButtonStateManager not available');
+    }
 
     for (let i = 0; i < bubblyButtons.length; i++) {
         bubblyButtons[i].addEventListener('click', animateButton, false);
