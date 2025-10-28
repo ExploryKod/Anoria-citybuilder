@@ -9,7 +9,7 @@
     background: #fafafa;
     border: 3px solid var(--cta);
     border-radius: 10px;
-    z-index: 1000;
+    z-index: 10020; /* Z-index plus élevé que la toolbar carousel */
     color: var(--primary);
     font-family: inherit;
     opacity: 0;

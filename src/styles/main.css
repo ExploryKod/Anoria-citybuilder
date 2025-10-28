@@ -98,11 +98,32 @@ html, body {
 canvas {
     width: 100vw !important;
     height: 100vh !important;
+    z-index: 1; /* Z-index bas pour être en dessous des éléments UI */
+}
+
+/* Ajuster le canvas pour mobile paysage */
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    canvas {
+        height: calc(100vh - 80px) !important;
+        top: 80px;
+    }
 }
 
 /* Disable pointer events on 3D scene when modal is open */
 canvas.pointer-events-disabled {
     pointer-events: none;
+}
+
+/* Désactiver les événements du canvas en mode mobile paysage pour éviter les conflits avec le carousel */
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    canvas {
+        pointer-events: none; /* Désactiver les clics sur le canvas */
+    }
+    
+    /* Réactiver les événements seulement sur la zone du canvas visible */
+    canvas.canvas-interactive {
+        pointer-events: auto;
+    }
 }
 
 .root-window {
@@ -128,6 +149,102 @@ canvas.pointer-events-disabled {
     justify-content: flex-start;
     align-items: center;
     gap: 20px;
+}
+
+/* Masquer le carousel toolbar en mode desktop */
+.toolbar-carousel {
+    display: none;
+}
+
+/* Styles Splide par défaut */
+.splide {
+    visibility: hidden;
+}
+
+.splide.is-initialized {
+    visibility: visible;
+}
+
+.splide__track {
+    overflow: hidden;
+}
+
+.splide__list {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.splide__slide {
+    flex-shrink: 0;
+}
+
+.splide__arrows {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    transform: translateY(-50%);
+    pointer-events: none;
+    z-index: 10;
+    height: 0;
+}
+
+.splide__arrow {
+    background: var(--cta);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    pointer-events: auto;
+    color: white;
+    font-size: 18px;
+    transition: all 0.3s ease;
+    opacity: 1;
+    visibility: visible;
+}
+
+.splide__arrow:hover {
+    background: var(--cta-05);
+    transform: scale(1.1);
+}
+
+.splide__arrow--prev {
+    margin-left: 10px;
+}
+
+.splide__arrow--next {
+    margin-right: 10px;
+}
+
+.splide__pagination {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.splide__pagination__page {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.splide__pagination__page.is-active {
+    background: var(--cta);
+    transform: scale(1.2);
 }
 
 
@@ -487,7 +604,7 @@ canvas.pointer-events-disabled {
   position: fixed;
   top: 20px;
   left: 100px;
-  z-index: 1000;
+  z-index: 10020; /* Z-index plus élevé que la toolbar carousel */
 }
 
 .legend-toggle-btn {
@@ -920,7 +1037,7 @@ footer a:hover {
 .info-building-overlay.active {
     pointer-events: auto;
     background-color: var(--lightgreen);
-    z-index: 1003;
+    z-index: 10020; /* Z-index plus élevé que la toolbar carousel */
     right: 0;
     opacity: 1;
     visibility: visible;
@@ -963,7 +1080,7 @@ footer a:hover {
     flex-direction: column;
     padding: 24px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    z-index: 1003;
+    z-index: 10020; /* Z-index plus élevé que la toolbar carousel */
     text-align: center;
 }
 
@@ -1043,8 +1160,8 @@ button#pwa-refresh:hover {
     }
 }
 
-@media screen and (max-width: 768px) {
-
+/* Mobile Portrait - Masquer le jeu */
+@media screen and (max-width: 768px) and (orientation: portrait) {
     body {
         overflow-x: hidden;
     }
@@ -1067,8 +1184,6 @@ button#pwa-refresh:hover {
         color: #fff;
     }
 
-
-    
     .no-game > div {
         padding: 20px 40px;
         display: flex;
@@ -1080,9 +1195,364 @@ button#pwa-refresh:hover {
         height: 100%;
     }
 
-
     .game-window {
         display: none;
+    }
+}
+
+/* Mobile Landscape - Mode responsive */
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    body {
+        overflow-x: hidden;
+    }
+
+    /* Masquer le message "no-game" en mode paysage */
+    .no-game {
+        display: none;
+    }
+
+    /* Masquer la toolbar originale en mode mobile */
+    .game-window .toolbar {
+        display: none;
+    }
+
+    /* Afficher et styliser le carousel toolbar */
+    .toolbar-carousel {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 80px;
+        z-index: 10000; /* Z-index très élevé pour être au-dessus du canvas */
+        background-color: var(--toolbar-bg-color);
+        padding: 10px 5px;
+        display: block !important;
+        border: 2px solid red; /* Debug: bordures rouges pour voir le carousel */
+        pointer-events: auto; /* S'assurer que les clics sont capturés */
+    }
+
+    /* Forcer l'affichage des flèches Splide */
+    .toolbar-carousel .splide__arrows {
+        display: flex !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
+    .toolbar-carousel .splide__arrow {
+        display: flex !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        background: var(--cta) !important;
+        color: white !important;
+    }
+
+    /* Styles spécifiques pour les flèches de la toolbar */
+    .toolbar-carousel .toolbar-arrows {
+        display: flex !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
+    .toolbar-carousel .toolbar-arrow {
+        display: flex !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        background: var(--cta) !important;
+        color: white !important;
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 50% !important;
+        border: none !important;
+        cursor: pointer !important;
+        z-index: 10001 !important; /* Z-index encore plus élevé pour les flèches */
+        pointer-events: auto !important; /* Forcer la capture des clics */
+    }
+
+    /* Styles pour le carousel Splide */
+    .toolbar-carousel .splide__track {
+        height: 100%;
+        pointer-events: auto;
+    }
+
+    .toolbar-carousel .splide__list {
+        pointer-events: auto;
+    }
+
+    .toolbar-carousel .splide__slide {
+        pointer-events: auto;
+    }
+
+    .toolbar-carousel .toolbar__container {
+        pointer-events: auto;
+    }
+
+    .toolbar-carousel .toolbar-btn {
+        pointer-events: auto;
+        z-index: 10002;
+    }
+
+    .toolbar-carousel .splide__list {
+        height: 100%;
+        display: flex;
+        align-items: center;
+    }
+
+    .toolbar-carousel .splide__slide {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Styles pour les containers dans le carousel */
+    .toolbar-carousel .toolbar__container {
+        flex-direction: column;
+        gap: 2px;
+        min-width: 60px;
+        flex-shrink: 0;
+    }
+
+    .toolbar-carousel .toolbar__sub-container {
+        padding: 2px;
+        gap: 2px;
+    }
+
+    /* Réduire la taille des boutons dans le carousel */
+    .toolbar-carousel .toolbar-btn {
+        height: 40px;
+        min-width: 40px;
+        font-size: 14px;
+        padding: 5px;
+    }
+
+    /* Réduire la taille des labels dans le carousel */
+    .toolbar-carousel .toolbar__label,
+    .toolbar-carousel .manager-label {
+        font-size: 8px;
+        text-align: center;
+    }
+
+    /* Ajuster les boutons dans les containers du carousel */
+    .toolbar-carousel .toolbar__container .toolbar-btn {
+        max-width: 40px;
+        height: 40px;
+    }
+
+    /* Réorganiser les containers de la toolbar */
+    .toolbar .toolbar__container {
+        flex-direction: column;
+        gap: 2px;
+        min-width: 60px;
+        flex-shrink: 0;
+    }
+
+    .toolbar .toolbar__sub-container {
+        padding: 2px;
+        gap: 2px;
+    }
+
+    /* Réduire la taille des boutons */
+    .toolbar .toolbar-btn {
+        height: 40px;
+        min-width: 40px;
+        font-size: 14px;
+        padding: 5px;
+    }
+
+    /* Réduire la taille des labels */
+    .toolbar__label,
+    .manager-label {
+        font-size: 8px;
+        text-align: center;
+    }
+
+    /* Ajuster les boutons dans les containers */
+    .toolbar .toolbar__container .toolbar-btn {
+        max-width: 40px;
+        height: 40px;
+    }
+
+    /* Ajuster le panel d'informations pour être en haut en pleine largeur */
+    .info-panel-wrapper {
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-width: none;
+        border-radius: 0;
+        height: auto;
+        min-height: 65px;
+    }
+
+    .delay-ui-wrapper {
+        padding: 1px 20px;
+        height: 15px;
+    }
+
+    .info-panel {
+        flex-direction: row;
+        gap: 8px;
+        padding: 5px;
+        justify-content: center;
+        flex-wrap: nowrap;
+        height: auto;
+        min-height: 50px;
+        align-items: center;
+    }
+
+    .info-panel > .info-box {
+        padding: 5px;
+        font-size: 10px;
+        flex: 0 0 auto;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        min-width: auto;
+        height: auto;
+    }
+
+    /* Boutons carrés pour les éléments interactifs uniquement */
+    .info-panel > .info-box.realtime-budget-box,
+    .info-panel > .info-box.budget-states-box,
+    .info-panel > .info-box.journal-box,
+    .info-panel > .info-box.city-map-box {
+        width: 40px;
+        height: 40px;
+    }
+
+    /* Éléments informatifs s'adaptent au contenu */
+    .info-panel > .info-box:not(.realtime-budget-box):not(.budget-states-box):not(.journal-box):not(.city-map-box) {
+        width: auto;
+        height: auto;
+        min-width: fit-content;
+        padding: 8px 12px;
+    }
+
+    /* Centrer verticalement les éléments avec des chiffres */
+    .info-panel .clock-box,
+    .info-panel .speed-box,
+    .info-panel .pop-box,
+    .info-panel .budget-box {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+    }
+
+    /* Centrer les éléments de texte dans les articles */
+    .info-panel .clock-box > div,
+    .info-panel .speed-box > div,
+    .info-panel .pop-box > div,
+    .info-panel .budget-box > div {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Centrer spécifiquement les éléments de données */
+    .info-panel .display-time,
+    .info-panel .display-speed,
+    .info-panel .display-pop,
+    .info-panel .display-funds {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+    }
+
+    .info-panel .budget-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+    }
+
+    .info-panel p {
+        font-size: 12px;
+        margin: 0;
+    }
+
+    /* Taille de police spécifique pour les éléments informatifs */
+    .info-panel > .info-box:not(.realtime-budget-box):not(.budget-states-box):not(.journal-box):not(.city-map-box) p {
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .info-panel svg {
+        height: 20px;
+        width: 20px;
+    }
+
+    /* Ajuster le footer */
+    footer {
+        display: none;
+    }
+
+    /* Ajuster les modales pour mobile */
+    .budget-panel,
+    .budget-states-panel,
+    .realtime-budget-panel,
+    .loans-panel,
+    .journal-panel,
+    .city-map-panel,
+    .tutorial-panel,
+    .objectives-panel,
+    .reset-confirm-panel {
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    /* Ajuster la légende */
+    .legend-dropdown-container {
+        top: 10px;
+        left: 10px;
+    }
+
+    .legend-dropdown {
+        max-width: 200px;
+        font-size: 12px;
+    }
+
+    /* Ajuster les overlays d'information */
+    .info-building-overlay {
+        width: 300px;
+        max-height: 300px;
+        top: 100px;
+    }
+
+    /* Améliorer la scrollabilité de la toolbar */
+    .toolbar::-webkit-scrollbar {
+        height: 4px;
+    }
+
+    .toolbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .toolbar::-webkit-scrollbar-thumb {
+        background: var(--cta);
+        border-radius: 2px;
+    }
+
+    /* Ajuster les panels pour éviter le chevauchement avec la toolbar */
+    .panel-layout.active {
+        bottom: 80px;
+        height: calc(50% - 80px);
+    }
+
+    /* Améliorer la visibilité des boutons sur mobile */
+    .toolbar-btn:active {
+        transform: scale(0.95);
+    }
+
+    /* Ajuster les tooltips pour mobile */
+    .tooltip {
+        font-size: 12px;
+        padding: 4px 8px;
     }
 }
 

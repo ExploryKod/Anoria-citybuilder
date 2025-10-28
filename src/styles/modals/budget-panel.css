@@ -8,7 +8,7 @@
     max-height: 725px;
     background: #fafafa;
     border-right: 3px solid var(--cta);
-    z-index: 1004;
+    z-index: 10010; /* Z-index plus élevé que la toolbar carousel */
     transition: left 0.3s ease-in-out;
     overflow-y: auto;
     color: var(--primary);
@@ -107,6 +107,74 @@
 
 .budget-tab-content.active {
     display: block;
+}
+
+/* Mobile Landscape Responsive Styles */
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    .budget-panel {
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100vh;
+        max-height: none;
+        border-right: none;
+        border-bottom: 3px solid var(--cta);
+    }
+
+    .budget-panel.active {
+        left: 0;
+    }
+
+    .budget-wrapper {
+        padding: 15px;
+    }
+
+    .budget-header {
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+    }
+
+    .budget-header h3 {
+        font-size: 1.1rem;
+    }
+
+    .budget-content {
+        gap: 15px;
+    }
+
+    .budget-tabs {
+        margin-bottom: 15px;
+        padding: 3px;
+    }
+
+    .budget-tab {
+        padding: 8px 10px;
+        font-size: 0.8rem;
+    }
+
+    .budget-tab-content {
+        gap: 10px;
+    }
+
+    .advice-section h4 {
+        font-size: 1rem;
+        margin-bottom: 8px;
+    }
+
+    .advice-item {
+        padding: 8px;
+        margin-bottom: 8px;
+    }
+
+    .advice-item h5 {
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+
+    .advice-item p {
+        font-size: 0.8rem;
+        line-height: 1.4;
+    }
 }
 
 /* Advice Section */

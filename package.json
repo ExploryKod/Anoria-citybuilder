@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@splidejs/splide": "^4.1.4",
     "dexie": "^4.0.11",
     "three": "^0.162.0"
   },
