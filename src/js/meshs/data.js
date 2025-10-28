@@ -59,7 +59,6 @@ export const assetsPrices = Object.freeze({
     'Streetlight-001': { price: 5, category: 'infrastructure', gridSize: 1 },
     
     // Public Buildings
-    'Chapel-001': { price: 60, category: 'public', gridSize: 2 },
     'Church-002': { price: 100, category: 'public', gridSize: 3 }
 });
 
@@ -115,9 +114,7 @@ export const meshNameMapping = {
     'Streetlight016': 'Streetlight-001',
     'Streetlight017': 'Streetlight-001',
     
-    // Chapel and Church
-    'Chapel': 'Chapel-001',
-    'Chapel001': 'Chapel-001',
+    // Church
     'Church002': 'Church-002',
     
     // House 2 Story variants

@@ -1,0 +1,170 @@
+.objectives-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) translateX(-100%);
+    max-width: 450px;
+    width: 90%;
+    max-height: 80vh;
+    background: #fafafa;
+    border: 3px solid var(--cta);
+    border-radius: 10px;
+    z-index: 1000;
+    color: var(--primary);
+    font-family: inherit;
+    opacity: 0;
+    transition: all 0.3s ease-in-out;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+}
+
+.objectives-panel.visible {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateX(0);
+    pointer-events: auto;
+}
+
+.objectives-panel-wrapper {
+    width: 100%;
+    height: 100%;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.objectives-panel-header {
+    padding: 16px 20px 12px 20px;
+    border-bottom: 2px solid var(--cta);
+    flex-shrink: 0;
+}
+
+.objectives-panel-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.objectives-panel-content {
+    padding: 16px 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--cta) transparent;
+}
+
+
+
+.objectives-panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.objectives-panel-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.objectives-panel-content::-webkit-scrollbar-thumb {
+    background: var(--cta);
+    border-radius: 3px;
+}
+
+.objectives-panel-content::-webkit-scrollbar-thumb:hover {
+    background: var(--cta-05);
+}
+
+.objectives-content {
+    padding: 0 20px 16px 20px;
+    flex-shrink: 0;
+}
+
+.objectives-buttons {
+    padding: 16px 20px;
+    border-top: 2px solid var(--cta);
+    flex-shrink: 0;
+    background: #fafafa;
+}
+
+.objectives-buttons-wrapper {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.objectives-buttons button {
+    padding: 8px 16px;
+    border: 3px solid var(--cta);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    min-width: 80px;
+    background-color: var(--cta);
+    color: white;
+}
+
+.objectives-buttons button:hover {
+    background-color: white;
+    color: var(--cta);
+}
+
+.objectives-previous-btn,
+.objectives-next-btn {
+    background-color: var(--cta);
+    color: white;
+}
+
+.objectives-previous-btn:hover,
+.objectives-next-btn:hover {
+    background-color: white;
+    color: var(--cta);
+}
+
+.objectives-skip-btn {
+    background-color: var(--cta);
+    color: white;
+}
+
+.objectives-skip-btn:hover {
+    background-color: white;
+    color: var(--cta);
+}
+
+.objectives-close-btn {
+    background-color: white;
+    color: var(--cta);
+}
+
+.objectives-close-btn:hover {
+    background-color: var(--cta);
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .objectives-panel {
+        max-width: calc(100vw - 20px);
+        max-height: 90vh;
+    }
+    
+    .objectives-panel-wrapper {
+        min-height: 350px;
+    }
+    
+    .objectives-buttons-wrapper {
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .objectives-buttons button {
+        width: 100%;
+        padding: 10px 16px;
+    }
+}

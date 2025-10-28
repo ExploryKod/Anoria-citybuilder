@@ -34,7 +34,7 @@ class MeshLoaderOptimized {
         industry: ['Windmill-001', 'Barn-001'],
         markets: ['Market-Stall'],
         infrastructure: ['Well-001', 'Fountain-001', 'Streetlight-001'],
-        public: ['Chapel-001', 'Church-002'],
+        public: ['Church-002'],
         palaces: ['House-2Story'],
         nature: []
     }
@@ -250,6 +250,8 @@ class MeshLoaderOptimized {
                         if (category !== propertyKey) {
                             return;
                         }
+                        
+                        // Found palace mesh
 
                         // Parse mesh name parts for button text
                         const normalized = meshName.replace(/[._\s]/g, '_');

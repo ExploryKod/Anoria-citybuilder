@@ -38,6 +38,7 @@ class TutorialManager {
         this.setupEventListeners();
         this.setupDefaultSteps();
         this.isInitialized = true;
+
     }
 
     /**
@@ -134,9 +135,7 @@ class TutorialManager {
      */
     disableThreeJSEvents() {
         this.eventBlocker.blockThreeJSEvents({
-            onBlock: (eventType, e) => {
-                // Event blocked
-            }
+            onBlock: (eventType, e) => {}
         });
     }
 
@@ -166,7 +165,10 @@ class TutorialManager {
         // Mettre le jeu en pause
         if (window.game && typeof window.game.pause === 'function') {
             window.game.pause();
+        } else {
+            console.warn('Game object not available for pausing');
         }
+
     }
 
     /**
@@ -182,7 +184,10 @@ class TutorialManager {
         // Reprendre le jeu
         if (window.game && typeof window.game.play === 'function') {
             window.game.play();
+        } else {
+            console.warn('Game object not available for resuming');
         }
+
     }
 
     /**
