@@ -607,10 +607,8 @@ export function createScene(housesStore, gameStore, assetManager) {
         // Daily budget operations - expenses and income
         try {
             if (window.budgetManager) {
-                // Add taxes (10€ per citizen per turn)
-                if (totalPop > 0) {
-                    await window.budgetManager.addTaxes(totalPop);
-                }
+                // Add taxes from houses (10€ per citizen per turn)
+                await window.budgetManager.addTaxes();
                 
                 // Add building maintenance expenses only
                 const buildingAmount = buildingCounts.total * 2; // Building maintenance cost
@@ -632,6 +630,10 @@ export function createScene(housesStore, gameStore, assetManager) {
                 // Process loan payments BEFORE saving budget state
                 if (window.processLoanPayments) {
                     await window.processLoanPayments();
+                    
+                    // Recalculate loan totals to ensure cumulative values are correct
+                    const budget = await window.budgetManager.getCurrentBudget();
+                    await window.budgetManager.calculateLoanTotals(budget);
                 }
                 
                 // Save budget state every 3 turns (AFTER loan payments)
@@ -649,6 +651,11 @@ export function createScene(housesStore, gameStore, assetManager) {
                         if (cleanupResult.deleted > 0) {
                             // Show notification to user only once
                             showCleanupNotificationOnce(cleanupResult);
+                        }
+                        
+                        // Also cleanup old journal entries (60+ days)
+                        if (window.budgetManager.cleanupOldJournalEntries) {
+                            await window.budgetManager.cleanupOldJournalEntries(60);
                         }
                     } catch (error) {
                         console.warn('Failed to save budget state:', error);

@@ -12,6 +12,7 @@ db.delete({ disableAutoOpen: false })
             game: 'name',
             budget: 'name',
             objectives: 'name', // Store pour les échecs et succès d'objectifs
+            journal: '++id, turn, date, type, amount, description' // Journal des écritures comptables
         });
         // Database cleared and recreated successfully
     })
