@@ -222,3 +222,74 @@
     font-size: 1rem;
     font-weight: 700;
 }
+
+/* Mobile Landscape Responsive Styles for Modals */
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    /* Ajuster les modales pour mobile paysage */
+    .modal-wrapper {
+        padding: 10px;
+    }
+
+    .modal-header {
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+    }
+
+    .modal-header h3 {
+        font-size: 1.1rem;
+    }
+
+    .modal-content {
+        gap: 10px;
+        padding: 0 5px;
+    }
+
+    .modal-section {
+        padding: 10px;
+    }
+
+    .modal-section-title {
+        font-size: 0.8rem;
+        margin-bottom: 8px;
+    }
+
+    .modal-item {
+        padding: 6px 8px;
+        margin-bottom: 3px;
+    }
+
+    .modal-item-label {
+        font-size: 0.7rem;
+    }
+
+    .modal-item-value {
+        font-size: 0.8rem;
+    }
+
+    .modal-grid {
+        gap: 8px;
+    }
+
+    .modal-grid-item {
+        padding: 8px;
+    }
+
+    .modal-grid-label {
+        font-size: 0.7rem;
+        margin-bottom: 3px;
+    }
+
+    .modal-grid-value {
+        font-size: 0.9rem;
+    }
+
+    .modal-btn {
+        padding: 6px 12px;
+        font-size: 11px;
+        min-width: 60px;
+    }
+
+    .modal-close-btn {
+        padding: 6px;
+    }
+}
