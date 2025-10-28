@@ -247,9 +247,10 @@ class ObjectivesManager {
                         // Première tentative : tour 0 + 0 (pas de grâce) + 60 tours = tour 60
                         targetMessage = `dans 60 tours (tour 60)`;
                     } else {
-                        // Tentatives suivantes : tour de départ + 20 (grâce) + 60 (objectif)
-                        const targetTour = lastResetTurn + 20 + 60;
-                        targetMessage = `dans 60 tours après période de grâce (tour ${targetTour})`;
+                        // Tentatives suivantes : utiliser la vraie targetDay calculée par le tracker
+                        const targetTour = window.objectivesTracker?.targetDay || 60;
+                        const turnsRemaining = targetTour - trackingData.currentDay;
+                        targetMessage = `dans ${turnsRemaining} tours après période de grâce (tour ${targetTour})`;
                     }
                     
                     html += `<p style="margin: 4px 0; color: var(--primary); font-style: italic; opacity: 0.7; text-align: left;">
