@@ -6,7 +6,7 @@
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
+    z-index: 10010; /* Z-index plus élevé que la toolbar carousel */
     display: none;
     align-items: center;
     justify-content: center;
@@ -259,5 +259,96 @@
     border-radius: 8px;
     font-size: 14px;
     font-weight: 600;
+}
+
+/* Mobile Landscape Responsive Styles */
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    .journal-wrapper {
+        width: 95%;
+        max-width: none;
+        max-height: 90vh;
+    }
+
+    .journal-header {
+        padding: 15px;
+    }
+
+    .journal-header h3 {
+        font-size: 1.3rem;
+    }
+
+    .journal-close-btn {
+        width: 32px;
+        height: 32px;
+        padding: 4px;
+    }
+
+    .journal-content {
+        padding: 15px;
+    }
+
+    .journal-filters {
+        gap: 8px;
+        margin-bottom: 15px;
+    }
+
+    .journal-filters button {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .journal-list {
+        gap: 10px;
+    }
+
+    .journal-item {
+        padding: 12px;
+    }
+
+    .journal-item-header {
+        margin-bottom: 8px;
+    }
+
+    .journal-item-turn {
+        font-size: 1rem;
+    }
+
+    .journal-item-date {
+        font-size: 0.8rem;
+    }
+
+    .journal-item-content {
+        font-size: 0.8rem;
+        line-height: 1.4;
+    }
+
+    .journal-item-type {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+    }
+
+    .journal-summary {
+        margin-top: 15px;
+        padding: 12px;
+    }
+
+    .journal-summary h4 {
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+    .journal-empty {
+        padding: 30px 15px;
+    }
+
+    .journal-empty-icon {
+        font-size: 1.5rem;
+        margin-bottom: 8px;
+    }
+
+    .journal-turn-header {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
 }
 

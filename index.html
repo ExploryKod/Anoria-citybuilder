@@ -1538,9 +1538,11 @@
         </div>
         <div class="city-map-content">
             <div class="city-map-legend">
-                <div class="legend-title">
-                    <h4>🗺️ Légende</h4>
-                </div>
+                <button class="legend-toggle">◀</button>
+                <div class="legend-content">
+                    <div class="legend-title">
+                        <h4>🗺️ Légende</h4>
+                    </div>
                 <div class="legend-items">
                     <div class="legend-item legend-status">
                         <span class="status-indicator no-road"></span>
@@ -1609,11 +1611,22 @@
                         <span class="legend-label">Herbe</span>
                     </div>
                 </div>
+                </div>
             </div>
-            <div class="city-map-grid" id="city-map-grid">
-                <div class="grid-loading">
-                    <div class="loading-spinner"></div>
-                    <p>Chargement de la carte...</p>
+            <div class="city-map-main">
+                <div class="city-map-filters">
+                    <button class="filter-btn active" data-filter="all">Tous</button>
+                    <button class="filter-btn" data-filter="houses">Maisons</button>
+                    <button class="filter-btn" data-filter="infrastructure">Infrastructure</button>
+                    <button class="filter-btn" data-filter="services">Services</button>
+                </div>
+                <div class="city-map-scrollable">
+                    <div class="city-map-grid" id="city-map-grid">
+                        <div class="grid-loading">
+                            <div class="loading-spinner"></div>
+                            <p>Chargement de la carte...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
