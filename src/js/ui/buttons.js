@@ -1615,6 +1615,22 @@ function initCityMapPopup() {
         return;
     }
 
+    // Initialize collapsible legend for mobile landscape
+    function initCollapsibleLegend() {
+        const legendToggle = document.querySelector('.legend-toggle');
+        const legend = document.querySelector('.city-map-legend');
+        
+        if (legendToggle && legend) {
+            legendToggle.addEventListener('click', () => {
+                legend.classList.toggle('collapsed');
+                
+                // Update button text
+                const isCollapsed = legend.classList.contains('collapsed');
+                legendToggle.textContent = isCollapsed ? '▶' : '◀';
+            });
+        }
+    }
+
     // Toggle popup on button click
     cityMapBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
@@ -1629,6 +1645,9 @@ function initCityMapPopup() {
             }
             // Generate the city map grid
             await generateCityMap();
+            
+            // Initialize collapsible legend after a short delay to ensure DOM is ready
+            setTimeout(initCollapsibleLegend, 100);
         } else {
             // Use PopupManager to handle events
             if (window.popupManager) {

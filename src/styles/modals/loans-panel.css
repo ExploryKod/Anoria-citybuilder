@@ -6,7 +6,7 @@
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
+    z-index: 10010; /* Z-index plus élevé que la toolbar carousel */
     display: none;
     align-items: center;
     justify-content: center;
@@ -132,8 +132,8 @@
     border-radius: 15px;
     box-shadow: 0 20px 40px rgba(0,0,0,0.3);
     width: 90%;
-    max-width: 800px;
-    max-height: 80vh;
+    max-width: 1000px;
+    max-height: 85vh;
     overflow: hidden;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
@@ -499,7 +499,211 @@
     font-weight: 500;
 }
 
-.summary-value {
-    color: var(--cta);
-    font-weight: 600;
+/* Mobile Landscape Responsive Styles */
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    .loans-panel-wrapper {
+        width: 95%;
+        max-width: none;
+        max-height: 90vh;
+    }
+
+    .loans-panel-header {
+        padding: 15px;
+    }
+
+    .loans-panel-header h2 {
+        font-size: 1.3rem;
+    }
+
+    .loans-health-indicator {
+        padding: 4px 8px;
+        font-size: 0.8rem;
+    }
+
+    .loans-panel-close-btn {
+        width: 32px;
+        height: 32px;
+        padding: 4px;
+    }
+
+    .loans-panel-content {
+        padding: 15px;
+    }
+
+    .loans-header {
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+    }
+
+    .loans-header h3 {
+        font-size: 1.1rem;
+    }
+
+    .loans-date {
+        font-size: 0.8rem;
+    }
+
+    .loans-health-section {
+        margin-bottom: 20px;
+    }
+
+    .loans-health-section h4 {
+        font-size: 1rem;
+        margin-bottom: 10px;
+        padding: 6px 10px;
+    }
+
+    .health-impact {
+        padding: 12px;
+    }
+
+    .loans-available h4 {
+        font-size: 1rem;
+        margin-bottom: 15px;
+        padding: 6px 10px;
+    }
+
+    .loan-category {
+        margin-bottom: 20px;
+    }
+
+    .loan-category h5 {
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+
+    .loan-option {
+        padding: 12px;
+        margin-bottom: 8px;
+    }
+
+    .loan-name {
+        font-size: 1rem;
+        margin-bottom: 4px;
+    }
+
+    .loan-description {
+        font-size: 0.8rem;
+    }
+
+    .loan-details {
+        font-size: 0.8rem;
+    }
+
+    .loan-select-btn {
+        padding: 8px 16px;
+        font-size: 0.8rem;
+    }
+
+    .loan-form-section {
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .loan-form-section h4 {
+        font-size: 1rem;
+        margin-bottom: 15px;
+    }
+
+    .loan-input-group {
+        margin-bottom: 12px;
+    }
+
+    .loan-input-group label {
+        font-size: 0.9rem;
+        margin-bottom: 4px;
+    }
+
+    .loan-input-group input,
+    .loan-input-group select {
+        padding: 8px;
+        font-size: 0.9rem;
+    }
+
+    .loan-summary {
+        padding: 12px;
+        margin-bottom: 15px;
+    }
+
+    .loan-summary-item {
+        padding: 4px 0;
+        font-size: 0.9rem;
+    }
+
+    .loan-summary-item.total {
+        font-size: 1rem;
+        margin-top: 8px;
+        padding-top: 8px;
+    }
+
+    .loan-form-buttons {
+        gap: 10px;
+    }
+
+    .loan-cancel-btn {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+
+    .loan-contract-btn {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+
+    .active-loans-section h4 {
+        font-size: 1rem;
+        margin-bottom: 12px;
+        padding: 6px 10px;
+    }
+
+    .no-loans {
+        padding: 30px 15px;
+    }
+
+    .no-loans-icon {
+        font-size: 1.5rem;
+        margin-bottom: 8px;
+    }
+
+    .amortization-schedule {
+        margin-top: 15px;
+        padding: 12px;
+    }
+
+    .amortization-schedule h4 {
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+
+    .schedule-summary {
+        gap: 15px;
+        margin-bottom: 12px;
+        padding: 8px;
+    }
+
+    .summary-item .label {
+        font-size: 0.7rem;
+    }
+
+    .summary-item .value {
+        font-size: 0.8rem;
+    }
+
+    .schedule-header {
+        grid-template-columns: 50px 60px 60px 60px 60px;
+        font-size: 0.7rem;
+    }
+
+    .schedule-header > div {
+        padding: 6px 4px;
+    }
+
+    .schedule-row {
+        grid-template-columns: 50px 60px 60px 60px 60px;
+        font-size: 0.7rem;
+    }
+
+    .schedule-row > div {
+        padding: 4px;
+    }
 }
