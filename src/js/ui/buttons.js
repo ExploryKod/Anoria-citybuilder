@@ -574,6 +574,12 @@ function toggleModal(e) {
             }
             break;
         case 'palaces':
+            // Check if palace button is disabled
+            if (window.buttonStateManager && !window.buttonStateManager.isEnabled('palace-btn')) {
+                console.log('🏛️ Palace button is disabled');
+                return; // Don't open panel if disabled
+            }
+            
             getButtonsUnactive()
             getButtonsDisabled()
             panelLayoutInner.classList.add('loading-objects')
@@ -833,10 +839,35 @@ window.onload = async () => {
 
     updateSpeedDisplay();
     
-    // Test button state manager integration
+    // Initialize button states for game start
     if (window.buttonStateManager) {
         console.log('✅ ButtonStateManager loaded successfully');
-        console.log('📝 Usage: window.buttonStateManager.disable("House-2Story") to test');
+        
+        // Register category buttons
+        const palaceBtn = document.getElementById('palace-btn');
+        if (palaceBtn) {
+            window.buttonStateManager.registerButton('palace-btn', palaceBtn);
+        }
+        
+        const infrastructureBtn = document.getElementById('infrastructure-btn');
+        if (infrastructureBtn) {
+            window.buttonStateManager.registerButton('infrastructure-btn', infrastructureBtn);
+        }
+        
+        // Disable initial unavailable buildings
+        const initialDisabledBuildings = [
+            'palace-btn',           // Palace category button
+            'House-Red',            // Red house
+            'House-Purple',         // Purple house
+            'Windmill-001',         // Windmill
+            'Church-002',           // Church
+            'infrastructure-btn'    // Infrastructure category button
+        ];
+        
+        initialDisabledBuildings.forEach(buildingId => {
+            window.buttonStateManager.disable(buildingId);
+            console.log(`🚫 Disabled: ${buildingId}`);
+        });
     } else {
         console.warn('⚠️ ButtonStateManager not available');
     }
@@ -1036,7 +1067,15 @@ window.onload = async () => {
 
     housesButton.addEventListener('click', toggleModal)
     
-    palacesButton.addEventListener('click', toggleModal)
+    palacesButton.addEventListener('click', (e) => {
+        // Check if palace button is disabled before toggling modal
+        if (window.buttonStateManager && !window.buttonStateManager.isEnabled('palace-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+        toggleModal(e);
+    })
 
     farmsButton.addEventListener('click', toggleModal)
     
@@ -1044,11 +1083,37 @@ window.onload = async () => {
 
     marketButton.addEventListener('click', toggleModal)
     
-    infrastructureButton.addEventListener('click', toggleModal)
+    infrastructureButton.addEventListener('click', (e) => {
+        // Check if infrastructure button is disabled before toggling modal
+        if (window.buttonStateManager && !window.buttonStateManager.isEnabled('infrastructure-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+        toggleModal(e);
+    })
     
     publicButton.addEventListener('click', toggleModal)
 
     panelLayoutCloseBtn.addEventListener('click', closeModal)
+    
+    // Legend dropdown functionality
+    const legendToggle = document.getElementById('legend-toggle');
+    const legendDropdown = document.getElementById('legend-dropdown');
+    
+    if (legendToggle && legendDropdown) {
+        legendToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            legendDropdown.classList.toggle('hidden');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.legend-dropdown-container')) {
+                legendDropdown.classList.add('hidden');
+            }
+        });
+    }
     
     // Budget panel functionality - get elements directly to avoid timing issues
     const budgetBtn = document.getElementById('budget-btn');
@@ -1148,6 +1213,9 @@ window.onload = async () => {
     
     // Initialize loan payment system
     initLoanPaymentSystem();
+    
+    // Initialize journal popup
+    initJournalPopup();
 }
 
 // Real-time Budget Popup Functions
@@ -2009,9 +2077,25 @@ function displayBudgetStates(states, container) {
                 <div class="statement-section">
                     <h4 class="statement-title">PRODUITS</h4>
                     <div class="statement-line">
-                        <span class="statement-label">Impôts (${population} habitants)</span>
+                        <span class="statement-label">Impôts habitants (${population} hab.)</span>
                         <span class="statement-value positive">${(state.totalTaxes || 0).toLocaleString('fr-FR')}€</span>
                     </div>
+                    ${state.taxBreakdown ? `
+                    <div class="statement-subdetail" style="padding-left: 20px; margin: 8px 0;">
+                        <div class="statement-line" style="font-size: 0.85em;">
+                            <span class="statement-label">• Maisons bleues</span>
+                            <span class="statement-value">${(state.taxBreakdown['House-Blue'] || 0).toLocaleString('fr-FR')}€</span>
+                        </div>
+                        <div class="statement-line" style="font-size: 0.85em;">
+                            <span class="statement-label">• Maisons rouges</span>
+                            <span class="statement-value">${(state.taxBreakdown['House-Red'] || 0).toLocaleString('fr-FR')}€</span>
+                        </div>
+                        <div class="statement-line" style="font-size: 0.85em;">
+                            <span class="statement-label">• Maisons violettes</span>
+                            <span class="statement-value">${(state.taxBreakdown['House-Purple'] || 0).toLocaleString('fr-FR')}€</span>
+                        </div>
+                    </div>
+                    ` : ''}
                     <div class="statement-line">
                         <span class="statement-label">Autres revenus</span>
                         <span class="statement-value positive">${((income || 0) - (state.totalTaxes || 0)).toLocaleString('fr-FR')}€</span>
@@ -2028,6 +2112,34 @@ function displayBudgetStates(states, container) {
                         <span class="statement-label">Maintenance bâtiments</span>
                         <span class="statement-value negative">-${(state.totalBuildingMaintenance || 0).toLocaleString('fr-FR')}€</span>
                     </div>
+                    ${state.maintenanceBreakdown ? `
+                    <div class="statement-subdetail" style="padding-left: 20px; margin: 8px 0;">
+                        <div class="statement-line" style="font-size: 0.85em;">
+                            <span class="statement-label">• Habitations</span>
+                            <span class="statement-value">-${(state.maintenanceBreakdown.houses || 0).toLocaleString('fr-FR')}€</span>
+                        </div>
+                        <div class="statement-line" style="font-size: 0.85em;">
+                            <span class="statement-label">• Fermes</span>
+                            <span class="statement-value">-${(state.maintenanceBreakdown.farms || 0).toLocaleString('fr-FR')}€</span>
+                        </div>
+                        <div class="statement-line" style="font-size: 0.85em;">
+                            <span class="statement-label">• Marchés</span>
+                            <span class="statement-value">-${(state.maintenanceBreakdown.markets || 0).toLocaleString('fr-FR')}€</span>
+                        </div>
+                        <div class="statement-line" style="font-size: 0.85em;">
+                            <span class="statement-label">• Routes</span>
+                            <span class="statement-value">-${(state.maintenanceBreakdown.roads || 0).toLocaleString('fr-FR')}€</span>
+                        </div>
+                        <div class="statement-line" style="font-size: 0.85em;">
+                            <span class="statement-label">• Infrastructure</span>
+                            <span class="statement-value">-${(state.maintenanceBreakdown.infrastructure || 0).toLocaleString('fr-FR')}€</span>
+                        </div>
+                        <div class="statement-line" style="font-size: 0.85em;">
+                            <span class="statement-label">• Industrie</span>
+                            <span class="statement-value">-${(state.maintenanceBreakdown.industry || 0).toLocaleString('fr-FR')}€</span>
+                        </div>
+                    </div>
+                    ` : ''}
                     <div class="statement-line">
                         <span class="statement-label">Intérêts dettes</span>
                         <span class="statement-value negative">-${(state.totalLoanInterestExpenses || 0).toLocaleString('fr-FR')}€</span>
@@ -2899,19 +3011,58 @@ async function loadActiveLoans() {
             return;
         }
         
-        activeLoansList.innerHTML = activeLoans.map(loan => `
-            <div class="loan-item">
-                <div class="loan-item-header">
-                    <div class="loan-type">${loan.type === 'bank' ? '🏛️ Bancaire' : '🏪 Commercial'}</div>
-                    <div class="loan-amount">${loan.amount}€</div>
-                    <div class="loan-progress">${loan.remainingTurns}/${loan.duration} tours</div>
+        activeLoansList.innerHTML = activeLoans.map(loan => {
+            // Calculate amortization schedule
+            const amortizationSchedule = generateAmortizationSchedule(loan);
+            
+            return `
+                <div class="loan-item">
+                    <div class="loan-item-header">
+                        <div class="loan-type">${loan.type === 'bank' ? '🏛️ Bancaire' : '🏪 Commercial'}</div>
+                        <div class="loan-amount">${loan.amount}€</div>
+                        <div class="loan-progress">${loan.remainingTurns}/${loan.duration} tours</div>
+                    </div>
+                    <div class="loan-details">
+                        <div>Taux: ${loan.interestRate}%</div>
+                        <div>Total à rembourser: ${loan.total}€ (intérêts: ${loan.interest}€)</div>
+                    </div>
+                    
+                    <!-- Amortization Schedule -->
+                    <div class="amortization-schedule">
+                        <h4>Tableau d'amortissement</h4>
+                        <div class="schedule-summary">
+                            <div class="summary-item">
+                                <span class="label">Intérêts totaux restants:</span>
+                                <span class="value">${amortizationSchedule.remainingInterest}€</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="label">Capital restant:</span>
+                                <span class="value">${loan.amount}€</span>
+                            </div>
+                        </div>
+                        
+                        <div class="schedule-table">
+                            <div class="schedule-header">
+                                <div class="col-turn">Tour</div>
+                                <div class="col-payment">Paiement</div>
+                                <div class="col-interest">Intérêts</div>
+                                <div class="col-principal">Capital</div>
+                                <div class="col-balance">Solde</div>
+                            </div>
+                            ${amortizationSchedule.schedule.map((row, index) => `
+                                <div class="schedule-row ${row.paid ? 'paid' : ''}">
+                                    <div class="col-turn">${row.turn}</div>
+                                    <div class="col-payment">${row.payment}€</div>
+                                    <div class="col-interest">${row.interest}€</div>
+                                    <div class="col-principal">${row.principal}€</div>
+                                    <div class="col-balance">${row.balance}€</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
                 </div>
-                <div class="loan-details">
-                    <div>Taux: ${loan.interestRate}%</div>
-                    <div>Total à rembourser: ${loan.total}€ (intérêts: ${loan.interest}€)</div>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
         
     } catch (error) {
         console.error('Error loading active loans:', error);
@@ -2924,11 +3075,52 @@ async function loadActiveLoans() {
     }
 }
 
+function generateAmortizationSchedule(loan) {
+    const schedule = [];
+    const monthlyPayment = Math.round(loan.total / loan.duration);
+    const interestRate = loan.interestRate / 100;
+    let remainingBalance = loan.amount;
+    let totalInterestPaid = 0;
+    let paidTurns = loan.duration - loan.remainingTurns;
+    
+    // Calculate total interest for the loan
+    const totalInterest = loan.interest || Math.round(loan.amount * interestRate);
+    
+    for (let turn = 1; turn <= loan.duration; turn++) {
+        const interestPayment = Math.round(remainingBalance * interestRate / loan.duration);
+        const principalPayment = monthlyPayment - interestPayment;
+        const isPaid = turn <= paidTurns;
+        
+        if (isPaid) {
+            remainingBalance = Math.max(0, remainingBalance - principalPayment);
+            totalInterestPaid += interestPayment;
+        }
+        
+        schedule.push({
+            turn: turn,
+            payment: monthlyPayment,
+            interest: interestPayment,
+            principal: principalPayment,
+            balance: remainingBalance,
+            paid: isPaid
+        });
+    }
+    
+    const remainingInterest = Math.max(0, totalInterest - totalInterestPaid);
+    
+    return {
+        schedule: schedule,
+        remainingInterest: remainingInterest
+    };
+}
+
 // Loan Management System
 async function processLoanPayments() {
     try {
         const activeLoans = await budgetManager.getActiveLoans();
         if (activeLoans.length === 0) return;
+        
+        console.log(`💰 Processing loan payments for ${activeLoans.length} active loan(s)`);
         
         const loansToRemove = [];
         
@@ -2940,14 +3132,18 @@ async function processLoanPayments() {
             const interestPayment = Math.round(loan.amount * (loan.interestRate / 100) / loan.duration);
             const principalPayment = monthlyPayment - interestPayment;
             
+            console.log(`Loan ${loan.id}: payment=${monthlyPayment}, interest=${interestPayment}, principal=${principalPayment}`);
+            
             // Check if we have enough funds
             const currentBudget = await budgetManager.getCurrentBudget();
             if (currentBudget.funds >= monthlyPayment) {
                 // Pay interest first
                 await budgetManager.addLoanInterest(interestPayment, `Intérêts prêt ${loan.type} (${loan.id})`);
+                console.log(`✅ Paid ${interestPayment}€ in interest for loan ${loan.id}`);
                 
                 // Pay principal
                 await budgetManager.repayLoan(principalPayment, `Remboursement prêt ${loan.type} (${loan.id})`, loan.id);
+                console.log(`✅ Paid ${principalPayment}€ in principal for loan ${loan.id}`);
                 
                 // Remove loan if fully paid
                 if (loan.remainingTurns <= 0 || loan.amount <= 0) {
@@ -2959,6 +3155,7 @@ async function processLoanPayments() {
                 if (currentBudget.funds >= interestPayment) {
                     await budgetManager.addLoanInterest(interestPayment, `Intérêts prêt ${loan.type} (${loan.id})`);
                     loan.remainingTurns--; // Still count as a turn
+                    console.log(`⚠️ Only paid ${interestPayment}€ in interest (not enough funds for full payment)`);
                 } else {
                     // Can't even pay interest - loan goes into default
                     console.warn(`Loan ${loan.id} in default - cannot pay interest`);
@@ -2969,6 +3166,13 @@ async function processLoanPayments() {
         
         // Update displays
         updateBudgetDisplay();
+        
+        // Log final totals
+        const finalBudget = await budgetManager.getCurrentBudget();
+        console.log(`📊 Budget totals after loan payments:`, {
+            totalLoanInterestExpenses: finalBudget.totalLoanInterestExpenses,
+            totalLoanRepayments: finalBudget.totalLoanRepayments
+        });
         
     } catch (error) {
         console.error('Error processing loan payments:', error);
@@ -3013,3 +3217,167 @@ async function refreshBudgetStatesModal() {
 
 // Make refresh function globally accessible
 window.refreshBudgetStatesModal = refreshBudgetStatesModal;
+
+// Journal Popup Functions
+function initJournalPopup() {
+    const journalBtn = document.getElementById('journal-btn');
+    const journalPanel = document.getElementById('journal-panel');
+    const journalCloseBtn = document.querySelector('.journal-close-btn');
+    const journalRefreshBtn = document.getElementById('journal-refresh-btn');
+    const filterButtons = document.querySelectorAll('.journal-filter-btn');
+    
+    if (!journalBtn || !journalPanel || !journalCloseBtn || !journalRefreshBtn) {
+        console.warn('Journal popup elements not found');
+        return;
+    }
+    
+    // Toggle journal popup on journal button click
+    journalBtn.addEventListener('click', () => {
+        journalPanel.classList.add('active');
+        if (window.popupManager) {
+            window.popupManager.forceOpenPopup('journal-panel');
+        }
+        loadJournalEntries('all');
+    });
+    
+    // Close journal popup
+    journalCloseBtn.addEventListener('click', () => {
+        journalPanel.classList.remove('active');
+        if (window.popupManager) {
+            window.popupManager.forceClosePopup('journal-panel');
+        }
+    });
+    
+    // Close popup when clicking outside
+    journalPanel.addEventListener('click', (e) => {
+        if (e.target === journalPanel) {
+            journalPanel.classList.remove('active');
+            if (window.popupManager) {
+                window.popupManager.forceClosePopup('journal-panel');
+            }
+        }
+    });
+    
+    // Refresh button
+    journalRefreshBtn.addEventListener('click', () => {
+        const activeFilterBtn = document.querySelector('.journal-filter-btn.active');
+        const currentPeriod = activeFilterBtn ? activeFilterBtn.dataset.period : 'all';
+        loadJournalEntries(currentPeriod);
+    });
+    
+    // Filter buttons
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadJournalEntries(btn.dataset.period);
+        });
+    });
+}
+
+async function loadJournalEntries(period = 'all') {
+    const journalList = document.getElementById('journal-list');
+    if (!journalList) return;
+    
+    journalList.innerHTML = `
+        <div class="journal-loading">
+            <div class="loading-spinner"></div>
+            <p>Chargement du journal...</p>
+        </div>
+    `;
+    
+    try {
+        if (!window.budgetManager) {
+            throw new Error('BudgetManager not available');
+        }
+        
+        let entries = await window.budgetManager.getJournalEntries();
+        
+        // Filter by period
+        if (period !== 'all') {
+            const now = new Date();
+            const periodMs = parseInt(period) * 24 * 60 * 60 * 1000;
+            const cutoffDate = new Date(now.getTime() - periodMs);
+            
+            entries = entries.filter(entry => new Date(entry.date) >= cutoffDate);
+        }
+        
+        if (entries.length === 0) {
+            journalList.innerHTML = `
+                <div class="no-journal-entries">
+                    <div class="no-journal-entries-icon">📔</div>
+                    <div class="no-journal-entries-text">Aucune écriture dans le journal</div>
+                </div>
+            `;
+            return;
+        }
+        
+        // Group entries by turn
+        const entriesByTurn = {};
+        entries.forEach(entry => {
+            if (!entriesByTurn[entry.turn]) {
+                entriesByTurn[entry.turn] = [];
+            }
+            entriesByTurn[entry.turn].push(entry);
+        });
+        
+        // Create HTML
+        const turns = Object.keys(entriesByTurn).sort((a, b) => parseInt(b) - parseInt(a));
+        const html = turns.map(turn => {
+            const turnEntries = entriesByTurn[turn];
+            return `
+                <div class="journal-turn-group">
+                    <h4 class="journal-turn-header">Tour ${turn}</h4>
+                    ${turnEntries.map(entry => createJournalEntryHTML(entry)).join('')}
+                </div>
+            `;
+        }).join('');
+        
+        journalList.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Error loading journal entries:', error);
+        journalList.innerHTML = `
+            <div class="journal-loading">
+                <p>Erreur lors du chargement du journal: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+function createJournalEntryHTML(entry) {
+    const date = new Date(entry.date);
+    const formattedDate = date.toLocaleString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    const typeClass = entry.type === 'income' ? 'positive' : 'negative';
+    const typeLabels = {
+        'income': 'Revenu',
+        'expense': 'Dépense',
+        'maintenance': 'Maintenance',
+        'loan_interest': 'Intérêts prêt',
+        'loan_repayment': 'Remboursement prêt'
+    };
+    
+    return `
+        <div class="journal-entry">
+            <div class="journal-entry-header">
+                <span class="journal-entry-type ${entry.type}">${typeLabels[entry.type] || entry.type}</span>
+                <span class="journal-entry-amount ${typeClass}">
+                    ${typeClass === 'positive' ? '+' : '-'}${Math.abs(entry.amount)}€
+                </span>
+            </div>
+            <div class="journal-entry-details">
+                <span class="journal-entry-description">${entry.description}</span>
+                <span class="journal-entry-turn">${formattedDate}</span>
+            </div>
+        </div>
+    `;
+}
+
+// Initialize journal popup in window.onload
