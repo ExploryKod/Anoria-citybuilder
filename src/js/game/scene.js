@@ -814,11 +814,15 @@ export function createScene(housesStore, gameStore, assetManager) {
         
         // Only update if changed (prevent unnecessary updates)
         if (newFocusedObject !== focusedObject) {
-            // Clear previous focus (if had focus methods)
-            // focusedObject?.setFocused?.(false);
+            // Clear previous focus (if object supports it)
+            if (focusedObject && typeof focusedObject.setFocused === 'function') {
+                focusedObject.setFocused(false);
+            }
             focusedObject = newFocusedObject;
-            // Set new focus (if has focus methods)
-            // focusedObject?.setFocused?.(true);
+            // Set new focus (if object supports it)
+            if (focusedObject && typeof focusedObject.setFocused === 'function') {
+                focusedObject.setFocused(true);
+            }
         }
     }
 
@@ -828,13 +832,17 @@ export function createScene(housesStore, gameStore, assetManager) {
      */
     function updateSelectedObject(object) {
         // Clear previous selection highlight if existed
-        // selectedObject?.setSelected?.(false);
-        
+        if (selectedObject && typeof selectedObject.setSelected === 'function') {
+            selectedObject.setSelected(false);
+        }
+
         selectedObject = object;
-        
+
         // Set new selection highlight if exists
-        // selectedObject?.setSelected?.(true);
-        
+        if (selectedObject && typeof selectedObject.setSelected === 'function') {
+            selectedObject.setSelected(true);
+        }
+
         // Call the selection callback if registered
         if (this.onObjectSelected && object) {
             this.onObjectSelected(object);

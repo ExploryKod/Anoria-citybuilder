@@ -27,6 +27,15 @@ import {
     toolBarButtons
 } from "./nodes.js";
 import { createGame } from '../game/game.js';
+
+// Global app registry helper (available throughout this module)
+function appRegister(name, instance) {
+    if (window.app && typeof window.app.register === 'function') {
+        window.app.register(name, instance);
+    } else {
+        window[name] = instance;
+    }
+}
 import gameStore from "../stores/GameStore.js";
 import housesStore from "../stores/HousesStore.js";
 import budgetManager from "../stores/BudgetManager.js";
@@ -1179,18 +1188,10 @@ window.onload = async () => {
     }
     
     // Register with AppRegistry (window.app) if available, else use direct window.* (backwards compatible)
-    const register = (name, instance) => {
-        if (window.app && window.app.register) {
-            window.app.register(name, instance);
-        } else {
-            window[name] = instance;
-        }
-    };
-    
-    register('gameStore', gameStore);
-    register('housesStore', housesStore);
+    appRegister('gameStore', gameStore);
+    appRegister('housesStore', housesStore);
     const game = createGame(housesStore, gameStore, assetManager);
-    register('game', game);
+    appRegister('game', game);
     
     // Functions can be registered as well
     window.setActiveTool = (e) => {
@@ -3214,7 +3215,7 @@ async function processLoanPayments() {
 function initLoanPaymentSystem() {
     // Expose processLoanPayments globally for scene.js
     // Register utility functions with AppRegistry
-    register('processLoanPayments', processLoanPayments);
+    appRegister('processLoanPayments', processLoanPayments);
     window.processLoanPayments = processLoanPayments; // Keep direct access for backwards compatibility
     
     // Process loan payments every turn
