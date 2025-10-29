@@ -95,6 +95,12 @@ html, body {
     overflow-x: hidden;
 }
 
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    html, body {
+        overflow: hidden;
+    }
+}
+
 canvas {
     width: 100vw !important;
     height: 100vh !important;
@@ -152,7 +158,7 @@ canvas.pointer-events-disabled {
 }
 
 @media screen and (max-width: 1024px) and (orientation: landscape) {
-    .toolbar {
+    .game-window .toolbar {
         height: 100%;
         max-height: calc(100vh - 65px);
         overflow: scroll;
