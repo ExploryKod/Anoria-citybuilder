@@ -104,7 +104,7 @@ canvas {
 /* Ajuster le canvas pour mobile paysage */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
     canvas {
-        height: calc(100vh - 80px) !important;
+        height: 100vh;
         top: 80px;
     }
 }
@@ -151,101 +151,17 @@ canvas.pointer-events-disabled {
     gap: 20px;
 }
 
-/* Masquer le carousel toolbar en mode desktop */
-.toolbar-carousel {
-    display: none;
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    .toolbar {
+        height: 100%;
+        max-height: calc(100vh - 65px);
+        overflow: scroll;
+        scroll-behavior: smooth;
+        width: 150px;
+        top: 65px;
+    }
 }
 
-/* Styles Splide par défaut */
-.splide {
-    visibility: hidden;
-}
-
-.splide.is-initialized {
-    visibility: visible;
-}
-
-.splide__track {
-    overflow: hidden;
-}
-
-.splide__list {
-    display: flex;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.splide__slide {
-    flex-shrink: 0;
-}
-
-.splide__arrows {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    transform: translateY(-50%);
-    pointer-events: none;
-    z-index: 10;
-    height: 0;
-}
-
-.splide__arrow {
-    background: var(--cta);
-    border: none;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    pointer-events: auto;
-    color: white;
-    font-size: 18px;
-    transition: all 0.3s ease;
-    opacity: 1;
-    visibility: visible;
-}
-
-.splide__arrow:hover {
-    background: var(--cta-05);
-    transform: scale(1.1);
-}
-
-.splide__arrow--prev {
-    margin-left: 10px;
-}
-
-.splide__arrow--next {
-    margin-right: 10px;
-}
-
-.splide__pagination {
-    display: flex;
-    justify-content: center;
-    gap: 5px;
-    margin-top: 10px;
-}
-
-.splide__pagination__page {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.splide__pagination__page.is-active {
-    background: var(--cta);
-    transform: scale(1.2);
-}
 
 
 
@@ -1160,6 +1076,8 @@ button#pwa-refresh:hover {
     }
 }
 
+/* Nettoyage: suppression des overrides liés au carousel mobile paysage */
+
 /* Mobile Portrait - Masquer le jeu */
 /* @media screen and (max-width: 768px) and (orientation: portrait) {
     body {
@@ -1210,134 +1128,7 @@ button#pwa-refresh:hover {
     .no-game {
         display: none;
     }
-
-    /* Masquer la toolbar originale en mode mobile */
-    .game-window .toolbar {
-        display: none;
-    }
-
-    /* Afficher et styliser le carousel toolbar */
-    .toolbar-carousel {
-        position: fixed;
-        top: auto;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 80px;
-        z-index: 10000; /* Z-index très élevé pour être au-dessus du canvas */
-        background-color: var(--toolbar-bg-color);
-        padding: 10px 5px;
-        display: block !important;
-        border: 2px solid red; /* Debug: bordures rouges pour voir le carousel */
-        pointer-events: auto; /* S'assurer que les clics sont capturés */
-    }
-
-    /* Forcer l'affichage des flèches Splide */
-    .toolbar-carousel .splide__arrows {
-        display: flex !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-    }
-
-    .toolbar-carousel .splide__arrow {
-        display: flex !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-        background: var(--cta) !important;
-        color: white !important;
-    }
-
-    /* Styles spécifiques pour les flèches de la toolbar */
-    .toolbar-carousel .toolbar-arrows {
-        display: flex !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-    }
-
-    .toolbar-carousel .toolbar-arrow {
-        display: flex !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-        background: var(--cta) !important;
-        color: white !important;
-        width: 40px !important;
-        height: 40px !important;
-        border-radius: 50% !important;
-        border: none !important;
-        cursor: pointer !important;
-        z-index: 10001 !important; /* Z-index encore plus élevé pour les flèches */
-        pointer-events: auto !important; /* Forcer la capture des clics */
-    }
-
-    /* Styles pour le carousel Splide */
-    .toolbar-carousel .splide__track {
-        height: 100%;
-        pointer-events: auto;
-    }
-
-    .toolbar-carousel .splide__list {
-        pointer-events: auto;
-    }
-
-    .toolbar-carousel .splide__slide {
-        pointer-events: auto;
-    }
-
-    .toolbar-carousel .toolbar__container {
-        pointer-events: auto;
-    }
-
-    .toolbar-carousel .toolbar-btn {
-        pointer-events: auto;
-        z-index: 10002;
-    }
-
-    .toolbar-carousel .splide__list {
-        height: 100%;
-        display: flex;
-        align-items: center;
-    }
-
-    .toolbar-carousel .splide__slide {
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* Styles pour les containers dans le carousel */
-    .toolbar-carousel .toolbar__container {
-        flex-direction: column;
-        gap: 2px;
-        min-width: 60px;
-        flex-shrink: 0;
-    }
-
-    .toolbar-carousel .toolbar__sub-container {
-        padding: 2px;
-        gap: 2px;
-    }
-
-    /* Réduire la taille des boutons dans le carousel */
-    .toolbar-carousel .toolbar-btn {
-        height: 40px;
-        min-width: 40px;
-        font-size: 14px;
-        padding: 5px;
-    }
-
-    /* Réduire la taille des labels dans le carousel */
-    .toolbar-carousel .toolbar__label,
-    .toolbar-carousel .manager-label {
-        font-size: 8px;
-        text-align: center;
-    }
-
-    /* Ajuster les boutons dans les containers du carousel */
-    .toolbar-carousel .toolbar__container .toolbar-btn {
-        max-width: 40px;
-        height: 40px;
-    }
+    /* (supprimé) règles carousel & masquage toolbar originale */
 
     /* Réorganiser les containers de la toolbar */
     .toolbar .toolbar__container {
