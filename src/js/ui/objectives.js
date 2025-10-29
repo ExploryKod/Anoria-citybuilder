@@ -598,6 +598,10 @@ const tutorialManager = new ObjectivesManager();
 
 // Exposer globalement pour les tests
 window.tutorialManager = tutorialManager;
+// Also register with AppRegistry if available
+if (window.app && window.app.register) {
+    window.app.register('tutorialManager', tutorialManager);
+}
 
 // Fonction utilitaire pour démarrer les objectifs
 window.startObjectives = async () => {

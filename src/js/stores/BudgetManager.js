@@ -987,6 +987,10 @@ const budgetManager = new BudgetManager();
 // Make it globally available for debugging
 if (typeof window !== 'undefined') {
     window.budgetManager = budgetManager;
+    // Also register with AppRegistry if available
+    if (window.app && window.app.register) {
+        window.app.register('budgetManager', budgetManager);
+    }
 }
 
 export default budgetManager;

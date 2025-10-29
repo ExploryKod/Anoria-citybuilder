@@ -1178,9 +1178,21 @@ window.onload = async () => {
         });
     }
     
-    window.gameStore = gameStore;
-    window.housesStore = housesStore;
-    window.game = createGame(housesStore, gameStore, assetManager);
+    // Register with AppRegistry (window.app) if available, else use direct window.* (backwards compatible)
+    const register = (name, instance) => {
+        if (window.app && window.app.register) {
+            window.app.register(name, instance);
+        } else {
+            window[name] = instance;
+        }
+    };
+    
+    register('gameStore', gameStore);
+    register('housesStore', housesStore);
+    const game = createGame(housesStore, gameStore, assetManager);
+    register('game', game);
+    
+    // Functions can be registered as well
     window.setActiveTool = (e) => {
         getButtonsUnactive(e)
         if(e.target.classList.contains('panel-btn')) {
@@ -3201,7 +3213,9 @@ async function processLoanPayments() {
 // Initialize loan payment system
 function initLoanPaymentSystem() {
     // Expose processLoanPayments globally for scene.js
-    window.processLoanPayments = processLoanPayments;
+    // Register utility functions with AppRegistry
+    register('processLoanPayments', processLoanPayments);
+    window.processLoanPayments = processLoanPayments; // Keep direct access for backwards compatibility
     
     // Process loan payments every turn
     if (window.game && window.game.onTurnEnd) {

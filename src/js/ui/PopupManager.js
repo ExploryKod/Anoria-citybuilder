@@ -368,6 +368,10 @@ const popupManager = new PopupManager();
 
 // Exposer globalement
 window.popupManager = popupManager;
+// Also register with AppRegistry if available
+if (window.app && window.app.register) {
+    window.app.register('popupManager', popupManager);
+}
 
 // PopupManager initialized
 
