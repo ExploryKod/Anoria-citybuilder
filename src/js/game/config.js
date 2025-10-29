@@ -40,7 +40,7 @@ const config = {
         shadows: {
             enabled: true,
             type: 'PCFSoftShadowMap', // Original Anoria used PCFSoftShadowMap
-            mapSize: 2048, // Original was 1024, using 2048 for better quality
+            mapSize: 1024, // Original Anoria value (restored for exact brightness match)
             normalBias: 0.01,
         },
         lights: {

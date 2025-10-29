@@ -45,8 +45,9 @@ export function createScene(housesStore, gameStore, assetManager) {
     renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(window.devicePixelRatio);
     
-    // Setup shadow rendering using config (centralized)
-    setupShadowRenderer();
+    // ORIGINAL ANORIA RENDERER SHADOW SETUP (restored exactly)
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     
     const controls = new OrbitControls(camera.camera, renderer.domElement);
     gameWindow.appendChild(renderer.domElement);
@@ -95,6 +96,9 @@ export function createScene(housesStore, gameStore, assetManager) {
             
             // create empty array for buildings : an array of undefined values
             buildings.push([...Array(city.size)]);
+            
+            // ORIGINAL: Called inside loop - this adds lights multiple times (16x for size 16)
+            // This is why the scene was brighter. Restored to match original brightness.
             setUpLights(city.size);
         }
 
@@ -732,9 +736,10 @@ export function createScene(housesStore, gameStore, assetManager) {
      * @param {number} citySize - Size of the city (used for dynamic intensity scaling)
      */
     function setUpLights(citySize) {
-        // Remove existing lights if re-initializing
-        const existingLights = scene.children.filter(child => child.isLight);
-        existingLights.forEach(light => scene.remove(light));
+        // NOTE: This function is called inside a loop (original behavior), adding lights multiple times
+        // Original code: once per x iteration = 16x for size 16 city
+        // This creates a brighter scene because lights accumulate. We restore this behavior to match brightness.
+        // DON'T remove existing lights - allow them to accumulate to match original brightness
 
         // Calculate dynamic light intensity based on city size (Anoria-specific)
         // Use the derived formula for light intensity
@@ -744,48 +749,37 @@ export function createScene(housesStore, gameStore, assetManager) {
         const AmbientLightIntensity = a * Math.pow(citySize, b);
         const DirectionalLightIntensity = c * Math.pow(citySize, b);
 
+        // ORIGINAL ANORIA LIGHTING SETUP - Restored exactly
         // Setup ambient light (base illumination)
-        const ambientLight = new THREE.AmbientLight(
-            config.rendering.lights.ambient.color,
-            AmbientLightIntensity
-        );
+        const ambientLight = new THREE.AmbientLight(0xffffff, AmbientLightIntensity);
         scene.add(ambientLight);
 
-        // Setup main directional light (sun) with shadows
-        // Using config position which maintains Anoria's original overhead lighting (0, 1, 0)
-        const sun = new THREE.DirectionalLight(
-            config.rendering.lights.sun.color,
-            DirectionalLightIntensity
-        );
-        sun.position.set(
-            config.rendering.lights.sun.position.x,
-            config.rendering.lights.sun.position.y,
-            config.rendering.lights.sun.position.z
-        );
-        sun.castShadow = config.rendering.shadows.enabled;
+        // Setup THREE directional lights - all with 0x999999 color (original Anoria)
+        // First light has shadows, others don't
+        const dirLight1 = new THREE.DirectionalLight(0x999999, DirectionalLightIntensity);
+        dirLight1.position.set(0, 1, 0);
+        dirLight1.castShadow = config.rendering.shadows.enabled;
 
-        // Configure shadow camera (similar to simcity's explicit pattern)
-        if (sun.castShadow) {
-            const shadowCam = sun.shadow.camera;
-            shadowCam.left = config.rendering.lights.sun.camera.left;
-            shadowCam.right = config.rendering.lights.sun.camera.right;
-            shadowCam.top = config.rendering.lights.sun.camera.top;
-            shadowCam.bottom = config.rendering.lights.sun.camera.bottom;
-            shadowCam.near = config.rendering.lights.sun.camera.near;
-            shadowCam.far = config.rendering.lights.sun.camera.far;
-            
-            sun.shadow.mapSize.width = config.rendering.shadows.mapSize;
-            sun.shadow.mapSize.height = config.rendering.shadows.mapSize;
-            sun.shadow.normalBias = config.rendering.shadows.normalBias;
+        // Configure shadows for first directional light (original Anoria values)
+        if (dirLight1.castShadow) {
+            dirLight1.shadow.camera.left = -10;
+            dirLight1.shadow.camera.right = 10;
+            dirLight1.shadow.camera.top = 0;
+            dirLight1.shadow.camera.bottom = -10;
+            dirLight1.shadow.mapSize.width = 1024; // Original was 1024, not 2048
+            dirLight1.shadow.mapSize.height = 1024;
+            dirLight1.shadow.camera.near = 0.5;
+            dirLight1.shadow.camera.far = 50;
         }
 
-        scene.add(sun);
+        scene.add(dirLight1);
 
-        // Additional directional lights for better coverage (Anoria-specific)
+        // Second directional light (no shadows)
         const dirLight2 = new THREE.DirectionalLight(0x999999, DirectionalLightIntensity);
         dirLight2.position.set(0, 1, 0);
         scene.add(dirLight2);
 
+        // Third directional light (no shadows)
         const dirLight3 = new THREE.DirectionalLight(0x999999, DirectionalLightIntensity);
         dirLight3.position.set(0, 1, 0);
         scene.add(dirLight3);
@@ -796,25 +790,7 @@ export function createScene(housesStore, gameStore, assetManager) {
         scene.add(hemiLight);
     }
 
-    /**
-     * Configures renderer shadow settings
-     * Called during scene initialization
-     */
-    function setupShadowRenderer() {
-        if (config.rendering.shadows.enabled) {
-            renderer.shadowMap.enabled = true;
-            
-            // Map shadow map type from config
-            const shadowTypeMap = {
-                'PCFShadowMap': THREE.PCFShadowMap,
-                'PCFSoftShadowMap': THREE.PCFSoftShadowMap,
-                'BasicShadowMap': THREE.BasicShadowMap,
-            };
-            renderer.shadowMap.type = shadowTypeMap[config.rendering.shadows.type] || THREE.PCFSoftShadowMap;
-        } else {
-            renderer.shadowMap.enabled = false;
-        }
-    }
+    // Note: setupShadowRenderer() removed - using original inline setup for exact brightness match
 
 
     /**
