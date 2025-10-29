@@ -59,6 +59,21 @@ const config = {
             opacity: 0.2,
         },
     },
+    
+    assets: {
+        // Base URL for assets - can be overridden or read from Vite config
+        baseUrl: '/', // Default matches vite.config.js base
+        // Asset paths
+        models: {
+            mainModel: '/resources/lowpoly/village_town_assets_v2.glb',
+            catalog: '/village_town_assets.json',
+        },
+        textures: {
+            base: '/resources/textures/maps/base.png',
+            specular: '/resources/textures/maps/specular.png',
+            grid: '/resources/textures/maps/grid.png',
+        },
+    },
 };
 
 export default config;
