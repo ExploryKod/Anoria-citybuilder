@@ -18,6 +18,8 @@ import {
 import budgetManager from '../stores/BudgetManager.js';
 import loaderManager from '../utils/LoaderManager.js';
 import objectivesTracker from '../ui/ObjectivesTracker.js';
+import InputManager from './InputManager.js';
+import gameUI from './GameUI.js';
 
 // Notification system for building placement feedback
 function showInsufficientFundsNotification(buildingType, price) {
@@ -172,7 +174,10 @@ export function createGame(housesStore, gameStore, assetManager) {
     let intervalId = null;
     // Set initial speed within limits (500ms - 20,000ms)
     localStorage.setItem("speed", "4000");
-    displayTime.textContent = time.toString() + ' jours';
+    
+    // Initialize GameUI and expose globally (similar to simcity's window.ui pattern)
+    window.gameUI = gameUI;
+    gameUI.updateTimeDisplay(time);
     
     // Initialize budget system - force reinitialize to ensure 200€ starting funds
     budgetManager.forceReinitialize(200).then(() => {
@@ -430,7 +435,7 @@ export function createGame(housesStore, gameStore, assetManager) {
     const game = {
 
         async update(time) {
-            displayTime.textContent = time + ' jours'
+            gameUI.updateTimeDisplay(time);
             city.update();
             await scene.update(city, time);
             
@@ -441,19 +446,14 @@ export function createGame(housesStore, gameStore, assetManager) {
         },
 
         pause() {
-           isPause = true;
-            // Game paused 
-            infoPanelClockIcon.style.display = 'none'
-            infoPanelNoClockIcon.style.display = 'block'
-            displayTime.textContent = 'pause'
+            isPause = true;
+            gameUI.setPaused(true);
         },
 
         async play() {
             // Game playing
             isPause = false;
-            infoPanelClockIcon.style.display = 'block'
-            infoPanelNoClockIcon.style.display = 'none'
-            displayTime.textContent = 'play'
+            gameUI.setPaused(false);
             // Appeler update(0) pour activer l'objectif au tour 0 au démarrage
             if (window.objectivesTracker) {
                 await objectivesTracker.checkObjectives(0);
@@ -480,6 +480,7 @@ export function createGame(housesStore, gameStore, assetManager) {
 
         setActiveToolId(toolId) {
             activeToolId = toolId;
+            gameUI.activeToolId = toolId;
         },
 
         startInterval() {
@@ -504,5 +505,15 @@ export function createGame(housesStore, gameStore, assetManager) {
     }, Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed')) || 4000)));
 
     scene.start();
+
+    // Initialize and attach InputManager non-invasively
+    try {
+        const target = document.getElementById('game-window');
+        if (target) {
+            const inputManager = new InputManager();
+            inputManager.attach(target);
+            window.inputManager = inputManager;
+        }
+    } catch (_) {}
     return game;
 }
