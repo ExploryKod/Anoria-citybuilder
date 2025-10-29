@@ -19,6 +19,7 @@ import {
     palaces
 } from '../ui/nodes.js';
 import {assetsPrices} from "../meshs/data.js";
+import config from './config.js';
 
 const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
 
@@ -42,18 +43,28 @@ export function createScene(housesStore, gameStore, assetManager) {
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(gameWindow.offsetWidth, gameWindow.offsetHeight);
     renderer.setClearColor(0x000000, 0);
-    renderer.shadowMap.enabled = true;
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    
+    // Setup shadow rendering using config (centralized)
+    setupShadowRenderer();
+    
     const controls = new OrbitControls(camera.camera, renderer.domElement);
     gameWindow.appendChild(renderer.domElement);
 
     // Selections d'un objet
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
-    let selectedObject = undefined;
+    let selectedObject = undefined; // Object that is currently selected (clicked)
+    let focusedObject = undefined; // Object currently under cursor (hover)
     // Référence une fonction appelée si un objet est sélectionné
     let onObjectSelected = undefined;
+
+    function getPointerClientXY(event) {
+        if (window.inputManager && window.inputManager.mouse) {
+            return { x: window.inputManager.mouse.x, y: window.inputManager.mouse.y };
+        }
+        return { x: event.clientX, y: event.clientY };
+    }
 
     //  Variables de items
     let terrain = [];
@@ -715,51 +726,147 @@ export function createScene(housesStore, gameStore, assetManager) {
 
     }
 
+    /**
+     * Sets up lighting and shadows for the scene
+     * Inspired by simcity-threejs-clone's explicit lighting pattern
+     * @param {number} citySize - Size of the city (used for dynamic intensity scaling)
+     */
     function setUpLights(citySize) {
-        // Setting up lights for city
+        // Remove existing lights if re-initializing
+        const existingLights = scene.children.filter(child => child.isLight);
+        existingLights.forEach(light => scene.remove(light));
 
+        // Calculate dynamic light intensity based on city size (Anoria-specific)
         // Use the derived formula for light intensity
         const b = Math.log10(0.1) / Math.log10(2); // Exponent
         const a = 0.03 / Math.pow(16, b); // Coefficient
         const c = 0.05 / Math.pow(16, b);
-
         const AmbientLightIntensity = a * Math.pow(citySize, b);
         const DirectionalLightIntensity = c * Math.pow(citySize, b);
 
-        // Light intensity calculated
-        const lights = [
-            new THREE.AmbientLight(0xffffff, AmbientLightIntensity),
-            new THREE.DirectionalLight(0x999999, DirectionalLightIntensity),
-            new THREE.DirectionalLight(0x999999, DirectionalLightIntensity),
-            new THREE.DirectionalLight(0x999999, DirectionalLightIntensity),
-        ];
+        // Setup ambient light (base illumination)
+        const ambientLight = new THREE.AmbientLight(
+            config.rendering.lights.ambient.color,
+            AmbientLightIntensity
+        );
+        scene.add(ambientLight);
 
-        // Set up directional lights
-        lights[1].position.set(0, 1, 0);
-        lights[2].position.set(0, 1, 0);
-        lights[3].position.set(0, 1, 0);
+        // Setup main directional light (sun) with shadows
+        // Using config position which maintains Anoria's original overhead lighting (0, 1, 0)
+        const sun = new THREE.DirectionalLight(
+            config.rendering.lights.sun.color,
+            DirectionalLightIntensity
+        );
+        sun.position.set(
+            config.rendering.lights.sun.position.x,
+            config.rendering.lights.sun.position.y,
+            config.rendering.lights.sun.position.z
+        );
+        sun.castShadow = config.rendering.shadows.enabled;
 
-        // Configure shadows for the first directional light
-        lights[1].shadow.camera.left = -10;
-        lights[1].shadow.camera.right = 10;
-        lights[1].shadow.camera.top = 0;
-        lights[1].shadow.camera.bottom = -10;
-        lights[1].shadow.mapSize.width = 1024;
-        lights[1].shadow.mapSize.height = 1024;
-        lights[1].shadow.camera.near = 0.5;
-        lights[1].shadow.camera.far = 50;
+        // Configure shadow camera (similar to simcity's explicit pattern)
+        if (sun.castShadow) {
+            const shadowCam = sun.shadow.camera;
+            shadowCam.left = config.rendering.lights.sun.camera.left;
+            shadowCam.right = config.rendering.lights.sun.camera.right;
+            shadowCam.top = config.rendering.lights.sun.camera.top;
+            shadowCam.bottom = config.rendering.lights.sun.camera.bottom;
+            shadowCam.near = config.rendering.lights.sun.camera.near;
+            shadowCam.far = config.rendering.lights.sun.camera.far;
+            
+            sun.shadow.mapSize.width = config.rendering.shadows.mapSize;
+            sun.shadow.mapSize.height = config.rendering.shadows.mapSize;
+            sun.shadow.normalBias = config.rendering.shadows.normalBias;
+        }
 
-        // Add lights to the scene
-        scene.add(...lights);
+        scene.add(sun);
 
-        // Add a hemisphere light
+        // Additional directional lights for better coverage (Anoria-specific)
+        const dirLight2 = new THREE.DirectionalLight(0x999999, DirectionalLightIntensity);
+        dirLight2.position.set(0, 1, 0);
+        scene.add(dirLight2);
+
+        const dirLight3 = new THREE.DirectionalLight(0x999999, DirectionalLightIntensity);
+        dirLight3.position.set(0, 1, 0);
+        scene.add(dirLight3);
+
+        // Hemisphere light for atmospheric illumination
         const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.1);
         hemiLight.position.set(0, 50, 0);
         scene.add(hemiLight);
     }
 
+    /**
+     * Configures renderer shadow settings
+     * Called during scene initialization
+     */
+    function setupShadowRenderer() {
+        if (config.rendering.shadows.enabled) {
+            renderer.shadowMap.enabled = true;
+            
+            // Map shadow map type from config
+            const shadowTypeMap = {
+                'PCFShadowMap': THREE.PCFShadowMap,
+                'PCFSoftShadowMap': THREE.PCFSoftShadowMap,
+                'BasicShadowMap': THREE.BasicShadowMap,
+            };
+            renderer.shadowMap.type = shadowTypeMap[config.rendering.shadows.type] || THREE.PCFSoftShadowMap;
+        } else {
+            renderer.shadowMap.enabled = false;
+        }
+    }
+
+
+    /**
+     * Updates the focused object (object under cursor) via raycasting
+     * Called every frame in the render loop
+     */
+    function updateFocusedObject() {
+        // Use InputManager mouse position if available, otherwise skip
+        if (!window.inputManager || !window.inputManager.mouse) {
+            return;
+        }
+
+        const { x: clientX, y: clientY } = window.inputManager.mouse;
+        mouse.x = (clientX / renderer.domElement.clientWidth) * 2 - 1;
+        mouse.y = -(clientY / renderer.domElement.clientHeight) * 2 + 1;
+        
+        raycaster.setFromCamera(mouse, camera.camera);
+        const intersections = raycaster.intersectObjects(scene.children, false);
+        
+        const newFocusedObject = intersections.length > 0 ? intersections[0].object : null;
+        
+        // Only update if changed (prevent unnecessary updates)
+        if (newFocusedObject !== focusedObject) {
+            // Clear previous focus (if had focus methods)
+            // focusedObject?.setFocused?.(false);
+            focusedObject = newFocusedObject;
+            // Set new focus (if has focus methods)
+            // focusedObject?.setFocused?.(true);
+        }
+    }
+
+    /**
+     * Updates the selected object and calls the selection callback
+     * @param {THREE.Object3D} object - The object to select (or null to deselect)
+     */
+    function updateSelectedObject(object) {
+        // Clear previous selection highlight if existed
+        // selectedObject?.setSelected?.(false);
+        
+        selectedObject = object;
+        
+        // Set new selection highlight if exists
+        // selectedObject?.setSelected?.(true);
+        
+        // Call the selection callback if registered
+        if (this.onObjectSelected && object) {
+            this.onObjectSelected(object);
+        }
+    }
 
     function draw() {
+        updateFocusedObject(); // Update focused object every frame
         renderer.render(scene, camera.camera);
     }
 
@@ -782,28 +889,23 @@ export function createScene(housesStore, gameStore, assetManager) {
         }
         
         camera.onMouseDown(event);
-        // Raycasting need y and x axis as + on the terrain (plan) (y-1,y1,x1,x-1)
-        mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
-        mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
-        raycaster.setFromCamera(mouse, camera.camera);
-        // all children of the scene (all objects) and recursive = true (all children of the children)
-        // @return {Array} An array of intersections, which are objects containing distance, point, face, faceIndex, and object fields.
-        // The clossest object is the first one in the array
-        let intersections = raycaster.intersectObjects(scene.children, false);
-        // if any intersection where found (if the array is not empty)
-        if(intersections.length > 0) {
-            // get the first object (the intersection) of the array of intersections
-            // Processing intersection
-            // if(selectedObject) selectedObject.material.emissive.setHex(0);
-            selectedObject = intersections[0].object;
-            // if(selectedObject.material.length !== undefined) {
-               
-            // }
-            // Object selected
-
-            if(this.onObjectSelected) {
-                this.onObjectSelected(selectedObject);
-            }
+        
+        // Use focusedObject if available (from per-frame updates), otherwise raycast
+        let objectToSelect = focusedObject;
+        
+        // Fallback: perform raycast if focusedObject not available
+        if (!objectToSelect) {
+            const p = getPointerClientXY(event);
+            mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
+            mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera.camera);
+            const intersections = raycaster.intersectObjects(scene.children, false);
+            objectToSelect = intersections.length > 0 ? intersections[0].object : null;
+        }
+        
+        // Update selected object using unified method
+        if (objectToSelect) {
+            updateSelectedObject.call(this, objectToSelect);
         }
     }
 
@@ -825,8 +927,9 @@ function onMouseMove(event) {
     camera.onMouseMove(event);
 
     // Update the mouse coordinates for raycasting
-    mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
-    mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
+    const p = getPointerClientXY(event);
+    mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
+    mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
 
     // Perform raycasting
     raycaster.setFromCamera(mouse, camera.camera);
@@ -875,8 +978,11 @@ function onMouseMove(event) {
         camera.onKeyBoardDown(event);
         // Raycasting need y and x axis as + on the terrain (plan) (y-1,y1,x1,x-1)
         // (number btw 0 and 1) * 2 - 1 > to get the value between -1 and 1
-        mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
-        mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
+        const p = window.inputManager ? window.inputManager.mouse : {x: undefined, y: undefined};
+        if (p.x !== undefined && p.y !== undefined) {
+            mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
+            mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
+        }
 
         raycaster.setFromCamera(mouse, camera.camera);
         // array of object > all objects from our scene that intersect with the ray (false = non recursive = only the first object)
@@ -956,11 +1062,15 @@ function onMouseMove(event) {
         initialize,
         update,
         start,
+        stop,
         onMouseDown,
         onMouseUp,
         onMouseMove, 
         onKeyBoardDown,
         onKeyBoardUp,
-        delay
+        delay,
+        // Expose focused/selected for external access if needed
+        get focusedObject() { return focusedObject; },
+        get selectedObject() { return selectedObject; }
     }
 }
