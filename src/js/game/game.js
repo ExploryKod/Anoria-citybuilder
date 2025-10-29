@@ -20,6 +20,7 @@ import loaderManager from '../utils/LoaderManager.js';
 import objectivesTracker from '../ui/ObjectivesTracker.js';
 import InputManager from './InputManager.js';
 import gameUI from './GameUI.js';
+import appRegistry from './AppRegistry.js';
 
 // Notification system for building placement feedback
 function showInsufficientFundsNotification(buildingType, price) {
@@ -175,14 +176,14 @@ export function createGame(housesStore, gameStore, assetManager) {
     // Set initial speed within limits (500ms - 20,000ms)
     localStorage.setItem("speed", "4000");
     
-    // Initialize GameUI and expose globally (similar to simcity's window.ui pattern)
-    window.gameUI = gameUI;
+    // Register with AppRegistry (centralized namespace)
+    appRegistry.register('gameUI', gameUI);
+    appRegistry.register('budgetManager', budgetManager);
     gameUI.updateTimeDisplay(time);
     
     // Initialize budget system - force reinitialize to ensure 200€ starting funds
     budgetManager.forceReinitialize(200).then(() => {
-        // Make budgetManager available globally for scene.js
-        window.budgetManager = budgetManager;
+        // BudgetManager registered above - available via window.app.budgetManager or window.budgetManager
     });
 
 
@@ -512,8 +513,12 @@ export function createGame(housesStore, gameStore, assetManager) {
         if (target) {
             const inputManager = new InputManager();
             inputManager.attach(target);
-            window.inputManager = inputManager;
+            appRegistry.register('inputManager', inputManager);
         }
     } catch (_) {}
+    
+    // Register game instance
+    appRegistry.register('game', game);
+    
     return game;
 }
