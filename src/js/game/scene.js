@@ -53,6 +53,12 @@ export function createScene(housesStore, gameStore, assetManager) {
     
     const controls = new OrbitControls(camera.camera, renderer.domElement);
     gameWindow.appendChild(renderer.domElement);
+    
+    // Helper function to check if info modal is open
+    function isInfoModalOpen() {
+        const infoOverlay = document.querySelector('.info-building-overlay');
+        return infoOverlay && infoOverlay.classList.contains('active');
+    }
 
     // Selections d'un objet
     const raycaster = new THREE.Raycaster();
@@ -61,6 +67,16 @@ export function createScene(housesStore, gameStore, assetManager) {
     let focusedObject = undefined; // Object currently under cursor (hover)
     // Référence une fonction appelée si un objet est sélectionné
     let onObjectSelected = undefined;
+
+    // Suppress scene input for a short time (e.g., just after closing a modal)
+    let suppressInputUntilMs = 0;
+    function suppressInput(ms = 200) {
+        suppressInputUntilMs = performance.now() + ms;
+        // Ensure any drag states are cleared
+        camera.onMouseUp({ button: 0 });
+        camera.onMouseUp({ button: 1 });
+        camera.onMouseUp({ button: 2 });
+    }
 
     function getPointerClientXY(event) {
         if (window.inputManager && window.inputManager.mouse) {
@@ -838,8 +854,14 @@ export function createScene(housesStore, gameStore, assetManager) {
     const objectsNames = ['grass', 'roads', 'House-Red', 'House-Purple', 'House-Blue', 'Market-Stall']
 
     function onMouseDown(event){
-        // Block interaction if a popup is open
+        // Block interaction if a popup is open or info modal is open
         if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+            return;
+        }
+        if (isInfoModalOpen()) {
+            return;
+        }
+        if (performance.now() < suppressInputUntilMs) {
             return;
         }
         
@@ -865,8 +887,14 @@ export function createScene(housesStore, gameStore, assetManager) {
     }
 
     function onMouseUp(event){
-        // Block interaction if a popup is open
+        // Block interaction if a popup is open or info modal is open
         if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+            return;
+        }
+        if (isInfoModalOpen()) {
+            return;
+        }
+        if (performance.now() < suppressInputUntilMs) {
             return;
         }
         
@@ -874,8 +902,18 @@ export function createScene(housesStore, gameStore, assetManager) {
     }
 
 function onMouseMove(event) {
-    // Block interaction if a popup is open
+    // Block interaction if a popup is open or info modal is open
     if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+        return;
+    }
+    if (isInfoModalOpen()) {
+        // Reset mouse button states in camera to prevent dragging when modal closes
+        camera.onMouseUp({ button: 0 }); // Reset left mouse
+        camera.onMouseUp({ button: 1 }); // Reset middle mouse
+        camera.onMouseUp({ button: 2 }); // Reset right mouse
+        return;
+    }
+    if (performance.now() < suppressInputUntilMs) {
         return;
     }
     
@@ -1026,6 +1064,9 @@ function onMouseMove(event) {
         delay,
         // Expose focused/selected for external access if needed
         get focusedObject() { return focusedObject; },
-        get selectedObject() { return selectedObject; }
+        get selectedObject() { return selectedObject; },
+        // Expose controls to enable/disable OrbitControls when modal opens/closes
+        get controls() { return controls; },
+        suppressInput
     }
 }

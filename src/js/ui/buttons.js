@@ -895,6 +895,23 @@ window.onload = async () => {
                 canvas.classList.remove('pointer-events-disabled');
             }
             
+            // Re-enable OrbitControls when modal closes
+            // Try to access scene through various paths
+            let sceneObj = null;
+            if (window.game && window.game.scene) {
+                sceneObj = window.game.scene;
+            } else if (window.scene) {
+                sceneObj = window.scene;
+            } else if (window.app && window.app.game && window.app.game.scene) {
+                sceneObj = window.app.game.scene;
+            }
+            if (sceneObj && sceneObj.controls) {
+                sceneObj.controls.enabled = true;
+            }
+            if (sceneObj && sceneObj.suppressInput) {
+                sceneObj.suppressInput(200);
+            }
+            
             window.game.play()
         }
     })
