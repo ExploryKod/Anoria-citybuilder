@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {  assetsPrices } from '../meshs/data.js';
+import { checkRoadAccess } from './modules/ModuleHelper.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
 import {getAssetPrice, makeDbItemId, makeInfoBuildingText, isAreaAvailableForBuilding} from '../utils/utils.js';
@@ -21,6 +22,27 @@ import objectivesTracker from '../ui/ObjectivesTracker.js';
 import InputManager from './InputManager.js';
 import gameUI from './GameUI.js';
 import appRegistry from './AppRegistry.js';
+
+// Services (city-wide simulation systems) - optional, non-invasive
+let services = [];
+// Load services asynchronously (non-blocking)
+(async () => {
+    try {
+        // Load all available services
+        const { RoadConnectivityService } = await import('./services/RoadConnectivityService.js');
+        const { FoodDistributionService } = await import('./services/FoodDistributionService.js');
+        
+        services.push(new RoadConnectivityService());
+        services.push(new FoodDistributionService()); // Farm > Market > House logic using IndexedDB
+        
+        console.log('[game.js] Services loaded successfully:', services.length, services.map(s => s.constructor.name));
+    } catch (err) {
+        console.warn('[game.js] Failed to load services (continuing without them):', {
+            error: err?.message || err,
+            note: 'Services are optional enhancements and game will function normally'
+        });
+    }
+})();
 
 // Notification system for building placement feedback
 function showInsufficientFundsNotification(buildingType, price) {
@@ -284,8 +306,16 @@ export function createGame(housesStore, gameStore, assetManager) {
                     makeInfoBuildingText(`- Autres légumes : ${houseStocks.carrot} paniers`, false)
                     makeInfoBuildingText(`------------------------------------`, false)
                     makeInfoBuildingText(`- Total : ${houseStocks.food} paniers`, false)
-                } else {
-                    makeInfoBuildingText(`Maison isolée`, false)
+                }
+
+                // Display market food stocks (similar to houses)
+                if((selectedObject.userData.id.includes('Market') || selectedObject.userData.id.includes('market')) && Object.hasOwn(houseStocks, 'food')) {
+                    makeInfoBuildingText(`Stock de nourriture (marché): `, false)
+                    makeInfoBuildingText(`- Blé : ${houseStocks.wheat || 0} paniers`, false)
+                    makeInfoBuildingText(`- Légumes verts : ${houseStocks.cabbage || 0} paniers`, false)
+                    makeInfoBuildingText(`- Autres légumes : ${houseStocks.carrot || 0} paniers`, false)
+                    makeInfoBuildingText(`------------------------------------`, false)
+                    makeInfoBuildingText(`- Total : ${houseStocks.food || 0} paniers disponibles`, false)
                 }
 
                 if(selectedObject.userData.id.includes('Farm') && Object.hasOwn(houseStocks, 'food')) {
@@ -304,8 +334,6 @@ export function createGame(housesStore, gameStore, assetManager) {
 
                     makeInfoBuildingText(`------------------------------------`, false)
                     makeInfoBuildingText(`- Total : ${houseStocks.food} unités produites`, false)
-                } else {
-                    makeInfoBuildingText(`Maison isolée`, false)
                 }
             }
            
@@ -342,10 +370,8 @@ export function createGame(housesStore, gameStore, assetManager) {
             const houseID = activeToolId + '-' + selectedObject.userData.x + '-' + selectedObject.userData.y
             const houseStocks = await housesStore.getHouseItem(houseID, 'stocks');
             const houseNeighbors = await housesStore.getHouseItem(houseID, 'neighbors');
-            let HouseRoads  = {roads: 0};
-            if(houseNeighbors) {
-                HouseRoads = {roads: houseNeighbors.filter(neighbor => neighbor.name === 'roads').length};
-            }
+            const { roadCount } = checkRoadAccess(houseNeighbors || []);
+            const HouseRoads  = { roads: roadCount };
             price = getAssetPrice(activeToolId, assetsPrices) || 0
             
             // Get funds from BudgetManager instead of game table
@@ -438,6 +464,21 @@ export function createGame(housesStore, gameStore, assetManager) {
         async update(time) {
             gameUI.updateTimeDisplay(time);
             city.update();
+            
+            // Run city-wide services before individual building simulation (services read/write to IndexedDB)
+            if (services.length > 0) {
+                try {
+                    await Promise.allSettled(
+                        services.map(service => service.simulate(city, housesStore, time))
+                    );
+                } catch (err) {
+                    console.error('[game.js > update] Service simulation error:', {
+                        error: err?.message || err,
+                        time
+                    });
+                }
+            }
+            
             await scene.update(city, time);
             
             // Vérifier les objectifs à chaque tour
