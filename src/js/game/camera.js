@@ -31,6 +31,10 @@ export function createCamera(gameWindow) {
     let isZoomingLess = false;
     let prevMouseX = 0;
     let prevMouseY = 0;
+    // Dolly zoom support
+    let dollyZoomEnabled = false;
+    const baselineFov = camera.fov;
+    const baselineRadius = (MAX_CAMERA_RADIUS + MIN_CAMERA_RADIUS) / 2;
     updateCameraPosition();
 
    
@@ -44,6 +48,11 @@ export function createCamera(gameWindow) {
     }
 
     function onKeyBoardDown(event){
+        // Toggle dolly zoom (vertigo effect)
+        if (event.key.toLowerCase() === 'v') {
+            dollyZoomEnabled = !dollyZoomEnabled;
+            updateCameraPosition();
+        }
         // Keyboard down event
         if(event.key === KEYBOARD_ZOOM_PLUS){
             isZoomingMore = true;
@@ -195,6 +204,14 @@ export function createCamera(gameWindow) {
         camera.position.z = cameraRadius * Math.cos(thetaAzimuth) * Math.cos(phiElevation);
         camera.position.add(cameraOrigin);
         camera.lookAt(cameraOrigin);
+        // Apply dolly zoom: adjust FOV inversely with radius to keep subject scale
+        if (dollyZoomEnabled) {
+            const ratio = Math.max(0.25, Math.min(4, baselineRadius / cameraRadius));
+            camera.fov = THREE.MathUtils.clamp(baselineFov * ratio, 20, 100);
+        } else {
+            camera.fov = baselineFov;
+        }
+        camera.updateProjectionMatrix();
         camera.updateMatrix();
     }
 
