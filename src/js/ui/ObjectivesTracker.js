@@ -763,6 +763,10 @@ const objectivesTracker = new ObjectivesTracker();
 
 // Exposer globalement
 window.objectivesTracker = objectivesTracker;
+// Also register with AppRegistry if available
+if (window.app && window.app.register) {
+    window.app.register('objectivesTracker', objectivesTracker);
+}
 
 export default objectivesTracker;
 

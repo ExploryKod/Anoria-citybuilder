@@ -200,5 +200,9 @@ class ObjectivesHistory {
 
 const objectivesHistory = new ObjectivesHistory();
 window.objectivesHistory = objectivesHistory;
+// Also register with AppRegistry if available
+if (window.app && window.app.register) {
+    window.app.register('objectivesHistory', objectivesHistory);
+}
 export default objectivesHistory;
 

@@ -19,6 +19,9 @@ import {
     palaces
 } from '../ui/nodes.js';
 import {assetsPrices} from "../meshs/data.js";
+import { checkRoadAccess, checkFoodAvailability } from './modules/ModuleHelper.js';
+import { setRoadAccessIcon } from './modules/StatusIconHelper.js';
+import config from './config.js';
 
 const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
 
@@ -42,18 +45,50 @@ export function createScene(housesStore, gameStore, assetManager) {
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(gameWindow.offsetWidth, gameWindow.offsetHeight);
     renderer.setClearColor(0x000000, 0);
-    renderer.shadowMap.enabled = true;
     renderer.setPixelRatio(window.devicePixelRatio);
+    
+    // ORIGINAL ANORIA RENDERER SHADOW SETUP (restored exactly)
+    renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    
     const controls = new OrbitControls(camera.camera, renderer.domElement);
+    // Disable OrbitControls so custom camera controls handle input
+    controls.enabled = false;
+    controls.enableRotate = false;
+    controls.enablePan = false;
+    controls.enableZoom = false;
     gameWindow.appendChild(renderer.domElement);
+    
+    // Helper function to check if info modal is open
+    function isInfoModalOpen() {
+        const infoOverlay = document.querySelector('.info-building-overlay');
+        return infoOverlay && infoOverlay.classList.contains('active');
+    }
 
     // Selections d'un objet
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
-    let selectedObject = undefined;
+    let selectedObject = undefined; // Object that is currently selected (clicked)
+    let focusedObject = undefined; // Object currently under cursor (hover)
     // Référence une fonction appelée si un objet est sélectionné
     let onObjectSelected = undefined;
+
+    // Suppress scene input for a short time (e.g., just after closing a modal)
+    let suppressInputUntilMs = 0;
+    function suppressInput(ms = 200) {
+        suppressInputUntilMs = performance.now() + ms;
+        // Ensure any drag states are cleared
+        camera.onMouseUp({ button: 0 });
+        camera.onMouseUp({ button: 1 });
+        camera.onMouseUp({ button: 2 });
+    }
+
+    function getPointerClientXY(event) {
+        if (window.inputManager && window.inputManager.mouse) {
+            return { x: window.inputManager.mouse.x, y: window.inputManager.mouse.y };
+        }
+        return { x: event.clientX, y: event.clientY };
+    }
 
     //  Variables de items
     let terrain = [];
@@ -84,6 +119,9 @@ export function createScene(housesStore, gameStore, assetManager) {
             
             // create empty array for buildings : an array of undefined values
             buildings.push([...Array(city.size)]);
+            
+            // ORIGINAL: Called inside loop - this adds lights multiple times (16x for size 16)
+            // This is why the scene was brighter. Restored to match original brightness.
             setUpLights(city.size);
         }
 
@@ -110,6 +148,17 @@ export function createScene(housesStore, gameStore, assetManager) {
 
         // Add a small delay to ensure all rendering is complete
         await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Set camera bounds based on city size (with small margins)
+        if (camera.setBounds && city && typeof city.size === 'number') {
+            const margin = 2;
+            camera.setBounds({
+                minX: -margin,
+                maxX: city.size + margin,
+                minZ: -margin,
+                maxZ: city.size + margin
+            });
+        }
     }
 
     async function update(city, time=0) {
@@ -253,38 +302,37 @@ export function createScene(housesStore, gameStore, assetManager) {
                     const marketTime = { name: currentUniqueID, increment: 1, field: 'time' };
                     await housesStore.incrementHouseField(marketTime, false)
 
-                    // Check road access for markets
+                    // Check road access for markets (using module helper, DB remains source of truth)
                     const marketNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
-                    if(marketNeighbors) {
-                        const isRoad = marketNeighbors.filter(neighbor => neighbor.name === 'roads').length;
-                        const MarketRoads = {roads : marketNeighbors.filter(neighbor => neighbor.name === 'roads').length};
-                        await housesStore.updateHouseFields(currentUniqueID, MarketRoads);
-                        
-                        // Adjust icon scale for markets (smaller than houses)
-                        const marketRoadScale = {
-                            x: statutsIconsMeta.road.scale.x * 0.714, // 0.5/0.7 ratio
-                            y: statutsIconsMeta.road.scale.y * 0.714,
-                            z: statutsIconsMeta.road.scale.z * 0.714
-                        };
-                        
-                        if(isRoad > 0 && buildings[x][y]) {
-                            // Market has road access
-                            assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
-                                marketRoadScale, statutsIconsMeta.road.position, false);
-                        } else if(buildings[x][y]) {
-                            // Market has no road access
-                            assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
-                                marketRoadScale, statutsIconsMeta.road.position, true);
-                        }
-                    } else if(buildings[x][y]) {
-                        // Market has no neighbors (no road access)
-                        const marketRoadScale = {
-                            x: statutsIconsMeta.road.scale.x * 0.714, // 0.5/0.7 ratio
-                            y: statutsIconsMeta.road.scale.y * 0.714,
-                            z: statutsIconsMeta.road.scale.z * 0.714
-                        };
-                        assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
-                            marketRoadScale, statutsIconsMeta.road.position, true);
+                    // Adjust icon scale for markets (smaller than houses)
+                    const marketRoadScale = {
+                        x: statutsIconsMeta.road.scale.x * 0.714, // 0.5/0.7 ratio
+                        y: statutsIconsMeta.road.scale.y * 0.714,
+                        z: statutsIconsMeta.road.scale.z * 0.714
+                    };
+
+                    if (marketNeighbors && buildings[x][y]) {
+                        const { hasAccess, roadCount } = checkRoadAccess(marketNeighbors);
+                        await housesStore.updateHouseFields(currentUniqueID, { roads: roadCount });
+
+                        setRoadAccessIcon({
+                            assetManager,
+                            mesh: buildings[x][y],
+                            textures,
+                            position: statutsIconsMeta.road.position,
+                            scale: marketRoadScale,
+                            hasAccess
+                        });
+                    } else if (buildings[x][y]) {
+                        // No neighbors → treat as no road access
+                        setRoadAccessIcon({
+                            assetManager,
+                            mesh: buildings[x][y],
+                            textures,
+                            position: statutsIconsMeta.road.position,
+                            scale: marketRoadScale,
+                            hasAccess: false
+                        });
                     }
 
                     /**
@@ -348,80 +396,17 @@ export function createScene(housesStore, gameStore, assetManager) {
 
 
 
-                    const currentMarket = await housesStore.getHouse(currentUniqueID);
-                    let marketHouses = [];
-                    let farmsNearBy = [];
-
-                    if(currentMarket) {
-                        // Check if market has road access before processing
-                        const hasRoadAccess = currentMarket.neighbors && currentMarket.neighbors.filter(neighbor => neighbor.name === 'roads').length > 0;
-                        
-                        if (hasRoadAccess) {
-                            // Market has road access - process normally
-                            farmsNearBy =  currentMarket?.neighbors.filter(neighbor => neighbor.name.includes("Farms"))
-                            marketHouses = currentMarket?.neighbors.filter(neighbor => neighbor.name.includes("House"))
-
-                            let carrotMarketStocks = 0;
-                            let cabbageMarketStocks = 0;
-                            let wheatMarketStocks = 0;
-
-                            if(farmsNearBy.length > 0) {
-
-                                farmsNearBy.forEach(farm => {
-                                    if(farm.name.includes("Farms-Wheat")) {
-                                        wheatMarketStocks++;
-                                        // Wheat added to market stocks
-                                    }
-                                    if(farm.name.includes("Farms-Carrot")) {
-                                        carrotMarketStocks++;
-                                        // Carrot added to market stocks
-                                    }
-                                    if(farm.name.includes("Farms-Cabbage")) {
-                                        cabbageMarketStocks++;
-                                        // Cabbage added to market stocks
-                                    }
-                                })
-
-                                const datas = [
-                                    {key: 'cabbage', number:  carrotMarketStocks, decrease: false},
-                                    {key: 'carrot', number:  cabbageMarketStocks, decrease: false},
-                                    {key: 'wheat', number: wheatMarketStocks, decrease: false},
-                                    {key: 'food', number: 3, decrease: false}
-                                ]
-                                await updateMarketStocks(buildings, housesStore, datas);
-                            }
-                        }
-
-                            let carrotHousesStocks = 0;
-                            let cabbageHousesStocks = 0;
-                            let wheatHousesStocks = 0;
-                            let wheatByHouse = 1;
-                            let carrotByHouse = 1;
-                            let cabbageByHouse = 1;
-                            let totalHouseFood = wheatByHouse + carrotByHouse + cabbageByHouse;
-                            for (const house of marketHouses) {
-                                const buildingsUserData = buildings[house.x][house.y].userData
-                                const newStocks = {food: totalHouseFood, carrot: carrotByHouse, cabbage: cabbageByHouse, wheat: wheatByHouse};
-                                buildings[house.x][house.y].userData = {...buildingsUserData, stocks: newStocks};
-                                
-                                await housesStore.updateHouseFields(house.id, {stocks: newStocks});
-                                
-                                carrotHousesStocks += carrotByHouse;
-                                cabbageHousesStocks += cabbageByHouse;
-                                wheatHousesStocks += wheatByHouse;
-                            }
-                            const foodHousesStocks = cabbageHousesStocks + carrotHousesStocks + wheatHousesStocks;
-                            const datas = [
-                                {key: 'cabbage', number: cabbageHousesStocks, decrease: true},
-                                {key: 'carrot', number: carrotHousesStocks, decrease: true},
-                                {key: 'wheat', number: wheatHousesStocks, decrease: true},
-                                {key: 'food', number: foodHousesStocks, decrease: true}
-                            ]
-                            await updateMarketStocks(buildings, housesStore, datas);
-                        } else {
-                            // Market has no road access - cannot distribute food
-                        }
-                    }
+                    // Food distribution (Farm > Market > House) is now handled by FoodDistributionService
+                    // Service runs before scene.update() and processes all markets city-wide using IndexedDB
+                    // This ensures consistent food distribution logic across the entire city
+                    // The service: collects from farms → adds to market stocks → distributes to houses
+                    
+                    // Market processing disabled here - FoodDistributionService handles it:
+                    // - Farm collection and market stock updates
+                    // - House food distribution
+                    // - Market stock decreases after distribution
+                    // All using IndexedDB as source of truth
+                }
 
                 //  only update if current building is a house or palace
                 if((houses.includes(currentBuildingId) || palaces.includes(currentBuildingId)) && buildings[x][y]) {
@@ -434,81 +419,125 @@ export function createScene(housesStore, gameStore, assetManager) {
                         };
                     }
 
-                    // turn by turn values from userData need to be mirrored in indexDB
-                    let valuesFromUserData = {}
-
-                    if(buildings[x][y] && Object.hasOwn(buildings[x][y], 'userData') && Object.hasOwn(buildings[x][y].userData, 'stocks')) {
-                        valuesFromUserData = {
-                            stocks:
-                                {
-                                    food: buildings[x][y].userData.stocks.food,
-                                    carrot: buildings[x][y].userData.stocks.carrot,
-                                    cabbage: buildings[x][y].userData.stocks.cabbage,
-                                    wheat: buildings[x][y].userData.stocks.wheat
-                                }
-                        }
-                    }
-
-                    await housesStore.updateHouseFields(currentUniqueID, valuesFromUserData)
-                    const currentHouse = await housesStore.getHouse(currentUniqueID);
-
-                    if(currentHouse) {
-                        // Processing house data
-                    }
+                    // IMPORTANT: IndexedDB is the source of truth for stocks
+                    // FoodDistributionService updates IndexedDB first, then we read from it
+                    // DO NOT write userData.stocks back to IndexedDB - it would overwrite service updates!
+                    
+                    // Removed old code that wrote userData.stocks to IndexedDB:
+                    // This was causing the service's updates to be overwritten
+                    // The service writes: stocks = {wheat: 0, carrot: 1, cabbage: 0, food: 1}
+                    // Then this code was reading empty userData.stocks and overwriting IndexedDB with 0s!
 
                     if(time > 0) {
                         const HouseTime = { name: currentUniqueID, increment: 1, field: 'time' };
                         await housesStore.incrementHouseField(HouseTime, false)
                     }
 
-                    // Check if house has food AND road access before allowing population growth
+                    // Check if house has food AND road access before allowing population growth (using module helpers, DB remains source of truth)
+                    // Read stocks from IndexedDB (FoodDistributionService's updates are here)
                     const houseFoodStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks');
                     const houseNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
-                    const hasFood = houseFoodStocks && houseFoodStocks.food > 0;
-                    const hasRoadAccess = houseNeighbors && houseNeighbors.filter(neighbor => neighbor.name === 'roads').length > 0;
+                    const currentPop = await housesStore.getHouseItem(currentUniqueID, 'pop');
+                    
+                    // IMPORTANT: Sync IndexedDB stocks to userData for visual display
+                    // This ensures stocks updated by FoodDistributionService are reflected in UI
+                    if (houseFoodStocks && buildings[x][y] && buildings[x][y].userData) {
+                        buildings[x][y].userData.stocks = {
+                            food: houseFoodStocks.food || 0,
+                            wheat: houseFoodStocks.wheat || 0,
+                            carrot: houseFoodStocks.carrot || 0,
+                            cabbage: houseFoodStocks.cabbage || 0
+                        };
+                        console.log('[scene.js] Synced house stocks from IndexedDB to userData:', {
+                            houseId: currentUniqueID,
+                            stocks: buildings[x][y].userData.stocks,
+                            x, y
+                        });
+                    }
+                    
+                    const { hasFood, totalFood } = checkFoodAvailability(houseFoodStocks || {}, currentPop);
+                    const { hasAccess: hasRoadAccess } = checkRoadAccess(houseNeighbors || []);
+                    
+                    console.log('[scene.js] Population check for house:', {
+                        houseId: currentUniqueID,
+                        hasFood,
+                        totalFood,
+                        hasRoadAccess,
+                        currentPop,
+                        stocks: houseFoodStocks,
+                        stocksDetail: {
+                            food: houseFoodStocks?.food || 0,
+                            wheat: houseFoodStocks?.wheat || 0,
+                            carrot: houseFoodStocks?.carrot || 0,
+                            cabbage: houseFoodStocks?.cabbage || 0
+                        }
+                    });
                     
                     if (hasFood && hasRoadAccess) {
                         // Has food AND road access - population can grow (max 2)
                         const housePop = { name: currentUniqueID, increment: 1, field: 'pop' };
                         await housesStore.incrementHouseField(housePop, {operator: '<=', limit: 2});
+                        console.log('[scene.js] Population incremented for house:', currentUniqueID);
                     } else {
                         // No food OR no road access - reset population to 0
-                        const currentPop = await housesStore.getHouseItem(currentUniqueID, 'pop');
                         if (currentPop > 0) {
                             await housesStore.updateHouseFields(currentUniqueID, { pop: 0 });
+                            console.log('[scene.js] Population reset to 0 (no food or road):', currentUniqueID);
                         }
                     }
 
                     const houseTime = await housesStore.getHouseItem(currentUniqueID, 'time');
                     // House time processing
 
-                    if(houseNeighbors) {
-                        const isRoad = houseNeighbors.filter(neighbor => neighbor.name === 'roads').length
-                        const HouseRoads = {roads : houseNeighbors.filter(neighbor => neighbor.name === 'roads').length};
-                        await housesStore.updateHouseFields(currentUniqueID, HouseRoads)
-                        
-                        if(isRoad > 0 && buildings[x][y]) {
-                            assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
-                                statutsIconsMeta.road.scale, statutsIconsMeta.road.position, false)
-                        } else if(buildings[x][y]) {
-                            assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
-                                statutsIconsMeta.road.scale, statutsIconsMeta.road.position, true)
-                        }
+                    if(houseNeighbors && buildings[x][y]) {
+                        const { hasAccess, roadCount } = checkRoadAccess(houseNeighbors);
+                        await housesStore.updateHouseFields(currentUniqueID, { roads: roadCount });
+
+                        setRoadAccessIcon({
+                            assetManager,
+                            mesh: buildings[x][y],
+                            textures,
+                            position: statutsIconsMeta.road.position,
+                            scale: statutsIconsMeta.road.scale,
+                            hasAccess
+                        });
                     } else if(buildings[x][y]) {
-                        assetManager.setStatusSprite(buildings[x][y], textures['no-roads'], 'no-road',
-                            statutsIconsMeta.road.scale, statutsIconsMeta.road.position, true)
+                        setRoadAccessIcon({
+                            assetManager,
+                            mesh: buildings[x][y],
+                            textures,
+                            position: statutsIconsMeta.road.position,
+                            scale: statutsIconsMeta.road.scale,
+                            hasAccess: false
+                        });
                     }
 
                     /* house evolution to stage 2 */
-                    const houseStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks')
-                    const housePop = await housesStore.getHouseItem(currentUniqueID, 'pop')
-                    const foodGoal = housePop > 2 && houseStocks.food > housePop * 2
-                    const decay = houseTime > 3 && housePop >= 2 && houseStocks.food < housePop
+                    // Use food module for calculations (DB stocks remain source of truth, reuse already-fetched values)
+                    const { meetsFoodGoal, isInsufficient } = checkFoodAvailability(houseFoodStocks, currentPop);
+                    const foodGoal = meetsFoodGoal;
+                    const decay = houseTime > 3 && isInsufficient;
 
-                    if(houseStocks.food <= 0 && buildings[x][y]) {
-                        assetManager.setStatusSprite(buildings[x][y], textures['nofood'], 'no-food', statutsIconsMeta.food.scale, statutsIconsMeta.food.position, true)
-                    } else if(buildings[x][y]) {
-                        assetManager.setStatusSprite(buildings[x][y], textures['nofood'], 'no-food', statutsIconsMeta.food.scale, statutsIconsMeta.food.position, false)
+                    // Set food status sprite based on module result
+                    // Show "no-food" icon when !hasFood (sprite shown when condition is true)
+                    // hasFood is computed above from IndexedDB stocks (source of truth)
+                    if(buildings[x][y]) {
+                        const showNoFoodIcon = !hasFood; // Show icon when NO food
+                        assetManager.setStatusSprite(
+                            buildings[x][y],
+                            textures['nofood'],
+                            'no-food',
+                            statutsIconsMeta.food.scale,
+                            statutsIconsMeta.food.position,
+                            showNoFoodIcon
+                        );
+                        console.log('[scene.js] Food sprite update:', {
+                            houseId: currentUniqueID,
+                            hasFood,
+                            showNoFoodIcon,
+                            totalFood,
+                            stocks: houseFoodStocks
+                        });
                     }
                     
                   
@@ -666,100 +695,165 @@ export function createScene(housesStore, gameStore, assetManager) {
             console.warn('Budget operations failed:', error);
         }
 
-        //  Display results in UI
-        // Display elements removed - using real-time budget panel instead
-        const gameItems = await gameStore.listAllGameItems()
+        //  Display results in UI - Use IndexedDB as source of truth
+        // Get population from housesStore (IndexedDB) instead of gameStore
+        const currentPopulation = await housesStore.getGlobalPopulation();
+        
+        // Get budget data from BudgetManager
+        let funds = 0;
+        if (window.budgetManager) {
+            const budgetData = await window.budgetManager.getCurrentBudget();
+            funds = budgetData.funds;
+        }
 
-        gameItems.filter(item => item).forEach(async (item) => {
-            // Processing game item
-            const {
-                name,
-                turn,
-                population,
-                maxPop,
-                deads,
-                foodAvailable,
-                foodNeeded,
-                salaries,
-                salesTax,
-                citizenTax,
-                markets,
-                foodMarkets,
-                goodsMarkets,
-                goodsNeeded,
-                goodsAvailable,
-                foodSales,
-                goodSales,
-                lastImmoExpense
-            } = item;
-
-            // Get budget data from BudgetManager instead of game table
-            let funds = 0;
-            if (window.budgetManager) {
-                const budgetData = await window.budgetManager.getCurrentBudget();
-                funds = budgetData.funds;
-            }
-
-            // Update population and funds display in general bar
+        // Update population and funds display in general bar using GameUI
+        // This ensures consistent UI updates (IndexedDB is source of truth)
+        if (window.gameUI) {
+            window.gameUI.updatePopulation(currentPopulation || 0);
+            window.gameUI.updateFunds(funds);
+        } else {
+            // Fallback to direct DOM update if GameUI not available
             const displayPop = document.querySelector('.display-pop');
             const displayFunds = document.querySelector('.display-funds');
             if (displayPop) {
-                displayPop.textContent = population.toString();
+                displayPop.textContent = (currentPopulation || 0).toString();
             }
             if (displayFunds) {
                 displayFunds.textContent = funds.toString();
             }
-        })
+        }
+
+        console.log('[scene.js] Updated top bar display:', {
+            population: currentPopulation,
+            funds,
+            usingGameUI: !!window.gameUI
+        });
 
         // End turn processing
 
     }
 
+    /**
+     * Sets up lighting and shadows for the scene
+     * Inspired by simcity-threejs-clone's explicit lighting pattern
+     * @param {number} citySize - Size of the city (used for dynamic intensity scaling)
+     */
     function setUpLights(citySize) {
-        // Setting up lights for city
+        // NOTE: This function is called inside a loop (original behavior), adding lights multiple times
+        // Original code: once per x iteration = 16x for size 16 city
+        // This creates a brighter scene because lights accumulate. We restore this behavior to match brightness.
+        // DON'T remove existing lights - allow them to accumulate to match original brightness
 
+        // Calculate dynamic light intensity based on city size (Anoria-specific)
         // Use the derived formula for light intensity
         const b = Math.log10(0.1) / Math.log10(2); // Exponent
         const a = 0.03 / Math.pow(16, b); // Coefficient
         const c = 0.05 / Math.pow(16, b);
-
         const AmbientLightIntensity = a * Math.pow(citySize, b);
         const DirectionalLightIntensity = c * Math.pow(citySize, b);
 
-        // Light intensity calculated
-        const lights = [
-            new THREE.AmbientLight(0xffffff, AmbientLightIntensity),
-            new THREE.DirectionalLight(0x999999, DirectionalLightIntensity),
-            new THREE.DirectionalLight(0x999999, DirectionalLightIntensity),
-            new THREE.DirectionalLight(0x999999, DirectionalLightIntensity),
-        ];
+        // ORIGINAL ANORIA LIGHTING SETUP - Restored exactly
+        // Setup ambient light (base illumination)
+        const ambientLight = new THREE.AmbientLight(0xffffff, AmbientLightIntensity);
+        scene.add(ambientLight);
 
-        // Set up directional lights
-        lights[1].position.set(0, 1, 0);
-        lights[2].position.set(0, 1, 0);
-        lights[3].position.set(0, 1, 0);
+        // Setup THREE directional lights - all with 0x999999 color (original Anoria)
+        // First light has shadows, others don't
+        const dirLight1 = new THREE.DirectionalLight(0x999999, DirectionalLightIntensity);
+        dirLight1.position.set(0, 1, 0);
+        dirLight1.castShadow = config.rendering.shadows.enabled;
 
-        // Configure shadows for the first directional light
-        lights[1].shadow.camera.left = -10;
-        lights[1].shadow.camera.right = 10;
-        lights[1].shadow.camera.top = 0;
-        lights[1].shadow.camera.bottom = -10;
-        lights[1].shadow.mapSize.width = 1024;
-        lights[1].shadow.mapSize.height = 1024;
-        lights[1].shadow.camera.near = 0.5;
-        lights[1].shadow.camera.far = 50;
+        // Configure shadows for first directional light (original Anoria values)
+        if (dirLight1.castShadow) {
+            dirLight1.shadow.camera.left = -10;
+            dirLight1.shadow.camera.right = 10;
+            dirLight1.shadow.camera.top = 0;
+            dirLight1.shadow.camera.bottom = -10;
+            dirLight1.shadow.mapSize.width = 1024; // Original was 1024, not 2048
+            dirLight1.shadow.mapSize.height = 1024;
+            dirLight1.shadow.camera.near = 0.5;
+            dirLight1.shadow.camera.far = 50;
+        }
 
-        // Add lights to the scene
-        scene.add(...lights);
+        scene.add(dirLight1);
 
-        // Add a hemisphere light
+        // Second directional light (no shadows)
+        const dirLight2 = new THREE.DirectionalLight(0x999999, DirectionalLightIntensity);
+        dirLight2.position.set(0, 1, 0);
+        scene.add(dirLight2);
+
+        // Third directional light (no shadows)
+        const dirLight3 = new THREE.DirectionalLight(0x999999, DirectionalLightIntensity);
+        dirLight3.position.set(0, 1, 0);
+        scene.add(dirLight3);
+
+        // Hemisphere light for atmospheric illumination
         const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.1);
         hemiLight.position.set(0, 50, 0);
         scene.add(hemiLight);
     }
 
+    // Note: setupShadowRenderer() removed - using original inline setup for exact brightness match
+
+
+    /**
+     * Updates the focused object (object under cursor) via raycasting
+     * Called every frame in the render loop
+     */
+    function updateFocusedObject() {
+        // Use InputManager mouse position if available, otherwise skip
+        if (!window.inputManager || !window.inputManager.mouse) {
+            return;
+        }
+
+        const { x: clientX, y: clientY } = window.inputManager.mouse;
+        mouse.x = (clientX / renderer.domElement.clientWidth) * 2 - 1;
+        mouse.y = -(clientY / renderer.domElement.clientHeight) * 2 + 1;
+        
+        raycaster.setFromCamera(mouse, camera.camera);
+        const intersections = raycaster.intersectObjects(scene.children, false);
+        
+        const newFocusedObject = intersections.length > 0 ? intersections[0].object : null;
+        
+        // Only update if changed (prevent unnecessary updates)
+        if (newFocusedObject !== focusedObject) {
+            // Clear previous focus (if object supports it)
+            if (focusedObject && typeof focusedObject.setFocused === 'function') {
+                focusedObject.setFocused(false);
+            }
+            focusedObject = newFocusedObject;
+            // Set new focus (if object supports it)
+            if (focusedObject && typeof focusedObject.setFocused === 'function') {
+                focusedObject.setFocused(true);
+            }
+        }
+    }
+
+    /**
+     * Updates the selected object and calls the selection callback
+     * @param {THREE.Object3D} object - The object to select (or null to deselect)
+     */
+    function updateSelectedObject(object) {
+        // Clear previous selection highlight if existed
+        if (selectedObject && typeof selectedObject.setSelected === 'function') {
+            selectedObject.setSelected(false);
+        }
+
+        selectedObject = object;
+
+        // Set new selection highlight if exists
+        if (selectedObject && typeof selectedObject.setSelected === 'function') {
+            selectedObject.setSelected(true);
+        }
+
+        // Call the selection callback if registered
+        if (this.onObjectSelected && object) {
+            this.onObjectSelected(object);
+        }
+    }
 
     function draw() {
+        updateFocusedObject(); // Update focused object every frame
         renderer.render(scene, camera.camera);
     }
 
@@ -776,40 +870,47 @@ export function createScene(housesStore, gameStore, assetManager) {
     const objectsNames = ['grass', 'roads', 'House-Red', 'House-Purple', 'House-Blue', 'Market-Stall']
 
     function onMouseDown(event){
-        // Block interaction if a popup is open
+        // Block interaction if a popup is open or info modal is open
         if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+            return;
+        }
+        if (isInfoModalOpen()) {
+            return;
+        }
+        if (performance.now() < suppressInputUntilMs) {
             return;
         }
         
         camera.onMouseDown(event);
-        // Raycasting need y and x axis as + on the terrain (plan) (y-1,y1,x1,x-1)
-        mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
-        mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
-        raycaster.setFromCamera(mouse, camera.camera);
-        // all children of the scene (all objects) and recursive = true (all children of the children)
-        // @return {Array} An array of intersections, which are objects containing distance, point, face, faceIndex, and object fields.
-        // The clossest object is the first one in the array
-        let intersections = raycaster.intersectObjects(scene.children, false);
-        // if any intersection where found (if the array is not empty)
-        if(intersections.length > 0) {
-            // get the first object (the intersection) of the array of intersections
-            // Processing intersection
-            // if(selectedObject) selectedObject.material.emissive.setHex(0);
-            selectedObject = intersections[0].object;
-            // if(selectedObject.material.length !== undefined) {
-               
-            // }
-            // Object selected
-
-            if(this.onObjectSelected) {
-                this.onObjectSelected(selectedObject);
-            }
+        
+        // Use focusedObject if available (from per-frame updates), otherwise raycast
+        let objectToSelect = focusedObject;
+        
+        // Fallback: perform raycast if focusedObject not available
+        if (!objectToSelect) {
+            const p = getPointerClientXY(event);
+            mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
+            mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera.camera);
+            const intersections = raycaster.intersectObjects(scene.children, false);
+            objectToSelect = intersections.length > 0 ? intersections[0].object : null;
+        }
+        
+        // Update selected object using unified method
+        if (objectToSelect) {
+            updateSelectedObject.call(this, objectToSelect);
         }
     }
 
     function onMouseUp(event){
-        // Block interaction if a popup is open
+        // Block interaction if a popup is open or info modal is open
         if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+            return;
+        }
+        if (isInfoModalOpen()) {
+            return;
+        }
+        if (performance.now() < suppressInputUntilMs) {
             return;
         }
         
@@ -817,16 +918,27 @@ export function createScene(housesStore, gameStore, assetManager) {
     }
 
 function onMouseMove(event) {
-    // Block interaction if a popup is open
+    // Block interaction if a popup is open or info modal is open
     if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+        return;
+    }
+    if (isInfoModalOpen()) {
+        // Reset mouse button states in camera to prevent dragging when modal closes
+        camera.onMouseUp({ button: 0 }); // Reset left mouse
+        camera.onMouseUp({ button: 1 }); // Reset middle mouse
+        camera.onMouseUp({ button: 2 }); // Reset right mouse
+        return;
+    }
+    if (performance.now() < suppressInputUntilMs) {
         return;
     }
     
     camera.onMouseMove(event);
 
     // Update the mouse coordinates for raycasting
-    mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
-    mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
+    const p = getPointerClientXY(event);
+    mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
+    mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
 
     // Perform raycasting
     raycaster.setFromCamera(mouse, camera.camera);
@@ -875,8 +987,11 @@ function onMouseMove(event) {
         camera.onKeyBoardDown(event);
         // Raycasting need y and x axis as + on the terrain (plan) (y-1,y1,x1,x-1)
         // (number btw 0 and 1) * 2 - 1 > to get the value between -1 and 1
-        mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
-        mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
+        const p = window.inputManager ? window.inputManager.mouse : {x: undefined, y: undefined};
+        if (p.x !== undefined && p.y !== undefined) {
+            mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
+            mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
+        }
 
         raycaster.setFromCamera(mouse, camera.camera);
         // array of object > all objects from our scene that intersect with the ray (false = non recursive = only the first object)
@@ -897,6 +1012,22 @@ function onMouseMove(event) {
 
     function onKeyBoardUp(event){
         camera.onKeyBoardUp(event);
+    }
+
+    function onMouseWheel(event) {
+        // Block interaction if a popup is open or info modal is open
+        if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+            return;
+        }
+        if (isInfoModalOpen()) {
+            return;
+        }
+        if (performance.now() < suppressInputUntilMs) {
+            return;
+        }
+        if (camera.onWheel) {
+            camera.onWheel(event);
+        }
     }
 
     /**
@@ -956,11 +1087,19 @@ function onMouseMove(event) {
         initialize,
         update,
         start,
+        stop,
         onMouseDown,
         onMouseUp,
         onMouseMove, 
         onKeyBoardDown,
         onKeyBoardUp,
-        delay
+            onMouseWheel,
+        delay,
+        // Expose focused/selected for external access if needed
+        get focusedObject() { return focusedObject; },
+        get selectedObject() { return selectedObject; },
+        // Expose controls to enable/disable OrbitControls when modal opens/closes
+        get controls() { return controls; },
+        suppressInput
     }
 }

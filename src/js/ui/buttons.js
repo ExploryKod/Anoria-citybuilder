@@ -27,6 +27,15 @@ import {
     toolBarButtons
 } from "./nodes.js";
 import { createGame } from '../game/game.js';
+
+// Global app registry helper (available throughout this module)
+function appRegister(name, instance) {
+    if (window.app && typeof window.app.register === 'function') {
+        window.app.register(name, instance);
+    } else {
+        window[name] = instance;
+    }
+}
 import gameStore from "../stores/GameStore.js";
 import housesStore from "../stores/HousesStore.js";
 import budgetManager from "../stores/BudgetManager.js";
@@ -886,6 +895,23 @@ window.onload = async () => {
                 canvas.classList.remove('pointer-events-disabled');
             }
             
+            // Re-enable OrbitControls when modal closes
+            // Try to access scene through various paths
+            let sceneObj = null;
+            if (window.game && window.game.scene) {
+                sceneObj = window.game.scene;
+            } else if (window.scene) {
+                sceneObj = window.scene;
+            } else if (window.app && window.app.game && window.app.game.scene) {
+                sceneObj = window.app.game.scene;
+            }
+            if (sceneObj && sceneObj.controls) {
+                sceneObj.controls.enabled = true;
+            }
+            if (sceneObj && sceneObj.suppressInput) {
+                sceneObj.suppressInput(200);
+            }
+            
             window.game.play()
         }
     })
@@ -1178,9 +1204,13 @@ window.onload = async () => {
         });
     }
     
-    window.gameStore = gameStore;
-    window.housesStore = housesStore;
-    window.game = createGame(housesStore, gameStore, assetManager);
+    // Register with AppRegistry (window.app) if available, else use direct window.* (backwards compatible)
+    appRegister('gameStore', gameStore);
+    appRegister('housesStore', housesStore);
+    const game = createGame(housesStore, gameStore, assetManager);
+    appRegister('game', game);
+    
+    // Functions can be registered as well
     window.setActiveTool = (e) => {
         getButtonsUnactive(e)
         if(e.target.classList.contains('panel-btn')) {
@@ -1315,28 +1345,41 @@ async function updateRealtimeBudget() {
             const incomeBreakdown = await window.budgetManager.getIncomeBreakdown();
             const expenseBreakdown = await window.budgetManager.getExpenseBreakdown();
             
-            // Get population data from game table
-            let population = null;
+            // Get population data from IndexedDB
+            // Primary source: housesStore (sums house.pop from houses table) - source of truth
+            // Fallback: gameStore (game table) for backwards compatibility
+            let population = 0;
             let populationError = false;
-            if (window.gameStore) {
-                try {
-                    population = await window.gameStore.getLatestGameItemByField('population');
-                    if (population === null || population === undefined) {
-                        // Keep previous value if available, otherwise show loading
-                        const currentPop = realtimePopulationEl ? realtimePopulationEl.textContent : '0';
-                        if (currentPop === 'Chargement...' || currentPop === '0') {
-                            population = '0'; // Show 0 instead of "Chargement..."
-                        } else {
-                            population = currentPop; // Keep previous value
-                        }
+            try {
+                // Try housesStore first (source of truth - calculates from house.pop)
+                if (housesStore && typeof housesStore.getGlobalPopulation === 'function') {
+                    population = await housesStore.getGlobalPopulation();
+                    population = population || 0;
+                    console.log('[buttons.js > updateRealtimeBudget] Population from housesStore (IndexedDB):', population);
+                } else if (window.housesStore && typeof window.housesStore.getGlobalPopulation === 'function') {
+                    population = await window.housesStore.getGlobalPopulation();
+                    population = population || 0;
+                    console.log('[buttons.js > updateRealtimeBudget] Population from housesStore (IndexedDB, window):', population);
+                } else {
+                    // Fallback to gameStore (also IndexedDB, but may be stale)
+                    console.warn('[buttons.js > updateRealtimeBudget] ⚠️ housesStore.getGlobalPopulation not available, FALLING BACK to gameStore (may be stale)');
+                    if (window.gameStore && typeof window.gameStore.getLatestGameItemByField === 'function') {
+                        const gamePop = await window.gameStore.getLatestGameItemByField('population');
+                        population = gamePop !== null && gamePop !== undefined ? gamePop : 0;
+                        console.warn('[buttons.js > updateRealtimeBudget] ⚠️ Using FALLBACK population from gameStore:', {
+                            population,
+                            source: 'gameStore (IndexedDB game table)',
+                            note: 'This may not reflect real-time house population changes'
+                        });
+                    } else {
+                        console.error('[buttons.js > updateRealtimeBudget] ❌ Both housesStore and gameStore unavailable! Population set to 0');
+                        population = 0;
                     }
-                } catch (error) {
-                    console.error('Error fetching population:', error);
-                    population = 'Erreur';
-                    populationError = true;
                 }
-            } else {
-                population = '0'; // Show 0 instead of "Chargement..."
+            } catch (error) {
+                console.error('[buttons.js > updateRealtimeBudget] Error fetching population from IndexedDB:', error);
+                population = 0;
+                populationError = true;
             }
             
             // Mettre à jour les fonds principaux
@@ -1396,11 +1439,17 @@ async function updateRealtimeBudget() {
                         realtimePopulationEl.title = 'Erreur lors du chargement de la population';
                     } else {
                         populationSpan.style.color = '#fff'; // Blanc pour valeur normale
-                        realtimePopulationEl.title = 'Population actuelle';
+                        realtimePopulationEl.title = `Population actuelle (${population} habitants)`;
                     }
                 } else {
                     realtimePopulationEl.textContent = population.toString();
                 }
+                
+                console.log('[buttons.js > updateRealtimeBudget] Updated realtime population display:', {
+                    population,
+                    hasError: populationError,
+                    elementExists: !!realtimePopulationEl
+                });
             }
             
             // Mettre à jour la santé financière
@@ -1648,6 +1697,9 @@ function initCityMapPopup() {
             
             // Initialize collapsible legend after a short delay to ensure DOM is ready
             setTimeout(initCollapsibleLegend, 100);
+
+            // Initialize map filters
+            initCityMapFilters();
         } else {
             // Use PopupManager to handle events
             if (window.popupManager) {
@@ -1675,6 +1727,60 @@ function initCityMapPopup() {
             }
         }
     });
+}
+
+// Apply filter on city map grid cells
+function applyCityMapFilter(filter) {
+    const grid = document.getElementById('city-map-grid');
+    if (!grid) return;
+    const cells = grid.querySelectorAll('.grid-cell');
+    cells.forEach(cell => {
+        const cat = cell.getAttribute('data-category') || 'other';
+        if (filter === 'all' || filter === cat) {
+            cell.classList.remove('filtered-hidden');
+        } else {
+            cell.classList.add('filtered-hidden');
+        }
+    });
+}
+
+// Wire up city map filter buttons
+function initCityMapFilters() {
+    const filterBar = document.querySelector('.city-map-filters');
+    if (!filterBar) return;
+    const btns = filterBar.querySelectorAll('.filter-btn');
+    btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            btns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const filter = btn.getAttribute('data-filter') || 'all';
+            applyCityMapFilter(filter);
+        });
+    });
+    // Apply current active on init
+    const activeBtn = filterBar.querySelector('.filter-btn.active');
+    const current = activeBtn ? activeBtn.getAttribute('data-filter') : 'all';
+    applyCityMapFilter(current);
+
+    // Neighbor toggle (independent of category filters)
+    const neighborsBtn = filterBar.querySelector('.neighbors-btn');
+    const grid = document.getElementById('city-map-grid');
+    if (neighborsBtn && grid) {
+        // Start with neighbors hidden when button is not active
+        if (!neighborsBtn.classList.contains('active')) {
+            grid.classList.add('hide-neighbors');
+        }
+        // Active (orange) = neighbors shown; inactive = hidden
+        neighborsBtn.addEventListener('click', () => {
+            const willBeActive = !neighborsBtn.classList.contains('active');
+            neighborsBtn.classList.toggle('active', willBeActive);
+            if (willBeActive) {
+                grid.classList.remove('hide-neighbors');
+            } else {
+                grid.classList.add('hide-neighbors');
+            }
+        });
+    }
 }
 
 // Function to get building code from type
@@ -1705,7 +1811,9 @@ function getNeighborCodes(neighbors) {
     }
     
     return neighbors.map(neighbor => {
-        const code = getBuildingCode(neighbor.name || neighbor.type);
+        // Prefer explicit fields, fallback to buildingId used in DB
+        const typeLike = neighbor.name || neighbor.type || neighbor.buildingId || '';
+        const code = getBuildingCode(typeLike);
         if (neighbor.x !== undefined && neighbor.y !== undefined) {
             return `${code}(${neighbor.x},${neighbor.y})`;
         }
@@ -1786,7 +1894,19 @@ async function generateCityMap() {
                     const needsRoadAccess = !isRoad;
                     
                     // Check for road access (only for buildings that need it)
-                    const hasRoad = needsRoadAccess ? neighbors.some(neighbor => neighbor.name === 'roads' || neighbor.name === 'Road') : true;
+                    let hasRoad = true;
+                    try {
+                        const { checkRoadAccess } = await import('../game/modules/ModuleHelper.js');
+                        hasRoad = needsRoadAccess ? checkRoadAccess(neighbors).hasAccess : true;
+                    } catch (err) {
+                        console.warn('[ui/buttons.js > generateCityMap] Falling back to inline road access check because ModuleHelper import failed.', {
+                            error: err?.message || err,
+                            buildingType: building.type,
+                            neighborsCount: neighbors?.length ?? 0
+                        });
+                        // Fallback to previous inline logic if helper not available
+                        hasRoad = needsRoadAccess ? neighbors.some(neighbor => neighbor.name === 'roads' || neighbor.name === 'Road') : true;
+                    }
                     
                     // Check if building can have food (houses, markets, but not roads, wells, etc.)
                     const canHaveFood = building.type.includes('House') || building.type.includes('Market') || building.type.includes('Farm');
@@ -1795,7 +1915,19 @@ async function generateCityMap() {
                     const stocks = building.stocks || {};
                     const hasFood = canHaveFood ? (stocks.food > 0 || stocks.wheat > 0 || stocks.carrot > 0 || stocks.cabbage > 0) : true;
                     
-                    tableHTML += `<td class="grid-cell">`;
+                    // Determine category for filtering
+                    let category = 'services';
+                    if (building.type && (building.type.includes('House') || building.type.includes('Palace'))) {
+                        category = 'houses';
+                    } else if (building.type && (building.type.includes('roads') || building.type.includes('Road'))) {
+                        category = 'infrastructure';
+                    } else if (building.type && (building.type.includes('Well') || building.type.includes('Church'))) {
+                        category = 'services';
+                    } else if (building.type && (building.type.includes('Market') || building.type.includes('Farm'))) {
+                        category = 'services';
+                    }
+
+                    tableHTML += `<td class=\"grid-cell\" data-category=\"${category}\">`;
                     
                     // Status indicators
                     tableHTML += `<div class="status-indicators">`;
@@ -1809,14 +1941,20 @@ async function generateCityMap() {
                     }
                     tableHTML += `</div>`;
                     
-                    tableHTML += `<span class="building-code ${code.toLowerCase()}">${code}</span>`;
+                    tableHTML += `<span class=\"building-code ${code.toLowerCase()}\">${code}</span>`;
+                    // Neighbors list (shown when neighbors toggle is active)
                     if (neighborCodes) {
-                        tableHTML += `<div class="neighbors-list">${neighborCodes}</div>`;
+                        tableHTML += `<div class=\"neighbors-list\">${neighborCodes}</div>`;
+                    }
+                    // Habitants count (per house), shown when neighbors are hidden
+                    if (category === 'houses') {
+                        const habitants = Number(building.pop || 0);
+                        tableHTML += `<div class=\"habitants-count\" title=\"Habitants\">${habitants}</div>`;
                     }
                     tableHTML += `</td>`;
                 } else {
                     // Empty cell (grass) - show a small indicator
-                    tableHTML += `<td class="grid-cell empty-cell">
+                    tableHTML += `<td class=\"grid-cell empty-cell\" data-category=\"infrastructure\"> 
                         <span class="building-code grass" style="opacity: 0.3;">G</span>
                     </td>`;
                 }
@@ -2516,11 +2654,24 @@ async function loadAdvice() {
             });
         }
 
-        // Check for road connectivity
-        const housesWithoutRoads = houses.filter(house => {
-            if (!house.type || !house.type.includes('House')) return false;
-            return !house.neighbors || house.neighbors.filter(n => n.name === 'roads').length === 0;
-        });
+        // Check for road connectivity (use helper when available; fallback preserved)
+        const housesWithoutRoads = [];
+        for (const house of houses) {
+            if (!house.type || !house.type.includes('House')) continue;
+            let hasRoadAccess = false;
+            try {
+                const { checkRoadAccess } = await import('../game/modules/ModuleHelper.js');
+                hasRoadAccess = !!(house.neighbors && checkRoadAccess(house.neighbors).hasAccess);
+            } catch (err) {
+                console.warn('[ui/buttons.js > initUrbanAdviceCenter] Falling back to inline road access check because ModuleHelper import failed.', {
+                    error: err?.message || err,
+                    houseId: house.id,
+                    neighborsCount: house.neighbors?.length ?? 0
+                });
+                hasRoadAccess = !!(house.neighbors && house.neighbors.filter(n => n.name === 'roads').length > 0);
+            }
+            if (!hasRoadAccess) housesWithoutRoads.push(house);
+        }
 
         if (housesWithoutRoads.length > 0) {
             advice.push({
@@ -3201,7 +3352,9 @@ async function processLoanPayments() {
 // Initialize loan payment system
 function initLoanPaymentSystem() {
     // Expose processLoanPayments globally for scene.js
-    window.processLoanPayments = processLoanPayments;
+    // Register utility functions with AppRegistry
+    appRegister('processLoanPayments', processLoanPayments);
+    window.processLoanPayments = processLoanPayments; // Keep direct access for backwards compatibility
     
     // Process loan payments every turn
     if (window.game && window.game.onTurnEnd) {

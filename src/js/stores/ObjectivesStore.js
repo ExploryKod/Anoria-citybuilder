@@ -96,6 +96,10 @@ const objectivesStore = new ObjectivesStore();
 
 // Expose globally for easy access
 window.objectivesStore = objectivesStore;
+// Also register with AppRegistry if available
+if (window.app && window.app.register) {
+    window.app.register('objectivesStore', objectivesStore);
+}
 
 export default objectivesStore;
 

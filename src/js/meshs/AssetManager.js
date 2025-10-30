@@ -1,11 +1,33 @@
 import * as THREE from 'three';
 import { textures } from './data.js';
 import MeshLoader from "./MeshLoaderOptimized.js";
+import config from '../game/config.js';
+
+/**
+ * Gets the base URL for assets (similar to simcity's pattern)
+ * Tries to read from Vite config, falls back to config.js value
+ * @returns {string} Base URL
+ */
+function getAssetBaseUrl() {
+    // Try to get from Vite config if available (like simcity does)
+    try {
+        // In Vite, import.meta.url or import.meta.env can provide base
+        // For now, use config value - can be enhanced to read from vite.config.js
+        return config.assets.baseUrl;
+    } catch (e) {
+        // Fallback to config
+        return config.assets.baseUrl || '/';
+    }
+}
 
 class AssetManager extends MeshLoader {
     #geometry = new THREE.BoxGeometry(1, 1, 1);
     #assets = {};
     #modelPath = "";
+    #baseUrl = '';
+    #loadingPromises = [];
+    #isLoaded = false;
+    #onLoadCallback = null;
     #meshUserData = {
         id: "nothing",
         type: "nothing",
@@ -24,9 +46,57 @@ class AssetManager extends MeshLoader {
         worldTime: 0
     }
 
-    constructor() {
+    /**
+     * @param {Function} onLoad - Optional callback when all assets are loaded (similar to simcity)
+     */
+    constructor(onLoad = null) {
         super()
-        this.#modelPath = `./resources/lowpoly/village_town_assets_v2.glb`
+        this.#baseUrl = getAssetBaseUrl();
+        // Standardize model path using base URL
+        this.#modelPath = `${this.#baseUrl}resources/lowpoly/village_town_assets_v2.glb`.replace('//', '/');
+        this.#onLoadCallback = onLoad;
+        
+        // Track loading state
+        this.#isLoaded = false;
+        this.#loadingPromises = [];
+    }
+
+    /**
+     * Gets the base URL for asset paths
+     * @returns {string}
+     */
+    getBaseUrl() {
+        return this.#baseUrl;
+    }
+
+    /**
+     * Builds a full asset URL from a relative path
+     * @param {string} relativePath - Relative path from assets root
+     * @returns {string} Full URL
+     */
+    getAssetUrl(relativePath) {
+        // Remove leading slash if present, then combine with baseUrl
+        const cleanPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
+        return `${this.#baseUrl}${cleanPath}`.replace(/\/+/g, '/');
+    }
+
+    /**
+     * Checks if all assets are loaded
+     * @returns {boolean}
+     */
+    isLoaded() {
+        return this.#isLoaded;
+    }
+
+    /**
+     * Returns a promise that resolves when all assets are loaded
+     * @returns {Promise<void>}
+     */
+    async waitForLoad() {
+        if (this.#isLoaded) {
+            return Promise.resolve();
+        }
+        return Promise.all(this.#loadingPromises);
     }
 
     getButtonData() {
@@ -239,14 +309,54 @@ class AssetManager extends MeshLoader {
     async initializeBuildings(propertyKey) {
 
         if(Object.hasOwn(this.modelMetas, propertyKey) && Object.hasOwn(this.toolIds, propertyKey)) {
-            await this.loadAssets(this.assetFullName, propertyKey, this.modelsObj, this.allAssetsNames, this.assetNames, this.toolIds, this.buttonData);
+            // Track loading promise for completion signaling
+            const loadPromise = this.loadAssets(this.assetFullName, propertyKey, this.modelsObj, this.allAssetsNames, this.assetNames, this.toolIds, this.buttonData);
+            this.#loadingPromises.push(loadPromise);
+            
+            await loadPromise;
+            
             // Houses
             this.toolIds[propertyKey].forEach(toolId => {
                 this.#assets[toolId] = (x, y, z = 0) =>
                     this.#createBuilding(x, y, z, this.modelMetas[propertyKey].size, toolId, this.#getModelsObj(propertyKey));
             });
+            
+            // Check if all loading is complete asynchronously (fires after all promises resolve)
+            // Note: This is called after each building category loads, but will only fire callback once all complete
+            this.#checkLoadingComplete();
         } else {
             console.warn(`Unknown property property type ${propertyKey}`);
+        }
+    }
+
+    /**
+     * Marks assets as loaded and calls onLoad callback if provided
+     * Similar to simcity's AssetManager pattern
+     * Checks completion asynchronously to ensure all promises are resolved
+     */
+    async #checkLoadingComplete() {
+        if (this.#loadingPromises.length === 0) {
+            // No async loading, mark as loaded immediately
+            if (!this.#isLoaded) {
+                this.#isLoaded = true;
+                if (this.#onLoadCallback) {
+                    this.#onLoadCallback();
+                }
+            }
+            return;
+        }
+
+        // Wait for all promises to complete
+        try {
+            await Promise.all(this.#loadingPromises);
+            if (!this.#isLoaded) {
+                this.#isLoaded = true;
+                if (this.#onLoadCallback) {
+                    this.#onLoadCallback();
+                }
+            }
+        } catch (error) {
+            console.error('Asset loading failed:', error);
         }
     }
 
