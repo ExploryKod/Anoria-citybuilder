@@ -29,8 +29,8 @@ export function createScene(housesStore, gameStore, assetManager) {
     // BudgetManager will be set by the game initialization
 
     const scene = new THREE.Scene();
-    // Subtle atmospheric fog to blend far terrain and sky
-    try { scene.fog = new THREE.FogExp2(0xfff7e6, 0.02); } catch(_) {}
+    // Subtle atmospheric fog to blend far terrain and sky (tuned to match background)
+    try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
     // scene.background = new THREE.Color(0x79845);
 
     let skyLoader = new THREE.TextureLoader();
@@ -103,7 +103,7 @@ export function createScene(housesStore, gameStore, assetManager) {
     async function initialize(city) {
         scene.clear();
         // Re-apply fog after clear
-        try { scene.fog = new THREE.FogExp2(0xfff7e6, 0.02); } catch(_) {}
+        try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
         terrain = [];
         buildings = [];
         loadingPromises = [];
@@ -872,44 +872,34 @@ export function createScene(housesStore, gameStore, assetManager) {
         renderer.setAnimationLoop(null);
     }
 
-    // Add a large skydome and a distant ground ring to fake infinity
+    // Add a distant ground ring to fake infinity (keep existing sky background)
     function addBackdrop() {
         // Avoid duplicating if reinitializing
-        const existingSky = scene.getObjectByName('skydome');
         const existingRing = scene.getObjectByName('infinite-ground-ring');
-        if (existingSky && existingRing) return;
-
-        // Skydome (inward-facing sphere)
-        try {
-            const skyGeo = new THREE.SphereGeometry(500, 32, 32);
-            const skyMat = new THREE.MeshBasicMaterial({
-                color: 0xfff3d6,
-                side: THREE.BackSide,
-                fog: false
-            });
-            const skydome = new THREE.Mesh(skyGeo, skyMat);
-            skydome.name = 'skydome';
-            scene.add(skydome);
-        } catch (_) {}
+        if (existingRing) return;
 
         // Distant ground ring
         try {
-            const size = 800;
+            const size = 1200;
             const ringGeo = new THREE.PlaneGeometry(size, size, 1, 1);
             const baseTex = (textures && textures['grid']) ? textures['grid'] : null;
             let ringMat;
             if (baseTex && baseTex instanceof THREE.Texture) {
                 baseTex.wrapS = baseTex.wrapT = THREE.RepeatWrapping;
-                baseTex.repeat.set(100, 100);
-                ringMat = new THREE.MeshLambertMaterial({ map: baseTex, color: 0xffffff, transparent: true, opacity: 0.6 });
+                baseTex.repeat.set(120, 120);
+                ringMat = new THREE.MeshLambertMaterial({ map: baseTex, color: 0xffffff, transparent: true, opacity: 0.45 });
             } else {
-                ringMat = new THREE.MeshLambertMaterial({ color: 0xeef8e8, transparent: true, opacity: 0.7 });
+                ringMat = new THREE.MeshLambertMaterial({ color: 0xeef8e8, transparent: true, opacity: 0.55 });
             }
+            // Backdrop ring should fade with fog and not interfere with depth
+            ringMat.fog = true;
+            ringMat.depthWrite = false;
             const ring = new THREE.Mesh(ringGeo, ringMat);
             ring.rotation.x = -Math.PI / 2;
             ring.position.y = -0.01;
             ring.receiveShadow = true;
             ring.name = 'infinite-ground-ring';
+            ring.frustumCulled = false;
             scene.add(ring);
         } catch (_) {}
     }
