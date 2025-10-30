@@ -3,7 +3,7 @@ import {  assetsPrices } from '../meshs/data.js';
 import { checkRoadAccess } from './modules/ModuleHelper.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
-import {getAssetPrice, makeDbItemId, makeInfoBuildingText, isAreaAvailableForBuilding} from '../utils/utils.js';
+import {getAssetPrice, makeDbItemId, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, isAreaAvailableForBuilding} from '../utils/utils.js';
 import {
     displayTime,
     overOverlay,
@@ -296,54 +296,50 @@ export function createGame(housesStore, gameStore, assetManager) {
                         .filter(neighbor => neighbor.buildingId && neighbor.buildingId !== "");
                 }
 
-                makeInfoBuildingText(`Bâtiment: ${selectedObject.userData.id} x: ${selectedObject.userData.x} y: ${selectedObject.userData.y}`, false)
-                makeInfoBuildingText(`Nombre d'habitants: ${buildingPop}`, false)
-                makeInfoBuildingText(`Desservie par ${houseRoads ? houseRoads : 0 } route(s).`, false)
+                makeInfoSection('Bâtiment');
+                makeInfoKeyValue('Type', `${selectedObject.userData.id}`);
+                makeInfoKeyValue('Adresse', `x: ${selectedObject.userData.x} | y: ${selectedObject.userData.y}`);
+                makeInfoKeyValue(`Habitants`, buildingPop);
+                makeInfoKeyValue('Routes desservies', houseRoads ? houseRoads : 0);
 
                 if(neighbors.length > 0) {
-                    makeInfoBuildingText(`Voisin immédiats: `, false)
+                    makeInfoSection('Voisins immédiats');
                     neighbors.filter(neigh => neigh.x && neigh.y).forEach(neighbor => {
-                        makeInfoBuildingText(`- ${neighbor.buildingId} | adresse: x: ${neighbor.x} et y: ${neighbor.y}`, false)
+                        makeInfoKeyValue(neighbor.buildingId, `x: ${neighbor.x} | y: ${neighbor.y}`);
                     })
                 } else {
-                    makeInfoBuildingText(`Maison isolée`, false)
+                    makeInfoKeyValue('Voisinage', 'Maison isolée');
                 }
 
                 if(selectedObject.userData.id.includes('House') && Object.hasOwn(houseStocks, 'food')) {
-                    makeInfoBuildingText(`Nourriture disponible: `, false)
-                    makeInfoBuildingText(`- Blé : ${houseStocks.wheat} paniers`, false)
-                    makeInfoBuildingText(`- Légumes verts : ${houseStocks.cabbage} paniers`, false)
-                    makeInfoBuildingText(`- Autres légumes : ${houseStocks.carrot} paniers`, false)
-                    makeInfoBuildingText(`------------------------------------`, false)
-                    makeInfoBuildingText(`- Total : ${houseStocks.food} paniers`, false)
+                    makeInfoSection('Stocks nourriture');
+                    makeInfoKeyValue('Blé', `${houseStocks.wheat} paniers`);
+                    makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage} paniers`);
+                    makeInfoKeyValue('Autres légumes', `${houseStocks.carrot} paniers`);
+                    makeInfoKeyValue('Total', `${houseStocks.food} paniers`);
                 }
 
                 // Display market food stocks (similar to houses)
                 if((selectedObject.userData.id.includes('Market') || selectedObject.userData.id.includes('market')) && Object.hasOwn(houseStocks, 'food')) {
-                    makeInfoBuildingText(`Stock de nourriture (marché): `, false)
-                    makeInfoBuildingText(`- Blé : ${houseStocks.wheat || 0} paniers`, false)
-                    makeInfoBuildingText(`- Légumes verts : ${houseStocks.cabbage || 0} paniers`, false)
-                    makeInfoBuildingText(`- Autres légumes : ${houseStocks.carrot || 0} paniers`, false)
-                    makeInfoBuildingText(`------------------------------------`, false)
-                    makeInfoBuildingText(`- Total : ${houseStocks.food || 0} paniers disponibles`, false)
+                    makeInfoSection('Stock marché');
+                    makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`);
+                    makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`);
+                    makeInfoKeyValue('Autres légumes', `${houseStocks.carrot || 0} paniers`);
+                    makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers disponibles`);
                 }
 
                 if(selectedObject.userData.id.includes('Farm') && Object.hasOwn(houseStocks, 'food')) {
-                    makeInfoBuildingText(`Nourriture disponible: `, false)
+                    makeInfoSection('Production ferme');
                     if(selectedObject.userData.id.includes('Farm-Wheat')) {
-                        makeInfoBuildingText(`- Blé : ${houseStocks.wheat} paniers produits`, false)
+                        makeInfoKeyValue('Blé', `${houseStocks.wheat} paniers produits`);
                     }
-
                     if(selectedObject.userData.id.includes('Farm-Carrot')) {
-                        makeInfoBuildingText(`- Carrotes : ${houseStocks.carrot} paniers produits`, false)
+                        makeInfoKeyValue('Carottes', `${houseStocks.carrot} paniers produits`);
                     }
-
                     if(selectedObject.userData.id.includes('Farm-Cabbage')) {
-                        makeInfoBuildingText(`- Légumes verts : ${houseStocks.cabbage} paniers produits`, false)
+                        makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage} paniers produits`);
                     }
-
-                    makeInfoBuildingText(`------------------------------------`, false)
-                    makeInfoBuildingText(`- Total : ${houseStocks.food} unités produites`, false)
+                    makeInfoKeyValue('Total', `${houseStocks.food} unités produites`);
                 }
             }
            
@@ -452,6 +448,7 @@ export function createGame(housesStore, gameStore, assetManager) {
     document.addEventListener('mousedown', scene.onMouseDown.bind(scene), false);
     document.addEventListener('mouseup', scene.onMouseUp.bind(scene), false);
     document.addEventListener('mousemove', scene.onMouseMove.bind(scene), false);
+    document.addEventListener('wheel', scene.onMouseWheel.bind(scene), { passive: true });
     document.addEventListener('keydown', scene.onKeyBoardDown.bind(scene), false);
     document.addEventListener('keyup', scene.onKeyBoardUp.bind(scene), false);
 
