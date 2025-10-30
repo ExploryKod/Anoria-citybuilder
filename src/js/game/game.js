@@ -253,22 +253,32 @@ export function createGame(housesStore, gameStore, assetManager) {
             await scene.update(city);
         } else if(activeToolId === "select-object") {
             // Object selection
-            infoObjectOverlay.classList.toggle('active');
-            
-            // Manage pointer events on 3D scene when info overlay toggles
-            const canvas = document.querySelector('canvas');
-            if (canvas) {
-                if (infoObjectOverlay.classList.contains('active')) {
-                    canvas.classList.add('pointer-events-disabled');
-                } else {
-                    canvas.classList.remove('pointer-events-disabled');
-                }
-            }
-            
-            makeInfoBuildingText("", true)
+            // Only open the info modal if we actually have info to show (i.e., on building objects)
+            let shouldOpenInfo = false;
 
-            if(!buildingsObjects.includes(selectedObject.userData.id)) {
-                // Not a building object
+            // Reset content first
+            makeInfoBuildingText("", true);
+
+            if(buildingsObjects.includes(selectedObject.userData.id)) {
+                shouldOpenInfo = true;
+            }
+
+            // Open/close modal strictly based on whether we have info
+            if (shouldOpenInfo) {
+                if (!infoObjectOverlay.classList.contains('active')) {
+                    infoObjectOverlay.classList.add('active');
+                }
+                // Manage pointer events on 3D scene when info overlay is active
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    canvas.classList.add('pointer-events-disabled');
+                }
+                if (scene.controls) {
+                    scene.controls.enabled = false;
+                }
+            } else {
+                // Do not open the modal at all for non-building objects (e.g., grass)
+                // If it's already open from a previous selection, leave its state unchanged here
             }
 
 
@@ -455,11 +465,22 @@ export function createGame(housesStore, gameStore, assetManager) {
                 canvas.classList.remove('pointer-events-disabled');
             }
             
+            // Re-enable OrbitControls when modal closes
+            if (scene.controls) {
+                scene.controls.enabled = true;
+            }
+            // Swallow first interactions just after closing modal
+            if (scene.suppressInput) {
+                scene.suppressInput(200);
+            }
+            
             window.game.play()
         }
     })
 
+    // Expose scene on game object so it can be accessed from other modules
     const game = {
+        scene: scene,
 
         async update(time) {
             gameUI.updateTimeDisplay(time);
