@@ -227,9 +227,26 @@ export function createGame(housesStore, gameStore, assetManager) {
         // Object selected
 
 
+        // Defensive guards: userData/x/y must exist and be in bounds
+        if (!selectedObject || !selectedObject.userData) {
+            console.warn('[game.onObjectSelected] Missing userData on selected object');
+            return;
+        }
         let { x, y } = selectedObject.userData;
+        if (typeof x !== 'number' || typeof y !== 'number') {
+            console.warn('[game.onObjectSelected] Invalid coordinates on selected object', { x, y });
+            return;
+        }
+        if (!city || typeof city.size !== 'number' || x < 0 || y < 0 || x >= city.size || y >= city.size) {
+            console.warn('[game.onObjectSelected] Coordinates out of bounds', { x, y, size: city?.size });
+            return;
+        }
         // location of the tile in the data model
-        const tile = city.tiles[x][y];
+        const tile = (city.tiles && city.tiles[x]) ? city.tiles[x][y] : undefined;
+        if (!tile) {
+            console.warn('[game.onObjectSelected] Missing tile at coordinates', { x, y });
+            return;
+        }
         // Object placed on terrain
         if(activeToolId === 'bulldoze') {
             // Find the building at this location and its size
@@ -366,7 +383,11 @@ export function createGame(housesStore, gameStore, assetManager) {
             
             // Check if area is available for this building
             const { x, y } = selectedObject.userData;
-            if (!isAreaAvailableForBuilding(city, x, y, gridSize)) {
+            // Special rule: roads can be placed on empty or existing road tiles without multi-tile checks
+            const isRoadTool = activeToolId === 'roads' || activeToolId === 'Road' || (activeToolId && activeToolId.toLowerCase() === 'roads');
+            const targetTile = city.tiles?.[x]?.[y];
+            const canPlaceRoad = isRoadTool && (!targetTile?.buildingId || targetTile.buildingId === 'roads' || targetTile.buildingId === 'Road');
+            if (!canPlaceRoad && !isAreaAvailableForBuilding(city, x, y, gridSize)) {
                 showGenericErrorNotification(activeToolId, 'area_not_available');
                 return;
             }
@@ -445,12 +466,22 @@ export function createGame(housesStore, gameStore, assetManager) {
     //    on onMouse we bind the scene object itself to the handler function onObjectSelected to work with the scene object
     // these event listeners are added to the document object, not the scene object itself - they are call by HTML document so we need to bind the scene object 
     // to the handler function
-    document.addEventListener('mousedown', scene.onMouseDown.bind(scene), false);
-    document.addEventListener('mouseup', scene.onMouseUp.bind(scene), false);
-    document.addEventListener('mousemove', scene.onMouseMove.bind(scene), false);
-    document.addEventListener('wheel', scene.onMouseWheel.bind(scene), { passive: true });
-    document.addEventListener('keydown', scene.onKeyBoardDown.bind(scene), false);
-    document.addEventListener('keyup', scene.onKeyBoardUp.bind(scene), false);
+    const canvasEl = scene.domElement || document.querySelector('canvas');
+    if (canvasEl) {
+        canvasEl.addEventListener('mousedown', scene.onMouseDown.bind(scene), false);
+        canvasEl.addEventListener('mouseup', scene.onMouseUp.bind(scene), false);
+        canvasEl.addEventListener('mousemove', scene.onMouseMove.bind(scene), false);
+        canvasEl.addEventListener('wheel', scene.onMouseWheel.bind(scene), { passive: true });
+        document.addEventListener('keydown', scene.onKeyBoardDown.bind(scene), false);
+        document.addEventListener('keyup', scene.onKeyBoardUp.bind(scene), false);
+    } else {
+        document.addEventListener('mousedown', scene.onMouseDown.bind(scene), false);
+        document.addEventListener('mouseup', scene.onMouseUp.bind(scene), false);
+        document.addEventListener('mousemove', scene.onMouseMove.bind(scene), false);
+        document.addEventListener('wheel', scene.onMouseWheel.bind(scene), { passive: true });
+        document.addEventListener('keydown', scene.onKeyBoardDown.bind(scene), false);
+        document.addEventListener('keyup', scene.onKeyBoardUp.bind(scene), false);
+    }
 
     infoObjectCloseBtn.addEventListener('click', () => {
         if(infoObjectOverlay.classList.contains('active')) {
