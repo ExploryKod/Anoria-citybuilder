@@ -382,6 +382,40 @@ export function makeInfoBuildingText(textContent, isHTMLReset=true) {
     infoObjectContent.appendChild(buildingText);
 }
 
+/**
+ * Append a key/value row to the info panel using a responsive layout
+ * @param {string} label
+ * @param {string|number} value
+ */
+export function makeInfoKeyValue(label, value) {
+    const infoObjectContent = document.querySelector('.info-building__body');
+    if(!infoObjectContent) return false;
+    const row = document.createElement('div');
+    row.className = 'kv-row';
+    const k = document.createElement('div');
+    k.className = 'kv-key';
+    k.textContent = label;
+    const v = document.createElement('div');
+    v.className = 'kv-value';
+    v.textContent = value !== undefined && value !== null ? String(value) : '';
+    row.appendChild(k);
+    row.appendChild(v);
+    infoObjectContent.appendChild(row);
+}
+
+/**
+ * Append a section title to the info panel
+ * @param {string} title
+ */
+export function makeInfoSection(title) {
+    const infoObjectContent = document.querySelector('.info-building__body');
+    if(!infoObjectContent) return false;
+    const h = document.createElement('h3');
+    h.className = 'info-section-title';
+    h.textContent = title;
+    infoObjectContent.appendChild(h);
+}
+
 
 export function getAssetPrice(buildingId, assetsPrices) {
     // Developer warnings in non-production environments

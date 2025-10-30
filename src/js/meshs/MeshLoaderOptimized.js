@@ -205,8 +205,11 @@ class MeshLoaderOptimized {
             // Track what we've already processed to avoid duplicates
             const processedMeshes = new Set();
 
+            // Use standardized asset path (can be overridden by passing baseUrl)
+            const modelPath = assetFullName || `./resources/lowpoly/village_town_assets_v2.glb`;
+            
             gltfloader.load(
-                `./resources/lowpoly/village_town_assets_v2.glb`,
+                modelPath,
                 
                 // Success callback
                 function (gltf) {

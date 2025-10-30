@@ -12,6 +12,7 @@ export function createCamera(gameWindow) {
     // Camera constants for zooming in and out
     const MIN_CAMERA_RADIUS = 10;
     const MAX_CAMERA_RADIUS = 30;
+    const PAN_STEP = 0.5;
 
     // Vector 
     const Y_AXIS = new THREE.Vector3(2, 2, 2);
@@ -34,6 +35,14 @@ export function createCamera(gameWindow) {
 
    
 
+    // Bounds for camera panning (world X/Z around origin)
+    let bounds = { minX: -Infinity, maxX: Infinity, minZ: -Infinity, maxZ: Infinity };
+
+    function clampOrigin() {
+        cameraOrigin.x = Math.max(bounds.minX, Math.min(bounds.maxX, cameraOrigin.x));
+        cameraOrigin.z = Math.max(bounds.minZ, Math.min(bounds.maxZ, cameraOrigin.z));
+    }
+
     function onKeyBoardDown(event){
         // Keyboard down event
         if(event.key === KEYBOARD_ZOOM_PLUS){
@@ -43,6 +52,33 @@ export function createCamera(gameWindow) {
         if(event.key === KEYBOARD_ZOOM_MINUS){
             isZoomingLess = true;
             // Zooming less
+        }
+
+        // WASD / Arrow keys panning based on current azimuth
+        const thetaAzimuth = cameraAzimuth * Math.PI / 180;
+        const forward = new THREE.Vector3(0,0,1).applyAxisAngle(new THREE.Vector3(0,1,0), thetaAzimuth);
+        const left = new THREE.Vector3(1,0,0).applyAxisAngle(new THREE.Vector3(0,1,0), thetaAzimuth);
+        const key = event.key.toLowerCase();
+        // Support AZERTY (ZQSD) and QWERTY (WASD)
+        if (event.key === 'ArrowUp' || key === 'w' || key === 'z') {
+            cameraOrigin.add(forward.clone().multiplyScalar(PAN_STEP));
+            clampOrigin();
+            updateCameraPosition();
+        }
+        if (event.key === 'ArrowDown' || key === 's') {
+            cameraOrigin.add(forward.clone().multiplyScalar(-PAN_STEP));
+            clampOrigin();
+            updateCameraPosition();
+        }
+        if (event.key === 'ArrowLeft' || key === 'a' || key === 'q') {
+            cameraOrigin.add(left.clone().multiplyScalar(PAN_STEP));
+            clampOrigin();
+            updateCameraPosition();
+        }
+        if (event.key === 'ArrowRight' || key === 'd') {
+            cameraOrigin.add(left.clone().multiplyScalar(-PAN_STEP));
+            clampOrigin();
+            updateCameraPosition();
         }
     }
 
@@ -65,6 +101,10 @@ export function createCamera(gameWindow) {
 
         if(event.button === LEFT_MOUSE_BUTTON){
             isLeftMouseDown = true;
+            // Allow Alt/Ctrl + left-drag to pan (for laptop touchpads)
+            if (event.altKey || event.ctrlKey) {
+                isMiddleMouseDown = true;
+            }
         }
         if(event.button === RIGHT_MOUSE_BUTTON){
             isRightMouseDown = true;
@@ -78,6 +118,8 @@ export function createCamera(gameWindow) {
         // Mouse up event
         if(event.button === LEFT_MOUSE_BUTTON){
             isLeftMouseDown = false;
+            // Stop the synthetic middle-drag if we started it via Alt/Ctrl
+            isMiddleMouseDown = false;
         }
         if(event.button === RIGHT_MOUSE_BUTTON){
             isRightMouseDown = false;
@@ -106,19 +148,43 @@ export function createCamera(gameWindow) {
           const left = new THREE.Vector3(1,0,0).applyAxisAngle(Y_AXIS, cameraAzimuth * Math.PI / 180);
           cameraOrigin.add(forward.multiplyScalar(-deltaY * 0.01));
           cameraOrigin.add(left.multiplyScalar(-deltaX * 0.01));
+          clampOrigin();
           updateCameraPosition();
         }
 
         if(isRightMouseDown) {
-            // Zooming
-            // 0.01 controls the speed of zooming
-            cameraRadius += deltaY * 0.02;
-            cameraRadius = Math.min(MAX_CAMERA_RADIUS, Math.max(MIN_CAMERA_RADIUS, cameraRadius));
+            // Pan with right mouse drag (more accessible than middle for many users)
+            const forward = new THREE.Vector3(0,0,1).applyAxisAngle(Y_AXIS, cameraAzimuth * Math.PI / 180);
+            const left = new THREE.Vector3(1,0,0).applyAxisAngle(Y_AXIS, cameraAzimuth * Math.PI / 180);
+            cameraOrigin.add(forward.multiplyScalar(-deltaY * 0.01));
+            cameraOrigin.add(left.multiplyScalar(-deltaX * 0.01));
+            clampOrigin();
             updateCameraPosition();
         }
 
         prevMouseX = event.clientX;
         prevMouseY = event.clientY;
+    }
+
+    function onWheel(event) {
+        // Touchpad friendly: pinch-to-zoom often sets ctrlKey; otherwise use wheel for panning
+        if (event.ctrlKey) {
+            // Zoom with pinch or ctrl+wheel
+            cameraRadius += (event.deltaY > 0 ? 1 : -1) * 0.8;
+            cameraRadius = Math.min(MAX_CAMERA_RADIUS, Math.max(MIN_CAMERA_RADIUS, cameraRadius));
+            updateCameraPosition();
+            return;
+        }
+        // Two-finger scroll to pan
+        const thetaAzimuth = cameraAzimuth * Math.PI / 180;
+        const forward = new THREE.Vector3(0,0,1).applyAxisAngle(new THREE.Vector3(0,1,0), thetaAzimuth);
+        const left = new THREE.Vector3(1,0,0).applyAxisAngle(new THREE.Vector3(0,1,0), thetaAzimuth);
+        // Tune the factor for comfortable trackpad panning
+        const factor = 0.005;
+        cameraOrigin.add(forward.multiplyScalar(-event.deltaY * factor));
+        cameraOrigin.add(left.multiplyScalar(-event.deltaX * factor));
+        clampOrigin();
+        updateCameraPosition();
     }
 
     function updateCameraPosition(){
@@ -138,6 +204,17 @@ export function createCamera(gameWindow) {
         onMouseMove,
         onMouseUp,
         onKeyBoardDown,
-        onKeyBoardUp
+        onKeyBoardUp,
+        onWheel,
+        setBounds(newBounds = {}) {
+            bounds = {
+                minX: newBounds.minX ?? bounds.minX,
+                maxX: newBounds.maxX ?? bounds.maxX,
+                minZ: newBounds.minZ ?? bounds.minZ,
+                maxZ: newBounds.maxZ ?? bounds.maxZ
+            };
+            clampOrigin();
+            updateCameraPosition();
+        }
     }
 }

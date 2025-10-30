@@ -909,22 +909,27 @@ footer a:hover {
 /* INFORMATION ABOUT THE BUILDING */
 
 .info-building-overlay {
-    padding: 10px;
+    padding: 14px;
     z-index: -1;
-    width: 400px;
-    max-height: 400px;
+    width: 420px;
+    max-height: 460px;
     position: absolute;
     right: 100%;
-    top: 150px;
-    bottom: 0;
+    top: 140px;
+    bottom: auto;
     opacity: 0;
     visibility: hidden;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 10px 0 0 10px;
-    transition: all 0.3s ease-in-out;
+    gap: 12px;
+    justify-content: flex-start;
+    align-items: stretch;
+    border-radius: 12px 0 0 12px;
+    background: #fff;
+    color: #1b1b1b;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+    transform: translateX(16px) translateY(0) scale(0.98);
+    transition: opacity 240ms ease, transform 280ms ease, right 240ms ease, visibility 0s linear 240ms;
     pointer-events: none;
 }
 
@@ -932,6 +937,11 @@ footer a:hover {
     width: 100%;
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    background: linear-gradient(135deg, #ff9800, #ffb74d);
+    color: #fff;
+    border-radius: 8px;
 }
 
 .info-building-overlay .info-building__header > div:nth-of-type(1) {
@@ -944,7 +954,10 @@ footer a:hover {
 
 .info-building-overlay .info-building__header > div:nth-of-type(1) h2 {
     color: #fff;
-    font-size: 20px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    margin: 0;
 }
 
 /* It contain the dynamic text content about the building */
@@ -953,20 +966,77 @@ footer a:hover {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 6px;
+    padding: 4px 6px 8px 6px;
+    overflow: auto;
+    /* Firefox scrollbar styling */
+    scrollbar-width: thin; /* auto | thin | none */
+    scrollbar-color: #ff9800 rgba(0,0,0,0.08); /* thumb | track */
+}
+
+/* smoother scrollbar for the modal content */
+.info-building-overlay .info-building__body::-webkit-scrollbar {
+    width: 8px;
+}
+.info-building-overlay .info-building__body::-webkit-scrollbar-thumb {
+    background: #ff9800;
+    border-radius: 8px;
+    border: 2px solid #fff; /* creates a gap and improves contrast on white bg */
+}
+.info-building-overlay .info-building__body::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.05);
+    border-radius: 8px;
+}
+.info-building-overlay .info-building__body::-webkit-scrollbar-thumb:hover {
+    background: #fb8c00; /* slightly darker on hover */
+}
+.info-building-overlay .info-building__body::-webkit-scrollbar-corner {
+    background: transparent;
 }
 
 .info-building-overlay.active {
     pointer-events: auto;
-    background-color: var(--lightgreen);
+    background: #fff;
     z-index: 10020; /* Z-index plus élevé que la toolbar carousel */
     right: 0;
     opacity: 1;
     visibility: visible;
+    transform: translateX(0) translateY(0) scale(1);
+    transition: opacity 260ms ease, transform 300ms ease, right 260ms ease;
 }
 
 .info-building-overlay.active button {
     pointer-events: auto;
+}
+
+/* Close button inside header */
+.info-building-overlay .panel-close-btn {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 8px;
+    padding: 4px 8px;
+    cursor: pointer;
+    transition: background 160ms ease, transform 120ms ease, box-shadow 140ms ease, opacity 120ms ease;
+}
+.info-building-overlay .panel-close-btn:hover {
+    background: #ffffff;
+    color: #ff9800;
+    border-color: #ffffff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18), 0 0 0 2px rgba(255,152,0,0.45) inset;
+}
+.info-building-overlay .panel-close-btn:active {
+    transform: scale(0.96);
+    background: #fff3e0; /* very light orange */
+}
+.info-building-overlay .panel-close-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.6), 0 0 0 5px rgba(255,152,0,0.7);
+}
+.info-building-overlay .panel-close-btn:disabled,
+.info-building-overlay .panel-close-btn[aria-disabled="true"] {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 
@@ -974,13 +1044,71 @@ footer a:hover {
 
 .info-building-item {
     margin: 0;
-    font-size: var(--text-xs-size);
-    font-weight: bold;
-    color: var(--grey)
+    font-size: 14px;
+    font-weight: 500;
+    color: #1b1b1b;
+}
+
+/* Optional subtle item spacing */
+.info-building-item + .info-building-item {
+    margin-top: 4px;
 }
 
 .anoria-text {
     text-align: left;
+}
+
+/* Section title */
+.info-section-title {
+    margin: 8px 2px 2px 2px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #ff9800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+/* Key/Value responsive list */
+.kv-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 8px;
+    background: #fff;
+    transition: background 140ms ease, border-color 140ms ease;
+}
+/* No hover visuals for non-interactive list rows */
+.kv-key {
+    color: #424242;
+    font-weight: 600;
+    font-size: 13px;
+    text-align: left;
+}
+.kv-value {
+    color: #111;
+    font-weight: 700;
+    font-size: 13px;
+    text-align: left;
+}
+
+@media (max-width: 560px) {
+    .info-building-overlay {
+        width: 92vw;
+        right: 50%;
+        transform: translateX(50%) scale(0.98);
+    }
+    .info-building-overlay.active {
+        transform: translateX(50%) scale(1);
+    }
+    .kv-row {
+        grid-template-columns: 1fr;
+    }
+    .kv-value {
+        justify-self: start;
+    }
 }
 
 #pwa-toast {
