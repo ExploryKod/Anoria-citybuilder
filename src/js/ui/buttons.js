@@ -1328,28 +1328,41 @@ async function updateRealtimeBudget() {
             const incomeBreakdown = await window.budgetManager.getIncomeBreakdown();
             const expenseBreakdown = await window.budgetManager.getExpenseBreakdown();
             
-            // Get population data from game table
-            let population = null;
+            // Get population data from IndexedDB
+            // Primary source: housesStore (sums house.pop from houses table) - source of truth
+            // Fallback: gameStore (game table) for backwards compatibility
+            let population = 0;
             let populationError = false;
-            if (window.gameStore) {
-                try {
-                    population = await window.gameStore.getLatestGameItemByField('population');
-                    if (population === null || population === undefined) {
-                        // Keep previous value if available, otherwise show loading
-                        const currentPop = realtimePopulationEl ? realtimePopulationEl.textContent : '0';
-                        if (currentPop === 'Chargement...' || currentPop === '0') {
-                            population = '0'; // Show 0 instead of "Chargement..."
-                        } else {
-                            population = currentPop; // Keep previous value
-                        }
+            try {
+                // Try housesStore first (source of truth - calculates from house.pop)
+                if (housesStore && typeof housesStore.getGlobalPopulation === 'function') {
+                    population = await housesStore.getGlobalPopulation();
+                    population = population || 0;
+                    console.log('[buttons.js > updateRealtimeBudget] Population from housesStore (IndexedDB):', population);
+                } else if (window.housesStore && typeof window.housesStore.getGlobalPopulation === 'function') {
+                    population = await window.housesStore.getGlobalPopulation();
+                    population = population || 0;
+                    console.log('[buttons.js > updateRealtimeBudget] Population from housesStore (IndexedDB, window):', population);
+                } else {
+                    // Fallback to gameStore (also IndexedDB, but may be stale)
+                    console.warn('[buttons.js > updateRealtimeBudget] ⚠️ housesStore.getGlobalPopulation not available, FALLING BACK to gameStore (may be stale)');
+                    if (window.gameStore && typeof window.gameStore.getLatestGameItemByField === 'function') {
+                        const gamePop = await window.gameStore.getLatestGameItemByField('population');
+                        population = gamePop !== null && gamePop !== undefined ? gamePop : 0;
+                        console.warn('[buttons.js > updateRealtimeBudget] ⚠️ Using FALLBACK population from gameStore:', {
+                            population,
+                            source: 'gameStore (IndexedDB game table)',
+                            note: 'This may not reflect real-time house population changes'
+                        });
+                    } else {
+                        console.error('[buttons.js > updateRealtimeBudget] ❌ Both housesStore and gameStore unavailable! Population set to 0');
+                        population = 0;
                     }
-                } catch (error) {
-                    console.error('Error fetching population:', error);
-                    population = 'Erreur';
-                    populationError = true;
                 }
-            } else {
-                population = '0'; // Show 0 instead of "Chargement..."
+            } catch (error) {
+                console.error('[buttons.js > updateRealtimeBudget] Error fetching population from IndexedDB:', error);
+                population = 0;
+                populationError = true;
             }
             
             // Mettre à jour les fonds principaux
@@ -1409,11 +1422,17 @@ async function updateRealtimeBudget() {
                         realtimePopulationEl.title = 'Erreur lors du chargement de la population';
                     } else {
                         populationSpan.style.color = '#fff'; // Blanc pour valeur normale
-                        realtimePopulationEl.title = 'Population actuelle';
+                        realtimePopulationEl.title = `Population actuelle (${population} habitants)`;
                     }
                 } else {
                     realtimePopulationEl.textContent = population.toString();
                 }
+                
+                console.log('[buttons.js > updateRealtimeBudget] Updated realtime population display:', {
+                    population,
+                    hasError: populationError,
+                    elementExists: !!realtimePopulationEl
+                });
             }
             
             // Mettre à jour la santé financière
@@ -1799,7 +1818,19 @@ async function generateCityMap() {
                     const needsRoadAccess = !isRoad;
                     
                     // Check for road access (only for buildings that need it)
-                    const hasRoad = needsRoadAccess ? neighbors.some(neighbor => neighbor.name === 'roads' || neighbor.name === 'Road') : true;
+                    let hasRoad = true;
+                    try {
+                        const { checkRoadAccess } = await import('../game/modules/ModuleHelper.js');
+                        hasRoad = needsRoadAccess ? checkRoadAccess(neighbors).hasAccess : true;
+                    } catch (err) {
+                        console.warn('[ui/buttons.js > generateCityMap] Falling back to inline road access check because ModuleHelper import failed.', {
+                            error: err?.message || err,
+                            buildingType: building.type,
+                            neighborsCount: neighbors?.length ?? 0
+                        });
+                        // Fallback to previous inline logic if helper not available
+                        hasRoad = needsRoadAccess ? neighbors.some(neighbor => neighbor.name === 'roads' || neighbor.name === 'Road') : true;
+                    }
                     
                     // Check if building can have food (houses, markets, but not roads, wells, etc.)
                     const canHaveFood = building.type.includes('House') || building.type.includes('Market') || building.type.includes('Farm');
@@ -2529,11 +2560,24 @@ async function loadAdvice() {
             });
         }
 
-        // Check for road connectivity
-        const housesWithoutRoads = houses.filter(house => {
-            if (!house.type || !house.type.includes('House')) return false;
-            return !house.neighbors || house.neighbors.filter(n => n.name === 'roads').length === 0;
-        });
+        // Check for road connectivity (use helper when available; fallback preserved)
+        const housesWithoutRoads = [];
+        for (const house of houses) {
+            if (!house.type || !house.type.includes('House')) continue;
+            let hasRoadAccess = false;
+            try {
+                const { checkRoadAccess } = await import('../game/modules/ModuleHelper.js');
+                hasRoadAccess = !!(house.neighbors && checkRoadAccess(house.neighbors).hasAccess);
+            } catch (err) {
+                console.warn('[ui/buttons.js > initUrbanAdviceCenter] Falling back to inline road access check because ModuleHelper import failed.', {
+                    error: err?.message || err,
+                    houseId: house.id,
+                    neighborsCount: house.neighbors?.length ?? 0
+                });
+                hasRoadAccess = !!(house.neighbors && house.neighbors.filter(n => n.name === 'roads').length > 0);
+            }
+            if (!hasRoadAccess) housesWithoutRoads.push(house);
+        }
 
         if (housesWithoutRoads.length > 0) {
             advice.push({
