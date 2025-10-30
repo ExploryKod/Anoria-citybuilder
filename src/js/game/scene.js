@@ -52,6 +52,11 @@ export function createScene(housesStore, gameStore, assetManager) {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     
     const controls = new OrbitControls(camera.camera, renderer.domElement);
+    // Disable OrbitControls so custom camera controls handle input
+    controls.enabled = false;
+    controls.enableRotate = false;
+    controls.enablePan = false;
+    controls.enableZoom = false;
     gameWindow.appendChild(renderer.domElement);
     
     // Helper function to check if info modal is open
@@ -143,6 +148,17 @@ export function createScene(housesStore, gameStore, assetManager) {
 
         // Add a small delay to ensure all rendering is complete
         await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Set camera bounds based on city size (with small margins)
+        if (camera.setBounds && city && typeof city.size === 'number') {
+            const margin = 2;
+            camera.setBounds({
+                minX: -margin,
+                maxX: city.size + margin,
+                minZ: -margin,
+                maxZ: city.size + margin
+            });
+        }
     }
 
     async function update(city, time=0) {
@@ -998,6 +1014,22 @@ function onMouseMove(event) {
         camera.onKeyBoardUp(event);
     }
 
+    function onMouseWheel(event) {
+        // Block interaction if a popup is open or info modal is open
+        if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+            return;
+        }
+        if (isInfoModalOpen()) {
+            return;
+        }
+        if (performance.now() < suppressInputUntilMs) {
+            return;
+        }
+        if (camera.onWheel) {
+            camera.onWheel(event);
+        }
+    }
+
     /**
      * Show cleanup notification to user only once
      * @param {Object} cleanupResult - Result from cleanupOldBudgetStatesByAge
@@ -1061,6 +1093,7 @@ function onMouseMove(event) {
         onMouseMove, 
         onKeyBoardDown,
         onKeyBoardUp,
+            onMouseWheel,
         delay,
         // Expose focused/selected for external access if needed
         get focusedObject() { return focusedObject; },

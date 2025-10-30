@@ -1697,6 +1697,9 @@ function initCityMapPopup() {
             
             // Initialize collapsible legend after a short delay to ensure DOM is ready
             setTimeout(initCollapsibleLegend, 100);
+
+            // Initialize map filters
+            initCityMapFilters();
         } else {
             // Use PopupManager to handle events
             if (window.popupManager) {
@@ -1724,6 +1727,60 @@ function initCityMapPopup() {
             }
         }
     });
+}
+
+// Apply filter on city map grid cells
+function applyCityMapFilter(filter) {
+    const grid = document.getElementById('city-map-grid');
+    if (!grid) return;
+    const cells = grid.querySelectorAll('.grid-cell');
+    cells.forEach(cell => {
+        const cat = cell.getAttribute('data-category') || 'other';
+        if (filter === 'all' || filter === cat) {
+            cell.classList.remove('filtered-hidden');
+        } else {
+            cell.classList.add('filtered-hidden');
+        }
+    });
+}
+
+// Wire up city map filter buttons
+function initCityMapFilters() {
+    const filterBar = document.querySelector('.city-map-filters');
+    if (!filterBar) return;
+    const btns = filterBar.querySelectorAll('.filter-btn');
+    btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            btns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const filter = btn.getAttribute('data-filter') || 'all';
+            applyCityMapFilter(filter);
+        });
+    });
+    // Apply current active on init
+    const activeBtn = filterBar.querySelector('.filter-btn.active');
+    const current = activeBtn ? activeBtn.getAttribute('data-filter') : 'all';
+    applyCityMapFilter(current);
+
+    // Neighbor toggle (independent of category filters)
+    const neighborsBtn = filterBar.querySelector('.neighbors-btn');
+    const grid = document.getElementById('city-map-grid');
+    if (neighborsBtn && grid) {
+        // Start with neighbors hidden when button is not active
+        if (!neighborsBtn.classList.contains('active')) {
+            grid.classList.add('hide-neighbors');
+        }
+        // Active (orange) = neighbors shown; inactive = hidden
+        neighborsBtn.addEventListener('click', () => {
+            const willBeActive = !neighborsBtn.classList.contains('active');
+            neighborsBtn.classList.toggle('active', willBeActive);
+            if (willBeActive) {
+                grid.classList.remove('hide-neighbors');
+            } else {
+                grid.classList.add('hide-neighbors');
+            }
+        });
+    }
 }
 
 // Function to get building code from type
@@ -1754,7 +1811,9 @@ function getNeighborCodes(neighbors) {
     }
     
     return neighbors.map(neighbor => {
-        const code = getBuildingCode(neighbor.name || neighbor.type);
+        // Prefer explicit fields, fallback to buildingId used in DB
+        const typeLike = neighbor.name || neighbor.type || neighbor.buildingId || '';
+        const code = getBuildingCode(typeLike);
         if (neighbor.x !== undefined && neighbor.y !== undefined) {
             return `${code}(${neighbor.x},${neighbor.y})`;
         }
@@ -1856,7 +1915,19 @@ async function generateCityMap() {
                     const stocks = building.stocks || {};
                     const hasFood = canHaveFood ? (stocks.food > 0 || stocks.wheat > 0 || stocks.carrot > 0 || stocks.cabbage > 0) : true;
                     
-                    tableHTML += `<td class="grid-cell">`;
+                    // Determine category for filtering
+                    let category = 'services';
+                    if (building.type && (building.type.includes('House') || building.type.includes('Palace'))) {
+                        category = 'houses';
+                    } else if (building.type && (building.type.includes('roads') || building.type.includes('Road'))) {
+                        category = 'infrastructure';
+                    } else if (building.type && (building.type.includes('Well') || building.type.includes('Church'))) {
+                        category = 'services';
+                    } else if (building.type && (building.type.includes('Market') || building.type.includes('Farm'))) {
+                        category = 'services';
+                    }
+
+                    tableHTML += `<td class=\"grid-cell\" data-category=\"${category}\">`;
                     
                     // Status indicators
                     tableHTML += `<div class="status-indicators">`;
@@ -1870,14 +1941,20 @@ async function generateCityMap() {
                     }
                     tableHTML += `</div>`;
                     
-                    tableHTML += `<span class="building-code ${code.toLowerCase()}">${code}</span>`;
+                    tableHTML += `<span class=\"building-code ${code.toLowerCase()}\">${code}</span>`;
+                    // Neighbors list (shown when neighbors toggle is active)
                     if (neighborCodes) {
-                        tableHTML += `<div class="neighbors-list">${neighborCodes}</div>`;
+                        tableHTML += `<div class=\"neighbors-list\">${neighborCodes}</div>`;
+                    }
+                    // Habitants count (per house), shown when neighbors are hidden
+                    if (category === 'houses') {
+                        const habitants = Number(building.pop || 0);
+                        tableHTML += `<div class=\"habitants-count\" title=\"Habitants\">${habitants}</div>`;
                     }
                     tableHTML += `</td>`;
                 } else {
                     // Empty cell (grass) - show a small indicator
-                    tableHTML += `<td class="grid-cell empty-cell">
+                    tableHTML += `<td class=\"grid-cell empty-cell\" data-category=\"infrastructure\"> 
                         <span class="building-code grass" style="opacity: 0.3;">G</span>
                     </td>`;
                 }
