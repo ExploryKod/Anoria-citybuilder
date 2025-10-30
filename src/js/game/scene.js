@@ -1149,6 +1149,8 @@ function onMouseMove(event) {
         get selectedObject() { return selectedObject; },
         // Expose controls to enable/disable OrbitControls when modal opens/closes
         get controls() { return controls; },
+        // Expose canvas element to attach precise listeners
+        get domElement() { return renderer.domElement; },
         suppressInput
     }
 }
