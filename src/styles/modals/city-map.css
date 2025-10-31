@@ -159,6 +159,10 @@
     font-size: 0.85rem;
     font-weight: 700;
     gap: 6px;
+    position: relative;
+    width: 40px;
+    height: 40px;
+    overflow: hidden;
 }
 .legend-toggle:hover {
     background: #fb8c00;
@@ -170,6 +174,50 @@
 .legend-toggle:focus-visible {
     outline: none;
     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.6), 0 0 0 5px rgba(255, 152, 0, 0.6);
+}
+
+/* Toggle icon animation */
+.legend-toggle svg {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(0deg);
+}
+
+/* Toggle left icon (shown when expanded/default) */
+.legend-toggle .lucide-toggle-left {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0deg);
+}
+
+/* Toggle right icon (shown when collapsed) */
+.legend-toggle .lucide-toggle-right {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(180deg);
+}
+
+/* When legend is collapsed, show right icon and hide left */
+.city-map-legend.collapsed .legend-toggle .lucide-toggle-left {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-180deg);
+}
+
+.city-map-legend.collapsed .legend-toggle .lucide-toggle-right {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0deg);
+}
+
+/* Smooth rotation effect on hover - only apply to visible icon */
+.legend-toggle:hover .lucide-toggle-left {
+    transform: translate(-50%, -50%) rotate(5deg);
+}
+
+.city-map-legend.collapsed .legend-toggle:hover .lucide-toggle-right {
+    transform: translate(-50%, -50%) rotate(-5deg);
 }
 
 .city-map-legend h4 {
