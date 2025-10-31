@@ -468,17 +468,27 @@ export function createGame(housesStore, gameStore, assetManager) {
     // to the handler function
     const canvasEl = scene.domElement || document.querySelector('canvas');
     if (canvasEl) {
+        // Mouse events
         canvasEl.addEventListener('mousedown', scene.onMouseDown.bind(scene), false);
         canvasEl.addEventListener('mouseup', scene.onMouseUp.bind(scene), false);
         canvasEl.addEventListener('mousemove', scene.onMouseMove.bind(scene), false);
         canvasEl.addEventListener('wheel', scene.onMouseWheel.bind(scene), { passive: true });
+        // Touch events for mobile
+        canvasEl.addEventListener('touchstart', scene.onTouchStart.bind(scene), { passive: false });
+        canvasEl.addEventListener('touchmove', scene.onTouchMove.bind(scene), { passive: false });
+        canvasEl.addEventListener('touchend', scene.onTouchEnd.bind(scene), { passive: false });
+        // Keyboard events
         document.addEventListener('keydown', scene.onKeyBoardDown.bind(scene), false);
         document.addEventListener('keyup', scene.onKeyBoardUp.bind(scene), false);
     } else {
+        // Fallback to document if canvas not found
         document.addEventListener('mousedown', scene.onMouseDown.bind(scene), false);
         document.addEventListener('mouseup', scene.onMouseUp.bind(scene), false);
         document.addEventListener('mousemove', scene.onMouseMove.bind(scene), false);
         document.addEventListener('wheel', scene.onMouseWheel.bind(scene), { passive: true });
+        document.addEventListener('touchstart', scene.onTouchStart.bind(scene), { passive: false });
+        document.addEventListener('touchmove', scene.onTouchMove.bind(scene), { passive: false });
+        document.addEventListener('touchend', scene.onTouchEnd.bind(scene), { passive: false });
         document.addEventListener('keydown', scene.onKeyBoardDown.bind(scene), false);
         document.addEventListener('keyup', scene.onKeyBoardUp.bind(scene), false);
     }

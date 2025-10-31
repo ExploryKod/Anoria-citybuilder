@@ -284,6 +284,91 @@ export function createCamera(gameWindow) {
         updateCameraPosition();
     }
 
+    // Touch event handlers for mobile
+    let touchStartDistance = 0;
+    let touchStartOrigin = null;
+    let lastTouchX = 0;
+    let lastTouchY = 0;
+    let isPinching = false;
+
+    function onTouchStart(event) {
+        if (event.touches.length === 1) {
+            // Single touch: pan
+            const touch = event.touches[0];
+            lastTouchX = touch.clientX;
+            lastTouchY = touch.clientY;
+            touchStartOrigin = cameraOrigin.clone();
+            isLeftMouseDown = true;
+        } else if (event.touches.length === 2) {
+            // Two touches: pinch to zoom
+            isPinching = true;
+            const touch1 = event.touches[0];
+            const touch2 = event.touches[1];
+            touchStartDistance = Math.hypot(
+                touch2.clientX - touch1.clientX,
+                touch2.clientY - touch1.clientY
+            );
+        }
+        event.preventDefault();
+    }
+
+    function onTouchMove(event) {
+        if (event.touches.length === 1 && isLeftMouseDown && !isPinching) {
+            // Single touch drag: pan camera
+            const touch = event.touches[0];
+            const deltaX = touch.clientX - lastTouchX;
+            const deltaY = touch.clientY - lastTouchY;
+            
+            const thetaAzimuth = cameraAzimuth * Math.PI / 180;
+            const forward = new THREE.Vector3(0,0,1).applyAxisAngle(new THREE.Vector3(0,1,0), thetaAzimuth);
+            const left = new THREE.Vector3(1,0,0).applyAxisAngle(new THREE.Vector3(0,1,0), thetaAzimuth);
+            
+            // Pan sensitivity for touch
+            const panFactor = 0.01;
+            cameraOrigin.add(forward.multiplyScalar(-deltaY * panFactor));
+            cameraOrigin.add(left.multiplyScalar(-deltaX * panFactor));
+            clampOrigin();
+            updateCameraPosition();
+            
+            lastTouchX = touch.clientX;
+            lastTouchY = touch.clientY;
+        } else if (event.touches.length === 2 && isPinching) {
+            // Two touches: pinch to zoom
+            const touch1 = event.touches[0];
+            const touch2 = event.touches[1];
+            const currentDistance = Math.hypot(
+                touch2.clientX - touch1.clientX,
+                touch2.clientY - touch1.clientY
+            );
+            
+            if (touchStartDistance > 0) {
+                const zoomFactor = (touchStartDistance - currentDistance) * 0.1;
+                cameraRadius += zoomFactor;
+                cameraRadius = Math.min(MAX_CAMERA_RADIUS, Math.max(MIN_CAMERA_RADIUS, cameraRadius));
+                updateCameraPosition();
+                touchStartDistance = currentDistance;
+            }
+        }
+        event.preventDefault();
+    }
+
+    function onTouchEnd(event) {
+        if (event.touches.length === 0) {
+            // All touches ended
+            isLeftMouseDown = false;
+            isPinching = false;
+            touchStartDistance = 0;
+            touchStartOrigin = null;
+        } else if (event.touches.length === 1) {
+            // One touch remaining: switch to pan mode
+            isPinching = false;
+            const touch = event.touches[0];
+            lastTouchX = touch.clientX;
+            lastTouchY = touch.clientY;
+        }
+        event.preventDefault();
+    }
+
     function updateCameraPosition(){
         // Lock angle in isometric mode (but allow rotation offset)
         if (isIsometricMode) {
@@ -377,6 +462,9 @@ export function createCamera(gameWindow) {
         onKeyBoardDown,
         onKeyBoardUp,
         onWheel,
+        onTouchStart,
+        onTouchMove,
+        onTouchEnd,
         setBounds(newBounds = {}) {
             bounds = {
                 minX: newBounds.minX ?? bounds.minX,
