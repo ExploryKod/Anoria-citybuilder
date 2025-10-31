@@ -1174,6 +1174,13 @@ function onTouchEnd(event) {
         if (performance.now() < suppressInputUntilMs) {
             return;
         }
+        
+        // Prevent browser zoom when Ctrl+wheel is used (for camera zoom)
+        if (event.ctrlKey) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
         if (camera.onWheel) {
             camera.onWheel(event);
         }
