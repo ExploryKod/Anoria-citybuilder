@@ -16,14 +16,15 @@ export function createCamera(gameWindow) {
 
     // Classic isometric camera settings (Pharaoh/Caesar 3 style)
     const ISOMETRIC_ELEVATION = 45; // Fixed 45° angle
-    const ISOMETRIC_AZIMUTH_BASE = 225;   // Base rotation (looking from SW)
+    const ISOMETRIC_AZIMUTH_BASE = 225;   // Base rotation (looking from SW - standard isometric view)
     const ORTHO_CAMERA_SIZE = 20;    // Orthographic view size
     
     // Camera mode toggle
     let isIsometricMode = true; // Set to true for classic city builder style (Pharaoh/Caesar 3)
     
     // Isometric rotation offset (for rotating view east/west)
-    let isometricRotationOffset = 0; // Rotation offset in degrees (0, 90, 180, 270)
+    // Start with 180° offset to show front of buildings (which are rotated 180° on Y axis)
+    let isometricRotationOffset = 180; // Rotation offset in degrees (0, 90, 180, 270)
 
     // Vector 
     const Y_AXIS = new THREE.Vector3(0, 1, 0);
