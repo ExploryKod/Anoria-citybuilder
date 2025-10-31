@@ -885,41 +885,65 @@ export function createScene(housesStore, gameStore, assetManager) {
         const existingRing = scene.getObjectByName('infinite-ground-ring');
         if (existingBase && existingRing) return;
 
-        // Solid base ground to prevent sky from showing through below city area
+        // Get grass texture and clone it to avoid modifying the original
+        const grassTex = (textures && textures['grass']) ? textures['grass'] : null;
+        
+        // Base ground plane with grass texture
         try {
             const baseSize = 3000;
             const baseGeo = new THREE.PlaneGeometry(baseSize, baseSize, 1, 1);
-            const baseMat = new THREE.MeshLambertMaterial({
-                color: 0xA4B98B, // match in-game grass color
-                fog: true
-            });
+            let baseMat;
+            if (grassTex && grassTex instanceof THREE.Texture) {
+                // Clone texture to avoid modifying the original
+                const grassTexClone = grassTex.clone();
+                grassTexClone.wrapS = THREE.RepeatWrapping;
+                grassTexClone.wrapT = THREE.RepeatWrapping;
+                grassTexClone.repeat.set(baseSize / 2, baseSize / 2); // Tile texture across the plane
+                baseMat = new THREE.MeshLambertMaterial({
+                    map: grassTexClone,
+                    color: 0xA4B98B, // Base color if texture is not fully visible
+                    fog: true
+                });
+            } else {
+                baseMat = new THREE.MeshLambertMaterial({
+                    color: 0xA4B98B, // match in-game grass color
+                    fog: true
+                });
+            }
             const base = new THREE.Mesh(baseGeo, baseMat);
             base.rotation.x = -Math.PI / 2;
             base.position.y = -0.02;
-            base.receiveShadow = false;
+            base.receiveShadow = true;
             base.name = 'infinite-ground-base';
             // Ensure it renders behind everything else but still occludes background
             base.renderOrder = -10;
             scene.add(base);
         } catch (_) {}
 
-        // Distant ground ring
+        // Distant ground ring with grass texture
         try {
             const size = 1200;
             const ringGeo = new THREE.PlaneGeometry(size, size, 1, 1);
-            // Prefer the actual grass texture for a seamless look
-            const grassTex = (textures && textures['grass']) ? textures['grass'] : null;
-            const baseTex = grassTex || ((textures && textures['grid']) ? textures['grid'] : null);
             let ringMat;
-            if (baseTex && baseTex instanceof THREE.Texture) {
-                baseTex.wrapS = baseTex.wrapT = THREE.RepeatWrapping;
-                baseTex.repeat.set(120, 120);
-                ringMat = new THREE.MeshLambertMaterial({ map: baseTex, color: 0xffffff, fog: true });
+            if (grassTex && grassTex instanceof THREE.Texture) {
+                // Clone texture to avoid modifying the original
+                const grassTexClone = grassTex.clone();
+                grassTexClone.wrapS = THREE.RepeatWrapping;
+                grassTexClone.wrapT = THREE.RepeatWrapping;
+                grassTexClone.repeat.set(120, 120); // Tile texture widely
+                ringMat = new THREE.MeshLambertMaterial({
+                    map: grassTexClone,
+                    color: 0xA4B98B, // Base color if texture is not fully visible
+                    fog: true,
+                    depthWrite: true
+                });
             } else {
-                ringMat = new THREE.MeshLambertMaterial({ color: 0xA4B98B, fog: true });
+                ringMat = new THREE.MeshLambertMaterial({
+                    color: 0xA4B98B,
+                    fog: true,
+                    depthWrite: true
+                });
             }
-            // Backdrop ring should occlude background and fade with fog
-            ringMat.depthWrite = true;
             const ring = new THREE.Mesh(ringGeo, ringMat);
             ring.rotation.x = -Math.PI / 2;
             ring.position.y = -0.01;
