@@ -29,6 +29,8 @@ export function createScene(housesStore, gameStore, assetManager) {
     // BudgetManager will be set by the game initialization
 
     const scene = new THREE.Scene();
+    // Subtle atmospheric fog to blend far terrain and sky (tuned to match background)
+    try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
     // scene.background = new THREE.Color(0x79845);
 
     let skyLoader = new THREE.TextureLoader();
@@ -57,6 +59,12 @@ export function createScene(housesStore, gameStore, assetManager) {
     controls.enableRotate = false;
     controls.enablePan = false;
     controls.enableZoom = false;
+    
+    // Update OrbitControls camera reference when camera mode toggles
+    camera.setOnCameraChanged((newCamera) => {
+        controls.object = newCamera;
+        controls.update();
+    });
     gameWindow.appendChild(renderer.domElement);
     
     // Helper function to check if info modal is open
@@ -100,6 +108,8 @@ export function createScene(housesStore, gameStore, assetManager) {
 
     async function initialize(city) {
         scene.clear();
+        // Re-apply fog after clear
+        try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
         terrain = [];
         buildings = [];
         loadingPromises = [];
@@ -159,6 +169,9 @@ export function createScene(housesStore, gameStore, assetManager) {
                 maxZ: city.size + margin
             });
         }
+
+        // Add infinite backdrop (skydome + distant ground ring)
+        addBackdrop();
     }
 
     async function update(city, time=0) {
@@ -865,6 +878,82 @@ export function createScene(housesStore, gameStore, assetManager) {
         renderer.setAnimationLoop(null);
     }
 
+    // Add a distant ground plane + ring to fake infinity (keep existing sky background)
+    function addBackdrop() {
+        // Avoid duplicating if reinitializing
+        const existingBase = scene.getObjectByName('infinite-ground-base');
+        const existingRing = scene.getObjectByName('infinite-ground-ring');
+        if (existingBase && existingRing) return;
+
+        // Get grass texture and clone it to avoid modifying the original
+        const grassTex = (textures && textures['grass']) ? textures['grass'] : null;
+        
+        // Base ground plane with grass texture
+        try {
+            const baseSize = 3000;
+            const baseGeo = new THREE.PlaneGeometry(baseSize, baseSize, 1, 1);
+            let baseMat;
+            if (grassTex && grassTex instanceof THREE.Texture) {
+                // Clone texture to avoid modifying the original
+                const grassTexClone = grassTex.clone();
+                grassTexClone.wrapS = THREE.RepeatWrapping;
+                grassTexClone.wrapT = THREE.RepeatWrapping;
+                grassTexClone.repeat.set(baseSize / 2, baseSize / 2); // Tile texture across the plane
+                baseMat = new THREE.MeshLambertMaterial({
+                    map: grassTexClone,
+                    color: 0xA4B98B, // Base color if texture is not fully visible
+                    fog: true
+                });
+            } else {
+                baseMat = new THREE.MeshLambertMaterial({
+                    color: 0xA4B98B, // match in-game grass color
+                    fog: true
+                });
+            }
+            const base = new THREE.Mesh(baseGeo, baseMat);
+            base.rotation.x = -Math.PI / 2;
+            base.position.y = -0.02;
+            base.receiveShadow = true;
+            base.name = 'infinite-ground-base';
+            // Ensure it renders behind everything else but still occludes background
+            base.renderOrder = -10;
+            scene.add(base);
+        } catch (_) {}
+
+        // Distant ground ring with grass texture
+        try {
+            const size = 1200;
+            const ringGeo = new THREE.PlaneGeometry(size, size, 1, 1);
+            let ringMat;
+            if (grassTex && grassTex instanceof THREE.Texture) {
+                // Clone texture to avoid modifying the original
+                const grassTexClone = grassTex.clone();
+                grassTexClone.wrapS = THREE.RepeatWrapping;
+                grassTexClone.wrapT = THREE.RepeatWrapping;
+                grassTexClone.repeat.set(120, 120); // Tile texture widely
+                ringMat = new THREE.MeshLambertMaterial({
+                    map: grassTexClone,
+                    color: 0xA4B98B, // Base color if texture is not fully visible
+                    fog: true,
+                    depthWrite: true
+                });
+            } else {
+                ringMat = new THREE.MeshLambertMaterial({
+                    color: 0xA4B98B,
+                    fog: true,
+                    depthWrite: true
+                });
+            }
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = -Math.PI / 2;
+            ring.position.y = -0.01;
+            ring.receiveShadow = true;
+            ring.name = 'infinite-ground-ring';
+            ring.frustumCulled = false;
+            scene.add(ring);
+        } catch (_) {}
+    }
+
     let hoveredObject = null
     let hoveredObjectName = null
     const objectsNames = ['grass', 'roads', 'House-Red', 'House-Purple', 'House-Blue', 'Market-Stall']
@@ -950,6 +1039,66 @@ function onMouseMove(event) {
     }
 }
 
+
+function onTouchStart(event) {
+    // Block interaction if a popup is open or info modal is open
+    if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+        return;
+    }
+    if (isInfoModalOpen()) {
+        return;
+    }
+    if (performance.now() < suppressInputUntilMs) {
+        return;
+    }
+    
+    camera.onTouchStart(event);
+    
+    // Handle object selection for single touch
+    if (event.touches.length === 1) {
+        const touch = event.touches[0];
+        const p = { x: touch.clientX, y: touch.clientY };
+        mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
+        mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera.camera);
+        const intersections = raycaster.intersectObjects(scene.children, false);
+        const objectToSelect = intersections.length > 0 ? intersections[0].object : null;
+        
+        if (objectToSelect) {
+            updateSelectedObject.call(this, objectToSelect);
+        }
+    }
+}
+
+function onTouchMove(event) {
+    // Block interaction if a popup is open or info modal is open
+    if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+        return;
+    }
+    if (isInfoModalOpen()) {
+        return;
+    }
+    if (performance.now() < suppressInputUntilMs) {
+        return;
+    }
+    
+    camera.onTouchMove(event);
+}
+
+function onTouchEnd(event) {
+    // Block interaction if a popup is open or info modal is open
+    if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+        return;
+    }
+    if (isInfoModalOpen()) {
+        return;
+    }
+    if (performance.now() < suppressInputUntilMs) {
+        return;
+    }
+    
+    camera.onTouchEnd(event);
+}
 
  function handleHover(intersections, hexColor, objectName="roads") {
     if (intersections.length > 0) {
@@ -1093,13 +1242,18 @@ function onMouseMove(event) {
         onMouseMove, 
         onKeyBoardDown,
         onKeyBoardUp,
-            onMouseWheel,
+        onMouseWheel,
+        onTouchStart,
+        onTouchMove,
+        onTouchEnd,
         delay,
         // Expose focused/selected for external access if needed
         get focusedObject() { return focusedObject; },
         get selectedObject() { return selectedObject; },
         // Expose controls to enable/disable OrbitControls when modal opens/closes
         get controls() { return controls; },
+        // Expose canvas element to attach precise listeners
+        get domElement() { return renderer.domElement; },
         suppressInput
     }
 }
