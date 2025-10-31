@@ -1126,11 +1126,25 @@ window.onload = async () => {
     // Legend dropdown functionality
     const legendToggle = document.getElementById('legend-toggle');
     const legendDropdown = document.getElementById('legend-dropdown');
+    const commandToggle = document.getElementById('command-toggle');
+    const commandDropdown = document.getElementById('command-dropdown');
     
     if (legendToggle && legendDropdown) {
         legendToggle.addEventListener('click', (e) => {
             e.stopPropagation();
-            legendDropdown.classList.toggle('hidden');
+            const isCurrentlyHidden = legendDropdown.classList.contains('hidden');
+            
+            // Close command dropdown if it's open
+            if (commandDropdown && !commandDropdown.classList.contains('hidden')) {
+                commandDropdown.classList.add('hidden');
+            }
+            
+            // Toggle legend dropdown
+            if (isCurrentlyHidden) {
+                legendDropdown.classList.remove('hidden');
+            } else {
+                legendDropdown.classList.add('hidden');
+            }
         });
         
         // Close dropdown when clicking outside
@@ -1142,13 +1156,22 @@ window.onload = async () => {
     }
     
     // Command dropdown functionality
-    const commandToggle = document.getElementById('command-toggle');
-    const commandDropdown = document.getElementById('command-dropdown');
-    
     if (commandToggle && commandDropdown) {
         commandToggle.addEventListener('click', (e) => {
             e.stopPropagation();
-            commandDropdown.classList.toggle('hidden');
+            const isCurrentlyHidden = commandDropdown.classList.contains('hidden');
+            
+            // Close legend dropdown if it's open
+            if (legendDropdown && !legendDropdown.classList.contains('hidden')) {
+                legendDropdown.classList.add('hidden');
+            }
+            
+            // Toggle command dropdown
+            if (isCurrentlyHidden) {
+                commandDropdown.classList.remove('hidden');
+            } else {
+                commandDropdown.classList.add('hidden');
+            }
         });
         
         // Close dropdown when clicking outside
