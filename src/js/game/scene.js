@@ -59,6 +59,12 @@ export function createScene(housesStore, gameStore, assetManager) {
     controls.enableRotate = false;
     controls.enablePan = false;
     controls.enableZoom = false;
+    
+    // Update OrbitControls camera reference when camera mode toggles
+    camera.setOnCameraChanged((newCamera) => {
+        controls.object = newCamera;
+        controls.update();
+    });
     gameWindow.appendChild(renderer.domElement);
     
     // Helper function to check if info modal is open
@@ -872,28 +878,48 @@ export function createScene(housesStore, gameStore, assetManager) {
         renderer.setAnimationLoop(null);
     }
 
-    // Add a distant ground ring using grass material to fake infinity (keep existing sky background)
+    // Add a distant ground plane + ring to fake infinity (keep existing sky background)
     function addBackdrop() {
         // Avoid duplicating if reinitializing
+        const existingBase = scene.getObjectByName('infinite-ground-base');
         const existingRing = scene.getObjectByName('infinite-ground-ring');
-        if (existingRing) return;
+        if (existingBase && existingRing) return;
 
-        // Distant ground ring using grass texture/material
+        // Solid base ground to prevent sky from showing through below city area
+        try {
+            const baseSize = 3000;
+            const baseGeo = new THREE.PlaneGeometry(baseSize, baseSize, 1, 1);
+            const baseMat = new THREE.MeshLambertMaterial({
+                color: 0xA4B98B, // match in-game grass color
+                fog: true
+            });
+            const base = new THREE.Mesh(baseGeo, baseMat);
+            base.rotation.x = -Math.PI / 2;
+            base.position.y = -0.02;
+            base.receiveShadow = false;
+            base.name = 'infinite-ground-base';
+            // Ensure it renders behind everything else but still occludes background
+            base.renderOrder = -10;
+            scene.add(base);
+        } catch (_) {}
+
+        // Distant ground ring
         try {
             const size = 1200;
             const ringGeo = new THREE.PlaneGeometry(size, size, 1, 1);
-            // Use the actual grass texture/material like scene tiles
+            // Prefer the actual grass texture for a seamless look
             const grassTex = (textures && textures['grass']) ? textures['grass'] : null;
+            const baseTex = grassTex || ((textures && textures['grid']) ? textures['grid'] : null);
             let ringMat;
-            if (grassTex && grassTex instanceof THREE.Texture) {
-                // Clone texture to avoid modifying the original
-                const texClone = grassTex.clone();
-                texClone.wrapS = texClone.wrapT = THREE.RepeatWrapping;
-                texClone.repeat.set(120, 120);
-                ringMat = new THREE.MeshLambertMaterial({ map: texClone, color: 0xA4B98B, fog: true });
+            if (baseTex && baseTex instanceof THREE.Texture) {
+                baseTex.wrapS = baseTex.wrapT = THREE.RepeatWrapping;
+                baseTex.repeat.set(120, 120);
+                ringMat = new THREE.MeshLambertMaterial({ map: baseTex, color: 0xffffff, fog: true });
             } else {
                 ringMat = new THREE.MeshLambertMaterial({ color: 0xA4B98B, fog: true });
             }
+            // Backdrop ring should occlude background and fade with fog
+            ringMat.depthWrite = true;
             const ring = new THREE.Mesh(ringGeo, ringMat);
             ring.rotation.x = -Math.PI / 2;
             ring.position.y = -0.01;

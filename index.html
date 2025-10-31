@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="./src/styles/btn.css">
     <link rel="stylesheet" href="./src/styles/tooltip.css">
     <link rel="stylesheet" href="./src/styles/tutorial.css">
+    <link rel="stylesheet" href="./src/styles/legends.css">
     
     <!-- Modal Styles -->
     <link rel="stylesheet" href="./src/styles/modals/global.css">
@@ -374,6 +375,62 @@
                 </svg>
               </div>
               <span>Prêts bancaires</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Command dropdown menu -->
+        <div class="command-dropdown-container">
+          <button id="command-toggle" class="command-toggle-btn" title="Raccourcis clavier">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-keyboard">
+              <rect width="20" height="16" x="2" y="4" rx="2"/>
+              <path d="M6 8h.01"/>
+              <path d="M10 8h.01"/>
+              <path d="M14 8h.01"/>
+              <path d="M18 8h.01"/>
+              <path d="M8 12h.01"/>
+              <path d="M12 12h.01"/>
+              <path d="M16 12h.01"/>
+              <path d="M7 16h10"/>
+            </svg>
+          </button>
+          <div id="command-dropdown" class="command-dropdown hidden">
+            <div class="command-title">
+              <h4>⌨️ Raccourcis clavier</h4>
+            </div>
+            <div class="command-items">
+              <div class="command-item">
+                <kbd>I</kbd>
+                <span class="command-label">Basculer vue isométrique/perspective</span>
+              </div>
+              <div class="command-item">
+                <kbd>V</kbd>
+                <span class="command-label">Activer effet dolly zoom</span>
+              </div>
+              <div class="command-item">
+                <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+                <span class="command-label">Déplacer la caméra</span>
+              </div>
+              <div class="command-item">
+                <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd>
+                <span class="command-label">Déplacer la caméra (AZERTY)</span>
+              </div>
+              <div class="command-item">
+                <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd>
+                <span class="command-label">Déplacer la caméra</span>
+              </div>
+              <div class="command-item">
+                <kbd>Molette</kbd>
+                <span class="command-label">Zoomer/Dézoomer</span>
+              </div>
+              <div class="command-item">
+                <kbd>Ctrl</kbd> + <kbd>Molette</kbd>
+                <span class="command-label">Zoomer (trackpad)</span>
+              </div>
+              <div class="command-item">
+                <kbd>Clic droit</kbd> / <kbd>Clic molette</kbd>
+                <span class="command-label">Déplacer la caméra</span>
+              </div>
             </div>
           </div>
         </div>

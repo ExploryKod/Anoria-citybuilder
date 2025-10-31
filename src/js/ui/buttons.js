@@ -1141,6 +1141,24 @@ window.onload = async () => {
         });
     }
     
+    // Command dropdown functionality
+    const commandToggle = document.getElementById('command-toggle');
+    const commandDropdown = document.getElementById('command-dropdown');
+    
+    if (commandToggle && commandDropdown) {
+        commandToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            commandDropdown.classList.toggle('hidden');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.command-dropdown-container')) {
+                commandDropdown.classList.add('hidden');
+            }
+        });
+    }
+    
     // Budget panel functionality - get elements directly to avoid timing issues
     const budgetBtn = document.getElementById('budget-btn');
     const budgetPanelEl = document.getElementById('budget-panel');

@@ -521,13 +521,7 @@ canvas.pointer-events-disabled {
   pointer-events: none;
 }
 
-/* Legend dropdown menu */
-.legend-dropdown-container {
-  position: fixed;
-  top: 20px;
-  left: 100px;
-  z-index: 10020; /* Z-index plus élevé que la toolbar carousel */
-}
+/* Legend dropdown menu - moved to legends.css */
 
 .legend-toggle-btn {
   background: rgba(255, 255, 255, 0.9);
@@ -1431,11 +1425,7 @@ button#pwa-refresh:hover {
         overflow-y: auto;
     }
 
-    /* Ajuster la légende */
-    .legend-dropdown-container {
-        top: 10px;
-        left: 10px;
-    }
+    /* Ajuster la légende - moved to legends.css */
 
     .legend-dropdown {
         max-width: 200px;

@@ -1,0 +1,269 @@
+/* Legend dropdown menu */
+.legend-dropdown-container {
+  position: absolute;
+  top: 5px;
+  left: 150px;
+  z-index: 10020; /* Z-index plus élevé que la toolbar carousel */
+}
+
+.legend-toggle-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.legend-toggle-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  color: #333;
+}
+
+.legend-dropdown {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  margin-left: 8px;
+  background: #2d2d2d;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  min-width: 240px;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-10px);
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.legend-dropdown:not(.hidden) {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #e0e0e0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background-color 0.2s ease;
+}
+
+.legend-item:last-child {
+  border-bottom: none;
+}
+
+.legend-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.legend-item.item-disabled {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Styles for disabled icon in legend only (visual demonstration) */
+.legend-icon-wrapper.disabled-icon {
+  opacity: 0.4;
+  filter: grayscale(70%);
+  position: relative;
+}
+
+.legend-icon-wrapper.disabled-icon::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    rgba(0, 0, 0, 0.1) 4px,
+    rgba(0, 0, 0, 0.1) 8px
+  );
+  pointer-events: none;
+}
+
+/* Style for selected house button in legend - showing hover state by default */
+.legend-icon-wrapper.selected-icon {
+  box-shadow: none;
+  background: var(--house-blue-color);
+  color: #fff;
+}
+
+.legend-icon-wrapper.selected-icon svg {
+  stroke: #fff;
+}
+
+.legend-icon-wrapper {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background-color: #fafafa;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #000;
+}
+
+.legend-icon-wrapper svg {
+  stroke: #000;
+}
+
+/* Style for toolbar selected button in legend */
+.legend-icon-wrapper.toolbar-selected-icon {
+  background-color: #009999;
+  border: 3px solid #009999;
+  color: #fff;
+}
+
+.legend-icon-wrapper.toolbar-selected-icon svg {
+  stroke: #fff;
+}
+
+/* Command dropdown menu */
+.command-dropdown-container {
+  position: absolute;
+  top: 45px; /* Positioned below legend-toggle */
+  left: 150px;
+  z-index: 10020; /* Same z-index as legend-dropdown */
+}
+
+/* Command toggle button - same style as legend-toggle-btn */
+.command-toggle-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.command-toggle-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  color: #333;
+}
+
+/* Command dropdown - same style as legend-dropdown */
+.command-dropdown {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  margin-left: 8px;
+  background: #2d2d2d;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  min-width: 340px;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-10px);
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.command-dropdown:not(.hidden) {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
+
+.command-title h4 {
+  margin: 0 0 15px 0;
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  padding-bottom: 10px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.command-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.command-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+.command-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.command-item kbd {
+  background: #ff9800;
+  color: #ffffff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  min-width: 28px;
+  text-align: center;
+  display: inline-block;
+}
+
+.command-item kbd + kbd {
+  margin-left: 4px;
+}
+
+.command-label {
+  color: #ffffff;
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .legend-dropdown-container {
+    top: 10px;
+    left: 10px;
+  }
+
+  .command-dropdown-container {
+    top: 50px;
+    left: 10px;
+  }
+
+  .command-dropdown {
+    max-width: calc(100vw - 100px);
+    font-size: 12px;
+  }
+
+  .legend-dropdown {
+    max-width: 200px;
+    font-size: 12px;
+  }
+}
+
