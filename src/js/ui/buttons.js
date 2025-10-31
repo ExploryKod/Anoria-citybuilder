@@ -1128,15 +1128,20 @@ window.onload = async () => {
     const legendDropdown = document.getElementById('legend-dropdown');
     const commandToggle = document.getElementById('command-toggle');
     const commandDropdown = document.getElementById('command-dropdown');
+    const financeToggle = document.getElementById('finance-toggle');
+    const financeDropdown = document.getElementById('finance-dropdown');
     
     if (legendToggle && legendDropdown) {
         legendToggle.addEventListener('click', (e) => {
             e.stopPropagation();
             const isCurrentlyHidden = legendDropdown.classList.contains('hidden');
             
-            // Close command dropdown if it's open
+            // Close other dropdowns if they're open
             if (commandDropdown && !commandDropdown.classList.contains('hidden')) {
                 commandDropdown.classList.add('hidden');
+            }
+            if (financeDropdown && !financeDropdown.classList.contains('hidden')) {
+                financeDropdown.classList.add('hidden');
             }
             
             // Toggle legend dropdown
@@ -1154,6 +1159,36 @@ window.onload = async () => {
             }
         });
     }
+
+    // Finance dropdown functionality
+    if (financeToggle && financeDropdown) {
+        financeToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isCurrentlyHidden = financeDropdown.classList.contains('hidden');
+            
+            // Close other dropdowns if they're open
+            if (legendDropdown && !legendDropdown.classList.contains('hidden')) {
+                legendDropdown.classList.add('hidden');
+            }
+            if (commandDropdown && !commandDropdown.classList.contains('hidden')) {
+                commandDropdown.classList.add('hidden');
+            }
+            
+            // Toggle finance dropdown
+            if (isCurrentlyHidden) {
+                financeDropdown.classList.remove('hidden');
+            } else {
+                financeDropdown.classList.add('hidden');
+            }
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.finance-dropdown-container')) {
+                financeDropdown.classList.add('hidden');
+            }
+        });
+    }
     
     // Command dropdown functionality
     if (commandToggle && commandDropdown) {
@@ -1161,9 +1196,12 @@ window.onload = async () => {
             e.stopPropagation();
             const isCurrentlyHidden = commandDropdown.classList.contains('hidden');
             
-            // Close legend dropdown if it's open
+            // Close other dropdowns if they're open
             if (legendDropdown && !legendDropdown.classList.contains('hidden')) {
                 legendDropdown.classList.add('hidden');
+            }
+            if (financeDropdown && !financeDropdown.classList.contains('hidden')) {
+                financeDropdown.classList.add('hidden');
             }
             
             // Toggle command dropdown
@@ -1713,10 +1751,7 @@ function initCityMapPopup() {
         if (legendToggle && legend) {
             legendToggle.addEventListener('click', () => {
                 legend.classList.toggle('collapsed');
-                
-                // Update button text
-                const isCollapsed = legend.classList.contains('collapsed');
-                legendToggle.textContent = isCollapsed ? '▶' : '◀';
+                // Icons are handled by CSS animations - no need to change text content
             });
         }
     }
