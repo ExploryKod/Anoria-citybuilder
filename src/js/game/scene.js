@@ -1040,6 +1040,66 @@ function onMouseMove(event) {
 }
 
 
+function onTouchStart(event) {
+    // Block interaction if a popup is open or info modal is open
+    if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+        return;
+    }
+    if (isInfoModalOpen()) {
+        return;
+    }
+    if (performance.now() < suppressInputUntilMs) {
+        return;
+    }
+    
+    camera.onTouchStart(event);
+    
+    // Handle object selection for single touch
+    if (event.touches.length === 1) {
+        const touch = event.touches[0];
+        const p = { x: touch.clientX, y: touch.clientY };
+        mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
+        mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera.camera);
+        const intersections = raycaster.intersectObjects(scene.children, false);
+        const objectToSelect = intersections.length > 0 ? intersections[0].object : null;
+        
+        if (objectToSelect) {
+            updateSelectedObject.call(this, objectToSelect);
+        }
+    }
+}
+
+function onTouchMove(event) {
+    // Block interaction if a popup is open or info modal is open
+    if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+        return;
+    }
+    if (isInfoModalOpen()) {
+        return;
+    }
+    if (performance.now() < suppressInputUntilMs) {
+        return;
+    }
+    
+    camera.onTouchMove(event);
+}
+
+function onTouchEnd(event) {
+    // Block interaction if a popup is open or info modal is open
+    if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+        return;
+    }
+    if (isInfoModalOpen()) {
+        return;
+    }
+    if (performance.now() < suppressInputUntilMs) {
+        return;
+    }
+    
+    camera.onTouchEnd(event);
+}
+
  function handleHover(intersections, hexColor, objectName="roads") {
     if (intersections.length > 0) {
         const intersectedObject = intersections[0].object;
@@ -1182,7 +1242,10 @@ function onMouseMove(event) {
         onMouseMove, 
         onKeyBoardDown,
         onKeyBoardUp,
-            onMouseWheel,
+        onMouseWheel,
+        onTouchStart,
+        onTouchMove,
+        onTouchEnd,
         delay,
         // Expose focused/selected for external access if needed
         get focusedObject() { return focusedObject; },
