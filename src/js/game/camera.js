@@ -266,6 +266,9 @@ export function createCamera(gameWindow) {
     function onWheel(event) {
         // Touchpad friendly: pinch-to-zoom often sets ctrlKey; otherwise use wheel for panning
         if (event.ctrlKey) {
+            // Prevent browser zoom - only zoom camera, not the page
+            event.preventDefault();
+            event.stopPropagation();
             // Zoom with pinch or ctrl+wheel
             cameraRadius += (event.deltaY > 0 ? 1 : -1) * 0.8;
             cameraRadius = Math.min(MAX_CAMERA_RADIUS, Math.max(MIN_CAMERA_RADIUS, cameraRadius));
