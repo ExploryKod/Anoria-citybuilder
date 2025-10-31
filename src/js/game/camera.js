@@ -16,11 +16,14 @@ export function createCamera(gameWindow) {
 
     // Classic isometric camera settings (Pharaoh/Caesar 3 style)
     const ISOMETRIC_ELEVATION = 45; // Fixed 45° angle
-    const ISOMETRIC_AZIMUTH = 225;   // Fixed rotation (looking from SW)
+    const ISOMETRIC_AZIMUTH_BASE = 225;   // Base rotation (looking from SW)
     const ORTHO_CAMERA_SIZE = 20;    // Orthographic view size
     
     // Camera mode toggle
     let isIsometricMode = true; // Set to true for classic city builder style (Pharaoh/Caesar 3)
+    
+    // Isometric rotation offset (for rotating view east/west)
+    let isometricRotationOffset = 0; // Rotation offset in degrees (0, 90, 180, 270)
 
     // Vector 
     const Y_AXIS = new THREE.Vector3(0, 1, 0);
@@ -46,7 +49,7 @@ export function createCamera(gameWindow) {
     let cameraOrigin = new THREE.Vector3();
     let cameraRadius = (MAX_CAMERA_RADIUS + MIN_CAMERA_RADIUS) / 2;
     let cameraElevation = isIsometricMode ? ISOMETRIC_ELEVATION : 20;
-    let cameraAzimuth = isIsometricMode ? ISOMETRIC_AZIMUTH : 50;
+    let cameraAzimuth = isIsometricMode ? (ISOMETRIC_AZIMUTH_BASE + isometricRotationOffset) : 50;
     let isLeftMouseDown = false;
     let isRightMouseDown = false;
     let isMiddleMouseDown = false;
@@ -78,6 +81,59 @@ export function createCamera(gameWindow) {
         if (event.key.toLowerCase() === 'i' && !event.ctrlKey && !event.altKey && !event.shiftKey) {
             toggleIsometric();
             return; // Don't process other keys
+        }
+        // Rotate view left/right with R/T keys
+        if (event.key.toLowerCase() === 'r' || event.key.toLowerCase() === 't') {
+            if (isIsometricMode) {
+                // Isometric mode: rotate in 90° increments
+                if (event.key.toLowerCase() === 'r') {
+                    // Rotate left (west)
+                    isometricRotationOffset = (isometricRotationOffset - 90 + 360) % 360;
+                } else if (event.key.toLowerCase() === 't') {
+                    // Rotate right (east)
+                    isometricRotationOffset = (isometricRotationOffset + 90) % 360;
+                }
+                cameraAzimuth = ISOMETRIC_AZIMUTH_BASE + isometricRotationOffset;
+            } else {
+                // Perspective mode: rotate smoothly
+                const rotationStep = 5; // Degrees per keypress
+                if (event.key.toLowerCase() === 'r') {
+                    // Rotate left (west)
+                    cameraAzimuth = (cameraAzimuth - rotationStep + 360) % 360;
+                } else if (event.key.toLowerCase() === 't') {
+                    // Rotate right (east)
+                    cameraAzimuth = (cameraAzimuth + rotationStep) % 360;
+                }
+            }
+            updateCameraPosition();
+            return;
+        }
+        // Rotate view with arrow keys + Shift
+        if (event.shiftKey) {
+            if (event.key === 'ArrowLeft') {
+                if (isIsometricMode) {
+                    // Isometric mode: rotate in 90° increments
+                    isometricRotationOffset = (isometricRotationOffset - 90 + 360) % 360;
+                    cameraAzimuth = ISOMETRIC_AZIMUTH_BASE + isometricRotationOffset;
+                } else {
+                    // Perspective mode: rotate smoothly
+                    cameraAzimuth = (cameraAzimuth - 5 + 360) % 360;
+                }
+                updateCameraPosition();
+                return;
+            }
+            if (event.key === 'ArrowRight') {
+                if (isIsometricMode) {
+                    // Isometric mode: rotate in 90° increments
+                    isometricRotationOffset = (isometricRotationOffset + 90) % 360;
+                    cameraAzimuth = ISOMETRIC_AZIMUTH_BASE + isometricRotationOffset;
+                } else {
+                    // Perspective mode: rotate smoothly
+                    cameraAzimuth = (cameraAzimuth + 5) % 360;
+                }
+                updateCameraPosition();
+                return;
+            }
         }
         // Toggle dolly zoom (vertigo effect)
         if (event.key.toLowerCase() === 'v') {
@@ -228,10 +284,10 @@ export function createCamera(gameWindow) {
     }
 
     function updateCameraPosition(){
-        // Lock angle in isometric mode
+        // Lock angle in isometric mode (but allow rotation offset)
         if (isIsometricMode) {
             cameraElevation = ISOMETRIC_ELEVATION;
-            cameraAzimuth = ISOMETRIC_AZIMUTH;
+            cameraAzimuth = ISOMETRIC_AZIMUTH_BASE + isometricRotationOffset;
         }
         
         const thetaAzimuth = cameraAzimuth * Math.PI / 180;
@@ -294,7 +350,7 @@ export function createCamera(gameWindow) {
                 1, 1000
             );
             cameraElevation = ISOMETRIC_ELEVATION;
-            cameraAzimuth = ISOMETRIC_AZIMUTH;
+            cameraAzimuth = ISOMETRIC_AZIMUTH_BASE + isometricRotationOffset;
         } else {
             camera = new THREE.PerspectiveCamera(75, aspect, 1, 1000);
             cameraElevation = 20;
