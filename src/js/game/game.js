@@ -708,6 +708,18 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
         }
     } catch (_) {}
     
+    // Initialize mobile controls for touch devices (if camera is available)
+    // Use dynamic import with .then() to avoid making createGame async
+    if (scene && scene.camera) {
+        import('../ui/mobile-controls.js')
+            .then(({ initMobileControls }) => {
+                initMobileControls(scene.camera);
+            })
+            .catch((error) => {
+                console.warn('[Game] Failed to initialize mobile controls:', error);
+            });
+    }
+    
     // Register game instance
     appRegistry.register('game', game);
     
