@@ -2,6 +2,7 @@ import { initPWA } from './pwa.js'
 import { gsap } from 'gsap'
 import infoPanelAnimations from './js/ui/InfoPanelAnimations.js'
 import modalAnimations from './js/ui/ModalAnimations.js'
+import './js/ui/OrientationToast.js'
 
 const app = document.querySelector('#game-window')
 
@@ -9,6 +10,7 @@ initPWA(app)
 
 /**
  * Positions the legend buttons container based on the toolbar width
+ * On mobile/tablette, buttons are positioned in bottom-left corner via CSS
  */
 function positionLegendButtons() {
   const toolbar = document.getElementById('toolbar');
@@ -18,7 +20,16 @@ function positionLegendButtons() {
     return;
   }
   
-  // Get the actual toolbar width (including padding)
+  // On mobile/tablette (max-width: 1024px), CSS handles positioning
+  // Check if we're on mobile/tablette
+  const isMobileOrTablet = window.matchMedia('(max-width: 1024px)').matches;
+  
+  if (isMobileOrTablet) {
+    // CSS handles positioning on mobile/tablette, don't override
+    return;
+  }
+  
+  // Desktop: position based on toolbar width
   const toolbarRect = toolbar.getBoundingClientRect();
   const toolbarWidth = toolbarRect.width;
   
@@ -282,5 +293,7 @@ if (document.readyState === 'loading') {
 let resizeTimeout;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(positionLegendButtons, 100);
+  resizeTimeout = setTimeout(() => {
+    positionLegendButtons();
+  }, 100);
 });
