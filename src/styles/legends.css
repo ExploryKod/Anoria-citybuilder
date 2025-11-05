@@ -2,11 +2,13 @@
 .legend-btns-container {
   position: absolute;
   top: 5px;
-  left: 115px; /* Positioned just after the left panel (toolbar is ~109px wide) */
-  z-index: 10020;
-  display: flex;
+  /* Left position is set dynamically by JavaScript based on toolbar width */
+  left: 115px; /* Fallback value, will be overridden by JS */
+  z-index: 10015; /* Between loader (10020) and left panel (10010) */
+  display: none; /* Hidden initially, shown after scene loads */
   flex-direction: column;
   gap: 8px;
+  /* GSAP will handle the animation */
 }
 
 /* Legend buttons - common styles for all legend buttons */
