@@ -49,6 +49,10 @@ export function createScene(housesStore, gameStore, assetManager) {
     renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(window.devicePixelRatio);
     
+    // Ensure canvas allows touch events on mobile
+    renderer.domElement.style.touchAction = 'none';
+    renderer.domElement.style.pointerEvents = 'auto';
+    
     // ORIGINAL ANORIA RENDERER SHADOW SETUP (restored exactly)
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -90,6 +94,13 @@ export function createScene(housesStore, gameStore, assetManager) {
         camera.onMouseUp({ button: 1 });
         camera.onMouseUp({ button: 2 });
     }
+
+    // Touch tracking for tap vs drag detection
+    let touchStartPos = null;
+    let touchStartObject = null;
+    let touchHasMoved = false;
+    let cameraTouchInitialized = false; // Track if we've initialized camera for this touch
+    const TAP_THRESHOLD = 10; // pixels - movement below this is considered a tap
 
     function getPointerClientXY(event) {
         if (window.inputManager && window.inputManager.mouse) {
@@ -1041,32 +1052,74 @@ function onMouseMove(event) {
 
 
 function onTouchStart(event) {
-    // Block interaction if a popup is open or info modal is open
-    if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+    const canvas = document.querySelector('canvas');
+    const canvasBlocked = canvas?.classList.contains('pointer-events-disabled');
+    
+    console.log('[Touch] onTouchStart', { 
+        touches: event.touches.length,
+        activePopups: window.popupManager?.getActivePopups() || [],
+        canvasHasPointerEventsDisabled: canvasBlocked,
+        canvasElement: !!canvas
+    });
+    
+    // If canvas has pointer-events-disabled, touch events won't reach us at all
+    // But if they do, we should still check for blocking popups
+    // BUT: panel-layout should not block events (it's configured with shouldBlockEvents: false)
+    const activePopups = window.popupManager?.getActivePopups() || [];
+    const blockingPopups = activePopups.filter(id => {
+        const config = window.popupManager?.popupConfigs?.get(id);
+        return config && config.shouldBlockEvents;
+    });
+    
+    if (blockingPopups.length > 0) {
+        console.log('[Touch] Blocked: blocking popups open', blockingPopups);
         return;
     }
     if (isInfoModalOpen()) {
+        console.log('[Touch] Blocked: info modal open');
         return;
     }
     if (performance.now() < suppressInputUntilMs) {
+        console.log('[Touch] Blocked: input suppressed');
         return;
     }
     
-    camera.onTouchStart(event);
+    // Reset touch tracking
+    touchHasMoved = false;
+    touchStartPos = null;
+    touchStartObject = null;
+    cameraTouchInitialized = false;
     
     // Handle object selection for single touch
     if (event.touches.length === 1) {
         const touch = event.touches[0];
+        touchStartPos = { x: touch.clientX, y: touch.clientY };
         const p = { x: touch.clientX, y: touch.clientY };
         mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
         mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera.camera);
         const intersections = raycaster.intersectObjects(scene.children, false);
-        const objectToSelect = intersections.length > 0 ? intersections[0].object : null;
+        touchStartObject = intersections.length > 0 ? intersections[0].object : null;
         
-        if (objectToSelect) {
-            updateSelectedObject.call(this, objectToSelect);
-        }
+        console.log('[Touch] Touch start', {
+            pos: touchStartPos,
+            intersections: intersections.length,
+            object: touchStartObject?.name || touchStartObject?.userData?.id || 'none'
+        });
+        
+        // Don't update selection yet - wait for touchEnd to determine if it was a tap
+        
+        // For single touch, we'll handle camera in onTouchMove only if movement is significant
+        // But we still need to prevent default behavior (scrolling)
+        event.preventDefault();
+    } else if (event.touches.length === 2) {
+        // Multi-touch: always allow camera handling (pinch to zoom)
+        camera.onTouchStart(event);
+        cameraTouchInitialized = true;
+    } else {
+        // Other cases: allow camera handling
+        camera.onTouchStart(event);
+        cameraTouchInitialized = true;
     }
 }
 
@@ -1082,22 +1135,101 @@ function onTouchMove(event) {
         return;
     }
     
-    camera.onTouchMove(event);
+    // Check if touch has moved significantly (indicating a drag/pan)
+    if (touchStartPos && event.touches.length === 1) {
+        const touch = event.touches[0];
+        const deltaX = Math.abs(touch.clientX - touchStartPos.x);
+        const deltaY = Math.abs(touch.clientY - touchStartPos.y);
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        
+        if (distance > TAP_THRESHOLD) {
+            touchHasMoved = true;
+            console.log('[Touch] Drag detected', { distance: distance.toFixed(2) });
+            // Movement is significant - this is a drag, so allow camera panning
+            // Need to call camera.onTouchStart first if we haven't already (for single touch)
+            if (!cameraTouchInitialized) {
+                camera.onTouchStart(event);
+                cameraTouchInitialized = true;
+            }
+            camera.onTouchMove(event);
+        }
+        // If movement is below threshold, don't call camera handlers to prevent accidental panning
+    } else {
+        // For multi-touch or when touchStartPos is not set, always allow camera handling
+        camera.onTouchMove(event);
+    }
 }
 
 function onTouchEnd(event) {
+    console.log('[Touch] onTouchEnd', {
+        hasMoved: touchHasMoved,
+        changedTouches: event.changedTouches?.length || 0,
+        touches: event.touches.length
+    });
+    
     // Block interaction if a popup is open or info modal is open
     if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+        console.log('[Touch] Blocked: popup open');
         return;
     }
     if (isInfoModalOpen()) {
+        console.log('[Touch] Blocked: info modal open');
         return;
     }
     if (performance.now() < suppressInputUntilMs) {
+        console.log('[Touch] Blocked: input suppressed');
         return;
     }
     
-    camera.onTouchEnd(event);
+    // Check if this was a tap (no significant movement)
+    if (!touchHasMoved && event.changedTouches && event.changedTouches.length > 0) {
+        // Re-raycast at the touch end position to get the current object
+        // This ensures we get the correct object even if camera moved slightly
+        const touch = event.changedTouches[0];
+        const p = { x: touch.clientX, y: touch.clientY };
+        mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
+        mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera.camera);
+        const intersections = raycaster.intersectObjects(scene.children, false);
+        const objectToSelect = intersections.length > 0 ? intersections[0].object : null;
+        
+        // Get activeToolId from game object
+        const currentToolId = (window.game && typeof window.game.activeToolId !== 'undefined') 
+            ? window.game.activeToolId 
+            : (window.game?.gameUI?.activeToolId || 'unknown');
+        
+        console.log('[Touch] Tap detected', {
+            object: objectToSelect?.name || objectToSelect?.userData?.id || 'none',
+            hasObject: !!objectToSelect,
+            activeToolId: currentToolId,
+            userData: objectToSelect?.userData
+        });
+        
+        if (objectToSelect) {
+            // This was a tap - trigger building placement
+            console.log('[Touch] Calling updateSelectedObject');
+            updateSelectedObject.call(this, objectToSelect);
+            // Prevent default behavior for taps
+            event.preventDefault();
+        } else {
+            console.log('[Touch] No object found at tap location');
+        }
+    } else if (touchHasMoved) {
+        console.log('[Touch] Touch was a drag, not placing building');
+    } else {
+        console.log('[Touch] No changedTouches or other issue');
+    }
+    
+    // Reset touch tracking
+    touchStartPos = null;
+    touchStartObject = null;
+    touchHasMoved = false;
+    
+    // Only call camera.onTouchEnd if we initialized camera touch handling
+    if (cameraTouchInitialized || event.touches.length > 0) {
+        camera.onTouchEnd(event);
+    }
+    cameraTouchInitialized = false;
 }
 
  function handleHover(intersections, hexColor, objectName="roads") {
