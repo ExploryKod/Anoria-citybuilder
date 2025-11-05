@@ -823,6 +823,117 @@ function makeNewButton(buttonInfo, svg="") {
 }
 
 
+// Function to show city size selection modal and return selected size
+function showCitySizeSelection() {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('city-size-selection-modal');
+        const options = modal?.querySelectorAll('.city-size-option');
+        const customInput = modal?.querySelector('#custom-city-size');
+        const customButton = modal?.querySelector('#custom-size-apply');
+        
+        if (!modal || !options) {
+            // Fallback: return default size if modal doesn't exist
+            resolve(16);
+            return;
+        }
+        
+        // Helper function to select a size and close modal
+        const selectSize = (size) => {
+            // Clamp size to valid range (12-24) - reduced to prevent WebGL errors
+            size = Math.max(12, Math.min(24, size));
+            
+            // Remove selected class from all options
+            options.forEach(opt => opt.classList.remove('selected'));
+            
+            // Check if it matches a preset option
+            const matchingOption = Array.from(options).find(opt => 
+                parseInt(opt.dataset.size, 10) === size
+            );
+            
+            if (matchingOption) {
+                matchingOption.classList.add('selected');
+            } else {
+                // Custom size - update input value
+                if (customInput) {
+                    customInput.value = size;
+                }
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('selectedCitySize', size.toString());
+            
+            // Hide modal
+            modal.classList.remove('active');
+            
+            // Show chronos loader
+            const chronosLoader = document.getElementById('chronos-loader-modal');
+            if (chronosLoader) {
+                chronosLoader.classList.remove('hidden');
+                chronosLoader.classList.add('opaque');
+            }
+            
+            // Resolve with selected size
+            setTimeout(() => resolve(size), 300); // Small delay for animation
+        };
+        
+        // Check if user has a saved preference
+        const savedSize = parseInt(localStorage.getItem('selectedCitySize'), 10);
+        if (savedSize && savedSize >= 12 && savedSize <= 24) {
+            // Pre-select the saved size
+            const matchingOption = Array.from(options).find(opt => 
+                parseInt(opt.dataset.size, 10) === savedSize
+            );
+            if (matchingOption) {
+                matchingOption.classList.add('selected');
+            } else if (customInput) {
+                customInput.value = savedSize;
+            }
+        } else {
+            // Default to medium size (24)
+            const defaultOption = Array.from(options).find(opt => parseInt(opt.dataset.size, 10) === 24);
+            if (defaultOption) {
+                defaultOption.classList.add('selected');
+            }
+        }
+        
+        // Handle preset option clicks
+        options.forEach(option => {
+            option.addEventListener('click', () => {
+                const size = parseInt(option.dataset.size, 10);
+                selectSize(size);
+            });
+        });
+        
+        // Handle custom input
+        if (customInput && customButton) {
+            // Update input when preset is selected
+            options.forEach(option => {
+                option.addEventListener('click', () => {
+                    customInput.value = parseInt(option.dataset.size, 10);
+                });
+            });
+            
+            // Handle apply button
+            customButton.addEventListener('click', () => {
+                const customSize = parseInt(customInput.value, 10);
+                if (!isNaN(customSize) && customSize >= 12 && customSize <= 24) {
+                    selectSize(customSize);
+                } else {
+                    alert('Veuillez entrer une taille entre 12 et 24.');
+                    customInput.focus();
+                }
+            });
+            
+            // Handle Enter key in input
+            customInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    customButton.click();
+                }
+            });
+        }
+    });
+}
+
 window.onload = async () => {
 
     // Root initialization
@@ -1228,7 +1339,10 @@ window.onload = async () => {
     // Register with AppRegistry (window.app) if available, else use direct window.* (backwards compatible)
     appRegister('gameStore', gameStore);
     appRegister('housesStore', housesStore);
-    const game = createGame(housesStore, gameStore, assetManager);
+    
+    // Show city size selection modal before creating game
+    const selectedCitySize = await showCitySizeSelection();
+    const game = createGame(housesStore, gameStore, assetManager, selectedCitySize);
     appRegister('game', game);
     
     // Functions can be registered as well
