@@ -44,8 +44,81 @@ let services = [];
     }
 })();
 
+// Translation object for building IDs to French names
+const BUILDING_TRANSLATIONS = {
+    // Zones
+    'grass': 'Herbe',
+    'roads': 'Route',
+    'Road': 'Route',
+    
+    // Houses
+    'House-Blue': 'Maison Bleue',
+    'House-Red': 'Maison Rouge',
+    'House-Purple': 'Maison Violette',
+    
+    // Palaces
+    'House-2Story': 'Palais',
+    
+    // Tombs
+    'Tombstone-1': 'Tombe',
+    'Tombstone-2': 'Tombe',
+    'Tombstone-3': 'Tombe',
+    
+    // Farms
+    'Farm-Wheat': 'Ferme',
+    'Farm-Carrot': 'Ferme',
+    'Farm-Cabbage': 'Ferme',
+    
+    // Industry
+    'Windmill-001': 'Moulin',
+    'Barn-001': 'Grange',
+    
+    // Markets
+    'Market-Stall': 'Marché',
+    
+    // Infrastructure
+    'Well-001': 'Puits',
+    'Fountain-001': 'Fontaine',
+    'Streetlight-001': 'Réverbère',
+    
+    // Public Buildings
+    'Church-002': 'Église'
+};
+
+// Helper function to translate building IDs to French names
+function getBuildingDisplayName(buildingId) {
+    if (!buildingId) return buildingId;
+    
+    // Direct lookup in translation object (most common case)
+    if (BUILDING_TRANSLATIONS[buildingId]) {
+        return BUILDING_TRANSLATIONS[buildingId];
+    }
+    
+    // Fallback: try to match by checking if buildingId starts with a known key
+    // This handles cases where the ID might have additional suffixes
+    for (const [key, value] of Object.entries(BUILDING_TRANSLATIONS)) {
+        // Check if buildingId starts with the key (handles variations like "House-2Story_Purple001")
+        if (buildingId.startsWith(key)) {
+            return value;
+        }
+    }
+    
+    // If no translation found, return the ID as-is
+    return buildingId;
+}
+
+// Helper function to translate error reasons to French
+function translateErrorReason(reason) {
+    const translations = {
+        'area_not_available': 'Espace non disponible',
+        'insufficient_funds': 'Fonds insuffisants'
+    };
+    return translations[reason] || reason;
+}
+
 // Notification system for building placement feedback
 function showInsufficientFundsNotification(buildingType, price) {
+    const displayName = getBuildingDisplayName(buildingType);
     const notification = document.createElement('div');
     notification.className = 'building-notification insufficient-funds';
     notification.innerHTML = `
@@ -53,7 +126,7 @@ function showInsufficientFundsNotification(buildingType, price) {
             <div class="notification-icon">💰</div>
             <div class="notification-text">
                 <div class="notification-title">Fonds Insuffisants</div>
-                <div class="notification-message">Impossible de construire ${buildingType}. Coût : ${price}€</div>
+                <div class="notification-message">Impossible de construire ${displayName}. Coût : ${price}€</div>
             </div>
         </div>
     `;
@@ -143,6 +216,8 @@ function showInsufficientFundsNotification(buildingType, price) {
 }
 
 function showGenericErrorNotification(buildingType, reason) {
+    const displayName = getBuildingDisplayName(buildingType);
+    const translatedReason = translateErrorReason(reason);
     const notification = document.createElement('div');
     notification.className = 'building-notification generic-error';
     notification.innerHTML = `
@@ -150,7 +225,7 @@ function showGenericErrorNotification(buildingType, reason) {
             <div class="notification-icon">⚠️</div>
             <div class="notification-text">
                 <div class="notification-title">Erreur de Construction</div>
-                <div class="notification-message">Impossible de construire ${buildingType}. ${reason}</div>
+                <div class="notification-message">Impossible de construire ${displayName}. ${translatedReason}</div>
             </div>
         </div>
     `;
@@ -222,12 +297,6 @@ export function createGame(housesStore, gameStore, assetManager) {
 
     // handler function to extract coordinate of an object I click on (data from asset js and using scene js methods)
     scene.onObjectSelected = async (selectedObject) => {
-        console.log('[Game] onObjectSelected called', {
-            activeToolId: activeToolId,
-            objectName: selectedObject?.name,
-            userData: selectedObject?.userData
-        });
-        
         selectedObject.info = '';
         selectedObject.name = activeToolId !== 'select-object'? activeToolId : selectedObject.name;
         // Object selected

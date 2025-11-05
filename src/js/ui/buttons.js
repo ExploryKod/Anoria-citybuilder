@@ -1248,11 +1248,6 @@ window.onload = async () => {
                 canvas.style.touchAction = 'none';
                 // Add canvas-interactive class for mobile landscape
                 canvas.classList.add('canvas-interactive');
-                console.log('[Buttons] Ensured canvas pointer events enabled after tool selection', {
-                    hasPointerEventsDisabled: canvas.classList.contains('pointer-events-disabled'),
-                    stylePointerEvents: canvas.style.pointerEvents,
-                    computedPointerEvents: window.getComputedStyle(canvas).pointerEvents
-                });
             }
             
             // Also ensure PopupManager knows panel-layout is closed
@@ -1266,7 +1261,6 @@ window.onload = async () => {
         selectedControl = e.currentTarget;
         selectedControl.classList.add('selected');
         window.game.setActiveToolId(e.target.dataset.toolid);
-        console.log('[Buttons] Active tool set to:', e.target.dataset.toolid);
     }
 
     // Initialize real-time budget popup

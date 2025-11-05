@@ -1052,16 +1052,6 @@ function onMouseMove(event) {
 
 
 function onTouchStart(event) {
-    const canvas = document.querySelector('canvas');
-    const canvasBlocked = canvas?.classList.contains('pointer-events-disabled');
-    
-    console.log('[Touch] onTouchStart', { 
-        touches: event.touches.length,
-        activePopups: window.popupManager?.getActivePopups() || [],
-        canvasHasPointerEventsDisabled: canvasBlocked,
-        canvasElement: !!canvas
-    });
-    
     // If canvas has pointer-events-disabled, touch events won't reach us at all
     // But if they do, we should still check for blocking popups
     // BUT: panel-layout should not block events (it's configured with shouldBlockEvents: false)
@@ -1072,15 +1062,12 @@ function onTouchStart(event) {
     });
     
     if (blockingPopups.length > 0) {
-        console.log('[Touch] Blocked: blocking popups open', blockingPopups);
         return;
     }
     if (isInfoModalOpen()) {
-        console.log('[Touch] Blocked: info modal open');
         return;
     }
     if (performance.now() < suppressInputUntilMs) {
-        console.log('[Touch] Blocked: input suppressed');
         return;
     }
     
@@ -1144,7 +1131,6 @@ function onTouchMove(event) {
         
         if (distance > TAP_THRESHOLD) {
             touchHasMoved = true;
-            console.log('[Touch] Drag detected', { distance: distance.toFixed(2) });
             // Movement is significant - this is a drag, so allow camera panning
             // Need to call camera.onTouchStart first if we haven't already (for single touch)
             if (!cameraTouchInitialized) {
@@ -1161,23 +1147,20 @@ function onTouchMove(event) {
 }
 
 function onTouchEnd(event) {
-    console.log('[Touch] onTouchEnd', {
-        hasMoved: touchHasMoved,
-        changedTouches: event.changedTouches?.length || 0,
-        touches: event.touches.length
+    // Block interaction if a popup is open or info modal is open
+    const activePopups = window.popupManager?.getActivePopups() || [];
+    const blockingPopups = activePopups.filter(id => {
+        const config = window.popupManager?.popupConfigs?.get(id);
+        return config && config.shouldBlockEvents;
     });
     
-    // Block interaction if a popup is open or info modal is open
-    if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
-        console.log('[Touch] Blocked: popup open');
+    if (blockingPopups.length > 0) {
         return;
     }
     if (isInfoModalOpen()) {
-        console.log('[Touch] Blocked: info modal open');
         return;
     }
     if (performance.now() < suppressInputUntilMs) {
-        console.log('[Touch] Blocked: input suppressed');
         return;
     }
     
@@ -1193,31 +1176,12 @@ function onTouchEnd(event) {
         const intersections = raycaster.intersectObjects(scene.children, false);
         const objectToSelect = intersections.length > 0 ? intersections[0].object : null;
         
-        // Get activeToolId from game object
-        const currentToolId = (window.game && typeof window.game.activeToolId !== 'undefined') 
-            ? window.game.activeToolId 
-            : (window.game?.gameUI?.activeToolId || 'unknown');
-        
-        console.log('[Touch] Tap detected', {
-            object: objectToSelect?.name || objectToSelect?.userData?.id || 'none',
-            hasObject: !!objectToSelect,
-            activeToolId: currentToolId,
-            userData: objectToSelect?.userData
-        });
-        
         if (objectToSelect) {
             // This was a tap - trigger building placement
-            console.log('[Touch] Calling updateSelectedObject');
             updateSelectedObject.call(this, objectToSelect);
             // Prevent default behavior for taps
             event.preventDefault();
-        } else {
-            console.log('[Touch] No object found at tap location');
         }
-    } else if (touchHasMoved) {
-        console.log('[Touch] Touch was a drag, not placing building');
-    } else {
-        console.log('[Touch] No changedTouches or other issue');
     }
     
     // Reset touch tracking
