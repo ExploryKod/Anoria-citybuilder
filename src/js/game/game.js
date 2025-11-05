@@ -4,6 +4,7 @@ import { checkRoadAccess } from './modules/ModuleHelper.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
 import {getAssetPrice, makeDbItemId, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, isAreaAvailableForBuilding} from '../utils/utils.js';
+import config from './config.js';
 import {
     displayTime,
     overOverlay,
@@ -44,8 +45,81 @@ let services = [];
     }
 })();
 
+// Translation object for building IDs to French names
+const BUILDING_TRANSLATIONS = {
+    // Zones
+    'grass': 'Herbe',
+    'roads': 'Route',
+    'Road': 'Route',
+    
+    // Houses
+    'House-Blue': 'Maison Bleue',
+    'House-Red': 'Maison Rouge',
+    'House-Purple': 'Maison Violette',
+    
+    // Palaces
+    'House-2Story': 'Palais',
+    
+    // Tombs
+    'Tombstone-1': 'Tombe',
+    'Tombstone-2': 'Tombe',
+    'Tombstone-3': 'Tombe',
+    
+    // Farms
+    'Farm-Wheat': 'Ferme',
+    'Farm-Carrot': 'Ferme',
+    'Farm-Cabbage': 'Ferme',
+    
+    // Industry
+    'Windmill-001': 'Moulin',
+    'Barn-001': 'Grange',
+    
+    // Markets
+    'Market-Stall': 'Marché',
+    
+    // Infrastructure
+    'Well-001': 'Puits',
+    'Fountain-001': 'Fontaine',
+    'Streetlight-001': 'Réverbère',
+    
+    // Public Buildings
+    'Church-002': 'Église'
+};
+
+// Helper function to translate building IDs to French names
+function getBuildingDisplayName(buildingId) {
+    if (!buildingId) return buildingId;
+    
+    // Direct lookup in translation object (most common case)
+    if (BUILDING_TRANSLATIONS[buildingId]) {
+        return BUILDING_TRANSLATIONS[buildingId];
+    }
+    
+    // Fallback: try to match by checking if buildingId starts with a known key
+    // This handles cases where the ID might have additional suffixes
+    for (const [key, value] of Object.entries(BUILDING_TRANSLATIONS)) {
+        // Check if buildingId starts with the key (handles variations like "House-2Story_Purple001")
+        if (buildingId.startsWith(key)) {
+            return value;
+        }
+    }
+    
+    // If no translation found, return the ID as-is
+    return buildingId;
+}
+
+// Helper function to translate error reasons to French
+function translateErrorReason(reason) {
+    const translations = {
+        'area_not_available': 'Espace non disponible',
+        'insufficient_funds': 'Fonds insuffisants'
+    };
+    return translations[reason] || reason;
+}
+
 // Notification system for building placement feedback
 function showInsufficientFundsNotification(buildingType, price) {
+    const displayName = getBuildingDisplayName(buildingType);
     const notification = document.createElement('div');
     notification.className = 'building-notification insufficient-funds';
     notification.innerHTML = `
@@ -53,7 +127,7 @@ function showInsufficientFundsNotification(buildingType, price) {
             <div class="notification-icon">💰</div>
             <div class="notification-text">
                 <div class="notification-title">Fonds Insuffisants</div>
-                <div class="notification-message">Impossible de construire ${buildingType}. Coût : ${price}€</div>
+                <div class="notification-message">Impossible de construire ${displayName}. Coût : ${price}€</div>
             </div>
         </div>
     `;
@@ -143,6 +217,8 @@ function showInsufficientFundsNotification(buildingType, price) {
 }
 
 function showGenericErrorNotification(buildingType, reason) {
+    const displayName = getBuildingDisplayName(buildingType);
+    const translatedReason = translateErrorReason(reason);
     const notification = document.createElement('div');
     notification.className = 'building-notification generic-error';
     notification.innerHTML = `
@@ -150,7 +226,7 @@ function showGenericErrorNotification(buildingType, reason) {
             <div class="notification-icon">⚠️</div>
             <div class="notification-text">
                 <div class="notification-title">Erreur de Construction</div>
-                <div class="notification-message">Impossible de construire ${buildingType}. ${reason}</div>
+                <div class="notification-message">Impossible de construire ${displayName}. ${translatedReason}</div>
             </div>
         </div>
     `;
@@ -188,7 +264,7 @@ function showGenericErrorNotification(buildingType, reason) {
     }, 4000);
 }
 
-export function createGame(housesStore, gameStore, assetManager) {
+export function createGame(housesStore, gameStore, assetManager, citySize = null) {
     let activeToolId = '';
     let time = 0;
     let isPause;
@@ -213,7 +289,18 @@ export function createGame(housesStore, gameStore, assetManager) {
     const scene = createScene(housesStore, gameStore, assetManager);
 
     /* City initialization */
-    const city = createCity(16);
+    // Get city size from parameter, localStorage, config, or default to 16
+    // Clamp to valid range (12-24) to prevent WebGL shader/material errors
+    let selectedCitySize = citySize || 
+                          parseInt(localStorage.getItem('selectedCitySize'), 10) || 
+                          config?.simulation?.citySize || 
+                          16;
+    
+    // Enforce maximum size of 24 to prevent WebGL shader compilation errors
+    // Larger sizes cause BackgroundMaterial shader validation failures
+    selectedCitySize = Math.max(12, Math.min(24, selectedCitySize));
+    
+    const city = createCity(selectedCitySize);
 
     scene.initialize(city).then(() => {
         // Hide Chronos loader modal once scene is initialized with fade-out
@@ -579,6 +666,10 @@ export function createGame(housesStore, gameStore, assetManager) {
             }
         },
 
+        get activeToolId() {
+            return activeToolId;
+        },
+
         setActiveToolId(toolId) {
             activeToolId = toolId;
             gameUI.activeToolId = toolId;
@@ -616,6 +707,18 @@ export function createGame(housesStore, gameStore, assetManager) {
             appRegistry.register('inputManager', inputManager);
         }
     } catch (_) {}
+    
+    // Initialize mobile controls for touch devices (if camera is available)
+    // Use dynamic import with .then() to avoid making createGame async
+    if (scene && scene.camera) {
+        import('../ui/mobile-controls.js')
+            .then(({ initMobileControls }) => {
+                initMobileControls(scene.camera);
+            })
+            .catch((error) => {
+                console.warn('[Game] Failed to initialize mobile controls:', error);
+            });
+    }
     
     // Register game instance
     appRegistry.register('game', game);

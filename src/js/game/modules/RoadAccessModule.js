@@ -34,8 +34,9 @@ export class RoadAccessModule extends SimModule {
             return false;
         }
 
-        // Count roads in neighbors
+        // Count roads in neighbors using isRoad property (more reliable than name checking)
         this.roadCount = neighbors.filter(neighbor => 
+            neighbor.isRoad || neighbor.userData?.isRoad || 
             neighbor.name === 'roads' || neighbor.name === 'Road' || neighbor.buildingId === 'roads'
         ).length;
 

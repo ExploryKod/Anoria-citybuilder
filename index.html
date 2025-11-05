@@ -14,6 +14,8 @@
     <!-- Modal Styles -->
     <link rel="stylesheet" href="./src/styles/modals/global.css">
     <link rel="stylesheet" href="./src/styles/modals/loader-modal.css">
+    <link rel="stylesheet" href="./src/styles/modals/city-size-selection.css">
+    <link rel="stylesheet" href="./src/styles/mobile-controls.css">
     <link rel="stylesheet" href="./src/styles/modals/realtime-budget.css">
     <link rel="stylesheet" href="./src/styles/modals/budget-states.css">
     <link rel="stylesheet" href="./src/styles/modals/budget-panel.css">
@@ -40,8 +42,49 @@
 </div>
 <div id="root-window" class="root-window">
     <div id="game-window" class="game-window">
+        <!-- City Size Selection Modal -->
+        <div id="city-size-selection-modal" class="city-size-selection-modal active">
+            <div class="city-size-selection-content">
+                <div class="city-size-selection-icon">🏙️</div>
+                <div class="city-size-selection-title">Choisissez la taille de votre ville</div>
+                <div class="city-size-selection-message">
+                    Sélectionnez la taille de votre ville. Plus grande signifie plus d'espace pour construire, mais plus de terrain à gérer.
+                    <br><strong>Maximum: 24 × 24</strong> (limite technique)
+                </div>
+                <div class="city-size-options">
+                    <button class="city-size-option" data-size="12">
+                        <div class="city-size-label">Très Petite</div>
+                        <div class="city-size-value">12 × 12</div>
+                        <div class="city-size-description">144 cases</div>
+                    </button>
+                    <button class="city-size-option" data-size="16">
+                        <div class="city-size-label">Petite</div>
+                        <div class="city-size-value">16 × 16</div>
+                        <div class="city-size-description">256 cases</div>
+                    </button>
+                    <button class="city-size-option" data-size="20">
+                        <div class="city-size-label">Moyenne-Petite</div>
+                        <div class="city-size-value">20 × 20</div>
+                        <div class="city-size-description">400 cases</div>
+                    </button>
+                    <button class="city-size-option" data-size="24">
+                        <div class="city-size-label">Moyenne</div>
+                        <div class="city-size-value">24 × 24</div>
+                        <div class="city-size-description">576 cases</div>
+                    </button>
+                </div>
+                <div class="city-size-custom">
+                    <label for="custom-city-size" class="custom-size-label">Taille personnalisée (12-24):</label>
+                    <div class="custom-size-input-group">
+                        <input type="number" id="custom-city-size" class="custom-size-input" min="12" max="24" value="24" step="1">
+                        <button id="custom-size-apply" class="custom-size-button">Appliquer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Chronos Loader Modal -->
-        <div id="chronos-loader-modal" class="chronos-loader-modal opaque">
+        <div id="chronos-loader-modal" class="chronos-loader-modal opaque hidden">
             <div class="chronos-loader-content">
                 <div class="chronos-loader-icon">⏳</div>
                 <div class="chronos-loader-title">Chronos crée le temps</div>
@@ -82,7 +125,7 @@
         <div id='loader' class="loader"></div>
 
         <div id="pause-overlay" class="pause-overlay">
-            <button type="button" id="play-btn" data-action="play" class="toolbar-btn bubbly-button">
+            <button type="button" id="play-btn" data-action="play" class="toolbar-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play">
                     <polygon points="6 3 20 12 6 21 6 3"/>
                 </svg>
@@ -308,6 +351,84 @@
 
       </section>
 
+      <!-- Mobile Camera Controls - Only visible on mobile/tablet -->
+      <div id="mobile-camera-controls" class="mobile-camera-controls">
+          <div class="mobile-controls-group">
+              <div class="mobile-controls-label">Caméra</div>
+              <!-- Camera Pan Controls (D-pad) -->
+              <div class="mobile-dpad">
+                  <button type="button" class="mobile-control-btn mobile-dpad-up" data-action="camera-up" aria-label="Déplacer caméra vers le haut">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="m18 15-6-6-6 6"/>
+                      </svg>
+                  </button>
+                  <div class="mobile-dpad-horizontal">
+                      <button type="button" class="mobile-control-btn mobile-dpad-left" data-action="camera-left" aria-label="Déplacer caméra vers la gauche">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="m15 18-6-6 6-6"/>
+                          </svg>
+                      </button>
+                      <button type="button" class="mobile-control-btn mobile-dpad-right" data-action="camera-right" aria-label="Déplacer caméra vers la droite">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="m9 18 6-6-6-6"/>
+                          </svg>
+                      </button>
+                  </div>
+                  <button type="button" class="mobile-control-btn mobile-dpad-down" data-action="camera-down" aria-label="Déplacer caméra vers le bas">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="m6 9 6 6 6-6"/>
+                      </svg>
+                  </button>
+              </div>
+          </div>
+          
+          <div class="mobile-controls-group">
+              <div class="mobile-controls-label">Rotation</div>
+              <div class="mobile-controls-row">
+                  <button type="button" class="mobile-control-btn mobile-rotate-left" data-action="rotate-left" aria-label="Rotation gauche">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-ccw-square-icon lucide-rotate-ccw-square"><path d="M20 9V7a2 2 0 0 0-2-2h-6"/><path d="m15 2-3 3 3 3"/>
+                        <path d="M20 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/>
+                    </svg>
+                  </button>
+                  <button type="button" class="mobile-control-btn mobile-rotate-right" data-action="rotate-right" aria-label="Rotation droite">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-cw-square-icon lucide-rotate-cw-square"><path d="M12 5H6a2 2 0 0 0-2 2v3"/><path d="m9 8 3-3-3-3"/>
+                        <path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                    </svg>
+                  </button>
+              </div>
+          </div>
+          
+          <div class="mobile-controls-group">
+              <div class="mobile-controls-label">Zoom</div>
+              <div class="mobile-controls-row">
+                  <button type="button" class="mobile-control-btn mobile-zoom-out" data-action="zoom-out" aria-label="Zoom arrière">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <circle cx="11" cy="11" r="8"/>
+                          <path d="m21 21-4.35-4.35"/>
+                          <path d="M8 11h6"/>
+                      </svg>
+                  </button>
+                  <button type="button" class="mobile-control-btn mobile-zoom-in" data-action="zoom-in" aria-label="Zoom avant">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <circle cx="11" cy="11" r="8"/>
+                          <path d="m21 21-4.35-4.35"/>
+                          <path d="M11 8v6"/>
+                          <path d="M8 11h6"/>
+                      </svg>
+                  </button>
+              </div>
+          </div>
+          
+          <div class="mobile-controls-group">
+              <button type="button" class="mobile-control-btn mobile-toggle-view" data-action="toggle-isometric" aria-label="Basculer vue isométrique">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 3v18h18"/>
+                      <path d="M18 21V3"/>
+                      <path d="M3 12h18"/>
+                  </svg>
+              </button>
+          </div>
+      </div>
 
         <div class="legend-btns-container">
             <!-- Legend dropdown menu -->
@@ -1463,6 +1584,10 @@
                     <div class="legend-item legend-status">
                         <span class="status-indicator no-food"></span>
                         <span class="legend-label">Pas de nourriture</span>
+                    </div>
+                    <div class="legend-item legend-status">
+                        <span class="status-indicator market-too-far"></span>
+                        <span class="legend-label">Marché trop loin</span>
                     </div>
                 </div>
                 <div class="legend-items">

@@ -530,6 +530,11 @@
     background: #ef4444;
 }
 
+.status-indicator.market-too-far {
+    background: #a855f7; /* Purple to distinguish from no-food (red) */
+    border: 1px solid #7c3aed;
+}
+
 /* Building codes */
 .building-code {
     display: inline-block;

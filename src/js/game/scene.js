@@ -49,6 +49,10 @@ export function createScene(housesStore, gameStore, assetManager) {
     renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(window.devicePixelRatio);
     
+    // Ensure canvas allows touch events on mobile
+    renderer.domElement.style.touchAction = 'none';
+    renderer.domElement.style.pointerEvents = 'auto';
+    
     // ORIGINAL ANORIA RENDERER SHADOW SETUP (restored exactly)
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -90,6 +94,13 @@ export function createScene(housesStore, gameStore, assetManager) {
         camera.onMouseUp({ button: 1 });
         camera.onMouseUp({ button: 2 });
     }
+
+    // Touch tracking for tap vs drag detection
+    let touchStartPos = null;
+    let touchStartObject = null;
+    let touchHasMoved = false;
+    let cameraTouchInitialized = false; // Track if we've initialized camera for this touch
+    const TAP_THRESHOLD = 10; // pixels - movement below this is considered a tap
 
     function getPointerClientXY(event) {
         if (window.inputManager && window.inputManager.mouse) {
@@ -168,6 +179,13 @@ export function createScene(housesStore, gameStore, assetManager) {
                 minZ: -margin,
                 maxZ: city.size + margin
             });
+            
+            // Center camera on the city (critical for proper raycasting coordinates)
+            // This ensures clicks/touches align correctly with terrain tiles
+            // City center is at (city.size / 2, city.size / 2)
+            if (camera.centerOnCity) {
+                camera.centerOnCity(city.size);
+            }
         }
 
         // Add infinite backdrop (skydome + distant ground ring)
@@ -234,6 +252,14 @@ export function createScene(housesStore, gameStore, assetManager) {
             for(let y = 0; y < city.size; y++) {
                 // Processing city tile
               let currentBuildingId = buildings[x][y]?.userData?.type || buildings[x][y]?.userData?.id;
+              // Also check terrain for roads using isRoad property (roads are in terrain array but may be in buildings array too)
+              if (!currentBuildingId && terrain[x] && terrain[x][y] && (terrain[x][y].userData?.isRoad || terrain[x][y].name === 'roads')) {
+                  currentBuildingId = 'roads';
+                  // Ensure road is in buildings array for neighbor detection
+                  if (!buildings[x][y]) {
+                      buildings[x][y] = terrain[x][y];
+                  }
+              }
               const currentBuilding = buildings[x][y];
               const newBuildingId = city.tiles[x][y].buildingId;
               const buildingInfo =  city.tiles[x][y];
@@ -574,6 +600,48 @@ export function createScene(housesStore, gameStore, assetManager) {
 
                   // if data model has changed as user add a new building, update the mesh 
             if(newBuildingId && (newBuildingId !== currentBuildingId)) {
+                // Special handling for roads: update terrain mesh AND add to buildings array for neighbor detection
+                if (newBuildingId === 'roads') {
+                    // Update terrain mesh material to show road texture
+                    if (terrain[x] && terrain[x][y]) {
+                        const terrainMesh = terrain[x][y];
+                        const sharedMaterials = assetManager.getSharedTerrainMaterials();
+                        if (sharedMaterials && sharedMaterials['roads'] && terrainMesh.material) {
+                            terrainMesh.material = sharedMaterials['roads'];
+                            terrainMesh.name = 'roads';
+                            terrainMesh.userData.id = 'roads';
+                            terrainMesh.userData.type = 'roads';
+                            terrainMesh.userData.x = x;
+                            terrainMesh.userData.y = y;
+                            terrainMesh.userData.isBuilding = false;
+                            terrainMesh.userData.isRoad = true; // Mark as road for easier detection
+                        }
+                    }
+                    // CRITICAL: Add terrain mesh to buildings array so it's detected as a neighbor
+                    // Roads need to be in buildings array for neighbor detection to work
+                    if (!buildings[x][y]) {
+                        buildings[x][y] = terrain[x][y];
+                    }
+                } else if (currentBuildingId === 'roads' || buildings[x][y]?.userData?.isRoad) {
+                    // If removing a road, restore terrain to grass
+                    if (terrain[x] && terrain[x][y]) {
+                        const terrainMesh = terrain[x][y];
+                        const sharedMaterials = assetManager.getSharedTerrainMaterials();
+                        if (sharedMaterials && sharedMaterials['grass'] && terrainMesh.material) {
+                            terrainMesh.material = sharedMaterials['grass'];
+                            terrainMesh.name = 'grass';
+                            terrainMesh.userData.id = 'grass';
+                            terrainMesh.userData.type = 'grass';
+                            terrainMesh.userData.x = x;
+                            terrainMesh.userData.y = y;
+                        }
+                    }
+                    // Remove from buildings array when road is removed
+                    if (buildings[x][y] === terrain[x][y]) {
+                        buildings[x][y] = undefined;
+                    }
+                }
+                
                 // Check if this is the origin tile for multi-tile buildings
                 // We only create a building at the origin (top-left) tile
                 const buildingData = assetsPrices[newBuildingId];
@@ -589,8 +657,8 @@ export function createScene(housesStore, gameStore, assetManager) {
                     }
                 }
                 
-                // Only create the mesh if this is the origin tile
-                if (isOriginTile) {
+                // Only create the mesh if this is the origin tile (and it's not a road)
+                if (isOriginTile && newBuildingId !== 'roads') {
                     //remove the initial building if needed
                     let isExistingBuilding;
                     if(currentBuildingId) {
@@ -878,6 +946,9 @@ export function createScene(housesStore, gameStore, assetManager) {
         renderer.setAnimationLoop(null);
     }
 
+    // Shared backdrop materials - created once and reused to reduce texture units
+    let sharedBackdropMaterials = null;
+    
     // Add a distant ground plane + ring to fake infinity (keep existing sky background)
     function addBackdrop() {
         // Avoid duplicating if reinitializing
@@ -885,66 +956,70 @@ export function createScene(housesStore, gameStore, assetManager) {
         const existingRing = scene.getObjectByName('infinite-ground-ring');
         if (existingBase && existingRing) return;
 
-        // Get grass texture and clone it to avoid modifying the original
+        // Get grass texture - use shared materials to reduce texture unit usage
         const grassTex = (textures && textures['grass']) ? textures['grass'] : null;
         
-        // Base ground plane with grass texture
+        // Create shared backdrop materials once
+        if (!sharedBackdropMaterials) {
+            if (grassTex && grassTex instanceof THREE.Texture) {
+                // Use original texture directly (don't clone) to save texture units
+                // Set repeat on a cloned texture only if needed
+                const baseTex = grassTex.clone();
+                baseTex.wrapS = THREE.RepeatWrapping;
+                baseTex.wrapT = THREE.RepeatWrapping;
+                baseTex.repeat.set(1500, 1500); // Tile texture across the plane
+                
+                const ringTex = grassTex.clone();
+                ringTex.wrapS = THREE.RepeatWrapping;
+                ringTex.wrapT = THREE.RepeatWrapping;
+                ringTex.repeat.set(120, 120);
+                
+                sharedBackdropMaterials = {
+                    base: new THREE.MeshLambertMaterial({
+                        map: baseTex,
+                        color: 0xA4B98B,
+                        fog: true
+                    }),
+                    ring: new THREE.MeshLambertMaterial({
+                        map: ringTex,
+                        color: 0xA4B98B,
+                        fog: true,
+                        depthWrite: true
+                    })
+                };
+            } else {
+                sharedBackdropMaterials = {
+                    base: new THREE.MeshLambertMaterial({
+                        color: 0xA4B98B,
+                        fog: true
+                    }),
+                    ring: new THREE.MeshLambertMaterial({
+                        color: 0xA4B98B,
+                        fog: true,
+                        depthWrite: true
+                    })
+                };
+            }
+        }
+        
+        // Base ground plane with shared material
         try {
             const baseSize = 3000;
             const baseGeo = new THREE.PlaneGeometry(baseSize, baseSize, 1, 1);
-            let baseMat;
-            if (grassTex && grassTex instanceof THREE.Texture) {
-                // Clone texture to avoid modifying the original
-                const grassTexClone = grassTex.clone();
-                grassTexClone.wrapS = THREE.RepeatWrapping;
-                grassTexClone.wrapT = THREE.RepeatWrapping;
-                grassTexClone.repeat.set(baseSize / 2, baseSize / 2); // Tile texture across the plane
-                baseMat = new THREE.MeshLambertMaterial({
-                    map: grassTexClone,
-                    color: 0xA4B98B, // Base color if texture is not fully visible
-                    fog: true
-                });
-            } else {
-                baseMat = new THREE.MeshLambertMaterial({
-                    color: 0xA4B98B, // match in-game grass color
-                    fog: true
-                });
-            }
-            const base = new THREE.Mesh(baseGeo, baseMat);
+            const base = new THREE.Mesh(baseGeo, sharedBackdropMaterials.base);
             base.rotation.x = -Math.PI / 2;
             base.position.y = -0.02;
             base.receiveShadow = true;
             base.name = 'infinite-ground-base';
-            // Ensure it renders behind everything else but still occludes background
             base.renderOrder = -10;
             scene.add(base);
         } catch (_) {}
 
-        // Distant ground ring with grass texture
+        // Distant ground ring with shared material
         try {
             const size = 1200;
             const ringGeo = new THREE.PlaneGeometry(size, size, 1, 1);
-            let ringMat;
-            if (grassTex && grassTex instanceof THREE.Texture) {
-                // Clone texture to avoid modifying the original
-                const grassTexClone = grassTex.clone();
-                grassTexClone.wrapS = THREE.RepeatWrapping;
-                grassTexClone.wrapT = THREE.RepeatWrapping;
-                grassTexClone.repeat.set(120, 120); // Tile texture widely
-                ringMat = new THREE.MeshLambertMaterial({
-                    map: grassTexClone,
-                    color: 0xA4B98B, // Base color if texture is not fully visible
-                    fog: true,
-                    depthWrite: true
-                });
-            } else {
-                ringMat = new THREE.MeshLambertMaterial({
-                    color: 0xA4B98B,
-                    fog: true,
-                    depthWrite: true
-                });
-            }
-            const ring = new THREE.Mesh(ringGeo, ringMat);
+            const ring = new THREE.Mesh(ringGeo, sharedBackdropMaterials.ring);
             ring.rotation.x = -Math.PI / 2;
             ring.position.y = -0.01;
             ring.receiveShadow = true;
@@ -1041,8 +1116,16 @@ function onMouseMove(event) {
 
 
 function onTouchStart(event) {
-    // Block interaction if a popup is open or info modal is open
-    if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+    // If canvas has pointer-events-disabled, touch events won't reach us at all
+    // But if they do, we should still check for blocking popups
+    // BUT: panel-layout should not block events (it's configured with shouldBlockEvents: false)
+    const activePopups = window.popupManager?.getActivePopups() || [];
+    const blockingPopups = activePopups.filter(id => {
+        const config = window.popupManager?.popupConfigs?.get(id);
+        return config && config.shouldBlockEvents;
+    });
+    
+    if (blockingPopups.length > 0) {
         return;
     }
     if (isInfoModalOpen()) {
@@ -1052,21 +1135,42 @@ function onTouchStart(event) {
         return;
     }
     
-    camera.onTouchStart(event);
+    // Reset touch tracking
+    touchHasMoved = false;
+    touchStartPos = null;
+    touchStartObject = null;
+    cameraTouchInitialized = false;
     
     // Handle object selection for single touch
     if (event.touches.length === 1) {
         const touch = event.touches[0];
+        touchStartPos = { x: touch.clientX, y: touch.clientY };
         const p = { x: touch.clientX, y: touch.clientY };
         mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
         mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera.camera);
         const intersections = raycaster.intersectObjects(scene.children, false);
-        const objectToSelect = intersections.length > 0 ? intersections[0].object : null;
+        touchStartObject = intersections.length > 0 ? intersections[0].object : null;
         
-        if (objectToSelect) {
-            updateSelectedObject.call(this, objectToSelect);
-        }
+        console.log('[Touch] Touch start', {
+            pos: touchStartPos,
+            intersections: intersections.length,
+            object: touchStartObject?.name || touchStartObject?.userData?.id || 'none'
+        });
+        
+        // Don't update selection yet - wait for touchEnd to determine if it was a tap
+        
+        // For single touch, we'll handle camera in onTouchMove only if movement is significant
+        // But we still need to prevent default behavior (scrolling)
+        event.preventDefault();
+    } else if (event.touches.length === 2) {
+        // Multi-touch: always allow camera handling (pinch to zoom)
+        camera.onTouchStart(event);
+        cameraTouchInitialized = true;
+    } else {
+        // Other cases: allow camera handling
+        camera.onTouchStart(event);
+        cameraTouchInitialized = true;
     }
 }
 
@@ -1082,12 +1186,39 @@ function onTouchMove(event) {
         return;
     }
     
-    camera.onTouchMove(event);
+    // Check if touch has moved significantly (indicating a drag/pan)
+    if (touchStartPos && event.touches.length === 1) {
+        const touch = event.touches[0];
+        const deltaX = Math.abs(touch.clientX - touchStartPos.x);
+        const deltaY = Math.abs(touch.clientY - touchStartPos.y);
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        
+        if (distance > TAP_THRESHOLD) {
+            touchHasMoved = true;
+            // Movement is significant - this is a drag, so allow camera panning
+            // Need to call camera.onTouchStart first if we haven't already (for single touch)
+            if (!cameraTouchInitialized) {
+                camera.onTouchStart(event);
+                cameraTouchInitialized = true;
+            }
+            camera.onTouchMove(event);
+        }
+        // If movement is below threshold, don't call camera handlers to prevent accidental panning
+    } else {
+        // For multi-touch or when touchStartPos is not set, always allow camera handling
+        camera.onTouchMove(event);
+    }
 }
 
 function onTouchEnd(event) {
     // Block interaction if a popup is open or info modal is open
-    if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+    const activePopups = window.popupManager?.getActivePopups() || [];
+    const blockingPopups = activePopups.filter(id => {
+        const config = window.popupManager?.popupConfigs?.get(id);
+        return config && config.shouldBlockEvents;
+    });
+    
+    if (blockingPopups.length > 0) {
         return;
     }
     if (isInfoModalOpen()) {
@@ -1097,7 +1228,36 @@ function onTouchEnd(event) {
         return;
     }
     
-    camera.onTouchEnd(event);
+    // Check if this was a tap (no significant movement)
+    if (!touchHasMoved && event.changedTouches && event.changedTouches.length > 0) {
+        // Re-raycast at the touch end position to get the current object
+        // This ensures we get the correct object even if camera moved slightly
+        const touch = event.changedTouches[0];
+        const p = { x: touch.clientX, y: touch.clientY };
+        mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
+        mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera.camera);
+        const intersections = raycaster.intersectObjects(scene.children, false);
+        const objectToSelect = intersections.length > 0 ? intersections[0].object : null;
+        
+        if (objectToSelect) {
+            // This was a tap - trigger building placement
+            updateSelectedObject.call(this, objectToSelect);
+            // Prevent default behavior for taps
+            event.preventDefault();
+        }
+    }
+    
+    // Reset touch tracking
+    touchStartPos = null;
+    touchStartObject = null;
+    touchHasMoved = false;
+    
+    // Only call camera.onTouchEnd if we initialized camera touch handling
+    if (cameraTouchInitialized || event.touches.length > 0) {
+        camera.onTouchEnd(event);
+    }
+    cameraTouchInitialized = false;
 }
 
  function handleHover(intersections, hexColor, objectName="roads") {
@@ -1261,6 +1421,8 @@ function onTouchEnd(event) {
         get controls() { return controls; },
         // Expose canvas element to attach precise listeners
         get domElement() { return renderer.domElement; },
+        // Expose camera for mobile controls
+        get camera() { return camera; },
         suppressInput
     }
 }

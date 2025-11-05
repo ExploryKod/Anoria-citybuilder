@@ -1,0 +1,188 @@
+/* Mobile Camera Controls - Only visible on mobile/tablet devices */
+.mobile-camera-controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: var(--z-index-toolbar);
+    display: none; /* Hidden by default, shown only on mobile */
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(29, 34, 40, 0.9);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    border: 2px solid var(--cta);
+}
+
+/* Show on mobile/tablet devices */
+@media screen and (max-width: 1024px) {
+    .mobile-camera-controls {
+        display: flex;
+    }
+}
+
+.mobile-controls-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+}
+
+.mobile-controls-label {
+    font-size: 9px;
+    color: var(--cta);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+}
+
+.mobile-controls-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+}
+
+/* D-pad for camera movement */
+.mobile-dpad {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 4px;
+    align-items: center;
+    justify-items: center;
+}
+
+.mobile-dpad-horizontal {
+    display: flex;
+    gap: 4px;
+    grid-column: 1;
+}
+
+.mobile-dpad-up {
+    grid-row: 1;
+}
+
+.mobile-dpad-left,
+.mobile-dpad-right {
+    grid-row: 2;
+}
+
+.mobile-dpad-down {
+    grid-row: 3;
+}
+
+.mobile-control-btn {
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--cta);
+    border-radius: 8px;
+    background-color: var(--toolbar-btn-color);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+
+.mobile-control-btn:active {
+    background-color: #fff;
+    border-color: #fff;
+    transform: scale(0.95);
+    box-shadow: 0 0 10px rgba(251, 129, 34, 0.5);
+}
+
+.mobile-control-btn svg {
+    pointer-events: none;
+    width: 20px;
+    height: 20px;
+}
+
+/* D-pad button sizes */
+.mobile-dpad-up,
+.mobile-dpad-down {
+    width: 44px;
+}
+
+.mobile-dpad-left,
+.mobile-dpad-right {
+    width: 44px;
+}
+
+/* Rotation and zoom buttons */
+.mobile-rotate-left,
+.mobile-rotate-right,
+.mobile-zoom-in,
+.mobile-zoom-out {
+    width: 44px;
+    height: 44px;
+}
+
+.mobile-toggle-view {
+    width: 100%;
+    min-width: 44px;
+    height: 44px;
+}
+
+/* Hide on desktop */
+@media screen and (min-width: 1025px) {
+    .mobile-camera-controls {
+        display: none !important;
+    }
+}
+
+/* Adjust for smaller mobile screens */
+@media screen and (max-width: 768px) {
+    .mobile-camera-controls {
+        bottom: 15px;
+        right: 15px;
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .mobile-control-btn {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .mobile-control-btn svg {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .mobile-controls-label {
+        font-size: 8px;
+    }
+}
+
+/* Landscape mobile adjustments */
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    .mobile-camera-controls {
+        bottom: 10px;
+        right: 10px;
+        padding: 8px;
+        gap: 8px;
+    }
+    
+    .mobile-control-btn {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .mobile-control-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .mobile-controls-label {
+        font-size: 7px;
+    }
+}
+
+
