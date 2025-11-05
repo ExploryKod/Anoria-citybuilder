@@ -286,8 +286,9 @@
   .legend-btns-container {
     top: auto;
     bottom: 10px;
-    left: auto;
-    right: 10px !important; /* Override JavaScript positioning - bottom right corner */
+    left: 50% !important; /* Center horizontally */
+    right: auto !important;
+    transform: translateX(-50%); /* Center the container */
     flex-direction: row; /* Horizontal layout for mobile */
     gap: 8px;
   }

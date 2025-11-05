@@ -225,5 +225,76 @@
     .custom-size-button {
         width: 100%;
     }
+    
+    /* Hide city size options 20 and 24 on mobile - only show 12 and 16 */
+    .city-size-option[data-size="20"],
+    .city-size-option[data-size="24"] {
+        display: none;
+    }
+    
+    /* Hide custom size input on mobile */
+    .city-size-custom {
+        display: none;
+    }
+}
+
+/* Mobile landscape view */
+@media (max-width: 1024px) and (orientation: landscape) {
+    .city-size-selection-content {
+        padding: 20px 15px;
+        max-width: 90%;
+        max-height: 95vh;
+    }
+    
+    .city-size-selection-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+    }
+    
+    .city-size-selection-title {
+        font-size: 22px;
+        margin-bottom: 8px;
+    }
+    
+    .city-size-selection-message {
+        font-size: 14px;
+        margin-bottom: 20px;
+        line-height: 1.4;
+    }
+    
+    .city-size-options {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-top: 20px;
+    }
+    
+    .city-size-option {
+        padding: 12px 10px;
+    }
+    
+    .city-size-label {
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+    
+    .city-size-value {
+        font-size: 18px;
+        margin-bottom: 2px;
+    }
+    
+    .city-size-description {
+        font-size: 10px;
+    }
+    
+    /* Hide city size options 20 and 24 on mobile landscape - only show 12 and 16 */
+    .city-size-option[data-size="20"],
+    .city-size-option[data-size="24"] {
+        display: none;
+    }
+    
+    /* Hide custom size input on mobile landscape */
+    .city-size-custom {
+        display: none;
+    }
 }
 

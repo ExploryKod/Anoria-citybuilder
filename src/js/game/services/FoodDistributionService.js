@@ -1,6 +1,7 @@
 import { SimService } from './SimService.js';
 import { checkRoadAccess } from '../modules/ModuleHelper.js';
 import { makeDbItemId } from '../../utils/utils.js';
+import config from '../config.js';
 
 /**
  * FoodDistributionService - Manages city-wide food distribution
@@ -8,7 +9,7 @@ import { makeDbItemId } from '../../utils/utils.js';
  * Farm > Market > House logic:
  * 1. Farms produce their specific crop (Farms-Wheat → wheat, Farms-Carrot → carrot, Farms-Cabbage → cabbage)
  * 2. Markets collect food from nearby farms (adds to market stocks in IndexedDB)
- * 3. Markets distribute food to nearby houses (decreases market stocks, increases house stocks)
+ * 3. Markets distribute food to houses within distance (decreases market stocks, increases house stocks)
  * 
  * Works with IndexedDB as source of truth - all reads/writes go through housesStore
  */
@@ -22,6 +23,27 @@ export class FoodDistributionService extends SimService {
         cabbage: 1,
         food: 3 // Total food = wheat + carrot + cabbage
     };
+
+    /**
+     * Maximum distance (in tiles) a market can distribute food to houses
+     * Uses Manhattan distance (sum of x and y differences)
+     * Configurable via config.simulation.foodDistributionDistance
+     */
+    get foodDistributionDistance() {
+        return config?.simulation?.foodDistributionDistance || 5;
+    }
+
+    /**
+     * Calculate Manhattan distance between two points
+     * @param {number} x1 - X coordinate of first point
+     * @param {number} y1 - Y coordinate of first point
+     * @param {number} x2 - X coordinate of second point
+     * @param {number} y2 - Y coordinate of second point
+     * @returns {number} Manhattan distance
+     */
+    calculateDistance(x1, y1, x2, y2) {
+        return Math.abs(x1 - x2) + Math.abs(y1 - y2);
+    }
 
     /**
      * Processes food distribution city-wide
@@ -44,8 +66,11 @@ export class FoodDistributionService extends SimService {
 
             // Process each market: Farm → Market → House
             for (const market of markets) {
-                await this.processMarket(market, housesStore);
+                await this.processMarket(market, housesStore, houses);
             }
+
+            // After processing all markets, update houses that are too far from any market
+            await this.updateHousesMarketDistanceStatus(markets, houses, housesStore);
         } catch (error) {
             console.error('[FoodDistributionService] Error processing food distribution:', {
                 error: error?.message || error,
@@ -64,9 +89,10 @@ export class FoodDistributionService extends SimService {
      * 
      * @param {Object} market - Market building from database
      * @param {HousesStore} housesStore - Database store
+     * @param {Array} allHouses - All houses from database (for distance-based distribution)
      * @returns {Promise<void>}
      */
-    async processMarket(market, housesStore) {
+    async processMarket(market, housesStore, allHouses = []) {
         // Get fresh data from IndexedDB (source of truth)
         const marketId = market.id || market.name;
         console.log('[FoodDistributionService] Processing market:', {
@@ -140,11 +166,130 @@ export class FoodDistributionService extends SimService {
             console.log('[FoodDistributionService] No farms nearby for market:', marketId);
         }
 
-        // Step 2: Distribute food from market to houses (Market → House)
-        if (marketHouses.length > 0) {
-            await this.distributeFoodToHouses(marketId, marketHouses, housesStore);
+        // Step 2: Distribute food from market to houses within distance (Market → House)
+        // Use distance-based distribution instead of just neighbors
+        const housesInRange = this.findHousesInRange(marketData, allHouses);
+        
+        if (housesInRange.length > 0) {
+            await this.distributeFoodToHouses(marketId, housesInRange, housesStore);
         } else {
-            console.log('[FoodDistributionService] No houses nearby for market:', marketId);
+            console.log('[FoodDistributionService] No houses within range for market:', marketId);
+        }
+    }
+
+    /**
+     * Finds all houses within food distribution distance of a market
+     * Uses Manhattan distance (configurable via config.simulation.foodDistributionDistance)
+     * 
+     * @param {Object} market - Market building from database (must have x, y coordinates)
+     * @param {Array} allHouses - All houses from database
+     * @returns {Array} Array of house objects within range
+     */
+    findHousesInRange(market, allHouses) {
+        if (!market || market.x === undefined || market.y === undefined) {
+            console.warn('[FoodDistributionService] Market missing coordinates:', market);
+            return [];
+        }
+
+        const marketX = market.x;
+        const marketY = market.y;
+        const maxDistance = this.foodDistributionDistance;
+
+        // Filter houses that are within range and have road access
+        const housesInRange = allHouses.filter(house => {
+            // Only process houses (not markets, farms, etc.)
+            const houseType = house.type || '';
+            if (!houseType.includes('House') && !houseType.includes('house')) {
+                return false;
+            }
+
+            // Check if house has coordinates
+            if (house.x === undefined || house.y === undefined) {
+                return false;
+            }
+
+            // Calculate distance
+            const distance = this.calculateDistance(marketX, marketY, house.x, house.y);
+            
+            // Check if house is within range
+            if (distance > maxDistance) {
+                return false;
+            }
+
+            // Check if house has road access (required for food distribution)
+            const neighbors = house.neighbors || [];
+            const { hasAccess: hasRoadAccess } = checkRoadAccess(neighbors);
+            
+            return hasRoadAccess;
+        });
+
+        console.log('[FoodDistributionService] Houses in range of market:', {
+            marketId: market.id || market.name,
+            marketPosition: { x: marketX, y: marketY },
+            maxDistance,
+            housesInRange: housesInRange.length,
+            houseIds: housesInRange.map(h => h.id || h.name)
+        });
+
+        return housesInRange;
+    }
+
+    /**
+     * Updates houses' market distance status in IndexedDB
+     * Marks houses that are too far from any market with road access
+     * 
+     * @param {Array} markets - All markets from database
+     * @param {Array} allHouses - All houses from database
+     * @param {HousesStore} housesStore - Database store
+     * @returns {Promise<void>}
+     */
+    async updateHousesMarketDistanceStatus(markets, allHouses, housesStore) {
+        // Find all markets with road access
+        const marketsWithRoadAccess = [];
+        for (const market of markets) {
+            const marketData = await housesStore.getHouse(market.id || market.name);
+            if (marketData) {
+                const neighbors = marketData.neighbors || [];
+                const { hasAccess: hasRoadAccess } = checkRoadAccess(neighbors);
+                if (hasRoadAccess && marketData.x !== undefined && marketData.y !== undefined) {
+                    marketsWithRoadAccess.push(marketData);
+                }
+            }
+        }
+
+        // Process each house
+        for (const house of allHouses) {
+            const houseType = house.type || '';
+            if (!houseType.includes('House') && !houseType.includes('house')) {
+                continue; // Skip non-houses
+            }
+
+            if (house.x === undefined || house.y === undefined) {
+                continue; // Skip houses without coordinates
+            }
+
+            // Check if house is within range of any market with road access
+            let isWithinRange = false;
+            for (const market of marketsWithRoadAccess) {
+                const distance = this.calculateDistance(house.x, house.y, market.x, market.y);
+                if (distance <= this.foodDistributionDistance) {
+                    isWithinRange = true;
+                    break;
+                }
+            }
+
+            // Update house status in IndexedDB
+            const houseId = house.id || house.name;
+            if (houseId) {
+                await housesStore.updateHouseFields(houseId, {
+                    marketTooFar: !isWithinRange
+                }).catch(err => {
+                    console.warn('[FoodDistributionService] Failed to update house market distance status:', {
+                        houseId,
+                        error: err?.message || err
+                    });
+                });
+            }
         }
     }
 
@@ -283,14 +428,14 @@ export class FoodDistributionService extends SimService {
     }
 
     /**
-     * Distributes food from market to nearby houses
+     * Distributes food from market to houses within range
      * 
      * Markets distribute 1 wheat + 1 carrot + 1 cabbage to each house
      * Market stocks are decreased accordingly (farm > market > house logic)
      * Only distributes if market has enough food of each type
      * 
      * @param {string} marketId - Market ID
-     * @param {Array} houses - Array of house neighbor objects
+     * @param {Array} houses - Array of house objects (within range)
      * @param {HousesStore} housesStore - Database store
      * @returns {Promise<void>}
      */
@@ -361,39 +506,25 @@ export class FoodDistributionService extends SimService {
 
         // Distribute food to each house (get fresh data from IndexedDB)
         const updatePromises = [];
-        for (const houseNeighbor of housesToDistribute) {
-            // Neighbors can have id, name, or buildingId - try all
-            // If only name/type is present, construct full ID from coordinates
-            let houseId = houseNeighbor.id || houseNeighbor.buildingId;
-            if (!houseId) {
-                // Try to construct ID from name (type) and coordinates
-                const houseType = houseNeighbor.name;
-                if (houseType && houseNeighbor.x !== undefined && houseNeighbor.y !== undefined) {
-                    houseId = makeDbItemId(houseType, houseNeighbor.x, houseNeighbor.y);
-                    if (!houseId) {
-                        console.warn('[FoodDistributionService] Failed to construct house ID from neighbor:', {
-                            type: houseType,
-                            x: houseNeighbor.x,
-                            y: houseNeighbor.y,
-                            neighbor: houseNeighbor
-                        });
-                    } else {
-                        console.log('[FoodDistributionService] Constructed house ID from neighbor:', {
-                            constructedId: houseId,
-                            originalNeighbor: houseNeighbor
-                        });
-                    }
+        for (const house of housesToDistribute) {
+            // Houses from findHousesInRange already have id or name
+            let houseId = house.id || house.name || house.buildingId;
+            if (!houseId && house.x !== undefined && house.y !== undefined) {
+                // Try to construct ID from type and coordinates
+                const houseType = house.type || house.name;
+                if (houseType) {
+                    houseId = makeDbItemId(houseType, house.x, house.y);
                 }
             }
             if (!houseId) {
-                console.warn('[FoodDistributionService] House neighbor missing ID:', houseNeighbor);
+                console.warn('[FoodDistributionService] House missing ID:', house);
                 continue;
             }
 
             try {
                 console.log('[FoodDistributionService] Processing house for distribution:', {
                     houseId,
-                    neighborData: houseNeighbor
+                    houseData: house
                 });
                 
                 // Get fresh house data from IndexedDB
@@ -401,7 +532,7 @@ export class FoodDistributionService extends SimService {
                 if (!houseData) {
                     console.warn('[FoodDistributionService] House not found in database:', {
                         houseId,
-                        neighborData: houseNeighbor
+                        houseData: house
                     });
                     continue;
                 }
