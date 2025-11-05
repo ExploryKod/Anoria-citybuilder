@@ -1421,6 +1421,8 @@ function onTouchEnd(event) {
         get controls() { return controls; },
         // Expose canvas element to attach precise listeners
         get domElement() { return renderer.domElement; },
+        // Expose camera for mobile controls
+        get camera() { return camera; },
         suppressInput
     }
 }
