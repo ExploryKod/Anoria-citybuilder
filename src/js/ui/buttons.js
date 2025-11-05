@@ -1221,67 +1221,9 @@ window.onload = async () => {
     }
     
     // Budget panel functionality - get elements directly to avoid timing issues
-    const budgetBtn = document.getElementById('budget-btn');
-    const budgetPanelEl = document.getElementById('budget-panel');
-    const budgetPanelCloseBtnEl = document.querySelector('.budget-panel-close-btn');
-    
-    if (budgetBtn) {
-        budgetBtn.addEventListener('click', () => {
-            budgetPanelEl.classList.add('active');
-            
-            // Utiliser PopupManager pour gérer les événements
-            if (window.popupManager) {
-                window.popupManager.forceOpenPopup('budget-panel');
-            } else {
-                console.warn('PopupManager not available, falling back to manual pause');
-                // Fallback: pause manuel si PopupManager n'est pas disponible
-                if (window.game) {
-                    window.game.pause();
-                }
-            }
-            
-            updateBudgetDisplay();
-        });
-    } else {
-        console.warn('Budget button not found in DOM');
-    }
-    
-    if (budgetPanelCloseBtnEl) {
-        budgetPanelCloseBtnEl.addEventListener('click', () => {
-            budgetPanelEl.classList.remove('active');
-            
-            // Utiliser PopupManager pour gérer les événements
-            if (window.popupManager) {
-                window.popupManager.forceClosePopup('budget-panel');
-            } else {
-                console.warn('PopupManager not available, falling back to manual resume');
-                // Fallback: resume manuel si PopupManager n'est pas disponible
-                if (window.game) {
-                    window.game.play();
-                }
-            }
-        });
-    }
-    
-    if (budgetPanelEl) {
-        // Close budget panel when clicking outside
-        budgetPanelEl.addEventListener('click', (e) => {
-            if (e.target === budgetPanelEl) {
-                budgetPanelEl.classList.remove('active');
-                
-                // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceClosePopup('budget-panel');
-                } else {
-                    console.warn('PopupManager not available, falling back to manual resume (outside click)');
-                    // Fallback: resume manuel si PopupManager n'est pas disponible
-                    if (window.game) {
-                        window.game.play();
-                    }
-                }
-            }
-        });
-    }
+    // Budget button now opens the centered balance sheet modal
+    // The old budget-panel slide-in functionality is replaced by balance-sheet-panel
+    // Note: budget-panel code is kept for backwards compatibility but not used
     
     // Register with AppRegistry (window.app) if available, else use direct window.* (backwards compatible)
     appRegister('gameStore', gameStore);
@@ -1325,6 +1267,9 @@ window.onload = async () => {
     
     // Initialize journal popup
     initJournalPopup();
+    
+    // Initialize balance sheet popup
+    initBalanceSheetPopup();
 }
 
 // Real-time Budget Popup Functions
@@ -2920,6 +2865,53 @@ function initLoanSystem() {
     updateLoanSummary();
 }
 
+
+// Balance Sheet Popup Functions (using budget-panel-wrapper)
+function initBalanceSheetPopup() {
+    const budgetBtn = document.getElementById('budget-btn');
+    const budgetPanel = document.getElementById('budget-panel');
+    const budgetPanelCloseBtn = document.querySelector('.budget-panel-close-btn');
+
+    if (!budgetBtn || !budgetPanel || !budgetPanelCloseBtn) {
+        console.warn('Balance sheet popup elements not found');
+        return;
+    }
+
+    // Open balance sheet popup on budget button click
+    budgetBtn.addEventListener('click', () => {
+        budgetPanel.classList.add('active');
+        
+        // Utiliser PopupManager pour gérer les événements
+        if (window.popupManager) {
+            window.popupManager.forceOpenPopup('budget-panel');
+        }
+        
+        // Update balance sheet data
+        updateBudgetDisplay();
+    });
+
+    // Close popup on close button click
+    budgetPanelCloseBtn.addEventListener('click', () => {
+        budgetPanel.classList.remove('active');
+        
+        // Utiliser PopupManager pour gérer les événements
+        if (window.popupManager) {
+            window.popupManager.forceClosePopup('budget-panel');
+        }
+    });
+
+    // Close popup when clicking outside
+    budgetPanel.addEventListener('click', (e) => {
+        if (e.target === budgetPanel) {
+            budgetPanel.classList.remove('active');
+            
+            // Utiliser PopupManager pour gérer les événements
+            if (window.popupManager) {
+                window.popupManager.forceClosePopup('budget-panel');
+            }
+        }
+    });
+}
 
 // Loans Popup Functions
 function initLoansPopup() {

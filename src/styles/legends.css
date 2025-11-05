@@ -4,7 +4,7 @@
   top: 5px;
   /* Left position is set dynamically by JavaScript based on toolbar width */
   left: 115px; /* Fallback value, will be overridden by JS */
-  z-index: 10015; /* Between loader (10020) and left panel (10010) */
+  z-index: var(--z-index-legend);
   display: none; /* Hidden initially, shown after scene loads */
   flex-direction: column;
   gap: 8px;

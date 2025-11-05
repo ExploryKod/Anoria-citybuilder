@@ -8,7 +8,7 @@
     max-height: 725px;
     background: #fafafa;
     border-left: 3px solid var(--cta);
-    z-index: 10010; /* Z-index plus élevé que la toolbar carousel */
+    z-index: var(--z-index-modal);
     transition: right 0.3s ease-in-out;
     overflow-y: auto;
     color: var(--primary);

@@ -40,6 +40,18 @@
     /* height des container */
     --top-container-h: 10vh;
     --progress-bar-h: 2vh;
+
+    /* Z-index Management - Hierarchical System */
+    --z-index-base: 1;
+    --z-index-canvas: 1;
+    --z-index-toolbar: 1000;
+    --z-index-tooltip: 1000;
+    --z-index-panel: 10010;
+    --z-index-legend: 10015;
+    --z-index-loader: 10020;
+    --z-index-info-panel: 10020;
+    --z-index-modal: 10030; /* Maximum z-index for modals */
+    --z-index-notification: 10040; /* Highest - for notifications that must appear above everything */
 }
 
 *,
@@ -104,7 +116,7 @@ html, body {
 canvas {
     width: 100vw !important;
     height: 100vh !important;
-    z-index: 1; /* Z-index bas pour être en dessous des éléments UI */
+    z-index: var(--z-index-canvas);
 }
 
 /* Ajuster le canvas pour mobile paysage */
@@ -908,11 +920,10 @@ footer a:hover {
     width: 420px;
     max-height: 460px;
     position: absolute;
-    right: 100%;
+    right: 0;
     top: 140px;
     bottom: auto;
-    opacity: 0;
-    visibility: hidden;
+    /* GSAP will handle all animations - no CSS transitions needed */
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -922,8 +933,6 @@ footer a:hover {
     background: #fff;
     color: #1b1b1b;
     box-shadow: 0 12px 30px rgba(0,0,0,0.25);
-    transform: translateX(16px) translateY(0) scale(0.98);
-    transition: opacity 240ms ease, transform 280ms ease, right 240ms ease, visibility 0s linear 240ms;
     pointer-events: none;
 }
 
@@ -989,14 +998,10 @@ footer a:hover {
 }
 
 .info-building-overlay.active {
+    /* GSAP handles all animations - this class is just for state management */
     pointer-events: auto;
     background: #fff;
-    z-index: 10020; /* Z-index plus élevé que la toolbar carousel */
-    right: 0;
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(0) translateY(0) scale(1);
-    transition: opacity 260ms ease, transform 300ms ease, right 260ms ease;
+    /* z-index and visibility are handled by GSAP */
 }
 
 .info-building-overlay.active button {
@@ -1124,7 +1129,7 @@ footer a:hover {
     flex-direction: column;
     padding: 24px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    z-index: 10020; /* Z-index plus élevé que la toolbar carousel */
+    z-index: var(--z-index-info-panel);
     text-align: center;
 }
 
