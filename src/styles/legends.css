@@ -2,11 +2,13 @@
 .legend-btns-container {
   position: absolute;
   top: 5px;
-  left: 115px; /* Positioned just after the left panel (toolbar is ~109px wide) */
-  z-index: 10020;
-  display: flex;
+  /* Left position is set dynamically by JavaScript based on toolbar width */
+  left: 115px; /* Fallback value, will be overridden by JS */
+  z-index: var(--z-index-legend);
+  display: none; /* Hidden initially, shown after scene loads */
   flex-direction: column;
   gap: 8px;
+  /* GSAP will handle the animation */
 }
 
 /* Legend buttons - common styles for all legend buttons */
@@ -279,22 +281,69 @@
   transform: translateX(0);
 }
 
-/* Mobile responsive */
-@media (max-width: 768px) {
+/* Tablet and Mobile responsive */
+@media (max-width: 1024px) {
   .legend-btns-container {
-    top: 10px;
-    left: 10px;
+    top: auto;
+    bottom: 10px;
+    left: auto;
+    right: 10px !important; /* Override JavaScript positioning - bottom right corner */
+    flex-direction: row; /* Horizontal layout for mobile */
+    gap: 8px;
   }
   
+  /* Hide text, show only icons */
+  .legend-toggle-btn span,
+  .finance-toggle-btn span,
+  .command-toggle-btn span {
+    display: none;
+  }
+  
+  /* Make buttons icon-only, square shape */
   .legend-toggle-btn,
   .finance-toggle-btn,
   .command-toggle-btn {
-    min-width: 150px;
+    min-width: 48px;
+    width: 48px;
+    height: 48px;
+    padding: 8px;
+    justify-content: center;
+    border-radius: 50%; /* Circular buttons on mobile */
   }
-
+  
+  /* Adjust dropdown positions for bottom-right buttons */
+  .legend-dropdown,
+  .finance-dropdown {
+    top: auto;
+    bottom: 100%;
+    left: auto;
+    right: 0;
+    margin-left: 0;
+    margin-right: 0;
+    margin-bottom: 8px;
+    transform: translateY(10px);
+  }
+  
+  .legend-dropdown:not(.hidden),
+  .finance-dropdown:not(.hidden) {
+    transform: translateY(0);
+  }
+  
   .command-dropdown {
-    max-width: calc(100vw - 100px);
+    top: auto;
+    bottom: 100%;
+    left: auto;
+    right: 0;
+    margin-left: 0;
+    margin-right: 0;
+    margin-bottom: 8px;
+    transform: translateY(10px);
+    max-width: calc(100vw - 20px);
     font-size: 12px;
+  }
+  
+  .command-dropdown:not(.hidden) {
+    transform: translateY(0);
   }
 
   .legend-dropdown {
@@ -305,6 +354,31 @@
   .finance-dropdown {
     max-width: 200px;
     font-size: 12px;
+  }
+}
+
+/* Smaller mobile devices */
+@media (max-width: 768px) {
+  .legend-btns-container {
+    bottom: 8px;
+    right: 8px !important;
+    gap: 6px;
+  }
+  
+  .legend-toggle-btn,
+  .finance-toggle-btn,
+  .command-toggle-btn {
+    min-width: 44px;
+    width: 44px;
+    height: 44px;
+    padding: 6px;
+  }
+  
+  .legend-dropdown,
+  .finance-dropdown,
+  .command-dropdown {
+    max-width: calc(100vw - 16px);
+    font-size: 11px;
   }
 }
 

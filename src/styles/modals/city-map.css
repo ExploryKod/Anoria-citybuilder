@@ -11,7 +11,7 @@
     display: none;
     justify-content: center;
     align-items: center;
-    z-index: 10010; /* Z-index plus élevé que la toolbar carousel */
+    z-index: var(--z-index-modal);
     overflow: auto;
     padding: 20px;
 }

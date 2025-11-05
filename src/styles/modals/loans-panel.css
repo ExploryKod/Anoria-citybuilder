@@ -6,7 +6,7 @@
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 10010; /* Z-index plus élevé que la toolbar carousel */
+    z-index: var(--z-index-modal);
     display: none;
     align-items: center;
     justify-content: center;
