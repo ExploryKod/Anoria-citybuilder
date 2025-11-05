@@ -222,6 +222,12 @@ export function createGame(housesStore, gameStore, assetManager) {
 
     // handler function to extract coordinate of an object I click on (data from asset js and using scene js methods)
     scene.onObjectSelected = async (selectedObject) => {
+        console.log('[Game] onObjectSelected called', {
+            activeToolId: activeToolId,
+            objectName: selectedObject?.name,
+            userData: selectedObject?.userData
+        });
+        
         selectedObject.info = '';
         selectedObject.name = activeToolId !== 'select-object'? activeToolId : selectedObject.name;
         // Object selected
@@ -577,6 +583,10 @@ export function createGame(housesStore, gameStore, assetManager) {
             if(infos[key]) {
                 return infos[key]
             }
+        },
+
+        get activeToolId() {
+            return activeToolId;
         },
 
         setActiveToolId(toolId) {
