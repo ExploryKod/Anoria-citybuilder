@@ -109,6 +109,7 @@ class PopupManager {
             onOpen: () => {},
             onClose: () => {}
         });
+
     }
 
     /**

@@ -1,3 +1,98 @@
+/* Balance Sheet Panel Styles - Centered modal like loans-panel */
+.balance-sheet-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: var(--z-index-modal);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.balance-sheet-panel.active {
+    display: flex !important;
+}
+
+.balance-sheet-panel-wrapper {
+    background: #fafafa;
+    color: var(--primary);
+    border-radius: 15px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    width: 90%;
+    max-width: 1000px;
+    max-height: 85vh;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+}
+
+.balance-sheet-panel-header {
+    background: white;
+    padding: 20px;
+    border-bottom: 2px solid var(--cta);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.balance-sheet-panel-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.balance-sheet-panel-close-btn {
+    background: white;
+    border: none;
+    color: var(--cta);
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease-in-out;
+    border: 3px solid var(--cta);
+}
+
+.balance-sheet-panel-close-btn:hover {
+    background: var(--cta);
+    color: white;
+}
+
+/* Custom scrollbar for balance sheet panel content */
+.balance-sheet-panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.balance-sheet-panel-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.balance-sheet-panel-content::-webkit-scrollbar-thumb {
+    background: var(--cta);
+    border-radius: 3px;
+}
+
+.balance-sheet-panel-content::-webkit-scrollbar-thumb:hover {
+    background: var(--cta-05);
+}
+
+/* Firefox scrollbar for balance sheet panel content */
+.balance-sheet-panel-content {
+    padding: 20px;
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--cta) transparent;
+}
+
 /* Balance Sheet Styles */
 .balance-sheet {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -236,4 +331,83 @@
 
 .balance-sheet-total.hidden {
     display: none;
+}
+
+/* Mobile Landscape Responsive Styles */
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    .balance-sheet-panel-wrapper {
+        width: 95%;
+        max-width: none;
+        max-height: 90vh;
+    }
+
+    .balance-sheet-panel-header {
+        padding: 15px;
+    }
+
+    .balance-sheet-panel-header h2 {
+        font-size: 1.3rem;
+    }
+
+    .balance-sheet-panel-close-btn {
+        width: 32px;
+        height: 32px;
+        padding: 4px;
+    }
+
+    .balance-sheet-panel-content {
+        padding: 15px;
+    }
+
+    .balance-sheet-header {
+        margin-bottom: 15px;
+        padding: 10px;
+        padding-bottom: 8px;
+    }
+
+    .balance-sheet-date {
+        font-size: 0.8rem;
+    }
+
+    .balance-sheet-section {
+        margin-bottom: 20px;
+        padding: 10px;
+    }
+
+    .balance-sheet-title {
+        font-size: 1rem;
+        margin-bottom: 10px;
+        padding: 6px 10px;
+    }
+
+    .balance-sheet-group {
+        margin-bottom: 15px;
+    }
+
+    .balance-sheet-subtitle {
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+    .balance-sheet-item {
+        padding: 6px 12px;
+        margin-bottom: 4px;
+        font-size: 0.9rem;
+    }
+
+    .balance-sheet-subitem {
+        padding: 5px 15px;
+        font-size: 0.85rem;
+    }
+
+    .balance-sheet-subdetail {
+        padding: 3px 25px;
+        font-size: 0.8rem;
+    }
+
+    .balance-sheet-total {
+        font-size: 1rem;
+        padding: 6px 10px;
+        margin-top: 8px;
+    }
 }
