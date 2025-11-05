@@ -1,57 +1,79 @@
-/* Urban Advice Center Styles */
+/* Budget Panel - Centered Modal like loans-panel */
 .budget-panel {
     position: fixed;
-    top: 75px;
-    left: -500px;
-    width: 500px;
-    height: calc(100vh - 75px);
-    max-height: 725px;
-    background: #fafafa;
-    border-right: 3px solid var(--cta);
-    z-index: 10010; /* Z-index plus élevé que la toolbar carousel */
-    transition: left 0.3s ease-in-out;
-    overflow-y: auto;
-    color: var(--primary);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: var(--z-index-modal);
+    display: none;
+    align-items: center;
+    justify-content: center;
 }
 
 .budget-panel.active {
-    left: 109px;
+    display: flex !important;
 }
 
-.budget-wrapper {
-    padding: 20px;
-    height: 100%;
+.budget-panel-wrapper {
+    background: #fafafa;
+    color: var(--primary);
+    border-radius: 15px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    width: 90%;
+    max-width: 1000px;
+    max-height: 85vh;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
     flex-direction: column;
 }
 
-.budget-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
+.budget-panel-header {
+    background: white;
+    padding: 20px;
     border-bottom: 2px solid var(--cta);
+    display: flex;
+    align-items: center;
+    gap: 20px;
 }
 
-.budget-header h3 {
-    color: var(--cta);
-    font-size: 1.2rem;
-    font-weight: 700;
+.budget-health-indicator {
+    flex-shrink: 0;
+    min-width: fit-content;
+}
+
+.budget-panel-title-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.budget-panel-header h2 {
     margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--primary);
+    text-align: center;
 }
 
 .budget-panel-close-btn {
     background: white;
     border: none;
     color: var(--cta);
-    cursor: pointer;
-    padding: 8px;
+    width: 40px;
+    height: 40px;
     border-radius: 10px;
-    transition: all 0.3s ease-in-out;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.3s ease-in-out;
+    border: 3px solid var(--cta);
+    flex-shrink: 0;
+    min-width: 40px;
 }
 
 .budget-panel-close-btn:hover {
@@ -59,10 +81,31 @@
     color: white;
 }
 
-.budget-content {
+/* Custom scrollbar for budget panel content */
+.budget-panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.budget-panel-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.budget-panel-content::-webkit-scrollbar-thumb {
+    background: var(--cta);
+    border-radius: 3px;
+}
+
+.budget-panel-content::-webkit-scrollbar-thumb:hover {
+    background: var(--cta-05);
+}
+
+/* Firefox scrollbar for budget panel content */
+.budget-panel-content {
+    padding: 20px;
     flex: 1;
-    display: flex;
-    flex-direction: column;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--cta) transparent;
 }
 
 /* Tabs Navigation */
@@ -111,35 +154,28 @@
 
 /* Mobile Landscape Responsive Styles */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
-    .budget-panel {
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100vh;
-        max-height: none;
-        border-right: none;
-        border-bottom: 3px solid var(--cta);
+    .budget-panel-wrapper {
+        width: 95%;
+        max-width: none;
+        max-height: 90vh;
     }
 
-    .budget-panel.active {
-        left: 0;
-    }
-
-    .budget-wrapper {
+    .budget-panel-header {
         padding: 15px;
     }
 
-    .budget-header {
-        margin-bottom: 15px;
-        padding-bottom: 10px;
+    .budget-panel-header h2 {
+        font-size: 1.3rem;
     }
 
-    .budget-header h3 {
-        font-size: 1.1rem;
+    .budget-panel-close-btn {
+        width: 32px;
+        height: 32px;
+        padding: 4px;
     }
 
-    .budget-content {
-        gap: 15px;
+    .budget-panel-content {
+        padding: 15px;
     }
 
     .budget-tabs {
