@@ -144,6 +144,13 @@ canvas.pointer-events-disabled {
     }
 }
 
+/* Allow touch events on mobile in portrait mode */
+@media screen and (max-width: 1024px) and (orientation: portrait) {
+    canvas {
+        pointer-events: auto !important;
+    }
+}
+
 .root-window {
     width: 100%;
     height: 100%;
@@ -270,6 +277,51 @@ canvas.pointer-events-disabled {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* Ensure pause, replay, and play buttons match other toolbar buttons (no pink styling) */
+#pause-btn,
+#replay-btn,
+#play-btn {
+    background-color: var(--toolbar-btn-color) !important;
+    border: 3px solid var(--cta) !important;
+    color: var(--primary) !important;
+}
+
+#pause-btn:hover,
+#replay-btn:hover,
+#play-btn:hover {
+    background-color: #fff !important;
+    border: 3px solid #fff !important;
+    color: var(--primary) !important;
+}
+
+#pause-btn:active,
+#replay-btn:active,
+#play-btn:active {
+    box-shadow: 0 0 10px #000235 !important;
+}
+
+/* Override bubbly-button styles if the class is still present */
+#play-btn.bubbly-button {
+    background-color: var(--toolbar-btn-color) !important;
+    color: var(--primary) !important;
+    box-shadow: none !important;
+    border: 3px solid var(--cta) !important;
+    border-radius: 10px !important;
+}
+
+#play-btn.bubbly-button:hover {
+    background-color: #fff !important;
+    border: 3px solid #fff !important;
+    color: var(--primary) !important;
+    box-shadow: none !important;
+}
+
+#play-btn.bubbly-button:active {
+    box-shadow: 0 0 10px #000235 !important;
+    transform: none !important;
+    background-color: var(--toolbar-btn-color) !important;
 }
 
 #faster-btn:active {

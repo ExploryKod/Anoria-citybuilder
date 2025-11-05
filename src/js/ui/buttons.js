@@ -823,6 +823,125 @@ function makeNewButton(buttonInfo, svg="") {
 }
 
 
+// Function to show city size selection modal and return selected size
+function showCitySizeSelection() {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('city-size-selection-modal');
+        const options = modal?.querySelectorAll('.city-size-option');
+        const customInput = modal?.querySelector('#custom-city-size');
+        const customButton = modal?.querySelector('#custom-size-apply');
+        
+        if (!modal || !options) {
+            // Fallback: return default size if modal doesn't exist
+            resolve(16);
+            return;
+        }
+        
+        // Check if mobile device (used throughout the function)
+        const isMobile = window.innerWidth <= 1024;
+        const maxSize = isMobile ? 16 : 24;
+        
+        // Helper function to select a size and close modal
+        const selectSize = (size) => {
+            // Clamp size to valid range based on device type
+            size = Math.max(12, Math.min(maxSize, size));
+            
+            // Remove selected class from all options
+            options.forEach(opt => opt.classList.remove('selected'));
+            
+            // Check if it matches a preset option
+            const matchingOption = Array.from(options).find(opt => 
+                parseInt(opt.dataset.size, 10) === size
+            );
+            
+            if (matchingOption) {
+                matchingOption.classList.add('selected');
+            } else {
+                // Custom size - update input value
+                if (customInput) {
+                    customInput.value = size;
+                }
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('selectedCitySize', size.toString());
+            
+            // Hide modal
+            modal.classList.remove('active');
+            
+            // Show chronos loader
+            const chronosLoader = document.getElementById('chronos-loader-modal');
+            if (chronosLoader) {
+                chronosLoader.classList.remove('hidden');
+                chronosLoader.classList.add('opaque');
+            }
+            
+            // Resolve with selected size
+            setTimeout(() => resolve(size), 300); // Small delay for animation
+        };
+        
+        // Check if user has a saved preference
+        const savedSize = parseInt(localStorage.getItem('selectedCitySize'), 10);
+        const minSize = 12;
+        
+        if (savedSize && savedSize >= minSize && savedSize <= maxSize) {
+            // Pre-select the saved size (clamp to mobile max if needed)
+            const clampedSize = Math.min(savedSize, maxSize);
+            const matchingOption = Array.from(options).find(opt => 
+                parseInt(opt.dataset.size, 10) === clampedSize
+            );
+            if (matchingOption) {
+                matchingOption.classList.add('selected');
+            } else if (customInput && !isMobile) {
+                customInput.value = clampedSize;
+            }
+        } else {
+            // Default to 16 on mobile, 24 on desktop
+            const defaultSize = isMobile ? 16 : 24;
+            const defaultOption = Array.from(options).find(opt => parseInt(opt.dataset.size, 10) === defaultSize);
+            if (defaultOption) {
+                defaultOption.classList.add('selected');
+            }
+        }
+        
+        // Handle preset option clicks
+        options.forEach(option => {
+            option.addEventListener('click', () => {
+                const size = parseInt(option.dataset.size, 10);
+                selectSize(size);
+            });
+        });
+        
+        // Handle custom input
+        if (customInput && customButton) {
+            // Update input when preset is selected
+            options.forEach(option => {
+                option.addEventListener('click', () => {
+                    customInput.value = parseInt(option.dataset.size, 10);
+                });
+            });
+            
+            // Handle apply button
+            customButton.addEventListener('click', () => {
+                const customSize = parseInt(customInput.value, 10);
+                if (!isNaN(customSize) && customSize >= 12 && customSize <= maxSize) {
+                    selectSize(customSize);
+                } else {
+                    alert(`Veuillez entrer une taille entre 12 et ${maxSize}.`);
+                    customInput.focus();
+                }
+            });
+            
+            // Handle Enter key in input
+            customInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    customButton.click();
+                }
+            });
+        }
+    });
+}
+
 window.onload = async () => {
 
     // Root initialization
@@ -1228,7 +1347,10 @@ window.onload = async () => {
     // Register with AppRegistry (window.app) if available, else use direct window.* (backwards compatible)
     appRegister('gameStore', gameStore);
     appRegister('housesStore', housesStore);
-    const game = createGame(housesStore, gameStore, assetManager);
+    
+    // Show city size selection modal before creating game
+    const selectedCitySize = await showCitySizeSelection();
+    const game = createGame(housesStore, gameStore, assetManager, selectedCitySize);
     appRegister('game', game);
     
     // Functions can be registered as well
@@ -1238,6 +1360,22 @@ window.onload = async () => {
             getButtonsDisabled()
             // For panel buttons (house selection), just close the modal and set the tool
             closeModal();
+            
+            // Ensure canvas pointer events are enabled after closing modal
+            const canvas = document.querySelector('canvas');
+            if (canvas) {
+                canvas.classList.remove('pointer-events-disabled');
+                // Force enable pointer events on mobile
+                canvas.style.pointerEvents = 'auto';
+                canvas.style.touchAction = 'none';
+                // Add canvas-interactive class for mobile landscape
+                canvas.classList.add('canvas-interactive');
+            }
+            
+            // Also ensure PopupManager knows panel-layout is closed
+            if (window.popupManager) {
+                window.popupManager.forceClosePopup('panel-layout');
+            }
         } else {
             // For toolbar buttons, toggle the modal
             toggleModal(e)
@@ -1936,6 +2074,10 @@ async function generateCityMap() {
                     const stocks = building.stocks || {};
                     const hasFood = canHaveFood ? (stocks.food > 0 || stocks.wheat > 0 || stocks.carrot > 0 || stocks.cabbage > 0) : true;
                     
+                    // Check if house is too far from market (for houses only)
+                    const isHouse = building.type && (building.type.includes('House') || building.type.includes('house'));
+                    const marketTooFar = isHouse ? (building.marketTooFar === true) : false;
+                    
                     // Determine category for filtering
                     let category = 'services';
                     if (building.type && (building.type.includes('House') || building.type.includes('Palace'))) {
@@ -1956,8 +2098,12 @@ async function generateCityMap() {
                     if (needsRoadAccess && !hasRoad) {
                         tableHTML += `<span class="status-indicator no-road" title="Pas de route"></span>`;
                     }
-                    // Only show food indicator for buildings that can have food
-                    if (canHaveFood && !hasFood) {
+                    // Show market-too-far indicator for houses without food that are too far from markets
+                    if (isHouse && !hasFood && marketTooFar) {
+                        tableHTML += `<span class="status-indicator market-too-far" title="Marché trop loin"></span>`;
+                    }
+                    // Only show food indicator for buildings that can have food (but not if it's market-too-far)
+                    else if (canHaveFood && !hasFood && !marketTooFar) {
                         tableHTML += `<span class="status-indicator no-food" title="Pas de nourriture"></span>`;
                     }
                     tableHTML += `</div>`;

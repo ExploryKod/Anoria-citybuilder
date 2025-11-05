@@ -7,6 +7,9 @@ const config = {
         tickMsMax: 20000,
         defaultTickMs: 4000,
         citySize: 16,
+        // Food distribution distance: maximum distance (in tiles) a market can distribute food to houses
+        // Houses beyond this distance from any market will not receive food
+        foodDistributionDistance: 5, // Default: 5 tiles (manhattan distance)
     },
 
     building: {
