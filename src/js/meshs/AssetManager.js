@@ -45,6 +45,12 @@ class AssetManager extends MeshLoader {
         maintenance: 0,
         worldTime: 0
     }
+    
+    // Shared materials for terrain - created once and reused to avoid texture unit limit
+    #sharedTerrainMaterials = null;
+    
+    // Shared sprite materials - created once per texture type to avoid texture unit limit
+    #sharedSpriteMaterials = new Map();
 
     /**
      * @param {Function} onLoad - Optional callback when all assets are loaded (similar to simcity)
@@ -105,6 +111,11 @@ class AssetManager extends MeshLoader {
 
     getToolIds() {
         return this.toolIds
+    }
+    
+    // Public method to get shared terrain materials (for updating terrain meshes)
+    getSharedTerrainMaterials() {
+        return this.#getSharedTerrainMaterials();
     }
 
     /**
@@ -196,7 +207,45 @@ class AssetManager extends MeshLoader {
     #createBuilding(x, y, z, size, meshName, objectsData) {
         // Creating building
         const placerPos = new THREE.Vector3(x, y, z);
-        const object3D = objectsData[meshName].clone();
+        const sourceObject = objectsData[meshName];
+        
+        // Clone the object
+        const object3D = sourceObject.clone();
+        
+        // CRITICAL: Restore original materials from source to avoid cloning materials
+        // This prevents exceeding WebGL texture unit limit (32 max)
+        // We traverse both objects in the same order and match materials
+        const sourceMeshes = [];
+        const clonedMeshes = [];
+        
+        sourceObject.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+                sourceMeshes.push(child);
+            }
+        });
+        
+        object3D.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+                clonedMeshes.push(child);
+            }
+        });
+        
+        // Match materials by traversal order (same structure)
+        // Also handle material arrays (for multi-material meshes)
+        for (let i = 0; i < clonedMeshes.length && i < sourceMeshes.length; i++) {
+            const sourceMesh = sourceMeshes[i];
+            const clonedMesh = clonedMeshes[i];
+            
+            if (sourceMesh.material) {
+                if (Array.isArray(sourceMesh.material)) {
+                    // Handle material arrays
+                    clonedMesh.material = sourceMesh.material;
+                } else {
+                    // Single material
+                    clonedMesh.material = sourceMesh.material;
+                }
+            }
+        }
 
         object3D.name = `${meshName}`;
         object3D.position.set(placerPos.x, placerPos.z, placerPos.y);
@@ -232,26 +281,38 @@ class AssetManager extends MeshLoader {
         return object3D;
     }
 
+    // Initialize shared terrain materials (called once, reused for all tiles)
+    #getSharedTerrainMaterials() {
+        if (!this.#sharedTerrainMaterials) {
+            // Create shared materials once - these will be reused for all terrain tiles
+            // This prevents exceeding WebGL texture unit limit (32 max)
+            // NOTE: Removed specularMap to save texture units (not critical for visual quality)
+            this.#sharedTerrainMaterials = {
+                'roads': new THREE.MeshLambertMaterial({
+                    map: textures['roads']
+                    // specularMap removed to reduce texture unit usage
+                }),
+                'grass': new THREE.MeshLambertMaterial({
+                    map: textures['grass']
+                    // specularMap removed to reduce texture unit usage
+                })
+            };
+        }
+        return this.#sharedTerrainMaterials;
+    }
+
     #createTerrain(x, y, buildingId = '') {
         let mesh;
         let material;
 
-        const materials = {
-            'roads': new THREE.MeshLambertMaterial({
-                map: textures['roads'],
-                specularMap: textures['specular']
-            }),
-            'grass': new THREE.MeshLambertMaterial({
-                map: textures['grass'],
-                specularMap: textures['specular']
-            })
-        };
+        // Use shared materials instead of creating new ones each time
+        const materials = this.#getSharedTerrainMaterials();
 
         switch (buildingId) {
             case 'roads':
                 material = materials['roads'];
                 mesh = new THREE.Mesh(this.#geometry, material);
-                mesh.userData = { id: buildingId, x, y, isBuilding: false, time: 0 };
+                mesh.userData = { id: buildingId, x, y, isBuilding: false, isRoad: true, time: 0 };
                 mesh.name = buildingId;
                 mesh.scale.set(1, 1, 1);
                 mesh.position.set(x, -0.5, y);
@@ -370,16 +431,27 @@ class AssetManager extends MeshLoader {
     }
 
     setSprite(texture = textures['no-roads'], name) {
-        // Clone the texture to avoid modifying the original
-        const spriteTexture = texture.clone();
-        spriteTexture.flipY = true; // Ensure sprites display correctly
+        // Use shared sprite materials to avoid texture unit limit
+        // Create a key based on texture UUID to identify unique materials
+        const textureKey = texture.uuid || 'default';
         
-        const spriteMaterial = new THREE.SpriteMaterial({
-            map: spriteTexture,
-            depthTest: false,
-            transparent: true,
-            alphaTest: 0.5
-        });
+        // Get or create shared material for this texture
+        if (!this.#sharedSpriteMaterials.has(textureKey)) {
+            // Create a clone of the texture for sprites (to set flipY without affecting original)
+            // But share the material itself to save texture units
+            const spriteTexture = texture.clone();
+            spriteTexture.flipY = true; // Ensure sprites display correctly
+            
+            const spriteMaterial = new THREE.SpriteMaterial({
+                map: spriteTexture,
+                depthTest: false,
+                transparent: true,
+                alphaTest: 0.5
+            });
+            this.#sharedSpriteMaterials.set(textureKey, spriteMaterial);
+        }
+        
+        const spriteMaterial = this.#sharedSpriteMaterials.get(textureKey);
         const sprite = new THREE.Sprite(spriteMaterial);
         sprite.name = name;
         return sprite;

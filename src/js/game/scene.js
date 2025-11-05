@@ -179,6 +179,13 @@ export function createScene(housesStore, gameStore, assetManager) {
                 minZ: -margin,
                 maxZ: city.size + margin
             });
+            
+            // Center camera on the city (critical for proper raycasting coordinates)
+            // This ensures clicks/touches align correctly with terrain tiles
+            // City center is at (city.size / 2, city.size / 2)
+            if (camera.centerOnCity) {
+                camera.centerOnCity(city.size);
+            }
         }
 
         // Add infinite backdrop (skydome + distant ground ring)
@@ -245,6 +252,14 @@ export function createScene(housesStore, gameStore, assetManager) {
             for(let y = 0; y < city.size; y++) {
                 // Processing city tile
               let currentBuildingId = buildings[x][y]?.userData?.type || buildings[x][y]?.userData?.id;
+              // Also check terrain for roads using isRoad property (roads are in terrain array but may be in buildings array too)
+              if (!currentBuildingId && terrain[x] && terrain[x][y] && (terrain[x][y].userData?.isRoad || terrain[x][y].name === 'roads')) {
+                  currentBuildingId = 'roads';
+                  // Ensure road is in buildings array for neighbor detection
+                  if (!buildings[x][y]) {
+                      buildings[x][y] = terrain[x][y];
+                  }
+              }
               const currentBuilding = buildings[x][y];
               const newBuildingId = city.tiles[x][y].buildingId;
               const buildingInfo =  city.tiles[x][y];
@@ -585,6 +600,48 @@ export function createScene(housesStore, gameStore, assetManager) {
 
                   // if data model has changed as user add a new building, update the mesh 
             if(newBuildingId && (newBuildingId !== currentBuildingId)) {
+                // Special handling for roads: update terrain mesh AND add to buildings array for neighbor detection
+                if (newBuildingId === 'roads') {
+                    // Update terrain mesh material to show road texture
+                    if (terrain[x] && terrain[x][y]) {
+                        const terrainMesh = terrain[x][y];
+                        const sharedMaterials = assetManager.getSharedTerrainMaterials();
+                        if (sharedMaterials && sharedMaterials['roads'] && terrainMesh.material) {
+                            terrainMesh.material = sharedMaterials['roads'];
+                            terrainMesh.name = 'roads';
+                            terrainMesh.userData.id = 'roads';
+                            terrainMesh.userData.type = 'roads';
+                            terrainMesh.userData.x = x;
+                            terrainMesh.userData.y = y;
+                            terrainMesh.userData.isBuilding = false;
+                            terrainMesh.userData.isRoad = true; // Mark as road for easier detection
+                        }
+                    }
+                    // CRITICAL: Add terrain mesh to buildings array so it's detected as a neighbor
+                    // Roads need to be in buildings array for neighbor detection to work
+                    if (!buildings[x][y]) {
+                        buildings[x][y] = terrain[x][y];
+                    }
+                } else if (currentBuildingId === 'roads' || buildings[x][y]?.userData?.isRoad) {
+                    // If removing a road, restore terrain to grass
+                    if (terrain[x] && terrain[x][y]) {
+                        const terrainMesh = terrain[x][y];
+                        const sharedMaterials = assetManager.getSharedTerrainMaterials();
+                        if (sharedMaterials && sharedMaterials['grass'] && terrainMesh.material) {
+                            terrainMesh.material = sharedMaterials['grass'];
+                            terrainMesh.name = 'grass';
+                            terrainMesh.userData.id = 'grass';
+                            terrainMesh.userData.type = 'grass';
+                            terrainMesh.userData.x = x;
+                            terrainMesh.userData.y = y;
+                        }
+                    }
+                    // Remove from buildings array when road is removed
+                    if (buildings[x][y] === terrain[x][y]) {
+                        buildings[x][y] = undefined;
+                    }
+                }
+                
                 // Check if this is the origin tile for multi-tile buildings
                 // We only create a building at the origin (top-left) tile
                 const buildingData = assetsPrices[newBuildingId];
@@ -600,8 +657,8 @@ export function createScene(housesStore, gameStore, assetManager) {
                     }
                 }
                 
-                // Only create the mesh if this is the origin tile
-                if (isOriginTile) {
+                // Only create the mesh if this is the origin tile (and it's not a road)
+                if (isOriginTile && newBuildingId !== 'roads') {
                     //remove the initial building if needed
                     let isExistingBuilding;
                     if(currentBuildingId) {
@@ -889,6 +946,9 @@ export function createScene(housesStore, gameStore, assetManager) {
         renderer.setAnimationLoop(null);
     }
 
+    // Shared backdrop materials - created once and reused to reduce texture units
+    let sharedBackdropMaterials = null;
+    
     // Add a distant ground plane + ring to fake infinity (keep existing sky background)
     function addBackdrop() {
         // Avoid duplicating if reinitializing
@@ -896,66 +956,70 @@ export function createScene(housesStore, gameStore, assetManager) {
         const existingRing = scene.getObjectByName('infinite-ground-ring');
         if (existingBase && existingRing) return;
 
-        // Get grass texture and clone it to avoid modifying the original
+        // Get grass texture - use shared materials to reduce texture unit usage
         const grassTex = (textures && textures['grass']) ? textures['grass'] : null;
         
-        // Base ground plane with grass texture
+        // Create shared backdrop materials once
+        if (!sharedBackdropMaterials) {
+            if (grassTex && grassTex instanceof THREE.Texture) {
+                // Use original texture directly (don't clone) to save texture units
+                // Set repeat on a cloned texture only if needed
+                const baseTex = grassTex.clone();
+                baseTex.wrapS = THREE.RepeatWrapping;
+                baseTex.wrapT = THREE.RepeatWrapping;
+                baseTex.repeat.set(1500, 1500); // Tile texture across the plane
+                
+                const ringTex = grassTex.clone();
+                ringTex.wrapS = THREE.RepeatWrapping;
+                ringTex.wrapT = THREE.RepeatWrapping;
+                ringTex.repeat.set(120, 120);
+                
+                sharedBackdropMaterials = {
+                    base: new THREE.MeshLambertMaterial({
+                        map: baseTex,
+                        color: 0xA4B98B,
+                        fog: true
+                    }),
+                    ring: new THREE.MeshLambertMaterial({
+                        map: ringTex,
+                        color: 0xA4B98B,
+                        fog: true,
+                        depthWrite: true
+                    })
+                };
+            } else {
+                sharedBackdropMaterials = {
+                    base: new THREE.MeshLambertMaterial({
+                        color: 0xA4B98B,
+                        fog: true
+                    }),
+                    ring: new THREE.MeshLambertMaterial({
+                        color: 0xA4B98B,
+                        fog: true,
+                        depthWrite: true
+                    })
+                };
+            }
+        }
+        
+        // Base ground plane with shared material
         try {
             const baseSize = 3000;
             const baseGeo = new THREE.PlaneGeometry(baseSize, baseSize, 1, 1);
-            let baseMat;
-            if (grassTex && grassTex instanceof THREE.Texture) {
-                // Clone texture to avoid modifying the original
-                const grassTexClone = grassTex.clone();
-                grassTexClone.wrapS = THREE.RepeatWrapping;
-                grassTexClone.wrapT = THREE.RepeatWrapping;
-                grassTexClone.repeat.set(baseSize / 2, baseSize / 2); // Tile texture across the plane
-                baseMat = new THREE.MeshLambertMaterial({
-                    map: grassTexClone,
-                    color: 0xA4B98B, // Base color if texture is not fully visible
-                    fog: true
-                });
-            } else {
-                baseMat = new THREE.MeshLambertMaterial({
-                    color: 0xA4B98B, // match in-game grass color
-                    fog: true
-                });
-            }
-            const base = new THREE.Mesh(baseGeo, baseMat);
+            const base = new THREE.Mesh(baseGeo, sharedBackdropMaterials.base);
             base.rotation.x = -Math.PI / 2;
             base.position.y = -0.02;
             base.receiveShadow = true;
             base.name = 'infinite-ground-base';
-            // Ensure it renders behind everything else but still occludes background
             base.renderOrder = -10;
             scene.add(base);
         } catch (_) {}
 
-        // Distant ground ring with grass texture
+        // Distant ground ring with shared material
         try {
             const size = 1200;
             const ringGeo = new THREE.PlaneGeometry(size, size, 1, 1);
-            let ringMat;
-            if (grassTex && grassTex instanceof THREE.Texture) {
-                // Clone texture to avoid modifying the original
-                const grassTexClone = grassTex.clone();
-                grassTexClone.wrapS = THREE.RepeatWrapping;
-                grassTexClone.wrapT = THREE.RepeatWrapping;
-                grassTexClone.repeat.set(120, 120); // Tile texture widely
-                ringMat = new THREE.MeshLambertMaterial({
-                    map: grassTexClone,
-                    color: 0xA4B98B, // Base color if texture is not fully visible
-                    fog: true,
-                    depthWrite: true
-                });
-            } else {
-                ringMat = new THREE.MeshLambertMaterial({
-                    color: 0xA4B98B,
-                    fog: true,
-                    depthWrite: true
-                });
-            }
-            const ring = new THREE.Mesh(ringGeo, ringMat);
+            const ring = new THREE.Mesh(ringGeo, sharedBackdropMaterials.ring);
             ring.rotation.x = -Math.PI / 2;
             ring.position.y = -0.01;
             ring.receiveShadow = true;

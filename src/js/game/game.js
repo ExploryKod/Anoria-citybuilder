@@ -4,6 +4,7 @@ import { checkRoadAccess } from './modules/ModuleHelper.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
 import {getAssetPrice, makeDbItemId, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, isAreaAvailableForBuilding} from '../utils/utils.js';
+import config from './config.js';
 import {
     displayTime,
     overOverlay,
@@ -263,7 +264,7 @@ function showGenericErrorNotification(buildingType, reason) {
     }, 4000);
 }
 
-export function createGame(housesStore, gameStore, assetManager) {
+export function createGame(housesStore, gameStore, assetManager, citySize = null) {
     let activeToolId = '';
     let time = 0;
     let isPause;
@@ -288,7 +289,18 @@ export function createGame(housesStore, gameStore, assetManager) {
     const scene = createScene(housesStore, gameStore, assetManager);
 
     /* City initialization */
-    const city = createCity(16);
+    // Get city size from parameter, localStorage, config, or default to 16
+    // Clamp to valid range (12-24) to prevent WebGL shader/material errors
+    let selectedCitySize = citySize || 
+                          parseInt(localStorage.getItem('selectedCitySize'), 10) || 
+                          config?.simulation?.citySize || 
+                          16;
+    
+    // Enforce maximum size of 24 to prevent WebGL shader compilation errors
+    // Larger sizes cause BackgroundMaterial shader validation failures
+    selectedCitySize = Math.max(12, Math.min(24, selectedCitySize));
+    
+    const city = createCity(selectedCitySize);
 
     scene.initialize(city).then(() => {
         // Hide Chronos loader modal once scene is initialized with fade-out

@@ -88,8 +88,11 @@ export function updateBuildingNeighbors(buildingData, area=1, time=0) {
         neighbors.terrainW
     ]
 
-    // Filter out undefined values first, then check for grass
-    const allBuildingsInZone = allTerrainMeshInZone.filter((mesh) => mesh && mesh.name && mesh.name !== 'grass')
+    // Filter out undefined values first, then check for grass (roads are included - they have isRoad property)
+    // Roads should be included in neighbors for road access detection
+    const allBuildingsInZone = allTerrainMeshInZone.filter((mesh) => 
+        mesh && mesh.name && mesh.name !== 'grass'
+    )
 
     const areaObject = {areaKey : areaKey, time: time, allTerrainMeshInZone : allTerrainMeshInZone}
 
@@ -269,6 +272,10 @@ export const zoneBordersBuildings = (buildingData, time=0) => {
                     if(Object.hasOwn(mesh, 'userData')) {
                         if(Object.hasOwn(mesh.userData, 'stocks')) {
                            neighborData = { ...neighborData, stocks: mesh.userData.stocks };
+                        }
+                        // Include isRoad property for road detection
+                        if(Object.hasOwn(mesh.userData, 'isRoad')) {
+                           neighborData = { ...neighborData, isRoad: mesh.userData.isRoad };
                         }
                     }
 

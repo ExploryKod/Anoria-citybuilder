@@ -14,6 +14,7 @@
     <!-- Modal Styles -->
     <link rel="stylesheet" href="./src/styles/modals/global.css">
     <link rel="stylesheet" href="./src/styles/modals/loader-modal.css">
+    <link rel="stylesheet" href="./src/styles/modals/city-size-selection.css">
     <link rel="stylesheet" href="./src/styles/modals/realtime-budget.css">
     <link rel="stylesheet" href="./src/styles/modals/budget-states.css">
     <link rel="stylesheet" href="./src/styles/modals/budget-panel.css">
@@ -40,8 +41,49 @@
 </div>
 <div id="root-window" class="root-window">
     <div id="game-window" class="game-window">
+        <!-- City Size Selection Modal -->
+        <div id="city-size-selection-modal" class="city-size-selection-modal active">
+            <div class="city-size-selection-content">
+                <div class="city-size-selection-icon">🏙️</div>
+                <div class="city-size-selection-title">Choisissez la taille de votre ville</div>
+                <div class="city-size-selection-message">
+                    Sélectionnez la taille de votre ville. Plus grande signifie plus d'espace pour construire, mais plus de terrain à gérer.
+                    <br><strong>Maximum: 24 × 24</strong> (limite technique)
+                </div>
+                <div class="city-size-options">
+                    <button class="city-size-option" data-size="12">
+                        <div class="city-size-label">Très Petite</div>
+                        <div class="city-size-value">12 × 12</div>
+                        <div class="city-size-description">144 cases</div>
+                    </button>
+                    <button class="city-size-option" data-size="16">
+                        <div class="city-size-label">Petite</div>
+                        <div class="city-size-value">16 × 16</div>
+                        <div class="city-size-description">256 cases</div>
+                    </button>
+                    <button class="city-size-option" data-size="20">
+                        <div class="city-size-label">Moyenne-Petite</div>
+                        <div class="city-size-value">20 × 20</div>
+                        <div class="city-size-description">400 cases</div>
+                    </button>
+                    <button class="city-size-option" data-size="24">
+                        <div class="city-size-label">Moyenne</div>
+                        <div class="city-size-value">24 × 24</div>
+                        <div class="city-size-description">576 cases</div>
+                    </button>
+                </div>
+                <div class="city-size-custom">
+                    <label for="custom-city-size" class="custom-size-label">Taille personnalisée (12-24):</label>
+                    <div class="custom-size-input-group">
+                        <input type="number" id="custom-city-size" class="custom-size-input" min="12" max="24" value="24" step="1">
+                        <button id="custom-size-apply" class="custom-size-button">Appliquer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Chronos Loader Modal -->
-        <div id="chronos-loader-modal" class="chronos-loader-modal opaque">
+        <div id="chronos-loader-modal" class="chronos-loader-modal opaque hidden">
             <div class="chronos-loader-content">
                 <div class="chronos-loader-icon">⏳</div>
                 <div class="chronos-loader-title">Chronos crée le temps</div>

@@ -478,6 +478,16 @@ export function createCamera(gameWindow) {
             clampOrigin();
             updateCameraPosition();
         },
+        
+        // Method to center camera on city (useful when city size changes)
+        centerOnCity(citySize) {
+            if (typeof citySize === 'number' && citySize > 0) {
+                const cityCenter = citySize / 2;
+                cameraOrigin.set(cityCenter, 0, cityCenter);
+                clampOrigin();
+                updateCameraPosition();
+            }
+        },
         // Toggle between isometric (Pharaoh style) and perspective modes
         toggleIsometric,
         // Set callback for when camera changes
