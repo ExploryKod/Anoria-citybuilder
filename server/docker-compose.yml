@@ -1,0 +1,45 @@
+services:
+  anoria-websocket:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: anoria-websocket
+    restart: unless-stopped
+    
+    # Limites de ressources (IMPORTANT pour ne pas surcharger le VPS)
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'        # Maximum 0.5 CPU (50% d'un core)
+          memory: 256M       # Maximum 256 MB de RAM
+        reservations:
+          cpus: '0.1'        # Minimum 0.1 CPU garanti
+          memory: 128M       # Minimum 128 MB de RAM garanti
+    
+    ports:
+      - "9876:9876"
+    
+    environment:
+      - NODE_ENV=production
+      - PORT=9876
+      - MAX_PLAYERS_PER_ROOM=2
+    
+    # Healthcheck pour redémarrer automatiquement si le serveur plante
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:9876', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Logs avec rotation pour éviter de remplir le disque
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Volumes pour persister les logs (optionnel)
+    volumes:
+      - ./logs:/app/logs
+

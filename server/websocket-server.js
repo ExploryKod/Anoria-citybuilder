@@ -48,6 +48,10 @@ const gameState = {
 // Serveur WebSocket
 const wss = new WebSocket.Server({ port: PORT });
 
+// Limite de sécurité : maximum de connexions simultanées
+const MAX_CONNECTIONS = 50; // Limite globale pour protéger les ressources
+let currentConnections = 0;
+
 // Gestion des erreurs du serveur (port déjà utilisé, etc.)
 wss.on('error', (error) => {
     if (error.code === 'EADDRINUSE') {
@@ -70,6 +74,16 @@ wss.on('listening', () => {
 
 // Gestion des connexions
 wss.on('connection', (ws, req) => {
+    // Vérifier la limite de connexions
+    if (currentConnections >= MAX_CONNECTIONS) {
+        console.warn('[Server] Limite de connexions atteinte, refus de connexion');
+        ws.close(1008, 'Server at capacity');
+        return;
+    }
+    
+    currentConnections++;
+    console.log(`[Server] Nouvelle connexion (Total: ${currentConnections}/${MAX_CONNECTIONS})`);
+    
     const playerId = uuidv4();
     const playerIP = req.socket.remoteAddress;
     let playerPseudo = 'Joueur';
@@ -111,6 +125,9 @@ wss.on('connection', (ws, req) => {
     
     // Gestion de la déconnexion
     ws.on('close', () => {
+        // Décrémenter le compteur de connexions
+        currentConnections--;
+        console.log(`[Server] Connexion fermée (Total: ${currentConnections}/${MAX_CONNECTIONS})`);
         console.log(`[${playerId}] Déconnexion`);
         
         const roomId = ws.roomId;
