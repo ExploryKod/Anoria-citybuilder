@@ -17,14 +17,12 @@ const getWebSocketUrl = () => {
     return 'ws://localhost:9876';
   }
   
-  // Production - Remplacez par votre URL de serveur WebSocket
-  // Exemples :
-  // Railway: 'wss://votre-app.railway.app'
-  // Render: 'wss://votre-app.onrender.com'
-  // Fly.io: 'wss://votre-app.fly.dev'
-  
-  // TODO: Remplacez cette URL par celle de votre serveur déployé
-  const PRODUCTION_WS_URL = 'wss://votre-serveur.railway.app'; // ⚠️ À MODIFIER
+  // Production - Utilise la variable d'environnement Vercel
+  // Configurez VITE_WEBSOCKET_URL dans Vercel Dashboard → Settings → Environment Variables
+  // Format: ws://194.164.76.63:9876 ou wss://votre-domaine.com
+  // Note: Avec Vite, les variables doivent être préfixées par VITE_ pour être accessibles côté client
+  const PRODUCTION_WS_URL = import.meta.env.VITE_WEBSOCKET_URL || 
+                            'ws://194.164.76.63:9876'; // Fallback par défaut
   
   return PRODUCTION_WS_URL;
 };
