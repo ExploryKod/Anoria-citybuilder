@@ -50,6 +50,18 @@
                 <div class="city-size-selection-title">Choisissez la taille de votre ville</div>
                 <div class="city-size-selection-message">
                 </div>
+                
+                <!-- Mode Selection Toggle (en haut) -->
+                <div class="city-size-multiplayer" style="margin-bottom: 24px;">
+                    <label class="multiplayer-toggle-label">
+                        <input type="checkbox" id="multiplayer-toggle" class="multiplayer-toggle">
+                        <div class="multiplayer-toggle-content">
+                            <span class="multiplayer-toggle-text">🎮 Mode Multijoueur</span>
+                            <span class="multiplayer-toggle-description">Jouez avec d'autres joueurs en temps réel</span>
+                        </div>
+                    </label>
+                </div>
+                
                 <div class="city-size-options">
                     <button class="city-size-option" data-size="12">
                         <div class="city-size-label">Très Petite</div>
@@ -79,25 +91,35 @@
                         <button id="custom-size-apply" class="custom-size-button">Appliquer</button>
                     </div>
                 </div>
-                <div class="city-size-multiplayer">
-                    <label class="multiplayer-toggle-label">
-                        <input type="checkbox" id="multiplayer-toggle" class="multiplayer-toggle">
-                        <div class="multiplayer-toggle-content">
-                            <span class="multiplayer-toggle-text">🎮 Mode Multijoueur</span>
-                            <span class="multiplayer-toggle-description">Jouez avec d'autres joueurs en temps réel</span>
-                        </div>
-                    </label>
-                    <div class="multiplayer-pseudo-container" id="multiplayer-pseudo-container" style="display: none;">
+                <!-- Section Multijoueur (affichée seulement si le toggle est activé) -->
+                <div class="city-size-multiplayer-section" id="multiplayer-section" style="display: none;">
+                    <div class="multiplayer-pseudo-container" id="multiplayer-pseudo-container">
                         <label for="multiplayer-pseudo" class="multiplayer-pseudo-label">Votre pseudo :</label>
                         <input type="text" id="multiplayer-pseudo" class="multiplayer-pseudo-input" placeholder="Joueur1" maxlength="20" minlength="2">
                         <div class="multiplayer-pseudo-hint">Choisissez un pseudo unique pour vous identifier</div>
                     </div>
-                    <div class="multiplayer-rooms-container" id="multiplayer-rooms-container" style="display: none;">
+                    
+                    <div class="multiplayer-room-name-container" id="multiplayer-room-name-container">
+                        <label for="multiplayer-room-name" class="multiplayer-room-name-label">Nom du salon (optionnel) :</label>
+                        <input type="text" id="multiplayer-room-name" class="multiplayer-room-name-input" placeholder="Mon Salon" maxlength="30">
+                        <div class="multiplayer-room-name-hint">Le nom du salon sera visible par les autres joueurs</div>
+                    </div>
+                    
+                    <div class="multiplayer-create-room-section">
+                        <div class="multiplayer-create-room-title">Créer un nouveau salon</div>
+                        <div class="multiplayer-create-room-options">
+                            <button class="multiplayer-create-room-btn" data-size="12">12×12</button>
+                            <button class="multiplayer-create-room-btn" data-size="16">16×16</button>
+                            <button class="multiplayer-create-room-btn" data-size="20">20×20</button>
+                            <button class="multiplayer-create-room-btn" data-size="24">24×24</button>
+                        </div>
+                    </div>
+                    
+                    <div class="multiplayer-rooms-container" id="multiplayer-rooms-container">
                         <div class="multiplayer-rooms-title">Salons disponibles</div>
                         <div class="multiplayer-rooms-list" id="multiplayer-rooms-list">
                             <div class="multiplayer-rooms-loading">Chargement des salons...</div>
                         </div>
-                        <div class="multiplayer-create-room-hint">Ou créez un nouveau salon en choisissant une taille ci-dessus</div>
                     </div>
                 </div>
             </div>

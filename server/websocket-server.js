@@ -86,6 +86,7 @@ wss.on('connection', (ws, req) => {
         .map(room => ({
             id: room.id,
             citySize: room.citySize,
+            roomName: room.roomName || null,
             currentPlayers: room.players.size,
             maxPlayers: MAX_PLAYERS_PER_ROOM
         }));
@@ -236,7 +237,7 @@ function handleMessage(ws, playerId, data) {
  * Crée un nouveau salon
  */
 function handleCreateRoom(ws, playerId, data) {
-    const { citySize, playerPseudo } = data;
+    const { citySize, playerPseudo, roomName } = data;
     
     if (!citySize || typeof citySize !== 'number' || citySize < 12 || citySize > 24) {
         sendError(ws, 'INVALID_CITY_SIZE', 'Taille de ville invalide (12-24)');
@@ -248,6 +249,7 @@ function handleCreateRoom(ws, playerId, data) {
     const room = {
         id: roomId,
         citySize: citySize,
+        roomName: roomName || null, // Nom du salon (optionnel)
         players: new Map(),
         buildings: new Map(),
         gameTime: 0,
@@ -558,6 +560,7 @@ function broadcastRoomListUpdate() {
         .map(room => ({
             id: room.id,
             citySize: room.citySize,
+            roomName: room.roomName || null,
             currentPlayers: room.players.size,
             maxPlayers: MAX_PLAYERS_PER_ROOM
         }));
