@@ -46,6 +46,51 @@ export function createScene(housesStore, gameStore, assetManager) {
     const camera = createCamera(gameWindow);
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(gameWindow.offsetWidth, gameWindow.offsetHeight);
+    
+    // Add WebGL error handling
+    const canvas = renderer.domElement;
+    
+    // Handle WebGL context lost (indicates insufficient GPU resources)
+    canvas.addEventListener('webglcontextlost', (event) => {
+        event.preventDefault();
+        console.error('[WebGL] Context lost - this may indicate insufficient GPU resources');
+        // Show error notification
+        const notification = document.createElement('div');
+        notification.className = 'building-notification webgl-error';
+        notification.innerHTML = `
+            <div class="notification-content">
+                <div class="notification-icon">🔴</div>
+                <div class="notification-text">
+                    <div class="notification-title">Erreur WebGL</div>
+                    <div class="notification-message">Le contexte WebGL a été perdu. Cela indique que votre système manque de ressources GPU. Veuillez réduire la taille de la ville ou fermer d'autres applications.</div>
+                </div>
+            </div>
+        `;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(211, 47, 47, 0.3);
+            z-index: 10002;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            max-width: 500px;
+            animation: slideDown 0.3s ease-out;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        `;
+        document.body.appendChild(notification);
+    });
+    
+    // Handle WebGL context restored
+    canvas.addEventListener('webglcontextrestored', () => {
+        console.log('[WebGL] Context restored');
+    });
     renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(window.devicePixelRatio);
     

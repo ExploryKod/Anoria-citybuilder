@@ -27,6 +27,7 @@ import {
     toolBarButtons
 } from "./nodes.js";
 import { createGame } from '../game/game.js';
+import webglDetector from '../utils/WebGLResourceDetector.js';
 
 // Global app registry helper (available throughout this module)
 function appRegister(name, instance) {
@@ -830,6 +831,7 @@ function showCitySizeSelection() {
         const options = modal?.querySelectorAll('.city-size-option');
         const customInput = modal?.querySelector('#custom-city-size');
         const customButton = modal?.querySelector('#custom-size-apply');
+        const messageEl = modal?.querySelector('.city-size-selection-message');
         
         if (!modal || !options) {
             // Fallback: return default size if modal doesn't exist
@@ -837,9 +839,32 @@ function showCitySizeSelection() {
             return;
         }
         
+        // Detect WebGL capabilities
+        const webglCapabilities = webglDetector.detectCapabilities();
+        const maxSafeCitySize = webglDetector.getMaxSafeCitySize();
+        
         // Check if mobile device (used throughout the function)
         const isMobile = window.innerWidth <= 1024;
-        const maxSize = isMobile ? 16 : 24;
+        // In test mode, allow larger sizes to test detection
+        const testMode = localStorage.getItem('webgl-test-mode');
+        const theoreticalMaxSize = testMode ? (isMobile ? 24 : 32) : (isMobile ? 16 : 24);
+        // Use the lower of theoretical max or WebGL-safe max
+        const maxSize = Math.min(theoreticalMaxSize, maxSafeCitySize);
+        
+        // Update modal message if system has limitations
+        if (messageEl && (webglCapabilities.issues?.length > 0 || webglCapabilities.warnings?.length > 0)) {
+            const originalMessage = messageEl.innerHTML;
+            let warningText = '';
+            if (maxSafeCitySize < theoreticalMaxSize) {
+                warningText = `<br><br><strong style="color: #ff9800;">⚠️ Limitation système détectée:</strong> `;
+                warningText += `Votre système a des ressources WebGL limitées. `;
+                warningText += `Taille maximale recommandée: <strong>${maxSafeCitySize} × ${maxSafeCitySize}</strong>. `;
+                if (webglCapabilities.issues?.length > 0) {
+                    warningText += `Les tailles supérieures peuvent causer des problèmes de performance ou des erreurs.`;
+                }
+            }
+            messageEl.innerHTML = originalMessage + warningText;
+        }
         
         // Helper function to select a size and close modal
         const selectSize = (size) => {
@@ -904,9 +929,50 @@ function showCitySizeSelection() {
             }
         }
         
+        // Update option buttons based on WebGL capabilities
+        options.forEach(option => {
+            const size = parseInt(option.dataset.size, 10);
+            const isSafe = size <= maxSafeCitySize;
+            
+            if (!isSafe) {
+                // Disable options that exceed system capabilities
+                option.disabled = true;
+                option.style.opacity = '0.5';
+                option.style.cursor = 'not-allowed';
+                option.title = `Cette taille dépasse les capacités de votre système (max: ${maxSafeCitySize}×${maxSafeCitySize})`;
+                
+                // Add warning indicator
+                const label = option.querySelector('.city-size-label');
+                if (label && !label.querySelector('.webgl-warning')) {
+                    const warning = document.createElement('span');
+                    warning.className = 'webgl-warning';
+                    warning.textContent = ' ⚠️';
+                    warning.style.color = '#ff9800';
+                    label.appendChild(warning);
+                }
+            } else {
+                option.disabled = false;
+                option.style.opacity = '1';
+                option.style.cursor = 'pointer';
+                option.title = '';
+                
+                // Remove warning indicator if present
+                const warning = option.querySelector('.webgl-warning');
+                if (warning) {
+                    warning.remove();
+                }
+            }
+        });
+        
         // Handle preset option clicks
         options.forEach(option => {
             option.addEventListener('click', () => {
+                if (option.disabled) {
+                    // Show alert if user tries to select disabled option
+                    const size = parseInt(option.dataset.size, 10);
+                    alert(`La taille ${size}×${size} dépasse les capacités de votre système.\nTaille maximale recommandée: ${maxSafeCitySize}×${maxSafeCitySize}.`);
+                    return;
+                }
                 const size = parseInt(option.dataset.size, 10);
                 selectSize(size);
             });
@@ -925,12 +991,28 @@ function showCitySizeSelection() {
             customButton.addEventListener('click', () => {
                 const customSize = parseInt(customInput.value, 10);
                 if (!isNaN(customSize) && customSize >= 12 && customSize <= maxSize) {
+                    // Check if size is safe for WebGL
+                    const safetyCheck = webglDetector.isCitySizeSafe(customSize);
+                    if (!safetyCheck.safe) {
+                        const proceed = confirm(`${safetyCheck.reason}\n\nVoulez-vous continuer quand même? (Non recommandé)`);
+                        if (!proceed) {
+                            customInput.value = maxSafeCitySize;
+                            customInput.focus();
+                            return;
+                        }
+                    }
                     selectSize(customSize);
                 } else {
-                    alert(`Veuillez entrer une taille entre 12 et ${maxSize}.`);
+                    alert(`Veuillez entrer une taille entre 12 et ${maxSize}${maxSize < theoreticalMaxSize ? ` (limité par les capacités de votre système)` : ''}.`);
                     customInput.focus();
                 }
             });
+            
+            // Update input max attribute
+            if (customInput) {
+                customInput.max = maxSize;
+                customInput.setAttribute('max', maxSize.toString());
+            }
             
             // Handle Enter key in input
             customInput.addEventListener('keypress', (e) => {
