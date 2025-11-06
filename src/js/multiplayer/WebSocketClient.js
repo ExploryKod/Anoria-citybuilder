@@ -15,6 +15,7 @@ export class WebSocketClient {
         this.reconnectDelay = 1000;
         this.listeners = new Map();
         this.messageQueue = [];
+        this.shouldReconnect = true; // Flag pour contrôler les tentatives de reconnexion
     }
 
     /**
@@ -23,6 +24,8 @@ export class WebSocketClient {
     connect() {
         return new Promise((resolve, reject) => {
             try {
+                // Réinitialiser le flag de reconnexion pour une nouvelle connexion
+                this.shouldReconnect = true;
                 this.ws = new WebSocket(this.url);
 
                 this.ws.onopen = () => {
@@ -77,8 +80,10 @@ export class WebSocketClient {
                         });
                     }
                     
-                    // Tentative de reconnexion seulement si ce n'est pas une fermeture volontaire
-                    if (event.code !== 1000 && event.code !== 1001) {
+                    // Tentative de reconnexion seulement si :
+                    // 1. Ce n'est pas une fermeture volontaire (code != 1000, 1001)
+                    // 2. Le flag shouldReconnect est true (pas de déconnexion explicite)
+                    if (this.shouldReconnect && event.code !== 1000 && event.code !== 1001) {
                         this.attemptReconnect();
                     }
                 };
@@ -255,6 +260,12 @@ export class WebSocketClient {
      * Tentative de reconnexion
      */
     attemptReconnect() {
+        // Ne pas tenter de reconnexion si shouldReconnect est false
+        if (!this.shouldReconnect) {
+            console.log('[WebSocket] Reconnexion désactivée (déconnexion volontaire)');
+            return;
+        }
+        
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
             console.error('[WebSocket] Nombre maximum de tentatives de reconnexion atteint');
             this.emit('reconnectFailed');
@@ -267,9 +278,12 @@ export class WebSocketClient {
         console.log(`[WebSocket] Tentative de reconnexion ${this.reconnectAttempts}/${this.maxReconnectAttempts} dans ${delay}ms...`);
 
         setTimeout(() => {
-            this.connect().catch(() => {
-                // La reconnexion échouera et tentera à nouveau
-            });
+            // Vérifier à nouveau avant de se reconnecter
+            if (this.shouldReconnect) {
+                this.connect().catch(() => {
+                    // La reconnexion échouera et tentera à nouveau
+                });
+            }
         }, delay);
     }
 
@@ -277,12 +291,22 @@ export class WebSocketClient {
      * Déconnecte du serveur
      */
     disconnect() {
+        // Désactiver les tentatives de reconnexion
+        this.shouldReconnect = false;
+        
         if (this.ws) {
-            this.ws.close();
+            // Fermer proprement avec code 1000 (normal closure)
+            try {
+                this.ws.close(1000, 'Déconnexion volontaire');
+            } catch (error) {
+                // Si la connexion est déjà fermée, juste nettoyer
+                console.log('[WebSocket] Connexion déjà fermée');
+            }
             this.ws = null;
         }
         this.connected = false;
         this.listeners.clear();
+        this.reconnectAttempts = 0; // Réinitialiser les tentatives
     }
 }
 
