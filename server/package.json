@@ -1,0 +1,21 @@
+{
+  "name": "anoria-websocket-server",
+  "version": "1.0.0",
+  "description": "WebSocket server for Anoria City Builder multiplayer",
+  "main": "websocket-server.js",
+  "scripts": {
+    "start": "node websocket-server.js",
+    "dev": "nodemon websocket-server.js"
+  },
+  "keywords": ["websocket", "multiplayer", "game"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ws": "^8.14.2",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
+

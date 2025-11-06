@@ -28,6 +28,7 @@
     <link rel="stylesheet" href="./src/styles/modals/journal.css">
     <link rel="stylesheet" href="./src/styles/modals/objectives.css">
     <link rel="stylesheet" href="./src/styles/modals/reset-confirm.css">
+    <link rel="stylesheet" href="./src/styles/multiplayer.css">
     <!-- ios support -->
     <link rel="apple-touch-icon" href="public/icons/icon-512x512.png" />
     <meta name="apple-mobile-web-app-status-bar" content="#db4938" />
@@ -76,6 +77,27 @@
                     <div class="custom-size-input-group">
                         <input type="number" id="custom-city-size" class="custom-size-input" min="12" max="24" value="24" step="1">
                         <button id="custom-size-apply" class="custom-size-button">Appliquer</button>
+                    </div>
+                </div>
+                <div class="city-size-multiplayer">
+                    <label class="multiplayer-toggle-label">
+                        <input type="checkbox" id="multiplayer-toggle" class="multiplayer-toggle">
+                        <div class="multiplayer-toggle-content">
+                            <span class="multiplayer-toggle-text">🎮 Mode Multijoueur</span>
+                            <span class="multiplayer-toggle-description">Jouez avec d'autres joueurs en temps réel</span>
+                        </div>
+                    </label>
+                    <div class="multiplayer-pseudo-container" id="multiplayer-pseudo-container" style="display: none;">
+                        <label for="multiplayer-pseudo" class="multiplayer-pseudo-label">Votre pseudo :</label>
+                        <input type="text" id="multiplayer-pseudo" class="multiplayer-pseudo-input" placeholder="Joueur1" maxlength="20" minlength="2">
+                        <div class="multiplayer-pseudo-hint">Choisissez un pseudo unique pour vous identifier</div>
+                    </div>
+                    <div class="multiplayer-rooms-container" id="multiplayer-rooms-container" style="display: none;">
+                        <div class="multiplayer-rooms-title">Salons disponibles</div>
+                        <div class="multiplayer-rooms-list" id="multiplayer-rooms-list">
+                            <div class="multiplayer-rooms-loading">Chargement des salons...</div>
+                        </div>
+                        <div class="multiplayer-create-room-hint">Ou créez un nouveau salon en choisissant une taille ci-dessus</div>
                     </div>
                 </div>
             </div>

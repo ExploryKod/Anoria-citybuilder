@@ -281,73 +281,66 @@ function showWebGLResourceWarning(capabilities, requestedSize, maxSafeSize) {
     const notification = document.createElement('div');
     notification.className = 'building-notification webgl-resource-warning';
     
-    const hasIssues = capabilities.issues && capabilities.issues.length > 0;
-    const severity = hasIssues ? 'critical' : 'warning';
-    const icon = hasIssues ? '🔴' : '⚠️';
-    const title = hasIssues ? 'Limitations WebGL Détectées' : 'Avertissement WebGL';
-    
-    let message = '';
+    // Message simplifié
+    let simpleMessage = '';
     if (requestedSize > maxSafeSize) {
-        message = `La taille de ville ${requestedSize}×${requestedSize} dépasse les capacités de votre système. `;
-        message += `Taille maximale recommandée: ${maxSafeSize}×${maxSafeSize}. `;
-        message += `La taille a été automatiquement réduite à ${maxSafeSize}×${maxSafeSize}.`;
+        simpleMessage = `Taille réduite à ${maxSafeSize}×${maxSafeSize} (limite système)`;
     } else {
-        message = `Votre système a des ressources WebGL limitées. `;
-        message += `Taille maximale recommandée: ${maxSafeSize}×${maxSafeSize}.`;
-    }
-
-    if (capabilities.recommendation) {
-        message += ` ${capabilities.recommendation}`;
+        simpleMessage = `Taille maximale recommandée: ${maxSafeSize}×${maxSafeSize}`;
     }
 
     notification.innerHTML = `
-        <div class="notification-content">
-            <div class="notification-icon">${icon}</div>
-            <div class="notification-text">
-                <div class="notification-title">${title}</div>
-                <div class="notification-message">${message}</div>
-                <div class="notification-details" style="margin-top: 8px; font-size: 11px; opacity: 0.85;">
-                    ${hasIssues && capabilities.issues.length > 0 ? 
-                        capabilities.issues.slice(0, 2).map(issue => `• ${issue}`).join('<br>') : 
-                        capabilities.warnings && capabilities.warnings.length > 0 ? 
-                        capabilities.warnings.slice(0, 2).map(w => `• ${w}`).join('<br>') : ''
-                    }
-                </div>
+        <div class="notification-content" style="display: flex; align-items: flex-start; gap: 12px; position: relative; padding-right: 30px;">
+            <div class="notification-icon" style="font-size: 24px; flex-shrink: 0; margin-top: 2px;">⚠️</div>
+            <div class="notification-text" style="flex: 1;">
+                <div class="notification-message" style="color: #000; font-size: 14px; line-height: 1.4;">${simpleMessage}</div>
             </div>
-            <button class="notification-close" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; margin-left: 10px; opacity: 0.8;" onclick="this.parentElement.parentElement.remove(); localStorage.setItem('${warningKey}', 'true');">×</button>
+            <button class="notification-close" style="
+                position: absolute;
+                top: 4px;
+                right: 4px;
+                background: none;
+                border: none;
+                color: #666;
+                font-size: 22px;
+                line-height: 1;
+                cursor: pointer;
+                padding: 0;
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                opacity: 0.6;
+                transition: opacity 0.2s;
+            " 
+            onmouseover="this.style.opacity='1'" 
+            onmouseout="this.style.opacity='0.6'"
+            onclick="this.closest('.webgl-resource-warning').remove(); localStorage.setItem('${warningKey}', 'true');">×</button>
         </div>
     `;
-    
-    // Add styles based on severity
-    const bgGradient = hasIssues 
-        ? 'linear-gradient(135deg, #d32f2f 0%, #c62828 100%)'
-        : 'linear-gradient(135deg, #ffa726 0%, #ff9800 100%)';
-    const shadowColor = hasIssues 
-        ? 'rgba(211, 47, 47, 0.3)'
-        : 'rgba(255, 167, 38, 0.3)';
     
     notification.style.cssText = `
         position: fixed;
         top: 20px;
         left: 50%;
         transform: translateX(-50%);
-        background: ${bgGradient};
-        color: white;
-        padding: 15px 25px;
-        border-radius: 12px;
-        box-shadow: 0 8px 25px ${shadowColor};
+        background: #ffffff;
+        color: #000000;
+        padding: 16px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         z-index: 10001;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         font-size: 14px;
-        font-weight: 500;
-        max-width: 450px;
+        max-width: 400px;
         animation: slideDown 0.3s ease-out;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 2px solid #ff9800;
     `;
     
     document.body.appendChild(notification);
     
-    // Auto-remove after 8 seconds (longer for important warnings)
+    // Auto-remove after 6 seconds
     setTimeout(() => {
         notification.style.animation = 'slideUp 0.3s ease-out';
         setTimeout(() => {
@@ -355,7 +348,7 @@ function showWebGLResourceWarning(capabilities, requestedSize, maxSafeSize) {
                 notification.parentNode.removeChild(notification);
             }
         }, 300);
-    }, 8000);
+    }, 6000);
 }
 
 export function createGame(housesStore, gameStore, assetManager, citySize = null) {
@@ -401,24 +394,8 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
     const absoluteMaxSize = testMode ? 32 : 24; // Allow up to 32x32 in test mode
     selectedCitySize = Math.max(12, Math.min(absoluteMaxSize, selectedCitySize));
     
-    // Check if requested size exceeds system capabilities
-    const originalRequestedSize = selectedCitySize;
-    if (selectedCitySize > maxSafeCitySize) {
-        console.warn(`[WebGL] Requested city size ${selectedCitySize}×${selectedCitySize} exceeds system capabilities. Reducing to ${maxSafeCitySize}×${maxSafeCitySize}.`);
-        selectedCitySize = maxSafeCitySize;
-        // Update localStorage with the safe size
-        localStorage.setItem('selectedCitySize', selectedCitySize.toString());
-    }
-    
-    // Show warning if system has limitations or if size was reduced
-    if ((webglCapabilities.issues && webglCapabilities.issues.length > 0) || 
-        (webglCapabilities.warnings && webglCapabilities.warnings.length > 0) ||
-        originalRequestedSize > maxSafeCitySize) {
-        // Show warning after a short delay to allow scene to initialize
-        setTimeout(() => {
-            showWebGLResourceWarning(webglCapabilities, originalRequestedSize, maxSafeCitySize);
-        }, 1000);
-    }
+    // City size adjustment is only done during initial selection in the modal
+    // No automatic adjustment here - use the size as selected by the user
     
     const city = createCity(selectedCitySize);
 
@@ -652,6 +629,16 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 }
                 await scene.update(city);
                 
+                // Envoyer au serveur multijoueur si activé
+                if (window.multiplayerManager && window.multiplayerManager.isMultiplayer) {
+                    try {
+                        await window.multiplayerManager.placeBuilding(activeToolId, x, y);
+                    } catch (error) {
+                        console.warn('[Multiplayer] Erreur envoi bâtiment:', error);
+                        // On continue même si l'envoi échoue (placement local réussi)
+                    }
+                }
+                
                 // Resume the game after successful building placement
                 if (window.game) {
                     window.game.play();
@@ -723,9 +710,10 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
         }
     })
 
-    // Expose scene on game object so it can be accessed from other modules
+    // Expose scene and city on game object so it can be accessed from other modules
     const game = {
         scene: scene,
+        city: city,
 
         async update(time) {
             gameUI.updateTimeDisplay(time);
