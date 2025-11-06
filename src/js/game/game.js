@@ -23,6 +23,7 @@ import objectivesTracker from '../ui/ObjectivesTracker.js';
 import InputManager from './InputManager.js';
 import gameUI from './GameUI.js';
 import appRegistry from './AppRegistry.js';
+import webglDetector from '../utils/WebGLResourceDetector.js';
 
 // Services (city-wide simulation systems) - optional, non-invasive
 let services = [];
@@ -264,6 +265,99 @@ function showGenericErrorNotification(buildingType, reason) {
     }, 4000);
 }
 
+/**
+ * Show WebGL resource limitation warning
+ * @param {Object} capabilities - WebGL capabilities object
+ * @param {number} requestedSize - City size that was requested
+ * @param {number} maxSafeSize - Maximum safe city size for this system
+ */
+function showWebGLResourceWarning(capabilities, requestedSize, maxSafeSize) {
+    // Check if user has already dismissed this warning
+    const warningKey = `webgl-warning-dismissed-${maxSafeSize}`;
+    if (localStorage.getItem(warningKey) === 'true') {
+        return;
+    }
+
+    const notification = document.createElement('div');
+    notification.className = 'building-notification webgl-resource-warning';
+    
+    const hasIssues = capabilities.issues && capabilities.issues.length > 0;
+    const severity = hasIssues ? 'critical' : 'warning';
+    const icon = hasIssues ? '🔴' : '⚠️';
+    const title = hasIssues ? 'Limitations WebGL Détectées' : 'Avertissement WebGL';
+    
+    let message = '';
+    if (requestedSize > maxSafeSize) {
+        message = `La taille de ville ${requestedSize}×${requestedSize} dépasse les capacités de votre système. `;
+        message += `Taille maximale recommandée: ${maxSafeSize}×${maxSafeSize}. `;
+        message += `La taille a été automatiquement réduite à ${maxSafeSize}×${maxSafeSize}.`;
+    } else {
+        message = `Votre système a des ressources WebGL limitées. `;
+        message += `Taille maximale recommandée: ${maxSafeSize}×${maxSafeSize}.`;
+    }
+
+    if (capabilities.recommendation) {
+        message += ` ${capabilities.recommendation}`;
+    }
+
+    notification.innerHTML = `
+        <div class="notification-content">
+            <div class="notification-icon">${icon}</div>
+            <div class="notification-text">
+                <div class="notification-title">${title}</div>
+                <div class="notification-message">${message}</div>
+                <div class="notification-details" style="margin-top: 8px; font-size: 11px; opacity: 0.85;">
+                    ${hasIssues && capabilities.issues.length > 0 ? 
+                        capabilities.issues.slice(0, 2).map(issue => `• ${issue}`).join('<br>') : 
+                        capabilities.warnings && capabilities.warnings.length > 0 ? 
+                        capabilities.warnings.slice(0, 2).map(w => `• ${w}`).join('<br>') : ''
+                    }
+                </div>
+            </div>
+            <button class="notification-close" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; margin-left: 10px; opacity: 0.8;" onclick="this.parentElement.parentElement.remove(); localStorage.setItem('${warningKey}', 'true');">×</button>
+        </div>
+    `;
+    
+    // Add styles based on severity
+    const bgGradient = hasIssues 
+        ? 'linear-gradient(135deg, #d32f2f 0%, #c62828 100%)'
+        : 'linear-gradient(135deg, #ffa726 0%, #ff9800 100%)';
+    const shadowColor = hasIssues 
+        ? 'rgba(211, 47, 47, 0.3)'
+        : 'rgba(255, 167, 38, 0.3)';
+    
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: ${bgGradient};
+        color: white;
+        padding: 15px 25px;
+        border-radius: 12px;
+        box-shadow: 0 8px 25px ${shadowColor};
+        z-index: 10001;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        max-width: 450px;
+        animation: slideDown 0.3s ease-out;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 8 seconds (longer for important warnings)
+    setTimeout(() => {
+        notification.style.animation = 'slideUp 0.3s ease-out';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 8000);
+}
+
 export function createGame(housesStore, gameStore, assetManager, citySize = null) {
     let activeToolId = '';
     let time = 0;
@@ -289,6 +383,10 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
     const scene = createScene(housesStore, gameStore, assetManager);
 
     /* City initialization */
+    // Detect WebGL capabilities first
+    const webglCapabilities = webglDetector.detectCapabilities();
+    const maxSafeCitySize = webglDetector.getMaxSafeCitySize();
+    
     // Get city size from parameter, localStorage, config, or default to 16
     // Clamp to valid range (12-24) to prevent WebGL shader/material errors
     let selectedCitySize = citySize || 
@@ -298,7 +396,29 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
     
     // Enforce maximum size of 24 to prevent WebGL shader compilation errors
     // Larger sizes cause BackgroundMaterial shader validation failures
-    selectedCitySize = Math.max(12, Math.min(24, selectedCitySize));
+    // In test mode, allow larger sizes to test detection
+    const testMode = localStorage.getItem('webgl-test-mode');
+    const absoluteMaxSize = testMode ? 32 : 24; // Allow up to 32x32 in test mode
+    selectedCitySize = Math.max(12, Math.min(absoluteMaxSize, selectedCitySize));
+    
+    // Check if requested size exceeds system capabilities
+    const originalRequestedSize = selectedCitySize;
+    if (selectedCitySize > maxSafeCitySize) {
+        console.warn(`[WebGL] Requested city size ${selectedCitySize}×${selectedCitySize} exceeds system capabilities. Reducing to ${maxSafeCitySize}×${maxSafeCitySize}.`);
+        selectedCitySize = maxSafeCitySize;
+        // Update localStorage with the safe size
+        localStorage.setItem('selectedCitySize', selectedCitySize.toString());
+    }
+    
+    // Show warning if system has limitations or if size was reduced
+    if ((webglCapabilities.issues && webglCapabilities.issues.length > 0) || 
+        (webglCapabilities.warnings && webglCapabilities.warnings.length > 0) ||
+        originalRequestedSize > maxSafeCitySize) {
+        // Show warning after a short delay to allow scene to initialize
+        setTimeout(() => {
+            showWebGLResourceWarning(webglCapabilities, originalRequestedSize, maxSafeCitySize);
+        }, 1000);
+    }
     
     const city = createCity(selectedCitySize);
 
