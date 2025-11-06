@@ -9,24 +9,22 @@
  */
 
 const getWebSocketUrl = () => {
+  // Si VITE_WEBSOCKET_URL est défini, TOUJOURS l'utiliser (même en local pour tester les certificats SSL)
+  if (import.meta.env.VITE_WEBSOCKET_URL) {
+    return import.meta.env.VITE_WEBSOCKET_URL;
+  }
+  
   // Détection automatique de l'environnement
   const hostname = window.location.hostname;
   
-  // Développement local
+  // Développement local (par défaut si pas de VITE_WEBSOCKET_URL)
   if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0') {
     return 'ws://localhost:9876';
   }
   
-  // Production - Utilise la variable d'environnement Vercel
-  // Configurez VITE_WEBSOCKET_URL dans Vercel Dashboard → Settings → Environment Variables
+  // Production - Fallback si pas de variable d'environnement
   // Format: wss://194.164.76.63 (avec Traefik + certificat auto-signé)
-  // Note: Avec Vite, les variables doivent être préfixées par VITE_ pour être accessibles côté client
-  // IMPORTANT: Utilisez wss:// (WebSocket Secure) car Vercel sert en HTTPS
-  // Le certificat auto-signé affichera un avertissement mais fonctionnera
-  const PRODUCTION_WS_URL = import.meta.env.VITE_WEBSOCKET_URL || 
-                            'wss://194.164.76.63'; // Fallback - Traefik avec certificat auto-signé
-  
-  return PRODUCTION_WS_URL;
+  return 'wss://194.164.76.63'; // Fallback - Traefik avec certificat auto-signé
 };
 
 export default getWebSocketUrl;

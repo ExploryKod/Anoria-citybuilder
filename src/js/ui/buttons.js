@@ -1781,14 +1781,14 @@ window.onload = async () => {
     const game = createGame(housesStore, gameStore, assetManager, selectedCitySize);
     appRegister('game', game);
     
-    // Activer le multijoueur si demandé
-    if (multiplayerEnabled && playerPseudo) {
+    // Activer le multijoueur uniquement si l'utilisateur a explicitement créé/rejoint un salon
+    if (multiplayerEnabled && playerPseudo && (selectionResult.action === 'create' || selectionResult.action === 'join')) {
         try {
             const { getMultiplayerManager } = await import('../multiplayer/MultiplayerManager.js');
             const multiplayerManager = getMultiplayerManager(game, game.scene, housesStore);
             
             // Déterminer l'action et les paramètres
-            const action = selectionResult.action || 'create';
+            const action = selectionResult.action;
             let roomIdOrCitySize;
             let roomName = null;
             if (action === 'join' && selectionResult.roomId) {

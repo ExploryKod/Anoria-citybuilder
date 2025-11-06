@@ -477,131 +477,97 @@ export class MultiplayerManager {
 
     /**
      * Affiche une alerte d'échec de connexion et propose le mode solo
+     * Style simple comme les modales du jeu
      */
     showConnectionFailedAlert() {
-        const alert = document.createElement('div');
-        alert.className = 'multiplayer-connection-failed-alert';
-        alert.innerHTML = `
-            <div class="alert-content">
-                <div class="alert-icon">⚠️</div>
-                <div class="alert-text">
-                    <div class="alert-title">Impossible de se connecter au serveur</div>
-                    <div class="alert-message">Le serveur multijoueur est inaccessible. Voulez-vous continuer en mode solo ?</div>
-                </div>
-            </div>
-            <div class="alert-actions">
-                <button class="alert-btn alert-btn-primary" id="switch-to-solo-btn">Jouer en solo</button>
-                <button class="alert-btn alert-btn-secondary" id="dismiss-alert-btn">Fermer</button>
-            </div>
-        `;
-        
-        alert.style.cssText = `
+        // Créer une modale simple comme les autres modales du jeu
+        const modal = document.createElement('div');
+        modal.className = 'multiplayer-error-modal';
+        modal.style.cssText = `
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-            color: white;
-            padding: 30px 35px;
-            border-radius: 16px;
-            box-shadow: 0 12px 40px rgba(255, 152, 0, 0.5);
-            z-index: 10005;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 14px;
-            font-weight: 500;
-            min-width: 380px;
-            max-width: 450px;
-            animation: scaleIn 0.3s ease-out;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: var(--z-index-modal, 10000);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         `;
         
-        // Styles pour les boutons
-        const style = document.createElement('style');
-        style.id = 'multiplayer-connection-failed-styles';
-        if (!document.getElementById('multiplayer-connection-failed-styles')) {
-            style.textContent = `
-                .multiplayer-connection-failed-alert .alert-content {
-                    display: flex;
-                    align-items: center;
-                    gap: 15px;
-                    margin-bottom: 20px;
-                }
-                .multiplayer-connection-failed-alert .alert-icon {
-                    font-size: 32px;
-                    flex-shrink: 0;
-                }
-                .multiplayer-connection-failed-alert .alert-text {
-                    flex: 1;
-                }
-                .multiplayer-connection-failed-alert .alert-title {
-                    font-weight: 700;
-                    font-size: 16px;
-                    margin-bottom: 4px;
-                }
-                .multiplayer-connection-failed-alert .alert-message {
-                    font-size: 13px;
-                    opacity: 0.95;
-                }
-                .multiplayer-connection-failed-alert .alert-actions {
-                    display: flex;
-                    gap: 12px;
-                    justify-content: flex-end;
-                }
-                .multiplayer-connection-failed-alert .alert-btn {
-                    padding: 10px 20px;
-                    border: none;
-                    border-radius: 8px;
-                    font-size: 14px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                }
-                .multiplayer-connection-failed-alert .alert-btn-primary {
-                    background: white;
-                    color: #ff9800;
-                }
-                .multiplayer-connection-failed-alert .alert-btn-primary:hover {
-                    background: #f5f5f5;
-                    transform: translateY(-1px);
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-                }
-                .multiplayer-connection-failed-alert .alert-btn-secondary {
-                    background: rgba(255, 255, 255, 0.2);
-                    color: white;
-                    border: 1px solid rgba(255, 255, 255, 0.3);
-                }
-                .multiplayer-connection-failed-alert .alert-btn-secondary:hover {
-                    background: rgba(255, 255, 255, 0.3);
-                }
-            `;
-            document.head.appendChild(style);
-        }
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = `
+            background: #fafafa;
+            color: var(--primary, #333);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 500px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 0;
+            overflow: hidden;
+        `;
         
-        document.body.appendChild(alert);
+        const header = document.createElement('div');
+        header.style.cssText = `
+            background: white;
+            padding: 20px;
+            border-bottom: 2px solid var(--cta, #fb8122);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        `;
+        header.innerHTML = `
+            <h3 style="margin: 0; font-size: 1.4rem; font-weight: 600; color: var(--primary, #333);">Serveur multijoueur inaccessible</h3>
+            <button class="modal-close-btn" style="background: white; border: 3px solid var(--cta, #fb8122); color: var(--cta, #fb8122); width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-size: 24px; line-height: 1;">×</button>
+        `;
         
-        // Bouton "Jouer en solo"
-        const soloBtn = alert.querySelector('#switch-to-solo-btn');
-        soloBtn.addEventListener('click', () => {
-            this.switchToSoloMode();
-            alert.style.opacity = '0';
-            alert.style.transition = 'opacity 0.4s';
-            setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.parentNode.removeChild(alert);
-                }
-            }, 400);
+        const content = document.createElement('div');
+        content.style.cssText = `
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        `;
+        content.innerHTML = `
+            <p style="margin: 0; color: var(--primary, #333); font-size: 14px; line-height: 1.5;">
+                Le serveur multijoueur est actuellement inaccessible. Voulez-vous continuer en mode solo ?
+            </p>
+        `;
+        
+        const actions = document.createElement('div');
+        actions.style.cssText = `
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            padding: 0 20px 20px;
+        `;
+        actions.innerHTML = `
+            <button class="modal-btn secondary" id="dismiss-btn" style="background: white; color: var(--cta, #fb8122); border: 3px solid var(--cta, #fb8122); padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; min-width: 80px;">Fermer</button>
+            <button class="modal-btn" id="switch-to-solo-btn" style="background-color: var(--cta, #fb8122); color: white; border: 3px solid var(--cta, #fb8122); padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; min-width: 80px;">Jouer en solo</button>
+        `;
+        
+        wrapper.appendChild(header);
+        wrapper.appendChild(content);
+        wrapper.appendChild(actions);
+        modal.appendChild(wrapper);
+        document.body.appendChild(modal);
+        
+        // Bouton fermer (X)
+        header.querySelector('.modal-close-btn').addEventListener('click', () => {
+            modal.remove();
         });
         
         // Bouton "Fermer"
-        const dismissBtn = alert.querySelector('#dismiss-alert-btn');
-        dismissBtn.addEventListener('click', () => {
-            alert.style.opacity = '0';
-            alert.style.transition = 'opacity 0.4s';
-            setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.parentNode.removeChild(alert);
-                }
-            }, 400);
+        actions.querySelector('#dismiss-btn').addEventListener('click', () => {
+            modal.remove();
+        });
+        
+        // Bouton "Jouer en solo"
+        actions.querySelector('#switch-to-solo-btn').addEventListener('click', () => {
+            this.switchToSoloMode();
+            modal.remove();
         });
     }
 
@@ -633,124 +599,100 @@ export class MultiplayerManager {
 
     /**
      * Affiche une alerte de connexion refusée (limite de joueurs)
+     * Style simple comme les modales du jeu
      */
     showConnectionRefusedAlert(data) {
-        const alert = document.createElement('div');
-        alert.className = 'multiplayer-connection-refused-alert';
-        alert.innerHTML = `
-            <div class="alert-content">
-                <div class="alert-icon">🚫</div>
-                <div class="alert-text">
-                    <div class="alert-title">Limite de joueurs atteinte</div>
-                    <div class="alert-message">${data.message || `Limite de ${data.maxPlayers} joueurs atteinte (${data.currentPlayers}/${data.maxPlayers})`}</div>
-                    <div class="alert-hint">Vous pouvez toujours jouer en mode solo.</div>
-                </div>
-            </div>
-        `;
-        
-        alert.style.cssText = `
+        // Créer une modale simple comme les autres modales du jeu
+        const modal = document.createElement('div');
+        modal.className = 'multiplayer-error-modal';
+        modal.style.cssText = `
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
-            color: white;
-            padding: 30px 35px;
-            border-radius: 16px;
-            box-shadow: 0 12px 40px rgba(211, 47, 47, 0.5);
-            z-index: 10004;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 14px;
-            font-weight: 500;
-            min-width: 320px;
-            max-width: 400px;
-            animation: scaleIn 0.3s ease-out;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            text-align: center;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: var(--z-index-modal, 10000);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         `;
         
-        // Ajouter les styles d'animation si pas déjà présents
-        if (!document.getElementById('multiplayer-alert-styles')) {
-            const style = document.createElement('style');
-            style.id = 'multiplayer-alert-styles';
-            style.textContent = `
-                @keyframes scaleIn {
-                    from {
-                        opacity: 0;
-                        transform: translate(-50%, -50%) scale(0.8);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translate(-50%, -50%) scale(1);
-                    }
-                }
-                @keyframes slideInRight {
-                    from {
-                        opacity: 0;
-                        transform: translateX(100px);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateX(0);
-                    }
-                }
-                @keyframes slideOutRight {
-                    from {
-                        opacity: 1;
-                        transform: translateX(0);
-                    }
-                    to {
-                        opacity: 0;
-                        transform: translateX(100px);
-                    }
-                }
-                .multiplayer-disconnect-alert .alert-content,
-                .multiplayer-connection-refused-alert .alert-content {
-                    display: flex;
-                    align-items: center;
-                    gap: 15px;
-                }
-                .multiplayer-disconnect-alert .alert-icon,
-                .multiplayer-connection-refused-alert .alert-icon {
-                    font-size: 32px;
-                    flex-shrink: 0;
-                }
-                .multiplayer-disconnect-alert .alert-text,
-                .multiplayer-connection-refused-alert .alert-text {
-                    flex: 1;
-                }
-                .multiplayer-disconnect-alert .alert-title,
-                .multiplayer-connection-refused-alert .alert-title {
-                    font-weight: 700;
-                    font-size: 16px;
-                    margin-bottom: 4px;
-                }
-                .multiplayer-disconnect-alert .alert-message,
-                .multiplayer-connection-refused-alert .alert-message {
-                    font-size: 13px;
-                    opacity: 0.95;
-                }
-                .multiplayer-connection-refused-alert .alert-hint {
-                    font-size: 12px;
-                    opacity: 0.85;
-                    margin-top: 8px;
-                    font-style: italic;
-                }
-            `;
-            document.head.appendChild(style);
-        }
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = `
+            background: #fafafa;
+            color: var(--primary, #333);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 500px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 0;
+            overflow: hidden;
+        `;
         
-        document.body.appendChild(alert);
+        const header = document.createElement('div');
+        header.style.cssText = `
+            background: white;
+            padding: 20px;
+            border-bottom: 2px solid var(--cta, #fb8122);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        `;
+        header.innerHTML = `
+            <h3 style="margin: 0; font-size: 1.4rem; font-weight: 600; color: var(--primary, #333);">Limite de joueurs atteinte</h3>
+            <button class="modal-close-btn" style="background: white; border: 3px solid var(--cta, #fb8122); color: var(--cta, #fb8122); width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-size: 24px; line-height: 1;">×</button>
+        `;
         
-        // Auto-remove après 8 secondes (plus long car c'est important)
+        const content = document.createElement('div');
+        content.style.cssText = `
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        `;
+        content.innerHTML = `
+            <p style="margin: 0; color: var(--primary, #333); font-size: 14px; line-height: 1.5;">
+                ${data.message || `Limite de ${data.maxPlayers} joueurs atteinte (${data.currentPlayers}/${data.maxPlayers})`}
+            </p>
+            <p style="margin: 0; color: var(--primary, #333); font-size: 14px; line-height: 1.5; font-style: italic;">
+                Vous pouvez toujours jouer en mode solo.
+            </p>
+        `;
+        
+        const actions = document.createElement('div');
+        actions.style.cssText = `
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            padding: 0 20px 20px;
+        `;
+        actions.innerHTML = `
+            <button class="modal-btn" id="close-btn" style="background-color: var(--cta, #fb8122); color: white; border: 3px solid var(--cta, #fb8122);">Fermer</button>
+        `;
+        
+        wrapper.appendChild(header);
+        wrapper.appendChild(content);
+        wrapper.appendChild(actions);
+        modal.appendChild(wrapper);
+        document.body.appendChild(modal);
+        
+        // Bouton fermer (X)
+        header.querySelector('.modal-close-btn').addEventListener('click', () => {
+            modal.remove();
+        });
+        
+        // Bouton "Fermer"
+        actions.querySelector('#close-btn').addEventListener('click', () => {
+            modal.remove();
+        });
+        
+        // Auto-remove après 8 secondes
         setTimeout(() => {
-            alert.style.opacity = '0';
-            alert.style.transition = 'opacity 0.4s';
-            setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.parentNode.removeChild(alert);
-                }
-            }, 400);
+            if (modal.parentNode) {
+                modal.remove();
+            }
         }, 8000);
     }
 
