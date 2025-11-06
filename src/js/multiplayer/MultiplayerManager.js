@@ -880,6 +880,8 @@ export class MultiplayerManager {
      */
     disable() {
         if (this.wsClient) {
+            // Désactiver les tentatives de reconnexion avant de déconnecter
+            this.wsClient.shouldReconnect = false;
             this.wsClient.disconnect();
             this.wsClient = null;
         }
