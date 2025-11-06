@@ -22,8 +22,9 @@ export class MultiplayerManager {
      * @param {string} playerPseudo - Pseudo du joueur
      * @param {string|number} roomIdOrCitySize - ID du salon à rejoindre ou taille de ville pour créer un salon
      * @param {string} action - 'create' pour créer un salon, 'join' pour rejoindre
+     * @param {string} roomName - Nom du salon (optionnel, seulement pour 'create')
      */
-    async enable(serverUrl = 'ws://localhost:9876', playerPseudo = 'Joueur', roomIdOrCitySize = null, action = 'create') {
+    async enable(serverUrl = 'ws://localhost:9876', playerPseudo = 'Joueur', roomIdOrCitySize = null, action = 'create', roomName = null) {
         this.playerPseudo = playerPseudo;
         if (this.isMultiplayer) {
             console.warn('[Multiplayer] Déjà activé');
@@ -51,6 +52,9 @@ export class MultiplayerManager {
                 roomCreatedOrJoined = true;
                 this.wsClient.off('roomCreated', onRoomCreated);
                 console.log('[Multiplayer] Salon créé:', data.roomId);
+                this.isMultiplayer = true;
+                // Mettre le jeu en pause si seul dans le salon
+                this.checkAndPauseIfAlone();
                 resolve();
             };
             
@@ -58,6 +62,9 @@ export class MultiplayerManager {
                 roomCreatedOrJoined = true;
                 this.wsClient.off('roomJoined', onRoomJoined);
                 console.log('[Multiplayer] Salon rejoint:', data.roomId);
+                this.isMultiplayer = true;
+                // Mettre le jeu en pause si seul dans le salon
+                this.checkAndPauseIfAlone();
                 resolve();
             };
             
@@ -79,7 +86,8 @@ export class MultiplayerManager {
                             // Créer un nouveau salon avec la taille spécifiée
                             this.wsClient.send('CREATE_ROOM', {
                                 citySize: roomIdOrCitySize,
-                                playerPseudo: playerPseudo
+                                playerPseudo: playerPseudo,
+                                roomName: roomName
                             });
                         } else {
                             // Ancien comportement (fallback)
@@ -197,6 +205,9 @@ export class MultiplayerManager {
                 }
             }
             this.updatePlayersList(this.playersList);
+            
+            // Si on était seul et qu'un joueur rejoint, reprendre le jeu
+            this.checkAndPauseIfAlone();
         });
 
         // Joueur parti
@@ -210,6 +221,9 @@ export class MultiplayerManager {
             // Retirer le joueur de la liste locale
             this.playersList = this.playersList.filter(p => p.id !== data.playerId);
             this.updatePlayersList(this.playersList);
+            
+            // Vérifier si on doit mettre en pause (si on est seul maintenant)
+            this.checkAndPauseIfAlone();
         });
 
         // Pseudo mis à jour
@@ -244,6 +258,9 @@ export class MultiplayerManager {
                 }
                 
                 this.updatePlayersList(this.playersList);
+                
+                // Vérifier si on doit mettre en pause ou reprendre
+                this.checkAndPauseIfAlone();
             }
         });
 
@@ -266,6 +283,15 @@ export class MultiplayerManager {
     async handleFullSync(data) {
         console.log(`[Multiplayer] Synchronisation: ${data.buildings.length} bâtiments, ${data.players.length} joueurs`);
         
+        // Mettre à jour la liste des joueurs
+        if (data.players && Array.isArray(data.players)) {
+            this.playersList = data.players.map(p => ({
+                id: p.id,
+                pseudo: p.pseudo || 'Joueur'
+            }));
+            this.updatePlayersList(this.playersList);
+        }
+        
         // Placer tous les bâtiments distants
         for (const building of data.buildings) {
             // Ne pas replacer nos propres bâtiments
@@ -273,6 +299,9 @@ export class MultiplayerManager {
                 await this.placeRemoteBuilding(building);
             }
         }
+        
+        // Vérifier si on doit mettre en pause (si seul)
+        this.checkAndPauseIfAlone();
     }
 
     /**
@@ -285,6 +314,32 @@ export class MultiplayerManager {
         }
 
         await this.placeRemoteBuilding(building);
+    }
+
+    /**
+     * Vérifie si on est seul dans le salon et met en pause si nécessaire
+     */
+    checkAndPauseIfAlone() {
+        if (!this.isMultiplayer || !this.game) {
+            return;
+        }
+        
+        // Compter les joueurs (nous inclus)
+        const totalPlayers = this.playersList.length;
+        
+        if (totalPlayers < 2) {
+            // Seul dans le salon - mettre en pause
+            if (this.game && typeof this.game.pause === 'function') {
+                this.game.pause();
+                this.showNotification('En attente d\'un autre joueur... Le jeu est en pause.', 'info');
+            }
+        } else {
+            // Au moins 2 joueurs - reprendre le jeu
+            if (this.game && typeof this.game.play === 'function') {
+                this.game.play();
+                this.showNotification('Partie démarrée !', 'success');
+            }
+        }
     }
 
     /**
