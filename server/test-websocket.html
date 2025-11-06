@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test WebSocket - Anoria Server</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .status {
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .status.connecting {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffc107;
+        }
+        
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.02);
+            }
+        }
+        
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .info-box h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .info-box p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .messages {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            font-size: 13px;
+            word-wrap: break-word;
+        }
+        
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .message.server {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-connect {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-connect:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+        
+        .btn-disconnect {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-disconnect:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+        }
+        
+        .btn-test {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-test:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .timestamp {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 Test WebSocket Anoria</h1>
+        <p class="subtitle">Vérification de la connexion au serveur WebSocket</p>
+        
+        <div id="status" class="status disconnected">
+            ⚫ Déconnecté
+        </div>
+        
+        <div class="info-box">
+            <h3>📡 Informations de connexion</h3>
+            <p><strong>URL:</strong> <span id="ws-url">ws://localhost:9876</span></p>
+            <p><strong>État:</strong> <span id="connection-state">Non connecté</span></p>
+            <p><strong>Messages reçus:</strong> <span id="message-count">0</span></p>
+        </div>
+        
+        <div class="messages" id="messages">
+            <div class="message info">
+                Prêt à se connecter. Cliquez sur "Se connecter" pour commencer.
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="btn-connect" class="btn-connect" onclick="connect()">Se connecter</button>
+            <button id="btn-disconnect" class="btn-disconnect" onclick="disconnect()" disabled>Se déconnecter</button>
+            <button id="btn-test" class="btn-test" onclick="sendTestMessage()" disabled>Envoyer test</button>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let messageCount = 0;
+        const wsUrl = 'ws://localhost:9876';
+        
+        function updateStatus(status, message) {
+            const statusEl = document.getElementById('status');
+            const stateEl = document.getElementById('connection-state');
+            
+            statusEl.className = `status ${status}`;
+            statusEl.textContent = message;
+            stateEl.textContent = status === 'connected' ? 'Connecté' : 
+                                 status === 'connecting' ? 'Connexion...' : 
+                                 status === 'error' ? 'Erreur' : 'Déconnecté';
+        }
+        
+        function addMessage(text, type = 'info') {
+            const messagesEl = document.getElementById('messages');
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${type}`;
+            
+            const time = new Date().toLocaleTimeString('fr-FR');
+            messageEl.innerHTML = `
+                <div>${text}</div>
+                <div class="timestamp">${time}</div>
+            `;
+            
+            messagesEl.appendChild(messageEl);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+            
+            if (type !== 'info') {
+                messageCount++;
+                document.getElementById('message-count').textContent = messageCount;
+            }
+        }
+        
+        function connect() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                addMessage('Déjà connecté!', 'info');
+                return;
+            }
+            
+            updateStatus('connecting', '🟡 Connexion en cours...');
+            addMessage(`Tentative de connexion à ${wsUrl}...`, 'info');
+            
+            document.getElementById('btn-connect').disabled = true;
+            
+            try {
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = () => {
+                    updateStatus('connected', '🟢 Connecté au serveur!');
+                    addMessage('✅ Connexion établie avec succès!', 'success');
+                    document.getElementById('btn-connect').disabled = true;
+                    document.getElementById('btn-disconnect').disabled = false;
+                    document.getElementById('btn-test').disabled = false;
+                };
+                
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        addMessage(`📨 Message reçu: ${JSON.stringify(data, null, 2)}`, 'server');
+                        
+                        // Si c'est la liste des salons, afficher un message spécial
+                        if (data.type === 'AVAILABLE_ROOMS') {
+                            addMessage(`✅ Serveur fonctionne! ${data.rooms?.length || 0} salon(s) disponible(s)`, 'success');
+                        }
+                    } catch (e) {
+                        addMessage(`📨 Message reçu (texte): ${event.data}`, 'server');
+                    }
+                };
+                
+                ws.onerror = (error) => {
+                    updateStatus('error', '🔴 Erreur de connexion');
+                    addMessage('❌ Erreur de connexion. Vérifiez que le serveur est démarré.', 'error');
+                    console.error('WebSocket error:', error);
+                };
+                
+                ws.onclose = (event) => {
+                    updateStatus('disconnected', '⚫ Déconnecté');
+                    addMessage(`🔌 Connexion fermée (code: ${event.code}, raison: ${event.reason || 'Aucune'})`, 'info');
+                    document.getElementById('btn-connect').disabled = false;
+                    document.getElementById('btn-disconnect').disabled = true;
+                    document.getElementById('btn-test').disabled = true;
+                    ws = null;
+                };
+                
+            } catch (error) {
+                updateStatus('error', '🔴 Erreur');
+                addMessage(`❌ Erreur: ${error.message}`, 'error');
+                document.getElementById('btn-connect').disabled = false;
+            }
+        }
+        
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+        
+        function sendTestMessage() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                addMessage('❌ Pas connecté au serveur', 'error');
+                return;
+            }
+            
+            const testMessage = {
+                type: 'TEST',
+                message: 'Message de test depuis la page HTML',
+                timestamp: new Date().toISOString()
+            };
+            
+            ws.send(JSON.stringify(testMessage));
+            addMessage(`📤 Message envoyé: ${JSON.stringify(testMessage)}`, 'info');
+        }
+        
+        // Auto-connexion au chargement de la page
+        window.addEventListener('load', () => {
+            addMessage('Page chargée. Cliquez sur "Se connecter" pour tester.', 'info');
+        });
+    </script>
+</body>
+</html>
+

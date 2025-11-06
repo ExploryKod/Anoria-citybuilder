@@ -962,8 +962,12 @@ function showCitySizeSelection() {
             roomsList.innerHTML = '<div class="multiplayer-rooms-loading">Chargement des salons...</div>';
             
             try {
+                // Importer la configuration WebSocket
+                const getWebSocketUrl = (await import('../../config/websocket.js')).default;
+                const wsUrl = getWebSocketUrl();
+                
                 // Se connecter temporairement au WebSocket pour recevoir la liste des salons
-                const ws = new WebSocket('ws://localhost:9876');
+                const ws = new WebSocket(wsUrl);
                 let roomsReceived = false;
                 let connectionClosed = false;
                 
@@ -1786,17 +1790,23 @@ window.onload = async () => {
             // Déterminer l'action et les paramètres
             const action = selectionResult.action || 'create';
             let roomIdOrCitySize;
+            let roomName = null;
             if (action === 'join' && selectionResult.roomId) {
                 // Rejoindre un salon existant
                 roomIdOrCitySize = selectionResult.roomId;
-            } else {
+            } else if (action === 'create') {
                 // Créer un nouveau salon avec la taille choisie
                 roomIdOrCitySize = selectedCitySize;
+                roomName = selectionResult.roomName || null;
             }
             
-            console.log('[Multiplayer] Activation avec:', { action, roomIdOrCitySize, playerPseudo, selectedCitySize });
+            console.log('[Multiplayer] Activation avec:', { action, roomIdOrCitySize, playerPseudo, selectedCitySize, roomName });
             
-            await multiplayerManager.enable('ws://localhost:9876', playerPseudo, roomIdOrCitySize, action);
+            // Importer la configuration WebSocket
+            const getWebSocketUrl = (await import('../../config/websocket.js')).default;
+            const wsUrl = getWebSocketUrl();
+            
+            await multiplayerManager.enable(wsUrl, playerPseudo, roomIdOrCitySize, action, roomName);
             window.multiplayerManager = multiplayerManager;
             console.log(`[Multiplayer] Mode multijoueur activé avec pseudo: ${playerPseudo}`);
         } catch (error) {
