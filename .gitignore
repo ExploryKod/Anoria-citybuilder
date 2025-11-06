@@ -35,3 +35,6 @@ models
 
 /MenWalking.fbx
 MenWalking.fbx
+
+server/*/** 
+/server
