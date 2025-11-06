@@ -19,10 +19,12 @@ const getWebSocketUrl = () => {
   
   // Production - Utilise la variable d'environnement Vercel
   // Configurez VITE_WEBSOCKET_URL dans Vercel Dashboard → Settings → Environment Variables
-  // Format: ws://194.164.76.63:9876 ou wss://votre-domaine.com
+  // Format: wss://194.164.76.63 (avec Traefik + certificat auto-signé)
   // Note: Avec Vite, les variables doivent être préfixées par VITE_ pour être accessibles côté client
+  // IMPORTANT: Utilisez wss:// (WebSocket Secure) car Vercel sert en HTTPS
+  // Le certificat auto-signé affichera un avertissement mais fonctionnera
   const PRODUCTION_WS_URL = import.meta.env.VITE_WEBSOCKET_URL || 
-                            'ws://194.164.76.63:9876'; // Fallback par défaut
+                            'wss://194.164.76.63'; // Fallback - Traefik avec certificat auto-signé
   
   return PRODUCTION_WS_URL;
 };
