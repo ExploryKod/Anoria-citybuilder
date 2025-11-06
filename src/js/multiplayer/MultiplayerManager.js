@@ -328,16 +328,45 @@ export class MultiplayerManager {
         const totalPlayers = this.playersList.length;
         
         if (totalPlayers < 2) {
-            // Seul dans le salon - mettre en pause
+            // Seul dans le salon - mettre en pause et afficher le message
             if (this.game && typeof this.game.pause === 'function') {
                 this.game.pause();
-                this.showNotification('En attente d\'un autre joueur... Le jeu est en pause.', 'info');
             }
+            this.showWaitingForPlayerMessage(true);
         } else {
-            // Au moins 2 joueurs - reprendre le jeu
+            // Au moins 2 joueurs - reprendre le jeu et masquer le message
+            this.showWaitingForPlayerMessage(false);
             if (this.game && typeof this.game.play === 'function') {
                 this.game.play();
                 this.showNotification('Partie démarrée !', 'success');
+            }
+        }
+    }
+
+    /**
+     * Affiche ou masque le message d'attente d'un joueur
+     * @param {boolean} show - True pour afficher, false pour masquer
+     */
+    showWaitingForPlayerMessage(show) {
+        let messageEl = document.getElementById('multiplayer-waiting-message');
+        
+        if (show) {
+            if (!messageEl) {
+                // Créer le message s'il n'existe pas
+                messageEl = document.createElement('div');
+                messageEl.id = 'multiplayer-waiting-message';
+                messageEl.innerHTML = `
+                    <div class="waiting-message-content">
+                        <div class="waiting-message-icon">⏳</div>
+                        <div class="waiting-message-text">En attente d'un nouveau joueur...</div>
+                    </div>
+                `;
+                document.body.appendChild(messageEl);
+            }
+            messageEl.style.display = 'flex';
+        } else {
+            if (messageEl) {
+                messageEl.style.display = 'none';
             }
         }
     }
@@ -740,6 +769,9 @@ export class MultiplayerManager {
         }
         this.isMultiplayer = false;
         this.remoteBuildings.clear();
+        
+        // Masquer le message d'attente
+        this.showWaitingForPlayerMessage(false);
         
         // Supprimer l'UI des joueurs
         const playersContainer = document.getElementById('multiplayer-players-list');
