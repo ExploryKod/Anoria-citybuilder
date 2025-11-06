@@ -824,7 +824,7 @@ function makeNewButton(buttonInfo, svg="") {
 }
 
 
-// Function to show city size selection modal and return selected size
+// Function to show city size selection modal and return selected size and multiplayer mode
 function showCitySizeSelection() {
     return new Promise((resolve) => {
         const modal = document.getElementById('city-size-selection-modal');
@@ -832,14 +832,15 @@ function showCitySizeSelection() {
         const customInput = modal?.querySelector('#custom-city-size');
         const customButton = modal?.querySelector('#custom-size-apply');
         const messageEl = modal?.querySelector('.city-size-selection-message');
+        const multiplayerToggle = modal?.querySelector('#multiplayer-toggle');
         
         if (!modal || !options) {
             // Fallback: return default size if modal doesn't exist
-            resolve(16);
+            resolve({ size: 16, multiplayer: false });
             return;
         }
         
-        // Detect WebGL capabilities
+        // Detect WebGL capabilities (doit être fait en premier)
         const webglCapabilities = webglDetector.detectCapabilities();
         const maxSafeCitySize = webglDetector.getMaxSafeCitySize();
         
@@ -850,6 +851,173 @@ function showCitySizeSelection() {
         const theoreticalMaxSize = testMode ? (isMobile ? 24 : 32) : (isMobile ? 16 : 24);
         // Use the lower of theoretical max or WebGL-safe max
         const maxSize = Math.min(theoreticalMaxSize, maxSafeCitySize);
+        
+        // Restaurer l'état multijoueur sauvegardé
+        const savedMultiplayer = localStorage.getItem('multiplayer-enabled') === 'true';
+        const savedPseudo = localStorage.getItem('multiplayer-pseudo') || '';
+        const pseudoContainer = modal?.querySelector('#multiplayer-pseudo-container');
+        const pseudoInput = modal?.querySelector('#multiplayer-pseudo');
+        
+        // Configurer le toggle multijoueur et le champ pseudo
+        if (multiplayerToggle) {
+            multiplayerToggle.checked = savedMultiplayer;
+            // Afficher/masquer le champ pseudo
+            if (pseudoContainer) {
+                pseudoContainer.style.display = savedMultiplayer ? 'block' : 'none';
+            }
+            if (pseudoInput && savedPseudo) {
+                pseudoInput.value = savedPseudo;
+            }
+            
+            // Toggle du champ pseudo et des salons
+            multiplayerToggle.addEventListener('change', () => {
+                if (pseudoContainer) {
+                    pseudoContainer.style.display = multiplayerToggle.checked ? 'block' : 'none';
+                }
+                const roomsContainer = modal?.querySelector('#multiplayer-rooms-container');
+                if (roomsContainer) {
+                    roomsContainer.style.display = multiplayerToggle.checked ? 'block' : 'none';
+                    if (multiplayerToggle.checked) {
+                        loadAvailableRooms(modal, maxSafeCitySize);
+                    }
+                }
+            });
+        }
+        
+        // Fonction pour charger et afficher les salons disponibles
+        const loadAvailableRooms = async (modal, maxSafeCitySizeParam) => {
+            const maxSafeCitySizeToUse = maxSafeCitySizeParam;
+            const roomsList = modal?.querySelector('#multiplayer-rooms-list');
+            if (!roomsList) return;
+            
+            roomsList.innerHTML = '<div class="multiplayer-rooms-loading">Chargement des salons...</div>';
+            
+            try {
+                // Se connecter temporairement au WebSocket pour recevoir la liste des salons
+                const ws = new WebSocket('ws://localhost:9876');
+                let roomsReceived = false;
+                let connectionClosed = false;
+                
+                const timeout = setTimeout(() => {
+                    if (!roomsReceived && !connectionClosed) {
+                        connectionClosed = true;
+                        ws.close();
+                        // Afficher un message mais permettre quand même de créer un salon
+                        roomsList.innerHTML = '<div class="multiplayer-rooms-empty">Serveur non disponible. Vous pouvez créer un nouveau salon en choisissant une taille ci-dessus.</div>';
+                    }
+                }, 3000);
+                
+                ws.onopen = () => {
+                    // La liste sera envoyée automatiquement par le serveur
+                    console.log('[Rooms] Connexion WebSocket établie pour charger les salons');
+                };
+                
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        console.log('[Rooms] Message reçu:', data.type, data);
+                        if (data.type === 'AVAILABLE_ROOMS') {
+                            roomsReceived = true;
+                            connectionClosed = true;
+                            clearTimeout(timeout);
+                            console.log('[Rooms] Salons reçus:', data.rooms);
+                            displayRooms(roomsList, data.rooms, maxSafeCitySizeToUse, modal);
+                            // Ne pas fermer immédiatement, attendre un peu pour recevoir d'autres mises à jour
+                            setTimeout(() => {
+                                if (ws.readyState === WebSocket.OPEN) {
+                                    ws.close();
+                                }
+                            }, 1000);
+                        }
+                    } catch (error) {
+                        console.error('[Rooms] Erreur parsing:', error);
+                    }
+                };
+                
+                ws.onerror = (error) => {
+                    console.error('[Rooms] Erreur WebSocket:', error);
+                    if (!connectionClosed) {
+                        connectionClosed = true;
+                        clearTimeout(timeout);
+                        // Afficher un message mais permettre quand même de créer un salon
+                        roomsList.innerHTML = '<div class="multiplayer-rooms-empty">Serveur non disponible. Vous pouvez créer un nouveau salon en choisissant une taille ci-dessus.</div>';
+                    }
+                };
+                
+                ws.onclose = () => {
+                    connectionClosed = true;
+                };
+            } catch (error) {
+                console.error('[Rooms] Erreur:', error);
+                // Afficher un message mais permettre quand même de créer un salon
+                roomsList.innerHTML = '<div class="multiplayer-rooms-empty">Erreur de connexion. Vous pouvez créer un nouveau salon en choisissant une taille ci-dessus.</div>';
+            }
+        };
+        
+        // Fonction pour afficher les salons
+        const displayRooms = (roomsList, rooms, maxSafeCitySize, modal) => {
+            if (!rooms || rooms.length === 0) {
+                roomsList.innerHTML = '<div class="multiplayer-rooms-empty">Aucun salon disponible. Créez-en un en choisissant une taille ci-dessus.</div>';
+                return;
+            }
+            
+            roomsList.innerHTML = '';
+            rooms.forEach(room => {
+                const roomEl = document.createElement('div');
+                const isCompatible = room.citySize <= maxSafeCitySize;
+                const isFull = room.currentPlayers >= room.maxPlayers;
+                
+                roomEl.className = `multiplayer-room-item ${!isCompatible ? 'room-incompatible' : ''} ${isFull ? 'room-full' : ''}`;
+                roomEl.innerHTML = `
+                    <div class="room-info">
+                        <div class="room-size">${room.citySize} × ${room.citySize}</div>
+                        <div class="room-players">${room.currentPlayers}/${room.maxPlayers} joueurs</div>
+                    </div>
+                    ${!isCompatible ? '<div class="room-warning">⚠️ Taille non compatible avec votre système</div>' : ''}
+                    ${isFull ? '<div class="room-status">Plein</div>' : '<button class="room-join-btn" data-room-id="${room.id}" data-city-size="${room.citySize}">Rejoindre</button>'}
+                `;
+                
+                // Toujours afficher le salon, même s'il est plein ou incompatible
+                // Mais seulement permettre de rejoindre si compatible et pas plein
+                if (!isFull && isCompatible) {
+                    const joinBtn = roomEl.querySelector('.room-join-btn');
+                    joinBtn.addEventListener('click', () => {
+                        const playerPseudo = pseudoInput ? (pseudoInput.value.trim() || 'Joueur' + Math.floor(Math.random() * 1000)) : 'Joueur';
+                        resolve({
+                            size: room.citySize,
+                            multiplayer: true,
+                            pseudo: playerPseudo,
+                            roomId: room.id,
+                            action: 'join'
+                        });
+                    });
+                } else if (isFull) {
+                    // Salon plein - désactiver visuellement mais toujours afficher
+                    const statusEl = roomEl.querySelector('.room-status');
+                    if (statusEl) {
+                        statusEl.style.fontWeight = '600';
+                        statusEl.style.color = '#999';
+                    }
+                } else if (!isCompatible) {
+                    // Salon incompatible - afficher mais avec avertissement
+                    const warningEl = roomEl.querySelector('.room-warning');
+                    if (warningEl) {
+                        warningEl.style.fontWeight = '600';
+                    }
+                }
+                
+                roomsList.appendChild(roomEl);
+            });
+        };
+        
+        // Charger les salons si le mode multijoueur est déjà activé
+        if (savedMultiplayer) {
+            const roomsContainer = modal?.querySelector('#multiplayer-rooms-container');
+            if (roomsContainer) {
+                roomsContainer.style.display = 'block';
+                loadAvailableRooms(modal, maxSafeCitySize);
+            }
+        }
         
         // Update modal message if system has limitations
         if (messageEl && (webglCapabilities.issues?.length > 0 || webglCapabilities.warnings?.length > 0)) {
@@ -867,9 +1035,13 @@ function showCitySizeSelection() {
         }
         
         // Helper function to select a size and close modal
-        const selectSize = (size) => {
+        const selectSize = (size, roomId = null, action = 'create', playerPseudo = null) => {
             // Clamp size to valid range based on device type
             size = Math.max(12, Math.min(maxSize, size));
+            
+            // Get multiplayer state and pseudo
+            const multiplayerEnabled = multiplayerToggle ? multiplayerToggle.checked : false;
+            const finalPlayerPseudo = playerPseudo || (pseudoInput ? (pseudoInput.value.trim() || 'Joueur' + Math.floor(Math.random() * 1000)) : 'Joueur');
             
             // Remove selected class from all options
             options.forEach(opt => opt.classList.remove('selected'));
@@ -890,6 +1062,10 @@ function showCitySizeSelection() {
             
             // Save to localStorage
             localStorage.setItem('selectedCitySize', size.toString());
+            localStorage.setItem('multiplayer-enabled', multiplayerEnabled.toString());
+            if (multiplayerEnabled) {
+                localStorage.setItem('multiplayer-pseudo', playerPseudo);
+            }
             
             // Hide modal
             modal.classList.remove('active');
@@ -901,8 +1077,14 @@ function showCitySizeSelection() {
                 chronosLoader.classList.add('opaque');
             }
             
-            // Resolve with selected size
-            setTimeout(() => resolve(size), 300); // Small delay for animation
+            // Resolve with selected size, multiplayer state, pseudo, roomId and action
+            setTimeout(() => resolve({ 
+                size, 
+                multiplayer: multiplayerEnabled,
+                pseudo: multiplayerEnabled ? finalPlayerPseudo : null,
+                roomId: roomId || null,
+                action: action
+            }), 300); // Small delay for animation
         };
         
         // Check if user has a saved preference
@@ -974,7 +1156,13 @@ function showCitySizeSelection() {
                     return;
                 }
                 const size = parseInt(option.dataset.size, 10);
-                selectSize(size);
+                // Si multijoueur activé, créer un salon avec cette taille
+                if (multiplayerToggle && multiplayerToggle.checked) {
+                    const playerPseudo = pseudoInput ? (pseudoInput.value.trim() || 'Joueur' + Math.floor(Math.random() * 1000)) : 'Joueur';
+                    selectSize(size, null, 'create', playerPseudo);
+                } else {
+                    selectSize(size);
+                }
             });
         });
         
@@ -990,18 +1178,24 @@ function showCitySizeSelection() {
             // Handle apply button
             customButton.addEventListener('click', () => {
                 const customSize = parseInt(customInput.value, 10);
-                if (!isNaN(customSize) && customSize >= 12 && customSize <= maxSize) {
-                    // Check if size is safe for WebGL
-                    const safetyCheck = webglDetector.isCitySizeSafe(customSize);
-                    if (!safetyCheck.safe) {
-                        const proceed = confirm(`${safetyCheck.reason}\n\nVoulez-vous continuer quand même? (Non recommandé)`);
-                        if (!proceed) {
-                            customInput.value = maxSafeCitySize;
-                            customInput.focus();
-                            return;
+                    if (!isNaN(customSize) && customSize >= 12 && customSize <= maxSize) {
+                        // Check if size is safe for WebGL
+                        const safetyCheck = webglDetector.isCitySizeSafe(customSize);
+                        if (!safetyCheck.safe) {
+                            const proceed = confirm(`${safetyCheck.reason}\n\nVoulez-vous continuer quand même? (Non recommandé)`);
+                            if (!proceed) {
+                                customInput.value = maxSafeCitySize;
+                                customInput.focus();
+                                return;
+                            }
                         }
-                    }
-                    selectSize(customSize);
+                        // Si multijoueur activé, créer un salon avec cette taille
+                        if (multiplayerToggle && multiplayerToggle.checked) {
+                            const playerPseudo = pseudoInput ? (pseudoInput.value.trim() || 'Joueur' + Math.floor(Math.random() * 1000)) : 'Joueur';
+                            selectSize(customSize, null, 'create', playerPseudo);
+                        } else {
+                            selectSize(customSize);
+                        }
                 } else {
                     alert(`Veuillez entrer une taille entre 12 et ${maxSize}${maxSize < theoreticalMaxSize ? ` (limité par les capacités de votre système)` : ''}.`);
                     customInput.focus();
@@ -1431,9 +1625,66 @@ window.onload = async () => {
     appRegister('housesStore', housesStore);
     
     // Show city size selection modal before creating game
-    const selectedCitySize = await showCitySizeSelection();
+    const selectionResult = await showCitySizeSelection();
+    const selectedCitySize = selectionResult.size || selectionResult; // Backward compatibility
+    const multiplayerEnabled = selectionResult.multiplayer || false;
+    const playerPseudo = selectionResult.pseudo || null;
+    
     const game = createGame(housesStore, gameStore, assetManager, selectedCitySize);
     appRegister('game', game);
+    
+    // Activer le multijoueur si demandé
+    if (multiplayerEnabled && playerPseudo) {
+        try {
+            const { getMultiplayerManager } = await import('../multiplayer/MultiplayerManager.js');
+            const multiplayerManager = getMultiplayerManager(game, game.scene, housesStore);
+            
+            // Déterminer l'action et les paramètres
+            const action = selectionResult.action || 'create';
+            let roomIdOrCitySize;
+            if (action === 'join' && selectionResult.roomId) {
+                // Rejoindre un salon existant
+                roomIdOrCitySize = selectionResult.roomId;
+            } else {
+                // Créer un nouveau salon avec la taille choisie
+                roomIdOrCitySize = selectedCitySize;
+            }
+            
+            console.log('[Multiplayer] Activation avec:', { action, roomIdOrCitySize, playerPseudo, selectedCitySize });
+            
+            await multiplayerManager.enable('ws://localhost:9876', playerPseudo, roomIdOrCitySize, action);
+            window.multiplayerManager = multiplayerManager;
+            console.log(`[Multiplayer] Mode multijoueur activé avec pseudo: ${playerPseudo}`);
+        } catch (error) {
+            console.error('[Multiplayer] Erreur d\'activation:', error);
+            
+            // Vérifier si c'est une erreur de limite de joueurs
+            if (error.message && error.message.includes('MAX_PLAYERS')) {
+                // L'alerte sera affichée par le MultiplayerManager
+                console.log('[Multiplayer] Limite de joueurs atteinte, mode solo activé');
+            } else {
+                // Afficher une notification d'erreur générique
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #d32f2f;
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 8px;
+                    z-index: 10000;
+                    font-family: sans-serif;
+                    font-size: 14px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    max-width: 300px;
+                `;
+                notification.textContent = `❌ Impossible de se connecter au serveur multijoueur. Vérifiez que le serveur est démarré.`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 5000);
+            }
+        }
+    }
     
     // Functions can be registered as well
     window.setActiveTool = (e) => {

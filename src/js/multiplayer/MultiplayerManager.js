@@ -1,0 +1,708 @@
+/**
+ * Gestionnaire multijoueur
+ * Intègre WebSocket avec le jeu existant
+ */
+
+import { WebSocketClient } from './WebSocketClient.js';
+
+export class MultiplayerManager {
+    constructor(game, scene, housesStore) {
+        this.game = game;
+        this.scene = scene;
+        this.housesStore = housesStore;
+        this.wsClient = null;
+        this.isMultiplayer = false;
+        this.remoteBuildings = new Map(); // Bâtiments placés par d'autres joueurs
+        this.playersList = []; // Liste locale des joueurs connectés
+    }
+
+    /**
+     * Active le mode multijoueur
+     * @param {string} serverUrl - URL du serveur WebSocket (ex: 'ws://localhost:9876')
+     * @param {string} playerPseudo - Pseudo du joueur
+     * @param {string|number} roomIdOrCitySize - ID du salon à rejoindre ou taille de ville pour créer un salon
+     * @param {string} action - 'create' pour créer un salon, 'join' pour rejoindre
+     */
+    async enable(serverUrl = 'ws://localhost:9876', playerPseudo = 'Joueur', roomIdOrCitySize = null, action = 'create') {
+        this.playerPseudo = playerPseudo;
+        if (this.isMultiplayer) {
+            console.warn('[Multiplayer] Déjà activé');
+            return;
+        }
+
+        console.log('[Multiplayer] Activation du mode multijoueur...');
+        
+        this.wsClient = new WebSocketClient(serverUrl, playerPseudo);
+        this.setupEventHandlers();
+        
+        // Gérer la connexion refusée avant de connecter
+        return new Promise((resolve, reject) => {
+            let connectionRefused = false;
+            let roomCreatedOrJoined = false;
+            
+            const onRefused = (data) => {
+                connectionRefused = true;
+                this.wsClient.off('connectionRefused', onRefused);
+                this.showConnectionRefusedAlert(data);
+                reject(new Error('MAX_PLAYERS_REACHED'));
+            };
+            
+            const onRoomCreated = (data) => {
+                roomCreatedOrJoined = true;
+                this.wsClient.off('roomCreated', onRoomCreated);
+                console.log('[Multiplayer] Salon créé:', data.roomId);
+                resolve();
+            };
+            
+            const onRoomJoined = (data) => {
+                roomCreatedOrJoined = true;
+                this.wsClient.off('roomJoined', onRoomJoined);
+                console.log('[Multiplayer] Salon rejoint:', data.roomId);
+                resolve();
+            };
+            
+            this.wsClient.on('connectionRefused', onRefused);
+            this.wsClient.on('roomCreated', onRoomCreated);
+            this.wsClient.on('roomJoined', onRoomJoined);
+            
+            this.wsClient.connect()
+                .then(() => {
+                    if (!connectionRefused) {
+                        // Une fois connecté, créer ou rejoindre le salon
+                        if (action === 'join' && roomIdOrCitySize) {
+                            // Rejoindre un salon existant
+                            this.wsClient.send('JOIN_ROOM', {
+                                roomId: roomIdOrCitySize,
+                                playerPseudo: playerPseudo
+                            });
+                        } else if (action === 'create' && roomIdOrCitySize) {
+                            // Créer un nouveau salon avec la taille spécifiée
+                            this.wsClient.send('CREATE_ROOM', {
+                                citySize: roomIdOrCitySize,
+                                playerPseudo: playerPseudo
+                            });
+                        } else {
+                            // Ancien comportement (fallback)
+                            this.wsClient.off('connectionRefused', onRefused);
+                            this.isMultiplayer = true;
+                            console.log('[Multiplayer] Mode multijoueur activé');
+                            resolve();
+                        }
+                    }
+                })
+                .catch((error) => {
+                    if (!connectionRefused) {
+                        this.wsClient.off('connectionRefused', onRefused);
+                        this.wsClient.off('roomCreated', onRoomCreated);
+                        this.wsClient.off('roomJoined', onRoomJoined);
+                        console.error('[Multiplayer] Erreur de connexion:', error);
+                        reject(error);
+                    }
+                });
+        });
+    }
+
+    /**
+     * Configure les handlers d'événements WebSocket
+     */
+    setupEventHandlers() {
+        // Connexion établie
+        this.wsClient.on('connected', () => {
+            console.log('[Multiplayer] Connecté au serveur');
+        });
+
+        // Connexion refusée (limite de joueurs atteinte)
+        this.wsClient.on('connectionRefused', (data) => {
+            console.error('[Multiplayer] Connexion refusée:', data);
+            this.isMultiplayer = false;
+            this.showConnectionRefusedAlert(data);
+        });
+
+        // ID joueur reçu
+        this.wsClient.on('playerId', (playerId) => {
+            console.log(`[Multiplayer] ID joueur: ${playerId}`);
+            // Vous pouvez stocker l'ID pour l'afficher dans l'UI
+            if (window.game) {
+                window.game.playerId = playerId;
+            }
+            
+            // Ajouter ce joueur à la liste locale avec le bon pseudo
+            const existingPlayer = this.playersList.find(p => p.id === playerId);
+            if (!existingPlayer) {
+                this.playersList.push({
+                    id: playerId,
+                    pseudo: this.playerPseudo || 'Joueur'
+                });
+            } else {
+                // Mettre à jour le pseudo si nécessaire
+                existingPlayer.pseudo = this.playerPseudo || existingPlayer.pseudo || 'Joueur';
+            }
+            // Mettre à jour l'affichage
+            this.updatePlayersList(this.playersList);
+        });
+
+        // Synchronisation complète
+        this.wsClient.on('fullSync', (data) => {
+            console.log('[Multiplayer] Synchronisation complète reçue');
+            this.handleFullSync(data);
+            
+            // Mettre à jour la liste locale des joueurs avec tous les pseudos
+            if (data.players && Array.isArray(data.players)) {
+                console.log('[Multiplayer] Joueurs reçus:', data.players);
+                this.playersList = data.players.map(p => ({
+                    id: p.id,
+                    pseudo: p.pseudo || 'Joueur'
+                }));
+                
+                // S'assurer que notre propre pseudo est correct
+                const myPlayer = this.playersList.find(p => p.id === this.wsClient?.playerId);
+                if (myPlayer && this.playerPseudo) {
+                    myPlayer.pseudo = this.playerPseudo;
+                }
+                
+                this.updatePlayersList(this.playersList);
+            }
+        });
+
+        // Bâtiment confirmé (celui qu'on a placé)
+        this.wsClient.on('buildConfirmed', (data) => {
+            console.log('[Multiplayer] Bâtiment confirmé:', data);
+            // Le bâtiment est déjà placé localement, on peut juste confirmer
+            this.showNotification(`Bâtiment placé: ${data.building.type}`, 'success');
+        });
+
+        // Bâtiment placé par un autre joueur
+        this.wsClient.on('buildBroadcast', (data) => {
+            console.log('[Multiplayer] Bâtiment d\'un autre joueur:', data);
+            this.handleRemoteBuild(data.building);
+        });
+
+        // Joueur rejoint
+        this.wsClient.on('playerJoined', (data) => {
+            const pseudo = data.playerPseudo || 'Joueur';
+            console.log(`[Multiplayer] ${pseudo} a rejoint (Total: ${data.totalPlayers})`);
+            this.showNotification(`${pseudo} a rejoint`, 'info');
+            
+            // Ajouter ou mettre à jour le joueur dans la liste locale
+            const existingPlayer = this.playersList.find(p => p.id === data.playerId);
+            if (!existingPlayer) {
+                this.playersList.push({
+                    id: data.playerId,
+                    pseudo: pseudo
+                });
+            } else {
+                // Mettre à jour le pseudo si fourni
+                if (data.playerPseudo) {
+                    existingPlayer.pseudo = data.playerPseudo;
+                }
+            }
+            this.updatePlayersList(this.playersList);
+        });
+
+        // Joueur parti
+        this.wsClient.on('playerLeft', (data) => {
+            const pseudo = data.playerPseudo || data.playerId.substring(0, 8);
+            console.log(`[Multiplayer] ${pseudo} est parti (Total: ${data.totalPlayers})`);
+            
+            // Afficher une alerte visible pour la déconnexion
+            this.showDisconnectionAlert(pseudo);
+            
+            // Retirer le joueur de la liste locale
+            this.playersList = this.playersList.filter(p => p.id !== data.playerId);
+            this.updatePlayersList(this.playersList);
+        });
+
+        // Pseudo mis à jour
+        this.wsClient.on('playerPseudoUpdated', (data) => {
+            // Mettre à jour le pseudo dans la liste locale
+            const player = this.playersList.find(p => p.id === data.playerId);
+            if (player) {
+                player.pseudo = data.playerPseudo;
+            } else {
+                // Ajouter le joueur s'il n'existe pas encore
+                this.playersList.push({
+                    id: data.playerId,
+                    pseudo: data.playerPseudo || 'Joueur'
+                });
+            }
+            this.updatePlayersList(this.playersList);
+        });
+
+        // Liste des joueurs mise à jour (broadcast du serveur)
+        this.wsClient.on('playersListUpdate', (data) => {
+            if (data.players && Array.isArray(data.players)) {
+                console.log('[Multiplayer] Liste des joueurs mise à jour:', data.players);
+                this.playersList = data.players.map(p => ({
+                    id: p.id,
+                    pseudo: p.pseudo || 'Joueur'
+                }));
+                
+                // S'assurer que notre propre pseudo est correct
+                const myPlayer = this.playersList.find(p => p.id === this.wsClient?.playerId);
+                if (myPlayer && this.playerPseudo) {
+                    myPlayer.pseudo = this.playerPseudo;
+                }
+                
+                this.updatePlayersList(this.playersList);
+            }
+        });
+
+        // Erreur
+        this.wsClient.on('error', (error) => {
+            console.error('[Multiplayer] Erreur:', error);
+            this.showNotification(`Erreur: ${error.message || error.code}`, 'error');
+        });
+
+        // Déconnexion
+        this.wsClient.on('disconnected', () => {
+            console.log('[Multiplayer] Déconnecté du serveur');
+            this.showNotification('Déconnecté du serveur', 'warning');
+        });
+    }
+
+    /**
+     * Gère la synchronisation complète
+     */
+    async handleFullSync(data) {
+        console.log(`[Multiplayer] Synchronisation: ${data.buildings.length} bâtiments, ${data.players.length} joueurs`);
+        
+        // Placer tous les bâtiments distants
+        for (const building of data.buildings) {
+            // Ne pas replacer nos propres bâtiments
+            if (building.playerId !== this.wsClient.playerId) {
+                await this.placeRemoteBuilding(building);
+            }
+        }
+    }
+
+    /**
+     * Gère le placement d'un bâtiment par un autre joueur
+     */
+    async handleRemoteBuild(building) {
+        // Vérifier si on n'a pas déjà ce bâtiment
+        if (this.remoteBuildings.has(building.id)) {
+            return;
+        }
+
+        await this.placeRemoteBuilding(building);
+    }
+
+    /**
+     * Place un bâtiment distant dans la scène
+     */
+    async placeRemoteBuilding(building) {
+        try {
+            const { type, x, y, id, playerId, playerPseudo } = building;
+
+            // Vérifier si on n'a pas déjà ce bâtiment
+            if (this.remoteBuildings.has(id)) {
+                return;
+            }
+
+            // Récupérer la ville depuis le jeu
+            if (!this.game || !this.game.scene || !window.game) {
+                console.warn('[Multiplayer] Impossible de placer bâtiment: jeu non initialisé');
+                return;
+            }
+
+            // Accéder à la ville via le jeu
+            const city = (window.game && window.game.city) || (this.game && this.game.city);
+            
+            if (!city || !city.tiles) {
+                console.warn('[Multiplayer] Impossible de placer bâtiment: ville non trouvée');
+                return;
+            }
+
+            // Marquer la position dans la ville (sans payer ni ajouter à la DB)
+            // On utilise juste la scène pour l'affichage visuel
+            if (city.tiles[x] && city.tiles[x][y]) {
+                city.tiles[x][y].buildingId = type;
+            }
+
+            // Mettre à jour la scène pour afficher le bâtiment
+            await this.scene.update(city);
+
+            // Marquer comme placé
+            this.remoteBuildings.set(id, building);
+            
+            const pseudo = playerPseudo || playerId.substring(0, 8);
+            this.showNotification(`${pseudo} a placé: ${type} à (${x}, ${y})`, 'info');
+        } catch (error) {
+            console.error('[Multiplayer] Erreur placement bâtiment distant:', error);
+        }
+    }
+
+    /**
+     * Place un bâtiment (appelé depuis le jeu)
+     * @param {string} buildingType - Type de bâtiment
+     * @param {number} x - Position X
+     * @param {number} y - Position Y
+     */
+    async placeBuilding(buildingType, x, y) {
+        if (!this.isMultiplayer || !this.wsClient) {
+            return false;
+        }
+
+        // Envoyer au serveur
+        this.wsClient.build(buildingType, x, y);
+        
+        // Le serveur confirmera, on attend la confirmation
+        return new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error('Timeout attente confirmation serveur'));
+            }, 5000);
+
+            const onConfirmed = (data) => {
+                if (data.building.x === x && data.building.y === y) {
+                    clearTimeout(timeout);
+                    this.wsClient.off('buildConfirmed', onConfirmed);
+                    resolve(data);
+                }
+            };
+
+            const onError = (error) => {
+                if (error.code === 'POSITION_OCCUPIED' || error.code === 'OUT_OF_BOUNDS') {
+                    clearTimeout(timeout);
+                    this.wsClient.off('error', onError);
+                    reject(error);
+                }
+            };
+
+            this.wsClient.on('buildConfirmed', onConfirmed);
+            this.wsClient.on('error', onError);
+        });
+    }
+
+    /**
+     * Affiche une alerte de connexion refusée (limite de joueurs)
+     */
+    showConnectionRefusedAlert(data) {
+        const alert = document.createElement('div');
+        alert.className = 'multiplayer-connection-refused-alert';
+        alert.innerHTML = `
+            <div class="alert-content">
+                <div class="alert-icon">🚫</div>
+                <div class="alert-text">
+                    <div class="alert-title">Limite de joueurs atteinte</div>
+                    <div class="alert-message">${data.message || `Limite de ${data.maxPlayers} joueurs atteinte (${data.currentPlayers}/${data.maxPlayers})`}</div>
+                    <div class="alert-hint">Vous pouvez toujours jouer en mode solo.</div>
+                </div>
+            </div>
+        `;
+        
+        alert.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+            color: white;
+            padding: 30px 35px;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(211, 47, 47, 0.5);
+            z-index: 10004;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            min-width: 320px;
+            max-width: 400px;
+            animation: scaleIn 0.3s ease-out;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            text-align: center;
+        `;
+        
+        // Ajouter les styles d'animation si pas déjà présents
+        if (!document.getElementById('multiplayer-alert-styles')) {
+            const style = document.createElement('style');
+            style.id = 'multiplayer-alert-styles';
+            style.textContent = `
+                @keyframes scaleIn {
+                    from {
+                        opacity: 0;
+                        transform: translate(-50%, -50%) scale(0.8);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translate(-50%, -50%) scale(1);
+                    }
+                }
+                @keyframes slideInRight {
+                    from {
+                        opacity: 0;
+                        transform: translateX(100px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateX(0);
+                    }
+                }
+                @keyframes slideOutRight {
+                    from {
+                        opacity: 1;
+                        transform: translateX(0);
+                    }
+                    to {
+                        opacity: 0;
+                        transform: translateX(100px);
+                    }
+                }
+                .multiplayer-disconnect-alert .alert-content,
+                .multiplayer-connection-refused-alert .alert-content {
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                }
+                .multiplayer-disconnect-alert .alert-icon,
+                .multiplayer-connection-refused-alert .alert-icon {
+                    font-size: 32px;
+                    flex-shrink: 0;
+                }
+                .multiplayer-disconnect-alert .alert-text,
+                .multiplayer-connection-refused-alert .alert-text {
+                    flex: 1;
+                }
+                .multiplayer-disconnect-alert .alert-title,
+                .multiplayer-connection-refused-alert .alert-title {
+                    font-weight: 700;
+                    font-size: 16px;
+                    margin-bottom: 4px;
+                }
+                .multiplayer-disconnect-alert .alert-message,
+                .multiplayer-connection-refused-alert .alert-message {
+                    font-size: 13px;
+                    opacity: 0.95;
+                }
+                .multiplayer-connection-refused-alert .alert-hint {
+                    font-size: 12px;
+                    opacity: 0.85;
+                    margin-top: 8px;
+                    font-style: italic;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(alert);
+        
+        // Auto-remove après 8 secondes (plus long car c'est important)
+        setTimeout(() => {
+            alert.style.opacity = '0';
+            alert.style.transition = 'opacity 0.4s';
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 400);
+        }, 8000);
+    }
+
+    /**
+     * Affiche une alerte de déconnexion
+     */
+    showDisconnectionAlert(playerPseudo) {
+        const alert = document.createElement('div');
+        alert.className = 'multiplayer-disconnect-alert';
+        alert.innerHTML = `
+            <div class="alert-content">
+                <div class="alert-icon">⚠️</div>
+                <div class="alert-text">
+                    <div class="alert-title">Joueur déconnecté</div>
+                    <div class="alert-message">${playerPseudo} s'est déconnecté</div>
+                </div>
+            </div>
+        `;
+        
+        // Les styles sont maintenant dans multiplayer.css
+        
+        document.body.appendChild(alert);
+        
+        // Auto-remove après 5 secondes
+        setTimeout(() => {
+            alert.style.animation = 'slideOutRight 0.4s ease-out';
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 400);
+        }, 5000);
+    }
+
+    /**
+     * Affiche une notification
+     */
+    showNotification(message, type = 'info') {
+        // Utiliser votre système de notification existant
+        if (window.popupManager) {
+            // Exemple avec popupManager si disponible
+            console.log(`[Multiplayer] ${type}: ${message}`);
+        } else {
+            // Notification simple
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: ${type === 'error' ? '#d32f2f' : type === 'success' ? '#2e7d32' : '#1976d2'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                z-index: 10000;
+                font-family: sans-serif;
+                font-size: 14px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.3s';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+    }
+
+    /**
+     * Met à jour la liste des joueurs connectés
+     */
+    updatePlayersList(players = null) {
+        // Utiliser la liste locale si pas de liste fournie
+        if (!players) {
+            players = this.playersList;
+        }
+        
+        // Si toujours pas de liste, ne rien faire
+        if (!players || players.length === 0) {
+            return;
+        }
+
+        // Créer ou mettre à jour l'UI des joueurs dans la modal legend-btns
+        let playersContainer = document.getElementById('multiplayer-players-list');
+        if (!playersContainer) {
+            // Trouver le container legend-btns-container
+            const legendContainer = document.querySelector('.legend-btns-container');
+            if (!legendContainer) {
+                console.warn('[Multiplayer] Container legend-btns-container non trouvé');
+                return;
+            }
+            
+            // Créer le conteneur pour les joueurs multijoueur
+            playersContainer = document.createElement('div');
+            playersContainer.id = 'multiplayer-players-list';
+            playersContainer.className = 'legend-btns multiplayer-players-container';
+            
+            // Créer le bouton toggle
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = 'legend-toggle-btn multiplayer-toggle-btn';
+            toggleBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <span>Joueurs connectés</span>
+            `;
+            
+            // Créer le dropdown
+            const dropdown = document.createElement('div');
+            dropdown.id = 'multiplayer-players-dropdown';
+            dropdown.className = 'legend-dropdown hidden';
+            
+            const title = document.createElement('div');
+            title.className = 'legend-item';
+            title.style.cssText = 'font-weight: 600; font-size: 14px; padding: 12px 16px; border-bottom: 2px solid rgba(255, 255, 255, 0.2);';
+            title.textContent = '🎮 Joueurs connectés';
+            dropdown.appendChild(title);
+            
+            const list = document.createElement('div');
+            list.id = 'multiplayer-players-items';
+            list.style.cssText = 'padding: 8px 0;';
+            dropdown.appendChild(list);
+            
+            // Ajouter au DOM
+            playersContainer.appendChild(toggleBtn);
+            playersContainer.appendChild(dropdown);
+            legendContainer.appendChild(playersContainer);
+            
+            // Ajouter le toggle functionality
+            toggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('hidden');
+            });
+            
+            // Fermer le dropdown si on clique ailleurs
+            document.addEventListener('click', (e) => {
+                if (!playersContainer.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        }
+
+        const list = document.getElementById('multiplayer-players-items');
+        if (!list) return;
+
+        // Afficher la liste dans le style legend-item
+        list.innerHTML = '';
+        players.forEach(player => {
+            const isCurrentPlayer = player.id === this.wsClient?.playerId;
+            const item = document.createElement('div');
+            item.className = `legend-item${isCurrentPlayer ? ' current-player' : ''}`;
+            
+            const indicator = document.createElement('div');
+            indicator.className = 'legend-icon-wrapper';
+            indicator.style.cssText = `
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: ${isCurrentPlayer ? '#2196f3' : '#4caf50'};
+                border: none;
+                padding: 0;
+            `;
+            
+            const name = document.createElement('span');
+            // Toujours afficher le pseudo, qu'il soit le joueur actuel ou non
+            const displayPseudo = player.pseudo || (isCurrentPlayer ? this.playerPseudo : null) || 'Joueur';
+            name.textContent = displayPseudo;
+            if (isCurrentPlayer) {
+                name.style.fontWeight = '600';
+                name.textContent += ' (Vous)';
+            }
+            
+            item.appendChild(indicator);
+            item.appendChild(name);
+            list.appendChild(item);
+        });
+    }
+
+    /**
+     * Désactive le mode multijoueur
+     */
+    disable() {
+        if (this.wsClient) {
+            this.wsClient.disconnect();
+            this.wsClient = null;
+        }
+        this.isMultiplayer = false;
+        this.remoteBuildings.clear();
+        
+        // Supprimer l'UI des joueurs
+        const playersContainer = document.getElementById('multiplayer-players-list');
+        if (playersContainer) {
+            playersContainer.remove();
+        }
+        
+        console.log('[Multiplayer] Mode multijoueur désactivé');
+    }
+}
+
+// Export singleton
+let multiplayerManager = null;
+
+export function getMultiplayerManager(game, scene, housesStore) {
+    if (!multiplayerManager) {
+        multiplayerManager = new MultiplayerManager(game, scene, housesStore);
+    }
+    return multiplayerManager;
+}
+
