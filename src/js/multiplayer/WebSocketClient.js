@@ -58,17 +58,29 @@ export class WebSocketClient {
 
                 this.ws.onerror = (error) => {
                     console.error('[WebSocket] Erreur:', error);
+                    this.connected = false;
                     this.emit('error', error);
+                    this.emit('connectionFailed', { error, message: 'Erreur de connexion WebSocket' });
                     reject(error);
                 };
 
-                this.ws.onclose = () => {
-                    console.log('[WebSocket] Connexion fermée');
+                this.ws.onclose = (event) => {
+                    console.log('[WebSocket] Connexion fermée', event.code, event.reason);
                     this.connected = false;
                     this.emit('disconnected');
                     
-                    // Tentative de reconnexion
-                    this.attemptReconnect();
+                    // Si la fermeture est due à une erreur (code != 1000), émettre un événement
+                    if (event.code !== 1000 && event.code !== 1001) {
+                        this.emit('connectionFailed', { 
+                            error: { code: event.code, reason: event.reason },
+                            message: `Connexion fermée: ${event.reason || 'Erreur inconnue'}`
+                        });
+                    }
+                    
+                    // Tentative de reconnexion seulement si ce n'est pas une fermeture volontaire
+                    if (event.code !== 1000 && event.code !== 1001) {
+                        this.attemptReconnect();
+                    }
                 };
 
             } catch (error) {

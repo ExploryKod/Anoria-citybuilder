@@ -1812,31 +1812,10 @@ window.onload = async () => {
         } catch (error) {
             console.error('[Multiplayer] Erreur d\'activation:', error);
             
-            // Vérifier si c'est une erreur de limite de joueurs
-            if (error.message && error.message.includes('MAX_PLAYERS')) {
-                // L'alerte sera affichée par le MultiplayerManager
-                console.log('[Multiplayer] Limite de joueurs atteinte, mode solo activé');
-            } else {
-                // Afficher une notification d'erreur générique
-                const notification = document.createElement('div');
-                notification.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: #d32f2f;
-                    color: white;
-                    padding: 15px 20px;
-                    border-radius: 8px;
-                    z-index: 10000;
-                    font-family: sans-serif;
-                    font-size: 14px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                    max-width: 300px;
-                `;
-                notification.textContent = `❌ Impossible de se connecter au serveur multijoueur. Vérifiez que le serveur est démarré.`;
-                document.body.appendChild(notification);
-                setTimeout(() => notification.remove(), 5000);
-            }
+            // Les erreurs sont gérées par MultiplayerManager :
+            // - MAX_PLAYERS_REACHED → showConnectionRefusedAlert
+            // - Autres erreurs → showConnectionFailedAlert (propose le mode solo)
+            // Le jeu continue normalement en mode solo si l'utilisateur accepte
         }
     }
     

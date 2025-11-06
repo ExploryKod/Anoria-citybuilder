@@ -104,6 +104,8 @@ export class MultiplayerManager {
                         this.wsClient.off('roomCreated', onRoomCreated);
                         this.wsClient.off('roomJoined', onRoomJoined);
                         console.error('[Multiplayer] Erreur de connexion:', error);
+                        this.isMultiplayer = false;
+                        this.showConnectionFailedAlert();
                         reject(error);
                     }
                 });
@@ -270,10 +272,26 @@ export class MultiplayerManager {
             this.showNotification(`Erreur: ${error.message || error.code}`, 'error');
         });
 
+        // Échec de connexion
+        this.wsClient.on('connectionFailed', (data) => {
+            console.error('[Multiplayer] Échec de connexion:', data);
+            if (this.isMultiplayer) {
+                this.isMultiplayer = false;
+                this.showConnectionFailedAlert();
+            }
+        });
+
         // Déconnexion
         this.wsClient.on('disconnected', () => {
             console.log('[Multiplayer] Déconnecté du serveur');
             this.showNotification('Déconnecté du serveur', 'warning');
+        });
+
+        // Échec de reconnexion après plusieurs tentatives
+        this.wsClient.on('reconnectFailed', () => {
+            console.error('[Multiplayer] Échec de reconnexion après plusieurs tentatives');
+            this.isMultiplayer = false;
+            this.showConnectionFailedAlert();
         });
     }
 
@@ -455,6 +473,162 @@ export class MultiplayerManager {
             this.wsClient.on('buildConfirmed', onConfirmed);
             this.wsClient.on('error', onError);
         });
+    }
+
+    /**
+     * Affiche une alerte d'échec de connexion et propose le mode solo
+     */
+    showConnectionFailedAlert() {
+        const alert = document.createElement('div');
+        alert.className = 'multiplayer-connection-failed-alert';
+        alert.innerHTML = `
+            <div class="alert-content">
+                <div class="alert-icon">⚠️</div>
+                <div class="alert-text">
+                    <div class="alert-title">Impossible de se connecter au serveur</div>
+                    <div class="alert-message">Le serveur multijoueur est inaccessible. Voulez-vous continuer en mode solo ?</div>
+                </div>
+            </div>
+            <div class="alert-actions">
+                <button class="alert-btn alert-btn-primary" id="switch-to-solo-btn">Jouer en solo</button>
+                <button class="alert-btn alert-btn-secondary" id="dismiss-alert-btn">Fermer</button>
+            </div>
+        `;
+        
+        alert.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+            padding: 30px 35px;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(255, 152, 0, 0.5);
+            z-index: 10005;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            min-width: 380px;
+            max-width: 450px;
+            animation: scaleIn 0.3s ease-out;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        `;
+        
+        // Styles pour les boutons
+        const style = document.createElement('style');
+        style.id = 'multiplayer-connection-failed-styles';
+        if (!document.getElementById('multiplayer-connection-failed-styles')) {
+            style.textContent = `
+                .multiplayer-connection-failed-alert .alert-content {
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                    margin-bottom: 20px;
+                }
+                .multiplayer-connection-failed-alert .alert-icon {
+                    font-size: 32px;
+                    flex-shrink: 0;
+                }
+                .multiplayer-connection-failed-alert .alert-text {
+                    flex: 1;
+                }
+                .multiplayer-connection-failed-alert .alert-title {
+                    font-weight: 700;
+                    font-size: 16px;
+                    margin-bottom: 4px;
+                }
+                .multiplayer-connection-failed-alert .alert-message {
+                    font-size: 13px;
+                    opacity: 0.95;
+                }
+                .multiplayer-connection-failed-alert .alert-actions {
+                    display: flex;
+                    gap: 12px;
+                    justify-content: flex-end;
+                }
+                .multiplayer-connection-failed-alert .alert-btn {
+                    padding: 10px 20px;
+                    border: none;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+                .multiplayer-connection-failed-alert .alert-btn-primary {
+                    background: white;
+                    color: #ff9800;
+                }
+                .multiplayer-connection-failed-alert .alert-btn-primary:hover {
+                    background: #f5f5f5;
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                }
+                .multiplayer-connection-failed-alert .alert-btn-secondary {
+                    background: rgba(255, 255, 255, 0.2);
+                    color: white;
+                    border: 1px solid rgba(255, 255, 255, 0.3);
+                }
+                .multiplayer-connection-failed-alert .alert-btn-secondary:hover {
+                    background: rgba(255, 255, 255, 0.3);
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(alert);
+        
+        // Bouton "Jouer en solo"
+        const soloBtn = alert.querySelector('#switch-to-solo-btn');
+        soloBtn.addEventListener('click', () => {
+            this.switchToSoloMode();
+            alert.style.opacity = '0';
+            alert.style.transition = 'opacity 0.4s';
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 400);
+        });
+        
+        // Bouton "Fermer"
+        const dismissBtn = alert.querySelector('#dismiss-alert-btn');
+        dismissBtn.addEventListener('click', () => {
+            alert.style.opacity = '0';
+            alert.style.transition = 'opacity 0.4s';
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 400);
+        });
+    }
+
+    /**
+     * Bascule en mode solo
+     */
+    switchToSoloMode() {
+        console.log('[Multiplayer] Basculement en mode solo...');
+        
+        // Désactiver le mode multijoueur
+        this.disable();
+        
+        // Reprendre le jeu si il était en pause
+        if (this.game && typeof this.game.play === 'function') {
+            this.game.play();
+        }
+        
+        // Masquer le message d'attente
+        this.showWaitingForPlayerMessage(false);
+        
+        // Afficher une notification de confirmation
+        this.showNotification('Mode solo activé', 'success');
+        
+        // Émettre un événement pour que le code externe puisse réagir
+        if (window.dispatchEvent) {
+            window.dispatchEvent(new CustomEvent('multiplayer-switched-to-solo'));
+        }
     }
 
     /**
