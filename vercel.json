@@ -1,0 +1,80 @@
+{
+  "rewrites": [
+    {
+      "source": "/politique-de-confidentialite",
+      "destination": "/politique-de-confidentialite.html"
+    },
+    {
+      "source": "/mentions-legales",
+      "destination": "/mentions-legales.html"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/politique-de-confidentialite.html",
+      "dest": "/politique-de-confidentialite.html"
+    },
+    {
+      "src": "/mentions-legales.html",
+      "dest": "/mentions-legales.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "geolocation=(), microphone=(), camera=()"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://anoria.vercel.app https://storage.googleapis.com; style-src 'self' 'unsafe-inline' https://anoria.vercel.app; img-src 'self' data: blob: https://anoria.vercel.app; font-src 'self' data: https://anoria.vercel.app; connect-src 'self' ws://localhost:9876 wss://194.164.76.63 wss://*.railway.app wss://*.render.com wss://*.fly.dev https://anoria.vercel.app https://*.vercel.app; worker-src 'self' blob: https://storage.googleapis.com; child-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains; preload"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|glb|json))",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    }
+  ]
+}
+
