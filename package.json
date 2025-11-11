@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "copy:tarteaucitron": "mkdir -p public/tarteaucitron && cp node_modules/tarteaucitronjs/tarteaucitron.min.js public/tarteaucitron/ && cp node_modules/tarteaucitronjs/tarteaucitron.services.min.js public/tarteaucitron/ && cp -r node_modules/tarteaucitronjs/lang public/tarteaucitron/ && cp -r node_modules/tarteaucitronjs/css public/tarteaucitron/ && echo '✅ Tarteaucitron files copied successfully'"
   },
   "dependencies": {
     "dexie": "^4.0.11",
     "gsap": "^3.13.0",
+    "tarteaucitronjs": "^1.26.0",
     "three": "^0.162.0"
   },
   "devDependencies": {
