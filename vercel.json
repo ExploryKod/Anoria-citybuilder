@@ -1,17 +1,6 @@
 {
   "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
-  "cleanUrls": false,
-  "rewrites": [
-    {
-      "source": "/politique-de-confidentialite",
-      "destination": "/politique-de-confidentialite.html"
-    },
-    {
-      "source": "/mentions-legales",
-      "destination": "/mentions-legales.html"
-    }
-  ],
   "headers": [
     {
       "source": "/(.*)",
