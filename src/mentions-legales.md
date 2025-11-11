@@ -52,5 +52,5 @@ Pour toute question relative aux présentes mentions légales, vous pouvez nous 
 
 ---
 
-*Dernière mise à jour : Novembre 2024*
+*Dernière mise à jour : 11 novembre 2025*
 

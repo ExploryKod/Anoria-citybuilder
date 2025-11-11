@@ -2,7 +2,7 @@
 
 La présente politique de confidentialité décrit la manière dont **Eraanurbs** (ci-après "nous", "notre" ou "le Site") collecte, utilise et protège vos informations personnelles lorsque vous utilisez notre site web de jeu de construction de ville.
 
-> **Dernière mise à jour :** Novembre 2024  
+> **Dernière mise à jour :** 11 novembre 2025  
 > **URL du site :** [https://anoria.vercel.app/](https://anoria.vercel.app/)
 
 ## 1. Responsable du traitement
@@ -137,5 +137,5 @@ Site web : [https://www.cnil.fr](https://www.cnil.fr)
 
 ---
 
-*Dernière mise à jour : Novembre 2024*
+*Dernière mise à jour : 11 novembre 2025*
 
