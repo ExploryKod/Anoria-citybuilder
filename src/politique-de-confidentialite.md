@@ -9,6 +9,8 @@ La présente politique de confidentialité décrit la manière dont **Eraanurbs*
 
 Le responsable du traitement des données personnelles est Eraanurbs, éditeur du Site accessible à l'adresse : [https://anoria.vercel.app/](https://anoria.vercel.app/)
 
+**Contact :** contact@amaury-franssen-dev.com
+
 ## 2. Données collectées
 
 ### 2.1. Données collectées automatiquement
@@ -61,7 +63,7 @@ Conformément au Règlement Général sur la Protection des Données (RGPD), vou
 - **Droit d'opposition** : vous pouvez vous opposer au traitement de vos données
 - **Droit de retirer votre consentement** : à tout moment pour les cookies non essentiels
 
-Pour exercer ces droits, vous pouvez nous contacter via les moyens mis à disposition sur le Site.
+Pour exercer ces droits, vous pouvez nous contacter à l'adresse suivante : **contact@amaury-franssen-dev.com**
 
 ## 7. Cookies et technologies similaires
 
@@ -123,7 +125,9 @@ Nous vous encourageons à consulter régulièrement cette page pour prendre conn
 
 ## 13. Contact
 
-Pour toute question concernant cette politique de confidentialité ou pour exercer vos droits, vous pouvez nous contacter via les moyens mis à disposition sur le Site.
+Pour toute question concernant cette politique de confidentialité ou pour exercer vos droits, vous pouvez nous contacter à l'adresse suivante :
+
+**Email :** contact@amaury-franssen-dev.com
 
 ## 14. Autorité de contrôle
 
