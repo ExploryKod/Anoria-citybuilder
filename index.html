@@ -1,8 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="googlebot" content="noindex, nofollow">
+    <meta name="description" content="Site de city builder de démo - Construisez et gérez votre ville en 3D">
+    <meta name="keywords" content="city builder, jeu de construction, simulation, ville, 3D">
+    <meta name="author" content="Eraanurbs">
 
     <link rel="stylesheet" href="./src/styles/main.css">
     <link rel="stylesheet" href="./src/styles/btn.css">
@@ -58,7 +63,7 @@ tarteaucitron.services.testcookie = {
 };
 
 tarteaucitron.init({
-    "privacyUrl": "", /* Privacy policy url - TODO: Add your privacy policy URL */
+    "privacyUrl": "/politique-de-confidentialite", /* Privacy policy url */
     "bodyPosition": "top", /* top to bring it as first element for accessibility - ensures banner shows immediately */
 
     "hashtag": "#tarteaucitron", /* Open the panel with this hashtag */
@@ -121,7 +126,7 @@ tarteaucitron.user.testcookie = true;
     <link rel="apple-touch-icon" href="public/icons/icon-512x512.png" />
     <meta name="apple-mobile-web-app-status-bar" content="#db4938" />
     <meta name="theme-color" content="#db4938" />
-    <title>Anoria</title>
+    <title>Eraanurbs - Démo City Builder</title>
 </head>
 <body>
 <div class="no-game">
@@ -208,6 +213,17 @@ tarteaucitron.user.testcookie = true;
                         <div class="multiplayer-rooms-list" id="multiplayer-rooms-list">
                             <div class="multiplayer-rooms-loading">Chargement des salons...</div>
                         </div>
+                    </div>
+                </div>
+                
+                <!-- Legal Links and Credits Footer -->
+                <div class="city-size-legal-footer">
+                    <div class="legal-links">
+                        <a href="/mentions-legales" target="_blank" rel="noopener noreferrer">Mentions légales</a>
+                        <span class="separator">•</span>
+                        <a href="/politique-de-confidentialite" target="_blank" rel="noopener noreferrer">Politique de confidentialité</a>
+                        <span class="separator">•</span>
+                        <a href="https://github.com/ExploryKod/Anoria/blob/main/src/credits.md" target="_blank" rel="noopener noreferrer">Crédits</a>
                     </div>
                 </div>
             </div>

@@ -675,3 +675,47 @@
     }
 }
 
+/* Legal Links and Credits Footer */
+.city-size-legal-footer {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
+    text-align: center;
+}
+
+.legal-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.legal-links a {
+    color: #666;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.legal-links a:hover {
+    color: #007bff;
+    text-decoration: underline;
+}
+
+.legal-links .separator {
+    color: #ccc;
+    margin: 0 4px;
+}
+
+@media (max-width: 768px) {
+    .legal-links {
+        font-size: 12px;
+        gap: 6px;
+    }
+    
+    .legal-links .separator {
+        margin: 0 2px;
+    }
+}
+

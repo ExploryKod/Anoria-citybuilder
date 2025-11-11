@@ -1,10 +1,10 @@
 {
-  "short_name": "Anoriapp",
-  "name": "Anoria",
+  "short_name": "Eraanurbs",
+  "name": "Eraanurbs - Site de city builder de démo",
   "theme_color": "#e7e41b",
   "background_color": "#aa3838",
-  "id": "anoria-app-awy",
-  "description": "Anoria is a mini city builder experience using three js",
+  "id": "eraanurbs-app",
+  "description": "Site de city builder de démo - Construisez et gérez votre ville en 3D",
   "display_override": [
     "standalone",
     "browser",
