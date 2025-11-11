@@ -9,16 +9,6 @@
       "destination": "/mentions-legales.html"
     }
   ],
-  "routes": [
-    {
-      "src": "/politique-de-confidentialite.html",
-      "dest": "/politique-de-confidentialite.html"
-    },
-    {
-      "src": "/mentions-legales.html",
-      "dest": "/mentions-legales.html"
-    }
-  ],
   "headers": [
     {
       "source": "/(.*)",
