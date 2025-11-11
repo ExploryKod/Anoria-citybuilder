@@ -11,7 +11,9 @@ URL du site : [https://anoria.vercel.app/](https://anoria.vercel.app/)
 
 ## 2. Directeur de publication
 
-Le directeur de publication est le propriétaire du Site.
+Le directeur de publication est **Amaury Franssen**.
+
+**Contact :** contact@amaury-franssen-dev.com
 
 ## 3. Hébergement du Site (Frontend)
 
