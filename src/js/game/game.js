@@ -453,7 +453,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
             }
             await scene.update(city);
         } else if(activeToolId === "select-object") {
-            // Object selection
+            // Object selection - ONLY open info modal when using select tool
             // Only open the info modal if we actually have info to show (i.e., on building objects)
             let shouldOpenInfo = false;
 
@@ -479,7 +479,14 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 }
             } else {
                 // Do not open the modal at all for non-building objects (e.g., grass)
-                // If it's already open from a previous selection, leave its state unchanged here
+                // If it's already open from a previous selection, close it
+                if (infoObjectOverlay.classList.contains('active')) {
+                    infoObjectOverlay.classList.remove('active');
+                    const canvas = document.querySelector('canvas');
+                    if (canvas) {
+                        canvas.classList.remove('pointer-events-disabled');
+                    }
+                }
             }
 
 
@@ -544,6 +551,8 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 }
             }
            
+            // Only pause/resume when using select-object tool
+            // When placing buildings, we don't want to pause the game
             if(infoObjectOverlay.classList.contains('active')) {
                 // Disable pointer events on 3D scene when info overlay is active
                 const canvas = document.querySelector('canvas');
@@ -561,6 +570,20 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
             }
             await scene.update(city)
         } else if(!tile.buildingId) {
+            // PLACING A BUILDING - Ensure game is NOT paused
+            // Close info overlay if it's open from a previous selection
+            if (infoObjectOverlay.classList.contains('active')) {
+                infoObjectOverlay.classList.remove('active');
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    canvas.classList.remove('pointer-events-disabled');
+                }
+                // Ensure game is playing (not paused)
+                if (window.game && typeof window.game.play === 'function') {
+                    window.game.play();
+                }
+            }
+            
             // Check if building requires multiple tiles
             const buildingInfo = assetsPrices[activeToolId];
             const gridSize = buildingInfo?.gridSize || 1;
@@ -735,8 +758,8 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
             
             await scene.update(city, time);
             
-            // Vérifier les objectifs à chaque tour
-            if (window.objectivesTracker) {
+            // Vérifier les objectifs à chaque tour (seulement si activés)
+            if (window.objectivesTracker && objectivesTracker.enabled) {
                 await objectivesTracker.checkObjectives(time);
             }
         },
@@ -750,8 +773,8 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
             // Game playing
             isPause = false;
             gameUI.setPaused(false);
-            // Appeler update(0) pour activer l'objectif au tour 0 au démarrage
-            if (window.objectivesTracker) {
+            // Appeler update(0) pour activer l'objectif au tour 0 au démarrage (seulement si activés)
+            if (window.objectivesTracker && objectivesTracker.enabled) {
                 await objectivesTracker.checkObjectives(0);
             }
         },

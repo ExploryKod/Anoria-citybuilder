@@ -7,6 +7,28 @@ import budgetManager from '../stores/BudgetManager.js';
 
 class ObjectivesTracker {
     constructor() {
+        // TEST MODE: Désactiver les objectifs pour les tests
+        // Méthode 1: Variable d'environnement Vite (prioritaire)
+        // Créer un fichier .env.local avec: VITE_IS_GOAL=false
+        // Méthode 2: localStorage (fallback)
+        // Pour désactiver: localStorage.setItem('objectives-disabled', 'true')
+        // Pour réactiver: localStorage.removeItem('objectives-disabled') ou localStorage.setItem('objectives-disabled', 'false')
+        
+        // Vérifier d'abord la variable d'environnement Vite
+        const envDisabled = import.meta.env.VITE_IS_GOAL === 'false' || import.meta.env.VITE_IS_GOAL === false;
+        // Ensuite vérifier localStorage (fallback)
+        const localStorageDisabled = localStorage.getItem('objectives-disabled') === 'true';
+        
+        // Les objectifs sont activés par défaut, sauf si désactivés par env ou localStorage
+        this.enabled = !envDisabled && !localStorageDisabled;
+        
+        // Log pour debug
+        if (envDisabled) {
+            console.log('🎯 Objectifs désactivés via variable d\'environnement VITE_IS_GOAL=false');
+        } else if (localStorageDisabled) {
+            console.log('🎯 Objectifs désactivés via localStorage');
+        }
+        
         this.objectives = [
             {
                 id: 'budget_challenge_60_days',
@@ -72,6 +94,11 @@ class ObjectivesTracker {
      * @param {number} currentDay - Tour actuel (1 tour = 1 intervalle du jeu)
      */
     async checkObjectives(currentDay) {
+        // TEST MODE: Si les objectifs sont désactivés, ne rien faire
+        if (!this.enabled) {
+            return;
+        }
+        
         if (!window.budgetManager) {
             console.warn('BudgetManager not available for objectives check');
             return;
