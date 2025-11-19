@@ -164,6 +164,12 @@ export function createScene(housesStore, gameStore, assetManager) {
     const interactiveGroup = new THREE.Group();
     interactiveGroup.name = 'interactive-objects';
     scene.add(interactiveGroup);
+    
+    // OPTIMIZATION: Zone groups for frustum culling
+    // Group buildings/terrain by zones (4x4 tiles per zone) for efficient frustum culling
+    const zoneGroups = [];
+    const ZONE_SIZE = 4; // 4x4 tiles per zone
+    let zoneGroupsInitialized = false;
 
     // Variables de gameplay
     let delay = 0;
@@ -193,6 +199,24 @@ export function createScene(housesStore, gameStore, assetManager) {
 
         // Wait for all terrain to be created
         const interactiveGroupRef = scene.interactiveGroup || scene.getObjectByName('interactive-objects');
+        
+        // OPTIMIZATION: Initialize zone groups for frustum culling
+        if (!zoneGroupsInitialized) {
+            const numZonesX = Math.ceil(city.size / ZONE_SIZE);
+            const numZonesY = Math.ceil(city.size / ZONE_SIZE);
+            
+            for (let zoneX = 0; zoneX < numZonesX; zoneX++) {
+                for (let zoneY = 0; zoneY < numZonesY; zoneY++) {
+                    const zoneGroup = new THREE.Group();
+                    zoneGroup.name = `zone_${zoneX}_${zoneY}`;
+                    zoneGroup.userData = { zoneX, zoneY, minX: zoneX * ZONE_SIZE, minY: zoneY * ZONE_SIZE };
+                    scene.add(zoneGroup);
+                    zoneGroups.push(zoneGroup);
+                }
+            }
+            zoneGroupsInitialized = true;
+        }
+        
         for(let x = 0; x < city.size; x++) {
             let column = [];
             for(let y = 0; y < city.size; y++) {
@@ -200,11 +224,21 @@ export function createScene(housesStore, gameStore, assetManager) {
                 const terrainId = city.tiles[x][y].terrainId;
                 const mesh = assetManager.createAsset(terrainId, x, y);
                 mesh.name = terrainId;
-                // Add to scene AND interactive group for raycasting optimization
-                scene.add(mesh);
-                if (interactiveGroupRef) {
-                    interactiveGroupRef.add(mesh);
+                
+                // OPTIMIZATION: Add to zone group (zone groups are in scene)
+                // This allows frustum culling to work properly
+                // Objects are NOT added directly to scene or interactive group
+                // They are accessed via zone groups for frustum culling
+                const zoneX = Math.floor(x / ZONE_SIZE);
+                const zoneY = Math.floor(y / ZONE_SIZE);
+                const zoneIndex = zoneX * Math.ceil(city.size / ZONE_SIZE) + zoneY;
+                if (zoneGroups[zoneIndex]) {
+                    zoneGroups[zoneIndex].add(mesh);
+                } else {
+                    // Fallback: add directly to scene if zone group doesn't exist
+                    scene.add(mesh);
                 }
+                
                 column.push(mesh);  
             }
             terrain.push(column);
@@ -663,11 +697,16 @@ export function createScene(housesStore, gameStore, assetManager) {
                         await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
                         await housesStore.deleteOneHouse(currentUniqueID);
                         buildings[x][y] = assetManager.createAsset('House-2Story', x, y);
-                        scene.add(buildings[x][y]);
-                        // Add to interactive group for optimized raycasting
-                        const interactiveGroupRef = scene.interactiveGroup || scene.getObjectByName('interactive-objects');
-                        if (interactiveGroupRef) {
-                            interactiveGroupRef.add(buildings[x][y]);
+                        // Add to appropriate zone group (NOT directly to scene)
+                        const zoneX = Math.floor(x / ZONE_SIZE);
+                        const zoneY = Math.floor(y / ZONE_SIZE);
+                        const citySize = city.size || 16;
+                        const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
+                        if (zoneGroups[zoneIndex]) {
+                            zoneGroups[zoneIndex].add(buildings[x][y]);
+                        } else {
+                            // Fallback: add directly to scene if zone group doesn't exist
+                            scene.add(buildings[x][y]);
                         }
                     }
 
@@ -748,10 +787,16 @@ export function createScene(housesStore, gameStore, assetManager) {
                         // Remove from both scene and interactive group
                         removeInteractiveObject(buildings[x][y]);
                         buildings[x][y] = assetManager.createAsset(newBuildingId, x, y);
-                        scene.add(buildings[x][y]);
-                        // Add to interactive group for optimized raycasting
-                        if (interactiveGroupRef) {
-                            interactiveGroupRef.add(buildings[x][y]);
+                        // Add to appropriate zone group (NOT directly to scene)
+                        const zoneX = Math.floor(x / ZONE_SIZE);
+                        const zoneY = Math.floor(y / ZONE_SIZE);
+                        const citySize = city.size || 16;
+                        const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
+                        if (zoneGroups[zoneIndex]) {
+                            zoneGroups[zoneIndex].add(buildings[x][y]);
+                        } else {
+                            // Fallback: add directly to scene if zone group doesn't exist
+                            scene.add(buildings[x][y]);
                         }
                     }
 
@@ -948,18 +993,24 @@ export function createScene(housesStore, gameStore, assetManager) {
         dirLight1.position.set(0, 1, 0);
         dirLight1.castShadow = config.rendering.shadows.enabled;
 
-        // Configure shadows for first directional light (optimized resolution)
+        // Configure shadows for first directional light (dynamic resolution based on city size)
         if (dirLight1.castShadow) {
             dirLight1.shadow.camera.left = -10;
             dirLight1.shadow.camera.right = 10;
             dirLight1.shadow.camera.top = 0;
             dirLight1.shadow.camera.bottom = -10;
-            // Reduced shadow map resolution for better performance (512 instead of 1024)
-            // Can be increased to 1024 if quality is more important than performance
-            dirLight1.shadow.mapSize.width = 512;
-            dirLight1.shadow.mapSize.height = 512;
+            // Dynamic shadow map resolution based on city size
+            // Smaller cities = lower resolution, larger cities = higher resolution
+            // This balances quality and performance
+            const shadowMapSize = citySize <= 12 ? 256 : citySize <= 16 ? 512 : 1024;
+            dirLight1.shadow.mapSize.width = shadowMapSize;
+            dirLight1.shadow.mapSize.height = shadowMapSize;
             dirLight1.shadow.camera.near = 0.5;
             dirLight1.shadow.camera.far = 50;
+            
+            // Store reference to light for dynamic resolution updates
+            scene.userData.shadowLight = dirLight1;
+            scene.userData.shadowMapBaseSize = shadowMapSize;
         }
 
         scene.add(dirLight1);
@@ -987,22 +1038,194 @@ export function createScene(housesStore, gameStore, assetManager) {
     /**
      * Helper function to get interactive objects for raycasting
      * OPTIMIZATION: Returns only buildings + terrain, not backdrop/lights/etc.
+     * Since objects are now in zone groups, we collect them from all zone groups
      */
     function getInteractiveObjects() {
-        const interactiveGroupRef = scene.interactiveGroup || scene.getObjectByName('interactive-objects');
-        return interactiveGroupRef ? interactiveGroupRef.children : scene.children;
+        // Collect all objects from zone groups (they contain buildings + terrain)
+        const objects = [];
+        zoneGroups.forEach(zoneGroup => {
+            zoneGroup.children.forEach(child => {
+                if (child instanceof THREE.Mesh) {
+                    objects.push(child);
+                }
+            });
+        });
+        return objects.length > 0 ? objects : scene.children;
     }
 
     /**
-     * Helper function to remove an object from both scene and interactive group
+     * Helper function to remove an object from scene, interactive group, and zone groups
+     * OPTIMIZATION: Ensures objects are properly cleaned up from all groups
+     */
+    /**
+     * Helper function to remove an object from scene and zone groups
      * OPTIMIZATION: Ensures objects are properly cleaned up
+     * Objects are now in zone groups (not directly in scene or interactive group)
      */
     function removeInteractiveObject(object) {
         if (!object) return;
-        const interactiveGroupRef = scene.interactiveGroup || scene.getObjectByName('interactive-objects');
-        scene.remove(object);
-        if (interactiveGroupRef && interactiveGroupRef.children.includes(object)) {
-            interactiveGroupRef.remove(object);
+        
+        // Remove from zone groups (this also removes from scene since zone groups are in scene)
+        zoneGroups.forEach(zoneGroup => {
+            if (zoneGroup.children.includes(object)) {
+                zoneGroup.remove(object);
+            }
+        });
+        
+        // Fallback: remove directly from scene if not in any zone group
+        if (scene.children.includes(object)) {
+            scene.remove(object);
+        }
+    }
+
+    /**
+     * OPTIMIZATION: Update frustum culling for zone groups
+     * Disables rendering of zones outside camera frustum
+     */
+    let lastFrustumUpdateCameraPosition = new THREE.Vector3();
+    const FRUSTUM_UPDATE_THRESHOLD = 3; // Only update frustum culling if camera moved > 3 units
+    
+    function updateFrustumCulling() {
+        // Only update if camera moved significantly (performance optimization)
+        const currentCameraPos = camera.camera.position.clone();
+        const distanceMoved = currentCameraPos.distanceTo(lastFrustumUpdateCameraPosition);
+        
+        if (distanceMoved < FRUSTUM_UPDATE_THRESHOLD && zoneGroups.length > 0) {
+            return; // Skip update if camera hasn't moved much
+        }
+        
+        lastFrustumUpdateCameraPosition.copy(currentCameraPos);
+        
+        // Create frustum from camera
+        const frustum = new THREE.Frustum();
+        const matrix = new THREE.Matrix4();
+        matrix.multiplyMatrices(camera.camera.projectionMatrix, camera.camera.matrixWorldInverse);
+        frustum.setFromProjectionMatrix(matrix);
+        
+        // Update visibility of each zone group
+        let zonesHidden = 0;
+        let zonesVisible = 0;
+        
+        zoneGroups.forEach(zoneGroup => {
+            if (zoneGroup.children.length === 0) {
+                zoneGroup.visible = false;
+                return;
+            }
+            
+            // Calculate bounding box for this zone
+            const box = new THREE.Box3();
+            zoneGroup.children.forEach(child => {
+                if (child instanceof THREE.Mesh) {
+                    box.expandByObject(child);
+                }
+            });
+            
+            // Check if zone intersects with frustum
+            const isVisible = frustum.intersectsBox(box);
+            zoneGroup.visible = isVisible;
+            
+            if (isVisible) {
+                zonesVisible++;
+            } else {
+                zonesHidden++;
+            }
+        });
+        
+        // Log stats occasionally (every 5 seconds)
+        if (Math.random() < 0.2) { // 20% chance per update
+            console.log(`[Frustum Culling] Visible: ${zonesVisible} zones | Hidden: ${zonesHidden} zones`);
+        }
+    }
+    
+    /**
+     * OPTIMIZATION: Update shadow casting based on distance from camera
+     * Disables shadows for objects far from camera to improve performance
+     * @param {number} maxShadowDistance - Maximum distance for shadow casting (default: 50)
+     */
+    let lastShadowUpdateCameraPosition = new THREE.Vector3();
+    const SHADOW_UPDATE_THRESHOLD = 5; // Only update shadows if camera moved > 5 units
+    
+    function updateShadowCasting(maxShadowDistance = 50) {
+        // Only update if camera moved significantly (performance optimization)
+        const currentCameraPos = camera.camera.position.clone();
+        const distanceMoved = currentCameraPos.distanceTo(lastShadowUpdateCameraPosition);
+        
+        if (distanceMoved < SHADOW_UPDATE_THRESHOLD) {
+            return; // Skip update if camera hasn't moved much
+        }
+        
+        lastShadowUpdateCameraPosition.copy(currentCameraPos);
+        
+        // OPTIMIZATION: Dynamically adjust shadow map resolution based on camera distance
+        // Closer camera = higher resolution, farther camera = lower resolution
+        const shadowLight = scene.userData.shadowLight;
+        const baseShadowMapSize = scene.userData.shadowMapBaseSize || 512;
+        
+        if (shadowLight && shadowLight.castShadow) {
+            // Calculate average distance to visible buildings
+            let totalDistance = 0;
+            let buildingCount = 0;
+            
+            for(let x = 0; x < buildings.length; x++) {
+                for(let y = 0; y < buildings[x]?.length; y++) {
+                    const building = buildings[x]?.[y];
+                    if (building) {
+                        const distance = currentCameraPos.distanceTo(building.position);
+                        if (distance < maxShadowDistance * 1.5) { // Check slightly beyond threshold
+                            totalDistance += distance;
+                            buildingCount++;
+                        }
+                    }
+                }
+            }
+            
+            if (buildingCount > 0) {
+                const avgDistance = totalDistance / buildingCount;
+                // Adjust shadow map resolution: closer = higher res, farther = lower res
+                // Range: 256 (far) to baseSize (close)
+                let dynamicSize = baseShadowMapSize;
+                if (avgDistance > maxShadowDistance * 0.8) {
+                    dynamicSize = Math.max(256, Math.floor(baseShadowMapSize * 0.5)); // Far: reduce to 50%
+                } else if (avgDistance > maxShadowDistance * 0.5) {
+                    dynamicSize = Math.max(256, Math.floor(baseShadowMapSize * 0.75)); // Medium: reduce to 75%
+                }
+                // Close: use base size (100%)
+                
+                // Only update if resolution changed significantly (avoid constant updates)
+                if (Math.abs(shadowLight.shadow.mapSize.width - dynamicSize) > 64) {
+                    shadowLight.shadow.mapSize.width = dynamicSize;
+                    shadowLight.shadow.mapSize.height = dynamicSize;
+                    shadowLight.shadow.map?.dispose(); // Dispose old map
+                    shadowLight.shadow.needsUpdate = true; // Force update
+                }
+            }
+        }
+        
+        // Update shadows for all buildings
+        let shadowUpdates = 0;
+        for(let x = 0; x < buildings.length; x++) {
+            for(let y = 0; y < buildings[x]?.length; y++) {
+                const building = buildings[x]?.[y];
+                if (building) {
+                    const distance = currentCameraPos.distanceTo(building.position);
+                    const shouldCastShadow = distance < maxShadowDistance;
+                    
+                    building.traverse((child) => {
+                        if (child instanceof THREE.Mesh) {
+                            if (child.castShadow !== shouldCastShadow) {
+                                child.castShadow = shouldCastShadow;
+                                child.receiveShadow = shouldCastShadow; // Also disable receiveShadow for consistency
+                                shadowUpdates++;
+                            }
+                        }
+                    });
+                }
+            }
+        }
+        
+        if (shadowUpdates > 0) {
+            const shadowRes = shadowLight?.shadow?.mapSize?.width || 'N/A';
+            console.log(`[Performance] Updated shadows for ${shadowUpdates} meshes | Shadow map: ${shadowRes}px (distance threshold: ${maxShadowDistance})`);
         }
     }
 
@@ -1067,9 +1290,51 @@ export function createScene(housesStore, gameStore, assetManager) {
         }
     }
 
+    // Performance statistics (optional, can be enabled via localStorage)
+    let performanceStats = {
+        enabled: localStorage.getItem('show-performance-stats') === 'true',
+        frameCount: 0,
+        lastLogTime: performance.now()
+    };
+    
+    function logPerformanceStats() {
+        if (!performanceStats.enabled) return;
+        
+        performanceStats.frameCount++;
+        const now = performance.now();
+        
+        // Log stats every second
+        if (now - performanceStats.lastLogTime > 1000) {
+            const info = renderer.info;
+            const fps = performanceStats.frameCount;
+            const drawCalls = info.render.calls;
+            const triangles = info.render.triangles;
+            const geometries = info.memory.geometries;
+            const textures = info.memory.textures;
+            
+            console.log(`[Performance] FPS: ~${fps} | Draw Calls: ${drawCalls} | Triangles: ${triangles.toLocaleString()} | Geometries: ${geometries} | Textures: ${textures}`);
+            
+            performanceStats.frameCount = 0;
+            performanceStats.lastLogTime = now;
+        }
+    }
+    
+    // Expose function to toggle stats
+    window.togglePerformanceStats = function() {
+        performanceStats.enabled = !performanceStats.enabled;
+        localStorage.setItem('show-performance-stats', performanceStats.enabled.toString());
+        console.log(`Performance stats ${performanceStats.enabled ? 'enabled' : 'disabled'}`);
+        return performanceStats.enabled;
+    };
+    
     function draw() {
         updateFocusedObject(); // Update focused object every frame
+        // OPTIMIZATION: Update frustum culling for zone groups (throttled)
+        updateFrustumCulling();
+        // OPTIMIZATION: Update shadow casting based on camera distance (throttled, not every frame)
+        updateShadowCasting(50); // 50 unit distance threshold - objects beyond this won't cast shadows
         renderer.render(scene, camera.camera);
+        logPerformanceStats(); // Log performance stats if enabled
     }
 
     function start() {
