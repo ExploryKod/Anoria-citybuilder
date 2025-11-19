@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { textures } from './data.js';
 import MeshLoader from "./MeshLoaderOptimized.js";
 import config from '../game/config.js';
+import instancingManager from './InstancingManager.js';
 
 /**
  * Gets the base URL for assets (similar to simcity's pattern)
