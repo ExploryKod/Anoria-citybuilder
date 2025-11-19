@@ -217,6 +217,16 @@ export function createScene(housesStore, gameStore, assetManager) {
             zoneGroupsInitialized = true;
         }
         
+        // OPTIMIZATION: Create terrain synchronously but efficiently
+        // Chunking with requestAnimationFrame added overhead, so we use direct creation
+        // but optimize by batching DOM updates and deferring non-critical work
+        
+        // Create initial empty arrays for buildings
+        for(let x = 0; x < city.size; x++) {
+            buildings.push([...Array(city.size)]);
+        }
+        
+        // Create terrain efficiently
         for(let x = 0; x < city.size; x++) {
             let column = [];
             for(let y = 0; y < city.size; y++) {
@@ -227,8 +237,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                 
                 // OPTIMIZATION: Add to zone group (zone groups are in scene)
                 // This allows frustum culling to work properly
-                // Objects are NOT added directly to scene or interactive group
-                // They are accessed via zone groups for frustum culling
                 const zoneX = Math.floor(x / ZONE_SIZE);
                 const zoneY = Math.floor(y / ZONE_SIZE);
                 const zoneIndex = zoneX * Math.ceil(city.size / ZONE_SIZE) + zoneY;
@@ -242,40 +250,49 @@ export function createScene(housesStore, gameStore, assetManager) {
                 column.push(mesh);  
             }
             terrain.push(column);
-            
-            // create empty array for buildings : an array of undefined values
-            buildings.push([...Array(city.size)]);
         }
         
         // CRITICAL FIX: Set up lights ONCE after terrain is created, not in the loop
         // Previously this was called 16 times for a 16×16 city, creating 80 lights!
-        // This was causing severe performance issues on low-end machines.
         setUpLights(city.size);
-
-        // Update population and funds display in general bar
-        const displayPop = document.querySelector('.display-pop');
-        const displayFunds = document.querySelector('.display-funds');
-        if (displayPop) {
-            displayPop.textContent = '0';
-        }
-        if (displayFunds) {
-            displayFunds.textContent = '0';
+        
+        // OPTIMIZATION: Defer DOM updates to reduce main-thread work
+        // Use requestIdleCallback or setTimeout to defer non-critical DOM operations
+        if (typeof requestIdleCallback !== 'undefined') {
+            requestIdleCallback(() => {
+                // Update population and funds display in general bar
+                const displayPop = document.querySelector('.display-pop');
+                const displayFunds = document.querySelector('.display-funds');
+                if (displayPop) {
+                    displayPop.textContent = '0';
+                }
+                if (displayFunds) {
+                    displayFunds.textContent = '0';
+                }
+                
+                // Hide the entire expenses box to avoid confusion
+                const debtBox = document.querySelector('.debt-box');
+                if (debtBox) {
+                    debtBox.style.display = 'none';
+                }
+            }, { timeout: 1000 });
+        } else {
+            // Fallback for browsers without requestIdleCallback
+            setTimeout(() => {
+                const displayPop = document.querySelector('.display-pop');
+                const displayFunds = document.querySelector('.display-funds');
+                if (displayPop) displayPop.textContent = '0';
+                if (displayFunds) displayFunds.textContent = '0';
+                const debtBox = document.querySelector('.debt-box');
+                if (debtBox) debtBox.style.display = 'none';
+            }, 0);
         }
         
-        // Hide the entire expenses box to avoid confusion
-        const debtBox = document.querySelector('.debt-box');
-        if (debtBox) {
-            debtBox.style.display = 'none';
-        }
-
         // Wait for any remaining promises to complete
         if (loadingPromises.length > 0) {
             await Promise.all(loadingPromises);
         }
-
-        // Add a small delay to ensure all rendering is complete
-        await new Promise(resolve => setTimeout(resolve, 100));
-
+        
         // Set camera bounds based on city size (with small margins)
         if (camera.setBounds && city && typeof city.size === 'number') {
             const margin = 2;
@@ -287,8 +304,6 @@ export function createScene(housesStore, gameStore, assetManager) {
             });
             
             // Center camera on the city (critical for proper raycasting coordinates)
-            // This ensures clicks/touches align correctly with terrain tiles
-            // City center is at (city.size / 2, city.size / 2)
             if (camera.centerOnCity) {
                 camera.centerOnCity(city.size);
             }
@@ -1131,10 +1146,8 @@ export function createScene(housesStore, gameStore, assetManager) {
             }
         });
         
-        // Log stats occasionally (every 5 seconds)
-        if (Math.random() < 0.2) { // 20% chance per update
-            console.log(`[Frustum Culling] Visible: ${zonesVisible} zones | Hidden: ${zonesHidden} zones`);
-        }
+        // Removed console.log to reduce JavaScript execution time
+        // Uncomment for debugging: console.log(`[Frustum Culling] Visible: ${zonesVisible} zones | Hidden: ${zonesHidden} zones`);
     }
     
     /**
@@ -1312,7 +1325,8 @@ export function createScene(housesStore, gameStore, assetManager) {
             const geometries = info.memory.geometries;
             const textures = info.memory.textures;
             
-            console.log(`[Performance] FPS: ~${fps} | Draw Calls: ${drawCalls} | Triangles: ${triangles.toLocaleString()} | Geometries: ${geometries} | Textures: ${textures}`);
+            // Removed console.log to reduce JavaScript execution time
+            // Uncomment for debugging: console.log(`[Performance] FPS: ~${fps} | Draw Calls: ${drawCalls} | Triangles: ${triangles.toLocaleString()} | Geometries: ${geometries} | Textures: ${textures}`);
             
             performanceStats.frameCount = 0;
             performanceStats.lastLogTime = now;
