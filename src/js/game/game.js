@@ -402,6 +402,16 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
     scene.initialize(city).then(() => {
         // Hide Chronos loader modal once scene is initialized with fade-out
         loaderManager.hide(500);
+        
+        // Ouvrir automatiquement le tutoriel au démarrage du jeu (premier mois)
+        // Petit délai pour s'assurer que tout est bien initialisé après le chargement
+        setTimeout(() => {
+            if (window.startTutorial && typeof window.startTutorial === 'function') {
+                window.startTutorial();
+            } else if (window.tutorialManager && typeof window.tutorialManager.showTutorial === 'function') {
+                window.tutorialManager.showTutorial();
+            }
+        }, 800); // Délai après le masquage du loader pour une meilleure UX
     });
 
     // handler function to extract coordinate of an object I click on (data from asset js and using scene js methods)
@@ -451,7 +461,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     }
                 }
             }
-            await scene.update(city);
+            await scene.update(city, time);
         } else if(activeToolId === "select-object") {
             // Object selection - ONLY open info modal when using select tool
             // Only open the info modal if we actually have info to show (i.e., on building objects)
@@ -536,18 +546,22 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers disponibles`);
                 }
 
-                if(selectedObject.userData.id.includes('Farm') && Object.hasOwn(houseStocks, 'food')) {
-                    makeInfoSection('Production ferme');
+                if(selectedObject.userData.id.includes('Farm')) {
+                    // Initialize stocks if not present
+                    if (!houseStocks) {
+                        houseStocks = { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+                    }
+                    makeInfoSection('Stocks ferme');
                     if(selectedObject.userData.id.includes('Farm-Wheat')) {
-                        makeInfoKeyValue('Blé', `${houseStocks.wheat} paniers produits`);
+                        makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`);
                     }
                     if(selectedObject.userData.id.includes('Farm-Carrot')) {
-                        makeInfoKeyValue('Carottes', `${houseStocks.carrot} paniers produits`);
+                        makeInfoKeyValue('Carottes', `${houseStocks.carrot || 0} paniers`);
                     }
                     if(selectedObject.userData.id.includes('Farm-Cabbage')) {
-                        makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage} paniers produits`);
+                        makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`);
                     }
-                    makeInfoKeyValue('Total', `${houseStocks.food} unités produites`);
+                    makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers`);
                 }
             }
            
@@ -568,7 +582,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 }
                 window.game.play()
             }
-            await scene.update(city)
+            await scene.update(city, time)
         } else if(!tile.buildingId) {
             // PLACING A BUILDING - Ensure game is NOT paused
             // Close info overlay if it's open from a previous selection
@@ -650,7 +664,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         }
                     }
                 }
-                await scene.update(city);
+                await scene.update(city, time);
                 
                 // Envoyer au serveur multijoueur si activé
                 if (window.multiplayerManager && window.multiplayerManager.isMultiplayer) {

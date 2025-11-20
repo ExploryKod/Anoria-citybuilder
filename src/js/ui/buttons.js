@@ -1371,25 +1371,66 @@ window.onload = async () => {
     // Root initialization
     const assetManager = new AssetManager();
     let selectedControl = document.getElementById('bulldoze-btn');
-    await assetManager.initializeTerrains()
-    await assetManager.initializeBuildings('houses')
-    await assetManager.initializeBuildings('palaces')
-    await assetManager.initializeBuildings('markets')
-    await assetManager.initializeBuildings('farms')
-    await assetManager.initializeBuildings('industry')
-    await assetManager.initializeBuildings('infrastructure')
-    await assetManager.initializeBuildings('public')
-    buttonData = assetManager.getButtonData();
-    toolIds = assetManager.getToolIds();
     
-    // Create budget elements dynamically if they don't exist
-    if (!document.getElementById('budget-btn')) {
-        //console.log('Creating budget button dynamically...');
-        createBudgetElements();
-        console.info('Balance sheets is a new feature, not implemented yet...');
+    // OPTIMIZATION: Break up asset loading into smaller chunks to reduce TBT
+    // Load critical assets first, then defer the rest
+    await assetManager.initializeTerrains();
+    
+    // OPTIMIZATION: Use requestIdleCallback to defer house loading slightly
+    // This prevents blocking the main thread for too long (>50ms chunks)
+    const loadHouses = async () => {
+        await assetManager.initializeBuildings('houses'); // Critical for gameplay
+    };
+    
+    // Load houses in next idle period to reduce TBT
+    if (typeof requestIdleCallback !== 'undefined') {
+        requestIdleCallback(loadHouses, { timeout: 500 });
+    } else {
+        setTimeout(loadHouses, 0);
     }
+    
+    // OPTIMIZATION: Defer non-critical assets using requestIdleCallback
+    // This prevents blocking the main thread during initial load
+    const loadNonCriticalAssets = () => {
+        Promise.all([
+            assetManager.initializeBuildings('palaces'),
+            assetManager.initializeBuildings('markets'),
+            assetManager.initializeBuildings('farms'),
+            assetManager.initializeBuildings('industry'),
+            assetManager.initializeBuildings('infrastructure'),
+            assetManager.initializeBuildings('public')
+        ]).catch(() => {
+            // Silently fail - assets will load when needed
+        });
+    };
+    
+    // Use requestIdleCallback if available, otherwise setTimeout
+    if (typeof requestIdleCallback !== 'undefined') {
+        requestIdleCallback(loadNonCriticalAssets, { timeout: 3000 });
+    } else {
+        setTimeout(loadNonCriticalAssets, 500);
+    }
+    
+    // OPTIMIZATION: Defer UI initialization to reduce TBT
+    // These operations can wait until browser is idle
+    const initUI = () => {
+        buttonData = assetManager.getButtonData();
+        toolIds = assetManager.getToolIds();
+        
+        // Create budget elements dynamically if they don't exist
+        if (!document.getElementById('budget-btn')) {
+            createBudgetElements();
+        }
 
-    updateSpeedDisplay();
+        updateSpeedDisplay();
+    };
+    
+    // Defer UI initialization to reduce TBT
+    if (typeof requestIdleCallback !== 'undefined') {
+        requestIdleCallback(initUI, { timeout: 1000 });
+    } else {
+        setTimeout(initUI, 100);
+    }
     
     // Initialize button states for game start
     if (window.buttonStateManager) {

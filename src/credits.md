@@ -21,7 +21,15 @@
 
 > Icone de route barré par Pawel-kuna : [site du designer ici](https://iconduck.com/designers/pawel-kuna) (MIT license).
 
-> Icone de blé barré de la collection [libreIcons](https://iconduck.com/sets/libreicons-icon-library)  par Denis Suitters: [son site ici](https://iconduck.com/designers/dennis-suitters) (MIT License). 
+> Icone de blé barré de la collection [libreIcons](https://iconduck.com/sets/libreicons-icon-library)  par Denis Suitters: [son site ici](https://iconduck.com/designers/dennis-suitters) (MIT License).
+
+## Sprites de saison pour les fermes (Freepik)
+
+> Harvest sprite (récolte) : <a href="https://www.freepik.com/icon/harvest_649379#fromView=search&page=1&position=11&uuid=1d5f86b9-025c-40c3-8f2f-0765f94a831d">Icon by Becris</a>
+
+> Grow food sprite (croissance) : <a href="https://www.freepik.com/icon/carrot_4590910#fromView=search&page=1&position=15&uuid=f3c0d1ae-2554-4dce-980b-082a8633f59b">Icon by Vitaly Gorbachev</a>
+
+> Sell food sprite (vente) : <a href="https://www.freepik.com/icon/market-segment_12769591#fromView=search&page=4&position=15&uuid=0425991a-77eb-443f-9ad5-ddda08c1ecce">Icon by Uniconlabs</a> 
 
 > Icone de lucide.dev : sous la licence de [ISC License consultable ici](https://lucide.dev/license)
 Contributeurs des icones de lucide.dev présente sur Anoria
