@@ -285,19 +285,38 @@ class AssetManager extends MeshLoader {
     // Initialize shared terrain materials (called once, reused for all tiles)
     #getSharedTerrainMaterials() {
         if (!this.#sharedTerrainMaterials) {
+            // Vérifier que les textures sont chargées
+            if (!textures['roads'] || !textures['grass']) {
+                console.error('[AssetManager] Textures not loaded yet!', { 
+                    roads: !!textures['roads'], 
+                    grass: !!textures['grass'] 
+                });
+            }
+            
             // Create shared materials once - these will be reused for all terrain tiles
             // This prevents exceeding WebGL texture unit limit (32 max)
             // NOTE: Removed specularMap to save texture units (not critical for visual quality)
             this.#sharedTerrainMaterials = {
                 'roads': new THREE.MeshLambertMaterial({
-                    map: textures['roads']
-                    // specularMap removed to reduce texture unit usage
+                    map: textures['roads'],
+                    // S'assurer que la texture est correctement configurée
+                    transparent: false,
+                    side: THREE.FrontSide
                 }),
                 'grass': new THREE.MeshLambertMaterial({
-                    map: textures['grass']
-                    // specularMap removed to reduce texture unit usage
+                    map: textures['grass'],
+                    transparent: false,
+                    side: THREE.FrontSide
                 })
             };
+            
+            // S'assurer que les textures sont marquées pour mise à jour
+            if (this.#sharedTerrainMaterials['roads'].map) {
+                this.#sharedTerrainMaterials['roads'].map.needsUpdate = true;
+            }
+            if (this.#sharedTerrainMaterials['grass'].map) {
+                this.#sharedTerrainMaterials['grass'].map.needsUpdate = true;
+            }
         }
         return this.#sharedTerrainMaterials;
     }
