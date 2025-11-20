@@ -651,10 +651,12 @@
 /* Mobile Landscape Responsive Styles */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
     .city-map-wrapper {
-        width: 95%;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
         max-width: none;
-        max-height: 90vh;
-        flex-direction: row; /* Layout horizontal pour mobile paysage */
+        max-height: 95vh;
     }
 
     .city-map-header {
