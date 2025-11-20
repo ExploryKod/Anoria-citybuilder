@@ -4,7 +4,7 @@
     bottom: 20px;
     right: 20px;
     z-index: var(--z-index-toolbar);
-    display: none; /* Hidden by default, shown only on mobile */
+    display: none; /* Hidden by default */
     flex-direction: column;
     gap: 12px;
     padding: 12px;
@@ -15,9 +15,21 @@
     border: 2px solid var(--cta);
 }
 
+.mobile-camera-controls.mobile-hidden {
+    display: none !important;
+}
+
+.mobile-camera-controls.mobile-visible {
+    display: flex;
+}
+
 /* Show on mobile/tablet devices */
 @media screen and (max-width: 1024px) {
     .mobile-camera-controls {
+        display: none;
+    }
+    
+    .mobile-camera-controls.mobile-visible {
         display: flex;
     }
 }

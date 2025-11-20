@@ -72,7 +72,8 @@
   color: #666;
 }
 
-.toolbar-mobile-toggle-btn {
+.toolbar-mobile-toggle-btn,
+.toolbar-mobile-controls-toggle-btn {
   display: none;
 }
 
@@ -354,7 +355,8 @@
     border-radius: 50%; /* Circular buttons on mobile */
   }
   
-  .toolbar-mobile-toggle-btn {
+  .toolbar-mobile-toggle-btn,
+  .toolbar-mobile-controls-toggle-btn {
     display: block;
   }
   
@@ -422,7 +424,8 @@
     padding: 6px;
   }
   
-  .toolbar-mobile-toggle-btn {
+  .toolbar-mobile-toggle-btn,
+  .toolbar-mobile-controls-toggle-btn {
     display: block;
   }
 
