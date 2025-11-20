@@ -751,16 +751,27 @@ export function createScene(housesStore, gameStore, assetManager) {
                         }
                     });
                     
-                    if (hasFood && hasRoadAccess) {
-                        // Has food AND road access - population can grow (max 2)
-                        const housePop = { name: currentUniqueID, increment: 1, field: 'pop' };
-                        await housesStore.incrementHouseField(housePop, {operator: '<=', limit: 2});
-                        console.log('[scene.js] Population incremented for house:', currentUniqueID);
+                    // Population = number of food stocks (1 stock = 1 citizen)
+                    // Population can only increase or stay the same (no consumption for now)
+                    if (hasRoadAccess) {
+                        // Calculate population based on food stocks: 1 stock = 1 citizen
+                        const targetPopulation = houseFoodStocks.food || 0;
+                        
+                        // Only update if target population is higher than current (no decrease)
+                        if (targetPopulation > currentPop) {
+                            await housesStore.updateHouseFields(currentUniqueID, { pop: targetPopulation });
+                            console.log('[scene.js] Population updated based on food stocks:', {
+                                houseId: currentUniqueID,
+                                oldPop: currentPop,
+                                newPop: targetPopulation,
+                                foodStocks: houseFoodStocks.food
+                            });
+                        }
                     } else {
-                        // No food OR no road access - reset population to 0
+                        // No road access - reset population to 0
                         if (currentPop > 0) {
                             await housesStore.updateHouseFields(currentUniqueID, { pop: 0 });
-                            console.log('[scene.js] Population reset to 0 (no food or road):', currentUniqueID);
+                            console.log('[scene.js] Population reset to 0 (no road access):', currentUniqueID);
                         }
                     }
 
