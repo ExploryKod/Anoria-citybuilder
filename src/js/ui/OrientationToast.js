@@ -7,6 +7,7 @@ class OrientationToast {
   constructor() {
     this.toast = document.getElementById('orientation-toast');
     this.isVisible = false;
+    this.hideTimeout = null;
     
     if (!this.toast) {
       console.warn('Orientation toast element not found');
@@ -46,14 +47,27 @@ class OrientationToast {
   }
 
   show() {
-    if (!this.toast || this.isVisible) return;
+    if (!this.toast) return;
     
     this.toast.classList.add('show');
     this.isVisible = true;
+    
+    // Automatically hide after a short delay to avoid blocking interaction
+    if (this.hideTimeout) {
+      clearTimeout(this.hideTimeout);
+    }
+    this.hideTimeout = setTimeout(() => {
+      this.hide();
+    }, 3000);
   }
 
   hide() {
     if (!this.toast || !this.isVisible) return;
+    
+    if (this.hideTimeout) {
+      clearTimeout(this.hideTimeout);
+      this.hideTimeout = null;
+    }
     
     this.toast.classList.remove('show');
     this.isVisible = false;

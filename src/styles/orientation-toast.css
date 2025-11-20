@@ -3,7 +3,7 @@
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(0.9);
   background: linear-gradient(135deg, var(--cta) 0%, #e67300 100%);
   color: white;
   padding: 20px 24px;
@@ -27,7 +27,6 @@
   opacity: 1;
   visibility: visible;
   transform: translate(-50%, -50%) scale(1);
-  pointer-events: auto;
 }
 
 .orientation-toast-icon {
