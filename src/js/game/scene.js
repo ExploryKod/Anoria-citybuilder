@@ -384,7 +384,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                   }
               }
               const currentBuilding = buildings[x][y];
-              const newBuildingId = city.tiles[x][y].buildingId;
+              const newBuildingId = city.tiles[x][y]?.buildingId;
               const buildingInfo =  city.tiles[x][y];
 
               // Check bounds for neighbor processing (avoid accessing out-of-bounds neighbors)
@@ -398,12 +398,50 @@ export function createScene(housesStore, gameStore, assetManager) {
                 if(!currentUniqueID) {
                     continue;
                 }
-                await housesStore.updateHouseFields(currentUniqueID, {worldTime: time})
-
-                /* update userData in indexDB === real userData state from three mesh */
-                const currentUserData = buildings[x][y].userData
-                // Building userData processing
-                await housesStore.updateHouseFields(currentUniqueID, {})
+                
+                // Vérifier si le bâtiment existe encore dans la base de données
+                // Si non, le supprimer de la scène (cas des événements aléatoires, etc.)
+                // IMPORTANT: Ne pas supprimer si un nouveau bâtiment est en cours de création (newBuildingId existe)
+                // EXCEPTION: Ne pas vérifier les routes car elles sont gérées différemment (terrain + buildings)
+                const isRoad = currentBuildingId === 'roads' || buildings[x][y]?.userData?.isRoad;
+                const hasNewBuilding = newBuildingId && newBuildingId !== currentBuildingId;
+                
+                // Ne vérifier la suppression que si aucun nouveau bâtiment n'est en cours de création
+                if (!isRoad && !hasNewBuilding) {
+                    const buildingExists = await housesStore.getHouse(currentUniqueID);
+                    if (!buildingExists) {
+                        // Le bâtiment n'existe plus dans la DB, le supprimer visuellement
+                        // IMPORTANT: Ne pas supprimer si c'est aussi le terrain (routes)
+                        const isTerrain = buildings[x][y] === terrain[x][y];
+                        if (!isTerrain) {
+                            removeInteractiveObject(buildings[x][y]);
+                            buildings[x][y] = undefined;
+                        }
+                        city.tiles[x][y].buildingId = undefined;
+                        continue; // Passer au prochain tile
+                    }
+                }
+                
+                // Pour les routes, on continue même si elles n'existent pas encore dans la DB
+                // car elles peuvent être en cours de création
+                if (!isRoad) {
+                    await housesStore.updateHouseFields(currentUniqueID, {worldTime: time})
+                    
+                    /* update userData in indexDB === real userData state from three mesh */
+                    const currentUserData = buildings[x][y].userData
+                    // Building userData processing
+                    await housesStore.updateHouseFields(currentUniqueID, {})
+                } else {
+                    // Pour les routes, on essaie de mettre à jour mais on ne bloque pas si ça échoue
+                    try {
+                        await housesStore.updateHouseFields(currentUniqueID, {worldTime: time})
+                        const currentUserData = buildings[x][y].userData
+                        await housesStore.updateHouseFields(currentUniqueID, {})
+                    } catch (err) {
+                        // Route peut ne pas exister encore dans la DB, c'est normal lors de la création
+                        // On continue quand même pour permettre l'affichage visuel
+                    }
+                }
 
 
 
@@ -866,7 +904,9 @@ export function createScene(housesStore, gameStore, assetManager) {
                     if (terrain[x] && terrain[x][y]) {
                         const terrainMesh = terrain[x][y];
                         const sharedMaterials = assetManager.getSharedTerrainMaterials();
-                        if (sharedMaterials && sharedMaterials['roads'] && terrainMesh.material) {
+                        if (sharedMaterials && sharedMaterials['roads']) {
+                            // Mettre à jour le matériau - utiliser directement le matériau partagé
+                            // Three.js peut partager le même matériau entre plusieurs meshes
                             terrainMesh.material = sharedMaterials['roads'];
                             terrainMesh.name = 'roads';
                             terrainMesh.userData.id = 'roads';
@@ -875,11 +915,49 @@ export function createScene(housesStore, gameStore, assetManager) {
                             terrainMesh.userData.y = y;
                             terrainMesh.userData.isBuilding = false;
                             terrainMesh.userData.isRoad = true; // Mark as road for easier detection
+                            
+                            // S'assurer que le mesh est visible
+                            terrainMesh.visible = true;
+                            
+                            // Forcer la mise à jour complète du mesh et du matériau
+                            if (terrainMesh.material) {
+                                terrainMesh.material.needsUpdate = true;
+                                // Forcer la mise à jour de la texture
+                                if (terrainMesh.material.map) {
+                                    terrainMesh.material.map.needsUpdate = true;
+                                }
+                            }
+                            
+                            // Forcer la mise à jour de la géométrie si nécessaire
+                            if (terrainMesh.geometry) {
+                                terrainMesh.geometry.attributesNeedUpdate = true;
+                            }
+                            
+                            // S'assurer que le parent du mesh est mis à jour
+                            if (terrainMesh.parent) {
+                                terrainMesh.parent.updateMatrixWorld(true);
+                            }
+                            
+                            // Debug: vérifier l'état du mesh
+                            console.log('[scene] Road material updated', {
+                                x, y,
+                                hasMaterial: !!terrainMesh.material,
+                                materialType: terrainMesh.material?.type,
+                                hasTexture: !!terrainMesh.material?.map,
+                                textureLoaded: terrainMesh.material?.map?.image?.complete,
+                                visible: terrainMesh.visible,
+                                inScene: terrainMesh.parent !== null,
+                                parentName: terrainMesh.parent?.name
+                            });
+                        } else {
+                            console.warn('[scene] Shared materials for roads not available', { x, y, sharedMaterials });
                         }
+                    } else {
+                        console.warn('[scene] Terrain mesh not found for road placement', { x, y, terrainExists: !!terrain[x] });
                     }
                     // CRITICAL: Add terrain mesh to buildings array so it's detected as a neighbor
                     // Roads need to be in buildings array for neighbor detection to work
-                    if (!buildings[x][y]) {
+                    if (!buildings[x][y] && terrain[x] && terrain[x][y]) {
                         buildings[x][y] = terrain[x][y];
                     }
                 } else if (currentBuildingId === 'roads' || buildings[x][y]?.userData?.isRoad) {
@@ -989,8 +1067,9 @@ export function createScene(housesStore, gameStore, assetManager) {
         // Daily budget operations - expenses and income
         try {
             if (window.budgetManager) {
-                // Add taxes from houses (10€ per citizen per turn)
-                await window.budgetManager.addTaxes();
+                // Add taxes from houses (100€ per citizen, only in November)
+                // Only collects if there is population
+                await window.budgetManager.addTaxes(time);
                 
                 // Add building maintenance expenses only
                 const buildingAmount = buildingCounts.total * 2; // Building maintenance cost

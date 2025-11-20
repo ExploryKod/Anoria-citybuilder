@@ -39,6 +39,8 @@ export default defineConfig({
       navigateFallback: 'index.html',
       suppressWarnings: true,
       type: 'module',
+      // Supprimer les avertissements Workbox en développement
+      disableDevLogs: true,
     },
   })],
 })
