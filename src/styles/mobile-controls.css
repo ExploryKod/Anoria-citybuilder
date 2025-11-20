@@ -30,6 +30,8 @@
     }
     
     .mobile-camera-controls.mobile-visible {
+        bottom: 50%;
+        transform: translateY(50%);
         display: flex;
     }
 }

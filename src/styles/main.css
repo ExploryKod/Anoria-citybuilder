@@ -176,10 +176,14 @@ canvas.pointer-events-disabled {
 }
 
 .game-window .toolbar {
+    scrollbar-width: auto;
+    scrollbar-color: var(--cta) #fafafa;
+
+    overflow-y: auto;
     position: absolute;
     top: 0;
-    bottom: 0;
     left: 0;
+    bottom: 0;
     background-color: var(--toolbar-bg-color);
     padding: 10px;
     display: flex;
@@ -195,11 +199,14 @@ canvas.pointer-events-disabled {
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
 }
 
+
+
 @media screen and (max-width: 1024px) and (orientation: landscape) {
     .game-window .toolbar {
         position: fixed;
         top: 70px;
         left: 50%;
+        bottom: auto;
         transform: translateX(-50%);
         width: calc(100% - 32vw);
         max-height: 70vh;
@@ -229,21 +236,24 @@ canvas.pointer-events-disabled {
     cursor: pointer;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .game-window .toolbar {
         position: fixed;
         top: 70px;
         left: 50%;
+        bottom: auto;
         transform: translateX(-50%);
         width: calc(100% - 24px);
-        max-height: calc(100vh - 45px);
-        height: auto;
         padding: 16px;
         border-radius: 16px;
         box-shadow: 0 15px 30px rgba(0, 0, 0, 0.35);
         overflow-y: auto;
         background-color: var(--toolbar-bg-color);
         z-index: var(--z-index-toolbar);
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(auto-fill, 1fr);
+        gap: 10px;
     }
 
     .game-window .toolbar.mobile-hidden {
@@ -252,6 +262,10 @@ canvas.pointer-events-disabled {
 
     .game-window .toolbar.mobile-visible {
         display: flex !important;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: start;
+        justify-content: start;
     }
 }
 
