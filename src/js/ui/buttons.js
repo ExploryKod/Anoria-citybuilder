@@ -1804,9 +1804,11 @@ window.onload = async () => {
         });
     }
     
-    // Mobile toolbar toggle functionality
+    // Mobile toolbar/camera toggle functionality
     const toolbarMobileToggle = document.getElementById('toolbar-mobile-toggle');
+    const mobileControlsToggle = document.getElementById('mobile-controls-toggle');
     const toolbarElement = document.getElementById('toolbar');
+    const mobileControlsElement = document.getElementById('mobile-camera-controls');
     const narrowToolbarQuery = window.matchMedia('(max-width: 768px)');
     const landscapeToolbarQuery = window.matchMedia('(max-width: 1024px) and (orientation: landscape)');
 
@@ -1820,13 +1822,23 @@ window.onload = async () => {
         }
     };
 
-    const isMobileToolbarView = () => {
+    const closeMobileControls = () => {
+        if (!mobileControlsElement) return;
+        mobileControlsElement.classList.remove('mobile-visible');
+        mobileControlsElement.classList.add('mobile-hidden');
+        if (mobileControlsToggle) {
+            mobileControlsToggle.classList.remove('active');
+            mobileControlsToggle.setAttribute('aria-pressed', 'false');
+        }
+    };
+
+    const isMobileViewport = () => {
         return narrowToolbarQuery.matches || landscapeToolbarQuery.matches;
     };
 
     const applyToolbarResponsiveState = () => {
         if (!toolbarElement) return;
-        if (isMobileToolbarView()) {
+        if (isMobileViewport()) {
             if (!toolbarElement.classList.contains('mobile-visible')) {
                 toolbarElement.classList.add('mobile-hidden');
             }
@@ -1840,10 +1852,26 @@ window.onload = async () => {
         }
     };
 
+    const applyMobileControlsResponsiveState = () => {
+        if (!mobileControlsElement) return;
+        if (isMobileViewport()) {
+            if (!mobileControlsElement.classList.contains('mobile-visible')) {
+                mobileControlsElement.classList.add('mobile-hidden');
+            }
+        } else {
+            mobileControlsElement.classList.remove('mobile-hidden');
+            mobileControlsElement.classList.remove('mobile-visible');
+            if (mobileControlsToggle) {
+                mobileControlsToggle.classList.remove('active');
+                mobileControlsToggle.setAttribute('aria-pressed', 'false');
+            }
+        }
+    };
+
     if (toolbarMobileToggle && toolbarElement) {
         toolbarMobileToggle.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (!isMobileToolbarView()) {
+            if (!isMobileViewport()) {
                 // On desktop, no need to toggle manually
                 return;
             }
@@ -1863,7 +1891,7 @@ window.onload = async () => {
         if (!toolbarElement || !toolbarElement.classList.contains('mobile-visible')) {
             return;
         }
-        if (!isMobileToolbarView()) {
+        if (!isMobileViewport()) {
             return;
         }
         if (!e.target.closest('#toolbar') && !e.target.closest('#toolbar-mobile-toggle')) {
@@ -1871,17 +1899,52 @@ window.onload = async () => {
         }
     });
 
+    if (mobileControlsToggle && mobileControlsElement) {
+        mobileControlsToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!isMobileViewport()) {
+                return;
+            }
+            const isVisible = mobileControlsElement.classList.contains('mobile-visible');
+            if (isVisible) {
+                closeMobileControls();
+            } else {
+                mobileControlsElement.classList.remove('mobile-hidden');
+                mobileControlsElement.classList.add('mobile-visible');
+                mobileControlsToggle.classList.add('active');
+                mobileControlsToggle.setAttribute('aria-pressed', 'true');
+            }
+        });
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!mobileControlsElement || !mobileControlsElement.classList.contains('mobile-visible')) {
+            return;
+        }
+        if (!isMobileViewport()) {
+            return;
+        }
+        if (!e.target.closest('#mobile-camera-controls') && !e.target.closest('#mobile-controls-toggle')) {
+            closeMobileControls();
+        }
+    });
+
+    const handleResponsiveChange = () => {
+        applyToolbarResponsiveState();
+        applyMobileControlsResponsiveState();
+    };
+
     const addMediaListener = (mq) => {
         if (mq.addEventListener) {
-            mq.addEventListener('change', applyToolbarResponsiveState);
+            mq.addEventListener('change', handleResponsiveChange);
         } else if (mq.addListener) {
-            mq.addListener(applyToolbarResponsiveState);
+            mq.addListener(handleResponsiveChange);
         }
     };
 
     addMediaListener(narrowToolbarQuery);
     addMediaListener(landscapeToolbarQuery);
-    applyToolbarResponsiveState();
+    handleResponsiveChange();
     
     // Budget panel functionality - get elements directly to avoid timing issues
     // Budget button now opens the centered balance sheet modal

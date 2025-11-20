@@ -434,7 +434,7 @@
       </section>
 
       <!-- Mobile Camera Controls - Only visible on mobile/tablet -->
-      <div id="mobile-camera-controls" class="mobile-camera-controls">
+      <div id="mobile-camera-controls" class="mobile-camera-controls mobile-hidden">
           <div class="mobile-controls-group">
               <div class="mobile-controls-label">Caméra</div>
               <!-- Camera Pan Controls (D-pad) -->
@@ -721,6 +721,25 @@
                     </svg>
                   </span>
                   <span class="sr-only">Basculer la barre d'outils</span>
+                </button>
+              </div>
+
+              <div class="legend-btns toolbar-mobile-controls-toggle-btn">
+                <button id="mobile-controls-toggle" class="toolbar-toggle-btn" title="Afficher/masquer les contrôles caméra" aria-pressed="false">
+                  <span class="toolbar-toggle-icon toolbar-toggle-icon--open" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-crosshair">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="1" x2="12" y2="23"/>
+                      <line x1="1" y1="12" x2="23" y2="12"/>
+                    </svg>
+                  </span>
+                  <span class="toolbar-toggle-icon toolbar-toggle-icon--close" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
+                      <path d="m18 6-12 12"/>
+                      <path d="m6 6 12 12"/>
+                    </svg>
+                  </span>
+                  <span class="sr-only">Basculer les contrôles caméra</span>
                 </button>
               </div>
         </div>
