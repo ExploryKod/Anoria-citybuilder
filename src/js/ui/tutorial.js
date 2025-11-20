@@ -47,7 +47,6 @@ class TutorialManager {
     setupEventListeners() {
         const previousBtn = this.panel.querySelector('.tutorial-previous-btn');
         const nextBtn = this.panel.querySelector('.tutorial-next-btn');
-        const skipBtn = this.panel.querySelector('.tutorial-skip-btn');
         const closeBtn = this.panel.querySelector('.tutorial-close-btn');
 
         if (previousBtn) {
@@ -56,10 +55,6 @@ class TutorialManager {
 
         if (nextBtn) {
             nextBtn.addEventListener('click', () => this.nextStep());
-        }
-
-        if (skipBtn) {
-            skipBtn.addEventListener('click', () => this.skipTutorial());
         }
 
         if (closeBtn) {
@@ -80,51 +75,41 @@ class TutorialManager {
     setupDefaultSteps() {
         this.steps = [
             {
-                title: 'Bienvenue dans Anoria',
+                title: 'Bienvenue à Eraanurbs',
                 content: `
-                    <p>Bienvenue dans <strong>Anoria City Builder</strong> !</p>
-                    <p>Dans ce tutoriel, vous apprendrez les bases pour créer une ville prospère.</p>
-                    <p>Vous commencez avec <strong>200€</strong> pour construire votre première ville.</p>
+                    <p>Tante Laminoria est décédée et vous lègue son domaine. Vous recevez un lopin de terre sans rien. Mais vous êtes décidé à y construire un hameau prospère !</p>
+                    <p>Cette tante qui vous fit si peur que vous la compariez à Era, femme de Zeus... d'où le nom que vous choisissez en sa mémoire : <strong>Eraanurbs</strong>.</p>
+                    <p>Vous avez demandé <strong>200 euros</strong> à un "ami" peu recommandable... qui vous les a accordés. Il espère peut-être y gagner quelque-chose.</p>
+                    <p>Mais pour cette première étape de votre aventure chez feu Tante Laminoria, vous êtes plein d'enthousiasme pour y construire un hameau prospère.</p>
                 `
             },
             {
-                title: 'Construire votre première maison',
+                title: 'Système Ferme / Marché',
                 content: `
-                    <p>Commençons par construire votre première maison !</p>
-                    <p><strong>Étape 1 :</strong> Cliquez sur l'outil "Maison" dans la barre d'outils à gauche</p>
-                    <p><strong>Étape 2 :</strong> Cliquez sur une case verte du terrain pour placer la maison</p>
-                    <p>Les maisons coûtent <strong>50€</strong> chacune.</p>
+                    <p>Chaque ferme ne peut produire qu'au <strong>printemps</strong> et <strong>été</strong> et ne peut vendre ses stocks qu'en <strong>automne</strong> si un marché n'est pas loin.</p>
+                    <p>Chaque marché n'achète qu'en <strong>automne</strong> et ne vend qu'aux maisons voisines en <strong>printemps</strong>, <strong>été</strong>, <strong>hiver</strong> tant qu'elle possède des stocks.</p>
                 `
             },
             {
-                title: 'Construire des routes',
+                title: 'Maisons',
                 content: `
-                    <p>Excellent ! Maintenant, construisons des routes pour connecter votre maison.</p>
-                    <p><strong>Étape 1 :</strong> Sélectionnez l'outil "Routes"</p>
-                    <p><strong>Étape 2 :</strong> Placez des routes autour de votre maison</p>
-                    <p>Les routes permettent aux habitants d'accéder aux services.</p>
+                    <p>Chaque maison achète des stocks au marché et peut accueillir des citoyens que tant qu'elle a des stocks.</p>
+                    <p>À partir de <strong>6 paniers</strong>, la maison devient plus riche.</p>
                 `
             },
             {
-                title: 'Construire une ferme',
+                title: 'Citoyens',
                 content: `
-                    <p>Maintenant, construisons une ferme pour nourrir vos habitants !</p>
-                    <p><strong>Étape 1 :</strong> Sélectionnez l'outil "Fermes"</p>
-                    <p><strong>Étape 2 :</strong> Placez une ferme près de votre maison</p>
-                    <p>Les fermes produisent de la nourriture pour vos habitants.</p>
+                    <p>Chaque citoyen va payer des impôts pour renflouer vos fonds et il y aura autant de citoyen qu'il n'y a de stocks de nourriture dans les maisons.</p>
+                    <p>Chaque bâtiment doit accéder à une route.</p>
                 `
             },
             {
-                title: 'Félicitations !',
+                title: 'Objectifs',
                 content: `
-                    <p><strong>Bravo !</strong> Vous avez créé votre première ville !</p>
-                    <p>Vous avez appris à :</p>
-                    <ul>
-                        <li>Construire des maisons</li>
-                        <li>Créer des routes</li>
-                        <li>Installer des fermes</li>
-                    </ul>
-                    <p>Votre ville va maintenant se développer automatiquement. Bonne chance !</p>
+                    <p>Vous avez des objectifs à atteindre si cette fonction est activée.</p>
+                    <p><strong>Tips :</strong> Commencez par une seule maison, une seule ferme, une seule route le plus vite possible pour éviter de perdre de l'argent dès le départ et essayer d'atteindre l'objectif.</p>
+                    <p>Vous n'êtes pas à l'abri des événements imprévisibles comme des récessions économiques, des tempêtes, la sécheresse, des inondations....</p>
                 `
             }
         ];
@@ -221,13 +206,6 @@ class TutorialManager {
     }
 
     /**
-     * Passe le tutoriel
-     */
-    skipTutorial() {
-        this.closeTutorial();
-    }
-
-    /**
      * Met à jour l'affichage de l'étape actuelle
      */
     updateDisplay() {
@@ -256,7 +234,6 @@ class TutorialManager {
     updateButtons() {
         const previousBtn = this.panel.querySelector('.tutorial-previous-btn');
         const nextBtn = this.panel.querySelector('.tutorial-next-btn');
-        const skipBtn = this.panel.querySelector('.tutorial-skip-btn');
 
         // Bouton précédent
         if (previousBtn) {
@@ -270,11 +247,6 @@ class TutorialManager {
             } else {
                 nextBtn.textContent = 'Suivant';
             }
-        }
-
-        // Bouton passer (toujours visible sauf à la dernière étape)
-        if (skipBtn) {
-            skipBtn.style.display = this.currentStep === this.steps.length - 1 ? 'none' : 'block';
         }
     }
 
