@@ -402,6 +402,16 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
     scene.initialize(city).then(() => {
         // Hide Chronos loader modal once scene is initialized with fade-out
         loaderManager.hide(500);
+        
+        // Ouvrir automatiquement le tutoriel au démarrage du jeu (premier mois)
+        // Petit délai pour s'assurer que tout est bien initialisé après le chargement
+        setTimeout(() => {
+            if (window.startTutorial && typeof window.startTutorial === 'function') {
+                window.startTutorial();
+            } else if (window.tutorialManager && typeof window.tutorialManager.showTutorial === 'function') {
+                window.tutorialManager.showTutorial();
+            }
+        }, 800); // Délai après le masquage du loader pour une meilleure UX
     });
 
     // handler function to extract coordinate of an object I click on (data from asset js and using scene js methods)
