@@ -52,7 +52,7 @@ function updateSpeedDisplay(changeDirection = '') {
     // Show as "X.Yx" format for speeds (where 1x = 1000ms)
     const speedMultiplier = (1000 / speedMs).toFixed(2);
     
-    displaySpeed.textContent = `Vitesse: ${speedMultiplier}x`;
+    displaySpeed.textContent = `${speedMultiplier}x`;
     
     // Show or hide the speed change indicator badge
     if (changeDirection) {
@@ -1803,6 +1803,85 @@ window.onload = async () => {
             }
         });
     }
+    
+    // Mobile toolbar toggle functionality
+    const toolbarMobileToggle = document.getElementById('toolbar-mobile-toggle');
+    const toolbarElement = document.getElementById('toolbar');
+    const narrowToolbarQuery = window.matchMedia('(max-width: 768px)');
+    const landscapeToolbarQuery = window.matchMedia('(max-width: 1024px) and (orientation: landscape)');
+
+    const closeMobileToolbar = () => {
+        if (!toolbarElement) return;
+        toolbarElement.classList.remove('mobile-visible');
+        toolbarElement.classList.add('mobile-hidden');
+        if (toolbarMobileToggle) {
+            toolbarMobileToggle.classList.remove('active');
+            toolbarMobileToggle.setAttribute('aria-pressed', 'false');
+        }
+    };
+
+    const isMobileToolbarView = () => {
+        return narrowToolbarQuery.matches || landscapeToolbarQuery.matches;
+    };
+
+    const applyToolbarResponsiveState = () => {
+        if (!toolbarElement) return;
+        if (isMobileToolbarView()) {
+            if (!toolbarElement.classList.contains('mobile-visible')) {
+                toolbarElement.classList.add('mobile-hidden');
+            }
+        } else {
+            toolbarElement.classList.remove('mobile-hidden');
+            toolbarElement.classList.remove('mobile-visible');
+            if (toolbarMobileToggle) {
+                toolbarMobileToggle.classList.remove('active');
+                toolbarMobileToggle.setAttribute('aria-pressed', 'false');
+            }
+        }
+    };
+
+    if (toolbarMobileToggle && toolbarElement) {
+        toolbarMobileToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!isMobileToolbarView()) {
+                // On desktop, no need to toggle manually
+                return;
+            }
+            const willShow = !toolbarElement.classList.contains('mobile-visible');
+            if (willShow) {
+                toolbarElement.classList.add('mobile-visible');
+                toolbarElement.classList.remove('mobile-hidden');
+            } else {
+                closeMobileToolbar();
+            }
+            toolbarMobileToggle.classList.toggle('active', willShow);
+            toolbarMobileToggle.setAttribute('aria-pressed', willShow ? 'true' : 'false');
+        });
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!toolbarElement || !toolbarElement.classList.contains('mobile-visible')) {
+            return;
+        }
+        if (!isMobileToolbarView()) {
+            return;
+        }
+        if (!e.target.closest('#toolbar') && !e.target.closest('#toolbar-mobile-toggle')) {
+            closeMobileToolbar();
+        }
+    });
+
+    const addMediaListener = (mq) => {
+        if (mq.addEventListener) {
+            mq.addEventListener('change', applyToolbarResponsiveState);
+        } else if (mq.addListener) {
+            mq.addListener(applyToolbarResponsiveState);
+        }
+    };
+
+    addMediaListener(narrowToolbarQuery);
+    addMediaListener(landscapeToolbarQuery);
+    applyToolbarResponsiveState();
     
     // Budget panel functionality - get elements directly to avoid timing issues
     // Budget button now opens the centered balance sheet modal
