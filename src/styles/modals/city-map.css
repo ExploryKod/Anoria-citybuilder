@@ -168,9 +168,7 @@
     background: #fb8c00;
     box-shadow: 0 4px 14px rgba(0,0,0,0.12);
 }
-.legend-toggle:active {
-    transform: scale(0.98);
-}
+
 .legend-toggle:focus-visible {
     outline: none;
     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.6), 0 0 0 5px rgba(255, 152, 0, 0.6);
@@ -687,15 +685,12 @@
 
     /* Légende rétractable */
     .city-map-legend {
-        width: 200px;
-        min-width: 200px;
-        max-width: 200px;
-        background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
-        border-right: 2px solid #475569;
-        padding: 15px;
+        flex: 0 0 150px;
+        margin: 3px;
+        padding: 5px;
         overflow-y: auto;
         transition: all 0.3s ease;
-        flex-shrink: 0;
+        display: block;
     }
 
     .city-map-legend.collapsed {
@@ -709,12 +704,7 @@
         display: none;
     }
 
-    .city-map-legend.collapsed .legend-toggle {
-        transform: rotate(180deg);
-    }
-
     .legend-toggle {
-        background: #475569;
         border: none;
         color: #f1f5f9;
         padding: 8px;
@@ -722,7 +712,6 @@
         cursor: pointer;
         transition: all 0.3s ease;
         margin-bottom: 15px;
-        width: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -731,7 +720,7 @@
     }
 
     .legend-toggle:hover {
-        background: #64748b;
+        opacity: 0.8;
     }
 
     .legend-content {
