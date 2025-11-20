@@ -458,18 +458,141 @@ class AssetManager extends MeshLoader {
         return sprite;
     }
 
-    setStatusSprite(mesh, texture, name, scale = {x: 0.7, y: 0.7, z: 1}, position, visible = false) {
+    setStatusSprite(mesh, texture, name, scale = {x: 0.7, y: 0.7, z: 1}, position, visible = false, color = null, backgroundColor = null) {
         // Remove existing sprite with the same name first
         this.removeStatusSprite(mesh, name);
         
-        const sprite = this.setSprite(texture, name);
+        // If background color is specified, this is a farm season sprite
+        // Remove ALL existing farm sprites to prevent overlapping between seasons
+        if (backgroundColor !== null) {
+            const farmSpriteNames = ['grow-food', 'harvest', 'sell-food', 
+                                     'grow-food-bg', 'harvest-bg', 'sell-food-bg'];
+            farmSpriteNames.forEach(spriteName => {
+                this.removeStatusSprite(mesh, spriteName);
+            });
+        }
+        
+        // Also clean up farm sprites if this is a farm winter sprite (no-food with red color)
+        if (name === 'no-food' && color === 0xff0000) {
+            const farmSpriteNames = ['grow-food', 'harvest', 'sell-food', 
+                                     'grow-food-bg', 'harvest-bg', 'sell-food-bg'];
+            farmSpriteNames.forEach(spriteName => {
+                this.removeStatusSprite(mesh, spriteName);
+            });
+        }
+        
+        // If background color is specified, create a colored circular background sprite first
+        if (backgroundColor !== null) {
+            const bgSprite = this.setSpriteWithColoredBackground(name + '-bg', scale, backgroundColor);
+            bgSprite.position.set(position.x, position.y, position.z - 0.01); // Slightly behind the main sprite
+            bgSprite.visible = visible;
+            mesh.add(bgSprite);
+        }
+        
+        // If color is specified, create a sprite with colored material
+        let sprite;
+        if (color) {
+            sprite = this.setSpriteWithColor(texture, name, color);
+        } else {
+            sprite = this.setSprite(texture, name);
+        }
+        
         sprite.scale.set(scale.x, scale.y, scale.z);
         sprite.position.set(position.x, position.y, position.z);
         sprite.visible = visible;
         mesh.add(sprite);
     }
+    
+    /**
+     * Creates a colored circular background sprite (slightly larger than the icon sprite)
+     * @param {string} name - Name for the sprite
+     * @param {Object} iconScale - Scale of the icon sprite to make background slightly larger
+     * @param {string|number} backgroundColor - Color for the background (hex string like '#FFB6C1' or number like 0xFFB6C1)
+     * @returns {THREE.Sprite} Created colored circular background sprite
+     */
+    setSpriteWithColoredBackground(name, iconScale, backgroundColor) {
+        // Convert color to hex string if it's a number
+        let colorHex = backgroundColor;
+        if (typeof backgroundColor === 'number') {
+            colorHex = '#' + backgroundColor.toString(16).padStart(6, '0');
+        } else if (typeof backgroundColor === 'string' && backgroundColor.startsWith('0x')) {
+            colorHex = '#' + backgroundColor.substring(2);
+        }
+        
+        // Create a colored circular texture using Canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        
+        // Draw a colored circle
+        ctx.fillStyle = colorHex;
+        ctx.beginPath();
+        ctx.arc(32, 32, 30, 0, Math.PI * 2); // Center at (32,32), radius 30
+        ctx.fill();
+        
+        const coloredTexture = new THREE.CanvasTexture(canvas);
+        coloredTexture.flipY = true;
+        
+        // Use a unique key for caching based on color
+        const colorKey = typeof backgroundColor === 'string' ? backgroundColor : backgroundColor.toString();
+        const textureKey = `bg_${colorKey}`;
+        
+        // Cache the material to avoid recreating it
+        if (!this.#sharedSpriteMaterials.has(textureKey)) {
+            const bgMaterial = new THREE.SpriteMaterial({
+                map: coloredTexture,
+                depthTest: false,
+                transparent: true,
+                opacity: 0.9 // Slightly transparent
+            });
+            this.#sharedSpriteMaterials.set(textureKey, bgMaterial);
+        }
+        
+        const bgMaterial = this.#sharedSpriteMaterials.get(textureKey);
+        const bgSprite = new THREE.Sprite(bgMaterial);
+        bgSprite.name = name;
+        // Make background sprite much larger to completely wrap the icon (150% of icon size)
+        bgSprite.scale.set(iconScale.x * 1.5, iconScale.y * 1.5, iconScale.z);
+        
+        return bgSprite;
+    }
+    
+    /**
+     * Creates a sprite with a colored material (for custom tinting)
+     * @param {THREE.Texture} texture - Texture to use
+     * @param {string} name - Name for the sprite
+     * @param {THREE.Color|number|string} color - Color to tint the sprite (red, 0xff0000, etc.)
+     * @returns {THREE.Sprite} Created sprite
+     */
+    setSpriteWithColor(texture, name, color) {
+        // Create a unique key that includes the color to avoid sharing colored materials
+        const colorKey = typeof color === 'string' ? color : (typeof color === 'number' ? `0x${color.toString(16)}` : color.getHexString());
+        const textureKey = `${texture.uuid || 'default'}_${colorKey}`;
+        
+        // Get or create shared material for this texture+color combination
+        if (!this.#sharedSpriteMaterials.has(textureKey)) {
+            const spriteTexture = texture.clone();
+            spriteTexture.flipY = true;
+            
+            const spriteMaterial = new THREE.SpriteMaterial({
+                map: spriteTexture,
+                color: color, // Apply color tint
+                depthTest: false,
+                transparent: true,
+                alphaTest: 0.5
+            });
+            this.#sharedSpriteMaterials.set(textureKey, spriteMaterial);
+        }
+        
+        const spriteMaterial = this.#sharedSpriteMaterials.get(textureKey);
+        const sprite = new THREE.Sprite(spriteMaterial);
+        sprite.name = name;
+        return sprite;
+    }
 
     removeStatusSprite(mesh, name) {
+        // Remove both the main sprite and its background if it exists
         const existingSprite = mesh.children.find(
             child => child.type === "Sprite" && child.name === name
         );
@@ -478,6 +601,17 @@ class AssetManager extends MeshLoader {
             // Dispose of the sprite material to prevent memory leaks
             if (existingSprite.material) {
                 existingSprite.material.dispose();
+            }
+        }
+        
+        // Also remove background sprite if it exists
+        const existingBgSprite = mesh.children.find(
+            child => child.type === "Sprite" && child.name === name + '-bg'
+        );
+        if (existingBgSprite) {
+            mesh.remove(existingBgSprite);
+            if (existingBgSprite.material) {
+                existingBgSprite.material.dispose();
             }
         }
     }

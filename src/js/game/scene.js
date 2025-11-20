@@ -13,6 +13,7 @@ import {
     commerce,
     delayBox,
     displayDelayUI,
+    farms,
     firstHouses,
     gameWindow,
     houses,
@@ -21,6 +22,7 @@ import {
 import {assetsPrices} from "../meshs/data.js";
 import { checkRoadAccess, checkFoodAvailability } from './modules/ModuleHelper.js';
 import { setRoadAccessIcon } from './modules/StatusIconHelper.js';
+import { TimeManager } from './utils/TimeManager.js';
 import config from './config.js';
 
 const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
@@ -566,6 +568,122 @@ export function createScene(housesStore, gameStore, assetManager) {
                     // - House food distribution
                     // - Market stock decreases after distribution
                     // All using IndexedDB as source of truth
+                }
+
+                // Process farms: show season-specific sprites and manage harvest stocks
+                if(farms.includes(currentBuildingId) && buildings[x][y]) {
+                    // First, clean up ALL possible farm sprites to prevent any leftover sprites
+                    const allFarmSpriteNames = ['no-food', 'grow-food', 'harvest', 'sell-food', 
+                                                'no-food-bg', 'grow-food-bg', 'harvest-bg', 'sell-food-bg'];
+                    allFarmSpriteNames.forEach(spriteName => {
+                        assetManager.removeStatusSprite(buildings[x][y], spriteName);
+                    });
+                    
+                    // Get current time info to determine season
+                    const timeInfo = TimeManager.getTimeInfo(time);
+                    const season = timeInfo.season;
+                    
+                    // Initialize farm stocks in IndexedDB if not present
+                    const farmStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks');
+                    if (!farmStocks) {
+                        await housesStore.updateHouseFields(currentUniqueID, {
+                            stocks: { food: 0, wheat: 0, carrot: 0, cabbage: 0 }
+                        });
+                    }
+                    
+                    // Harvest season (Été): add +1 panier per month (accumulates if not sold)
+                    // Only add once per month - track the last month when production happened
+                    if (season === 'Été') {
+                        // Get farm data to check last production month
+                        const farmData = await housesStore.getHouse(currentUniqueID);
+                        const lastProductionMonth = farmData?.lastProductionMonth;
+                        const currentMonthIndex = timeInfo.monthIndex;
+                        
+                        // Only add panier if we haven't produced this month yet
+                        if (lastProductionMonth !== currentMonthIndex) {
+                            // Get current stocks
+                            const currentFarmStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks') || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+                            
+                            // Determine farm type and add 1 panier of that type (no maximum limit - accumulates)
+                            let farmType = currentBuildingId;
+                            let newStocks = { ...currentFarmStocks };
+                            
+                            if (farmType.includes('Farm-Wheat') || farmType.includes('Wheat')) {
+                                // Add 1 wheat panier (accumulates indefinitely)
+                                newStocks.wheat = (currentFarmStocks.wheat || 0) + 1;
+                                newStocks.food = (newStocks.food || 0) + 1;
+                            } else if (farmType.includes('Farm-Carrot') || farmType.includes('Carrot')) {
+                                // Add 1 carrot panier (accumulates indefinitely)
+                                newStocks.carrot = (currentFarmStocks.carrot || 0) + 1;
+                                newStocks.food = (newStocks.food || 0) + 1;
+                            } else if (farmType.includes('Farm-Cabbage') || farmType.includes('Cabbage')) {
+                                // Add 1 cabbage panier (accumulates indefinitely)
+                                newStocks.cabbage = (currentFarmStocks.cabbage || 0) + 1;
+                                newStocks.food = (newStocks.food || 0) + 1;
+                            }
+                            
+                            // Update stocks and track production month in IndexedDB
+                            await housesStore.updateHouseFields(currentUniqueID, { 
+                                stocks: newStocks,
+                                lastProductionMonth: currentMonthIndex
+                            });
+                        }
+                    }
+                    
+                    // Farm sprite scale (60% of normal size)
+                    const farmSpriteScale = {
+                        x: statutsIconsMeta.food.scale.x * 0.6,
+                        y: statutsIconsMeta.food.scale.y * 0.6,
+                        z: statutsIconsMeta.food.scale.z
+                    };
+                    
+                    // Determine which sprite to show based on season
+                    let spriteTexture, spriteName, spriteColor, spritePosition, backgroundColor;
+                    
+                    // All sprites use the same position as no-food
+                    spritePosition = statutsIconsMeta.food.position;
+                    
+                    if (season === 'Hiver') {
+                        // Winter: no-food (yellow, no background)
+                        spriteTexture = textures['nofood'];
+                        spriteName = 'no-food';
+                        spriteColor = 0xFFFF00; // Yellow
+                        backgroundColor = null; // No background for winter
+                    } else {
+                        // Other seasons: colored sprites with pastel colored circular background
+                        spriteColor = null; // No color tint (keep original colors)
+                        
+                        if (season === 'Printemps') {
+                            // Spring: grow-food with light green pastel background
+                            spriteTexture = textures['grow-food'];
+                            spriteName = 'grow-food';
+                            backgroundColor = 0xB8E6B8; // Light green pastel
+                        } else if (season === 'Été') {
+                            // Summer: harvest with light yellow/orange pastel background
+                            spriteTexture = textures['harvest'];
+                            spriteName = 'harvest';
+                            backgroundColor = 0xFFE4B5; // Light yellow/orange pastel
+                        } else if (season === 'Automne') {
+                            // Autumn: sell-food with light orange/red pastel background
+                            spriteTexture = textures['sell-food'];
+                            spriteName = 'sell-food';
+                            backgroundColor = 0xFFCCCB; // Light orange/red pastel
+                        }
+                    }
+                    
+                    // Show the appropriate sprite for the current season (only one sprite per season)
+                    if(buildings[x][y] && spriteTexture) {
+                        assetManager.setStatusSprite(
+                            buildings[x][y],
+                            spriteTexture,
+                            spriteName,
+                            farmSpriteScale,
+                            spritePosition || statutsIconsMeta.food.position,
+                            true, // Always show sprite (season-specific)
+                            spriteColor, // Color (red for winter, null for others to keep original colors)
+                            backgroundColor // Pastel colored circular background for season sprites (null for winter)
+                        );
+                    }
                 }
 
                 //  only update if current building is a house or palace

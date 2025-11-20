@@ -53,8 +53,28 @@ export class TimeManager {
         const monthIndexAdjusted = Math.floor(adjustedDays / this.DAYS_PER_MONTH) % 12;
         const monthNumber = Math.floor(adjustedDays / this.DAYS_PER_MONTH) + 1;
         
-        // Calculer la saison (chaque saison dure 3 mois = 90 jours)
-        const seasonIndex = Math.floor((adjustedDays % (this.DAYS_PER_MONTH * 12)) / (this.DAYS_PER_MONTH * this.MONTHS_PER_SEASON));
+        // Calculer l'année : 12 mois par année
+        const year = Math.floor(adjustedDays / (this.DAYS_PER_MONTH * 12));
+        
+        // Calculer la saison selon les mois réels :
+        // Automne : Septembre (8), Octobre (9), Novembre (10)
+        // Hiver : Décembre (11), Janvier (0), Février (1)
+        // Printemps : Mars (2), Avril (3), Mai (4)
+        // Été : Juin (5), Juillet (6), Août (7)
+        let seasonIndex;
+        if (monthIndexAdjusted >= 8 && monthIndexAdjusted <= 10) {
+            // Automne : Septembre, Octobre, Novembre
+            seasonIndex = 2; // Automne est l'index 2 dans SEASONS
+        } else if (monthIndexAdjusted === 11 || monthIndexAdjusted <= 1) {
+            // Hiver : Décembre, Janvier, Février
+            seasonIndex = 3; // Hiver est l'index 3 dans SEASONS
+        } else if (monthIndexAdjusted >= 2 && monthIndexAdjusted <= 4) {
+            // Printemps : Mars, Avril, Mai
+            seasonIndex = 0; // Printemps est l'index 0 dans SEASONS
+        } else {
+            // Été : Juin, Juillet, Août
+            seasonIndex = 1; // Été est l'index 1 dans SEASONS
+        }
         
         // S'assurer que les index sont valides
         const safeMonthIndex = Math.max(0, Math.min(11, monthIndexAdjusted));
@@ -73,7 +93,8 @@ export class TimeManager {
                 monthIndex: 0,
                 monthNumber: 1,
                 season: this.SEASONS[0],
-                seasonIndex: 0
+                seasonIndex: 0,
+                year: 0
             };
         }
         
@@ -84,7 +105,8 @@ export class TimeManager {
             monthIndex: safeMonthIndex,
             monthNumber: monthNumber,
             season: season,
-            seasonIndex: safeSeasonIndex
+            seasonIndex: safeSeasonIndex,
+            year: year
         };
     }
 
@@ -106,7 +128,15 @@ export class TimeManager {
             return 'Chargement...';
         }
         
-        return `${timeInfo.dayInMonth} ${timeInfo.month} | ${timeInfo.season}`;
+        // Formater l'année : 0 JC, 1 ap JC, 2 ap JC, etc.
+        let yearDisplay;
+        if (timeInfo.year === 0) {
+            yearDisplay = '0 JC';
+        } else {
+            yearDisplay = `${timeInfo.year} ap JC`;
+        }
+        
+        return `${timeInfo.dayInMonth} ${timeInfo.month} | ${timeInfo.season} | ${yearDisplay}`;
     }
 
     /**
