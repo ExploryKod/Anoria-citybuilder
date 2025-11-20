@@ -36,6 +36,7 @@
     --text-size: 18px;
     --text-xl-size: 20px;
     --font-list-size: 18px;
+    --sr-only-width: 1px;
 
     /* height des container */
     --top-container-h: 10vh;
@@ -52,6 +53,17 @@
     --z-index-info-panel: 10020;
     --z-index-modal: 10030; /* Maximum z-index for modals */
     --z-index-notification: 10040; /* Highest - for notifications that must appear above everything */
+}
+
+.sr-only {
+    position: absolute;
+    width: var(--sr-only-width);
+    height: var(--sr-only-width);
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
 }
 
 *,
@@ -176,22 +188,78 @@ canvas.pointer-events-disabled {
     gap: 20px;
 }
 
+.toolbar-toggle-btn.active {
+    background: var(--cta);
+    color: #fff;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+}
+
 @media screen and (max-width: 1024px) and (orientation: landscape) {
     .game-window .toolbar {
-        height: 100%;
-        max-height: calc(100vh - 65px);
-        overflow: scroll;
-        scroll-behavior: smooth;
-        width: 150px;
-        top: 65px;
+        position: fixed;
+        top: 70px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 32vw);
+        max-height: 70vh;
+        height: auto;
+        padding: 16px;
+        border-radius: 16px;
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.35);
+        overflow-y: auto;
+        background-color: var(--toolbar-bg-color);
+        z-index: var(--z-index-toolbar);
+    }
+
+    .game-window .toolbar.mobile-hidden {
+        display: none !important;
+    }
+
+    .game-window .toolbar.mobile-visible {
+        display: flex !important;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: start;
+        justify-content: start;
     }
 }
 
+.toolbar-toggle-btn {
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .game-window .toolbar {
+        position: fixed;
+        top: 70px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 24px);
+        max-height: calc(100vh - 45px);
+        height: auto;
+        padding: 16px;
+        border-radius: 16px;
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.35);
+        overflow-y: auto;
+        background-color: var(--toolbar-bg-color);
+        z-index: var(--z-index-toolbar);
+    }
+
+    .game-window .toolbar.mobile-hidden {
+        display: none !important;
+    }
+
+    .game-window .toolbar.mobile-visible {
+        display: flex !important;
+    }
+}
+
+#pause-btn,
+#replay-btn,
 
 
 
 .toolbar .toolbar-btn {
-    height: 50px;
     border: 3px solid var(--cta);
     border-radius: 10px;
    
@@ -279,10 +347,14 @@ canvas.pointer-events-disabled {
     justify-content: center;
 }
 
-/* Ensure pause, replay, and play buttons match other toolbar buttons (no pink styling) */
+
 #pause-btn,
 #replay-btn,
-#play-btn {
+#play-btn,
+.pause-overlay .play-btn {
+    padding: 5px;
+    border-radius: 10px;
+    cursor: pointer;
     background-color: var(--toolbar-btn-color) !important;
     border: 3px solid var(--cta) !important;
     color: var(--primary) !important;
@@ -290,7 +362,8 @@ canvas.pointer-events-disabled {
 
 #pause-btn:hover,
 #replay-btn:hover,
-#play-btn:hover {
+#play-btn:hover,
+.pause-overlay .play-btn:hover {
     background-color: #fff !important;
     border: 3px solid #fff !important;
     color: var(--primary) !important;
@@ -298,7 +371,8 @@ canvas.pointer-events-disabled {
 
 #pause-btn:active,
 #replay-btn:active,
-#play-btn:active {
+#play-btn:active,
+.pause-overlay .play-btn:active {
     box-shadow: 0 0 10px #000235 !important;
 }
 
@@ -361,8 +435,11 @@ canvas.pointer-events-disabled {
 
 .game-window .pause-overlay {
     display: flex;
+    flex-direction: column;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
+    gap: 30px;
+    padding: 40px;
 }
 
 .game-window .over-overlay {
@@ -411,14 +488,12 @@ canvas.pointer-events-disabled {
 }
 
 .game-window .pause-overlay .play-btn {
-    width: 150px;
-    height: 150px;
-    border-radius: 10px;
-    background-color: #fff;
-    color: #000235;
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    min-width: 200px;
+    min-height: 200px;
+    font-size: 28px;
+    font-weight: 700;
+    border-radius: 20px;
+    padding: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -842,6 +917,25 @@ canvas.pointer-events-disabled {
         display: flex;
         column-gap: 5px;
     }
+}
+
+.info-panel > .info-box.infos-time {
+   min-width: 500px;
+   justify-content: center;
+   gap: 20px;
+
+   svg.lucide-rabbit {
+    height: 20px;
+    width: 20px;
+   }
+}
+
+.info-panel > .info-box.infos-budget {
+    min-width: 150px;
+}
+
+.info-panel > .info-box.infos-pop {
+    min-width: 150px;
 }
 
 .info-panel p {

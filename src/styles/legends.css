@@ -23,7 +23,8 @@
 
 .legend-toggle-btn,
 .finance-toggle-btn,
-.command-toggle-btn {
+.command-toggle-btn,
+.toolbar-toggle-btn {
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;
@@ -42,21 +43,60 @@
   text-align: left;
 }
 
+.toolbar-toggle-btn.active {
+  background: var(--lightgreen);
+  border-color: var(--lightgreen);
+  color: #fff;  
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+   
+  svg {
+    stroke: #fff;
+  }
+}
+
 .legend-toggle-btn:hover,
 .finance-toggle-btn:hover,
-.command-toggle-btn:hover {
-  background: rgba(255, 255, 255, 1);
+.command-toggle-btn:hover,
+.toolbar-toggle-btn:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   color: #333;
 }
 
 .legend-toggle-btn span,
 .finance-toggle-btn span,
-.command-toggle-btn span {
+.command-toggle-btn span,
+.toolbar-toggle-btn span {
   margin-left: 8px;
   font-size: 13px;
   font-weight: 600;
   color: #666;
+}
+
+.toolbar-mobile-toggle-btn {
+  display: none;
+}
+
+.toolbar-toggle-btn .toolbar-toggle-icon {
+  margin-left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toolbar-toggle-btn .toolbar-toggle-icon--close {
+  display: none;
+}
+
+.toolbar-toggle-btn.active .toolbar-toggle-icon--open {
+  display: none;
+}
+
+.toolbar-toggle-btn.active .toolbar-toggle-icon--close {
+  display: flex;
+}
+
+.toolbar-toggle-btn svg {
+  stroke: currentColor;
 }
 
 .legend-dropdown {
@@ -296,20 +336,26 @@
   /* Hide text, show only icons */
   .legend-toggle-btn span,
   .finance-toggle-btn span,
-  .command-toggle-btn span {
+  .command-toggle-btn span,
+  .toolbar-toggle-btn span {
     display: none;
   }
   
   /* Make buttons icon-only, square shape */
   .legend-toggle-btn,
   .finance-toggle-btn,
-  .command-toggle-btn {
+  .command-toggle-btn,
+  .toolbar-toggle-btn {
     min-width: 48px;
     width: 48px;
     height: 48px;
     padding: 8px;
     justify-content: center;
     border-radius: 50%; /* Circular buttons on mobile */
+  }
+  
+  .toolbar-mobile-toggle-btn {
+    display: block;
   }
   
   /* Adjust dropdown positions for bottom-right buttons */
@@ -368,13 +414,18 @@
   
   .legend-toggle-btn,
   .finance-toggle-btn,
-  .command-toggle-btn {
+  .command-toggle-btn,
+  .toolbar-toggle-btn {
     min-width: 44px;
     width: 44px;
     height: 44px;
     padding: 6px;
   }
   
+  .toolbar-mobile-toggle-btn {
+    display: block;
+  }
+
   .legend-dropdown,
   .finance-dropdown,
   .command-dropdown {

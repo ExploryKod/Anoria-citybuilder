@@ -245,7 +245,7 @@
         </div>
 
         <!-- Toolbar originale (desktop) -->
-        <section id="toolbar" class="toolbar">
+        <section id="toolbar" class="toolbar mobile-hidden">
 
         <div class="toolbar__container">
             <div class="toolbar__sub-container">
@@ -703,6 +703,26 @@
                   </div>
                 </div>
               </div>
+
+              <div class="legend-btns toolbar-mobile-toggle-btn">
+                <button id="toolbar-mobile-toggle" class="toolbar-toggle-btn" title="Afficher/masquer la barre d'outils" aria-pressed="false">
+                  <span class="toolbar-toggle-icon toolbar-toggle-icon--open" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layout-grid">
+                      <rect width="7" height="7" x="3" y="3" rx="1"/>
+                      <rect width="7" height="7" x="14" y="3" rx="1"/>
+                      <rect width="7" height="7" x="3" y="14" rx="1"/>
+                      <rect width="7" height="7" x="14" y="14" rx="1"/>
+                    </svg>
+                  </span>
+                  <span class="toolbar-toggle-icon toolbar-toggle-icon--close" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
+                      <path d="m18 6-12 12"/>
+                      <path d="m6 6 12 12"/>
+                    </svg>
+                  </span>
+                  <span class="sr-only">Basculer la barre d'outils</span>
+                </button>
+              </div>
         </div>
 
 
@@ -712,25 +732,30 @@
             </div>
 
             <div class="info-panel">
-                <section class="info-box">
+                <section class="info-box infos-time">
                     <article class="clock-box">
-                  <span class="clock-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock-4"><circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alarm-clock-off">
-                        <path d="M6.87 6.87a8 8 0 1 0 11.26 11.26"/><path d="M19.9 14.25a8 8 0 0 0-9.15-9.15"/><path d="m22 6-3-3"/><path d="M6.26 18.67 4 21"/><path d="m2 2 20 20"/><path d="M4 4 2 6"/>
-                    </svg>
-                  </span>
+                        <span class="clock-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock-4"><circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alarm-clock-off">
+                                <path d="M6.87 6.87a8 8 0 1 0 11.26 11.26"/><path d="M19.9 14.25a8 8 0 0 0-9.15-9.15"/><path d="m22 6-3-3"/><path d="M6.26 18.67 4 21"/><path d="m2 2 20 20"/><path d="M4 4 2 6"/>
+                            </svg>
+                        </span>
                         <div class="display-time"></div>
                     </article>
                     <article class="speed-box">
+                        <span class="speed-icon">   
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+                            class="lucide lucide-rabbit"><path d="M13 16a3 3 0 0 1 2.24 5"/><path d="M18 12h.01"/><path d="M18 21h-8a4 4 0 0 1-4-4 7 7 0 0 1 7-7h.2L9.6 6.4a1 1 0 1 1 2.8-2.8L15.8 7h.2c3.3 0 6 2.7 6 6v1a2 2 0 0 1-2 2h-1a3 3 0 0 0-3 3"/>
+                                <path d="M20 8.54V4a2 2 0 1 0-4 0v3"/><path d="M7.612 12.524a3 3 0 1 0-1.6 4.3"/></svg>
+                        </span>
                         <div class="display-speed"></div>
                         <div class="speed-change-indicator"></div>
                     </article>
                 </section>
 
-                <section class="info-box">
+                <section class="info-box infos-pop">
                     <article class="pop-box">
                  <span class="info-box pop-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
@@ -744,14 +769,14 @@
 
 
 
-                <section class="info-box">
+                <section class="info-box infos-budget">
                     <article class="budget-box">
-                <span class="budget-icon">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-euro">
-                          <path d="M4 10h12"/><path d="M4 14h9"/>
-                          <path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/>
-                        </svg>
-                  </span>
+                        <span class="budget-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-euro">
+                            <path d="M4 10h12"/><path d="M4 14h9"/>
+                            <path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/>
+                            </svg>
+                        </span>
                         <div class="display-funds"></div>
                     </article>
                 </section>
