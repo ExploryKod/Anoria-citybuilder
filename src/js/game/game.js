@@ -33,9 +33,11 @@ let services = [];
         // Load all available services
         const { RoadConnectivityService } = await import('./services/RoadConnectivityService.js');
         const { FoodDistributionService } = await import('./services/FoodDistributionService.js');
+        const { RandomEventsService } = await import('./services/RandomEventsService.js');
         
         services.push(new RoadConnectivityService());
         services.push(new FoodDistributionService()); // Farm > Market > House logic using IndexedDB
+        services.push(new RandomEventsService()); // Événements aléatoires (ouragan, inondation)
         
         console.log('[game.js] Services loaded successfully:', services.length, services.map(s => s.constructor.name));
     } catch (err) {
@@ -367,8 +369,18 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
     gameUI.updateTimeDisplay(time);
     
     // Initialize budget system - force reinitialize to ensure 200€ starting funds
-    budgetManager.forceReinitialize(200).then(() => {
+    budgetManager.forceReinitialize(200).then(async () => {
         // BudgetManager registered above - available via window.app.budgetManager or window.budgetManager
+        // Update funds display in navigation bar immediately after initialization
+        const initialBudget = await budgetManager.getCurrentBudget();
+        if (window.gameUI) {
+            window.gameUI.updateFunds(initialBudget.funds || 200);
+        } else {
+            const displayFunds = document.querySelector('.display-funds');
+            if (displayFunds) {
+                displayFunds.textContent = (initialBudget.funds || 200).toString();
+            }
+        }
     });
 
 
