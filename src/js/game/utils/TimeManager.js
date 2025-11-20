@@ -8,10 +8,32 @@
  */
 export class TimeManager {
     /**
+     * Resolve days per month from environment variables
+     * Allows switching between test/prod via VITE_DAYS_PER_MONTH
+     */
+    static resolveDaysPerMonth() {
+        let envValue;
+
+        if (typeof import.meta !== 'undefined' && import.meta.env && Object.prototype.hasOwnProperty.call(import.meta.env, 'VITE_DAYS_PER_MONTH')) {
+            envValue = import.meta.env.VITE_DAYS_PER_MONTH;
+        } else if (typeof window !== 'undefined' && window.__VITE_DAYS_PER_MONTH__ !== undefined) {
+            envValue = window.__VITE_DAYS_PER_MONTH__;
+        }
+
+        const parsed = parseInt(envValue, 10);
+        if (!isNaN(parsed) && parsed > 0) {
+            return parsed;
+        }
+
+        // Default fallback (test mode)
+        return 1;
+    }
+
+    /**
      * Nombre de jours par mois
      * Modifié à 1 pour les tests (permet de passer plus vite d'une saison à l'autre)
      */
-    static DAYS_PER_MONTH = 1;
+    static DAYS_PER_MONTH = TimeManager.resolveDaysPerMonth();
 
     /**
      * Nombre de mois par saison
@@ -136,7 +158,12 @@ export class TimeManager {
             yearDisplay = `${timeInfo.year} ap JC`;
         }
         
-        return `${timeInfo.dayInMonth} ${timeInfo.month} | ${timeInfo.season} | ${yearDisplay}`;
+        const showDay = this.DAYS_PER_MONTH > 1;
+        const dateLabel = showDay
+            ? `${timeInfo.dayInMonth} ${timeInfo.month}`
+            : `${timeInfo.month}`;
+
+        return `${dateLabel} | ${timeInfo.season} | ${yearDisplay}`;
     }
 
     /**
@@ -146,7 +173,10 @@ export class TimeManager {
      */
     static formatTimeShort(days) {
         const timeInfo = this.getTimeInfo(days);
-        return `J${timeInfo.days} | ${timeInfo.dayInMonth}/${timeInfo.monthNumber} | ${timeInfo.season}`;
+        const showDay = this.DAYS_PER_MONTH > 1;
+        const dayLabel = showDay ? `J${timeInfo.dayInMonth}` : `M${timeInfo.monthNumber}`;
+
+        return `${dayLabel} | ${timeInfo.month} | ${timeInfo.season}`;
     }
 }
 

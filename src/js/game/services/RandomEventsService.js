@@ -6,9 +6,20 @@
 import { SimService } from './SimService.js';
 import { makeDbItemId } from '../../utils/utils.js';
 
-// MODE TEST: Mettre à true pour activer le mode test (100% probabilité après la première année)
-// Mettre à false pour le mode normal (probabilité normale après la première année)
-const isEventTest = false;
+/**
+ * Détermine si nous sommes en mode test en lisant la variable d'env VITE_IS_EVENTS_TEST
+ * Valeur par défaut : false (mode normal)
+ */
+const isEventTest = (() => {
+    if (typeof import.meta !== 'undefined' && import.meta.env && Object.prototype.hasOwnProperty.call(import.meta.env, 'VITE_IS_EVENTS_TEST')) {
+        return String(import.meta.env.VITE_IS_EVENTS_TEST).toLowerCase() === 'true';
+    }
+    // Fallback (utile dans certains contextes de tests)
+    if (typeof window !== 'undefined' && window.__VITE_IS_EVENTS_TEST__ !== undefined) {
+        return String(window.__VITE_IS_EVENTS_TEST__).toLowerCase() === 'true';
+    }
+    return false;
+})();
 
 export class RandomEventsService extends SimService {
     constructor() {
