@@ -367,6 +367,7 @@
     bottom: 100%;
     left: auto;
     right: 0;
+    transform: translateX(50%) !important;
     margin-left: 0;
     margin-right: 0;
     margin-bottom: 8px;
@@ -383,6 +384,7 @@
     bottom: 100%;
     left: auto;
     right: 0;
+    transform: translateX(50%) !important;
     margin-left: 0;
     margin-right: 0;
     margin-bottom: 8px;
