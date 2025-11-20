@@ -1,6 +1,11 @@
 // game.js
 export const displayTime = document.querySelector('.info-panel .display-time');
 export const displaySpeed = document.querySelector('.info-panel .display-speed');
+
+// Initialiser l'affichage du temps avec "Chargement..." si l'élément existe
+if (displayTime) {
+    displayTime.textContent = 'Chargement...';
+}
 export const speedChangeIndicator = document.querySelector('.speed-change-indicator');
 export const overOverlay = document.querySelector('#over-overlay');
 export const overOverlayMessage = document.querySelector('#over-overlay .over-overlay__text');
