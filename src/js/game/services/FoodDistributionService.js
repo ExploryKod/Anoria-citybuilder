@@ -185,10 +185,11 @@ export class FoodDistributionService extends SimService {
 
         // Step 2: Distribute food from market to houses within distance (Market → House)
         // Use distance-based distribution instead of just neighbors
+        // IMPORTANT: Pass time parameter so houses don't buy in autumn
         const housesInRange = this.findHousesInRange(marketData, allHouses);
         
         if (housesInRange.length > 0) {
-            await this.distributeFoodToHouses(marketId, housesInRange, housesStore);
+            await this.distributeFoodToHouses(marketId, housesInRange, housesStore, time);
         } else {
             console.log('[FoodDistributionService] No houses within range for market:', marketId);
         }
@@ -531,16 +532,34 @@ export class FoodDistributionService extends SimService {
     /**
      * Distributes food from market to houses within range
      * 
-     * Markets distribute 1 wheat + 1 carrot + 1 cabbage to each house
+     * Houses can buy as much as they want as long as the market has stocks
+     * Multiple houses buy simultaneously, so the market can run out of stock
      * Market stocks are decreased accordingly (farm > market > house logic)
-     * Only distributes if market has enough food of each type
+     * Only distributes if market has stocks
+     * 
+     * IMPORTANT: Houses do NOT buy in autumn - they live on their existing stocks
+     * Houses only buy during winter, spring, and summer
      * 
      * @param {string} marketId - Market ID
      * @param {Array} houses - Array of house objects (within range)
      * @param {HousesStore} housesStore - Database store
+     * @param {number} time - Current simulation time (number of days)
      * @returns {Promise<void>}
      */
-    async distributeFoodToHouses(marketId, houses, housesStore) {
+    async distributeFoodToHouses(marketId, houses, housesStore, time = 0) {
+        // Check current season - houses do NOT buy in autumn
+        const timeInfo = TimeManager.getTimeInfo(time);
+        const isAutumn = timeInfo.season === 'Automne';
+        
+        if (isAutumn) {
+            console.log('[FoodDistributionService] Autumn season - houses do not buy from markets, they live on existing stocks:', {
+                marketId,
+                month: timeInfo.month,
+                season: timeInfo.season,
+                monthIndex: timeInfo.monthIndex
+            });
+            return; // Houses do not buy in autumn
+        }
         // Get fresh market data from IndexedDB (source of truth)
         const marketData = await housesStore.getHouse(marketId);
         if (!marketData) {
@@ -563,7 +582,7 @@ export class FoodDistributionService extends SimService {
         const cabbageAvailable = marketStocks.cabbage || 0;
         const totalFoodAvailable = wheatAvailable + carrotAvailable + cabbageAvailable;
         
-        // Check if market has ANY food to distribute (changed: allow partial distribution)
+        // Check if market has ANY food to distribute
         if (totalFoodAvailable === 0) {
             console.log('[FoodDistributionService] Market has no food to distribute:', {
                 marketId,
@@ -571,18 +590,9 @@ export class FoodDistributionService extends SimService {
             });
             return;
         }
-        
-        // Calculate how many houses we can feed with available stocks
-        // Changed: Allow distribution as long as we have at least one type of food per house
-        // We can distribute to all houses if we have at least some food (not requiring all 3 types)
-        const housesToDistribute = houses.slice(0, Math.min(
-            houses.length,
-            Math.floor(totalFoodAvailable / 1) // At least 1 unit of any food type per house
-        ));
 
-        console.log('[FoodDistributionService] Distribution calculation:', {
+        console.log('[FoodDistributionService] Distributing to all houses (they can buy as much as available):', {
             marketId,
-            housesToDistribute: housesToDistribute.length,
             totalHouses: houses.length,
             wheatAvailable,
             carrotAvailable,
@@ -590,12 +600,8 @@ export class FoodDistributionService extends SimService {
             totalFoodAvailable
         });
 
-        console.log('[FoodDistributionService] Distributing to houses:', {
-            marketId,
-            housesToDistribute: housesToDistribute.map(h => h.id || h.name || h.buildingId)
-        });
-
         // Track remaining stocks as we distribute (prevents over-distribution)
+        // Multiple houses buy simultaneously, so stocks can run out
         let remainingWheat = wheatAvailable;
         let remainingCarrot = carrotAvailable;
         let remainingCabbage = cabbageAvailable;
@@ -606,72 +612,109 @@ export class FoodDistributionService extends SimService {
         let totalCabbageDistributed = 0;
 
         // Distribute food to each house (get fresh data from IndexedDB)
-        const updatePromises = [];
-        for (const house of housesToDistribute) {
-            // Houses from findHousesInRange already have id or name
-            let houseId = house.id || house.name || house.buildingId;
-            if (!houseId && house.x !== undefined && house.y !== undefined) {
-                // Try to construct ID from type and coordinates
-                const houseType = house.type || house.name;
-                if (houseType) {
-                    houseId = makeDbItemId(houseType, house.x, house.y);
+        // Each house buys 1 panier at a time, all houses buy simultaneously until market runs out
+        // Houses can buy as much as they want as long as market has stocks
+        // IMPORTANT: Wait for each update to complete before next iteration to avoid race conditions
+        
+        // Store all update promises for final wait
+        const allUpdatePromises = [];
+        
+        // Continue distributing until market runs out of stock
+        // Each iteration, all houses try to buy 1 panier of each available type
+        let iteration = 0;
+        const maxIterations = Math.max(wheatAvailable, carrotAvailable, cabbageAvailable); // Safety limit
+        
+        while ((remainingWheat > 0 || remainingCarrot > 0 || remainingCabbage > 0) && iteration < maxIterations) {
+            iteration++;
+            let stocksBoughtThisIteration = false;
+            
+            // Store updates for this iteration (we'll wait for them before next iteration)
+            const iterationUpdates = [];
+            
+            // All houses try to buy 1 panier each in this iteration
+            for (const house of houses) {
+                // Check if market still has stocks
+                if (remainingWheat === 0 && remainingCarrot === 0 && remainingCabbage === 0) {
+                    break; // Market is out of stock
                 }
-            }
-            if (!houseId) {
-                console.warn('[FoodDistributionService] House missing ID:', house);
-                continue;
-            }
 
-            try {
-                console.log('[FoodDistributionService] Processing house for distribution:', {
-                    houseId,
-                    houseData: house
-                });
-                
-                // Get fresh house data from IndexedDB
-                const houseData = await housesStore.getHouse(houseId);
-                if (!houseData) {
-                    console.warn('[FoodDistributionService] House not found in database:', {
-                        houseId,
-                        houseData: house
-                    });
+                // Houses from findHousesInRange already have id or name
+                let houseId = house.id || house.name || house.buildingId;
+                if (!houseId && house.x !== undefined && house.y !== undefined) {
+                    // Try to construct ID from type and coordinates
+                    const houseType = house.type || house.name;
+                    if (houseType) {
+                        houseId = makeDbItemId(houseType, house.x, house.y);
+                    }
+                }
+                if (!houseId) {
                     continue;
                 }
 
-                console.log('[FoodDistributionService] House found, current stocks:', {
-                    houseId,
-                    currentStocks: houseData.stocks || {},
-                    houseType: houseData.type
-                });
+                try {
+                    // Get fresh house data from IndexedDB (wait for previous updates to complete)
+                    const houseData = await housesStore.getHouse(houseId);
+                    if (!houseData) {
+                        continue;
+                    }
 
-                // Update house stocks in IndexedDB - distribute whatever is available
-                // Distribute 1 unit of each available type, not requiring all 3 types
-                // Use remaining stocks to avoid over-distribution
-                const newHouseStocks = {
-                    wheat: remainingWheat >= this.foodPerHouse.wheat ? this.foodPerHouse.wheat : 0,
-                    carrot: remainingCarrot >= this.foodPerHouse.carrot ? this.foodPerHouse.carrot : 0,
-                    cabbage: remainingCabbage >= this.foodPerHouse.cabbage ? this.foodPerHouse.cabbage : 0,
-                };
-                // Calculate total food as sum of all types
-                newHouseStocks.food = newHouseStocks.wheat + newHouseStocks.carrot + newHouseStocks.cabbage;
-                
-                // Update remaining stocks
-                remainingWheat -= newHouseStocks.wheat;
-                remainingCarrot -= newHouseStocks.carrot;
-                remainingCabbage -= newHouseStocks.cabbage;
+                    // Get current house stocks (to add to them, not replace)
+                    const currentHouseStocks = houseData.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
 
-                console.log('[FoodDistributionService] Updating house stocks:', {
-                    houseId,
-                    newStocks: newHouseStocks,
-                    foodCount: newHouseStocks.food,
-                    wheat: newHouseStocks.wheat,
-                    carrot: newHouseStocks.carrot,
-                    cabbage: newHouseStocks.cabbage,
-                    note: 'Will save to IndexedDB as source of truth'
-                });
+                    // House buys 1 panier of each available type (if available)
+                    let wheatToBuy = 0;
+                    let carrotToBuy = 0;
+                    let cabbageToBuy = 0;
+                    
+                    // Buy 1 panier of each type if available
+                    if (remainingWheat > 0) {
+                        wheatToBuy = 1;
+                        remainingWheat--;
+                        stocksBoughtThisIteration = true;
+                    }
+                    if (remainingCarrot > 0) {
+                        carrotToBuy = 1;
+                        remainingCarrot--;
+                        stocksBoughtThisIteration = true;
+                    }
+                    if (remainingCabbage > 0) {
+                        cabbageToBuy = 1;
+                        remainingCabbage--;
+                        stocksBoughtThisIteration = true;
+                    }
+                    
+                    // If no stocks were bought, skip this house
+                    if (wheatToBuy === 0 && carrotToBuy === 0 && cabbageToBuy === 0) {
+                        continue;
+                    }
+                    
+                    // Update house stocks: add purchased stocks to existing stocks
+                    const newHouseStocks = {
+                        wheat: (currentHouseStocks.wheat || 0) + wheatToBuy,
+                        carrot: (currentHouseStocks.carrot || 0) + carrotToBuy,
+                        cabbage: (currentHouseStocks.cabbage || 0) + cabbageToBuy,
+                    };
+                    // Calculate total food as sum of all types
+                    newHouseStocks.food = newHouseStocks.wheat + newHouseStocks.carrot + newHouseStocks.cabbage;
 
-                updatePromises.push(
-                    housesStore.updateHouseFields(houseId, { stocks: newHouseStocks }).then(() => {
+                    console.log('[FoodDistributionService] House buying stocks:', {
+                        houseId,
+                        iteration,
+                        wheatBought: wheatToBuy,
+                        carrotBought: carrotToBuy,
+                        cabbageBought: cabbageToBuy,
+                        totalBought: wheatToBuy + carrotToBuy + cabbageToBuy,
+                        currentStocks: currentHouseStocks,
+                        newHouseStocks: newHouseStocks,
+                        remainingMarketStocks: {
+                            wheat: remainingWheat,
+                            carrot: remainingCarrot,
+                            cabbage: remainingCabbage
+                        }
+                    });
+
+                    // Wait for this update to complete before continuing (prevents race conditions)
+                    const updatePromise = housesStore.updateHouseFields(houseId, { stocks: newHouseStocks }).then(() => {
                         console.log('[FoodDistributionService] Successfully updated house stocks:', {
                             houseId,
                             stocks: newHouseStocks
@@ -681,30 +724,51 @@ export class FoodDistributionService extends SimService {
                             houseId,
                             error: err?.message || err
                         });
-                    })
-                );
+                    });
+                    
+                    iterationUpdates.push(updatePromise);
+                    allUpdatePromises.push(updatePromise);
 
-                // Only count what was actually distributed
-                totalWheatDistributed += newHouseStocks.wheat;
-                totalCarrotDistributed += newHouseStocks.carrot;
-                totalCabbageDistributed += newHouseStocks.cabbage;
-            } catch (err) {
-                console.warn('[FoodDistributionService] Failed to get house data:', {
-                    houseId,
-                    error: err?.message || err
-                });
+                    // Count what was actually distributed
+                    totalWheatDistributed += wheatToBuy;
+                    totalCarrotDistributed += carrotToBuy;
+                    totalCabbageDistributed += cabbageToBuy;
+                } catch (err) {
+                    console.warn('[FoodDistributionService] Failed to get house data:', {
+                        houseId,
+                        error: err?.message || err
+                    });
+                }
+            }
+            
+            // Wait for all updates in this iteration to complete before next iteration
+            // This ensures we read fresh data in the next iteration
+            await Promise.allSettled(iterationUpdates);
+            
+            // If no stocks were bought this iteration, stop
+            if (!stocksBoughtThisIteration) {
+                break;
             }
         }
+        
+        console.log('[FoodDistributionService] Distribution iterations completed:', {
+            marketId,
+            iterations: iteration,
+            housesProcessed: houses.length,
+            totalWheatDistributed,
+            totalCarrotDistributed,
+            totalCabbageDistributed
+        });
 
         // Wait for all house updates to complete
-        await Promise.allSettled(updatePromises);
+        await Promise.allSettled(allUpdatePromises);
 
         console.log('[FoodDistributionService] Distribution complete:', {
             marketId,
             totalWheatDistributed,
             totalCarrotDistributed,
             totalCabbageDistributed,
-            housesUpdated: updatePromises.length
+            housesUpdated: allUpdatePromises.length
         });
 
         // Decrease market stocks in IndexedDB (food distributed)
