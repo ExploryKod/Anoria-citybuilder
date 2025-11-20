@@ -326,7 +326,7 @@
 @media (max-width: 1024px) {
   .legend-btns-container {
     top: auto;
-    bottom: 10px;
+    bottom: calc(var(--footer-height) + 10px);
     left: 50% !important; /* Center horizontally */
     right: auto !important;
     transform: translateX(-50%); /* Center the container */
@@ -409,9 +409,9 @@
 /* Smaller mobile devices */
 @media (max-width: 768px) {
   .legend-btns-container {
-    bottom: 8px;
     right: 8px !important;
     gap: 6px;
+    justify-content: center;
   }
   
   .legend-toggle-btn,
