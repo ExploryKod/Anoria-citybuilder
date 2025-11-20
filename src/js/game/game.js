@@ -451,7 +451,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     }
                 }
             }
-            await scene.update(city);
+            await scene.update(city, time);
         } else if(activeToolId === "select-object") {
             // Object selection - ONLY open info modal when using select tool
             // Only open the info modal if we actually have info to show (i.e., on building objects)
@@ -536,18 +536,22 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers disponibles`);
                 }
 
-                if(selectedObject.userData.id.includes('Farm') && Object.hasOwn(houseStocks, 'food')) {
-                    makeInfoSection('Production ferme');
+                if(selectedObject.userData.id.includes('Farm')) {
+                    // Initialize stocks if not present
+                    if (!houseStocks) {
+                        houseStocks = { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+                    }
+                    makeInfoSection('Stocks ferme');
                     if(selectedObject.userData.id.includes('Farm-Wheat')) {
-                        makeInfoKeyValue('Blé', `${houseStocks.wheat} paniers produits`);
+                        makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`);
                     }
                     if(selectedObject.userData.id.includes('Farm-Carrot')) {
-                        makeInfoKeyValue('Carottes', `${houseStocks.carrot} paniers produits`);
+                        makeInfoKeyValue('Carottes', `${houseStocks.carrot || 0} paniers`);
                     }
                     if(selectedObject.userData.id.includes('Farm-Cabbage')) {
-                        makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage} paniers produits`);
+                        makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`);
                     }
-                    makeInfoKeyValue('Total', `${houseStocks.food} unités produites`);
+                    makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers`);
                 }
             }
            
@@ -568,7 +572,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 }
                 window.game.play()
             }
-            await scene.update(city)
+            await scene.update(city, time)
         } else if(!tile.buildingId) {
             // PLACING A BUILDING - Ensure game is NOT paused
             // Close info overlay if it's open from a previous selection
@@ -650,7 +654,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         }
                     }
                 }
-                await scene.update(city);
+                await scene.update(city, time);
                 
                 // Envoyer au serveur multijoueur si activé
                 if (window.multiplayerManager && window.multiplayerManager.isMultiplayer) {
