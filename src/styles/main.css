@@ -1619,7 +1619,6 @@ button#pwa-refresh:hover {
     .tutorial-panel,
     .objectives-panel,
     .reset-confirm-panel {
-        max-height: 80vh;
         overflow-y: auto;
     }
 
@@ -1632,9 +1631,9 @@ button#pwa-refresh:hover {
 
     /* Ajuster les overlays d'information */
     .info-building-overlay {
-        width: 300px;
-        max-height: 300px;
-        top: 100px;
+        width: minmax(300px, 50vw);
+        max-height: 80vh;
+        top: 10px;
     }
 
     /* Améliorer la scrollabilité de la toolbar */
@@ -1671,8 +1670,8 @@ button#pwa-refresh:hover {
 
 @media (max-width: 560px) {
     .info-building-overlay {
-        width: 92vw;
-        right: 50%;
+        width: 95vw;
+        right: 0;
         transform: translateX(50%) scale(0.98);
     }
     .info-building-overlay.active {

@@ -13,3 +13,6 @@
 
 # sell food 
 <a href="https://www.freepik.com/icon/shopping-basket_4872546#fromView=family&page=1&position=38&uuid=9d1dd744-3ee1-46b9-a017-f0039302bd0b">Icon by Freepik</a>
+
+# Lucid-dev : toggle isométric (land-plot icon)
+Url website of the author: https://github.com/danielbayley
