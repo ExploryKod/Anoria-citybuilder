@@ -125,9 +125,14 @@ export class FoodDistributionService extends SimService {
 
         // Separate neighbors into farms and houses
         // Neighbors can have either 'name' or 'buildingId' field (check both)
+        // Also check the type field if available
         const farmsNearby = neighbors.filter(neighbor => {
-            const name = neighbor.name || neighbor.buildingId || '';
-            return name.includes('Farm') || name.includes('farm');
+            const name = neighbor.name || neighbor.buildingId || neighbor.type || '';
+            const type = neighbor.type || '';
+            // Check multiple ways to identify farms
+            return name.includes('Farm') || name.includes('farm') || 
+                   type.includes('Farm') || type.includes('farm') ||
+                   name.includes('Wheat') || name.includes('Carrot') || name.includes('Cabbage');
         });
 
         const marketHouses = neighbors.filter(neighbor => {
@@ -321,7 +326,7 @@ export class FoodDistributionService extends SimService {
             let farmId = farmNeighbor.id || farmNeighbor.buildingId;
             if (!farmId) {
                 // Try to construct ID from name (type) and coordinates
-                const farmType = farmNeighbor.name;
+                const farmType = farmNeighbor.name || farmNeighbor.type || '';
                 if (farmType && farmNeighbor.x !== undefined && farmNeighbor.y !== undefined) {
                     farmId = makeDbItemId(farmType, farmNeighbor.x, farmNeighbor.y);
                     if (!farmId) {
@@ -343,7 +348,22 @@ export class FoodDistributionService extends SimService {
                 // Get fresh farm data from IndexedDB (source of truth)
                 const farmData = await housesStore.getHouse(farmId);
                 if (!farmData) {
-                    console.warn('[FoodDistributionService] Farm not found in database:', farmId);
+                    console.warn('[FoodDistributionService] Farm not found in database:', {
+                        farmId,
+                        neighborData: farmNeighbor
+                    });
+                    continue;
+                }
+
+                // Check if farm has road access (required for production)
+                const farmNeighbors = farmData.neighbors || [];
+                const { hasAccess: farmHasRoadAccess } = checkRoadAccess(farmNeighbors);
+                
+                if (!farmHasRoadAccess) {
+                    console.log('[FoodDistributionService] Farm has no road access, skipping:', {
+                        farmId,
+                        farmType: farmData.type
+                    });
                     continue;
                 }
 
@@ -352,23 +372,27 @@ export class FoodDistributionService extends SimService {
                 console.log('[FoodDistributionService] Processing farm:', {
                     farmId,
                     farmType,
+                    hasRoadAccess: farmHasRoadAccess,
                     neighborData: farmNeighbor
                 });
                 
                 // Each farm type produces only its specific crop
-                if (farmType.includes('Farm-Wheat') || farmType.includes('Farms-Wheat')) {
-                    wheatCount++; // Farms-Wheat produces 1 wheat
+                // Production happens every turn as long as farm has road access
+                if (farmType.includes('Farm-Wheat') || farmType.includes('Farms-Wheat') || farmType.includes('Wheat')) {
+                    wheatCount++; // Farms-Wheat produces 1 wheat per turn
                     console.log('[FoodDistributionService] Found wheat farm:', farmId);
-                } else if (farmType.includes('Farm-Carrot') || farmType.includes('Farms-Carrot')) {
-                    carrotCount++; // Farms-Carrot produces 1 carrot
+                } else if (farmType.includes('Farm-Carrot') || farmType.includes('Farms-Carrot') || farmType.includes('Carrot')) {
+                    carrotCount++; // Farms-Carrot produces 1 carrot per turn
                     console.log('[FoodDistributionService] Found carrot farm:', farmId);
-                } else if (farmType.includes('Farm-Cabbage') || farmType.includes('Farms-Cabbage')) {
-                    cabbageCount++; // Farms-Cabbage produces 1 cabbage
+                } else if (farmType.includes('Farm-Cabbage') || farmType.includes('Farms-Cabbage') || farmType.includes('Cabbage')) {
+                    cabbageCount++; // Farms-Cabbage produces 1 cabbage per turn
                     console.log('[FoodDistributionService] Found cabbage farm:', farmId);
                 } else {
                     console.warn('[FoodDistributionService] Unknown farm type:', {
                         farmId,
-                        farmType
+                        farmType,
+                        neighborName: farmNeighbor.name,
+                        neighborType: farmNeighbor.type
                     });
                 }
             } catch (err) {
