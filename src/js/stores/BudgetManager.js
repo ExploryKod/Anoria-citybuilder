@@ -580,11 +580,23 @@ class BudgetManager {
     }
 
     /**
-     * Add taxes based on population (10€ per citizen per turn)
+     * Add taxes based on population (100€ per citizen per month, only in November)
      * Calculates taxes from houses in the database
+     * Only collects taxes if there is population AND it's November (month index 10)
+     * @param {number} time - Current simulation time (number of days)
      * @returns {Promise<Object>} Updated budget
      */
-    async addTaxes() {
+    async addTaxes(time = 0) {
+        // Import TimeManager to check current month
+        const { TimeManager } = await import('../game/utils/TimeManager.js');
+        const timeInfo = TimeManager.getTimeInfo(time);
+        const isNovember = timeInfo.monthIndex === 10; // November is month index 10 (0-indexed: Jan=0, Feb=1, ..., Nov=10)
+        
+        // Only collect taxes in November
+        if (!isNovember) {
+            return await this.getCurrentBudget();
+        }
+        
         // Get all houses from the database
         const houses = await this.db.houses.toArray();
         
@@ -600,26 +612,31 @@ class BudgetManager {
         houses.forEach(house => {
             if (house.type && (house.type.includes('House-Blue') || house.type.includes('House-Red') || house.type.includes('House-Purple'))) {
                 const pop = house.pop || 0;
-                const taxPerHouse = pop * 10; // 10€ per citizen
                 
-                if (house.type.includes('House-Blue')) {
-                    taxBreakdown['House-Blue'] += taxPerHouse;
-                } else if (house.type.includes('House-Red')) {
-                    taxBreakdown['House-Red'] += taxPerHouse;
-                } else if (house.type.includes('House-Purple')) {
-                    taxBreakdown['House-Purple'] += taxPerHouse;
+                // Only collect taxes if there is population
+                if (pop > 0) {
+                    const taxPerHouse = pop * 100; // 100€ per citizen in May
+                    
+                    if (house.type.includes('House-Blue')) {
+                        taxBreakdown['House-Blue'] += taxPerHouse;
+                    } else if (house.type.includes('House-Red')) {
+                        taxBreakdown['House-Red'] += taxPerHouse;
+                    } else if (house.type.includes('House-Purple')) {
+                        taxBreakdown['House-Purple'] += taxPerHouse;
+                    }
+                    
+                    taxBreakdown.total += taxPerHouse;
+                    taxBreakdown.population += pop;
                 }
-                
-                taxBreakdown.total += taxPerHouse;
-                taxBreakdown.population += pop;
             }
         });
         
-        if (taxBreakdown.total > 0) {
+        // Only add taxes if there is population
+        if (taxBreakdown.total > 0 && taxBreakdown.population > 0) {
             const budget = await this.getCurrentBudget();
             
             // Add journal entry
-            await this.addJournalEntry(budget.turn, 'income', taxBreakdown.total, `Impôts habitants (${taxBreakdown.population} hab.)`);
+            await this.addJournalEntry(budget.turn, 'income', taxBreakdown.total, `Impôts habitants (${taxBreakdown.population} hab.) - Novembre`);
             
             // Add to daily income
             budget.funds += taxBreakdown.total;
