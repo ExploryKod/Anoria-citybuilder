@@ -17,6 +17,7 @@ import {
     overOverlayMessage,
     bulldozeSelected
 } from '../ui/nodes.js';
+import { TimeManager } from './utils/TimeManager.js';
 
 class GameUI {
     /**
@@ -38,6 +39,12 @@ class GameUI {
     isPaused = false;
 
     /**
+     * Current time value (number of days) - stored to keep displaying it even when paused
+     * @type {number | null}
+     */
+    currentTime = null;
+
+    /**
      * Getter for the game render window element
      * @returns {HTMLElement | null}
      */
@@ -47,14 +54,27 @@ class GameUI {
 
     /**
      * Updates the time display
-     * @param {number|string} time - Time value to display
-     * @param {string} unit - Optional unit (e.g., 'jours')
+     * @param {number|string|undefined} time - Time value to display (number of days)
+     * @param {string} unit - Optional unit (ignored if time is number, uses TimeManager)
      */
     updateTimeDisplay(time, unit = 'jours') {
         if (displayTime) {
-            displayTime.textContent = typeof time === 'number' 
-                ? `${time} ${unit}` 
-                : time;
+            // Vérifier si time est un nombre valide
+            if (typeof time === 'number' && !isNaN(time) && time >= 0) {
+                // Stocker le temps actuel pour pouvoir le réafficher même en pause
+                this.currentTime = time;
+                // Utiliser le TimeManager pour formater le temps avec jours, mois et saisons
+                const formattedTime = TimeManager.formatTime(time);
+                // S'assurer que le formatage n'a pas retourné undefined
+                if (formattedTime && formattedTime !== 'undefined') {
+                    displayTime.textContent = formattedTime;
+                } else {
+                    displayTime.textContent = 'Chargement...';
+                }
+            } else {
+                // Si le temps n'est pas encore défini ou invalide, afficher "Chargement..."
+                displayTime.textContent = 'Chargement...';
+            }
         }
     }
 
@@ -88,20 +108,25 @@ class GameUI {
     }
 
     /**
-     * Updates pause UI elements (icons and display)
+     * Updates pause UI elements (icons only - time display is not changed)
      * @param {boolean} paused - Current pause state
      */
     updatePauseUI(paused) {
         if (paused) {
-            // Game paused
+            // Game paused - changer seulement les icônes
             if (infoPanelClockIcon) infoPanelClockIcon.style.display = 'none';
             if (infoPanelNoClockIcon) infoPanelNoClockIcon.style.display = 'block';
-            this.updateTimeDisplay('pause');
+            // Ne pas modifier l'affichage du temps - il reste visible avec sa valeur actuelle
         } else {
-            // Game playing
+            // Game playing - changer seulement les icônes
             if (infoPanelClockIcon) infoPanelClockIcon.style.display = 'block';
             if (infoPanelNoClockIcon) infoPanelNoClockIcon.style.display = 'none';
-            this.updateTimeDisplay('play');
+            // Ne pas modifier l'affichage du temps - il reste visible avec sa valeur actuelle
+        }
+        
+        // Réafficher le temps stocké si disponible (pour s'assurer qu'il est toujours affiché)
+        if (this.currentTime !== null && displayTime) {
+            displayTime.textContent = TimeManager.formatTime(this.currentTime);
         }
     }
 
