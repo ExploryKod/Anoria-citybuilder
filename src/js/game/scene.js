@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {createCamera} from './camera.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import {applyHoverColor, resetHoveredObject, resetObjectColor} from '../utils/meshUtils.js';
 import {  textures  } from '../meshs/data.js'
 import {
@@ -313,6 +314,9 @@ export function createScene(housesStore, gameStore, assetManager) {
 
         // Add infinite backdrop (skydome + distant ground ring)
         addBackdrop();
+        
+        // Load and add citizen character to the scene
+        loadCitizenCharacter(city);
     }
 
     async function update(city, time=0) {
@@ -363,11 +367,52 @@ export function createScene(housesStore, gameStore, assetManager) {
         const statutsIconsMeta = {
             road: {
                 position : {x: -1, y: 1, z: 1},
-                scale : {x: 1.2, y: 1.2, z: 1}
+                scale : {x: 1.2, y: 1.2, z: 1},
+                spriteColor: null,
+                backgroundColor: null
             },
             food: {
                 position : {x: -0.5, y: 1, z: 0},
-                scale : {x: 1.0, y: 1.0, z: 1}
+                scale : {x: 1.0, y: 1.0, z: 1},
+                spriteColor: null,
+                backgroundColor: null
+            },
+            // Different positions for different farm sprites
+            'no-food': {
+                position : {x: -0.5, y: 1, z: 0},
+                scale : {x: 1.0, y: 1.0, z: 1},
+                spriteColor: null,
+                backgroundColor: null
+            },
+            'no-food-farm': {
+                position : {x: -0.8, y: 0.5, z: -0.2},
+                scale : {x: 0.6, y: 0.6, z: 0.6},
+                spriteColor: 0xFFFF00, // Yellow
+                backgroundColor: null
+            },
+            'grow-food': {
+                position : {x: -0.8, y: 0.5, z: -0.2},
+                scale : {x: 0.4, y: 0.4, z: 0.4},
+                spriteColor: null, // Keep original colors
+                backgroundColor: 0xFFE8E8 
+            },
+            'harvest': {
+                position : {x: -0.8, y: 0.5, z: -0.2},
+                scale : {x: 0.4, y: 0.4, z: 0.4},
+                spriteColor: null, // Keep original colors
+                backgroundColor: 0xFFE8E8
+            },
+            'sell-food': {
+                position : {x: -0.8, y: 0.5, z: -0.2},
+                scale : {x: 0.4, y: 0.4, z: 0.4},
+                spriteColor: null, // Keep original colors
+                backgroundColor: 0xFFE8E8
+            },
+            'isBuying': {
+                position : {x: -0.5, y: 0.5, z: 0},
+                scale : {x: 0.6, y: 0.6, z: 1},
+                spriteColor: 0x00FF00, // Green color
+                backgroundColor: 0xFFFFFF // White background
             }
         };
 
@@ -535,6 +580,24 @@ export function createScene(housesStore, gameStore, assetManager) {
                         });
                     }
 
+                    // Display buying icon during autumn (when markets buy from farms)
+                    if (buildings[x][y]) {
+                        const isBuying = await housesStore.getHouseItem(currentUniqueID, 'isBuying');
+                        const buyingMeta = statutsIconsMeta['isBuying'];
+                        
+                        // Show green buying icon with white background during autumn
+                        assetManager.setStatusSprite(
+                            buildings[x][y],
+                            textures['isBuying'],
+                            'isBuying',
+                            buyingMeta.scale,
+                            buyingMeta.position,
+                            isBuying === true, // Only show during autumn
+                            buyingMeta.spriteColor, // Green color from metadata
+                            buyingMeta.backgroundColor // White background from metadata
+                        );
+                    }
+
                     /**
                      * Update market stocks of food in userData and in DB
                      * @param buildings
@@ -668,44 +731,42 @@ export function createScene(housesStore, gameStore, assetManager) {
                         }
                     }
                     
-                    // Farm sprite scale (60% of normal size)
-                    const farmSpriteScale = {
-                        x: statutsIconsMeta.food.scale.x * 0.6,
-                        y: statutsIconsMeta.food.scale.y * 0.6,
-                        z: statutsIconsMeta.food.scale.z
-                    };
-                    
                     // Determine which sprite to show based on season
-                    let spriteTexture, spriteName, spriteColor, spritePosition, backgroundColor;
-                    
-                    // All sprites use the same position as no-food
-                    spritePosition = statutsIconsMeta.food.position;
+                    let spriteTexture, spriteName, spriteColor, spritePosition, spriteScale, backgroundColor;
                     
                     if (season === 'Hiver') {
                         // Winter: no-food (yellow, no background)
                         spriteTexture = textures['nofood'];
                         spriteName = 'no-food';
-                        spriteColor = 0xFFFF00; // Yellow
-                        backgroundColor = null; // No background for winter
+                        spritePosition = statutsIconsMeta['no-food-farm'].position;
+                        spriteScale = statutsIconsMeta['no-food-farm'].scale;
+                        spriteColor = statutsIconsMeta['no-food-farm'].spriteColor;
+                        backgroundColor = statutsIconsMeta['no-food-farm'].backgroundColor;
                     } else {
-                        // Other seasons: colored sprites with pastel colored circular background
-                        spriteColor = null; // No color tint (keep original colors)
-                        
                         if (season === 'Printemps') {
-                            // Spring: grow-food with light green pastel background
+                            // Spring: grow-food with pastel green background
                             spriteTexture = textures['grow-food'];
                             spriteName = 'grow-food';
-                            backgroundColor = 0xB8E6B8; // Light green pastel
+                            spritePosition = statutsIconsMeta['grow-food'].position;
+                            spriteScale = statutsIconsMeta['grow-food'].scale;
+                            spriteColor = statutsIconsMeta['grow-food'].spriteColor;
+                            backgroundColor = statutsIconsMeta['grow-food'].backgroundColor;
                         } else if (season === 'Été') {
-                            // Summer: harvest with light yellow/orange pastel background
+                            // Summer: harvest with pastel yellow/orange background
                             spriteTexture = textures['harvest'];
                             spriteName = 'harvest';
-                            backgroundColor = 0xFFE4B5; // Light yellow/orange pastel
+                            spritePosition = statutsIconsMeta['harvest'].position;
+                            spriteScale = statutsIconsMeta['harvest'].scale;
+                            spriteColor = statutsIconsMeta['harvest'].spriteColor;
+                            backgroundColor = statutsIconsMeta['harvest'].backgroundColor;
                         } else if (season === 'Automne') {
-                            // Autumn: sell-food with light orange/red pastel background
+                            // Autumn: sell-food with pastel orange/red background
                             spriteTexture = textures['sell-food'];
                             spriteName = 'sell-food';
-                            backgroundColor = 0xFFCCCB; // Light orange/red pastel
+                            spritePosition = statutsIconsMeta['sell-food'].position;
+                            spriteScale = statutsIconsMeta['sell-food'].scale;
+                            spriteColor = statutsIconsMeta['sell-food'].spriteColor;
+                            backgroundColor = statutsIconsMeta['sell-food'].backgroundColor;
                         }
                     }
                     
@@ -715,8 +776,8 @@ export function createScene(housesStore, gameStore, assetManager) {
                             buildings[x][y],
                             spriteTexture,
                             spriteName,
-                            farmSpriteScale,
-                            spritePosition || statutsIconsMeta.food.position,
+                            spriteScale,
+                            spritePosition,
                             true, // Always show sprite (season-specific)
                             spriteColor, // Color (red for winter, null for others to keep original colors)
                             backgroundColor // Pastel colored circular background for season sprites (null for winter)
@@ -1257,6 +1318,99 @@ export function createScene(housesStore, gameStore, assetManager) {
 
     // Note: setupShadowRenderer() removed - using original inline setup for exact brightness match
 
+    /**
+     * Loads and adds the citizen character to the scene
+     * @param {Object} city - The city object with size information
+     */
+    function loadCitizenCharacter(city) {
+        const gltfLoader = new GLTFLoader();
+        // Use config baseUrl pattern for consistency
+        const baseUrl = config.assets.baseUrl || '/';
+        const citizenPath = `${baseUrl}citizen02/citizenAnimated02.glb`.replace(/\/+/g, '/');
+        
+        gltfLoader.load(
+            citizenPath,
+            (gltf) => {
+                const citizen = gltf.scene;
+                
+                // Name the character for easy identification
+                citizen.name = 'citizen02';
+                
+                // Calculate appropriate scale - characters should be much smaller than buildings
+                // Buildings are typically 1 unit, so a character should be around 0.1-0.2 scale
+                // Adjust this value based on your character's original size
+                // Start with 0.15, you can adjust if too big/small
+                const characterScale = 1;
+                citizen.scale.set(characterScale, characterScale, characterScale);
+                
+                // Position at center of city (visible location)
+                // City coordinates: x and y from 0 to city.size
+                const centerX = city.size / 2;
+                const centerY = city.size / 2;
+                // Position at ground level (y = 0 is ground level, buildings are at y = -0.5)
+                // Character should be at ground level
+                citizen.position.set(centerX, 0, centerY);
+                
+                // Calculate bounding box to help with size debugging
+                const box = new THREE.Box3().setFromObject(citizen);
+                const size = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+                
+                // Ensure character receives proper lighting and shadows
+                citizen.traverse((child) => {
+                    if (child instanceof THREE.Mesh) {
+                        // Enable shadows for the character
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        
+                        // Ensure materials are properly lit
+                        if (child.material) {
+                            // Make sure material responds to lights
+                            if (child.material instanceof THREE.MeshBasicMaterial) {
+                                // Convert BasicMaterial to LambertMaterial for proper lighting
+                                const newMaterial = new THREE.MeshLambertMaterial({
+                                    map: child.material.map,
+                                    color: child.material.color,
+                                    transparent: child.material.transparent,
+                                    opacity: child.material.opacity
+                                });
+                                child.material = newMaterial;
+                            }
+                            
+                            // Ensure material properties are set for lighting
+                            if (child.material.needsUpdate !== undefined) {
+                                child.material.needsUpdate = true;
+                            }
+                        }
+                    }
+                });
+                
+                // Add to scene
+                scene.add(citizen);
+                
+                console.log('[Scene] Citizen character loaded and added to scene', {
+                    position: citizen.position,
+                    scale: citizen.scale,
+                    boundingBoxSize: size,
+                    boundingBoxCenter: center,
+                    path: citizenPath,
+                    tip: 'If character is too big/small, adjust characterScale (currently ' + characterScale + ')'
+                });
+            },
+            (progress) => {
+                // Loading progress (optional)
+                if (progress.lengthComputable) {
+                    const percentComplete = (progress.loaded / progress.total) * 100;
+                    console.log(`[Scene] Loading citizen: ${percentComplete.toFixed(2)}%`);
+                }
+            },
+            (error) => {
+                console.error('[Scene] Error loading citizen character:', error);
+                console.error('[Scene] Tried to load from:', citizenPath);
+                console.error('[Scene] Make sure the file exists at: /public/citizen02/citizenAnimated02.glb');
+            }
+        );
+    }
 
     /**
      * Helper function to get interactive objects for raycasting
