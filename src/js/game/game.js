@@ -799,12 +799,20 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
         pause() {
             isPause = true;
             gameUI.setPaused(true);
+            // Pause citizen animation
+            if (scene.pauseCitizen) {
+                scene.pauseCitizen();
+            }
         },
 
         async play() {
             // Game playing
             isPause = false;
             gameUI.setPaused(false);
+            // Resume citizen animation
+            if (scene.resumeCitizen) {
+                scene.resumeCitizen();
+            }
             // Appeler update(0) pour activer l'objectif au tour 0 au démarrage (seulement si activés)
             if (window.objectivesTracker && objectivesTracker.enabled) {
                 await objectivesTracker.checkObjectives(0);
