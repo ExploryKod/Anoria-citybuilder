@@ -33,7 +33,7 @@
 .chronos-loader-content {
     background: #fafafa;
     border: 3px solid var(--cta);
-    border-radius: 10px;
+    border-radius: var(--border-radius-small);
     padding: 50px 60px;
     text-align: center;
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);

@@ -29,13 +29,10 @@ function positionLegendButtons() {
     return;
   }
   
-  // Desktop: position based on toolbar width
-  const toolbarRect = toolbar.getBoundingClientRect();
-  const toolbarWidth = toolbarRect.width;
-  
-  // Set the left position: toolbar width + 6px gap
-  const leftPosition = toolbarWidth + 6;
-  legendContainer.style.left = `${leftPosition}px`;
+  // Desktop: CSS now handles centering (same as footer)
+  // Remove any inline styles that might override CSS
+  legendContainer.style.left = '';
+  legendContainer.style.right = '';
 }
 
 /**

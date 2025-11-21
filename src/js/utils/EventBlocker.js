@@ -33,10 +33,31 @@ class EventBlocker {
 
         this.blockedEvents = [...events];
         this.originalEventListeners = [];
+        this.excludeSelectors = excludeSelectors;
 
         // Bloquer les événements sur le document
         events.forEach(eventType => {
             const blocker = (e) => {
+                // Vérifier si l'élément cible est dans les exclusions
+                if (this.excludeSelectors && this.excludeSelectors.length > 0) {
+                    const target = e.target;
+                    if (target) {
+                        for (const selector of this.excludeSelectors) {
+                            try {
+                                if (target.matches && target.matches(selector)) {
+                                    return; // Ne pas bloquer cet événement
+                                }
+                                // Vérifier aussi si un parent correspond
+                                if (target.closest && target.closest(selector)) {
+                                    return; // Ne pas bloquer cet événement
+                                }
+                            } catch (err) {
+                                // Ignorer les erreurs de sélecteur invalide
+                            }
+                        }
+                    }
+                }
+                
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
