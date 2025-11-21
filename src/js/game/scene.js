@@ -175,6 +175,7 @@ export function createScene(housesStore, gameStore, assetManager) {
     let citizenTargetPosition = null; // Target position for citizen to walk to
     let citizenPath = []; // Path of road tiles to follow
     let citizenCurrentPathIndex = 0; // Current index in the path
+    let citizenPathDirection = 1; // 1 for forward, -1 for backward
     let citizenOnRoad = false; // Track if citizen is on a road
     let citizenWaitingForRoad = false; // Track if citizen is waiting for road access
     let citizenWasWalkingBeforePause = false; // Track if citizen was walking before pause
@@ -217,6 +218,7 @@ export function createScene(housesStore, gameStore, assetManager) {
         citizenWaitingForRoad = false;
         citizenPath = [];
         citizenCurrentPathIndex = 0;
+        citizenPathDirection = 1;
         if (citizenCharacter) {
             citizenCharacter.visible = false;
             if (citizenCharacter.parent) {
@@ -1465,14 +1467,14 @@ export function createScene(housesStore, gameStore, assetManager) {
     }
 
     /**
-     * Creates a loop path following roads using a simple algorithm
-     * Starts from a road tile and follows adjacent roads to create a loop
+     * Creates a linear path following roads (not a loop)
+     * Starts from a road tile and follows adjacent roads until reaching an end
      * @param {number} startX - Starting X coordinate
      * @param {number} startY - Starting Y coordinate
      * @param {number} maxPathLength - Maximum path length (default: 50)
      * @returns {Array<{x: number, y: number}>} Path of road tiles
      */
-    function createRoadLoopPath(startX, startY, maxPathLength = 50) {
+    function createRoadPath(startX, startY, maxPathLength = 50) {
         const path = [{ x: startX, y: startY }];
         const visited = new Set();
         visited.add(`${startX},${startY}`);
@@ -1485,42 +1487,18 @@ export function createScene(housesStore, gameStore, assetManager) {
         while (path.length < maxPathLength && attempts < maxAttempts) {
             const adjacent = getAdjacentRoads(currentX, currentY);
             
-            // Filter out already visited tiles (but allow returning to start for loop)
+            // Filter out already visited tiles
             const unvisited = adjacent.filter(road => {
                 const key = `${road.x},${road.y}`;
-                // Allow returning to start if we have a reasonable path length
-                if (road.x === startX && road.y === startY && path.length > 5) {
-                    return true;
-                }
                 return !visited.has(key);
             });
             
             if (unvisited.length === 0) {
-                // No unvisited roads, try to return to start or pick a random visited one
-                if (path.length > 5) {
-                    // Try to return to start
-                    const startAdjacent = getAdjacentRoads(startX, startY);
-                    const canReturnToStart = startAdjacent.some(adj => 
-                        adj.x === currentX && adj.y === currentY
-                    );
-                    if (canReturnToStart) {
-                        path.push({ x: startX, y: startY });
-                        break; // Loop complete
-                    }
-                }
-                
-                // Pick a random adjacent road (even if visited) to continue
-                if (adjacent.length > 0) {
-                    const randomAdj = adjacent[Math.floor(Math.random() * adjacent.length)];
-                    currentX = randomAdj.x;
-                    currentY = randomAdj.y;
-                    path.push({ x: currentX, y: currentY });
-                } else {
-                    break; // No more roads to follow
-                }
+                // No unvisited roads - reached end of road, return current path
+                break;
             } else {
-                // Pick a random unvisited road
-                const next = unvisited[Math.floor(Math.random() * unvisited.length)];
+                // Pick the first unvisited road (simple forward movement)
+                const next = unvisited[0];
                 currentX = next.x;
                 currentY = next.y;
                 path.push({ x: currentX, y: currentY });
@@ -1528,18 +1506,6 @@ export function createScene(housesStore, gameStore, assetManager) {
             }
             
             attempts++;
-        }
-        
-        // If path is long enough, try to close the loop
-        if (path.length > 5) {
-            const last = path[path.length - 1];
-            const startAdjacent = getAdjacentRoads(startX, startY);
-            const canCloseLoop = startAdjacent.some(adj => 
-                adj.x === last.x && adj.y === last.y
-            );
-            if (canCloseLoop) {
-                path.push({ x: startX, y: startY });
-            }
         }
         
         return path;
@@ -2184,15 +2150,16 @@ export function createScene(housesStore, gameStore, assetManager) {
                     citizenCharacter.position.copy(citizenTargetPosition);
                     citizenOnRoad = true;
                     
-                    // Create road loop path starting from current position
-                    citizenPath = createRoadLoopPath(currentTile.x, currentTile.y);
+                    // Create road path starting from current position
+                    citizenPath = createRoadPath(currentTile.x, currentTile.y);
                     citizenCurrentPathIndex = 0;
+                    citizenPathDirection = 1; // Start walking forward
                     
                     if (citizenPath.length > 1) {
                         // Set next target in path
                         const nextTile = citizenPath[1];
                         citizenTargetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
-                        console.log('[Scene] Citizen reached road, starting loop path', {
+                        console.log('[Scene] Citizen reached road, starting path', {
                             pathLength: citizenPath.length,
                             startTile: currentTile
                         });
@@ -2242,8 +2209,9 @@ export function createScene(housesStore, gameStore, assetManager) {
                         const adjacentRoads = getAdjacentRoads(tile.x, tile.y);
                         if (adjacentRoads.length > 0) {
                             const nearestRoad = adjacentRoads[0];
-                            citizenPath = createRoadLoopPath(nearestRoad.x, nearestRoad.y);
+                            citizenPath = createRoadPath(nearestRoad.x, nearestRoad.y);
                             citizenCurrentPathIndex = 0;
+                            citizenPathDirection = 1;
                             if (citizenPath.length > 1) {
                                 const nextTile = citizenPath[1];
                                 citizenTargetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
@@ -2253,26 +2221,37 @@ export function createScene(housesStore, gameStore, assetManager) {
                 } else {
                     // Reached current target in path - move to next
                     citizenCharacter.position.copy(citizenTargetPosition);
-                    citizenCurrentPathIndex++;
+                    citizenCurrentPathIndex += citizenPathDirection;
                     
-                    // Check if we've completed the loop or need to continue
+                    // Check if we've reached the end of the path
                     if (citizenCurrentPathIndex >= citizenPath.length) {
-                        // Loop complete or path ended - restart from beginning or create new path
-                        const currentTilePos = worldToTile(citizenCharacter.position);
-                        citizenPath = createRoadLoopPath(currentTilePos.x, currentTilePos.y);
-                        citizenCurrentPathIndex = 0;
+                        // Reached end - turn back (reverse direction)
+                        citizenPathDirection = -1;
+                        citizenCurrentPathIndex = citizenPath.length - 2; // Go to second-to-last tile
+                    } else if (citizenCurrentPathIndex < 0) {
+                        // Reached beginning - turn forward (reverse direction)
+                        citizenPathDirection = 1;
+                        citizenCurrentPathIndex = 1; // Go to second tile
                     }
                     
-                    if (citizenPath.length > 1) {
-                        // Get next tile in path (with wrap-around for loop)
-                        const nextIndex = citizenCurrentPathIndex % citizenPath.length;
-                        const nextTile = citizenPath[nextIndex];
+                    if (citizenPath.length > 1 && citizenCurrentPathIndex >= 0 && citizenCurrentPathIndex < citizenPath.length) {
+                        // Get next tile in path based on direction
+                        const nextTile = citizenPath[citizenCurrentPathIndex];
                         citizenTargetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
-                        
-                        // Occasionally pause (10% chance every time we reach a tile)
-                        if (Math.random() < 0.1) {
-                            // Pause for a moment
+                        // Continue walking - no idle pauses
+                    } else {
+                        // Path issue - recalculate
+                        const currentTilePos = worldToTile(citizenCharacter.position);
+                        citizenPath = createRoadPath(currentTilePos.x, currentTilePos.y);
+                        citizenCurrentPathIndex = 0;
+                        citizenPathDirection = 1;
+                        if (citizenPath.length > 1) {
+                            const nextTile = citizenPath[1];
+                            citizenTargetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
+                        } else {
+                            // No path available - switch to idle
                             citizenIsWalking = false;
+                            citizenTargetPosition = null;
                             const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
                             let idleAnimation = null;
                             for (const name of idleNames) {
@@ -2284,39 +2263,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                             if (idleAnimation) {
                                 switchCitizenAnimation(idleAnimation, true, 0.3);
                             }
-                            
-                            // Resume walking after 2-5 seconds
-                            setTimeout(() => {
-                                if (citizenCharacter && citizenOnRoad) {
-                                    citizenIsWalking = true;
-                                    const walkNames = ['walk', 'Walk', 'Walking', 'walking'];
-                                    let walkAnimation = null;
-                                    for (const name of walkNames) {
-                                        if (citizenAnimations[name]) {
-                                            walkAnimation = name;
-                                            break;
-                                        }
-                                    }
-                                    if (walkAnimation) {
-                                        switchCitizenAnimation(walkAnimation, true, 0.3);
-                                    }
-                                }
-                            }, 2000 + Math.random() * 3000);
-                        }
-                    } else {
-                        // No path available - switch to idle
-                        citizenIsWalking = false;
-                        citizenTargetPosition = null;
-                        const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
-                        let idleAnimation = null;
-                        for (const name of idleNames) {
-                            if (citizenAnimations[name]) {
-                                idleAnimation = name;
-                                break;
-                            }
-                        }
-                        if (idleAnimation) {
-                            switchCitizenAnimation(idleAnimation, true, 0.3);
                         }
                     }
                 }
