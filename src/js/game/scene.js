@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {createCamera} from './camera.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { AnimationMixer } from 'three';
 import {applyHoverColor, resetHoveredObject, resetObjectColor} from '../utils/meshUtils.js';
 import {  textures  } from '../meshs/data.js'
 import {
@@ -162,6 +163,17 @@ export function createScene(housesStore, gameStore, assetManager) {
     let buildings = [];
     let loadingPromises = [];
     
+    // Animation mixer for citizen character
+    let citizenMixer = null;
+    let citizenAnimations = {};
+    let currentCitizenAction = null;
+    let citizenCharacter = null; // Reference to the citizen object
+    let citizenSpawned = false; // Track if citizen has been spawned
+    let previousPopulation = 0; // Track previous population to detect changes
+    let citizenIsWalking = false; // Track if citizen is currently walking
+    let citizenTargetPosition = null; // Target position for citizen to walk to
+    const WALK_SPEED = 2; // Units per second
+    
     // OPTIMIZATION: Create a separate group for interactive objects (buildings + terrain)
     // This allows raycasting to test only relevant objects instead of all scene children
     const interactiveGroup = new THREE.Group();
@@ -184,6 +196,18 @@ export function createScene(housesStore, gameStore, assetManager) {
         terrain = [];
         buildings = [];
         loadingPromises = [];
+        
+        // Reset citizen state
+        citizenSpawned = false;
+        previousPopulation = 0;
+        citizenIsWalking = false;
+        citizenTargetPosition = null;
+        if (citizenCharacter) {
+            citizenCharacter.visible = false;
+            if (citizenCharacter.parent) {
+                citizenCharacter.parent.remove(citizenCharacter);
+            }
+        }
         
         // Recreate interactive group after scene.clear()
         const existingGroup = scene.getObjectByName('interactive-objects');
@@ -1192,6 +1216,12 @@ export function createScene(housesStore, gameStore, assetManager) {
         // Get population from housesStore (IndexedDB) instead of gameStore
         const currentPopulation = await housesStore.getGlobalPopulation();
         
+        // Check if population appeared (went from 0 to > 0) and spawn citizen if needed
+        if (currentPopulation > 0 && previousPopulation === 0 && !citizenSpawned && citizenCharacter) {
+            spawnCitizenCharacter(city);
+        }
+        previousPopulation = currentPopulation;
+        
         // Get budget data from BudgetManager
         let funds = 0;
         if (window.budgetManager) {
@@ -1319,6 +1349,98 @@ export function createScene(housesStore, gameStore, assetManager) {
     // Note: setupShadowRenderer() removed - using original inline setup for exact brightness match
 
     /**
+     * Spawns the citizen character from outside the scene and makes it walk in
+     * @param {Object} city - The city object with size information
+     */
+    function spawnCitizenCharacter(city) {
+        if (!citizenCharacter || citizenSpawned) {
+            return;
+        }
+        
+        citizenSpawned = true;
+        
+        // Calculate spawn position (outside the scene, coming from one edge)
+        // Spawn from the bottom-left corner (negative coordinates)
+        const spawnX = -3;
+        const spawnZ = -3;
+        
+        // Calculate target position (center of city)
+        const targetX = city.size / 2;
+        const targetZ = city.size / 2;
+        
+        // Set initial position (outside scene)
+        citizenCharacter.position.set(spawnX, 0, spawnZ);
+        citizenCharacter.visible = true;
+        
+        // Add to scene
+        scene.add(citizenCharacter);
+        
+        // Set target position
+        citizenTargetPosition = new THREE.Vector3(targetX, 0, targetZ);
+        
+        // Switch to walk animation
+        const walkNames = ['walk', 'Walk', 'Walking', 'walking'];
+        let walkAnimation = null;
+        for (const name of walkNames) {
+            if (citizenAnimations[name]) {
+                walkAnimation = name;
+                break;
+            }
+        }
+        
+        // If no walk animation found, try the second animation (often walk is second after idle)
+        if (!walkAnimation && Object.keys(citizenAnimations).length > 1) {
+            const animationKeys = Object.keys(citizenAnimations);
+            walkAnimation = animationKeys[1]; // Use second animation
+        }
+        
+        if (walkAnimation) {
+            switchCitizenAnimation(walkAnimation, true, 0.2);
+            citizenIsWalking = true;
+            console.log('[Scene] Citizen spawned and walking into scene', {
+                from: { x: spawnX, z: spawnZ },
+                to: { x: targetX, z: targetZ }
+            });
+        } else {
+            console.warn('[Scene] No walk animation found, using first available');
+            citizenIsWalking = true;
+        }
+    }
+
+    /**
+     * Switches the citizen character animation
+     * @param {string} animationName - Name of the animation to play (e.g., 'idle', 'walk', 'Walking')
+     * @param {boolean} fadeIn - Whether to fade in the new animation (default: true)
+     * @param {number} fadeDuration - Duration of fade transition in seconds (default: 0.3)
+     */
+    function switchCitizenAnimation(animationName, fadeIn = true, fadeDuration = 0.3) {
+        if (!citizenMixer || !citizenAnimations[animationName]) {
+            console.warn('[Scene] Cannot switch animation:', animationName, 'Available:', Object.keys(citizenAnimations));
+            return;
+        }
+        
+        // Stop current animation
+        if (currentCitizenAction) {
+            if (fadeIn) {
+                currentCitizenAction.fadeOut(fadeDuration);
+            } else {
+                currentCitizenAction.stop();
+            }
+        }
+        
+        // Play new animation
+        const newAction = citizenMixer.clipAction(citizenAnimations[animationName]);
+        if (fadeIn) {
+            newAction.reset().fadeIn(fadeDuration).play();
+        } else {
+            newAction.reset().play();
+        }
+        
+        currentCitizenAction = newAction;
+        console.log('[Scene] Switched to animation:', animationName);
+    }
+
+    /**
      * Loads and adds the citizen character to the scene
      * @param {Object} city - The city object with size information
      */
@@ -1385,15 +1507,59 @@ export function createScene(housesStore, gameStore, assetManager) {
                     }
                 });
                 
-                // Add to scene
-                scene.add(citizen);
+                // Set up animations
+                if (gltf.animations && gltf.animations.length > 0) {
+                    // Create animation mixer for the citizen
+                    citizenMixer = new AnimationMixer(citizen);
+                    
+                    // Store all animations
+                    gltf.animations.forEach((clip) => {
+                        citizenAnimations[clip.name] = clip;
+                        console.log('[Scene] Found animation:', clip.name, `(${clip.duration.toFixed(2)}s)`);
+                    });
+                    
+                    // Play the first animation (typically idle) or look for 'idle' or 'Idle' animation
+                    let animationToPlay = null;
+                    const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
+                    
+                    // Try to find an idle animation
+                    for (const name of idleNames) {
+                        if (citizenAnimations[name]) {
+                            animationToPlay = citizenAnimations[name];
+                            break;
+                        }
+                    }
+                    
+                    // If no idle found, use the first animation
+                    if (!animationToPlay && gltf.animations.length > 0) {
+                        animationToPlay = gltf.animations[0];
+                    }
+                    
+                    // Play the animation
+                    if (animationToPlay) {
+                        currentCitizenAction = citizenMixer.clipAction(animationToPlay);
+                        currentCitizenAction.play();
+                        console.log('[Scene] Playing animation:', animationToPlay.name);
+                    }
+                } else {
+                    console.warn('[Scene] No animations found in citizen GLB file');
+                }
                 
-                console.log('[Scene] Citizen character loaded and added to scene', {
-                    position: citizen.position,
+                // Store reference to citizen character
+                citizenCharacter = citizen;
+                
+                // Initially hide the character (will spawn when population appears)
+                citizen.visible = false;
+                
+                // Don't add to scene yet - will be added when population appears
+                // scene.add(citizen);
+                
+                console.log('[Scene] Citizen character loaded (ready to spawn when population appears)', {
                     scale: citizen.scale,
                     boundingBoxSize: size,
                     boundingBoxCenter: center,
                     path: citizenPath,
+                    animationsCount: gltf.animations ? gltf.animations.length : 0,
                     tip: 'If character is too big/small, adjust characterScale (currently ' + characterScale + ')'
                 });
             },
@@ -1703,7 +1869,69 @@ export function createScene(housesStore, gameStore, assetManager) {
         return performanceStats.enabled;
     };
     
+    // Store last frame time for animation delta calculation
+    let lastFrameTime = performance.now();
+    
     function draw() {
+        // Calculate delta time for animations (in seconds)
+        const currentTime = performance.now();
+        const deltaTime = (currentTime - lastFrameTime) / 1000; // Convert to seconds
+        lastFrameTime = currentTime;
+        
+        // Update citizen animations if mixer exists
+        if (citizenMixer) {
+            citizenMixer.update(deltaTime);
+        }
+        
+        // Update citizen movement if walking
+        if (citizenIsWalking && citizenCharacter && citizenTargetPosition) {
+            const currentPos = citizenCharacter.position;
+            const direction = new THREE.Vector3()
+                .subVectors(citizenTargetPosition, currentPos)
+                .normalize();
+            
+            const distance = currentPos.distanceTo(citizenTargetPosition);
+            
+            if (distance > 0.1) {
+                // Still walking - move towards target
+                const moveDistance = WALK_SPEED * deltaTime;
+                citizenCharacter.position.add(
+                    direction.multiplyScalar(moveDistance)
+                );
+                
+                // Rotate character to face movement direction
+                if (direction.length() > 0) {
+                    const angle = Math.atan2(direction.x, direction.z);
+                    citizenCharacter.rotation.y = angle;
+                }
+            } else {
+                // Reached destination - switch to idle
+                citizenCharacter.position.copy(citizenTargetPosition);
+                citizenIsWalking = false;
+                citizenTargetPosition = null;
+                
+                // Switch to idle animation
+                const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
+                let idleAnimation = null;
+                for (const name of idleNames) {
+                    if (citizenAnimations[name]) {
+                        idleAnimation = name;
+                        break;
+                    }
+                }
+                
+                // If no idle found, use first animation
+                if (!idleAnimation && Object.keys(citizenAnimations).length > 0) {
+                    idleAnimation = Object.keys(citizenAnimations)[0];
+                }
+                
+                if (idleAnimation) {
+                    switchCitizenAnimation(idleAnimation, true, 0.3);
+                    console.log('[Scene] Citizen reached destination, switching to idle');
+                }
+            }
+        }
+        
         updateFocusedObject(); // Update focused object every frame
         // OPTIMIZATION: Update frustum culling for zone groups (throttled)
         updateFrustumCulling();
@@ -2199,6 +2427,8 @@ function onTouchEnd(event) {
         get domElement() { return renderer.domElement; },
         // Expose camera for mobile controls
         get camera() { return camera; },
-        suppressInput
+        suppressInput,
+        // Expose animation control for citizen character
+        switchCitizenAnimation
     }
 }
