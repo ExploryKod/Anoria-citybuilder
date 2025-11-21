@@ -513,8 +513,9 @@ class BudgetManager {
     /**
      * Add building maintenance expenses only
      * @param {number} amount - Building maintenance cost
+     * @param {string} description - Optional custom description (default: 'Maintenance bâtiments')
      */
-    async addBuildingMaintenance(amount) {
+    async addBuildingMaintenance(amount, description = 'Maintenance bâtiments') {
         const budget = await this.getCurrentBudget();
         
         // Validate input amount
@@ -536,30 +537,48 @@ class BudgetManager {
                 total: 0
             };
             
+            // Maintenance costs per building type (per month)
+            const maintenanceCosts = {
+                'roads': 2,
+                'House-Blue': 3,
+                'House-Red': 3,
+                'House-Purple': 3,
+                'House-2Story': 3,
+                'Farm': 1,
+                'Market': 1
+            };
+            
             houses.forEach(house => {
                 if (!house.type) return;
                 
                 const type = house.type;
+                let cost = 2; // Default cost
                 
-                if (type.includes('House')) {
-                    maintenanceBreakdown.houses += 2;
+                if (type.includes('roads')) {
+                    cost = maintenanceCosts['roads'];
+                    maintenanceBreakdown.roads += cost;
+                } else if (type === 'House-Blue' || type === 'House-Red' || type === 'House-Purple' || type === 'House-2Story' || type.includes('House')) {
+                    cost = maintenanceCosts['House-Blue']; // All houses cost 3€
+                    maintenanceBreakdown.houses += cost;
                 } else if (type.includes('Farm')) {
-                    maintenanceBreakdown.farms += 2;
+                    cost = maintenanceCosts['Farm'];
+                    maintenanceBreakdown.farms += cost;
                 } else if (type.includes('Market')) {
-                    maintenanceBreakdown.markets += 2;
-                } else if (type.includes('roads')) {
-                    maintenanceBreakdown.roads += 2;
+                    cost = maintenanceCosts['Market'];
+                    maintenanceBreakdown.markets += cost;
                 } else if (type.includes('Well') || type.includes('Fountain') || type.includes('Streetlight')) {
-                    maintenanceBreakdown.infrastructure += 2;
+                    cost = 2; // Infrastructure default
+                    maintenanceBreakdown.infrastructure += cost;
                 } else if (type.includes('Windmill') || type.includes('Barn')) {
-                    maintenanceBreakdown.industry += 2;
+                    cost = 2; // Industry default
+                    maintenanceBreakdown.industry += cost;
                 }
                 
-                maintenanceBreakdown.total += 2;
+                maintenanceBreakdown.total += cost;
             });
             
-            // Add journal entry
-            await this.addJournalEntry(budget.turn, 'maintenance', amount, 'Maintenance bâtiments');
+            // Add journal entry with custom description
+            await this.addJournalEntry(budget.turn, 'maintenance', amount, description);
             
             // Update budget
             budget.funds -= amount;

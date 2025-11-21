@@ -4394,10 +4394,25 @@ function createJournalEntryHTML(entry) {
     const typeLabels = {
         'income': 'Revenu',
         'expense': 'Dépense',
-        'maintenance': 'Maintenance',
+        'maintenance': 'Maintenance mensuelle',
         'loan_interest': 'Intérêts prêt',
         'loan_repayment': 'Remboursement prêt'
     };
+    
+    // Check if description contains breakdown data
+    const breakdownMatch = entry.description?.match(/\|BREAKDOWN\|(.*?)\|BREAKDOWN\|/);
+    let descriptionText = entry.description || '';
+    let breakdownItems = null;
+    
+    if (breakdownMatch && entry.type === 'maintenance') {
+        try {
+            breakdownItems = JSON.parse(breakdownMatch[1]);
+            // Remove breakdown data from description text
+            descriptionText = entry.description.replace(/\|BREAKDOWN\|.*?\|BREAKDOWN\|/, '').trim();
+        } catch (e) {
+            console.warn('Failed to parse maintenance breakdown:', e);
+        }
+    }
     
     return `
         <div class="journal-entry">
@@ -4408,8 +4423,22 @@ function createJournalEntryHTML(entry) {
                 </span>
             </div>
             <div class="journal-entry-details">
-                <span class="journal-entry-description">${entry.description}</span>
-                <span class="journal-entry-turn">${formattedDate}</span>
+                <div class="journal-entry-description">${descriptionText}</div>
+                ${breakdownItems ? `
+                <ul class="journal-maintenance-breakdown">
+                    ${breakdownItems.map(item => `
+                        <li class="journal-breakdown-item">
+                            <span class="breakdown-label">${item.label}:</span>
+                            <span class="breakdown-count">${item.count}</span>
+                            <span class="breakdown-multiply">×</span>
+                            <span class="breakdown-unit-cost">${item.unitCost}€</span>
+                            <span class="breakdown-equals">=</span>
+                            <span class="breakdown-total">${item.total}€</span>
+                        </li>
+                    `).join('')}
+                </ul>
+                ` : ''}
+                <div class="journal-entry-turn">${formattedDate}</div>
             </div>
         </div>
     `;
