@@ -22,7 +22,7 @@
 
 .city-map-wrapper {
     background: #ffffff;
-    border-radius: 16px;
+    border-radius: var(--border-radius);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
     width: 100%;
     max-width: 1200px;
@@ -51,7 +51,7 @@
 .city-map-close-btn {
     cursor: pointer;
     padding: 8px;
-    border-radius: 8px;
+    border-radius: var(--border-radius-small);
     transition: all 0.2s ease;
     color: #ffffff;
 }
@@ -131,7 +131,7 @@
 .city-map-legend {
     background: #ffffff;
     padding: 20px;
-    border-radius: 12px;
+    border-radius: var(--border-radius-medium);
     border: 1px solid rgba(255,152,0,0.35);
     display: flex;
     flex-direction: column;
@@ -150,7 +150,7 @@
     border: 1px solid #ffb74d;
     color: #ffffff;
     padding: 8px 10px;
-    border-radius: 8px;
+    border-radius: var(--border-radius-small);
     cursor: pointer;
     transition: background 0.2s ease, transform 0.12s ease, box-shadow 0.2s ease;
     display: inline-flex;
@@ -367,7 +367,7 @@
 /* Grid Styles */
 .city-map-grid {
     background: #ffffff;
-    border-radius: 12px;
+    border-radius: var(--border-radius-medium);
     padding: 20px;
     overflow-x: auto;
     border: 1px solid rgba(255,152,0,0.35);
@@ -772,7 +772,7 @@
     .city-map-filters button {
         padding: 8px 14px;
         font-size: 0.85rem;
-        border-radius: 8px;
+        border-radius: var(--border-radius-small);
         border: 1px solid #ffcc80;
         background: #fff7e6;
         color: #1b1b1b;

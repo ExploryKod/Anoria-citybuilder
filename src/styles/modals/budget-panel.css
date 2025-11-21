@@ -19,7 +19,7 @@
 .budget-panel-wrapper {
     background: #fafafa;
     color: var(--primary);
-    border-radius: 15px;
+    border-radius: var(--border-radius);
     box-shadow: 0 20px 40px rgba(0,0,0,0.3);
     width: 90%;
     max-width: 1000px;
@@ -65,7 +65,7 @@
     color: var(--cta);
     width: 40px;
     height: 40px;
-    border-radius: 10px;
+    border-radius: var(--border-radius-small);
     cursor: pointer;
     display: flex;
     align-items: center;

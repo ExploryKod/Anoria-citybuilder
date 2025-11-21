@@ -19,7 +19,7 @@
 .journal-wrapper {
     background: #fafafa;
     color: var(--primary);
-    border-radius: 15px;
+    border-radius: var(--border-radius);
     box-shadow: 0 20px 40px rgba(0,0,0,0.3);
     width: 90%;
     max-width: 1000px;
@@ -171,7 +171,7 @@
 .journal-entry-type {
     display: inline-block;
     padding: 4px 12px;
-    border-radius: 12px;
+    border-radius: var(--border-radius-medium);
     font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;

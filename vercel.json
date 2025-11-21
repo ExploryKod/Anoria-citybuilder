@@ -27,7 +27,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://anoria.vercel.app https://storage.googleapis.com; style-src 'self' 'unsafe-inline' https://anoria.vercel.app; img-src 'self' data: blob: https://anoria.vercel.app; font-src 'self' data: https://anoria.vercel.app; media-src 'self' blob: https://anoria.vercel.app; connect-src 'self' blob: ws://localhost:9876 wss://194.164.76.63 wss://*.railway.app wss://*.render.com wss://*.fly.dev https://anoria.vercel.app https://*.vercel.app; worker-src 'self' blob: https://storage.googleapis.com; child-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://anoria.vercel.app https://storage.googleapis.com; style-src 'self' 'unsafe-inline' data: https://anoria.vercel.app; img-src 'self' data: blob: https://anoria.vercel.app https://github.com; font-src 'self' data: https://anoria.vercel.app; media-src 'self' blob: https://anoria.vercel.app; connect-src 'self' blob: ws://localhost:9876 wss://194.164.76.63 wss://*.railway.app wss://*.render.com wss://*.fly.dev https://anoria.vercel.app https://*.vercel.app https://github.com; worker-src 'self' blob: https://storage.googleapis.com; child-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;"
         },
         {
           "key": "Strict-Transport-Security",
