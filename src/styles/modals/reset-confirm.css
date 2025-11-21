@@ -8,7 +8,7 @@
     max-height: 80vh;
     background: #fafafa;
     border: 3px solid #ef4444;
-    border-radius: 10px;
+    border-radius: var(--border-radius-small);
     z-index: var(--z-index-modal);
     color: var(--primary);
     font-family: inherit;
@@ -109,7 +109,7 @@
     gap: 12px;
     padding: 12px;
     background: white;
-    border-radius: 8px;
+    border-radius: var(--border-radius-small);
     border: 2px solid #fecaca;
 }
 
@@ -155,7 +155,7 @@
     font-size: 15px;
     font-weight: 600;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--border-radius-small);
     cursor: pointer;
     transition: all 0.2s ease;
 }

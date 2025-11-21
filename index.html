@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="./src/styles/btn.css">
     <link rel="stylesheet" href="./src/styles/tooltip.css">
     <link rel="stylesheet" href="./src/styles/tutorial.css">
+    <link rel="stylesheet" href="./src/styles/parameters.css">
     <link rel="stylesheet" href="./src/styles/legends.css">
     <link rel="stylesheet" href="./src/styles/orientation-toast.css">
     
@@ -546,7 +547,7 @@
                       <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
                       <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
                       </svg>
-                      <span>Légendes Finances</span>
+                      <span>Finances</span>
                   </button>
                   <div id="finance-dropdown" class="finance-dropdown hidden">
                       <div class="legend-item">
@@ -625,7 +626,7 @@
                     <path d="M16 12h.01"/>
                     <path d="M7 16h10"/>
                   </svg>
-                  <span>Commandes du jeu</span>
+                  <span>Commandes</span>
                 </button>
                 <div id="command-dropdown" class="command-dropdown hidden">
                   <div class="command-title">
@@ -716,6 +717,21 @@
                     </svg>
                   </span>
                   <span class="sr-only">Basculer les contrôles caméra</span>
+                </button>
+              </div>
+
+              <div class="legend-btns parameters-btn-container">
+                <button
+                  id="parameters-btn"
+                  class="parameters-toggle-btn"
+                  title="Paramètres"
+                  aria-label="Paramètres"
+                  aria-haspopup="dialog"
+                  aria-controls="parameters-panel"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sliders-horizontal-icon lucide-sliders-horizontal"><path d="M10 5H3"/><path d="M12 19H3"/><path d="M14 3v4"/><path d="M16 17v4"/><path d="M21 12h-9"/><path d="M21 19h-5"/><path d="M21 5h-7"/><path d="M8 10v4"/><path d="M8 12H3"/></svg>
+                  <span class="parameters-toggle-btn-text">Paramètres</span>
+              
                 </button>
               </div>
         </div>
@@ -839,7 +855,9 @@
     </div>
 </div>
 <footer>
-    <span>Projet de Amaury Franssen - 2024 &copy; Tout droit réservé </span>
+    <div class="footer-content">
+        <span>Projet de Amaury Franssen - 2024 &copy; Tout droit réservé </span>
+    </div>
 </footer>
 
 <!-- Real-time Budget Popup -->
@@ -1852,6 +1870,72 @@
     </div>
 </div>
 
+<div
+    id="parameters-panel"
+    class="parameters-panel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="parameters-panel-title"
+    aria-hidden="true"
+    tabindex="-1"
+>
+    <div class="parameters-panel-wrapper">
+        <div class="parameters-panel-header">
+            <h3 id="parameters-panel-title">🔧 Paramètres</h3>
+        </div>
+        <div class="parameters-panel-content">
+            <div class="parameters-content">
+                <div class="parameters-section">
+                    <h4 class="parameters-section-title">Gestion des évènements</h4>
+                    <div class="parameters-control-group">
+                        <label class="parameters-control-label">
+                            <span class="parameters-control-text">Évènements possibles ?</span>
+                            <input type="checkbox" id="events-enabled-toggle" class="parameters-switch" checked>
+                        </label>
+                    </div>
+                    <div class="parameters-control-group">
+                        <label class="parameters-control-label" for="event-probability-input">
+                            <span class="parameters-control-text">Probabilité /100</span>
+                            <input 
+                                type="number" 
+                                id="event-probability-input" 
+                                class="parameters-number-input" 
+                                min="0" 
+                                max="100" 
+                                value="5"
+                            >
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="parameters-section">
+                    <h4 class="parameters-section-title">Gestion du temps</h4>
+                    <div class="parameters-control-group">
+                        <label class="parameters-control-label" for="days-per-month-input">
+                            <span class="parameters-control-text">Nombre de tours (jours) / mois</span>
+                            <input 
+                                type="number" 
+                                id="days-per-month-input" 
+                                class="parameters-number-input" 
+                                min="1" 
+                                max="30" 
+                                value="1"
+                            >
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="parameters-buttons">
+                <div class="parameters-buttons-wrapper">
+                    <button class="parameters-previous-btn" type="button" disabled>Précédent</button>
+                    <button class="parameters-next-btn" type="button" disabled>Suivant</button>
+                    <button class="parameters-close-btn" type="button">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="module" src="/src/main.js"></script>
 <script type="module" src="/src/js/game/game.js"></script>
 <script type="module" src="/src/js/utils/EventBlocker.js"></script>
@@ -1861,6 +1945,7 @@
 <script type="module" src="/src/js/ui/ObjectivesTracker.js"></script>
 <script type="module" src="/src/js/ui/buttons.js"></script>
 <script type="module" src="/src/js/ui/tutorial.js"></script>
+<script type="module" src="/src/js/ui/parameters.js"></script>
 <script type="module" src="/src/js/ui/objectives.js"></script>
 <script type="module" src="/src/js/ui/objectives-history.js"></script>
 

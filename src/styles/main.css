@@ -54,6 +54,12 @@
     --z-index-modal: 10030; /* Maximum z-index for modals */
     --z-index-notification: 10040; /* Highest - for notifications that must appear above everything */
     --footer-height: 40px;
+
+    /* Border radius */
+    --border-radius: 15px;
+    --border-radius-small: 10px;
+    --border-radius-medium: 12px;
+    --border-radius-large: 14px;
 }
 
 .sr-only {
@@ -165,14 +171,17 @@ canvas.pointer-events-disabled {
 }
 
 .root-window {
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    box-sizing: border-box;
 }
 
 .root-window .game-window {
     position: relative;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
+    box-sizing: border-box;
 }
 
 .game-window .toolbar {
@@ -212,7 +221,7 @@ canvas.pointer-events-disabled {
         max-height: 70vh;
         height: auto;
         padding: 16px;
-        border-radius: 16px;
+        border-radius: var(--border-radius);
         box-shadow: 0 15px 30px rgba(0, 0, 0, 0.35);
         overflow-y: auto;
         background-color: var(--toolbar-bg-color);
@@ -245,7 +254,7 @@ canvas.pointer-events-disabled {
         transform: translateX(-50%);
         width: calc(100% - 24px);
         padding: 16px;
-        border-radius: 16px;
+        border-radius: var(--border-radius);
         box-shadow: 0 15px 30px rgba(0, 0, 0, 0.35);
         overflow-y: auto;
         background-color: var(--toolbar-bg-color);
@@ -273,7 +282,7 @@ canvas.pointer-events-disabled {
 #replay-btn,
 .toolbar .toolbar-btn {
     border: 3px solid var(--cta);
-    border-radius: 10px;
+    border-radius: var(--border-radius-small);
    
     background-color: var(--toolbar-btn-color);
     color: var(--primary);
@@ -365,7 +374,7 @@ canvas.pointer-events-disabled {
 #play-btn,
 .pause-overlay .play-btn {
     padding: 5px;
-    border-radius: 10px;
+    border-radius: var(--border-radius-small);
     cursor: pointer;
     background-color: var(--toolbar-btn-color) !important;
     border: 3px solid var(--cta) !important;
@@ -394,7 +403,7 @@ canvas.pointer-events-disabled {
     color: var(--primary) !important;
     box-shadow: none !important;
     border: 3px solid var(--cta) !important;
-    border-radius: 10px !important;
+    border-radius: var(--border-radius-small) !important;
 }
 
 #play-btn.bubbly-button:hover {
@@ -441,7 +450,7 @@ canvas.pointer-events-disabled {
 }
 
 .game-window .pause-overlay, .game-window .over-overlay {
-    border-radius: 15px;
+    border-radius: var(--border-radius);
 
 }
 
@@ -465,7 +474,7 @@ canvas.pointer-events-disabled {
 }
 .over-overlay .over-overlay__text {
     padding: 20px;
-    border-radius: 10px;
+    border-radius: var(--border-radius-small);
     background-color: #fafafa;
     color: #000235;
     display: flex;
@@ -476,7 +485,7 @@ canvas.pointer-events-disabled {
 .game-window .panel-close-btn {
     width: 50px;
     height: 50px;
-    border-radius: 10px;
+    border-radius: var(--border-radius-small);
     background-color: #fff;
     color: #000235;
     display: flex;
@@ -489,7 +498,7 @@ canvas.pointer-events-disabled {
     background-color: var(--cta);
     margin: 0 auto;
     padding: 20px 30px;
-    border-radius: 15px;
+    border-radius: var(--border-radius);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -504,7 +513,7 @@ canvas.pointer-events-disabled {
     min-height: 200px;
     font-size: 28px;
     font-weight: 700;
-    border-radius: 20px;
+    border-radius: var(--border-radius);
     padding: 20px;
     display: flex;
     justify-content: center;
@@ -550,7 +559,7 @@ canvas.pointer-events-disabled {
     min-height: auto;
     max-width: 75%;
     padding: 40px;
-    border-radius: 10px;
+    border-radius: var(--border-radius-small);
     background-color: #fff;
     display: grid;
     grid-template-columns: repeat( 3, 1fr);
@@ -566,7 +575,7 @@ canvas.pointer-events-disabled {
     width: 100%;
     height: 100%;
     padding: 5px;
-    border-radius: 10px;
+    border-radius: var(--border-radius-small);
     background-color: #fafafa;
     border: none;
     box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
@@ -677,7 +686,7 @@ canvas.pointer-events-disabled {
 .legend-toggle-btn {
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+  border-radius: var(--border-radius-small);
   padding: 8px;
   cursor: pointer;
   display: flex;
@@ -700,7 +709,7 @@ canvas.pointer-events-disabled {
   left: 100%;
   margin-left: 8px;
   background: #2d2d2d;
-  border-radius: 8px;
+  border-radius: var(--border-radius-small);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   min-width: 240px;
   overflow: hidden;
@@ -890,7 +899,7 @@ canvas.pointer-events-disabled {
     height: 100%;
     width: auto;
     transition: all 0.5s ease-in;
-    border-radius: 10px;
+    border-radius: var(--border-radius-small);
 }
 
 
@@ -902,7 +911,7 @@ canvas.pointer-events-disabled {
     width: 100%;
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     column-gap: 20px;
     row-gap: 10px;
@@ -917,7 +926,7 @@ canvas.pointer-events-disabled {
 
 .info-panel > .info-box, .info-box-stats > .info-box, .info-box-global-numbers > .info-box {
     height: 40px;
-    border-radius: 10px;
+    border-radius: var(--border-radius-small);
     padding: 10px;
     background-color: var(--cta);
     border-right: 1px solid var(--primary);
@@ -1046,21 +1055,27 @@ canvas.pointer-events-disabled {
 }
 
 footer {
-    max-width: 600px;
-    min-height: var(--footer-height);
+    width: 100%;
     position: absolute;
     bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    right: 0;
-    margin: 0 auto;
-    padding: 5px;
-    background-color: #fff;
-    color: var(--lightgreen);
-    border-radius: 10px 10px 0 0;
+    left: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
+}
+
+footer .footer-content {
+    width: 600px;
+    min-height: var(--footer-height);
+    padding: 5px;
+    background-color: #fff;
+    color: var(--lightgreen);
+    border-radius: var(--border-radius-small) var(--border-radius-small) 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
 }
 
 footer span {
@@ -1098,7 +1113,7 @@ footer a:hover {
     gap: 12px;
     justify-content: flex-start;
     align-items: stretch;
-    border-radius: 12px 0 0 12px;
+    border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
     background: #fff;
     color: #1b1b1b;
     box-shadow: 0 12px 30px rgba(0,0,0,0.25);
@@ -1113,7 +1128,7 @@ footer a:hover {
     padding: 6px 8px;
     background: linear-gradient(135deg, #ff9800, #ffb74d);
     color: #fff;
-    border-radius: 8px;
+    border-radius: var(--border-radius-small);
 }
 
 .info-building-overlay .info-building__header > div:nth-of-type(1) {
@@ -1152,12 +1167,12 @@ footer a:hover {
 }
 .info-building-overlay .info-building__body::-webkit-scrollbar-thumb {
     background: #ff9800;
-    border-radius: 8px;
+    border-radius: var(--border-radius-small);
     border: 2px solid #fff; /* creates a gap and improves contrast on white bg */
 }
 .info-building-overlay .info-building__body::-webkit-scrollbar-track {
     background: rgba(0,0,0,0.05);
-    border-radius: 8px;
+    border-radius: var(--border-radius-small);
 }
 .info-building-overlay .info-building__body::-webkit-scrollbar-thumb:hover {
     background: #fb8c00; /* slightly darker on hover */
@@ -1182,7 +1197,7 @@ footer a:hover {
     background: rgba(255,255,255,0.2);
     color: #fff;
     border: 1px solid rgba(255,255,255,0.35);
-    border-radius: 8px;
+    border-radius: var(--border-radius-small);
     padding: 4px 8px;
     cursor: pointer;
     transition: background 160ms ease, transform 120ms ease, box-shadow 140ms ease, opacity 120ms ease;
@@ -1244,7 +1259,7 @@ footer a:hover {
     gap: 8px;
     padding: 6px 8px;
     border: 1px solid rgba(0,0,0,0.06);
-    border-radius: 8px;
+    border-radius: var(--border-radius-small);
     background: #fff;
     transition: background 140ms ease, border-color 140ms ease;
 }
@@ -1271,7 +1286,7 @@ footer a:hover {
     width: 90%;
     background: #fafafa;
     border: 3px solid var(--cta);
-    border-radius: 10px;
+    border-radius: var(--border-radius-small);
     color: var(--primary);
     font-family: inherit;
     opacity: 0;
@@ -1307,7 +1322,7 @@ footer a:hover {
     font-size: 15px;
     font-weight: 600;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--border-radius-small);
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -1406,9 +1421,9 @@ button#pwa-refresh:hover {
 
 @media screen and (max-width: 1024px) and (orientation: portrait) {
 
-    footer {
-        left: 0;
-        transform: translateX(0);
+    footer .footer-content {
+        width: 100%;
+        border-radius: 0;
     }
     /* ================================ INFO PANEL (PORTRAIT) ================================ */
     .info-panel-wrapper .info-panel .info-box.infos-time {
@@ -1437,9 +1452,9 @@ button#pwa-refresh:hover {
 /* Mobile Landscape - Mode responsive */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
 
-    footer {
-        left: 50%;
-        transform: translateX(-50%);
+    footer .footer-content {
+        width: 100%;
+        border-radius: 0;
     }
 
     body {

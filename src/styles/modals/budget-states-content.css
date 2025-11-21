@@ -20,7 +20,7 @@
 .budget-state-item {
     background: rgba(251, 129, 34, 0.05);
     border: 1px solid rgba(251, 129, 34, 0.2);
-    border-radius: 10px;
+    border-radius: var(--border-radius-small);
     padding: 15px;
     margin-bottom: 10px;
     transition: all 0.3s ease;

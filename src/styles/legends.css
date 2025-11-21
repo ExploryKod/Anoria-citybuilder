@@ -1,14 +1,23 @@
-/* Legend buttons container */
+
+/* Legend buttons container - positioned at bottom for all screen sizes */
 .legend-btns-container {
-  position: absolute;
-  top: 5px;
-  /* Left position is set dynamically by JavaScript based on toolbar width */
-  left: 115px; /* Fallback value, will be overridden by JS */
+  display: none;
   z-index: var(--z-index-legend);
-  display: none; /* Hidden initially, shown after scene loads */
-  flex-direction: column;
+  position: absolute;
+  top: auto;
+  bottom: calc(var(--footer-height) + 10px);
+  left: 50%; /* Center horizontally - same as footer */
+  transform: translateX(-50%); /* Center the container - same as footer */
+  display: flex;
+  flex-direction: row; /* Horizontal layout */
   gap: 8px;
-  /* GSAP will handle the animation */
+  justify-content: center;
+  align-items: center;
+  max-width: 600px; /* Same max-width as footer for alignment */
+  width: auto; /* Auto width to fit content, constrained by max-width */
+  min-width: 0; /* Allow shrinking */
+  padding: 0 10px; /* Add some padding to prevent buttons from touching edges */
+  box-sizing: border-box;
 }
 
 /* Legend buttons - common styles for all legend buttons */
@@ -24,23 +33,28 @@
 .legend-toggle-btn,
 .finance-toggle-btn,
 .command-toggle-btn,
-.toolbar-toggle-btn {
+.toolbar-toggle-btn,
+.parameters-toggle-btn {
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+  border-radius: var(--border-radius-small);
   padding: 8px 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: flex-start; /* Left align text */
-  color: #666;
+  justify-content: flex-start;
+  column-gap: 8px;
   transition: all 0.2s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  min-width: 180px;
+  flex: 1 1 0; /* Equal flex distribution, allow shrinking */
+  min-width: 0; /* Allow flex items to shrink below content size */
+  max-width: 145px; /* Max width per button: (600px - 20px padding - 24px gaps) / 4 ≈ 145px */
   height: 40px;
   white-space: nowrap;
   text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
 }
 
 .toolbar-toggle-btn.active {
@@ -57,20 +71,26 @@
 .legend-toggle-btn:hover,
 .finance-toggle-btn:hover,
 .command-toggle-btn:hover,
-.toolbar-toggle-btn:hover {
+.toolbar-toggle-btn:hover,
+.parameters-toggle-btn:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   color: #333;
 }
 
-.legend-toggle-btn span,
-.finance-toggle-btn span,
-.command-toggle-btn span,
-.toolbar-toggle-btn span {
-  margin-left: 8px;
+.legend-toggle-btn span:nth-of-type(1),
+.finance-toggle-btn span:nth-of-type(1),
+.command-toggle-btn span:nth-of-type(1),
+.toolbar-toggle-btn span:nth-of-type(1),
+.parameters-toggle-btn span:nth-of-type(1) {
   font-size: 13px;
   font-weight: 600;
   color: #666;
 }
+
+.parameters-toggle-btn-icon svg {
+  stroke: currentColor;
+}
+
 
 .toolbar-mobile-toggle-btn,
 .toolbar-mobile-controls-toggle-btn {
@@ -102,17 +122,19 @@
 
 .legend-dropdown {
   position: absolute;
-  top: 0;
+  top: auto;
+  bottom: 100%;
   left: 100%;
   margin-left: 8px;
+  margin-bottom: 8px;
   background: #2d2d2d;
-  border-radius: 8px;
+  border-radius: var(--border-radius-small);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   min-width: 240px;
   overflow: hidden;
   opacity: 0;
   visibility: hidden;
-  transform: translateX(-10px);
+  transform: translateY(10px);
   transition: all 0.2s ease;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -120,7 +142,7 @@
 .legend-dropdown:not(.hidden) {
   opacity: 1;
   visibility: visible;
-  transform: translateX(0);
+  transform: translateY(0);
 }
 
 .legend-item {
@@ -217,17 +239,19 @@
 /* Command dropdown - same style as legend-dropdown */
 .command-dropdown {
   position: absolute;
-  top: 0;
+  top: auto;
+  bottom: 100%;
   left: 100%;
   margin-left: 8px;
+  margin-bottom: 8px;
   background: #2d2d2d;
-  border-radius: 8px;
+  border-radius: var(--border-radius-small);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   min-width: 340px;
   overflow: hidden;
   opacity: 0;
   visibility: hidden;
-  transform: translateX(-10px);
+  transform: translateY(10px);
   transition: all 0.2s ease;
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 20px;
@@ -238,7 +262,7 @@
 .command-dropdown:not(.hidden) {
   opacity: 1;
   visibility: visible;
-  transform: translateX(0);
+  transform: translateY(0);
 }
 
 .command-title h4 {
@@ -301,17 +325,19 @@
 
 .finance-dropdown {
   position: absolute;
-  top: 0;
+  top: auto;
+  bottom: 100%;
   left: 100%;
   margin-left: 8px;
+  margin-bottom: 8px;
   background: #2d2d2d;
-  border-radius: 8px;
+  border-radius: var(--border-radius-small);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   min-width: 240px;
   overflow: hidden;
   opacity: 0;
   visibility: hidden;
-  transform: translateX(-10px);
+  transform: translateY(10px);
   transition: all 0.2s ease;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -319,34 +345,29 @@
 .finance-dropdown:not(.hidden) {
   opacity: 1;
   visibility: visible;
-  transform: translateX(0);
+  transform: translateY(0);
 }
+
+/* Desktop: Keep text visible, buttons at bottom */
+/* Text is visible by default, no need to hide it on desktop */
 
 /* Tablet and Mobile responsive */
 @media (max-width: 1024px) {
-  .legend-btns-container {
-    top: auto;
-    bottom: calc(var(--footer-height) + 10px);
-    left: 50% !important; /* Center horizontally */
-    right: auto !important;
-    transform: translateX(-50%); /* Center the container */
-    flex-direction: row; /* Horizontal layout for mobile */
-    gap: 8px;
-  }
-  
-  /* Hide text, show only icons */
+  /* Hide text, show only icons on mobile/tablet */
   .legend-toggle-btn span,
   .finance-toggle-btn span,
   .command-toggle-btn span,
-  .toolbar-toggle-btn span {
+  .toolbar-toggle-btn span,
+  .parameters-toggle-btn span {
     display: none;
   }
   
-  /* Make buttons icon-only, square shape */
+  /* Make buttons icon-only, circular shape on mobile/tablet */
   .legend-toggle-btn,
   .finance-toggle-btn,
   .command-toggle-btn,
-  .toolbar-toggle-btn {
+  .toolbar-toggle-btn,
+  .parameters-toggle-btn {
     min-width: 48px;
     width: 48px;
     height: 48px;
@@ -360,41 +381,33 @@
     display: block;
   }
   
-  /* Adjust dropdown positions for bottom-right buttons */
+  /* Adjust dropdown positions for mobile - center them above buttons */
   .legend-dropdown,
   .finance-dropdown {
-    top: auto;
-    bottom: 100%;
-    left: auto;
-    right: 0;
-    transform: translateX(50%) !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) translateY(10px) !important;
     margin-left: 0;
     margin-right: 0;
-    margin-bottom: 8px;
-    transform: translateY(10px);
   }
   
   .legend-dropdown:not(.hidden),
   .finance-dropdown:not(.hidden) {
-    transform: translateY(0);
+    transform: translateX(-50%) translateY(0) !important;
   }
   
   .command-dropdown {
-    top: auto;
-    bottom: 100%;
-    left: auto;
-    right: 0;
-    transform: translateX(50%) !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) translateY(10px) !important;
     margin-left: 0;
     margin-right: 0;
-    margin-bottom: 8px;
-    transform: translateY(10px);
     max-width: calc(100vw - 20px);
     font-size: 12px;
   }
   
   .command-dropdown:not(.hidden) {
-    transform: translateY(0);
+    transform: translateX(-50%) translateY(0) !important;
   }
 
   .legend-dropdown {
