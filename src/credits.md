@@ -68,3 +68,24 @@ Contributeurs des icones de lucide.dev présente sur Anoria
 
 # Lucid-dev : toggle isométric (land-plot icon)
 Url website of the author: https://github.com/danielbayley
+
+# is happy
+<a href="https://www.freepik.com/icon/embarrassed_7747850#fromView=popular&page=2&position=18&uuid=c60aab02-c0bf-40a9-917a-7bc411a9dea4">Icon by Freepik</a>
+
+# is building
+<a href="https://www.freepik.com/icon/wall_3769213#fromView=popular&page=3&position=26&uuid=c60aab02-c0bf-40a9-917a-7bc411a9dea4">Icon by Freepik</a>
+
+# international commerce
+<a href="https://www.freepik.com/icon/map_7171990#fromView=popular&page=3&position=0&uuid=c60aab02-c0bf-40a9-917a-7bc411a9dea4">Icon by Freepik</a>
+
+# cookie icon
+<a href="https://www.freepik.com/icon/cookie_5100808#fromView=popular&page=2&position=49&uuid=c60aab02-c0bf-40a9-917a-7bc411a9dea4">Icon by Freepik</a>
+
+# health icon
+<a href="https://www.freepik.com/icon/red-cross_2099473">Icon by Freepik</a>
+
+# plague icon
+<a href="https://www.freepik.com/icon/sick_3688165#fromView=search&page=1&position=23&uuid=0171d2ce-09a5-4e31-b07a-e1e3f6d37768">Icon by Freepik</a>
+
+# is Buying icon
+<a href="https://www.freepik.com/icon/consumption_3141553">Icon by Freepik</a>

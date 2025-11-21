@@ -24,7 +24,9 @@ export const textures = Object.freeze({
     // Farm season sprites
     'grow-food': loadTextures(`/resources/textures/status/grow_food.png`, true),
     'harvest': loadTextures(`/resources/textures/status/harvest.png`, true),
-    'sell-food': loadTextures(`/resources/textures/status/sell_food.png`, true)
+    'sell-food': loadTextures(`/resources/textures/status/sell_food.png`, true),
+    // Market buying sprite
+    'isBuying': loadTextures(`/resources/textures/status/isBuying.png`, true)
 })
 
 export const assetsPrices = Object.freeze({

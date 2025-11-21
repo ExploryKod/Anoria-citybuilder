@@ -74,6 +74,21 @@ export class FoodDistributionService extends SimService {
                 return type.includes('Market') || type.includes('market');
             });
 
+            // Update isBuying flag for all markets based on season
+            const timeInfo = TimeManager.getTimeInfo(time);
+            const isAutumn = timeInfo.season === 'Automne';
+            
+            for (const market of markets) {
+                const marketId = market.id || market.name;
+                // Set isBuying flag: true during autumn, false otherwise
+                await housesStore.updateHouseFields(marketId, { isBuying: isAutumn }).catch(err => {
+                    console.warn('[FoodDistributionService] Failed to update market isBuying flag:', {
+                        marketId,
+                        error: err?.message || err
+                    });
+                });
+            }
+
             // Process each market: Farm → Market → House
             for (const market of markets) {
                 await this.processMarket(market, housesStore, houses, time);

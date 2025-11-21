@@ -38,3 +38,8 @@ MenWalking.fbx
 
 server/*/** 
 /server
+
+/public/citizen02/citizenAnimated02.glb
+/public/citizen02/citizen02.blend
+/public/citizen02/Standing_Idle.fbx
+/public/citizen02/Walking.fbx
