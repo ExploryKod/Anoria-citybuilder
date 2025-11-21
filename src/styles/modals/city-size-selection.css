@@ -23,7 +23,7 @@
 
 .city-size-selection-content {
     background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
-    border-radius: 20px;
+    border-radius: var(--border-radius);
     padding: 40px;
     max-width: 600px;
     width: 90%;
@@ -75,7 +75,7 @@
 .city-size-option {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border: 2px solid #dee2e6;
-    border-radius: 12px;
+    border-radius: var(--border-radius-medium);
     padding: 20px 16px;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -160,7 +160,7 @@
     height: 28px;
     appearance: none;
     background: #dee2e6;
-    border-radius: 14px;
+    border-radius: var(--border-radius-small);
     position: relative;
     cursor: pointer;
     transition: background 0.3s ease;
@@ -241,7 +241,7 @@
 .multiplayer-pseudo-input {
     padding: 10px 16px;
     border: 2px solid #dee2e6;
-    border-radius: 8px;
+    border-radius: var(--border-radius-small);
     font-size: 16px;
     text-align: center;
     font-weight: 500;
@@ -301,7 +301,7 @@
     width: 100%;
     padding: 10px 14px;
     border: 2px solid #dee2e6;
-    border-radius: 8px;
+    border-radius: var(--border-radius-small);
     font-size: 14px;
     transition: border-color 0.3s ease;
     max-width: 100%;
@@ -374,7 +374,7 @@
     padding: 12px;
     margin-bottom: 8px;
     background: #f5f5f5;
-    border-radius: 8px;
+    border-radius: var(--border-radius-small);
     border: 2px solid transparent;
     transition: all 0.2s ease;
 }
@@ -530,7 +530,7 @@
     flex: 1;
     padding: 12px 16px;
     border: 2px solid #dee2e6;
-    border-radius: 8px;
+    border-radius: var(--border-radius-small);
     font-size: 16px;
     text-align: center;
     font-weight: 600;
@@ -549,7 +549,7 @@
     background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--border-radius-small);
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;

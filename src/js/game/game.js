@@ -24,6 +24,12 @@ import InputManager from './InputManager.js';
 import gameUI from './GameUI.js';
 import appRegistry from './AppRegistry.js';
 import webglDetector from '../utils/WebGLResourceDetector.js';
+import { TimeManager } from './utils/TimeManager.js';
+
+// Initialiser le cache de TimeManager au démarrage
+TimeManager.initializeCache().catch(err => {
+    console.warn('[game.js] Could not initialize TimeManager cache:', err);
+});
 
 // Services (city-wide simulation systems) - optional, non-invasive
 let services = [];

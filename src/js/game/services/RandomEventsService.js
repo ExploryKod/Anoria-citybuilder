@@ -2,45 +2,38 @@
  * RandomEventsService - Gère les événements aléatoires du jeu
  * Ouragan, inondation, etc.
  */
-
+import { isEventsEnabled, getEventProbability, getDaysPerMonth } from '../../../config/events.js';
 import { SimService } from './SimService.js';
 import { makeDbItemId } from '../../utils/utils.js';
-
-/**
- * Détermine si nous sommes en mode test en lisant la variable d'env VITE_IS_EVENTS_TEST
- * Valeur par défaut : false (mode normal)
- */
-const isEventTest = (() => {
-    if (typeof import.meta !== 'undefined' && import.meta.env && Object.prototype.hasOwnProperty.call(import.meta.env, 'VITE_IS_EVENTS_TEST')) {
-        return String(import.meta.env.VITE_IS_EVENTS_TEST).toLowerCase() === 'true';
-    }
-    // Fallback (utile dans certains contextes de tests)
-    if (typeof window !== 'undefined' && window.__VITE_IS_EVENTS_TEST__ !== undefined) {
-        return String(window.__VITE_IS_EVENTS_TEST__).toLowerCase() === 'true';
-    }
-    return false;
-})();
+import { TimeManager } from '../utils/TimeManager.js';
 
 export class RandomEventsService extends SimService {
+    
+    /**
+     * Met à jour firstYearEnd en utilisant la valeur depuis localStorage
+     */
+    updateFirstYearEnd() {
+        this.firstYearEnd = 12 * getDaysPerMonth();
+    }
     constructor() {
         super();
         
-        if (isEventTest) {
-            // MODE TEST: 100% de probabilité après la première année
-            this.eventProbability = 1.0; // 100% pour le test
+        // Charger la probabilité depuis localStorage (en pourcentage, convertie en 0-1)
+        const probabilityPercent = getEventProbability();
+        this.eventProbability = probabilityPercent / 100;
+        
+        // Si probabilité élevée (>= 50%), on considère que c'est un mode test et on réduit le délai minimum
+        if (probabilityPercent >= 50) {
             this.minTurnsBetweenEvents = 0; // Pas de minimum pour le test
         } else {
-            // MODE NORMAL: Probabilité normale après la première année
-            this.eventProbability = 0.05; // 5% par tour
             this.minTurnsBetweenEvents = 10; // Minimum 10 tours entre événements
         }
         
         // Dernier tour où un événement s'est produit (pour éviter les événements trop fréquents)
         this.lastEventTurn = -10;
-        // Première année = 12 tours (12 mois)
-        this.firstYearEnd = 12;
-        // Mode test
-        this.isEventTest = isEventTest;
+        // Première année = 12 mois, donc 12 * DAYS_PER_MONTH tours
+        // Utiliser getDaysPerMonth() depuis events.js pour avoir la valeur depuis localStorage
+        this.updateFirstYearEnd();
     }
 
     /**
@@ -274,7 +267,26 @@ export class RandomEventsService extends SimService {
      */
     async simulate(city, housesStore, time = 0) {
         try {
-            // AUCUN événement pendant la première année (12 premiers tours) - dans les deux modes
+            // Vérifier si les événements sont activés
+            if (!isEventsEnabled()) {
+                return; // Événements désactivés
+            }
+
+            // Recharger la probabilité depuis localStorage (peut avoir changé)
+            const probabilityPercent = getEventProbability();
+            this.eventProbability = probabilityPercent / 100;
+            
+            // Mettre à jour le délai minimum selon la probabilité
+            if (probabilityPercent >= 50) {
+                this.minTurnsBetweenEvents = 0;
+            } else {
+                this.minTurnsBetweenEvents = 10;
+            }
+            
+            // Mettre à jour firstYearEnd au cas où daysPerMonth aurait changé
+            this.updateFirstYearEnd();
+
+            // AUCUN événement pendant la première année (12 premiers tours)
             if (time <= this.firstYearEnd) {
                 return; // Pas d'événements la première année
             }
@@ -297,8 +309,6 @@ export class RandomEventsService extends SimService {
             }
 
             // Tirage aléatoire pour déterminer si un événement se produit
-            // MODE TEST: 100% de probabilité après la première année
-            // MODE NORMAL: 5% de probabilité après la première année
             const randomValue = Math.random();
             if (randomValue <= this.eventProbability) {
                 // Sélectionner un événement aléatoire

@@ -7,7 +7,7 @@
   background: linear-gradient(135deg, var(--cta) 0%, #e67300 100%);
   color: white;
   padding: 20px 24px;
-  border-radius: 16px;
+  border-radius: var(--border-radius);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   z-index: var(--z-index-notification);
   display: flex;

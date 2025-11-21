@@ -8,7 +8,7 @@
     max-height: 80vh;
     background: #fafafa;
     border: 3px solid var(--cta);
-    border-radius: 10px;
+    border-radius: var(--border-radius-small);
     z-index: var(--z-index-modal);
     color: var(--primary);
     font-family: inherit;
@@ -100,7 +100,7 @@
 .objectives-buttons button {
     padding: 8px 16px;
     border: 3px solid var(--cta);
-    border-radius: 10px;
+    border-radius: var(--border-radius-small);
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;

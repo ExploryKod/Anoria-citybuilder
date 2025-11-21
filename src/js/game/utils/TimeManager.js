@@ -8,12 +8,61 @@
  */
 export class TimeManager {
     /**
-     * Resolve days per month from environment variables
-     * Allows switching between test/prod via VITE_DAYS_PER_MONTH
+     * Cache pour éviter les imports répétés
      */
-    static resolveDaysPerMonth() {
-        let envValue;
+    static _eventsConfigCache = null;
+    
+    /**
+     * Cache synchrone pour DAYS_PER_MONTH (mis à jour depuis localStorage)
+     */
+    static _daysPerMonthCache = null;
+    static _cacheInitialized = false;
 
+    /**
+     * Initialise le cache depuis localStorage (appelé au démarrage)
+     */
+    static async initializeCache() {
+        if (this._cacheInitialized) return;
+        
+        try {
+            const eventsConfig = await import('../../../config/events.js');
+            this._eventsConfigCache = eventsConfig;
+            if (typeof eventsConfig.getDaysPerMonth === 'function') {
+                this._daysPerMonthCache = eventsConfig.getDaysPerMonth();
+                this._cacheInitialized = true;
+            }
+        } catch (error) {
+            console.warn('[TimeManager] Could not initialize cache, using env fallback:', error);
+        }
+        
+        // Si le cache n'a pas pu être initialisé, utiliser la valeur par défaut
+        if (!this._cacheInitialized) {
+            this._daysPerMonthCache = this.resolveDaysPerMonthFromEnv();
+            this._cacheInitialized = true;
+        }
+    }
+
+    /**
+     * Met à jour le cache depuis localStorage (appelé quand les paramètres changent)
+     */
+    static async refreshCache() {
+        try {
+            if (!this._eventsConfigCache) {
+                this._eventsConfigCache = await import('../../../config/events.js');
+            }
+            if (this._eventsConfigCache && typeof this._eventsConfigCache.getDaysPerMonth === 'function') {
+                this._daysPerMonthCache = this._eventsConfigCache.getDaysPerMonth();
+            }
+        } catch (error) {
+            console.warn('[TimeManager] Could not refresh cache:', error);
+        }
+    }
+
+    /**
+     * Récupère le nombre de jours par mois depuis les variables d'environnement (fallback)
+     */
+    static resolveDaysPerMonthFromEnv() {
+        let envValue;
         if (typeof import.meta !== 'undefined' && import.meta.env && Object.prototype.hasOwnProperty.call(import.meta.env, 'VITE_DAYS_PER_MONTH')) {
             envValue = import.meta.env.VITE_DAYS_PER_MONTH;
         } else if (typeof window !== 'undefined' && window.__VITE_DAYS_PER_MONTH__ !== undefined) {
@@ -25,15 +74,48 @@ export class TimeManager {
             return parsed;
         }
 
-        // Default fallback (test mode)
-        return 1;
+        return 1; // Default
     }
 
     /**
-     * Nombre de jours par mois
-     * Modifié à 1 pour les tests (permet de passer plus vite d'une saison à l'autre)
+     * Récupère le nombre de jours par mois depuis localStorage (source of truth)
+     * Version asynchrone pour mise à jour dynamique
      */
-    static DAYS_PER_MONTH = TimeManager.resolveDaysPerMonth();
+    static async getDaysPerMonth() {
+        await this.initializeCache();
+        return this._daysPerMonthCache || 1;
+    }
+
+    /**
+     * Nombre de jours par mois (synchrone, utilise le cache)
+     * Le cache est initialisé au démarrage et mis à jour quand les paramètres changent
+     */
+    static get DAYS_PER_MONTH() {
+        // Initialiser le cache de manière synchrone si possible
+        if (!this._cacheInitialized && typeof window !== 'undefined' && window.localStorage) {
+            try {
+                const stored = localStorage.getItem('days_per_month');
+                if (stored !== null) {
+                    const parsed = parseInt(stored, 10);
+                    if (!isNaN(parsed) && parsed >= 1 && parsed <= 30) {
+                        this._daysPerMonthCache = parsed;
+                        this._cacheInitialized = true;
+                        return parsed;
+                    }
+                }
+            } catch (error) {
+                // Ignorer les erreurs
+            }
+        }
+        
+        // Utiliser le cache ou la valeur par défaut
+        if (this._daysPerMonthCache !== null) {
+            return this._daysPerMonthCache;
+        }
+        
+        // Fallback vers les variables d'environnement
+        return this.resolveDaysPerMonthFromEnv();
+    }
 
     /**
      * Nombre de mois par saison
@@ -56,9 +138,10 @@ export class TimeManager {
     /**
      * Calcule les informations de temps à partir du nombre de jours
      * @param {number} days - Nombre de jours écoulés
+     * @param {number} daysPerMonth - Nombre de jours par mois (optionnel, utilise DAYS_PER_MONTH si non fourni)
      * @returns {Object} Objet contenant les informations de temps
      */
-    static getTimeInfo(days) {
+    static getTimeInfo(days, daysPerMonth = null) {
         // Vérifier que days est un nombre valide
         if (days === undefined || days === null || isNaN(days) || typeof days !== 'number') {
             days = 0; // Valeur par défaut
@@ -67,16 +150,21 @@ export class TimeManager {
         // S'assurer que days est positif ou zéro
         days = Math.max(0, Math.floor(days));
         
+        // Utiliser daysPerMonth fourni ou la valeur depuis le cache
+        if (daysPerMonth === null) {
+            daysPerMonth = this.DAYS_PER_MONTH;
+        }
+        
         // Traiter days comme 0-indexed (nombre de jours écoulés depuis le début)
         // Si days = 0 → jour 1 du premier mois
         // Si days = 15 → jour 16 du premier mois
         const adjustedDays = days; // days est déjà 0-indexed
-        const dayInMonth = (adjustedDays % this.DAYS_PER_MONTH) + 1;
-        const monthIndexAdjusted = Math.floor(adjustedDays / this.DAYS_PER_MONTH) % 12;
-        const monthNumber = Math.floor(adjustedDays / this.DAYS_PER_MONTH) + 1;
+        const dayInMonth = (adjustedDays % daysPerMonth) + 1;
+        const monthIndexAdjusted = Math.floor(adjustedDays / daysPerMonth) % 12;
+        const monthNumber = Math.floor(adjustedDays / daysPerMonth) + 1;
         
         // Calculer l'année : 12 mois par année
-        const year = Math.floor(adjustedDays / (this.DAYS_PER_MONTH * 12));
+        const year = Math.floor(adjustedDays / (daysPerMonth * 12));
         
         // Calculer la saison selon les mois réels :
         // Automne : Septembre (8), Octobre (9), Novembre (10)
@@ -143,7 +231,8 @@ export class TimeManager {
             return 'Chargement...';
         }
         
-        const timeInfo = this.getTimeInfo(days);
+        const daysPerMonth = this.DAYS_PER_MONTH;
+        const timeInfo = this.getTimeInfo(days, daysPerMonth);
         
         // Vérifier que les valeurs sont définies
         if (!timeInfo.month || !timeInfo.season) {
@@ -158,7 +247,7 @@ export class TimeManager {
             yearDisplay = `${timeInfo.year} ap JC`;
         }
         
-        const showDay = this.DAYS_PER_MONTH > 1;
+        const showDay = daysPerMonth > 1;
         const dateLabel = showDay
             ? `${timeInfo.dayInMonth} ${timeInfo.month}`
             : `${timeInfo.month}`;
@@ -172,11 +261,17 @@ export class TimeManager {
      * @returns {string} Chaîne formatée courte (ex: "J15 M3 Printemps")
      */
     static formatTimeShort(days) {
-        const timeInfo = this.getTimeInfo(days);
-        const showDay = this.DAYS_PER_MONTH > 1;
+        const daysPerMonth = this.DAYS_PER_MONTH;
+        const timeInfo = this.getTimeInfo(days, daysPerMonth);
+        const showDay = daysPerMonth > 1;
         const dayLabel = showDay ? `J${timeInfo.dayInMonth}` : `M${timeInfo.monthNumber}`;
 
         return `${dayLabel} | ${timeInfo.month} | ${timeInfo.season}`;
     }
+}
+
+// Exposer TimeManager globalement pour permettre la mise à jour du cache
+if (typeof window !== 'undefined') {
+    window.TimeManager = TimeManager;
 }
 
