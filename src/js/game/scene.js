@@ -167,8 +167,8 @@ export function createScene(housesStore, gameStore, assetManager) {
     // Track last month when maintenance was paid (to pay only once per month)
     let lastMaintenanceMonth = -1;
     
-    // Multiple citizens support (max 15)
-    const MAX_CITIZENS = 15;
+    // Multiple citizens support (max 3)
+    const MAX_CITIZENS = 3;
     let citizenAnimations = {}; // Shared animation clips (loaded once)
     let citizens = []; // Array of citizen objects, each with its own state
     let previousPopulation = 0; // Track previous population to detect changes
@@ -684,21 +684,68 @@ export function createScene(housesStore, gameStore, assetManager) {
                     }
 
                     // Display buying icon during autumn (when markets buy from farms)
+                    // FIX: Only show green icon if market actually got food baskets, otherwise show red no-food icon
                     if (buildings[x][y]) {
                         const isBuying = await housesStore.getHouseItem(currentUniqueID, 'isBuying');
-                        const buyingMeta = statutsIconsMeta['isBuying'];
+                        const marketStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks') || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                         
-                        // Show green buying icon with white background during autumn
-                        assetManager.setStatusSprite(
-                            buildings[x][y],
-                            textures['isBuying'],
-                            'isBuying',
-                            buyingMeta.scale,
-                            buyingMeta.position,
-                            isBuying === true, // Only show during autumn
-                            buyingMeta.spriteColor, // Green color from metadata
-                            buyingMeta.backgroundColor // White background from metadata
-                        );
+                        // Check if market actually has food baskets (paniers) in stocks
+                        const hasFoodBaskets = (marketStocks.wheat || 0) > 0 || 
+                                               (marketStocks.carrot || 0) > 0 || 
+                                               (marketStocks.cabbage || 0) > 0 || 
+                                               (marketStocks.food || 0) > 0;
+                        
+                        if (isBuying === true) {
+                            if (hasFoodBaskets) {
+                                // Market successfully bought food - show green buying icon
+                                const buyingMeta = statutsIconsMeta['isBuying'];
+                                assetManager.setStatusSprite(
+                                    buildings[x][y],
+                                    textures['isBuying'],
+                                    'isBuying',
+                                    buyingMeta.scale,
+                                    buyingMeta.position,
+                                    true,
+                                    buyingMeta.spriteColor, // Green color from metadata
+                                    buyingMeta.backgroundColor // White background from metadata
+                                );
+                            } else {
+                                // Market is in buying period but got no food - show red no-food icon
+                                const noFoodMeta = statutsIconsMeta['no-food'];
+                                assetManager.setStatusSprite(
+                                    buildings[x][y],
+                                    textures['nofood'],
+                                    'no-food',
+                                    noFoodMeta.scale,
+                                    noFoodMeta.position,
+                                    true,
+                                    0xFF0000, // Red color to indicate no food
+                                    null // No background
+                                );
+                            }
+                        } else {
+                            // Not in buying period - hide both icons
+                            assetManager.setStatusSprite(
+                                buildings[x][y],
+                                textures['isBuying'],
+                                'isBuying',
+                                statutsIconsMeta['isBuying'].scale,
+                                statutsIconsMeta['isBuying'].position,
+                                false,
+                                null,
+                                null
+                            );
+                            assetManager.setStatusSprite(
+                                buildings[x][y],
+                                textures['nofood'],
+                                'no-food',
+                                statutsIconsMeta['no-food'].scale,
+                                statutsIconsMeta['no-food'].position,
+                                false,
+                                null,
+                                null
+                            );
+                        }
                     }
 
                     /**
@@ -935,6 +982,67 @@ export function createScene(housesStore, gameStore, assetManager) {
                         });
                     }
                     
+                    // NEW: Monthly food consumption - 1 basket per citizen per month
+                    const timeInfo = TimeManager.getTimeInfo(time);
+                    const currentMonthIndex = timeInfo.monthIndex;
+                    const houseData = await housesStore.getHouse(currentUniqueID);
+                    const lastConsumptionMonth = houseData?.lastConsumptionMonth;
+                    
+                    // Only consume food once per month
+                    if (lastConsumptionMonth !== currentMonthIndex && currentPop > 0) {
+                        const currentStocks = houseFoodStocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+                        const consumptionAmount = currentPop; // 1 basket per citizen
+                        
+                        // Consume food: prioritize wheat, then carrot, then cabbage
+                        let remainingConsumption = consumptionAmount;
+                        const newStocks = { ...currentStocks };
+                        
+                        // Consume wheat first
+                        if (remainingConsumption > 0 && newStocks.wheat > 0) {
+                            const wheatConsumed = Math.min(remainingConsumption, newStocks.wheat);
+                            newStocks.wheat -= wheatConsumed;
+                            remainingConsumption -= wheatConsumed;
+                        }
+                        
+                        // Then consume carrot
+                        if (remainingConsumption > 0 && newStocks.carrot > 0) {
+                            const carrotConsumed = Math.min(remainingConsumption, newStocks.carrot);
+                            newStocks.carrot -= carrotConsumed;
+                            remainingConsumption -= carrotConsumed;
+                        }
+                        
+                        // Finally consume cabbage
+                        if (remainingConsumption > 0 && newStocks.cabbage > 0) {
+                            const cabbageConsumed = Math.min(remainingConsumption, newStocks.cabbage);
+                            newStocks.cabbage -= cabbageConsumed;
+                            remainingConsumption -= cabbageConsumed;
+                        }
+                        
+                        // Update total food
+                        newStocks.food = newStocks.wheat + newStocks.carrot + newStocks.cabbage;
+                        
+                        // Update stocks and track consumption month
+                        await housesStore.updateHouseFields(currentUniqueID, {
+                            stocks: newStocks,
+                            lastConsumptionMonth: currentMonthIndex
+                        });
+                        
+                        console.log('[scene.js] Monthly food consumption:', {
+                            houseId: currentUniqueID,
+                            citizens: currentPop,
+                            consumed: consumptionAmount - remainingConsumption,
+                            remainingToConsume: remainingConsumption,
+                            oldStocks: currentStocks,
+                            newStocks: newStocks
+                        });
+                        
+                        // Get updated stocks after consumption for further processing
+                        const updatedStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks');
+                        if (updatedStocks) {
+                            Object.assign(houseFoodStocks, updatedStocks);
+                        }
+                    }
+                    
                     const { hasFood, totalFood } = checkFoodAvailability(houseFoodStocks || {}, currentPop);
                     const { hasAccess: hasRoadAccess } = checkRoadAccess(houseNeighbors || []);
                     
@@ -953,20 +1061,22 @@ export function createScene(housesStore, gameStore, assetManager) {
                         }
                     });
                     
-                    // Population = number of food stocks (1 stock = 1 citizen)
-                    // Population can only increase or stay the same (no consumption for now)
+                    // Population management: based on available food after consumption
+                    // Population can increase if food > population, decrease if food < population
                     if (hasRoadAccess) {
-                        // Calculate population based on food stocks: 1 stock = 1 citizen
-                        const targetPopulation = houseFoodStocks.food || 0;
+                        // Population = available food baskets (1 basket = 1 citizen)
+                        const availableFood = houseFoodStocks?.food || 0;
+                        const targetPopulation = availableFood;
                         
-                        // Only update if target population is higher than current (no decrease)
-                        if (targetPopulation > currentPop) {
+                        // Update population if it changed (can increase or decrease)
+                        if (targetPopulation !== currentPop) {
                             await housesStore.updateHouseFields(currentUniqueID, { pop: targetPopulation });
                             console.log('[scene.js] Population updated based on food stocks:', {
                                 houseId: currentUniqueID,
                                 oldPop: currentPop,
                                 newPop: targetPopulation,
-                                foodStocks: houseFoodStocks.food
+                                foodStocks: availableFood,
+                                change: targetPopulation > currentPop ? 'increased' : 'decreased'
                             });
                         }
                     } else {
