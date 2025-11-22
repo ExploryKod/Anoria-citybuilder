@@ -682,7 +682,21 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         }
                     }
                 }
-                await scene.update(city, time);
+                
+                // FIX: For roads, update visually immediately for instant feedback
+                // Then do full scene update asynchronously
+                const isRoadTool = activeToolId === 'roads' || activeToolId === 'Road' || (activeToolId && activeToolId.toLowerCase() === 'roads');
+                if (isRoadTool && scene.updateRoadImmediate) {
+                    // Update road visually immediately
+                    scene.updateRoadImmediate(x, y);
+                    // Do full scene update asynchronously (don't await - let it run in background)
+                    scene.update(city, time).catch(err => {
+                        console.warn('[game.js] Scene update error after road placement:', err);
+                    });
+                } else {
+                    // For other buildings, do normal update
+                    await scene.update(city, time);
+                }
                 
                 // Envoyer au serveur multijoueur si activé
                 if (window.multiplayerManager && window.multiplayerManager.isMultiplayer) {
