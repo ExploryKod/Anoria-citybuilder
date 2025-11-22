@@ -35,8 +35,36 @@ class HouseStore {
     }
 
     /**
-     * Process population based on food availability and road access
-     * Population can only grow if there's food AND road access, and resets to 0 if no food OR no road access
+     * Calculate the number of famished (hungry) people in the city
+     * Famished people = total population - fed population
+     * Fed population = min(population, food stocks) for each house
+     * @returns {Promise<number>} Number of famished people
+     */
+    async getFamishedPopulation() {
+        const houses = await this.listAllHouses();
+        let totalPopulation = 0;
+        let fedPopulation = 0;
+
+        for (const house of houses) {
+            if (house.type && house.type.includes('House')) {
+                const housePop = house.pop || 0;
+                const houseStocks = house.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+                const totalFood = houseStocks.food || 0;
+                
+                totalPopulation += housePop;
+                // Fed population = min(population, available food)
+                // If house has 6 people but only 3 food, only 3 are fed
+                fedPopulation += Math.min(housePop, totalFood);
+            }
+        }
+
+        const famishedPopulation = Math.max(0, totalPopulation - fedPopulation);
+        return famishedPopulation;
+    }
+
+    /**
+     * Process population based on road access (food is no longer required)
+     * Population can exist without food (un nourished people), but requires road access
      * @returns {Promise<Object>} Result with population changes
      */
     async processPopulationFoodLogic() {
@@ -47,12 +75,11 @@ class HouseStore {
 
         for (const house of houses) {
             if (house.type && house.type.includes('House')) { // Only process houses
-                const hasFood = house.stocks && house.stocks.food > 0;
                 const hasRoadAccess = house.neighbors && house.neighbors.filter(neighbor => neighbor.name === 'roads').length > 0;
                 const currentPop = house.pop || 0;
                 
-                if (!hasFood || !hasRoadAccess) {
-                    // No food OR no road access - reset population to 0
+                if (!hasRoadAccess) {
+                    // No road access - reset population to 0 (food is not required)
                     if (currentPop > 0) {
                         totalPopulationLost += currentPop;
                         housesAffected++;
@@ -70,8 +97,8 @@ class HouseStore {
             totalPopulationGained,
             housesAffected,
             message: totalPopulationLost > 0 ? 
-                `${totalPopulationLost} inhabitants lost due to no food or road access in ${housesAffected} houses` : 
-                'All houses with population have food and road access'
+                `${totalPopulationLost} inhabitants lost due to no road access in ${housesAffected} houses` : 
+                'All houses with population have road access'
         };
     }
 
