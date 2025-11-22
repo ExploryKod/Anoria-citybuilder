@@ -29,604 +29,6 @@ import config from './config.js';
 
 const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
 
-/**
- * Citizen class - Encapsulates a single citizen's state and behavior
- * Follows Single Responsibility Principle: manages one citizen only
- */
-class Citizen {
-    constructor(character, mixer, animations, id) {
-        this.character = character;
-        this.mixer = mixer;
-        this.animations = animations;
-        this.id = id;
-        this.isWalking = false;
-        this.targetPosition = null;
-        this.path = [];
-        this.currentPathIndex = 0;
-        this.pathDirection = 1; // 1 for forward, -1 for backward
-        this.onRoad = false;
-        this.waitingForRoad = false;
-        this.wasWalkingBeforePause = false;
-        this.currentAction = null;
-        this.spawned = false;
-    }
-
-    /**
-     * Switches to a specific animation
-     */
-    switchAnimation(animationName, fadeIn = true, fadeDuration = 0.3) {
-        if (!this.animations[animationName]) {
-            return;
-        }
-        
-        if (this.currentAction) {
-            if (fadeIn) {
-                this.currentAction.fadeOut(fadeDuration);
-            } else {
-                this.currentAction.stop();
-            }
-        }
-        
-        const newAction = this.mixer.clipAction(this.animations[animationName]);
-        if (fadeIn) {
-            newAction.reset().fadeIn(fadeDuration).play();
-        } else {
-            newAction.reset().play();
-        }
-        
-        this.currentAction = newAction;
-    }
-
-    /**
-     * Pauses the citizen (switches to idle)
-     */
-    pause() {
-        if (!this.character || !this.character.visible) {
-            return;
-        }
-        
-        this.wasWalkingBeforePause = this.isWalking;
-        this.isWalking = false;
-        
-        const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
-        let idleAnimation = null;
-        for (const name of idleNames) {
-            if (this.animations[name]) {
-                idleAnimation = name;
-                break;
-            }
-        }
-        
-        if (!idleAnimation && Object.keys(this.animations).length > 0) {
-            idleAnimation = Object.keys(this.animations)[0];
-        }
-        
-        if (idleAnimation) {
-            this.switchAnimation(idleAnimation, true, 0.3);
-        }
-    }
-
-    /**
-     * Resumes the citizen (switches back to walk if was walking)
-     */
-    resume() {
-        if (!this.character || !this.character.visible) {
-            return;
-        }
-        
-        const shouldBeWalking = 
-            (this.wasWalkingBeforePause || this.onRoad || this.targetPosition || this.path.length > 0) &&
-            !this.waitingForRoad;
-        
-        if (shouldBeWalking) {
-            this.isWalking = true;
-            
-            const walkNames = ['walk', 'Walk', 'Walking', 'walking'];
-            let walkAnimation = null;
-            for (const name of walkNames) {
-                if (this.animations[name]) {
-                    walkAnimation = name;
-                    break;
-                }
-            }
-            
-            if (!walkAnimation && Object.keys(this.animations).length > 1) {
-                const animationKeys = Object.keys(this.animations);
-                walkAnimation = animationKeys[1];
-            }
-            
-            if (walkAnimation) {
-                this.switchAnimation(walkAnimation, true, 0.3);
-            }
-        }
-    }
-
-    /**
-     * Resets all state (for respawning)
-     */
-    reset() {
-        this.isWalking = false;
-        this.targetPosition = null;
-        this.onRoad = false;
-        this.waitingForRoad = false;
-        this.path = [];
-        this.currentPathIndex = 0;
-        this.pathDirection = 1;
-        this.wasWalkingBeforePause = false;
-        this.spawned = false;
-    }
-
-    /**
-     * Removes the citizen from the scene
-     */
-    remove() {
-        if (this.character && this.character.parent) {
-            this.character.parent.remove(this.character);
-        }
-        if (this.character) {
-            this.character.visible = false;
-        }
-        if (this.mixer) {
-            Object.values(this.animations).forEach(clip => {
-                const action = this.mixer.clipAction(clip);
-                if (action && action.isRunning()) {
-                    action.fadeOut(0.2);
-                    action.stop();
-                }
-            });
-        }
-        this.reset();
-    }
-}
-
-/**
- * CitizenManager class - Manages all citizens in the scene
- * Follows Single Responsibility Principle: manages citizen collection only
- */
-class CitizenManager {
-    constructor(scene, citySize) {
-        this.scene = scene;
-        this.citySize = citySize;
-        this.citizens = [];
-        this.citizenTemplate = null; // Template GLTF for cloning
-        this.animations = {};
-        this.populationPerCitizen = 5;
-        this.helpers = null; // Will be set with helper functions
-        this.WALK_SPEED = 2; // Units per second
-    }
-
-    /**
-     * Sets helper functions for pathfinding and road detection
-     */
-    setHelpers(helpers) {
-        this.helpers = helpers;
-    }
-
-    /**
-     * Sets the citizen template (loaded GLTF) for cloning
-     */
-    setTemplate(template, animations) {
-        this.citizenTemplate = template;
-        this.animations = animations;
-    }
-
-    /**
-     * Creates a new citizen by cloning the template
-     */
-    createCitizen(id) {
-        if (!this.citizenTemplate) {
-            console.warn('[CitizenManager] No template available');
-            return null;
-        }
-
-        // Clone the template
-        const character = this.citizenTemplate.clone();
-        character.name = `citizen_${id}`;
-        
-        // Create animation mixer for this citizen
-        const mixer = new AnimationMixer(character);
-        
-        // Create citizen instance
-        const citizen = new Citizen(character, mixer, this.animations, id);
-        
-        this.citizens.push(citizen);
-        return citizen;
-    }
-
-    /**
-     * Removes a citizen
-     */
-    removeCitizen(citizen) {
-        citizen.remove();
-        const index = this.citizens.indexOf(citizen);
-        if (index > -1) {
-            this.citizens.splice(index, 1);
-        }
-    }
-
-    /**
-     * Updates the number of citizens based on population
-     */
-    updateCitizenCount(population, city) {
-        const requiredCount = Math.floor(population / this.populationPerCitizen);
-        const currentCount = this.citizens.filter(c => c.character.visible && c.character.parent).length;
-        
-        if (requiredCount > currentCount) {
-            // Need to spawn more citizens
-            const toSpawn = requiredCount - currentCount;
-            for (let i = 0; i < toSpawn; i++) {
-                const citizen = this.createCitizen(this.citizens.length);
-                if (citizen) {
-                    this.spawnCitizen(citizen, city);
-                }
-            }
-        } else if (requiredCount < currentCount) {
-            // Need to remove citizens
-            const toRemove = currentCount - requiredCount;
-            const visibleCitizens = this.citizens.filter(c => c.character.visible && c.character.parent);
-            for (let i = 0; i < toRemove && i < visibleCitizens.length; i++) {
-                this.removeCitizen(visibleCitizens[i]);
-            }
-        }
-    }
-
-    /**
-     * Spawns a citizen at a border road
-     */
-    spawnCitizen(citizen, city) {
-        if (!citizen || !citizen.character) {
-            return;
-        }
-
-        // Reset state
-        citizen.reset();
-
-        // Find border roads
-        const borderRoads = this.findBorderRoads(city);
-        
-        if (borderRoads.length === 0) {
-            // No road access - wait outside
-            citizen.waitingForRoad = true;
-            citizen.spawned = true;
-            citizen.character.position.set(-3, 0, -3);
-            citizen.character.visible = true;
-            this.scene.add(citizen.character);
-            
-            const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
-            let idleAnimation = null;
-            for (const name of idleNames) {
-                if (citizen.animations[name]) {
-                    idleAnimation = name;
-                    break;
-                }
-            }
-            if (idleAnimation) {
-                citizen.switchAnimation(idleAnimation, true, 0.2);
-            }
-            return;
-        }
-
-        // Spawn at first border road
-        const targetRoad = borderRoads[0];
-        citizen.spawned = true;
-        citizen.waitingForRoad = false;
-
-        // Calculate spawn position outside scene
-        let spawnX, spawnZ;
-        if (targetRoad.x === 0) {
-            spawnX = -3;
-            spawnZ = targetRoad.y;
-        } else if (targetRoad.x === city.size - 1) {
-            spawnX = city.size + 2;
-            spawnZ = targetRoad.y;
-        } else if (targetRoad.y === 0) {
-            spawnX = targetRoad.x;
-            spawnZ = -3;
-        } else {
-            spawnX = targetRoad.x;
-            spawnZ = city.size + 2;
-        }
-
-        citizen.character.position.set(spawnX, 0, spawnZ);
-        citizen.character.visible = true;
-        this.scene.add(citizen.character);
-        
-        citizen.targetPosition = new THREE.Vector3(targetRoad.x, 0, targetRoad.y);
-        citizen.onRoad = false;
-        citizen.isWalking = true;
-
-        const walkNames = ['walk', 'Walk', 'Walking', 'walking'];
-        let walkAnimation = null;
-        for (const name of walkNames) {
-            if (citizen.animations[name]) {
-                walkAnimation = name;
-                break;
-            }
-        }
-        
-        if (!walkAnimation && Object.keys(citizen.animations).length > 1) {
-            const animationKeys = Object.keys(citizen.animations);
-            walkAnimation = animationKeys[1];
-        }
-        
-        if (walkAnimation) {
-            citizen.switchAnimation(walkAnimation, true, 0.2);
-        }
-    }
-
-    /**
-     * Finds border roads using helper function
-     */
-    findBorderRoads(city) {
-        if (this.helpers && this.helpers.findBorderRoads) {
-            return this.helpers.findBorderRoads(city);
-        }
-        return [];
-    }
-
-    /**
-     * Pauses all citizens
-     */
-    pauseAll() {
-        this.citizens.forEach(citizen => citizen.pause());
-    }
-
-    /**
-     * Resumes all citizens
-     */
-    resumeAll() {
-        this.citizens.forEach(citizen => citizen.resume());
-    }
-
-    /**
-     * Updates all citizens (animations and movement)
-     */
-    updateAll(deltaTime, helpers) {
-        this.citizens.forEach(citizen => {
-            if (citizen.mixer) {
-                citizen.mixer.update(deltaTime);
-            }
-            if (citizen.character && citizen.character.visible) {
-                this.updateCitizenMovement(citizen, deltaTime, helpers);
-            }
-        });
-    }
-
-    /**
-     * Updates a single citizen's movement
-     */
-    updateCitizenMovement(citizen, deltaTime, helpers) {
-        if (!citizen.character || !citizen.character.visible || !helpers) {
-            return;
-        }
-
-        const currentPos = citizen.character.position;
-        const currentTile = helpers.worldToTile(currentPos);
-
-        // Check if waiting for road access
-        if (citizen.waitingForRoad) {
-            const borderRoads = this.findBorderRoads({ size: this.citySize });
-            if (borderRoads.length > 0) {
-                citizen.waitingForRoad = false;
-                const targetRoad = borderRoads[0];
-                citizen.targetPosition = new THREE.Vector3(targetRoad.x, 0, targetRoad.y);
-                citizen.onRoad = false;
-                citizen.isWalking = true;
-
-                const walkNames = ['walk', 'Walk', 'Walking', 'walking'];
-                let walkAnimation = null;
-                for (const name of walkNames) {
-                    if (citizen.animations[name]) {
-                        walkAnimation = name;
-                        break;
-                    }
-                }
-                if (walkAnimation) {
-                    citizen.switchAnimation(walkAnimation, true, 0.2);
-                }
-            }
-            return;
-        }
-
-        // Check if walking to border road (not on road yet)
-        if (citizen.isWalking && citizen.targetPosition && !citizen.onRoad) {
-            const direction = new THREE.Vector3()
-                .subVectors(citizen.targetPosition, currentPos)
-                .normalize();
-            
-            const distance = currentPos.distanceTo(citizen.targetPosition);
-            
-            if (distance > 0.1) {
-                // Still walking - move towards target
-                const moveDistance = this.WALK_SPEED * deltaTime;
-                citizen.character.position.add(direction.multiplyScalar(moveDistance));
-                
-                // Rotate character to face movement direction
-                if (direction.length() > 0) {
-                    const angle = Math.atan2(direction.x, direction.z);
-                    citizen.character.rotation.y = angle;
-                }
-            } else {
-                // Reached border road - now on road, create loop path
-                citizen.character.position.copy(citizen.targetPosition);
-                citizen.onRoad = true;
-                
-                // Create road path starting from current position
-                citizen.path = helpers.createRoadPath(currentTile.x, currentTile.y);
-                citizen.currentPathIndex = 0;
-                citizen.pathDirection = 1;
-                
-                if (citizen.path.length > 1) {
-                    const nextTile = citizen.path[1];
-                    citizen.targetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
-                } else {
-                    // No path found, switch to idle
-                    citizen.isWalking = false;
-                    citizen.targetPosition = null;
-                    const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
-                    let idleAnimation = null;
-                    for (const name of idleNames) {
-                        if (citizen.animations[name]) {
-                            idleAnimation = name;
-                            break;
-                        }
-                    }
-                    if (idleAnimation) {
-                        citizen.switchAnimation(idleAnimation, true, 0.3);
-                    }
-                }
-            }
-        }
-        // Check if walking on road loop
-        else if (citizen.isWalking && citizen.onRoad && citizen.path.length > 0 && citizen.targetPosition) {
-            // Validate path before using it
-            if (!helpers.validatePath(citizen.path)) {
-                // Path is invalid - recalculate
-                this.recalculateCitizenPath(citizen, helpers);
-                return;
-            }
-            
-            const direction = new THREE.Vector3()
-                .subVectors(citizen.targetPosition, currentPos)
-                .normalize();
-            
-            const distance = currentPos.distanceTo(citizen.targetPosition);
-            
-            if (distance > 0.1) {
-                // Still walking - move towards target
-                const moveDistance = this.WALK_SPEED * deltaTime;
-                citizen.character.position.add(direction.multiplyScalar(moveDistance));
-                
-                // Rotate character to face movement direction
-                if (direction.length() > 0) {
-                    const angle = Math.atan2(direction.x, direction.z);
-                    citizen.character.rotation.y = angle;
-                }
-                
-                // Verify we're still on a road (safety check)
-                const tile = helpers.worldToTile(citizen.character.position);
-                if (!helpers.isRoadTile(tile.x, tile.y) || helpers.hasBuilding(tile.x, tile.y)) {
-                    // Off road or hit building - recalculate path
-                    this.recalculateCitizenPath(citizen, helpers);
-                    return;
-                }
-            } else {
-                // Reached current target in path - move to next
-                citizen.character.position.copy(citizen.targetPosition);
-                citizen.currentPathIndex += citizen.pathDirection;
-                
-                // Check if we've reached the end of the path
-                if (citizen.currentPathIndex >= citizen.path.length) {
-                    // Reached end - turn back (reverse direction)
-                    citizen.pathDirection = -1;
-                    citizen.currentPathIndex = citizen.path.length - 2;
-                } else if (citizen.currentPathIndex < 0) {
-                    // Reached beginning - turn forward (reverse direction)
-                    citizen.pathDirection = 1;
-                    citizen.currentPathIndex = 1;
-                }
-                
-                // Validate path before accessing it
-                if (!helpers.validatePath(citizen.path)) {
-                    this.recalculateCitizenPath(citizen, helpers);
-                    return;
-                }
-                
-                if (citizen.path.length > 1 && citizen.currentPathIndex >= 0 && citizen.currentPathIndex < citizen.path.length) {
-                    const nextTile = citizen.path[citizen.currentPathIndex];
-                    citizen.targetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
-                } else {
-                    this.recalculateCitizenPath(citizen, helpers);
-                }
-            }
-        }
-    }
-
-    /**
-     * Recalculates a citizen's path
-     */
-    recalculateCitizenPath(citizen, helpers) {
-        if (!citizen.character || !citizen.onRoad) {
-            return false;
-        }
-        
-        const currentTile = helpers.worldToTile(citizen.character.position);
-        
-        // Check if current position is still on a road
-        if (!helpers.isRoadTile(currentTile.x, currentTile.y) || helpers.hasBuilding(currentTile.x, currentTile.y)) {
-            // Not on a road - try to find nearest road
-            const adjacentRoads = helpers.getAdjacentRoads(currentTile.x, currentTile.y);
-            if (adjacentRoads.length > 0) {
-                const nearestRoad = adjacentRoads[0];
-                citizen.path = helpers.createRoadPath(nearestRoad.x, nearestRoad.y);
-                citizen.character.position.set(nearestRoad.x, 0, nearestRoad.y);
-                citizen.currentPathIndex = 0;
-                citizen.pathDirection = 1;
-                if (citizen.path.length > 1) {
-                    const nextTile = citizen.path[1];
-                    citizen.targetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
-                }
-                return true;
-            } else {
-                // No road nearby - switch to idle
-                citizen.isWalking = false;
-                citizen.targetPosition = null;
-                citizen.onRoad = false;
-                const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
-                let idleAnimation = null;
-                for (const name of idleNames) {
-                    if (citizen.animations[name]) {
-                        idleAnimation = name;
-                        break;
-                    }
-                }
-                if (idleAnimation) {
-                    citizen.switchAnimation(idleAnimation, true, 0.3);
-                }
-                return false;
-            }
-        }
-        
-        // Current position is on a road - create new path from here
-        citizen.path = helpers.createRoadPath(currentTile.x, currentTile.y);
-        
-        if (citizen.path.length > 1) {
-            // Find the closest tile in the new path to current position
-            let closestIndex = 0;
-            let minDistance = Infinity;
-            for (let i = 0; i < citizen.path.length; i++) {
-                const tile = citizen.path[i];
-                const distance = Math.abs(tile.x - currentTile.x) + Math.abs(tile.y - currentTile.y);
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    closestIndex = i;
-                }
-            }
-            
-            citizen.currentPathIndex = closestIndex;
-            citizen.pathDirection = 1;
-            
-            // Set next target
-            if (citizen.currentPathIndex < citizen.path.length - 1) {
-                const nextTile = citizen.path[citizen.currentPathIndex + 1];
-                citizen.targetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
-            } else if (citizen.currentPathIndex > 0) {
-                // At end of path, go backwards
-                citizen.pathDirection = -1;
-                const nextTile = citizen.path[citizen.currentPathIndex - 1];
-                citizen.targetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
-            }
-            
-            return true;
-        } else {
-            // No path available
-            citizen.isWalking = false;
-            citizen.targetPosition = null;
-            return false;
-        }
-    }
-}
-
 export function createScene(housesStore, gameStore, assetManager) {
     // BudgetManager will be set by the game initialization
 
@@ -765,8 +167,23 @@ export function createScene(housesStore, gameStore, assetManager) {
     // Track last month when maintenance was paid (to pay only once per month)
     let lastMaintenanceMonth = -1;
     
-    // Citizen management system
-    let citizenManager = null;
+    // Animation mixer for citizen character
+    let citizenMixer = null;
+    let citizenAnimations = {};
+    let currentCitizenAction = null;
+    let citizenCharacter = null; // Reference to the citizen object
+    let citizenSpawned = false; // Track if citizen has been spawned
+    let previousPopulation = 0; // Track previous population to detect changes
+    let citizenIsWalking = false; // Track if citizen is currently walking
+    let citizenTargetPosition = null; // Target position for citizen to walk to
+    let citizenPath = []; // Path of road tiles to follow
+    let citizenCurrentPathIndex = 0; // Current index in the path
+    let citizenPathDirection = 1; // 1 for forward, -1 for backward
+    let citizenOnRoad = false; // Track if citizen is on a road
+    let citizenWaitingForRoad = false; // Track if citizen is waiting for road access
+    let citizenWasWalkingBeforePause = false; // Track if citizen was walking before pause
+    let lastPathRecalculationTurn = -1; // Track last turn when path was recalculated
+    const WALK_SPEED = 2; // Units per second
     
     // OPTIMIZATION: Create a separate group for interactive objects (buildings + terrain)
     // This allows raycasting to test only relevant objects instead of all scene children
@@ -796,14 +213,27 @@ export function createScene(housesStore, gameStore, assetManager) {
             currentCitySize = city.size;
         }
         
-        // Initialize citizen manager
-        citizenManager = new CitizenManager(scene, currentCitySize);
-        
-        // Set helper functions for the manager (will be set after functions are defined)
-        // This will be done after all helper functions are defined
+        // Reset citizen state
+        citizenSpawned = false;
+        previousPopulation = 0;
+        citizenIsWalking = false;
+        citizenTargetPosition = null;
+        citizenOnRoad = false;
+        citizenWaitingForRoad = false;
+        citizenPath = [];
+        citizenCurrentPathIndex = 0;
+        citizenPathDirection = 1;
+        lastPathRecalculationTurn = -1;
         
         // Reset maintenance tracking
         lastMaintenanceMonth = -1;
+        
+        if (citizenCharacter) {
+            citizenCharacter.visible = false;
+            if (citizenCharacter.parent) {
+                citizenCharacter.parent.remove(citizenCharacter);
+            }
+        }
         
         // Recreate interactive group after scene.clear()
         const existingGroup = scene.getObjectByName('interactive-objects');
@@ -1911,10 +1341,52 @@ export function createScene(housesStore, gameStore, assetManager) {
         // Get population from housesStore (IndexedDB) instead of gameStore
         const currentPopulation = await housesStore.getGlobalPopulation();
         
-        // Manage citizens based on current population (from IndexedDB)
-        // One citizen per 5 population
-        if (citizenManager) {
-            citizenManager.updateCitizenCount(currentPopulation, city);
+        // Manage citizen character based on current population state (from IndexedDB)
+        if (citizenCharacter) {
+            const isCharacterVisible = citizenCharacter.visible && citizenCharacter.parent;
+            
+            // If population > 0, character should be visible and spawned
+            if (currentPopulation > 0) {
+                // If character is not visible or not spawned, spawn it (fresh entry)
+                if (!isCharacterVisible || !citizenSpawned) {
+                    spawnCitizenCharacter(city);
+                }
+            }
+            // If population === 0, character should be hidden
+            else if (currentPopulation === 0) {
+                if (isCharacterVisible || citizenSpawned) {
+                    hideCitizenCharacter();
+                }
+            }
+        }
+        
+        // Recalculate citizen path each turn to reflect current city state
+        if (citizenCharacter && citizenSpawned && time !== lastPathRecalculationTurn) {
+            // Check if citizen is waiting for a road and if a road now exists
+            if (citizenWaitingForRoad) {
+                const borderRoads = findBorderRoads(city);
+                if (borderRoads.length > 0) {
+                    // Road appeared - spawn citizen to walk in
+                    citizenWaitingForRoad = false;
+                    spawnCitizenCharacter(city);
+                }
+            }
+            
+            // If citizen is on road, validate and recalculate path if needed
+            if (citizenOnRoad && citizenPath.length > 0) {
+                // Validate current path
+                if (!validatePath(citizenPath)) {
+                    // Path is invalid - recalculate from current position
+                    console.log('[Scene] Citizen path invalid, recalculating...');
+                    recalculateCitizenPath();
+                } else {
+                    // Path is valid, but recalculate anyway to pick up new roads
+                    // This ensures the character can use newly built roads
+                    recalculateCitizenPath();
+                }
+            }
+            
+            lastPathRecalculationTurn = time;
         }
         
         // Get budget data from BudgetManager
@@ -2167,6 +1639,88 @@ export function createScene(housesStore, gameStore, assetManager) {
      * Recalculates the citizen path from current position
      * @returns {boolean} True if path was successfully recalculated, false otherwise
      */
+    function recalculateCitizenPath() {
+        if (!citizenCharacter || !citizenOnRoad) {
+            return false;
+        }
+        
+        const currentTile = worldToTile(citizenCharacter.position);
+        
+        // Check if current position is still on a road
+        if (!isRoadTile(currentTile.x, currentTile.y) || hasBuilding(currentTile.x, currentTile.y)) {
+            // Not on a road - try to find nearest road
+            const adjacentRoads = getAdjacentRoads(currentTile.x, currentTile.y);
+            if (adjacentRoads.length > 0) {
+                const nearestRoad = adjacentRoads[0];
+                citizenPath = createRoadPath(nearestRoad.x, nearestRoad.y);
+                // Move character to nearest road
+                citizenCharacter.position.set(nearestRoad.x, 0, nearestRoad.y);
+                citizenCurrentPathIndex = 0;
+                citizenPathDirection = 1;
+                if (citizenPath.length > 1) {
+                    const nextTile = citizenPath[1];
+                    citizenTargetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
+                }
+                return true;
+            } else {
+                // No road nearby - switch to idle
+                citizenIsWalking = false;
+                citizenTargetPosition = null;
+                citizenOnRoad = false;
+                const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
+                let idleAnimation = null;
+                for (const name of idleNames) {
+                    if (citizenAnimations[name]) {
+                        idleAnimation = name;
+                        break;
+                    }
+                }
+                if (idleAnimation) {
+                    switchCitizenAnimation(idleAnimation, true, 0.3);
+                }
+                return false;
+            }
+        }
+        
+        // Current position is on a road - create new path from here
+        citizenPath = createRoadPath(currentTile.x, currentTile.y);
+        
+        if (citizenPath.length > 1) {
+            // Find the closest tile in the new path to current position
+            let closestIndex = 0;
+            let minDistance = Infinity;
+            for (let i = 0; i < citizenPath.length; i++) {
+                const tile = citizenPath[i];
+                const distance = Math.abs(tile.x - currentTile.x) + Math.abs(tile.y - currentTile.y);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestIndex = i;
+                }
+            }
+            
+            citizenCurrentPathIndex = closestIndex;
+            citizenPathDirection = 1;
+            
+            // Set next target
+            if (citizenCurrentPathIndex < citizenPath.length - 1) {
+                const nextTile = citizenPath[citizenCurrentPathIndex + 1];
+                citizenTargetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
+            } else if (citizenCurrentPathIndex > 0) {
+                // At end of path, go backwards
+                citizenPathDirection = -1;
+                const nextTile = citizenPath[citizenCurrentPathIndex - 1];
+                citizenTargetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
+            }
+            
+            return true;
+        } else {
+            // No path available
+            citizenIsWalking = false;
+            citizenTargetPosition = null;
+            return false;
+        }
+    }
+
     /**
      * Creates a linear path following roads (not a loop)
      * Starts from a road tile and follows adjacent roads until reaching an end
@@ -2309,10 +1863,9 @@ export function createScene(housesStore, gameStore, assetManager) {
                     break;
                 }
             }
-            // Animation handled by manager
-            // if (idleAnimation) {
-            //     switchCitizenAnimation(idleAnimation, true, 0.2);
-            // }
+            if (idleAnimation) {
+                switchCitizenAnimation(idleAnimation, true, 0.2);
+            }
             
             console.log('[Scene] Citizen waiting outside - no road access on border');
             return;
@@ -2372,8 +1925,7 @@ export function createScene(housesStore, gameStore, assetManager) {
         }
         
         if (walkAnimation) {
-            // Animation handled by manager
-            // switchCitizenAnimation(walkAnimation, true, 0.2);
+            switchCitizenAnimation(walkAnimation, true, 0.2);
             citizenIsWalking = true;
             console.log('[Scene] Citizen spawned and walking to border road', {
                 from: { x: spawnX, z: spawnZ },
@@ -2383,6 +1935,39 @@ export function createScene(housesStore, gameStore, assetManager) {
             console.warn('[Scene] No walk animation found, using first available');
             citizenIsWalking = true;
         }
+    }
+
+    /**
+     * Switches the citizen character animation
+     * @param {string} animationName - Name of the animation to play (e.g., 'idle', 'walk', 'Walking')
+     * @param {boolean} fadeIn - Whether to fade in the new animation (default: true)
+     * @param {number} fadeDuration - Duration of fade transition in seconds (default: 0.3)
+     */
+    function switchCitizenAnimation(animationName, fadeIn = true, fadeDuration = 0.3) {
+        if (!citizenMixer || !citizenAnimations[animationName]) {
+            console.warn('[Scene] Cannot switch animation:', animationName, 'Available:', Object.keys(citizenAnimations));
+            return;
+        }
+        
+        // Stop current animation
+        if (currentCitizenAction) {
+            if (fadeIn) {
+                currentCitizenAction.fadeOut(fadeDuration);
+            } else {
+                currentCitizenAction.stop();
+            }
+        }
+        
+        // Play new animation
+        const newAction = citizenMixer.clipAction(citizenAnimations[animationName]);
+        if (fadeIn) {
+            newAction.reset().fadeIn(fadeDuration).play();
+        } else {
+            newAction.reset().play();
+        }
+        
+        currentCitizenAction = newAction;
+        console.log('[Scene] Switched to animation:', animationName);
     }
 
     /**
@@ -2452,32 +2037,61 @@ export function createScene(housesStore, gameStore, assetManager) {
                     }
                 });
                 
-                // Set up animations - store them for cloning
-                const animations = {};
+                // Set up animations
                 if (gltf.animations && gltf.animations.length > 0) {
+                    // Create animation mixer for the citizen
+                    citizenMixer = new AnimationMixer(citizen);
+                    
+                    // Store all animations
                     gltf.animations.forEach((clip) => {
-                        animations[clip.name] = clip;
+                        citizenAnimations[clip.name] = clip;
                         console.log('[Scene] Found animation:', clip.name, `(${clip.duration.toFixed(2)}s)`);
                     });
+                    
+                    // Play the first animation (typically idle) or look for 'idle' or 'Idle' animation
+                    let animationToPlay = null;
+                    const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
+                    
+                    // Try to find an idle animation
+                    for (const name of idleNames) {
+                        if (citizenAnimations[name]) {
+                            animationToPlay = citizenAnimations[name];
+                            break;
+                        }
+                    }
+                    
+                    // If no idle found, use the first animation
+                    if (!animationToPlay && gltf.animations.length > 0) {
+                        animationToPlay = gltf.animations[0];
+                    }
+                    
+                    // Play the animation
+                    if (animationToPlay) {
+                        currentCitizenAction = citizenMixer.clipAction(animationToPlay);
+                        currentCitizenAction.play();
+                        console.log('[Scene] Playing animation:', animationToPlay.name);
+                    }
                 } else {
                     console.warn('[Scene] No animations found in citizen GLB file');
                 }
                 
-                // Store template in manager (initially hidden, will be cloned for each citizen)
+                // Store reference to citizen character
+                citizenCharacter = citizen;
+                
+                // Initially hide the character (will spawn when population appears)
                 citizen.visible = false;
-                if (citizenManager) {
-                    citizenManager.setTemplate(citizen, animations);
-                    console.log('[Scene] Citizen template loaded (ready to spawn citizens when population appears)', {
-                        scale: citizen.scale,
-                        boundingBoxSize: size,
-                        boundingBoxCenter: center,
-                        path: citizenPath,
-                        animationsCount: gltf.animations ? gltf.animations.length : 0,
-                        tip: 'If character is too big/small, adjust characterScale (currently ' + characterScale + ')'
-                    });
-                } else {
-                    console.error('[Scene] CitizenManager not initialized');
-                }
+                
+                // Don't add to scene yet - will be added when population appears
+                // scene.add(citizen);
+                
+                console.log('[Scene] Citizen character loaded (ready to spawn when population appears)', {
+                    scale: citizen.scale,
+                    boundingBoxSize: size,
+                    boundingBoxCenter: center,
+                    path: citizenPath,
+                    animationsCount: gltf.animations ? gltf.animations.length : 0,
+                    tip: 'If character is too big/small, adjust characterScale (currently ' + characterScale + ')'
+                });
             },
             (progress) => {
                 // Loading progress (optional)
@@ -2794,9 +2408,180 @@ export function createScene(housesStore, gameStore, assetManager) {
         const deltaTime = (currentTime - lastFrameTime) / 1000; // Convert to seconds
         lastFrameTime = currentTime;
         
-        // Update all citizens (animations and movement)
-        if (citizenManager && citizenManager.helpers) {
-            citizenManager.updateAll(deltaTime, citizenManager.helpers);
+        // Update citizen animations if mixer exists
+        if (citizenMixer) {
+            citizenMixer.update(deltaTime);
+        }
+        
+        // Update citizen movement
+        if (citizenCharacter && citizenCharacter.visible) {
+            const currentPos = citizenCharacter.position;
+            const currentTile = { x: Math.round(currentPos.x), y: Math.round(currentPos.z) };
+            
+            // Check if waiting for road access
+            if (citizenWaitingForRoad) {
+                // Check if road access appeared
+                const borderRoads = findBorderRoads({ size: currentCitySize });
+                if (borderRoads.length > 0) {
+                    // Road access available - start walking to it
+                    citizenWaitingForRoad = false;
+                    const targetRoad = borderRoads[0];
+                    citizenTargetPosition = new THREE.Vector3(targetRoad.x, 0, targetRoad.y);
+                    citizenOnRoad = false;
+                    citizenIsWalking = true;
+                    
+                    const walkNames = ['walk', 'Walk', 'Walking', 'walking'];
+                    let walkAnimation = null;
+                    for (const name of walkNames) {
+                        if (citizenAnimations[name]) {
+                            walkAnimation = name;
+                            break;
+                        }
+                    }
+                    if (walkAnimation) {
+                        switchCitizenAnimation(walkAnimation, true, 0.2);
+                    }
+                }
+                // Otherwise continue waiting (idle animation already playing)
+            }
+            // Check if walking to border road (not on road yet)
+            else if (citizenIsWalking && citizenTargetPosition && !citizenOnRoad) {
+                const direction = new THREE.Vector3()
+                    .subVectors(citizenTargetPosition, currentPos)
+                    .normalize();
+                
+                const distance = currentPos.distanceTo(citizenTargetPosition);
+                
+                if (distance > 0.1) {
+                    // Still walking - move towards target
+                    const moveDistance = WALK_SPEED * deltaTime;
+                    citizenCharacter.position.add(
+                        direction.multiplyScalar(moveDistance)
+                    );
+                    
+                    // Rotate character to face movement direction
+                    if (direction.length() > 0) {
+                        const angle = Math.atan2(direction.x, direction.z);
+                        citizenCharacter.rotation.y = angle;
+                    }
+                } else {
+                    // Reached border road - now on road, create loop path
+                    citizenCharacter.position.copy(citizenTargetPosition);
+                    citizenOnRoad = true;
+                    
+                    // Create road path starting from current position
+                    citizenPath = createRoadPath(currentTile.x, currentTile.y);
+                    citizenCurrentPathIndex = 0;
+                    citizenPathDirection = 1; // Start walking forward
+                    
+                    if (citizenPath.length > 1) {
+                        // Set next target in path
+                        const nextTile = citizenPath[1];
+                        citizenTargetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
+                        console.log('[Scene] Citizen reached road, starting path', {
+                            pathLength: citizenPath.length,
+                            startTile: currentTile
+                        });
+                    } else {
+                        // No path found, switch to idle
+                        citizenIsWalking = false;
+                        citizenTargetPosition = null;
+                        const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
+                        let idleAnimation = null;
+                        for (const name of idleNames) {
+                            if (citizenAnimations[name]) {
+                                idleAnimation = name;
+                                break;
+                            }
+                        }
+                        if (idleAnimation) {
+                            switchCitizenAnimation(idleAnimation, true, 0.3);
+                        }
+                    }
+                }
+            }
+            // Check if walking on road loop
+            else if (citizenIsWalking && citizenOnRoad && citizenPath.length > 0 && citizenTargetPosition) {
+                // Validate path before using it (safety check)
+                if (!validatePath(citizenPath)) {
+                    // Path is invalid - recalculate immediately
+                    console.log('[Scene] Citizen path invalid during movement, recalculating...');
+                    if (!recalculateCitizenPath()) {
+                        // Recalculation failed - character will be set to idle
+                        return;
+                    }
+                }
+                
+                const direction = new THREE.Vector3()
+                    .subVectors(citizenTargetPosition, currentPos)
+                    .normalize();
+                
+                const distance = currentPos.distanceTo(citizenTargetPosition);
+                
+                if (distance > 0.1) {
+                    // Still walking - move towards target
+                    const moveDistance = WALK_SPEED * deltaTime;
+                    citizenCharacter.position.add(
+                        direction.multiplyScalar(moveDistance)
+                    );
+                    
+                    // Rotate character to face movement direction
+                    if (direction.length() > 0) {
+                        const angle = Math.atan2(direction.x, direction.z);
+                        citizenCharacter.rotation.y = angle;
+                    }
+                    
+                    // Verify we're still on a road (safety check)
+                    const tile = worldToTile(citizenCharacter.position);
+                    if (!isRoadTile(tile.x, tile.y) || hasBuilding(tile.x, tile.y)) {
+                        // Off road or hit building - recalculate path
+                        console.log('[Scene] Citizen off road or hit building, recalculating path...');
+                        if (!recalculateCitizenPath()) {
+                            // Recalculation failed - character will be set to idle
+                            return;
+                        }
+                    }
+                } else {
+                    // Reached current target in path - move to next
+                    citizenCharacter.position.copy(citizenTargetPosition);
+                    citizenCurrentPathIndex += citizenPathDirection;
+                    
+                    // Check if we've reached the end of the path
+                    if (citizenCurrentPathIndex >= citizenPath.length) {
+                        // Reached end - turn back (reverse direction)
+                        citizenPathDirection = -1;
+                        citizenCurrentPathIndex = citizenPath.length - 2; // Go to second-to-last tile
+                    } else if (citizenCurrentPathIndex < 0) {
+                        // Reached beginning - turn forward (reverse direction)
+                        citizenPathDirection = 1;
+                        citizenCurrentPathIndex = 1; // Go to second tile
+                    }
+                    
+                    // Validate path before accessing it
+                    if (!validatePath(citizenPath)) {
+                        // Path is invalid - recalculate
+                        console.log('[Scene] Citizen path invalid at path end, recalculating...');
+                        if (!recalculateCitizenPath()) {
+                            // Recalculation failed - character will be set to idle
+                            return;
+                        }
+                    }
+                    
+                    if (citizenPath.length > 1 && citizenCurrentPathIndex >= 0 && citizenCurrentPathIndex < citizenPath.length) {
+                        // Get next tile in path based on direction
+                        const nextTile = citizenPath[citizenCurrentPathIndex];
+                        citizenTargetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
+                        // Continue walking - no idle pauses
+                    } else {
+                        // Path issue - recalculate
+                        console.log('[Scene] Citizen path index issue, recalculating...');
+                        if (!recalculateCitizenPath()) {
+                            // Recalculation failed - character will be set to idle
+                            return;
+                        }
+                    }
+                }
+            }
         }
         
         updateFocusedObject(); // Update focused object every frame
@@ -3268,19 +3053,6 @@ function onTouchEnd(event) {
         }, 5000);
     }
 
-    // Set helper functions for citizen manager (after all functions are defined)
-    if (citizenManager) {
-        citizenManager.setHelpers({
-            findBorderRoads,
-            isRoadTile,
-            hasBuilding,
-            getAdjacentRoads,
-            createRoadPath,
-            validatePath,
-            worldToTile
-        });
-    }
-
     // make the game know the object userData I selected (to reach x and y position of the object or its id from asset
     return {
         onObjectSelected,
@@ -3308,15 +3080,115 @@ function onTouchEnd(event) {
         // Expose camera for mobile controls
         get camera() { return camera; },
         suppressInput,
-        // Expose pause/resume control for citizen characters
-        pauseCitizen: () => {
-            if (citizenManager) {
-                citizenManager.pauseAll();
+        // Expose animation control for citizen character
+        switchCitizenAnimation,
+        // Expose pause/resume control for citizen character
+        pauseCitizen,
+        resumeCitizen
+    }
+
+    /**
+     * Pauses citizen animation (switches to idle)
+     */
+    function pauseCitizen() {
+        if (!citizenCharacter || !citizenCharacter.visible) {
+            return;
+        }
+        
+        // Remember if citizen was walking
+        citizenWasWalkingBeforePause = citizenIsWalking;
+        
+        // Stop walking
+        citizenIsWalking = false;
+        
+        // Switch to idle animation
+        const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
+        let idleAnimation = null;
+        for (const name of idleNames) {
+            if (citizenAnimations[name]) {
+                idleAnimation = name;
+                break;
             }
-        },
-        resumeCitizen: () => {
-            if (citizenManager) {
-                citizenManager.resumeAll();
+        }
+        
+        // If no idle found, use first animation
+        if (!idleAnimation && Object.keys(citizenAnimations).length > 0) {
+            idleAnimation = Object.keys(citizenAnimations)[0];
+        }
+        
+        if (idleAnimation) {
+            switchCitizenAnimation(idleAnimation, true, 0.3);
+            console.log('[Scene] Citizen paused - switched to idle');
+        }
+    }
+
+    /**
+     * Resumes citizen animation (switches back to walk if was walking)
+     * This function is called whenever the game resumes, ensuring the citizen
+     * is in the correct state regardless of how many times pause/resume was called
+     */
+    function resumeCitizen() {
+        if (!citizenCharacter || !citizenCharacter.visible) {
+            return;
+        }
+        
+        // Determine if citizen should be walking based on current state
+        // Check multiple conditions to ensure we resume correctly:
+        // 1. Was walking before pause (flag)
+        // 2. Is on a road (citizenOnRoad)
+        // 3. Has a target position (citizenTargetPosition)
+        // 4. Has a valid path (citizenPath.length > 0)
+        const shouldBeWalking = 
+            (citizenWasWalkingBeforePause || citizenOnRoad || citizenTargetPosition || citizenPath.length > 0) &&
+            !citizenWaitingForRoad; // Don't walk if waiting for road access
+        
+        if (shouldBeWalking) {
+            citizenIsWalking = true;
+            
+            // Switch to walk animation
+            const walkNames = ['walk', 'Walk', 'Walking', 'walking'];
+            let walkAnimation = null;
+            for (const name of walkNames) {
+                if (citizenAnimations[name]) {
+                    walkAnimation = name;
+                    break;
+                }
+            }
+            
+            // If no walk animation found, try the second animation (often walk is second after idle)
+            if (!walkAnimation && Object.keys(citizenAnimations).length > 1) {
+                const animationKeys = Object.keys(citizenAnimations);
+                walkAnimation = animationKeys[1]; // Use second animation
+            }
+            
+            if (walkAnimation) {
+                switchCitizenAnimation(walkAnimation, true, 0.3);
+                console.log('[Scene] Citizen resumed - switched to walk', {
+                    wasWalkingBeforePause: citizenWasWalkingBeforePause,
+                    onRoad: citizenOnRoad,
+                    hasTarget: !!citizenTargetPosition,
+                    pathLength: citizenPath.length
+                });
+            }
+        } else {
+            // Citizen should be idle (waiting for road or no path available)
+            // Ensure idle animation is playing
+            const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
+            let idleAnimation = null;
+            for (const name of idleNames) {
+                if (citizenAnimations[name]) {
+                    idleAnimation = name;
+                    break;
+                }
+            }
+            
+            if (!idleAnimation && Object.keys(citizenAnimations).length > 0) {
+                idleAnimation = Object.keys(citizenAnimations)[0];
+            }
+            
+            if (idleAnimation) {
+                switchCitizenAnimation(idleAnimation, true, 0.3);
+                console.log('[Scene] Citizen resumed - staying idle (waiting for road or no path)');
             }
         }
     }
