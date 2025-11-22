@@ -11,6 +11,24 @@ const config = {
         // Houses beyond this distance from any market will not receive food
         foodDistributionDistance: 5, // Default: 5 tiles (manhattan distance)
     },
+    
+    budget: {
+        // Initial starting funds (trésorerie initiale / capital social)
+        // Can be overridden via environment variable VITE_INITIAL_FUNDS
+        // Default: 200 euros
+        initialFunds: (() => {
+            const envValue = import.meta.env.VITE_INITIAL_FUNDS;
+            const parsed = envValue ? parseInt(envValue, 10) : null;
+            const result = parsed && !isNaN(parsed) ? parsed : 200;
+            console.log('[config.js] Initial funds config:', {
+                envValue,
+                parsed,
+                result,
+                'import.meta.env.VITE_INITIAL_FUNDS': import.meta.env.VITE_INITIAL_FUNDS
+            });
+            return result;
+        })(),
+    },
 
     building: {
         // Default values; specific assets override in assets data

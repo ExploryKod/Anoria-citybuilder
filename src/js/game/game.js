@@ -374,17 +374,29 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
     appRegistry.register('budgetManager', budgetManager);
     gameUI.updateTimeDisplay(time);
     
-    // Initialize budget system - force reinitialize to ensure 200€ starting funds
-    budgetManager.forceReinitialize(200).then(async () => {
+    // Initialize budget system - use initial funds from config (can be set via .env)
+    const initialFunds = config?.budget?.initialFunds || 200;
+    
+    console.log('[game.js] Initializing budget with:', {
+        initialFunds,
+        configValue: config?.budget?.initialFunds,
+        envValue: import.meta.env.VITE_INITIAL_FUNDS,
+        configObject: config
+    });
+    
+    budgetManager.forceReinitialize(initialFunds).then(async () => {
         // BudgetManager registered above - available via window.app.budgetManager or window.budgetManager
         // Update funds display in navigation bar immediately after initialization
         const initialBudget = await budgetManager.getCurrentBudget();
+        
+        console.log('[game.js] Budget initialized, current budget:', initialBudget);
+        
         if (window.gameUI) {
-            window.gameUI.updateFunds(initialBudget.funds || 200);
+            window.gameUI.updateFunds(initialBudget.funds || initialFunds);
         } else {
             const displayFunds = document.querySelector('.display-funds');
             if (displayFunds) {
-                displayFunds.textContent = (initialBudget.funds || 200).toString();
+                displayFunds.textContent = (initialBudget.funds || initialFunds).toString();
             }
         }
     });
