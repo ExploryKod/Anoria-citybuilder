@@ -3187,6 +3187,47 @@ function onTouchEnd(event) {
         }, 5000);
     }
 
+    /**
+     * Immediately update a road tile visually without waiting for full scene update
+     * This provides instant feedback when placing roads
+     * @param {number} x - X coordinate
+     * @param {number} y - Y coordinate
+     */
+    function updateRoadImmediate(x, y) {
+        if (!terrain[x] || !terrain[x][y]) return;
+        
+        const terrainMesh = terrain[x][y];
+        const sharedMaterials = assetManager.getSharedTerrainMaterials();
+        
+        if (sharedMaterials && sharedMaterials['roads']) {
+            // Update terrain mesh material to show road texture immediately
+            terrainMesh.material = sharedMaterials['roads'];
+            terrainMesh.name = 'roads';
+            terrainMesh.userData.id = 'roads';
+            terrainMesh.userData.type = 'roads';
+            terrainMesh.userData.x = x;
+            terrainMesh.userData.y = y;
+            terrainMesh.userData.isBuilding = false;
+            terrainMesh.userData.isRoad = true;
+            
+            // Ensure mesh is visible
+            terrainMesh.visible = true;
+            
+            // Force material update
+            if (terrainMesh.material) {
+                terrainMesh.material.needsUpdate = true;
+                if (terrainMesh.material.map) {
+                    terrainMesh.material.map.needsUpdate = true;
+                }
+            }
+            
+            // Add to buildings array for neighbor detection
+            if (!buildings[x][y]) {
+                buildings[x][y] = terrainMesh;
+            }
+        }
+    }
+
     // make the game know the object userData I selected (to reach x and y position of the object or its id from asset
     return {
         onObjectSelected,
@@ -3216,7 +3257,9 @@ function onTouchEnd(event) {
         suppressInput,
         // Expose pause/resume control for citizen characters
         pauseCitizen,
-        resumeCitizen
+        resumeCitizen,
+        // Expose immediate road update for instant visual feedback
+        updateRoadImmediate
     }
 
     /**
