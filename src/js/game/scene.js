@@ -1141,6 +1141,44 @@ export function createScene(housesStore, gameStore, assetManager) {
 
         }
 
+        // Cleanup: Remove orphaned house records from IndexedDB (houses that don't exist in scene)
+        // This ensures population is accurate and prevents ghost population from deleted houses
+        try {
+            const allHousesInDb = await housesStore.listAllHouses();
+            const orphanedHouses = [];
+            
+            for (const house of allHousesInDb) {
+                const x = house.x;
+                const y = house.y;
+                
+                // Check if building exists in scene at this position
+                if (x >= 0 && x < city.size && y >= 0 && y < city.size) {
+                    const buildingInScene = buildings[x] && buildings[x][y];
+                    const buildingType = buildingInScene?.userData?.type;
+                    const expectedId = makeDbItemId(house.type, x, y);
+                    
+                    // If no building in scene, or building type doesn't match, it's orphaned
+                    if (!buildingInScene || buildingType !== house.type) {
+                        orphanedHouses.push(expectedId);
+                    }
+                } else {
+                    // Invalid coordinates - definitely orphaned
+                    const expectedId = makeDbItemId(house.type, x, y);
+                    orphanedHouses.push(expectedId);
+                }
+            }
+            
+            // Delete orphaned houses
+            if (orphanedHouses.length > 0) {
+                console.log(`[Scene] Cleaning up ${orphanedHouses.length} orphaned house records from IndexedDB`);
+                for (const houseId of orphanedHouses) {
+                    await housesStore.deleteOneHouse(houseId);
+                }
+            }
+        } catch (error) {
+            console.warn('[Scene] Error during orphaned house cleanup:', error);
+        }
+
         // Gestion de la barre des délais
         if(delayBox && displayDelayUI) {
             if(delay > 0 && delay < 80) {
@@ -1784,13 +1822,21 @@ export function createScene(housesStore, gameStore, assetManager) {
         
         // Stop any animations
         if (citizenMixer) {
-            // Stop all actions
-            Object.values(citizenAnimations).forEach(action => {
-                if (action && action.isRunning()) {
-                    action.fadeOut(0.2);
-                    action.stop();
+            // Stop all actions - get actions from mixer for each clip
+            Object.values(citizenAnimations).forEach(clip => {
+                if (clip) {
+                    const action = citizenMixer.clipAction(clip);
+                    if (action && typeof action.isRunning === 'function' && action.isRunning()) {
+                        action.fadeOut(0.2);
+                        action.stop();
+                    }
                 }
             });
+            // Also stop the current action if it exists
+            if (currentCitizenAction && typeof currentCitizenAction.isRunning === 'function' && currentCitizenAction.isRunning()) {
+                currentCitizenAction.fadeOut(0.2);
+                currentCitizenAction.stop();
+            }
         }
         
         // Reset all citizen state
