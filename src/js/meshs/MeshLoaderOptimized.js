@@ -76,6 +76,11 @@ class MeshLoaderOptimized {
         'nature': { size: 0.5 }
     }
 
+    // Per-asset size overrides (for assets that need different size than their category)
+    assetSizeOverrides = {
+        'Windmill-001': 0.5  // Windmills should match one case size like houses
+    }
+
     assetNames = [];
 
     constructor() {

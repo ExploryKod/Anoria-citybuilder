@@ -110,6 +110,15 @@ class PopupManager {
             onClose: () => {}
         });
 
+        this.popupConfigs.set('food-traceability-panel', {
+            shouldBlockEvents: true,
+            shouldPauseGame: true,
+            eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
+            canvasSelectors: ['canvas'],
+            onOpen: () => {},
+            onClose: () => {}
+        });
+
     }
 
     /**

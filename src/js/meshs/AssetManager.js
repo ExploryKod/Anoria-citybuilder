@@ -398,8 +398,10 @@ class AssetManager extends MeshLoader {
             
             // Houses
             this.toolIds[propertyKey].forEach(toolId => {
+                // Check for per-asset size override, otherwise use category size
+                const size = this.assetSizeOverrides?.[toolId] ?? this.modelMetas[propertyKey].size;
                 this.#assets[toolId] = (x, y, z = 0) =>
-                    this.#createBuilding(x, y, z, this.modelMetas[propertyKey].size, toolId, this.#getModelsObj(propertyKey));
+                    this.#createBuilding(x, y, z, size, toolId, this.#getModelsObj(propertyKey));
             });
             
             // Check if all loading is complete asynchronously (fires after all promises resolve)

@@ -1,0 +1,802 @@
+/* Food Traceability Panel Styles */
+.food-traceability-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: var(--z-index-modal);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.food-traceability-panel.active {
+    display: flex !important;
+}
+
+.food-traceability-wrapper {
+    background: #fafafa;
+    color: var(--primary);
+    border-radius: var(--border-radius);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    width: 90%;
+    max-width: 1200px;
+    max-height: 85vh;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+}
+
+.food-traceability-header {
+    background: white;
+    padding: 20px;
+    border-bottom: 2px solid #28a745;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.food-traceability-header h3 {
+    margin: 0;
+    font-size: 20px;
+    color: var(--primary);
+}
+
+.food-traceability-close-btn {
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.food-traceability-close-btn:hover {
+    background: #f0f0f0;
+}
+
+.food-traceability-close-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+}
+
+.food-traceability-content {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.food-traceability-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.food-traceability-filter-btn {
+    padding: 8px 16px;
+    border: 1px solid #28a745;
+    background: white;
+    color: #28a745;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.food-traceability-filter-btn:hover {
+    background: #f0f0f0;
+}
+
+.food-traceability-filter-btn.active {
+    background: #28a745;
+    color: white;
+}
+
+.food-traceability-refresh-section {
+    margin-bottom: 20px;
+}
+
+.food-traceability-refresh-btn {
+    padding: 10px 20px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.food-traceability-refresh-btn:hover {
+    background: #218838;
+}
+
+.food-traceability-loading {
+    text-align: center;
+    padding: 40px;
+}
+
+.food-traceability-list {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Month Group */
+.food-traceability-month-group {
+    margin-bottom: 24px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.food-traceability-month-header {
+    margin: 0;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.food-traceability-month-content {
+    padding: 16px;
+}
+
+/* Building Section (Market, House, Farm) */
+.food-traceability-building-section {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #28a745;
+}
+
+.food-traceability-building-section:last-child {
+    margin-bottom: 0;
+}
+
+.food-traceability-building-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.food-traceability-building-type {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.food-traceability-coords-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    background: #28a745;
+    color: white;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    gap: 4px;
+}
+
+.food-traceability-coords-pill.farm {
+    background: #ffc107;
+    color: #000;
+}
+
+.food-traceability-coords-pill.market {
+    background: #17a2b8;
+    color: white;
+}
+
+.food-traceability-coords-pill.house {
+    background: #6f42c1;
+    color: white;
+}
+
+/* Transaction List */
+.food-traceability-transaction-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.food-traceability-transaction {
+    padding: 12px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.food-traceability-transaction-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.food-traceability-transaction-subtitle {
+    font-size: 11px;
+    color: #6c757d;
+    font-style: italic;
+    margin-top: -4px;
+    margin-bottom: 4px;
+}
+
+.food-traceability-transaction-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.food-traceability-transaction-type {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    gap: 4px;
+}
+
+.food-traceability-transaction-type.farm-to-market {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.food-traceability-transaction-type.market-to-house {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.food-traceability-transaction-type.house-consumption {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.food-traceability-food-type {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    gap: 4px;
+}
+
+.food-traceability-food-type.wheat {
+    background: #ffd700;
+    color: #856404;
+}
+
+.food-traceability-food-type.carrot {
+    background: #ff8c00;
+    color: #fff;
+}
+
+.food-traceability-food-type.cabbage {
+    background: #90ee90;
+    color: #006400;
+}
+
+.food-traceability-transaction-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    color: #495057;
+}
+
+.food-traceability-transaction-detail {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.food-traceability-transaction-detail-label {
+    font-weight: 600;
+    color: var(--primary);
+    min-width: 80px;
+}
+
+.food-traceability-transaction-detail-value {
+    color: #495057;
+}
+
+.food-traceability-arrow {
+    color: #6c757d;
+    margin: 0 4px;
+}
+
+.food-traceability-price {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.food-traceability-quantity {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* Empty State */
+.no-food-traceability-entries {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.no-food-traceability-entries-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.no-food-traceability-entries-text {
+    font-size: 16px;
+}
+
+/* Status Indicators */
+.food-traceability-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    gap: 4px;
+}
+
+.food-traceability-status.has-food {
+    background: #d4edda;
+    color: #155724;
+}
+
+.food-traceability-status.no-food {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* New Column-Based Transaction Section */
+.food-traceability-transaction-section {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.food-traceability-transaction-section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.food-traceability-transaction-table {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.food-traceability-transaction-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.food-traceability-transaction-cell {
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.food-traceability-cell-header {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--primary);
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.food-traceability-stocks-column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.food-traceability-stocks-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.food-traceability-stocks-label {
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--primary);
+    text-transform: uppercase;
+}
+
+.food-traceability-stocks-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    color: #495057;
+}
+
+.food-traceability-stocks-details > div {
+    padding: 2px 0;
+}
+
+.food-traceability-stocks-total {
+    font-weight: 600;
+    color: var(--primary);
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Mobile Responsive */
+@media screen and (max-width: 768px) {
+    .food-traceability-wrapper {
+        width: 95%;
+        max-width: none;
+        max-height: 90vh;
+    }
+
+    .food-traceability-content {
+        padding: 12px;
+    }
+
+    .food-traceability-transaction-section {
+        padding: 12px;
+    }
+
+    .food-traceability-transaction-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .food-traceability-transaction-cell {
+        padding: 10px;
+    }
+
+    .food-traceability-transaction-details {
+        font-size: 12px;
+    }
+
+    .food-traceability-stocks-details {
+        font-size: 12px;
+    }
+
+    .food-traceability-transaction-section-header {
+        font-size: 14px;
+        gap: 8px;
+    }
+}
+
+/* Tabs */
+.food-traceability-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.food-traceability-tab {
+    padding: 12px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6c757d;
+    transition: all 0.2s ease;
+    margin-bottom: -2px;
+}
+
+.food-traceability-tab:hover {
+    color: var(--primary);
+    background: #f8f9fa;
+}
+
+.food-traceability-tab.active {
+    color: var(--primary);
+    border-bottom-color: #28a745;
+}
+
+.food-traceability-tab-content {
+    display: none;
+}
+
+.food-traceability-tab-content.active {
+    display: block;
+}
+
+/* Charts / Statistics */
+.food-charts-controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    align-items: center;
+}
+
+.food-charts-select {
+    padding: 8px 16px;
+    border: 1px solid #28a745;
+    border-radius: 6px;
+    background: white;
+    color: var(--primary);
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.food-stats-container {
+    min-height: 200px;
+}
+
+.food-stats-loading {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
+
+.no-food-stats {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.no-food-stats-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.no-food-stats-text {
+    font-size: 16px;
+}
+
+/* Summary Cards */
+.food-stats-summary {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.food-stats-summary-title {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    color: var(--primary);
+}
+
+.food-stats-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.food-stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-left: 4px solid;
+}
+
+.food-stat-card.fed {
+    border-left-color: #28a745;
+}
+
+.food-stat-card.unfed {
+    border-left-color: #dc3545;
+}
+
+.food-stat-card.total {
+    border-left-color: #17a2b8;
+}
+
+.food-stat-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+.food-stat-label {
+    font-size: 13px;
+    color: #6c757d;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.food-stat-value {
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--primary);
+    margin-bottom: 4px;
+}
+
+.food-stat-unit {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+/* Year Sections */
+.food-stats-year-section {
+    margin-bottom: 30px;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.food-stats-year-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e9ecef;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.food-stats-year-title {
+    margin: 0;
+    font-size: 20px;
+    color: var(--primary);
+}
+
+.food-stats-year-summary {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.food-stat-badge {
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.food-stat-badge.fed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.food-stat-badge.unfed {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.food-stat-badge.total {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+/* Month Cards */
+.food-stats-months {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.food-stat-month-card {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 16px;
+    border: 1px solid #e9ecef;
+}
+
+.food-stat-month-header {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.food-stat-month-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--primary);
+}
+
+.food-stat-month-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.food-stat-month-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.food-stat-month-icon {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+}
+
+.food-stat-month-label {
+    flex: 1;
+    color: #6c757d;
+}
+
+.food-stat-month-value {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.food-stat-month-item.fed .food-stat-month-value {
+    color: #28a745;
+}
+
+.food-stat-month-item.unfed .food-stat-month-value {
+    color: #dc3545;
+}
+
+.food-stat-month-item.total .food-stat-month-value {
+    color: #17a2b8;
+}
+
+@media screen and (max-width: 768px) {
+    .food-traceability-tabs {
+        flex-wrap: wrap;
+    }
+    
+    .food-traceability-tab {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+    
+    .food-stats-summary-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .food-stats-year-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .food-stats-months {
+        grid-template-columns: 1fr;
+    }
+}
+
