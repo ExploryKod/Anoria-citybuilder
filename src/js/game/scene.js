@@ -481,11 +481,27 @@ export function createScene(housesStore, gameStore, assetManager) {
                 // Processing city tile
               let currentBuildingId = buildings[x][y]?.userData?.type || buildings[x][y]?.userData?.id;
               // Also check terrain for roads using isRoad property (roads are in terrain array but may be in buildings array too)
+              // FIX BUG 1: Only detect road from terrain if it's also in city.tiles (meaning it was properly placed)
+              const tileBuildingId = city.tiles[x][y]?.buildingId;
               if (!currentBuildingId && terrain[x] && terrain[x][y] && (terrain[x][y].userData?.isRoad || terrain[x][y].name === 'roads')) {
-                  currentBuildingId = 'roads';
-                  // Ensure road is in buildings array for neighbor detection
-                  if (!buildings[x][y]) {
-                      buildings[x][y] = terrain[x][y];
+                  // Only treat as road if it's also marked in city.tiles (was properly placed)
+                  if (tileBuildingId === 'roads' || tileBuildingId === 'Road') {
+                      currentBuildingId = 'roads';
+                      // Ensure road is in buildings array for neighbor detection
+                      if (!buildings[x][y]) {
+                          buildings[x][y] = terrain[x][y];
+                      }
+                  } else {
+                      // Terrain has road material but city.tiles doesn't - restore to grass
+                      const terrainMesh = terrain[x][y];
+                      const sharedMaterials = assetManager.getSharedTerrainMaterials();
+                      if (sharedMaterials && sharedMaterials['grass'] && terrainMesh.material) {
+                          terrainMesh.material = sharedMaterials['grass'];
+                          terrainMesh.name = 'grass';
+                          terrainMesh.userData.id = 'grass';
+                          terrainMesh.userData.type = 'grass';
+                          terrainMesh.userData.isRoad = false;
+                      }
                   }
               }
               const currentBuilding = buildings[x][y];
@@ -507,9 +523,37 @@ export function createScene(housesStore, gameStore, assetManager) {
                 // Vérifier si le bâtiment existe encore dans la base de données
                 // Si non, le supprimer de la scène (cas des événements aléatoires, etc.)
                 // IMPORTANT: Ne pas supprimer si un nouveau bâtiment est en cours de création (newBuildingId existe)
-                // EXCEPTION: Ne pas vérifier les routes car elles sont gérées différemment (terrain + buildings)
                 const isRoad = currentBuildingId === 'roads' || buildings[x][y]?.userData?.isRoad;
                 const hasNewBuilding = newBuildingId && newBuildingId !== currentBuildingId;
+                
+                // FIX BUG 1: For roads, use city.tiles as source of truth
+                // If city.tiles doesn't have a road but terrain shows road material, restore to grass
+                // This prevents "ghost" roads from terrain material when payment failed
+                if (isRoad) {
+                    const tileHasRoad = city.tiles[x][y]?.buildingId === 'roads' || city.tiles[x][y]?.buildingId === 'Road';
+                    if (!tileHasRoad) {
+                        // Terrain shows road but city.tiles doesn't - this means payment failed or road was removed
+                        // Restore terrain to grass
+                        if (terrain[x] && terrain[x][y]) {
+                            const terrainMesh = terrain[x][y];
+                            const sharedMaterials = assetManager.getSharedTerrainMaterials();
+                            if (sharedMaterials && sharedMaterials['grass'] && terrainMesh.material) {
+                                terrainMesh.material = sharedMaterials['grass'];
+                                terrainMesh.name = 'grass';
+                                terrainMesh.userData.id = 'grass';
+                                terrainMesh.userData.type = 'grass';
+                                terrainMesh.userData.isRoad = false; // Clear road flag
+                                terrainMesh.userData.x = x;
+                                terrainMesh.userData.y = y;
+                            }
+                        }
+                        // Remove from buildings array
+                        if (buildings[x][y] === terrain[x][y]) {
+                            buildings[x][y] = undefined;
+                        }
+                        continue; // Skip further processing for this tile
+                    }
+                }
                 
                 // Ne vérifier la suppression que si aucun nouveau bâtiment n'est en cours de création
                 if (!isRoad && !hasNewBuilding) {
@@ -527,8 +571,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                     }
                 }
                 
-                // Pour les routes, on continue même si elles n'existent pas encore dans la DB
-                // car elles peuvent être en cours de création
+                // Update building data in database
                 if (!isRoad) {
                     await housesStore.updateHouseFields(currentUniqueID, {worldTime: time})
                     
@@ -1082,7 +1125,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                         buildings[x][y] = terrain[x][y];
                     }
                 } else if (currentBuildingId === 'roads' || buildings[x][y]?.userData?.isRoad) {
-                    // If removing a road, restore terrain to grass
+                    // FIX BUG 2: If removing a road, restore terrain to grass properly
                     if (terrain[x] && terrain[x][y]) {
                         const terrainMesh = terrain[x][y];
                         const sharedMaterials = assetManager.getSharedTerrainMaterials();
@@ -1091,8 +1134,16 @@ export function createScene(housesStore, gameStore, assetManager) {
                             terrainMesh.name = 'grass';
                             terrainMesh.userData.id = 'grass';
                             terrainMesh.userData.type = 'grass';
+                            terrainMesh.userData.isRoad = false; // Clear road flag
                             terrainMesh.userData.x = x;
                             terrainMesh.userData.y = y;
+                            terrainMesh.userData.isBuilding = false;
+                            // Ensure mesh is visible and in scene
+                            terrainMesh.visible = true;
+                            // Force material update
+                            if (terrainMesh.material) {
+                                terrainMesh.material.needsUpdate = true;
+                            }
                         }
                     }
                     // Remove from buildings array when road is removed
