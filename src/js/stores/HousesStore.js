@@ -192,38 +192,80 @@ class HouseStore {
     }
 
     async updateHouseFields(name, updates, appendToArrays = false) {
-        const house = await this.db.houses.get(name);
-        if (house) {
-            for (const key in updates) {
-                if (updates[key] !== undefined) {
-                    if (Array.isArray(house[key]) && appendToArrays) {
-                        house[key] = [...house[key], ...updates[key]];
-                    } else {
-                        house[key] = updates[key];
-                    }
+        let house = await this.db.houses.get(name);
+        
+        // If house doesn't exist, create it with the updates
+        if (!house) {
+            // Extract x, y from name (format: "Type-x-y")
+            const parts = name.split('-');
+            if (parts.length >= 3) {
+                const x = parseInt(parts[parts.length - 2]);
+                const y = parseInt(parts[parts.length - 1]);
+                
+                if (!isNaN(x) && !isNaN(y)) {
+                    // Create new house entry with basic structure
+                    house = {
+                        name: name,
+                        type: parts.slice(0, -2).join('-'), // Get type part (handles "House-2Story")
+                        price: 0,
+                        x: x,
+                        y: y,
+                        neighbors: [],
+                        pop: 0,
+                        stocks: { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
+                        roads: 0,
+                        worldTime: 0
+                    };
+                } else {
+                    // Cannot create house without valid coordinates
+                    return;
+                }
+            } else {
+                // Cannot create house without valid name format
+                return;
+            }
+        }
+        
+        // Update house fields
+        for (const key in updates) {
+            if (updates[key] !== undefined) {
+                if (Array.isArray(house[key]) && appendToArrays) {
+                    house[key] = [...house[key], ...updates[key]];
+                } else {
+                    house[key] = updates[key];
                 }
             }
-            await this.db.houses.put(house);
         }
+        
+        await this.db.houses.put(house);
     }
 
     async updateHouseName(oldName, newName, keys = {}) {
-        const house = await this.db.houses.get(oldName);
-        if (house) {
-            // Delete old entry first to avoid key conflicts
-            await this.db.houses.delete(oldName);
-            
-            // Create new entry with updated name and keys, preserving all other fields
-            const updatedHouse = {
-                ...house,
-                name: newName
-            };
-            
-            if (keys.type) updatedHouse.type = keys.type;
-            if (keys.price) updatedHouse.price = keys.price;
-            
-            // Put the new entry
-            await this.db.houses.put(updatedHouse);
+        try {
+            const house = await this.db.houses.get(oldName);
+            if (house) {
+                // Delete old entry first to avoid key conflicts
+                await this.db.houses.delete(oldName);
+                
+                // Create new entry with updated name and keys, preserving all other fields
+                const updatedHouse = {
+                    ...house,
+                    name: newName
+                };
+                
+                if (keys.type) updatedHouse.type = keys.type;
+                if (keys.price) updatedHouse.price = keys.price;
+                
+                // Put the new entry (will create if doesn't exist, update if exists)
+                await this.db.houses.put(updatedHouse);
+                return { success: true, message: `House ${oldName} updated to ${newName}` };
+            } else {
+                console.warn(`[HousesStore] House with oldName ${oldName} not found for update.`);
+                return { success: false, message: `House ${oldName} not found.` };
+            }
+        } catch (error) {
+            console.error(`[HousesStore] Error updating house name from ${oldName} to ${newName}:`, error);
+            return { success: false, message: `Error updating house name: ${error.message}` };
         }
     }
 

@@ -1399,8 +1399,32 @@ export function createScene(housesStore, gameStore, assetManager) {
                         const houseNeighborsBeforeEvolution = houseNeighbors || [];
                         const { roadCount: roadsBeforeEvolution } = checkRoadAccess(houseNeighborsBeforeEvolution);
                         
-                        await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
-                        // Note: updateHouseName already deletes oldName, so deleteOneHouse is not needed
+                        // Update house name in database (same pattern as House-Red evolution)
+                        const updateResult = await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
+                        
+                        // If updateHouseName failed (house not found), create the house entry
+                        if (!updateResult || !updateResult.success) {
+                            // House doesn't exist in DB - create it with all necessary fields
+                            const newHouseData = {
+                                name: newUniqueBuildingId,
+                                type: keys.type,
+                                price: keys.price,
+                                x: x,
+                                y: y,
+                                neighbors: houseNeighborsBeforeEvolution,
+                                pop: currentPop,
+                                stocks: houseFoodStocks || { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
+                                roads: roadsBeforeEvolution,
+                                worldTime: worldTime || time
+                            };
+                            await housesStore.addHouse(newHouseData);
+                        } else {
+                            // House was successfully renamed - ensure neighbors and roads are preserved
+                            await housesStore.updateHouseFields(newUniqueBuildingId, {
+                                neighbors: houseNeighborsBeforeEvolution,
+                                roads: roadsBeforeEvolution
+                            });
+                        }
                         
                         // IMPORTANT: Update currentBuildingId and currentUniqueID to reflect the evolution
                         // This ensures subsequent code in the same loop iteration uses the correct ID
@@ -1413,13 +1437,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                             buildingData.currentBuildingId = currentBuildingId;
                             buildingData.currentUniqueID = currentUniqueID;
                         }
-                        
-                        // Ensure neighbors and roads are preserved in the new record
-                        // (updateHouseName should preserve them, but we explicitly update to be safe)
-                        await housesStore.updateHouseFields(currentUniqueID, {
-                            neighbors: houseNeighborsBeforeEvolution,
-                            roads: roadsBeforeEvolution
-                        });
                         
                         buildings[x][y] = assetManager.createAsset('House-2Story', x, y);
                         // Add to appropriate zone group (NOT directly to scene)
