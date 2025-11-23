@@ -89,3 +89,9 @@ Url website of the author: https://github.com/danielbayley
 
 # is Buying icon
 <a href="https://www.freepik.com/icon/consumption_3141553">Icon by Freepik</a>
+
+# Unemployed / Unavailable
+<a href="https://www.freepik.com/icon/block_16701734#fromView=family&page=1&position=43&uuid=416a8a11-f72b-440d-951e-72d565fcc26b">Icon by meaicon</a>
+
+# employed
+<a href="https://www.freepik.com/icon/user_16702003#fromView=resource_detail&position=4">Icon by meaicon</a>

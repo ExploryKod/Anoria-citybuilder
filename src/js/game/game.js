@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import {  assetsPrices } from '../meshs/data.js';
-import { checkRoadAccess } from './modules/ModuleHelper.js';
+import { checkRoadAccess, canHouseEvolveToPurple, canHouseEvolveToPalace, checkFoodAvailability } from './modules/ModuleHelper.js';
+import { firstHouses } from '../ui/nodes.js';
+import { TimeManager } from './utils/TimeManager.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
 import {getAssetPrice, makeDbItemId, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, isAreaAvailableForBuilding} from '../utils/utils.js';
@@ -25,7 +27,6 @@ import InputManager from './InputManager.js';
 import gameUI from './GameUI.js';
 import appRegistry from './AppRegistry.js';
 import webglDetector from '../utils/WebGLResourceDetector.js';
-import { TimeManager } from './utils/TimeManager.js';
 
 // Initialiser le cache de TimeManager au démarrage
 TimeManager.initializeCache().catch(err => {
@@ -540,9 +541,36 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
             if(buildingsObjects.includes(selectedObject.userData.id)) {
                 // Building selection
                 const uniqueId = makeDbItemId(selectedObject.userData.id, selectedObject.userData.x, selectedObject.userData.y)
+                
+                // Debug: Log the ID construction and retrieved data
+                console.log('[game.js] Building info popup:', {
+                    userDataId: selectedObject.userData.id,
+                    x: selectedObject.userData.x,
+                    y: selectedObject.userData.y,
+                    constructedId: uniqueId
+                });
+                
                 const buildingPop = await housesStore.getHouseItem(uniqueId, 'pop')
                 const houseRoads = await housesStore.getHouseItem(uniqueId, 'roads');
                 const houseStocks = await housesStore.getHouseItem(uniqueId, 'stocks');
+                
+                // Debug: Log retrieved data
+                console.log('[game.js] Retrieved data from DB:', {
+                    uniqueId,
+                    pop: buildingPop,
+                    roads: houseRoads,
+                    hasStocks: !!houseStocks
+                });
+                
+                // Also try to get the full house record to see what's actually stored
+                const fullHouse = await housesStore.getHouse(uniqueId);
+                console.log('[game.js] Full house record:', {
+                    uniqueId,
+                    type: fullHouse?.type,
+                    roads: fullHouse?.roads,
+                    neighborsCount: fullHouse?.neighbors?.length || 0,
+                    hasNeighbors: !!fullHouse?.neighbors
+                });
 
                 /* Check if neighbor */
                 let neighbors = [];
@@ -568,10 +596,73 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
 
                 if(selectedObject.userData.id.includes('House') && Object.hasOwn(houseStocks, 'food')) {
                     makeInfoSection('Stocks nourriture');
-                    makeInfoKeyValue('Blé', `${houseStocks.wheat} paniers`);
-                    makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage} paniers`);
-                    makeInfoKeyValue('Autres légumes', `${houseStocks.carrot} paniers`);
-                    makeInfoKeyValue('Total', `${houseStocks.food} paniers`);
+                    makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`);
+                    makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`);
+                    makeInfoKeyValue('Autres légumes', `${houseStocks.carrot || 0} paniers`);
+                    makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers`);
+                    
+                    // Evolution section - show conditions for next evolution step
+                    const buildingType = selectedObject.userData.id;
+                    const { hasAccess: hasRoadAccess } = checkRoadAccess(neighbors || []);
+                    const { totalFood } = checkFoodAvailability(houseStocks || {}, buildingPop || 0);
+                    
+                    makeInfoSection('Évolution');
+                    
+                    // House-Blue: Show conditions to become House-Red
+                    if (buildingType === 'House-Blue') {
+                        makeInfoKeyValue('→ Maison Rouge', '');
+                        const isInhabited = (buildingPop || 0) > 0;
+                        const roadStatus = hasRoadAccess ? '✅' : '❌';
+                        const popStatus = isInhabited ? '✅' : '❌';
+                        makeInfoKeyValue('  • Accès routier', `${roadStatus} ${hasRoadAccess ? 'Oui' : 'Non'}`);
+                        makeInfoKeyValue('  • Habitée', `${popStatus} ${isInhabited ? 'Oui' : 'Non'}`);
+                        makeInfoKeyValue('  • Nourriture de base', `${totalFood > 0 ? '✅' : '❌'} ${totalFood} panier${totalFood !== 1 ? 's' : ''}`);
+                    }
+                    
+                    // House-Red: Show conditions to become House-Purple (only Purple-specific conditions)
+                    else if (buildingType === 'House-Red') {
+                        makeInfoKeyValue('→ Maison Violette', '');
+                        const purpleCheck = canHouseEvolveToPurple({
+                            stocks: houseStocks || {},
+                            population: buildingPop || 0,
+                            buildingType: buildingType,
+                            hasRoadAccess: hasRoadAccess
+                        });
+                        
+                        // Only show Purple-specific condition (food >= population)
+                        const foodStatus = totalFood >= (buildingPop || 0) ? '✅' : '❌';
+                        makeInfoKeyValue('  • Nourriture ≥ Population', `${foodStatus} ${totalFood}/${buildingPop || 0}`);
+                        
+                        if (!purpleCheck.canEvolve && purpleCheck.reason === 'hunger_present') {
+                            const needed = Math.max(0, (buildingPop || 0) - totalFood);
+                            makeInfoKeyValue('  • Manque', `${needed} panier${needed > 1 ? 's' : ''}`);
+                        }
+                    }
+                    
+                    // House-Purple: Show conditions to become Palace (only Palace-specific conditions)
+                    else if (buildingType === 'House-Purple') {
+                        makeInfoKeyValue('→ Palais', '');
+                        const palaceCheck = canHouseEvolveToPalace({
+                            stocks: houseStocks || {},
+                            population: buildingPop || 0,
+                            buildingType: buildingType,
+                            firstHouses: firstHouses
+                        });
+                        
+                        // Palace-specific conditions (food goal, not basic conditions)
+                        const { meetsFoodGoal } = checkFoodAvailability(houseStocks || {}, buildingPop || 0);
+                        const foodGoalStatus = meetsFoodGoal ? '✅' : '❌';
+                        const foodGoalText = meetsFoodGoal 
+                            ? `Oui (${totalFood} > ${(buildingPop || 0) * 2})`
+                            : `Non (${totalFood} ≤ ${(buildingPop || 0) * 2})`;
+                        makeInfoKeyValue('  • Population > 2', `${(buildingPop || 0) > 2 ? '✅' : '❌'} ${buildingPop || 0}`);
+                        makeInfoKeyValue('  • Nourriture > Pop × 2', `${foodGoalStatus} ${foodGoalText}`);
+                    }
+                    
+                    // Palace: No further evolution
+                    else if (buildingType === 'House-2Story') {
+                        makeInfoKeyValue('→ Palais', '✅ Niveau maximum atteint');
+                    }
                 }
 
                 // Display market food stocks (similar to houses)

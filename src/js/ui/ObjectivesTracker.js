@@ -31,23 +31,13 @@ class ObjectivesTracker {
         
         this.objectives = [
             {
-                id: 'budget_challenge_60_days',
-                title: '🏛️ Défi Financier : 60 jours',
-                description: 'Seuil en spirale : maintenir une gestion financière saine sur 60 jours. Période de grâce de 20 tours après échec.',
+                id: 'budget_challenge_5000',
+                title: '💰 Objectif Financier',
+                description: 'Atteindre 5000€ de fonds pour déverrouiller la Maison Violette.',
                 requirements: [
                     {
-                        text: 'Le résultat net ne doit jamais descendre à -20€',
-                        check: (data) => data.minNetFlow >= -20,
-                        value: null
-                    },
-                    {
-                        text: 'Le résultat net doit atteindre au moins +100€',
-                        check: (data) => data.maxNetFlow >= 100,
-                        value: null
-                    },
-                    {
-                        text: 'Les fonds doivent être d\'au moins 600€ à la date cible',
-                        check: (data) => data.fundsAtTargetDay >= 600,
+                        text: 'Les fonds doivent atteindre au moins 5000€',
+                        check: (data) => data.currentFunds >= 5000,
                         value: null
                     }
                 ],
@@ -57,23 +47,13 @@ class ObjectivesTracker {
         ];
 
         this.trackingData = {
-            minNetFlow: Infinity,
-            maxNetFlow: -Infinity,
-            minNetFlowTurn: null, // Tour où le flux net minimum a été atteint
-            maxNetFlowTurn: null, // Tour où le flux net maximum a été atteint
-            fundsAtTargetDay: null,
+            currentFunds: 0,
             currentDay: 0
         };
-
-        this.objectiveFailed = false; // Indique si l'objectif a échoué (seuil atteint)
-        this.resetCount = 0; // Nombre de fois que l'objectif a été réinitialisé
-        this.lastResetTurn = 0; // Tour du dernier reset (pour tracker depuis le dernier reset uniquement)
-        this.gracePeriod = 20; // Période de grâce de 20 tours après un reset (pour seuil en spirale)
-        this.targetDay = 60; // Date cible pour les fonds (threshold_date - rééchelonnable)
         
         // Au démarrage d'un nouveau jeu, l'objectif est inactif par défaut
         // Il sera activé au tour 0 par checkObjectives(0)
-        const objective = this.objectives.find(obj => obj.id === 'budget_challenge_60_days');
+        const objective = this.objectives.find(obj => obj.id === 'budget_challenge_5000');
         if (objective) {
             objective.active = false; // Activé au tour 0
             objective.completed = false;
@@ -90,7 +70,6 @@ class ObjectivesTracker {
 
     /**
      * Vérifie les objectifs à chaque tour
-     * Utilise les états de budget sauvegardés tous les 3 tours (tous les 3 intervalles) comme source de vérité
      * @param {number} currentDay - Tour actuel (1 tour = 1 intervalle du jeu)
      */
     async checkObjectives(currentDay) {
@@ -106,7 +85,7 @@ class ObjectivesTracker {
 
         try {
             // Activer l'objectif au tour 0 (initialisation d'un nouveau jeu)
-            const objective = this.objectives.find(obj => obj.id === 'budget_challenge_60_days');
+            const objective = this.objectives.find(obj => obj.id === 'budget_challenge_5000');
             if (currentDay === 0 && objective) {
                 // Toujours réactiver au tour 0 pour un nouveau jeu
                 objective.active = true;
@@ -118,69 +97,16 @@ class ObjectivesTracker {
                 });
             }
 
-            // Calculer la période de grâce - si on est dans la période de grâce, NE RIEN CHECKER
-            const isInGracePeriod = this.resetCount > 0 && (currentDay - this.lastResetTurn) <= this.gracePeriod;
+            // Mettre à jour les données de tracking
+            this.trackingData.currentDay = currentDay;
             
-            // Pendant la période de grâce : AUCUNE vérification, AUCUN tracking
-            if (isInGracePeriod) {
-                console.log(`⏸️ Période de grâce active (tour ${currentDay - this.lastResetTurn}/${this.gracePeriod}) - Aucun tracking ni vérification`);
-                this.trackingData.currentDay = currentDay;
-                return; // Sortir immédiatement, rien à vérifier
-            }
+            // Récupérer les fonds actuels depuis BudgetManager
+            const budget = await window.budgetManager.getCurrentBudget();
+            this.trackingData.currentFunds = budget.funds || 0;
 
-            // Calculer les données de tracking depuis les états de budget sauvegardés tous les 3 tours (3 intervalles)
-            await this.updateTrackingFromBudgetStates(currentDay);
-
-            // Vérifier si le seuil critique a été atteint (flux net < -20)
-            // Pendant la période de grâce, on ne vérifie jamais (déjà géré par le return ci-dessus)
-            if (!this.objectiveFailed && this.trackingData.minNetFlow < -20) {
-                this.objectiveFailed = true;
-                await this.handleObjectiveFailure(currentDay);
-            }
-
-            // Enregistrer les fonds à la date cible (seuil à date fixe - threshold_date)
-            if (currentDay === this.targetDay) {
-                await this.saveFundsAtTargetDay();
-                
-                // Vérifier l'échec sur les fonds juste après avoir enregistré
-                if (!this.objectiveFailed && this.trackingData.fundsAtTargetDay < 600) {
-                    console.log(`❌ Échec sur les fonds au tour ${this.targetDay}: ${this.trackingData.fundsAtTargetDay}€ au lieu de 600€ (threshold_date)`);
-                    
-                    // Enregistrer l'échec dans le store
-                    try {
-                        if (window.objectivesStore) {
-                            await window.objectivesStore.recordObjectiveFailure({
-                                objectiveId: 'budget_challenge_60_days',
-                                type: 'threshold_date',
-                                turn: this.targetDay,
-                                reason: 'Fonds insuffisants à la date cible',
-                                details: {
-                                    fundsAtTargetDay: this.trackingData.fundsAtTargetDay,
-                                    requiredFunds: 600,
-                                    targetDay: this.targetDay,
-                                    minNetFlow: this.trackingData.minNetFlow,
-                                    maxNetFlow: this.trackingData.maxNetFlow,
-                                    maxNetFlowTurn: this.trackingData.maxNetFlowTurn,
-                                    resetCount: this.resetCount
-                                }
-                            });
-                        }
-                    } catch (error) {
-                        console.error('Error recording threshold_date failure:', error);
-                    }
-                    
-                    // Rééchelonner la date cible (ajouter la période de grâce pour donner le même nombre de jours)
-                    // 60 jours + 20 tours de grâce = 80 tours au total
-                    this.targetDay = currentDay + 80; // 60 + 20 = 80 tours
-                    this.trackingData.fundsAtTargetDay = null; // Réinitialiser pour attendre la nouvelle date
-                    console.log(`📅 Date cible rééchelonnée au tour ${this.targetDay} (dans 80 tours depuis maintenant)`);
-                }
-            }
-
-            // Vérifier la complétion uniquement au tour cible de la tentative actuelle
-            // Ne pas vérifier aux tours précédents (ex: tour 60 lors de la 2e tentative)
-            if (currentDay === this.targetDay && !this.objectiveFailed && this.trackingData.fundsAtTargetDay !== null && this.trackingData.fundsAtTargetDay >= 600) {
-                await this.verifyObjective('budget_challenge_60_days');
+            // Vérifier si l'objectif est complété (fond >= 5000)
+            if (objective && objective.active && !objective.completed && this.trackingData.currentFunds >= 5000) {
+                await this.verifyObjective('budget_challenge_5000');
             }
 
         } catch (error) {
@@ -189,120 +115,13 @@ class ObjectivesTracker {
     }
 
     /**
-     * Met à jour les données de tracking depuis les états de budget sauvegardés
-     * Les comptes de résultat sont sauvegardés tous les 3 tours (3 intervalles)
-     * @param {number} currentDay - Tour actuel (1 tour = 1 intervalle)
-     */
-    async updateTrackingFromBudgetStates(currentDay) {
-        try {
-            // Calculer le début effectif du tracking (début après période de grâce)
-            const gracePeriodStart = this.resetCount > 0 ? this.lastResetTurn + this.gracePeriod : this.lastResetTurn;
-            
-            // Récupérer les états de budget depuis la fin de la période de grâce uniquement
-            const budgetStates = await window.budgetManager.getBudgetStatesForPeriod(gracePeriodStart, currentDay);
-            
-            // Mettre à jour les données de tracking
-            this.trackingData.currentDay = currentDay;
-            
-            // Calculer le flux net min et max depuis les états sauvegardés
-            if (budgetStates.length > 0) {
-                budgetStates.forEach(state => {
-                    // Ignorer les états pendant la période de grâce pour les tentatives après échec
-                    const isAfterGracePeriod = state.turn > gracePeriodStart;
-                    
-                    if (state.netFlow !== undefined && (this.resetCount === 0 || isAfterGracePeriod)) {
-                        // Trouver le flux net minimum et son tour
-                        if (state.netFlow < this.trackingData.minNetFlow) {
-                            this.trackingData.minNetFlow = state.netFlow;
-                            this.trackingData.minNetFlowTurn = state.turn;
-                        }
-                        
-                        // Trouver le flux net maximum et son tour
-                        if (state.netFlow > this.trackingData.maxNetFlow) {
-                            this.trackingData.maxNetFlow = state.netFlow;
-                            this.trackingData.maxNetFlowTurn = state.turn;
-                        }
-                    }
-                });
-                
-            }
-        } catch (error) {
-            console.error('Error updating tracking from budget states:', error);
-        }
-    }
-
-    /**
-     * Enregistre les fonds à la date cible depuis les états de budget
-     * Date cible rééchelonnable (threshold_date)
-     */
-    async saveFundsAtTargetDay() {
-        try {
-            // Récupérer l'état de budget à la date cible (tour targetDay)
-            const budgetStates = await window.budgetManager.getBudgetStatesForPeriod(this.targetDay - 3, this.targetDay);
-            
-            // Trouver l'état le plus proche de la date cible
-            const stateAtTargetDay = budgetStates.find(state => state.turn === this.targetDay) || 
-                                     budgetStates[budgetStates.length - 1];
-            
-            if (stateAtTargetDay) {
-                this.trackingData.fundsAtTargetDay = stateAtTargetDay.funds || 0;
-            } else {
-                // Fallback sur le budget actuel si aucun état n'est trouvé
-                const budget = await window.budgetManager.getCurrentBudget();
-                this.trackingData.fundsAtTargetDay = budget.funds || 0;
-            }
-        } catch (error) {
-            console.error('Error saving funds at target day:', error);
-        }
-    }
-
-    /**
-     * Gère l'échec de l'objectif (seuil critique atteint)
-     * @param {number} currentDay - Tour actuel
-     */
-    async handleObjectiveFailure(currentDay) {
-        // Afficher une modale de rééchelonnement
-        this.showRescheduleModal();
-    }
-
-    /**
-     * Affiche une modale de rééchelonnement de l'objectif
+     * Affiche une modale de rééchelonnement de l'objectif (deprecated - kept for compatibility)
+     * No longer used with simplified objective
      */
     showRescheduleModal() {
-        // Créer l'overlay semi-transparent
-        const overlay = document.createElement('div');
-        overlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 2, 53, 0.85);
-            z-index: 10001;
-            backdrop-filter: blur(3px);
-        `;
-        
-        const modal = document.createElement('div');
-        modal.className = 'objective-reschedule-modal';
-        modal.innerHTML = `
-            <div class="reschedule-modal-content">
-                <h3>⚠️ Objectif Non Atteint</h3>
-                <div class="reschedule-modal-message">
-                    <p>Le flux net est descendu à <strong>${this.trackingData.minNetFlow}€</strong> au tour ${this.trackingData.minNetFlowTurn}.</p>
-                    <p>L'objectif (seuil en spirale) exigeait que le flux net ne descende jamais en dessous de -20€. ${this.resetCount === 0 ? 'Vous aurez maintenant une période de grâce de 20 tours pour vous remettre en ordre.' : 'Après cette tentative, vous bénéficierez d\'une période de grâce de 20 tours.'}</p>
-                </div>
-                <div class="reschedule-modal-buttons">
-                    <button class="reschedule-btn">Rééchelonner l'objectif</button>
-                    <button class="replay-all-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-ccw">
-                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                            <path d="M3 3v5h5"/>
-                        </svg>
-                        Rejouer
-                    </button>
-                </div>
-            </div>
-        `;
+        // This function is deprecated - simplified objective doesn't need rescheduling
+        console.log('showRescheduleModal called but no longer needed with simplified objective');
+        return;
         
         // Styles inline pour la modale
         modal.style.cssText = `
@@ -427,82 +246,11 @@ class ObjectivesTracker {
     }
 
     /**
-     * Rééchelonne l'objectif (remet à zéro les compteurs du tracker uniquement)
-     * Enregistre l'échec dans le store objectives
+     * Rééchelonne l'objectif (deprecated - kept for compatibility)
      */
     async rescheduleObjective() {
-        // Enregistrer l'échec dans le store
-        try {
-            if (window.objectivesStore) {
-                await window.objectivesStore.recordObjectiveFailure({
-                    objectiveId: 'budget_challenge_60_days',
-                    type: 'threshold_spiral',
-                    turn: this.trackingData.minNetFlowTurn,
-                    reason: 'Flux net minimum en dessous de -20€',
-                    details: {
-                        minNetFlow: this.trackingData.minNetFlow,
-                        maxNetFlow: this.trackingData.maxNetFlow,
-                        maxNetFlowTurn: this.trackingData.maxNetFlowTurn,
-                        fundsAtTargetDay: this.trackingData.fundsAtTargetDay,
-                        targetDay: this.targetDay,
-                        resetCount: this.resetCount
-                    }
-                });
-            }
-        } catch (error) {
-            console.error('Error recording objective failure:', error);
-        }
-        
-        // Sauvegarder les données actuelles avant reset
-        const currentDay = this.trackingData.currentDay;
-        const isFirstReset = this.resetCount === 0; // Si resetCount === 0, c'est le 1er reset (= 2e tentative)
-        
-        // Enregistrer le tour du reset pour tracker uniquement depuis ce tour (AVANT de reset)
-        this.lastResetTurn = currentDay;
-        
-        // Reset uniquement les compteurs du tracker
-        this.trackingData = {
-            minNetFlow: Infinity,
-            maxNetFlow: -Infinity,
-            minNetFlowTurn: null,
-            maxNetFlowTurn: null,
-            fundsAtTargetDay: null,
-            currentDay: currentDay // Garder le tour actuel
-        };
-        
-        // Réinitialiser le statut d'échec
-        this.objectiveFailed = false;
-        
-        // Incrémenter le resetCount AVANT de calculer la nouvelle cible
-        this.resetCount++;
-        
-        // Calculer la date cible depuis le tour de reset
-        // Si échec au tour X :
-        // - Période de grâce : tours X+1 à X+20 (20 tours)
-        // - Tracking commence : tour X+21
-        // - Objectif sur 60 tours : donc cible au tour X+21+60-1 = X+80
-        // Donc : tour_reset + période_grâce (20) + durée_objectif (60) = tour_reset + 80
-        if (this.resetCount >= 1) {
-            // 2e tentative et suivantes : tour_reset + 80
-            this.targetDay = currentDay + 81; // +1 pour commencer après le tour de grâce
-            console.log(`🎯 Nouvelle cible calculée: tour ${this.targetDay} (reset au tour ${currentDay} + 20 grâce + 61 jours)`);
-        }
-        // Sinon, reste à 60 (première tentative)
-        
-        // IMPORTANT : Réactiver l'objectif pour permettre une nouvelle tentative
-        const objective = this.objectives.find(obj => obj.id === 'budget_challenge_60_days');
-        if (objective) {
-            objective.active = true;
-            objective.completed = false;
-        }
-        
-        // Message de confirmation
-        this.showRescheduleSuccess();
-        
-        // Réactiver les événements Three.js
-        if (window.tutorialManager && window.tutorialManager.enableThreeJSEvents) {
-            window.tutorialManager.enableThreeJSEvents();
-        }
+        // No longer needed with simplified objective
+        console.log('Reschedule no longer needed with simplified objective');
     }
 
     /**
@@ -742,11 +490,8 @@ class ObjectivesTracker {
                     details: {
                         title: objective?.title || 'Unknown',
                         description: objective?.description || '',
-                        minNetFlow: this.trackingData.minNetFlow,
-                        maxNetFlow: this.trackingData.maxNetFlow,
-                        fundsAtTargetDay: this.trackingData.fundsAtTargetDay,
-                        resetCount: this.resetCount,
-                        totalAttempts: this.resetCount + 1
+                        currentFunds: this.trackingData.currentFunds,
+                        turn: turn
                     }
                 });
             }
@@ -760,24 +505,14 @@ class ObjectivesTracker {
      * Tout redevient neutre - pas d'objectif actif
      */
     resetAfterCompletion() {
-        // Réinitialiser tous les compteurs
+        // Réinitialiser les données de tracking
         this.trackingData = {
-            minNetFlow: Infinity,
-            maxNetFlow: -Infinity,
-            minNetFlowTurn: null,
-            maxNetFlowTurn: null,
-            fundsAtTargetDay: null,
+            currentFunds: 0,
             currentDay: this.trackingData.currentDay // Garder le tour actuel
         };
         
-        // Réinitialiser le statut d'échec et les compteurs
-        this.objectiveFailed = false;
-        this.resetCount = 0;
-        this.lastResetTurn = 0;
-        this.targetDay = 60;
-        
         // Désactiver l'objectif après succès
-        const objective = this.objectives.find(obj => obj.id === 'budget_challenge_60_days');
+        const objective = this.objectives.find(obj => obj.id === 'budget_challenge_5000');
         if (objective) {
             objective.active = false;
             objective.completed = false;

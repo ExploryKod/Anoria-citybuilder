@@ -78,7 +78,8 @@ class MeshLoaderOptimized {
 
     // Per-asset size overrides (for assets that need different size than their category)
     assetSizeOverrides = {
-        'Windmill-001': 0.5  // Windmills should match one case size like houses
+        'Windmill-001': 0.5,  // Windmills should match one case size like houses
+        'Barn-001': 0.5       // Storehouse should match one case size like houses
     }
 
     assetNames = [];

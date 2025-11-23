@@ -22,7 +22,7 @@ import {
     palaces
 } from '../ui/nodes.js';
 import {assetsPrices} from "../meshs/data.js";
-import { checkRoadAccess, checkFoodAvailability } from './modules/ModuleHelper.js';
+import { checkRoadAccess, checkFoodAvailability, canHouseEvolveToPalace, canHouseEvolveToPurple } from './modules/ModuleHelper.js';
 import { setRoadAccessIcon } from './modules/StatusIconHelper.js';
 import { TimeManager } from './utils/TimeManager.js';
 import config from './config.js';
@@ -536,7 +536,7 @@ export function createScene(housesStore, gameStore, assetManager) {
               const isOnEdge = x === 0 || x === city.size - 1 || y === 0 || y === city.size - 1;
 
               if(currentBuildingId && isInCityLimits) {
-                const currentUniqueID =  makeDbItemId(currentBuildingId, x, y)
+                let currentUniqueID =  makeDbItemId(currentBuildingId, x, y)
                 // Skip if makeDbItemId returned false (invalid building ID or coordinates)
                 if(!currentUniqueID) {
                     continue;
@@ -988,16 +988,12 @@ export function createScene(housesStore, gameStore, assetManager) {
                     // The service writes: stocks = {wheat: 0, carrot: 1, cabbage: 0, food: 1}
                     // Then this code was reading empty userData.stocks and overwriting IndexedDB with 0s!
 
-                    if(time > 0) {
-                        const HouseTime = { name: currentUniqueID, increment: 1, field: 'time' };
-                        await housesStore.incrementHouseField(HouseTime, false)
-                    }
-
                     // Check if house has food AND road access before allowing population growth (using module helpers, DB remains source of truth)
                     // Read stocks from IndexedDB (FoodDistributionService's updates are here)
                     const houseFoodStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks');
                     const houseNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
                     const currentPop = await housesStore.getHouseItem(currentUniqueID, 'pop');
+                    const worldTime = await housesStore.getHouseItem(currentUniqueID, 'worldTime');
                     
                     // IMPORTANT: Sync IndexedDB stocks to userData for visual display
                     // This ensures stocks updated by FoodDistributionService are reflected in UI
@@ -1202,9 +1198,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                         }
                     }
 
-                    const houseTime = await housesStore.getHouseItem(currentUniqueID, 'time');
-                    // House time processing
-
                     if(houseNeighbors && buildings[x][y]) {
                         const { hasAccess, roadCount } = checkRoadAccess(houseNeighbors);
                         await housesStore.updateHouseFields(currentUniqueID, { roads: roadCount });
@@ -1231,8 +1224,9 @@ export function createScene(housesStore, gameStore, assetManager) {
                     /* house evolution to stage 2 */
                     // Use food module for calculations (DB stocks remain source of truth, reuse already-fetched values)
                     const { meetsFoodGoal, isInsufficient } = checkFoodAvailability(houseFoodStocks, currentPop);
-                    const foodGoal = meetsFoodGoal;
-                    const decay = houseTime > 3 && isInsufficient;
+                    // Use unified time system for decay check (worldTime is source of truth)
+                    const buildingAge = TimeManager.getBuildingAge(time, worldTime);
+                    const decay = buildingAge > 3 && isInsufficient;
 
                     // Set food status sprite based on module result
                     // Show "no-food" icon when !hasFood (sprite shown when condition is true)
@@ -1270,7 +1264,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                         const newUniqueBuildingId = makeDbItemId('House-Red', x, y);
                         const keys = { type : "House-Red", price: assetsPrices["House-Red"].price}
                         await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
-                        await housesStore.deleteOneHouse(currentUniqueID);
                         buildings[x][y] = assetManager.createAsset('House-Red', x, y);
                         // Add to appropriate zone group (NOT directly to scene)
                         const zoneX = Math.floor(x / ZONE_SIZE);
@@ -1295,7 +1288,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                         const newUniqueBuildingId = makeDbItemId('House-Blue', x, y);
                         const keys = { type : "House-Blue", price: assetsPrices["House-Blue"].price}
                         await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
-                        await housesStore.deleteOneHouse(currentUniqueID);
                         buildings[x][y] = assetManager.createAsset('House-Blue', x, y);
                         // Add to appropriate zone group (NOT directly to scene)
                         const zoneX = Math.floor(x / ZONE_SIZE);
@@ -1314,14 +1306,121 @@ export function createScene(housesStore, gameStore, assetManager) {
                             population: currentPop
                         });
                     }
+                    
+                    /* house evolution: Red → Purple based on food conditions */
+                    // House-Red becomes House-Purple when all conditions are met:
+                    // - All House-Red conditions (pop > 0, road access)
+                    // - No one suffering from hunger (food stocks = population)
+                    else if (currentBuildingId === 'House-Red') {
+                        const purpleEvolutionCheck = canHouseEvolveToPurple({
+                            stocks: houseFoodStocks,
+                            population: currentPop,
+                            buildingType: currentBuildingId,
+                            hasRoadAccess: hasRoadAccess
+                        });
+                        
+                        if (purpleEvolutionCheck.canEvolve) {
+                            removeInteractiveObject(buildings[x][y]);
+                            const newUniqueBuildingId = makeDbItemId('House-Purple', x, y);
+                            const keys = { type : "House-Purple", price: assetsPrices["House-Purple"].price}
+                            await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
+                            buildings[x][y] = assetManager.createAsset('House-Purple', x, y);
+                            // Add to appropriate zone group (NOT directly to scene)
+                            const zoneX = Math.floor(x / ZONE_SIZE);
+                            const zoneY = Math.floor(y / ZONE_SIZE);
+                            const citySize = city.size || 16;
+                            const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
+                            if (zoneGroups[zoneIndex]) {
+                                zoneGroups[zoneIndex].add(buildings[x][y]);
+                            } else {
+                                // Fallback: add directly to scene if zone group doesn't exist
+                                scene.add(buildings[x][y]);
+                            }
+                            console.log('[scene.js] House evolved: House-Red → House-Purple (well-fed)', {
+                                houseId: currentUniqueID,
+                                newId: newUniqueBuildingId,
+                                population: currentPop,
+                                foodStocks: houseFoodStocks
+                            });
+                        }
+                    }
+                    
+                    /* house regression: Purple → Red if conditions no longer met */
+                    // House-Purple becomes House-Red when conditions are no longer met
+                    else if (currentBuildingId === 'House-Purple') {
+                        const purpleEvolutionCheck = canHouseEvolveToPurple({
+                            stocks: houseFoodStocks,
+                            population: currentPop,
+                            buildingType: 'House-Red', // Check if it would qualify as House-Red
+                            hasRoadAccess: hasRoadAccess
+                        });
+                        
+                        if (!purpleEvolutionCheck.canEvolve) {
+                            removeInteractiveObject(buildings[x][y]);
+                            const newUniqueBuildingId = makeDbItemId('House-Red', x, y);
+                            const keys = { type : "House-Red", price: assetsPrices["House-Red"].price}
+                            await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
+                            buildings[x][y] = assetManager.createAsset('House-Red', x, y);
+                            // Add to appropriate zone group (NOT directly to scene)
+                            const zoneX = Math.floor(x / ZONE_SIZE);
+                            const zoneY = Math.floor(y / ZONE_SIZE);
+                            const citySize = city.size || 16;
+                            const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
+                            if (zoneGroups[zoneIndex]) {
+                                zoneGroups[zoneIndex].add(buildings[x][y]);
+                            } else {
+                                // Fallback: add directly to scene if zone group doesn't exist
+                                scene.add(buildings[x][y]);
+                            }
+                            console.log('[scene.js] House regressed: House-Purple → House-Red (conditions no longer met)', {
+                                houseId: currentUniqueID,
+                                newId: newUniqueBuildingId,
+                                population: currentPop,
+                                reason: purpleEvolutionCheck.reason,
+                                foodStocks: houseFoodStocks
+                            });
+                        }
+                    }
 
-                    /* house evolution to stage 2 (palace) - unchanged logic */
-                    if(houseTime > 3 && foodGoal && firstHouses.includes(currentBuildingId)) {
+                    /* house evolution to stage 2 (palace) - using unified helper function */
+                    const evolutionCheck = canHouseEvolveToPalace({
+                        stocks: houseFoodStocks,
+                        population: currentPop,
+                        buildingType: currentBuildingId,
+                        firstHouses: firstHouses
+                    });
+                    
+                    if(evolutionCheck.canEvolve) {
                         removeInteractiveObject(buildings[x][y]);
                         const newUniqueBuildingId = makeDbItemId('House-2Story', x, y);
                         const keys = { type : "House-2Story", price: assetsPrices["House-2Story"].price}
+                        
+                        // Preserve neighbors and roads data before evolution
+                        const houseNeighborsBeforeEvolution = houseNeighbors || [];
+                        const { roadCount: roadsBeforeEvolution } = checkRoadAccess(houseNeighborsBeforeEvolution);
+                        
                         await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
-                        await housesStore.deleteOneHouse(currentUniqueID);
+                        // Note: updateHouseName already deletes oldName, so deleteOneHouse is not needed
+                        
+                        // IMPORTANT: Update currentBuildingId and currentUniqueID to reflect the evolution
+                        // This ensures subsequent code in the same loop iteration uses the correct ID
+                        currentBuildingId = 'House-2Story';
+                        const oldUniqueID = currentUniqueID;
+                        currentUniqueID = newUniqueBuildingId;
+                        
+                        // Update buildingData to reflect the evolution (used later for neighbor updates)
+                        if (buildingData) {
+                            buildingData.currentBuildingId = currentBuildingId;
+                            buildingData.currentUniqueID = currentUniqueID;
+                        }
+                        
+                        // Ensure neighbors and roads are preserved in the new record
+                        // (updateHouseName should preserve them, but we explicitly update to be safe)
+                        await housesStore.updateHouseFields(currentUniqueID, {
+                            neighbors: houseNeighborsBeforeEvolution,
+                            roads: roadsBeforeEvolution
+                        });
+                        
                         buildings[x][y] = assetManager.createAsset('House-2Story', x, y);
                         // Add to appropriate zone group (NOT directly to scene)
                         const zoneX = Math.floor(x / ZONE_SIZE);
@@ -1334,6 +1433,14 @@ export function createScene(housesStore, gameStore, assetManager) {
                             // Fallback: add directly to scene if zone group doesn't exist
                             scene.add(buildings[x][y]);
                         }
+                        console.log('[scene.js] House evolved to palace:', {
+                            houseId: oldUniqueID,
+                            newId: currentUniqueID,
+                            age: buildingAge,
+                            population: currentPop,
+                            roads: roadsBeforeEvolution,
+                            neighborsCount: houseNeighborsBeforeEvolution.length
+                        });
                     }
 
                 }
