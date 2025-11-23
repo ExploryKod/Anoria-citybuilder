@@ -1460,6 +1460,115 @@ export function createScene(housesStore, gameStore, assetManager) {
                         });
                     }
 
+                    /* house regression: 2Story → Purple/Red/Blue if conditions no longer met */
+                    // House-2Story regresses when palace conditions are no longer met
+                    else if (currentBuildingId === 'House-2Story') {
+                        // Check if palace conditions are still met
+                        const palaceEvolutionCheck = canHouseEvolveToPalace({
+                            stocks: houseFoodStocks,
+                            population: currentPop,
+                            buildingType: 'House-Purple', // Check if it would qualify from House-Purple
+                            firstHouses: firstHouses
+                        });
+                        
+                        // If palace conditions are no longer met, regress
+                        if (!palaceEvolutionCheck.canEvolve) {
+                            let targetType = 'House-Red'; // Default regression target
+                            
+                            // Determine regression target based on current conditions
+                            if (currentPop === 0) {
+                                // No population -> regress to House-Blue
+                                targetType = 'House-Blue';
+                            } else {
+                                // Check if House-Purple conditions are met
+                                const purpleEvolutionCheck = canHouseEvolveToPurple({
+                                    stocks: houseFoodStocks,
+                                    population: currentPop,
+                                    buildingType: 'House-Red',
+                                    hasRoadAccess: hasRoadAccess
+                                });
+                                
+                                if (purpleEvolutionCheck.canEvolve) {
+                                    // Can maintain House-Purple level
+                                    targetType = 'House-Purple';
+                                } else {
+                                    // Can only maintain House-Red level
+                                    targetType = 'House-Red';
+                                }
+                            }
+                            
+                            removeInteractiveObject(buildings[x][y]);
+                            const newUniqueBuildingId = makeDbItemId(targetType, x, y);
+                            const keys = { type: targetType, price: assetsPrices[targetType].price };
+                            
+                            // Preserve neighbors and roads data before regression
+                            const houseNeighborsBeforeRegression = houseNeighbors || [];
+                            const { roadCount: roadsBeforeRegression } = checkRoadAccess(houseNeighborsBeforeRegression);
+                            
+                            // Update house name in database
+                            const updateResult = await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
+                            
+                            // If updateHouseName failed (house not found), create the house entry
+                            if (!updateResult || !updateResult.success) {
+                                const newHouseData = {
+                                    name: newUniqueBuildingId,
+                                    type: keys.type,
+                                    price: keys.price,
+                                    x: x,
+                                    y: y,
+                                    neighbors: houseNeighborsBeforeRegression,
+                                    pop: currentPop,
+                                    stocks: houseFoodStocks || { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
+                                    roads: roadsBeforeRegression,
+                                    worldTime: worldTime || time
+                                };
+                                await housesStore.addHouse(newHouseData);
+                            } else {
+                                // Ensure neighbors and roads are preserved
+                                await housesStore.updateHouseFields(newUniqueBuildingId, {
+                                    neighbors: houseNeighborsBeforeRegression,
+                                    roads: roadsBeforeRegression
+                                });
+                            }
+                            
+                            buildings[x][y] = assetManager.createAsset(targetType, x, y);
+                            // Add to appropriate zone group (NOT directly to scene)
+                            const zoneX = Math.floor(x / ZONE_SIZE);
+                            const zoneY = Math.floor(y / ZONE_SIZE);
+                            const citySize = city.size || 16;
+                            const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
+                            if (zoneGroups[zoneIndex]) {
+                                zoneGroups[zoneIndex].add(buildings[x][y]);
+                            } else {
+                                // Fallback: add directly to scene if zone group doesn't exist
+                                scene.add(buildings[x][y]);
+                            }
+                            
+                            // Update currentBuildingId and currentUniqueID to reflect the regression
+                            currentBuildingId = targetType;
+                            const oldUniqueID = currentUniqueID;
+                            currentUniqueID = newUniqueBuildingId;
+                            
+                            // Update buildingData to reflect the regression
+                            if (buildingData) {
+                                buildingData.currentBuildingId = currentBuildingId;
+                                buildingData.currentUniqueID = currentUniqueID;
+                            }
+                            
+                            // Force neighbor recalculation
+                            houseNeighbors = null;
+                            
+                            console.log('[scene.js] House regressed: House-2Story → ' + targetType + ' (conditions no longer met)', {
+                                houseId: oldUniqueID,
+                                newId: currentUniqueID,
+                                population: currentPop,
+                                reason: palaceEvolutionCheck.reason,
+                                foodStocks: houseFoodStocks,
+                                targetType: targetType
+                            });
+                        }
+                    }
+
                 }
           
               }
