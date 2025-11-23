@@ -268,6 +268,35 @@ export class TimeManager {
 
         return `${dayLabel} | ${timeInfo.month} | ${timeInfo.season}`;
     }
+
+    /**
+     * Calculate the age of a building in days
+     * Uses worldTime (creation time) as the source of truth
+     * @param {number} currentTime - Current game time in days
+     * @param {number} worldTime - Building creation time (worldTime field from IndexedDB)
+     * @returns {number} Age in days (0 if worldTime is not set or invalid)
+     */
+    static getBuildingAge(currentTime, worldTime) {
+        if (worldTime === undefined || worldTime === null || isNaN(worldTime) || typeof worldTime !== 'number') {
+            return 0;
+        }
+        if (currentTime === undefined || currentTime === null || isNaN(currentTime) || typeof currentTime !== 'number') {
+            return 0;
+        }
+        return Math.max(0, currentTime - worldTime);
+    }
+
+    /**
+     * Check if a building is old enough for evolution
+     * @param {number} currentTime - Current game time in days
+     * @param {number} worldTime - Building creation time
+     * @param {number} requiredAgeDays - Required age in days (default: 3)
+     * @returns {boolean} True if building is old enough
+     */
+    static isBuildingOldEnough(currentTime, worldTime, requiredAgeDays = 3) {
+        const age = this.getBuildingAge(currentTime, worldTime);
+        return age > requiredAgeDays;
+    }
 }
 
 // Exposer TimeManager globalement pour permettre la mise à jour du cache

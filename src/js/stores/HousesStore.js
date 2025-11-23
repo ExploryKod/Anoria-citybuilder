@@ -210,11 +210,20 @@ class HouseStore {
     async updateHouseName(oldName, newName, keys = {}) {
         const house = await this.db.houses.get(oldName);
         if (house) {
-            house.name = newName;
-            if (keys.type) house.type = keys.type;
-            if (keys.price) house.price = keys.price;
-            await this.db.houses.put(house);
+            // Delete old entry first to avoid key conflicts
             await this.db.houses.delete(oldName);
+            
+            // Create new entry with updated name and keys, preserving all other fields
+            const updatedHouse = {
+                ...house,
+                name: newName
+            };
+            
+            if (keys.type) updatedHouse.type = keys.type;
+            if (keys.price) updatedHouse.price = keys.price;
+            
+            // Put the new entry
+            await this.db.houses.put(updatedHouse);
         }
     }
 
