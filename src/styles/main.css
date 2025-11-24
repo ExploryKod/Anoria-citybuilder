@@ -356,7 +356,9 @@ canvas.pointer-events-disabled {
 }
 
 .toolbar__buttons {
+    max-width: calc(50px * 2 + 5px);
     display: flex;
+    flex-wrap: wrap;
     gap: 5px;
 }
 
@@ -1555,8 +1557,7 @@ button#pwa-refresh:hover {
 
     /* Boutons carrés pour les éléments interactifs uniquement */
     .info-panel > .info-box.realtime-budget-box,
-    .info-panel > .info-box.budget-states-box,
-    .info-panel > .info-box.journal-box,
+    .info-panel > .info-box.administrator-box,
     .info-panel > .info-box.city-map-box {
         width: 40px;
         height: 40px;
@@ -1624,7 +1625,7 @@ button#pwa-refresh:hover {
     }
 
     /* Taille de police spécifique pour les éléments informatifs */
-    .info-panel > .info-box:not(.realtime-budget-box):not(.budget-states-box):not(.journal-box):not(.city-map-box) p {
+    .info-panel > .info-box:not(.realtime-budget-box):not(.administrator-box):not(.city-map-box) p {
         font-size: 14px;
         font-weight: 700;
     }
