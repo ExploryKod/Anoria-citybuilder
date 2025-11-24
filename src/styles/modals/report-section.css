@@ -1,0 +1,190 @@
+/* Report Section - Inspired by Caesar 3 Chief Advisor */
+
+.report-board {
+    background: #fafafa;
+    border-radius: var(--border-radius-small);
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: left;
+}
+
+.report-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--info);
+}
+
+.report-header-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--info);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.report-header-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--primary);
+    margin: 0;
+    text-align: left;
+}
+
+.report-period-info {
+    margin: 15px 0;
+    padding: 10px 12px;
+    background: rgba(23, 162, 184, 0.1);
+    border-radius: var(--border-radius-small);
+    border-left: 4px solid var(--info);
+    font-size: 13px;
+    color: var(--primary);
+    text-align: left;
+}
+
+.report-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.report-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 12px;
+    background: white;
+    border-radius: var(--border-radius-small);
+    border-left: 4px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.report-item:hover {
+    background: rgba(251, 129, 34, 0.05);
+}
+
+.report-item-bullet {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #666;
+    margin-top: 6px;
+    flex-shrink: 0;
+}
+
+.report-item-content {
+    flex: 1;
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.report-item-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--primary);
+    min-width: 150px;
+}
+
+.report-item-status {
+    font-size: 14px;
+    color: var(--primary);
+    text-align: left;
+    flex: 1;
+}
+
+.report-item-status.positive {
+    color: var(--success);
+    font-weight: 500;
+}
+
+.report-item-status.normal {
+    color: var(--primary);
+}
+
+.report-item-status.warning {
+    color: var(--warning);
+    font-weight: 500;
+}
+
+.report-item-status.danger {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.report-item.danger {
+    border-left-color: var(--danger);
+    background: rgba(156, 41, 57, 0.05);
+}
+
+.report-item.warning {
+    border-left-color: var(--warning);
+    background: rgba(255, 193, 7, 0.05);
+}
+
+.report-item.positive {
+    border-left-color: var(--success);
+    background: rgba(40, 167, 69, 0.05);
+}
+
+.report-item.normal {
+    border-left-color: #ccc;
+}
+
+/* Mobile Responsive */
+@media screen and (max-width: 1024px) {
+    .report-board {
+        padding: 15px;
+        text-align: left;
+    }
+
+    .report-header-title {
+        font-size: 20px;
+        text-align: left;
+    }
+
+    .report-period-info {
+        text-align: left;
+    }
+
+    .report-item-content {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+    }
+
+    .report-item-label {
+        min-width: auto;
+        text-align: left;
+    }
+
+    .report-item-status {
+        width: 100%;
+        text-align: left;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .report-board {
+        padding: 12px;
+        text-align: left;
+    }
+
+    .report-item {
+        padding: 10px;
+    }
+
+    .report-item-label,
+    .report-item-status {
+        text-align: left;
+    }
+}
+

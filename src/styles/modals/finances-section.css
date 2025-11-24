@@ -1,0 +1,337 @@
+/* Finances Section - Inspired by Caesar 3 */
+
+.finances-board {
+    background: #fafafa;
+    border-radius: var(--border-radius-small);
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: left;
+}
+
+
+.finances-debt-info {
+    margin: 15px 0;
+    padding: 12px;
+    background: rgba(251, 129, 34, 0.1);
+    border-radius: var(--border-radius-small);
+    border-left: 4px solid var(--cta);
+}
+
+.finances-debt-text {
+    font-size: 14px;
+    color: var(--primary);
+    margin: 0;
+    text-align: left;
+}
+
+.finances-debt-amount {
+    font-weight: 700;
+    color: var(--cta);
+}
+
+.finances-tax-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 15px 0;
+    padding: 12px;
+    background: rgba(251, 129, 34, 0.05);
+    border-radius: var(--border-radius-small);
+    max-width: 300px;
+}
+
+.finances-tax-controls-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+.finances-tax-label {
+    font-size: 14px;
+    color: var(--primary);
+    font-weight: 500;
+    text-align: left;
+}
+
+.finances-tax-buttons {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.finances-tax-btn {
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--cta);
+    background: white;
+    color: var(--cta);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.finances-tax-btn:hover {
+    background: var(--cta);
+    color: white;
+}
+
+.finances-tax-btn:active {
+    transform: scale(0.95);
+}
+
+.finances-tax-rate {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--cta);
+    min-width: 50px;
+    text-align: center;
+}
+
+.finances-tax-estimate-wrapper {
+    width: 100%;
+}
+
+.finances-tax-estimate {
+    font-size: 13px;
+    color: var(--primary);
+    text-align: left;
+    display: block;
+}
+
+.finances-tax-registration {
+    font-size: 13px;
+    color: var(--primary);
+    margin-top: 8px;
+    text-align: left;
+}
+
+.finances-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background: white;
+    border-radius: var(--border-radius-small);
+    overflow: hidden;
+}
+
+.finances-table thead {
+    background: var(--cta);
+    color: white;
+}
+
+.finances-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 14px;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.finances-table th:last-child {
+    border-right: none;
+}
+
+.finances-table th.indicator-col {
+    width: 50px;
+    text-align: center;
+}
+
+.finances-table th.label-col {
+    width: auto;
+    text-align: left;
+    flex: 1;
+}
+
+.finances-table th.last-year-col {
+    width: 150px;
+    text-align: left;
+}
+
+.finances-table th.this-year-col {
+    width: 150px;
+    text-align: left;
+}
+
+.finances-table tbody tr {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.finances-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.finances-table td {
+    padding: 10px 12px;
+    font-size: 14px;
+    color: var(--primary);
+    text-align: left;
+}
+
+.finances-table td.indicator-col {
+    text-align: center;
+    padding: 10px 8px;
+}
+
+.finances-table td.indicator-col svg {
+    width: 18px;
+    height: 18px;
+    opacity: 0.6;
+}
+
+.finances-table td.label-col {
+    text-align: left;
+}
+
+.finances-table td.last-year-col,
+.finances-table td.this-year-col {
+    text-align: left;
+    font-weight: 500;
+}
+
+.finances-table .finances-row-label {
+    font-weight: 500;
+    color: var(--primary);
+}
+
+.finances-table .finances-row-total {
+    font-weight: 700;
+    background: rgba(251, 129, 34, 0.1);
+    border-top: 2px solid var(--cta);
+}
+
+.finances-table .finances-row-total .finances-row-label {
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.finances-table .finances-row-net {
+    font-weight: 600;
+    background: rgba(0, 153, 153, 0.1);
+}
+
+.finances-table .finances-row-balance {
+    font-weight: 700;
+    background: rgba(40, 167, 69, 0.1);
+    border-top: 2px solid var(--lightgreen);
+}
+
+.finances-table .finances-row-balance.negative {
+    background: rgba(156, 41, 57, 0.1);
+    border-top-color: var(--danger);
+}
+
+.finances-table .finances-value-positive {
+    color: var(--success);
+}
+
+.finances-table .finances-value-negative {
+    color: var(--danger);
+}
+
+.finances-message-area {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: var(--border-radius-small);
+    background: rgba(251, 129, 34, 0.05);
+    border-left: 4px solid var(--cta);
+    min-height: 60px;
+}
+
+.finances-message-area.warning {
+    background: rgba(255, 193, 7, 0.1);
+    border-left-color: var(--warning);
+}
+
+.finances-message-area.danger {
+    background: rgba(156, 41, 57, 0.1);
+    border-left-color: var(--danger);
+}
+
+.finances-message-area.success {
+    background: rgba(40, 167, 69, 0.1);
+    border-left-color: var(--success);
+}
+
+.finances-message-text {
+    font-size: 14px;
+    color: var(--primary);
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* Mobile Responsive */
+@media screen and (max-width: 1024px) {
+    .finances-board {
+        padding: 15px;
+        text-align: left;
+    }
+
+    .finances-header-title {
+        font-size: 20px;
+        text-align: left;
+    }
+
+    .finances-table {
+        font-size: 12px;
+    }
+
+    .finances-table th,
+    .finances-table td {
+        padding: 8px;
+        font-size: 12px;
+        text-align: left;
+    }
+
+    .finances-table th.indicator-col,
+    .finances-table td.indicator-col {
+        text-align: center;
+    }
+
+    .finances-table th.last-year-col,
+    .finances-table th.this-year-col {
+        width: 100px;
+        text-align: left;
+    }
+
+    .finances-tax-controls {
+        max-width: 100%;
+    }
+
+    .finances-tax-controls-row {
+        justify-content: flex-start;
+    }
+
+    .finances-debt-text {
+        text-align: left;
+    }
+
+    .finances-message-text {
+        text-align: left;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .finances-board {
+        padding: 12px;
+        text-align: left;
+    }
+
+    .finances-table th,
+    .finances-table td {
+        padding: 6px;
+        font-size: 11px;
+        text-align: left;
+    }
+
+    .finances-table th.indicator-col,
+    .finances-table td.indicator-col {
+        text-align: center;
+    }
+}
+

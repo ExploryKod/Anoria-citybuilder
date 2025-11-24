@@ -1675,7 +1675,11 @@ window.onload = async () => {
         setActiveTool(e);
     })
 
-    housesButton.addEventListener('click', toggleModal)
+    housesButton.addEventListener('click', (e) => {
+        if (window.setActiveTool) {
+            window.setActiveTool(e);
+        }
+    })
     
     palacesButton.addEventListener('click', (e) => {
         // Check if palace button is disabled before toggling modal
@@ -1691,7 +1695,11 @@ window.onload = async () => {
     
     industryButton.addEventListener('click', toggleModal)
 
-    marketButton.addEventListener('click', toggleModal)
+    marketButton.addEventListener('click', (e) => {
+        if (window.setActiveTool) {
+            window.setActiveTool(e);
+        }
+    })
     
     infrastructureButton.addEventListener('click', (e) => {
         // Check if infrastructure button is disabled before toggling modal
@@ -1703,7 +1711,11 @@ window.onload = async () => {
         toggleModal(e);
     })
     
-    publicButton.addEventListener('click', toggleModal)
+    publicButton.addEventListener('click', (e) => {
+        if (window.setActiveTool) {
+            window.setActiveTool(e);
+        }
+    })
 
     panelLayoutCloseBtn.addEventListener('click', closeModal)
     
@@ -2025,8 +2037,11 @@ window.onload = async () => {
             if (window.popupManager) {
                 window.popupManager.forceClosePopup('panel-layout');
             }
+        } else if(e.target.dataset.toolid) {
+            // For toolbar buttons with data-toolid (like roads, residential), directly set the tool
+            // No modal needed
         } else {
-            // For toolbar buttons, toggle the modal
+            // For toolbar buttons without data-toolid, toggle the modal
             toggleModal(e)
         }
         selectedControl = e.currentTarget;
