@@ -2058,6 +2058,11 @@ window.onload = async () => {
     
     // Initialize balance sheet popup
     initBalanceSheetPopup();
+    
+    // Initialize administrator panel
+    if (typeof initAdministratorPanel === 'function') {
+        initAdministratorPanel();
+    }
 }
 
 // Real-time Budget Popup Functions

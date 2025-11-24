@@ -1,0 +1,305 @@
+/* Administrator Panel - Inspired by Caesar 3 */
+.administrator-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: var(--z-index-modal);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.administrator-panel.active {
+    display: flex !important;
+}
+
+.administrator-panel-wrapper {
+    background: #fafafa;
+    color: var(--primary);
+    border-radius: var(--border-radius);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    width: 90%;
+    max-width: 1200px;
+    max-height: 85vh;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+}
+
+.administrator-panel-header {
+    background: linear-gradient(135deg, #fff6f0, #fff);
+    padding: 20px 24px;
+    border-bottom: 3px solid var(--cta);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.administrator-panel-title {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.administrator-panel-title h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.administrator-panel-close-btn {
+    background: white;
+    border: none;
+    color: var(--cta);
+    width: 40px;
+    height: 40px;
+    border-radius: var(--border-radius-small);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease-in-out;
+    border: 3px solid var(--cta);
+    flex-shrink: 0;
+    min-width: 40px;
+}
+
+.administrator-panel-close-btn:hover {
+    background: var(--cta);
+    color: white;
+}
+
+/* Navigation Buttons Bar */
+.administrator-nav-buttons {
+    display: flex;
+    gap: 12px;
+    padding: 16px 24px;
+    background: #fff;
+    border-bottom: 2px solid var(--cta);
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.administrator-nav-btn {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    border-radius: var(--border-radius-small);
+    border: 3px solid var(--cta);
+    background-color: #fafafa;
+    color: var(--cta);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease-in-out;
+    box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
+}
+
+.administrator-nav-btn svg {
+    width: 32px;
+    height: 32px;
+    stroke: currentColor;
+    pointer-events: none;
+}
+
+.administrator-nav-btn:hover {
+    background-color: var(--cta);
+    color: white;
+    box-shadow: none;
+    transform: translateY(-2px);
+}
+
+.administrator-nav-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 0 10px var(--cta);
+}
+
+.administrator-nav-btn.selected {
+    background-color: var(--lightgreen);
+    border-color: var(--lightgreen);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 153, 153, 0.3);
+}
+
+.administrator-nav-btn.selected:hover {
+    background-color: var(--lightgreen);
+    opacity: 0.9;
+}
+
+/* Special color for Report button */
+.administrator-nav-btn.report-btn {
+    border-color: var(--info);
+    color: var(--info);
+}
+
+.administrator-nav-btn.report-btn:hover {
+    background-color: var(--info);
+    color: white;
+}
+
+.administrator-nav-btn.report-btn.selected {
+    background-color: var(--info);
+    border-color: var(--info);
+    color: white;
+    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+}
+
+.administrator-nav-btn.report-btn.selected:hover {
+    background-color: var(--info);
+    opacity: 0.9;
+}
+
+/* Content Area */
+.administrator-panel-content {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: linear-gradient(180deg, rgba(255,255,255,0.9), #fff);
+    scrollbar-width: thin;
+    scrollbar-color: var(--cta) transparent;
+}
+
+.administrator-panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.administrator-panel-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.administrator-panel-content::-webkit-scrollbar-thumb {
+    background: var(--cta);
+    border-radius: 3px;
+}
+
+.administrator-panel-content::-webkit-scrollbar-thumb:hover {
+    background: var(--cta-05);
+}
+
+/* Section Styles */
+.administrator-section {
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.administrator-section.active {
+    display: block;
+}
+
+.administrator-section-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--cta);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.administrator-section-content {
+    color: var(--primary);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+/* Placeholder content styles */
+.administrator-placeholder {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--primary);
+    opacity: 0.7;
+}
+
+.administrator-placeholder-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.administrator-placeholder-text {
+    font-size: 18px;
+    font-weight: 500;
+}
+
+/* Mobile Landscape Responsive */
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    .administrator-panel-wrapper {
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    .administrator-panel-header {
+        padding: 12px 16px;
+    }
+
+    .administrator-panel-title h2 {
+        font-size: 18px;
+    }
+
+    .administrator-nav-buttons {
+        padding: 10px 16px;
+        gap: 8px;
+    }
+
+    .administrator-nav-btn {
+        width: 48px;
+        height: 48px;
+    }
+
+    .administrator-nav-btn svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .administrator-panel-content {
+        padding: 16px;
+    }
+
+    .administrator-section-title {
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+
+    .administrator-section-content {
+        font-size: 13px;
+    }
+}
+
+/* Mobile Portrait Responsive */
+@media screen and (max-width: 768px) and (orientation: portrait) {
+    .administrator-panel-wrapper {
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    .administrator-nav-buttons {
+        padding: 12px;
+        gap: 8px;
+    }
+
+    .administrator-nav-btn {
+        width: 56px;
+        height: 56px;
+    }
+
+    .administrator-nav-btn svg {
+        width: 28px;
+        height: 28px;
+    }
+}
+

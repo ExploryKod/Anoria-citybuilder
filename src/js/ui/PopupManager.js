@@ -92,6 +92,15 @@ class PopupManager {
             onClose: () => {}
         });
 
+        this.popupConfigs.set('administrator-panel', {
+            shouldBlockEvents: true,
+            shouldPauseGame: true,
+            eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
+            canvasSelectors: ['canvas'],
+            onOpen: () => {},
+            onClose: () => {}
+        });
+
         this.popupConfigs.set('city-map-panel', {
             shouldBlockEvents: true,
             shouldPauseGame: true,
