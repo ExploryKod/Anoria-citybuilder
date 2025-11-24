@@ -37,13 +37,12 @@ const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
 function getHouseMaxPopulation(houseType) {
     if (!houseType) return 0;
     
-    // 2Story houses (evolved houses) can hold 12 people
-    if (houseType.includes('House-2Story') || houseType.includes('House_2Story')) {
-        return 12;
-    }
-    
-    // Regular houses (Blue, Red, Purple) can hold 6 people
-    if (houseType.includes('House-Blue') || houseType.includes('House-Red') || houseType.includes('House-Purple')) {
+    // All houses (Blue, Red, Purple, 2Story) can hold 6 people
+    if (houseType.includes('House-Blue') || 
+        houseType.includes('House-Red') || 
+        houseType.includes('House-Purple') ||
+        houseType.includes('House-2Story') || 
+        houseType.includes('House_2Story')) {
         return 6;
     }
     
@@ -861,8 +860,11 @@ export function createScene(housesStore, gameStore, assetManager) {
                         });
                     }
                     
-                    // Harvest season (Automne): produce 12 paniers once per year (enough to feed 1 person for 1 year)
-                    // 1 person consumes 1 panier per month = 12 paniers per year
+                    // Harvest season (Automne): produce 78 paniers once per year (enough to feed 6 citizens for 1 year + buffer)
+                    // 1 citizen consumes 1 panier per month = 12 paniers per year
+                    // 6 citizens × 12 paniers/year = 72 paniers/year for consumption
+                    // + 6 paniers buffer needed during the time market is buying a new load for one year
+                    // Total: 72 + 6 = 78 paniers/year
                     // Only produce once per year - track the last year when production happened
                     if (season === 'Automne') {
                         // Get farm data to check last production year
@@ -876,23 +878,27 @@ export function createScene(housesStore, gameStore, assetManager) {
                             // Get current stocks
                             const currentFarmStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks') || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                             
-                            // Determine farm type and add 12 paniers of that type (enough to feed 1 person for 1 year)
+                            // Determine farm type and add 78 paniers of that type (enough to feed 6 citizens for 1 year + buffer)
                             let farmType = currentBuildingId;
                             let newStocks = { ...currentFarmStocks };
                             
-                            // Production: 12 paniers = enough to feed 1 person for 1 year (1 panier/month × 12 months)
-                            const productionAmount = 12;
+                            // Production: 78 paniers = enough to feed 6 citizens for 1 year + 6 paniers buffer
+                            // 1 citizen consumes 1 panier/month = 12 paniers/year
+                            // 6 citizens × 12 paniers/year = 72 paniers/year for consumption
+                            // + 6 paniers buffer needed during the time market is buying a new load
+                            // Total: (1×12×6) + (1×6) = 72 + 6 = 78 paniers/year
+                            const productionAmount = 78;
                             
                             if (farmType.includes('Farm-Wheat') || farmType.includes('Wheat')) {
-                                // Add 12 wheat paniers (enough to feed 1 person for 1 year)
+                                // Add 78 wheat paniers (enough to feed 6 citizens for 1 year + buffer)
                                 newStocks.wheat = (currentFarmStocks.wheat || 0) + productionAmount;
                                 newStocks.food = (newStocks.food || 0) + productionAmount;
                             } else if (farmType.includes('Farm-Carrot') || farmType.includes('Carrot')) {
-                                // Add 12 carrot paniers (enough to feed 1 person for 1 year)
+                                // Add 78 carrot paniers (enough to feed 6 citizens for 1 year + buffer)
                                 newStocks.carrot = (currentFarmStocks.carrot || 0) + productionAmount;
                                 newStocks.food = (newStocks.food || 0) + productionAmount;
                             } else if (farmType.includes('Farm-Cabbage') || farmType.includes('Cabbage')) {
-                                // Add 12 cabbage paniers (enough to feed 1 person for 1 year)
+                                // Add 78 cabbage paniers (enough to feed 6 citizens for 1 year + buffer)
                                 newStocks.cabbage = (currentFarmStocks.cabbage || 0) + productionAmount;
                                 newStocks.food = (newStocks.food || 0) + productionAmount;
                             }
