@@ -22,7 +22,7 @@ import {
     palaces
 } from '../ui/nodes.js';
 import {assetsPrices} from "../meshs/data.js";
-import { checkRoadAccess, checkFoodAvailability, canHouseEvolveToPalace, canHouseEvolveToPurple } from './modules/ModuleHelper.js';
+import { checkRoadAccess, checkFoodAvailability, canHouseEvolveToPalace, canHouseEvolveToPurple, canCitizenAppear } from './modules/ModuleHelper.js';
 import { setRoadAccessIcon } from './modules/StatusIconHelper.js';
 import { TimeManager } from './utils/TimeManager.js';
 import config from './config.js';
@@ -1964,16 +1964,120 @@ export function createScene(housesStore, gameStore, assetManager) {
         const targetCitizenCount = Math.min(currentPopulation, MAX_CITIZENS);
         const currentCitizenCount = citizens.filter(c => c.spawned && c.character && c.character.visible).length;
         
+        console.log('[Scene] Citizen spawning check:', {
+            currentPopulation,
+            famishedPopulation,
+            targetCitizenCount,
+            currentCitizenCount,
+            citizensLength: citizens.length,
+            MAX_CITIZENS,
+            shouldSpawn: targetCitizenCount > currentCitizenCount
+        });
+        
+        // Check if citizen-cool can appear (population exists AND no famished population)
+        const citizenCoolCheck = canCitizenAppear({
+            citizenType: 'citizen-cool',
+            totalPopulation: currentPopulation,
+            famishedPopulation: famishedPopulation
+        });
+        
+        const canCreateCitizenCool = citizenCoolCheck.canAppear && currentPopulation > 0;
+        const currentCitizenCoolCount = citizens.filter(c => c && c.citizenType === 'citizen-cool' && c.spawned && c.character && c.character.visible).length;
+        const currentCitizen02Count = citizens.filter(c => c && c.citizenType === 'citizen02' && c.spawned && c.character && c.character.visible).length;
+        
+        // Replace citizen02 with citizen-cool if conditions are met
+        // Only replace one at a time to avoid sudden changes
+        if (canCreateCitizenCool && currentCitizen02Count > 0 && currentCitizenCoolCount < targetCitizenCount) {
+            // Find first visible citizen02 to replace
+            const citizen02ToReplace = citizens.find(c => 
+                c && 
+                c.citizenType === 'citizen02' && 
+                c.spawned && 
+                c.character && 
+                c.character.visible
+            );
+            
+            if (citizen02ToReplace) {
+                console.log('[Scene] Replacing citizen02 with citizen-cool (conditions met)');
+                // Hide the citizen02
+                hideCitizenCharacter(citizen02ToReplace);
+                
+                // Create citizen-cool to replace it
+                createCitizenInstance('citizen-cool').then(newCitizen => {
+                    if (newCitizen) {
+                        // Find and replace the citizen02 in the array
+                        const index = citizens.indexOf(citizen02ToReplace);
+                        if (index !== -1) {
+                            citizens[index] = newCitizen;
+                            if (citizen02Count > 0) {
+                                citizen02Count--;
+                            }
+                        } else {
+                            citizens.push(newCitizen);
+                        }
+                        spawnCitizenCharacter(newCitizen, city);
+                        console.log('[Scene] ✅ citizen-cool created to replace citizen02');
+                    } else {
+                        console.error('[Scene] Failed to create citizen-cool for replacement');
+                    }
+                });
+            }
+        }
+        
         // Spawn new citizens if population increased
+        // Simplified logic: citizen02 appears when there's population
+        // citizen-cool appears when there's population AND no famished population
         if (targetCitizenCount > currentCitizenCount) {
             const citizensToSpawn = targetCitizenCount - currentCitizenCount;
             for (let i = 0; i < citizensToSpawn; i++) {
                 // Check if we have an available citizen slot
                 if (citizens.length < MAX_CITIZENS) {
-                    createCitizenInstance().then(newCitizen => {
+                    // Determine which type of citizen to create
+                    // Simple strategy: try citizen-cool first if conditions are met, otherwise citizen02
+                    let citizenType = 'citizen02';
+                    
+                    if (canCreateCitizenCool) {
+                        // Conditions met: create citizen-cool
+                        citizenType = 'citizen-cool';
+                        console.log('[Scene] ✅ Creating new citizen-cool (conditions met)');
+                    } else {
+                        // Conditions not met or no population: create citizen02
+                        citizenType = 'citizen02';
+                        console.log('[Scene] Creating new citizen02 (citizen-cool conditions not met)');
+                    }
+                    
+                    // Final check: verify the chosen citizen type can appear
+                    const appearanceCheck = canCitizenAppear({
+                        citizenType: citizenType,
+                        totalPopulation: currentPopulation,
+                        famishedPopulation: famishedPopulation
+                    });
+                    
+                    if (!appearanceCheck.canAppear) {
+                        // This shouldn't happen for citizen02, but handle it
+                        console.warn('[Scene] Selected citizen type cannot appear, skipping:', {
+                            type: citizenType,
+                            reason: appearanceCheck.reason
+                        });
+                        continue;
+                    }
+                    
+                    console.log('[Scene] Creating new citizen:', {
+                        type: citizenType,
+                        totalCitizens: citizens.length,
+                        famishedPopulation: famishedPopulation,
+                        currentPopulation: currentPopulation
+                    });
+                    
+                    createCitizenInstance(citizenType).then(newCitizen => {
                         if (newCitizen) {
                             citizens.push(newCitizen);
+                            if (citizenType === 'citizen02') {
+                                citizen02Count++;
+                            }
                             spawnCitizenCharacter(newCitizen, city);
+                        } else {
+                            console.error('[Scene] Failed to create citizen:', citizenType);
                         }
                     });
                 } else {
@@ -2313,10 +2417,11 @@ export function createScene(housesStore, gameStore, assetManager) {
                 citizen.isWalking = false;
                 citizen.targetPosition = null;
                 citizen.onRoad = false;
+                const animationsToUse = getCitizenAnimations(citizen);
                 const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
                 let idleAnimation = null;
                 for (const name of idleNames) {
-                    if (citizenAnimations[name]) {
+                    if (animationsToUse[name]) {
                         idleAnimation = name;
                         break;
                     }
@@ -2509,10 +2614,11 @@ export function createScene(housesStore, gameStore, assetManager) {
             scene.add(citizen.character);
             
             // Play idle animation while waiting
+            const animationsToUse = getCitizenAnimations(citizen);
             const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
             let idleAnimation = null;
             for (const name of idleNames) {
-                if (citizenAnimations[name]) {
+                if (animationsToUse[name]) {
                     idleAnimation = name;
                     break;
                 }
@@ -2564,18 +2670,19 @@ export function createScene(housesStore, gameStore, assetManager) {
         citizen.onRoad = false;
         
         // Switch to walk animation
+        const animationsToUse = getCitizenAnimations(citizen);
         const walkNames = ['walk', 'Walk', 'Walking', 'walking'];
         let walkAnimation = null;
         for (const name of walkNames) {
-            if (citizenAnimations[name]) {
+            if (animationsToUse[name]) {
                 walkAnimation = name;
                 break;
             }
         }
         
         // If no walk animation found, try the second animation (often walk is second after idle)
-        if (!walkAnimation && Object.keys(citizenAnimations).length > 1) {
-            const animationKeys = Object.keys(citizenAnimations);
+        if (!walkAnimation && Object.keys(animationsToUse).length > 1) {
+            const animationKeys = Object.keys(animationsToUse);
             walkAnimation = animationKeys[1]; // Use second animation
         }
         
@@ -2589,6 +2696,15 @@ export function createScene(housesStore, gameStore, assetManager) {
     }
 
     /**
+     * Gets the appropriate animation set for a citizen based on their type
+     * @param {CitizenData} citizen - The citizen data object
+     * @returns {Object} Animation clips object
+     */
+    function getCitizenAnimations(citizen) {
+        return citizen && citizen.citizenType === 'citizen-cool' ? citizenCoolAnimations : citizenAnimations;
+    }
+    
+    /**
      * Switches a citizen's animation
      * @param {CitizenData} citizen - The citizen data object
      * @param {string} animationName - Name of the animation to play (e.g., 'idle', 'walk', 'Walking')
@@ -2596,8 +2712,15 @@ export function createScene(housesStore, gameStore, assetManager) {
      * @param {number} fadeDuration - Duration of fade transition in seconds (default: 0.3)
      */
     function switchCitizenAnimation(citizen, animationName, fadeIn = true, fadeDuration = 0.3) {
-        if (!citizen || !citizen.mixer || !citizenAnimations[animationName]) {
-            console.warn('[Scene] Cannot switch animation:', animationName, 'Available:', Object.keys(citizenAnimations));
+        if (!citizen || !citizen.mixer) {
+            return;
+        }
+        
+        // Use the appropriate animation set based on citizen type
+        const animationsToUse = citizen.citizenType === 'citizen-cool' ? citizenCoolAnimations : citizenAnimations;
+        
+        if (!animationsToUse[animationName]) {
+            console.warn('[Scene] Cannot switch animation:', animationName, 'Available:', Object.keys(animationsToUse), 'Type:', citizen.citizenType);
             return;
         }
         
@@ -2611,7 +2734,7 @@ export function createScene(housesStore, gameStore, assetManager) {
         }
         
         // Play new animation
-        const newAction = citizen.mixer.clipAction(citizenAnimations[animationName]);
+        const newAction = citizen.mixer.clipAction(animationsToUse[animationName]);
         if (fadeIn) {
             newAction.reset().fadeIn(fadeDuration).play();
         } else {
@@ -2623,9 +2746,14 @@ export function createScene(housesStore, gameStore, assetManager) {
 
     // Store animation clips (loaded once, shared across all citizens)
     let citizenAnimationsLoaded = false;
+    let citizenCoolAnimationsLoaded = false;
+    let citizenCoolAnimations = {};
+    
+    // Track citizen02 count to determine when to spawn citizen-cool
+    let citizen02Count = 0;
     
     /**
-     * Loads animation clips (shared across all citizens, loaded once)
+     * Loads animation clips for citizen02 (shared across all citizen02, loaded once)
      */
     function loadCitizenAnimations() {
         if (citizenAnimationsLoaded) {
@@ -2639,39 +2767,113 @@ export function createScene(housesStore, gameStore, assetManager) {
         gltfLoader.load(
             citizenPath,
             (gltf) => {
-                // Store all animations (shared across all citizens)
+                // Store all animations (shared across all citizen02)
                 if (gltf.animations && gltf.animations.length > 0) {
                     gltf.animations.forEach((clip) => {
                         citizenAnimations[clip.name] = clip;
-                        console.log('[Scene] Found animation:', clip.name, `(${clip.duration.toFixed(2)}s)`);
+                        console.log('[Scene] Found citizen02 animation:', clip.name, `(${clip.duration.toFixed(2)}s)`);
                     });
                     citizenAnimationsLoaded = true;
                 } else {
-                    console.warn('[Scene] No animations found in citizen GLB file');
+                    console.warn('[Scene] No animations found in citizen02 GLB file');
                 }
             },
             null,
             (error) => {
-                console.error('[Scene] Error loading citizen animations:', error);
+                console.error('[Scene] Error loading citizen02 animations:', error);
+            }
+        );
+    }
+    
+    /**
+     * Loads animation clips for citizen-cool (shared across all citizen-cool, loaded once)
+     */
+    function loadCitizenCoolAnimations() {
+        if (citizenCoolAnimationsLoaded) {
+            return;
+        }
+        
+        const gltfLoader = new GLTFLoader();
+        const baseUrl = config.assets.baseUrl || '/';
+        const citizenPath = `${baseUrl}citizenCool/CitizenCoolTwoAnim.glb`.replace(/\/+/g, '/');
+        
+        gltfLoader.load(
+            citizenPath,
+            (gltf) => {
+                // Store all animations (shared across all citizen-cool)
+                if (gltf.animations && gltf.animations.length > 0) {
+                    gltf.animations.forEach((clip) => {
+                        citizenCoolAnimations[clip.name] = clip;
+                        console.log('[Scene] Found citizen-cool animation:', clip.name, `(${clip.duration.toFixed(2)}s)`);
+                    });
+                    citizenCoolAnimationsLoaded = true;
+                } else {
+                    console.warn('[Scene] No animations found in citizen-cool GLB file');
+                }
+            },
+            null,
+            (error) => {
+                console.error('[Scene] Error loading citizen-cool animations:', error);
             }
         );
     }
     
     /**
      * Creates a new citizen instance by loading the GLB file
+     * Loads a fresh model each time (no cloning) to maintain consistency
+     * @param {string} citizenType - Type of citizen to create: 'citizen02' or 'citizen-cool'
      * @returns {Promise<CitizenData|null>} New citizen data object or null if loading fails
      */
-    function createCitizenInstance() {
+    function createCitizenInstance(citizenType = 'citizen02') {
         return new Promise((resolve) => {
+            // Create a new loader instance to avoid caching issues
             const gltfLoader = new GLTFLoader();
             const baseUrl = config.assets.baseUrl || '/';
-            const citizenPath = `${baseUrl}citizen02/citizenAnimated02.glb`.replace(/\/+/g, '/');
+            
+            // Determine which model to load based on citizen type
+            let citizenPath, citizenName, animationsToUse;
+            if (citizenType === 'citizen-cool') {
+                citizenPath = `${baseUrl}citizenCool/CitizenCoolTwoAnim.glb`.replace(/\/+/g, '/');
+                citizenName = `citizen-cool-${citizens.length}`;
+                animationsToUse = citizenCoolAnimations;
+                // Load animations if not already loaded
+                loadCitizenCoolAnimations();
+            } else {
+                citizenPath = `${baseUrl}citizen02/citizenAnimated02.glb`.replace(/\/+/g, '/');
+                citizenName = `citizen-${citizens.length}`;
+                animationsToUse = citizenAnimations;
+                // Load animations if not already loaded
+                loadCitizenAnimations();
+            }
+            
+            // Load the model fresh each time - no cloning to maintain consistency
+            // Each citizen gets its own complete model instance
+            console.log('[Scene] Loading citizen model:', {
+                type: citizenType,
+                path: citizenPath,
+                baseUrl: baseUrl
+            });
             
             gltfLoader.load(
                 citizenPath,
                 (gltf) => {
+                    console.log('[Scene] Citizen model loaded successfully:', {
+                        type: citizenType,
+                        path: citizenPath,
+                        hasScene: !!gltf.scene,
+                        animationCount: gltf.animations ? gltf.animations.length : 0,
+                        animations: gltf.animations ? gltf.animations.map(a => a.name) : []
+                    });
+                    
+                    // Use the scene directly - each load creates a fresh instance
+                    // This ensures animations and materials work correctly for each citizen
                     const citizen = gltf.scene;
-                    citizen.name = `citizen-${citizens.length}`;
+                    if (!citizen) {
+                        console.error('[Scene] No scene found in GLB file:', citizenPath);
+                        resolve(null);
+                        return;
+                    }
+                    citizen.name = citizenName;
                     
                     // Apply scale: 0.5 = half size (same as original single citizen)
                     const characterScale = 0.5;
@@ -2706,40 +2908,70 @@ export function createScene(housesStore, gameStore, assetManager) {
                         }
                     });
                     
-                    // Store animations if not already loaded
-                    if (gltf.animations && gltf.animations.length > 0 && !citizenAnimationsLoaded) {
+                    // Store animations if not already loaded (for the first instance)
+                    if (citizenType === 'citizen02' && gltf.animations && gltf.animations.length > 0 && !citizenAnimationsLoaded) {
                         gltf.animations.forEach((clip) => {
                             citizenAnimations[clip.name] = clip;
                         });
                         citizenAnimationsLoaded = true;
+                    } else if (citizenType === 'citizen-cool' && gltf.animations && gltf.animations.length > 0 && !citizenCoolAnimationsLoaded) {
+                        gltf.animations.forEach((clip) => {
+                            citizenCoolAnimations[clip.name] = clip;
+                        });
+                        citizenCoolAnimationsLoaded = true;
                     }
                     
                     // Create new citizen data
                     const citizenData = new CitizenData();
                     citizenData.character = citizen;
+                    citizenData.citizenType = citizenType; // Store the type for reference
                     
-                    // Set up animations for this citizen
-                    if (Object.keys(citizenAnimations).length > 0) {
+                    // Set up animations for this citizen using the appropriate animation set
+                    // If animations are not loaded yet, try to use animations from the gltf directly
+                    let animationsToUseFinal = animationsToUse;
+                    if (Object.keys(animationsToUseFinal).length === 0 && gltf.animations && gltf.animations.length > 0) {
+                        // Animations not loaded yet, create a temporary set from this gltf
+                        const tempAnimations = {};
+                        gltf.animations.forEach((clip) => {
+                            tempAnimations[clip.name] = clip;
+                        });
+                        animationsToUseFinal = tempAnimations;
+                        console.log('[Scene] Using animations from GLB directly for', citizenType, ':', Object.keys(tempAnimations));
+                    }
+                    
+                    if (Object.keys(animationsToUseFinal).length > 0) {
                         citizenData.mixer = new AnimationMixer(citizen);
                         
                         // Start with idle animation immediately
                         const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
                         let idleAnimation = null;
                         for (const name of idleNames) {
-                            if (citizenAnimations[name]) {
+                            if (animationsToUseFinal[name]) {
                                 idleAnimation = name;
                                 break;
                             }
                         }
-                        if (!idleAnimation && Object.keys(citizenAnimations).length > 0) {
-                            idleAnimation = Object.keys(citizenAnimations)[0];
+                        if (!idleAnimation && Object.keys(animationsToUseFinal).length > 0) {
+                            idleAnimation = Object.keys(animationsToUseFinal)[0];
                         }
                         if (idleAnimation) {
-                            const action = citizenData.mixer.clipAction(citizenAnimations[idleAnimation]);
+                            const action = citizenData.mixer.clipAction(animationsToUseFinal[idleAnimation]);
                             action.play();
                             citizenData.currentAction = action;
+                            console.log('[Scene] Started', idleAnimation, 'animation for', citizenType);
+                        } else {
+                            console.warn('[Scene] No idle animation found for', citizenType);
                         }
+                    } else {
+                        console.warn('[Scene] No animations available for', citizenType, '- citizen will be created without animations');
                     }
+                    
+                    console.log('[Scene] Citizen instance created:', {
+                        type: citizenType,
+                        name: citizenName,
+                        hasAnimations: Object.keys(animationsToUseFinal).length > 0,
+                        animationCount: Object.keys(animationsToUseFinal).length
+                    });
                     
                     resolve(citizenData);
                 },
@@ -2751,8 +2983,12 @@ export function createScene(housesStore, gameStore, assetManager) {
                     }
                 },
                 (error) => {
-                    console.error('[Scene] Error loading citizen character:', error);
-                    console.error('[Scene] Tried to load from:', citizenPath);
+                    console.error('[Scene] Error loading citizen character:', {
+                        type: citizenType,
+                        path: citizenPath,
+                        error: error.message || error,
+                        stack: error.stack
+                    });
                     resolve(null);
                 }
             );
@@ -3087,10 +3323,11 @@ export function createScene(housesStore, gameStore, assetManager) {
                 citizen.onRoad = false;
                 citizen.isWalking = true;
                 
+                const animationsToUse = getCitizenAnimations(citizen);
                 const walkNames = ['walk', 'Walk', 'Walking', 'walking'];
                 let walkAnimation = null;
                 for (const name of walkNames) {
-                    if (citizenAnimations[name]) {
+                    if (animationsToUse[name]) {
                         walkAnimation = name;
                         break;
                     }
@@ -3141,10 +3378,11 @@ export function createScene(housesStore, gameStore, assetManager) {
                     // No path found, switch to idle
                     citizen.isWalking = false;
                     citizen.targetPosition = null;
+                    const animationsToUse = getCitizenAnimations(citizen);
                     const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
                     let idleAnimation = null;
                     for (const name of idleNames) {
-                        if (citizenAnimations[name]) {
+                        if (animationsToUse[name]) {
                             idleAnimation = name;
                             break;
                         }
@@ -3808,18 +4046,19 @@ function onTouchEnd(event) {
             citizen.isWalking = false;
             
             // Switch to idle animation
+            const animationsToUse = getCitizenAnimations(citizen);
             const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
             let idleAnimation = null;
             for (const name of idleNames) {
-                if (citizenAnimations[name]) {
+                if (animationsToUse[name]) {
                     idleAnimation = name;
                     break;
                 }
             }
             
             // If no idle found, use first animation
-            if (!idleAnimation && Object.keys(citizenAnimations).length > 0) {
-                idleAnimation = Object.keys(citizenAnimations)[0];
+            if (!idleAnimation && Object.keys(animationsToUse).length > 0) {
+                idleAnimation = Object.keys(animationsToUse)[0];
             }
             
             if (idleAnimation) {
@@ -3853,18 +4092,19 @@ function onTouchEnd(event) {
                 citizen.isWalking = true;
                 
                 // Switch to walk animation
+                const animationsToUse = getCitizenAnimations(citizen);
                 const walkNames = ['walk', 'Walk', 'Walking', 'walking'];
                 let walkAnimation = null;
                 for (const name of walkNames) {
-                    if (citizenAnimations[name]) {
+                    if (animationsToUse[name]) {
                         walkAnimation = name;
                         break;
                     }
                 }
                 
                 // If no walk animation found, try the second animation (often walk is second after idle)
-                if (!walkAnimation && Object.keys(citizenAnimations).length > 1) {
-                    const animationKeys = Object.keys(citizenAnimations);
+                if (!walkAnimation && Object.keys(animationsToUse).length > 1) {
+                    const animationKeys = Object.keys(animationsToUse);
                     walkAnimation = animationKeys[1]; // Use second animation
                 }
                 
@@ -3874,17 +4114,18 @@ function onTouchEnd(event) {
             } else {
                 // Citizen should be idle (waiting for road or no path available)
                 // Ensure idle animation is playing
+                const animationsToUse = getCitizenAnimations(citizen);
                 const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
                 let idleAnimation = null;
                 for (const name of idleNames) {
-                    if (citizenAnimations[name]) {
+                    if (animationsToUse[name]) {
                         idleAnimation = name;
                         break;
                     }
                 }
                 
-                if (!idleAnimation && Object.keys(citizenAnimations).length > 0) {
-                    idleAnimation = Object.keys(citizenAnimations)[0];
+                if (!idleAnimation && Object.keys(animationsToUse).length > 0) {
+                    idleAnimation = Object.keys(animationsToUse)[0];
                 }
                 
                 if (idleAnimation) {
