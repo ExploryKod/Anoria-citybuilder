@@ -187,3 +187,78 @@ export function canHouseEvolveToPalace({
     return { canEvolve: true };
 }
 
+/**
+ * Check if a citizen type can appear based on city conditions
+ * Uses a simple, extensible system for citizen appearance conditions
+ * Follows KISS principle: simple, clear conditions that are easy to extend
+ * 
+ * @param {Object} params - Parameters object
+ * @param {string} params.citizenType - Type of citizen to check ('citizen02' or 'citizen-cool')
+ * @param {number} params.totalPopulation - Total population in the city
+ * @param {number} params.famishedPopulation - Number of famished (hungry) people
+ * @returns {Object} { canAppear: boolean, reason?: string, details?: Object }
+ */
+export function canCitizenAppear({ 
+    citizenType, 
+    totalPopulation, 
+    famishedPopulation 
+}) {
+    // Base condition: citizen02 can always appear (no special conditions)
+    if (citizenType === 'citizen02') {
+        return { canAppear: true };
+    }
+    
+    // citizen-cool condition: only appears if there are no famished people
+    // All citizens must be fed (totalPopulation - famishedPopulation = totalPopulation)
+    // This means: famishedPopulation === 0 AND totalPopulation > 0
+    if (citizenType === 'citizen-cool') {
+        // Must have population
+        if (totalPopulation <= 0) {
+            return { 
+                canAppear: false, 
+                reason: 'no_population',
+                details: {
+                    totalPopulation,
+                    famishedPopulation,
+                    message: 'Cannot appear: no population in city'
+                }
+            };
+        }
+        
+        // Must have no famished population
+        if (famishedPopulation > 0) {
+            const fedPopulation = totalPopulation - famishedPopulation;
+            return { 
+                canAppear: false, 
+                reason: 'hunger_present',
+                details: {
+                    famishedPopulation,
+                    totalPopulation,
+                    fedPopulation,
+                    message: `Cannot appear: ${famishedPopulation} people are famished`
+                }
+            };
+        }
+        
+        // Conditions met: population exists and no one is famished
+        return { 
+            canAppear: true,
+            details: {
+                totalPopulation,
+                famishedPopulation,
+                message: 'All conditions met: population exists and everyone is fed'
+            }
+        };
+    }
+    
+    // Unknown citizen type - default to false for safety
+    return { 
+        canAppear: false, 
+        reason: 'unknown_citizen_type',
+        details: {
+            citizenType,
+            message: `Unknown citizen type: ${citizenType}`
+        }
+    };
+}
+
