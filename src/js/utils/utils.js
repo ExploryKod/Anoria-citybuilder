@@ -96,6 +96,12 @@ export function updateBuildingNeighbors(buildingData, area=1, time=0) {
 
     const areaObject = {areaKey : areaKey, time: time, allTerrainMeshInZone : allTerrainMeshInZone}
 
+    // Safety check: ensure buildings[x][y] exists before accessing userData
+    if (!buildings[x] || !buildings[x][y] || !buildings[x][y].userData) {
+        console.warn(`[updateBuildingNeighbors] Building at [${x}][${y}] does not exist or has no userData`);
+        return;
+    }
+
     if (!Object.hasOwn(buildings[x][y].userData, 'neighborZones')) {
         buildings[x][y].userData.neighborZones = {};
     }

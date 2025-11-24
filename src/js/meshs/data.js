@@ -24,7 +24,9 @@ export const textures = Object.freeze({
     // Farm season sprites
     'grow-food': loadTextures(`/resources/textures/status/grow_food.png`, true),
     'harvest': loadTextures(`/resources/textures/status/harvest.png`, true),
-    'sell-food': loadTextures(`/resources/textures/status/sell_food.png`, true)
+    'sell-food': loadTextures(`/resources/textures/status/sell_food.png`, true),
+    // Market buying sprite
+    'isBuying': loadTextures(`/resources/textures/status/isBuying.png`, true)
 })
 
 export const assetsPrices = Object.freeze({
@@ -51,7 +53,7 @@ export const assetsPrices = Object.freeze({
     'Farm-Cabbage': { price: 30, category: 'farms', gridSize: 1 },
     
     // Industry (agricultural industry)
-    'Windmill-001': { price: 50, category: 'industry', gridSize: 2 },
+    'Windmill-001': { price: 50, category: 'industry', gridSize: 1 },
     'Barn-001': { price: 40, category: 'industry', gridSize: 3 },
 
     // Markets

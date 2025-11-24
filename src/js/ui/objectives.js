@@ -132,211 +132,57 @@ class ObjectivesManager {
      * @returns {string} HTML du contenu
      */
     async createObjectiveContent(objective) {
-        let html = `<p>${objective.description}</p>`;
+        let html = `<p style="font-size: 15px; line-height: 1.6; margin-bottom: 20px;">${objective.description}</p>`;
         
+        // Afficher les conditions de manière simplifiée
         if (objective.requirements && objective.requirements.length > 0) {
-            html += '<div style="background: rgba(251, 129, 34, 0.1); border-radius: 8px; padding: 12px; margin-top: 12px;">';
-            html += '<strong style="color: var(--cta); display: block; margin-bottom: 8px;">Conditions :</strong>';
-            html += '<div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start;">';
+            html += '<div style="background: rgba(251, 129, 34, 0.1); border-radius: 8px; padding: 16px; margin-top: 16px;">';
+            html += '<strong style="color: var(--cta); display: block; margin-bottom: 12px; font-size: 14px;">Condition :</strong>';
             
             objective.requirements.forEach((req, index) => {
-                const status = req.value === true ? '✅' : req.value === false ? '❌' : '⏳';
-                const color = req.value === true ? '#28a745' : req.value === false ? '#dc3545' : '#ffc107';
-                html += `<div style="display: flex; align-items: center; margin: 0; padding: 0;">
-                    <span style="color: ${color}; margin-right: 8px; flex-shrink: 0;">${status}</span>
-                    <span style="text-align: left;">${req.text}</span>
+                const status = req.value === true ? '✅' : '⏳';
+                const color = req.value === true ? '#28a745' : '#ffc107';
+                html += `<div style="display: flex; align-items: center; margin: 8px 0;">
+                    <span style="color: ${color}; margin-right: 10px; flex-shrink: 0; font-size: 18px;">${status}</span>
+                    <span style="text-align: left; font-size: 14px;">${req.text}</span>
                 </div>`;
             });
             
             html += '</div>';
-            html += '</div>';
         }
 
-        // Afficher les données de tracking si disponible
+        // Afficher l'état actuel de manière simplifiée
         if (window.objectivesTracker) {
             const trackingData = window.objectivesTracker.getTrackingData();
-            const resetCount = window.objectivesTracker.resetCount || 0;
-            const hasFailed = window.objectivesTracker.objectiveFailed;
             
-            // Calculer la période de grâce (uniquement pour les tentatives après échec)
-            const turnsSinceReset = trackingData.currentDay - (window.objectivesTracker?.lastResetTurn || 0);
-            const isInGracePeriod = resetCount > 0 && turnsSinceReset >= 0 && turnsSinceReset <= (window.objectivesTracker?.gracePeriod || 20);
+            html += `<div style="background: rgba(251, 129, 34, 0.05); border-radius: 8px; padding: 16px; margin-top: 16px; border: 1px solid rgba(251, 129, 34, 0.2);">`;
+            html += '<strong style="color: var(--cta); display: block; margin-bottom: 12px; font-size: 14px;">État actuel :</strong>';
             
-            html += `<div style="background: rgba(251, 129, 34, 0.05); border-radius: 8px; padding: 12px; margin-top: 12px; border: 1px solid rgba(251, 129, 34, 0.2); text-align: left;">`;
-            html += '<strong style="color: var(--cta); display: block; margin-bottom: 8px; text-align: left;">État actuel :</strong>';
+            // Afficher les fonds actuels
+            const currentFunds = trackingData.currentFunds || 0;
+            const targetFunds = 5000;
+            const progress = Math.min(100, (currentFunds / targetFunds) * 100);
+            const isCompleted = currentFunds >= targetFunds;
             
-            // Afficher le nombre de tentatives
-            if (resetCount > 0 || hasFailed) {
-                html += `<p style="margin: 4px 0; color: var(--primary); font-size: 0.9em; text-align: left;">
-                    <strong>Tentative :</strong> ${resetCount + 1} 
-                    ${hasFailed ? '<span style="color: #dc3545;">❌ Échec actuel</span>' : ''}
-                    ${isInGracePeriod && !hasFailed ? `<span style="color: #28a745;"> • Période de grâce (${turnsSinceReset}/${window.objectivesTracker?.gracePeriod || 20})</span>` : ''}
-                </p>`;
-            }
+            html += `<div style="margin: 12px 0;">`;
+            html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">`;
+            html += `<span style="color: var(--primary); font-size: 14px; font-weight: 600;">Fonds actuels :</span>`;
+            html += `<span style="color: ${isCompleted ? '#28a745' : 'var(--primary)'}; font-size: 16px; font-weight: 700;">${currentFunds.toLocaleString('fr-FR')}€</span>`;
+            html += `</div>`;
             
-            if (trackingData.currentDay !== undefined) {
-                html += `<p style="margin: 4px 0; color: var(--primary); text-align: left;"><strong>Tour actuel :</strong> ${trackingData.currentDay}</p>`;
-            }
-            if (isInGracePeriod) {
-                // Pendant la période de grâce, afficher "Grâcié" en vert
-                html += `<p style="margin: 4px 0; color: var(--primary); text-align: left;">
-                    <strong>Flux net minimum :</strong> 
-                    <span style="color: #28a745; font-weight: 600;">Grâcié</span>
-                    ✅
-                </p>`;
-            } else if (trackingData.minNetFlow !== Infinity) {
-                const isValid = trackingData.minNetFlow >= -20;
-                const statusColor = isValid ? '#28a745' : '#dc3545';
-                const statusIcon = isValid ? '✅' : '❌';
-                const turnInfo = trackingData.minNetFlowTurn !== null ? ` (tour ${trackingData.minNetFlowTurn})` : '';
-                const warning = hasFailed && !isValid ? ' <span style="color: #ffc107; font-size: 0.85em;">⚠ Seuil atteint</span>' : '';
-                html += `<p style="margin: 4px 0; color: var(--primary); text-align: left;">
-                    <strong>Flux net minimum :</strong> 
-                    <span style="color: ${statusColor};">${trackingData.minNetFlow}€${turnInfo}</span>
-                    ${statusIcon}${warning}
-                </p>`;
-            } else {
-                // Aucune donnée encore pour cette tentative
-                html += `<p style="margin: 4px 0; color: var(--primary); font-style: italic; opacity: 0.7; text-align: left;">
-                    <strong>Flux net minimum :</strong> En attente de données...
-                </p>`;
-            }
+            // Barre de progression
+            html += `<div style="background: rgba(0, 0, 0, 0.1); border-radius: 4px; height: 24px; overflow: hidden; position: relative;">`;
+            html += `<div style="background: ${isCompleted ? 'linear-gradient(90deg, #28a745, #20c997)' : 'linear-gradient(90deg, var(--cta), #ff8c42)'}; height: 100%; width: ${progress}%; transition: width 0.3s ease; border-radius: 4px;"></div>`;
+            html += `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: ${progress > 50 ? 'white' : 'var(--primary)'}; font-size: 12px; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">${Math.round(progress)}%</div>`;
+            html += `</div>`;
             
-            if (isInGracePeriod) {
-                // Pendant la période de grâce, afficher "Grâcié" en vert
-                html += `<p style="margin: 4px 0; color: var(--primary); text-align: left;">
-                    <strong>Flux net maximum :</strong> 
-                    <span style="color: #28a745; font-weight: 600;">Grâcié</span>
-                    ✅
-                </p>`;
-            } else if (trackingData.maxNetFlow !== -Infinity) {
-                const isValid = trackingData.maxNetFlow >= 100;
-                const statusColor = isValid ? '#28a745' : '#dc3545';
-                const statusIcon = isValid ? '✅' : '❌';
-                const turnInfo = trackingData.maxNetFlowTurn !== null ? ` (tour ${trackingData.maxNetFlowTurn})` : '';
-                html += `<p style="margin: 4px 0; color: var(--primary); text-align: left;">
-                    <strong>Flux net maximum :</strong> 
-                    <span style="color: ${statusColor};">${trackingData.maxNetFlow}€${turnInfo}</span>
-                    ${statusIcon}
-                </p>`;
-            } else {
-                // Aucune donnée encore pour cette tentative
-                html += `<p style="margin: 4px 0; color: var(--primary); font-style: italic; opacity: 0.7; text-align: left;">
-                    <strong>Flux net maximum :</strong> En attente de données...
-                </p>`;
-            }
-                // Afficher les fonds max atteints et le nombre de tours restants
-                const currentTargetDay = window.objectivesTracker?.targetDay || 60;
-                const lastResetTurn = window.objectivesTracker?.lastResetTurn || 0;
-                const isFirstAttempt = resetCount === 0; // Première tentative = pas de rééchelonnement
-                
-                if (trackingData.fundsAtTargetDay !== null) {
-                    const isValid = trackingData.fundsAtTargetDay >= 600;
-                    const statusColor = isValid ? '#28a745' : '#dc3545';
-                    const statusIcon = isValid ? '✅' : '❌';
-                    html += `<p style="margin: 4px 0; color: var(--primary); text-align: left;">
-                        <strong>Fonds max atteints :</strong> 
-                        <span style="color: ${statusColor};">${trackingData.fundsAtTargetDay}€</span>
-                        ${statusIcon}
-                        <span style="font-size: 0.85em; opacity: 0.7;"> (cible: 600€ au tour ${currentTargetDay})</span>
-                    </p>`;
-                } else if (currentTargetDay >= trackingData.currentDay) {
-                    // Message différent selon si c'est la première tentative ou une tentative rééchelonnée
-                    let targetMessage;
-                    if (isFirstAttempt) {
-                        // Première tentative : tour 0 + 0 (pas de grâce) + 60 tours = tour 60
-                        targetMessage = `dans 60 tours (tour 60)`;
-                    } else {
-                        // Tentatives suivantes : utiliser la vraie targetDay calculée par le tracker
-                        const targetTour = window.objectivesTracker?.targetDay || 60;
-                        const turnsRemaining = targetTour - trackingData.currentDay;
-                        targetMessage = `dans ${turnsRemaining} tours après période de grâce (tour ${targetTour})`;
-                    }
-                    
-                    html += `<p style="margin: 4px 0; color: var(--primary); font-style: italic; opacity: 0.7; text-align: left;">
-                        <strong>Fonds max atteints :</strong> En attente... (cible ${targetMessage})
-                    </p>`;
-                } else {
-                    html += `<p style="margin: 4px 0; color: #ffc107; font-style: italic; text-align: left;">
-                        <strong>Fonds max atteints :</strong> En attente d'évaluation au tour ${currentTargetDay}...
-                    </p>`;
-                }
+            html += `<div style="display: flex; justify-content: space-between; margin-top: 8px;">`;
+            html += `<span style="color: var(--primary); font-size: 12px; opacity: 0.7;">0€</span>`;
+            html += `<span style="color: var(--primary); font-size: 12px; opacity: 0.7;">${targetFunds.toLocaleString('fr-FR')}€</span>`;
+            html += `</div>`;
+            html += `</div>`;
             
             html += '</div>';
-            
-            // Afficher les informations sur les états de budget
-            html += `<div style="background: rgba(251, 129, 34, 0.03); border-radius: 8px; padding: 12px; margin-top: 12px; border: 1px solid rgba(251, 129, 34, 0.1); text-align: left;">`;
-            html += '<strong style="color: var(--cta); display: block; margin-bottom: 8px; font-size: 0.9em;">ℹ️</strong>';
-            
-            // Message adapté selon l'état
-            const targetDay = window.objectivesTracker?.targetDay || 60;
-            const targetDayWasRescheduled = targetDay > 60;
-            
-            if (resetCount > 0) {
-                html += `<p style="margin: 0; color: var(--primary); font-size: 0.85em; line-height: 1.4; text-align: left;">`;
-                html += `Données de la <strong>Tentative ${resetCount + 1}</strong> (depuis le tour ${window.objectivesTracker?.lastResetTurn || 'rééchelonnement'}). `;
-                html += `Issues des <strong>comptes de résultat</strong> dans "États Budgets".`;
-                if (isInGracePeriod) {
-                    html += ` <span style="color: #28a745; font-weight: 600;">✓ Période de grâce active</span>`;
-                }
-                html += `</p>`;
-            } else {
-                html += `<p style="margin: 0; color: var(--primary); font-size: 0.85em; line-height: 1.4; text-align: left;">`;
-                html += `Données issues des <strong>comptes de résultat</strong> (tous les 3 tours) dans "États Budgets".`;
-                html += ` <span style="color: #ffc107; font-weight: 600;">⚠️ Si vous échouez, une période de grâce de 20 tours vous sera accordée</span>`;
-                html += `</p>`;
-            }
-            
-            // Indiquer si la date cible a été rééchelonnée (uniquement pour les tentatives suivantes)
-            if (resetCount > 0 && targetDayWasRescheduled) {
-                html += `<p style="margin: 4px 0 0 0; color: var(--primary); font-size: 0.85em; line-height: 1.4; text-align: left;">`;
-                const startOfAttempt = window.objectivesTracker?.lastResetTurn || 0;
-                const targetTour = startOfAttempt + 20 + 60; // T2T + 20 (grâce) + 60 (objectif)
-                html += `<strong style="color: var(--cta);">📅</strong> Date cible rééchelonnée au tour <strong>${targetTour}</strong> (départ: tour ${startOfAttempt} + 20 tours de grâce + 60 tours objectif).`;
-                html += `</p>`;
-            }
-            
-            // Aide pour retrouver le compte de résultat concerné en cas d'échec
-            const failedTurns = [];
-            if (trackingData.minNetFlow !== Infinity && trackingData.minNetFlow < -20) {
-                failedTurns.push(trackingData.minNetFlowTurn);
-            }
-            if (trackingData.maxNetFlow !== -Infinity && trackingData.maxNetFlow < 100) {
-                failedTurns.push(trackingData.maxNetFlowTurn);
-            }
-            if (trackingData.fundsAtTargetDay !== null && trackingData.fundsAtTargetDay < 600) {
-                const targetDay = window.objectivesTracker?.targetDay || 60;
-                failedTurns.push(targetDay);
-            }
-            
-            if (failedTurns.length > 0) {
-                const uniqueTurns = [...new Set(failedTurns)].sort((a, b) => a - b);
-                html += `<p style="margin: 8px 0 0 0; color: var(--primary); font-size: 0.85em; line-height: 1.4; text-align: left;">`;
-                html += `<strong style="color: var(--cta);">💡</strong> `;
-                html += `Consult <strong>"États Budgets"</strong> aux tours ${uniqueTurns.join(', ')} pour analyser la situation.`;
-                html += `</p>`;
-            }
-            
-            html += '</div>';
-        }
-        
-        // Ajouter un bouton pour accéder à l'historique si disponible
-        // Toujours disponible à partir de la 2e tentative (resetCount >= 1)
-        try {
-            const resetCount = window.objectivesTracker?.resetCount || 0;
-            
-            // Toujours afficher le bouton d'historique dès la 2e tentative
-            if (resetCount >= 1) {
-                html += `
-                    <div style="margin-top: 20px; text-align: center;">
-                        <button id="show-history-btn" style="background: var(--cta); color: white; border: none; border-radius: 10px; padding: 12px 24px; cursor: pointer; font-weight: 600; font-size: 14px;">
-                            📜 Voir l'historique des objectifs
-                        </button>
-                    </div>
-                `;
-            }
-        } catch (error) {
-            console.error('Error checking history:', error);
         }
 
         return html;

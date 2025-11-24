@@ -12,7 +12,8 @@ db.delete({ disableAutoOpen: false })
             game: 'name',
             budget: 'name',
             objectives: 'name', // Store pour les échecs et succès d'objectifs
-            journal: '++id, turn, date, type, amount, description' // Journal des écritures comptables
+            journal: '++id, turn, date, type, amount, description', // Journal des écritures comptables
+            foodTraceability: '++id, turn, month, year, date, transactionType, fromId, fromCoords, toId, toCoords, foodType, quantity, price' // Traçabilité alimentaire
         });
         // Database cleared and recreated successfully
     })

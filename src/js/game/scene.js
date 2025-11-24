@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import {createCamera} from './camera.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { ObjectLoader } from 'three';
+import { AnimationMixer } from 'three';
 import {applyHoverColor, resetHoveredObject, resetObjectColor} from '../utils/meshUtils.js';
 import {  textures  } from '../meshs/data.js'
 import {
@@ -20,12 +23,33 @@ import {
     palaces
 } from '../ui/nodes.js';
 import {assetsPrices} from "../meshs/data.js";
-import { checkRoadAccess, checkFoodAvailability } from './modules/ModuleHelper.js';
+import { checkRoadAccess, checkFoodAvailability, canHouseEvolveToPalace, canHouseEvolveToPurple } from './modules/ModuleHelper.js';
 import { setRoadAccessIcon } from './modules/StatusIconHelper.js';
 import { TimeManager } from './utils/TimeManager.js';
 import config from './config.js';
 
 const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
+
+/**
+ * Get the maximum population capacity for a house type
+ * @param {string} houseType - The house type (e.g., 'House-Blue', 'House-2Story')
+ * @returns {number} Maximum population capacity
+ */
+function getHouseMaxPopulation(houseType) {
+    if (!houseType) return 0;
+    
+    // All houses (Blue, Red, Purple, 2Story) can hold 6 people
+    if (houseType.includes('House-Blue') || 
+        houseType.includes('House-Red') || 
+        houseType.includes('House-Purple') ||
+        houseType.includes('House-2Story') || 
+        houseType.includes('House_2Story')) {
+        return 6;
+    }
+    
+    // Default: no population for non-house buildings
+    return 0;
+}
 
 export function createScene(housesStore, gameStore, assetManager) {
     // BudgetManager will be set by the game initialization
@@ -160,6 +184,36 @@ export function createScene(housesStore, gameStore, assetManager) {
     let terrain = [];
     let buildings = [];
     let loadingPromises = [];
+    let currentCitySize = 16; // Store current city size for citizen pathfinding
+    
+    // Track last month when maintenance was paid (to pay only once per month)
+    let lastMaintenanceMonth = -1;
+    
+    // Multiple citizens support (max 3)
+    const MAX_CITIZENS = 3;
+    let citizenAnimations = {}; // Shared animation clips (loaded once)
+    let citizens = []; // Array of citizen objects, each with its own state
+    let previousPopulation = 0; // Track previous population to detect changes
+    const WALK_SPEED = 2; // Units per second
+    
+    // Citizen data structure
+    class CitizenData {
+        constructor() {
+            this.character = null; // THREE.Object3D reference
+            this.mixer = null; // AnimationMixer
+            this.currentAction = null; // Current AnimationAction
+            this.spawned = false; // Track if citizen has been spawned
+            this.isWalking = false; // Track if citizen is currently walking
+            this.targetPosition = null; // Target position for citizen to walk to
+            this.path = []; // Path of road tiles to follow
+            this.currentPathIndex = 0; // Current index in the path
+            this.pathDirection = 1; // 1 for forward, -1 for backward
+            this.onRoad = false; // Track if citizen is on a road
+            this.waitingForRoad = false; // Track if citizen is waiting for road access
+            this.wasWalkingBeforePause = false; // Track if citizen was walking before pause
+            this.lastPathRecalculationTurn = -1; // Track last turn when path was recalculated
+        }
+    }
     
     // OPTIMIZATION: Create a separate group for interactive objects (buildings + terrain)
     // This allows raycasting to test only relevant objects instead of all scene children
@@ -183,6 +237,35 @@ export function createScene(housesStore, gameStore, assetManager) {
         terrain = [];
         buildings = [];
         loadingPromises = [];
+        
+        // Store city size for citizen pathfinding
+        if (city && typeof city.size === 'number') {
+            currentCitySize = city.size;
+        }
+        
+        // Reset citizen state
+        // Remove all existing citizens
+        citizens.forEach(citizen => {
+            if (citizen.character && citizen.character.parent) {
+                citizen.character.parent.remove(citizen.character);
+            }
+            if (citizen.mixer) {
+                // Stop all animations
+                Object.values(citizenAnimations).forEach(clip => {
+                    if (clip) {
+                        const action = citizen.mixer.clipAction(clip);
+                        if (action && typeof action.isRunning === 'function' && action.isRunning()) {
+                            action.stop();
+                        }
+                    }
+                });
+            }
+        });
+        citizens = [];
+        previousPopulation = 0;
+        
+        // Reset maintenance tracking
+        lastMaintenanceMonth = -1;
         
         // Recreate interactive group after scene.clear()
         const existingGroup = scene.getObjectByName('interactive-objects');
@@ -313,6 +396,9 @@ export function createScene(housesStore, gameStore, assetManager) {
 
         // Add infinite backdrop (skydome + distant ground ring)
         addBackdrop();
+        
+        // Load and add citizen character to the scene
+        loadCitizenAnimations();
     }
 
     async function update(city, time=0) {
@@ -363,11 +449,52 @@ export function createScene(housesStore, gameStore, assetManager) {
         const statutsIconsMeta = {
             road: {
                 position : {x: -1, y: 1, z: 1},
-                scale : {x: 1.2, y: 1.2, z: 1}
+                scale : {x: 1.2, y: 1.2, z: 1},
+                spriteColor: null,
+                backgroundColor: null
             },
             food: {
                 position : {x: -0.5, y: 1, z: 0},
-                scale : {x: 1.0, y: 1.0, z: 1}
+                scale : {x: 1.0, y: 1.0, z: 1},
+                spriteColor: null,
+                backgroundColor: null
+            },
+            // Different positions for different farm sprites
+            'no-food': {
+                position : {x: -0.5, y: 1, z: 0},
+                scale : {x: 1.0, y: 1.0, z: 1},
+                spriteColor: null,
+                backgroundColor: null
+            },
+            'no-food-farm': {
+                position : {x: -0.8, y: 0.5, z: -0.2},
+                scale : {x: 0.6, y: 0.6, z: 0.6},
+                spriteColor: 0xFFFF00, // Yellow
+                backgroundColor: null
+            },
+            'grow-food': {
+                position : {x: -0.8, y: 0.5, z: -0.2},
+                scale : {x: 0.4, y: 0.4, z: 0.4},
+                spriteColor: null, // Keep original colors
+                backgroundColor: 0xFFE8E8 
+            },
+            'harvest': {
+                position : {x: -0.8, y: 0.5, z: -0.2},
+                scale : {x: 0.4, y: 0.4, z: 0.4},
+                spriteColor: null, // Keep original colors
+                backgroundColor: 0xFFE8E8
+            },
+            'sell-food': {
+                position : {x: -0.8, y: 0.5, z: -0.2},
+                scale : {x: 0.4, y: 0.4, z: 0.4},
+                spriteColor: null, // Keep original colors
+                backgroundColor: 0xFFE8E8
+            },
+            'isBuying': {
+                position : {x: -0.5, y: 0.5, z: 0},
+                scale : {x: 0.6, y: 0.6, z: 1},
+                spriteColor: 0x00FF00, // Green color
+                backgroundColor: 0xFFFFFF // White background
             }
         };
 
@@ -376,11 +503,27 @@ export function createScene(housesStore, gameStore, assetManager) {
                 // Processing city tile
               let currentBuildingId = buildings[x][y]?.userData?.type || buildings[x][y]?.userData?.id;
               // Also check terrain for roads using isRoad property (roads are in terrain array but may be in buildings array too)
+              // FIX BUG 1: Only detect road from terrain if it's also in city.tiles (meaning it was properly placed)
+              const tileBuildingId = city.tiles[x][y]?.buildingId;
               if (!currentBuildingId && terrain[x] && terrain[x][y] && (terrain[x][y].userData?.isRoad || terrain[x][y].name === 'roads')) {
-                  currentBuildingId = 'roads';
-                  // Ensure road is in buildings array for neighbor detection
-                  if (!buildings[x][y]) {
-                      buildings[x][y] = terrain[x][y];
+                  // Only treat as road if it's also marked in city.tiles (was properly placed)
+                  if (tileBuildingId === 'roads' || tileBuildingId === 'Road') {
+                      currentBuildingId = 'roads';
+                      // Ensure road is in buildings array for neighbor detection
+                      if (!buildings[x][y]) {
+                          buildings[x][y] = terrain[x][y];
+                      }
+                  } else {
+                      // Terrain has road material but city.tiles doesn't - restore to grass
+                      const terrainMesh = terrain[x][y];
+                      const sharedMaterials = assetManager.getSharedTerrainMaterials();
+                      if (sharedMaterials && sharedMaterials['grass'] && terrainMesh.material) {
+                          terrainMesh.material = sharedMaterials['grass'];
+                          terrainMesh.name = 'grass';
+                          terrainMesh.userData.id = 'grass';
+                          terrainMesh.userData.type = 'grass';
+                          terrainMesh.userData.isRoad = false;
+                      }
                   }
               }
               const currentBuilding = buildings[x][y];
@@ -393,7 +536,7 @@ export function createScene(housesStore, gameStore, assetManager) {
               const isOnEdge = x === 0 || x === city.size - 1 || y === 0 || y === city.size - 1;
 
               if(currentBuildingId && isInCityLimits) {
-                const currentUniqueID =  makeDbItemId(currentBuildingId, x, y)
+                let currentUniqueID =  makeDbItemId(currentBuildingId, x, y)
                 // Skip if makeDbItemId returned false (invalid building ID or coordinates)
                 if(!currentUniqueID) {
                     continue;
@@ -402,9 +545,37 @@ export function createScene(housesStore, gameStore, assetManager) {
                 // Vérifier si le bâtiment existe encore dans la base de données
                 // Si non, le supprimer de la scène (cas des événements aléatoires, etc.)
                 // IMPORTANT: Ne pas supprimer si un nouveau bâtiment est en cours de création (newBuildingId existe)
-                // EXCEPTION: Ne pas vérifier les routes car elles sont gérées différemment (terrain + buildings)
                 const isRoad = currentBuildingId === 'roads' || buildings[x][y]?.userData?.isRoad;
                 const hasNewBuilding = newBuildingId && newBuildingId !== currentBuildingId;
+                
+                // FIX BUG 1: For roads, use city.tiles as source of truth
+                // If city.tiles doesn't have a road but terrain shows road material, restore to grass
+                // This prevents "ghost" roads from terrain material when payment failed
+                if (isRoad) {
+                    const tileHasRoad = city.tiles[x][y]?.buildingId === 'roads' || city.tiles[x][y]?.buildingId === 'Road';
+                    if (!tileHasRoad) {
+                        // Terrain shows road but city.tiles doesn't - this means payment failed or road was removed
+                        // Restore terrain to grass
+                        if (terrain[x] && terrain[x][y]) {
+                            const terrainMesh = terrain[x][y];
+                            const sharedMaterials = assetManager.getSharedTerrainMaterials();
+                            if (sharedMaterials && sharedMaterials['grass'] && terrainMesh.material) {
+                                terrainMesh.material = sharedMaterials['grass'];
+                                terrainMesh.name = 'grass';
+                                terrainMesh.userData.id = 'grass';
+                                terrainMesh.userData.type = 'grass';
+                                terrainMesh.userData.isRoad = false; // Clear road flag
+                                terrainMesh.userData.x = x;
+                                terrainMesh.userData.y = y;
+                            }
+                        }
+                        // Remove from buildings array
+                        if (buildings[x][y] === terrain[x][y]) {
+                            buildings[x][y] = undefined;
+                        }
+                        continue; // Skip further processing for this tile
+                    }
+                }
                 
                 // Ne vérifier la suppression que si aucun nouveau bâtiment n'est en cours de création
                 if (!isRoad && !hasNewBuilding) {
@@ -422,8 +593,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                     }
                 }
                 
-                // Pour les routes, on continue même si elles n'existent pas encore dans la DB
-                // car elles peuvent être en cours de création
+                // Update building data in database
                 if (!isRoad) {
                     await housesStore.updateHouseFields(currentUniqueID, {worldTime: time})
                     
@@ -535,6 +705,68 @@ export function createScene(housesStore, gameStore, assetManager) {
                         });
                     }
 
+                    // Display buying icon during autumn (when markets buy from farms)
+                    // Show green buying icon if market is in buying period (isBuying === true)
+                    // isBuying indicates that conditions are met to buy food from nearest farms
+                    if (buildings[x][y]) {
+                        const isBuying = await housesStore.getHouseItem(currentUniqueID, 'isBuying');
+                        
+                        // Show/hide buying icon based on buying status only
+                        // isBuying means market can buy food from farms (conditions are met)
+                        if (isBuying === true) {
+                            // Market is in buying period - show green buying icon
+                            const buyingMeta = statutsIconsMeta['isBuying'];
+                            assetManager.setStatusSprite(
+                                buildings[x][y],
+                                textures['isBuying'],
+                                'isBuying',
+                                buyingMeta.scale,
+                                buyingMeta.position,
+                                true,
+                                buyingMeta.spriteColor, // Green color from metadata
+                                buyingMeta.backgroundColor // White background from metadata
+                            );
+                        } else {
+                            // Not in buying period - hide buying icon
+                            assetManager.setStatusSprite(
+                                buildings[x][y],
+                                textures['isBuying'],
+                                'isBuying',
+                                statutsIconsMeta['isBuying'].scale,
+                                statutsIconsMeta['isBuying'].position,
+                                false,
+                                null,
+                                null
+                            );
+                        }
+                    }
+                    
+                    // Set no-food icon for markets (independent of other sprites, like houses)
+                    // Show "no-food" icon when market has no food stocks (same logic as houses)
+                    if (buildings[x][y]) {
+                        const marketStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks') || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+                        const hasFoodBaskets = (marketStocks.wheat || 0) > 0 || 
+                                               (marketStocks.carrot || 0) > 0 || 
+                                               (marketStocks.cabbage || 0) > 0 || 
+                                               (marketStocks.food || 0) > 0;
+                        
+                        const showNoFoodIcon = !hasFoodBaskets; // Show icon when NO food
+                        assetManager.setStatusSprite(
+                            buildings[x][y],
+                            textures['nofood'],
+                            'no-food',
+                            statutsIconsMeta['no-food'].scale,
+                            statutsIconsMeta['no-food'].position,
+                            showNoFoodIcon
+                        );
+                        console.log('[scene.js] Market food sprite update:', {
+                            marketId: currentUniqueID,
+                            hasFoodBaskets,
+                            showNoFoodIcon,
+                            stocks: marketStocks
+                        });
+                    }
+
                     /**
                      * Update market stocks of food in userData and in DB
                      * @param buildings
@@ -629,83 +861,102 @@ export function createScene(housesStore, gameStore, assetManager) {
                         });
                     }
                     
-                    // Harvest season (Été): add +1 panier per month (accumulates if not sold)
-                    // Only add once per month - track the last month when production happened
-                    if (season === 'Été') {
-                        // Get farm data to check last production month
+                    // Harvest season (Automne): produce 78 paniers once per year (enough to feed 6 citizens for 1 year + buffer)
+                    // 1 citizen consumes 1 panier per month = 12 paniers per year
+                    // 6 citizens × 12 paniers/year = 72 paniers/year for consumption
+                    // + 6 paniers buffer needed during the time market is buying a new load for one year
+                    // Total: 72 + 6 = 78 paniers/year
+                    // Only produce once per year - track the last year when production happened
+                    if (season === 'Automne') {
+                        // Get farm data to check last production year
                         const farmData = await housesStore.getHouse(currentUniqueID);
-                        const lastProductionMonth = farmData?.lastProductionMonth;
+                        const lastProductionYear = farmData?.lastProductionYear;
+                        const currentYear = timeInfo.year || 0;
                         const currentMonthIndex = timeInfo.monthIndex;
                         
-                        // Only add panier if we haven't produced this month yet
-                        if (lastProductionMonth !== currentMonthIndex) {
+                        // Only produce if we haven't produced this year yet (produce once per year in autumn)
+                        if (lastProductionYear !== currentYear) {
                             // Get current stocks
                             const currentFarmStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks') || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                             
-                            // Determine farm type and add 1 panier of that type (no maximum limit - accumulates)
+                            // Determine farm type and add 78 paniers of that type (enough to feed 6 citizens for 1 year + buffer)
                             let farmType = currentBuildingId;
                             let newStocks = { ...currentFarmStocks };
                             
+                            // Production: 78 paniers = enough to feed 6 citizens for 1 year + 6 paniers buffer
+                            // 1 citizen consumes 1 panier/month = 12 paniers/year
+                            // 6 citizens × 12 paniers/year = 72 paniers/year for consumption
+                            // + 6 paniers buffer needed during the time market is buying a new load
+                            // Total: (1×12×6) + (1×6) = 72 + 6 = 78 paniers/year
+                            const productionAmount = 78;
+                            
                             if (farmType.includes('Farm-Wheat') || farmType.includes('Wheat')) {
-                                // Add 1 wheat panier (accumulates indefinitely)
-                                newStocks.wheat = (currentFarmStocks.wheat || 0) + 1;
-                                newStocks.food = (newStocks.food || 0) + 1;
+                                // Add 78 wheat paniers (enough to feed 6 citizens for 1 year + buffer)
+                                newStocks.wheat = (currentFarmStocks.wheat || 0) + productionAmount;
+                                newStocks.food = (newStocks.food || 0) + productionAmount;
                             } else if (farmType.includes('Farm-Carrot') || farmType.includes('Carrot')) {
-                                // Add 1 carrot panier (accumulates indefinitely)
-                                newStocks.carrot = (currentFarmStocks.carrot || 0) + 1;
-                                newStocks.food = (newStocks.food || 0) + 1;
+                                // Add 78 carrot paniers (enough to feed 6 citizens for 1 year + buffer)
+                                newStocks.carrot = (currentFarmStocks.carrot || 0) + productionAmount;
+                                newStocks.food = (newStocks.food || 0) + productionAmount;
                             } else if (farmType.includes('Farm-Cabbage') || farmType.includes('Cabbage')) {
-                                // Add 1 cabbage panier (accumulates indefinitely)
-                                newStocks.cabbage = (currentFarmStocks.cabbage || 0) + 1;
-                                newStocks.food = (newStocks.food || 0) + 1;
+                                // Add 78 cabbage paniers (enough to feed 6 citizens for 1 year + buffer)
+                                newStocks.cabbage = (currentFarmStocks.cabbage || 0) + productionAmount;
+                                newStocks.food = (newStocks.food || 0) + productionAmount;
                             }
                             
-                            // Update stocks and track production month in IndexedDB
+                            // Update stocks and track production year in IndexedDB
                             await housesStore.updateHouseFields(currentUniqueID, { 
                                 stocks: newStocks,
-                                lastProductionMonth: currentMonthIndex
+                                lastProductionYear: currentYear,
+                                lastProductionMonth: currentMonthIndex // Keep for compatibility
+                            });
+                            
+                            console.log('[scene.js] Farm produced annual harvest:', {
+                                farmId: currentUniqueID,
+                                farmType,
+                                productionAmount,
+                                newStocks,
+                                year: currentYear
                             });
                         }
                     }
                     
-                    // Farm sprite scale (60% of normal size)
-                    const farmSpriteScale = {
-                        x: statutsIconsMeta.food.scale.x * 0.6,
-                        y: statutsIconsMeta.food.scale.y * 0.6,
-                        z: statutsIconsMeta.food.scale.z
-                    };
-                    
                     // Determine which sprite to show based on season
-                    let spriteTexture, spriteName, spriteColor, spritePosition, backgroundColor;
-                    
-                    // All sprites use the same position as no-food
-                    spritePosition = statutsIconsMeta.food.position;
+                    let spriteTexture, spriteName, spriteColor, spritePosition, spriteScale, backgroundColor;
                     
                     if (season === 'Hiver') {
                         // Winter: no-food (yellow, no background)
                         spriteTexture = textures['nofood'];
                         spriteName = 'no-food';
-                        spriteColor = 0xFFFF00; // Yellow
-                        backgroundColor = null; // No background for winter
+                        spritePosition = statutsIconsMeta['no-food-farm'].position;
+                        spriteScale = statutsIconsMeta['no-food-farm'].scale;
+                        spriteColor = statutsIconsMeta['no-food-farm'].spriteColor;
+                        backgroundColor = statutsIconsMeta['no-food-farm'].backgroundColor;
                     } else {
-                        // Other seasons: colored sprites with pastel colored circular background
-                        spriteColor = null; // No color tint (keep original colors)
-                        
                         if (season === 'Printemps') {
-                            // Spring: grow-food with light green pastel background
+                            // Spring: grow-food with pastel green background
                             spriteTexture = textures['grow-food'];
                             spriteName = 'grow-food';
-                            backgroundColor = 0xB8E6B8; // Light green pastel
+                            spritePosition = statutsIconsMeta['grow-food'].position;
+                            spriteScale = statutsIconsMeta['grow-food'].scale;
+                            spriteColor = statutsIconsMeta['grow-food'].spriteColor;
+                            backgroundColor = statutsIconsMeta['grow-food'].backgroundColor;
                         } else if (season === 'Été') {
-                            // Summer: harvest with light yellow/orange pastel background
+                            // Summer: harvest with pastel yellow/orange background
                             spriteTexture = textures['harvest'];
                             spriteName = 'harvest';
-                            backgroundColor = 0xFFE4B5; // Light yellow/orange pastel
+                            spritePosition = statutsIconsMeta['harvest'].position;
+                            spriteScale = statutsIconsMeta['harvest'].scale;
+                            spriteColor = statutsIconsMeta['harvest'].spriteColor;
+                            backgroundColor = statutsIconsMeta['harvest'].backgroundColor;
                         } else if (season === 'Automne') {
-                            // Autumn: sell-food with light orange/red pastel background
+                            // Autumn: sell-food with pastel orange/red background
                             spriteTexture = textures['sell-food'];
                             spriteName = 'sell-food';
-                            backgroundColor = 0xFFCCCB; // Light orange/red pastel
+                            spritePosition = statutsIconsMeta['sell-food'].position;
+                            spriteScale = statutsIconsMeta['sell-food'].scale;
+                            spriteColor = statutsIconsMeta['sell-food'].spriteColor;
+                            backgroundColor = statutsIconsMeta['sell-food'].backgroundColor;
                         }
                     }
                     
@@ -715,8 +966,8 @@ export function createScene(housesStore, gameStore, assetManager) {
                             buildings[x][y],
                             spriteTexture,
                             spriteName,
-                            farmSpriteScale,
-                            spritePosition || statutsIconsMeta.food.position,
+                            spriteScale,
+                            spritePosition,
                             true, // Always show sprite (season-specific)
                             spriteColor, // Color (red for winter, null for others to keep original colors)
                             backgroundColor // Pastel colored circular background for season sprites (null for winter)
@@ -744,16 +995,12 @@ export function createScene(housesStore, gameStore, assetManager) {
                     // The service writes: stocks = {wheat: 0, carrot: 1, cabbage: 0, food: 1}
                     // Then this code was reading empty userData.stocks and overwriting IndexedDB with 0s!
 
-                    if(time > 0) {
-                        const HouseTime = { name: currentUniqueID, increment: 1, field: 'time' };
-                        await housesStore.incrementHouseField(HouseTime, false)
-                    }
-
                     // Check if house has food AND road access before allowing population growth (using module helpers, DB remains source of truth)
                     // Read stocks from IndexedDB (FoodDistributionService's updates are here)
                     const houseFoodStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks');
                     const houseNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
                     const currentPop = await housesStore.getHouseItem(currentUniqueID, 'pop');
+                    const worldTime = await housesStore.getHouseItem(currentUniqueID, 'worldTime');
                     
                     // IMPORTANT: Sync IndexedDB stocks to userData for visual display
                     // This ensures stocks updated by FoodDistributionService are reflected in UI
@@ -771,11 +1018,121 @@ export function createScene(housesStore, gameStore, assetManager) {
                         });
                     }
                     
+                    // NEW: Monthly food consumption - 1 basket per citizen per month
+                    // Fetch house data once for use in both food consumption and population logic
+                    const houseData = await housesStore.getHouse(currentUniqueID);
+                    const timeInfo = TimeManager.getTimeInfo(time);
+                    const currentMonthIndex = timeInfo.monthIndex;
+                    const lastConsumptionMonth = houseData?.lastConsumptionMonth;
+                    
+                    // Only consume food once per month
+                    if (lastConsumptionMonth !== currentMonthIndex && currentPop > 0) {
+                        const currentStocks = houseFoodStocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+                        const consumptionAmount = currentPop; // 1 basket per citizen
+                        
+                        // Consume food: prioritize wheat, then carrot, then cabbage
+                        let remainingConsumption = consumptionAmount;
+                        const newStocks = { ...currentStocks };
+                        
+                        // Track what was consumed for traceability
+                        let wheatConsumed = 0;
+                        let carrotConsumed = 0;
+                        let cabbageConsumed = 0;
+                        
+                        // Consume wheat first
+                        if (remainingConsumption > 0 && newStocks.wheat > 0) {
+                            wheatConsumed = Math.min(remainingConsumption, newStocks.wheat);
+                            newStocks.wheat -= wheatConsumed;
+                            remainingConsumption -= wheatConsumed;
+                        }
+                        
+                        // Then consume carrot
+                        if (remainingConsumption > 0 && newStocks.carrot > 0) {
+                            carrotConsumed = Math.min(remainingConsumption, newStocks.carrot);
+                            newStocks.carrot -= carrotConsumed;
+                            remainingConsumption -= carrotConsumed;
+                        }
+                        
+                        // Finally consume cabbage
+                        if (remainingConsumption > 0 && newStocks.cabbage > 0) {
+                            cabbageConsumed = Math.min(remainingConsumption, newStocks.cabbage);
+                            newStocks.cabbage -= cabbageConsumed;
+                            remainingConsumption -= cabbageConsumed;
+                        }
+                        
+                        // Update total food
+                        newStocks.food = newStocks.wheat + newStocks.carrot + newStocks.cabbage;
+                        
+                        // Update stocks and track consumption month
+                        await housesStore.updateHouseFields(currentUniqueID, {
+                            stocks: newStocks,
+                            lastConsumptionMonth: currentMonthIndex
+                        });
+                        
+                        // Enregistrer la consommation dans la traçabilité
+                        if (window.foodTraceabilityService && houseData) {
+                            if (wheatConsumed > 0) {
+                                await window.foodTraceabilityService.recordHouseConsumption(
+                                    timeInfo.turn || 0,
+                                    currentMonthIndex,
+                                    timeInfo.year || 0,
+                                    { id: currentUniqueID, x: houseData.x, y: houseData.y, type: houseData.type },
+                                    'wheat',
+                                    wheatConsumed,
+                                    currentPop
+                                );
+                            }
+                            if (carrotConsumed > 0) {
+                                await window.foodTraceabilityService.recordHouseConsumption(
+                                    timeInfo.turn || 0,
+                                    currentMonthIndex,
+                                    timeInfo.year || 0,
+                                    { id: currentUniqueID, x: houseData.x, y: houseData.y, type: houseData.type },
+                                    'carrot',
+                                    carrotConsumed,
+                                    currentPop
+                                );
+                            }
+                            if (cabbageConsumed > 0) {
+                                await window.foodTraceabilityService.recordHouseConsumption(
+                                    timeInfo.turn || 0,
+                                    currentMonthIndex,
+                                    timeInfo.year || 0,
+                                    { id: currentUniqueID, x: houseData.x, y: houseData.y, type: houseData.type },
+                                    'cabbage',
+                                    cabbageConsumed,
+                                    currentPop
+                                );
+                            }
+                        }
+                        
+                        console.log('[scene.js] Monthly food consumption:', {
+                            houseId: currentUniqueID,
+                            citizens: currentPop,
+                            consumed: consumptionAmount - remainingConsumption,
+                            remainingToConsume: remainingConsumption,
+                            oldStocks: currentStocks,
+                            newStocks: newStocks
+                        });
+                        
+                        // Get updated stocks after consumption for further processing
+                        const updatedStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks');
+                        if (updatedStocks) {
+                            Object.assign(houseFoodStocks, updatedStocks);
+                        }
+                    }
+                    
                     const { hasFood, totalFood } = checkFoodAvailability(houseFoodStocks || {}, currentPop);
                     const { hasAccess: hasRoadAccess } = checkRoadAccess(houseNeighbors || []);
                     
+                    // Get house type to determine max population capacity (reuse houseData from above)
+                    const houseType = houseData?.type || currentBuildingId;
+                    const maxPopulation = getHouseMaxPopulation(houseType);
+                    
                     console.log('[scene.js] Population check for house:', {
                         houseId: currentUniqueID,
+                        houseType,
+                        maxPopulation,
                         hasFood,
                         totalFood,
                         hasRoadAccess,
@@ -789,32 +1146,64 @@ export function createScene(housesStore, gameStore, assetManager) {
                         }
                     });
                     
-                    // Population = number of food stocks (1 stock = 1 citizen)
-                    // Population can only increase or stay the same (no consumption for now)
-                    if (hasRoadAccess) {
-                        // Calculate population based on food stocks: 1 stock = 1 citizen
-                        const targetPopulation = houseFoodStocks.food || 0;
+                    // Population management: population grows independently of food up to house capacity
+                    // Population can exceed food (creating un nourished people)
+                    // Only road access is required for population to exist
+                    if (hasRoadAccess && maxPopulation > 0) {
+                        // Population grows monthly up to house capacity limit
+                        // Population is not tied to food - can have un nourished people
+                        const timeInfo = TimeManager.getTimeInfo(time);
+                        const currentMonthIndex = timeInfo.monthIndex;
+                        const lastPopulationGrowthMonth = houseData?.lastPopulationGrowthMonth;
                         
-                        // Only update if target population is higher than current (no decrease)
-                        if (targetPopulation > currentPop) {
-                            await housesStore.updateHouseFields(currentUniqueID, { pop: targetPopulation });
-                            console.log('[scene.js] Population updated based on food stocks:', {
-                                houseId: currentUniqueID,
-                                oldPop: currentPop,
-                                newPop: targetPopulation,
-                                foodStocks: houseFoodStocks.food
-                            });
+                        let targetPopulation = currentPop;
+                        
+                        // If house is not at capacity, allow population to grow monthly
+                        if (currentPop < maxPopulation && lastPopulationGrowthMonth !== currentMonthIndex) {
+                            // Population grows 1 person per month when there's space
+                            targetPopulation = Math.min(currentPop + 1, maxPopulation);
+                            
+                            // Update population and track growth month
+                            if (targetPopulation !== currentPop) {
+                                await housesStore.updateHouseFields(currentUniqueID, { 
+                                    pop: targetPopulation,
+                                    lastPopulationGrowthMonth: currentMonthIndex
+                                });
+                                console.log('[scene.js] Population updated (monthly growth):', {
+                                    houseId: currentUniqueID,
+                                    oldPop: currentPop,
+                                    newPop: targetPopulation,
+                                    maxPopulation,
+                                    foodStocks: houseFoodStocks?.food || 0,
+                                    change: 'increased',
+                                    note: targetPopulation > (houseFoodStocks?.food || 0) ? 'un nourished people possible' : 'all fed'
+                                });
+                            }
+                        } else if (currentPop >= maxPopulation) {
+                            // House is at capacity - ensure it doesn't exceed max
+                            if (currentPop > maxPopulation) {
+                                targetPopulation = maxPopulation;
+                                await housesStore.updateHouseFields(currentUniqueID, { pop: targetPopulation });
+                                console.log('[scene.js] Population capped at max capacity:', {
+                                    houseId: currentUniqueID,
+                                    oldPop: currentPop,
+                                    newPop: targetPopulation,
+                                    maxPopulation
+                                });
+                            }
                         }
                     } else {
-                        // No road access - reset population to 0
+                        // No road access OR not a house - reset population to 0
                         if (currentPop > 0) {
                             await housesStore.updateHouseFields(currentUniqueID, { pop: 0 });
-                            console.log('[scene.js] Population reset to 0 (no road access):', currentUniqueID);
+                            console.log('[scene.js] Population reset to 0 (no road access or not a house):', {
+                                houseId: currentUniqueID,
+                                hasRoadAccess,
+                                maxPopulation,
+                                reason: !hasRoadAccess ? 'no road access' : 'not a house'
+                            });
                         }
                     }
-
-                    const houseTime = await housesStore.getHouseItem(currentUniqueID, 'time');
-                    // House time processing
 
                     if(houseNeighbors && buildings[x][y]) {
                         const { hasAccess, roadCount } = checkRoadAccess(houseNeighbors);
@@ -842,8 +1231,9 @@ export function createScene(housesStore, gameStore, assetManager) {
                     /* house evolution to stage 2 */
                     // Use food module for calculations (DB stocks remain source of truth, reuse already-fetched values)
                     const { meetsFoodGoal, isInsufficient } = checkFoodAvailability(houseFoodStocks, currentPop);
-                    const foodGoal = meetsFoodGoal;
-                    const decay = houseTime > 3 && isInsufficient;
+                    // Use unified time system for decay check (worldTime is source of truth)
+                    const buildingAge = TimeManager.getBuildingAge(time, worldTime);
+                    const decay = buildingAge > 3 && isInsufficient;
 
                     // Set food status sprite based on module result
                     // Show "no-food" icon when !hasFood (sprite shown when condition is true)
@@ -868,16 +1258,193 @@ export function createScene(housesStore, gameStore, assetManager) {
                     }
                     
                   
-                    if(decay) {
-                        assetManager.changeMeshColor(buildings[x][y],  0X404040)
+                    // DISABLED: Don't change building material color on decay
+                    // This was causing unwanted color changes when opening info panel
+                    // if(decay) {
+                    //     assetManager.changeMeshColor(buildings[x][y],  0X404040)
+                    // }
+
+                    /* house evolution: Blue ↔ Red based on population */
+                    // House-Blue becomes House-Red when inhabited (pop > 0)
+                    if (currentBuildingId === 'House-Blue' && currentPop > 0) {
+                        removeInteractiveObject(buildings[x][y]);
+                        const newUniqueBuildingId = makeDbItemId('House-Red', x, y);
+                        const keys = { type : "House-Red", price: assetsPrices["House-Red"].price}
+                        await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
+                        buildings[x][y] = assetManager.createAsset('House-Red', x, y);
+                        // Add to appropriate zone group (NOT directly to scene)
+                        const zoneX = Math.floor(x / ZONE_SIZE);
+                        const zoneY = Math.floor(y / ZONE_SIZE);
+                        const citySize = city.size || 16;
+                        const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
+                        if (zoneGroups[zoneIndex]) {
+                            zoneGroups[zoneIndex].add(buildings[x][y]);
+                        } else {
+                            // Fallback: add directly to scene if zone group doesn't exist
+                            scene.add(buildings[x][y]);
+                        }
+                        console.log('[scene.js] House evolved: House-Blue → House-Red (inhabited)', {
+                            houseId: currentUniqueID,
+                            newId: newUniqueBuildingId,
+                            population: currentPop
+                        });
+                    }
+                    // House-Red becomes House-Blue when uninhabited (pop === 0)
+                    else if (currentBuildingId === 'House-Red' && currentPop === 0) {
+                        removeInteractiveObject(buildings[x][y]);
+                        const newUniqueBuildingId = makeDbItemId('House-Blue', x, y);
+                        const keys = { type : "House-Blue", price: assetsPrices["House-Blue"].price}
+                        await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
+                        buildings[x][y] = assetManager.createAsset('House-Blue', x, y);
+                        // Add to appropriate zone group (NOT directly to scene)
+                        const zoneX = Math.floor(x / ZONE_SIZE);
+                        const zoneY = Math.floor(y / ZONE_SIZE);
+                        const citySize = city.size || 16;
+                        const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
+                        if (zoneGroups[zoneIndex]) {
+                            zoneGroups[zoneIndex].add(buildings[x][y]);
+                        } else {
+                            // Fallback: add directly to scene if zone group doesn't exist
+                            scene.add(buildings[x][y]);
+                        }
+                        console.log('[scene.js] House regressed: House-Red → House-Blue (uninhabited)', {
+                            houseId: currentUniqueID,
+                            newId: newUniqueBuildingId,
+                            population: currentPop
+                        });
+                    }
+                    
+                    /* house evolution: Red → Purple based on food conditions */
+                    // House-Red becomes House-Purple when all conditions are met:
+                    // - All House-Red conditions (pop > 0, road access)
+                    // - No one suffering from hunger (food stocks = population)
+                    else if (currentBuildingId === 'House-Red') {
+                        const purpleEvolutionCheck = canHouseEvolveToPurple({
+                            stocks: houseFoodStocks,
+                            population: currentPop,
+                            buildingType: currentBuildingId,
+                            hasRoadAccess: hasRoadAccess
+                        });
+                        
+                        if (purpleEvolutionCheck.canEvolve) {
+                            removeInteractiveObject(buildings[x][y]);
+                            const newUniqueBuildingId = makeDbItemId('House-Purple', x, y);
+                            const keys = { type : "House-Purple", price: assetsPrices["House-Purple"].price}
+                            await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
+                            buildings[x][y] = assetManager.createAsset('House-Purple', x, y);
+                            // Add to appropriate zone group (NOT directly to scene)
+                            const zoneX = Math.floor(x / ZONE_SIZE);
+                            const zoneY = Math.floor(y / ZONE_SIZE);
+                            const citySize = city.size || 16;
+                            const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
+                            if (zoneGroups[zoneIndex]) {
+                                zoneGroups[zoneIndex].add(buildings[x][y]);
+                            } else {
+                                // Fallback: add directly to scene if zone group doesn't exist
+                                scene.add(buildings[x][y]);
+                            }
+                            console.log('[scene.js] House evolved: House-Red → House-Purple (well-fed)', {
+                                houseId: currentUniqueID,
+                                newId: newUniqueBuildingId,
+                                population: currentPop,
+                                foodStocks: houseFoodStocks
+                            });
+                        }
+                    }
+                    
+                    /* house regression: Purple → Red if conditions no longer met */
+                    // House-Purple becomes House-Red when conditions are no longer met
+                    else if (currentBuildingId === 'House-Purple') {
+                        const purpleEvolutionCheck = canHouseEvolveToPurple({
+                            stocks: houseFoodStocks,
+                            population: currentPop,
+                            buildingType: 'House-Red', // Check if it would qualify as House-Red
+                            hasRoadAccess: hasRoadAccess
+                        });
+                        
+                        if (!purpleEvolutionCheck.canEvolve) {
+                            removeInteractiveObject(buildings[x][y]);
+                            const newUniqueBuildingId = makeDbItemId('House-Red', x, y);
+                            const keys = { type : "House-Red", price: assetsPrices["House-Red"].price}
+                            await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
+                            buildings[x][y] = assetManager.createAsset('House-Red', x, y);
+                            // Add to appropriate zone group (NOT directly to scene)
+                            const zoneX = Math.floor(x / ZONE_SIZE);
+                            const zoneY = Math.floor(y / ZONE_SIZE);
+                            const citySize = city.size || 16;
+                            const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
+                            if (zoneGroups[zoneIndex]) {
+                                zoneGroups[zoneIndex].add(buildings[x][y]);
+                            } else {
+                                // Fallback: add directly to scene if zone group doesn't exist
+                                scene.add(buildings[x][y]);
+                            }
+                            console.log('[scene.js] House regressed: House-Purple → House-Red (conditions no longer met)', {
+                                houseId: currentUniqueID,
+                                newId: newUniqueBuildingId,
+                                population: currentPop,
+                                reason: purpleEvolutionCheck.reason,
+                                foodStocks: houseFoodStocks
+                            });
+                        }
                     }
 
-                    if(houseTime > 3 && foodGoal && firstHouses.includes(currentBuildingId)) {
+                    /* house evolution to stage 2 (palace) - using unified helper function */
+                    const evolutionCheck = canHouseEvolveToPalace({
+                        stocks: houseFoodStocks,
+                        population: currentPop,
+                        buildingType: currentBuildingId,
+                        firstHouses: firstHouses
+                    });
+                    
+                    if(evolutionCheck.canEvolve) {
                         removeInteractiveObject(buildings[x][y]);
                         const newUniqueBuildingId = makeDbItemId('House-2Story', x, y);
                         const keys = { type : "House-2Story", price: assetsPrices["House-2Story"].price}
-                        await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
-                        await housesStore.deleteOneHouse(currentUniqueID);
+                        
+                        // Preserve neighbors and roads data before evolution
+                        const houseNeighborsBeforeEvolution = houseNeighbors || [];
+                        const { roadCount: roadsBeforeEvolution } = checkRoadAccess(houseNeighborsBeforeEvolution);
+                        
+                        // Update house name in database (same pattern as House-Red evolution)
+                        const updateResult = await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
+                        
+                        // If updateHouseName failed (house not found), create the house entry
+                        if (!updateResult || !updateResult.success) {
+                            // House doesn't exist in DB - create it with all necessary fields
+                            const newHouseData = {
+                                name: newUniqueBuildingId,
+                                type: keys.type,
+                                price: keys.price,
+                                x: x,
+                                y: y,
+                                neighbors: houseNeighborsBeforeEvolution,
+                                pop: currentPop,
+                                stocks: houseFoodStocks || { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
+                                roads: roadsBeforeEvolution,
+                                worldTime: worldTime || time
+                            };
+                            await housesStore.addHouse(newHouseData);
+                        } else {
+                            // House was successfully renamed - ensure neighbors and roads are preserved
+                            await housesStore.updateHouseFields(newUniqueBuildingId, {
+                                neighbors: houseNeighborsBeforeEvolution,
+                                roads: roadsBeforeEvolution
+                            });
+                        }
+                        
+                        // IMPORTANT: Update currentBuildingId and currentUniqueID to reflect the evolution
+                        // This ensures subsequent code in the same loop iteration uses the correct ID
+                        currentBuildingId = 'House-2Story';
+                        const oldUniqueID = currentUniqueID;
+                        currentUniqueID = newUniqueBuildingId;
+                        
+                        // Update buildingData to reflect the evolution (used later for neighbor updates)
+                        if (buildingData) {
+                            buildingData.currentBuildingId = currentBuildingId;
+                            buildingData.currentUniqueID = currentUniqueID;
+                        }
+                        
                         buildings[x][y] = assetManager.createAsset('House-2Story', x, y);
                         // Add to appropriate zone group (NOT directly to scene)
                         const zoneX = Math.floor(x / ZONE_SIZE);
@@ -889,6 +1456,123 @@ export function createScene(housesStore, gameStore, assetManager) {
                         } else {
                             // Fallback: add directly to scene if zone group doesn't exist
                             scene.add(buildings[x][y]);
+                        }
+                        console.log('[scene.js] House evolved to palace:', {
+                            houseId: oldUniqueID,
+                            newId: currentUniqueID,
+                            age: buildingAge,
+                            population: currentPop,
+                            roads: roadsBeforeEvolution,
+                            neighborsCount: houseNeighborsBeforeEvolution.length
+                        });
+                    }
+
+                    /* house regression: 2Story → Purple/Red/Blue if conditions no longer met */
+                    // House-2Story regresses when palace conditions are no longer met
+                    else if (currentBuildingId === 'House-2Story') {
+                        // Check if palace conditions are still met
+                        const palaceEvolutionCheck = canHouseEvolveToPalace({
+                            stocks: houseFoodStocks,
+                            population: currentPop,
+                            buildingType: 'House-Purple', // Check if it would qualify from House-Purple
+                            firstHouses: firstHouses
+                        });
+                        
+                        // If palace conditions are no longer met, regress
+                        if (!palaceEvolutionCheck.canEvolve) {
+                            let targetType = 'House-Red'; // Default regression target
+                            
+                            // Determine regression target based on current conditions
+                            if (currentPop === 0) {
+                                // No population -> regress to House-Blue
+                                targetType = 'House-Blue';
+                            } else {
+                                // Check if House-Purple conditions are met
+                                const purpleEvolutionCheck = canHouseEvolveToPurple({
+                                    stocks: houseFoodStocks,
+                                    population: currentPop,
+                                    buildingType: 'House-Red',
+                                    hasRoadAccess: hasRoadAccess
+                                });
+                                
+                                if (purpleEvolutionCheck.canEvolve) {
+                                    // Can maintain House-Purple level
+                                    targetType = 'House-Purple';
+                                } else {
+                                    // Can only maintain House-Red level
+                                    targetType = 'House-Red';
+                                }
+                            }
+                            
+                            removeInteractiveObject(buildings[x][y]);
+                            const newUniqueBuildingId = makeDbItemId(targetType, x, y);
+                            const keys = { type: targetType, price: assetsPrices[targetType].price };
+                            
+                            // Preserve neighbors and roads data before regression
+                            const houseNeighborsBeforeRegression = houseNeighbors || [];
+                            const { roadCount: roadsBeforeRegression } = checkRoadAccess(houseNeighborsBeforeRegression);
+                            
+                            // Update house name in database
+                            const updateResult = await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
+                            
+                            // If updateHouseName failed (house not found), create the house entry
+                            if (!updateResult || !updateResult.success) {
+                                const newHouseData = {
+                                    name: newUniqueBuildingId,
+                                    type: keys.type,
+                                    price: keys.price,
+                                    x: x,
+                                    y: y,
+                                    neighbors: houseNeighborsBeforeRegression,
+                                    pop: currentPop,
+                                    stocks: houseFoodStocks || { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
+                                    roads: roadsBeforeRegression,
+                                    worldTime: worldTime || time
+                                };
+                                await housesStore.addHouse(newHouseData);
+                            } else {
+                                // Ensure neighbors and roads are preserved
+                                await housesStore.updateHouseFields(newUniqueBuildingId, {
+                                    neighbors: houseNeighborsBeforeRegression,
+                                    roads: roadsBeforeRegression
+                                });
+                            }
+                            
+                            buildings[x][y] = assetManager.createAsset(targetType, x, y);
+                            // Add to appropriate zone group (NOT directly to scene)
+                            const zoneX = Math.floor(x / ZONE_SIZE);
+                            const zoneY = Math.floor(y / ZONE_SIZE);
+                            const citySize = city.size || 16;
+                            const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
+                            if (zoneGroups[zoneIndex]) {
+                                zoneGroups[zoneIndex].add(buildings[x][y]);
+                            } else {
+                                // Fallback: add directly to scene if zone group doesn't exist
+                                scene.add(buildings[x][y]);
+                            }
+                            
+                            // Update currentBuildingId and currentUniqueID to reflect the regression
+                            currentBuildingId = targetType;
+                            const oldUniqueID = currentUniqueID;
+                            currentUniqueID = newUniqueBuildingId;
+                            
+                            // Update buildingData to reflect the regression
+                            if (buildingData) {
+                                buildingData.currentBuildingId = currentBuildingId;
+                                buildingData.currentUniqueID = currentUniqueID;
+                            }
+                            
+                            // Force neighbor recalculation
+                            houseNeighbors = null;
+                            
+                            console.log('[scene.js] House regressed: House-2Story → ' + targetType + ' (conditions no longer met)', {
+                                houseId: oldUniqueID,
+                                newId: currentUniqueID,
+                                population: currentPop,
+                                reason: palaceEvolutionCheck.reason,
+                                foodStocks: houseFoodStocks,
+                                targetType: targetType
+                            });
                         }
                     }
 
@@ -961,7 +1645,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                         buildings[x][y] = terrain[x][y];
                     }
                 } else if (currentBuildingId === 'roads' || buildings[x][y]?.userData?.isRoad) {
-                    // If removing a road, restore terrain to grass
+                    // FIX BUG 2: If removing a road, restore terrain to grass properly
                     if (terrain[x] && terrain[x][y]) {
                         const terrainMesh = terrain[x][y];
                         const sharedMaterials = assetManager.getSharedTerrainMaterials();
@@ -970,8 +1654,16 @@ export function createScene(housesStore, gameStore, assetManager) {
                             terrainMesh.name = 'grass';
                             terrainMesh.userData.id = 'grass';
                             terrainMesh.userData.type = 'grass';
+                            terrainMesh.userData.isRoad = false; // Clear road flag
                             terrainMesh.userData.x = x;
                             terrainMesh.userData.y = y;
+                            terrainMesh.userData.isBuilding = false;
+                            // Ensure mesh is visible and in scene
+                            terrainMesh.visible = true;
+                            // Force material update
+                            if (terrainMesh.material) {
+                                terrainMesh.material.needsUpdate = true;
+                            }
                         }
                     }
                     // Remove from buildings array when road is removed
@@ -1030,6 +1722,44 @@ export function createScene(housesStore, gameStore, assetManager) {
 
         }
 
+        // Cleanup: Remove orphaned house records from IndexedDB (houses that don't exist in scene)
+        // This ensures population is accurate and prevents ghost population from deleted houses
+        try {
+            const allHousesInDb = await housesStore.listAllHouses();
+            const orphanedHouses = [];
+            
+            for (const house of allHousesInDb) {
+                const x = house.x;
+                const y = house.y;
+                
+                // Check if building exists in scene at this position
+                if (x >= 0 && x < city.size && y >= 0 && y < city.size) {
+                    const buildingInScene = buildings[x] && buildings[x][y];
+                    const buildingType = buildingInScene?.userData?.type;
+                    const expectedId = makeDbItemId(house.type, x, y);
+                    
+                    // If no building in scene, or building type doesn't match, it's orphaned
+                    if (!buildingInScene || buildingType !== house.type) {
+                        orphanedHouses.push(expectedId);
+                    }
+                } else {
+                    // Invalid coordinates - definitely orphaned
+                    const expectedId = makeDbItemId(house.type, x, y);
+                    orphanedHouses.push(expectedId);
+                }
+            }
+            
+            // Delete orphaned houses
+            if (orphanedHouses.length > 0) {
+                console.log(`[Scene] Cleaning up ${orphanedHouses.length} orphaned house records from IndexedDB`);
+                for (const houseId of orphanedHouses) {
+                    await housesStore.deleteOneHouse(houseId);
+                }
+            }
+        } catch (error) {
+            console.warn('[Scene] Error during orphaned house cleanup:', error);
+        }
+
         // Gestion de la barre des délais
         if(delayBox && displayDelayUI) {
             if(delay > 0 && delay < 80) {
@@ -1041,7 +1771,7 @@ export function createScene(housesStore, gameStore, assetManager) {
             }
         }
 
-        // Calculate building counts for budget operations
+        // Calculate building counts and maintenance costs for budget operations
         let buildingCounts = {
             houses: 0,
             farms: 0,
@@ -1050,15 +1780,55 @@ export function createScene(housesStore, gameStore, assetManager) {
             total: 0
         };
         
+        // Maintenance costs per building type (per month)
+        const maintenanceCosts = {
+            'roads': 2,
+            'House-Blue': 3,
+            'House-Red': 3,
+            'House-Purple': 3,
+            'House-2Story': 3,
+            'Farm': 1,
+            'Market': 1
+        };
+        
+        // Detailed breakdown for journal
+        let maintenanceBreakdown = {
+            roads: { count: 0, cost: 0 },
+            houses: { count: 0, cost: 0 },
+            farms: { count: 0, cost: 0 },
+            markets: { count: 0, cost: 0 }
+        };
+        
         for(let x = 0; x < city.size; x++) {
             for(let y = 0; y < city.size; y++) {
                 const building = buildings[x][y];
                 if (building && building.userData && building.userData.type) {
                     const type = building.userData.type;
-                    if (type.includes('House')) buildingCounts.houses++;
-                    else if (type.includes('Farm')) buildingCounts.farms++;
-                    else if (type.includes('Market')) buildingCounts.markets++;
-                    else if (type.includes('roads')) buildingCounts.roads++;
+                    
+                    // Calculate maintenance cost based on building type
+                    let cost = 2; // Default cost
+                    if (type.includes('roads')) {
+                        cost = maintenanceCosts['roads'];
+                        buildingCounts.roads++;
+                        maintenanceBreakdown.roads.count++;
+                        maintenanceBreakdown.roads.cost += cost;
+                    } else if (type === 'House-Blue' || type === 'House-Red' || type === 'House-Purple' || type === 'House-2Story') {
+                        cost = maintenanceCosts['House-Blue']; // All houses cost 3€
+                        buildingCounts.houses++;
+                        maintenanceBreakdown.houses.count++;
+                        maintenanceBreakdown.houses.cost += cost;
+                    } else if (type.includes('Farm')) {
+                        cost = maintenanceCosts['Farm'];
+                        buildingCounts.farms++;
+                        maintenanceBreakdown.farms.count++;
+                        maintenanceBreakdown.farms.cost += cost;
+                    } else if (type.includes('Market')) {
+                        cost = maintenanceCosts['Market'];
+                        buildingCounts.markets++;
+                        maintenanceBreakdown.markets.count++;
+                        maintenanceBreakdown.markets.cost += cost;
+                    }
+                    
                     buildingCounts.total++;
                 }
             }
@@ -1071,10 +1841,69 @@ export function createScene(housesStore, gameStore, assetManager) {
                 // Only collects if there is population
                 await window.budgetManager.addTaxes(time);
                 
-                // Add building maintenance expenses only
-                const buildingAmount = buildingCounts.total * 2; // Building maintenance cost
-                if (buildingAmount > 0) {
-                    await window.budgetManager.addBuildingMaintenance(buildingAmount);
+                // Add building maintenance expenses - only once per month
+                const timeInfo = TimeManager.getTimeInfo(time);
+                const currentMonth = timeInfo.monthNumber; // Month number (1-12, then continues)
+                
+                // Only pay maintenance if we're in a different month than last time
+                if (currentMonth !== lastMaintenanceMonth) {
+                    // Calculate total maintenance cost from breakdown
+                    const buildingAmount = maintenanceBreakdown.roads.cost + 
+                                         maintenanceBreakdown.houses.cost + 
+                                         maintenanceBreakdown.farms.cost + 
+                                         maintenanceBreakdown.markets.cost;
+                    
+                    if (buildingAmount > 0) {
+                        // Create detailed description with month name, year, and breakdown
+                        const year = timeInfo.year + 1; // Year is 0-indexed, so add 1 for display
+                        const monthName = timeInfo.month || 'Mois'; // Use 'month' property from TimeManager
+                        
+                        // Build structured breakdown data for journal display
+                        const breakdownItems = [];
+                        if (maintenanceBreakdown.roads.count > 0) {
+                            breakdownItems.push({
+                                label: 'Routes',
+                                count: maintenanceBreakdown.roads.count,
+                                unitCost: 2,
+                                total: maintenanceBreakdown.roads.cost
+                            });
+                        }
+                        if (maintenanceBreakdown.houses.count > 0) {
+                            breakdownItems.push({
+                                label: 'Maisons',
+                                count: maintenanceBreakdown.houses.count,
+                                unitCost: 3,
+                                total: maintenanceBreakdown.houses.cost
+                            });
+                        }
+                        if (maintenanceBreakdown.farms.count > 0) {
+                            breakdownItems.push({
+                                label: 'Fermes',
+                                count: maintenanceBreakdown.farms.count,
+                                unitCost: 1,
+                                total: maintenanceBreakdown.farms.cost
+                            });
+                        }
+                        if (maintenanceBreakdown.markets.count > 0) {
+                            breakdownItems.push({
+                                label: 'Marchés',
+                                count: maintenanceBreakdown.markets.count,
+                                unitCost: 1,
+                                total: maintenanceBreakdown.markets.cost
+                            });
+                        }
+                        
+                        // Create description with structured data (JSON format for parsing)
+                        const breakdownData = JSON.stringify(breakdownItems);
+                        const maintenanceDescription = `Maintenance mensuelle - ${monthName} ${year} |BREAKDOWN|${breakdownData}|BREAKDOWN|`;
+                        
+                        await window.budgetManager.addBuildingMaintenance(buildingAmount, maintenanceDescription);
+                        lastMaintenanceMonth = currentMonth;
+                        console.log(`[Scene] Building maintenance paid for month ${currentMonth} (${monthName} ${year})`, {
+                            amount: buildingAmount,
+                            breakdown: maintenanceBreakdown
+                        });
+                    }
                 }
                 
                 // Process population/food logic
@@ -1130,6 +1959,140 @@ export function createScene(housesStore, gameStore, assetManager) {
         //  Display results in UI - Use IndexedDB as source of truth
         // Get population from housesStore (IndexedDB) instead of gameStore
         const currentPopulation = await housesStore.getGlobalPopulation();
+        const famishedPopulation = await housesStore.getFamishedPopulation();
+        
+        // Manage multiple citizens based on current population state (from IndexedDB)
+        const targetCitizenCount = Math.min(currentPopulation, MAX_CITIZENS);
+        const currentCitizenCount = citizens.filter(c => c.spawned && c.character && c.character.visible).length;
+        
+        // Check if citizen-cool can appear (population exists AND no famished population)
+        const canCreateCitizenCool = famishedPopulation === 0 && currentPopulation > 0;
+        const currentCitizenCoolCount = citizens.filter(c => c && c.citizenType === 'citizen-cool' && c.spawned && c.character && c.character.visible).length;
+        const currentCitizen02Count = citizens.filter(c => c && c.citizenType === 'citizen02' && c.spawned && c.character && c.character.visible).length;
+        
+        // Replace citizen02 with citizen-cool if conditions are met
+        // Only replace one at a time to avoid sudden changes
+        if (canCreateCitizenCool && currentCitizen02Count > 0 && currentCitizenCoolCount < targetCitizenCount) {
+            // Find first visible citizen02 to replace
+            const citizen02ToReplace = citizens.find(c => 
+                c && 
+                c.citizenType === 'citizen02' && 
+                c.spawned && 
+                c.character && 
+                c.character.visible
+            );
+            
+            if (citizen02ToReplace) {
+                console.log('[Scene] Replacing citizen02 with citizen-cool (conditions met)');
+                // Hide the citizen02
+                hideCitizenCharacter(citizen02ToReplace);
+                
+                // Create citizen-cool to replace it
+                createCitizenInstance('citizen-cool').then(newCitizen => {
+                    if (newCitizen) {
+                        // Find and replace the citizen02 in the array
+                        const index = citizens.indexOf(citizen02ToReplace);
+                        if (index !== -1) {
+                            citizens[index] = newCitizen;
+                            if (citizen02Count > 0) {
+                                citizen02Count--;
+                            }
+                        } else {
+                            citizens.push(newCitizen);
+                        }
+                        spawnCitizenCharacter(newCitizen, city);
+                        console.log('[Scene] ✅ citizen-cool created to replace citizen02');
+                    } else {
+                        console.error('[Scene] Failed to create citizen-cool for replacement');
+                    }
+                });
+            }
+        }
+        
+        // Spawn new citizens if population increased
+        // Simplified logic: citizen02 appears when there's population
+        // citizen-cool appears when there's population AND no famished population
+        if (targetCitizenCount > currentCitizenCount) {
+            const citizensToSpawn = targetCitizenCount - currentCitizenCount;
+            for (let i = 0; i < citizensToSpawn; i++) {
+                // Check if we have an available citizen slot
+                if (citizens.length < MAX_CITIZENS) {
+                    // Determine which type of citizen to create
+                    // Simple strategy: try citizen-cool first if conditions are met, otherwise citizen02
+                    let citizenType = 'citizen02';
+                    
+                    if (canCreateCitizenCool) {
+                        // Conditions met: create citizen-cool
+                        citizenType = 'citizen-cool';
+                        console.log('[Scene] ✅ Creating new citizen-cool (conditions met)');
+                    } else {
+                        // Conditions not met or no population: create citizen02
+                        citizenType = 'citizen02';
+                        console.log('[Scene] Creating new citizen02 (citizen-cool conditions not met)');
+                    }
+                    
+                    createCitizenInstance(citizenType).then(newCitizen => {
+                        if (newCitizen) {
+                            citizens.push(newCitizen);
+                            if (citizenType === 'citizen02') {
+                                citizen02Count++;
+                            }
+                            spawnCitizenCharacter(newCitizen, city);
+                        } else {
+                            console.error('[Scene] Failed to create citizen:', citizenType);
+                        }
+                    });
+                } else {
+                    // Find a hidden citizen to reuse
+                    const hiddenCitizen = citizens.find(c => !c.spawned || !c.character.visible);
+                    if (hiddenCitizen) {
+                        spawnCitizenCharacter(hiddenCitizen, city);
+                    }
+                }
+            }
+        }
+        
+        // Hide citizens if population decreased
+        if (targetCitizenCount < currentCitizenCount) {
+            const citizensToHide = currentCitizenCount - targetCitizenCount;
+            let hiddenCount = 0;
+            for (const citizen of citizens) {
+                if (citizen.spawned && citizen.character && citizen.character.visible && hiddenCount < citizensToHide) {
+                    hideCitizenCharacter(citizen);
+                    hiddenCount++;
+                }
+            }
+        }
+        
+        // Recalculate citizen paths each turn to reflect current city state
+        citizens.forEach(citizen => {
+            if (citizen.character && citizen.spawned && time !== citizen.lastPathRecalculationTurn) {
+                // Check if citizen is waiting for a road and if a road now exists
+                if (citizen.waitingForRoad) {
+                    const borderRoads = findBorderRoads(city);
+                    if (borderRoads.length > 0) {
+                        // Road appeared - spawn citizen to walk in
+                        citizen.waitingForRoad = false;
+                        spawnCitizenCharacter(citizen, city);
+                    }
+                }
+                
+                // If citizen is on road, validate and recalculate path if needed
+                if (citizen.onRoad && citizen.path.length > 0) {
+                    // Validate current path
+                    if (!validatePath(citizen.path)) {
+                        // Path is invalid - recalculate from current position
+                        recalculateCitizenPath(citizen);
+                    } else {
+                        // Path is valid, but recalculate anyway to pick up new roads
+                        // This ensures the character can use newly built roads
+                        recalculateCitizenPath(citizen);
+                    }
+                }
+                
+                citizen.lastPathRecalculationTurn = time;
+            }
+        });
         
         // Get budget data from BudgetManager
         let funds = 0;
@@ -1138,17 +2101,22 @@ export function createScene(housesStore, gameStore, assetManager) {
             funds = budgetData.funds;
         }
 
-        // Update population and funds display in general bar using GameUI
+        // Update population, famished population and funds display in general bar using GameUI
         // This ensures consistent UI updates (IndexedDB is source of truth)
         if (window.gameUI) {
             window.gameUI.updatePopulation(currentPopulation || 0);
+            window.gameUI.updateFamishedPopulation(famishedPopulation || 0);
             window.gameUI.updateFunds(funds);
         } else {
             // Fallback to direct DOM update if GameUI not available
             const displayPop = document.querySelector('.display-pop');
+            const displayHungerPop = document.querySelector('.display-hunger-pop');
             const displayFunds = document.querySelector('.display-funds');
             if (displayPop) {
                 displayPop.textContent = (currentPopulation || 0).toString();
+            }
+            if (displayHungerPop) {
+                displayHungerPop.textContent = (famishedPopulation || 0).toString();
             }
             if (displayFunds) {
                 displayFunds.textContent = funds.toString();
@@ -1157,6 +2125,7 @@ export function createScene(housesStore, gameStore, assetManager) {
 
         console.log('[scene.js] Updated top bar display:', {
             population: currentPopulation,
+            famishedPopulation: famishedPopulation,
             funds,
             usingGameUI: !!window.gameUI
         });
@@ -1257,6 +2226,778 @@ export function createScene(housesStore, gameStore, assetManager) {
 
     // Note: setupShadowRenderer() removed - using original inline setup for exact brightness match
 
+    /**
+     * Checks if a tile at (x, y) is a road
+     * @param {number} x - X coordinate
+     * @param {number} y - Y coordinate
+     * @returns {boolean}
+     */
+    function isRoadTile(x, y) {
+        if (x < 0 || x >= buildings.length || y < 0 || y >= buildings[0]?.length) {
+            return false;
+        }
+        const building = buildings[x][y];
+        const terrainTile = terrain[x]?.[y];
+        
+        return (building && (building.userData?.isRoad || building.userData?.type === 'roads' || building.name === 'roads')) ||
+               (terrainTile && (terrainTile.userData?.isRoad || terrainTile.name === 'roads'));
+    }
+
+    /**
+     * Checks if a tile at (x, y) has a building (non-road)
+     * @param {number} x - X coordinate
+     * @param {number} y - Y coordinate
+     * @returns {boolean}
+     */
+    function hasBuilding(x, y) {
+        if (x < 0 || x >= buildings.length || y < 0 || y >= buildings[0]?.length) {
+            return false;
+        }
+        const building = buildings[x][y];
+        return building && !building.userData?.isRoad && building.userData?.type !== 'roads' && building.name !== 'roads';
+    }
+
+    /**
+     * Gets adjacent road tiles (up, down, left, right)
+     * @param {number} x - X coordinate
+     * @param {number} y - Y coordinate
+     * @returns {Array<{x: number, y: number}>} Array of adjacent road coordinates
+     */
+    function getAdjacentRoads(x, y) {
+        const adjacent = [];
+        const directions = [
+            { x: 0, y: -1 }, // Up
+            { x: 0, y: 1 },  // Down
+            { x: -1, y: 0 }, // Left
+            { x: 1, y: 0 }   // Right
+        ];
+        
+        for (const dir of directions) {
+            const newX = x + dir.x;
+            const newY = y + dir.y;
+            if (isRoadTile(newX, newY) && !hasBuilding(newX, newY)) {
+                adjacent.push({ x: newX, y: newY });
+            }
+        }
+        
+        return adjacent;
+    }
+
+    /**
+     * Finds road tiles on the border of the map
+     * @param {Object} city - City object
+     * @returns {Array<{x: number, y: number}>} Array of border road coordinates
+     */
+    function findBorderRoads(city) {
+        const borderRoads = [];
+        const size = city.size;
+        
+        // Check all border tiles
+        for (let i = 0; i < size; i++) {
+            // Top border (y = 0)
+            if (isRoadTile(i, 0)) {
+                borderRoads.push({ x: i, y: 0 });
+            }
+            // Bottom border (y = size - 1)
+            if (isRoadTile(i, size - 1)) {
+                borderRoads.push({ x: i, y: size - 1 });
+            }
+            // Left border (x = 0)
+            if (isRoadTile(0, i)) {
+                borderRoads.push({ x: 0, y: i });
+            }
+            // Right border (x = size - 1)
+            if (isRoadTile(size - 1, i)) {
+                borderRoads.push({ x: size - 1, y: i });
+            }
+        }
+        
+        return borderRoads;
+    }
+
+    /**
+     * Gets the tile coordinates from a world position
+     * @param {THREE.Vector3} position - World position
+     * @returns {{x: number, y: number}} Tile coordinates
+     */
+    function worldToTile(position) {
+        return {
+            x: Math.round(position.x),
+            y: Math.round(position.z)
+        };
+    }
+
+    /**
+     * Validates if the current path is still valid (all tiles are roads, no buildings)
+     * @param {Array<{x: number, y: number}>} path - Path to validate
+     * @returns {boolean} True if path is valid, false otherwise
+     */
+    function validatePath(path) {
+        if (!path || path.length === 0) {
+            return false;
+        }
+        
+        for (const tile of path) {
+            if (!isRoadTile(tile.x, tile.y) || hasBuilding(tile.x, tile.y)) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    /**
+     * Recalculates the citizen path from current position
+     * @param {CitizenData} citizen - The citizen data object
+     * @returns {boolean} True if path was successfully recalculated, false otherwise
+     */
+    function recalculateCitizenPath(citizen) {
+        if (!citizen || !citizen.character || !citizen.onRoad) {
+            return false;
+        }
+        
+        const currentTile = worldToTile(citizen.character.position);
+        
+        // Check if current position is still on a road
+        if (!isRoadTile(currentTile.x, currentTile.y) || hasBuilding(currentTile.x, currentTile.y)) {
+            // Not on a road - try to find nearest road
+            const adjacentRoads = getAdjacentRoads(currentTile.x, currentTile.y);
+            if (adjacentRoads.length > 0) {
+                const nearestRoad = adjacentRoads[0];
+                citizen.path = createRoadPath(nearestRoad.x, nearestRoad.y);
+                // Move character to nearest road
+                citizen.character.position.set(nearestRoad.x, 0, nearestRoad.y);
+                citizen.currentPathIndex = 0;
+                citizen.pathDirection = 1;
+                if (citizen.path.length > 1) {
+                    const nextTile = citizen.path[1];
+                    citizen.targetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
+                }
+                return true;
+            } else {
+                // No road nearby - switch to idle
+                citizen.isWalking = false;
+                citizen.targetPosition = null;
+                citizen.onRoad = false;
+                const animationsToUse = getCitizenAnimations(citizen);
+                const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
+                let idleAnimation = null;
+                for (const name of idleNames) {
+                    if (animationsToUse[name]) {
+                        idleAnimation = name;
+                        break;
+                    }
+                }
+                if (idleAnimation) {
+                    switchCitizenAnimation(citizen, idleAnimation, true, 0.3);
+                }
+                return false;
+            }
+        }
+        
+        // Current position is on a road - create new path from here
+        citizen.path = createRoadPath(currentTile.x, currentTile.y);
+        
+        if (citizen.path.length > 1) {
+            // Find the closest tile in the new path to current position
+            let closestIndex = 0;
+            let minDistance = Infinity;
+            for (let i = 0; i < citizen.path.length; i++) {
+                const tile = citizen.path[i];
+                const distance = Math.abs(tile.x - currentTile.x) + Math.abs(tile.y - currentTile.y);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestIndex = i;
+                }
+            }
+            
+            citizen.currentPathIndex = closestIndex;
+            citizen.pathDirection = 1;
+            
+            // Set next target
+            if (citizen.currentPathIndex < citizen.path.length - 1) {
+                const nextTile = citizen.path[citizen.currentPathIndex + 1];
+                citizen.targetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
+            } else if (citizen.currentPathIndex > 0) {
+                // At end of path, go backwards
+                citizen.pathDirection = -1;
+                const nextTile = citizen.path[citizen.currentPathIndex - 1];
+                citizen.targetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
+            }
+            
+            return true;
+        } else {
+            // No path available
+            citizen.isWalking = false;
+            citizen.targetPosition = null;
+            return false;
+        }
+    }
+
+    /**
+     * Creates a linear path following roads (not a loop)
+     * Starts from a road tile and follows adjacent roads until reaching an end
+     * @param {number} startX - Starting X coordinate
+     * @param {number} startY - Starting Y coordinate
+     * @param {number} maxPathLength - Maximum path length (default: 50)
+     * @returns {Array<{x: number, y: number}>} Path of road tiles
+     */
+    function createRoadPath(startX, startY, maxPathLength = 50) {
+        const path = [{ x: startX, y: startY }];
+        const visited = new Set();
+        visited.add(`${startX},${startY}`);
+        
+        let currentX = startX;
+        let currentY = startY;
+        let attempts = 0;
+        const maxAttempts = maxPathLength * 2;
+        
+        while (path.length < maxPathLength && attempts < maxAttempts) {
+            const adjacent = getAdjacentRoads(currentX, currentY);
+            
+            // Filter out already visited tiles
+            const unvisited = adjacent.filter(road => {
+                const key = `${road.x},${road.y}`;
+                return !visited.has(key);
+            });
+            
+            if (unvisited.length === 0) {
+                // No unvisited roads - reached end of road, return current path
+                break;
+            } else {
+                // Pick the first unvisited road (simple forward movement)
+                const next = unvisited[0];
+                currentX = next.x;
+                currentY = next.y;
+                path.push({ x: currentX, y: currentY });
+                visited.add(`${currentX},${currentY}`);
+            }
+            
+            attempts++;
+        }
+        
+        return path;
+    }
+
+    /**
+     * Hides and removes a citizen character
+     * @param {CitizenData} citizen - The citizen data object to hide
+     */
+    function hideCitizenCharacter(citizen) {
+        if (!citizen || !citizen.character) {
+            return;
+        }
+        
+        // Hide the character
+        citizen.character.visible = false;
+        
+        // Remove from scene
+        if (citizen.character.parent) {
+            citizen.character.parent.remove(citizen.character);
+        }
+        
+        // Stop any animations
+        if (citizen.mixer) {
+            // Stop all actions - get actions from mixer for each clip
+            Object.values(citizenAnimations).forEach(clip => {
+                if (clip) {
+                    const action = citizen.mixer.clipAction(clip);
+                    if (action && typeof action.isRunning === 'function' && action.isRunning()) {
+                        action.fadeOut(0.2);
+                        action.stop();
+                    }
+                }
+            });
+            // Also stop the current action if it exists
+            if (citizen.currentAction && typeof citizen.currentAction.isRunning === 'function' && citizen.currentAction.isRunning()) {
+                citizen.currentAction.fadeOut(0.2);
+                citizen.currentAction.stop();
+            }
+        }
+        
+        // Reset all citizen state
+        citizen.spawned = false;
+        citizen.isWalking = false;
+        citizen.targetPosition = null;
+        citizen.onRoad = false;
+        citizen.waitingForRoad = false;
+        citizen.path = [];
+        citizen.currentPathIndex = 0;
+        citizen.pathDirection = 1;
+        citizen.wasWalkingBeforePause = false;
+        citizen.lastPathRecalculationTurn = -1;
+    }
+
+    /**
+     * Spawns a citizen character from outside the scene and makes it walk in
+     * @param {CitizenData} citizen - The citizen data object to spawn
+     * @param {Object} city - The city object with size information
+     */
+    function spawnCitizenCharacter(citizen, city) {
+        if (!citizen || !citizen.character) {
+            return;
+        }
+        
+        // If already spawned and visible, don't respawn (unless explicitly needed)
+        if (citizen.spawned && citizen.character.visible && citizen.character.parent) {
+            return;
+        }
+        
+        // Reset state to ensure fresh entry
+        citizen.spawned = false;
+        citizen.isWalking = false;
+        citizen.targetPosition = null;
+        citizen.onRoad = false;
+        citizen.waitingForRoad = false;
+        citizen.path = [];
+        citizen.currentPathIndex = 0;
+        citizen.pathDirection = 1;
+        citizen.wasWalkingBeforePause = false;
+        citizen.lastPathRecalculationTurn = -1;
+        
+        // Ensure character is removed from scene before respawning
+        if (citizen.character.parent) {
+            citizen.character.parent.remove(citizen.character);
+        }
+        
+        // Check for border roads
+        const borderRoads = findBorderRoads(city);
+        
+        if (borderRoads.length === 0) {
+            // No road access on border - wait outside
+            citizen.waitingForRoad = true;
+            citizen.spawned = true;
+            
+            // Position outside scene
+            const spawnX = -3;
+            const spawnZ = -3;
+            citizen.character.position.set(spawnX, 0, spawnZ);
+            citizen.character.visible = true;
+            scene.add(citizen.character);
+            
+            // Play idle animation while waiting
+            const animationsToUse = getCitizenAnimations(citizen);
+            const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
+            let idleAnimation = null;
+            for (const name of idleNames) {
+                if (animationsToUse[name]) {
+                    idleAnimation = name;
+                    break;
+                }
+            }
+            if (idleAnimation) {
+                switchCitizenAnimation(citizen, idleAnimation, true, 0.2);
+            }
+            
+            return;
+        }
+        
+        // Road access found - spawn and walk to first border road
+        citizen.spawned = true;
+        citizen.waitingForRoad = false;
+        
+        // Find closest border road (or use first one)
+        // For multiple citizens, we can distribute them across border roads
+        const borderRoadIndex = citizens.length % borderRoads.length;
+        const targetRoad = borderRoads[borderRoadIndex];
+        
+        // Calculate spawn position (outside the scene, near the border road)
+        // Spawn from outside based on which border the road is on
+        let spawnX, spawnZ;
+        if (targetRoad.x === 0) {
+            // Left border
+            spawnX = -3;
+            spawnZ = targetRoad.y;
+        } else if (targetRoad.x === city.size - 1) {
+            // Right border
+            spawnX = city.size + 2;
+            spawnZ = targetRoad.y;
+        } else if (targetRoad.y === 0) {
+            // Top border
+            spawnX = targetRoad.x;
+            spawnZ = -3;
+        } else {
+            // Bottom border
+            spawnX = targetRoad.x;
+            spawnZ = city.size + 2;
+        }
+        
+        // Set initial position (outside scene)
+        citizen.character.position.set(spawnX, 0, spawnZ);
+        citizen.character.visible = true;
+        scene.add(citizen.character);
+        
+        // Set target position (the border road)
+        citizen.targetPosition = new THREE.Vector3(targetRoad.x, 0, targetRoad.y);
+        citizen.onRoad = false;
+        
+        // Switch to walk animation
+        const animationsToUse = getCitizenAnimations(citizen);
+        const walkNames = ['walk', 'Walk', 'Walking', 'walking'];
+        let walkAnimation = null;
+        for (const name of walkNames) {
+            if (animationsToUse[name]) {
+                walkAnimation = name;
+                break;
+            }
+        }
+        
+        // If no walk animation found, try the second animation (often walk is second after idle)
+        if (!walkAnimation && Object.keys(animationsToUse).length > 1) {
+            const animationKeys = Object.keys(animationsToUse);
+            walkAnimation = animationKeys[1]; // Use second animation
+        }
+        
+        if (walkAnimation) {
+            switchCitizenAnimation(citizen, walkAnimation, true, 0.2);
+            citizen.isWalking = true;
+        } else {
+            console.warn('[Scene] No walk animation found, using first available');
+            citizen.isWalking = true;
+        }
+    }
+
+    /**
+     * Gets the appropriate animation set for a citizen based on their type
+     * @param {CitizenData} citizen - The citizen data object
+     * @returns {Object} Animation clips object
+     */
+    function getCitizenAnimations(citizen) {
+        return citizen && citizen.citizenType === 'citizen-cool' ? citizenCoolAnimations : citizenAnimations;
+    }
+    
+    /**
+     * Switches a citizen's animation
+     * @param {CitizenData} citizen - The citizen data object
+     * @param {string} animationName - Name of the animation to play (e.g., 'idle', 'walk', 'Walking')
+     * @param {boolean} fadeIn - Whether to fade in the new animation (default: true)
+     * @param {number} fadeDuration - Duration of fade transition in seconds (default: 0.3)
+     */
+    function switchCitizenAnimation(citizen, animationName, fadeIn = true, fadeDuration = 0.3) {
+        if (!citizen || !citizen.mixer) {
+            return;
+        }
+        
+        // Use the appropriate animation set based on citizen type
+        const animationsToUse = citizen.citizenType === 'citizen-cool' ? citizenCoolAnimations : citizenAnimations;
+        
+        if (!animationsToUse[animationName]) {
+            console.warn('[Scene] Cannot switch animation:', animationName, 'Available:', Object.keys(animationsToUse), 'Type:', citizen.citizenType);
+            return;
+        }
+        
+        // Stop current animation
+        if (citizen.currentAction) {
+            if (fadeIn) {
+                citizen.currentAction.fadeOut(fadeDuration);
+            } else {
+                citizen.currentAction.stop();
+            }
+        }
+        
+        // Play new animation
+        const newAction = citizen.mixer.clipAction(animationsToUse[animationName]);
+        if (fadeIn) {
+            newAction.reset().fadeIn(fadeDuration).play();
+        } else {
+            newAction.reset().play();
+        }
+        
+        citizen.currentAction = newAction;
+    }
+
+    // Store animation clips (loaded once, shared across all citizens)
+    let citizenAnimationsLoaded = false;
+    let citizenCoolAnimationsLoaded = false;
+    let citizenCoolAnimations = {};
+    
+    // Track citizen02 count to determine when to spawn citizen-cool
+    let citizen02Count = 0;
+    
+    /**
+     * Loads animation clips for citizen02 (shared across all citizen02, loaded once)
+     */
+    function loadCitizenAnimations() {
+        if (citizenAnimationsLoaded) {
+            return;
+        }
+        
+        const gltfLoader = new GLTFLoader();
+        const baseUrl = config.assets.baseUrl || '/';
+        const citizenPath = `${baseUrl}citizen02/citizenAnimated02.glb`.replace(/\/+/g, '/');
+        
+        gltfLoader.load(
+            citizenPath,
+            (gltf) => {
+                // Store all animations (shared across all citizen02)
+                if (gltf.animations && gltf.animations.length > 0) {
+                    gltf.animations.forEach((clip) => {
+                        citizenAnimations[clip.name] = clip;
+                        console.log('[Scene] Found citizen02 animation:', clip.name, `(${clip.duration.toFixed(2)}s)`);
+                    });
+                    citizenAnimationsLoaded = true;
+                } else {
+                    console.warn('[Scene] No animations found in citizen02 GLB file');
+                }
+            },
+            null,
+            (error) => {
+                console.error('[Scene] Error loading citizen02 animations:', error);
+            }
+        );
+    }
+    
+    /**
+     * Loads animation clips for citizen-cool (shared across all citizen-cool, loaded once)
+     */
+    function loadCitizenCoolAnimations() {
+        if (citizenCoolAnimationsLoaded) {
+            return;
+        }
+        
+        const gltfLoader = new GLTFLoader();
+        const baseUrl = config.assets.baseUrl || '/';
+        const citizenPath = `${baseUrl}citizenCool/citizenCoolTwoAnim.glb`.replace(/\/+/g, '/');
+        
+        gltfLoader.load(
+            citizenPath,
+            (gltf) => {
+                // Store all animations (shared across all citizen-cool)
+                // Based on JSON reference: animations are named "idle" and "walk"
+                if (gltf.animations && gltf.animations.length > 0) {
+                    gltf.animations.forEach((clip) => {
+                        citizenCoolAnimations[clip.name] = clip;
+                        console.log('[Scene] Found citizen-cool animation:', clip.name, `(${clip.duration.toFixed(2)}s)`);
+                    });
+                    citizenCoolAnimationsLoaded = true;
+                } else {
+                    console.warn('[Scene] No animations found in citizen-cool GLB file');
+                }
+            },
+            null,
+            (error) => {
+                console.error('[Scene] Error loading citizen-cool animations:', error);
+            }
+        );
+    }
+    
+    /**
+     * Creates a new citizen instance by loading the GLB file
+     * Loads a fresh model each time (no cloning) to maintain consistency
+     * @param {string} citizenType - Type of citizen to create: 'citizen02' or 'citizen-cool'
+     * @returns {Promise<CitizenData|null>} New citizen data object or null if loading fails
+     */
+    function createCitizenInstance(citizenType = 'citizen02') {
+        return new Promise((resolve) => {
+            const baseUrl = config.assets.baseUrl || '/';
+            
+            // Determine which model to load based on citizen type
+            // Both citizen types now use GLB files (like citizen02)
+            const gltfLoader = new GLTFLoader();
+            let citizenPath, citizenName, animationsToUse;
+            
+            if (citizenType === 'citizen-cool') {
+                citizenPath = `${baseUrl}citizenCool/citizenCoolTwoAnim.glb`.replace(/\/+/g, '/');
+                citizenName = `citizen-cool-${citizens.length}`;
+                animationsToUse = citizenCoolAnimations;
+                // Load animations if not already loaded
+                loadCitizenCoolAnimations();
+            } else {
+                citizenPath = `${baseUrl}citizen02/citizenAnimated02.glb`.replace(/\/+/g, '/');
+                citizenName = `citizen-${citizens.length}`;
+                animationsToUse = citizenAnimations;
+                // Load animations if not already loaded
+                loadCitizenAnimations();
+            }
+            
+            console.log('[Scene] Loading citizen model:', {
+                type: citizenType,
+                path: citizenPath,
+                baseUrl: baseUrl
+            });
+            
+            gltfLoader.load(
+                citizenPath,
+                (gltf) => {
+                    console.log('[Scene] Citizen model loaded successfully:', {
+                        type: citizenType,
+                        path: citizenPath,
+                        hasScene: !!gltf.scene,
+                        animationCount: gltf.animations ? gltf.animations.length : 0,
+                        animations: gltf.animations ? gltf.animations.map(a => a.name) : []
+                    });
+                    
+                    // Use the scene directly - each load creates a fresh instance
+                    // This ensures animations and materials work correctly for each citizen
+                    const citizen = gltf.scene;
+                    if (!citizen) {
+                        console.error('[Scene] No scene found in GLB file:', citizenPath);
+                        resolve(null);
+                        return;
+                    }
+                    citizen.name = citizenName;
+                    
+                    // Store animations from GLB if available (for citizen-cool, animations should be "idle" and "walk")
+                    if (gltf.animations && gltf.animations.length > 0) {
+                        gltf.animations.forEach((clip) => {
+                            if (citizenType === 'citizen-cool') {
+                                citizenCoolAnimations[clip.name] = clip;
+                            } else {
+                                citizenAnimations[clip.name] = clip;
+                            }
+                        });
+                        if (citizenType === 'citizen-cool') {
+                            citizenCoolAnimationsLoaded = true;
+                        } else {
+                            citizenAnimationsLoaded = true;
+                        }
+                    }
+                    
+                    // Continue with the rest of the setup (scale, materials, animations, etc.)
+                    setupCitizenFromLoadedModel(citizen, citizenType, citizenName, animationsToUse, resolve);
+                },
+                (progress) => {
+                    // Loading progress (optional)
+                    if (progress.lengthComputable) {
+                        const percentComplete = (progress.loaded / progress.total) * 100;
+                        console.log(`[Scene] Loading citizen ${citizens.length}: ${percentComplete.toFixed(2)}%`);
+                    }
+                },
+                (error) => {
+                    console.error('[Scene] Error loading citizen character:', {
+                        type: citizenType,
+                        path: citizenPath,
+                        error: error.message || error,
+                        stack: error.stack
+                    });
+                    resolve(null);
+                }
+            );
+        });
+    }
+    
+    /**
+     * Helper function to set up citizen after model is loaded (common setup for both GLB and JSON)
+     * @param {THREE.Object3D} citizen - The loaded citizen model
+     * @param {string} citizenType - Type of citizen ('citizen02' or 'citizen-cool')
+     * @param {string} citizenName - Name for the citizen
+     * @param {Object} animationsToUse - Animations object to use
+     * @param {Function} resolve - Promise resolve function
+     */
+    function setupCitizenFromLoadedModel(citizen, citizenType, citizenName, animationsToUse, resolve) {
+        // Apply scale: 0.5 = half size (same as original single citizen)
+        const characterScale = 0.5;
+        citizen.scale.set(characterScale, characterScale, characterScale);
+        
+        // Extract animations from the loaded model (works for both GLB and JSON)
+        let modelAnimations = [];
+        if (citizen.animations && citizen.animations.length > 0) {
+            modelAnimations = citizen.animations;
+        } else {
+            // Try to find animations in the scene graph
+            citizen.traverse((child) => {
+                if (child.animations && child.animations.length > 0) {
+                    modelAnimations = modelAnimations.concat(child.animations);
+                }
+            });
+        }
+        
+        // Store animations if not already loaded (for the first instance)
+        if (citizenType === 'citizen02' && modelAnimations.length > 0 && !citizenAnimationsLoaded) {
+            modelAnimations.forEach((clip) => {
+                citizenAnimations[clip.name] = clip;
+            });
+            citizenAnimationsLoaded = true;
+        } else if (citizenType === 'citizen-cool' && modelAnimations.length > 0 && !citizenCoolAnimationsLoaded) {
+            modelAnimations.forEach((clip) => {
+                citizenCoolAnimations[clip.name] = clip;
+            });
+            citizenCoolAnimationsLoaded = true;
+        }
+        
+        // Ensure character receives proper lighting and shadows
+        citizen.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+                // Enable shadows for the character
+                child.castShadow = true;
+                child.receiveShadow = true;
+                
+                // Ensure materials are properly lit
+                if (child.material) {
+                    // Make sure material responds to lights
+                    if (child.material instanceof THREE.MeshBasicMaterial) {
+                        // Convert BasicMaterial to LambertMaterial for proper lighting
+                        const newMaterial = new THREE.MeshLambertMaterial({
+                            map: child.material.map,
+                            color: child.material.color,
+                            transparent: child.material.transparent,
+                            opacity: child.material.opacity
+                        });
+                        child.material = newMaterial;
+                    }
+                    
+                    // Ensure material properties are set for lighting
+                    if (child.material.needsUpdate !== undefined) {
+                        child.material.needsUpdate = true;
+                    }
+                }
+            }
+        });
+        
+        // Create new citizen data
+        const citizenData = new CitizenData();
+        citizenData.character = citizen;
+        citizenData.citizenType = citizenType; // Store the type for reference
+        
+        // Set up animations for this citizen using the appropriate animation set
+        // If animations are not loaded yet, try to use animations from the model directly
+        let animationsToUseFinal = animationsToUse;
+        if (Object.keys(animationsToUseFinal).length === 0 && modelAnimations.length > 0) {
+            // Animations not loaded yet, create a temporary set from this model
+            const tempAnimations = {};
+            modelAnimations.forEach((clip) => {
+                tempAnimations[clip.name] = clip;
+            });
+            animationsToUseFinal = tempAnimations;
+            console.log('[Scene] Using animations from model directly for', citizenType, ':', Object.keys(tempAnimations));
+        }
+        
+        if (Object.keys(animationsToUseFinal).length > 0) {
+            citizenData.mixer = new AnimationMixer(citizen);
+            
+            // Start with idle animation immediately
+            const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
+            let idleAnimation = null;
+            for (const name of idleNames) {
+                if (animationsToUseFinal[name]) {
+                    idleAnimation = name;
+                    break;
+                }
+            }
+            if (!idleAnimation && Object.keys(animationsToUseFinal).length > 0) {
+                idleAnimation = Object.keys(animationsToUseFinal)[0];
+            }
+            if (idleAnimation) {
+                const action = citizenData.mixer.clipAction(animationsToUseFinal[idleAnimation]);
+                action.play();
+                citizenData.currentAction = action;
+                console.log('[Scene] Started', idleAnimation, 'animation for', citizenType);
+            } else {
+                console.warn('[Scene] No idle animation found for', citizenType);
+            }
+        } else {
+            console.warn('[Scene] No animations available for', citizenType, '- citizen will be created without animations');
+        }
+        
+        console.log('[Scene] Citizen instance created:', {
+            type: citizenType,
+            name: citizenName,
+            hasAnimations: Object.keys(animationsToUseFinal).length > 0,
+            animationCount: Object.keys(animationsToUseFinal).length
+        });
+        
+        resolve(citizenData);
+    }
 
     /**
      * Helper function to get interactive objects for raycasting
@@ -1476,15 +3217,17 @@ export function createScene(housesStore, gameStore, assetManager) {
         
         // Only update if changed (prevent unnecessary updates)
         if (newFocusedObject !== focusedObject) {
+            // DISABLED: Don't change material color on hover/focus
             // Clear previous focus (if object supports it)
-            if (focusedObject && typeof focusedObject.setFocused === 'function') {
-                focusedObject.setFocused(false);
-            }
+            // if (focusedObject && typeof focusedObject.setFocused === 'function') {
+            //     focusedObject.setFocused(false);
+            // }
             focusedObject = newFocusedObject;
+            // DISABLED: Don't change material color on hover/focus
             // Set new focus (if object supports it)
-            if (focusedObject && typeof focusedObject.setFocused === 'function') {
-                focusedObject.setFocused(true);
-            }
+            // if (focusedObject && typeof focusedObject.setFocused === 'function') {
+            //     focusedObject.setFocused(true);
+            // }
         }
     }
 
@@ -1494,16 +3237,18 @@ export function createScene(housesStore, gameStore, assetManager) {
      */
     function updateSelectedObject(object) {
         // Clear previous selection highlight if existed
-        if (selectedObject && typeof selectedObject.setSelected === 'function') {
-            selectedObject.setSelected(false);
-        }
+        // DISABLED: Don't change material color when selecting objects for info panel
+        // if (selectedObject && typeof selectedObject.setSelected === 'function') {
+        //     selectedObject.setSelected(false);
+        // }
 
         selectedObject = object;
 
         // Set new selection highlight if exists
-        if (selectedObject && typeof selectedObject.setSelected === 'function') {
-            selectedObject.setSelected(true);
-        }
+        // DISABLED: Don't change material color when selecting objects for info panel
+        // if (selectedObject && typeof selectedObject.setSelected === 'function') {
+        //     selectedObject.setSelected(true);
+        // }
 
         // Call the selection callback if registered
         if (this.onObjectSelected && object) {
@@ -1549,7 +3294,202 @@ export function createScene(housesStore, gameStore, assetManager) {
         return performanceStats.enabled;
     };
     
+    // Store last frame time for animation delta calculation
+    let lastFrameTime = performance.now();
+    
+    /**
+     * Updates a single citizen's movement and animation
+     * @param {CitizenData} citizen - The citizen data object to update
+     * @param {number} deltaTime - Time delta in seconds
+     */
+    function updateCitizen(citizen, deltaTime) {
+        if (!citizen || !citizen.character || !citizen.character.visible) {
+            return;
+        }
+        
+        // Update citizen animation mixer
+        if (citizen.mixer) {
+            citizen.mixer.update(deltaTime);
+        }
+        
+        const currentPos = citizen.character.position;
+        const currentTile = { x: Math.round(currentPos.x), y: Math.round(currentPos.z) };
+        
+        // Check if waiting for road access
+        if (citizen.waitingForRoad) {
+            // Check if road access appeared
+            const borderRoads = findBorderRoads({ size: currentCitySize });
+            if (borderRoads.length > 0) {
+                // Road access available - start walking to it
+                citizen.waitingForRoad = false;
+                const targetRoad = borderRoads[0];
+                citizen.targetPosition = new THREE.Vector3(targetRoad.x, 0, targetRoad.y);
+                citizen.onRoad = false;
+                citizen.isWalking = true;
+                
+                const animationsToUse = getCitizenAnimations(citizen);
+                const walkNames = ['walk', 'Walk', 'Walking', 'walking'];
+                let walkAnimation = null;
+                for (const name of walkNames) {
+                    if (animationsToUse[name]) {
+                        walkAnimation = name;
+                        break;
+                    }
+                }
+                if (walkAnimation) {
+                    switchCitizenAnimation(citizen, walkAnimation, true, 0.2);
+                }
+            }
+            // Otherwise continue waiting (idle animation already playing)
+            return;
+        }
+        
+        // Check if walking to border road (not on road yet)
+        if (citizen.isWalking && citizen.targetPosition && !citizen.onRoad) {
+            const direction = new THREE.Vector3()
+                .subVectors(citizen.targetPosition, currentPos)
+                .normalize();
+            
+            const distance = currentPos.distanceTo(citizen.targetPosition);
+            
+            if (distance > 0.1) {
+                // Still walking - move towards target
+                const moveDistance = WALK_SPEED * deltaTime;
+                citizen.character.position.add(
+                    direction.multiplyScalar(moveDistance)
+                );
+                
+                // Rotate character to face movement direction
+                if (direction.length() > 0) {
+                    const angle = Math.atan2(direction.x, direction.z);
+                    citizen.character.rotation.y = angle;
+                }
+            } else {
+                // Reached border road - now on road, create loop path
+                citizen.character.position.copy(citizen.targetPosition);
+                citizen.onRoad = true;
+                
+                // Create road path starting from current position
+                citizen.path = createRoadPath(currentTile.x, currentTile.y);
+                citizen.currentPathIndex = 0;
+                citizen.pathDirection = 1; // Start walking forward
+                
+                if (citizen.path.length > 1) {
+                    // Set next target in path
+                    const nextTile = citizen.path[1];
+                    citizen.targetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
+                } else {
+                    // No path found, switch to idle
+                    citizen.isWalking = false;
+                    citizen.targetPosition = null;
+                    const animationsToUse = getCitizenAnimations(citizen);
+                    const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
+                    let idleAnimation = null;
+                    for (const name of idleNames) {
+                        if (animationsToUse[name]) {
+                            idleAnimation = name;
+                            break;
+                        }
+                    }
+                    if (idleAnimation) {
+                        switchCitizenAnimation(citizen, idleAnimation, true, 0.3);
+                    }
+                }
+            }
+            return;
+        }
+        
+        // Check if walking on road loop
+        if (citizen.isWalking && citizen.onRoad && citizen.path.length > 0 && citizen.targetPosition) {
+            // Validate path before using it (safety check)
+            if (!validatePath(citizen.path)) {
+                // Path is invalid - recalculate immediately
+                if (!recalculateCitizenPath(citizen)) {
+                    // Recalculation failed - character will be set to idle
+                    return;
+                }
+            }
+            
+            const direction = new THREE.Vector3()
+                .subVectors(citizen.targetPosition, currentPos)
+                .normalize();
+            
+            const distance = currentPos.distanceTo(citizen.targetPosition);
+            
+            if (distance > 0.1) {
+                // Still walking - move towards target
+                const moveDistance = WALK_SPEED * deltaTime;
+                citizen.character.position.add(
+                    direction.multiplyScalar(moveDistance)
+                );
+                
+                // Rotate character to face movement direction
+                if (direction.length() > 0) {
+                    const angle = Math.atan2(direction.x, direction.z);
+                    citizen.character.rotation.y = angle;
+                }
+                
+                // Verify we're still on a road (safety check)
+                const tile = worldToTile(citizen.character.position);
+                if (!isRoadTile(tile.x, tile.y) || hasBuilding(tile.x, tile.y)) {
+                    // Off road or hit building - recalculate path
+                    if (!recalculateCitizenPath(citizen)) {
+                        // Recalculation failed - character will be set to idle
+                        return;
+                    }
+                }
+            } else {
+                // Reached current target in path - move to next
+                citizen.character.position.copy(citizen.targetPosition);
+                citizen.currentPathIndex += citizen.pathDirection;
+                
+                // Check if we've reached the end of the path
+                if (citizen.currentPathIndex >= citizen.path.length) {
+                    // Reached end - turn back (reverse direction)
+                    citizen.pathDirection = -1;
+                    citizen.currentPathIndex = citizen.path.length - 2; // Go to second-to-last tile
+                } else if (citizen.currentPathIndex < 0) {
+                    // Reached beginning - turn forward (reverse direction)
+                    citizen.pathDirection = 1;
+                    citizen.currentPathIndex = 1; // Go to second tile
+                }
+                
+                // Validate path before accessing it
+                if (!validatePath(citizen.path)) {
+                    // Path is invalid - recalculate
+                    if (!recalculateCitizenPath(citizen)) {
+                        // Recalculation failed - character will be set to idle
+                        return;
+                    }
+                }
+                
+                if (citizen.path.length > 1 && citizen.currentPathIndex >= 0 && citizen.currentPathIndex < citizen.path.length) {
+                    // Get next tile in path based on direction
+                    const nextTile = citizen.path[citizen.currentPathIndex];
+                    citizen.targetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
+                    // Continue walking - no idle pauses
+                } else {
+                    // Path issue - recalculate
+                    if (!recalculateCitizenPath(citizen)) {
+                        // Recalculation failed - character will be set to idle
+                        return;
+                    }
+                }
+            }
+        }
+    }
+    
     function draw() {
+        // Calculate delta time for animations (in seconds)
+        const currentTime = performance.now();
+        const deltaTime = (currentTime - lastFrameTime) / 1000; // Convert to seconds
+        lastFrameTime = currentTime;
+        
+        // Update all citizens
+        citizens.forEach(citizen => {
+            updateCitizen(citizen, deltaTime);
+        });
+        
         updateFocusedObject(); // Update focused object every frame
         // OPTIMIZATION: Update frustum culling for zone groups (throttled)
         updateFrustumCulling();
@@ -2019,6 +3959,47 @@ function onTouchEnd(event) {
         }, 5000);
     }
 
+    /**
+     * Immediately update a road tile visually without waiting for full scene update
+     * This provides instant feedback when placing roads
+     * @param {number} x - X coordinate
+     * @param {number} y - Y coordinate
+     */
+    function updateRoadImmediate(x, y) {
+        if (!terrain[x] || !terrain[x][y]) return;
+        
+        const terrainMesh = terrain[x][y];
+        const sharedMaterials = assetManager.getSharedTerrainMaterials();
+        
+        if (sharedMaterials && sharedMaterials['roads']) {
+            // Update terrain mesh material to show road texture immediately
+            terrainMesh.material = sharedMaterials['roads'];
+            terrainMesh.name = 'roads';
+            terrainMesh.userData.id = 'roads';
+            terrainMesh.userData.type = 'roads';
+            terrainMesh.userData.x = x;
+            terrainMesh.userData.y = y;
+            terrainMesh.userData.isBuilding = false;
+            terrainMesh.userData.isRoad = true;
+            
+            // Ensure mesh is visible
+            terrainMesh.visible = true;
+            
+            // Force material update
+            if (terrainMesh.material) {
+                terrainMesh.material.needsUpdate = true;
+                if (terrainMesh.material.map) {
+                    terrainMesh.material.map.needsUpdate = true;
+                }
+            }
+            
+            // Add to buildings array for neighbor detection
+            if (!buildings[x][y]) {
+                buildings[x][y] = terrainMesh;
+            }
+        }
+    }
+
     // make the game know the object userData I selected (to reach x and y position of the object or its id from asset
     return {
         onObjectSelected,
@@ -2045,6 +4026,116 @@ function onTouchEnd(event) {
         get domElement() { return renderer.domElement; },
         // Expose camera for mobile controls
         get camera() { return camera; },
-        suppressInput
+        suppressInput,
+        // Expose pause/resume control for citizen characters
+        pauseCitizen,
+        resumeCitizen,
+        // Expose immediate road update for instant visual feedback
+        updateRoadImmediate
+    }
+
+    /**
+     * Pauses all citizen animations (switches to idle)
+     */
+    function pauseCitizen() {
+        citizens.forEach(citizen => {
+            if (!citizen.character || !citizen.character.visible) {
+                return;
+            }
+            
+            // Remember if citizen was walking
+            citizen.wasWalkingBeforePause = citizen.isWalking;
+            
+            // Stop walking
+            citizen.isWalking = false;
+            
+            // Switch to idle animation
+            const animationsToUse = getCitizenAnimations(citizen);
+            const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
+            let idleAnimation = null;
+            for (const name of idleNames) {
+                if (animationsToUse[name]) {
+                    idleAnimation = name;
+                    break;
+                }
+            }
+            
+            // If no idle found, use first animation
+            if (!idleAnimation && Object.keys(animationsToUse).length > 0) {
+                idleAnimation = Object.keys(animationsToUse)[0];
+            }
+            
+            if (idleAnimation) {
+                switchCitizenAnimation(citizen, idleAnimation, true, 0.3);
+            }
+        });
+    }
+
+    /**
+     * Resumes all citizen animations (switches back to walk if was walking)
+     * This function is called whenever the game resumes, ensuring citizens
+     * are in the correct state regardless of how many times pause/resume was called
+     */
+    function resumeCitizen() {
+        citizens.forEach(citizen => {
+            if (!citizen.character || !citizen.character.visible) {
+                return;
+            }
+            
+            // Determine if citizen should be walking based on current state
+            // Check multiple conditions to ensure we resume correctly:
+            // 1. Was walking before pause (flag)
+            // 2. Is on a road (citizen.onRoad)
+            // 3. Has a target position (citizen.targetPosition)
+            // 4. Has a valid path (citizen.path.length > 0)
+            const shouldBeWalking = 
+                (citizen.wasWalkingBeforePause || citizen.onRoad || citizen.targetPosition || citizen.path.length > 0) &&
+                !citizen.waitingForRoad; // Don't walk if waiting for road access
+            
+            if (shouldBeWalking) {
+                citizen.isWalking = true;
+                
+                // Switch to walk animation
+                const animationsToUse = getCitizenAnimations(citizen);
+                const walkNames = ['walk', 'Walk', 'Walking', 'walking'];
+                let walkAnimation = null;
+                for (const name of walkNames) {
+                    if (animationsToUse[name]) {
+                        walkAnimation = name;
+                        break;
+                    }
+                }
+                
+                // If no walk animation found, try the second animation (often walk is second after idle)
+                if (!walkAnimation && Object.keys(animationsToUse).length > 1) {
+                    const animationKeys = Object.keys(animationsToUse);
+                    walkAnimation = animationKeys[1]; // Use second animation
+                }
+                
+                if (walkAnimation) {
+                    switchCitizenAnimation(citizen, walkAnimation, true, 0.3);
+                }
+            } else {
+                // Citizen should be idle (waiting for road or no path available)
+                // Ensure idle animation is playing
+                const animationsToUse = getCitizenAnimations(citizen);
+                const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
+                let idleAnimation = null;
+                for (const name of idleNames) {
+                    if (animationsToUse[name]) {
+                        idleAnimation = name;
+                        break;
+                    }
+                }
+                
+                if (!idleAnimation && Object.keys(animationsToUse).length > 0) {
+                    idleAnimation = Object.keys(animationsToUse)[0];
+                }
+                
+                if (idleAnimation) {
+                    switchCitizenAnimation(citizen, idleAnimation, true, 0.3);
+                }
+            }
+        });
     }
 }

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import {  assetsPrices } from '../meshs/data.js';
-import { checkRoadAccess } from './modules/ModuleHelper.js';
+import { checkRoadAccess, canHouseEvolveToPurple, canHouseEvolveToPalace, checkFoodAvailability } from './modules/ModuleHelper.js';
+import { firstHouses } from '../ui/nodes.js';
+import { TimeManager } from './utils/TimeManager.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
 import {getAssetPrice, makeDbItemId, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, isAreaAvailableForBuilding} from '../utils/utils.js';
@@ -18,13 +20,13 @@ import {
     displaySpeed
 } from '../ui/nodes.js';
 import budgetManager from '../stores/BudgetManager.js';
+import FoodTraceabilityService from '../stores/FoodTraceabilityService.js';
 import loaderManager from '../utils/LoaderManager.js';
 import objectivesTracker from '../ui/ObjectivesTracker.js';
 import InputManager from './InputManager.js';
 import gameUI from './GameUI.js';
 import appRegistry from './AppRegistry.js';
 import webglDetector from '../utils/WebGLResourceDetector.js';
-import { TimeManager } from './utils/TimeManager.js';
 
 // Initialiser le cache de TimeManager au démarrage
 TimeManager.initializeCache().catch(err => {
@@ -372,19 +374,37 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
     // Register with AppRegistry (centralized namespace)
     appRegistry.register('gameUI', gameUI);
     appRegistry.register('budgetManager', budgetManager);
+    
+    // Initialize FoodTraceabilityService
+    const foodTraceabilityService = new FoodTraceabilityService();
+    appRegistry.register('foodTraceabilityService', foodTraceabilityService);
+    window.foodTraceabilityService = foodTraceabilityService; // Make globally available
+    
     gameUI.updateTimeDisplay(time);
     
-    // Initialize budget system - force reinitialize to ensure 200€ starting funds
-    budgetManager.forceReinitialize(200).then(async () => {
+    // Initialize budget system - use initial funds from config (can be set via .env)
+    const initialFunds = config?.budget?.initialFunds || 200;
+    
+    console.log('[game.js] Initializing budget with:', {
+        initialFunds,
+        configValue: config?.budget?.initialFunds,
+        envValue: import.meta.env.VITE_INITIAL_FUNDS,
+        configObject: config
+    });
+    
+    budgetManager.forceReinitialize(initialFunds).then(async () => {
         // BudgetManager registered above - available via window.app.budgetManager or window.budgetManager
         // Update funds display in navigation bar immediately after initialization
         const initialBudget = await budgetManager.getCurrentBudget();
+        
+        console.log('[game.js] Budget initialized, current budget:', initialBudget);
+        
         if (window.gameUI) {
-            window.gameUI.updateFunds(initialBudget.funds || 200);
+            window.gameUI.updateFunds(initialBudget.funds || initialFunds);
         } else {
             const displayFunds = document.querySelector('.display-funds');
             if (displayFunds) {
-                displayFunds.textContent = (initialBudget.funds || 200).toString();
+                displayFunds.textContent = (initialBudget.funds || initialFunds).toString();
             }
         }
     });
@@ -521,9 +541,36 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
             if(buildingsObjects.includes(selectedObject.userData.id)) {
                 // Building selection
                 const uniqueId = makeDbItemId(selectedObject.userData.id, selectedObject.userData.x, selectedObject.userData.y)
+                
+                // Debug: Log the ID construction and retrieved data
+                console.log('[game.js] Building info popup:', {
+                    userDataId: selectedObject.userData.id,
+                    x: selectedObject.userData.x,
+                    y: selectedObject.userData.y,
+                    constructedId: uniqueId
+                });
+                
                 const buildingPop = await housesStore.getHouseItem(uniqueId, 'pop')
                 const houseRoads = await housesStore.getHouseItem(uniqueId, 'roads');
                 const houseStocks = await housesStore.getHouseItem(uniqueId, 'stocks');
+                
+                // Debug: Log retrieved data
+                console.log('[game.js] Retrieved data from DB:', {
+                    uniqueId,
+                    pop: buildingPop,
+                    roads: houseRoads,
+                    hasStocks: !!houseStocks
+                });
+                
+                // Also try to get the full house record to see what's actually stored
+                const fullHouse = await housesStore.getHouse(uniqueId);
+                console.log('[game.js] Full house record:', {
+                    uniqueId,
+                    type: fullHouse?.type,
+                    roads: fullHouse?.roads,
+                    neighborsCount: fullHouse?.neighbors?.length || 0,
+                    hasNeighbors: !!fullHouse?.neighbors
+                });
 
                 /* Check if neighbor */
                 let neighbors = [];
@@ -549,10 +596,93 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
 
                 if(selectedObject.userData.id.includes('House') && Object.hasOwn(houseStocks, 'food')) {
                     makeInfoSection('Stocks nourriture');
-                    makeInfoKeyValue('Blé', `${houseStocks.wheat} paniers`);
-                    makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage} paniers`);
-                    makeInfoKeyValue('Autres légumes', `${houseStocks.carrot} paniers`);
-                    makeInfoKeyValue('Total', `${houseStocks.food} paniers`);
+                    makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`);
+                    makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`);
+                    makeInfoKeyValue('Autres légumes', `${houseStocks.carrot || 0} paniers`);
+                    makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers`);
+                    
+                    // Evolution section - show conditions for next evolution step
+                    const buildingType = selectedObject.userData.id;
+                    const { hasAccess: hasRoadAccess } = checkRoadAccess(neighbors || []);
+                    const { totalFood } = checkFoodAvailability(houseStocks || {}, buildingPop || 0);
+                    
+                    makeInfoSection('Évolution');
+                    
+                    // House-Blue: Show conditions to become House-Red
+                    if (buildingType === 'House-Blue') {
+                        makeInfoKeyValue('→ Maison Rouge', '');
+                        const isInhabited = (buildingPop || 0) > 0;
+                        const roadStatus = hasRoadAccess ? '✅' : '❌';
+                        const popStatus = isInhabited ? '✅' : '❌';
+                        makeInfoKeyValue('  • Accès routier', `${roadStatus} ${hasRoadAccess ? 'Oui' : 'Non'}`);
+                        makeInfoKeyValue('  • Habitée', `${popStatus} ${isInhabited ? 'Oui' : 'Non'}`);
+                        makeInfoKeyValue('  • Nourriture de base', `${totalFood > 0 ? '✅' : '❌'} ${totalFood} panier${totalFood !== 1 ? 's' : ''}`);
+                    }
+                    
+                    // House-Red: Show conditions to become House-Purple (only Purple-specific conditions)
+                    else if (buildingType === 'House-Red') {
+                        makeInfoKeyValue('→ Maison Violette', '');
+                        const purpleCheck = canHouseEvolveToPurple({
+                            stocks: houseStocks || {},
+                            population: buildingPop || 0,
+                            buildingType: buildingType,
+                            hasRoadAccess: hasRoadAccess
+                        });
+                        
+                        // Show Purple-specific conditions
+                        makeInfoKeyValue('  • Population > 5', `${(buildingPop || 0) > 5 ? '✅' : '❌'} ${buildingPop || 0}`);
+                        const foodStatus = totalFood >= (buildingPop || 0) ? '✅' : '❌';
+                        makeInfoKeyValue('  • Nourriture ≥ Population', `${foodStatus} ${totalFood}/${buildingPop || 0}`);
+                        
+                        if (!purpleCheck.canEvolve) {
+                            if (purpleCheck.reason === 'hunger_present') {
+                                const needed = Math.max(0, (buildingPop || 0) - totalFood);
+                                makeInfoKeyValue('  • Manque', `${needed} panier${needed > 1 ? 's' : ''}`);
+                            } else if (purpleCheck.reason === 'population_too_low') {
+                                const needed = Math.max(0, 6 - (buildingPop || 0));
+                                makeInfoKeyValue('  • Manque', `${needed} habitant${needed > 1 ? 's' : ''}`);
+                            }
+                        }
+                    }
+                    
+                    // House-Purple: Show conditions to become Palace (only Palace-specific conditions)
+                    else if (buildingType === 'House-Purple') {
+                        makeInfoKeyValue('→ Palais', '');
+                        const palaceCheck = canHouseEvolveToPalace({
+                            stocks: houseStocks || {},
+                            population: buildingPop || 0,
+                            buildingType: buildingType,
+                            firstHouses: firstHouses
+                        });
+                        
+                        // Palace-specific conditions (food goal, not basic conditions)
+                        const { meetsFoodGoal } = checkFoodAvailability(houseStocks || {}, buildingPop || 0);
+                        const foodGoalStatus = meetsFoodGoal ? '✅' : '❌';
+                        const foodGoalText = meetsFoodGoal 
+                            ? `Oui (${totalFood} > ${(buildingPop || 0) * 2})`
+                            : `Non (${totalFood} ≤ ${(buildingPop || 0) * 2})`;
+                        
+                        // Check food variety (at least 2 types of food)
+                        const foodTypes = {
+                            wheat: (houseStocks?.wheat || 0) > 0,
+                            carrot: (houseStocks?.carrot || 0) > 0,
+                            cabbage: (houseStocks?.cabbage || 0) > 0
+                        };
+                        const availableFoodTypesCount = Object.values(foodTypes).filter(Boolean).length;
+                        const foodVarietyStatus = availableFoodTypesCount >= 2 ? '✅' : '❌';
+                        const foodVarietyText = availableFoodTypesCount >= 2 
+                            ? `Oui (${availableFoodTypesCount} types: ${Object.entries(foodTypes).filter(([_, available]) => available).map(([type]) => type).join(', ')})`
+                            : `Non (${availableFoodTypesCount} type${availableFoodTypesCount !== 1 ? 's' : ''} disponible)`;
+                        
+                        makeInfoKeyValue('  • Population > 5', `${(buildingPop || 0) > 5 ? '✅' : '❌'} ${buildingPop || 0}`);
+                        makeInfoKeyValue('  • Nourriture > Pop × 2', `${foodGoalStatus} ${foodGoalText}`);
+                        makeInfoKeyValue('  • 2 types de nourriture', `${foodVarietyStatus} ${foodVarietyText}`);
+                    }
+                    
+                    // Palace: No further evolution
+                    else if (buildingType === 'House-2Story') {
+                        makeInfoKeyValue('→ Palais', '✅ Niveau maximum atteint');
+                    }
                 }
 
                 // Display market food stocks (similar to houses)
@@ -682,7 +812,21 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         }
                     }
                 }
-                await scene.update(city, time);
+                
+                // FIX: For roads, update visually immediately for instant feedback
+                // Then do full scene update asynchronously
+                const isRoadTool = activeToolId === 'roads' || activeToolId === 'Road' || (activeToolId && activeToolId.toLowerCase() === 'roads');
+                if (isRoadTool && scene.updateRoadImmediate) {
+                    // Update road visually immediately
+                    scene.updateRoadImmediate(x, y);
+                    // Do full scene update asynchronously (don't await - let it run in background)
+                    scene.update(city, time).catch(err => {
+                        console.warn('[game.js] Scene update error after road placement:', err);
+                    });
+                } else {
+                    // For other buildings, do normal update
+                    await scene.update(city, time);
+                }
                 
                 // Envoyer au serveur multijoueur si activé
                 if (window.multiplayerManager && window.multiplayerManager.isMultiplayer) {
@@ -799,12 +943,20 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
         pause() {
             isPause = true;
             gameUI.setPaused(true);
+            // Pause citizen animation
+            if (scene.pauseCitizen) {
+                scene.pauseCitizen();
+            }
         },
 
         async play() {
             // Game playing
             isPause = false;
             gameUI.setPaused(false);
+            // Resume citizen animation
+            if (scene.resumeCitizen) {
+                scene.resumeCitizen();
+            }
             // Appeler update(0) pour activer l'objectif au tour 0 au démarrage (seulement si activés)
             if (window.objectivesTracker && objectivesTracker.enabled) {
                 await objectivesTracker.checkObjectives(0);
