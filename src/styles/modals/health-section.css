@@ -1,0 +1,249 @@
+/* Health Section - Health Management */
+
+.health-board {
+    background: #fafafa;
+    border-radius: var(--border-radius-small);
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: left;
+}
+
+.health-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--cta);
+}
+
+.health-header-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--cta);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.health-header-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--primary);
+    margin: 0;
+    text-align: left;
+}
+
+.health-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.health-section {
+    background: white;
+    border-radius: var(--border-radius-small);
+    padding: 18px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.health-section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 15px;
+    text-align: left;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.health-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.health-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: var(--border-radius-small);
+    border-left: 4px solid transparent;
+}
+
+.health-item-label {
+    font-size: 14px;
+    color: var(--primary);
+    font-weight: 500;
+    text-align: left;
+    flex: 1;
+}
+
+.health-item-value {
+    font-size: 14px;
+    font-weight: 600;
+    text-align: right;
+    min-width: 100px;
+}
+
+.health-item-value.percentage {
+    color: var(--primary);
+}
+
+.health-item-value.number {
+    color: var(--primary);
+}
+
+.health-item-value.low-risk {
+    color: var(--success);
+}
+
+.health-item-value.medium-risk {
+    color: var(--warning);
+}
+
+.health-item-value.high-risk {
+    color: var(--danger);
+}
+
+.health-item-value.critical {
+    color: var(--danger);
+    font-weight: 700;
+}
+
+.health-item.low-risk {
+    border-left-color: var(--success);
+}
+
+.health-item.medium-risk {
+    border-left-color: var(--warning);
+}
+
+.health-item.high-risk {
+    border-left-color: var(--danger);
+}
+
+.health-coverage-bar {
+    width: 200px;
+    height: 20px;
+    background: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.health-coverage-fill {
+    height: 100%;
+    background: var(--success);
+    transition: width 0.3s ease;
+    border-radius: 10px;
+}
+
+.health-coverage-fill.medium {
+    background: var(--warning);
+}
+
+.health-coverage-fill.low {
+    background: var(--danger);
+}
+
+.health-death-rate {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: rgba(156, 41, 57, 0.05);
+    border-radius: var(--border-radius-small);
+    border-left: 4px solid var(--danger);
+}
+
+.health-death-rate-label {
+    font-size: 14px;
+    color: var(--primary);
+    font-weight: 500;
+    text-align: left;
+}
+
+.health-death-rate-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--danger);
+    text-align: right;
+}
+
+.health-major-disease {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(156, 41, 57, 0.1);
+    border-radius: var(--border-radius-small);
+    border: 1px solid var(--danger);
+    margin-top: 10px;
+}
+
+.health-major-disease-label {
+    font-size: 13px;
+    color: var(--primary);
+    font-weight: 500;
+    text-align: left;
+}
+
+.health-major-disease-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--danger);
+    text-align: left;
+}
+
+/* Mobile Responsive */
+@media screen and (max-width: 1024px) {
+    .health-board {
+        padding: 15px;
+        text-align: left;
+    }
+
+    .health-header-title {
+        font-size: 20px;
+        text-align: left;
+    }
+
+    .health-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .health-item-value {
+        text-align: left;
+        width: 100%;
+    }
+
+    .health-coverage-bar {
+        width: 100%;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .health-board {
+        padding: 12px;
+        text-align: left;
+    }
+
+    .health-section {
+        padding: 15px;
+    }
+
+    .health-item {
+        padding: 8px;
+    }
+}
+

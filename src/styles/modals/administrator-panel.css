@@ -45,6 +45,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    justify-content: flex-start;
 }
 
 .administrator-panel-title h2 {
@@ -55,6 +56,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    text-align: left;
 }
 
 .administrator-panel-close-btn {
@@ -86,7 +88,7 @@
     padding: 16px 24px;
     background: #fff;
     border-bottom: 2px solid var(--cta);
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     flex-wrap: wrap;
 }
@@ -170,6 +172,7 @@
     background: linear-gradient(180deg, rgba(255,255,255,0.9), #fff);
     scrollbar-width: thin;
     scrollbar-color: var(--cta) transparent;
+    text-align: left;
 }
 
 .administrator-panel-content::-webkit-scrollbar {
@@ -209,17 +212,19 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    text-align: left;
 }
 
 .administrator-section-content {
     color: var(--primary);
     font-size: 15px;
     line-height: 1.6;
+    text-align: left;
 }
 
 /* Placeholder content styles */
 .administrator-placeholder {
-    text-align: center;
+    text-align: left;
     padding: 60px 20px;
     color: var(--primary);
     opacity: 0.7;
@@ -229,11 +234,13 @@
     font-size: 64px;
     margin-bottom: 20px;
     opacity: 0.5;
+    text-align: left;
 }
 
 .administrator-placeholder-text {
     font-size: 18px;
     font-weight: 500;
+    text-align: left;
 }
 
 /* Mobile Landscape Responsive */
@@ -249,11 +256,13 @@
 
     .administrator-panel-title h2 {
         font-size: 18px;
+        text-align: left;
     }
 
     .administrator-nav-buttons {
         padding: 10px 16px;
         gap: 8px;
+        justify-content: flex-start;
     }
 
     .administrator-nav-btn {
@@ -268,15 +277,18 @@
 
     .administrator-panel-content {
         padding: 16px;
+        text-align: left;
     }
 
     .administrator-section-title {
         font-size: 16px;
         margin-bottom: 12px;
+        text-align: left;
     }
 
     .administrator-section-content {
         font-size: 13px;
+        text-align: left;
     }
 }
 
@@ -287,9 +299,14 @@
         max-height: 90vh;
     }
 
+    .administrator-panel-title h2 {
+        text-align: left;
+    }
+
     .administrator-nav-buttons {
         padding: 12px;
         gap: 8px;
+        justify-content: flex-start;
     }
 
     .administrator-nav-btn {
@@ -300,6 +317,15 @@
     .administrator-nav-btn svg {
         width: 28px;
         height: 28px;
+    }
+
+    .administrator-panel-content {
+        text-align: left;
+    }
+
+    .administrator-section-title,
+    .administrator-section-content {
+        text-align: left;
     }
 }
 
