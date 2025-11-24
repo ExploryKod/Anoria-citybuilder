@@ -99,6 +99,7 @@ export function checkFoodAvailability(stocks, population = 0) {
  * Check if a house can evolve to purple (House-Purple)
  * House-Red can evolve to House-Purple when:
  * - All House-Red conditions are met (population > 0, road access)
+ * - Population > 5 (almost full house with 6 max capacity)
  * - No one is suffering from hunger (food stocks = population)
  * @param {Object} params - Parameters object
  * @param {Object} params.stocks - Food stocks from IndexedDB
@@ -128,6 +129,11 @@ export function canHouseEvolveToPurple({
         return { canEvolve: false, reason: 'no_road_access' };
     }
     
+    // Purple evolution condition: population must be > 5 (almost full house)
+    if (population <= 5) {
+        return { canEvolve: false, reason: 'population_too_low' };
+    }
+    
     // Purple evolution condition: no one suffering from hunger (food stocks >= population)
     const { totalFood } = checkFoodAvailability(stocks, population);
     if (totalFood < population) {
@@ -140,11 +146,12 @@ export function canHouseEvolveToPurple({
 /**
  * Check if a house can evolve to palace (House-2Story)
  * Uses unified time system and food module
+ * Only House-Purple can evolve to House-2Story
  * @param {Object} params - Parameters object
  * @param {Object} params.stocks - Food stocks from IndexedDB
  * @param {number} params.population - Current population
- * @param {string} params.buildingType - Current building type
- * @param {Array<string>} params.firstHouses - Array of basic house types that can evolve
+ * @param {string} params.buildingType - Current building type (must be 'House-Purple')
+ * @param {Array<string>} params.firstHouses - Array of basic house types that can evolve (not used anymore, kept for compatibility)
  * @returns {Object} { canEvolve: boolean, reason?: string }
  */
 export function canHouseEvolveToPalace({ 
@@ -153,15 +160,28 @@ export function canHouseEvolveToPalace({
     buildingType, 
     firstHouses
 }) {
-    // Check if building type is eligible
-    if (!firstHouses.includes(buildingType)) {
-        return { canEvolve: false, reason: 'not_eligible_house_type' };
+    // Check if building type is House-Purple (only Purple can evolve to Palace)
+    if (buildingType !== 'House-Purple') {
+        return { canEvolve: false, reason: 'not_house_purple' };
     }
     
     // Check food goal using food module
     const { meetsFoodGoal } = checkFoodAvailability(stocks, population);
     if (!meetsFoodGoal) {
         return { canEvolve: false, reason: 'food_goal_not_met' };
+    }
+    
+    // Check that house has at least 2 types of food available
+    const foodTypes = {
+        wheat: (stocks?.wheat || 0) > 0,
+        carrot: (stocks?.carrot || 0) > 0,
+        cabbage: (stocks?.cabbage || 0) > 0
+    };
+    
+    const availableFoodTypesCount = Object.values(foodTypes).filter(Boolean).length;
+    
+    if (availableFoodTypesCount < 2) {
+        return { canEvolve: false, reason: 'insufficient_food_variety' };
     }
     
     return { canEvolve: true };

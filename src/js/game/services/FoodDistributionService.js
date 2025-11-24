@@ -339,12 +339,14 @@ export class FoodDistributionService extends SimService {
      * 3. Can only buy up to available farm stocks (cannot buy more than available)
      * 
      * Each farm type produces only its specific crop:
-     * - Farms-Wheat → produces 12 wheat units (enough to feed 1 person for 1 year)
-     * - Farms-Carrot → produces 12 carrot units (enough to feed 1 person for 1 year)
-     * - Farms-Cabbage → produces 12 cabbage units (enough to feed 1 person for 1 year)
+     * - Farms-Wheat → produces 78 wheat units (enough to feed 6 citizens for 1 year + buffer)
+     * - Farms-Carrot → produces 78 carrot units (enough to feed 6 citizens for 1 year + buffer)
+     * - Farms-Cabbage → produces 78 cabbage units (enough to feed 6 citizens for 1 year + buffer)
      * 
      * NOTE: Farms produce once per year during autumn (Automne)
-     * Each farm produces 12 paniers = 1 panier/month × 12 months = enough to feed 1 person for 1 year
+     * Each farm produces 78 paniers = (6 citizens × 12 paniers/year) + 6 paniers buffer = enough to feed 1 house (6 citizens) for 1 year
+     * 1 citizen consumes 1 panier/month = 12 paniers/year
+     * Calculation: (1×12×6) + (1×6) = 72 + 6 = 78 paniers/year
      * 
      * @param {string} marketId - Market ID (must have road access)
      * @param {Array} farms - Array of farm neighbor objects

@@ -629,13 +629,19 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                             hasRoadAccess: hasRoadAccess
                         });
                         
-                        // Only show Purple-specific condition (food >= population)
+                        // Show Purple-specific conditions
+                        makeInfoKeyValue('  • Population > 5', `${(buildingPop || 0) > 5 ? '✅' : '❌'} ${buildingPop || 0}`);
                         const foodStatus = totalFood >= (buildingPop || 0) ? '✅' : '❌';
                         makeInfoKeyValue('  • Nourriture ≥ Population', `${foodStatus} ${totalFood}/${buildingPop || 0}`);
                         
-                        if (!purpleCheck.canEvolve && purpleCheck.reason === 'hunger_present') {
-                            const needed = Math.max(0, (buildingPop || 0) - totalFood);
-                            makeInfoKeyValue('  • Manque', `${needed} panier${needed > 1 ? 's' : ''}`);
+                        if (!purpleCheck.canEvolve) {
+                            if (purpleCheck.reason === 'hunger_present') {
+                                const needed = Math.max(0, (buildingPop || 0) - totalFood);
+                                makeInfoKeyValue('  • Manque', `${needed} panier${needed > 1 ? 's' : ''}`);
+                            } else if (purpleCheck.reason === 'population_too_low') {
+                                const needed = Math.max(0, 6 - (buildingPop || 0));
+                                makeInfoKeyValue('  • Manque', `${needed} habitant${needed > 1 ? 's' : ''}`);
+                            }
                         }
                     }
                     
@@ -655,8 +661,22 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         const foodGoalText = meetsFoodGoal 
                             ? `Oui (${totalFood} > ${(buildingPop || 0) * 2})`
                             : `Non (${totalFood} ≤ ${(buildingPop || 0) * 2})`;
-                        makeInfoKeyValue('  • Population > 2', `${(buildingPop || 0) > 2 ? '✅' : '❌'} ${buildingPop || 0}`);
+                        
+                        // Check food variety (at least 2 types of food)
+                        const foodTypes = {
+                            wheat: (houseStocks?.wheat || 0) > 0,
+                            carrot: (houseStocks?.carrot || 0) > 0,
+                            cabbage: (houseStocks?.cabbage || 0) > 0
+                        };
+                        const availableFoodTypesCount = Object.values(foodTypes).filter(Boolean).length;
+                        const foodVarietyStatus = availableFoodTypesCount >= 2 ? '✅' : '❌';
+                        const foodVarietyText = availableFoodTypesCount >= 2 
+                            ? `Oui (${availableFoodTypesCount} types: ${Object.entries(foodTypes).filter(([_, available]) => available).map(([type]) => type).join(', ')})`
+                            : `Non (${availableFoodTypesCount} type${availableFoodTypesCount !== 1 ? 's' : ''} disponible)`;
+                        
+                        makeInfoKeyValue('  • Population > 5', `${(buildingPop || 0) > 5 ? '✅' : '❌'} ${buildingPop || 0}`);
                         makeInfoKeyValue('  • Nourriture > Pop × 2', `${foodGoalStatus} ${foodGoalText}`);
+                        makeInfoKeyValue('  • 2 types de nourriture', `${foodVarietyStatus} ${foodVarietyText}`);
                     }
                     
                     // Palace: No further evolution
