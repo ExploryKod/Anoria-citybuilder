@@ -166,6 +166,7 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
+    text-align: left;
 }
 
 .journal-entry-type {
@@ -217,19 +218,74 @@
 
 .journal-entry-details {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 8px;
     font-size: 14px;
     color: #6c757d;
+    text-align: left;
 }
 
 .journal-entry-description {
-    flex: 1;
+    text-align: left;
+    margin-bottom: 4px;
+}
+
+.journal-maintenance-breakdown {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0;
+    text-align: left;
+}
+
+.journal-breakdown-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+    text-align: left;
+    font-size: 13px;
+    flex-wrap: wrap;
+}
+
+.breakdown-label {
+    font-weight: 600;
+    color: var(--primary);
+    min-width: 80px;
+    text-align: left;
+}
+
+.breakdown-count {
+    color: #495057;
+    text-align: left;
+}
+
+.breakdown-multiply {
+    color: #6c757d;
+    margin: 0 2px;
+}
+
+.breakdown-unit-cost {
+    color: #495057;
+    font-weight: 500;
+}
+
+.breakdown-equals {
+    color: #6c757d;
+    margin: 0 4px;
+}
+
+.breakdown-total {
+    color: var(--primary);
+    font-weight: 600;
+    margin-left: auto;
+    text-align: right;
 }
 
 .journal-entry-turn {
     font-weight: 600;
     color: var(--primary);
+    text-align: left;
+    margin-top: 4px;
 }
 
 .no-journal-entries {
@@ -259,6 +315,59 @@
     border-radius: 8px;
     font-size: 14px;
     font-weight: 600;
+}
+
+/* Mobile Responsive Styles */
+@media screen and (max-width: 768px) {
+    .journal-wrapper {
+        width: 95%;
+        max-width: none;
+        max-height: 90vh;
+    }
+
+    .journal-content {
+        padding: 12px;
+    }
+
+    .journal-entry {
+        padding: 12px;
+    }
+
+    .journal-entry-details {
+        font-size: 13px;
+    }
+
+    .journal-maintenance-breakdown {
+        margin: 6px 0;
+    }
+
+    .journal-breakdown-item {
+        font-size: 12px;
+        gap: 4px;
+        padding: 3px 0;
+    }
+
+    .breakdown-label {
+        min-width: 60px;
+        font-size: 12px;
+    }
+
+    .breakdown-total {
+        margin-left: 0;
+        width: 100%;
+        text-align: left;
+        margin-top: 2px;
+        padding-left: 64px;
+    }
+
+    .journal-entry-description {
+        font-size: 13px;
+        line-height: 1.4;
+    }
+
+    .journal-entry-turn {
+        font-size: 12px;
+    }
 }
 
 /* Mobile Landscape Responsive Styles */

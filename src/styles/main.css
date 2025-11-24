@@ -950,6 +950,15 @@ canvas.pointer-events-disabled {
     }
 }
 
+.info-panel .info-box-global-numbers > .info-box.infos-pop {
+    background-color: #fff !important;
+    min-width: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    gap: 5px;
+}
+
 .info-panel > .info-box.infos-time {
    min-width: 500px;
    justify-content: center;

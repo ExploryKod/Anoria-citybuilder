@@ -10,6 +10,7 @@ import {
     infoPanelNoClockIcon,
     gameWindow as gameWindowElement,
     displayPop,
+    displayHungerPop,
     displayFunds,
     infoObjectOverlay,
     infoObjectCloseBtn,
@@ -156,6 +157,16 @@ class GameUI {
     updatePopulation(population) {
         if (displayPop) {
             displayPop.textContent = population?.toString() || '0';
+        }
+    }
+
+    /**
+     * Updates famished (hungry) population display
+     * @param {number} famishedPopulation - Number of famished people
+     */
+    updateFamishedPopulation(famishedPopulation) {
+        if (displayHungerPop) {
+            displayHungerPop.textContent = (famishedPopulation || 0).toString();
         }
     }
 

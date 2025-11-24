@@ -41,13 +41,20 @@ export class FoodModule extends SimModule {
     }
 
     /**
-     * Gets total food count (sum of all food types)
+     * Gets total food count
+     * Uses the 'food' field which is the sum of wheat + carrot + cabbage
+     * If 'food' is not set, calculates from individual types
      * @returns {number}
      */
     getTotalFood() {
         if (!this.stocks) return 0;
-        return (this.stocks.food || 0) + 
-               (this.stocks.wheat || 0) + 
+        // 'food' is already the sum of wheat + carrot + cabbage, so use it directly
+        // If 'food' is not set, calculate from individual types
+        if (this.stocks.food !== undefined && this.stocks.food !== null) {
+            return this.stocks.food;
+        }
+        // Fallback: calculate from individual types if 'food' is not set
+        return (this.stocks.wheat || 0) + 
                (this.stocks.carrot || 0) + 
                (this.stocks.cabbage || 0);
     }
@@ -66,13 +73,14 @@ export class FoodModule extends SimModule {
     }
 
     /**
-     * Checks if food goal is met (for house evolution)
-     * Food goal: population > 2 AND food > population * 2
+     * Checks if food goal is met (for house evolution to palace)
+     * Food goal: population > 5 AND food > population * 2
+     * Population must be > 5 (almost full house with 6 max capacity)
      * @returns {boolean}
      */
     meetsFoodGoal() {
         const totalFood = this.getTotalFood();
-        return this.population > 2 && totalFood > this.population * 2;
+        return this.population > 5 && totalFood > this.population * 2;
     }
 
     /**

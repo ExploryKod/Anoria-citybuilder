@@ -35,8 +35,36 @@ class HouseStore {
     }
 
     /**
-     * Process population based on food availability and road access
-     * Population can only grow if there's food AND road access, and resets to 0 if no food OR no road access
+     * Calculate the number of famished (hungry) people in the city
+     * Famished people = total population - fed population
+     * Fed population = min(population, food stocks) for each house
+     * @returns {Promise<number>} Number of famished people
+     */
+    async getFamishedPopulation() {
+        const houses = await this.listAllHouses();
+        let totalPopulation = 0;
+        let fedPopulation = 0;
+
+        for (const house of houses) {
+            if (house.type && house.type.includes('House')) {
+                const housePop = house.pop || 0;
+                const houseStocks = house.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+                const totalFood = houseStocks.food || 0;
+                
+                totalPopulation += housePop;
+                // Fed population = min(population, available food)
+                // If house has 6 people but only 3 food, only 3 are fed
+                fedPopulation += Math.min(housePop, totalFood);
+            }
+        }
+
+        const famishedPopulation = Math.max(0, totalPopulation - fedPopulation);
+        return famishedPopulation;
+    }
+
+    /**
+     * Process population based on road access (food is no longer required)
+     * Population can exist without food (un nourished people), but requires road access
      * @returns {Promise<Object>} Result with population changes
      */
     async processPopulationFoodLogic() {
@@ -47,12 +75,11 @@ class HouseStore {
 
         for (const house of houses) {
             if (house.type && house.type.includes('House')) { // Only process houses
-                const hasFood = house.stocks && house.stocks.food > 0;
                 const hasRoadAccess = house.neighbors && house.neighbors.filter(neighbor => neighbor.name === 'roads').length > 0;
                 const currentPop = house.pop || 0;
                 
-                if (!hasFood || !hasRoadAccess) {
-                    // No food OR no road access - reset population to 0
+                if (!hasRoadAccess) {
+                    // No road access - reset population to 0 (food is not required)
                     if (currentPop > 0) {
                         totalPopulationLost += currentPop;
                         housesAffected++;
@@ -70,8 +97,8 @@ class HouseStore {
             totalPopulationGained,
             housesAffected,
             message: totalPopulationLost > 0 ? 
-                `${totalPopulationLost} inhabitants lost due to no food or road access in ${housesAffected} houses` : 
-                'All houses with population have food and road access'
+                `${totalPopulationLost} inhabitants lost due to no road access in ${housesAffected} houses` : 
+                'All houses with population have road access'
         };
     }
 
@@ -165,29 +192,80 @@ class HouseStore {
     }
 
     async updateHouseFields(name, updates, appendToArrays = false) {
-        const house = await this.db.houses.get(name);
-        if (house) {
-            for (const key in updates) {
-                if (updates[key] !== undefined) {
-                    if (Array.isArray(house[key]) && appendToArrays) {
-                        house[key] = [...house[key], ...updates[key]];
-                    } else {
-                        house[key] = updates[key];
-                    }
+        let house = await this.db.houses.get(name);
+        
+        // If house doesn't exist, create it with the updates
+        if (!house) {
+            // Extract x, y from name (format: "Type-x-y")
+            const parts = name.split('-');
+            if (parts.length >= 3) {
+                const x = parseInt(parts[parts.length - 2]);
+                const y = parseInt(parts[parts.length - 1]);
+                
+                if (!isNaN(x) && !isNaN(y)) {
+                    // Create new house entry with basic structure
+                    house = {
+                        name: name,
+                        type: parts.slice(0, -2).join('-'), // Get type part (handles "House-2Story")
+                        price: 0,
+                        x: x,
+                        y: y,
+                        neighbors: [],
+                        pop: 0,
+                        stocks: { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
+                        roads: 0,
+                        worldTime: 0
+                    };
+                } else {
+                    // Cannot create house without valid coordinates
+                    return;
+                }
+            } else {
+                // Cannot create house without valid name format
+                return;
+            }
+        }
+        
+        // Update house fields
+        for (const key in updates) {
+            if (updates[key] !== undefined) {
+                if (Array.isArray(house[key]) && appendToArrays) {
+                    house[key] = [...house[key], ...updates[key]];
+                } else {
+                    house[key] = updates[key];
                 }
             }
-            await this.db.houses.put(house);
         }
+        
+        await this.db.houses.put(house);
     }
 
     async updateHouseName(oldName, newName, keys = {}) {
-        const house = await this.db.houses.get(oldName);
-        if (house) {
-            house.name = newName;
-            if (keys.type) house.type = keys.type;
-            if (keys.price) house.price = keys.price;
-            await this.db.houses.put(house);
-            await this.db.houses.delete(oldName);
+        try {
+            const house = await this.db.houses.get(oldName);
+            if (house) {
+                // Delete old entry first to avoid key conflicts
+                await this.db.houses.delete(oldName);
+                
+                // Create new entry with updated name and keys, preserving all other fields
+                const updatedHouse = {
+                    ...house,
+                    name: newName
+                };
+                
+                if (keys.type) updatedHouse.type = keys.type;
+                if (keys.price) updatedHouse.price = keys.price;
+                
+                // Put the new entry (will create if doesn't exist, update if exists)
+                await this.db.houses.put(updatedHouse);
+                return { success: true, message: `House ${oldName} updated to ${newName}` };
+            } else {
+                console.warn(`[HousesStore] House with oldName ${oldName} not found for update.`);
+                return { success: false, message: `House ${oldName} not found.` };
+            }
+        } catch (error) {
+            console.error(`[HousesStore] Error updating house name from ${oldName} to ${newName}:`, error);
+            return { success: false, message: `Error updating house name: ${error.message}` };
         }
     }
 
