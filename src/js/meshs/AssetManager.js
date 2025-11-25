@@ -307,6 +307,13 @@ class AssetManager extends MeshLoader {
                     map: textures['grass'],
                     transparent: false,
                     side: THREE.FrontSide
+                }),
+                'terrain': new THREE.MeshLambertMaterial({
+                    map: textures['grass'],
+                    color: 0x8b1e1e,
+                    emissive: 0x220000,
+                    transparent: false,
+                    side: THREE.FrontSide
                 })
             };
             
@@ -345,6 +352,17 @@ class AssetManager extends MeshLoader {
                 mesh = new THREE.Mesh(this.#geometry, material);
                 mesh.name = buildingId;
                 mesh.userData = { id: buildingId, x, y, isBuilding: false, time: 0 };
+                mesh.scale.set(1, 1, 1);
+                mesh.position.set(x, -0.5, y);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                break;
+
+            case 'terrain':
+                material = materials['terrain'] || materials['grass'];
+                mesh = new THREE.Mesh(this.#geometry, material);
+                mesh.name = buildingId;
+                mesh.userData = { id: buildingId, x, y, isBuilding: false, isPlaceholder: true, time: 0 };
                 mesh.scale.set(1, 1, 1);
                 mesh.position.set(x, -0.5, y);
                 mesh.castShadow = true;

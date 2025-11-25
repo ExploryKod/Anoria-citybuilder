@@ -13,7 +13,8 @@ export const infoObjectOverlay = document.querySelector('.info-building-overlay'
 export const infoObjectCloseBtn = document.querySelector('.info-building-overlay .panel-close-btn');
 export const buildingsObjects = [
     'House-Red', 'House-Purple', 'House-Blue', 'Market-Stall', 
-    'Tombstone-1', 'Farm-Carrot', 'Farm-Wheat', 'Farm-Cabbage', 'House-2Story'
+    'Tombstone-1', 'Farm-Carrot', 'Farm-Wheat', 'Farm-Cabbage', 'House-2Story',
+    'Windmill-001', 'Barn-001'
 ];
 
 export const infoPanelClock = document.querySelector('.info-panel .clock-box');

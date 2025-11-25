@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import {createCamera} from './camera.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { ObjectLoader } from 'three';
 import { AnimationMixer } from 'three';
 import {applyHoverColor, resetHoveredObject, resetObjectColor} from '../utils/meshUtils.js';
 import {  textures  } from '../meshs/data.js'
@@ -1965,71 +1964,40 @@ export function createScene(housesStore, gameStore, assetManager) {
         const targetCitizenCount = Math.min(currentPopulation, MAX_CITIZENS);
         const currentCitizenCount = citizens.filter(c => c.spawned && c.character && c.character.visible).length;
         
-        // Check if citizen-cool can appear (population exists AND no famished population)
-        const canCreateCitizenCool = famishedPopulation === 0 && currentPopulation > 0;
-        const currentCitizenCoolCount = citizens.filter(c => c && c.citizenType === 'citizen-cool' && c.spawned && c.character && c.character.visible).length;
-        const currentCitizen02Count = citizens.filter(c => c && c.citizenType === 'citizen02' && c.spawned && c.character && c.character.visible).length;
-        
-        // Replace citizen02 with citizen-cool if conditions are met
-        // Only replace one at a time to avoid sudden changes
-        if (canCreateCitizenCool && currentCitizen02Count > 0 && currentCitizenCoolCount < targetCitizenCount) {
-            // Find first visible citizen02 to replace
-            const citizen02ToReplace = citizens.find(c => 
-                c && 
-                c.citizenType === 'citizen02' && 
-                c.spawned && 
-                c.character && 
-                c.character.visible
-            );
-            
-            if (citizen02ToReplace) {
-                console.log('[Scene] Replacing citizen02 with citizen-cool (conditions met)');
-                // Hide the citizen02
-                hideCitizenCharacter(citizen02ToReplace);
-                
-                // Create citizen-cool to replace it
-                createCitizenInstance('citizen-cool').then(newCitizen => {
-                    if (newCitizen) {
-                        // Find and replace the citizen02 in the array
-                        const index = citizens.indexOf(citizen02ToReplace);
-                        if (index !== -1) {
-                            citizens[index] = newCitizen;
-                            if (citizen02Count > 0) {
-                                citizen02Count--;
-                            }
-                        } else {
-                            citizens.push(newCitizen);
-                        }
-                        spawnCitizenCharacter(newCitizen, city);
-                        console.log('[Scene] ✅ citizen-cool created to replace citizen02');
-                    } else {
-                        console.error('[Scene] Failed to create citizen-cool for replacement');
-                    }
-                });
-            }
-        }
-        
         // Spawn new citizens if population increased
-        // Simplified logic: citizen02 appears when there's population
-        // citizen-cool appears when there's population AND no famished population
         if (targetCitizenCount > currentCitizenCount) {
             const citizensToSpawn = targetCitizenCount - currentCitizenCount;
             for (let i = 0; i < citizensToSpawn; i++) {
                 // Check if we have an available citizen slot
                 if (citizens.length < MAX_CITIZENS) {
                     // Determine which type of citizen to create
-                    // Simple strategy: try citizen-cool first if conditions are met, otherwise citizen02
+                    // First 2 citizens are always citizen02, then alternate between both types
                     let citizenType = 'citizen02';
+                    const citizenCoolCount = citizens.filter(c => c && c.citizenType === 'citizen-cool').length;
                     
-                    if (canCreateCitizenCool) {
-                        // Conditions met: create citizen-cool
-                        citizenType = 'citizen-cool';
-                        console.log('[Scene] ✅ Creating new citizen-cool (conditions met)');
-                    } else {
-                        // Conditions not met or no population: create citizen02
-                        citizenType = 'citizen02';
-                        console.log('[Scene] Creating new citizen02 (citizen-cool conditions not met)');
+                    if (citizen02Count >= 2) {
+                        // After 2 citizen02, alternate: every 3rd citizen (starting from the 3rd) is citizen-cool
+                        // Pattern: citizen02, citizen02, citizen-cool, citizen02, citizen-cool, citizen02, citizen-cool...
+                        // This means: after 2 citizen02, we create 1 citizen-cool, then 1 citizen02, then 1 citizen-cool, etc.
+                        const totalCreatedAfterFirstTwo = (citizen02Count - 2) + citizenCoolCount;
+                        // Alternate: even index = citizen02, odd index = citizen-cool
+                        if (totalCreatedAfterFirstTwo % 2 === 0) {
+                            // Even: create citizen-cool
+                            citizenType = 'citizen-cool';
+                        } else {
+                            // Odd: create citizen02
+                            citizenType = 'citizen02';
+                        }
                     }
+                    
+                    console.log('[Scene] Creating citizen:', {
+                        type: citizenType,
+                        citizen02Count: citizen02Count,
+                        citizenCoolCount: citizenCoolCount,
+                        totalCitizens: citizens.length,
+                        totalAfterFirstTwo: (citizen02Count - 2) + citizenCoolCount,
+                        decision: citizen02Count >= 2 ? `alternate (index ${(citizen02Count - 2) + citizenCoolCount})` : 'first 2 citizens'
+                    });
                     
                     createCitizenInstance(citizenType).then(newCitizen => {
                         if (newCitizen) {
@@ -2037,6 +2005,12 @@ export function createScene(housesStore, gameStore, assetManager) {
                             if (citizenType === 'citizen02') {
                                 citizen02Count++;
                             }
+                            console.log('[Scene] Citizen created successfully:', {
+                                type: citizenType,
+                                name: newCitizen.character.name,
+                                citizen02Count: citizen02Count,
+                                totalCitizens: citizens.length
+                            });
                             spawnCitizenCharacter(newCitizen, city);
                         } else {
                             console.error('[Scene] Failed to create citizen:', citizenType);
@@ -2763,7 +2737,6 @@ export function createScene(housesStore, gameStore, assetManager) {
             citizenPath,
             (gltf) => {
                 // Store all animations (shared across all citizen-cool)
-                // Based on JSON reference: animations are named "idle" and "walk"
                 if (gltf.animations && gltf.animations.length > 0) {
                     gltf.animations.forEach((clip) => {
                         citizenCoolAnimations[clip.name] = clip;
@@ -2789,13 +2762,12 @@ export function createScene(housesStore, gameStore, assetManager) {
      */
     function createCitizenInstance(citizenType = 'citizen02') {
         return new Promise((resolve) => {
+            // Create a new loader instance to avoid caching issues
+            const gltfLoader = new GLTFLoader();
             const baseUrl = config.assets.baseUrl || '/';
             
             // Determine which model to load based on citizen type
-            // Both citizen types now use GLB files (like citizen02)
-            const gltfLoader = new GLTFLoader();
             let citizenPath, citizenName, animationsToUse;
-            
             if (citizenType === 'citizen-cool') {
                 citizenPath = `${baseUrl}citizenCool/citizenCoolTwoAnim.glb`.replace(/\/+/g, '/');
                 citizenName = `citizen-cool-${citizens.length}`;
@@ -2810,6 +2782,8 @@ export function createScene(housesStore, gameStore, assetManager) {
                 loadCitizenAnimations();
             }
             
+            // Load the model fresh each time - no cloning to maintain consistency
+            // Each citizen gets its own complete model instance
             console.log('[Scene] Loading citizen model:', {
                 type: citizenType,
                 path: citizenPath,
@@ -2837,24 +2811,105 @@ export function createScene(housesStore, gameStore, assetManager) {
                     }
                     citizen.name = citizenName;
                     
-                    // Store animations from GLB if available (for citizen-cool, animations should be "idle" and "walk")
-                    if (gltf.animations && gltf.animations.length > 0) {
-                        gltf.animations.forEach((clip) => {
-                            if (citizenType === 'citizen-cool') {
-                                citizenCoolAnimations[clip.name] = clip;
-                            } else {
-                                citizenAnimations[clip.name] = clip;
+                    // Apply scale: 0.5 = half size (same as original single citizen)
+                    const characterScale = 0.5;
+                    citizen.scale.set(characterScale, characterScale, characterScale);
+                    
+                    // Ensure character receives proper lighting and shadows
+                    citizen.traverse((child) => {
+                        if (child instanceof THREE.Mesh) {
+                            // Enable shadows for the character
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                            
+                            // Ensure materials are properly lit
+                            if (child.material) {
+                                // Make sure material responds to lights
+                                if (child.material instanceof THREE.MeshBasicMaterial) {
+                                    // Convert BasicMaterial to LambertMaterial for proper lighting
+                                    const newMaterial = new THREE.MeshLambertMaterial({
+                                        map: child.material.map,
+                                        color: child.material.color,
+                                        transparent: child.material.transparent,
+                                        opacity: child.material.opacity
+                                    });
+                                    child.material = newMaterial;
+                                }
+                                
+                                // Ensure material properties are set for lighting
+                                if (child.material.needsUpdate !== undefined) {
+                                    child.material.needsUpdate = true;
+                                }
                             }
-                        });
-                        if (citizenType === 'citizen-cool') {
-                            citizenCoolAnimationsLoaded = true;
-                        } else {
-                            citizenAnimationsLoaded = true;
                         }
+                    });
+                    
+                    // Store animations if not already loaded (for the first instance)
+                    if (citizenType === 'citizen02' && gltf.animations && gltf.animations.length > 0 && !citizenAnimationsLoaded) {
+                        gltf.animations.forEach((clip) => {
+                            citizenAnimations[clip.name] = clip;
+                        });
+                        citizenAnimationsLoaded = true;
+                    } else if (citizenType === 'citizen-cool' && gltf.animations && gltf.animations.length > 0 && !citizenCoolAnimationsLoaded) {
+                        gltf.animations.forEach((clip) => {
+                            citizenCoolAnimations[clip.name] = clip;
+                        });
+                        citizenCoolAnimationsLoaded = true;
                     }
                     
-                    // Continue with the rest of the setup (scale, materials, animations, etc.)
-                    setupCitizenFromLoadedModel(citizen, citizenType, citizenName, animationsToUse, resolve);
+                    // Create new citizen data
+                    const citizenData = new CitizenData();
+                    citizenData.character = citizen;
+                    citizenData.citizenType = citizenType; // Store the type for reference
+                    
+                    // Set up animations for this citizen using the appropriate animation set
+                    // If animations are not loaded yet, try to use animations from the gltf directly
+                    let animationsToUseFinal = animationsToUse;
+                    if (Object.keys(animationsToUseFinal).length === 0 && gltf.animations && gltf.animations.length > 0) {
+                        // Animations not loaded yet, create a temporary set from this gltf
+                        const tempAnimations = {};
+                        gltf.animations.forEach((clip) => {
+                            tempAnimations[clip.name] = clip;
+                        });
+                        animationsToUseFinal = tempAnimations;
+                        console.log('[Scene] Using animations from GLB directly for', citizenType, ':', Object.keys(tempAnimations));
+                    }
+                    
+                    if (Object.keys(animationsToUseFinal).length > 0) {
+                        citizenData.mixer = new AnimationMixer(citizen);
+                        
+                        // Start with idle animation immediately
+                        const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
+                        let idleAnimation = null;
+                        for (const name of idleNames) {
+                            if (animationsToUseFinal[name]) {
+                                idleAnimation = name;
+                                break;
+                            }
+                        }
+                        if (!idleAnimation && Object.keys(animationsToUseFinal).length > 0) {
+                            idleAnimation = Object.keys(animationsToUseFinal)[0];
+                        }
+                        if (idleAnimation) {
+                            const action = citizenData.mixer.clipAction(animationsToUseFinal[idleAnimation]);
+                            action.play();
+                            citizenData.currentAction = action;
+                            console.log('[Scene] Started', idleAnimation, 'animation for', citizenType);
+                        } else {
+                            console.warn('[Scene] No idle animation found for', citizenType);
+                        }
+                    } else {
+                        console.warn('[Scene] No animations available for', citizenType, '- citizen will be created without animations');
+                    }
+                    
+                    console.log('[Scene] Citizen instance created:', {
+                        type: citizenType,
+                        name: citizenName,
+                        hasAnimations: Object.keys(animationsToUseFinal).length > 0,
+                        animationCount: Object.keys(animationsToUseFinal).length
+                    });
+                    
+                    resolve(citizenData);
                 },
                 (progress) => {
                     // Loading progress (optional)
@@ -2874,129 +2929,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                 }
             );
         });
-    }
-    
-    /**
-     * Helper function to set up citizen after model is loaded (common setup for both GLB and JSON)
-     * @param {THREE.Object3D} citizen - The loaded citizen model
-     * @param {string} citizenType - Type of citizen ('citizen02' or 'citizen-cool')
-     * @param {string} citizenName - Name for the citizen
-     * @param {Object} animationsToUse - Animations object to use
-     * @param {Function} resolve - Promise resolve function
-     */
-    function setupCitizenFromLoadedModel(citizen, citizenType, citizenName, animationsToUse, resolve) {
-        // Apply scale: 0.5 = half size (same as original single citizen)
-        const characterScale = 0.5;
-        citizen.scale.set(characterScale, characterScale, characterScale);
-        
-        // Extract animations from the loaded model (works for both GLB and JSON)
-        let modelAnimations = [];
-        if (citizen.animations && citizen.animations.length > 0) {
-            modelAnimations = citizen.animations;
-        } else {
-            // Try to find animations in the scene graph
-            citizen.traverse((child) => {
-                if (child.animations && child.animations.length > 0) {
-                    modelAnimations = modelAnimations.concat(child.animations);
-                }
-            });
-        }
-        
-        // Store animations if not already loaded (for the first instance)
-        if (citizenType === 'citizen02' && modelAnimations.length > 0 && !citizenAnimationsLoaded) {
-            modelAnimations.forEach((clip) => {
-                citizenAnimations[clip.name] = clip;
-            });
-            citizenAnimationsLoaded = true;
-        } else if (citizenType === 'citizen-cool' && modelAnimations.length > 0 && !citizenCoolAnimationsLoaded) {
-            modelAnimations.forEach((clip) => {
-                citizenCoolAnimations[clip.name] = clip;
-            });
-            citizenCoolAnimationsLoaded = true;
-        }
-        
-        // Ensure character receives proper lighting and shadows
-        citizen.traverse((child) => {
-            if (child instanceof THREE.Mesh) {
-                // Enable shadows for the character
-                child.castShadow = true;
-                child.receiveShadow = true;
-                
-                // Ensure materials are properly lit
-                if (child.material) {
-                    // Make sure material responds to lights
-                    if (child.material instanceof THREE.MeshBasicMaterial) {
-                        // Convert BasicMaterial to LambertMaterial for proper lighting
-                        const newMaterial = new THREE.MeshLambertMaterial({
-                            map: child.material.map,
-                            color: child.material.color,
-                            transparent: child.material.transparent,
-                            opacity: child.material.opacity
-                        });
-                        child.material = newMaterial;
-                    }
-                    
-                    // Ensure material properties are set for lighting
-                    if (child.material.needsUpdate !== undefined) {
-                        child.material.needsUpdate = true;
-                    }
-                }
-            }
-        });
-        
-        // Create new citizen data
-        const citizenData = new CitizenData();
-        citizenData.character = citizen;
-        citizenData.citizenType = citizenType; // Store the type for reference
-        
-        // Set up animations for this citizen using the appropriate animation set
-        // If animations are not loaded yet, try to use animations from the model directly
-        let animationsToUseFinal = animationsToUse;
-        if (Object.keys(animationsToUseFinal).length === 0 && modelAnimations.length > 0) {
-            // Animations not loaded yet, create a temporary set from this model
-            const tempAnimations = {};
-            modelAnimations.forEach((clip) => {
-                tempAnimations[clip.name] = clip;
-            });
-            animationsToUseFinal = tempAnimations;
-            console.log('[Scene] Using animations from model directly for', citizenType, ':', Object.keys(tempAnimations));
-        }
-        
-        if (Object.keys(animationsToUseFinal).length > 0) {
-            citizenData.mixer = new AnimationMixer(citizen);
-            
-            // Start with idle animation immediately
-            const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
-            let idleAnimation = null;
-            for (const name of idleNames) {
-                if (animationsToUseFinal[name]) {
-                    idleAnimation = name;
-                    break;
-                }
-            }
-            if (!idleAnimation && Object.keys(animationsToUseFinal).length > 0) {
-                idleAnimation = Object.keys(animationsToUseFinal)[0];
-            }
-            if (idleAnimation) {
-                const action = citizenData.mixer.clipAction(animationsToUseFinal[idleAnimation]);
-                action.play();
-                citizenData.currentAction = action;
-                console.log('[Scene] Started', idleAnimation, 'animation for', citizenType);
-            } else {
-                console.warn('[Scene] No idle animation found for', citizenType);
-            }
-        } else {
-            console.warn('[Scene] No animations available for', citizenType, '- citizen will be created without animations');
-        }
-        
-        console.log('[Scene] Citizen instance created:', {
-            type: citizenType,
-            name: citizenName,
-            hasAnimations: Object.keys(animationsToUseFinal).length > 0,
-            animationCount: Object.keys(animationsToUseFinal).length
-        });
-        
-        resolve(citizenData);
     }
 
     /**
