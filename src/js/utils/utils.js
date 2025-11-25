@@ -399,8 +399,9 @@ export function makeInfoBuildingText(textContent, isHTMLReset=true) {
  * Append a key/value row to the info panel using a responsive layout
  * @param {string} label
  * @param {string|number} value
+ * @param {string} subtext - Optional gray italic text to display below the value
  */
-export function makeInfoKeyValue(label, value) {
+export function makeInfoKeyValue(label, value, subtext = null) {
     const infoObjectContent = document.querySelector('.info-building__body');
     if(!infoObjectContent) return false;
     const row = document.createElement('div');
@@ -411,6 +412,16 @@ export function makeInfoKeyValue(label, value) {
     const v = document.createElement('div');
     v.className = 'kv-value';
     v.textContent = value !== undefined && value !== null ? String(value) : '';
+    
+    // Add subtext if provided
+    if (subtext) {
+        const sub = document.createElement('div');
+        sub.className = 'kv-subtext';
+        sub.textContent = subtext;
+        sub.style.cssText = 'color: #888; font-size: 11px; font-style: italic; font-weight: 400; margin-top: 2px;';
+        v.appendChild(sub);
+    }
+    
     row.appendChild(k);
     row.appendChild(v);
     infoObjectContent.appendChild(row);

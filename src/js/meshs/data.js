@@ -33,6 +33,7 @@ export const assetsPrices = Object.freeze({
     // Zones
     'grass': { price: 0, category: 'zones', gridSize: 1 },
     'roads': { price: 5, category: 'zones', gridSize: 1 },
+    'terrain': { price: 0, category: 'zones', gridSize: 1 },
 
     // Houses
     'House-Blue': { price: 10, category: 'houses', gridSize: 1 },

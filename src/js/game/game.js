@@ -41,10 +41,12 @@ let services = [];
         // Load all available services
         const { RoadConnectivityService } = await import('./services/RoadConnectivityService.js');
         const { FoodDistributionService } = await import('./services/FoodDistributionService.js');
+        const { WindmillService } = await import('./services/WindmillService.js');
         const { RandomEventsService } = await import('./services/RandomEventsService.js');
         
         services.push(new RoadConnectivityService());
         services.push(new FoodDistributionService()); // Farm > Market > House logic using IndexedDB
+        services.push(new WindmillService()); // Windmill collects from all farms in October
         services.push(new RandomEventsService()); // Événements aléatoires (ouragan, inondation)
         
         console.log('[game.js] Services loaded successfully:', services.length, services.map(s => s.constructor.name));
@@ -123,7 +125,8 @@ function getBuildingDisplayName(buildingId) {
 function translateErrorReason(reason) {
     const translations = {
         'area_not_available': 'Espace non disponible',
-        'insufficient_funds': 'Fonds insuffisants'
+        'insufficient_funds': 'Fonds insuffisants',
+        'building_already_exists': 'Un bâtiment existe déjà à cet emplacement'
     };
     return translations[reason] || reason;
 }
@@ -711,6 +714,30 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     }
                     makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers`);
                 }
+
+                // Display windmill food stocks (collected from all farms in October)
+                if((selectedObject.userData.id.includes('Windmill') || selectedObject.userData.id.includes('windmill')) && Object.hasOwn(houseStocks, 'food')) {
+                    // Get last collection data
+                    const lastCollection = await housesStore.getHouseItem(uniqueId, 'lastCollection');
+                    
+                    makeInfoSection('Stock moulin');
+                    
+                    // Show stocks with last collection amounts
+                    const wheatSubtext = lastCollection?.wheat ? `+${lastCollection.wheat} dernière collecte` : null;
+                    const cabbageSubtext = lastCollection?.cabbage ? `+${lastCollection.cabbage} dernière collecte` : null;
+                    const carrotSubtext = lastCollection?.carrot ? `+${lastCollection.carrot} dernière collecte` : null;
+                    const totalSubtext = lastCollection?.total ? `+${lastCollection.total} dernière collecte` : null;
+                    
+                    makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`, wheatSubtext);
+                    makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`, cabbageSubtext);
+                    makeInfoKeyValue('Autres légumes', `${houseStocks.carrot || 0} paniers`, carrotSubtext);
+                    makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers collectés`, totalSubtext);
+                    
+                    makeInfoSection('Fonctionnement');
+                    makeInfoKeyValue('Collecte', 'Chaque octobre');
+                    makeInfoKeyValue('Source', 'Toutes les fermes du jeu');
+                    makeInfoKeyValue('Condition', 'Accès routier requis');
+                }
             }
            
             // Only pause/resume when using select-object tool
@@ -764,6 +791,15 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
             // Prepare building data for payment validation
             let price = 0
             const houseID = activeToolId + '-' + selectedObject.userData.x + '-' + selectedObject.userData.y
+            
+            // Check if building already exists in database
+            const existingHouse = await housesStore.getHouse(houseID);
+            if (existingHouse) {
+                console.warn('[game.js] Building already exists at this location:', houseID);
+                showGenericErrorNotification(activeToolId, 'building_already_exists');
+                return;
+            }
+            
             const houseStocks = await housesStore.getHouseItem(houseID, 'stocks');
             const houseNeighbors = await housesStore.getHouseItem(houseID, 'neighbors');
             const { roadCount } = checkRoadAccess(houseNeighbors || []);
