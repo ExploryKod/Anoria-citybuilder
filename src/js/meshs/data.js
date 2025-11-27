@@ -26,7 +26,9 @@ export const textures = Object.freeze({
     'harvest': loadTextures(`/resources/textures/status/harvest.png`, true),
     'sell-food': loadTextures(`/resources/textures/status/sell_food.png`, true),
     // Market buying sprite
-    'isBuying': loadTextures(`/resources/textures/status/isBuying.png`, true)
+    'isBuying': loadTextures(`/resources/textures/status/isBuying.png`, true),
+    // Windmill collecting sprite (reuse isBuying icon)
+    'isCollecting': loadTextures(`/resources/textures/status/isBuying.png`, true)
 })
 
 export const assetsPrices = Object.freeze({

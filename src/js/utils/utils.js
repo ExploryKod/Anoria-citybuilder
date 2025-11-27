@@ -376,8 +376,9 @@ export function makeDbItemId(currentBuildingId, x, y) {
  * Function to create a building info text
  * @param {String} textContent - The text content to be displayed in the info building
  * @param {Boolean} isHTMLReset - Whether to reset the current info building text or not
+ * @param {String} customClass - Optional custom CSS class to add to the text element
  */
-export function makeInfoBuildingText(textContent, isHTMLReset=true) {
+export function makeInfoBuildingText(textContent, isHTMLReset=true, customClass=null) {
     const infoObjectContent = document.querySelector('.info-building__body');
     
     if(!infoObjectContent) {
@@ -391,6 +392,9 @@ export function makeInfoBuildingText(textContent, isHTMLReset=true) {
     const buildingText = document.createElement('p');
     buildingText.classList.add('anoria-text');
     buildingText.classList.add('info-building-item');
+    if(customClass) {
+        buildingText.classList.add(customClass);
+    }
     buildingText.textContent = textContent
     infoObjectContent.appendChild(buildingText);
 }

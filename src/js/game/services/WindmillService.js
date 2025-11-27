@@ -28,13 +28,6 @@ export class WindmillService extends SimService {
         const timeInfo = TimeManager.getTimeInfo(time);
         const isOctober = timeInfo.monthIndex === 9;
         
-        if (!isOctober) {
-            // Windmills only collect in October
-            return;
-        }
-
-        console.log('[WindmillService] October detected - windmills collecting from farms');
-
         try {
             // Get all buildings from IndexedDB (source of truth)
             const houses = await housesStore.listAllHouses();
@@ -44,6 +37,22 @@ export class WindmillService extends SimService {
                 const type = house.type || '';
                 return type.includes('Windmill') || type.includes('windmill');
             });
+
+            if (!isOctober) {
+                // Not October - set isCollecting to false for all windmills
+                for (const windmill of windmills) {
+                    const windmillId = windmill.id || windmill.name;
+                    await housesStore.updateHouseFields(windmillId, { isCollecting: false }).catch(err => {
+                        console.warn('[WindmillService] Failed to update windmill isCollecting flag:', {
+                            windmillId,
+                            error: err?.message || err
+                        });
+                    });
+                }
+                return;
+            }
+
+            console.log('[WindmillService] October detected - windmills collecting from farms');
 
             // Find all farms
             const farms = houses.filter(house => {
@@ -110,8 +119,23 @@ export class WindmillService extends SimService {
         if (!hasRoadAccess) {
             // Windmill has no road access - CANNOT collect food from farms
             console.log('[WindmillService] Windmill has no road access, skipping:', windmillId);
+            // Set isCollecting to false (no road access = cannot collect)
+            await housesStore.updateHouseFields(windmillId, { isCollecting: false }).catch(err => {
+                console.warn('[WindmillService] Failed to update windmill isCollecting flag:', {
+                    windmillId,
+                    error: err?.message || err
+                });
+            });
             return;
         }
+
+        // Set isCollecting to true (windmill has road access and it's October)
+        await housesStore.updateHouseFields(windmillId, { isCollecting: true }).catch(err => {
+            console.warn('[WindmillService] Failed to update windmill isCollecting flag:', {
+                windmillId,
+                error: err?.message || err
+            });
+        });
 
         // Collect food from ALL farms (no distance condition)
         await this.collectFoodFromFarms(windmillId, allFarms, housesStore, time);
