@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {  assetsPrices } from '../meshs/data.js';
 import { checkRoadAccess, canHouseEvolveToPurple, canHouseEvolveToPalace, checkFoodAvailability } from './modules/ModuleHelper.js';
+import { getDefaultEmployees } from './modules/EmployeeHelper.js';
 import { firstHouses } from '../ui/nodes.js';
 import { TimeManager } from './utils/TimeManager.js';
 import { createScene } from './scene.js';
@@ -43,11 +44,31 @@ let services = [];
         const { FoodDistributionService } = await import('./services/FoodDistributionService.js');
         const { WindmillService } = await import('./services/WindmillService.js');
         const { RandomEventsService } = await import('./services/RandomEventsService.js');
+        const { EmploymentPriorityService } = await import('./services/EmploymentPriorityService.js');
         
         services.push(new RoadConnectivityService());
         services.push(new FoodDistributionService()); // Farm > Market > House logic using IndexedDB
         services.push(new WindmillService()); // Windmill collects from all farms in October
         services.push(new RandomEventsService()); // Événements aléatoires (ouragan, inondation)
+        
+        // Employment Priority Service - updates building priorities based on user settings
+        const employmentPriorityService = new EmploymentPriorityService();
+        services.push(employmentPriorityService);
+        
+        // Make service available to work section manager
+        if (window.workSectionManager) {
+            window.workSectionManager.setPriorityService(employmentPriorityService);
+        } else {
+            // If work section manager isn't initialized yet, set it when it becomes available
+            const checkWorkSection = setInterval(() => {
+                if (window.workSectionManager) {
+                    window.workSectionManager.setPriorityService(employmentPriorityService);
+                    clearInterval(checkWorkSection);
+                }
+            }, 100);
+            // Stop checking after 5 seconds
+            setTimeout(() => clearInterval(checkWorkSection), 5000);
+        }
         
         console.log('[game.js] Services loaded successfully:', services.length, services.map(s => s.constructor.name));
     } catch (err) {
@@ -371,6 +392,8 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
     let isOver;
     let infos = {};
     let intervalId = null;
+    // Track pending building placements to prevent race conditions from rapid clicks
+    const pendingPlacements = new Set();
     // Set initial speed within limits (500ms - 20,000ms)
     localStorage.setItem("speed", "4000");
     
@@ -717,6 +740,15 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
 
                 // Display windmill food stocks (collected from all farms in October)
                 if((selectedObject.userData.id.includes('Windmill') || selectedObject.userData.id.includes('windmill')) && Object.hasOwn(houseStocks, 'food')) {
+                    // Check if windmill has road access
+                    const windmillRoads = houseRoads || 0;
+                    const hasRoadAccess = windmillRoads > 0;
+                    
+                    // Show warning if no road access
+                    if (!hasRoadAccess) {
+                        makeInfoBuildingText('⚠️ Sans route le moulin ne peut stocker', false, 'warning-message');
+                    }
+                    
                     // Get last collection data
                     const lastCollection = await housesStore.getHouseItem(uniqueId, 'lastCollection');
                     
@@ -792,51 +824,77 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
             let price = 0
             const houseID = activeToolId + '-' + selectedObject.userData.x + '-' + selectedObject.userData.y
             
-            // Check if building already exists in database
-            const existingHouse = await housesStore.getHouse(houseID);
-            if (existingHouse) {
-                console.warn('[game.js] Building already exists at this location:', houseID);
-                showGenericErrorNotification(activeToolId, 'building_already_exists');
+            // Check if this building is already being placed (prevent rapid duplicate clicks)
+            if (pendingPlacements.has(houseID)) {
+                console.warn('[game.js] Building placement already in progress:', houseID);
                 return;
             }
             
-            const houseStocks = await housesStore.getHouseItem(houseID, 'stocks');
-            const houseNeighbors = await housesStore.getHouseItem(houseID, 'neighbors');
-            const { roadCount } = checkRoadAccess(houseNeighbors || []);
-            const HouseRoads  = { roads: roadCount };
-            price = getAssetPrice(activeToolId, assetsPrices) || 0
+            // Mark as pending
+            pendingPlacements.add(houseID);
             
-            // Get funds from BudgetManager instead of game table
-            let funds = 0;
-            if (window.budgetManager) {
-                const budgetData = await window.budgetManager.getCurrentBudget();
-                funds = budgetData.funds;
-            }
+            // Set timeout to clear pending (safety mechanism - 10 seconds)
+            setTimeout(() => {
+                if (pendingPlacements.has(houseID)) {
+                    console.warn('[game.js] Clearing stuck pending placement for:', houseID);
+                    pendingPlacements.delete(houseID);
+                }
+            }, 10000);
             
-            const dbHouseData = {
-                name: houseID,
-                type: activeToolId,
-                neighbors: [],
-                pop: 0,
-                stocks : houseStocks ? houseStocks : {food: 0, cabbage : 0, wheat: 0, carrot: 0},
-                gameTurn: time,
-                time: 0,
-                isBuilding: true,
-                roads:  HouseRoads.roads ?? 0,
-                stage : 0,
-                stageName: "",
-                price : price ? price : 0,
-                cityFunds: funds,
-                maintenance: 0,
-                worldTime: 0,
-                x : selectedObject.userData.x,
-                y : selectedObject.userData.y,
-            }
+            try {
+                // Check if building already exists in database
+                const existingHouse = await housesStore.getHouse(houseID);
+                if (existingHouse) {
+                    console.warn('[game.js] Building already exists at this location:', houseID);
+                    showGenericErrorNotification(activeToolId, 'building_already_exists');
+                    return;
+                }
+            
+                const houseStocks = await housesStore.getHouseItem(houseID, 'stocks');
+                const houseNeighbors = await housesStore.getHouseItem(houseID, 'neighbors');
+                const { roadCount } = checkRoadAccess(houseNeighbors || []);
+                const HouseRoads  = { roads: roadCount };
+                price = getAssetPrice(activeToolId, assetsPrices) || 0
+                
+                // Get funds from BudgetManager instead of game table
+                let funds = 0;
+                if (window.budgetManager) {
+                    const budgetData = await window.budgetManager.getCurrentBudget();
+                    funds = budgetData.funds;
+                }
+                
+                const dbHouseData = {
+                    name: houseID,
+                    type: activeToolId,
+                    neighbors: [],
+                    pop: 0,
+                    stocks : houseStocks ? houseStocks : {food: 0, cabbage : 0, wheat: 0, carrot: 0},
+                    gameTurn: time,
+                    time: 0,
+                    isBuilding: true,
+                    roads:  HouseRoads.roads ?? 0,
+                    stage : 0,
+                    stageName: "",
+                    price : price ? price : 0,
+                    cityFunds: funds,
+                    maintenance: 0,
+                    worldTime: 0,
+                    x : selectedObject.userData.x,
+                    y : selectedObject.userData.y,
+                    employees: getDefaultEmployees(activeToolId)
+                }
 
-            // Validate payment BEFORE placing building
-            const paymentResult = await housesStore.addHouseAndPay(dbHouseData);
-            
-            if (paymentResult.success) {
+                // Validate payment BEFORE placing building
+                const paymentResult = await housesStore.addHouseAndPay(dbHouseData);
+                
+                // Handle duplicate building error gracefully
+                if (!paymentResult.success && paymentResult.reason === 'duplicate') {
+                    console.warn('[game.js] Building already exists, skipping placement:', houseID);
+                    showGenericErrorNotification(activeToolId, 'building_already_exists');
+                    return;
+                }
+                
+                if (paymentResult.success) {
                 // Payment successful - place building visually
                 // Mark all tiles as occupied by this building
                 for (let dx = 0; dx < gridSize; dx++) {
@@ -878,16 +936,20 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 if (window.game) {
                     window.game.play();
                 }
-            } else {
-                // Payment failed - show error message
-                // Show beautiful popup notification
-                if (paymentResult.reason === 'insufficient_funds') {
-                    showInsufficientFundsNotification(activeToolId, price);
+                } else {
+                    // Payment failed - show error message
+                    // Show beautiful popup notification
+                    if (paymentResult.reason === 'insufficient_funds') {
+                        showInsufficientFundsNotification(activeToolId, price);
                 } else {
                     showGenericErrorNotification(activeToolId, paymentResult.reason);
                 }
                 
                 // Building is not placed visually, so no cleanup needed
+                }
+            } finally {
+                // Always clear pending placement, even if there was an error
+                pendingPlacements.delete(houseID);
             }
         }
     }

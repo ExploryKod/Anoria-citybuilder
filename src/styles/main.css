@@ -1252,6 +1252,18 @@ footer a:hover {
     text-align: left;
 }
 
+/* Warning message style */
+.info-building-item.warning-message {
+    background-color: #fff3cd;
+    border-left: 4px solid var(--warning);
+    padding: 10px 12px;
+    margin: 8px 0;
+    border-radius: 4px;
+    color: #856404;
+    font-weight: 600;
+    font-size: 13px;
+}
+
 /* Section title */
 .info-section-title {
     margin: 8px 2px 2px 2px;

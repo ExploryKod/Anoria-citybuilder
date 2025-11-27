@@ -24,6 +24,7 @@ import {
 import {assetsPrices} from "../meshs/data.js";
 import { checkRoadAccess, checkFoodAvailability, canHouseEvolveToPalace, canHouseEvolveToPurple } from './modules/ModuleHelper.js';
 import { setRoadAccessIcon } from './modules/StatusIconHelper.js';
+import { getDefaultEmployees } from './modules/EmployeeHelper.js';
 import { TimeManager } from './utils/TimeManager.js';
 import config from './config.js';
 
@@ -600,12 +601,73 @@ export function createScene(housesStore, gameStore, assetManager) {
                     const currentUserData = buildings[x][y].userData
                     // Building userData processing
                     await housesStore.updateHouseFields(currentUniqueID, {})
+                    
+                    // Migration: Add employees object to existing buildings if missing, or migrate old structure
+                    const buildingData = await housesStore.getHouse(currentUniqueID);
+                    if (buildingData) {
+                        if (!buildingData.employees) {
+                            // No employees object - create new one
+                            const defaultEmployees = getDefaultEmployees(currentBuildingId);
+                            await housesStore.updateHouseFields(currentUniqueID, { employees: defaultEmployees });
+                        } else {
+                            // Migrate old structure to new structure
+                            const employees = buildingData.employees;
+                            const needsUpdate = 
+                                employees.category !== undefined || // Old: category -> new: sector
+                                employees.worker_need === undefined || // Missing worker_need
+                                employees.elite_need === undefined; // Missing elite_need
+                            
+                            if (needsUpdate) {
+                                const defaultEmployees = getDefaultEmployees(currentBuildingId);
+                                const migratedEmployees = {
+                                    priority: employees.priority !== undefined ? employees.priority : defaultEmployees.priority,
+                                    worker_need: defaultEmployees.worker_need, // From config
+                                    elite_need: defaultEmployees.elite_need, // From config
+                                    worker: employees.worker || 0,
+                                    elite: employees.elite || 0,
+                                    sector: employees.category !== undefined ? employees.category : (employees.sector || defaultEmployees.sector),
+                                    salary: employees.salary || 0
+                                };
+                                await housesStore.updateHouseFields(currentUniqueID, { employees: migratedEmployees });
+                            }
+                        }
+                    }
                 } else {
                     // Pour les routes, on essaie de mettre à jour mais on ne bloque pas si ça échoue
                     try {
                         await housesStore.updateHouseFields(currentUniqueID, {worldTime: time})
                         const currentUserData = buildings[x][y].userData
                         await housesStore.updateHouseFields(currentUniqueID, {})
+                        
+                        // Migration: Add employees object to roads if missing, or migrate old structure
+                        const roadData = await housesStore.getHouse(currentUniqueID);
+                        if (roadData) {
+                            if (!roadData.employees) {
+                                const defaultEmployees = getDefaultEmployees(currentBuildingId);
+                                await housesStore.updateHouseFields(currentUniqueID, { employees: defaultEmployees });
+                            } else {
+                                // Migrate old structure to new structure
+                                const employees = roadData.employees;
+                                const needsUpdate = 
+                                    employees.category !== undefined ||
+                                    employees.worker_need === undefined ||
+                                    employees.elite_need === undefined;
+                                
+                                if (needsUpdate) {
+                                    const defaultEmployees = getDefaultEmployees(currentBuildingId);
+                                    const migratedEmployees = {
+                                        priority: employees.priority !== undefined ? employees.priority : defaultEmployees.priority,
+                                        worker_need: defaultEmployees.worker_need,
+                                        elite_need: defaultEmployees.elite_need,
+                                        worker: employees.worker || 0,
+                                        elite: employees.elite || 0,
+                                        sector: employees.category !== undefined ? employees.category : (employees.sector || defaultEmployees.sector),
+                                        salary: employees.salary || 0
+                                    };
+                                    await housesStore.updateHouseFields(currentUniqueID, { employees: migratedEmployees });
+                                }
+                            }
+                        }
                     } catch (err) {
                         // Route peut ne pas exister encore dans la DB, c'est normal lors de la création
                         // On continue quand même pour permettre l'affichage visuel
@@ -837,6 +899,82 @@ export function createScene(housesStore, gameStore, assetManager) {
                     // - House food distribution
                     // - Market stock decreases after distribution
                     // All using IndexedDB as source of truth
+                }
+
+                // Process windmills: show road access and collecting status sprites
+                if((currentBuildingId.includes('Windmill') || currentBuildingId.includes('windmill')) && buildings[x][y]) {
+                    // Check road access for windmills (using module helper, DB remains source of truth)
+                    const windmillNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
+                    
+                    // Adjust icon scale for windmills (similar to markets)
+                    const windmillRoadScale = {
+                        x: statutsIconsMeta.road.scale.x * 0.714,
+                        y: statutsIconsMeta.road.scale.y * 0.714,
+                        z: statutsIconsMeta.road.scale.z * 0.714
+                    };
+
+                    if (windmillNeighbors && buildings[x][y]) {
+                        const { hasAccess, roadCount } = checkRoadAccess(windmillNeighbors);
+                        await housesStore.updateHouseFields(currentUniqueID, { roads: roadCount });
+
+                        setRoadAccessIcon({
+                            assetManager,
+                            mesh: buildings[x][y],
+                            textures,
+                            position: statutsIconsMeta.road.position,
+                            scale: windmillRoadScale,
+                            hasAccess
+                        });
+                    } else if (buildings[x][y]) {
+                        // No neighbors → treat as no road access
+                        setRoadAccessIcon({
+                            assetManager,
+                            mesh: buildings[x][y],
+                            textures,
+                            position: statutsIconsMeta.road.position,
+                            scale: windmillRoadScale,
+                            hasAccess: false
+                        });
+                    }
+
+                    // Display collecting icon during October (when windmills collect from farms)
+                    // Show green collecting icon if windmill is collecting (isCollecting === true)
+                    if (buildings[x][y]) {
+                        const isCollecting = await housesStore.getHouseItem(currentUniqueID, 'isCollecting');
+                        
+                        // Show/hide collecting icon based on collecting status
+                        if (isCollecting === true) {
+                            // Windmill is collecting food - show green collecting icon
+                            const collectingMeta = {
+                                position: {x: -0.5, y: 0.5, z: 0},
+                                scale: {x: 0.6, y: 0.6, z: 1},
+                                spriteColor: 0x00FF00, // Green color
+                                backgroundColor: 0xFFFFFF // White background
+                            };
+                            assetManager.setStatusSprite(
+                                buildings[x][y],
+                                textures['isCollecting'],
+                                'isCollecting',
+                                collectingMeta.scale,
+                                collectingMeta.position,
+                                true,
+                                collectingMeta.spriteColor,
+                                collectingMeta.backgroundColor
+                            );
+                        } else {
+                            // Not collecting - hide collecting icon
+                            assetManager.setStatusSprite(
+                                buildings[x][y],
+                                textures['isCollecting'],
+                                'isCollecting',
+                                {x: 0.6, y: 0.6, z: 1},
+                                {x: -0.5, y: 0.5, z: 0},
+                                false,
+                                null,
+                                null
+                            );
+                        }
+                    }
                 }
 
                 // Process farms: show season-specific sprites and manage harvest stocks
