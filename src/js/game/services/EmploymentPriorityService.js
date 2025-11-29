@@ -15,6 +15,20 @@ export class EmploymentPriorityService extends SimService {
      * Storage key for employment priorities
      */
     PRIORITIES_STORAGE_KEY = 'employment_priorities';
+    
+    /**
+     * HousesStore reference (set during initialization)
+     * @type {HousesStore|null}
+     */
+    housesStore = null;
+    
+    /**
+     * Set housesStore reference for immediate updates
+     * @param {HousesStore} housesStore - Database store
+     */
+    setHousesStore(housesStore) {
+        this.housesStore = housesStore;
+    }
 
     /**
      * Processes employment priority updates city-wide
@@ -125,8 +139,9 @@ export class EmploymentPriorityService extends SimService {
      * When a priority is changed, it swaps with the sector that had the old priority
      * @param {number} sector - Sector number
      * @param {number} newPriority - New priority value (1 to max sectors)
+     * @param {HousesStore} housesStore - Database store (optional, for immediate updates)
      */
-    updateSectorPriority(sector, newPriority) {
+    async updateSectorPriority(sector, newPriority, housesStore = null) {
         const priorities = this.getUserPriorities();
         // Get max sectors directly from config (source of truth)
         const maxSectors = config.employment?.maxSectors || 6;
@@ -139,7 +154,7 @@ export class EmploymentPriorityService extends SimService {
         
         // If priority hasn't changed, do nothing
         if (currentPriority === clampedPriority) {
-            return;
+            return; // No change needed
         }
         
         // Find which sector currently has the new priority (if any)
@@ -175,6 +190,102 @@ export class EmploymentPriorityService extends SimService {
         
         console.log('[EmploymentPriorityService] Updated priority for sector', sector, 'to', clampedPriority, 
                    sectorWithNewPriority !== null ? `(swapped with sector ${sectorWithNewPriority})` : '');
+        
+        // Immediately update all buildings with the new priority (don't wait for next turn)
+        await this.updateBuildingsImmediately(sector, clampedPriority, sectorWithNewPriority, currentPriority, housesStore);
+    }
+    
+    /**
+     * Immediately update all buildings' priorities when sector priority changes
+     * This ensures buildings are updated right away, not waiting for next game turn
+     * @param {number} changedSector - Sector that had its priority changed
+     * @param {number} newPriority - New priority value
+     * @param {number|null} swappedSector - Sector that was swapped (if any)
+     * @param {number} oldPriority - Old priority value (for swapped sector)
+     * @param {HousesStore} housesStore - Database store (optional, will try to get from window if not provided)
+     */
+    async updateBuildingsImmediately(changedSector, newPriority, swappedSector, oldPriority, housesStore = null) {
+        try {
+            // Get housesStore from parameter, instance variable, window, or app registry
+            if (!housesStore) {
+                housesStore = this.housesStore;
+            }
+            
+            if (!housesStore) {
+                if (window.app && window.app.housesStore) {
+                    housesStore = window.app.housesStore;
+                } else if (window.housesStore) {
+                    housesStore = window.housesStore;
+                } else if (window.game && window.game.housesStore) {
+                    housesStore = window.game.housesStore;
+                } else {
+                    console.warn('[EmploymentPriorityService] Cannot update buildings immediately: housesStore not available');
+                    return;
+                }
+            }
+            
+            // Get all buildings from IndexedDB
+            const houses = await housesStore.listAllHouses();
+            const updatePromises = [];
+            
+            for (const house of houses) {
+                if (!house.employees) continue;
+                
+                const buildingSector = house.employees.sector || 0;
+                
+                // Skip residential buildings (sector 0)
+                if (buildingSector === 0) continue;
+                
+                // Update building if it matches the changed sector
+                if (buildingSector === changedSector && house.employees.priority !== newPriority) {
+                    updatePromises.push(
+                        housesStore.updateHouseFields(house.name, {
+                            employees: {
+                                ...house.employees,
+                                priority: newPriority
+                            }
+                        }).catch(err => {
+                            console.warn('[EmploymentPriorityService] Failed to update building priority:', {
+                                buildingId: house.name,
+                                sector: buildingSector,
+                                error: err?.message || err
+                            });
+                        })
+                    );
+                }
+                
+                // Update building if it matches the swapped sector
+                if (swappedSector !== null && buildingSector === swappedSector && house.employees.priority !== oldPriority) {
+                    updatePromises.push(
+                        housesStore.updateHouseFields(house.name, {
+                            employees: {
+                                ...house.employees,
+                                priority: oldPriority
+                            }
+                        }).catch(err => {
+                            console.warn('[EmploymentPriorityService] Failed to update swapped building priority:', {
+                                buildingId: house.name,
+                                sector: buildingSector,
+                                error: err?.message || err
+                            });
+                        })
+                    );
+                }
+            }
+            
+            // Wait for all updates to complete
+            await Promise.allSettled(updatePromises);
+            
+            if (updatePromises.length > 0) {
+                console.log('[EmploymentPriorityService] Immediately updated priorities for', updatePromises.length, 'buildings');
+            }
+        } catch (error) {
+            console.error('[EmploymentPriorityService] Error updating buildings immediately:', {
+                error: error?.message || error,
+                changedSector,
+                newPriority
+            });
+        }
     }
 
     /**

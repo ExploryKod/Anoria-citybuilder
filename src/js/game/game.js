@@ -53,6 +53,8 @@ let services = [];
         
         // Employment Priority Service - updates building priorities based on user settings
         const employmentPriorityService = new EmploymentPriorityService();
+        // Set housesStore reference for immediate building updates
+        employmentPriorityService.setHousesStore(housesStore);
         services.push(employmentPriorityService);
         
         // Make service available to work section manager

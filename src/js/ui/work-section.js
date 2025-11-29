@@ -129,10 +129,24 @@ class WorkSectionManager {
             
             // Update priority in the service (which handles swapping)
             if (this.employmentPriorityService) {
+                // Get housesStore for immediate building updates
+                let housesStore = null;
+                if (window.app && window.app.housesStore) {
+                    housesStore = window.app.housesStore;
+                } else if (window.housesStore) {
+                    housesStore = window.housesStore;
+                } else if (window.game && window.game.housesStore) {
+                    housesStore = window.game.housesStore;
+                }
+                
+                // Update priority and immediately update all buildings
                 this.employmentPriorityService.updateSectorPriority(
                     sectorData.sectorNumber, 
-                    clampedPriority
-                );
+                    clampedPriority,
+                    housesStore
+                ).catch(err => {
+                    console.warn('[WorkSection] Error updating sector priority:', err);
+                });
                 
                 // Reload priorities to reflect swaps
                 const allPriorities = this.employmentPriorityService.getAllPriorities();
