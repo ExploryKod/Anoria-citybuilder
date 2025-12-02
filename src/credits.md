@@ -95,3 +95,6 @@ Url website of the author: https://github.com/danielbayley
 
 # employed
 <a href="https://www.freepik.com/icon/user_16702003#fromView=resource_detail&position=4">Icon by meaicon</a>
+
+# unemployed
+<a href="https://fr.freepik.com/icone/pas-travail_6980489">Icône de Freepik</a>

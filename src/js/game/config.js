@@ -97,7 +97,7 @@ const config = {
             'Farm-Wheat': { worker_need: 3, elite_need: 0 },
             'Farm-Carrot': { worker_need: 3, elite_need: 0 },
             'Farm-Cabbage': { worker_need: 3, elite_need: 0 },
-            'Windmill-001': { worker_need: 2, elite_need: 1 },
+            'Windmill-001': { worker_need: 4, elite_need: 2 },
             // Commerces
             'Market-Stall': { worker_need: 2, elite_need: 1 },
             // Industries

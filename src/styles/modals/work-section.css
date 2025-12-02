@@ -135,6 +135,71 @@
     color: var(--success);
 }
 
+/* Detail containers and tooltips */
+.work-need-container,
+.work-have-container {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+}
+
+.work-detail-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    background: #333;
+    color: white;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.work-detail-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #333;
+}
+
+.work-need-container:hover .work-detail-tooltip,
+.work-have-container:hover .work-detail-tooltip {
+    opacity: 1;
+}
+
+.work-detail-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 2px 0;
+}
+
+.work-detail-item:not(:last-child) {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 4px;
+    margin-bottom: 4px;
+}
+
+.work-detail-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 400;
+}
+
+.work-detail-value {
+    color: white;
+    font-weight: 600;
+}
+
 .work-summary {
     display: flex;
     gap: 30px;

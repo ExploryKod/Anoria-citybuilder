@@ -135,7 +135,88 @@ export class EmploymentPriorityService extends SimService {
     }
 
     /**
-     * Update priority for a specific sector with Caesar 3-style swapping
+     * Update priority for a specific sector with Caesar 3-style swapping (synchronous version)
+     * When a priority is changed, it swaps with the sector that had the old priority
+     * This only updates localStorage - IndexedDB updates happen in the game loop
+     * @param {number} sector - Sector number
+     * @param {number} newPriority - New priority value (1 to max sectors)
+     */
+    updateSectorPrioritySync(sector, newPriority) {
+        const priorities = this.getUserPriorities();
+        // Get max sectors directly from config (source of truth)
+        const maxSectors = config.employment?.maxSectors || 6;
+        
+        // Clamp priority to valid range (1 to max sectors)
+        const clampedPriority = Math.max(1, Math.min(maxSectors, newPriority));
+        
+        // Get current priority for this sector
+        const currentPriority = priorities[sector] !== undefined 
+            ? priorities[sector] 
+            : (config.employment?.defaultPriorities?.[sector] || 1);
+        
+        console.log(`[EmploymentPriorityService] updateSectorPrioritySync: Sector ${sector}, newPriority=${newPriority}, clamped=${clampedPriority}, current=${currentPriority}`);
+        
+        // If priority hasn't changed, do nothing
+        if (currentPriority === clampedPriority) {
+            console.log('[EmploymentPriorityService] No change - priority already', clampedPriority);
+            return; // No change needed
+        }
+        
+        // Find which sector currently has the new priority (if any)
+        // We need to check both user priorities and default priorities
+        let sectorWithNewPriority = null;
+        const defaultPriorities = config.employment?.defaultPriorities || {};
+        const sectors = config.employment?.sectors || {};
+        
+        console.log('[EmploymentPriorityService] Searching for sector with priority', clampedPriority);
+        console.log('[EmploymentPriorityService] User priorities:', priorities);
+        console.log('[EmploymentPriorityService] Default priorities:', defaultPriorities);
+        
+        // Check all sectors to find which one currently has the new priority
+        for (const [secNumStr, sectorName] of Object.entries(sectors)) {
+            const secNum = parseInt(secNumStr, 10);
+            if (secNum === sector) continue; // Skip the sector being changed
+            
+            // Get current priority for this sector (user priority or default)
+            const currentSecPriority = priorities[secNum] !== undefined 
+                ? priorities[secNum] 
+                : (defaultPriorities[secNum] || 1);
+            
+            console.log(`[EmploymentPriorityService] Sector ${secNum} (${sectorName}): priority=${currentSecPriority}`);
+            
+            // If this sector has the priority we're trying to assign, it's the one to swap with
+            if (currentSecPriority === clampedPriority) {
+                sectorWithNewPriority = secNum;
+                console.log(`[EmploymentPriorityService] ✓ FOUND! Sector ${secNum} has priority ${clampedPriority} - will swap`);
+                break;
+            }
+        }
+        
+        // Swap priorities: this sector gets new priority, other sector gets old priority
+        priorities[sector] = clampedPriority;
+        if (sectorWithNewPriority !== null) {
+            priorities[sectorWithNewPriority] = currentPriority;
+            console.log('[EmploymentPriorityService] ✓ SWAPPING:', {
+                sector1: sector,
+                oldPriority1: currentPriority,
+                newPriority1: clampedPriority,
+                sector2: sectorWithNewPriority,
+                oldPriority2: clampedPriority,
+                newPriority2: currentPriority
+            });
+        } else {
+            console.log('[EmploymentPriorityService] ✗ NO SWAP - no other sector has priority', clampedPriority);
+        }
+        
+        this.saveUserPriorities(priorities);
+        console.log('[EmploymentPriorityService] Saved to localStorage:', priorities);
+        
+        console.log('[EmploymentPriorityService] Final: Sector', sector, currentPriority, '→', clampedPriority, 
+                   sectorWithNewPriority !== null ? `| Sector ${sectorWithNewPriority}: ${clampedPriority} → ${currentPriority}` : '');
+    }
+    
+    /**
+     * Update priority for a specific sector with Caesar 3-style swapping (async version with IndexedDB update)
      * When a priority is changed, it swaps with the sector that had the old priority
      * @param {number} sector - Sector number
      * @param {number} newPriority - New priority value (1 to max sectors)
@@ -158,25 +239,25 @@ export class EmploymentPriorityService extends SimService {
         }
         
         // Find which sector currently has the new priority (if any)
+        // We need to check both user priorities and default priorities
         let sectorWithNewPriority = null;
-        for (const [secNum, secPriority] of Object.entries(priorities)) {
-            if (parseInt(secNum, 10) !== sector && secPriority === clampedPriority) {
-                sectorWithNewPriority = parseInt(secNum, 10);
-                break;
-            }
-        }
+        const defaultPriorities = config.employment?.defaultPriorities || {};
+        const sectors = config.employment?.sectors || {};
         
-        // If no sector has the new priority, check defaults
-        if (!sectorWithNewPriority) {
-            const defaultPriorities = config.employment?.defaultPriorities || {};
-            for (const [secNum, secPriority] of Object.entries(defaultPriorities)) {
-                const sec = parseInt(secNum, 10);
-                if (sec !== sector && 
-                    secPriority === clampedPriority && 
-                    priorities[sec] === undefined) {
-                    sectorWithNewPriority = sec;
-                    break;
-                }
+        // Check all sectors to find which one currently has the new priority
+        for (const [secNumStr, sectorName] of Object.entries(sectors)) {
+            const secNum = parseInt(secNumStr, 10);
+            if (secNum === sector) continue; // Skip the sector being changed
+            
+            // Get current priority for this sector (user priority or default)
+            const currentSecPriority = priorities[secNum] !== undefined 
+                ? priorities[secNum] 
+                : (defaultPriorities[secNum] || 1);
+            
+            // If this sector has the priority we're trying to assign, it's the one to swap with
+            if (currentSecPriority === clampedPriority) {
+                sectorWithNewPriority = secNum;
+                break;
             }
         }
         
@@ -184,12 +265,20 @@ export class EmploymentPriorityService extends SimService {
         priorities[sector] = clampedPriority;
         if (sectorWithNewPriority !== null) {
             priorities[sectorWithNewPriority] = currentPriority;
+            console.log('[EmploymentPriorityService] Swapping priorities:', {
+                sector1: sector,
+                newPriority1: clampedPriority,
+                sector2: sectorWithNewPriority,
+                newPriority2: currentPriority
+            });
+        } else {
+            console.log('[EmploymentPriorityService] No swap needed - no other sector has priority', clampedPriority);
         }
         
         this.saveUserPriorities(priorities);
         
-        console.log('[EmploymentPriorityService] Updated priority for sector', sector, 'to', clampedPriority, 
-                   sectorWithNewPriority !== null ? `(swapped with sector ${sectorWithNewPriority})` : '');
+        console.log('[EmploymentPriorityService] Updated priority for sector', sector, 'from', currentPriority, 'to', clampedPriority, 
+                   sectorWithNewPriority !== null ? `(swapped with sector ${sectorWithNewPriority} which now has ${currentPriority})` : '');
         
         // Immediately update all buildings with the new priority (don't wait for next turn)
         await this.updateBuildingsImmediately(sector, clampedPriority, sectorWithNewPriority, currentPriority, housesStore);
