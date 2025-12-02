@@ -4,6 +4,44 @@ import budgetManager from './BudgetManager.js';
 class HouseStore {
     constructor() {
         this.db = db;
+        // Track pending building additions to prevent race conditions
+        this.pendingAdditions = new Set();
+        // Track timeouts for pending additions (safety mechanism)
+        this.pendingTimeouts = new Map();
+    }
+    
+    /**
+     * Clear a pending addition after a timeout (safety mechanism)
+     * @param {string} houseName - Name of the house
+     * @param {number} timeoutMs - Timeout in milliseconds (default: 5000ms)
+     */
+    _setPendingTimeout(houseName, timeoutMs = 5000) {
+        // Clear any existing timeout for this house
+        if (this.pendingTimeouts.has(houseName)) {
+            clearTimeout(this.pendingTimeouts.get(houseName));
+        }
+        
+        // Set new timeout
+        const timeout = setTimeout(() => {
+            if (this.pendingAdditions.has(houseName)) {
+                console.warn(`[HousesStore] Clearing stuck pending addition for ${houseName} after timeout`);
+                this.pendingAdditions.delete(houseName);
+                this.pendingTimeouts.delete(houseName);
+            }
+        }, timeoutMs);
+        
+        this.pendingTimeouts.set(houseName, timeout);
+    }
+    
+    /**
+     * Clear pending timeout for a house
+     * @param {string} houseName - Name of the house
+     */
+    _clearPendingTimeout(houseName) {
+        if (this.pendingTimeouts.has(houseName)) {
+            clearTimeout(this.pendingTimeouts.get(houseName));
+            this.pendingTimeouts.delete(houseName);
+        }
     }
 
     async listAllHouses() {
@@ -135,16 +173,73 @@ class HouseStore {
     }
 
     async addHouse(data) {
+        const houseName = data.name;
+        
+        // Check if this house is already being added (prevent race conditions)
+        if (this.pendingAdditions.has(houseName)) {
+            console.warn(`[HousesStore] House ${houseName} is already being added, skipping duplicate request`);
+            return { success: false, error: 'Building is already being added.', reason: 'duplicate' };
+        }
+        
+        // Mark as pending and set safety timeout
+        this.pendingAdditions.add(houseName);
+        this._setPendingTimeout(houseName, 5000); // 5 second timeout
+        
         try {
+            // Check if house already exists before attempting to add
+            const existingHouse = await this.db.houses.get(houseName);
+            if (existingHouse) {
+                console.warn(`[HousesStore] House ${houseName} already exists, skipping add`);
+                this.pendingAdditions.delete(houseName);
+                this._clearPendingTimeout(houseName);
+                return { success: false, error: 'Key already exists in the object store.', reason: 'duplicate' };
+            }
+            
             await this.db.houses.add(data);
+            this.pendingAdditions.delete(houseName);
+            this._clearPendingTimeout(houseName);
             return { success: true };
         } catch (err) {
-            console.error(`Error adding house: ${err.message}`);
+            // Always remove from pending, even on error
+            this.pendingAdditions.delete(houseName);
+            this._clearPendingTimeout(houseName);
+            
+            // Handle ConstraintError specifically (duplicate key)
+            if (err.name === 'ConstraintError' || err.message.includes('Key already exists')) {
+                console.warn(`[HousesStore] House ${houseName} already exists (ConstraintError)`);
+                return { success: false, error: 'Key already exists in the object store.', reason: 'duplicate' };
+            }
+            console.error(`[HousesStore] Error adding house: ${err.message}`);
             return { success: false, error: err.message };
         }
     }
 
     async addHouseAndPay(data) {
+        const houseName = data.name;
+        
+        // Check if this house is already being added (prevent race conditions)
+        if (this.pendingAdditions.has(houseName)) {
+            console.warn(`[HousesStore] House ${houseName} is already being added, skipping duplicate request`);
+            return { 
+                success: false, 
+                reason: 'duplicate', 
+                error: 'Building is already being added',
+                message: 'Building is already being added. Please wait.'
+            };
+        }
+        
+        // Check if house already exists BEFORE processing payment
+        const existingHouse = await this.getHouse(houseName);
+        if (existingHouse) {
+            console.warn(`[HousesStore] Cannot add house ${houseName}: already exists`);
+            return { 
+                success: false, 
+                reason: 'duplicate', 
+                error: 'Building already exists at this location',
+                message: 'Building already exists at this location'
+            };
+        }
+
         // Use the new BudgetManager for proper financial handling
         const expenseResult = await budgetManager.addExpense(data.price, `Building: ${data.type}`);
         
@@ -156,8 +251,21 @@ class HouseStore {
         const addHouseResult = await this.addHouse(data);
         
         if (!addHouseResult.success) {
-            console.error('Error adding house after payment:', addHouseResult.error);
-            // If house creation fails, we should refund the expense
+            console.error('[HousesStore] Error adding house after payment:', addHouseResult.error);
+            
+            // If it's a duplicate error, we already checked, so this shouldn't happen
+            // But if it does, refund the expense
+            if (addHouseResult.reason === 'duplicate') {
+                await budgetManager.addIncome(data.price, `Refund for duplicate ${data.type}`);
+                return { 
+                    success: false, 
+                    reason: 'duplicate', 
+                    error: 'Building already exists at this location',
+                    message: 'Building already exists at this location'
+                };
+            }
+            
+            // For other errors, refund the expense
             await budgetManager.addIncome(data.price, `Refund for failed ${data.type}`);
             return { success: false, reason: 'database_error', error: addHouseResult.error };
         }

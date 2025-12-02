@@ -1,0 +1,549 @@
+/* Commerce Section - Goods Trading Management */
+
+.commerce-board {
+    background: #fafafa;
+    border-radius: var(--border-radius-small);
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: left;
+}
+
+.commerce-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--cta);
+}
+
+.commerce-header-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--cta);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.commerce-header-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--primary);
+    margin: 0;
+    text-align: left;
+}
+
+.commerce-goods-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.commerce-good-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px;
+    background: white;
+    border-radius: var(--border-radius-small);
+    border-left: 4px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.commerce-good-item:hover {
+    background: rgba(251, 129, 34, 0.05);
+    border-left-color: var(--cta);
+}
+
+.commerce-good-item.active {
+    background: rgba(251, 129, 34, 0.1);
+    border-left-color: var(--cta);
+    border-color: var(--cta);
+}
+
+.commerce-good-item.dominant {
+    border-left-color: var(--success);
+}
+
+.commerce-good-item.normal {
+    border-left-color: #ccc;
+}
+
+.commerce-good-item.few {
+    border-left-color: var(--warning);
+}
+
+.commerce-good-item.inferior {
+    border-left-color: var(--danger);
+}
+
+.commerce-good-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary);
+    min-width: 150px;
+    text-align: left;
+}
+
+.commerce-good-name.dominant {
+    color: var(--success);
+}
+
+.commerce-good-name.few {
+    color: var(--warning);
+}
+
+.commerce-good-name.inferior {
+    color: var(--danger);
+}
+
+.commerce-good-prices {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex: 1;
+    flex-wrap: wrap;
+}
+
+.commerce-price-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 80px;
+}
+
+.commerce-price-label {
+    font-size: 11px;
+    color: var(--primary);
+    opacity: 0.7;
+    text-transform: uppercase;
+    text-align: left;
+}
+
+.commerce-price-value {
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+}
+
+.commerce-price-value.market {
+    color: var(--primary);
+}
+
+.commerce-price-control {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.commerce-price-btn {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--cta);
+    background: white;
+    color: var(--cta);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    padding: 0;
+}
+
+.commerce-price-btn:hover {
+    background: var(--cta);
+    color: white;
+}
+
+.commerce-price-btn:active {
+    transform: scale(0.95);
+}
+
+.commerce-price-input {
+    width: 60px;
+    padding: 4px 6px;
+    border: 2px solid var(--cta);
+    border-radius: 4px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+    background: white;
+    color: var(--primary);
+}
+
+.commerce-price-input:focus {
+    outline: none;
+    border-color: var(--lightgreen);
+    box-shadow: 0 0 0 2px rgba(0, 153, 153, 0.2);
+}
+
+.commerce-price-input.selling.unacceptable {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.commerce-price-input.selling.generous {
+    border-color: var(--warning);
+    color: var(--warning);
+}
+
+.commerce-price-input.buying.unacceptable {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.commerce-price-input.buying.generous {
+    border-color: var(--warning);
+    color: var(--warning);
+}
+
+.commerce-good-market-share {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    min-width: 120px;
+}
+
+.commerce-market-share-label {
+    font-size: 11px;
+    color: var(--primary);
+    opacity: 0.7;
+    text-transform: uppercase;
+    text-align: left;
+}
+
+.commerce-market-share-value {
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+}
+
+.commerce-market-share-value.dominant {
+    color: var(--success);
+}
+
+.commerce-market-share-value.normal {
+    color: var(--primary);
+}
+
+.commerce-market-share-value.few {
+    color: var(--warning);
+}
+
+.commerce-market-share-value.inferior {
+    color: var(--danger);
+}
+
+.commerce-good-details {
+    display: none;
+    margin-top: 15px;
+    padding: 20px;
+    background: rgba(251, 129, 34, 0.05);
+    border-radius: var(--border-radius-small);
+    border: 1px solid var(--cta);
+}
+
+.commerce-good-details.active {
+    display: block;
+}
+
+.commerce-details-section {
+    margin-bottom: 20px;
+}
+
+.commerce-details-section:last-child {
+    margin-bottom: 0;
+}
+
+.commerce-details-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 12px;
+    text-align: left;
+}
+
+.commerce-details-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.commerce-details-label {
+    font-size: 14px;
+    color: var(--primary);
+    font-weight: 500;
+    min-width: 150px;
+    text-align: left;
+}
+
+.commerce-switch-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.commerce-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+    flex-shrink: 0;
+}
+
+.commerce-switch-input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.commerce-switch-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 26px;
+}
+
+.commerce-switch-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+.commerce-switch-input:checked + .commerce-switch-slider {
+    background-color: var(--cta);
+}
+
+.commerce-switch-input:checked + .commerce-switch-slider:before {
+    transform: translateX(24px);
+}
+
+.commerce-switch-input:focus + .commerce-switch-slider {
+    box-shadow: 0 0 1px var(--cta);
+}
+
+.commerce-switch-label {
+    font-size: 14px;
+    color: var(--primary);
+    font-weight: 500;
+    text-align: left;
+}
+
+.commerce-threshold-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.commerce-threshold-label {
+    font-size: 13px;
+    color: var(--primary);
+    min-width: 80px;
+    text-align: left;
+}
+
+.commerce-threshold-buttons {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.commerce-threshold-btn {
+    width: 28px;
+    height: 28px;
+    border: 2px solid var(--cta);
+    background: white;
+    color: var(--cta);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.commerce-threshold-btn:hover {
+    background: var(--cta);
+    color: white;
+}
+
+.commerce-threshold-btn:active {
+    transform: scale(0.95);
+}
+
+.commerce-threshold-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--cta);
+    min-width: 50px;
+    text-align: left;
+}
+
+.commerce-tax-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.commerce-tax-input {
+    width: 80px;
+    padding: 6px 10px;
+    border: 2px solid var(--cta);
+    border-radius: 4px;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 600;
+    background: white;
+    color: var(--primary);
+}
+
+.commerce-tax-input:focus {
+    outline: none;
+    border-color: var(--lightgreen);
+    box-shadow: 0 0 0 2px rgba(0, 153, 153, 0.2);
+}
+
+.commerce-consumption-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: var(--border-radius-small);
+    background: rgba(251, 129, 34, 0.05);
+}
+
+.commerce-consumption-indicator.unable {
+    background: rgba(156, 41, 57, 0.1);
+    border-left: 4px solid var(--danger);
+}
+
+.commerce-consumption-indicator.able {
+    background: rgba(40, 167, 69, 0.1);
+    border-left: 4px solid var(--success);
+}
+
+.commerce-consumption-indicator.exceeding {
+    background: rgba(255, 193, 7, 0.1);
+    border-left: 4px solid var(--warning);
+}
+
+.commerce-consumption-text {
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+}
+
+.commerce-consumption-text.unable {
+    color: var(--danger);
+}
+
+.commerce-consumption-text.able {
+    color: var(--success);
+}
+
+.commerce-consumption-text.exceeding {
+    color: var(--warning);
+}
+
+.commerce-consumption-percentage {
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+}
+
+/* Mobile Responsive */
+@media screen and (max-width: 1024px) {
+    .commerce-board {
+        padding: 15px;
+        text-align: left;
+    }
+
+    .commerce-header-title {
+        font-size: 20px;
+        text-align: left;
+    }
+
+    .commerce-good-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .commerce-good-name {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .commerce-good-prices {
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .commerce-price-item {
+        width: 100%;
+    }
+
+    .commerce-good-market-share {
+        width: 100%;
+    }
+
+    .commerce-details-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .commerce-details-label {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .commerce-threshold-controls {
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .commerce-board {
+        padding: 12px;
+        text-align: left;
+    }
+
+    .commerce-good-item {
+        padding: 10px;
+    }
+
+    .commerce-good-details {
+        padding: 15px;
+    }
+}
+

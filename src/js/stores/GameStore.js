@@ -33,13 +33,30 @@ class GameStore {
     }
 
     // Adds a new game item to the database.
+    // If the item already exists, it will update it instead (using put)
     async addGameItems(data) {
         try {
+            // Check if game item already exists
+            const existingItem = await this.db.game.get(data.name);
+            if (existingItem) {
+                // Update existing item instead of throwing error
+                console.warn(`[GameStore] Game object ${data.name} already exists, updating instead.`);
+                await this.db.game.put(data);
+                return;
+            }
+            
             await this.db.game.add(data);
             // Game object added successfully
         } catch (err) {
             if (err.name === 'ConstraintError') {
-                console.error(`Game object ${data.name} already exists.`);
+                // Fallback: if add fails due to race condition, use put instead
+                console.warn(`[GameStore] Game object ${data.name} already exists (race condition), updating instead.`);
+                try {
+                    await this.db.game.put(data);
+                } catch (putErr) {
+                    console.error(`[GameStore] Error updating game object ${data.name}:`, putErr);
+                    throw putErr;
+                }
             } else {
                 throw err;
             }

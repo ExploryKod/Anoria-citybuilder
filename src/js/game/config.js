@@ -47,6 +47,70 @@ const config = {
         initialCheckOnPlay: true,
     },
 
+    employment: {
+        // Maximum number of sectors (source of truth for priority max value)
+        maxSectors: 6,
+        
+        // Employment sectors mapping: sector number -> sector name
+        // These sectors are used in the work board panel and determine building priorities
+        sectors: {
+            1: 'Production Alimentaire',
+            2: 'Commerces',
+            3: 'Industries',
+            4: 'Stockage',
+            5: 'Infrastructure',
+            6: 'Services Publics'
+        },
+        // Default priorities for each sector (1 to max sectors, where max is highest priority)
+        // Priorities must be unique - managed by priority swapping system
+        defaultPriorities: {
+            1: 6,  // Production Alimentaire
+            2: 5,  // Commerces
+            3: 4,  // Industries
+            4: 3,  // Stockage
+            5: 1,  // Infrastructure
+            6: 2   // Services Publics
+        },
+        // Building type to sector mapping
+        // Maps building types to their employment sector number
+        buildingSectorMap: {
+            // Production Alimentaire (1) - Farms only
+            'Farm-Wheat': 1,
+            'Farm-Carrot': 1,
+            'Farm-Cabbage': 1,
+            // Commerces (2)
+            'Market-Stall': 2,
+            // Industries (3)
+            // (Future industrial buildings)
+            // Stockage (4) - Storage buildings
+            'Windmill-001': 4,
+            'Barn-001': 4,
+            // Infrastructure (5)
+            'roads': 5,
+            // Services Publics (6)
+            // (Future public buildings: schools, hospitals, etc.)
+        },
+        // Worker and elite needs per building type (set by admin in code)
+        // These determine how many workers/elites each building type needs
+        buildingNeeds: {
+            // Production Alimentaire
+            'Farm-Wheat': { worker_need: 3, elite_need: 0 },
+            'Farm-Carrot': { worker_need: 3, elite_need: 0 },
+            'Farm-Cabbage': { worker_need: 3, elite_need: 0 },
+            'Windmill-001': { worker_need: 4, elite_need: 2 },
+            // Commerces
+            'Market-Stall': { worker_need: 2, elite_need: 1 },
+            // Industries
+            // (Future industrial buildings)
+            // Stockage
+            'Barn-001': { worker_need: 1, elite_need: 0 },
+            // Infrastructure
+            'roads': { worker_need: 0, elite_need: 0 },
+            // Services Publics
+            // (Future public buildings)
+        }
+    },
+
     ui: {
         notifications: {
             autoHideMs: 4000,

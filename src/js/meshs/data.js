@@ -26,13 +26,18 @@ export const textures = Object.freeze({
     'harvest': loadTextures(`/resources/textures/status/harvest.png`, true),
     'sell-food': loadTextures(`/resources/textures/status/sell_food.png`, true),
     // Market buying sprite
-    'isBuying': loadTextures(`/resources/textures/status/isBuying.png`, true)
+    'isBuying': loadTextures(`/resources/textures/status/isBuying.png`, true),
+    // Windmill collecting sprite (reuse isBuying icon)
+    'isCollecting': loadTextures(`/resources/textures/status/isBuying.png`, true),
+    // No worker sprite (red) - shown when building has no employees
+    'no-work': loadTextures(`/resources/textures/status/no-work.png`, true)
 })
 
 export const assetsPrices = Object.freeze({
     // Zones
     'grass': { price: 0, category: 'zones', gridSize: 1 },
     'roads': { price: 5, category: 'zones', gridSize: 1 },
+    'terrain': { price: 0, category: 'zones', gridSize: 1 },
 
     // Houses
     'House-Blue': { price: 10, category: 'houses', gridSize: 1 },
