@@ -193,21 +193,24 @@ class WorkSectionManager {
                         sector.availableWorkers = available.workers;
                         sector.availableElites = available.elites;
                         
-                        // Total need = workers + elites
-                        sector.need = sector.workerNeed + sector.eliteNeed;
-                        // Total have = workers + elites
-                        sector.have = sector.workers + sector.elites;
+                        // For now: only count WORKERS (not elites)
+                        // Initial need = total workers needed for this sector
+                        sector.initialNeed = sector.workerNeed;
+                        // Have = workers currently assigned
+                        sector.have = sector.workers;
+                        // Remaining need = workers still needed (after deducting assigned)
+                        sector.need = Math.max(0, sector.workerNeed - sector.workers);
                     }
                 });
             }
             
-            // Update total employed (total workers + elites assigned)
-            this.workData.totalEmployed = totalWorkers + totalElites;
+            // Update total employed (workers only for now - elites not counted yet)
+            this.workData.totalEmployed = totalWorkers;
             
-            // Calculate unemployment/lack
-            const totalNeed = totalWorkerNeed + totalEliteNeed;
-            const totalAvailable = available.workers + available.elites;
-            const totalAssigned = totalWorkers + totalElites;
+            // Calculate unemployment/lack (workers only for now)
+            const totalNeed = totalWorkerNeed;
+            const totalAvailable = available.workers;
+            const totalAssigned = totalWorkers;
             
             // Unemployed = available but not assigned
             this.workData.totalUnemployed = Math.max(0, totalAvailable - totalAssigned);
@@ -546,40 +549,48 @@ class WorkSectionManager {
             sectorCell.className = 'sector-col';
             sectorCell.textContent = sector.name;
             
-            // Need column - show combined total with details on hover
+            // Need column - remaining workers needed (Caesar 3 style)
+            // Shows: remaining need (initial need in gray if different)
             const needCell = document.createElement('td');
             needCell.className = 'need-col';
             const needContainer = document.createElement('div');
             needContainer.className = 'work-need-container';
             
+            const remainingNeed = sector.need || 0;
+            const initialNeed = sector.initialNeed || 0;
+            
             const needSpan = document.createElement('span');
-            needSpan.className = sector.need > sector.have ? 'work-need-lack' : 'work-need-ok';
+            needSpan.className = remainingNeed > 0 ? 'work-need-lack' : 'work-need-ok';
             needSpan.setAttribute('data-field', `need-${sector.id}`);
-            const lack = sector.need - sector.have;
-            if (lack > 0) {
-                needSpan.textContent = `${sector.need} (-${lack})`;
-            } else {
-                needSpan.textContent = sector.need;
-            }
+            needSpan.textContent = remainingNeed;
             needContainer.appendChild(needSpan);
+            
+            // Show initial need in gray parentheses if there are workers assigned
+            if (initialNeed > 0 && remainingNeed !== initialNeed) {
+                const initialSpan = document.createElement('span');
+                initialSpan.className = 'work-need-initial';
+                initialSpan.textContent = `(${initialNeed})`;
+                initialSpan.title = 'Besoin initial si aucun ouvrier assigné';
+                needContainer.appendChild(initialSpan);
+            }
             
             // Add detail tooltip
             const needDetail = document.createElement('div');
             needDetail.className = 'work-detail-tooltip';
             needDetail.innerHTML = `
                 <div class="work-detail-item">
-                    <span class="work-detail-label">Ouvriers:</span>
-                    <span class="work-detail-value">${sector.workerNeed || 0}</span>
+                    <span class="work-detail-label">Besoin restant:</span>
+                    <span class="work-detail-value">${remainingNeed}</span>
                 </div>
                 <div class="work-detail-item">
-                    <span class="work-detail-label">Élites:</span>
-                    <span class="work-detail-value">${sector.eliteNeed || 0}</span>
+                    <span class="work-detail-label">Besoin initial:</span>
+                    <span class="work-detail-value">${initialNeed}</span>
                 </div>
             `;
             needContainer.appendChild(needDetail);
             needCell.appendChild(needContainer);
             
-            // Disponible column - show assigned employees with city-wide available on hover
+            // Have column - workers currently assigned
             const haveCell = document.createElement('td');
             haveCell.className = 'have-col';
             const haveContainer = document.createElement('div');
@@ -587,10 +598,10 @@ class WorkSectionManager {
             
             const haveSpan = document.createElement('span');
             haveSpan.setAttribute('data-field', `have-${sector.id}`);
-            haveSpan.textContent = sector.have;
+            haveSpan.textContent = sector.have || 0;
             haveContainer.appendChild(haveSpan);
             
-            // Add detail tooltip showing assigned and city-wide available
+            // Add detail tooltip showing assigned workers and city-wide available
             const haveDetail = document.createElement('div');
             haveDetail.className = 'work-detail-tooltip';
             haveDetail.innerHTML = `
@@ -598,17 +609,9 @@ class WorkSectionManager {
                     <span class="work-detail-label">Ouvriers assignés:</span>
                     <span class="work-detail-value">${sector.workers || 0}</span>
                 </div>
-                <div class="work-detail-item">
-                    <span class="work-detail-label">Élites assignées:</span>
-                    <span class="work-detail-value">${sector.elites || 0}</span>
-                </div>
                 <div class="work-detail-item" style="border-top: 1px solid rgba(255, 255, 255, 0.3); margin-top: 6px; padding-top: 6px;">
                     <span class="work-detail-label">Ouvriers disponibles (ville):</span>
                     <span class="work-detail-value">${sector.availableWorkers || 0}</span>
-                </div>
-                <div class="work-detail-item">
-                    <span class="work-detail-label">Élites disponibles (ville):</span>
-                    <span class="work-detail-value">${sector.availableElites || 0}</span>
                 </div>
             `;
             haveContainer.appendChild(haveDetail);
@@ -621,6 +624,48 @@ class WorkSectionManager {
             
             tableBody.appendChild(row);
         });
+        
+        // Add legend after the table (if not already present)
+        this.renderLegend();
+    }
+    
+    /**
+     * Renders the legend under the work table
+     */
+    renderLegend() {
+        const tableBody = document.getElementById('work-table-body');
+        if (!tableBody) return;
+        
+        const table = tableBody.closest('table');
+        if (!table) return;
+        
+        // Check if legend already exists
+        let legend = table.nextElementSibling;
+        if (legend && legend.classList.contains('work-legend')) {
+            // Legend already exists, no need to recreate
+            return;
+        }
+        
+        // Create legend
+        legend = document.createElement('div');
+        legend.className = 'work-legend';
+        legend.innerHTML = `
+            <div class="work-legend-item">
+                <span class="work-legend-label">Besoin :</span>
+                <span class="work-legend-desc">Ouvriers encore nécessaires pour ce secteur</span>
+            </div>
+            <div class="work-legend-item">
+                <span class="work-legend-label">(n) :</span>
+                <span class="work-legend-desc">Besoin initial si aucun ouvrier n'était assigné</span>
+            </div>
+            <div class="work-legend-item">
+                <span class="work-legend-label">Embauchés :</span>
+                <span class="work-legend-desc">Ouvriers actuellement embauchés dans ce secteur</span>
+            </div>
+        `;
+        
+        // Insert legend after table
+        table.parentNode.insertBefore(legend, table.nextSibling);
     }
 
     renderSummary() {

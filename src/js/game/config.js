@@ -74,16 +74,16 @@ const config = {
         // Building type to sector mapping
         // Maps building types to their employment sector number
         buildingSectorMap: {
-            // Production Alimentaire (1)
+            // Production Alimentaire (1) - Farms only
             'Farm-Wheat': 1,
             'Farm-Carrot': 1,
             'Farm-Cabbage': 1,
-            'Windmill-001': 1,
             // Commerces (2)
             'Market-Stall': 2,
             // Industries (3)
             // (Future industrial buildings)
-            // Stockage (4)
+            // Stockage (4) - Storage buildings
+            'Windmill-001': 4,
             'Barn-001': 4,
             // Infrastructure (5)
             'roads': 5,

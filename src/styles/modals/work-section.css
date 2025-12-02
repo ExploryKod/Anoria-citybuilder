@@ -43,7 +43,12 @@
     margin: 20px 0;
     background: white;
     border-radius: var(--border-radius-small);
-    overflow: hidden;
+    /* Removed overflow: hidden to allow tooltips to display above table */
+}
+
+.work-table tbody {
+    /* Allow tooltips to escape the table bounds */
+    position: relative;
 }
 
 .work-table thead {
@@ -133,6 +138,41 @@
 
 .work-need-ok {
     color: var(--success);
+}
+
+.work-need-initial {
+    color: #888;
+    font-weight: 400;
+    font-size: 12px;
+    margin-left: 4px;
+}
+
+/* Legend under the table */
+.work-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 10px;
+    padding: 12px 15px;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: var(--border-radius-small);
+    font-size: 12px;
+    color: #666;
+}
+
+.work-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.work-legend-label {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.work-legend-desc {
+    color: #666;
 }
 
 /* Detail containers and tooltips */

@@ -1,6 +1,7 @@
 import { SimService } from './SimService.js';
 import { checkRoadAccess } from '../modules/ModuleHelper.js';
 import { TimeManager } from '../utils/TimeManager.js';
+import { getSectorPriority, getAllSectorPriorities } from '../modules/EmployeeHelper.js';
 import config from '../config.js';
 
 /**
@@ -10,6 +11,12 @@ import config from '../config.js';
  * 1. Houses provide available workers (population)
  * 2. Buildings receive workers based on priority and needs
  * 3. Distribution happens each simulation tick (monthly redistribution)
+ * 
+ * Priority System:
+ * - Building sector is stored in IndexedDB (static, set at creation)
+ * - Priority per sector is stored in localStorage (dynamic, changed by admin)
+ * - At distribution time, we look up priority from localStorage based on sector
+ * - Lower priority number = higher importance (1 = first to get workers)
  * 
  * Simple first version: workers only, priority-based distribution
  * Future: elites, distance-based, traceability
@@ -148,13 +155,19 @@ export class EmploymentDistributionService extends SimService {
 
     /**
      * Gets all buildings that need workers, sorted by priority
+     * Priority is looked up from localStorage based on building's sector
+     * Lower priority number = higher importance (priority 1 is highest)
      * 
      * @param {HousesStore} housesStore
-     * @returns {Promise<Array>} Buildings needing workers, sorted by priority (highest first)
+     * @returns {Promise<Array>} Buildings needing workers, sorted by priority (1 first, 6 last)
      */
     async getBuildingsNeedingWorkers(housesStore) {
         const allBuildings = await housesStore.listAllHouses();
         const buildingsNeedingWorkers = [];
+        
+        // Get current priority mapping from localStorage (read once for all buildings)
+        const currentPriorities = getAllSectorPriorities();
+        console.log('[EmploymentDistributionService] Current sector priorities from localStorage:', currentPriorities);
         
         for (const building of allBuildings) {
             // Skip houses and roads
@@ -178,6 +191,13 @@ export class EmploymentDistributionService extends SimService {
             const currentWorkers = employees.worker || 0;
             const deficit = workerNeed - currentWorkers;
             
+            // Get sector from IndexedDB (static, set at building creation)
+            const buildingSector = employees.sector || 0;
+            
+            // Look up priority from localStorage based on sector (dynamic, set by admin)
+            // This allows instant priority changes without updating IndexedDB
+            const buildingPriority = getSectorPriority(buildingSector);
+            
             if (deficit > 0) {
                 buildingsNeedingWorkers.push({
                     id: building.id || building.name,
@@ -186,22 +206,26 @@ export class EmploymentDistributionService extends SimService {
                     y: building.y,
                     workerDeficit: deficit,
                     workerNeed: workerNeed,
-                    priority: this.getBuildingPriority(building.type),
+                    priority: buildingPriority, // From localStorage via sector lookup
+                    sector: buildingSector,     // From IndexedDB
                     employees: employees
                 });
             }
         }
         
-        // Sort by priority (higher priority number = higher priority = first in line)
-        buildingsNeedingWorkers.sort((a, b) => b.priority - a.priority);
+        // Sort by priority (lower priority number = higher importance = first in line)
+        // Example: Priority 1 gets workers before Priority 6
+        // This matches user-set priorities where 1 is most important
+        buildingsNeedingWorkers.sort((a, b) => a.priority - b.priority);
         
-        console.log('[EmploymentDistributionService] Buildings needing workers:', {
+        console.log('[EmploymentDistributionService] Buildings needing workers (sorted by priority):', {
             count: buildingsNeedingWorkers.length,
             buildings: buildingsNeedingWorkers.map(b => ({
                 id: b.id,
                 type: b.type,
-                deficit: b.workerDeficit,
-                priority: b.priority
+                sector: b.sector,
+                priority: b.priority,
+                deficit: b.workerDeficit
             }))
         });
         
@@ -210,7 +234,7 @@ export class EmploymentDistributionService extends SimService {
 
     /**
      * Distributes available workers to buildings based on priority
-     * Higher priority buildings get workers first
+     * Lower priority number = higher importance (priority 1 gets workers first)
      * 
      * @param {number} availableWorkers - Total workers available
      * @param {Array} buildings - Buildings needing workers (sorted by priority)
