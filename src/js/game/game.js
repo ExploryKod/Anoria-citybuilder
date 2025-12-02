@@ -45,6 +45,7 @@ let services = [];
         const { WindmillService } = await import('./services/WindmillService.js');
         const { RandomEventsService } = await import('./services/RandomEventsService.js');
         const { EmploymentPriorityService } = await import('./services/EmploymentPriorityService.js');
+        const { EmploymentDistributionService } = await import('./services/EmploymentDistributionService.js');
         
         services.push(new RoadConnectivityService());
         services.push(new FoodDistributionService()); // Farm > Market > House logic using IndexedDB
@@ -56,6 +57,14 @@ let services = [];
         // Set housesStore reference for immediate building updates
         employmentPriorityService.setHousesStore(housesStore);
         services.push(employmentPriorityService);
+        
+        // Employment Distribution Service - distributes workers from houses to buildings
+        // Simple version: workers only, priority-based, road access required
+        services.push(new EmploymentDistributionService());
+        console.log('[game.js] EmploymentDistributionService registered');
+        
+        // Note: Initial simulation will run on first game.update() call
+        // The service is now synchronized with the game loop
         
         // Make service available to work section manager
         if (window.workSectionManager) {
@@ -720,6 +729,37 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`);
                     makeInfoKeyValue('Autres légumes', `${houseStocks.carrot || 0} paniers`);
                     makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers disponibles`);
+                    
+                    // Display employee information for markets
+                    const marketData = await housesStore.getHouse(uniqueId);
+                    if (marketData && marketData.employees) {
+                        const employees = marketData.employees;
+                        const workerNeed = employees.worker_need || 0;
+                        const eliteNeed = employees.elite_need || 0;
+                        const workers = employees.worker || 0;
+                        const elites = employees.elite || 0;
+                        const priority = employees.priority || 0;
+                        
+                        const hasEnoughWorkers = workers >= workerNeed;
+                        const hasEnoughElites = elites >= eliteNeed;
+                        const hasNoWorkers = workers === 0 && workerNeed > 0;
+                        const hasPartialWorkers = workers > 0 && workers < workerNeed;
+                        const isFullyStaffed = hasEnoughWorkers && hasEnoughElites;
+                        
+                        makeInfoSection('Employés');
+                        makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
+                        makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
+                        makeInfoKeyValue('Priorité', `${priority}`);
+                        
+                        // Show status message based on employee status
+                        if (isFullyStaffed) {
+                            makeInfoBuildingText('✅ Le marché a tout ce qu\'il faut pour fonctionner', false, 'success-message');
+                        } else if (hasNoWorkers) {
+                            makeInfoBuildingText('❌ Le marché n\'a aucun employé et ne peut pas fonctionner', false, 'error-message');
+                        } else if (hasPartialWorkers) {
+                            makeInfoBuildingText('⚠️ Le marché ne peut fonctionner à sa pleine capacité', false, 'warning-message');
+                        }
+                    }
                 }
 
                 if(selectedObject.userData.id.includes('Farm')) {
@@ -738,6 +778,37 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`);
                     }
                     makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers`);
+                    
+                    // Display employee information for farms
+                    const farmData = await housesStore.getHouse(uniqueId);
+                    if (farmData && farmData.employees) {
+                        const employees = farmData.employees;
+                        const workerNeed = employees.worker_need || 0;
+                        const eliteNeed = employees.elite_need || 0;
+                        const workers = employees.worker || 0;
+                        const elites = employees.elite || 0;
+                        const priority = employees.priority || 0;
+                        
+                        const hasEnoughWorkers = workers >= workerNeed;
+                        const hasEnoughElites = elites >= eliteNeed;
+                        const hasNoWorkers = workers === 0 && workerNeed > 0;
+                        const hasPartialWorkers = workers > 0 && workers < workerNeed;
+                        const isFullyStaffed = hasEnoughWorkers && hasEnoughElites;
+                        
+                        makeInfoSection('Employés');
+                        makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
+                        makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
+                        makeInfoKeyValue('Priorité', `${priority}`);
+                        
+                        // Show status message based on employee status
+                        if (isFullyStaffed) {
+                            makeInfoBuildingText('✅ La ferme a tout ce qu\'il faut pour fonctionner', false, 'success-message');
+                        } else if (hasNoWorkers) {
+                            makeInfoBuildingText('❌ La ferme n\'a aucun employé et ne peut pas fonctionner', false, 'error-message');
+                        } else if (hasPartialWorkers) {
+                            makeInfoBuildingText('⚠️ La ferme ne peut fonctionner à sa pleine capacité', false, 'warning-message');
+                        }
+                    }
                 }
 
                 // Display windmill food stocks (collected from all farms in October)
@@ -771,6 +842,37 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     makeInfoKeyValue('Collecte', 'Chaque octobre');
                     makeInfoKeyValue('Source', 'Toutes les fermes du jeu');
                     makeInfoKeyValue('Condition', 'Accès routier requis');
+                    
+                    // Display employee information
+                    const buildingData = await housesStore.getHouse(uniqueId);
+                    if (buildingData && buildingData.employees) {
+                        const employees = buildingData.employees;
+                        const workerNeed = employees.worker_need || 0;
+                        const eliteNeed = employees.elite_need || 0;
+                        const workers = employees.worker || 0;
+                        const elites = employees.elite || 0;
+                        const priority = employees.priority || 0;
+                        
+                        const hasEnoughWorkers = workers >= workerNeed;
+                        const hasEnoughElites = elites >= eliteNeed;
+                        const hasNoWorkers = workers === 0 && workerNeed > 0;
+                        const hasPartialWorkers = workers > 0 && workers < workerNeed;
+                        const isFullyStaffed = hasEnoughWorkers && hasEnoughElites;
+                        
+                        makeInfoSection('Employés');
+                        makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
+                        makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
+                        makeInfoKeyValue('Priorité', `${priority}`);
+                        
+                        // Show status message based on employee status
+                        if (isFullyStaffed) {
+                            makeInfoBuildingText('✅ Le moulin a tout ce qu\'il faut pour fonctionner', false, 'success-message');
+                        } else if (hasNoWorkers) {
+                            makeInfoBuildingText('❌ Le moulin n\'a aucun employé et ne peut pas fonctionner', false, 'error-message');
+                        } else if (hasPartialWorkers) {
+                            makeInfoBuildingText('⚠️ Le moulin ne peut fonctionner à sa pleine capacité', false, 'warning-message');
+                        }
+                    }
                 }
             }
            

@@ -28,7 +28,9 @@ export const textures = Object.freeze({
     // Market buying sprite
     'isBuying': loadTextures(`/resources/textures/status/isBuying.png`, true),
     // Windmill collecting sprite (reuse isBuying icon)
-    'isCollecting': loadTextures(`/resources/textures/status/isBuying.png`, true)
+    'isCollecting': loadTextures(`/resources/textures/status/isBuying.png`, true),
+    // No worker sprite (red) - shown when building has no employees
+    'no-work': loadTextures(`/resources/textures/status/no-work.png`, true)
 })
 
 export const assetsPrices = Object.freeze({

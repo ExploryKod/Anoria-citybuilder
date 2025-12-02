@@ -16,9 +16,11 @@ class WorkSectionManager {
         this.employmentPriorityService = service;
     }
 
-    init() {
+    async init() {
         this.setupEventListeners();
-        this.loadWorkData();
+        await this.loadWorkData();
+        // No automatic refresh - data is read directly from IndexedDB when panel opens
+        // Just like info panel, it shows current state at that moment
     }
 
     setupEventListeners() {
@@ -63,7 +65,177 @@ class WorkSectionManager {
         
         // Generate or regenerate work data
         this.workData = this.generatePlaceholderWorkData();
+        
+        // Load employee statistics from IndexedDB (independent of service)
+        await this.updateEmployeeStatistics();
+        
         this.render();
+    }
+    
+    /**
+     * Calculate available workers and elites from houses (same logic as service but direct from IndexedDB)
+     * - Elites: 1/6 of House-2Story (Palace) population (or 0 if no 2Story)
+     * - Workers: All population from House-Blue, House-Red, House-Purple + remaining 5/6 of House-2Story
+     * @param {Array} allHouses - All houses from IndexedDB
+     * @returns {{workers: number, elites: number}}
+     */
+    calculateAvailableEmployees(allHouses) {
+        let workerPopulation = 0;
+        let elitePopulation = 0;
+        
+        for (const house of allHouses) {
+            const type = house.type || '';
+            const pop = house.pop || 0;
+            
+            if (type.includes('House')) {
+                // House-2Story (Palace): 1/6 becomes elite, 5/6 remain workers
+                if (type.includes('2Story') || type.includes('2-Story')) {
+                    const elitesFromThisHouse = Math.floor(pop / 6);
+                    const workersFromThisHouse = pop - elitesFromThisHouse;
+                    elitePopulation += elitesFromThisHouse;
+                    workerPopulation += workersFromThisHouse;
+                }
+                // Other houses (Blue, Red, Purple): all population are workers
+                else if (type.includes('Blue') || type.includes('Red') || type.includes('Purple')) {
+                    workerPopulation += pop;
+                }
+            }
+        }
+        
+        return { workers: workerPopulation, elites: elitePopulation };
+    }
+    
+    /**
+     * Update employee statistics directly from IndexedDB (like info panel does)
+     */
+    async updateEmployeeStatistics() {
+        // Get housesStore (same way info panel does)
+        let housesStore = null;
+        if (window.app && window.app.housesStore) {
+            housesStore = window.app.housesStore;
+        } else if (window.housesStore) {
+            housesStore = window.housesStore;
+        } else if (window.game && window.game.housesStore) {
+            housesStore = window.game.housesStore;
+        }
+        
+        if (!housesStore) {
+            console.warn('[WorkSection] housesStore not available');
+            return;
+        }
+        
+        try {
+            // Read all buildings from IndexedDB (source of truth)
+            const allBuildings = await housesStore.listAllHouses();
+            
+            // Calculate available employees from houses
+            const available = this.calculateAvailableEmployees(allBuildings);
+            
+            // Calculate statistics by sector
+            let totalWorkerNeed = 0;
+            let totalEliteNeed = 0;
+            let totalWorkers = 0;
+            let totalElites = 0;
+            const bySector = {};
+            
+            for (const building of allBuildings) {
+                if (!building.employees) continue;
+                
+                const employees = building.employees;
+                const sector = employees.sector || 0;
+                
+                // Skip residential (sector 0)
+                if (sector === 0) continue;
+                
+                // Initialize sector if not exists
+                if (!bySector[sector]) {
+                    bySector[sector] = {
+                        workerNeed: 0,
+                        eliteNeed: 0,
+                        workers: 0,
+                        elites: 0
+                    };
+                }
+                
+                const workerNeed = employees.worker_need || 0;
+                const eliteNeed = employees.elite_need || 0;
+                const workers = employees.worker || 0;
+                const elites = employees.elite || 0;
+                
+                totalWorkerNeed += workerNeed;
+                totalEliteNeed += eliteNeed;
+                totalWorkers += workers;
+                totalElites += elites;
+                
+                bySector[sector].workerNeed += workerNeed;
+                bySector[sector].eliteNeed += eliteNeed;
+                bySector[sector].workers += workers;
+                bySector[sector].elites += elites;
+            }
+            
+            // Update sector data with real statistics
+            if (this.workData && this.workData.sectors) {
+                this.workData.sectors.forEach(sector => {
+                    if (sector.sectorNumber !== undefined) {
+                        const sectorStats = bySector[sector.sectorNumber] || {
+                            workerNeed: 0,
+                            eliteNeed: 0,
+                            workers: 0,
+                            elites: 0
+                        };
+                        
+                        // Store detailed breakdown
+                        sector.workerNeed = sectorStats.workerNeed || 0;
+                        sector.eliteNeed = sectorStats.eliteNeed || 0;
+                        sector.workers = sectorStats.workers || 0;
+                        sector.elites = sectorStats.elites || 0;
+                        // City-wide available (same for all sectors)
+                        sector.availableWorkers = available.workers;
+                        sector.availableElites = available.elites;
+                        
+                        // Total need = workers + elites
+                        sector.need = sector.workerNeed + sector.eliteNeed;
+                        // Total have = workers + elites
+                        sector.have = sector.workers + sector.elites;
+                    }
+                });
+            }
+            
+            // Update total employed (total workers + elites assigned)
+            this.workData.totalEmployed = totalWorkers + totalElites;
+            
+            // Calculate unemployment/lack
+            const totalNeed = totalWorkerNeed + totalEliteNeed;
+            const totalAvailable = available.workers + available.elites;
+            const totalAssigned = totalWorkers + totalElites;
+            
+            // Unemployed = available but not assigned
+            this.workData.totalUnemployed = Math.max(0, totalAvailable - totalAssigned);
+            
+            // Lack = need but not available/assigned
+            const totalLack = Math.max(0, totalNeed - totalAssigned);
+            
+            // Calculate unemployment percentage
+            if (totalAvailable > 0) {
+                this.workData.unemploymentPercentage = Math.round(
+                    (this.workData.totalUnemployed / totalAvailable) * 100
+                );
+            } else {
+                this.workData.unemploymentPercentage = 0;
+            }
+            
+            // Store lack for display
+            this.workData.totalLack = totalLack;
+            this.workData.totalAvailable = totalAvailable;
+            this.workData.totalNeed = totalNeed;
+            
+            // Store city-wide available workers/elites for all sectors
+            this.workData.totalAvailableWorkers = available.workers;
+            this.workData.totalAvailableElites = available.elites;
+            
+        } catch (error) {
+            console.error('[WorkSection] Error updating employee statistics:', error);
+        }
     }
 
     generatePlaceholderWorkData() {
@@ -85,8 +257,14 @@ class WorkSectionManager {
                 sectorNumber: secNum, // Store sector number for priority updates
                 name: sectorName,
                 priority: priority,
-                need: 0,
-                have: 0
+                need: 0, // Combined worker + elite need
+                have: 0, // Combined worker + elite assigned
+                workerNeed: 0,
+                eliteNeed: 0,
+                workers: 0,
+                elites: 0,
+                availableWorkers: 0,
+                availableElites: 0
             };
         });
         
@@ -127,36 +305,32 @@ class WorkSectionManager {
             // Clamp priority to valid range (1 to max sectors)
             const clampedPriority = Math.max(1, Math.min(maxSectors, priority));
             
-            // Update priority in the service (which handles swapping)
+            // Update priority in the service (which handles swapping synchronously)
             if (this.employmentPriorityService) {
-                // Get housesStore for immediate building updates
-                let housesStore = null;
-                if (window.app && window.app.housesStore) {
-                    housesStore = window.app.housesStore;
-                } else if (window.housesStore) {
-                    housesStore = window.housesStore;
-                } else if (window.game && window.game.housesStore) {
-                    housesStore = window.game.housesStore;
-                }
-                
-                // Update priority and immediately update all buildings
-                this.employmentPriorityService.updateSectorPriority(
+                // Perform swap synchronously (just localStorage, no IndexedDB update needed immediately)
+                this.employmentPriorityService.updateSectorPrioritySync(
                     sectorData.sectorNumber, 
-                    clampedPriority,
-                    housesStore
-                ).catch(err => {
-                    console.warn('[WorkSection] Error updating sector priority:', err);
-                });
+                    clampedPriority
+                );
                 
-                // Reload priorities to reflect swaps
+                // Reload priorities to reflect swaps (synchronous)
                 const allPriorities = this.employmentPriorityService.getAllPriorities();
+                
+                console.log('[WorkSection] Priorities after swap:', allPriorities);
+                
+                // Update workData with new priorities BEFORE re-render
                 this.workData.sectors.forEach(sec => {
                     if (sec.sectorNumber !== undefined) {
-                        sec.priority = allPriorities[sec.sectorNumber] || sec.priority;
+                        const newPriority = allPriorities[sec.sectorNumber];
+                        if (newPriority !== undefined) {
+                            const oldPriority = sec.priority;
+                            sec.priority = newPriority;
+                            console.log(`[WorkSection] Sector ${sec.sectorNumber} (${sec.name}): ${oldPriority} → ${newPriority}`);
+                        }
                     }
                 });
                 
-                // Re-render to show updated priorities
+                // Re-render immediately to show updated priorities (including swapped values)
                 this.renderWorkTable();
             } else {
                 // Fallback if service not available
@@ -229,7 +403,17 @@ class WorkSectionManager {
             priorityInput.min = '1';
             priorityInput.max = maxSectors.toString();
             priorityInput.step = '1'; // Only allow integers
-            priorityInput.value = sector.priority;
+            // Ensure priority value is set (use sector.priority or get from service)
+            let priorityValue = sector.priority;
+            if (!priorityValue && this.employmentPriorityService) {
+                priorityValue = this.employmentPriorityService.getSectorPriority(sector.sectorNumber);
+            }
+            if (!priorityValue) {
+                priorityValue = config.employment?.defaultPriorities?.[sector.sectorNumber] || 1;
+            }
+            priorityInput.value = priorityValue;
+            // Also update sector.priority to ensure consistency
+            sector.priority = priorityValue;
             priorityInput.setAttribute('aria-label', `Priorité ${sector.name}`);
             priorityInput.setAttribute('title', `Priorité entre 1 et ${maxSectors}`);
             
@@ -311,7 +495,7 @@ class WorkSectionManager {
                     value = max;
                 }
                 
-                // Update priority with clamped value
+                // Update priority with clamped value (synchronous)
                 this.updatePriority(sector.id, value);
             });
             
@@ -330,7 +514,7 @@ class WorkSectionManager {
                         value = max;
                     }
                     
-                    // Update if value changed
+                    // Update if value changed (synchronous)
                     if (value !== sector.priority) {
                         this.updatePriority(sector.id, value);
                     }
@@ -351,6 +535,7 @@ class WorkSectionManager {
                     e.target.value = max.toString();
                 }
                 
+                // Update priority (synchronous)
                 this.updatePriority(sector.id, value);
             });
             
@@ -361,9 +546,12 @@ class WorkSectionManager {
             sectorCell.className = 'sector-col';
             sectorCell.textContent = sector.name;
             
-            // Need column
+            // Need column - show combined total with details on hover
             const needCell = document.createElement('td');
             needCell.className = 'need-col';
+            const needContainer = document.createElement('div');
+            needContainer.className = 'work-need-container';
+            
             const needSpan = document.createElement('span');
             needSpan.className = sector.need > sector.have ? 'work-need-lack' : 'work-need-ok';
             needSpan.setAttribute('data-field', `need-${sector.id}`);
@@ -373,13 +561,58 @@ class WorkSectionManager {
             } else {
                 needSpan.textContent = sector.need;
             }
-            needCell.appendChild(needSpan);
+            needContainer.appendChild(needSpan);
             
-            // Have column
+            // Add detail tooltip
+            const needDetail = document.createElement('div');
+            needDetail.className = 'work-detail-tooltip';
+            needDetail.innerHTML = `
+                <div class="work-detail-item">
+                    <span class="work-detail-label">Ouvriers:</span>
+                    <span class="work-detail-value">${sector.workerNeed || 0}</span>
+                </div>
+                <div class="work-detail-item">
+                    <span class="work-detail-label">Élites:</span>
+                    <span class="work-detail-value">${sector.eliteNeed || 0}</span>
+                </div>
+            `;
+            needContainer.appendChild(needDetail);
+            needCell.appendChild(needContainer);
+            
+            // Disponible column - show assigned employees with city-wide available on hover
             const haveCell = document.createElement('td');
             haveCell.className = 'have-col';
-            haveCell.setAttribute('data-field', `have-${sector.id}`);
-            haveCell.textContent = sector.have;
+            const haveContainer = document.createElement('div');
+            haveContainer.className = 'work-have-container';
+            
+            const haveSpan = document.createElement('span');
+            haveSpan.setAttribute('data-field', `have-${sector.id}`);
+            haveSpan.textContent = sector.have;
+            haveContainer.appendChild(haveSpan);
+            
+            // Add detail tooltip showing assigned and city-wide available
+            const haveDetail = document.createElement('div');
+            haveDetail.className = 'work-detail-tooltip';
+            haveDetail.innerHTML = `
+                <div class="work-detail-item">
+                    <span class="work-detail-label">Ouvriers assignés:</span>
+                    <span class="work-detail-value">${sector.workers || 0}</span>
+                </div>
+                <div class="work-detail-item">
+                    <span class="work-detail-label">Élites assignées:</span>
+                    <span class="work-detail-value">${sector.elites || 0}</span>
+                </div>
+                <div class="work-detail-item" style="border-top: 1px solid rgba(255, 255, 255, 0.3); margin-top: 6px; padding-top: 6px;">
+                    <span class="work-detail-label">Ouvriers disponibles (ville):</span>
+                    <span class="work-detail-value">${sector.availableWorkers || 0}</span>
+                </div>
+                <div class="work-detail-item">
+                    <span class="work-detail-label">Élites disponibles (ville):</span>
+                    <span class="work-detail-value">${sector.availableElites || 0}</span>
+                </div>
+            `;
+            haveContainer.appendChild(haveDetail);
+            haveCell.appendChild(haveContainer);
             
             row.appendChild(priorityCell);
             row.appendChild(sectorCell);
@@ -402,7 +635,21 @@ class WorkSectionManager {
 
         if (unemployedElement) {
             const percentage = this.workData.unemploymentPercentage;
-            unemployedElement.textContent = `${this.workData.totalUnemployed} (${percentage}%)`;
+            const lack = this.workData.totalLack || 0;
+            
+            if (lack > 0) {
+                // Show lack if there's a shortage
+                unemployedElement.textContent = `Manque: ${lack} employés`;
+                unemployedElement.style.color = '#b8860b';
+            } else if (this.workData.totalUnemployed > 0) {
+                // Show unemployment if there are available but unassigned workers
+                unemployedElement.textContent = `${this.workData.totalUnemployed} (${percentage}%)`;
+                unemployedElement.style.color = '#666';
+            } else {
+                // All employed
+                unemployedElement.textContent = '0 (0%)';
+                unemployedElement.style.color = '#2d7a2d';
+            }
         }
     }
 
@@ -425,22 +672,22 @@ function initWorkSection() {
     if (!workSection) return;
 
     const manager = new WorkSectionManager();
+    window.workSectionManager = manager;
     
+    // Update data every time the section becomes active (like info panel)
     const observer = new MutationObserver(() => {
         if (workSection.classList.contains('active')) {
-            manager.init();
-            observer.disconnect();
+            // Reload data from IndexedDB when section opens (current state)
+            manager.loadWorkData();
         }
     });
 
     observer.observe(workSection, { attributes: true, attributeFilter: ['class'] });
 
+    // Initialize if already active
     if (workSection.classList.contains('active')) {
         manager.init();
-        observer.disconnect();
     }
-
-    window.workSectionManager = manager;
 }
 
 if (document.readyState === 'loading') {

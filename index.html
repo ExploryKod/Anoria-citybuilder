@@ -43,6 +43,7 @@
     <link rel="stylesheet" href="./src/styles/modals/finances-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/styles/modals/report-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/styles/modals/work-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/styles/modals/storage-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/styles/modals/commerce-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/styles/modals/health-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/styles/multiplayer.css" media="print" onload="this.media='all'">
@@ -63,6 +64,7 @@
         <link rel="stylesheet" href="./src/styles/modals/finances-section.css">
         <link rel="stylesheet" href="./src/styles/modals/report-section.css">
         <link rel="stylesheet" href="./src/styles/modals/work-section.css">
+        <link rel="stylesheet" href="./src/styles/modals/storage-section.css">
         <link rel="stylesheet" href="./src/styles/modals/commerce-section.css">
         <link rel="stylesheet" href="./src/styles/modals/health-section.css">
         <link rel="stylesheet" href="./src/styles/multiplayer.css">
@@ -1705,6 +1707,21 @@
                 </button>
                 
                 <button 
+                    class="administrator-nav-btn" 
+                    id="admin-nav-storage"
+                    data-section="storage"
+                    title="Unités de Stock"
+                    aria-label="Ouvrir la section Unités de Stock">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse">
+                        <path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35l2-.26 8-1.13 8 1.13 2 .26Z"/>
+                        <path d="M6 18h12"/>
+                        <path d="M6 14h12"/>
+                        <rect x="6" y="10" width="12" height="4"/>
+                    </svg>
+                    <span class="sr-only">Unités de Stock</span>
+                </button>
+                
+                <button 
                     class="administrator-nav-btn report-btn" 
                     id="admin-nav-report"
                     data-section="report"
@@ -2126,6 +2143,39 @@
                                         </span>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Storage Units Section -->
+                <div class="administrator-section" id="admin-section-storage">
+                    <div class="administrator-section-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse">
+                            <path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35l2-.26 8-1.13 8 1.13 2 .26Z"/>
+                            <path d="M6 18h12"/>
+                            <path d="M6 14h12"/>
+                            <rect x="6" y="10" width="12" height="4"/>
+                        </svg>
+                        Unités de Stock
+                    </div>
+                    <div class="administrator-section-content">
+                        <div class="storage-board" id="storage-board">
+                            <div class="storage-header">
+                                <div class="storage-header-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse">
+                                        <path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35l2-.26 8-1.13 8 1.13 2 .26Z"/>
+                                        <path d="M6 18h12"/>
+                                        <path d="M6 14h12"/>
+                                        <rect x="6" y="10" width="12" height="4"/>
+                                    </svg>
+                                </div>
+                                <h3 class="storage-header-title">Gestion des Moulins</h3>
+                            </div>
+
+                            <div class="storage-windmills-list" id="storage-windmills-list">
+                                <!-- Windmills will be dynamically generated -->
+                                <div class="storage-loading">Chargement des moulins...</div>
                             </div>
                         </div>
                     </div>
@@ -2712,6 +2762,7 @@
 <script type="module" src="/src/js/ui/finances-section.js"></script>
 <script type="module" src="/src/js/ui/report-section.js"></script>
 <script type="module" src="/src/js/ui/work-section.js"></script>
+<script type="module" src="/src/js/ui/storage-section.js"></script>
 <script type="module" src="/src/js/ui/commerce-section.js"></script>
 <script type="module" src="/src/js/ui/health-section.js"></script>
 <script type="module" src="/src/js/ui/tutorial.js"></script>

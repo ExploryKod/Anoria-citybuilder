@@ -495,6 +495,13 @@ export function createScene(housesStore, gameStore, assetManager) {
                 scale : {x: 0.6, y: 0.6, z: 1},
                 spriteColor: 0x00FF00, // Green color
                 backgroundColor: 0xFFFFFF // White background
+            },
+            // No worker sprite (red) - shown when farm has no employees
+            'no-work': {
+                position : {x: -0.8, y: 0.5, z: -0.2},
+                scale : {x: 0.5, y: 0.5, z: 0.5},
+                spriteColor: 0xFF0000, // Red color
+                backgroundColor: 0xFFE8E8 // Light red background
             }
         };
 
@@ -981,7 +988,8 @@ export function createScene(housesStore, gameStore, assetManager) {
                 if(farms.includes(currentBuildingId) && buildings[x][y]) {
                     // First, clean up ALL possible farm sprites to prevent any leftover sprites
                     const allFarmSpriteNames = ['no-food', 'grow-food', 'harvest', 'sell-food', 
-                                                'no-food-bg', 'grow-food-bg', 'harvest-bg', 'sell-food-bg'];
+                                                'no-food-bg', 'grow-food-bg', 'harvest-bg', 'sell-food-bg',
+                                                'no-work', 'no-work-bg'];
                     allFarmSpriteNames.forEach(spriteName => {
                         assetManager.removeStatusSprite(buildings[x][y], spriteName);
                     });
@@ -989,6 +997,30 @@ export function createScene(housesStore, gameStore, assetManager) {
                     // Get current time info to determine season
                     const timeInfo = TimeManager.getTimeInfo(time);
                     const season = timeInfo.season;
+                    
+                    // Check if farm has workers (required to operate)
+                    const farmDataForWorkers = await housesStore.getHouse(currentUniqueID);
+                    const farmEmployees = farmDataForWorkers?.employees || { worker: 0, worker_need: 0 };
+                    const farmWorkers = farmEmployees.worker || 0;
+                    const farmWorkerNeed = farmEmployees.worker_need || 0;
+                    const hasNoWorkers = farmWorkers === 0 && farmWorkerNeed > 0;
+                    
+                    // If no workers, show no-work sprite (red) and skip all production
+                    if (hasNoWorkers) {
+                        const noWorkMeta = statutsIconsMeta['no-work'];
+                        assetManager.setStatusSprite(
+                            buildings[x][y],
+                            textures['no-work'],
+                            'no-work',
+                            noWorkMeta.scale,
+                            noWorkMeta.position,
+                            true, // visible
+                            noWorkMeta.spriteColor,
+                            noWorkMeta.backgroundColor
+                        );
+                        // Skip all production and season sprites - farm cannot operate without workers
+                        continue;
+                    }
                     
                     // Initialize farm stocks in IndexedDB if not present
                     const farmStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks');
@@ -1004,6 +1036,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                     // + 6 paniers buffer needed during the time market is buying a new load for one year
                     // Total: 72 + 6 = 78 paniers/year
                     // Only produce once per year - track the last year when production happened
+                    // NOTE: Production only happens if farm has workers (checked above)
                     if (season === 'Automne') {
                         // Get farm data to check last production year
                         const farmData = await housesStore.getHouse(currentUniqueID);
@@ -1058,7 +1091,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                         }
                     }
                     
-                    // Determine which sprite to show based on season
+                    // Determine which sprite to show based on season (only if farm has workers)
                     let spriteTexture, spriteName, spriteColor, spritePosition, spriteScale, backgroundColor;
                     
                     if (season === 'Hiver') {
