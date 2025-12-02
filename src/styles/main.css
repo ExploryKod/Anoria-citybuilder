@@ -926,6 +926,8 @@ canvas.pointer-events-disabled {
     gap: 5px;
 }
 
+
+
 .info-panel > .info-box, .info-box-stats > .info-box, .info-box-global-numbers > .info-box {
     height: 40px;
     border-radius: var(--border-radius-small);
@@ -1470,15 +1472,49 @@ button#pwa-refresh:hover {
         border-radius: 0;
     }
     /* ================================ INFO PANEL (PORTRAIT) ================================ */
-    .info-panel-wrapper .info-panel .info-box.infos-time {
-        min-width: 90vw;
-        justify-content: center;
+    
+    .info-panel {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(auto-fill, 1fr);
         gap: 10px;
     }
 
-    .info-panel-wrapper .info-box-global-numbers {
+    .info-panel .info-box-stats {
+        grid-column: 2;
+        grid-row: 2;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+        gap: 5px;
+    }
+
+    .info-box-stats > .info-box:odd {
+        grid-column: auto;
+        grid-row: 1;
+    }
+
+    .info-box-stats > .info-box:even {
+        grid-column: auto;
+        grid-row: 2;
+    }
+
+    .info-panel-wrapper .info-panel .info-box.infos-time {
+        display: flex;
         flex-direction: column;
-        align-items: center;
+        min-width: 90vw;
+        justify-content: space-between;
+        gap: 10px;
+        grid-column: 1 / span 2;
+        grid-row: 1;
+        min-height: 70px;
+    }
+
+    .info-panel-wrapper .info-box-global-numbers {
+        grid-column: 1;
+        grid-row: 2;
+        flex-direction: column;
+        align-items: start;
         justify-content: center;
         gap: 10px;
     }
