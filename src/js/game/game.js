@@ -613,7 +613,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 let neighbors = [];
                 if(selectedObject.userData.neighbors) {
                     neighbors = selectedObject.userData.neighbors
-                        .filter(neighbor => neighbor.buildingId && neighbor.buildingId !== "");
+                        .filter(neighbor => neighbor && neighbor.buildingId && neighbor.buildingId !== "");
                 }
 
                 makeInfoSection('Bâtiment');
@@ -732,32 +732,60 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     
                     // Display employee information for markets
                     const marketData = await housesStore.getHouse(uniqueId);
-                    if (marketData && marketData.employees) {
-                        const employees = marketData.employees;
-                        const workerNeed = employees.worker_need || 0;
-                        const eliteNeed = employees.elite_need || 0;
-                        const workers = employees.worker || 0;
-                        const elites = employees.elite || 0;
-                        const priority = employees.priority || 0;
+                    if (marketData) {
+                        // Check supply chain status (farms and houses)
+                        const noFarmsNearby = marketData.noFarmsNearby === true;
                         
-                        const hasEnoughWorkers = workers >= workerNeed;
-                        const hasEnoughElites = elites >= eliteNeed;
-                        const hasNoWorkers = workers === 0 && workerNeed > 0;
-                        const hasPartialWorkers = workers > 0 && workers < workerNeed;
-                        const isFullyStaffed = hasEnoughWorkers && hasEnoughElites;
+                        // Check if there are houses within distribution range
+                        // Houses in range are determined by FoodDistributionService.findHousesInRange()
+                        // For now, we check neighbors for houses
+                        const marketNeighbors = marketData.neighbors || [];
+                        const housesNearby = marketNeighbors.filter(neighbor => {
+                            if (!neighbor) return false;
+                            const name = neighbor.name || neighbor.buildingId || neighbor.type || '';
+                            return name.includes('House') || name.includes('house');
+                        });
+                        const noHousesNearby = housesNearby.length === 0;
                         
-                        makeInfoSection('Employés');
-                        makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
-                        makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
-                        makeInfoKeyValue('Priorité', `${priority}`);
+                        makeInfoSection('Approvisionnement');
+                        if (noFarmsNearby) {
+                            makeInfoKeyValue('Fermes', '❌ Aucune ferme à proximité');
+                        } else {
+                            makeInfoKeyValue('Fermes', '✅ Fermes accessibles');
+                        }
+                        if (noHousesNearby) {
+                            makeInfoKeyValue('Distribution', '❌ Aucune maison à portée');
+                        } else {
+                            makeInfoKeyValue('Distribution', '✅ Maisons à portée');
+                        }
                         
-                        // Show status message based on employee status
-                        if (isFullyStaffed) {
-                            makeInfoBuildingText('✅ Le marché a tout ce qu\'il faut pour fonctionner', false, 'success-message');
-                        } else if (hasNoWorkers) {
-                            makeInfoBuildingText('❌ Le marché n\'a aucun employé et ne peut pas fonctionner', false, 'error-message');
-                        } else if (hasPartialWorkers) {
-                            makeInfoBuildingText('⚠️ Le marché ne peut fonctionner à sa pleine capacité', false, 'warning-message');
+                        if (marketData.employees) {
+                            const employees = marketData.employees;
+                            const workerNeed = employees.worker_need || 0;
+                            const eliteNeed = employees.elite_need || 0;
+                            const workers = employees.worker || 0;
+                            const elites = employees.elite || 0;
+                            const priority = employees.priority || 0;
+                            
+                            const hasEnoughWorkers = workers >= workerNeed;
+                            const hasEnoughElites = elites >= eliteNeed;
+                            const hasNoWorkers = workers === 0 && workerNeed > 0;
+                            const hasPartialWorkers = workers > 0 && workers < workerNeed;
+                            const isFullyStaffed = hasEnoughWorkers && hasEnoughElites;
+                            
+                            makeInfoSection('Employés');
+                            makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
+                            makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
+                            makeInfoKeyValue('Priorité', `${priority}`);
+                            
+                            // Show status message based on employee status
+                            if (isFullyStaffed) {
+                                makeInfoBuildingText('✅ Le marché marche à plein régime', false, 'success-message');
+                            } else if (hasNoWorkers) {
+                                makeInfoBuildingText('❌ Le marché manque de bras, il ne peut fonctionner', false, 'error-message');
+                            } else if (hasPartialWorkers) {
+                                makeInfoBuildingText('⚠️ Le marché tente de vendre avec peine car trop peu d\'employés', false, 'warning-message');
+                            }
                         }
                     }
                 }
