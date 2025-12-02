@@ -961,6 +961,12 @@ export function createScene(housesStore, gameStore, assetManager) {
 
                 // Process windmills: show road access and collecting status sprites
                 if((currentBuildingId.includes('Windmill') || currentBuildingId.includes('windmill')) && buildings[x][y]) {
+                    // Clean up windmill sprites (including no-work)
+                    const windmillSpriteNames = ['isCollecting', 'isCollecting-bg', 'no-work', 'no-work-bg'];
+                    windmillSpriteNames.forEach(spriteName => {
+                        assetManager.removeStatusSprite(buildings[x][y], spriteName);
+                    });
+                    
                     // Check road access for windmills (using module helper, DB remains source of truth)
                     const windmillNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
                     
@@ -995,9 +1001,31 @@ export function createScene(housesStore, gameStore, assetManager) {
                         });
                     }
 
-                    // Display collecting icon during October (when windmills collect from farms)
-                    // Show green collecting icon if windmill is collecting (isCollecting === true)
-                    if (buildings[x][y]) {
+                    // Check if windmill has workers (required to operate)
+                    const windmillDataForWorkers = await housesStore.getHouse(currentUniqueID);
+                    const windmillEmployees = windmillDataForWorkers?.employees || { worker: 0, worker_need: 0 };
+                    const windmillWorkers = windmillEmployees.worker || 0;
+                    const windmillWorkerNeed = windmillEmployees.worker_need || 0;
+                    const windmillHasNoWorkers = windmillWorkers === 0 && windmillWorkerNeed > 0;
+
+                    // If no workers, show no-work sprite (red) and skip collecting functionality
+                    if (windmillHasNoWorkers && buildings[x][y]) {
+                        // Use windmill-specific position (similar to isCollecting position)
+                        const windmillNoWorkPosition = { x: -0.5, y: 0.5, z: 0 };
+                        assetManager.setStatusSprite(
+                            buildings[x][y],
+                            textures['no-work'],
+                            'no-work',
+                            { x: 0.6, y: 0.6, z: 1 }, // Same scale as isCollecting
+                            windmillNoWorkPosition,
+                            true, // visible
+                            0xFF0000, // Red color
+                            0xFFE8E8 // Light red background
+                        );
+                        // Skip collecting icon display - windmill cannot operate without workers
+                    } else if (buildings[x][y]) {
+                        // Display collecting icon during October (when windmills collect from farms)
+                        // Show green collecting icon if windmill is collecting (isCollecting === true)
                         const isCollecting = await housesStore.getHouseItem(currentUniqueID, 'isCollecting');
                         
                         // Show/hide collecting icon based on collecting status
