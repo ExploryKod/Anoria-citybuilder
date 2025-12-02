@@ -356,7 +356,9 @@ canvas.pointer-events-disabled {
 }
 
 .toolbar__buttons {
+    max-width: calc(50px * 2 + 5px);
     display: flex;
+    flex-wrap: wrap;
     gap: 5px;
 }
 
@@ -1250,6 +1252,39 @@ footer a:hover {
     text-align: left;
 }
 
+/* Warning message style */
+.info-building-item.success-message {
+    background: #e8f5e9;
+    border-left: 4px solid #4caf50;
+    color: #2d7a2d;
+    padding: 12px 16px;
+    border-radius: 4px;
+    font-weight: 500;
+    margin: 10px 0;
+}
+
+.info-building-item.warning-message {
+    background-color: #fff3cd;
+    border-left: 4px solid var(--warning);
+    padding: 10px 12px;
+    margin: 8px 0;
+    border-radius: 4px;
+    color: #856404;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.info-building-item.error-message {
+    background-color: #ffebee;
+    border-left: 4px solid #f44336;
+    padding: 10px 12px;
+    margin: 8px 0;
+    border-radius: 4px;
+    color: #c62828;
+    font-weight: 600;
+    font-size: 13px;
+}
+
 /* Section title */
 .info-section-title {
     margin: 8px 2px 2px 2px;
@@ -1555,8 +1590,7 @@ button#pwa-refresh:hover {
 
     /* Boutons carrés pour les éléments interactifs uniquement */
     .info-panel > .info-box.realtime-budget-box,
-    .info-panel > .info-box.budget-states-box,
-    .info-panel > .info-box.journal-box,
+    .info-panel > .info-box.administrator-box,
     .info-panel > .info-box.city-map-box {
         width: 40px;
         height: 40px;
@@ -1624,7 +1658,7 @@ button#pwa-refresh:hover {
     }
 
     /* Taille de police spécifique pour les éléments informatifs */
-    .info-panel > .info-box:not(.realtime-budget-box):not(.budget-states-box):not(.journal-box):not(.city-map-box) p {
+    .info-panel > .info-box:not(.realtime-budget-box):not(.administrator-box):not(.city-map-box) p {
         font-size: 14px;
         font-weight: 700;
     }

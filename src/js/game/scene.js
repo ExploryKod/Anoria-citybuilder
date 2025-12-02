@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import {createCamera} from './camera.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { ObjectLoader } from 'three';
 import { AnimationMixer } from 'three';
 import {applyHoverColor, resetHoveredObject, resetObjectColor} from '../utils/meshUtils.js';
 import {  textures  } from '../meshs/data.js'
@@ -25,6 +24,7 @@ import {
 import {assetsPrices} from "../meshs/data.js";
 import { checkRoadAccess, checkFoodAvailability, canHouseEvolveToPalace, canHouseEvolveToPurple } from './modules/ModuleHelper.js';
 import { setRoadAccessIcon } from './modules/StatusIconHelper.js';
+import { getDefaultEmployees } from './modules/EmployeeHelper.js';
 import { TimeManager } from './utils/TimeManager.js';
 import config from './config.js';
 
@@ -495,6 +495,13 @@ export function createScene(housesStore, gameStore, assetManager) {
                 scale : {x: 0.6, y: 0.6, z: 1},
                 spriteColor: 0x00FF00, // Green color
                 backgroundColor: 0xFFFFFF // White background
+            },
+            // No worker sprite (red) - shown when farm has no employees
+            'no-work': {
+                position : {x: -0.8, y: 0.5, z: -0.2},
+                scale : {x: 0.5, y: 0.5, z: 0.5},
+                spriteColor: 0xFF0000, // Red color
+                backgroundColor: 0xFFE8E8 // Light red background
             }
         };
 
@@ -601,12 +608,73 @@ export function createScene(housesStore, gameStore, assetManager) {
                     const currentUserData = buildings[x][y].userData
                     // Building userData processing
                     await housesStore.updateHouseFields(currentUniqueID, {})
+                    
+                    // Migration: Add employees object to existing buildings if missing, or migrate old structure
+                    const buildingData = await housesStore.getHouse(currentUniqueID);
+                    if (buildingData) {
+                        if (!buildingData.employees) {
+                            // No employees object - create new one
+                            const defaultEmployees = getDefaultEmployees(currentBuildingId);
+                            await housesStore.updateHouseFields(currentUniqueID, { employees: defaultEmployees });
+                        } else {
+                            // Migrate old structure to new structure
+                            const employees = buildingData.employees;
+                            const needsUpdate = 
+                                employees.category !== undefined || // Old: category -> new: sector
+                                employees.worker_need === undefined || // Missing worker_need
+                                employees.elite_need === undefined; // Missing elite_need
+                            
+                            if (needsUpdate) {
+                                const defaultEmployees = getDefaultEmployees(currentBuildingId);
+                                const migratedEmployees = {
+                                    priority: employees.priority !== undefined ? employees.priority : defaultEmployees.priority,
+                                    worker_need: defaultEmployees.worker_need, // From config
+                                    elite_need: defaultEmployees.elite_need, // From config
+                                    worker: employees.worker || 0,
+                                    elite: employees.elite || 0,
+                                    sector: employees.category !== undefined ? employees.category : (employees.sector || defaultEmployees.sector),
+                                    salary: employees.salary || 0
+                                };
+                                await housesStore.updateHouseFields(currentUniqueID, { employees: migratedEmployees });
+                            }
+                        }
+                    }
                 } else {
                     // Pour les routes, on essaie de mettre à jour mais on ne bloque pas si ça échoue
                     try {
                         await housesStore.updateHouseFields(currentUniqueID, {worldTime: time})
                         const currentUserData = buildings[x][y].userData
                         await housesStore.updateHouseFields(currentUniqueID, {})
+                        
+                        // Migration: Add employees object to roads if missing, or migrate old structure
+                        const roadData = await housesStore.getHouse(currentUniqueID);
+                        if (roadData) {
+                            if (!roadData.employees) {
+                                const defaultEmployees = getDefaultEmployees(currentBuildingId);
+                                await housesStore.updateHouseFields(currentUniqueID, { employees: defaultEmployees });
+                            } else {
+                                // Migrate old structure to new structure
+                                const employees = roadData.employees;
+                                const needsUpdate = 
+                                    employees.category !== undefined ||
+                                    employees.worker_need === undefined ||
+                                    employees.elite_need === undefined;
+                                
+                                if (needsUpdate) {
+                                    const defaultEmployees = getDefaultEmployees(currentBuildingId);
+                                    const migratedEmployees = {
+                                        priority: employees.priority !== undefined ? employees.priority : defaultEmployees.priority,
+                                        worker_need: defaultEmployees.worker_need,
+                                        elite_need: defaultEmployees.elite_need,
+                                        worker: employees.worker || 0,
+                                        elite: employees.elite || 0,
+                                        sector: employees.category !== undefined ? employees.category : (employees.sector || defaultEmployees.sector),
+                                        salary: employees.salary || 0
+                                    };
+                                    await housesStore.updateHouseFields(currentUniqueID, { employees: migratedEmployees });
+                                }
+                            }
+                        }
                     } catch (err) {
                         // Route peut ne pas exister encore dans la DB, c'est normal lors de la création
                         // On continue quand même pour permettre l'affichage visuel
@@ -672,6 +740,14 @@ export function createScene(housesStore, gameStore, assetManager) {
                     const marketTime = { name: currentUniqueID, increment: 1, field: 'time' };
                     await housesStore.incrementHouseField(marketTime, false)
 
+                    // Clean up market sprites (including no-work)
+                    if (buildings[x][y]) {
+                        const marketSpriteNames = ['isBuying', 'isBuying-bg', 'no-work', 'no-work-bg'];
+                        marketSpriteNames.forEach(spriteName => {
+                            assetManager.removeStatusSprite(buildings[x][y], spriteName);
+                        });
+                    }
+
                     // Check road access for markets (using module helper, DB remains source of truth)
                     const marketNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
                     // Adjust icon scale for markets (smaller than houses)
@@ -705,27 +781,70 @@ export function createScene(housesStore, gameStore, assetManager) {
                         });
                     }
 
-                    // Display buying icon during autumn (when markets buy from farms)
-                    // Show green buying icon if market is in buying period (isBuying === true)
-                    // isBuying indicates that conditions are met to buy food from nearest farms
-                    if (buildings[x][y]) {
+                    // Check if market has workers (required to operate)
+                    const marketDataForWorkers = await housesStore.getHouse(currentUniqueID);
+                    const marketEmployees = marketDataForWorkers?.employees || { worker: 0, worker_need: 0 };
+                    const marketWorkers = marketEmployees.worker || 0;
+                    const marketWorkerNeed = marketEmployees.worker_need || 0;
+                    const marketHasNoWorkers = marketWorkers === 0 && marketWorkerNeed > 0;
+
+                    // If no workers, show no-work sprite (red) and skip buying functionality
+                    if (marketHasNoWorkers && buildings[x][y]) {
+                        const noWorkMeta = statutsIconsMeta['no-work'];
+                        // Use market-specific position (similar to isBuying position)
+                        const marketNoWorkPosition = { x: -0.5, y: 0.5, z: 0 };
+                        assetManager.setStatusSprite(
+                            buildings[x][y],
+                            textures['no-work'],
+                            'no-work',
+                            { x: 0.6, y: 0.6, z: 1 }, // Same scale as isBuying
+                            marketNoWorkPosition,
+                            true, // visible
+                            0xFF0000, // Red color
+                            0xFFE8E8 // Light red background
+                        );
+                        // Skip buying icon display - market cannot operate without workers
+                    } else if (buildings[x][y]) {
+                        // Display buying icon during autumn (when markets buy from farms)
+                        // Show green buying icon if market is in buying period (isBuying === true)
+                        // isBuying indicates that conditions are met to buy food from nearest farms
                         const isBuying = await housesStore.getHouseItem(currentUniqueID, 'isBuying');
                         
-                        // Show/hide buying icon based on buying status only
+                        // Check if farms are too far (using same rule as FoodDistributionService)
+                        // noFarmsNearby is set by FoodDistributionService based on neighbors
+                        const noFarmsNearby = marketDataForWorkers?.noFarmsNearby === true;
+                        
+                        // Show/hide buying icon based on buying status
                         // isBuying means market can buy food from farms (conditions are met)
                         if (isBuying === true) {
-                            // Market is in buying period - show green buying icon
+                            // Market is in buying period
                             const buyingMeta = statutsIconsMeta['isBuying'];
-                            assetManager.setStatusSprite(
-                                buildings[x][y],
-                                textures['isBuying'],
-                                'isBuying',
-                                buyingMeta.scale,
-                                buyingMeta.position,
-                                true,
-                                buyingMeta.spriteColor, // Green color from metadata
-                                buyingMeta.backgroundColor // White background from metadata
-                            );
+                            
+                            if (!noFarmsNearby) {
+                                // Farms nearby - show green buying icon with white background
+                                assetManager.setStatusSprite(
+                                    buildings[x][y],
+                                    textures['isBuying'],
+                                    'isBuying',
+                                    buyingMeta.scale,
+                                    buyingMeta.position,
+                                    true,
+                                    buyingMeta.spriteColor, // Green color from metadata
+                                    buyingMeta.backgroundColor // White background from metadata
+                                );
+                            } else {
+                                // No farms nearby - show buying icon with RED background
+                                assetManager.setStatusSprite(
+                                    buildings[x][y],
+                                    textures['isBuying'],
+                                    'isBuying',
+                                    buyingMeta.scale,
+                                    buyingMeta.position,
+                                    true,
+                                    0xFF6600, // Orange/red color to indicate problem
+                                    0xFFCCCC // Light red background - farms too far
+                                );
+                            }
                         } else {
                             // Not in buying period - hide buying icon
                             assetManager.setStatusSprite(
@@ -840,11 +959,116 @@ export function createScene(housesStore, gameStore, assetManager) {
                     // All using IndexedDB as source of truth
                 }
 
+                // Process windmills: show road access and collecting status sprites
+                if((currentBuildingId.includes('Windmill') || currentBuildingId.includes('windmill')) && buildings[x][y]) {
+                    // Clean up windmill sprites (including no-work)
+                    const windmillSpriteNames = ['isCollecting', 'isCollecting-bg', 'no-work', 'no-work-bg'];
+                    windmillSpriteNames.forEach(spriteName => {
+                        assetManager.removeStatusSprite(buildings[x][y], spriteName);
+                    });
+                    
+                    // Check road access for windmills (using module helper, DB remains source of truth)
+                    const windmillNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
+                    
+                    // Adjust icon scale for windmills (similar to markets)
+                    const windmillRoadScale = {
+                        x: statutsIconsMeta.road.scale.x * 0.714,
+                        y: statutsIconsMeta.road.scale.y * 0.714,
+                        z: statutsIconsMeta.road.scale.z * 0.714
+                    };
+
+                    if (windmillNeighbors && buildings[x][y]) {
+                        const { hasAccess, roadCount } = checkRoadAccess(windmillNeighbors);
+                        await housesStore.updateHouseFields(currentUniqueID, { roads: roadCount });
+
+                        setRoadAccessIcon({
+                            assetManager,
+                            mesh: buildings[x][y],
+                            textures,
+                            position: statutsIconsMeta.road.position,
+                            scale: windmillRoadScale,
+                            hasAccess
+                        });
+                    } else if (buildings[x][y]) {
+                        // No neighbors → treat as no road access
+                        setRoadAccessIcon({
+                            assetManager,
+                            mesh: buildings[x][y],
+                            textures,
+                            position: statutsIconsMeta.road.position,
+                            scale: windmillRoadScale,
+                            hasAccess: false
+                        });
+                    }
+
+                    // Check if windmill has workers (required to operate)
+                    const windmillDataForWorkers = await housesStore.getHouse(currentUniqueID);
+                    const windmillEmployees = windmillDataForWorkers?.employees || { worker: 0, worker_need: 0 };
+                    const windmillWorkers = windmillEmployees.worker || 0;
+                    const windmillWorkerNeed = windmillEmployees.worker_need || 0;
+                    const windmillHasNoWorkers = windmillWorkers === 0 && windmillWorkerNeed > 0;
+
+                    // If no workers, show no-work sprite (red) and skip collecting functionality
+                    if (windmillHasNoWorkers && buildings[x][y]) {
+                        // Use windmill-specific position (similar to isCollecting position)
+                        const windmillNoWorkPosition = { x: -0.5, y: 0.5, z: 0 };
+                        assetManager.setStatusSprite(
+                            buildings[x][y],
+                            textures['no-work'],
+                            'no-work',
+                            { x: 0.6, y: 0.6, z: 1 }, // Same scale as isCollecting
+                            windmillNoWorkPosition,
+                            true, // visible
+                            0xFF0000, // Red color
+                            0xFFE8E8 // Light red background
+                        );
+                        // Skip collecting icon display - windmill cannot operate without workers
+                    } else if (buildings[x][y]) {
+                        // Display collecting icon during October (when windmills collect from farms)
+                        // Show green collecting icon if windmill is collecting (isCollecting === true)
+                        const isCollecting = await housesStore.getHouseItem(currentUniqueID, 'isCollecting');
+                        
+                        // Show/hide collecting icon based on collecting status
+                        if (isCollecting === true) {
+                            // Windmill is collecting food - show green collecting icon
+                            const collectingMeta = {
+                                position: {x: -0.5, y: 0.5, z: 0},
+                                scale: {x: 0.6, y: 0.6, z: 1},
+                                spriteColor: 0x00FF00, // Green color
+                                backgroundColor: 0xFFFFFF // White background
+                            };
+                            assetManager.setStatusSprite(
+                                buildings[x][y],
+                                textures['isCollecting'],
+                                'isCollecting',
+                                collectingMeta.scale,
+                                collectingMeta.position,
+                                true,
+                                collectingMeta.spriteColor,
+                                collectingMeta.backgroundColor
+                            );
+                        } else {
+                            // Not collecting - hide collecting icon
+                            assetManager.setStatusSprite(
+                                buildings[x][y],
+                                textures['isCollecting'],
+                                'isCollecting',
+                                {x: 0.6, y: 0.6, z: 1},
+                                {x: -0.5, y: 0.5, z: 0},
+                                false,
+                                null,
+                                null
+                            );
+                        }
+                    }
+                }
+
                 // Process farms: show season-specific sprites and manage harvest stocks
                 if(farms.includes(currentBuildingId) && buildings[x][y]) {
                     // First, clean up ALL possible farm sprites to prevent any leftover sprites
                     const allFarmSpriteNames = ['no-food', 'grow-food', 'harvest', 'sell-food', 
-                                                'no-food-bg', 'grow-food-bg', 'harvest-bg', 'sell-food-bg'];
+                                                'no-food-bg', 'grow-food-bg', 'harvest-bg', 'sell-food-bg',
+                                                'no-work', 'no-work-bg'];
                     allFarmSpriteNames.forEach(spriteName => {
                         assetManager.removeStatusSprite(buildings[x][y], spriteName);
                     });
@@ -852,6 +1076,30 @@ export function createScene(housesStore, gameStore, assetManager) {
                     // Get current time info to determine season
                     const timeInfo = TimeManager.getTimeInfo(time);
                     const season = timeInfo.season;
+                    
+                    // Check if farm has workers (required to operate)
+                    const farmDataForWorkers = await housesStore.getHouse(currentUniqueID);
+                    const farmEmployees = farmDataForWorkers?.employees || { worker: 0, worker_need: 0 };
+                    const farmWorkers = farmEmployees.worker || 0;
+                    const farmWorkerNeed = farmEmployees.worker_need || 0;
+                    const hasNoWorkers = farmWorkers === 0 && farmWorkerNeed > 0;
+                    
+                    // If no workers, show no-work sprite (red) and skip all production
+                    if (hasNoWorkers) {
+                        const noWorkMeta = statutsIconsMeta['no-work'];
+                        assetManager.setStatusSprite(
+                            buildings[x][y],
+                            textures['no-work'],
+                            'no-work',
+                            noWorkMeta.scale,
+                            noWorkMeta.position,
+                            true, // visible
+                            noWorkMeta.spriteColor,
+                            noWorkMeta.backgroundColor
+                        );
+                        // Skip all production and season sprites - farm cannot operate without workers
+                        continue;
+                    }
                     
                     // Initialize farm stocks in IndexedDB if not present
                     const farmStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks');
@@ -867,6 +1115,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                     // + 6 paniers buffer needed during the time market is buying a new load for one year
                     // Total: 72 + 6 = 78 paniers/year
                     // Only produce once per year - track the last year when production happened
+                    // NOTE: Production only happens if farm has workers (checked above)
                     if (season === 'Automne') {
                         // Get farm data to check last production year
                         const farmData = await housesStore.getHouse(currentUniqueID);
@@ -921,7 +1170,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                         }
                     }
                     
-                    // Determine which sprite to show based on season
+                    // Determine which sprite to show based on season (only if farm has workers)
                     let spriteTexture, spriteName, spriteColor, spritePosition, spriteScale, backgroundColor;
                     
                     if (season === 'Hiver') {
@@ -1965,71 +2214,40 @@ export function createScene(housesStore, gameStore, assetManager) {
         const targetCitizenCount = Math.min(currentPopulation, MAX_CITIZENS);
         const currentCitizenCount = citizens.filter(c => c.spawned && c.character && c.character.visible).length;
         
-        // Check if citizen-cool can appear (population exists AND no famished population)
-        const canCreateCitizenCool = famishedPopulation === 0 && currentPopulation > 0;
-        const currentCitizenCoolCount = citizens.filter(c => c && c.citizenType === 'citizen-cool' && c.spawned && c.character && c.character.visible).length;
-        const currentCitizen02Count = citizens.filter(c => c && c.citizenType === 'citizen02' && c.spawned && c.character && c.character.visible).length;
-        
-        // Replace citizen02 with citizen-cool if conditions are met
-        // Only replace one at a time to avoid sudden changes
-        if (canCreateCitizenCool && currentCitizen02Count > 0 && currentCitizenCoolCount < targetCitizenCount) {
-            // Find first visible citizen02 to replace
-            const citizen02ToReplace = citizens.find(c => 
-                c && 
-                c.citizenType === 'citizen02' && 
-                c.spawned && 
-                c.character && 
-                c.character.visible
-            );
-            
-            if (citizen02ToReplace) {
-                console.log('[Scene] Replacing citizen02 with citizen-cool (conditions met)');
-                // Hide the citizen02
-                hideCitizenCharacter(citizen02ToReplace);
-                
-                // Create citizen-cool to replace it
-                createCitizenInstance('citizen-cool').then(newCitizen => {
-                    if (newCitizen) {
-                        // Find and replace the citizen02 in the array
-                        const index = citizens.indexOf(citizen02ToReplace);
-                        if (index !== -1) {
-                            citizens[index] = newCitizen;
-                            if (citizen02Count > 0) {
-                                citizen02Count--;
-                            }
-                        } else {
-                            citizens.push(newCitizen);
-                        }
-                        spawnCitizenCharacter(newCitizen, city);
-                        console.log('[Scene] ✅ citizen-cool created to replace citizen02');
-                    } else {
-                        console.error('[Scene] Failed to create citizen-cool for replacement');
-                    }
-                });
-            }
-        }
-        
         // Spawn new citizens if population increased
-        // Simplified logic: citizen02 appears when there's population
-        // citizen-cool appears when there's population AND no famished population
         if (targetCitizenCount > currentCitizenCount) {
             const citizensToSpawn = targetCitizenCount - currentCitizenCount;
             for (let i = 0; i < citizensToSpawn; i++) {
                 // Check if we have an available citizen slot
                 if (citizens.length < MAX_CITIZENS) {
                     // Determine which type of citizen to create
-                    // Simple strategy: try citizen-cool first if conditions are met, otherwise citizen02
+                    // First 2 citizens are always citizen02, then alternate between both types
                     let citizenType = 'citizen02';
+                    const citizenCoolCount = citizens.filter(c => c && c.citizenType === 'citizen-cool').length;
                     
-                    if (canCreateCitizenCool) {
-                        // Conditions met: create citizen-cool
-                        citizenType = 'citizen-cool';
-                        console.log('[Scene] ✅ Creating new citizen-cool (conditions met)');
-                    } else {
-                        // Conditions not met or no population: create citizen02
-                        citizenType = 'citizen02';
-                        console.log('[Scene] Creating new citizen02 (citizen-cool conditions not met)');
+                    if (citizen02Count >= 2) {
+                        // After 2 citizen02, alternate: every 3rd citizen (starting from the 3rd) is citizen-cool
+                        // Pattern: citizen02, citizen02, citizen-cool, citizen02, citizen-cool, citizen02, citizen-cool...
+                        // This means: after 2 citizen02, we create 1 citizen-cool, then 1 citizen02, then 1 citizen-cool, etc.
+                        const totalCreatedAfterFirstTwo = (citizen02Count - 2) + citizenCoolCount;
+                        // Alternate: even index = citizen02, odd index = citizen-cool
+                        if (totalCreatedAfterFirstTwo % 2 === 0) {
+                            // Even: create citizen-cool
+                            citizenType = 'citizen-cool';
+                        } else {
+                            // Odd: create citizen02
+                            citizenType = 'citizen02';
+                        }
                     }
+                    
+                    console.log('[Scene] Creating citizen:', {
+                        type: citizenType,
+                        citizen02Count: citizen02Count,
+                        citizenCoolCount: citizenCoolCount,
+                        totalCitizens: citizens.length,
+                        totalAfterFirstTwo: (citizen02Count - 2) + citizenCoolCount,
+                        decision: citizen02Count >= 2 ? `alternate (index ${(citizen02Count - 2) + citizenCoolCount})` : 'first 2 citizens'
+                    });
                     
                     createCitizenInstance(citizenType).then(newCitizen => {
                         if (newCitizen) {
@@ -2037,6 +2255,12 @@ export function createScene(housesStore, gameStore, assetManager) {
                             if (citizenType === 'citizen02') {
                                 citizen02Count++;
                             }
+                            console.log('[Scene] Citizen created successfully:', {
+                                type: citizenType,
+                                name: newCitizen.character.name,
+                                citizen02Count: citizen02Count,
+                                totalCitizens: citizens.length
+                            });
                             spawnCitizenCharacter(newCitizen, city);
                         } else {
                             console.error('[Scene] Failed to create citizen:', citizenType);
@@ -2763,7 +2987,6 @@ export function createScene(housesStore, gameStore, assetManager) {
             citizenPath,
             (gltf) => {
                 // Store all animations (shared across all citizen-cool)
-                // Based on JSON reference: animations are named "idle" and "walk"
                 if (gltf.animations && gltf.animations.length > 0) {
                     gltf.animations.forEach((clip) => {
                         citizenCoolAnimations[clip.name] = clip;
@@ -2789,13 +3012,12 @@ export function createScene(housesStore, gameStore, assetManager) {
      */
     function createCitizenInstance(citizenType = 'citizen02') {
         return new Promise((resolve) => {
+            // Create a new loader instance to avoid caching issues
+            const gltfLoader = new GLTFLoader();
             const baseUrl = config.assets.baseUrl || '/';
             
             // Determine which model to load based on citizen type
-            // Both citizen types now use GLB files (like citizen02)
-            const gltfLoader = new GLTFLoader();
             let citizenPath, citizenName, animationsToUse;
-            
             if (citizenType === 'citizen-cool') {
                 citizenPath = `${baseUrl}citizenCool/citizenCoolTwoAnim.glb`.replace(/\/+/g, '/');
                 citizenName = `citizen-cool-${citizens.length}`;
@@ -2810,6 +3032,8 @@ export function createScene(housesStore, gameStore, assetManager) {
                 loadCitizenAnimations();
             }
             
+            // Load the model fresh each time - no cloning to maintain consistency
+            // Each citizen gets its own complete model instance
             console.log('[Scene] Loading citizen model:', {
                 type: citizenType,
                 path: citizenPath,
@@ -2837,24 +3061,105 @@ export function createScene(housesStore, gameStore, assetManager) {
                     }
                     citizen.name = citizenName;
                     
-                    // Store animations from GLB if available (for citizen-cool, animations should be "idle" and "walk")
-                    if (gltf.animations && gltf.animations.length > 0) {
-                        gltf.animations.forEach((clip) => {
-                            if (citizenType === 'citizen-cool') {
-                                citizenCoolAnimations[clip.name] = clip;
-                            } else {
-                                citizenAnimations[clip.name] = clip;
+                    // Apply scale: 0.5 = half size (same as original single citizen)
+                    const characterScale = 0.5;
+                    citizen.scale.set(characterScale, characterScale, characterScale);
+                    
+                    // Ensure character receives proper lighting and shadows
+                    citizen.traverse((child) => {
+                        if (child instanceof THREE.Mesh) {
+                            // Enable shadows for the character
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                            
+                            // Ensure materials are properly lit
+                            if (child.material) {
+                                // Make sure material responds to lights
+                                if (child.material instanceof THREE.MeshBasicMaterial) {
+                                    // Convert BasicMaterial to LambertMaterial for proper lighting
+                                    const newMaterial = new THREE.MeshLambertMaterial({
+                                        map: child.material.map,
+                                        color: child.material.color,
+                                        transparent: child.material.transparent,
+                                        opacity: child.material.opacity
+                                    });
+                                    child.material = newMaterial;
+                                }
+                                
+                                // Ensure material properties are set for lighting
+                                if (child.material.needsUpdate !== undefined) {
+                                    child.material.needsUpdate = true;
+                                }
                             }
-                        });
-                        if (citizenType === 'citizen-cool') {
-                            citizenCoolAnimationsLoaded = true;
-                        } else {
-                            citizenAnimationsLoaded = true;
                         }
+                    });
+                    
+                    // Store animations if not already loaded (for the first instance)
+                    if (citizenType === 'citizen02' && gltf.animations && gltf.animations.length > 0 && !citizenAnimationsLoaded) {
+                        gltf.animations.forEach((clip) => {
+                            citizenAnimations[clip.name] = clip;
+                        });
+                        citizenAnimationsLoaded = true;
+                    } else if (citizenType === 'citizen-cool' && gltf.animations && gltf.animations.length > 0 && !citizenCoolAnimationsLoaded) {
+                        gltf.animations.forEach((clip) => {
+                            citizenCoolAnimations[clip.name] = clip;
+                        });
+                        citizenCoolAnimationsLoaded = true;
                     }
                     
-                    // Continue with the rest of the setup (scale, materials, animations, etc.)
-                    setupCitizenFromLoadedModel(citizen, citizenType, citizenName, animationsToUse, resolve);
+                    // Create new citizen data
+                    const citizenData = new CitizenData();
+                    citizenData.character = citizen;
+                    citizenData.citizenType = citizenType; // Store the type for reference
+                    
+                    // Set up animations for this citizen using the appropriate animation set
+                    // If animations are not loaded yet, try to use animations from the gltf directly
+                    let animationsToUseFinal = animationsToUse;
+                    if (Object.keys(animationsToUseFinal).length === 0 && gltf.animations && gltf.animations.length > 0) {
+                        // Animations not loaded yet, create a temporary set from this gltf
+                        const tempAnimations = {};
+                        gltf.animations.forEach((clip) => {
+                            tempAnimations[clip.name] = clip;
+                        });
+                        animationsToUseFinal = tempAnimations;
+                        console.log('[Scene] Using animations from GLB directly for', citizenType, ':', Object.keys(tempAnimations));
+                    }
+                    
+                    if (Object.keys(animationsToUseFinal).length > 0) {
+                        citizenData.mixer = new AnimationMixer(citizen);
+                        
+                        // Start with idle animation immediately
+                        const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
+                        let idleAnimation = null;
+                        for (const name of idleNames) {
+                            if (animationsToUseFinal[name]) {
+                                idleAnimation = name;
+                                break;
+                            }
+                        }
+                        if (!idleAnimation && Object.keys(animationsToUseFinal).length > 0) {
+                            idleAnimation = Object.keys(animationsToUseFinal)[0];
+                        }
+                        if (idleAnimation) {
+                            const action = citizenData.mixer.clipAction(animationsToUseFinal[idleAnimation]);
+                            action.play();
+                            citizenData.currentAction = action;
+                            console.log('[Scene] Started', idleAnimation, 'animation for', citizenType);
+                        } else {
+                            console.warn('[Scene] No idle animation found for', citizenType);
+                        }
+                    } else {
+                        console.warn('[Scene] No animations available for', citizenType, '- citizen will be created without animations');
+                    }
+                    
+                    console.log('[Scene] Citizen instance created:', {
+                        type: citizenType,
+                        name: citizenName,
+                        hasAnimations: Object.keys(animationsToUseFinal).length > 0,
+                        animationCount: Object.keys(animationsToUseFinal).length
+                    });
+                    
+                    resolve(citizenData);
                 },
                 (progress) => {
                     // Loading progress (optional)
@@ -2874,129 +3179,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                 }
             );
         });
-    }
-    
-    /**
-     * Helper function to set up citizen after model is loaded (common setup for both GLB and JSON)
-     * @param {THREE.Object3D} citizen - The loaded citizen model
-     * @param {string} citizenType - Type of citizen ('citizen02' or 'citizen-cool')
-     * @param {string} citizenName - Name for the citizen
-     * @param {Object} animationsToUse - Animations object to use
-     * @param {Function} resolve - Promise resolve function
-     */
-    function setupCitizenFromLoadedModel(citizen, citizenType, citizenName, animationsToUse, resolve) {
-        // Apply scale: 0.5 = half size (same as original single citizen)
-        const characterScale = 0.5;
-        citizen.scale.set(characterScale, characterScale, characterScale);
-        
-        // Extract animations from the loaded model (works for both GLB and JSON)
-        let modelAnimations = [];
-        if (citizen.animations && citizen.animations.length > 0) {
-            modelAnimations = citizen.animations;
-        } else {
-            // Try to find animations in the scene graph
-            citizen.traverse((child) => {
-                if (child.animations && child.animations.length > 0) {
-                    modelAnimations = modelAnimations.concat(child.animations);
-                }
-            });
-        }
-        
-        // Store animations if not already loaded (for the first instance)
-        if (citizenType === 'citizen02' && modelAnimations.length > 0 && !citizenAnimationsLoaded) {
-            modelAnimations.forEach((clip) => {
-                citizenAnimations[clip.name] = clip;
-            });
-            citizenAnimationsLoaded = true;
-        } else if (citizenType === 'citizen-cool' && modelAnimations.length > 0 && !citizenCoolAnimationsLoaded) {
-            modelAnimations.forEach((clip) => {
-                citizenCoolAnimations[clip.name] = clip;
-            });
-            citizenCoolAnimationsLoaded = true;
-        }
-        
-        // Ensure character receives proper lighting and shadows
-        citizen.traverse((child) => {
-            if (child instanceof THREE.Mesh) {
-                // Enable shadows for the character
-                child.castShadow = true;
-                child.receiveShadow = true;
-                
-                // Ensure materials are properly lit
-                if (child.material) {
-                    // Make sure material responds to lights
-                    if (child.material instanceof THREE.MeshBasicMaterial) {
-                        // Convert BasicMaterial to LambertMaterial for proper lighting
-                        const newMaterial = new THREE.MeshLambertMaterial({
-                            map: child.material.map,
-                            color: child.material.color,
-                            transparent: child.material.transparent,
-                            opacity: child.material.opacity
-                        });
-                        child.material = newMaterial;
-                    }
-                    
-                    // Ensure material properties are set for lighting
-                    if (child.material.needsUpdate !== undefined) {
-                        child.material.needsUpdate = true;
-                    }
-                }
-            }
-        });
-        
-        // Create new citizen data
-        const citizenData = new CitizenData();
-        citizenData.character = citizen;
-        citizenData.citizenType = citizenType; // Store the type for reference
-        
-        // Set up animations for this citizen using the appropriate animation set
-        // If animations are not loaded yet, try to use animations from the model directly
-        let animationsToUseFinal = animationsToUse;
-        if (Object.keys(animationsToUseFinal).length === 0 && modelAnimations.length > 0) {
-            // Animations not loaded yet, create a temporary set from this model
-            const tempAnimations = {};
-            modelAnimations.forEach((clip) => {
-                tempAnimations[clip.name] = clip;
-            });
-            animationsToUseFinal = tempAnimations;
-            console.log('[Scene] Using animations from model directly for', citizenType, ':', Object.keys(tempAnimations));
-        }
-        
-        if (Object.keys(animationsToUseFinal).length > 0) {
-            citizenData.mixer = new AnimationMixer(citizen);
-            
-            // Start with idle animation immediately
-            const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
-            let idleAnimation = null;
-            for (const name of idleNames) {
-                if (animationsToUseFinal[name]) {
-                    idleAnimation = name;
-                    break;
-                }
-            }
-            if (!idleAnimation && Object.keys(animationsToUseFinal).length > 0) {
-                idleAnimation = Object.keys(animationsToUseFinal)[0];
-            }
-            if (idleAnimation) {
-                const action = citizenData.mixer.clipAction(animationsToUseFinal[idleAnimation]);
-                action.play();
-                citizenData.currentAction = action;
-                console.log('[Scene] Started', idleAnimation, 'animation for', citizenType);
-            } else {
-                console.warn('[Scene] No idle animation found for', citizenType);
-            }
-        } else {
-            console.warn('[Scene] No animations available for', citizenType, '- citizen will be created without animations');
-        }
-        
-        console.log('[Scene] Citizen instance created:', {
-            type: citizenType,
-            name: citizenName,
-            hasAnimations: Object.keys(animationsToUseFinal).length > 0,
-            animationCount: Object.keys(animationsToUseFinal).length
-        });
-        
-        resolve(citizenData);
     }
 
     /**

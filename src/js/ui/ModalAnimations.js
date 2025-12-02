@@ -19,7 +19,8 @@ class ModalAnimations {
       'realtime-budget-panel',
       'budget-states-panel',
       'journal-panel',
-      'city-map-panel'
+      'city-map-panel',
+      'administrator-panel'
     ];
 
     modalIds.forEach(modalId => {
@@ -44,7 +45,8 @@ class ModalAnimations {
       .journal-wrapper,
       .journal-panel-wrapper,
       .city-map-wrapper,
-      .city-map-panel-wrapper
+      .city-map-panel-wrapper,
+      .administrator-panel-wrapper
     `);
     
     // Find header - supports various naming conventions
@@ -58,7 +60,8 @@ class ModalAnimations {
       .journal-header,
       .journal-panel-header,
       .city-map-header,
-      .city-map-panel-header
+      .city-map-panel-header,
+      .administrator-panel-header
     `);
     
     // Find content - supports various naming conventions
@@ -72,7 +75,8 @@ class ModalAnimations {
       .journal-content,
       .journal-panel-content,
       .city-map-content,
-      .city-map-panel-content
+      .city-map-panel-content,
+      .administrator-panel-content
     `);
 
     if (!wrapper) {
