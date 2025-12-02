@@ -740,6 +740,14 @@ export function createScene(housesStore, gameStore, assetManager) {
                     const marketTime = { name: currentUniqueID, increment: 1, field: 'time' };
                     await housesStore.incrementHouseField(marketTime, false)
 
+                    // Clean up market sprites (including no-work)
+                    if (buildings[x][y]) {
+                        const marketSpriteNames = ['isBuying', 'isBuying-bg', 'no-work', 'no-work-bg'];
+                        marketSpriteNames.forEach(spriteName => {
+                            assetManager.removeStatusSprite(buildings[x][y], spriteName);
+                        });
+                    }
+
                     // Check road access for markets (using module helper, DB remains source of truth)
                     const marketNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
                     // Adjust icon scale for markets (smaller than houses)
@@ -773,27 +781,70 @@ export function createScene(housesStore, gameStore, assetManager) {
                         });
                     }
 
-                    // Display buying icon during autumn (when markets buy from farms)
-                    // Show green buying icon if market is in buying period (isBuying === true)
-                    // isBuying indicates that conditions are met to buy food from nearest farms
-                    if (buildings[x][y]) {
+                    // Check if market has workers (required to operate)
+                    const marketDataForWorkers = await housesStore.getHouse(currentUniqueID);
+                    const marketEmployees = marketDataForWorkers?.employees || { worker: 0, worker_need: 0 };
+                    const marketWorkers = marketEmployees.worker || 0;
+                    const marketWorkerNeed = marketEmployees.worker_need || 0;
+                    const marketHasNoWorkers = marketWorkers === 0 && marketWorkerNeed > 0;
+
+                    // If no workers, show no-work sprite (red) and skip buying functionality
+                    if (marketHasNoWorkers && buildings[x][y]) {
+                        const noWorkMeta = statutsIconsMeta['no-work'];
+                        // Use market-specific position (similar to isBuying position)
+                        const marketNoWorkPosition = { x: -0.5, y: 0.5, z: 0 };
+                        assetManager.setStatusSprite(
+                            buildings[x][y],
+                            textures['no-work'],
+                            'no-work',
+                            { x: 0.6, y: 0.6, z: 1 }, // Same scale as isBuying
+                            marketNoWorkPosition,
+                            true, // visible
+                            0xFF0000, // Red color
+                            0xFFE8E8 // Light red background
+                        );
+                        // Skip buying icon display - market cannot operate without workers
+                    } else if (buildings[x][y]) {
+                        // Display buying icon during autumn (when markets buy from farms)
+                        // Show green buying icon if market is in buying period (isBuying === true)
+                        // isBuying indicates that conditions are met to buy food from nearest farms
                         const isBuying = await housesStore.getHouseItem(currentUniqueID, 'isBuying');
                         
-                        // Show/hide buying icon based on buying status only
+                        // Check if farms are too far (using same rule as FoodDistributionService)
+                        // noFarmsNearby is set by FoodDistributionService based on neighbors
+                        const noFarmsNearby = marketDataForWorkers?.noFarmsNearby === true;
+                        
+                        // Show/hide buying icon based on buying status
                         // isBuying means market can buy food from farms (conditions are met)
                         if (isBuying === true) {
-                            // Market is in buying period - show green buying icon
+                            // Market is in buying period
                             const buyingMeta = statutsIconsMeta['isBuying'];
-                            assetManager.setStatusSprite(
-                                buildings[x][y],
-                                textures['isBuying'],
-                                'isBuying',
-                                buyingMeta.scale,
-                                buyingMeta.position,
-                                true,
-                                buyingMeta.spriteColor, // Green color from metadata
-                                buyingMeta.backgroundColor // White background from metadata
-                            );
+                            
+                            if (!noFarmsNearby) {
+                                // Farms nearby - show green buying icon with white background
+                                assetManager.setStatusSprite(
+                                    buildings[x][y],
+                                    textures['isBuying'],
+                                    'isBuying',
+                                    buyingMeta.scale,
+                                    buyingMeta.position,
+                                    true,
+                                    buyingMeta.spriteColor, // Green color from metadata
+                                    buyingMeta.backgroundColor // White background from metadata
+                                );
+                            } else {
+                                // No farms nearby - show buying icon with RED background
+                                assetManager.setStatusSprite(
+                                    buildings[x][y],
+                                    textures['isBuying'],
+                                    'isBuying',
+                                    buyingMeta.scale,
+                                    buyingMeta.position,
+                                    true,
+                                    0xFF6600, // Orange/red color to indicate problem
+                                    0xFFCCCC // Light red background - farms too far
+                                );
+                            }
                         } else {
                             // Not in buying period - hide buying icon
                             assetManager.setStatusSprite(

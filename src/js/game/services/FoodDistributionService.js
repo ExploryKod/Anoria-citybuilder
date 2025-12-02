@@ -150,6 +150,22 @@ export class FoodDistributionService extends SimService {
             return;
         }
 
+        // Check if market has workers (REQUIRED for operation)
+        const marketEmployees = marketData.employees || { worker: 0, worker_need: 0 };
+        const marketWorkers = marketEmployees.worker || 0;
+        const marketWorkerNeed = marketEmployees.worker_need || 0;
+        const hasNoWorkers = marketWorkers === 0 && marketWorkerNeed > 0;
+        
+        if (hasNoWorkers) {
+            // Market has no workers - CANNOT receive food from farms OR distribute to houses
+            console.log('[FoodDistributionService] Market has no workers, skipping:', {
+                marketId,
+                workers: marketWorkers,
+                workerNeed: marketWorkerNeed
+            });
+            return;
+        }
+
         // Separate neighbors into farms and houses
         // Neighbors can have either 'name' or 'buildingId' field (check both)
         // Also check the type field if available
@@ -193,7 +209,16 @@ export class FoodDistributionService extends SimService {
 
         // Step 1: Collect food from farms into market (Farm → Market)
         // Skip collection during winter (Janvier-Février-Mars) - farms don't produce
-        if (farmsNearby.length > 0) {
+        // Also update noFarmsNearby status for UI display
+        const hasFarmsNearby = farmsNearby.length > 0;
+        await housesStore.updateHouseFields(marketId, { noFarmsNearby: !hasFarmsNearby }).catch(err => {
+            console.warn('[FoodDistributionService] Failed to update market noFarmsNearby status:', {
+                marketId,
+                error: err?.message || err
+            });
+        });
+        
+        if (hasFarmsNearby) {
             await this.collectFoodFromFarms(marketId, farmsNearby, housesStore, time);
         } else {
             console.log('[FoodDistributionService] No farms nearby for market:', marketId);
