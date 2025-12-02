@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {  assetsPrices } from '../meshs/data.js';
 import { checkRoadAccess, canHouseEvolveToPurple, canHouseEvolveToPalace, checkFoodAvailability } from './modules/ModuleHelper.js';
-import { getDefaultEmployees } from './modules/EmployeeHelper.js';
+import { getDefaultEmployees, getSectorPriority, getSectorName } from './modules/EmployeeHelper.js';
 import { firstHouses } from '../ui/nodes.js';
 import { TimeManager } from './utils/TimeManager.js';
 import { createScene } from './scene.js';
@@ -52,16 +52,16 @@ let services = [];
         services.push(new WindmillService()); // Windmill collects from all farms in October
         services.push(new RandomEventsService()); // Événements aléatoires (ouragan, inondation)
         
-        // Employment Priority Service - updates building priorities based on user settings
+        // Employment Priority Service - manages sector priorities in localStorage
+        // Priority is stored in localStorage (not IndexedDB) for instant updates
         const employmentPriorityService = new EmploymentPriorityService();
-        // Set housesStore reference for immediate building updates
-        employmentPriorityService.setHousesStore(housesStore);
         services.push(employmentPriorityService);
         
         // Employment Distribution Service - distributes workers from houses to buildings
-        // Simple version: workers only, priority-based, road access required
+        // Reads sector from IndexedDB, looks up priority from localStorage at runtime
+        // Lower priority number = higher importance (1 = first to get workers)
         services.push(new EmploymentDistributionService());
-        console.log('[game.js] EmploymentDistributionService registered');
+        console.log('[game.js] Employment services registered (priority from localStorage, sector from IndexedDB)');
         
         // Note: Initial simulation will run on first game.update() call
         // The service is now synchronized with the game loop
@@ -747,6 +747,22 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         });
                         const noHousesNearby = housesNearby.length === 0;
                         
+                        // Check buying status and show market state
+                        const isBuying = marketData.isBuying === true;
+                        const hasNoWorkersForState = (marketData.employees?.worker || 0) === 0 && (marketData.employees?.worker_need || 0) > 0;
+                        
+                        // Buying period configuration (easy to change)
+                        const buyingPeriodName = 'Automne'; // Season when markets buy from farms
+                        
+                        makeInfoSection('État du marché');
+                        if (hasNoWorkersForState) {
+                            makeInfoKeyValue('État', '🔴 Inactif : pas d\'employés');
+                        } else if (isBuying) {
+                            makeInfoKeyValue('État', '🟢 Achats en cours : c\'est le mois des affaires !');
+                        } else {
+                            makeInfoKeyValue('État', `⏸️ En attente : le marché n'achète qu'en ${buyingPeriodName}`);
+                        }
+                        
                         makeInfoSection('Approvisionnement');
                         if (noFarmsNearby) {
                             makeInfoKeyValue('Fermes', '❌ Aucune ferme à proximité');
@@ -765,7 +781,9 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                             const eliteNeed = employees.elite_need || 0;
                             const workers = employees.worker || 0;
                             const elites = employees.elite || 0;
-                            const priority = employees.priority || 0;
+                            // Get priority from localStorage based on sector (not from IndexedDB)
+                            const sector = employees.sector || 0;
+                            const priority = getSectorPriority(sector);
                             
                             const hasEnoughWorkers = workers >= workerNeed;
                             const hasEnoughElites = elites >= eliteNeed;
@@ -774,9 +792,10 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                             const isFullyStaffed = hasEnoughWorkers && hasEnoughElites;
                             
                             makeInfoSection('Employés');
+                            makeInfoKeyValue('Secteur', `${sector} : ${getSectorName(sector)}`);
+                            makeInfoKeyValue('Priorité', `${priority}`);
                             makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
                             makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
-                            makeInfoKeyValue('Priorité', `${priority}`);
                             
                             // Show status message based on employee status
                             if (isFullyStaffed) {
@@ -815,7 +834,9 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         const eliteNeed = employees.elite_need || 0;
                         const workers = employees.worker || 0;
                         const elites = employees.elite || 0;
-                        const priority = employees.priority || 0;
+                        // Get priority from localStorage based on sector (not from IndexedDB)
+                        const sector = employees.sector || 0;
+                        const priority = getSectorPriority(sector);
                         
                         const hasEnoughWorkers = workers >= workerNeed;
                         const hasEnoughElites = elites >= eliteNeed;
@@ -824,9 +845,10 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         const isFullyStaffed = hasEnoughWorkers && hasEnoughElites;
                         
                         makeInfoSection('Employés');
+                        makeInfoKeyValue('Secteur', `${sector} : ${getSectorName(sector)}`);
+                        makeInfoKeyValue('Priorité', `${priority}`);
                         makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
                         makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
-                        makeInfoKeyValue('Priorité', `${priority}`);
                         
                         // Show status message based on employee status
                         if (isFullyStaffed) {
@@ -892,7 +914,9 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         const eliteNeed = employees.elite_need || 0;
                         const workers = employees.worker || 0;
                         const elites = employees.elite || 0;
-                        const priority = employees.priority || 0;
+                        // Get priority from localStorage based on sector (not from IndexedDB)
+                        const sector = employees.sector || 0;
+                        const priority = getSectorPriority(sector);
                         
                         const hasEnoughWorkers = workers >= workerNeed;
                         const hasEnoughElites = elites >= eliteNeed;
@@ -901,9 +925,10 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         const isFullyStaffed = hasEnoughWorkers && hasEnoughElites;
                         
                         makeInfoSection('Employés');
+                        makeInfoKeyValue('Secteur', `${sector} : ${getSectorName(sector)}`);
+                        makeInfoKeyValue('Priorité', `${priority}`);
                         makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
                         makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
-                        makeInfoKeyValue('Priorité', `${priority}`);
                         
                         // Show status message based on employee status
                         if (isFullyStaffed) {

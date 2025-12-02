@@ -1,14 +1,17 @@
 /**
  * EmployeeHelper - Manages employee data for buildings
  * 
- * Each building has an employees object with:
- * - priority: number (1 to max sectors, determines hiring priority, unique per sector)
+ * Each building has an employees object stored in IndexedDB with:
+ * - sector: number (building sector from config.employment.sectors - STATIC, set at creation)
  * - worker_need: number (number of regular workers needed - set by admin in config)
  * - elite_need: number (number of elite workers needed - set by admin in config)
  * - worker: number (number of regular workers currently assigned)
  * - elite: number (number of elite workers currently assigned)
- * - sector: number (building sector from config.employment.sectors)
  * - salary: number (total salary cost per month)
+ * 
+ * NOTE: Priority is NOT stored in IndexedDB anymore!
+ * Priority is managed in localStorage by sector and looked up at runtime.
+ * This allows instant priority changes without updating all buildings in IndexedDB.
  */
 
 import config from '../config.js';
@@ -39,16 +42,13 @@ export function getBuildingSector(buildingType) {
 
 /**
  * Get default employee configuration for a building type
+ * Priority is NOT stored here - it's managed in localStorage by sector
  * @param {string} buildingType - Building type ID
- * @returns {Object} Default employees object
+ * @returns {Object} Default employees object (without priority)
  */
 export function getDefaultEmployees(buildingType) {
     const sector = getBuildingSector(buildingType);
-    const defaultPriorities = config.employment?.defaultPriorities || {};
     const buildingNeeds = config.employment?.buildingNeeds || {};
-    
-    // Get default priority for this sector
-    const defaultPriority = defaultPriorities[sector] || 1;
     
     // Get worker_need and elite_need from config
     const needs = buildingNeeds[buildingType] || { worker_need: 0, elite_need: 0 };
@@ -61,7 +61,6 @@ export function getDefaultEmployees(buildingType) {
     // Residential buildings - no employees needed
     if (sector === 0 || type.includes('house')) {
         return {
-            priority: 0,
             worker_need: 0,
             elite_need: 0,
             worker: 0,
@@ -72,8 +71,8 @@ export function getDefaultEmployees(buildingType) {
     }
     
     // Return structure with needs from config
+    // NOTE: No priority here - priority is looked up from localStorage at runtime
     return {
-        priority: defaultPriority,
         worker_need: needs.worker_need || 0,
         elite_need: needs.elite_need || 0,
         worker: 0, // Initially no workers assigned
@@ -114,5 +113,72 @@ export function updateEmployeeSalary(employees, workerSalary = 10, eliteSalary =
         ...employees,
         salary: calculateSalary(employees, workerSalary, eliteSalary)
     };
+}
+
+/**
+ * Storage key for employment priorities in localStorage
+ */
+const PRIORITIES_STORAGE_KEY = 'employment_priorities';
+
+/**
+ * Get priority for a sector from localStorage
+ * Priority determines hiring order: 1 = first to get workers
+ * @param {number} sector - Sector number (1-6)
+ * @returns {number} Priority value (1 = highest priority)
+ */
+export function getSectorPriority(sector) {
+    if (!sector || sector === 0) return 99; // Residential/no sector = lowest priority
+    
+    try {
+        const stored = localStorage.getItem(PRIORITIES_STORAGE_KEY);
+        if (stored) {
+            const priorities = JSON.parse(stored);
+            return priorities[sector] !== undefined ? priorities[sector] : getDefaultPriority(sector);
+        }
+    } catch (err) {
+        console.warn('[EmployeeHelper] Error reading priorities from localStorage:', err);
+    }
+    
+    return getDefaultPriority(sector);
+}
+
+/**
+ * Get default priority for a sector from config
+ * @param {number} sector - Sector number
+ * @returns {number} Default priority value
+ */
+function getDefaultPriority(sector) {
+    const defaultPriorities = config.employment?.defaultPriorities || {};
+    return defaultPriorities[sector] || sector; // Fallback to sector number if not defined
+}
+
+/**
+ * Get all sector priorities from localStorage (for display/debugging)
+ * @returns {Object} Map of sector -> priority
+ */
+export function getAllSectorPriorities() {
+    try {
+        const stored = localStorage.getItem(PRIORITIES_STORAGE_KEY);
+        if (stored) {
+            return JSON.parse(stored);
+        }
+    } catch (err) {
+        console.warn('[EmployeeHelper] Error reading priorities from localStorage:', err);
+    }
+    
+    // Return defaults from config
+    return config.employment?.defaultPriorities || {};
+}
+
+/**
+ * Get sector name from config
+ * @param {number} sector - Sector number (1-6)
+ * @returns {string} Sector name (e.g., "Production Alimentaire")
+ */
+export function getSectorName(sector) {
+    if (!sector || sector === 0) return 'Résidentiel';
+    
+    const sectors = config.employment?.sectors || {};
+    return sectors[sector] || `Secteur ${sector}`;
 }
 
