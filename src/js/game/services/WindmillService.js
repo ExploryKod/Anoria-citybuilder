@@ -129,7 +129,30 @@ export class WindmillService extends SimService {
             return;
         }
 
-        // Set isCollecting to true (windmill has road access and it's October)
+        // Check if windmill has workers (REQUIRED for operation)
+        const windmillEmployees = windmillData.employees || { worker: 0, worker_need: 0 };
+        const windmillWorkers = windmillEmployees.worker || 0;
+        const windmillWorkerNeed = windmillEmployees.worker_need || 0;
+        const hasNoWorkers = windmillWorkers === 0 && windmillWorkerNeed > 0;
+        
+        if (hasNoWorkers) {
+            // Windmill has no workers - CANNOT collect food from farms
+            console.log('[WindmillService] Windmill has no workers, skipping:', {
+                windmillId,
+                workers: windmillWorkers,
+                workerNeed: windmillWorkerNeed
+            });
+            // Set isCollecting to false (no workers = cannot collect)
+            await housesStore.updateHouseFields(windmillId, { isCollecting: false }).catch(err => {
+                console.warn('[WindmillService] Failed to update windmill isCollecting flag:', {
+                    windmillId,
+                    error: err?.message || err
+                });
+            });
+            return;
+        }
+
+        // Set isCollecting to true (windmill has road access, workers, and it's October)
         await housesStore.updateHouseFields(windmillId, { isCollecting: true }).catch(err => {
             console.warn('[WindmillService] Failed to update windmill isCollecting flag:', {
                 windmillId,

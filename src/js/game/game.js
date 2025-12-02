@@ -841,14 +841,15 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
 
                 // Display windmill food stocks (collected from all farms in October)
                 if((selectedObject.userData.id.includes('Windmill') || selectedObject.userData.id.includes('windmill')) && Object.hasOwn(houseStocks, 'food')) {
+                    // Get windmill data for status checks
+                    const windmillData = await housesStore.getHouse(uniqueId);
+                    
                     // Check if windmill has road access
                     const windmillRoads = houseRoads || 0;
                     const hasRoadAccess = windmillRoads > 0;
                     
-                    // Show warning if no road access
-                    if (!hasRoadAccess) {
-                        makeInfoBuildingText('⚠️ Sans route le moulin ne peut stocker', false, 'warning-message');
-                    }
+                    // Check if windmill is currently collecting (set by WindmillService in October)
+                    const isCollecting = windmillData?.isCollecting === true;
                     
                     // Get last collection data
                     const lastCollection = await housesStore.getHouseItem(uniqueId, 'lastCollection');
@@ -866,15 +867,27 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     makeInfoKeyValue('Autres légumes', `${houseStocks.carrot || 0} paniers`, carrotSubtext);
                     makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers collectés`, totalSubtext);
                     
-                    makeInfoSection('Fonctionnement');
-                    makeInfoKeyValue('Collecte', 'Chaque octobre');
+                    makeInfoSection('Approvisionnement');
+                    if (hasRoadAccess) {
+                        makeInfoKeyValue('Routes', '✅ Accès routier');
+                    } else {
+                        makeInfoKeyValue('Routes', '❌ Pas d\'accès routier');
+                    }
                     makeInfoKeyValue('Source', 'Toutes les fermes du jeu');
-                    makeInfoKeyValue('Condition', 'Accès routier requis');
+                    if (isCollecting) {
+                        makeInfoKeyValue('État', '🟢 En collecte (octobre)');
+                    } else {
+                        makeInfoKeyValue('État', '⏸️ En attente (collecte en octobre)');
+                    }
+                    
+                    // Show warning if no road access
+                    if (!hasRoadAccess) {
+                        makeInfoBuildingText('⚠️ Sans route le moulin ne peut stocker', false, 'warning-message');
+                    }
                     
                     // Display employee information
-                    const buildingData = await housesStore.getHouse(uniqueId);
-                    if (buildingData && buildingData.employees) {
-                        const employees = buildingData.employees;
+                    if (windmillData && windmillData.employees) {
+                        const employees = windmillData.employees;
                         const workerNeed = employees.worker_need || 0;
                         const eliteNeed = employees.elite_need || 0;
                         const workers = employees.worker || 0;
@@ -894,11 +907,11 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         
                         // Show status message based on employee status
                         if (isFullyStaffed) {
-                            makeInfoBuildingText('✅ Le moulin a tout ce qu\'il faut pour fonctionner', false, 'success-message');
+                            makeInfoBuildingText('✅ Le moulin tourne à plein régime', false, 'success-message');
                         } else if (hasNoWorkers) {
-                            makeInfoBuildingText('❌ Le moulin n\'a aucun employé et ne peut pas fonctionner', false, 'error-message');
+                            makeInfoBuildingText('❌ Le moulin manque de bras, il ne peut fonctionner', false, 'error-message');
                         } else if (hasPartialWorkers) {
-                            makeInfoBuildingText('⚠️ Le moulin ne peut fonctionner à sa pleine capacité', false, 'warning-message');
+                            makeInfoBuildingText('⚠️ Le moulin tourne avec peine car trop peu d\'employés', false, 'warning-message');
                         }
                     }
                 }
