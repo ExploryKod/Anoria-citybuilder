@@ -21,7 +21,7 @@ export class EmploymentPriorityService extends SimService {
      * Storage key for employment priorities
      */
     PRIORITIES_STORAGE_KEY = 'employment_priorities';
-
+    
     /**
      * Ensures localStorage has priority data initialized
      * Called each game tick to ensure defaults are set
