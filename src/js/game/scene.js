@@ -805,9 +805,9 @@ export function createScene(housesStore, gameStore, assetManager) {
                         );
                         // Skip buying icon display - market cannot operate without workers
                     } else if (buildings[x][y]) {
-                        // Display buying icon during autumn (when markets buy from farms)
-                        // Show green buying icon if market is in buying period (isBuying === true)
-                        // isBuying indicates that conditions are met to buy food from nearest farms
+                    // Display buying icon during autumn (when markets buy from farms)
+                    // Show green buying icon if market is in buying period (isBuying === true)
+                    // isBuying indicates that conditions are met to buy food from nearest farms
                         const isBuying = await housesStore.getHouseItem(currentUniqueID, 'isBuying');
                         
                         // Check if farms are too far (using same rule as FoodDistributionService)
@@ -822,16 +822,16 @@ export function createScene(housesStore, gameStore, assetManager) {
                             
                             if (!noFarmsNearby) {
                                 // Farms nearby - show green buying icon with white background
-                                assetManager.setStatusSprite(
-                                    buildings[x][y],
-                                    textures['isBuying'],
-                                    'isBuying',
-                                    buyingMeta.scale,
-                                    buyingMeta.position,
-                                    true,
-                                    buyingMeta.spriteColor, // Green color from metadata
-                                    buyingMeta.backgroundColor // White background from metadata
-                                );
+                            assetManager.setStatusSprite(
+                                buildings[x][y],
+                                textures['isBuying'],
+                                'isBuying',
+                                buyingMeta.scale,
+                                buyingMeta.position,
+                                true,
+                                buyingMeta.spriteColor, // Green color from metadata
+                                buyingMeta.backgroundColor // White background from metadata
+                            );
                             } else {
                                 // No farms nearby - show buying icon with RED background
                                 assetManager.setStatusSprite(
@@ -1024,8 +1024,8 @@ export function createScene(housesStore, gameStore, assetManager) {
                         );
                         // Skip collecting icon display - windmill cannot operate without workers
                     } else if (buildings[x][y]) {
-                        // Display collecting icon during October (when windmills collect from farms)
-                        // Show green collecting icon if windmill is collecting (isCollecting === true)
+                    // Display collecting icon during October (when windmills collect from farms)
+                    // Show green collecting icon if windmill is collecting (isCollecting === true)
                         const isCollecting = await housesStore.getHouseItem(currentUniqueID, 'isCollecting');
                         
                         // Show/hide collecting icon based on collecting status

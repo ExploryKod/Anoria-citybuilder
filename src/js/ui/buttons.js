@@ -1911,6 +1911,142 @@ window.onload = async () => {
         }
     });
 
+    // Make toolbar draggable on mobile only
+    const toolbarDragHeader = document.getElementById('toolbarheader');
+    if (toolbarDragHeader && toolbarElement) {
+        // Function to make element draggable (adapted from W3Schools)
+        function dragElement(elmnt) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+            // Helper function to check if target is a button or interactive element
+            function isInteractiveElement(target) {
+                if (!target) return false;
+                // Check if it's a button, link, or inside a button container
+                return target.tagName === 'BUTTON' ||
+                       target.tagName === 'A' ||
+                       target.closest('.toolbar-btn') !== null ||
+                       target.closest('.toolbar__buttons') !== null ||
+                       target.closest('.toolbar__container') !== null;
+            }
+
+            // Handle icon can always drag
+            if (toolbarDragHeader) {
+                toolbarDragHeader.onmousedown = dragMouseDown;
+                toolbarDragHeader.ontouchstart = dragTouchStart;
+            }
+
+            // Allow dragging from anywhere on toolbar except buttons
+            elmnt.addEventListener('mousedown', (e) => {
+                // Don't drag if clicking on a button or interactive element
+                if (isInteractiveElement(e.target)) return;
+                dragMouseDown(e);
+            });
+
+            elmnt.addEventListener('touchstart', (e) => {
+                // Don't drag if touching a button or interactive element
+                if (isInteractiveElement(e.target)) return;
+                dragTouchStart(e);
+            });
+
+            function dragMouseDown(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                // Get the mouse cursor position at startup
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                // Call a function whenever the cursor moves
+                document.onmousemove = elementDrag;
+            }
+
+            function dragTouchStart(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const touch = e.touches[0];
+                pos3 = touch.clientX;
+                pos4 = touch.clientY;
+                document.ontouchend = closeDragElement;
+                document.ontouchmove = elementDragTouch;
+            }
+
+            function elementDrag(e) {
+                e.preventDefault();
+                // Calculate the new cursor position
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                // Get actual visual position (accounting for transform)
+                const rect = elmnt.getBoundingClientRect();
+                // Set the element's new position relative to viewport
+                const newTop = (rect.top - pos2);
+                const newLeft = (rect.left - pos1);
+                elmnt.style.top = newTop + "px";
+                elmnt.style.left = newLeft + "px";
+                // Remove transform, bottom, and percentage-based positioning to allow manual positioning
+                elmnt.style.transform = "none";
+                elmnt.style.bottom = "auto";
+            }
+
+            function elementDragTouch(e) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                // Calculate the new touch position
+                pos1 = pos3 - touch.clientX;
+                pos2 = pos4 - touch.clientY;
+                pos3 = touch.clientX;
+                pos4 = touch.clientY;
+                // Get actual visual position (accounting for transform)
+                const rect = elmnt.getBoundingClientRect();
+                // Set the element's new position relative to viewport
+                const newTop = (rect.top - pos2);
+                const newLeft = (rect.left - pos1);
+                elmnt.style.top = newTop + "px";
+                elmnt.style.left = newLeft + "px";
+                // Remove transform, bottom, and percentage-based positioning to allow manual positioning
+                elmnt.style.transform = "none";
+                elmnt.style.bottom = "auto";
+            }
+
+            function closeDragElement() {
+                // Stop moving when mouse/touch is released
+                document.onmouseup = null;
+                document.onmousemove = null;
+                document.ontouchend = null;
+                document.ontouchmove = null;
+            }
+        }
+
+        // Initialize dragging on all breakpoints
+        dragElement(toolbarElement);
+    }
+
+    // Toolbar tab switching
+    const toolbarTabs = document.querySelectorAll('.toolbar-tab');
+    const toolbarSections = document.querySelectorAll('.toolbar-section');
+
+    if (toolbarTabs.length > 0 && toolbarSections.length > 0) {
+        toolbarTabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const targetSection = tab.getAttribute('data-tab');
+                
+                // Update active tab
+                toolbarTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Update active section
+                toolbarSections.forEach(section => {
+                    if (section.getAttribute('data-section') === targetSection) {
+                        section.classList.add('active');
+                    } else {
+                        section.classList.remove('active');
+                    }
+                });
+            });
+        });
+    }
+
     if (mobileControlsToggle && mobileControlsElement) {
         mobileControlsToggle.addEventListener('click', (e) => {
             e.stopPropagation();

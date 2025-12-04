@@ -17,7 +17,17 @@
 
 > "Village / Town Assets" [source ici](https://skfb.ly/otGwo) by imwolfgang is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
 
-## Icones (provienne de DuckIcons)
+## Icones 
+
+### Icones issues de <a href="https://lucide.dev">lucide.dev</a> :
+- Les icones marquées comme "lucide" dans le html (DOM) et qui se retrouve dans les barres de navigations (icone de maison, de blé, de salade etc.):
+
+Auteurs : 
+- Karsa Mistmere : https://github.com/karsa-mistmere
+- Jguddas : https://github.com/jguddas
+- Respository général de lucide : https://github.com/lucide-icons/lucide
+
+### Icones issues de DuckIcons
 
 > Icone de route barré par Pawel-kuna : [site du designer ici](https://iconduck.com/designers/pawel-kuna) (MIT license).
 
