@@ -1,8 +1,5 @@
 /* Budget States Panel Styles - Common toolbar button styles */
-.budget-states-box,
-.journal-box,
-.realtime-budget-box,
-.city-map-box {
+.stats-buttons {
     cursor: pointer;
     transition: all 0.3s ease-in-out;
     border: 3px solid #fff !important;
@@ -12,18 +9,12 @@
     overflow: hidden;
 }
 
-.budget-states-box:hover,
-.journal-box:hover,
-.realtime-budget-box:hover,
-.city-map-box:hover {
+.stats-buttons:hover {
     transform: translateY(-2px);
     background: #fff;
 }
 
-.budget-states-box.active,
-.journal-box.active,
-.realtime-budget-box.active,
-.city-map-box.active {
+.stats-buttons.active {
     transform: translateY(0px);
     background: #fff;
 }
