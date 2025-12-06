@@ -3,9 +3,9 @@
 ## 📊 État actuel
 
 **Statistiques globales :**
-- ✅ **321 tests passent** sur 324
+- ✅ **359 tests passent** sur 362
 - ⚠️ **3 tests échouent** (BudgetManager - problème de logique métier)
-- ✅ **138 nouveaux tests** créés (92 modules + 46 HousesStore)
+- ✅ **177 nouveaux tests** créés (92 modules + 46 HousesStore + 20 utils + 18 FoodDistributionService)
 
 **Tests implémentés :**
 - ✅ TimeManager (33 tests)
@@ -18,25 +18,27 @@
 - ✅ **EmploymentModule (30 tests)** 🆕
 - ✅ EmployeeHelper.localStorage (8 tests)
 - ✅ **HousesStore (46 tests)** 🆕
+- ✅ **FoodDistributionService (18 tests)** 🆕
 - ✅ BudgetManager (13 tests passent, 3 échouent)
 
 ## 📋 Tests non implémentés
 
 ### Services (nécessitent mocking IndexedDB)
 
-#### FoodDistributionService
+#### FoodDistributionService ✅ **IMPLÉMENTÉ (partiel)**
 - **Fichier** : `src/js/game/services/FoodDistributionService.js`
-- **Fonctionnalités à tester** :
-  - Distribution de nourriture des fermes vers les marchés
-  - Distribution des marchés vers les maisons
-  - Calcul de distance (Manhattan)
-  - Vérification de l'accès routier
-  - Détection `noFarmsNearby` pour les marchés
-  - Vérification des employés avant distribution
-- **Difficulté** : ⚠️ Moyenne
-  - Nécessite de mocker `HousesStore` (IndexedDB)
-  - Nécessite de créer des structures de données complexes (buildings, neighbors)
-  - Tests de distance et de logique de distribution
+- **Tests** : `tests/FoodDistributionService.test.js` (18 tests)
+- **Fonctionnalités testées** :
+  - ✅ `calculateDistance()` - Distance Manhattan (5 tests)
+  - ✅ `findHousesInRange()` - Filtrage par distance (5 tests)
+  - ✅ `processMarket()` - Logique principale (4 tests)
+  - ✅ `simulate()` - Orchestration globale (4 tests)
+- **Fonctionnalités non testées** (complexes, nécessitent structures complètes) :
+  - ⚠️ `collectFoodFromFarms()` - Collecte depuis fermes (stocks multiples, saisons)
+  - ⚠️ `distributeFoodToHouses()` - Distribution vers maisons (stocks multiples, saisons)
+  - ⚠️ `updateHousesMarketDistanceStatus()` - Détection distance marché
+- **Statut** : ✅ 18 tests passent (tests de base)
+- **Notes** : Tests de base créés. Tests d'intégration complets (ferme → marché → maison) à ajouter si nécessaire. Utilise le vrai TimeManager avec contrôle via paramètre `time`.
 
 #### EmploymentDistributionService
 - **Fichier** : `src/js/game/services/EmploymentDistributionService.js`
@@ -226,15 +228,17 @@
 
 ## 📊 Priorités d'implémentation
 
-### ✅ Terminé (138 tests)
+### ✅ Terminé (177 tests)
 - **FoodModule** - 32 tests ✅
 - **RoadAccessModule** - 30 tests ✅
 - **EmploymentModule** - 30 tests ✅
 - **HousesStore** - 46 tests ✅
+- **Utils supplémentaires** - 20 tests ✅
+- **FoodDistributionService** - 18 tests ✅ (partiel)
 
 ### Priorité Haute (fonctions critiques)
-1. **FoodDistributionService** - Logique de distribution alimentaire
-2. **EmploymentDistributionService** - Distribution des travailleurs
+1. **EmploymentDistributionService** - Distribution des travailleurs
+2. **FoodDistributionService** - Tests d'intégration complets (collectFoodFromFarms, distributeFoodToHouses)
 
 ### Priorité Moyenne (utilitaires)
 3. **Utils supplémentaires** - Fonctions utilitaires
@@ -271,17 +275,19 @@
 | utils | `utils.test.js` | 30 | ✅ |
 | config | `config.test.js` | 29 | ✅ |
 
-### Tests avec mocking (162 tests)
+### Tests avec mocking (180 tests)
 | Module | Fichier de test | Tests | Statut |
 |--------|----------------|-------|--------|
 | FoodModule | `FoodModule.test.js` | 32 | ✅ |
 | RoadAccessModule | `RoadAccessModule.test.js` | 30 | ✅ |
 | EmploymentModule | `EmploymentModule.test.js` | 30 | ✅ |
 | HousesStore | `HousesStore.test.js` | 46 | ✅ |
+| Utils supplémentaires | `utils.test.js` (extensions) | 20 | ✅ |
+| FoodDistributionService | `FoodDistributionService.test.js` | 18 | ✅ |
 | EmployeeHelper.localStorage | `EmployeeHelper.localStorage.test.js` | 8 | ✅ |
 | BudgetManager | `BudgetManager.test.js` | 16 | ⚠️ (13 passent, 3 échouent) |
 
-**Total : 324 tests (321 passent, 3 échouent)**
+**Total : 362 tests (359 passent, 3 échouent)**
 
 ### Détails des tests HousesStore
 
