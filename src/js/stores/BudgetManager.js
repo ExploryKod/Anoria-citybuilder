@@ -63,6 +63,15 @@ class BudgetManager {
         };
         
         await this.db.budget.add(initialBudget);
+        
+        // Add capital funds entry to journal (turn 0) only if journal is empty
+        // This ensures we don't create duplicate entries on reinitialization
+        const existingEntries = await this.getJournalEntries();
+        const hasCapitalFunds = existingEntries.some(entry => entry.type === 'capital_funds' && entry.turn === 0);
+        
+        if (!hasCapitalFunds) {
+            await this.addJournalEntry(0, 'capital_funds', startingFunds, `Capital de départ (VITE_INITIAL_FUNDS=${startingFunds}€)`);
+        }
             
         return initialBudget;
     }
@@ -363,8 +372,8 @@ class BudgetManager {
         try {
             budget.funds = currentFunds - amount;
             
-            // Add journal entry
-            await this.addJournalEntry(budget.turn, 'expense', amount, reason);
+            // Add journal entry (constructions are tracked as 'construction' type)
+            await this.addJournalEntry(budget.turn, 'construction', amount, reason);
             
             // Distinguish between investments and regular expenses
             if (reason.includes('Building:') || reason.includes('building')) {

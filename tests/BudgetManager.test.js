@@ -335,24 +335,33 @@ describe('BudgetManager', () => {
         });
 
         test('ajoute une entrée au journal', async () => {
+            // Note: initialize() crée automatiquement une entrée capital_funds au tour 0
+            await budgetManager.initialize(200);
             await budgetManager.addJournalEntry(1, 'income', 50, 'Impôts');
             
             const entries = await testDb.journal.toArray();
             
-            expect(entries).toHaveLength(1);
-            expect(entries[0].turn).toBe(1);
-            expect(entries[0].type).toBe('income');
-            expect(entries[0].amount).toBe(50);
-            expect(entries[0].description).toBe('Impôts');
+            // 1 entrée capital_funds (créée automatiquement) + 1 entrée income = 2 entrées
+            expect(entries).toHaveLength(2);
+            // Trouver l'entrée income (pas capital_funds)
+            const incomeEntry = entries.find(e => e.type === 'income');
+            expect(incomeEntry).toBeDefined();
+            expect(incomeEntry.turn).toBe(1);
+            expect(incomeEntry.type).toBe('income');
+            expect(incomeEntry.amount).toBe(50);
+            expect(incomeEntry.description).toBe('Impôts');
         });
 
         test('peut ajouter plusieurs entrées', async () => {
+            // Note: initialize() crée automatiquement une entrée capital_funds au tour 0
+            await budgetManager.initialize(200);
             await budgetManager.addJournalEntry(1, 'income', 50, 'Impôts');
-            await budgetManager.addJournalEntry(1, 'expense', 30, 'Maintenance');
+            await budgetManager.addJournalEntry(1, 'maintenance', 30, 'Maintenance mensuelle');
             
             const entries = await testDb.journal.toArray();
             
-            expect(entries).toHaveLength(2);
+            // 1 entrée capital_funds (créée automatiquement) + 2 entrées ajoutées = 3 entrées
+            expect(entries).toHaveLength(3);
         });
     });
 
@@ -367,7 +376,7 @@ describe('BudgetManager', () => {
             // Créer des entrées de journal pour différents tours
             await testDb.journal.bulkAdd([
                 { turn: 1, date: new Date('2024-01-01').toISOString(), type: 'income', amount: 50, description: 'Test 1' },
-                { turn: 2, date: new Date('2024-01-02').toISOString(), type: 'expense', amount: 30, description: 'Test 2' },
+                { turn: 2, date: new Date('2024-01-02').toISOString(), type: 'construction', amount: 30, description: 'Test 2' },
                 { turn: 3, date: new Date('2024-01-03').toISOString(), type: 'income', amount: 20, description: 'Test 3' }
             ]);
         });
@@ -375,7 +384,8 @@ describe('BudgetManager', () => {
         test('récupère toutes les entrées du journal', async () => {
             const entries = await budgetManager.getJournalEntries();
             
-            expect(entries).toHaveLength(3);
+            // 1 entrée capital_funds (créée automatiquement par initialize) + 3 entrées ajoutées = 4 entrées
+            expect(entries).toHaveLength(4);
         });
 
         test('filtre les entrées par âge maximum (en jours)', async () => {

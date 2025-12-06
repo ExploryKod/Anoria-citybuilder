@@ -183,11 +183,24 @@
     color: #155724;
 }
 
-.journal-entry-type.expense {
+.journal-entry-type.capital_funds {
+    background: #cfe2ff;
+    color: #084298;
+}
+
+/* Construction en rouge */
+.journal-entry-type.construction {
     background: #f8d7da;
     color: #721c24;
 }
 
+/* Dépenses exceptionnelles (réparations) en orange/rouge foncé */
+.journal-entry-type.exceptional_expenses {
+    background: #fd7e14;
+    color: #842029;
+}
+
+/* Maintenance en jaune/orange */
 .journal-entry-type.maintenance {
     background: #fff3cd;
     color: #856404;

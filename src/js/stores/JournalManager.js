@@ -170,7 +170,9 @@ class JournalManager {
             }
             
             // Classer comme revenu ou dépense
-            const isIncome = entry.type === 'income';
+            // Revenus: 'income', 'capital_funds'
+            // Dépenses: 'construction', 'maintenance', 'loan_interest', 'loan_repayment', 'exceptional_expenses'
+            const isIncome = entry.type === 'income' || entry.type === 'capital_funds';
             
             if (isIncome) {
                 grouped[key].income.total += entry.amount;
