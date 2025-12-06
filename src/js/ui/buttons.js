@@ -4580,10 +4580,15 @@ function createJournalEntryHTML(entry) {
         minute: '2-digit'
     });
     
-    const typeClass = entry.type === 'income' ? 'positive' : 'negative';
+    // Déterminer si c'est un revenu (positif) ou une dépense (négatif)
+    const isIncome = entry.type === 'income' || entry.type === 'capital_funds';
+    const typeClass = isIncome ? 'positive' : 'negative';
+    
     const typeLabels = {
         'income': 'Revenu',
-        'expense': 'Dépense',
+        'capital_funds': 'Capital de départ',
+        'construction': 'Construction',
+        'exceptional_expenses': 'Réparation',
         'maintenance': 'Maintenance mensuelle',
         'loan_interest': 'Intérêts prêt',
         'loan_repayment': 'Remboursement prêt'

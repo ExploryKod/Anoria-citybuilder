@@ -67,7 +67,7 @@ describe('JournalManager', () => {
 
         test('should add multiple journal entries', async () => {
             await journalManager.addJournalEntry(1, 'income', 1000, 'Taxes');
-            await journalManager.addJournalEntry(1, 'expense', 500, 'Maintenance');
+            await journalManager.addJournalEntry(1, 'maintenance', 500, 'Maintenance mensuelle');
             await journalManager.addJournalEntry(2, 'income', 1200, 'More taxes');
             
             const entries = await testDb.journal.toArray();
@@ -80,7 +80,7 @@ describe('JournalManager', () => {
             // Add some test entries
             await journalManager.addJournalEntry(1, 'income', 1000, 'Taxes Turn 1');
             await new Promise(resolve => setTimeout(resolve, 10));
-            await journalManager.addJournalEntry(2, 'expense', 500, 'Maintenance Turn 2');
+            await journalManager.addJournalEntry(2, 'maintenance', 500, 'Maintenance Turn 2');
             await new Promise(resolve => setTimeout(resolve, 10));
             await journalManager.addJournalEntry(3, 'income', 1500, 'Taxes Turn 3');
         });
@@ -105,7 +105,7 @@ describe('JournalManager', () => {
     describe('getJournalEntriesForTurn', () => {
         beforeEach(async () => {
             await journalManager.addJournalEntry(1, 'income', 1000, 'Entry 1');
-            await journalManager.addJournalEntry(1, 'expense', 500, 'Entry 2');
+            await journalManager.addJournalEntry(1, 'construction', 500, 'Entry 2');
             await journalManager.addJournalEntry(2, 'income', 1500, 'Entry 3');
         });
 
@@ -126,7 +126,7 @@ describe('JournalManager', () => {
     describe('clearAllEntries', () => {
         test('should clear all journal entries', async () => {
             await journalManager.addJournalEntry(1, 'income', 1000, 'Test');
-            await journalManager.addJournalEntry(2, 'expense', 500, 'Test');
+            await journalManager.addJournalEntry(2, 'construction', 500, 'Test');
             
             const count = await journalManager.clearAllEntries();
             expect(count).toBe(2);
@@ -157,7 +157,7 @@ describe('JournalManager', () => {
             await new Promise(resolve => setTimeout(resolve, 10));
             await journalManager.addJournalEntry(2, 'income', 500, 'Income 2');
             await new Promise(resolve => setTimeout(resolve, 10));
-            await journalManager.addJournalEntry(3, 'expense', 300, 'Expense 1');
+            await journalManager.addJournalEntry(3, 'construction', 300, 'Construction 1');
             await new Promise(resolve => setTimeout(resolve, 10));
             await journalManager.addJournalEntry(4, 'maintenance', 200, 'Maintenance');
             
@@ -165,9 +165,9 @@ describe('JournalManager', () => {
             
             expect(stats.totalEntries).toBe(4);
             expect(stats.totalIncome).toBe(1500);
-            expect(stats.totalExpenses).toBe(500); // expense + maintenance
+            expect(stats.totalExpenses).toBe(500); // construction + maintenance
             expect(stats.byType.income).toBe(2);
-            expect(stats.byType.expense).toBe(1);
+            expect(stats.byType.construction).toBe(1);
             expect(stats.byType.maintenance).toBe(1);
             expect(stats.earliestEntry).toBeDefined();
             expect(stats.latestEntry).toBeDefined();

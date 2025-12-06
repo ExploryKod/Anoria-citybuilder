@@ -147,7 +147,7 @@ export class RandomEventsService extends SimService {
                 const budget = await window.budgetManager.getCurrentBudget();
                 await window.budgetManager.addJournalEntry(
                     budget.turn,
-                    'expense',
+                    'exceptional_expenses',
                     event.cost,
                     `${event.name}: ${event.description} - Maison détruite et réparations`
                 );
