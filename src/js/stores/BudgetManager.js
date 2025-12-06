@@ -22,10 +22,15 @@ class BudgetManager {
             startingFunds = config?.budget?.initialFunds || 200;
         }
         
+        // Safe access to import.meta.env (doesn't exist in Node.js/Jest)
+        const envValue = typeof import.meta !== 'undefined' && import.meta.env 
+            ? import.meta.env.VITE_INITIAL_FUNDS 
+            : undefined;
+        
         console.log('[BudgetManager] initialize called with:', {
             provided: startingFunds,
             fromConfig: config?.budget?.initialFunds,
-            envValue: import.meta.env.VITE_INITIAL_FUNDS
+            envValue: envValue
         });
         
         // Clear any existing budget data to ensure fresh start
@@ -114,7 +119,11 @@ class BudgetManager {
         // Get expected initial funds from config (source of truth)
         const expectedInitialFunds = config?.budget?.initialFunds || 200;
         
-        console.log('[BudgetManager] getCurrentBudget - Config initialFunds:', expectedInitialFunds, 'import.meta.env.VITE_INITIAL_FUNDS:', import.meta.env.VITE_INITIAL_FUNDS);
+        // Safe access to import.meta.env
+        const envValue = typeof import.meta !== 'undefined' && import.meta.env 
+            ? import.meta.env.VITE_INITIAL_FUNDS 
+            : undefined;
+        console.log('[BudgetManager] getCurrentBudget - Config initialFunds:', expectedInitialFunds, 'import.meta.env.VITE_INITIAL_FUNDS:', envValue);
         
         if (!budget) {
             // No budget exists - initialize with config value
@@ -794,7 +803,9 @@ class BudgetManager {
         console.log('[BudgetManager] forceReinitialize called with:', {
             provided: startingFunds,
             fromConfig: config?.budget?.initialFunds,
-            envValue: import.meta.env.VITE_INITIAL_FUNDS
+            envValue: typeof import.meta !== 'undefined' && import.meta.env 
+                ? import.meta.env.VITE_INITIAL_FUNDS 
+                : undefined
         });
         
         await this.db.budget.clear();
@@ -1120,4 +1131,6 @@ if (typeof window !== 'undefined') {
     }
 }
 
+// Export both the class (for testing) and the singleton instance (for production)
+export { BudgetManager };
 export default budgetManager;
