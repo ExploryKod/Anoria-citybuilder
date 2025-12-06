@@ -666,6 +666,7 @@ class BudgetManager {
      * Add taxes based on population (100€ per citizen per month, only in November)
      * Calculates taxes from houses in the database
      * Only collects taxes if there is population AND it's November (month index 10)
+     * Taxes are collected only ONCE per year (first day of November)
      * @param {number} time - Current simulation time (number of days)
      * @returns {Promise<Object>} Updated budget
      */
@@ -678,6 +679,15 @@ class BudgetManager {
         // Only collect taxes in November
         if (!isNovember) {
             return await this.getCurrentBudget();
+        }
+        
+        // Check if taxes have already been collected for this year
+        const budget = await this.getCurrentBudget();
+        const lastTaxYear = budget.lastTaxYear ?? -1; // Year when taxes were last collected
+        
+        // Only collect taxes once per year (first time we enter November)
+        if (timeInfo.year === lastTaxYear) {
+            return budget; // Taxes already collected this year
         }
         
         // Get all houses from the database
@@ -716,8 +726,6 @@ class BudgetManager {
         
         // Only add taxes if there is population
         if (taxBreakdown.total > 0 && taxBreakdown.population > 0) {
-            const budget = await this.getCurrentBudget();
-            
             // Add journal entry
             await this.addJournalEntry(budget.turn, 'income', taxBreakdown.total, `Impôts habitants (${taxBreakdown.population} hab.) - Novembre`);
             
@@ -730,13 +738,17 @@ class BudgetManager {
             // Store tax breakdown for detailed display
             budget.taxBreakdown = taxBreakdown;
             
+            // Mark this year as having collected taxes
+            budget.lastTaxYear = timeInfo.year;
+            
             budget.netFlow = budget.income - budget.expenses;
             
             await this.db.budget.put(budget);
+            console.log(`[BudgetManager] Taxes collected for year ${timeInfo.year}: ${taxBreakdown.total}€ from ${taxBreakdown.population} habitants`);
             return budget;
         }
         
-        return await this.getCurrentBudget();
+        return budget;
     }
 
     /**
