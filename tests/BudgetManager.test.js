@@ -9,6 +9,7 @@
 
 import Dexie from 'dexie';
 import { BudgetManager } from '../src/js/stores/BudgetManager.js';
+import { JournalManager } from '../src/js/stores/JournalManager.js';
 import config from '../src/js/game/config.js';
 
 // ============================================================================
@@ -45,6 +46,11 @@ describe('BudgetManager', () => {
         // Créer un BudgetManager avec la base de test
         budgetManager = new BudgetManager();
         budgetManager.db = testDb; // Injecter la base de test
+        
+        // Create and inject JournalManager with test database
+        const journalManager = new JournalManager();
+        journalManager.db = testDb;
+        budgetManager.journalManager = journalManager;
         
         // Mock config pour éviter les problèmes avec import.meta.env
         budgetManager.config = config;
