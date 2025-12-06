@@ -7,6 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "copy:tarteaucitron": "mkdir -p public/tarteaucitron && cp node_modules/tarteaucitronjs/tarteaucitron.min.js public/tarteaucitron/ && cp node_modules/tarteaucitronjs/tarteaucitron.services.min.js public/tarteaucitron/ && cp -r node_modules/tarteaucitronjs/lang public/tarteaucitron/ && cp -r node_modules/tarteaucitronjs/css public/tarteaucitron/ && echo '✅ Tarteaucitron files copied successfully'"
   },
   "dependencies": {
@@ -18,7 +21,11 @@
   "devDependencies": {
     "@gltf-transform/core": "^4.2.1",
     "@gltf-transform/extensions": "^4.2.1",
+    "@types/jest": "^30.0.0",
     "@vite-pwa/assets-generator": "^0.2.6",
+    "fake-indexeddb": "^6.2.5",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
     "vite": "^6.0.11",
     "vite-plugin-pwa": "^0.21.1",
     "workbox-window": "^7.3.0"

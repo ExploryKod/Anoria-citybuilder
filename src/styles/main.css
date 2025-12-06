@@ -242,35 +242,6 @@ canvas.pointer-events-disabled {
     color: #fff;
 }
 
-/* Toolbar tabs container - extra margin to separate from sections */
-.toolbar-tabs-container {
-    margin-bottom: 15px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
-}
-
-/* Tab buttons - white background, orange on active */
-.toolbar-btn.toolbar-tab {
-    background-color: #fff;
-    border-color: var(--cta);
-    color: var(--primary);
-}
-
-.toolbar-btn.toolbar-tab:hover {
-    background-color: #f5f5f5;
-    border-color: var(--cta);
-}
-
-.toolbar-btn.toolbar-tab.active {
-    background-color: var(--cta);
-    border-color: var(--cta);
-    color: #fff;
-}
-
-.toolbar-btn.toolbar-tab.active:hover {
-    opacity: 0.9;
-}
-
 /* Toolbar sections */
 .toolbar-section {
     display: none;
@@ -351,8 +322,8 @@ canvas.pointer-events-disabled {
     background-color: rgba(0, 0, 0, 0.3);
     color: #fff;
     text-align: center;
-    font-size: 28px;
-    line-height: 48px;
+    font-size: 18px;
+    line-height: 32px;
     border-radius: 50%;
     user-select: none;
     -webkit-user-select: none;
@@ -438,12 +409,6 @@ canvas.pointer-events-disabled {
     pointer-events: none;
 }
 
-.toolbar-btn:hover {
-    background-color: #fff;
-    border: 3px solid #fff;
-    color: var(--primary);
-}
-
 .toolbar-btn:active {
    box-shadow: 0 0 10px #000235;
 }
@@ -461,6 +426,35 @@ canvas.pointer-events-disabled {
 .toolbar-btn.selected:active {
     box-shadow: 0 0 10px var(--lightgreen);
  }
+
+ /* Toolbar tabs container - extra margin to separate from sections */
+.toolbar-tabs-container {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Tab buttons - white background, orange on active */
+.toolbar .toolbar-btn.toolbar-tab {
+    background-color: #fff;
+    border-color: #fff;
+    color: var(--primary);
+}
+
+.toolbar .toolbar-btn.toolbar-tab:hover {
+    background-color: #f5f5f5;
+    border-color: var(--cta);
+}
+
+.toolbar .toolbar-btn.toolbar-tab.active {
+    background-color: var(--lightgreen);
+    border-color: var(--lightgreen);
+    color: #fff;
+}
+
+.toolbar .toolbar-btn.toolbar-tab.active:hover {
+    opacity: 0.9;
+}
 
 
 /* two toolbar-btn container */
@@ -497,9 +491,8 @@ canvas.pointer-events-disabled {
 }
 
 .toolbar__buttons {
-    max-width: calc(50px * 2 + 5px);
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 5px;
 }
 
@@ -1556,50 +1549,11 @@ button#pwa-refresh:hover {
     }
 }
 
-/* Nettoyage: suppression des overrides liés au carousel mobile paysage */
-
-/* Mobile Portrait - Masquer le jeu */
-/* @media screen and (max-width: 768px) and (orientation: portrait) {
-    body {
-        overflow-x: hidden;
-    }
-
-    .no-game {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .no-game p {
-        font-size: 18px;
-        font-weight: bold;
-        color: #fff;
-    }
-
-    .no-game > div {
-        padding: 20px 40px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background-color: #000235;
-        width: 100%;
-        height: 100%;
-    }
-
-    .game-window {
-        display: none;
-    }
-} */
-
 
 @media screen and (max-width: 1024px) and (orientation: portrait) {
+
+
+    /* ================================ Footer (PORTRAIT) ================================ */
 
     footer .footer-content {
         width: 100%;

@@ -417,6 +417,7 @@ class HouseStore {
     }
 }
 
-// Export an instance of the HouseStore class to use across your application
+// Export both the class (for testing) and the singleton instance (for production)
+export { HouseStore };
 const houseStore = new HouseStore();
 export default houseStore;

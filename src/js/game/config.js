@@ -17,15 +17,12 @@ const config = {
         // Can be overridden via environment variable VITE_INITIAL_FUNDS
         // Default: 200 euros
         initialFunds: (() => {
-            const envValue = import.meta.env.VITE_INITIAL_FUNDS;
+            // Safe access to import.meta.env (doesn't exist in Node.js/Jest)
+            const envValue = typeof import.meta !== 'undefined' && import.meta.env 
+                ? import.meta.env.VITE_INITIAL_FUNDS 
+                : undefined;
             const parsed = envValue ? parseInt(envValue, 10) : null;
             const result = parsed && !isNaN(parsed) ? parsed : 200;
-            console.log('[config.js] Initial funds config:', {
-                envValue,
-                parsed,
-                result,
-                'import.meta.env.VITE_INITIAL_FUNDS': import.meta.env.VITE_INITIAL_FUNDS
-            });
             return result;
         })(),
     },
