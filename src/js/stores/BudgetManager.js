@@ -1,5 +1,6 @@
 import db from './db.js';
 import config from '../game/config.js';
+import journalManager from './JournalManager.js';
 
 /**
  * BudgetManager - Handles all budget operations with proper financial terminology
@@ -10,6 +11,7 @@ import config from '../game/config.js';
 class BudgetManager {
     constructor() {
         this.db = db;
+        this.journalManager = journalManager;
     }
 
     /**
@@ -387,75 +389,43 @@ class BudgetManager {
 
     /**
      * Add journal entry (écriture comptable)
+     * Delegates to JournalManager
      * @param {number} turn - Turn number
      * @param {string} type - Type of entry ('income', 'expense', 'loan_interest', 'loan_repayment', etc.)
      * @param {number} amount - Amount
      * @param {string} description - Description
      */
     async addJournalEntry(turn, type, amount, description) {
-        try {
-            await this.db.journal.add({
-                turn: turn,
-                date: new Date().toISOString(),
-                type: type,
-                amount: amount,
-                description: description
-            });
-        } catch (error) {
-            console.error('Error adding journal entry:', error);
-        }
+        return await this.journalManager.addJournalEntry(turn, type, amount, description);
     }
 
     /**
      * Get journal entries
+     * Delegates to JournalManager
      * @param {number} maxAge - Maximum age in days (optional)
      * @returns {Promise<Array>} Journal entries
      */
     async getJournalEntries(maxAge = null) {
-        let entries = await this.db.journal.toArray();
-        
-        if (maxAge) {
-            const cutoffDate = new Date();
-            cutoffDate.setDate(cutoffDate.getDate() - maxAge);
-            
-            entries = entries.filter(entry => new Date(entry.date) >= cutoffDate);
-        }
-        
-        // Sort by turn descending, then by date descending
-        return entries.sort((a, b) => {
-            if (a.turn !== b.turn) {
-                return b.turn - a.turn;
-            }
-            return new Date(b.date) - new Date(a.date);
-        });
+        return await this.journalManager.getJournalEntries(maxAge);
     }
 
     /**
      * Get journal entries for a specific turn
+     * Delegates to JournalManager
      * @param {number} turn - Turn number
      * @returns {Promise<Array>} Journal entries
      */
     async getJournalEntriesForTurn(turn) {
-        return await this.db.journal.where('turn').equals(turn).sortBy('date');
+        return await this.journalManager.getJournalEntriesForTurn(turn);
     }
 
     /**
      * Cleanup old journal entries
+     * Delegates to JournalManager
      * @param {number} maxAge - Maximum age in days
      */
     async cleanupOldJournalEntries(maxAge = 60) {
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - maxAge);
-        const cutoffISO = cutoffDate.toISOString();
-        
-        const oldEntries = await this.db.journal.where('date').below(cutoffISO).toArray();
-        
-        if (oldEntries.length > 0) {
-            const ids = oldEntries.map(entry => entry.id);
-            await this.db.journal.bulkDelete(ids);
-        }
-        
-        return { deleted: oldEntries.length };
+        return await this.journalManager.cleanupOldJournalEntries(maxAge);
     }
 
     /**

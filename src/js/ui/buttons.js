@@ -4479,11 +4479,13 @@ async function loadJournalEntries(period = 'all') {
     `;
     
     try {
-        if (!window.budgetManager) {
-            throw new Error('BudgetManager not available');
+        // Try to use journalManager directly if available, otherwise fall back to budgetManager
+        const manager = window.journalManager || window.app?.journalManager || window.budgetManager;
+        if (!manager) {
+            throw new Error('Journal/BudgetManager not available');
         }
         
-        let entries = await window.budgetManager.getJournalEntries();
+        let entries = await manager.getJournalEntries();
         
         // Filter by period
         if (period !== 'all') {
