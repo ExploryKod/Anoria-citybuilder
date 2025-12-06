@@ -167,3 +167,26 @@ export function setDaysPerMonth(days) {
         localStorage.setItem(STORAGE_KEY_DAYS_PER_MONTH, String(clamped));
     }
 }
+
+/**
+ * Récupère les fonds initiaux depuis les variables d'environnement
+ * @returns {number} Montant des fonds initiaux (par défaut 500)
+ */
+export function getInitialFunds() {
+    if (typeof import.meta !== 'undefined' && import.meta.env && Object.prototype.hasOwnProperty.call(import.meta.env, 'VITE_INITIAL_FUNDS')) {
+        const envValue = import.meta.env.VITE_INITIAL_FUNDS;
+        const parsed = parseInt(envValue, 10);
+        if (!isNaN(parsed) && parsed >= 0) {
+            return parsed;
+        }
+    }
+    // Fallback
+    if (typeof window !== 'undefined' && window.__VITE_INITIAL_FUNDS__ !== undefined) {
+        const parsed = parseInt(window.__VITE_INITIAL_FUNDS__, 10);
+        if (!isNaN(parsed) && parsed >= 0) {
+            return parsed;
+        }
+    }
+    // Par défaut, 500 fonds
+    return 500;
+}
