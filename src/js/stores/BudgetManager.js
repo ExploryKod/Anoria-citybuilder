@@ -22,10 +22,15 @@ class BudgetManager {
             startingFunds = config?.budget?.initialFunds || 200;
         }
         
+        // Safe access to import.meta.env (doesn't exist in Node.js/Jest)
+        const envValue = typeof import.meta !== 'undefined' && import.meta.env 
+            ? import.meta.env.VITE_INITIAL_FUNDS 
+            : undefined;
+        
         console.log('[BudgetManager] initialize called with:', {
             provided: startingFunds,
             fromConfig: config?.budget?.initialFunds,
-            envValue: import.meta.env.VITE_INITIAL_FUNDS
+            envValue: envValue
         });
         
         // Clear any existing budget data to ensure fresh start
@@ -114,7 +119,11 @@ class BudgetManager {
         // Get expected initial funds from config (source of truth)
         const expectedInitialFunds = config?.budget?.initialFunds || 200;
         
-        console.log('[BudgetManager] getCurrentBudget - Config initialFunds:', expectedInitialFunds, 'import.meta.env.VITE_INITIAL_FUNDS:', import.meta.env.VITE_INITIAL_FUNDS);
+        // Safe access to import.meta.env
+        const envValue = typeof import.meta !== 'undefined' && import.meta.env 
+            ? import.meta.env.VITE_INITIAL_FUNDS 
+            : undefined;
+        console.log('[BudgetManager] getCurrentBudget - Config initialFunds:', expectedInitialFunds, 'import.meta.env.VITE_INITIAL_FUNDS:', envValue);
         
         if (!budget) {
             // No budget exists - initialize with config value
@@ -666,6 +675,7 @@ class BudgetManager {
      * Add taxes based on population (100€ per citizen per month, only in November)
      * Calculates taxes from houses in the database
      * Only collects taxes if there is population AND it's November (month index 10)
+     * Taxes are collected only ONCE per year (first day of November)
      * @param {number} time - Current simulation time (number of days)
      * @returns {Promise<Object>} Updated budget
      */
@@ -678,6 +688,15 @@ class BudgetManager {
         // Only collect taxes in November
         if (!isNovember) {
             return await this.getCurrentBudget();
+        }
+        
+        // Check if taxes have already been collected for this year
+        const budget = await this.getCurrentBudget();
+        const lastTaxYear = budget.lastTaxYear ?? -1; // Year when taxes were last collected
+        
+        // Only collect taxes once per year (first time we enter November)
+        if (timeInfo.year === lastTaxYear) {
+            return budget; // Taxes already collected this year
         }
         
         // Get all houses from the database
@@ -716,8 +735,6 @@ class BudgetManager {
         
         // Only add taxes if there is population
         if (taxBreakdown.total > 0 && taxBreakdown.population > 0) {
-            const budget = await this.getCurrentBudget();
-            
             // Add journal entry
             await this.addJournalEntry(budget.turn, 'income', taxBreakdown.total, `Impôts habitants (${taxBreakdown.population} hab.) - Novembre`);
             
@@ -730,13 +747,17 @@ class BudgetManager {
             // Store tax breakdown for detailed display
             budget.taxBreakdown = taxBreakdown;
             
+            // Mark this year as having collected taxes
+            budget.lastTaxYear = timeInfo.year;
+            
             budget.netFlow = budget.income - budget.expenses;
             
             await this.db.budget.put(budget);
+            console.log(`[BudgetManager] Taxes collected for year ${timeInfo.year}: ${taxBreakdown.total}€ from ${taxBreakdown.population} habitants`);
             return budget;
         }
         
-        return await this.getCurrentBudget();
+        return budget;
     }
 
     /**
@@ -782,7 +803,9 @@ class BudgetManager {
         console.log('[BudgetManager] forceReinitialize called with:', {
             provided: startingFunds,
             fromConfig: config?.budget?.initialFunds,
-            envValue: import.meta.env.VITE_INITIAL_FUNDS
+            envValue: typeof import.meta !== 'undefined' && import.meta.env 
+                ? import.meta.env.VITE_INITIAL_FUNDS 
+                : undefined
         });
         
         await this.db.budget.clear();
@@ -1108,4 +1131,6 @@ if (typeof window !== 'undefined') {
     }
 }
 
+// Export both the class (for testing) and the singleton instance (for production)
+export { BudgetManager };
 export default budgetManager;
