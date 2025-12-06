@@ -137,26 +137,39 @@ class BudgetManager {
             
             // If this is a brand new budget (turn 0), update funds to match config
             // This handles the case where IndexedDB has old data but config changed
+            // BUT only if no transactions have been made (income = 0 and expenses = 0)
             if (budget.turn === 0) {
                 // Check if funds still match the old initialFunds (meaning it's a fresh start)
                 // Use a small tolerance for floating point comparison
                 const fundsMatchOldInitial = Math.abs(budget.funds - oldInitialFunds) < 1;
-                if (fundsMatchOldInitial) {
-                    // Funds haven't changed from initial - update to new initial funds
-                    console.log('[BudgetManager] Updating funds from', budget.funds, 'to', expectedInitialFunds, '(fresh start detected, turn=0)');
+                // Only reset if no transactions have been made (truly fresh start)
+                const noTransactions = (budget.income === 0 || budget.income === undefined) && 
+                                      (budget.expenses === 0 || budget.expenses === undefined);
+                
+                if (fundsMatchOldInitial && noTransactions) {
+                    // Funds haven't changed from initial AND no transactions - update to new initial funds
+                    console.log('[BudgetManager] Updating funds from', budget.funds, 'to', expectedInitialFunds, '(fresh start detected, turn=0, no transactions)');
                     budget.funds = expectedInitialFunds;
                     needsUpdate = true;
                 } else {
-                    console.log('[BudgetManager] Funds do not match old initialFunds, keeping current funds:', budget.funds);
+                    console.log('[BudgetManager] Funds do not match old initialFunds or transactions exist, keeping current funds:', budget.funds);
                 }
             } else {
                 console.log('[BudgetManager] Budget has turn > 0, not updating funds (game in progress)');
             }
         } else if (budget.turn === 0 && Math.abs(budget.funds - expectedInitialFunds) > 1) {
             // Even if initialFunds matches, if turn is 0 and funds don't match, update funds
-            console.log('[BudgetManager] Turn is 0 but funds don\'t match expected initial funds. Updating funds from', budget.funds, 'to', expectedInitialFunds);
-            budget.funds = expectedInitialFunds;
-            needsUpdate = true;
+            // BUT only if no transactions have been made
+            const noTransactions = (budget.income === 0 || budget.income === undefined) && 
+                                  (budget.expenses === 0 || budget.expenses === undefined);
+            
+            if (noTransactions) {
+                console.log('[BudgetManager] Turn is 0 but funds don\'t match expected initial funds. Updating funds from', budget.funds, 'to', expectedInitialFunds, '(no transactions detected)');
+                budget.funds = expectedInitialFunds;
+                needsUpdate = true;
+            } else {
+                console.log('[BudgetManager] Turn is 0 but transactions exist, keeping current funds:', budget.funds);
+            }
         }
         
         // Calculate loan totals from budget loans array
@@ -344,13 +357,8 @@ class BudgetManager {
         const currentExpenses = budget.expenses;
         const currentIncome = budget.income;
         
-        if (currentFunds < amount) {
-            return {
-                success: false,
-                reason: 'insufficient_funds',
-                message: `Not enough funds. Required: ${amount}€, Available: ${currentFunds}€`
-            };
-        }
+        // Allow negative funds (debt) - removed the insufficient funds check
+        // The game can go into debt, which is a valid game state
 
         try {
             budget.funds = currentFunds - amount;

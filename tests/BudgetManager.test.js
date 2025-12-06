@@ -154,17 +154,18 @@ describe('BudgetManager', () => {
             await budgetManager.initialize(200);
         });
 
-        test('soustrait des dépenses du budget', async () => {
+        test('soustrait des dépenses du budget (investissements)', async () => {
             await budgetManager.initialize(200);
-            await budgetManager.addExpense(30, 'Maintenance routes');
+            await budgetManager.addExpense(30, 'Building: House');
             
             // Lire directement depuis la base
             const budgetData = await testDb.budget.toArray();
             const budget = budgetData[0];
             
             expect(budget.funds).toBe(170); // 200 - 30
-            expect(budget.expenses).toBe(30);
-            expect(budget.dailyExpenses).toBe(30);
+            expect(budget.totalInvestments).toBe(30);
+            // Note: addExpense() does NOT update dailyExpenses (only addDailyExpense() does)
+            expect(budget.dailyExpenses).toBe(0);
         });
 
         test('peut avoir un budget négatif (dette)', async () => {
@@ -175,8 +176,53 @@ describe('BudgetManager', () => {
             const budgetData = await testDb.budget.toArray();
             const budget = budgetData[0];
             
-            expect(budget.funds).toBe(-50); // 200 - 250
+            expect(budget.funds).toBe(-50); // 200 - 250 (debt allowed)
             expect(budget.expenses).toBe(250);
+        });
+    });
+
+    describe('addDailyExpense', () => {
+        
+        beforeEach(async () => {
+            await budgetManager.initialize(200);
+        });
+
+        test('soustrait des dépenses quotidiennes du budget', async () => {
+            await budgetManager.initialize(200);
+            await budgetManager.addDailyExpense(30, 'Maintenance routes');
+            
+            // Lire directement depuis la base
+            const budgetData = await testDb.budget.toArray();
+            const budget = budgetData[0];
+            
+            expect(budget.funds).toBe(170); // 200 - 30
+            expect(budget.expenses).toBe(30);
+            expect(budget.dailyExpenses).toBe(30); // addDailyExpense() updates dailyExpenses
+        });
+
+        test('cumule plusieurs dépenses quotidiennes', async () => {
+            await budgetManager.initialize(200);
+            await budgetManager.addDailyExpense(20, 'Maintenance 1');
+            await budgetManager.addDailyExpense(15, 'Maintenance 2');
+            
+            const budgetData = await testDb.budget.toArray();
+            const budget = budgetData[0];
+            
+            expect(budget.funds).toBe(165); // 200 - 20 - 15
+            expect(budget.expenses).toBe(35); // 20 + 15
+            expect(budget.dailyExpenses).toBe(35); // 20 + 15
+        });
+
+        test('peut avoir un budget négatif avec dépenses quotidiennes', async () => {
+            await budgetManager.initialize(200);
+            await budgetManager.addDailyExpense(250, 'Grosse dépense quotidienne');
+            
+            const budgetData = await testDb.budget.toArray();
+            const budget = budgetData[0];
+            
+            expect(budget.funds).toBe(-50); // 200 - 250 (debt allowed)
+            expect(budget.expenses).toBe(250);
+            expect(budget.dailyExpenses).toBe(250);
         });
     });
 
