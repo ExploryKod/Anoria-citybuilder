@@ -61,9 +61,7 @@ class BudgetManager {
         };
         
         await this.db.budget.add(initialBudget);
-        
-        console.log('[BudgetManager] Budget initialized and saved:', initialBudget);
-        
+            
         return initialBudget;
     }
 
@@ -96,14 +94,7 @@ class BudgetManager {
         if (budget.totalLoanInterest === undefined) budget.totalLoanInterest = 0;
         if (budget.totalLoanRepayments === undefined) budget.totalLoanRepayments = 0;
         if (budget.totalLoanInterestExpenses === undefined) budget.totalLoanInterestExpenses = 0;
-        
-        // console.log('Loan totals calculated:', {
-        //     debt: totalLoanDebt,
-        //     interest: budget.totalLoanInterest,
-        //     repayments: budget.totalLoanRepayments,
-        //     interestExpenses: budget.totalLoanInterestExpenses
-        // });
-        
+               
         // Save the updated budget
         await this.db.budget.put(budget);
     }
@@ -123,21 +114,12 @@ class BudgetManager {
         const envValue = typeof import.meta !== 'undefined' && import.meta.env 
             ? import.meta.env.VITE_INITIAL_FUNDS 
             : undefined;
-        console.log('[BudgetManager] getCurrentBudget - Config initialFunds:', expectedInitialFunds, 'import.meta.env.VITE_INITIAL_FUNDS:', envValue);
-        
+     
         if (!budget) {
             // No budget exists - initialize with config value
-            console.log('[BudgetManager] No budget exists, initializing with:', expectedInitialFunds);
             return await this.initialize(expectedInitialFunds);
         }
-        
-        console.log('[BudgetManager] Existing budget found:', {
-            funds: budget.funds,
-            initialFunds: budget.initialFunds,
-            turn: budget.turn,
-            expectedInitialFunds: expectedInitialFunds
-        });
-        
+             
         // Check if initialFunds needs to be updated to match config
         // This ensures the budget always reflects the current config value
         let needsUpdate = false;

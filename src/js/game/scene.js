@@ -2086,6 +2086,9 @@ export function createScene(housesStore, gameStore, assetManager) {
         // Daily budget operations - expenses and income
         try {
             if (window.budgetManager) {
+                // Update turn FIRST so all journal entries have the correct turn number
+                await window.budgetManager.updateTurn(time);
+                
                 // Add taxes from houses (100€ per citizen, only in November)
                 // Only collects if there is population
                 await window.budgetManager.addTaxes(time);
@@ -2162,9 +2165,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                         console.warn(`⚠️ ${populationResult.message}`);
                     }
                 }
-                
-                // Update turn
-                await window.budgetManager.updateTurn(time);
                 
                 // Process loan payments BEFORE saving budget state
                 if (window.processLoanPayments) {

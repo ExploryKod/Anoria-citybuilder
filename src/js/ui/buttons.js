@@ -4517,9 +4517,19 @@ async function loadJournalEntries(period = 'all') {
         const turns = Object.keys(entriesByTurn).sort((a, b) => parseInt(b) - parseInt(a));
         const html = turns.map(turn => {
             const turnEntries = entriesByTurn[turn];
+            
+            // Get month and year info from TimeManager
+            let timeLabel = '';
+            if (window.TimeManager) {
+                const timeInfo = window.TimeManager.getTimeInfo(parseInt(turn));
+                const year = timeInfo.year;
+                const yearDisplay = year === 0 ? '0 JC' : `${year} ap JC`;
+                timeLabel = ` — ${timeInfo.month} ${yearDisplay}`;
+            }
+            
             return `
                 <div class="journal-turn-group">
-                    <h4 class="journal-turn-header">Tour ${turn}</h4>
+                    <h4 class="journal-turn-header">Tour ${turn}${timeLabel}</h4>
                     ${turnEntries.map(entry => createJournalEntryHTML(entry)).join('')}
                 </div>
             `;
