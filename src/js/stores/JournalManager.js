@@ -137,6 +137,115 @@ class JournalManager {
 
         return stats;
     }
+
+    /**
+     * Get financial summary grouped by month
+     * @returns {Promise<Array>} Array of monthly summaries sorted by year/month descending
+     */
+    async getMonthlyFinancialSummary() {
+        const entries = await this.getJournalEntries();
+        
+        // Grouper par (year, month)
+        const grouped = {};
+        
+        entries.forEach(entry => {
+            // Convertir turn → timeInfo
+            if (!window.TimeManager) {
+                console.warn('[JournalManager] TimeManager not available');
+                return;
+            }
+            
+            const timeInfo = window.TimeManager.getTimeInfo(entry.turn);
+            const key = `${timeInfo.year}-${timeInfo.monthIndex}`;
+            
+            if (!grouped[key]) {
+                grouped[key] = {
+                    year: timeInfo.year,
+                    month: timeInfo.monthIndex,
+                    monthName: timeInfo.month,
+                    income: { total: 0, entries: [] },
+                    expenses: { total: 0, entries: [] },
+                    entryCount: 0
+                };
+            }
+            
+            // Classer comme revenu ou dépense
+            const isIncome = entry.type === 'income';
+            
+            if (isIncome) {
+                grouped[key].income.total += entry.amount;
+                grouped[key].income.entries.push({
+                    type: entry.type,
+                    amount: entry.amount,
+                    description: entry.description,
+                    date: entry.date,
+                    turn: entry.turn
+                });
+            } else {
+                grouped[key].expenses.total += entry.amount;
+                grouped[key].expenses.entries.push({
+                    type: entry.type,
+                    amount: entry.amount,
+                    description: entry.description,
+                    date: entry.date,
+                    turn: entry.turn
+                });
+            }
+            
+            grouped[key].entryCount++;
+        });
+        
+        // Calculer netFlow pour chaque mois
+        Object.values(grouped).forEach(month => {
+            month.netFlow = month.income.total - month.expenses.total;
+        });
+        
+        // Trier par année puis mois (décroissant)
+        return Object.values(grouped).sort((a, b) => {
+            if (a.year !== b.year) return b.year - a.year;
+            return b.month - a.month;
+        });
+    }
+
+    /**
+     * Get financial summary grouped by year
+     * @returns {Promise<Array>} Array of yearly summaries sorted by year descending
+     */
+    async getYearlyFinancialSummary() {
+        const monthlyData = await this.getMonthlyFinancialSummary();
+        
+        // Grouper par année
+        const grouped = {};
+        
+        monthlyData.forEach(month => {
+            const year = month.year;
+            
+            if (!grouped[year]) {
+                grouped[year] = {
+                    year: year,
+                    income: { total: 0, entries: [] },
+                    expenses: { total: 0, entries: [] },
+                    monthCount: 0,
+                    months: []  // Détail des mois pour cette année
+                };
+            }
+            
+            grouped[year].income.total += month.income.total;
+            grouped[year].expenses.total += month.expenses.total;
+            grouped[year].income.entries.push(...month.income.entries);
+            grouped[year].expenses.entries.push(...month.expenses.entries);
+            grouped[year].monthCount++;
+            grouped[year].months.push(month);
+        });
+        
+        // Calculer netFlow pour chaque année
+        Object.values(grouped).forEach(year => {
+            year.netFlow = year.income.total - year.expenses.total;
+        });
+        
+        // Trier par année décroissante
+        return Object.values(grouped).sort((a, b) => b.year - a.year);
+    }
 }
 
 // Create singleton instance
