@@ -437,6 +437,24 @@ class BudgetManager {
     }
 
     /**
+     * Get financial summary grouped by month
+     * Delegates to JournalManager
+     * @returns {Promise<Array>} Array of monthly summaries
+     */
+    async getMonthlyFinancialSummary() {
+        return await this.journalManager.getMonthlyFinancialSummary();
+    }
+
+    /**
+     * Get financial summary grouped by year
+     * Delegates to JournalManager
+     * @returns {Promise<Array>} Array of yearly summaries
+     */
+    async getYearlyFinancialSummary() {
+        return await this.journalManager.getYearlyFinancialSummary();
+    }
+
+    /**
      * Check if we can afford an expense
      * @param {number} amount - Amount to check
      * @returns {Promise<boolean>} True if affordable

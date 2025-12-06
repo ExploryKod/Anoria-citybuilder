@@ -461,3 +461,143 @@
     }
 }
 
+/* Regroupements Année */
+.journal-year-group {
+    margin-bottom: 2rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+}
+
+.journal-year-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.journal-year-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.journal-year-summary {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+/* Regroupements Mois */
+.journal-month-group {
+    border-bottom: 1px solid #e9ecef;
+}
+
+.journal-month-group:last-child {
+    border-bottom: none;
+}
+
+.journal-month-header {
+    background: #f8f9fa;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.journal-month-header h4 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--primary);
+}
+
+.journal-month-summary {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Résumés */
+.journal-summary-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.journal-year-header .journal-summary-item {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.journal-summary-item .label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.journal-summary-item .amount {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.journal-summary-item.income .amount {
+    color: #4ade80;
+}
+
+.journal-summary-item.expenses .amount {
+    color: #f87171;
+}
+
+.journal-summary-item.netflow.positive .amount {
+    color: #4ade80;
+}
+
+.journal-summary-item.netflow.negative .amount {
+    color: #f87171;
+}
+
+/* Entrées du mois */
+.journal-month-entries {
+    padding: 0.5rem 1.5rem;
+    background: white;
+}
+
+/* Responsive pour les regroupements */
+@media (max-width: 768px) {
+    .journal-year-header,
+    .journal-month-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .journal-year-summary,
+    .journal-month-summary {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .journal-year-header h3 {
+        font-size: 1.2rem;
+    }
+    
+    .journal-month-header h4 {
+        font-size: 1rem;
+    }
+    
+    .journal-summary-item {
+        flex: 1;
+        min-width: 100px;
+        justify-content: space-between;
+    }
+}
+

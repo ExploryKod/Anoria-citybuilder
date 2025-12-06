@@ -4485,18 +4485,10 @@ async function loadJournalEntries(period = 'all') {
             throw new Error('Journal/BudgetManager not available');
         }
         
-        let entries = await manager.getJournalEntries();
+        // Récupérer les données groupées par année et mois
+        const yearlyData = await manager.getYearlyFinancialSummary();
         
-        // Filter by period
-        if (period !== 'all') {
-            const now = new Date();
-            const periodMs = parseInt(period) * 24 * 60 * 60 * 1000;
-            const cutoffDate = new Date(now.getTime() - periodMs);
-            
-            entries = entries.filter(entry => new Date(entry.date) >= cutoffDate);
-        }
-        
-        if (entries.length === 0) {
+        if (yearlyData.length === 0) {
             journalList.innerHTML = `
                 <div class="no-journal-entries">
                     <div class="no-journal-entries-icon">📔</div>
@@ -4506,36 +4498,65 @@ async function loadJournalEntries(period = 'all') {
             return;
         }
         
-        // Group entries by turn
-        const entriesByTurn = {};
-        entries.forEach(entry => {
-            if (!entriesByTurn[entry.turn]) {
-                entriesByTurn[entry.turn] = [];
-            }
-            entriesByTurn[entry.turn].push(entry);
-        });
+        // Créer le HTML avec regroupements Année → Mois → Entrées
+        let html = '';
         
-        // Create HTML
-        const turns = Object.keys(entriesByTurn).sort((a, b) => parseInt(b) - parseInt(a));
-        const html = turns.map(turn => {
-            const turnEntries = entriesByTurn[turn];
-            
-            // Get month and year info from TimeManager
-            let timeLabel = '';
-            if (window.TimeManager) {
-                const timeInfo = window.TimeManager.getTimeInfo(parseInt(turn));
-                const year = timeInfo.year;
-                const yearDisplay = year === 0 ? '0 JC' : `${year} ap JC`;
-                timeLabel = ` — ${timeInfo.month} ${yearDisplay}`;
-            }
-            
-            return `
-                <div class="journal-turn-group">
-                    <h4 class="journal-turn-header">Tour ${turn}${timeLabel}</h4>
-                    ${turnEntries.map(entry => createJournalEntryHTML(entry)).join('')}
+        yearlyData.forEach(yearData => {
+            // En-tête Année
+            const yearDisplay = yearData.year === 0 ? '0 JC' : `${yearData.year} ap JC`;
+            html += `
+                <div class="journal-year-group">
+                    <div class="journal-year-header">
+                        <h3>Année ${yearDisplay}</h3>
+                        <div class="journal-year-summary">
+                            <div class="journal-summary-item income">
+                                <span class="label">Revenus:</span>
+                                <span class="amount">+${yearData.income.total}€</span>
+                            </div>
+                            <div class="journal-summary-item expenses">
+                                <span class="label">Dépenses:</span>
+                                <span class="amount">-${yearData.expenses.total}€</span>
+                            </div>
+                            <div class="journal-summary-item netflow ${yearData.netFlow >= 0 ? 'positive' : 'negative'}">
+                                <span class="label">Solde:</span>
+                                <span class="amount">${yearData.netFlow >= 0 ? '+' : ''}${yearData.netFlow}€</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${yearData.months.map(monthData => {
+                        // En-tête Mois
+                        const yearDisplayMonth = monthData.year === 0 ? '0 JC' : `${monthData.year} ap JC`;
+                        return `
+                            <div class="journal-month-group">
+                                <div class="journal-month-header">
+                                    <h4>${monthData.monthName} ${yearDisplayMonth}</h4>
+                                    <div class="journal-month-summary">
+                                        <div class="journal-summary-item income">
+                                            <span class="label">Revenus:</span>
+                                            <span class="amount">+${monthData.income.total}€</span>
+                                        </div>
+                                        <div class="journal-summary-item expenses">
+                                            <span class="label">Dépenses:</span>
+                                            <span class="amount">-${monthData.expenses.total}€</span>
+                                        </div>
+                                        <div class="journal-summary-item netflow ${monthData.netFlow >= 0 ? 'positive' : 'negative'}">
+                                            <span class="label">Solde:</span>
+                                            <span class="amount">${monthData.netFlow >= 0 ? '+' : ''}${monthData.netFlow}€</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="journal-month-entries">
+                                    ${monthData.income.entries.map(entry => createJournalEntryHTML(entry)).join('')}
+                                    ${monthData.expenses.entries.map(entry => createJournalEntryHTML(entry)).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
                 </div>
             `;
-        }).join('');
+        });
         
         journalList.innerHTML = html;
         
