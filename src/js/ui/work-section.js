@@ -2,7 +2,7 @@ import config from '../game/config.js';
 
 class WorkSectionManager {
     constructor() {
-        this.salary = 30;
+        this.salary = 100; // Valeur par défaut : 100€/mois
         this.unemploymentRate = 50;
         this.workData = null;
         this.employmentPriorityService = null;
@@ -29,12 +29,39 @@ class WorkSectionManager {
         const unemploymentDecreaseBtn = document.getElementById('unemployment-decrease-btn');
         const unemploymentIncreaseBtn = document.getElementById('unemployment-increase-btn');
 
+        // Utiliser des fonctions nommées pour pouvoir les retirer si nécessaire
+        const handleSalaryDecrease = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('[WorkSection] Decrease salary button clicked, current salary:', this.salary);
+            this.adjustSalary(-1);
+        };
+
+        const handleSalaryIncrease = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('[WorkSection] Increase salary button clicked, current salary:', this.salary);
+            this.adjustSalary(1);
+        };
+
         if (salaryDecreaseBtn) {
-            salaryDecreaseBtn.addEventListener('click', () => this.adjustSalary(-1));
+            // Retirer l'ancien listener s'il existe
+            salaryDecreaseBtn.removeEventListener('click', this._handleSalaryDecrease);
+            this._handleSalaryDecrease = handleSalaryDecrease;
+            salaryDecreaseBtn.addEventListener('click', this._handleSalaryDecrease);
+            console.log('[WorkSection] Salary decrease button listener attached');
+        } else {
+            console.warn('[WorkSection] salary-decrease-btn not found in DOM');
         }
 
         if (salaryIncreaseBtn) {
-            salaryIncreaseBtn.addEventListener('click', () => this.adjustSalary(1));
+            // Retirer l'ancien listener s'il existe
+            salaryIncreaseBtn.removeEventListener('click', this._handleSalaryIncrease);
+            this._handleSalaryIncrease = handleSalaryIncrease;
+            salaryIncreaseBtn.addEventListener('click', this._handleSalaryIncrease);
+            console.log('[WorkSection] Salary increase button listener attached');
+        } else {
+            console.warn('[WorkSection] salary-increase-btn not found in DOM');
         }
 
         if (unemploymentDecreaseBtn) {
@@ -68,6 +95,9 @@ class WorkSectionManager {
         
         // Load employee statistics from IndexedDB (independent of service)
         await this.updateEmployeeStatistics();
+        
+        // Réattacher les event listeners au cas où le panneau vient d'être rendu
+        this.setupEventListeners();
         
         this.render();
     }
@@ -280,11 +310,12 @@ class WorkSectionManager {
     }
 
     adjustSalary(delta) {
-        const newSalary = Math.max(10, Math.min(100, this.salary + delta));
+        const newSalary = Math.max(10, Math.min(500, this.salary + delta));
         
         if (newSalary !== this.salary) {
             this.salary = newSalary;
-            this.updateSalaryDisplay();
+            console.log('[WorkSection] Salary adjusted:', this.salary);
+            this.updateSalaryDisplay(); // Maintenant async
         }
     }
 
@@ -342,23 +373,56 @@ class WorkSectionManager {
         }
     }
 
-    updateSalaryDisplay() {
+    async updateSalaryDisplay() {
         const salaryDisplay = document.getElementById('salary-display');
+        const salaryMonthDisplay = document.getElementById('salary-month-display');
         const salaryYearDisplay = document.getElementById('salary-year-display');
         const annualBillDisplay = document.getElementById('salary-annual-bill');
+        const populationDisplay = document.getElementById('salary-population-display');
 
+        // Afficher le salaire mensuel (modifiable)
         if (salaryDisplay) {
             salaryDisplay.textContent = this.salary;
         }
 
+        // Afficher le salaire mensuel dans l'info (identique à salary-display)
+        if (salaryMonthDisplay) {
+            salaryMonthDisplay.textContent = this.salary;
+        }
+
+        // Afficher le salaire annuel (informatif = mensuel × 12)
         if (salaryYearDisplay) {
             const yearlyAmount = this.salary * 12;
             salaryYearDisplay.textContent = yearlyAmount;
         }
 
-        if (annualBillDisplay && this.workData) {
-            const totalWorkers = this.workData.totalEmployed;
-            const annualBill = totalWorkers * this.salary * 12;
+        // Récupérer la population totale depuis housesStore (même source que info-panel)
+        let totalPopulation = 0;
+        try {
+            let housesStore = null;
+            if (window.app && window.app.housesStore) {
+                housesStore = window.app.housesStore;
+            } else if (window.housesStore) {
+                housesStore = window.housesStore;
+            } else if (window.game && window.game.housesStore) {
+                housesStore = window.game.housesStore;
+            }
+
+            if (housesStore && typeof housesStore.getGlobalPopulation === 'function') {
+                totalPopulation = await housesStore.getGlobalPopulation();
+            }
+        } catch (error) {
+            console.warn('[WorkSection] Error getting population for salary display:', error);
+        }
+
+        // Afficher la population entre parenthèses
+        if (populationDisplay) {
+            populationDisplay.textContent = totalPopulation;
+        }
+
+        // Facture annuelle totale estimée = population totale × salaire annuel
+        if (annualBillDisplay) {
+            const annualBill = totalPopulation * this.salary * 12;
             annualBillDisplay.textContent = Math.round(annualBill);
         }
     }
@@ -375,7 +439,7 @@ class WorkSectionManager {
 
         this.renderWorkTable();
         this.renderSummary();
-        this.updateSalaryDisplay();
+        this.updateSalaryDisplay(); // Maintenant async
         this.updateUnemploymentDisplay();
     }
 
