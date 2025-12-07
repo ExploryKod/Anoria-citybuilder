@@ -7,6 +7,122 @@ import db from './db.js';
 class JournalManager {
     constructor() {
         this.db = db;
+        this.LOCALSTORAGE_KEY = 'journal_year_end_balances';
+    }
+
+    /**
+     * Calculer et sauvegarder le solde de fin d'année dans localStorage
+     * Utilise EXACTEMENT la même méthode que celle qui affiche le solde dans le journal HTML
+     * C'est la même séquence d'appels que dans loadJournalEntries() :
+     * 1. manager.getYearlyFinancialSummary()
+     * 2. yearData.netFlow (affiché dans le HTML)
+     * @param {number} year - Année
+     * @returns {Promise<number>} Le solde calculé (netFlow)
+     */
+    async calculateAndSaveYearEndBalance(year) {
+        // Utiliser EXACTEMENT la même méthode que celle utilisée dans loadJournalEntries()
+        // buttons.js ligne 4489: const yearlyData = await manager.getYearlyFinancialSummary();
+        // buttons.js ligne 4522: yearData.netFlow (affiché dans le HTML)
+        const yearlyData = await this.getYearlyFinancialSummary();
+        const yearData = yearlyData.find(y => y.year === year);
+        
+        if (!yearData) {
+            console.warn(`[JournalManager] No data found for year ${year} in getYearlyFinancialSummary()`);
+            return 0;
+        }
+        
+        // Utiliser EXACTEMENT le même netFlow que celui affiché dans le journal HTML
+        // C'est exactement ce qui est utilisé dans buttons.js ligne 4522:
+        // <span class="amount">${yearData.netFlow >= 0 ? '+' : ''}${yearData.netFlow}€</span>
+        const netFlow = yearData.netFlow;
+        
+        // Sauvegarder dans localStorage avec la même valeur exacte
+        this.saveYearEndBalance(year, netFlow);
+        
+        console.log(`[JournalManager] Calculated and saved year end balance for year ${year} (same method as journal display):`, {
+            netFlow,
+            income: yearData.income.total,
+            expenses: yearData.expenses.total,
+            calculation: `${yearData.income.total} - ${yearData.expenses.total} = ${netFlow}`,
+            source: 'getYearlyFinancialSummary() - EXACT same as loadJournalEntries() line 4489'
+        });
+        
+        return netFlow;
+    }
+
+    /**
+     * Sauvegarder le solde de fin d'année dans localStorage
+     * @param {number} year - Année
+     * @param {number} netFlow - Solde de l'année (revenus - dépenses)
+     */
+    saveYearEndBalance(year, netFlow) {
+        try {
+            const stored = localStorage.getItem(this.LOCALSTORAGE_KEY);
+            let soldes = stored ? JSON.parse(stored) : [];
+            
+            // Supprimer l'entrée existante pour cette année si elle existe
+            soldes = soldes.filter(s => s.an !== year);
+            
+            // Ajouter le nouveau solde
+            const nature = netFlow >= 0 ? 'revenue' : 'deficit';
+            const amount = Math.abs(netFlow);
+            
+            soldes.push({
+                an: year,
+                nature: nature,
+                amount: amount
+            });
+            
+            // Trier par année
+            soldes.sort((a, b) => a.an - b.an);
+            
+            localStorage.setItem(this.LOCALSTORAGE_KEY, JSON.stringify(soldes));
+            
+            console.log('[JournalManager] Saved year end balance:', {
+                year,
+                netFlow,
+                nature,
+                amount
+            });
+        } catch (error) {
+            console.error('[JournalManager] Error saving year end balance:', error);
+        }
+    }
+
+    /**
+     * Récupérer le solde de fin d'année depuis localStorage
+     * @param {number} year - Année
+     * @returns {Object|null} {an, nature, amount} ou null si non trouvé
+     */
+    getYearEndBalance(year) {
+        try {
+            const stored = localStorage.getItem(this.LOCALSTORAGE_KEY);
+            if (!stored) return null;
+            
+            const soldes = JSON.parse(stored);
+            const solde = soldes.find(s => s.an === year);
+            
+            return solde || null;
+        } catch (error) {
+            console.error('[JournalManager] Error getting year end balance:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Récupérer tous les soldes de fin d'année
+     * @returns {Array} Tableau de {an, nature, amount}
+     */
+    getAllYearEndBalances() {
+        try {
+            const stored = localStorage.getItem(this.LOCALSTORAGE_KEY);
+            if (!stored) return [];
+            
+            return JSON.parse(stored);
+        } catch (error) {
+            console.error('[JournalManager] Error getting all year end balances:', error);
+            return [];
+        }
     }
 
     /**
@@ -254,7 +370,7 @@ class JournalManager {
     /**
      * Create carry forward entry (report à nouveau) for the beginning of a new year
      * Le report à nouveau de l'année N est le SOLDE (netFlow) de l'année N-1
-     * Ce solde inclut déjà le report à nouveau de l'année N-1 dans son calcul
+     * Ce solde est récupéré depuis localStorage pour garantir l'exactitude
      * @param {number} turn - Turn number (should be turn 1 of the new year)
      * @returns {Promise<void>}
      */
@@ -281,65 +397,59 @@ class JournalManager {
             return;
         }
         
-        // Calculer le solde de l'année précédente en EXCLUANT le report à nouveau de l'année courante
-        // (qui n'existe pas encore, mais on veut s'assurer qu'on utilise exactement le même calcul)
-        // On recalcule directement depuis les entrées pour être sûr d'avoir la valeur exacte
-        const allEntries = await this.getJournalEntries();
+        // Récupérer le solde de fin d'année depuis localStorage
+        const yearEndBalance = this.getYearEndBalance(previousYear);
         
-        let prevYearIncome = 0;
-        let prevYearExpenses = 0;
-        
-        allEntries.forEach(entry => {
-            const entryTimeInfo = window.TimeManager.getTimeInfo(entry.turn);
-            if (entryTimeInfo.year !== previousYear) {
-                return; // Ignorer les entrées d'autres années
+        if (!yearEndBalance) {
+            console.warn(`[JournalManager] No year end balance found in localStorage for year ${previousYear}, calculating from journal...`);
+            // Fallback: calculer depuis le journal si pas trouvé dans localStorage
+            const yearlyData = await this.getYearlyFinancialSummary();
+            const previousYearData = yearlyData.find(y => y.year === previousYear);
+            
+            if (!previousYearData) {
+                console.warn(`[JournalManager] No data found for previous year ${previousYear}`);
+                return;
             }
             
-            // Classer l'entrée comme revenu ou dépense (même logique que getMonthlyFinancialSummary)
-            let isIncome = entry.type === 'income' || entry.type === 'capital_funds';
+            const previousYearNetFlow = previousYearData.netFlow;
+            const nature = previousYearNetFlow >= 0 ? 'revenue' : 'deficit';
+            const amount = Math.abs(previousYearNetFlow);
             
-            if (entry.type === 'carry_forward') {
-                // Pour le report à nouveau, déterminer si c'est un revenu ou une dépense
-                const signMatch = entry.description?.match(/\(([+-])\)/);
-                if (signMatch) {
-                    isIncome = signMatch[1] === '+';
-                } else {
-                    // Fallback: si pas de signe, traiter comme revenu par défaut
-                    isIncome = true;
-                }
-            }
+            // Sauvegarder pour la prochaine fois
+            this.saveYearEndBalance(previousYear, previousYearNetFlow);
             
-            if (isIncome) {
-                prevYearIncome += entry.amount;
-            } else {
-                prevYearExpenses += entry.amount;
-            }
-        });
+            const yearDisplay = previousYear === 0 ? '0 JC' : `${previousYear} ap JC`;
+            const signIndicator = nature === 'revenue' ? '+' : '-';
+            const description = `Report à nouveau de l'année ${yearDisplay} (${signIndicator})`;
+            
+            await this.addJournalEntry(turn, 'carry_forward', amount, description);
+            console.log('[JournalManager] Created carry forward entry (fallback):', {
+                turn,
+                amount,
+                previousYearNetFlow,
+                previousYear,
+                nature,
+                isIncome: nature === 'revenue'
+            });
+            return;
+        }
         
-        // Le solde de l'année précédente = revenus - dépenses
-        // C'est exactement le même calcul que celui utilisé dans getYearlyFinancialSummary()
-        const previousYearNetFlow = prevYearIncome - prevYearExpenses;
-        
-        // Le montant est toujours positif dans IndexedDB
-        // Le signe du netFlow détermine si c'est revenu (positif) ou dépense (négatif)
-        // Utiliser exactement la valeur absolue du netFlow sans arrondi supplémentaire
-        const amount = Math.abs(previousYearNetFlow);
+        // Utiliser le solde stocké dans localStorage (garantit l'exactitude)
+        const amount = yearEndBalance.amount;
+        const nature = yearEndBalance.nature;
+        const isPositive = nature === 'revenue';
         const yearDisplay = previousYear === 0 ? '0 JC' : `${previousYear} ap JC`;
-        // Stocker le signe dans la description pour pouvoir le récupérer lors du calcul
-        const isPositive = previousYearNetFlow >= 0;
         const signIndicator = isPositive ? '+' : '-';
         const description = `Report à nouveau de l'année ${yearDisplay} (${signIndicator})`;
         
         await this.addJournalEntry(turn, 'carry_forward', amount, description);
-        console.log('[JournalManager] Created carry forward entry:', {
+        console.log('[JournalManager] Created carry forward entry from localStorage:', {
             turn,
             amount,
-            previousYearNetFlow,
             previousYear,
-            previousYearIncome: prevYearIncome,
-            previousYearExpenses: prevYearExpenses,
-            calculatedNetFlow: previousYearNetFlow,
-            isIncome: isPositive
+            nature,
+            isIncome: isPositive,
+            source: 'localStorage'
         });
     }
 
