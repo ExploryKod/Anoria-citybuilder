@@ -124,6 +124,15 @@ class FinancesSectionManager {
             .filter(e => e.type === 'maintenance')
             .reduce((sum, e) => sum + e.amount, 0);
         
+        const salary = expenseEntries
+            .filter(e => e.type === 'salary')
+            .reduce((sum, e) => sum + e.amount, 0);
+        
+        // Debug: vérifier que les salaires sont bien extraits
+        if (salary > 0) {
+            console.log('[FinancesSection] Salary extracted:', salary, 'from', expenseEntries.filter(e => e.type === 'salary').length, 'entries');
+        }
+        
         const repairs = expenseEntries
             .filter(e => e.type === 'exceptional_expenses')
             .reduce((sum, e) => sum + e.amount, 0);
@@ -140,6 +149,7 @@ class FinancesSectionManager {
             totalIncome: Math.round(yearData.income.total),
             construction: Math.round(construction),
             maintenance: Math.round(maintenance),
+            salary: Math.round(salary),
             repairs: Math.round(repairs),
             carryForwardExpense: Math.round(carryForwardExpense),
             totalExpenses: Math.round(yearData.expenses.total),
@@ -155,6 +165,7 @@ class FinancesSectionManager {
             totalIncome: 0,
             construction: 0,
             maintenance: 0,
+            salary: 0,
             repairs: 0,
             carryForwardExpense: 0,
             totalExpenses: 0,
@@ -255,6 +266,7 @@ class FinancesSectionManager {
         const expenseFields = [
             { key: 'construction', thisYear: 'constructionThisYear', lastYear: 'constructionLastYear' },
             { key: 'maintenance', thisYear: 'maintenanceThisYear', lastYear: 'maintenanceLastYear' },
+            { key: 'salary', thisYear: 'salaryThisYear', lastYear: 'salaryLastYear' },
             { key: 'repairs', thisYear: 'repairsThisYear', lastYear: 'repairsLastYear' },
             { key: 'carryForwardExpense', thisYear: 'carryForwardExpenseThisYear', lastYear: 'carryForwardExpenseLastYear' },
             { key: 'totalExpenses', thisYear: 'totalExpensesThisYear', lastYear: 'totalExpensesLastYear' }
