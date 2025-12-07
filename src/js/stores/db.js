@@ -17,10 +17,10 @@ db.delete({ disableAutoOpen: false })
         });
         // Database cleared and recreated successfully
         
-        // Clear journal year-end balances from localStorage (same reset logic as IndexedDB)
+        // Clear localStorage items (same reset logic as IndexedDB)
         try {
             localStorage.removeItem('journal_year_end_balances');
-            console.log('[db.js] Cleared journal_year_end_balances from localStorage');
+            localStorage.removeItem('citizen_tax_amount');
         } catch (error) {
             console.warn('[db.js] Error clearing localStorage:', error);
         }

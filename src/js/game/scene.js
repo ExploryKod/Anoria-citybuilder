@@ -189,6 +189,9 @@ export function createScene(housesStore, gameStore, assetManager) {
     // Track last month when maintenance was paid (to pay only once per month)
     let lastMaintenanceMonth = -1;
     
+    // Track last month when salaries were paid (to pay only once per month on first turn)
+    let lastSalaryMonth = -1;
+    
     // Multiple citizens support (max 3)
     const MAX_CITIZENS = 3;
     let citizenAnimations = {}; // Shared animation clips (loaded once)
@@ -266,6 +269,7 @@ export function createScene(housesStore, gameStore, assetManager) {
         
         // Reset maintenance tracking
         lastMaintenanceMonth = -1;
+        lastSalaryMonth = -1;
         
         // Recreate interactive group after scene.clear()
         const existingGroup = scene.getObjectByName('interactive-objects');
@@ -2093,10 +2097,48 @@ export function createScene(housesStore, gameStore, assetManager) {
                 // Only collects if there is population
                 await window.budgetManager.addTaxes(time);
                 
-                // Add building maintenance expenses - only once per month
+                // Add salaries expense - only once per month on first turn (dayInMonth === 1)
                 const timeInfo = TimeManager.getTimeInfo(time);
                 const currentMonth = timeInfo.monthNumber; // Month number (1-12, then continues)
+                const isFirstTurnOfMonth = timeInfo.dayInMonth === 1;
                 
+                // Pay salaries on first turn of each month (if not already paid this month)
+                if (isFirstTurnOfMonth && currentMonth !== lastSalaryMonth) {
+                    // Get salary from workSectionManager (default: 100€/mois)
+                    let salaryPerMonth = 100; // Default fallback
+                    if (window.workSectionManager && typeof window.workSectionManager.salary === 'number') {
+                        salaryPerMonth = window.workSectionManager.salary;
+                    }
+                    
+                    // Get total population from housesStore
+                    let totalPopulation = 0;
+                    if (window.housesStore && typeof window.housesStore.getGlobalPopulation === 'function') {
+                        totalPopulation = await window.housesStore.getGlobalPopulation();
+                    }
+                    
+                    if (totalPopulation > 0 && salaryPerMonth > 0) {
+                        const yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
+                        const monthName = timeInfo.month || 'Mois';
+                        const salaryDescription = `Salaires fonctionnaires - ${monthName} ${yearDisplay} (${totalPopulation} hab. × ${salaryPerMonth}€)`;
+                        
+                        const totalSalaryAmount = totalPopulation * salaryPerMonth;
+                        await window.budgetManager.addSalaries(salaryPerMonth, totalPopulation, salaryDescription);
+                        
+                        let salaryTaxRate = 0.2;
+                        if (window.workSectionManager && typeof window.workSectionManager.salaryTaxRate === 'number') {
+                            salaryTaxRate = window.workSectionManager.salaryTaxRate;
+                        }
+                        
+                        if (salaryTaxRate > 0) {
+                            const taxDescription = `Impôt sur les salaires - ${monthName} ${yearDisplay} (${Math.round(salaryTaxRate * 100)}%)`;
+                            await window.budgetManager.addSalaryTax(totalSalaryAmount, salaryTaxRate, taxDescription);
+                        }
+                        
+                        lastSalaryMonth = currentMonth;
+                    }
+                }
+                
+                // Add building maintenance expenses - only once per month
                 // Only pay maintenance if we're in a different month than last time
                 if (currentMonth !== lastMaintenanceMonth) {
                     // Calculate total maintenance cost from breakdown

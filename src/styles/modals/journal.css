@@ -220,9 +220,14 @@
     text-transform: uppercase;
 }
 
-.journal-entry-type.salary_tax {
+.journal-entry-type.citizen_tax {
     background: #d4edda;
     color: #155724;
+}
+
+.journal-entry-type.payroll_tax {
+    background: #cfe2ff;
+    color: #084298;
 }
 
 .journal-entry-type.capital_funds {
@@ -246,6 +251,11 @@
 .journal-entry-type.maintenance {
     background: #fff3cd;
     color: #856404;
+}
+
+.journal-entry-type.salary {
+    background: #e7f3ff;
+    color: #004085;
 }
 
 .journal-entry-type.loan_interest {
@@ -280,6 +290,12 @@
 .journal-entry-type.cumul_construction {
     background: #f8d7da;
     color: #721c24;
+    font-weight: 600;
+}
+
+.journal-entry-type.cumul_salary {
+    background: #e7f3ff;
+    color: #004085;
     font-weight: 600;
 }
 

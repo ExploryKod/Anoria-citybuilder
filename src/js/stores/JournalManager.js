@@ -133,7 +133,7 @@ class JournalManager {
     /**
      * Add journal entry (écriture comptable)
      * @param {number} turn - Turn number
-     * @param {string} type - Type of entry ('salary_tax', 'expense', 'loan_interest', 'loan_repayment', etc.)
+     * @param {string} type - Type of entry ('citizen_tax', 'expense', 'loan_interest', 'loan_repayment', etc.)
      * @param {number} amount - Amount
      * @param {string} description - Description
      */
@@ -254,7 +254,7 @@ class JournalManager {
             stats.byType[entry.type]++;
 
             // Calculate totals
-            if (entry.type === 'salary_tax') {
+            if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax') {
                 stats.totalIncome += entry.amount;
             } else {
                 stats.totalExpenses += entry.amount;
@@ -305,6 +305,7 @@ class JournalManager {
             // Exclure les cumuls et les balances du calcul mensuel (ils sont informatifs seulement)
             if (entry.type === 'cumul_maintenance' || 
                 entry.type === 'cumul_construction' || 
+                entry.type === 'cumul_salary' ||
                 entry.type === 'cumul_exceptional_expenses' ||
                 entry.type === 'cumul_loan_interest' ||
                 entry.type === 'cumul_loan_repayment' ||
@@ -313,9 +314,9 @@ class JournalManager {
             }
             
             // Classer comme revenu ou dépense
-            // Revenus: 'salary_tax', 'capital_funds', 'carry_forward' (si netFlow précédent positif)
-            // Dépenses: 'construction', 'maintenance', 'loan_interest', 'loan_repayment', 'exceptional_expenses', 'carry_forward' (si netFlow précédent négatif)
-            let isIncome = entry.type === 'salary_tax' || entry.type === 'capital_funds';
+            // Revenus: 'citizen_tax', 'payroll_tax', 'capital_funds', 'carry_forward' (si netFlow précédent positif)
+            // Dépenses: 'construction', 'maintenance', 'salary', 'loan_interest', 'loan_repayment', 'exceptional_expenses', 'carry_forward' (si netFlow précédent négatif)
+            let isIncome = entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds';
             
             if (entry.type === 'carry_forward') {
                 // Pour le report à nouveau, déterminer si c'est un revenu ou une dépense
@@ -339,7 +340,7 @@ class JournalManager {
                             const eTimeInfo = window.TimeManager.getTimeInfo(e.turn);
                             
                             if (eTimeInfo.year === previousYear) {
-                                const isEIncome = e.type === 'salary_tax' || e.type === 'capital_funds';
+                                const isEIncome = e.type === 'citizen_tax' || e.type === 'payroll_tax' || e.type === 'capital_funds';
                                 if (isEIncome) {
                                     prevYearIncome += e.amount;
                                 } else {
@@ -516,6 +517,10 @@ class JournalManager {
             .filter(e => e.type === 'construction')
             .reduce((sum, e) => sum + e.amount, 0);
 
+        const salaryCumul = yearEntries
+            .filter(e => e.type === 'salary')
+            .reduce((sum, e) => sum + e.amount, 0);
+
         const exceptionalExpensesCumul = yearEntries
             .filter(e => e.type === 'exceptional_expenses')
             .reduce((sum, e) => sum + e.amount, 0);
@@ -534,6 +539,7 @@ class JournalManager {
         
         const hasMaintenanceCumul = existingEntries.some(e => e.type === 'cumul_maintenance' && e.description?.includes(`Année ${yearDisplay}`));
         const hasConstructionCumul = existingEntries.some(e => e.type === 'cumul_construction' && e.description?.includes(`Année ${yearDisplay}`));
+        const hasSalaryCumul = existingEntries.some(e => e.type === 'cumul_salary' && e.description?.includes(`Année ${yearDisplay}`));
         const hasExceptionalExpensesCumul = existingEntries.some(e => e.type === 'cumul_exceptional_expenses' && e.description?.includes(`Année ${yearDisplay}`));
         const hasLoanInterestCumul = existingEntries.some(e => e.type === 'cumul_loan_interest' && e.description?.includes(`Année ${yearDisplay}`));
         const hasLoanRepaymentCumul = existingEntries.some(e => e.type === 'cumul_loan_repayment' && e.description?.includes(`Année ${yearDisplay}`));
@@ -547,6 +553,11 @@ class JournalManager {
         if (!hasConstructionCumul && constructionCumul > 0) {
             await this.addJournalEntry(turn, 'cumul_construction', constructionCumul, `Cumul Construction - Année ${yearDisplay}`);
             console.log(`[JournalManager] Created construction cumul entry for year ${year}: ${constructionCumul}€`);
+        }
+
+        if (!hasSalaryCumul && salaryCumul > 0) {
+            await this.addJournalEntry(turn, 'cumul_salary', salaryCumul, `Cumul Salaires - Année ${yearDisplay}`);
+            console.log(`[JournalManager] Created salary cumul entry for year ${year}: ${salaryCumul}€`);
         }
 
         if (!hasExceptionalExpensesCumul && exceptionalExpensesCumul > 0) {
@@ -603,6 +614,7 @@ class JournalManager {
             // Exclure les cumuls et les balances du calcul de balance (ils sont informatifs seulement)
             if (entry.type === 'cumul_maintenance' || 
                 entry.type === 'cumul_construction' || 
+                entry.type === 'cumul_salary' ||
                 entry.type === 'cumul_exceptional_expenses' ||
                 entry.type === 'cumul_loan_interest' ||
                 entry.type === 'cumul_loan_repayment' ||
@@ -611,7 +623,7 @@ class JournalManager {
             }
             
             // Utiliser la même logique que getMonthlyFinancialSummary() pour classer les entrées
-            let isIncome = entry.type === 'salary_tax' || entry.type === 'capital_funds';
+            let isIncome = entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds';
             
             // Traiter les reports à nouveau de la même manière que dans getMonthlyFinancialSummary
             if (entry.type === 'carry_forward') {
@@ -641,7 +653,7 @@ class JournalManager {
                                 const eTimeInfo = window.TimeManager.getTimeInfo(e.turn);
                                 
                                 if (eTimeInfo.year === previousYear) {
-                                    const isEIncome = e.type === 'salary_tax' || e.type === 'capital_funds';
+                                    const isEIncome = e.type === 'citizen_tax' || e.type === 'payroll_tax' || e.type === 'capital_funds';
                                     if (isEIncome) {
                                         prevYearIncome += e.amount;
                                     } else {
@@ -828,6 +840,7 @@ class JournalManager {
             const entriesToExport = entries.filter(e => 
                 e.type !== 'cumul_maintenance' && 
                 e.type !== 'cumul_construction' && 
+                e.type !== 'cumul_salary' &&
                 e.type !== 'cumul_exceptional_expenses' &&
                 e.type !== 'cumul_loan_interest' &&
                 e.type !== 'cumul_loan_repayment' &&
@@ -845,10 +858,12 @@ class JournalManager {
                 
                 const date = new Date(entry.date).toLocaleDateString('fr-FR');
                 const typeLabels = {
-                    'salary_tax': 'Impôts',
+                    'citizen_tax': 'Impôt Citoyen',
+                    'payroll_tax': 'Impôt sur les salaires',
                     'capital_funds': 'Capital',
                     'construction': 'Construction',
                     'maintenance': 'Maintenance',
+                    'salary': 'Salaires',
                     'exceptional_expenses': 'Réparation',
                     'loan_interest': 'Intérêts',
                     'loan_repayment': 'Remboursement',
@@ -856,7 +871,7 @@ class JournalManager {
                 };
                 
                 const typeLabel = typeLabels[entry.type] || entry.type;
-                const amountText = entry.type === 'salary_tax' || entry.type === 'capital_funds' || 
+                const amountText = entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds' || 
                                  (entry.type === 'carry_forward' && entry.description?.includes('(+)')) 
                                  ? `+${entry.amount}€` : `-${entry.amount}€`;
                 
