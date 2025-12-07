@@ -100,6 +100,10 @@
 
 .journal-refresh-section {
     margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
 }
 
 .journal-refresh-btn {
@@ -119,6 +123,44 @@
 
 .journal-refresh-btn:hover {
     background: #009999;
+}
+
+.journal-export-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.journal-export-btn {
+    padding: 8px 12px;
+    border: 1px solid #666;
+    background: white;
+    color: #333;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+.journal-export-btn:hover {
+    background: #f0f0f0;
+    border-color: var(--cta);
+    color: var(--cta);
+}
+
+.journal-export-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.journal-export-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
 }
 
 .journal-loading {
@@ -178,16 +220,29 @@
     text-transform: uppercase;
 }
 
-.journal-entry-type.income {
+.journal-entry-type.salary_tax {
     background: #d4edda;
     color: #155724;
 }
 
-.journal-entry-type.expense {
+.journal-entry-type.capital_funds {
+    background: #cfe2ff;
+    color: #084298;
+}
+
+/* Construction en rouge */
+.journal-entry-type.construction {
     background: #f8d7da;
     color: #721c24;
 }
 
+/* Dépenses exceptionnelles (réparations) en orange/rouge foncé */
+.journal-entry-type.exceptional_expenses {
+    background: #fd7e14;
+    color: #842029;
+}
+
+/* Maintenance en jaune/orange */
 .journal-entry-type.maintenance {
     background: #fff3cd;
     color: #856404;
@@ -201,6 +256,56 @@
 .journal-entry-type.loan_repayment {
     background: #e2e3e5;
     color: #383d41;
+}
+
+.journal-entry-type.carry_forward {
+    background: #d1e7dd;
+    color: #0f5132;
+    font-weight: 500;
+}
+
+/* Report à nouveau en dépense (déficitaire) */
+.journal-entry-type.carry_forward.negative {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Cumuls */
+.journal-entry-type.cumul_maintenance {
+    background: #fff3cd;
+    color: #856404;
+    font-weight: 600;
+}
+
+.journal-entry-type.cumul_construction {
+    background: #f8d7da;
+    color: #721c24;
+    font-weight: 600;
+}
+
+.journal-entry-type.cumul_exceptional_expenses {
+    background: #ffe0b2;
+    color: #e65100;
+    font-weight: 600;
+}
+
+.journal-entry-type.cumul_loan_interest {
+    background: #d1ecf1;
+    color: #0c5460;
+    font-weight: 600;
+}
+
+.journal-entry-type.cumul_loan_repayment {
+    background: #e2e3e5;
+    color: #383d41;
+    font-weight: 600;
+}
+
+/* Balance */
+.journal-entry-type.balance {
+    background: #e7f3ff;
+    color: #004085;
+    font-weight: 600;
 }
 
 .journal-entry-amount {
@@ -286,6 +391,44 @@
     color: var(--primary);
     text-align: left;
     margin-top: 4px;
+}
+
+.journal-entry-meta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 4px;
+}
+
+.journal-entry-year,
+.journal-entry-turn-number,
+.journal-entry-date {
+    display: inline-block;
+}
+
+.journal-entry-year {
+    font-weight: 500;
+    color: #495057;
+}
+
+.journal-entry-turn-number {
+    font-weight: 500;
+    color: #495057;
+}
+
+.journal-summary-item.construction-cumul,
+.journal-summary-item.maintenance-cumul {
+    font-size: 13px;
+}
+
+.journal-summary-item.construction-cumul .amount {
+    color: #dc3545;
+}
+
+.journal-summary-item.maintenance-cumul .amount {
+    color: #856404;
 }
 
 .no-journal-entries {
@@ -458,6 +601,146 @@
     .journal-turn-header {
         padding: 8px 12px;
         font-size: 0.8rem;
+    }
+}
+
+/* Regroupements Année */
+.journal-year-group {
+    margin-bottom: 2rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+}
+
+.journal-year-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.journal-year-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.journal-year-summary {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+/* Regroupements Mois */
+.journal-month-group {
+    border-bottom: 1px solid #e9ecef;
+}
+
+.journal-month-group:last-child {
+    border-bottom: none;
+}
+
+.journal-month-header {
+    background: #f8f9fa;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.journal-month-header h4 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--primary);
+}
+
+.journal-month-summary {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Résumés */
+.journal-summary-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.journal-year-header .journal-summary-item {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.journal-summary-item .label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.journal-summary-item .amount {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.journal-summary-item.income .amount {
+    color: #4ade80;
+}
+
+.journal-summary-item.expenses .amount {
+    color: #f87171;
+}
+
+.journal-summary-item.netflow.positive .amount {
+    color: #4ade80;
+}
+
+.journal-summary-item.netflow.negative .amount {
+    color: #f87171;
+}
+
+/* Entrées du mois */
+.journal-month-entries {
+    padding: 0.5rem 1.5rem;
+    background: white;
+}
+
+/* Responsive pour les regroupements */
+@media (max-width: 768px) {
+    .journal-year-header,
+    .journal-month-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .journal-year-summary,
+    .journal-month-summary {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .journal-year-header h3 {
+        font-size: 1.2rem;
+    }
+    
+    .journal-month-header h4 {
+        font-size: 1rem;
+    }
+    
+    .journal-summary-item {
+        flex: 1;
+        min-width: 100px;
+        justify-content: space-between;
     }
 }
 

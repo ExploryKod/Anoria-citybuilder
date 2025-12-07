@@ -241,7 +241,7 @@ class HouseStore {
         }
 
         // Use the new BudgetManager for proper financial handling
-        const expenseResult = await budgetManager.addExpense(data.price, `Building: ${data.type}`);
+        const expenseResult = await budgetManager.addConstructionExpense(data.price, `Building: ${data.type}`);
         
         if (!expenseResult.success) {
             console.warn(`Cannot build ${data.type}: ${expenseResult.message}`);

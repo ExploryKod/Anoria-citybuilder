@@ -21,6 +21,7 @@ import {
     displaySpeed
 } from '../ui/nodes.js';
 import budgetManager from '../stores/BudgetManager.js';
+import journalManager from '../stores/JournalManager.js';
 import FoodTraceabilityService from '../stores/FoodTraceabilityService.js';
 import loaderManager from '../utils/LoaderManager.js';
 import objectivesTracker from '../ui/ObjectivesTracker.js';
@@ -411,6 +412,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
     // Register with AppRegistry (centralized namespace)
     appRegistry.register('gameUI', gameUI);
     appRegistry.register('budgetManager', budgetManager);
+    appRegistry.register('journalManager', journalManager);
     
     // Initialize FoodTraceabilityService
     const foodTraceabilityService = new FoodTraceabilityService();
