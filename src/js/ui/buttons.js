@@ -4869,6 +4869,8 @@ function createJournalEntryHTML(entry) {
         isIncome = entry.amount >= 0;
     } else if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds') {
         isIncome = true;
+    } else if (entry.type.startsWith('export_')) {
+        isIncome = true; // Tous les exports sont des revenus
     } else if (entry.type.startsWith('import_')) {
         isIncome = false; // Tous les imports sont des dépenses
     } else if (entry.type === 'salary' || entry.type === 'maintenance' || entry.type === 'construction' || entry.type === 'exceptional_expenses') {
@@ -4893,6 +4895,10 @@ function createJournalEntryHTML(entry) {
         'import_carrot': 'Import Carotte',
         'import_cabbage': 'Import Chou',
         'import_wood': 'Import Bois',
+        'export_wheat': 'Export Blé',
+        'export_carrot': 'Export Carotte',
+        'export_cabbage': 'Export Chou',
+        'export_wood': 'Export Bois',
         'loan_interest': 'Intérêts prêt',
         'loan_repayment': 'Remboursement prêt',
         'cumul_maintenance': 'Cumul Maintenance',

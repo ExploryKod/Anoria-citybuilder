@@ -109,6 +109,7 @@ class CommerceStore {
         });
     }
 
+
     /**
      * Nettoie toutes les données du store (appelé au replay)
      */

@@ -622,6 +622,46 @@ class BudgetManager {
     }
 
     /**
+     * Add export income (vente de produits vers l'extérieur)
+     * @param {number} amount - Revenu total de l'export
+     * @param {string} description - Description de l'export
+     * @param {string} productId - ID du produit (wheat, carrot, etc.)
+     * @returns {Promise<Object>} Updated budget
+     */
+    async addExportIncome(amount, description, productId = 'unknown') {
+        const budget = await this.getCurrentBudget();
+        
+        // Validate input amount
+        if (typeof amount !== 'number' || isNaN(amount) || !isFinite(amount)) {
+            console.error(`Invalid export income amount: ${amount}`);
+            return budget;
+        }
+        
+        const roundedAmount = Math.round(amount);
+        
+        // Créer le type d'entrée journal : 'export_wheat', 'export_carrot', etc.
+        const journalType = `export_${productId}`;
+        
+        // Add journal entry
+        await this.addJournalEntry(budget.turn, journalType, roundedAmount, description);
+        
+        // Update budget (export = revenu)
+        budget.funds = Math.round(budget.funds + roundedAmount);
+        budget.income = Math.round(budget.income + roundedAmount);
+        budget.dailyIncome = Math.round(budget.dailyIncome + roundedAmount);
+        budget.netFlow = Math.round(budget.income - budget.expenses);
+        
+        // Track total exports if needed
+        if (!budget.totalExports) budget.totalExports = {};
+        if (!budget.totalExports[productId]) budget.totalExports[productId] = 0;
+        budget.totalExports[productId] = Math.round(budget.totalExports[productId] + roundedAmount);
+        
+        await this.db.budget.put(budget);
+        
+        return budget;
+    }
+
+    /**
      * Add daily income (taxes, sales, etc.)
      * @param {number} amount - Daily income amount
      * @param {string} source - Source of income

@@ -256,7 +256,9 @@ class JournalManager {
             stats.byType[entry.type]++;
 
             // Calculate totals
-            if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax') {
+            // Revenus: citizen_tax, payroll_tax, capital_funds, export_*
+            // Dépenses: tout le reste (construction, maintenance, salary, import_*, etc.)
+            if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds' || entry.type.startsWith('export_')) {
                 stats.totalIncome += entry.amount;
             } else {
                 stats.totalExpenses += entry.amount;
@@ -316,13 +318,18 @@ class JournalManager {
             }
             
             // Classer comme revenu ou dépense
-            // Revenus: 'citizen_tax', 'payroll_tax', 'capital_funds', 'carry_forward' (si netFlow précédent positif)
+            // Revenus: 'citizen_tax', 'payroll_tax', 'capital_funds', 'export_*', 'carry_forward' (si netFlow précédent positif)
             // Dépenses: 'construction', 'maintenance', 'salary', 'loan_interest', 'loan_repayment', 'exceptional_expenses', 'import_*', 'carry_forward' (si netFlow précédent négatif)
             let isIncome = entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds';
             
             // Les imports sont des dépenses
             if (entry.type.startsWith('import_')) {
                 isIncome = false;
+            }
+            
+            // Les exports sont des revenus
+            if (entry.type.startsWith('export_')) {
+                isIncome = true;
             }
             
             if (entry.type === 'carry_forward') {
@@ -350,6 +357,9 @@ class JournalManager {
                                 let isEIncome = e.type === 'citizen_tax' || e.type === 'payroll_tax' || e.type === 'capital_funds';
                                 if (e.type.startsWith('import_')) {
                                     isEIncome = false;
+                                }
+                                if (e.type.startsWith('export_')) {
+                                    isEIncome = true;
                                 }
                                 if (isEIncome) {
                                     prevYearIncome += e.amount;
@@ -640,6 +650,11 @@ class JournalManager {
                 isIncome = false;
             }
             
+            // Les exports sont des revenus
+            if (entry.type.startsWith('export_')) {
+                isIncome = true;
+            }
+            
             // Traiter les reports à nouveau de la même manière que dans getMonthlyFinancialSummary
             if (entry.type === 'carry_forward') {
                 // Pour le report à nouveau, déterminer si c'est un revenu ou une dépense
@@ -671,6 +686,9 @@ class JournalManager {
                                     let isEIncome = e.type === 'citizen_tax' || e.type === 'payroll_tax' || e.type === 'capital_funds';
                                     if (e.type.startsWith('import_')) {
                                         isEIncome = false;
+                                    }
+                                    if (e.type.startsWith('export_')) {
+                                        isEIncome = true;
                                     }
                                     if (isEIncome) {
                                         prevYearIncome += e.amount;
@@ -887,15 +905,20 @@ class JournalManager {
                     'import_carrot': 'Import Carotte',
                     'import_cabbage': 'Import Chou',
                     'import_wood': 'Import Bois',
+                    'export_wheat': 'Export Blé',
+                    'export_carrot': 'Export Carotte',
+                    'export_cabbage': 'Export Chou',
+                    'export_wood': 'Export Bois',
                     'loan_interest': 'Intérêts',
                     'loan_repayment': 'Remboursement',
                     'carry_forward': 'Report'
                 };
                 
                 const typeLabel = typeLabels[entry.type] || entry.type;
-                const amountText = entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds' || 
-                                 (entry.type === 'carry_forward' && entry.description?.includes('(+)')) 
-                                 ? `+${entry.amount}€` : `-${entry.amount}€`;
+                const isIncomeType = entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds' || 
+                                   entry.type.startsWith('export_') ||
+                                   (entry.type === 'carry_forward' && entry.description?.includes('(+)'));
+                const amountText = isIncomeType ? `+${entry.amount}€` : `-${entry.amount}€`;
                 
                 doc.text(`${date} - ${typeLabel}: ${amountText}`, margin, yPosition);
                 yPosition += lineHeight;
