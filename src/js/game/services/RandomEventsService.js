@@ -136,15 +136,19 @@ export class RandomEventsService extends SimService {
                 return;
             }
 
-            // Déduire le coût de réparation
+            // Déduire le coût de réparation (dépense exceptionnelle, pas une construction)
             if (window.budgetManager) {
-                await window.budgetManager.addExpense(
-                    event.cost, 
-                    `Réparations ${event.name} - ${event.description}`
-                );
-                
-                // Ajouter une entrée dans le journal
                 const budget = await window.budgetManager.getCurrentBudget();
+                
+                // Déduire les fonds directement (sans utiliser addExpense qui crée une entrée 'construction')
+                budget.funds = budget.funds - event.cost;
+                budget.expenses = budget.expenses + event.cost;
+                budget.netFlow = budget.income - budget.expenses;
+                
+                // Mettre à jour le budget dans la base de données
+                await window.budgetManager.db.budget.put(budget);
+                
+                // Ajouter UNIQUEMENT l'entrée de journal de type 'exceptional_expenses'
                 await window.budgetManager.addJournalEntry(
                     budget.turn,
                     'exceptional_expenses',
