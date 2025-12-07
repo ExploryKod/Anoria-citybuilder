@@ -70,7 +70,7 @@ class BudgetManager {
         const hasCapitalFunds = existingEntries.some(entry => entry.type === 'capital_funds' && entry.turn === 0);
         
         if (!hasCapitalFunds) {
-            await this.addJournalEntry(0, 'capital_funds', startingFunds, `Capital de départ (VITE_INITIAL_FUNDS=${startingFunds}€)`);
+            await this.addJournalEntry(0, 'capital_funds', startingFunds, `Capital de départ: ${startingFunds}€)`);
         }
             
         return initialBudget;
