@@ -253,7 +253,8 @@ class JournalManager {
 
     /**
      * Create carry forward entry (report à nouveau) for the beginning of a new year
-     * Calcule automatiquement le report à nouveau depuis les données du journal
+     * Le report à nouveau de l'année N est le SOLDE (netFlow) de l'année N-1
+     * Ce solde inclut déjà le report à nouveau de l'année N-1 dans son calcul
      * @param {number} turn - Turn number (should be turn 1 of the new year)
      * @returns {Promise<void>}
      */
@@ -280,28 +281,19 @@ class JournalManager {
             return;
         }
         
-        // Calculer le netFlow de l'année précédente depuis les entrées du journal
-        // (en excluant les reports à nouveau)
-        const allEntries = await this.getJournalEntries();
-        let prevYearIncome = 0;
-        let prevYearExpenses = 0;
+        // Utiliser getYearlyFinancialSummary() pour obtenir le netFlow de l'année précédente
+        // Cette méthode calcule correctement le solde en incluant le report à nouveau de l'année précédente
+        const yearlyData = await this.getYearlyFinancialSummary();
+        const previousYearData = yearlyData.find(y => y.year === previousYear);
         
-        allEntries.forEach(entry => {
-            // Exclure les reports à nouveau du calcul
-            if (entry.type === 'carry_forward') return;
-            
-            const entryTimeInfo = window.TimeManager.getTimeInfo(entry.turn);
-            if (entryTimeInfo.year === previousYear) {
-                const isEntryIncome = entry.type === 'income' || entry.type === 'capital_funds';
-                if (isEntryIncome) {
-                    prevYearIncome += entry.amount;
-                } else {
-                    prevYearExpenses += entry.amount;
-                }
-            }
-        });
+        if (!previousYearData) {
+            console.warn(`[JournalManager] No data found for previous year ${previousYear}`);
+            return;
+        }
         
-        const previousYearNetFlow = prevYearIncome - prevYearExpenses;
+        // Le netFlow de l'année précédente est le solde à reporter
+        // Il inclut déjà le report à nouveau de l'année précédente dans son calcul
+        const previousYearNetFlow = previousYearData.netFlow;
         
         // Le montant est toujours positif dans IndexedDB
         // Le signe du netFlow détermine si c'est revenu (positif) ou dépense (négatif)
@@ -318,6 +310,8 @@ class JournalManager {
             amount,
             previousYearNetFlow,
             previousYear,
+            previousYearIncome: previousYearData.income.total,
+            previousYearExpenses: previousYearData.expenses.total,
             isIncome: isPositive
         });
     }
@@ -331,8 +325,58 @@ class JournalManager {
         let balance = 0;
         
         entries.forEach(entry => {
-            const isIncome = entry.type === 'income' || entry.type === 'capital_funds' || 
-                           (entry.type === 'carry_forward' && entry.description?.includes('(+)'));
+            // Utiliser la même logique que getMonthlyFinancialSummary() pour classer les entrées
+            let isIncome = entry.type === 'income' || entry.type === 'capital_funds';
+            
+            // Traiter les reports à nouveau de la même manière que dans getMonthlyFinancialSummary
+            if (entry.type === 'carry_forward') {
+                // Pour le report à nouveau, déterminer si c'est un revenu ou une dépense
+                // en fonction du signe stocké dans la description
+                // Format: "Report à nouveau de l'année X (signe)"
+                const signMatch = entry.description?.match(/\(([+-])\)/);
+                if (signMatch) {
+                    isIncome = signMatch[1] === '+';
+                } else {
+                    // Fallback: si pas de signe dans la description, calculer depuis le netFlow de l'année précédente
+                    if (!window.TimeManager) {
+                        // Si TimeManager n'est pas disponible, traiter comme revenu par défaut
+                        isIncome = true;
+                    } else {
+                        const timeInfo = window.TimeManager.getTimeInfo(entry.turn);
+                        const previousYear = timeInfo.year - 1;
+                        if (previousYear >= 0) {
+                            // Calculer le netFlow de l'année précédente en EXCLUANT le report à nouveau
+                            let prevYearIncome = 0;
+                            let prevYearExpenses = 0;
+                            
+                            entries.forEach(e => {
+                                if (e.type === 'carry_forward') return; // Exclure tous les reports à nouveau
+                                
+                                if (!window.TimeManager) return;
+                                const eTimeInfo = window.TimeManager.getTimeInfo(e.turn);
+                                
+                                if (eTimeInfo.year === previousYear) {
+                                    const isEIncome = e.type === 'income' || e.type === 'capital_funds';
+                                    if (isEIncome) {
+                                        prevYearIncome += e.amount;
+                                    } else {
+                                        prevYearExpenses += e.amount;
+                                    }
+                                }
+                            });
+                            
+                            const prevYearNetFlow = prevYearIncome - prevYearExpenses;
+                            isIncome = prevYearNetFlow >= 0;
+                        } else {
+                            // Année 0, pas de report à nouveau (ne devrait pas arriver)
+                            isIncome = true;
+                        }
+                    }
+                }
+            }
+            
+            // Tous les autres types sont des dépenses (construction, maintenance, exceptional_expenses, loan_interest, loan_repayment, etc.)
+            
             if (isIncome) {
                 balance += entry.amount;
             } else {

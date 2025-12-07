@@ -24,9 +24,16 @@ class FinancesSectionManager {
     }
 
     async loadFinancialData() {
+        // Vérifier que journalManager est disponible
         if (!this.journalManager) {
-            this.renderStaticData();
-            return;
+            // Essayer de récupérer depuis window
+            this.journalManager = window.journalManager || window.app?.journalManager;
+            
+            if (!this.journalManager) {
+                console.warn('[FinancesSection] JournalManager not available, using static data');
+                this.renderStaticData();
+                return;
+            }
         }
 
         try {
@@ -51,7 +58,7 @@ class FinancesSectionManager {
             this.financialData = this.processFinancialData(currentBalance, yearlyData, currentYear);
             this.render();
         } catch (error) {
-            console.error('Error loading financial data:', error);
+            console.error('[FinancesSection] Error loading financial data:', error);
             this.renderStaticData();
         }
     }
@@ -237,41 +244,76 @@ class FinancesSectionManager {
     }
 
     updateTableData(thisYear, lastYear) {
-        const fields = [
+        // Revenus (toujours positifs)
+        const incomeFields = [
             { key: 'initialFunds', thisYear: 'initialFundsThisYear', lastYear: 'initialFundsLastYear' },
             { key: 'incomeTax', thisYear: 'incomeTaxThisYear', lastYear: 'incomeTaxLastYear' },
             { key: 'carryForwardIncome', thisYear: 'carryForwardIncomeThisYear', lastYear: 'carryForwardIncomeLastYear' },
-            { key: 'totalIncome', thisYear: 'totalIncomeThisYear', lastYear: 'totalIncomeLastYear' },
+            { key: 'totalIncome', thisYear: 'totalIncomeThisYear', lastYear: 'totalIncomeLastYear' }
+        ];
+
+        // Dépenses (toujours positives dans le journal, mais affichées en rouge)
+        const expenseFields = [
             { key: 'construction', thisYear: 'constructionThisYear', lastYear: 'constructionLastYear' },
             { key: 'maintenance', thisYear: 'maintenanceThisYear', lastYear: 'maintenanceLastYear' },
             { key: 'repairs', thisYear: 'repairsThisYear', lastYear: 'repairsLastYear' },
             { key: 'carryForwardExpense', thisYear: 'carryForwardExpenseThisYear', lastYear: 'carryForwardExpenseLastYear' },
-            { key: 'totalExpenses', thisYear: 'totalExpensesThisYear', lastYear: 'totalExpensesLastYear' },
+            { key: 'totalExpenses', thisYear: 'totalExpensesThisYear', lastYear: 'totalExpensesLastYear' }
+        ];
+
+        // Balance (peut être négative ou positive)
+        const balanceFields = [
             { key: 'balance', thisYear: 'balanceThisYear', lastYear: 'balanceLastYear' }
         ];
 
-        fields.forEach(field => {
-            this.updateField(field.thisYear, thisYear[field.key]);
-            this.updateField(field.lastYear, lastYear[field.key]);
+        // Mettre à jour les revenus (toujours positifs)
+        incomeFields.forEach(field => {
+            this.updateField(field.thisYear, thisYear[field.key], 'income');
+            this.updateField(field.lastYear, lastYear[field.key], 'income');
+        });
+
+        // Mettre à jour les dépenses (toujours positives dans le journal)
+        expenseFields.forEach(field => {
+            this.updateField(field.thisYear, thisYear[field.key], 'expense');
+            this.updateField(field.lastYear, lastYear[field.key], 'expense');
+        });
+
+        // Mettre à jour la balance (peut être négative)
+        balanceFields.forEach(field => {
+            this.updateField(field.thisYear, thisYear[field.key], 'balance');
+            this.updateField(field.lastYear, lastYear[field.key], 'balance');
         });
 
         this.updateBalanceRow(thisYear.balance);
     }
 
-    updateField(fieldId, value) {
+    updateField(fieldId, value, type = 'balance') {
         const element = document.querySelector(`[data-field="${fieldId}"]`);
-        if (element) {
-            const numValue = Math.round(value || 0);
+        if (!element) {
+            console.warn(`[FinancesSection] Element not found for field: ${fieldId}`);
+            return;
+        }
+        
+        const numValue = Math.round(value || 0);
+        const absValue = Math.abs(numValue);
+        
+        // Mettre à jour le texte avec formatage français
+        element.textContent = absValue.toLocaleString('fr-FR');
+        
+        // Mettre à jour les classes CSS selon le type
+        if (type === 'balance') {
+            // Pour la balance, la classe dépend du signe de la valeur
             const isNegative = numValue < 0;
-            const absValue = Math.abs(numValue);
-            
-            if (element.tagName === 'SPAN') {
-                element.textContent = isNegative ? `-${absValue}` : absValue.toString();
-                element.className = isNegative ? 'finances-value-negative' : 'finances-value-positive';
-            } else {
-                element.textContent = absValue.toString();
-                element.className = isNegative ? 'finances-value-negative' : 'finances-value-positive';
-            }
+            element.classList.remove('finances-value-positive', 'finances-value-negative');
+            element.classList.add(isNegative ? 'finances-value-negative' : 'finances-value-positive');
+        } else if (type === 'income') {
+            // Pour les revenus, toujours positif (même si 0)
+            element.classList.remove('finances-value-negative');
+            element.classList.add('finances-value-positive');
+        } else if (type === 'expense') {
+            // Pour les dépenses, toujours négatif (affichage en rouge)
+            element.classList.remove('finances-value-positive');
+            element.classList.add('finances-value-negative');
         }
     }
 
@@ -309,18 +351,19 @@ function initFinancesSection() {
 
     const manager = new FinancesSectionManager();
     
+    // Observer pour recharger les données à chaque fois que la section devient active
     const observer = new MutationObserver(() => {
         if (financesSection.classList.contains('active')) {
-            manager.init();
-            observer.disconnect();
+            // Recharger les données depuis le journal à chaque activation
+            manager.loadFinancialData();
         }
     });
 
     observer.observe(financesSection, { attributes: true, attributeFilter: ['class'] });
 
+    // Initialiser si déjà actif
     if (financesSection.classList.contains('active')) {
         manager.init();
-        observer.disconnect();
     }
 
     window.financesSectionManager = manager;
