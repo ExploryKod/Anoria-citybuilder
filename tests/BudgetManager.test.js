@@ -105,7 +105,7 @@ describe('BudgetManager', () => {
     });
 
     // ========================================================================
-    // addIncome / addExpense - Opérations financières
+    // addIncome / addConstructionExpense - Opérations financières
     // ========================================================================
     describe('addIncome', () => {
         
@@ -148,7 +148,7 @@ describe('BudgetManager', () => {
         });
     });
 
-    describe('addExpense', () => {
+    describe('addConstructionExpense', () => {
         
         beforeEach(async () => {
             await budgetManager.initialize(200);
@@ -156,7 +156,7 @@ describe('BudgetManager', () => {
 
         test('soustrait des dépenses du budget (investissements)', async () => {
             await budgetManager.initialize(200);
-            await budgetManager.addExpense(30, 'Building: House');
+            await budgetManager.addConstructionExpense(30, 'Building: House');
             
             // Lire directement depuis la base
             const budgetData = await testDb.budget.toArray();
@@ -164,13 +164,13 @@ describe('BudgetManager', () => {
             
             expect(budget.funds).toBe(170); // 200 - 30
             expect(budget.totalInvestments).toBe(30);
-            // Note: addExpense() does NOT update dailyExpenses (only addDailyExpense() does)
+            // Note: addConstructionExpense() does NOT update dailyExpenses (only addDailyExpense() does)
             expect(budget.dailyExpenses).toBe(0);
         });
 
         test('peut avoir un budget négatif (dette)', async () => {
             await budgetManager.initialize(200);
-            await budgetManager.addExpense(250, 'Grosse dépense');
+            await budgetManager.addConstructionExpense(250, 'Grosse dépense');
             
             // Lire directement depuis la base
             const budgetData = await testDb.budget.toArray();

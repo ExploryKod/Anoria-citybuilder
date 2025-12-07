@@ -343,12 +343,12 @@ class BudgetManager {
     }
 
     /**
-     * Add expense (spending money)
-     * @param {number} amount - Expense amount
-     * @param {string} reason - Reason for expense (e.g., "building", "maintenance")
+     * Add construction expense to budget (building purchases)
+     * @param {number} amount - Construction expense amount
+     * @param {string} reason - Reason for expense (e.g., "Building: House")
      * @returns {Promise<Object>} Result object with success status
      */
-    async addExpense(amount, reason = "unknown") {
+    async addConstructionExpense(amount, reason = "unknown") {
         const budget = await this.getCurrentBudget();
         
         // Validate input amount

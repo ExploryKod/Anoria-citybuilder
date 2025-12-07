@@ -140,7 +140,7 @@ export class RandomEventsService extends SimService {
             if (window.budgetManager) {
                 const budget = await window.budgetManager.getCurrentBudget();
                 
-                // Déduire les fonds directement (sans utiliser addExpense qui crée une entrée 'construction')
+                // Déduire les fonds directement (sans utiliser addConstructionExpense qui crée une entrée 'construction')
                 budget.funds = budget.funds - event.cost;
                 budget.expenses = budget.expenses + event.cost;
                 budget.netFlow = budget.income - budget.expenses;
