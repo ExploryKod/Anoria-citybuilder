@@ -511,22 +511,32 @@ class BudgetManager {
         
         await this.db.budget.put(budget);
         
-        // Détecter le début d'une nouvelle année (tour 1 de chaque année, sauf année 0)
+        // Détecter la fin d'année et le début d'une nouvelle année
         if (window.TimeManager) {
             const currentTimeInfo = window.TimeManager.getTimeInfo(turn);
             const previousTimeInfo = window.TimeManager.getTimeInfo(previousTurn);
             
             // Vérifier si on vient de passer au tour 1 d'une nouvelle année (janvier)
             // et que ce n'est pas l'année 0
-            // Conditions :
-            // 1. Année actuelle > 0 (pas l'année 0)
-            // 2. Mois actuel = janvier (monthIndex === 0)
-            // 3. On vient de changer d'année (année précédente < année actuelle)
             if (currentTimeInfo.year > 0 && 
                 currentTimeInfo.monthIndex === 0 && // Janvier
                 previousTimeInfo.year < currentTimeInfo.year) {
                 
-                // Le JournalManager calcule automatiquement le report à nouveau depuis les données du journal
+                // On vient de passer de l'année précédente à la nouvelle année
+                // Le dernier tour de l'année précédente était previousTurn
+                const endingYear = previousTimeInfo.year;
+                
+                if (endingYear >= 0) {
+                    // Calculer et sauvegarder le solde de fin d'année
+                    // Utilise EXACTEMENT la même méthode que loadJournalEntries() ligne 4489
+                    // qui appelle getYearlyFinancialSummary() et utilise yearData.netFlow
+                    // C'est la même valeur qui est affichée dans le HTML ligne 4522
+                    const yearEndNetFlow = await this.journalManager.calculateAndSaveYearEndBalance(endingYear);
+                    console.log(`[BudgetManager] Calculated and saved year end balance for year ${endingYear}: ${yearEndNetFlow}€ (same method as journal display)`);
+                }
+                
+                // Maintenant créer le report à nouveau pour la nouvelle année
+                // Le JournalManager utilisera le solde sauvegardé dans localStorage
                 await this.journalManager.createCarryForwardEntry(turn);
             }
         }
