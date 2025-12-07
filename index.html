@@ -981,7 +981,7 @@
                 <div class="realtime-revenue-label">Détail des Revenus</div>
                 <div class="realtime-revenue-grid">
                     <div class="realtime-revenue-item">
-                        <div class="realtime-revenue-source">🏛️ Impôts (10€/hab)</div>
+                        <div class="realtime-revenue-source">🏛️ Impôt Citoyen</div>
                         <div class="realtime-revenue-amount" id="realtime-taxes">0€</div>
                     </div>
                     <div class="realtime-revenue-item">
@@ -996,7 +996,7 @@
                 <div class="realtime-expense-label">Détail des Dépenses</div>
                 <div class="realtime-expense-grid">
                     <div class="realtime-expense-item">
-                        <div class="realtime-expense-source">🏗️ Maintenance bâtiments (2€/bât)</div>
+                        <div class="realtime-expense-source">🏗️ Maintenance bâtiments</div>
                         <div class="realtime-expense-amount" id="realtime-building-maintenance">0€</div>
                     </div>
                     <div class="realtime-expense-item">
@@ -1769,21 +1769,21 @@
 
                             <div class="finances-debt-info" id="finances-debt-info">
                                 <p class="finances-debt-text">
-                                    La ville a une dette envers les prêteurs de <span class="finances-debt-amount" id="finances-debt-amount">0</span> Denarii
+                                    La ville a une dette envers les prêteurs de <span class="finances-debt-amount" id="finances-debt-amount">0</span> €
                                 </p>
                             </div>
 
                             <div class="finances-tax-controls">
                                 <div class="finances-tax-controls-row">
-                                    <span class="finances-tax-label">Taux d'imposition :</span>
+                                    <span class="finances-tax-label">Impôt par citoyen :</span>
                                     <div class="finances-tax-buttons">
-                                        <button type="button" class="finances-tax-btn" id="tax-decrease-btn" aria-label="Diminuer le taux d'imposition">
+                                        <button type="button" class="finances-tax-btn" id="tax-decrease-btn" aria-label="Diminuer l'impôt par citoyen">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus">
                                                 <path d="M5 12h14"/>
                                             </svg>
                                         </button>
-                                        <span class="finances-tax-rate" id="tax-rate-display">7%</span>
-                                        <button type="button" class="finances-tax-btn" id="tax-increase-btn" aria-label="Augmenter le taux d'imposition">
+                                        <span class="finances-tax-rate" id="tax-rate-display">100</span>
+                                        <button type="button" class="finances-tax-btn" id="tax-increase-btn" aria-label="Augmenter l'impôt par citoyen">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
                                                 <path d="M5 12h14"/>
                                                 <path d="M12 5v14"/>
@@ -1792,7 +1792,7 @@
                                     </div>
                                 </div>
                                 <div class="finances-tax-estimate-wrapper">
-                                    <span class="finances-tax-estimate" id="tax-estimate">rapporte environ 234 Denarii</span>
+                                    <span class="finances-tax-estimate" id="tax-estimate">€ par citoyen</span>
                                 </div>
                             </div>
                             <div class="finances-tax-registration" id="tax-registration">
@@ -1836,9 +1836,22 @@
                                                 <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                                             </svg>
                                         </td>
-                                        <td class="label-col finances-row-label">Impôts</td>
+                                        <td class="label-col finances-row-label">Impôt Citoyen</td>
                                         <td class="last-year-col finances-value-positive" data-field="incomeTaxLastYear" id="income-tax-last-year">0</td>
                                         <td class="this-year-col finances-value-positive" data-field="incomeTaxThisYear" id="income-tax-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-coins">
+                                                <circle cx="8" cy="8" r="6"></circle>
+                                                <path d="M18.09 10.37A6 6 0 1 1 10.34 18"></path>
+                                                <path d="M7 6h1v4"></path>
+                                                <path d="M16 10h1v4"></path>
+                                            </svg>
+                                        </td>
+                                        <td class="label-col finances-row-label">Impôt sur les salaires</td>
+                                        <td class="last-year-col finances-value-positive" data-field="payrollTaxLastYear" id="payroll-tax-last-year">0</td>
+                                        <td class="this-year-col finances-value-positive" data-field="payrollTaxThisYear" id="payroll-tax-this-year">0</td>
                                     </tr>
                                     <tr>
                                         <td class="indicator-col">
@@ -1883,6 +1896,19 @@
                                         <td class="label-col finances-row-label">Maintenance</td>
                                         <td class="last-year-col finances-value-negative" data-field="maintenanceLastYear" id="maintenance-last-year">0</td>
                                         <td class="this-year-col finances-value-negative" data-field="maintenanceThisYear" id="maintenance-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
+                                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                                <circle cx="9" cy="7" r="4"/>
+                                                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                            </svg>
+                                        </td>
+                                        <td class="label-col finances-row-label">Salaires</td>
+                                        <td class="last-year-col finances-value-negative" data-field="salaryLastYear" id="salary-last-year">0</td>
+                                        <td class="this-year-col finances-value-negative" data-field="salaryThisYear" id="salary-this-year">0</td>
                                     </tr>
                                     <tr>
                                         <td class="indicator-col">
@@ -2071,6 +2097,34 @@
                                     </div>
                                     <div class="work-control-info">
                                         Facture annuelle totale estimée sur la base de la population actuelle (<span class="work-control-info-value" id="salary-population-display">0</span>) : <span class="work-control-info-value" id="salary-annual-bill">0</span> €
+                                    </div>
+                                </div>
+
+                                <div class="work-control-group">
+                                    <div class="work-control-label">Impôt sur les salaires</div>
+                                    <div class="work-control-row">
+                                        <div class="work-control-buttons">
+                                            <button type="button" class="work-control-btn" id="salary-tax-decrease-btn" aria-label="Diminuer le taux d'imposition sur les salaires">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus">
+                                                    <path d="M5 12h14"></path>
+                                                </svg>
+                                            </button>
+                                            <span class="work-control-info">
+                                                Taux d'imposition : <span class="work-control-info-value" id="salary-tax-rate-display">20</span>%
+                                            </span>
+                                            <button type="button" class="work-control-btn" id="salary-tax-increase-btn" aria-label="Augmenter le taux d'imposition sur les salaires">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
+                                                    <path d="M5 12h14"></path>
+                                                    <path d="M12 5v14"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div class="work-control-info">
+                                            Impôt mensuel estimé : <span class="work-control-info-value" id="salary-tax-amount-display">0</span> €/mois
+                                        </div>
+                                        <div class="work-control-info">
+                                            Impôt annuel estimé : <span class="work-control-info-value" id="salary-tax-annual-display">0</span> €/an
+                                        </div>
                                     </div>
                                 </div>
 

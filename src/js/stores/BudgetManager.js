@@ -130,6 +130,21 @@ class BudgetManager {
             // No budget exists - initialize with config value
             return await this.initialize(expectedInitialFunds);
         }
+        
+        // Round all financial values to ensure consistency
+        if (typeof budget.funds === 'number') budget.funds = Math.round(budget.funds);
+        if (typeof budget.income === 'number') budget.income = Math.round(budget.income);
+        if (typeof budget.expenses === 'number') budget.expenses = Math.round(budget.expenses);
+        if (typeof budget.netFlow === 'number') budget.netFlow = Math.round(budget.netFlow);
+        if (typeof budget.dailyIncome === 'number') budget.dailyIncome = Math.round(budget.dailyIncome);
+        if (typeof budget.dailyExpenses === 'number') budget.dailyExpenses = Math.round(budget.dailyExpenses);
+        if (typeof budget.totalTaxes === 'number') budget.totalTaxes = Math.round(budget.totalTaxes);
+        if (typeof budget.totalBuildingMaintenance === 'number') budget.totalBuildingMaintenance = Math.round(budget.totalBuildingMaintenance);
+        if (typeof budget.totalInvestments === 'number') budget.totalInvestments = Math.round(budget.totalInvestments);
+        if (typeof budget.totalSalaries === 'number') budget.totalSalaries = Math.round(budget.totalSalaries);
+        if (typeof budget.totalLoanInterest === 'number') budget.totalLoanInterest = Math.round(budget.totalLoanInterest);
+        if (typeof budget.totalLoanInterestExpenses === 'number') budget.totalLoanInterestExpenses = Math.round(budget.totalLoanInterestExpenses);
+        if (typeof budget.totalLoanRepayments === 'number') budget.totalLoanRepayments = Math.round(budget.totalLoanRepayments);
              
         // Check if initialFunds needs to be updated to match config
         // This ensures the budget always reflects the current config value
@@ -230,11 +245,12 @@ class BudgetManager {
         const budget = await this.getCurrentBudget();
         
         // Add journal entry
-        await this.addJournalEntry(budget.turn, 'salary_tax', amount, source);
+        await this.addJournalEntry(budget.turn, 'citizen_tax', Math.round(amount), source);
         
-        budget.funds += amount;
-        budget.income += amount;
-        budget.netFlow = budget.income - budget.expenses;
+        const roundedAmount = Math.round(amount);
+        budget.funds = Math.round(budget.funds + roundedAmount);
+        budget.income = Math.round(budget.income + roundedAmount);
+        budget.netFlow = Math.round(budget.income - budget.expenses);
         
         await this.db.budget.put(budget);
 
@@ -248,7 +264,8 @@ class BudgetManager {
      */
     async addLoan(amount, description = 'Loan', loanData = null) {
         const budget = await this.getCurrentBudget();
-        budget.funds += amount;
+        const roundedAmount = Math.round(amount);
+        budget.funds = Math.round(budget.funds + roundedAmount);
         
         // Initialize loans array if not exists
         if (!budget.loans) budget.loans = [];
@@ -273,19 +290,20 @@ class BudgetManager {
         const budget = await this.getCurrentBudget();
         
         // Add journal entry
-        await this.addJournalEntry(budget.turn, 'loan_interest', amount, description);
+        const roundedAmount = Math.round(amount);
+        await this.addJournalEntry(budget.turn, 'loan_interest', roundedAmount, description);
         
-        budget.expenses += amount;
-        budget.funds -= amount;
-        budget.netFlow = budget.income - budget.expenses;
+        budget.expenses = Math.round(budget.expenses + roundedAmount);
+        budget.funds = Math.round(budget.funds - roundedAmount);
+        budget.netFlow = Math.round(budget.income - budget.expenses);
         
         // Initialize loan interest if not exists
         if (!budget.totalLoanInterest) budget.totalLoanInterest = 0;
-        budget.totalLoanInterest += amount;
+        budget.totalLoanInterest = Math.round(budget.totalLoanInterest + roundedAmount);
         
         // Initialize loan interest expenses if not exists
         if (!budget.totalLoanInterestExpenses) budget.totalLoanInterestExpenses = 0;
-        budget.totalLoanInterestExpenses += amount;
+        budget.totalLoanInterestExpenses = Math.round(budget.totalLoanInterestExpenses + roundedAmount);
         
         await this.db.budget.put(budget);
 
@@ -301,15 +319,16 @@ class BudgetManager {
         const budget = await this.getCurrentBudget();
         
         // Add journal entry
-        await this.addJournalEntry(budget.turn, 'loan_repayment', amount, description);
+        const roundedAmount = Math.round(amount);
+        await this.addJournalEntry(budget.turn, 'loan_repayment', roundedAmount, description);
         
-        budget.funds -= amount;
-        budget.expenses += amount;
-        budget.netFlow = budget.income - budget.expenses;
+        budget.funds = Math.round(budget.funds - roundedAmount);
+        budget.expenses = Math.round(budget.expenses + roundedAmount);
+        budget.netFlow = Math.round(budget.income - budget.expenses);
         
         // Track total loan repayments
         if (!budget.totalLoanRepayments) budget.totalLoanRepayments = 0;
-        budget.totalLoanRepayments += amount;
+        budget.totalLoanRepayments = Math.round(budget.totalLoanRepayments + roundedAmount);
         
         // Update specific loan if loanId provided
         if (loanId && budget.loans) {
@@ -370,22 +389,24 @@ class BudgetManager {
         // The game can go into debt, which is a valid game state
 
         try {
-            budget.funds = currentFunds - amount;
+            const roundedAmount = Math.round(amount);
+            budget.funds = Math.round(currentFunds - roundedAmount);
             
             // Add journal entry (constructions are tracked as 'construction' type)
-            await this.addJournalEntry(budget.turn, 'construction', amount, reason);
+            await this.addJournalEntry(budget.turn, 'construction', roundedAmount, reason);
             
             // Distinguish between investments and regular expenses
             if (reason.includes('Building:') || reason.includes('building')) {
                 // This is an investment (building purchase)
-                budget.totalInvestments += amount;
+                if (!budget.totalInvestments) budget.totalInvestments = 0;
+                budget.totalInvestments = Math.round(budget.totalInvestments + roundedAmount);
                 // Don't add to regular expenses for investments
             } else {
                 // This is a regular expense
-                budget.expenses = currentExpenses + amount;
+                budget.expenses = Math.round(currentExpenses + roundedAmount);
             }
             
-            budget.netFlow = currentIncome - budget.expenses;
+            budget.netFlow = Math.round(currentIncome - budget.expenses);
             
             await this.db.budget.put(budget);
 
@@ -581,8 +602,11 @@ class BudgetManager {
         
         budget.funds = currentFunds + amount;
         budget.income = currentIncome + amount;
-        budget.dailyIncome = currentDailyIncome + amount;
-        budget.netFlow = budget.income - budget.expenses;
+        const roundedAmount = Math.round(amount);
+        budget.funds = Math.round(budget.funds + roundedAmount);
+        budget.income = Math.round(budget.income + roundedAmount);
+        budget.dailyIncome = Math.round(currentDailyIncome + roundedAmount);
+        budget.netFlow = Math.round(budget.income - budget.expenses);
         
         await this.db.budget.put(budget);
         return budget;
@@ -608,10 +632,11 @@ class BudgetManager {
         const currentIncome = budget.income;
         const currentDailyExpenses = budget.dailyExpenses;
         
-        budget.funds = currentFunds - amount;
-        budget.expenses = currentExpenses + amount;
-        budget.dailyExpenses = currentDailyExpenses + amount;
-        budget.netFlow = currentIncome - budget.expenses;
+        const roundedAmount = Math.round(amount);
+        budget.funds = Math.round(currentFunds - roundedAmount);
+        budget.expenses = Math.round(currentExpenses + roundedAmount);
+        budget.dailyExpenses = Math.round(currentDailyExpenses + roundedAmount);
+        budget.netFlow = Math.round(currentIncome - budget.expenses);
         
         await this.db.budget.put(budget);
         return budget;
@@ -686,16 +711,18 @@ class BudgetManager {
             });
             
             // Add journal entry with custom description
-            await this.addJournalEntry(budget.turn, 'maintenance', amount, description);
+            const roundedAmount = Math.round(amount);
+            await this.addJournalEntry(budget.turn, 'maintenance', roundedAmount, description);
             
             // Update budget
-            budget.funds -= amount;
-            budget.expenses += amount;
-            budget.dailyExpenses += amount;
+            budget.funds = Math.round(budget.funds - roundedAmount);
+            budget.expenses = Math.round(budget.expenses + roundedAmount);
+            budget.dailyExpenses = Math.round(budget.dailyExpenses + roundedAmount);
             
             // Update detailed tracking
-            budget.totalBuildingMaintenance += amount;
-            budget.netFlow = budget.income - budget.expenses;
+            if (!budget.totalBuildingMaintenance) budget.totalBuildingMaintenance = 0;
+            budget.totalBuildingMaintenance = Math.round(budget.totalBuildingMaintenance + roundedAmount);
+            budget.netFlow = Math.round(budget.income - budget.expenses);
             
             // Store maintenance breakdown for detailed display
             budget.maintenanceBreakdown = maintenanceBreakdown;
@@ -707,10 +734,90 @@ class BudgetManager {
     }
 
     /**
-     * Add taxes based on population (100€ per citizen per month, only in November)
+     * Add salaries expense (salaire brut mensuel × population totale)
+     * Called once per month on the first turn of each month
+     * @param {number} salaryPerMonth - Salary per citizen per month (from workSectionManager)
+     * @param {number} population - Total population (from housesStore)
+     * @param {string} description - Optional custom description
+     * @returns {Promise<Object>} Updated budget
+     */
+    async addSalaries(salaryPerMonth, population, description = null) {
+        const budget = await this.getCurrentBudget();
+        
+        // Validate inputs
+        if (typeof salaryPerMonth !== 'number' || isNaN(salaryPerMonth) || !isFinite(salaryPerMonth) || salaryPerMonth < 0) {
+            console.error(`Invalid salary per month: ${salaryPerMonth}`);
+            return budget;
+        }
+        
+        if (typeof population !== 'number' || isNaN(population) || !isFinite(population) || population < 0) {
+            console.error(`Invalid population: ${population}`);
+            return budget;
+        }
+        
+        // Calculate total salary expense
+        const totalSalary = Math.round(salaryPerMonth * population);
+        
+        if (totalSalary > 0) {
+            // Use provided description or create default
+            const salaryDescription = description || `Salaires fonctionnaires (${population} hab. × ${salaryPerMonth}€)`;
+            
+            // Add journal entry
+            await this.addJournalEntry(budget.turn, 'salary', totalSalary, salaryDescription);
+            
+            // Update budget
+            budget.funds = Math.round(budget.funds - totalSalary);
+            budget.expenses = Math.round(budget.expenses + totalSalary);
+            budget.dailyExpenses = Math.round(budget.dailyExpenses + totalSalary);
+            
+            // Track total salaries paid
+            if (!budget.totalSalaries) {
+                budget.totalSalaries = 0;
+            }
+            budget.totalSalaries = Math.round(budget.totalSalaries + totalSalary);
+            budget.netFlow = Math.round(budget.income - budget.expenses);
+            
+            await this.db.budget.put(budget);
+            console.log(`[BudgetManager] Salaries paid: ${totalSalary}€ (${population} hab. × ${salaryPerMonth}€/mois)`);
+        }
+        
+        return budget;
+    }
+
+    async addSalaryTax(salaryAmount, taxRate, description = null) {
+        const budget = await this.getCurrentBudget();
+        
+        if (typeof salaryAmount !== 'number' || isNaN(salaryAmount) || !isFinite(salaryAmount) || salaryAmount < 0) {
+            return budget;
+        }
+        
+        if (typeof taxRate !== 'number' || isNaN(taxRate) || !isFinite(taxRate) || taxRate < 0 || taxRate > 1) {
+            return budget;
+        }
+        
+        const taxAmount = Math.round(salaryAmount * taxRate);
+        
+        if (taxAmount > 0) {
+            const taxDescription = description || `Impôt sur les salaires (${Math.round(taxRate * 100)}%)`;
+            
+            await this.addJournalEntry(budget.turn, 'payroll_tax', taxAmount, taxDescription);
+            
+            budget.funds = Math.round(budget.funds + taxAmount);
+            budget.income = Math.round(budget.income + taxAmount);
+            budget.netFlow = Math.round(budget.income - budget.expenses);
+            
+            await this.db.budget.put(budget);
+        }
+        
+        return budget;
+    }
+
+    /**
+     * Add taxes based on population (configurable amount per citizen, only in November)
      * Calculates taxes from houses in the database
      * Only collects taxes if there is population AND it's November (month index 10)
      * Taxes are collected only ONCE per year (first day of November)
+     * The amount per citizen is configurable via finances-tax-controls (default: 100€)
      * @param {number} time - Current simulation time (number of days)
      * @returns {Promise<Object>} Updated budget
      */
@@ -752,17 +859,22 @@ class BudgetManager {
                 
                 // Only collect taxes if there is population
                 if (pop > 0) {
-                    const taxPerHouse = pop * 100; // 100€ per citizen in May
+                    // Get citizen tax amount from finances section manager (default: 100€)
+                    let citizenTaxAmount = 100;
+                    if (window.financesSectionManager && typeof window.financesSectionManager.citizenTaxAmount === 'number') {
+                        citizenTaxAmount = window.financesSectionManager.citizenTaxAmount;
+                    }
+                    const taxPerHouse = Math.round(pop * citizenTaxAmount);
                     
                     if (house.type.includes('House-Blue')) {
-                        taxBreakdown['House-Blue'] += taxPerHouse;
+                        taxBreakdown['House-Blue'] = Math.round(taxBreakdown['House-Blue'] + taxPerHouse);
                     } else if (house.type.includes('House-Red')) {
-                        taxBreakdown['House-Red'] += taxPerHouse;
+                        taxBreakdown['House-Red'] = Math.round(taxBreakdown['House-Red'] + taxPerHouse);
                     } else if (house.type.includes('House-Purple')) {
-                        taxBreakdown['House-Purple'] += taxPerHouse;
+                        taxBreakdown['House-Purple'] = Math.round(taxBreakdown['House-Purple'] + taxPerHouse);
                     }
                     
-                    taxBreakdown.total += taxPerHouse;
+                    taxBreakdown.total = Math.round(taxBreakdown.total + taxPerHouse);
                     taxBreakdown.population += pop;
                 }
             }
@@ -771,13 +883,15 @@ class BudgetManager {
         // Only add taxes if there is population
         if (taxBreakdown.total > 0 && taxBreakdown.population > 0) {
             // Add journal entry
-            await this.addJournalEntry(budget.turn, 'salary_tax', taxBreakdown.total, `Impôts habitants (${taxBreakdown.population} hab.) - Novembre`);
+            const roundedTotal = Math.round(taxBreakdown.total);
+            await this.addJournalEntry(budget.turn, 'citizen_tax', roundedTotal, `Impôt Citoyen (${taxBreakdown.population} hab.) - Novembre`);
             
             // Add to daily income
-            budget.funds += taxBreakdown.total;
-            budget.income += taxBreakdown.total;
-            budget.dailyIncome += taxBreakdown.total;
-            budget.totalTaxes += taxBreakdown.total; // Track total taxes collected
+            budget.funds = Math.round(budget.funds + roundedTotal);
+            budget.income = Math.round(budget.income + roundedTotal);
+            budget.dailyIncome = Math.round(budget.dailyIncome + roundedTotal);
+            if (!budget.totalTaxes) budget.totalTaxes = 0;
+            budget.totalTaxes = Math.round(budget.totalTaxes + roundedTotal);
             
             // Store tax breakdown for detailed display
             budget.taxBreakdown = taxBreakdown;
@@ -785,7 +899,7 @@ class BudgetManager {
             // Mark this year as having collected taxes
             budget.lastTaxYear = timeInfo.year;
             
-            budget.netFlow = budget.income - budget.expenses;
+            budget.netFlow = Math.round(budget.income - budget.expenses);
             
             await this.db.budget.put(budget);
             console.log(`[BudgetManager] Taxes collected for year ${timeInfo.year}: ${taxBreakdown.total}€ from ${taxBreakdown.population} habitants`);

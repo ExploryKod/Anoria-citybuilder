@@ -3207,7 +3207,7 @@ function displayBudgetStates(states, container) {
                 <div class="statement-section">
                     <h4 class="statement-title">PRODUITS</h4>
                     <div class="statement-line">
-                        <span class="statement-label">Impôts habitants (${population} hab.)</span>
+                        <span class="statement-label">Impôt Citoyen (${population} hab.)</span>
                         <span class="statement-value positive">${(state.totalTaxes || 0).toLocaleString('fr-FR')}€</span>
                     </div>
                     ${state.taxBreakdown ? `
@@ -4859,6 +4859,7 @@ function createJournalEntryHTML(entry) {
     
     if (entry.type === 'cumul_maintenance' || 
         entry.type === 'cumul_construction' || 
+        entry.type === 'cumul_salary' ||
         entry.type === 'cumul_exceptional_expenses' ||
         entry.type === 'cumul_loan_interest' ||
         entry.type === 'cumul_loan_repayment') {
@@ -4866,8 +4867,10 @@ function createJournalEntryHTML(entry) {
     } else if (entry.type === 'balance') {
         // La balance peut être positive ou négative selon le montant
         isIncome = entry.amount >= 0;
-    } else if (entry.type === 'salary_tax' || entry.type === 'capital_funds') {
+    } else if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds') {
         isIncome = true;
+    } else if (entry.type === 'salary' || entry.type === 'maintenance' || entry.type === 'construction' || entry.type === 'exceptional_expenses') {
+        isIncome = false; // Dépenses
     } else if (entry.type === 'carry_forward') {
         // Pour carry_forward, utiliser la propriété isCarryForwardIncome si disponible
         isIncome = entry.isCarryForwardIncome !== undefined ? entry.isCarryForwardIncome : true;
@@ -4876,16 +4879,19 @@ function createJournalEntryHTML(entry) {
     const typeClass = isIncome ? 'positive' : 'negative';
     
     const typeLabels = {
-        'salary_tax': 'Impôts',
+        'citizen_tax': 'Impôt Citoyen',
+        'payroll_tax': 'Impôt sur les salaires',
         'capital_funds': 'Capital de départ',
         'carry_forward': 'Report à nouveau',
         'construction': 'Construction',
         'exceptional_expenses': 'Réparation',
         'maintenance': 'Maintenance mensuelle',
+        'salary': 'Salaires',
         'loan_interest': 'Intérêts prêt',
         'loan_repayment': 'Remboursement prêt',
         'cumul_maintenance': 'Cumul Maintenance',
         'cumul_construction': 'Cumul Construction',
+        'cumul_salary': 'Cumul Salaires',
         'cumul_exceptional_expenses': 'Cumul Réparations',
         'cumul_loan_interest': 'Cumul Intérêts Prêt',
         'cumul_loan_repayment': 'Cumul Remboursement Prêt',
