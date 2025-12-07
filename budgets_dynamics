@@ -1,0 +1,546 @@
+BUDGET (store indexdb budget) : image donnée tous les 3 tours (donc tous les 3 mois si 1 tour = 1 mois). 
+
+{name: 'budget_current', funds: 885, initialFunds: 500, expenses: 80, income: 500, …}
+dailyExpenses
+: 
+6
+dailyIncome
+: 
+0
+expenses
+: 
+80
+funds
+: 
+885
+income
+: 
+500
+initialFunds
+: 
+500
+lastTaxYear
+: 
+0
+loanDebt
+: 
+0
+loans
+: 
+[]
+maintenanceBreakdown
+: 
+{houses: 3, farms: 1, markets: 0, roads: 2, infrastructure: 0, …}
+name
+: 
+"budget_current"
+netFlow
+: 
+420
+taxBreakdown
+: 
+{House-Blue: 0, House-Red: 500, House-Purple: 0, total: 500, population: 5}
+totalBuildingMaintenance
+: 
+80
+totalInvestments
+: 
+35
+totalLoanInterest
+: 
+0
+totalLoanInterestExpenses
+: 
+0
+totalLoanRepayments
+: 
+0
+totalMaintenance
+: 
+0
+totalSalaries
+: 
+0
+totalTaxes
+: 
+500
+turn
+: 
+19
+1	"budget_turn_12"	
+{name: 'budget_turn_12', turn: 12, date: '2025-12-07T16:04:57.242Z', funds: 927, income: 500, …}
+buildingCounts
+: 
+{houses: 1, farms: 1, markets: 0, roads: 1, total: 3}
+dailyExpenses
+: 
+6
+dailyIncome
+: 
+0
+date
+: 
+"2025-12-07T16:04:57.242Z"
+expenses
+: 
+38
+financialHealth
+: 
+{status: 'deficit', message: 'Déficitaire', budget: {…}, netFlow: -6}
+funds
+: 
+927
+income
+: 
+500
+maintenanceBreakdown
+: 
+{houses: 3, farms: 1, markets: 0, roads: 2, infrastructure: 0, …}
+name
+: 
+"budget_turn_12"
+netFlow
+: 
+462
+population
+: 
+6
+taxBreakdown
+: 
+{House-Blue: 0, House-Red: 500, House-Purple: 0, total: 500, population: 5}
+totalBuildingMaintenance
+: 
+38
+totalInvestments
+: 
+35
+totalLoanInterestExpenses
+: 
+0
+totalLoanRepayments
+: 
+0
+totalTaxes
+: 
+500
+turn
+: 
+12
+2	"budget_turn_15"	
+{name: 'budget_turn_15', turn: 15, date: '2025-12-07T16:05:03.221Z', funds: 909, income: 500, …}
+buildingCounts
+: 
+{houses: 1, farms: 1, markets: 0, roads: 1, total: 3}
+dailyExpenses
+: 
+6
+dailyIncome
+: 
+0
+date
+: 
+"2025-12-07T16:05:03.221Z"
+expenses
+: 
+56
+financialHealth
+: 
+{status: 'deficit', message: 'Déficitaire', budget: {…}, netFlow: -6}
+funds
+: 
+909
+income
+: 
+500
+maintenanceBreakdown
+: 
+{houses: 3, farms: 1, markets: 0, roads: 2, infrastructure: 0, …}
+name
+: 
+"budget_turn_15"
+netFlow
+: 
+444
+population
+: 
+6
+taxBreakdown
+: 
+{House-Blue: 0, House-Red: 500, House-Purple: 0, total: 500, population: 5}
+totalBuildingMaintenance
+: 
+56
+totalInvestments
+: 
+35
+totalLoanInterestExpenses
+: 
+0
+totalLoanRepayments
+: 
+0
+totalTaxes
+: 
+500
+turn
+: 
+15
+3	"budget_turn_18"	
+{name: 'budget_turn_18', turn: 18, date: '2025-12-07T16:05:09.159Z', funds: 891, income: 500, …}
+buildingCounts
+: 
+{houses: 1, farms: 1, markets: 0, roads: 1, total: 3}
+dailyExpenses
+: 
+6
+dailyIncome
+: 
+0
+date
+: 
+"2025-12-07T16:05:09.159Z"
+expenses
+: 
+74
+financialHealth
+: 
+{status: 'deficit', message: 'Déficitaire', budget: {…}, netFlow: -6}
+funds
+: 
+891
+income
+: 
+500
+maintenanceBreakdown
+: 
+{houses: 3, farms: 1, markets: 0, roads: 2, infrastructure: 0, …}
+name
+: 
+"budget_turn_18"
+netFlow
+: 
+426
+population
+: 
+6
+taxBreakdown
+: 
+{House-Blue: 0, House-Red: 500, House-Purple: 0, total: 500, population: 5}
+totalBuildingMaintenance
+: 
+74
+totalInvestments
+: 
+35
+totalLoanInterestExpenses
+: 
+0
+totalLoanRepayments
+: 
+0
+totalTaxes
+: 
+500
+turn
+: 
+18
+4	"budget_turn_3"	
+{name: 'budget_turn_3', turn: 3, date: '2025-12-07T16:04:42.147Z', funds: 500, income: 0, …}
+buildingCounts
+: 
+{houses: 0, farms: 0, markets: 0, roads: 0, total: 0}
+dailyExpenses
+: 
+0
+dailyIncome
+: 
+0
+date
+: 
+"2025-12-07T16:04:42.147Z"
+expenses
+: 
+0
+financialHealth
+: 
+{status: 'healthy', message: 'Finances saines', budget: {…}, netFlow: 0}
+funds
+: 
+500
+income
+: 
+0
+maintenanceBreakdown
+: 
+null
+name
+: 
+"budget_turn_3"
+netFlow
+: 
+0
+population
+: 
+0
+taxBreakdown
+: 
+null
+totalBuildingMaintenance
+: 
+0
+totalInvestments
+: 
+0
+totalLoanInterestExpenses
+: 
+0
+totalLoanRepayments
+: 
+0
+totalTaxes
+: 
+0
+turn
+: 
+3
+5	"budget_turn_6"	
+{name: 'budget_turn_6', turn: 6, date: '2025-12-07T16:04:48.883Z', funds: 479, income: 0, …}
+buildingCounts
+: 
+{houses: 1, farms: 0, markets: 0, roads: 1, total: 2}
+dailyExpenses
+: 
+0
+dailyIncome
+: 
+0
+date
+: 
+"2025-12-07T16:04:48.883Z"
+expenses
+: 
+6
+financialHealth
+: 
+{status: 'healthy', message: 'Finances saines', budget: {…}, netFlow: 0}
+funds
+: 
+479
+income
+: 
+0
+maintenanceBreakdown
+: 
+{houses: 3, farms: 0, markets: 0, roads: 0, infrastructure: 0, …}
+name
+: 
+"budget_turn_6"
+netFlow
+: 
+-6
+population
+: 
+0
+taxBreakdown
+: 
+null
+totalBuildingMaintenance
+: 
+6
+totalInvestments
+: 
+15
+totalLoanInterestExpenses
+: 
+0
+totalLoanRepayments
+: 
+0
+totalTaxes
+: 
+0
+turn
+: 
+6
+6	"budget_turn_9"	
+{name: 'budget_turn_9', turn: 9, date: '2025-12-07T16:04:53.716Z', funds: 464, income: 0, …}
+buildingCounts
+: 
+{houses: 1, farms: 0, markets: 0, roads: 1, total: 2}
+dailyExpenses
+: 
+5
+dailyIncome
+: 
+0
+date
+: 
+"2025-12-07T16:04:53.716Z"
+expenses
+: 
+21
+financialHealth
+: 
+{status: 'deficit', message: 'Déficitaire', budget: {…}, netFlow: -5}
+funds
+: 
+464
+income
+: 
+0
+maintenanceBreakdown
+: 
+{houses: 3, farms: 0, markets: 0, roads: 2, infrastructure: 0, …}
+name
+: 
+"budget_turn_9"
+netFlow
+: 
+-21
+population
+: 
+3
+taxBreakdown
+: 
+null
+totalBuildingMaintenance
+: 
+21
+totalInvestments
+: 
+15
+totalLoanInterestExpenses
+: 
+0
+totalLoanRepayments
+: 
+0
+totalTaxes
+: 
+0
+turn
+: 
+9
+
+
+
+
+JOURNAL (entrées du store indexdb "journal"): 
+
+{turn: 0, date: '2025-12-07T16:04:33.621Z', type: 'capital_funds', amount: 500, description: 'Capital de départ: 500€', …}
+1	2	
+{turn: 1, date: '2025-12-07T16:04:37.113Z', type: 'balance', amount: 500, description: 'Solde', …}
+2	3	
+{turn: 2, date: '2025-12-07T16:04:41.175Z', type: 'balance', amount: 500, description: 'Solde', …}
+3	4	
+{turn: 3, date: '2025-12-07T16:04:42.137Z', type: 'balance', amount: 500, description: 'Solde', …}
+4	5	
+{turn: 4, date: '2025-12-07T16:04:45.084Z', type: 'balance', amount: 500, description: 'Solde', …}
+5	6	
+{turn: 5, date: '2025-12-07T16:04:45.134Z', type: 'balance', amount: 490, description: 'Solde', …}
+6	7	
+{turn: 5, date: '2025-12-07T16:04:45.230Z', type: 'construction', amount: 10, description: 'Building: House-Blue', …}
+7	8	
+{turn: 5, date: '2025-12-07T16:04:45.266Z', type: 'maintenance', amount: 3, description: 'Maintenance mensuelle - Juin 1 |BREAKDOWN|[{"label…ns","count":1,"unitCost":3,"total":3}]|BREAKDOWN|', …}
+8	9	
+{turn: 6, date: '2025-12-07T16:04:48.320Z', type: 'balance', amount: 479, description: 'Solde', …}
+9	10	
+{turn: 6, date: '2025-12-07T16:04:48.327Z', type: 'maintenance', amount: 3, description: 'Maintenance mensuelle - Juillet 1 |BREAKDOWN|[{"la…ns","count":1,"unitCost":3,"total":3}]|BREAKDOWN|', …}
+10	11	
+{turn: 6, date: '2025-12-07T16:04:48.820Z', type: 'construction', amount: 5, description: 'Building: roads', …}
+11	12	
+{turn: 7, date: '2025-12-07T16:04:49.187Z', type: 'balance', amount: 479, description: 'Solde', …}
+12	13	
+{turn: 7, date: '2025-12-07T16:04:49.194Z', type: 'maintenance', amount: 5, description: 'Maintenance mensuelle - Août 1 |BREAKDOWN|[{"label…ns","count":1,"unitCost":3,"total":3}]|BREAKDOWN|', …}
+13	14	
+{turn: 8, date: '2025-12-07T16:04:51.168Z', type: 'balance', amount: 474, description: 'Solde', …}
+14	15	
+{turn: 8, date: '2025-12-07T16:04:51.174Z', type: 'maintenance', amount: 5, description: 'Maintenance mensuelle - Septembre 1 |BREAKDOWN|[{"…ns","count":1,"unitCost":3,"total":3}]|BREAKDOWN|', …}
+15	16	
+{turn: 9, date: '2025-12-07T16:04:53.700Z', type: 'balance', amount: 469, description: 'Solde', …}
+16	17	
+{turn: 9, date: '2025-12-07T16:04:53.703Z', type: 'maintenance', amount: 5, description: 'Maintenance mensuelle - Octobre 1 |BREAKDOWN|[{"la…ns","count":1,"unitCost":3,"total":3}]|BREAKDOWN|', …}
+17	18	
+{turn: 10, date: '2025-12-07T16:04:54.166Z', type: 'balance', amount: 939, description: 'Solde', …}
+18	19	
+{turn: 10, date: '2025-12-07T16:04:54.168Z', type: 'salary_tax', amount: 500, description: 'Impôts habitants (5 hab.) - Novembre', …}
+19	20	
+{turn: 10, date: '2025-12-07T16:04:54.175Z', type: 'maintenance', amount: 5, description: 'Maintenance mensuelle - Novembre 1 |BREAKDOWN|[{"l…ns","count":1,"unitCost":3,"total":3}]|BREAKDOWN|', …}
+20	21	
+{turn: 10, date: '2025-12-07T16:04:54.556Z', type: 'construction', amount: 20, description: 'Building: Farm-Carrot', …}
+21	22	
+{turn: 11, date: '2025-12-07T16:04:57.139Z', type: 'balance', amount: 939, description: 'Solde', …}
+22	23	
+{turn: 11, date: '2025-12-07T16:04:57.147Z', type: 'maintenance', amount: 6, description: 'Maintenance mensuelle - Décembre 1 |BREAKDOWN|[{"l…es","count":1,"unitCost":1,"total":1}]|BREAKDOWN|', …}
+23	24	
+{turn: 12, date: '2025-12-07T16:04:57.214Z', type: 'balance', amount: 933, description: 'Solde', …}
+24	25	
+{turn: 11, date: '2025-12-07T16:04:57.216Z', type: 'cumul_maintenance', amount: 32, description: 'Cumul Maintenance - Année 0 JC', …}
+25	26	
+{turn: 11, date: '2025-12-07T16:04:57.217Z', type: 'cumul_construction', amount: 35, description: 'Cumul Construction - Année 0 JC', …}
+26	27	
+{turn: 12, date: '2025-12-07T16:04:57.222Z', type: 'carry_forward', amount: 939, description: "Report à nouveau de l'année 0 JC (+)", …}
+27	28	
+{turn: 12, date: '2025-12-07T16:04:57.230Z', type: 'maintenance', amount: 6, description: 'Maintenance mensuelle - Janvier 2 |BREAKDOWN|[{"la…es","count":1,"unitCost":1,"total":1}]|BREAKDOWN|', …}
+28	29	
+{turn: 13, date: '2025-12-07T16:05:00.174Z', type: 'balance', amount: 927, description: 'Solde', …}
+29	30	
+{turn: 13, date: '2025-12-07T16:05:00.181Z', type: 'maintenance', amount: 6, description: 'Maintenance mensuelle - Février 2 |BREAKDOWN|[{"la…es","count":1,"unitCost":1,"total":1}]|BREAKDOWN|', …}
+30	31	
+{turn: 14, date: '2025-12-07T16:05:01.139Z', type: 'balance', amount: 921, description: 'Solde', …}
+31	32	
+{turn: 14, date: '2025-12-07T16:05:01.159Z', type: 'maintenance', amount: 6, description: 'Maintenance mensuelle - Mars 2 |BREAKDOWN|[{"label…es","count":1,"unitCost":1,"total":1}]|BREAKDOWN|', …}
+32	33	
+{turn: 15, date: '2025-12-07T16:05:03.189Z', type: 'balance', amount: 915, description: 'Solde', …}
+33	34	
+{turn: 15, date: '2025-12-07T16:05:03.201Z', type: 'maintenance', amount: 6, description: 'Maintenance mensuelle - Avril 2 |BREAKDOWN|[{"labe…es","count":1,"unitCost":1,"total":1}]|BREAKDOWN|', …}
+34	35	
+{turn: 16, date: '2025-12-07T16:05:05.131Z', type: 'balance', amount: 909, description: 'Solde', …}
+35	36	
+{turn: 16, date: '2025-12-07T16:05:05.137Z', type: 'maintenance', amount: 6, description: 'Maintenance mensuelle - Mai 2 |BREAKDOWN|[{"label"…es","count":1,"unitCost":1,"total":1}]|BREAKDOWN|', …}
+36	37	
+{turn: 17, date: '2025-12-07T16:05:06.168Z', type: 'balance', amount: 903, description: 'Solde', …}
+37	38	
+{turn: 17, date: '2025-12-07T16:05:06.187Z', type: 'maintenance', amount: 6, description: 'Maintenance mensuelle - Juin 2 |BREAKDOWN|[{"label…es","count":1,"unitCost":1,"total":1}]|BREAKDOWN|', …}
+38	39	
+{turn: 18, date: '2025-12-07T16:05:09.119Z', type: 'balance', amount: 897, description: 'Solde', …}
+39	40	
+{turn: 18, date: '2025-12-07T16:05:09.138Z', type: 'maintenance', amount: 6, description: 'Maintenance mensuelle - Juillet 2 |BREAKDOWN|[{"la…es","count":1,"unitCost":1,"total":1}]|BREAKDOWN|', …}
+40	41	
+{turn: 19, date: '2025-12-07T16:05:09.340Z', type: 'balance', amount: 891, description: 'Solde', …}
+41	42	
+{turn: 19, date: '2025-12-07T16:05:09.361Z', type: 'maintenance', amount: 6, description: 'Maintenance mensuelle - Août 2 |BREAKDOWN|[{"label…es","count":1,"unitCost":1,"total":1}]|BREAKDOWN|', …}
+
+
+CONSOLE :
+
+[JournalManager] Created balance entry for turn 1: 500€
+JournalManager.js:426 [JournalManager] Created balance entry for turn 2: 500€
+JournalManager.js:426 [JournalManager] Created balance entry for turn 3: 500€
+JournalManager.js:426 [JournalManager] Created balance entry for turn 4: 500€
+JournalManager.js:426 [JournalManager] Created balance entry for turn 5: 500€
+JournalManager.js:433 [JournalManager] Updated balance entry for turn 5: 490€
+JournalManager.js:426 [JournalManager] Created balance entry for turn 6: 487€
+JournalManager.js:433 [JournalManager] Updated balance entry for turn 6: 479€
+JournalManager.js:426 [JournalManager] Created balance entry for turn 7: 479€
+JournalManager.js:426 [JournalManager] Created balance entry for turn 8: 474€
+JournalManager.js:426 [JournalManager] Created balance entry for turn 9: 469€
+JournalManager.js:426 [JournalManager] Created balance entry for turn 10: 464€
+JournalManager.js:433 [JournalManager] Updated balance entry for turn 10: 939€
+JournalManager.js:426 [JournalManager] Created balance entry for turn 11: 939€
+JournalManager.js:426 [JournalManager] Created balance entry for turn 12: 933€
+JournalManager.js:388 [JournalManager] Created maintenance cumul entry for year 0: 32€
+JournalManager.js:393 [JournalManager] Created construction cumul entry for year 0: 35€
+JournalManager.js:324 [JournalManager] Created carry forward entry from balance: {turn: 12, amount: 939, previousYear: 0, balance: 939, nature: 'revenue', …}
+JournalManager.js:426 [JournalManager] Created balance entry for turn 13: 927€
+JournalManager.js:426 [JournalManager] Created balance entry for turn 14: 921€
+JournalManager.js:426 [JournalManager] Created balance entry for turn 15: 915€
+JournalManager.js:426 [JournalManager] Created balance entry for turn 16: 909€
+JournalManager.js:426 [JournalManager] Created balance entry for turn 17: 903€
+JournalManager.js:426 [JournalManager] Created balance entry for turn 18: 897€
+JournalManager.js:426 [JournalManager] Created balance entry for turn 19: 891€
+
+[BudgetManager] forceReinitialize called with: {provided: 500, fromConfig: 500, envValue: '500'}
+BudgetManager.js:32 [BudgetManager] initialize called with: {provided: 500, fromConfig: 500, envValue: '500'}
+BudgetManager.js:850 [BudgetManager] forceReinitialize completed, new budget: {name: 'budget_current', funds: 500, initialFunds: 500, expenses: 0, income: 0, …}
+BudgetManager.js:791 [BudgetManager] Taxes collected for year 0: 500€ from 5 habitants
