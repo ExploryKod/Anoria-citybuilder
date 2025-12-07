@@ -55,13 +55,87 @@ export class CommerceService extends SimService {
     }
 
     /**
+     * Ajoute du stock d'un produit dans les moulins (en commençant par le premier)
+     * @param {HousesStore} housesStore - Store IndexedDB
+     * @param {string} productId - ID du produit
+     * @param {number} quantity - Quantité à ajouter
+     * @returns {Promise<Object|null>} { windmillId, addedQuantity } ou null si aucun moulin
+     */
+    async addToWindmillStock(housesStore, productId, quantity) {
+        if (!housesStore || quantity <= 0) return null;
+        
+        try {
+            const allHouses = await housesStore.listAllHouses();
+            const windmills = allHouses.filter(house => {
+                const type = house.type || '';
+                return type.includes('Windmill') || type.includes('windmill');
+            });
+            
+            if (windmills.length === 0) {
+                // Pas de moulin, on ne peut pas stocker
+                return null;
+            }
+            
+            // Mapper productId vers la clé de stock
+            const stockKey = productId === 'wheat' ? 'wheat' : 
+                            productId === 'carrot' ? 'carrot' : 
+                            productId === 'cabbage' ? 'cabbage' : null;
+            
+            if (!stockKey) return null;
+            
+            // Ajouter le stock au premier moulin
+            const firstWindmill = windmills[0];
+            const windmillData = await housesStore.getHouse(firstWindmill.id || firstWindmill.name);
+            if (!windmillData) {
+                console.warn(`[CommerceService] Windmill not found: ${firstWindmill.id || firstWindmill.name}`);
+                return null;
+            }
+            
+            const stocks = windmillData.stocks || {};
+            const currentStock = stocks[stockKey] || 0;
+            
+            // Ajouter le stock
+            const updatedStocks = {
+                ...stocks,
+                [stockKey]: currentStock + quantity,
+                food: (stocks.food || 0) + quantity // Augmenter aussi le total
+            };
+            
+            // Récupérer les imports précédents pour les cumuler
+            const existingLastImport = windmillData.lastImport || {};
+            
+            // Stocker les imports pour l'affichage (similaire à lastCollection)
+            // On cumule les imports du tour actuel
+            const lastImport = {
+                ...existingLastImport,
+                [stockKey]: (existingLastImport[stockKey] || 0) + quantity,
+                total: (existingLastImport.total || 0) + quantity
+            };
+            
+            await housesStore.updateHouseFields(firstWindmill.id || firstWindmill.name, {
+                stocks: updatedStocks,
+                lastImport: lastImport
+            });
+            
+            return {
+                windmillId: firstWindmill.id || firstWindmill.name,
+                addedQuantity: quantity
+            };
+        } catch (error) {
+            console.warn(`[CommerceService] Error adding to windmill stock for ${productId}:`, error);
+            return null;
+        }
+    }
+
+    /**
      * Traite les imports pour un produit spécifique
      * Extensible : on peut ajouter d'autres produits facilement
      * @param {string} productId - ID du produit
+     * @param {HousesStore} housesStore - Store IndexedDB
      * @param {number} time - Temps de simulation
      * @returns {Promise<Object|null>} Résultat de l'import ou null
      */
-    async processProductImport(productId, time) {
+    async processProductImport(productId, housesStore, time) {
         const config = this.getProductConfig(productId);
         if (!config) {
             console.warn(`[CommerceService] No config found for product: ${productId}`);
@@ -71,16 +145,20 @@ export class CommerceService extends SimService {
         // Vérifier si on peut importer
         const quantity = 1; // 1 panier par tour
         if (!this.canImportProduct(productId, quantity)) {
-            // Log pour debug (seulement si on est proche de la limite)
+            // Log pour debug
             const currentYearly = this.yearlyImports[productId] || 0;
             const buyingMax = config.buyingMax || 0;
             if (currentYearly >= buyingMax) {
-                // Seuil max atteint, c'est normal, pas besoin de log
+                console.log(`[CommerceService] Import ${productId} skipped: yearly max reached (${currentYearly}/${buyingMax})`);
             } else if (config.stockpiling) {
                 console.log(`[CommerceService] Import ${productId} skipped: stockpiling enabled`);
+            } else {
+                console.log(`[CommerceService] Import ${productId} skipped: unknown reason`);
             }
             return null; // Seuil max atteint ou stockpiling activé
         }
+        
+        console.log(`[CommerceService] Processing import for ${productId}, yearly: ${this.yearlyImports[productId] || 0}, max: ${config.buyingMax}`);
 
         // Calculer le coût
         const pricePerUnit = config.buyingPrice || 5; // Prix par défaut : 5€
@@ -90,8 +168,21 @@ export class CommerceService extends SimService {
         if (!window.budgetManager) return null;
 
         // Enregistrer l'import dans le budget (même si fonds insuffisants, pour permettre les tests avec déficit)
+        // L'import se fait toujours, même sans moulin (les denrées seront perdues)
         const description = `Import ${productId} (${quantity} panier × ${pricePerUnit}€)`;
         await window.budgetManager.addImportExpense(totalCost, description, productId);
+
+        // Ajouter le produit importé aux stocks des moulins (en commençant par le premier)
+        // Si pas de moulin, l'import se fait quand même mais les denrées sont perdues
+        if (housesStore) {
+            const stockAdded = await this.addToWindmillStock(housesStore, productId, quantity);
+            if (!stockAdded) {
+                // Pas de moulin disponible, on peut quand même importer (le produit est acheté mais non stocké)
+                console.log(`[CommerceService] Import ${productId} successful but no windmill to store it (denrées perdues)`);
+            }
+        } else {
+            console.log(`[CommerceService] Import ${productId} successful but no housesStore available (denrées perdues)`);
+        }
 
         // Mettre à jour le compteur annuel
         this.yearlyImports[productId] = (this.yearlyImports[productId] || 0) + quantity;
@@ -106,7 +197,8 @@ export class CommerceService extends SimService {
             quantity,
             pricePerUnit,
             totalCost,
-            description
+            description,
+            stockAdded: stockAdded !== null
         };
     }
 
@@ -290,6 +382,41 @@ export class CommerceService extends SimService {
     }
 
     /**
+     * Réinitialise les imports affichés pour tous les moulins (appelé à la fin du tour)
+     * @param {HousesStore} housesStore - Store IndexedDB
+     * @returns {Promise<void>}
+     */
+    async resetWindmillImportsDisplay(housesStore) {
+        if (!housesStore) return;
+        
+        try {
+            const allHouses = await housesStore.listAllHouses();
+            const windmills = allHouses.filter(house => {
+                const type = house.type || '';
+                return type.includes('Windmill') || type.includes('windmill');
+            });
+            
+            // Réinitialiser lastImport pour tous les moulins (seulement si la clé existe)
+            for (const windmill of windmills) {
+                const windmillId = windmill.id || windmill.name;
+                try {
+                    const windmillData = await housesStore.getHouse(windmillId);
+                    if (windmillData && windmillData.lastImport !== undefined) {
+                        await housesStore.updateHouseFields(windmillId, {
+                            lastImport: { wheat: 0, carrot: 0, cabbage: 0, total: 0 }
+                        });
+                    }
+                } catch (error) {
+                    // Ignorer les erreurs si le moulin n'existe pas ou n'a pas encore de lastImport
+                    // C'est normal pour les nouveaux moulins
+                }
+            }
+        } catch (error) {
+            console.warn('[CommerceService] Error resetting windmill imports display:', error);
+        }
+    }
+
+    /**
      * Point d'entrée principal - appelé chaque tour
      * Extensible : on peut ajouter d'autres produits ici
      * @param {City} city - Objet ville
@@ -298,9 +425,13 @@ export class CommerceService extends SimService {
      * @returns {Promise<Object>} Objet avec { imports: Array, exports: Array }
      */
     async simulate(city, housesStore, time = 0) {
-        if (typeof window === 'undefined' || !window.TimeManager) return { imports: [], exports: [] };
+        if (typeof window === 'undefined' || !window.TimeManager) {
+            console.warn('[CommerceService] simulate called but window or TimeManager not available');
+            return { imports: [], exports: [] };
+        }
 
         const timeInfo = window.TimeManager.getTimeInfo(time);
+        console.log(`[CommerceService] simulate called - Turn: ${timeInfo.turn}, Year: ${timeInfo.year}, Month: ${timeInfo.monthIndex + 1}`);
         
         // Réinitialiser les compteurs annuels au début de l'année
         if (timeInfo.year !== this.lastProcessedYear) {
@@ -312,6 +443,10 @@ export class CommerceService extends SimService {
             }
             this.lastProcessedYear = timeInfo.year;
         }
+        
+        // Ne PAS réinitialiser lastImport au début du tour car on veut cumuler les imports du tour
+        // La réinitialisation se fera au début du tour suivant (ou on peut la faire à la fin du tour précédent)
+        // await this.resetWindmillImportsDisplay(housesStore);
 
         // S'assurer que la configuration est chargée
         // Si le store est vide, essayer de charger depuis commerceSectionManager
@@ -326,17 +461,23 @@ export class CommerceService extends SimService {
         
         // Si toujours pas de config, on ne peut pas importer/exporter
         if (!config) {
+            console.warn('[CommerceService] No config available - imports/exports disabled');
             return { imports: [], exports: [] };
         }
+        
+        console.log(`[CommerceService] Config loaded - ${config.length} products configured`);
 
         // Traiter les imports par produit
         // Extensible : on peut ajouter d'autres produits ici
         const imports = [];
 
         // Import de blé
-        const wheatImport = await this.processProductImport('wheat', time);
+        const wheatImport = await this.processProductImport('wheat', housesStore, time);
         if (wheatImport) {
+            console.log(`[CommerceService] ✅ Wheat import successful: ${wheatImport.quantity} unit(s) at ${wheatImport.pricePerUnit}€ each`);
             imports.push(wheatImport);
+        } else {
+            console.log(`[CommerceService] ❌ Wheat import skipped or failed`);
         }
 
         // TODO: Ajouter d'autres produits ici (carrot, cabbage, wood)
@@ -350,12 +491,20 @@ export class CommerceService extends SimService {
         // Export de blé (nécessite des moulins avec du stock)
         const wheatExport = await this.processProductExport('wheat', housesStore, time);
         if (wheatExport) {
+            console.log(`[CommerceService] ✅ Wheat export successful: ${wheatExport.quantity} unit(s) at ${wheatExport.pricePerUnit}€ each`);
             exports.push(wheatExport);
+        } else {
+            console.log(`[CommerceService] ❌ Wheat export skipped or failed`);
         }
 
         // TODO: Ajouter d'autres produits ici (carrot, cabbage, wood)
         // const carrotExport = await this.processProductExport('carrot', housesStore, time);
         // if (carrotExport) exports.push(carrotExport);
+
+        // Réinitialiser l'affichage des imports pour tous les moulins à la FIN du tour
+        // (pour que l'affichage soit prêt pour le prochain tour)
+        // On le fait après le traitement pour ne pas perdre les données du tour actuel
+        await this.resetWindmillImportsDisplay(housesStore);
 
         return { imports, exports };
     }
