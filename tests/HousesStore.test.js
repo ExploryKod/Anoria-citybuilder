@@ -36,7 +36,7 @@ class MockBudgetManager {
         this.incomes = [];
     }
 
-    async addExpense(amount, reason) {
+    async addConstructionExpense(amount, reason) {
         this.expenses.push({ amount, reason });
         return { success: true, budget: { funds: 1000 - amount } };
     }

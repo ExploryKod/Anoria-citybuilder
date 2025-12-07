@@ -1,6 +1,6 @@
 class FinancesSectionManager {
-    constructor(budgetManager) {
-        this.budgetManager = budgetManager;
+    constructor() {
+        this.journalManager = window.journalManager || window.app?.journalManager;
         this.taxRate = 7;
         this.financialData = null;
     }
@@ -24,101 +24,144 @@ class FinancesSectionManager {
     }
 
     async loadFinancialData() {
-        if (!this.budgetManager) {
-            this.renderStaticData();
-            return;
+        // Vérifier que journalManager est disponible
+        if (!this.journalManager) {
+            // Essayer de récupérer depuis window
+            this.journalManager = window.journalManager || window.app?.journalManager;
+            
+            if (!this.journalManager) {
+                console.warn('[FinancesSection] JournalManager not available, using static data');
+                this.renderStaticData();
+                return;
+            }
         }
 
         try {
-            const currentBudget = await this.budgetManager.getCurrentBudget();
-            const budgetStates = await this.budgetManager.getBudgetStates();
+            // Obtenir le tour actuel depuis le journal (dernière entrée)
+            const allEntries = await this.journalManager.getJournalEntries();
+            const currentTurn = allEntries.length > 0 ? allEntries[0].turn : 0;
             
-            this.financialData = this.processFinancialData(currentBudget, budgetStates);
+            // Obtenir l'année actuelle depuis TimeManager
+            let currentYear = 0;
+            if (window.TimeManager) {
+                const timeInfo = window.TimeManager.getTimeInfo(currentTurn);
+                currentYear = timeInfo.year;
+            }
+            
+            // Obtenir les données annuelles depuis le journal
+            const yearlyData = await this.journalManager.getYearlyFinancialSummary();
+            
+            // Le solde est déjà calculé dans yearlyData pour chaque année
+            // Pour l'année en cours, on utilise getCurrentBalance() qui calcule depuis toutes les entrées
+            const currentBalance = await this.journalManager.getCurrentBalance();
+            
+            this.financialData = this.processFinancialData(currentBalance, yearlyData, currentYear);
             this.render();
         } catch (error) {
-            console.error('Error loading financial data:', error);
+            console.error('[FinancesSection] Error loading financial data:', error);
             this.renderStaticData();
         }
     }
 
-    processFinancialData(currentBudget, budgetStates) {
-        const thisYear = this.calculateThisYearData(currentBudget);
-        const lastYear = this.calculateLastYearData(budgetStates);
+    processFinancialData(currentBalance, yearlyData, currentYear) {
+        // Trouver les données de cette année et de l'année dernière
+        const thisYearData = yearlyData.find(y => y.year === currentYear) || this.getEmptyYearData(currentYear);
+        const lastYearData = yearlyData.find(y => y.year === currentYear - 1) || this.getEmptyYearData(currentYear - 1);
+        
+        // Pour chaque année, utiliser le solde de l'année (netFlow = revenus - dépenses)
+        // Le netFlow est calculé par getYearlyFinancialSummary() et représente le solde de l'année
+        const thisYearBalance = thisYearData.netFlow !== undefined ? thisYearData.netFlow : 0; // Solde de l'année en cours (revenus - dépenses)
+        const lastYearBalance = lastYearData.netFlow !== undefined ? lastYearData.netFlow : 0; // Solde de l'année dernière (revenus - dépenses)
+        
+        const thisYear = this.mapJournalDataToUI(thisYearData, thisYearBalance);
+        const lastYear = this.mapJournalDataToUI(lastYearData, lastYearBalance);
 
         return {
             thisYear,
             lastYear,
-            debt: currentBudget.funds < 0 ? Math.abs(currentBudget.funds) : 0,
+            debt: currentBalance < 0 ? Math.abs(currentBalance) : 0,
             taxRate: this.taxRate,
             taxEstimate: this.calculateTaxEstimate(this.taxRate),
             message: this.generateFinancialMessage(thisYear, lastYear)
         };
     }
 
-    calculateThisYearData(budget) {
-        return {
-            incomeTax: budget.totalTaxes || 0,
-            vat: 0,
-            tradeTax: 0,
-            gifts: 0,
-            interestIncome: 0,
-            totalIncome: budget.income || 0,
-            salaries: budget.totalBuildingMaintenance || 0,
-            imports: 0,
-            giftsGiven: 0,
-            interestExpense: budget.totalLoanInterestExpenses || 0,
-            maintenance: 0,
-            construction: budget.totalInvestments || 0,
-            totalExpenses: budget.expenses || 0,
-            netFlow: budget.netFlow || 0,
-            balance: budget.funds || 0
-        };
-    }
-
-    calculateLastYearData(budgetStates) {
-        if (!budgetStates || budgetStates.length === 0) {
-            return this.getDefaultLastYearData();
+    /**
+     * Mappe les données du journal vers le format UI
+     * @param {Object} yearData - Données annuelles du journal
+     * @param {number} currentBalance - Solde actuel (calculé depuis le journal) ou 0 pour l'année dernière
+     * @returns {Object} Données formatées pour l'UI
+     */
+    mapJournalDataToUI(yearData, currentBalance) {
+        if (!yearData || !yearData.income || !yearData.expenses) {
+            return this.getEmptyYearData(yearData?.year || 0);
         }
 
-        const lastYearState = budgetStates[budgetStates.length - 1];
+        // Extraire les montants par type depuis les entrées du journal
+        const incomeEntries = yearData.income.entries || [];
+        const expenseEntries = yearData.expenses.entries || [];
+
+        // Revenus
+        const initialFunds = incomeEntries
+            .filter(e => e.type === 'capital_funds')
+            .reduce((sum, e) => sum + e.amount, 0);
+        
+        const incomeTax = incomeEntries
+            .filter(e => e.type === 'salary_tax')
+            .reduce((sum, e) => sum + e.amount, 0);
+        
+        // Report à nouveau en revenu (si positif)
+        const carryForwardIncome = incomeEntries
+            .filter(e => e.type === 'carry_forward')
+            .reduce((sum, e) => sum + e.amount, 0);
+
+        // Dépenses
+        const construction = expenseEntries
+            .filter(e => e.type === 'construction')
+            .reduce((sum, e) => sum + e.amount, 0);
+        
+        const maintenance = expenseEntries
+            .filter(e => e.type === 'maintenance')
+            .reduce((sum, e) => sum + e.amount, 0);
+        
+        const repairs = expenseEntries
+            .filter(e => e.type === 'exceptional_expenses')
+            .reduce((sum, e) => sum + e.amount, 0);
+        
+        // Report à nouveau en dépense (si négatif)
+        const carryForwardExpense = expenseEntries
+            .filter(e => e.type === 'carry_forward')
+            .reduce((sum, e) => sum + e.amount, 0);
+
         return {
-            incomeTax: lastYearState.totalTaxes || 137,
-            vat: 0,
-            tradeTax: 0,
-            gifts: lastYearState.totalTaxes > 100 ? 1500 : 0,
-            interestIncome: 0,
-            totalIncome: lastYearState.income || 1637,
-            salaries: lastYearState.totalBuildingMaintenance || 320,
-            imports: 0,
-            giftsGiven: 0,
-            interestExpense: lastYearState.totalLoanInterestExpenses || 0,
-            maintenance: 0,
-            construction: lastYearState.totalInvestments || 2756,
-            totalExpenses: lastYearState.expenses || 3436,
-            netFlow: lastYearState.netFlow || -1799,
-            balance: lastYearState.funds || 1217
+            initialFunds: Math.round(initialFunds),
+            incomeTax: Math.round(incomeTax),
+            carryForwardIncome: Math.round(carryForwardIncome),
+            totalIncome: Math.round(yearData.income.total),
+            construction: Math.round(construction),
+            maintenance: Math.round(maintenance),
+            repairs: Math.round(repairs),
+            carryForwardExpense: Math.round(carryForwardExpense),
+            totalExpenses: Math.round(yearData.expenses.total),
+            balance: Math.round(currentBalance)
         };
     }
 
-    getDefaultLastYearData() {
+    getEmptyYearData(year) {
         return {
-            incomeTax: 137,
-            vat: 0,
-            tradeTax: 0,
-            gifts: 1500,
-            interestIncome: 0,
-            totalIncome: 1637,
-            salaries: 320,
-            imports: 0,
-            giftsGiven: 0,
-            interestExpense: 0,
+            initialFunds: 0,
+            incomeTax: 0,
+            carryForwardIncome: 0,
+            totalIncome: 0,
+            construction: 0,
             maintenance: 0,
-            construction: 2756,
-            totalExpenses: 3436,
-            netFlow: -1799,
-            balance: 1217
+            repairs: 0,
+            carryForwardExpense: 0,
+            totalExpenses: 0,
+            balance: 0
         };
     }
+
 
     calculateTaxEstimate(taxRate) {
         return Math.round(taxRate * 33.4);
@@ -132,13 +175,8 @@ class FinancesSectionManager {
             };
         }
 
-        if (thisYear.netFlow < 0) {
-            return {
-                text: 'Le flux net est négatif. Surveillez vos dépenses.',
-                type: 'warning'
-            };
-        }
-
+        // Le solde (report à nouveau) reflète déjà le résultat de l'année précédente
+        // On n'a pas besoin de calculer le netFlow séparément
         if (thisYear.balance > lastYear.balance) {
             return {
                 text: 'La situation financière s\'améliore par rapport à l\'année dernière.',
@@ -189,30 +227,14 @@ class FinancesSectionManager {
 
     renderStaticData() {
         const staticData = {
-            thisYear: {
-                incomeTax: 63,
-                vat: 0,
-                tradeTax: 0,
-                gifts: 0,
-                interestIncome: 0,
-                totalIncome: 63,
-                salaries: 116,
-                imports: 0,
-                giftsGiven: 0,
-                interestExpense: 1,
-                maintenance: 0,
-                construction: 1352,
-                totalExpenses: 1559,
-                netFlow: -1496,
-                balance: -279
-            },
-            lastYear: this.getDefaultLastYearData(),
-            debt: 279,
+            thisYear: this.getEmptyYearData(0),
+            lastYear: this.getEmptyYearData(0),
+            debt: 0,
             taxRate: 7,
             taxEstimate: 234,
             message: {
-                text: 'Analyse financière : La ville fonctionne avec un déficit cette année. Il est recommandé d\'augmenter les revenus ou de réduire les dépenses.',
-                type: 'danger'
+                text: 'La situation financière est stable.',
+                type: 'info'
             }
         };
 
@@ -221,46 +243,76 @@ class FinancesSectionManager {
     }
 
     updateTableData(thisYear, lastYear) {
-        const fields = [
+        // Revenus (toujours positifs)
+        const incomeFields = [
+            { key: 'initialFunds', thisYear: 'initialFundsThisYear', lastYear: 'initialFundsLastYear' },
             { key: 'incomeTax', thisYear: 'incomeTaxThisYear', lastYear: 'incomeTaxLastYear' },
-            { key: 'vat', thisYear: 'vatThisYear', lastYear: 'vatLastYear' },
-            { key: 'tradeTax', thisYear: 'tradeTaxThisYear', lastYear: 'tradeTaxLastYear' },
-            { key: 'gifts', thisYear: 'giftsThisYear', lastYear: 'giftsLastYear' },
-            { key: 'interestIncome', thisYear: 'interestIncomeThisYear', lastYear: 'interestIncomeLastYear' },
-            { key: 'totalIncome', thisYear: 'totalIncomeThisYear', lastYear: 'totalIncomeLastYear' },
-            { key: 'salaries', thisYear: 'salariesThisYear', lastYear: 'salariesLastYear' },
-            { key: 'imports', thisYear: 'importsThisYear', lastYear: 'importsLastYear' },
-            { key: 'giftsGiven', thisYear: 'giftsGivenThisYear', lastYear: 'giftsGivenLastYear' },
-            { key: 'interestExpense', thisYear: 'interestExpenseThisYear', lastYear: 'interestExpenseLastYear' },
-            { key: 'maintenance', thisYear: 'maintenanceThisYear', lastYear: 'maintenanceLastYear' },
+            { key: 'carryForwardIncome', thisYear: 'carryForwardIncomeThisYear', lastYear: 'carryForwardIncomeLastYear' },
+            { key: 'totalIncome', thisYear: 'totalIncomeThisYear', lastYear: 'totalIncomeLastYear' }
+        ];
+
+        // Dépenses (toujours positives dans le journal, mais affichées en rouge)
+        const expenseFields = [
             { key: 'construction', thisYear: 'constructionThisYear', lastYear: 'constructionLastYear' },
-            { key: 'totalExpenses', thisYear: 'totalExpensesThisYear', lastYear: 'totalExpensesLastYear' },
-            { key: 'netFlow', thisYear: 'netFlowThisYear', lastYear: 'netFlowLastYear' },
+            { key: 'maintenance', thisYear: 'maintenanceThisYear', lastYear: 'maintenanceLastYear' },
+            { key: 'repairs', thisYear: 'repairsThisYear', lastYear: 'repairsLastYear' },
+            { key: 'carryForwardExpense', thisYear: 'carryForwardExpenseThisYear', lastYear: 'carryForwardExpenseLastYear' },
+            { key: 'totalExpenses', thisYear: 'totalExpensesThisYear', lastYear: 'totalExpensesLastYear' }
+        ];
+
+        // Balance (peut être négative ou positive)
+        const balanceFields = [
             { key: 'balance', thisYear: 'balanceThisYear', lastYear: 'balanceLastYear' }
         ];
 
-        fields.forEach(field => {
-            this.updateField(field.thisYear, thisYear[field.key]);
-            this.updateField(field.lastYear, lastYear[field.key]);
+        // Mettre à jour les revenus (toujours positifs)
+        incomeFields.forEach(field => {
+            this.updateField(field.thisYear, thisYear[field.key], 'income');
+            this.updateField(field.lastYear, lastYear[field.key], 'income');
+        });
+
+        // Mettre à jour les dépenses (toujours positives dans le journal)
+        expenseFields.forEach(field => {
+            this.updateField(field.thisYear, thisYear[field.key], 'expense');
+            this.updateField(field.lastYear, lastYear[field.key], 'expense');
+        });
+
+        // Mettre à jour la balance (peut être négative)
+        balanceFields.forEach(field => {
+            this.updateField(field.thisYear, thisYear[field.key], 'balance');
+            this.updateField(field.lastYear, lastYear[field.key], 'balance');
         });
 
         this.updateBalanceRow(thisYear.balance);
     }
 
-    updateField(fieldId, value) {
+    updateField(fieldId, value, type = 'balance') {
         const element = document.querySelector(`[data-field="${fieldId}"]`);
-        if (element) {
-            const numValue = Math.round(value || 0);
+        if (!element) {
+            console.warn(`[FinancesSection] Element not found for field: ${fieldId}`);
+            return;
+        }
+        
+        const numValue = Math.round(value || 0);
+        const absValue = Math.abs(numValue);
+        
+        // Mettre à jour le texte avec formatage français
+        element.textContent = absValue.toLocaleString('fr-FR');
+        
+        // Mettre à jour les classes CSS selon le type
+        if (type === 'balance') {
+            // Pour la balance, la classe dépend du signe de la valeur
             const isNegative = numValue < 0;
-            const absValue = Math.abs(numValue);
-            
-            if (element.tagName === 'SPAN') {
-                element.textContent = isNegative ? `-${absValue}` : absValue.toString();
-                element.className = isNegative ? 'finances-value-negative' : 'finances-value-positive';
-            } else {
-                element.textContent = absValue.toString();
-                element.className = isNegative ? 'finances-value-negative' : 'finances-value-positive';
-            }
+            element.classList.remove('finances-value-positive', 'finances-value-negative');
+            element.classList.add(isNegative ? 'finances-value-negative' : 'finances-value-positive');
+        } else if (type === 'income') {
+            // Pour les revenus, toujours positif (même si 0)
+            element.classList.remove('finances-value-negative');
+            element.classList.add('finances-value-positive');
+        } else if (type === 'expense') {
+            // Pour les dépenses, toujours négatif (affichage en rouge)
+            element.classList.remove('finances-value-positive');
+            element.classList.add('finances-value-negative');
         }
     }
 
@@ -296,21 +348,21 @@ function initFinancesSection() {
     const financesSection = document.getElementById('admin-section-finances');
     if (!financesSection) return;
 
-    const budgetManager = window.budgetManager || window.app?.budgetManager;
-    const manager = new FinancesSectionManager(budgetManager);
+    const manager = new FinancesSectionManager();
     
+    // Observer pour recharger les données à chaque fois que la section devient active
     const observer = new MutationObserver(() => {
         if (financesSection.classList.contains('active')) {
-            manager.init();
-            observer.disconnect();
+            // Recharger les données depuis le journal à chaque activation
+            manager.loadFinancialData();
         }
     });
 
     observer.observe(financesSection, { attributes: true, attributeFilter: ['class'] });
 
+    // Initialiser si déjà actif
     if (financesSection.classList.contains('active')) {
         manager.init();
-        observer.disconnect();
     }
 
     window.financesSectionManager = manager;

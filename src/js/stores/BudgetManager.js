@@ -1,5 +1,6 @@
 import db from './db.js';
 import config from '../game/config.js';
+import journalManager from './JournalManager.js';
 
 /**
  * BudgetManager - Handles all budget operations with proper financial terminology
@@ -10,6 +11,7 @@ import config from '../game/config.js';
 class BudgetManager {
     constructor() {
         this.db = db;
+        this.journalManager = journalManager;
     }
 
     /**
@@ -62,8 +64,15 @@ class BudgetManager {
         
         await this.db.budget.add(initialBudget);
         
-        console.log('[BudgetManager] Budget initialized and saved:', initialBudget);
+        // Add capital funds entry to journal (turn 0) only if journal is empty
+        // This ensures we don't create duplicate entries on reinitialization
+        const existingEntries = await this.getJournalEntries();
+        const hasCapitalFunds = existingEntries.some(entry => entry.type === 'capital_funds' && entry.turn === 0);
         
+        if (!hasCapitalFunds) {
+            await this.addJournalEntry(0, 'capital_funds', startingFunds, `Capital de départ: ${startingFunds}€`);
+        }
+            
         return initialBudget;
     }
 
@@ -96,14 +105,7 @@ class BudgetManager {
         if (budget.totalLoanInterest === undefined) budget.totalLoanInterest = 0;
         if (budget.totalLoanRepayments === undefined) budget.totalLoanRepayments = 0;
         if (budget.totalLoanInterestExpenses === undefined) budget.totalLoanInterestExpenses = 0;
-        
-        // console.log('Loan totals calculated:', {
-        //     debt: totalLoanDebt,
-        //     interest: budget.totalLoanInterest,
-        //     repayments: budget.totalLoanRepayments,
-        //     interestExpenses: budget.totalLoanInterestExpenses
-        // });
-        
+               
         // Save the updated budget
         await this.db.budget.put(budget);
     }
@@ -123,21 +125,12 @@ class BudgetManager {
         const envValue = typeof import.meta !== 'undefined' && import.meta.env 
             ? import.meta.env.VITE_INITIAL_FUNDS 
             : undefined;
-        console.log('[BudgetManager] getCurrentBudget - Config initialFunds:', expectedInitialFunds, 'import.meta.env.VITE_INITIAL_FUNDS:', envValue);
-        
+     
         if (!budget) {
             // No budget exists - initialize with config value
-            console.log('[BudgetManager] No budget exists, initializing with:', expectedInitialFunds);
             return await this.initialize(expectedInitialFunds);
         }
-        
-        console.log('[BudgetManager] Existing budget found:', {
-            funds: budget.funds,
-            initialFunds: budget.initialFunds,
-            turn: budget.turn,
-            expectedInitialFunds: expectedInitialFunds
-        });
-        
+             
         // Check if initialFunds needs to be updated to match config
         // This ensures the budget always reflects the current config value
         let needsUpdate = false;
@@ -153,26 +146,39 @@ class BudgetManager {
             
             // If this is a brand new budget (turn 0), update funds to match config
             // This handles the case where IndexedDB has old data but config changed
+            // BUT only if no transactions have been made (income = 0 and expenses = 0)
             if (budget.turn === 0) {
                 // Check if funds still match the old initialFunds (meaning it's a fresh start)
                 // Use a small tolerance for floating point comparison
                 const fundsMatchOldInitial = Math.abs(budget.funds - oldInitialFunds) < 1;
-                if (fundsMatchOldInitial) {
-                    // Funds haven't changed from initial - update to new initial funds
-                    console.log('[BudgetManager] Updating funds from', budget.funds, 'to', expectedInitialFunds, '(fresh start detected, turn=0)');
+                // Only reset if no transactions have been made (truly fresh start)
+                const noTransactions = (budget.income === 0 || budget.income === undefined) && 
+                                      (budget.expenses === 0 || budget.expenses === undefined);
+                
+                if (fundsMatchOldInitial && noTransactions) {
+                    // Funds haven't changed from initial AND no transactions - update to new initial funds
+                    console.log('[BudgetManager] Updating funds from', budget.funds, 'to', expectedInitialFunds, '(fresh start detected, turn=0, no transactions)');
                     budget.funds = expectedInitialFunds;
                     needsUpdate = true;
                 } else {
-                    console.log('[BudgetManager] Funds do not match old initialFunds, keeping current funds:', budget.funds);
+                    console.log('[BudgetManager] Funds do not match old initialFunds or transactions exist, keeping current funds:', budget.funds);
                 }
             } else {
                 console.log('[BudgetManager] Budget has turn > 0, not updating funds (game in progress)');
             }
         } else if (budget.turn === 0 && Math.abs(budget.funds - expectedInitialFunds) > 1) {
             // Even if initialFunds matches, if turn is 0 and funds don't match, update funds
-            console.log('[BudgetManager] Turn is 0 but funds don\'t match expected initial funds. Updating funds from', budget.funds, 'to', expectedInitialFunds);
-            budget.funds = expectedInitialFunds;
-            needsUpdate = true;
+            // BUT only if no transactions have been made
+            const noTransactions = (budget.income === 0 || budget.income === undefined) && 
+                                  (budget.expenses === 0 || budget.expenses === undefined);
+            
+            if (noTransactions) {
+                console.log('[BudgetManager] Turn is 0 but funds don\'t match expected initial funds. Updating funds from', budget.funds, 'to', expectedInitialFunds, '(no transactions detected)');
+                budget.funds = expectedInitialFunds;
+                needsUpdate = true;
+            } else {
+                console.log('[BudgetManager] Turn is 0 but transactions exist, keeping current funds:', budget.funds);
+            }
         }
         
         // Calculate loan totals from budget loans array
@@ -224,7 +230,7 @@ class BudgetManager {
         const budget = await this.getCurrentBudget();
         
         // Add journal entry
-        await this.addJournalEntry(budget.turn, 'income', amount, source);
+        await this.addJournalEntry(budget.turn, 'salary_tax', amount, source);
         
         budget.funds += amount;
         budget.income += amount;
@@ -337,12 +343,12 @@ class BudgetManager {
     }
 
     /**
-     * Add expense (spending money)
-     * @param {number} amount - Expense amount
-     * @param {string} reason - Reason for expense (e.g., "building", "maintenance")
+     * Add construction expense to budget (building purchases)
+     * @param {number} amount - Construction expense amount
+     * @param {string} reason - Reason for expense (e.g., "Building: House")
      * @returns {Promise<Object>} Result object with success status
      */
-    async addExpense(amount, reason = "unknown") {
+    async addConstructionExpense(amount, reason = "unknown") {
         const budget = await this.getCurrentBudget();
         
         // Validate input amount
@@ -360,19 +366,14 @@ class BudgetManager {
         const currentExpenses = budget.expenses;
         const currentIncome = budget.income;
         
-        if (currentFunds < amount) {
-            return {
-                success: false,
-                reason: 'insufficient_funds',
-                message: `Not enough funds. Required: ${amount}€, Available: ${currentFunds}€`
-            };
-        }
+        // Allow negative funds (debt) - removed the insufficient funds check
+        // The game can go into debt, which is a valid game state
 
         try {
             budget.funds = currentFunds - amount;
             
-            // Add journal entry
-            await this.addJournalEntry(budget.turn, 'expense', amount, reason);
+            // Add journal entry (constructions are tracked as 'construction' type)
+            await this.addJournalEntry(budget.turn, 'construction', amount, reason);
             
             // Distinguish between investments and regular expenses
             if (reason.includes('Building:') || reason.includes('building')) {
@@ -405,75 +406,61 @@ class BudgetManager {
 
     /**
      * Add journal entry (écriture comptable)
+     * Delegates to JournalManager
      * @param {number} turn - Turn number
      * @param {string} type - Type of entry ('income', 'expense', 'loan_interest', 'loan_repayment', etc.)
      * @param {number} amount - Amount
      * @param {string} description - Description
      */
     async addJournalEntry(turn, type, amount, description) {
-        try {
-            await this.db.journal.add({
-                turn: turn,
-                date: new Date().toISOString(),
-                type: type,
-                amount: amount,
-                description: description
-            });
-        } catch (error) {
-            console.error('Error adding journal entry:', error);
-        }
+        return await this.journalManager.addJournalEntry(turn, type, amount, description);
     }
 
     /**
      * Get journal entries
+     * Delegates to JournalManager
      * @param {number} maxAge - Maximum age in days (optional)
      * @returns {Promise<Array>} Journal entries
      */
     async getJournalEntries(maxAge = null) {
-        let entries = await this.db.journal.toArray();
-        
-        if (maxAge) {
-            const cutoffDate = new Date();
-            cutoffDate.setDate(cutoffDate.getDate() - maxAge);
-            
-            entries = entries.filter(entry => new Date(entry.date) >= cutoffDate);
-        }
-        
-        // Sort by turn descending, then by date descending
-        return entries.sort((a, b) => {
-            if (a.turn !== b.turn) {
-                return b.turn - a.turn;
-            }
-            return new Date(b.date) - new Date(a.date);
-        });
+        return await this.journalManager.getJournalEntries(maxAge);
     }
 
     /**
      * Get journal entries for a specific turn
+     * Delegates to JournalManager
      * @param {number} turn - Turn number
      * @returns {Promise<Array>} Journal entries
      */
     async getJournalEntriesForTurn(turn) {
-        return await this.db.journal.where('turn').equals(turn).sortBy('date');
+        return await this.journalManager.getJournalEntriesForTurn(turn);
     }
 
     /**
      * Cleanup old journal entries
+     * Delegates to JournalManager
      * @param {number} maxAge - Maximum age in days
      */
     async cleanupOldJournalEntries(maxAge = 60) {
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - maxAge);
-        const cutoffISO = cutoffDate.toISOString();
-        
-        const oldEntries = await this.db.journal.where('date').below(cutoffISO).toArray();
-        
-        if (oldEntries.length > 0) {
-            const ids = oldEntries.map(entry => entry.id);
-            await this.db.journal.bulkDelete(ids);
-        }
-        
-        return { deleted: oldEntries.length };
+        return await this.journalManager.cleanupOldJournalEntries(maxAge);
+    }
+
+    /**
+     * Get financial summary grouped by month
+     * Delegates to JournalManager
+     * @returns {Promise<Array>} Array of monthly summaries
+     */
+    async getMonthlyFinancialSummary() {
+        return await this.journalManager.getMonthlyFinancialSummary();
+    }
+
+    /**
+     * Get financial summary grouped by year
+     * Delegates to JournalManager
+     * @returns {Promise<Array>} Array of yearly summaries
+     */
+    async getYearlyFinancialSummary() {
+        return await this.journalManager.getYearlyFinancialSummary();
     }
 
     /**
@@ -515,6 +502,7 @@ class BudgetManager {
      */
     async updateTurn(turn) {
         const budget = await this.getCurrentBudget();
+        const previousTurn = budget.turn || 0;
         budget.turn = turn;
         
         // Reset daily income/expenses but keep running totals
@@ -522,6 +510,53 @@ class BudgetManager {
         budget.dailyExpenses = 0;
         
         await this.db.budget.put(budget);
+        
+        // Ajouter l'entrée de balance à chaque tour (même source que display-funds)
+        // Vérifier que journalManager et la méthode existent avant d'appeler
+        if (this.journalManager && typeof this.journalManager.addBalanceEntry === 'function') {
+            try {
+                await this.journalManager.addBalanceEntry(turn, budget.funds);
+            } catch (error) {
+                console.error('[BudgetManager] Error adding balance entry:', error);
+                // Ne pas bloquer l'exécution si l'ajout de balance échoue
+            }
+        } else {
+            console.warn('[BudgetManager] journalManager.addBalanceEntry not available');
+        }
+        
+        // Détecter la fin d'année et le début d'une nouvelle année
+        if (window.TimeManager) {
+            const currentTimeInfo = window.TimeManager.getTimeInfo(turn);
+            const previousTimeInfo = window.TimeManager.getTimeInfo(previousTurn);
+            
+            // DÉTECTION 1: Fin d'année (dernier tour de décembre)
+            // Créer les entrées de cumul pour l'année qui se termine
+            if (previousTimeInfo.year >= 0 && 
+                previousTimeInfo.monthIndex === 11 && // Décembre (0-indexed: 0=janvier, 11=décembre)
+                currentTimeInfo.year > previousTimeInfo.year) {
+                
+                // On vient de passer au premier tour de la nouvelle année
+                // Le dernier tour de l'année précédente était previousTurn (décembre)
+                const endingYear = previousTimeInfo.year;
+                
+                // Créer les entrées de cumul pour l'année qui se termine
+                // Utiliser previousTurn (dernier turn de l'année) pour les cumuls
+                await this.journalManager.createCumulEntries(endingYear, previousTurn);
+            }
+            
+            // DÉTECTION 2: Début d'une nouvelle année (janvier)
+            // Créer le report à nouveau pour la nouvelle année
+            if (currentTimeInfo.year > 0 && 
+                currentTimeInfo.monthIndex === 0 && // Janvier
+                previousTimeInfo.year < currentTimeInfo.year) {
+                
+                // Créer le report à nouveau pour la nouvelle année
+                // Le JournalManager utilisera le solde sauvegardé dans localStorage
+                // (la sauvegarde se fait maintenant dans loadJournalEntries() au moment de l'affichage)
+                await this.journalManager.createCarryForwardEntry(turn);
+            }
+        }
+        
         return budget;
     }
 
@@ -736,7 +771,7 @@ class BudgetManager {
         // Only add taxes if there is population
         if (taxBreakdown.total > 0 && taxBreakdown.population > 0) {
             // Add journal entry
-            await this.addJournalEntry(budget.turn, 'income', taxBreakdown.total, `Impôts habitants (${taxBreakdown.population} hab.) - Novembre`);
+            await this.addJournalEntry(budget.turn, 'salary_tax', taxBreakdown.total, `Impôts habitants (${taxBreakdown.population} hab.) - Novembre`);
             
             // Add to daily income
             budget.funds += taxBreakdown.total;

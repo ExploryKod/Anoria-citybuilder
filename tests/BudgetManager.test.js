@@ -9,6 +9,7 @@
 
 import Dexie from 'dexie';
 import { BudgetManager } from '../src/js/stores/BudgetManager.js';
+import { JournalManager } from '../src/js/stores/JournalManager.js';
 import config from '../src/js/game/config.js';
 
 // ============================================================================
@@ -45,6 +46,11 @@ describe('BudgetManager', () => {
         // Créer un BudgetManager avec la base de test
         budgetManager = new BudgetManager();
         budgetManager.db = testDb; // Injecter la base de test
+        
+        // Create and inject JournalManager with test database
+        const journalManager = new JournalManager();
+        journalManager.db = testDb;
+        budgetManager.journalManager = journalManager;
         
         // Mock config pour éviter les problèmes avec import.meta.env
         budgetManager.config = config;
@@ -99,7 +105,7 @@ describe('BudgetManager', () => {
     });
 
     // ========================================================================
-    // addIncome / addExpense - Opérations financières
+    // addIncome / addConstructionExpense - Opérations financières
     // ========================================================================
     describe('addIncome', () => {
         
@@ -142,15 +148,48 @@ describe('BudgetManager', () => {
         });
     });
 
-    describe('addExpense', () => {
+    describe('addConstructionExpense', () => {
         
         beforeEach(async () => {
             await budgetManager.initialize(200);
         });
 
-        test('soustrait des dépenses du budget', async () => {
+        test('soustrait des dépenses du budget (investissements)', async () => {
             await budgetManager.initialize(200);
-            await budgetManager.addExpense(30, 'Maintenance routes');
+            await budgetManager.addConstructionExpense(30, 'Building: House');
+            
+            // Lire directement depuis la base
+            const budgetData = await testDb.budget.toArray();
+            const budget = budgetData[0];
+            
+            expect(budget.funds).toBe(170); // 200 - 30
+            expect(budget.totalInvestments).toBe(30);
+            // Note: addConstructionExpense() does NOT update dailyExpenses (only addDailyExpense() does)
+            expect(budget.dailyExpenses).toBe(0);
+        });
+
+        test('peut avoir un budget négatif (dette)', async () => {
+            await budgetManager.initialize(200);
+            await budgetManager.addConstructionExpense(250, 'Grosse dépense');
+            
+            // Lire directement depuis la base
+            const budgetData = await testDb.budget.toArray();
+            const budget = budgetData[0];
+            
+            expect(budget.funds).toBe(-50); // 200 - 250 (debt allowed)
+            expect(budget.expenses).toBe(250);
+        });
+    });
+
+    describe('addDailyExpense', () => {
+        
+        beforeEach(async () => {
+            await budgetManager.initialize(200);
+        });
+
+        test('soustrait des dépenses quotidiennes du budget', async () => {
+            await budgetManager.initialize(200);
+            await budgetManager.addDailyExpense(30, 'Maintenance routes');
             
             // Lire directement depuis la base
             const budgetData = await testDb.budget.toArray();
@@ -158,19 +197,32 @@ describe('BudgetManager', () => {
             
             expect(budget.funds).toBe(170); // 200 - 30
             expect(budget.expenses).toBe(30);
-            expect(budget.dailyExpenses).toBe(30);
+            expect(budget.dailyExpenses).toBe(30); // addDailyExpense() updates dailyExpenses
         });
 
-        test('peut avoir un budget négatif (dette)', async () => {
+        test('cumule plusieurs dépenses quotidiennes', async () => {
             await budgetManager.initialize(200);
-            await budgetManager.addExpense(250, 'Grosse dépense');
+            await budgetManager.addDailyExpense(20, 'Maintenance 1');
+            await budgetManager.addDailyExpense(15, 'Maintenance 2');
             
-            // Lire directement depuis la base
             const budgetData = await testDb.budget.toArray();
             const budget = budgetData[0];
             
-            expect(budget.funds).toBe(-50); // 200 - 250
+            expect(budget.funds).toBe(165); // 200 - 20 - 15
+            expect(budget.expenses).toBe(35); // 20 + 15
+            expect(budget.dailyExpenses).toBe(35); // 20 + 15
+        });
+
+        test('peut avoir un budget négatif avec dépenses quotidiennes', async () => {
+            await budgetManager.initialize(200);
+            await budgetManager.addDailyExpense(250, 'Grosse dépense quotidienne');
+            
+            const budgetData = await testDb.budget.toArray();
+            const budget = budgetData[0];
+            
+            expect(budget.funds).toBe(-50); // 200 - 250 (debt allowed)
             expect(budget.expenses).toBe(250);
+            expect(budget.dailyExpenses).toBe(250);
         });
     });
 
@@ -283,24 +335,33 @@ describe('BudgetManager', () => {
         });
 
         test('ajoute une entrée au journal', async () => {
-            await budgetManager.addJournalEntry(1, 'income', 50, 'Impôts');
+            // Note: initialize() crée automatiquement une entrée capital_funds au tour 0
+            await budgetManager.initialize(200);
+            await budgetManager.addJournalEntry(1, 'salary_tax', 50, 'Impôts');
             
             const entries = await testDb.journal.toArray();
             
-            expect(entries).toHaveLength(1);
-            expect(entries[0].turn).toBe(1);
-            expect(entries[0].type).toBe('income');
-            expect(entries[0].amount).toBe(50);
-            expect(entries[0].description).toBe('Impôts');
+            // 1 entrée capital_funds (créée automatiquement) + 1 entrée salary_tax = 2 entrées
+            expect(entries).toHaveLength(2);
+            // Trouver l'entrée salary_tax (pas capital_funds)
+            const incomeEntry = entries.find(e => e.type === 'salary_tax');
+            expect(incomeEntry).toBeDefined();
+            expect(incomeEntry.turn).toBe(1);
+            expect(incomeEntry.type).toBe('salary_tax');
+            expect(incomeEntry.amount).toBe(50);
+            expect(incomeEntry.description).toBe('Impôts');
         });
 
         test('peut ajouter plusieurs entrées', async () => {
-            await budgetManager.addJournalEntry(1, 'income', 50, 'Impôts');
-            await budgetManager.addJournalEntry(1, 'expense', 30, 'Maintenance');
+            // Note: initialize() crée automatiquement une entrée capital_funds au tour 0
+            await budgetManager.initialize(200);
+            await budgetManager.addJournalEntry(1, 'salary_tax', 50, 'Impôts');
+            await budgetManager.addJournalEntry(1, 'maintenance', 30, 'Maintenance mensuelle');
             
             const entries = await testDb.journal.toArray();
             
-            expect(entries).toHaveLength(2);
+            // 1 entrée capital_funds (créée automatiquement) + 2 entrées ajoutées = 3 entrées
+            expect(entries).toHaveLength(3);
         });
     });
 
@@ -314,16 +375,17 @@ describe('BudgetManager', () => {
             
             // Créer des entrées de journal pour différents tours
             await testDb.journal.bulkAdd([
-                { turn: 1, date: new Date('2024-01-01').toISOString(), type: 'income', amount: 50, description: 'Test 1' },
-                { turn: 2, date: new Date('2024-01-02').toISOString(), type: 'expense', amount: 30, description: 'Test 2' },
-                { turn: 3, date: new Date('2024-01-03').toISOString(), type: 'income', amount: 20, description: 'Test 3' }
+                { turn: 1, date: new Date('2024-01-01').toISOString(), type: 'salary_tax', amount: 50, description: 'Test 1' },
+                { turn: 2, date: new Date('2024-01-02').toISOString(), type: 'construction', amount: 30, description: 'Test 2' },
+                { turn: 3, date: new Date('2024-01-03').toISOString(), type: 'salary_tax', amount: 20, description: 'Test 3' }
             ]);
         });
 
         test('récupère toutes les entrées du journal', async () => {
             const entries = await budgetManager.getJournalEntries();
             
-            expect(entries).toHaveLength(3);
+            // 1 entrée capital_funds (créée automatiquement par initialize) + 3 entrées ajoutées = 4 entrées
+            expect(entries).toHaveLength(4);
         });
 
         test('filtre les entrées par âge maximum (en jours)', async () => {
@@ -334,7 +396,7 @@ describe('BudgetManager', () => {
             await testDb.journal.add({
                 turn: 0,
                 date: oldDate.toISOString(),
-                type: 'income',
+                type: 'salary_tax',
                 amount: 10,
                 description: 'Ancienne entrée'
             });
