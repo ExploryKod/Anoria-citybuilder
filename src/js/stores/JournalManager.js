@@ -170,9 +170,49 @@ class JournalManager {
             }
             
             // Classer comme revenu ou dépense
-            // Revenus: 'income', 'capital_funds'
-            // Dépenses: 'construction', 'maintenance', 'loan_interest', 'loan_repayment', 'exceptional_expenses'
-            const isIncome = entry.type === 'income' || entry.type === 'capital_funds';
+            // Revenus: 'income', 'capital_funds', 'carry_forward' (si netFlow précédent positif)
+            // Dépenses: 'construction', 'maintenance', 'loan_interest', 'loan_repayment', 'exceptional_expenses', 'carry_forward' (si netFlow précédent négatif)
+            let isIncome = entry.type === 'income' || entry.type === 'capital_funds';
+            
+            if (entry.type === 'carry_forward') {
+                // Pour le report à nouveau, déterminer si c'est un revenu ou une dépense
+                // en fonction du signe stocké dans la description
+                // Format: "Report à nouveau de l'année X (signe)"
+                const signMatch = entry.description?.match(/\(([+-])\)/);
+                if (signMatch) {
+                    isIncome = signMatch[1] === '+';
+                } else {
+                    // Fallback: calculer depuis le netFlow de l'année précédente
+                    const previousYear = timeInfo.year - 1;
+                    if (previousYear >= 0) {
+                        // Calculer le netFlow de l'année précédente en EXCLUANT le report à nouveau
+                        let prevYearIncome = 0;
+                        let prevYearExpenses = 0;
+                        
+                        entries.forEach(e => {
+                            if (e.type === 'carry_forward') return; // Exclure tous les reports à nouveau
+                            
+                            if (!window.TimeManager) return;
+                            const eTimeInfo = window.TimeManager.getTimeInfo(e.turn);
+                            
+                            if (eTimeInfo.year === previousYear) {
+                                const isEIncome = e.type === 'income' || e.type === 'capital_funds';
+                                if (isEIncome) {
+                                    prevYearIncome += e.amount;
+                                } else {
+                                    prevYearExpenses += e.amount;
+                                }
+                            }
+                        });
+                        
+                        const prevYearNetFlow = prevYearIncome - prevYearExpenses;
+                        isIncome = prevYearNetFlow >= 0;
+                    } else {
+                        // Année 0, pas de report à nouveau (ne devrait pas arriver)
+                        isIncome = true;
+                    }
+                }
+            }
             
             if (isIncome) {
                 grouped[key].income.total += entry.amount;
@@ -181,7 +221,8 @@ class JournalManager {
                     amount: entry.amount,
                     description: entry.description,
                     date: entry.date,
-                    turn: entry.turn
+                    turn: entry.turn,
+                    isCarryForwardIncome: entry.type === 'carry_forward' ? true : undefined
                 });
             } else {
                 grouped[key].expenses.total += entry.amount;
@@ -190,7 +231,8 @@ class JournalManager {
                     amount: entry.amount,
                     description: entry.description,
                     date: entry.date,
-                    turn: entry.turn
+                    turn: entry.turn,
+                    isCarryForwardIncome: entry.type === 'carry_forward' ? false : undefined
                 });
             }
             
@@ -207,6 +249,98 @@ class JournalManager {
             if (a.year !== b.year) return b.year - a.year;
             return b.month - a.month;
         });
+    }
+
+    /**
+     * Create carry forward entry (report à nouveau) for the beginning of a new year
+     * Calcule automatiquement le report à nouveau depuis les données du journal
+     * @param {number} turn - Turn number (should be turn 1 of the new year)
+     * @returns {Promise<void>}
+     */
+    async createCarryForwardEntry(turn) {
+        // Vérifier qu'on n'a pas déjà créé cette entrée pour ce tour
+        const existingEntries = await this.getJournalEntriesForTurn(turn);
+        const hasCarryForward = existingEntries.some(entry => entry.type === 'carry_forward');
+        
+        if (hasCarryForward) {
+            console.log('[JournalManager] Carry forward entry already exists for turn', turn);
+            return;
+        }
+        
+        if (!window.TimeManager) {
+            console.warn('[JournalManager] TimeManager not available, cannot create carry forward entry');
+            return;
+        }
+        
+        const currentTimeInfo = window.TimeManager.getTimeInfo(turn);
+        const previousYear = currentTimeInfo.year - 1;
+        
+        // Si on est en année 0, pas de report à nouveau
+        if (previousYear < 0) {
+            return;
+        }
+        
+        // Calculer le netFlow de l'année précédente depuis les entrées du journal
+        // (en excluant les reports à nouveau)
+        const allEntries = await this.getJournalEntries();
+        let prevYearIncome = 0;
+        let prevYearExpenses = 0;
+        
+        allEntries.forEach(entry => {
+            // Exclure les reports à nouveau du calcul
+            if (entry.type === 'carry_forward') return;
+            
+            const entryTimeInfo = window.TimeManager.getTimeInfo(entry.turn);
+            if (entryTimeInfo.year === previousYear) {
+                const isEntryIncome = entry.type === 'income' || entry.type === 'capital_funds';
+                if (isEntryIncome) {
+                    prevYearIncome += entry.amount;
+                } else {
+                    prevYearExpenses += entry.amount;
+                }
+            }
+        });
+        
+        const previousYearNetFlow = prevYearIncome - prevYearExpenses;
+        
+        // Le montant est toujours positif dans IndexedDB
+        // Le signe du netFlow détermine si c'est revenu (positif) ou dépense (négatif)
+        const amount = Math.abs(previousYearNetFlow);
+        const yearDisplay = previousYear === 0 ? '0 JC' : `${previousYear} ap JC`;
+        // Stocker le signe dans la description pour pouvoir le récupérer lors du calcul
+        const isPositive = previousYearNetFlow >= 0;
+        const signIndicator = isPositive ? '+' : '-';
+        const description = `Report à nouveau de l'année ${yearDisplay} (${signIndicator})`;
+        
+        await this.addJournalEntry(turn, 'carry_forward', amount, description);
+        console.log('[JournalManager] Created carry forward entry:', {
+            turn,
+            amount,
+            previousYearNetFlow,
+            previousYear,
+            isIncome: isPositive
+        });
+    }
+
+    /**
+     * Calculate current balance (solde) from all journal entries
+     * @returns {Promise<number>} Current balance (cumulative income - cumulative expenses)
+     */
+    async getCurrentBalance() {
+        const entries = await this.getJournalEntries();
+        let balance = 0;
+        
+        entries.forEach(entry => {
+            const isIncome = entry.type === 'income' || entry.type === 'capital_funds' || 
+                           (entry.type === 'carry_forward' && entry.description?.includes('(+)'));
+            if (isIncome) {
+                balance += entry.amount;
+            } else {
+                balance -= entry.amount;
+            }
+        });
+        
+        return balance;
     }
 
     /**
@@ -240,12 +374,12 @@ class JournalManager {
             grouped[year].months.push(month);
         });
         
-        // Calculer netFlow pour chaque année
+        // Calculer netFlow pour chaque année (le solde de l'année = netFlow de l'année)
         Object.values(grouped).forEach(year => {
             year.netFlow = year.income.total - year.expenses.total;
         });
         
-        // Trier par année décroissante
+        // Trier par année décroissante pour l'affichage
         return Object.values(grouped).sort((a, b) => b.year - a.year);
     }
 }

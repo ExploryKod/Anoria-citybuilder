@@ -502,6 +502,7 @@ class BudgetManager {
      */
     async updateTurn(turn) {
         const budget = await this.getCurrentBudget();
+        const previousTurn = budget.turn || 0;
         budget.turn = turn;
         
         // Reset daily income/expenses but keep running totals
@@ -509,6 +510,27 @@ class BudgetManager {
         budget.dailyExpenses = 0;
         
         await this.db.budget.put(budget);
+        
+        // Détecter le début d'une nouvelle année (tour 1 de chaque année, sauf année 0)
+        if (window.TimeManager) {
+            const currentTimeInfo = window.TimeManager.getTimeInfo(turn);
+            const previousTimeInfo = window.TimeManager.getTimeInfo(previousTurn);
+            
+            // Vérifier si on vient de passer au tour 1 d'une nouvelle année (janvier)
+            // et que ce n'est pas l'année 0
+            // Conditions :
+            // 1. Année actuelle > 0 (pas l'année 0)
+            // 2. Mois actuel = janvier (monthIndex === 0)
+            // 3. On vient de changer d'année (année précédente < année actuelle)
+            if (currentTimeInfo.year > 0 && 
+                currentTimeInfo.monthIndex === 0 && // Janvier
+                previousTimeInfo.year < currentTimeInfo.year) {
+                
+                // Le JournalManager calcule automatiquement le report à nouveau depuis les données du journal
+                await this.journalManager.createCarryForwardEntry(turn);
+            }
+        }
+        
         return budget;
     }
 

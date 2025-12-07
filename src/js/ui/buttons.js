@@ -4548,8 +4548,21 @@ async function loadJournalEntries(period = 'all') {
                                 </div>
                                 
                                 <div class="journal-month-entries">
-                                    ${monthData.income.entries.map(entry => createJournalEntryHTML(entry)).join('')}
-                                    ${monthData.expenses.entries.map(entry => createJournalEntryHTML(entry)).join('')}
+                                    ${(() => {
+                                        // Séparer les entrées : report à nouveau en premier, puis les autres
+                                        const carryForwardIncome = monthData.income.entries.filter(e => e.type === 'carry_forward');
+                                        const carryForwardExpenses = monthData.expenses.entries.filter(e => e.type === 'carry_forward');
+                                        const otherIncome = monthData.income.entries.filter(e => e.type !== 'carry_forward');
+                                        const otherExpenses = monthData.expenses.entries.filter(e => e.type !== 'carry_forward');
+                                        
+                                        // Afficher d'abord les reports à nouveau (revenus puis dépenses), puis les autres
+                                        return [
+                                            ...carryForwardIncome.map(entry => createJournalEntryHTML(entry)),
+                                            ...carryForwardExpenses.map(entry => createJournalEntryHTML(entry)),
+                                            ...otherIncome.map(entry => createJournalEntryHTML(entry)),
+                                            ...otherExpenses.map(entry => createJournalEntryHTML(entry))
+                                        ].join('');
+                                    })()}
                                 </div>
                             </div>
                         `;
@@ -4581,12 +4594,19 @@ function createJournalEntryHTML(entry) {
     });
     
     // Déterminer si c'est un revenu (positif) ou une dépense (négatif)
-    const isIncome = entry.type === 'income' || entry.type === 'capital_funds';
+    let isIncome = entry.type === 'income' || entry.type === 'capital_funds';
+    
+    // Pour carry_forward, utiliser la propriété isCarryForwardIncome si disponible
+    if (entry.type === 'carry_forward') {
+        isIncome = entry.isCarryForwardIncome !== undefined ? entry.isCarryForwardIncome : true;
+    }
+    
     const typeClass = isIncome ? 'positive' : 'negative';
     
     const typeLabels = {
         'income': 'Revenu',
         'capital_funds': 'Capital de départ',
+        'carry_forward': 'Report à nouveau',
         'construction': 'Construction',
         'exceptional_expenses': 'Réparation',
         'maintenance': 'Maintenance mensuelle',
