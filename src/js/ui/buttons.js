@@ -4768,25 +4768,50 @@ function createJournalEntryHTML(entry) {
         minute: '2-digit'
     });
     
-    // Déterminer si c'est un revenu (positif) ou une dépense (négatif)
-    let isIncome = entry.type === 'income' || entry.type === 'capital_funds';
+    // Obtenir l'année depuis le turn
+    let yearDisplay = '';
+    if (window.TimeManager && entry.turn !== undefined) {
+        const timeInfo = window.TimeManager.getTimeInfo(entry.turn);
+        yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
+    }
     
-    // Pour carry_forward, utiliser la propriété isCarryForwardIncome si disponible
-    if (entry.type === 'carry_forward') {
+    // Déterminer si c'est un revenu (positif) ou une dépense (négatif)
+    // Les cumuls et les balances sont informatifs seulement (pas comptés dans les calculs)
+    let isIncome = false;
+    
+    if (entry.type === 'cumul_maintenance' || 
+        entry.type === 'cumul_construction' || 
+        entry.type === 'cumul_exceptional_expenses' ||
+        entry.type === 'cumul_loan_interest' ||
+        entry.type === 'cumul_loan_repayment') {
+        isIncome = false; // Les cumuls sont toujours des dépenses
+    } else if (entry.type === 'balance') {
+        // La balance peut être positive ou négative selon le montant
+        isIncome = entry.amount >= 0;
+    } else if (entry.type === 'salary_tax' || entry.type === 'capital_funds') {
+        isIncome = true;
+    } else if (entry.type === 'carry_forward') {
+        // Pour carry_forward, utiliser la propriété isCarryForwardIncome si disponible
         isIncome = entry.isCarryForwardIncome !== undefined ? entry.isCarryForwardIncome : true;
     }
     
     const typeClass = isIncome ? 'positive' : 'negative';
     
     const typeLabels = {
-        'income': 'Revenu',
+        'salary_tax': 'Impôts',
         'capital_funds': 'Capital de départ',
         'carry_forward': 'Report à nouveau',
         'construction': 'Construction',
         'exceptional_expenses': 'Réparation',
         'maintenance': 'Maintenance mensuelle',
         'loan_interest': 'Intérêts prêt',
-        'loan_repayment': 'Remboursement prêt'
+        'loan_repayment': 'Remboursement prêt',
+        'cumul_maintenance': 'Cumul Maintenance',
+        'cumul_construction': 'Cumul Construction',
+        'cumul_exceptional_expenses': 'Cumul Réparations',
+        'cumul_loan_interest': 'Cumul Intérêts Prêt',
+        'cumul_loan_repayment': 'Cumul Remboursement Prêt',
+        'balance': 'Solde'
     };
     
     // Check if description contains breakdown data
@@ -4828,7 +4853,11 @@ function createJournalEntryHTML(entry) {
                     `).join('')}
                 </ul>
                 ` : ''}
-                <div class="journal-entry-turn">${formattedDate}</div>
+                <div class="journal-entry-meta">
+                    ${yearDisplay ? `<span class="journal-entry-year">Année: ${yearDisplay}</span>` : ''}
+                    ${entry.turn !== undefined ? `<span class="journal-entry-turn-number">Tour: ${entry.turn}</span>` : ''}
+                    <span class="journal-entry-date">${formattedDate}</span>
+                </div>
             </div>
         </div>
     `;

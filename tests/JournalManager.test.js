@@ -52,13 +52,13 @@ describe('JournalManager', () => {
 
     describe('addJournalEntry', () => {
         test('should add a journal entry with correct fields', async () => {
-            await journalManager.addJournalEntry(1, 'income', 1000, 'Taxes from citizens');
+            await journalManager.addJournalEntry(1, 'salary_tax', 1000, 'Taxes from citizens');
             
             const entries = await testDb.journal.toArray();
             expect(entries).toHaveLength(1);
             expect(entries[0]).toMatchObject({
                 turn: 1,
-                type: 'income',
+                type: 'salary_tax',
                 amount: 1000,
                 description: 'Taxes from citizens'
             });
@@ -183,7 +183,7 @@ describe('JournalManager', () => {
             await testDb.journal.add({
                 turn: 1,
                 date: oldDate.toISOString(),
-                type: 'income',
+                type: 'salary_tax',
                 amount: 1000,
                 description: 'Old entry'
             });
