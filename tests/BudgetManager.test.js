@@ -337,25 +337,25 @@ describe('BudgetManager', () => {
         test('ajoute une entrée au journal', async () => {
             // Note: initialize() crée automatiquement une entrée capital_funds au tour 0
             await budgetManager.initialize(200);
-            await budgetManager.addJournalEntry(1, 'salary_tax', 50, 'Impôts');
+            await budgetManager.addJournalEntry(1, 'citizen_tax', 50, 'Impôt Citoyen');
             
             const entries = await testDb.journal.toArray();
             
-            // 1 entrée capital_funds (créée automatiquement) + 1 entrée salary_tax = 2 entrées
+            // 1 entrée capital_funds (créée automatiquement) + 1 entrée citizen_tax = 2 entrées
             expect(entries).toHaveLength(2);
-            // Trouver l'entrée salary_tax (pas capital_funds)
-            const incomeEntry = entries.find(e => e.type === 'salary_tax');
+            // Trouver l'entrée citizen_tax (pas capital_funds)
+            const incomeEntry = entries.find(e => e.type === 'citizen_tax');
             expect(incomeEntry).toBeDefined();
             expect(incomeEntry.turn).toBe(1);
-            expect(incomeEntry.type).toBe('salary_tax');
+            expect(incomeEntry.type).toBe('citizen_tax');
             expect(incomeEntry.amount).toBe(50);
-            expect(incomeEntry.description).toBe('Impôts');
+            expect(incomeEntry.description).toBe('Impôt Citoyen');
         });
 
         test('peut ajouter plusieurs entrées', async () => {
             // Note: initialize() crée automatiquement une entrée capital_funds au tour 0
             await budgetManager.initialize(200);
-            await budgetManager.addJournalEntry(1, 'salary_tax', 50, 'Impôts');
+            await budgetManager.addJournalEntry(1, 'citizen_tax', 50, 'Impôt Citoyen');
             await budgetManager.addJournalEntry(1, 'maintenance', 30, 'Maintenance mensuelle');
             
             const entries = await testDb.journal.toArray();
@@ -375,9 +375,9 @@ describe('BudgetManager', () => {
             
             // Créer des entrées de journal pour différents tours
             await testDb.journal.bulkAdd([
-                { turn: 1, date: new Date('2024-01-01').toISOString(), type: 'salary_tax', amount: 50, description: 'Test 1' },
+                { turn: 1, date: new Date('2024-01-01').toISOString(), type: 'citizen_tax', amount: 50, description: 'Test 1' },
                 { turn: 2, date: new Date('2024-01-02').toISOString(), type: 'construction', amount: 30, description: 'Test 2' },
-                { turn: 3, date: new Date('2024-01-03').toISOString(), type: 'salary_tax', amount: 20, description: 'Test 3' }
+                { turn: 3, date: new Date('2024-01-03').toISOString(), type: 'citizen_tax', amount: 20, description: 'Test 3' }
             ]);
         });
 
@@ -396,7 +396,7 @@ describe('BudgetManager', () => {
             await testDb.journal.add({
                 turn: 0,
                 date: oldDate.toISOString(),
-                type: 'salary_tax',
+                type: 'citizen_tax',
                 amount: 10,
                 description: 'Ancienne entrée'
             });

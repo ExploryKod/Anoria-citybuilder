@@ -230,7 +230,7 @@ class BudgetManager {
         const budget = await this.getCurrentBudget();
         
         // Add journal entry
-        await this.addJournalEntry(budget.turn, 'salary_tax', amount, source);
+        await this.addJournalEntry(budget.turn, 'citizen_tax', amount, source);
         
         budget.funds += amount;
         budget.income += amount;
@@ -822,7 +822,7 @@ class BudgetManager {
         // Only add taxes if there is population
         if (taxBreakdown.total > 0 && taxBreakdown.population > 0) {
             // Add journal entry
-            await this.addJournalEntry(budget.turn, 'salary_tax', taxBreakdown.total, `Impôts habitants (${taxBreakdown.population} hab.) - Novembre`);
+            await this.addJournalEntry(budget.turn, 'citizen_tax', taxBreakdown.total, `Impôt Citoyen (${taxBreakdown.population} hab.) - Novembre`);
             
             // Add to daily income
             budget.funds += taxBreakdown.total;

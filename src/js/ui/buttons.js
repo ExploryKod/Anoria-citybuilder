@@ -3207,7 +3207,7 @@ function displayBudgetStates(states, container) {
                 <div class="statement-section">
                     <h4 class="statement-title">PRODUITS</h4>
                     <div class="statement-line">
-                        <span class="statement-label">Impôts habitants (${population} hab.)</span>
+                        <span class="statement-label">Impôt Citoyen (${population} hab.)</span>
                         <span class="statement-value positive">${(state.totalTaxes || 0).toLocaleString('fr-FR')}€</span>
                     </div>
                     ${state.taxBreakdown ? `
@@ -4867,7 +4867,7 @@ function createJournalEntryHTML(entry) {
     } else if (entry.type === 'balance') {
         // La balance peut être positive ou négative selon le montant
         isIncome = entry.amount >= 0;
-    } else if (entry.type === 'salary_tax' || entry.type === 'capital_funds') {
+    } else if (entry.type === 'citizen_tax' || entry.type === 'capital_funds') {
         isIncome = true;
     } else if (entry.type === 'salary' || entry.type === 'maintenance' || entry.type === 'construction' || entry.type === 'exceptional_expenses') {
         isIncome = false; // Dépenses
@@ -4879,7 +4879,7 @@ function createJournalEntryHTML(entry) {
     const typeClass = isIncome ? 'positive' : 'negative';
     
     const typeLabels = {
-        'salary_tax': 'Impôts',
+        'citizen_tax': 'Impôt Citoyen',
         'capital_funds': 'Capital de départ',
         'carry_forward': 'Report à nouveau',
         'construction': 'Construction',
