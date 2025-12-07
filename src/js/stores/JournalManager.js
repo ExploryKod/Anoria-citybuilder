@@ -427,8 +427,8 @@ class JournalManager {
         // Récupérer le solde de fin d'année depuis localStorage
         const yearEndBalance = this.getYearEndBalance(previousYear);
         
-        if (!yearEndBalance) {
-            console.warn(`[JournalManager] No year end balance found in localStorage for year ${previousYear}, calculating from journal...`);
+        if (!yearEndBalance || typeof yearEndBalance.amount !== 'number' || isNaN(yearEndBalance.amount)) {
+            console.warn(`[JournalManager] No valid year end balance found in localStorage for year ${previousYear}, calculating from journal...`);
             // Fallback: calculer depuis le journal si pas trouvé dans localStorage
             const yearlyData = await this.getYearlyFinancialSummary();
             const previousYearData = yearlyData.find(y => y.year === previousYear);
@@ -439,6 +439,13 @@ class JournalManager {
             }
             
             const previousYearNetFlow = previousYearData.netFlow;
+            
+            // Validation : vérifier que le netFlow est un nombre valide
+            if (typeof previousYearNetFlow !== 'number' || isNaN(previousYearNetFlow)) {
+                console.error(`[JournalManager] Invalid netFlow for year ${previousYear}: ${previousYearNetFlow}`);
+                return;
+            }
+            
             const nature = previousYearNetFlow >= 0 ? 'revenue' : 'deficit';
             const amount = Math.abs(previousYearNetFlow);
             

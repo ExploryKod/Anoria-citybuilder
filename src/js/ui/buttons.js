@@ -4537,20 +4537,46 @@ async function loadJournalEntries(period = 'all') {
             const stored = localStorage.getItem(LOCALSTORAGE_KEY);
             soldes = stored ? JSON.parse(stored) : [];
             
+            // NETTOYER : supprimer les entrées avec amount NaN ou undefined
+            soldes = soldes.filter(s => typeof s.amount === 'number' && !isNaN(s.amount));
+            
             // Pour chaque année affichée, récupérer le solde depuis les entrées balance
             for (const yearData of yearlyData) {
                 try {
-                    let balance;
+                    let nature;
+                    let amount;
+                    
                     // Pour l'année en cours, utiliser currentFunds (budget.funds actuel)
                     if (yearData.year === currentYear) {
-                        balance = currentFunds;
+                        nature = currentFunds >= 0 ? 'revenue' : 'deficit';
+                        amount = Math.abs(currentFunds);
                     } else {
-                        // Pour les années précédentes, utiliser la dernière entrée balance
-                        balance = await manager.getYearEndBalance(yearData.year);
+                        // Pour les années précédentes, utiliser localStorage (méthode synchrone)
+                        // Retourne {an, nature, amount, turn, date} ou null
+                        const yearEndBalance = manager.getYearEndBalance(yearData.year);
+                        
+                        if (yearEndBalance && typeof yearEndBalance.amount === 'number' && !isNaN(yearEndBalance.amount)) {
+                            nature = yearEndBalance.nature;
+                            amount = yearEndBalance.amount;
+                        } else {
+                            // Pas de solde valide trouvé, utiliser netFlow calculé comme fallback
+                            const netFlow = yearData.netFlow;
+                            if (typeof netFlow === 'number' && !isNaN(netFlow)) {
+                                nature = netFlow >= 0 ? 'revenue' : 'deficit';
+                                amount = Math.abs(netFlow);
+                                console.warn(`[Journal] No valid balance in localStorage for year ${yearData.year}, using netFlow: ${netFlow}`);
+                            } else {
+                                console.warn(`[Journal] No valid balance for year ${yearData.year}, skipping`);
+                                continue;
+                            }
+                        }
                     }
                     
-                    const nature = balance >= 0 ? 'revenue' : 'deficit';
-                    const amount = Math.abs(balance);
+                    // Validation finale : ne pas sauvegarder si amount est NaN
+                    if (typeof amount !== 'number' || isNaN(amount)) {
+                        console.error(`[Journal] Invalid amount for year ${yearData.year}: ${amount}`);
+                        continue;
+                    }
                     
                     // Vérifier si cette combinaison (an + turn) existe déjà
                     const existingIndex = soldes.findIndex(s => s.an === yearData.year && s.turn === currentTurn);
@@ -4618,21 +4644,22 @@ async function loadJournalEntries(period = 'all') {
                 displayBalance = currentFunds;
                 balanceClass = displayBalance >= 0 ? 'positive' : 'negative';
             } else {
-                // Années précédentes : utiliser le solde sauvegardé depuis balance entries
+                // Années précédentes : utiliser le solde sauvegardé depuis localStorage
                 const savedBalance = soldes.find(s => s.an === yearData.year);
-                if (savedBalance) {
+                if (savedBalance && typeof savedBalance.amount === 'number' && !isNaN(savedBalance.amount)) {
                     displayBalance = savedBalance.nature === 'revenue' ? savedBalance.amount : -savedBalance.amount;
                     balanceClass = savedBalance.nature === 'revenue' ? 'positive' : 'negative';
                 } else {
-                    // Fallback : essayer de récupérer depuis getYearEndBalance
-                    try {
-                        displayBalance = yearData.year === currentYear ? currentFunds : 0;
+                    // Fallback : utiliser netFlow calculé
+                    const netFlow = yearData.netFlow;
+                    if (typeof netFlow === 'number' && !isNaN(netFlow)) {
+                        displayBalance = netFlow;
                         balanceClass = displayBalance >= 0 ? 'positive' : 'negative';
-                        console.warn(`[Journal] No saved balance found for year ${yearData.year}, using fallback`);
-                    } catch (error) {
+                    } else {
+                        // Dernier recours : afficher 0 avec avertissement
                         displayBalance = 0;
                         balanceClass = 'error';
-                        console.error(`[Journal] Error getting balance for year ${yearData.year}:`, error);
+                        console.warn(`[Journal] No valid balance for year ${yearData.year}`);
                     }
                 }
             }
