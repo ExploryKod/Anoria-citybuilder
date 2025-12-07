@@ -178,6 +178,11 @@ class FinancesSectionManager {
             .filter(e => e.type === 'exceptional_expenses')
             .reduce((sum, e) => sum + e.amount, 0);
         
+        // Imports : regrouper tous les types import_* (import_wheat, import_carrot, etc.)
+        const imports = expenseEntries
+            .filter(e => e.type && e.type.startsWith('import_'))
+            .reduce((sum, e) => sum + e.amount, 0);
+        
         // Report à nouveau en dépense (si négatif)
         const carryForwardExpense = expenseEntries
             .filter(e => e.type === 'carry_forward')
@@ -193,6 +198,7 @@ class FinancesSectionManager {
             maintenance: Math.round(maintenance),
             salary: Math.round(salary),
             repairs: Math.round(repairs),
+            imports: Math.round(imports),
             carryForwardExpense: Math.round(carryForwardExpense),
             totalExpenses: Math.round(yearData.expenses.total),
             balance: Math.round(currentBalance)
@@ -210,6 +216,7 @@ class FinancesSectionManager {
             maintenance: 0,
             salary: 0,
             repairs: 0,
+            imports: 0,
             carryForwardExpense: 0,
             totalExpenses: 0,
             balance: 0
@@ -306,6 +313,7 @@ class FinancesSectionManager {
             { key: 'maintenance', thisYear: 'maintenanceThisYear', lastYear: 'maintenanceLastYear' },
             { key: 'salary', thisYear: 'salaryThisYear', lastYear: 'salaryLastYear' },
             { key: 'repairs', thisYear: 'repairsThisYear', lastYear: 'repairsLastYear' },
+            { key: 'imports', thisYear: 'importsThisYear', lastYear: 'importsLastYear' },
             { key: 'carryForwardExpense', thisYear: 'carryForwardExpenseThisYear', lastYear: 'carryForwardExpenseLastYear' },
             { key: 'totalExpenses', thisYear: 'totalExpensesThisYear', lastYear: 'totalExpensesLastYear' }
         ];

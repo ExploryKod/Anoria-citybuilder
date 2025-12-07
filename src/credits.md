@@ -20,7 +20,10 @@
 ## Icones 
 
 ### Icones issues de <a href="https://lucide.dev">lucide.dev</a> :
-- Les icones marquées comme "lucide" dans le html (DOM) et qui se retrouve dans les barres de navigations (icone de maison, de blé, de salade etc.):
+- Les icones marquées comme "lucide" dans le html (DOM) et qui se retrouve dans les barres de navigations, les panneaux d'administration (finance-board, commerce-board, etc.) :
+  - Icônes de navigation (maison, blé, salade, etc.)
+  - Icônes du finance-board (ship pour les importations, trending-down pour le solde, etc.)
+  - Icônes des panneaux d'administration (settings, play, circle-x, etc.)
 
 Auteurs : 
 - Karsa Mistmere : https://github.com/karsa-mistmere
