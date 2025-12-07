@@ -1,8 +1,31 @@
 class FinancesSectionManager {
     constructor() {
         this.journalManager = window.journalManager || window.app?.journalManager;
-        this.taxRate = 7;
+        this.citizenTaxAmount = this.loadCitizenTaxAmount();
         this.financialData = null;
+    }
+
+    loadCitizenTaxAmount() {
+        try {
+            const stored = localStorage.getItem('citizen_tax_amount');
+            if (stored !== null) {
+                const parsed = parseInt(stored, 10);
+                if (!isNaN(parsed) && parsed >= 0) {
+                    return parsed;
+                }
+            }
+        } catch (error) {
+            console.warn('[FinancesSection] Error loading citizen tax amount from localStorage:', error);
+        }
+        return 100; // Default: 100€ per citizen
+    }
+
+    saveCitizenTaxAmount(amount) {
+        try {
+            localStorage.setItem('citizen_tax_amount', amount.toString());
+        } catch (error) {
+            console.warn('[FinancesSection] Error saving citizen tax amount to localStorage:', error);
+        }
     }
 
     init() {
@@ -14,16 +37,37 @@ class FinancesSectionManager {
         const taxDecreaseBtn = document.getElementById('tax-decrease-btn');
         const taxIncreaseBtn = document.getElementById('tax-increase-btn');
 
+        const handleTaxDecrease = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.adjustCitizenTaxAmount(-10);
+        };
+
+        const handleTaxIncrease = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.adjustCitizenTaxAmount(10);
+        };
+
         if (taxDecreaseBtn) {
-            taxDecreaseBtn.addEventListener('click', () => this.adjustTaxRate(-1));
+            taxDecreaseBtn.removeEventListener('click', this._handleTaxDecrease);
+            this._handleTaxDecrease = handleTaxDecrease;
+            taxDecreaseBtn.addEventListener('click', this._handleTaxDecrease);
         }
 
         if (taxIncreaseBtn) {
-            taxIncreaseBtn.addEventListener('click', () => this.adjustTaxRate(1));
+            taxIncreaseBtn.removeEventListener('click', this._handleTaxIncrease);
+            this._handleTaxIncrease = handleTaxIncrease;
+            taxIncreaseBtn.addEventListener('click', this._handleTaxIncrease);
         }
+        
+        this.updateTaxDisplay();
     }
 
     async loadFinancialData() {
+        // Réattacher les event listeners au cas où le panneau vient d'être rendu
+        this.setupEventListeners();
+        
         // Vérifier que journalManager est disponible
         if (!this.journalManager) {
             // Essayer de récupérer depuis window
@@ -80,8 +124,6 @@ class FinancesSectionManager {
             thisYear,
             lastYear,
             debt: currentBalance < 0 ? Math.abs(currentBalance) : 0,
-            taxRate: this.taxRate,
-            taxEstimate: this.calculateTaxEstimate(this.taxRate),
             message: this.generateFinancialMessage(thisYear, lastYear)
         };
     }
@@ -175,10 +217,6 @@ class FinancesSectionManager {
     }
 
 
-    calculateTaxEstimate(taxRate) {
-        return Math.round(taxRate * 33.4);
-    }
-
     generateFinancialMessage(thisYear, lastYear) {
         if (thisYear.balance < 0) {
             return {
@@ -202,11 +240,12 @@ class FinancesSectionManager {
         };
     }
 
-    adjustTaxRate(delta) {
-        const newRate = Math.max(0, Math.min(20, this.taxRate + delta));
+    adjustCitizenTaxAmount(delta) {
+        const newAmount = Math.max(0, Math.min(1000, this.citizenTaxAmount + delta));
         
-        if (newRate !== this.taxRate) {
-            this.taxRate = newRate;
+        if (newAmount !== this.citizenTaxAmount) {
+            this.citizenTaxAmount = newAmount;
+            this.saveCitizenTaxAmount(newAmount);
             this.updateTaxDisplay();
         }
     }
@@ -216,12 +255,11 @@ class FinancesSectionManager {
         const taxEstimate = document.getElementById('tax-estimate');
 
         if (taxRateDisplay) {
-            taxRateDisplay.textContent = `${this.taxRate}%`;
+            taxRateDisplay.textContent = this.citizenTaxAmount;
         }
 
         if (taxEstimate) {
-            const estimate = this.calculateTaxEstimate(this.taxRate);
-            taxEstimate.textContent = `rapporte environ ${estimate} Denarii`;
+            taxEstimate.textContent = `${this.citizenTaxAmount}€ par citoyen`;
         }
     }
 
@@ -242,8 +280,6 @@ class FinancesSectionManager {
             thisYear: this.getEmptyYearData(0),
             lastYear: this.getEmptyYearData(0),
             debt: 0,
-            taxRate: 7,
-            taxEstimate: 234,
             message: {
                 text: 'La situation financière est stable.',
                 type: 'info'
