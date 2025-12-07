@@ -70,7 +70,7 @@ class BudgetManager {
         const hasCapitalFunds = existingEntries.some(entry => entry.type === 'capital_funds' && entry.turn === 0);
         
         if (!hasCapitalFunds) {
-            await this.addJournalEntry(0, 'capital_funds', startingFunds, `Capital de départ: ${startingFunds}€)`);
+            await this.addJournalEntry(0, 'capital_funds', startingFunds, `Capital de départ: ${startingFunds}€`);
         }
             
         return initialBudget;
@@ -230,7 +230,7 @@ class BudgetManager {
         const budget = await this.getCurrentBudget();
         
         // Add journal entry
-        await this.addJournalEntry(budget.turn, 'income', amount, source);
+        await this.addJournalEntry(budget.turn, 'salary_tax', amount, source);
         
         budget.funds += amount;
         budget.income += amount;
@@ -511,13 +511,41 @@ class BudgetManager {
         
         await this.db.budget.put(budget);
         
+        // Ajouter l'entrée de balance à chaque tour (même source que display-funds)
+        // Vérifier que journalManager et la méthode existent avant d'appeler
+        if (this.journalManager && typeof this.journalManager.addBalanceEntry === 'function') {
+            try {
+                await this.journalManager.addBalanceEntry(turn, budget.funds);
+            } catch (error) {
+                console.error('[BudgetManager] Error adding balance entry:', error);
+                // Ne pas bloquer l'exécution si l'ajout de balance échoue
+            }
+        } else {
+            console.warn('[BudgetManager] journalManager.addBalanceEntry not available');
+        }
+        
         // Détecter la fin d'année et le début d'une nouvelle année
         if (window.TimeManager) {
             const currentTimeInfo = window.TimeManager.getTimeInfo(turn);
             const previousTimeInfo = window.TimeManager.getTimeInfo(previousTurn);
             
-            // Vérifier si on vient de passer au tour 1 d'une nouvelle année (janvier)
-            // et que ce n'est pas l'année 0
+            // DÉTECTION 1: Fin d'année (dernier tour de décembre)
+            // Créer les entrées de cumul pour l'année qui se termine
+            if (previousTimeInfo.year >= 0 && 
+                previousTimeInfo.monthIndex === 11 && // Décembre (0-indexed: 0=janvier, 11=décembre)
+                currentTimeInfo.year > previousTimeInfo.year) {
+                
+                // On vient de passer au premier tour de la nouvelle année
+                // Le dernier tour de l'année précédente était previousTurn (décembre)
+                const endingYear = previousTimeInfo.year;
+                
+                // Créer les entrées de cumul pour l'année qui se termine
+                // Utiliser previousTurn (dernier turn de l'année) pour les cumuls
+                await this.journalManager.createCumulEntries(endingYear, previousTurn);
+            }
+            
+            // DÉTECTION 2: Début d'une nouvelle année (janvier)
+            // Créer le report à nouveau pour la nouvelle année
             if (currentTimeInfo.year > 0 && 
                 currentTimeInfo.monthIndex === 0 && // Janvier
                 previousTimeInfo.year < currentTimeInfo.year) {
@@ -743,7 +771,7 @@ class BudgetManager {
         // Only add taxes if there is population
         if (taxBreakdown.total > 0 && taxBreakdown.population > 0) {
             // Add journal entry
-            await this.addJournalEntry(budget.turn, 'income', taxBreakdown.total, `Impôts habitants (${taxBreakdown.population} hab.) - Novembre`);
+            await this.addJournalEntry(budget.turn, 'salary_tax', taxBreakdown.total, `Impôts habitants (${taxBreakdown.population} hab.) - Novembre`);
             
             // Add to daily income
             budget.funds += taxBreakdown.total;

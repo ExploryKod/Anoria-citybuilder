@@ -133,18 +133,30 @@ class JournalManager {
     /**
      * Add journal entry (écriture comptable)
      * @param {number} turn - Turn number
-     * @param {string} type - Type of entry ('income', 'expense', 'loan_interest', 'loan_repayment', etc.)
+     * @param {string} type - Type of entry ('salary_tax', 'expense', 'loan_interest', 'loan_repayment', etc.)
      * @param {number} amount - Amount
      * @param {string} description - Description
      */
     async addJournalEntry(turn, type, amount, description) {
         try {
+            // Obtenir le mois et l'année depuis TimeManager
+            let month = null;
+            let year = null;
+            
+            if (window.TimeManager) {
+                const timeInfo = window.TimeManager.getTimeInfo(turn);
+                month = timeInfo.monthIndex + 1; // monthIndex est 0-indexed (0=janvier), on veut 1-12
+                year = timeInfo.year;
+            }
+            
             await this.db.journal.add({
                 turn: turn,
                 date: new Date().toISOString(),
                 type: type,
                 amount: amount,
-                description: description
+                description: description,
+                month: month,
+                year: year
             });
         } catch (error) {
             console.error('Error adding journal entry:', error);
@@ -242,7 +254,7 @@ class JournalManager {
             stats.byType[entry.type]++;
 
             // Calculate totals
-            if (entry.type === 'income') {
+            if (entry.type === 'salary_tax') {
                 stats.totalIncome += entry.amount;
             } else {
                 stats.totalExpenses += entry.amount;
@@ -290,10 +302,20 @@ class JournalManager {
                 };
             }
             
+            // Exclure les cumuls et les balances du calcul mensuel (ils sont informatifs seulement)
+            if (entry.type === 'cumul_maintenance' || 
+                entry.type === 'cumul_construction' || 
+                entry.type === 'cumul_exceptional_expenses' ||
+                entry.type === 'cumul_loan_interest' ||
+                entry.type === 'cumul_loan_repayment' ||
+                entry.type === 'balance') {
+                return; // Passer à l'entrée suivante
+            }
+            
             // Classer comme revenu ou dépense
-            // Revenus: 'income', 'capital_funds', 'carry_forward' (si netFlow précédent positif)
+            // Revenus: 'salary_tax', 'capital_funds', 'carry_forward' (si netFlow précédent positif)
             // Dépenses: 'construction', 'maintenance', 'loan_interest', 'loan_repayment', 'exceptional_expenses', 'carry_forward' (si netFlow précédent négatif)
-            let isIncome = entry.type === 'income' || entry.type === 'capital_funds';
+            let isIncome = entry.type === 'salary_tax' || entry.type === 'capital_funds';
             
             if (entry.type === 'carry_forward') {
                 // Pour le report à nouveau, déterminer si c'est un revenu ou une dépense
@@ -317,7 +339,7 @@ class JournalManager {
                             const eTimeInfo = window.TimeManager.getTimeInfo(e.turn);
                             
                             if (eTimeInfo.year === previousYear) {
-                                const isEIncome = e.type === 'income' || e.type === 'capital_funds';
+                                const isEIncome = e.type === 'salary_tax' || e.type === 'capital_funds';
                                 if (isEIncome) {
                                     prevYearIncome += e.amount;
                                 } else {
@@ -459,6 +481,110 @@ class JournalManager {
     }
 
     /**
+     * Créer les entrées de cumul de tous les types de dépenses pour une année
+     * Ces entrées sont créées à la fin de l'année (décembre)
+     * @param {number} year - Année pour laquelle créer les cumuls
+     * @param {number} turn - Turn number (dernier turn de l'année)
+     * @returns {Promise<void>}
+     */
+    async createCumulEntries(year, turn) {
+        if (!window.TimeManager) {
+            console.warn('[JournalManager] TimeManager not available, cannot create cumul entries');
+            return;
+        }
+
+        // Récupérer toutes les entrées du journal pour cette année
+        const allEntries = await this.getJournalEntries();
+        const yearEntries = allEntries.filter(entry => {
+            const timeInfo = window.TimeManager.getTimeInfo(entry.turn);
+            return timeInfo.year === year;
+        });
+
+        // Calculer les cumuls pour tous les types de dépenses
+        const maintenanceCumul = yearEntries
+            .filter(e => e.type === 'maintenance')
+            .reduce((sum, e) => sum + e.amount, 0);
+
+        const constructionCumul = yearEntries
+            .filter(e => e.type === 'construction')
+            .reduce((sum, e) => sum + e.amount, 0);
+
+        const exceptionalExpensesCumul = yearEntries
+            .filter(e => e.type === 'exceptional_expenses')
+            .reduce((sum, e) => sum + e.amount, 0);
+        
+        const loanInterestCumul = yearEntries
+            .filter(e => e.type === 'loan_interest')
+            .reduce((sum, e) => sum + e.amount, 0);
+        
+        const loanRepaymentCumul = yearEntries
+            .filter(e => e.type === 'loan_repayment')
+            .reduce((sum, e) => sum + e.amount, 0);
+
+        // Vérifier si les entrées de cumul existent déjà pour ce turn
+        const existingEntries = await this.getJournalEntriesForTurn(turn);
+        const yearDisplay = year === 0 ? '0 JC' : `${year} ap JC`;
+        
+        const hasMaintenanceCumul = existingEntries.some(e => e.type === 'cumul_maintenance' && e.description?.includes(`Année ${yearDisplay}`));
+        const hasConstructionCumul = existingEntries.some(e => e.type === 'cumul_construction' && e.description?.includes(`Année ${yearDisplay}`));
+        const hasExceptionalExpensesCumul = existingEntries.some(e => e.type === 'cumul_exceptional_expenses' && e.description?.includes(`Année ${yearDisplay}`));
+        const hasLoanInterestCumul = existingEntries.some(e => e.type === 'cumul_loan_interest' && e.description?.includes(`Année ${yearDisplay}`));
+        const hasLoanRepaymentCumul = existingEntries.some(e => e.type === 'cumul_loan_repayment' && e.description?.includes(`Année ${yearDisplay}`));
+
+        // Créer les entrées de cumul si elles n'existent pas et si le cumul > 0
+        if (!hasMaintenanceCumul && maintenanceCumul > 0) {
+            await this.addJournalEntry(turn, 'cumul_maintenance', maintenanceCumul, `Cumul Maintenance - Année ${yearDisplay}`);
+            console.log(`[JournalManager] Created maintenance cumul entry for year ${year}: ${maintenanceCumul}€`);
+        }
+
+        if (!hasConstructionCumul && constructionCumul > 0) {
+            await this.addJournalEntry(turn, 'cumul_construction', constructionCumul, `Cumul Construction - Année ${yearDisplay}`);
+            console.log(`[JournalManager] Created construction cumul entry for year ${year}: ${constructionCumul}€`);
+        }
+
+        if (!hasExceptionalExpensesCumul && exceptionalExpensesCumul > 0) {
+            await this.addJournalEntry(turn, 'cumul_exceptional_expenses', exceptionalExpensesCumul, `Cumul Réparations - Année ${yearDisplay}`);
+            console.log(`[JournalManager] Created exceptional expenses cumul entry for year ${year}: ${exceptionalExpensesCumul}€`);
+        }
+
+        if (!hasLoanInterestCumul && loanInterestCumul > 0) {
+            await this.addJournalEntry(turn, 'cumul_loan_interest', loanInterestCumul, `Cumul Intérêts Prêt - Année ${yearDisplay}`);
+            console.log(`[JournalManager] Created loan interest cumul entry for year ${year}: ${loanInterestCumul}€`);
+        }
+
+        if (!hasLoanRepaymentCumul && loanRepaymentCumul > 0) {
+            await this.addJournalEntry(turn, 'cumul_loan_repayment', loanRepaymentCumul, `Cumul Remboursement Prêt - Année ${yearDisplay}`);
+            console.log(`[JournalManager] Created loan repayment cumul entry for year ${year}: ${loanRepaymentCumul}€`);
+        }
+    }
+
+    /**
+     * Ajouter une entrée de balance (solde) à chaque tour
+     * Le solde vient de budget.funds (même source que display-funds)
+     * @param {number} turn - Turn number
+     * @param {number} balance - Solde actuel (budget.funds)
+     * @returns {Promise<void>}
+     */
+    async addBalanceEntry(turn, balance) {
+        // Vérifier si une entrée de balance existe déjà pour ce turn
+        const existingEntries = await this.getJournalEntriesForTurn(turn);
+        const hasBalance = existingEntries.some(e => e.type === 'balance');
+        
+        if (!hasBalance) {
+            await this.addJournalEntry(turn, 'balance', balance, 'Solde');
+            console.log(`[JournalManager] Created balance entry for turn ${turn}: ${balance}€`);
+        } else {
+            // Mettre à jour l'entrée existante si le solde a changé
+            const existingBalance = existingEntries.find(e => e.type === 'balance');
+            if (existingBalance && existingBalance.amount !== balance) {
+                // Mettre à jour l'entrée existante
+                await this.db.journal.update(existingBalance.id, { amount: balance });
+                console.log(`[JournalManager] Updated balance entry for turn ${turn}: ${balance}€`);
+            }
+        }
+    }
+
+    /**
      * Calculate current balance (solde) from all journal entries
      * @returns {Promise<number>} Current balance (cumulative income - cumulative expenses)
      */
@@ -467,8 +593,18 @@ class JournalManager {
         let balance = 0;
         
         entries.forEach(entry => {
+            // Exclure les cumuls et les balances du calcul de balance (ils sont informatifs seulement)
+            if (entry.type === 'cumul_maintenance' || 
+                entry.type === 'cumul_construction' || 
+                entry.type === 'cumul_exceptional_expenses' ||
+                entry.type === 'cumul_loan_interest' ||
+                entry.type === 'cumul_loan_repayment' ||
+                entry.type === 'balance') {
+                return; // Passer à l'entrée suivante
+            }
+            
             // Utiliser la même logique que getMonthlyFinancialSummary() pour classer les entrées
-            let isIncome = entry.type === 'income' || entry.type === 'capital_funds';
+            let isIncome = entry.type === 'salary_tax' || entry.type === 'capital_funds';
             
             // Traiter les reports à nouveau de la même manière que dans getMonthlyFinancialSummary
             if (entry.type === 'carry_forward') {
@@ -498,7 +634,7 @@ class JournalManager {
                                 const eTimeInfo = window.TimeManager.getTimeInfo(e.turn);
                                 
                                 if (eTimeInfo.year === previousYear) {
-                                    const isEIncome = e.type === 'income' || e.type === 'capital_funds';
+                                    const isEIncome = e.type === 'salary_tax' || e.type === 'capital_funds';
                                     if (isEIncome) {
                                         prevYearIncome += e.amount;
                                     } else {
@@ -693,7 +829,7 @@ class JournalManager {
                 
                 const date = new Date(entry.date).toLocaleDateString('fr-FR');
                 const typeLabels = {
-                    'income': 'Revenu',
+                    'salary_tax': 'Impôts',
                     'capital_funds': 'Capital',
                     'construction': 'Construction',
                     'maintenance': 'Maintenance',
@@ -704,7 +840,7 @@ class JournalManager {
                 };
                 
                 const typeLabel = typeLabels[entry.type] || entry.type;
-                const amountText = entry.type === 'income' || entry.type === 'capital_funds' || 
+                const amountText = entry.type === 'salary_tax' || entry.type === 'capital_funds' || 
                                  (entry.type === 'carry_forward' && entry.description?.includes('(+)')) 
                                  ? `+${entry.amount}€` : `-${entry.amount}€`;
                 
