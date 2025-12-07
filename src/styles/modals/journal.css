@@ -258,6 +258,11 @@
     color: #004085;
 }
 
+.journal-entry-type[class*="import_"] {
+    background: #fff3cd;
+    color: #856404;
+}
+
 .journal-entry-type.loan_interest {
     background: #d1ecf1;
     color: #0c5460;

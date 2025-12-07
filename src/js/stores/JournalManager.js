@@ -143,8 +143,10 @@ class JournalManager {
             let month = null;
             let year = null;
             
-            if (window.TimeManager) {
-                const timeInfo = window.TimeManager.getTimeInfo(turn);
+            // Support both window (browser) and global (Node/Jest)
+            const timeManager = (typeof window !== 'undefined' ? window : global)?.TimeManager;
+            if (timeManager) {
+                const timeInfo = timeManager.getTimeInfo(turn);
                 month = timeInfo.monthIndex + 1; // monthIndex est 0-indexed (0=janvier), on veut 1-12
                 year = timeInfo.year;
             }
@@ -315,8 +317,13 @@ class JournalManager {
             
             // Classer comme revenu ou dépense
             // Revenus: 'citizen_tax', 'payroll_tax', 'capital_funds', 'carry_forward' (si netFlow précédent positif)
-            // Dépenses: 'construction', 'maintenance', 'salary', 'loan_interest', 'loan_repayment', 'exceptional_expenses', 'carry_forward' (si netFlow précédent négatif)
+            // Dépenses: 'construction', 'maintenance', 'salary', 'loan_interest', 'loan_repayment', 'exceptional_expenses', 'import_*', 'carry_forward' (si netFlow précédent négatif)
             let isIncome = entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds';
+            
+            // Les imports sont des dépenses
+            if (entry.type.startsWith('import_')) {
+                isIncome = false;
+            }
             
             if (entry.type === 'carry_forward') {
                 // Pour le report à nouveau, déterminer si c'est un revenu ou une dépense
@@ -340,7 +347,10 @@ class JournalManager {
                             const eTimeInfo = window.TimeManager.getTimeInfo(e.turn);
                             
                             if (eTimeInfo.year === previousYear) {
-                                const isEIncome = e.type === 'citizen_tax' || e.type === 'payroll_tax' || e.type === 'capital_funds';
+                                let isEIncome = e.type === 'citizen_tax' || e.type === 'payroll_tax' || e.type === 'capital_funds';
+                                if (e.type.startsWith('import_')) {
+                                    isEIncome = false;
+                                }
                                 if (isEIncome) {
                                     prevYearIncome += e.amount;
                                 } else {
@@ -625,6 +635,11 @@ class JournalManager {
             // Utiliser la même logique que getMonthlyFinancialSummary() pour classer les entrées
             let isIncome = entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds';
             
+            // Les imports sont des dépenses
+            if (entry.type.startsWith('import_')) {
+                isIncome = false;
+            }
+            
             // Traiter les reports à nouveau de la même manière que dans getMonthlyFinancialSummary
             if (entry.type === 'carry_forward') {
                 // Pour le report à nouveau, déterminer si c'est un revenu ou une dépense
@@ -653,7 +668,10 @@ class JournalManager {
                                 const eTimeInfo = window.TimeManager.getTimeInfo(e.turn);
                                 
                                 if (eTimeInfo.year === previousYear) {
-                                    const isEIncome = e.type === 'citizen_tax' || e.type === 'payroll_tax' || e.type === 'capital_funds';
+                                    let isEIncome = e.type === 'citizen_tax' || e.type === 'payroll_tax' || e.type === 'capital_funds';
+                                    if (e.type.startsWith('import_')) {
+                                        isEIncome = false;
+                                    }
                                     if (isEIncome) {
                                         prevYearIncome += e.amount;
                                     } else {
@@ -865,6 +883,10 @@ class JournalManager {
                     'maintenance': 'Maintenance',
                     'salary': 'Salaires',
                     'exceptional_expenses': 'Réparation',
+                    'import_wheat': 'Import Blé',
+                    'import_carrot': 'Import Carotte',
+                    'import_cabbage': 'Import Chou',
+                    'import_wood': 'Import Bois',
                     'loan_interest': 'Intérêts',
                     'loan_repayment': 'Remboursement',
                     'carry_forward': 'Report'

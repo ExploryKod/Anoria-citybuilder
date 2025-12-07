@@ -47,11 +47,13 @@ let services = [];
         const { RandomEventsService } = await import('./services/RandomEventsService.js');
         const { EmploymentPriorityService } = await import('./services/EmploymentPriorityService.js');
         const { EmploymentDistributionService } = await import('./services/EmploymentDistributionService.js');
+        const { CommerceService } = await import('./services/CommerceService.js');
         
         services.push(new RoadConnectivityService());
         services.push(new FoodDistributionService()); // Farm > Market > House logic using IndexedDB
         services.push(new WindmillService()); // Windmill collects from all farms in October
         services.push(new RandomEventsService()); // Événements aléatoires (ouragan, inondation)
+        services.push(new CommerceService()); // Gestion des imports/exports
         
         // Employment Priority Service - manages sector priorities in localStorage
         // Priority is stored in localStorage (not IndexedDB) for instant updates
