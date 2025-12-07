@@ -4859,6 +4859,7 @@ function createJournalEntryHTML(entry) {
     
     if (entry.type === 'cumul_maintenance' || 
         entry.type === 'cumul_construction' || 
+        entry.type === 'cumul_salary' ||
         entry.type === 'cumul_exceptional_expenses' ||
         entry.type === 'cumul_loan_interest' ||
         entry.type === 'cumul_loan_repayment') {
@@ -4868,6 +4869,8 @@ function createJournalEntryHTML(entry) {
         isIncome = entry.amount >= 0;
     } else if (entry.type === 'salary_tax' || entry.type === 'capital_funds') {
         isIncome = true;
+    } else if (entry.type === 'salary' || entry.type === 'maintenance' || entry.type === 'construction' || entry.type === 'exceptional_expenses') {
+        isIncome = false; // Dépenses
     } else if (entry.type === 'carry_forward') {
         // Pour carry_forward, utiliser la propriété isCarryForwardIncome si disponible
         isIncome = entry.isCarryForwardIncome !== undefined ? entry.isCarryForwardIncome : true;
@@ -4882,10 +4885,12 @@ function createJournalEntryHTML(entry) {
         'construction': 'Construction',
         'exceptional_expenses': 'Réparation',
         'maintenance': 'Maintenance mensuelle',
+        'salary': 'Salaires',
         'loan_interest': 'Intérêts prêt',
         'loan_repayment': 'Remboursement prêt',
         'cumul_maintenance': 'Cumul Maintenance',
         'cumul_construction': 'Cumul Construction',
+        'cumul_salary': 'Cumul Salaires',
         'cumul_exceptional_expenses': 'Cumul Réparations',
         'cumul_loan_interest': 'Cumul Intérêts Prêt',
         'cumul_loan_repayment': 'Cumul Remboursement Prêt',

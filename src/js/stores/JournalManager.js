@@ -305,6 +305,7 @@ class JournalManager {
             // Exclure les cumuls et les balances du calcul mensuel (ils sont informatifs seulement)
             if (entry.type === 'cumul_maintenance' || 
                 entry.type === 'cumul_construction' || 
+                entry.type === 'cumul_salary' ||
                 entry.type === 'cumul_exceptional_expenses' ||
                 entry.type === 'cumul_loan_interest' ||
                 entry.type === 'cumul_loan_repayment' ||
@@ -314,7 +315,7 @@ class JournalManager {
             
             // Classer comme revenu ou dépense
             // Revenus: 'salary_tax', 'capital_funds', 'carry_forward' (si netFlow précédent positif)
-            // Dépenses: 'construction', 'maintenance', 'loan_interest', 'loan_repayment', 'exceptional_expenses', 'carry_forward' (si netFlow précédent négatif)
+            // Dépenses: 'construction', 'maintenance', 'salary', 'loan_interest', 'loan_repayment', 'exceptional_expenses', 'carry_forward' (si netFlow précédent négatif)
             let isIncome = entry.type === 'salary_tax' || entry.type === 'capital_funds';
             
             if (entry.type === 'carry_forward') {
@@ -516,6 +517,10 @@ class JournalManager {
             .filter(e => e.type === 'construction')
             .reduce((sum, e) => sum + e.amount, 0);
 
+        const salaryCumul = yearEntries
+            .filter(e => e.type === 'salary')
+            .reduce((sum, e) => sum + e.amount, 0);
+
         const exceptionalExpensesCumul = yearEntries
             .filter(e => e.type === 'exceptional_expenses')
             .reduce((sum, e) => sum + e.amount, 0);
@@ -534,6 +539,7 @@ class JournalManager {
         
         const hasMaintenanceCumul = existingEntries.some(e => e.type === 'cumul_maintenance' && e.description?.includes(`Année ${yearDisplay}`));
         const hasConstructionCumul = existingEntries.some(e => e.type === 'cumul_construction' && e.description?.includes(`Année ${yearDisplay}`));
+        const hasSalaryCumul = existingEntries.some(e => e.type === 'cumul_salary' && e.description?.includes(`Année ${yearDisplay}`));
         const hasExceptionalExpensesCumul = existingEntries.some(e => e.type === 'cumul_exceptional_expenses' && e.description?.includes(`Année ${yearDisplay}`));
         const hasLoanInterestCumul = existingEntries.some(e => e.type === 'cumul_loan_interest' && e.description?.includes(`Année ${yearDisplay}`));
         const hasLoanRepaymentCumul = existingEntries.some(e => e.type === 'cumul_loan_repayment' && e.description?.includes(`Année ${yearDisplay}`));
@@ -547,6 +553,11 @@ class JournalManager {
         if (!hasConstructionCumul && constructionCumul > 0) {
             await this.addJournalEntry(turn, 'cumul_construction', constructionCumul, `Cumul Construction - Année ${yearDisplay}`);
             console.log(`[JournalManager] Created construction cumul entry for year ${year}: ${constructionCumul}€`);
+        }
+
+        if (!hasSalaryCumul && salaryCumul > 0) {
+            await this.addJournalEntry(turn, 'cumul_salary', salaryCumul, `Cumul Salaires - Année ${yearDisplay}`);
+            console.log(`[JournalManager] Created salary cumul entry for year ${year}: ${salaryCumul}€`);
         }
 
         if (!hasExceptionalExpensesCumul && exceptionalExpensesCumul > 0) {
@@ -603,6 +614,7 @@ class JournalManager {
             // Exclure les cumuls et les balances du calcul de balance (ils sont informatifs seulement)
             if (entry.type === 'cumul_maintenance' || 
                 entry.type === 'cumul_construction' || 
+                entry.type === 'cumul_salary' ||
                 entry.type === 'cumul_exceptional_expenses' ||
                 entry.type === 'cumul_loan_interest' ||
                 entry.type === 'cumul_loan_repayment' ||
@@ -828,6 +840,7 @@ class JournalManager {
             const entriesToExport = entries.filter(e => 
                 e.type !== 'cumul_maintenance' && 
                 e.type !== 'cumul_construction' && 
+                e.type !== 'cumul_salary' &&
                 e.type !== 'cumul_exceptional_expenses' &&
                 e.type !== 'cumul_loan_interest' &&
                 e.type !== 'cumul_loan_repayment' &&
@@ -849,6 +862,7 @@ class JournalManager {
                     'capital_funds': 'Capital',
                     'construction': 'Construction',
                     'maintenance': 'Maintenance',
+                    'salary': 'Salaires',
                     'exceptional_expenses': 'Réparation',
                     'loan_interest': 'Intérêts',
                     'loan_repayment': 'Remboursement',
