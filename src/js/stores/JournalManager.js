@@ -281,22 +281,48 @@ class JournalManager {
             return;
         }
         
-        // Utiliser getYearlyFinancialSummary() pour obtenir le netFlow de l'année précédente
-        // Cette méthode calcule correctement le solde en incluant le report à nouveau de l'année précédente
-        const yearlyData = await this.getYearlyFinancialSummary();
-        const previousYearData = yearlyData.find(y => y.year === previousYear);
+        // Calculer le solde de l'année précédente en EXCLUANT le report à nouveau de l'année courante
+        // (qui n'existe pas encore, mais on veut s'assurer qu'on utilise exactement le même calcul)
+        // On recalcule directement depuis les entrées pour être sûr d'avoir la valeur exacte
+        const allEntries = await this.getJournalEntries();
         
-        if (!previousYearData) {
-            console.warn(`[JournalManager] No data found for previous year ${previousYear}`);
-            return;
-        }
+        let prevYearIncome = 0;
+        let prevYearExpenses = 0;
         
-        // Le netFlow de l'année précédente est le solde à reporter
-        // Il inclut déjà le report à nouveau de l'année précédente dans son calcul
-        const previousYearNetFlow = previousYearData.netFlow;
+        allEntries.forEach(entry => {
+            const entryTimeInfo = window.TimeManager.getTimeInfo(entry.turn);
+            if (entryTimeInfo.year !== previousYear) {
+                return; // Ignorer les entrées d'autres années
+            }
+            
+            // Classer l'entrée comme revenu ou dépense (même logique que getMonthlyFinancialSummary)
+            let isIncome = entry.type === 'income' || entry.type === 'capital_funds';
+            
+            if (entry.type === 'carry_forward') {
+                // Pour le report à nouveau, déterminer si c'est un revenu ou une dépense
+                const signMatch = entry.description?.match(/\(([+-])\)/);
+                if (signMatch) {
+                    isIncome = signMatch[1] === '+';
+                } else {
+                    // Fallback: si pas de signe, traiter comme revenu par défaut
+                    isIncome = true;
+                }
+            }
+            
+            if (isIncome) {
+                prevYearIncome += entry.amount;
+            } else {
+                prevYearExpenses += entry.amount;
+            }
+        });
+        
+        // Le solde de l'année précédente = revenus - dépenses
+        // C'est exactement le même calcul que celui utilisé dans getYearlyFinancialSummary()
+        const previousYearNetFlow = prevYearIncome - prevYearExpenses;
         
         // Le montant est toujours positif dans IndexedDB
         // Le signe du netFlow détermine si c'est revenu (positif) ou dépense (négatif)
+        // Utiliser exactement la valeur absolue du netFlow sans arrondi supplémentaire
         const amount = Math.abs(previousYearNetFlow);
         const yearDisplay = previousYear === 0 ? '0 JC' : `${previousYear} ap JC`;
         // Stocker le signe dans la description pour pouvoir le récupérer lors du calcul
@@ -310,8 +336,9 @@ class JournalManager {
             amount,
             previousYearNetFlow,
             previousYear,
-            previousYearIncome: previousYearData.income.total,
-            previousYearExpenses: previousYearData.expenses.total,
+            previousYearIncome: prevYearIncome,
+            previousYearExpenses: prevYearExpenses,
+            calculatedNetFlow: previousYearNetFlow,
             isIncome: isPositive
         });
     }
