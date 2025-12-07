@@ -107,7 +107,7 @@ class FinancesSectionManager {
             .reduce((sum, e) => sum + e.amount, 0);
         
         const incomeTax = incomeEntries
-            .filter(e => e.type === 'salary_tax')
+            .filter(e => e.type === 'citizen_tax')
             .reduce((sum, e) => sum + e.amount, 0);
         
         // Report à nouveau en revenu (si positif)

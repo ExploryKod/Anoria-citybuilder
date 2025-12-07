@@ -133,7 +133,7 @@ class JournalManager {
     /**
      * Add journal entry (écriture comptable)
      * @param {number} turn - Turn number
-     * @param {string} type - Type of entry ('salary_tax', 'expense', 'loan_interest', 'loan_repayment', etc.)
+     * @param {string} type - Type of entry ('citizen_tax', 'expense', 'loan_interest', 'loan_repayment', etc.)
      * @param {number} amount - Amount
      * @param {string} description - Description
      */
@@ -254,7 +254,7 @@ class JournalManager {
             stats.byType[entry.type]++;
 
             // Calculate totals
-            if (entry.type === 'salary_tax') {
+            if (entry.type === 'citizen_tax') {
                 stats.totalIncome += entry.amount;
             } else {
                 stats.totalExpenses += entry.amount;
@@ -314,9 +314,9 @@ class JournalManager {
             }
             
             // Classer comme revenu ou dépense
-            // Revenus: 'salary_tax', 'capital_funds', 'carry_forward' (si netFlow précédent positif)
+            // Revenus: 'citizen_tax', 'capital_funds', 'carry_forward' (si netFlow précédent positif)
             // Dépenses: 'construction', 'maintenance', 'salary', 'loan_interest', 'loan_repayment', 'exceptional_expenses', 'carry_forward' (si netFlow précédent négatif)
-            let isIncome = entry.type === 'salary_tax' || entry.type === 'capital_funds';
+            let isIncome = entry.type === 'citizen_tax' || entry.type === 'capital_funds';
             
             if (entry.type === 'carry_forward') {
                 // Pour le report à nouveau, déterminer si c'est un revenu ou une dépense
@@ -340,7 +340,7 @@ class JournalManager {
                             const eTimeInfo = window.TimeManager.getTimeInfo(e.turn);
                             
                             if (eTimeInfo.year === previousYear) {
-                                const isEIncome = e.type === 'salary_tax' || e.type === 'capital_funds';
+                                const isEIncome = e.type === 'citizen_tax' || e.type === 'capital_funds';
                                 if (isEIncome) {
                                     prevYearIncome += e.amount;
                                 } else {
@@ -623,7 +623,7 @@ class JournalManager {
             }
             
             // Utiliser la même logique que getMonthlyFinancialSummary() pour classer les entrées
-            let isIncome = entry.type === 'salary_tax' || entry.type === 'capital_funds';
+            let isIncome = entry.type === 'citizen_tax' || entry.type === 'capital_funds';
             
             // Traiter les reports à nouveau de la même manière que dans getMonthlyFinancialSummary
             if (entry.type === 'carry_forward') {
@@ -653,7 +653,7 @@ class JournalManager {
                                 const eTimeInfo = window.TimeManager.getTimeInfo(e.turn);
                                 
                                 if (eTimeInfo.year === previousYear) {
-                                    const isEIncome = e.type === 'salary_tax' || e.type === 'capital_funds';
+                                    const isEIncome = e.type === 'citizen_tax' || e.type === 'capital_funds';
                                     if (isEIncome) {
                                         prevYearIncome += e.amount;
                                     } else {
@@ -858,7 +858,7 @@ class JournalManager {
                 
                 const date = new Date(entry.date).toLocaleDateString('fr-FR');
                 const typeLabels = {
-                    'salary_tax': 'Impôts',
+                    'citizen_tax': 'Impôt Citoyen',
                     'capital_funds': 'Capital',
                     'construction': 'Construction',
                     'maintenance': 'Maintenance',
@@ -870,7 +870,7 @@ class JournalManager {
                 };
                 
                 const typeLabel = typeLabels[entry.type] || entry.type;
-                const amountText = entry.type === 'salary_tax' || entry.type === 'capital_funds' || 
+                const amountText = entry.type === 'citizen_tax' || entry.type === 'capital_funds' || 
                                  (entry.type === 'carry_forward' && entry.description?.includes('(+)')) 
                                  ? `+${entry.amount}€` : `-${entry.amount}€`;
                 
