@@ -4465,6 +4465,22 @@ function initJournalPopup() {
             loadJournalEntries(btn.dataset.period);
         });
     });
+    
+    // Export buttons
+    const exportJsonBtn = document.getElementById('journal-export-json-btn');
+    const exportPdfBtn = document.getElementById('journal-export-pdf-btn');
+    
+    if (exportJsonBtn) {
+        exportJsonBtn.addEventListener('click', async () => {
+            await exportJournalToJSON();
+        });
+    }
+    
+    if (exportPdfBtn) {
+        exportPdfBtn.addEventListener('click', async () => {
+            await exportJournalToPDF();
+        });
+    }
 }
 
 async function loadJournalEntries(period = 'all') {
@@ -4487,6 +4503,72 @@ async function loadJournalEntries(period = 'all') {
         
         // Récupérer les données groupées par année et mois
         const yearlyData = await manager.getYearlyFinancialSummary();
+        
+        // Obtenir le tour actuel et la date pour la sauvegarde
+        // Le turn actuel vient du budget, pas du journal (car le journal peut avoir plusieurs tours)
+        let currentTurn = 0;
+        if (window.budgetManager) {
+            const budget = await window.budgetManager.getCurrentBudget();
+            currentTurn = budget.turn || 0;
+        } else {
+            // Fallback: utiliser le turn le plus récent du journal
+            const allEntries = await manager.getJournalEntries();
+            if (allEntries.length > 0) {
+                // Trier par turn décroissant pour obtenir le plus récent
+                const sortedEntries = [...allEntries].sort((a, b) => b.turn - a.turn);
+                currentTurn = sortedEntries[0].turn;
+            }
+        }
+        const currentDate = new Date().toISOString();
+        
+        // Sauvegarder dans localStorage EXACTEMENT au moment de l'affichage
+        // Utiliser la même valeur que celle affichée dans le HTML (yearData.netFlow)
+        const LOCALSTORAGE_KEY = 'journal_year_end_balances';
+        try {
+            const stored = localStorage.getItem(LOCALSTORAGE_KEY);
+            let soldes = stored ? JSON.parse(stored) : [];
+            
+            // Pour chaque année affichée, sauvegarder le solde avec turn et date
+            yearlyData.forEach(yearData => {
+                const netFlow = yearData.netFlow; // EXACTEMENT la même valeur que celle affichée ligne 4538
+                const nature = netFlow >= 0 ? 'revenue' : 'deficit';
+                const amount = Math.abs(netFlow);
+                
+                // Vérifier si cette combinaison (an + turn) existe déjà
+                const existingIndex = soldes.findIndex(s => s.an === yearData.year && s.turn === currentTurn);
+                
+                if (existingIndex >= 0) {
+                    // Mettre à jour l'entrée existante
+                    soldes[existingIndex] = {
+                        an: yearData.year,
+                        nature: nature,
+                        amount: amount,
+                        turn: currentTurn,
+                        date: currentDate
+                    };
+                } else {
+                    // Ajouter une nouvelle entrée (garder tout l'historique)
+                    soldes.push({
+                        an: yearData.year,
+                        nature: nature,
+                        amount: amount,
+                        turn: currentTurn,
+                        date: currentDate
+                    });
+                }
+            });
+            
+            // Trier par année puis par turn (décroissant)
+            soldes.sort((a, b) => {
+                if (a.an !== b.an) return b.an - a.an;
+                return b.turn - a.turn;
+            });
+            
+            localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(soldes));
+            console.log('[Journal] Saved balances to localStorage:', soldes);
+        } catch (error) {
+            console.error('[Journal] Error saving balances to localStorage:', error);
+        }
         
         if (yearlyData.length === 0) {
             journalList.innerHTML = `
@@ -4580,6 +4662,99 @@ async function loadJournalEntries(period = 'all') {
                 <p>Erreur lors du chargement du journal: ${error.message}</p>
             </div>
         `;
+    }
+}
+
+/**
+ * Export journal to JSON and download
+ */
+async function exportJournalToJSON() {
+    try {
+        const manager = window.journalManager || window.app?.journalManager || window.budgetManager;
+        if (!manager) {
+            throw new Error('JournalManager not available');
+        }
+        
+        const jsonString = await manager.exportToJSON();
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `journal-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        console.log('[Journal] Exported to JSON successfully');
+    } catch (error) {
+        console.error('[Journal] Error exporting to JSON:', error);
+        alert('Erreur lors de l\'export JSON: ' + error.message);
+    }
+}
+
+/**
+ * Export journal to PDF and download
+ */
+async function exportJournalToPDF() {
+    try {
+        const manager = window.journalManager || window.app?.journalManager || window.budgetManager;
+        if (!manager) {
+            throw new Error('JournalManager not available');
+        }
+        
+        // Show loading indicator
+        const exportPdfBtn = document.getElementById('journal-export-pdf-btn');
+        if (exportPdfBtn) {
+            exportPdfBtn.disabled = true;
+            exportPdfBtn.innerHTML = '<span>Génération...</span>';
+        }
+        
+        const pdfBlob = await manager.exportToPDF();
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `journal-${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        // Restore button
+        if (exportPdfBtn) {
+            exportPdfBtn.disabled = false;
+            exportPdfBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text">
+                    <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>
+                    <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
+                    <path d="M10 9H8"/>
+                    <path d="M16 13H8"/>
+                    <path d="M16 17H8"/>
+                </svg>
+                PDF
+            `;
+        }
+        
+        console.log('[Journal] Exported to PDF successfully');
+    } catch (error) {
+        console.error('[Journal] Error exporting to PDF:', error);
+        alert('Erreur lors de l\'export PDF: ' + error.message);
+        
+        // Restore button on error
+        const exportPdfBtn = document.getElementById('journal-export-pdf-btn');
+        if (exportPdfBtn) {
+            exportPdfBtn.disabled = false;
+            exportPdfBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text">
+                    <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>
+                    <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
+                    <path d="M10 9H8"/>
+                    <path d="M16 13H8"/>
+                    <path d="M16 17H8"/>
+                </svg>
+                PDF
+            `;
+        }
     }
 }
 

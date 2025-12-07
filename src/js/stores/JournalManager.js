@@ -91,8 +91,9 @@ class JournalManager {
 
     /**
      * Récupérer le solde de fin d'année depuis localStorage
+     * Retourne le dernier solde (le plus récent turn) pour une année donnée
      * @param {number} year - Année
-     * @returns {Object|null} {an, nature, amount} ou null si non trouvé
+     * @returns {Object|null} {an, nature, amount, turn, date} ou null si non trouvé
      */
     getYearEndBalance(year) {
         try {
@@ -100,9 +101,13 @@ class JournalManager {
             if (!stored) return null;
             
             const soldes = JSON.parse(stored);
-            const solde = soldes.find(s => s.an === year);
+            // Filtrer par année et prendre le plus récent (turn le plus élevé)
+            const yearSoldes = soldes.filter(s => s.an === year);
+            if (yearSoldes.length === 0) return null;
             
-            return solde || null;
+            // Trier par turn décroissant et prendre le premier (le plus récent)
+            yearSoldes.sort((a, b) => (b.turn || 0) - (a.turn || 0));
+            return yearSoldes[0];
         } catch (error) {
             console.error('[JournalManager] Error getting year end balance:', error);
             return null;
@@ -562,6 +567,191 @@ class JournalManager {
         
         // Trier par année décroissante pour l'affichage
         return Object.values(grouped).sort((a, b) => b.year - a.year);
+    }
+
+    /**
+     * Export journal to JSON format
+     * @returns {Promise<string>} JSON string of all journal data
+     */
+    async exportToJSON() {
+        try {
+            const entries = await this.getJournalEntries();
+            const yearlyData = await this.getYearlyFinancialSummary();
+            const yearEndBalances = this.getAllYearEndBalances();
+            
+            const exportData = {
+                exportDate: new Date().toISOString(),
+                entries: entries.map(entry => ({
+                    id: entry.id,
+                    turn: entry.turn,
+                    date: entry.date,
+                    type: entry.type,
+                    amount: entry.amount,
+                    description: entry.description
+                })),
+                yearlySummary: yearlyData.map(year => ({
+                    year: year.year,
+                    income: year.income.total,
+                    expenses: year.expenses.total,
+                    netFlow: year.netFlow,
+                    monthCount: year.monthCount
+                })),
+                yearEndBalances: yearEndBalances
+            };
+            
+            return JSON.stringify(exportData, null, 2);
+        } catch (error) {
+            console.error('[JournalManager] Error exporting to JSON:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Export journal to PDF format
+     * Uses jsPDF library (loaded from CDN)
+     * @returns {Promise<Blob>} PDF blob
+     */
+    async exportToPDF() {
+        try {
+            // Check if jsPDF is available
+            if (typeof window.jsPDF === 'undefined' && !(window.jspdf && window.jspdf.jsPDF)) {
+                // Load jsPDF from CDN
+                await this.loadJSPDF();
+            }
+            
+            // Get jsPDF constructor (can be window.jsPDF or window.jspdf.jsPDF)
+            const jsPDF = window.jsPDF || (window.jspdf && window.jspdf.jsPDF);
+            if (!jsPDF) {
+                throw new Error('jsPDF not available after loading');
+            }
+            
+            const doc = new jsPDF();
+            
+            const yearlyData = await this.getYearlyFinancialSummary();
+            const entries = await this.getJournalEntries();
+            
+            // Title
+            doc.setFontSize(18);
+            doc.text('Journal des Écritures Comptables', 14, 20);
+            
+            // Export date
+            doc.setFontSize(10);
+            doc.text(`Exporté le: ${new Date().toLocaleString('fr-FR')}`, 14, 30);
+            
+            let yPosition = 40;
+            const pageHeight = doc.internal.pageSize.height;
+            const margin = 14;
+            const lineHeight = 7;
+            
+            // Yearly summaries
+            doc.setFontSize(14);
+            doc.text('Résumé par Année', margin, yPosition);
+            yPosition += 10;
+            
+            doc.setFontSize(10);
+            yearlyData.forEach(yearData => {
+                // Check if we need a new page
+                if (yPosition > pageHeight - 30) {
+                    doc.addPage();
+                    yPosition = margin;
+                }
+                
+                const yearDisplay = yearData.year === 0 ? '0 JC' : `${yearData.year} ap JC`;
+                doc.setFont(undefined, 'bold');
+                doc.text(`Année ${yearDisplay}`, margin, yPosition);
+                yPosition += lineHeight;
+                
+                doc.setFont(undefined, 'normal');
+                doc.text(`Revenus: ${yearData.income.total}€`, margin + 5, yPosition);
+                yPosition += lineHeight;
+                doc.text(`Dépenses: ${yearData.expenses.total}€`, margin + 5, yPosition);
+                yPosition += lineHeight;
+                
+                const netFlowColor = yearData.netFlow >= 0 ? [0, 128, 0] : [255, 0, 0];
+                doc.setTextColor(...netFlowColor);
+                doc.text(`Solde: ${yearData.netFlow >= 0 ? '+' : ''}${yearData.netFlow}€`, margin + 5, yPosition);
+                doc.setTextColor(0, 0, 0);
+                yPosition += lineHeight + 3;
+            });
+            
+            // Detailed entries (first 100 entries to avoid PDF size issues)
+            yPosition += 5;
+            doc.setFontSize(14);
+            doc.text('Détail des Écritures', margin, yPosition);
+            yPosition += 10;
+            
+            doc.setFontSize(8);
+            const maxEntries = Math.min(entries.length, 100);
+            for (let i = 0; i < maxEntries; i++) {
+                const entry = entries[i];
+                
+                // Check if we need a new page
+                if (yPosition > pageHeight - 20) {
+                    doc.addPage();
+                    yPosition = margin;
+                }
+                
+                const date = new Date(entry.date).toLocaleDateString('fr-FR');
+                const typeLabels = {
+                    'income': 'Revenu',
+                    'capital_funds': 'Capital',
+                    'construction': 'Construction',
+                    'maintenance': 'Maintenance',
+                    'exceptional_expenses': 'Réparation',
+                    'loan_interest': 'Intérêts',
+                    'loan_repayment': 'Remboursement',
+                    'carry_forward': 'Report'
+                };
+                
+                const typeLabel = typeLabels[entry.type] || entry.type;
+                const amountText = entry.type === 'income' || entry.type === 'capital_funds' || 
+                                 (entry.type === 'carry_forward' && entry.description?.includes('(+)')) 
+                                 ? `+${entry.amount}€` : `-${entry.amount}€`;
+                
+                doc.text(`${date} - ${typeLabel}: ${amountText}`, margin, yPosition);
+                yPosition += lineHeight;
+                doc.text(`  ${entry.description}`, margin + 5, yPosition);
+                yPosition += lineHeight + 2;
+            }
+            
+            if (entries.length > maxEntries) {
+                doc.text(`... et ${entries.length - maxEntries} autres entrées`, margin, yPosition);
+            }
+            
+            // Generate blob
+            const pdfBlob = doc.output('blob');
+            return pdfBlob;
+        } catch (error) {
+            console.error('[JournalManager] Error exporting to PDF:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Load jsPDF library from CDN
+     * @returns {Promise<void>}
+     */
+    async loadJSPDF() {
+        return new Promise((resolve, reject) => {
+            // Check if jsPDF is already loaded (different possible global names)
+            if (typeof window.jsPDF !== 'undefined' || (window.jspdf && window.jspdf.jsPDF)) {
+                resolve();
+                return;
+            }
+            
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+            script.onload = () => {
+                // jsPDF can be available as window.jsPDF or window.jspdf.jsPDF
+                if (typeof window.jsPDF !== 'undefined' || (window.jspdf && window.jspdf.jsPDF)) {
+                    resolve();
+                } else {
+                    reject(new Error('jsPDF failed to load'));
+                }
+            };
+            script.onerror = () => reject(new Error('Failed to load jsPDF from CDN'));
+            document.head.appendChild(script);
+        });
     }
 }
 

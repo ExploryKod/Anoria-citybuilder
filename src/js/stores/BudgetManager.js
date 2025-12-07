@@ -522,21 +522,9 @@ class BudgetManager {
                 currentTimeInfo.monthIndex === 0 && // Janvier
                 previousTimeInfo.year < currentTimeInfo.year) {
                 
-                // On vient de passer de l'année précédente à la nouvelle année
-                // Le dernier tour de l'année précédente était previousTurn
-                const endingYear = previousTimeInfo.year;
-                
-                if (endingYear >= 0) {
-                    // Calculer et sauvegarder le solde de fin d'année
-                    // Utilise EXACTEMENT la même méthode que loadJournalEntries() ligne 4489
-                    // qui appelle getYearlyFinancialSummary() et utilise yearData.netFlow
-                    // C'est la même valeur qui est affichée dans le HTML ligne 4522
-                    const yearEndNetFlow = await this.journalManager.calculateAndSaveYearEndBalance(endingYear);
-                    console.log(`[BudgetManager] Calculated and saved year end balance for year ${endingYear}: ${yearEndNetFlow}€ (same method as journal display)`);
-                }
-                
-                // Maintenant créer le report à nouveau pour la nouvelle année
+                // Créer le report à nouveau pour la nouvelle année
                 // Le JournalManager utilisera le solde sauvegardé dans localStorage
+                // (la sauvegarde se fait maintenant dans loadJournalEntries() au moment de l'affichage)
                 await this.journalManager.createCarryForwardEntry(turn);
             }
         }
