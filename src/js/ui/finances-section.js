@@ -68,11 +68,10 @@ class FinancesSectionManager {
         const thisYearData = yearlyData.find(y => y.year === currentYear) || this.getEmptyYearData(currentYear);
         const lastYearData = yearlyData.find(y => y.year === currentYear - 1) || this.getEmptyYearData(currentYear - 1);
         
-        // Pour chaque année, utiliser le solde de l'année (netFlow) calculé par le journal
-        // Pour l'année en cours, on utilise le solde actuel (cumul depuis le début) car on est en cours d'année
-        // Pour l'année dernière, on utilise le netFlow de l'année (solde de l'année)
-        const thisYearBalance = currentBalance; // Solde actuel (cumul depuis le début du jeu)
-        const lastYearBalance = lastYearData.netFlow !== undefined ? lastYearData.netFlow : 0; // Solde de l'année dernière (netFlow de l'année)
+        // Pour chaque année, utiliser le solde de l'année (netFlow = revenus - dépenses)
+        // Le netFlow est calculé par getYearlyFinancialSummary() et représente le solde de l'année
+        const thisYearBalance = thisYearData.netFlow !== undefined ? thisYearData.netFlow : 0; // Solde de l'année en cours (revenus - dépenses)
+        const lastYearBalance = lastYearData.netFlow !== undefined ? lastYearData.netFlow : 0; // Solde de l'année dernière (revenus - dépenses)
         
         const thisYear = this.mapJournalDataToUI(thisYearData, thisYearBalance);
         const lastYear = this.mapJournalDataToUI(lastYearData, lastYearBalance);

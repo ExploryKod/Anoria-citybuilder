@@ -16,6 +16,14 @@ db.delete({ disableAutoOpen: false })
             foodTraceability: '++id, turn, month, year, date, transactionType, fromId, fromCoords, toId, toCoords, foodType, quantity, price' // Traçabilité alimentaire
         });
         // Database cleared and recreated successfully
+        
+        // Clear journal year-end balances from localStorage (same reset logic as IndexedDB)
+        try {
+            localStorage.removeItem('journal_year_end_balances');
+            console.log('[db.js] Cleared journal_year_end_balances from localStorage');
+        } catch (error) {
+            console.warn('[db.js] Error clearing localStorage:', error);
+        }
     })
     .catch((err) => {
         console.error('Error clearing and recreating the database:', err);
