@@ -176,16 +176,19 @@ describe('JournalManager', () => {
             await journalManager.addJournalEntry(4, 'maintenance', 200, 'Maintenance');
             await new Promise(resolve => setTimeout(resolve, 10));
             await journalManager.addJournalEntry(5, 'import_wheat', 5, 'Import blé');
+            await new Promise(resolve => setTimeout(resolve, 10));
+            await journalManager.addJournalEntry(6, 'export_wheat', 15, 'Export blé');
             
             const stats = await journalManager.getStatistics();
             
-            expect(stats.totalEntries).toBe(5);
-            expect(stats.totalIncome).toBe(1500); // citizen_tax entries
+            expect(stats.totalEntries).toBe(6);
+            expect(stats.totalIncome).toBe(1515); // citizen_tax entries + export_wheat
             expect(stats.totalExpenses).toBe(505); // construction + maintenance + import_wheat
             expect(stats.byType.citizen_tax).toBe(2);
             expect(stats.byType.construction).toBe(1);
             expect(stats.byType.maintenance).toBe(1);
             expect(stats.byType.import_wheat).toBe(1);
+            expect(stats.byType.export_wheat).toBe(1);
             expect(stats.earliestEntry).toBeDefined();
             expect(stats.latestEntry).toBeDefined();
         });

@@ -96,8 +96,8 @@ class CommerceSectionManager {
                 marketShare: 45,
                 marketPosition: 'normal',
                 stockpiling: false,
-                sellingMax: 1000,
-                sellingMin: 100,
+                sellingMax: 8,  // Seuil maximum d'export annuel (8 paniers)
+                // sellingMin supprimé
                 buyingMax: 8,  // Seuil maximum d'achat annuel (8 paniers)
                 // buyingMin supprimé
                 tax: 10,
@@ -115,8 +115,8 @@ class CommerceSectionManager {
                 marketShare: 25,
                 marketPosition: 'few',
                 stockpiling: false,
-                sellingMax: 800,
-                sellingMin: 80,
+                sellingMax: 8,  // Seuil maximum d'export annuel
+                // sellingMin supprimé
                 buyingMax: 400,
                 // buyingMin supprimé
                 tax: 15,
@@ -134,8 +134,8 @@ class CommerceSectionManager {
                 marketShare: 15,
                 marketPosition: 'inferior',
                 stockpiling: true,
-                sellingMax: 600,
-                sellingMin: 60,
+                sellingMax: 8,  // Seuil maximum d'export annuel
+                // sellingMin supprimé
                 buyingMax: 300,
                 // buyingMin supprimé
                 tax: 20,
@@ -153,8 +153,8 @@ class CommerceSectionManager {
                 marketShare: 70,
                 marketPosition: 'dominant',
                 stockpiling: false,
-                sellingMax: 2000,
-                sellingMin: 200,
+                sellingMax: 8,  // Seuil maximum d'export annuel
+                // sellingMin supprimé
                 buyingMax: 1000,
                 // buyingMin supprimé
                 tax: 5,
@@ -305,37 +305,18 @@ class CommerceSectionManager {
                         </div>
 
                         <div class="commerce-details-section">
-                            <div class="commerce-details-title">Seuils de vente</div>
+                            <div class="commerce-details-title">Seuils d'export</div>
                             <div class="commerce-details-row">
                                 <div class="commerce-details-label">Maximum</div>
                                 <div class="commerce-threshold-controls">
                                     <div class="commerce-threshold-buttons">
-                                        <button type="button" class="commerce-threshold-btn" data-good-id="${good.id}" data-type="selling-max" data-action="decrease" aria-label="Diminuer le maximum de vente">
+                                        <button type="button" class="commerce-threshold-btn" data-good-id="${good.id}" data-type="selling-max" data-action="decrease" aria-label="Diminuer le maximum d'export">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus">
                                                 <path d="M5 12h14"/>
                                             </svg>
                                         </button>
                                         <span class="commerce-threshold-value" id="selling-max-${good.id}">${good.sellingMax}</span>
-                                        <button type="button" class="commerce-threshold-btn" data-good-id="${good.id}" data-type="selling-max" data-action="increase" aria-label="Augmenter le maximum de vente">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
-                                                <path d="M5 12h14"/>
-                                                <path d="M12 5v14"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="commerce-details-row">
-                                <div class="commerce-details-label">Minimum</div>
-                                <div class="commerce-threshold-controls">
-                                    <div class="commerce-threshold-buttons">
-                                        <button type="button" class="commerce-threshold-btn" data-good-id="${good.id}" data-type="selling-min" data-action="decrease" aria-label="Diminuer le minimum de vente">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus">
-                                                <path d="M5 12h14"/>
-                                            </svg>
-                                        </button>
-                                        <span class="commerce-threshold-value" id="selling-min-${good.id}">${good.sellingMin}</span>
-                                        <button type="button" class="commerce-threshold-btn" data-good-id="${good.id}" data-type="selling-min" data-action="increase" aria-label="Augmenter le minimum de vente">
+                                        <button type="button" class="commerce-threshold-btn" data-good-id="${good.id}" data-type="selling-max" data-action="increase" aria-label="Augmenter le maximum d'export">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
                                                 <path d="M5 12h14"/>
                                                 <path d="M12 5v14"/>

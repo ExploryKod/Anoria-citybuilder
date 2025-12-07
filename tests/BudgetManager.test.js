@@ -286,6 +286,78 @@ describe('BudgetManager', () => {
         });
     });
 
+    describe('addExportIncome', () => {
+        
+        beforeEach(async () => {
+            await budgetManager.initialize(200);
+        });
+
+        test('ajoute le revenu d\'export au budget', async () => {
+            await budgetManager.initialize(200);
+            await budgetManager.addExportIncome(15, 'Export blé (1 panier × 15€)', 'wheat');
+            
+            const budgetData = await testDb.budget.toArray();
+            const budget = budgetData[0];
+            
+            expect(budget.funds).toBe(215); // 200 + 15
+            expect(budget.income).toBe(15);
+            expect(budget.dailyIncome).toBe(15);
+            expect(budget.totalExports).toBeDefined();
+            expect(budget.totalExports.wheat).toBe(15);
+        });
+
+        test('crée une entrée journal avec le type export_wheat', async () => {
+            await budgetManager.initialize(200);
+            await budgetManager.addExportIncome(15, 'Export blé (1 panier × 15€)', 'wheat');
+            
+            const entries = await testDb.journal.toArray();
+            expect(entries.length).toBeGreaterThanOrEqual(2); // 1 capital_funds + 1 export_wheat
+            
+            const exportEntry = entries.find(e => e.type === 'export_wheat');
+            expect(exportEntry).toBeDefined();
+            expect(exportEntry.amount).toBe(15);
+            expect(exportEntry.description).toBe('Export blé (1 panier × 15€)');
+        });
+
+        test('cumule plusieurs exports du même produit', async () => {
+            await budgetManager.initialize(200);
+            await budgetManager.addExportIncome(15, 'Export blé 1', 'wheat');
+            await budgetManager.addExportIncome(15, 'Export blé 2', 'wheat');
+            
+            const budgetData = await testDb.budget.toArray();
+            const budget = budgetData[0];
+            
+            expect(budget.funds).toBe(230); // 200 + 15 + 15
+            expect(budget.income).toBe(30);
+            expect(budget.totalExports.wheat).toBe(30);
+        });
+
+        test('peut exporter différents produits', async () => {
+            await budgetManager.initialize(200);
+            await budgetManager.addExportIncome(15, 'Export blé', 'wheat');
+            await budgetManager.addExportIncome(18, 'Export carotte', 'carrot');
+            
+            const budgetData = await testDb.budget.toArray();
+            const budget = budgetData[0];
+            
+            expect(budget.funds).toBe(233); // 200 + 15 + 18
+            expect(budget.income).toBe(33);
+            expect(budget.totalExports.wheat).toBe(15);
+            expect(budget.totalExports.carrot).toBe(18);
+        });
+
+        test('arrondit les montants', async () => {
+            await budgetManager.initialize(200);
+            await budgetManager.addExportIncome(15.7, 'Export avec décimales', 'wheat');
+            
+            const budgetData = await testDb.budget.toArray();
+            const budget = budgetData[0];
+            
+            expect(budget.funds).toBe(216); // 200 + 16 (arrondi)
+            expect(budget.income).toBe(16);
+        });
+    });
+
     describe('addDailyExpense', () => {
         
         beforeEach(async () => {
