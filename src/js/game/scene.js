@@ -2121,9 +2121,20 @@ export function createScene(housesStore, gameStore, assetManager) {
                         const monthName = timeInfo.month || 'Mois';
                         const salaryDescription = `Salaires fonctionnaires - ${monthName} ${yearDisplay} (${totalPopulation} hab. × ${salaryPerMonth}€)`;
                         
+                        const totalSalaryAmount = totalPopulation * salaryPerMonth;
                         await window.budgetManager.addSalaries(salaryPerMonth, totalPopulation, salaryDescription);
+                        
+                        let salaryTaxRate = 0.2;
+                        if (window.workSectionManager && typeof window.workSectionManager.salaryTaxRate === 'number') {
+                            salaryTaxRate = window.workSectionManager.salaryTaxRate;
+                        }
+                        
+                        if (salaryTaxRate > 0) {
+                            const taxDescription = `Impôt sur les salaires - ${monthName} ${yearDisplay} (${Math.round(salaryTaxRate * 100)}%)`;
+                            await window.budgetManager.addSalaryTax(totalSalaryAmount, salaryTaxRate, taxDescription);
+                        }
+                        
                         lastSalaryMonth = currentMonth;
-                        console.log(`[Scene] Salaries paid for month ${currentMonth} (${monthName} ${yearDisplay}): ${totalPopulation} hab. × ${salaryPerMonth}€ = ${totalPopulation * salaryPerMonth}€`);
                     }
                 }
                 

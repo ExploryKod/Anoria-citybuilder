@@ -110,6 +110,10 @@ class FinancesSectionManager {
             .filter(e => e.type === 'citizen_tax')
             .reduce((sum, e) => sum + e.amount, 0);
         
+        const payrollTax = incomeEntries
+            .filter(e => e.type === 'payroll_tax')
+            .reduce((sum, e) => sum + e.amount, 0);
+        
         // Report à nouveau en revenu (si positif)
         const carryForwardIncome = incomeEntries
             .filter(e => e.type === 'carry_forward')
@@ -128,11 +132,6 @@ class FinancesSectionManager {
             .filter(e => e.type === 'salary')
             .reduce((sum, e) => sum + e.amount, 0);
         
-        // Debug: vérifier que les salaires sont bien extraits
-        if (salary > 0) {
-            console.log('[FinancesSection] Salary extracted:', salary, 'from', expenseEntries.filter(e => e.type === 'salary').length, 'entries');
-        }
-        
         const repairs = expenseEntries
             .filter(e => e.type === 'exceptional_expenses')
             .reduce((sum, e) => sum + e.amount, 0);
@@ -145,6 +144,7 @@ class FinancesSectionManager {
         return {
             initialFunds: Math.round(initialFunds),
             incomeTax: Math.round(incomeTax),
+            payrollTax: Math.round(payrollTax),
             carryForwardIncome: Math.round(carryForwardIncome),
             totalIncome: Math.round(yearData.income.total),
             construction: Math.round(construction),
@@ -161,6 +161,7 @@ class FinancesSectionManager {
         return {
             initialFunds: 0,
             incomeTax: 0,
+            payrollTax: 0,
             carryForwardIncome: 0,
             totalIncome: 0,
             construction: 0,
@@ -258,6 +259,7 @@ class FinancesSectionManager {
         const incomeFields = [
             { key: 'initialFunds', thisYear: 'initialFundsThisYear', lastYear: 'initialFundsLastYear' },
             { key: 'incomeTax', thisYear: 'incomeTaxThisYear', lastYear: 'incomeTaxLastYear' },
+            { key: 'payrollTax', thisYear: 'payrollTaxThisYear', lastYear: 'payrollTaxLastYear' },
             { key: 'carryForwardIncome', thisYear: 'carryForwardIncomeThisYear', lastYear: 'carryForwardIncomeLastYear' },
             { key: 'totalIncome', thisYear: 'totalIncomeThisYear', lastYear: 'totalIncomeLastYear' }
         ];

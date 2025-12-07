@@ -3,6 +3,7 @@ import config from '../game/config.js';
 class WorkSectionManager {
     constructor() {
         this.salary = 100; // Valeur par défaut : 100€/mois
+        this.salaryTaxRate = 0.2; // Valeur par défaut : 20% (0.2)
         this.unemploymentRate = 50;
         this.workData = null;
         this.employmentPriorityService = null;
@@ -26,6 +27,8 @@ class WorkSectionManager {
     setupEventListeners() {
         const salaryDecreaseBtn = document.getElementById('salary-decrease-btn');
         const salaryIncreaseBtn = document.getElementById('salary-increase-btn');
+        const salaryTaxDecreaseBtn = document.getElementById('salary-tax-decrease-btn');
+        const salaryTaxIncreaseBtn = document.getElementById('salary-tax-increase-btn');
         const unemploymentDecreaseBtn = document.getElementById('unemployment-decrease-btn');
         const unemploymentIncreaseBtn = document.getElementById('unemployment-increase-btn');
 
@@ -33,14 +36,12 @@ class WorkSectionManager {
         const handleSalaryDecrease = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('[WorkSection] Decrease salary button clicked, current salary:', this.salary);
             this.adjustSalary(-1);
         };
 
         const handleSalaryIncrease = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('[WorkSection] Increase salary button clicked, current salary:', this.salary);
             this.adjustSalary(1);
         };
 
@@ -49,19 +50,36 @@ class WorkSectionManager {
             salaryDecreaseBtn.removeEventListener('click', this._handleSalaryDecrease);
             this._handleSalaryDecrease = handleSalaryDecrease;
             salaryDecreaseBtn.addEventListener('click', this._handleSalaryDecrease);
-            console.log('[WorkSection] Salary decrease button listener attached');
-        } else {
-            console.warn('[WorkSection] salary-decrease-btn not found in DOM');
         }
 
         if (salaryIncreaseBtn) {
-            // Retirer l'ancien listener s'il existe
             salaryIncreaseBtn.removeEventListener('click', this._handleSalaryIncrease);
             this._handleSalaryIncrease = handleSalaryIncrease;
             salaryIncreaseBtn.addEventListener('click', this._handleSalaryIncrease);
-            console.log('[WorkSection] Salary increase button listener attached');
-        } else {
-            console.warn('[WorkSection] salary-increase-btn not found in DOM');
+        }
+
+        const handleSalaryTaxDecrease = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.adjustSalaryTaxRate(-0.01);
+        };
+
+        const handleSalaryTaxIncrease = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.adjustSalaryTaxRate(0.01);
+        };
+
+        if (salaryTaxDecreaseBtn) {
+            salaryTaxDecreaseBtn.removeEventListener('click', this._handleSalaryTaxDecrease);
+            this._handleSalaryTaxDecrease = handleSalaryTaxDecrease;
+            salaryTaxDecreaseBtn.addEventListener('click', this._handleSalaryTaxDecrease);
+        }
+
+        if (salaryTaxIncreaseBtn) {
+            salaryTaxIncreaseBtn.removeEventListener('click', this._handleSalaryTaxIncrease);
+            this._handleSalaryTaxIncrease = handleSalaryTaxIncrease;
+            salaryTaxIncreaseBtn.addEventListener('click', this._handleSalaryTaxIncrease);
         }
 
         if (unemploymentDecreaseBtn) {
@@ -314,8 +332,16 @@ class WorkSectionManager {
         
         if (newSalary !== this.salary) {
             this.salary = newSalary;
-            console.log('[WorkSection] Salary adjusted:', this.salary);
-            this.updateSalaryDisplay(); // Maintenant async
+            this.updateSalaryDisplay();
+        }
+    }
+
+    adjustSalaryTaxRate(delta) {
+        const newRate = Math.max(0, Math.min(1, this.salaryTaxRate + delta));
+        
+        if (newRate !== this.salaryTaxRate) {
+            this.salaryTaxRate = newRate;
+            this.updateSalaryTaxDisplay();
         }
     }
 
@@ -347,19 +373,13 @@ class WorkSectionManager {
                     clampedPriority
                 );
                 
-                // Reload priorities to reflect swaps (synchronous)
                 const allPriorities = this.employmentPriorityService.getAllPriorities();
                 
-                console.log('[WorkSection] Priorities after swap:', allPriorities);
-                
-                // Update workData with new priorities BEFORE re-render
                 this.workData.sectors.forEach(sec => {
                     if (sec.sectorNumber !== undefined) {
                         const newPriority = allPriorities[sec.sectorNumber];
                         if (newPriority !== undefined) {
-                            const oldPriority = sec.priority;
                             sec.priority = newPriority;
-                            console.log(`[WorkSection] Sector ${sec.sectorNumber} (${sec.name}): ${oldPriority} → ${newPriority}`);
                         }
                     }
                 });
@@ -380,23 +400,19 @@ class WorkSectionManager {
         const annualBillDisplay = document.getElementById('salary-annual-bill');
         const populationDisplay = document.getElementById('salary-population-display');
 
-        // Afficher le salaire mensuel (modifiable)
         if (salaryDisplay) {
             salaryDisplay.textContent = this.salary;
         }
 
-        // Afficher le salaire mensuel dans l'info (identique à salary-display)
         if (salaryMonthDisplay) {
             salaryMonthDisplay.textContent = this.salary;
         }
 
-        // Afficher le salaire annuel (informatif = mensuel × 12)
         if (salaryYearDisplay) {
             const yearlyAmount = this.salary * 12;
             salaryYearDisplay.textContent = yearlyAmount;
         }
 
-        // Récupérer la population totale depuis housesStore (même source que info-panel)
         let totalPopulation = 0;
         try {
             let housesStore = null;
@@ -415,15 +431,53 @@ class WorkSectionManager {
             console.warn('[WorkSection] Error getting population for salary display:', error);
         }
 
-        // Afficher la population entre parenthèses
         if (populationDisplay) {
             populationDisplay.textContent = totalPopulation;
         }
 
-        // Facture annuelle totale estimée = population totale × salaire annuel
         if (annualBillDisplay) {
             const annualBill = totalPopulation * this.salary * 12;
             annualBillDisplay.textContent = Math.round(annualBill);
+        }
+        
+        this.updateSalaryTaxDisplay();
+    }
+
+    async updateSalaryTaxDisplay() {
+        const salaryTaxRateDisplay = document.getElementById('salary-tax-rate-display');
+        const salaryTaxAmountDisplay = document.getElementById('salary-tax-amount-display');
+        const salaryTaxAnnualDisplay = document.getElementById('salary-tax-annual-display');
+
+        if (salaryTaxRateDisplay) {
+            salaryTaxRateDisplay.textContent = Math.round(this.salaryTaxRate * 100);
+        }
+
+        let totalPopulation = 0;
+        try {
+            let housesStore = null;
+            if (window.app && window.app.housesStore) {
+                housesStore = window.app.housesStore;
+            } else if (window.housesStore) {
+                housesStore = window.housesStore;
+            } else if (window.game && window.game.housesStore) {
+                housesStore = window.game.housesStore;
+            }
+
+            if (housesStore && typeof housesStore.getGlobalPopulation === 'function') {
+                totalPopulation = await housesStore.getGlobalPopulation();
+            }
+        } catch (error) {
+            console.warn('[WorkSection] Error getting population for salary tax display:', error);
+        }
+
+        if (salaryTaxAmountDisplay) {
+            const monthlyTaxAmount = Math.round(totalPopulation * this.salary * this.salaryTaxRate);
+            salaryTaxAmountDisplay.textContent = monthlyTaxAmount;
+        }
+
+        if (salaryTaxAnnualDisplay) {
+            const annualTaxAmount = Math.round(totalPopulation * this.salary * 12 * this.salaryTaxRate);
+            salaryTaxAnnualDisplay.textContent = annualTaxAmount;
         }
     }
 
@@ -439,7 +493,8 @@ class WorkSectionManager {
 
         this.renderWorkTable();
         this.renderSummary();
-        this.updateSalaryDisplay(); // Maintenant async
+        this.updateSalaryDisplay();
+        this.updateSalaryTaxDisplay();
         this.updateUnemploymentDisplay();
     }
 

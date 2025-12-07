@@ -4867,7 +4867,7 @@ function createJournalEntryHTML(entry) {
     } else if (entry.type === 'balance') {
         // La balance peut être positive ou négative selon le montant
         isIncome = entry.amount >= 0;
-    } else if (entry.type === 'citizen_tax' || entry.type === 'capital_funds') {
+    } else if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds') {
         isIncome = true;
     } else if (entry.type === 'salary' || entry.type === 'maintenance' || entry.type === 'construction' || entry.type === 'exceptional_expenses') {
         isIncome = false; // Dépenses
@@ -4880,6 +4880,7 @@ function createJournalEntryHTML(entry) {
     
     const typeLabels = {
         'citizen_tax': 'Impôt Citoyen',
+        'payroll_tax': 'Impôt sur les salaires',
         'capital_funds': 'Capital de départ',
         'carry_forward': 'Report à nouveau',
         'construction': 'Construction',
