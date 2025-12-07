@@ -4504,12 +4504,19 @@ async function loadJournalEntries(period = 'all') {
         // Récupérer les données groupées par année et mois
         const yearlyData = await manager.getYearlyFinancialSummary();
         
-        // Obtenir le tour actuel et la date pour la sauvegarde
-        // Le turn actuel vient du budget, pas du journal (car le journal peut avoir plusieurs tours)
+        // Obtenir le budget actuel (source unique de vérité : budget.funds)
+        let currentFunds = 0;
+        let currentYear = 0;
         let currentTurn = 0;
+        
         if (window.budgetManager) {
             const budget = await window.budgetManager.getCurrentBudget();
+            currentFunds = budget.funds || 0;
             currentTurn = budget.turn || 0;
+            if (window.TimeManager) {
+                const timeInfo = window.TimeManager.getTimeInfo(currentTurn);
+                currentYear = timeInfo.year;
+            }
         } else {
             // Fallback: utiliser le turn le plus récent du journal
             const allEntries = await manager.getJournalEntries();
@@ -4521,42 +4528,57 @@ async function loadJournalEntries(period = 'all') {
         }
         const currentDate = new Date().toISOString();
         
-        // Sauvegarder dans localStorage EXACTEMENT au moment de l'affichage
-        // Utiliser la même valeur que celle affichée dans le HTML (yearData.netFlow)
+        // Sauvegarder les soldes de fin d'année dans localStorage
+        // Utiliser les entrées 'balance' qui reflètent budget.funds
         const LOCALSTORAGE_KEY = 'journal_year_end_balances';
+        let soldes = []; // Déclarer en dehors du try pour être accessible plus tard
+        
         try {
             const stored = localStorage.getItem(LOCALSTORAGE_KEY);
-            let soldes = stored ? JSON.parse(stored) : [];
+            soldes = stored ? JSON.parse(stored) : [];
             
-            // Pour chaque année affichée, sauvegarder le solde avec turn et date
-            yearlyData.forEach(yearData => {
-                const netFlow = yearData.netFlow; // EXACTEMENT la même valeur que celle affichée ligne 4538
-                const nature = netFlow >= 0 ? 'revenue' : 'deficit';
-                const amount = Math.abs(netFlow);
-                
-                // Vérifier si cette combinaison (an + turn) existe déjà
-                const existingIndex = soldes.findIndex(s => s.an === yearData.year && s.turn === currentTurn);
-                
-                if (existingIndex >= 0) {
-                    // Mettre à jour l'entrée existante
-                    soldes[existingIndex] = {
-                        an: yearData.year,
-                        nature: nature,
-                        amount: amount,
-                        turn: currentTurn,
-                        date: currentDate
-                    };
-                } else {
-                    // Ajouter une nouvelle entrée (garder tout l'historique)
-                    soldes.push({
-                        an: yearData.year,
-                        nature: nature,
-                        amount: amount,
-                        turn: currentTurn,
-                        date: currentDate
-                    });
+            // Pour chaque année affichée, récupérer le solde depuis les entrées balance
+            for (const yearData of yearlyData) {
+                try {
+                    let balance;
+                    // Pour l'année en cours, utiliser currentFunds (budget.funds actuel)
+                    if (yearData.year === currentYear) {
+                        balance = currentFunds;
+                    } else {
+                        // Pour les années précédentes, utiliser la dernière entrée balance
+                        balance = await manager.getYearEndBalance(yearData.year);
+                    }
+                    
+                    const nature = balance >= 0 ? 'revenue' : 'deficit';
+                    const amount = Math.abs(balance);
+                    
+                    // Vérifier si cette combinaison (an + turn) existe déjà
+                    const existingIndex = soldes.findIndex(s => s.an === yearData.year && s.turn === currentTurn);
+                    
+                    if (existingIndex >= 0) {
+                        // Mettre à jour l'entrée existante
+                        soldes[existingIndex] = {
+                            an: yearData.year,
+                            nature: nature,
+                            amount: amount,
+                            turn: currentTurn,
+                            date: currentDate
+                        };
+                    } else {
+                        // Ajouter une nouvelle entrée
+                        soldes.push({
+                            an: yearData.year,
+                            nature: nature,
+                            amount: amount,
+                            turn: currentTurn,
+                            date: currentDate
+                        });
+                    }
+                } catch (error) {
+                    console.error(`[Journal] Error getting balance for year ${yearData.year}:`, error.message);
+                    // Ne pas sauvegarder cette année si erreur
                 }
-            });
+            }
             
             // Trier par année puis par turn (décroissant)
             soldes.sort((a, b) => {
@@ -4586,6 +4608,35 @@ async function loadJournalEntries(period = 'all') {
         yearlyData.forEach(yearData => {
             // En-tête Année
             const yearDisplay = yearData.year === 0 ? '0 JC' : `${yearData.year} ap JC`;
+            
+            // Pour le solde : utiliser budget.funds (source unique de vérité)
+            let displayBalance;
+            let balanceClass;
+            
+            if (yearData.year === currentYear) {
+                // Année en cours : utiliser budget.funds actuel
+                displayBalance = currentFunds;
+                balanceClass = displayBalance >= 0 ? 'positive' : 'negative';
+            } else {
+                // Années précédentes : utiliser le solde sauvegardé depuis balance entries
+                const savedBalance = soldes.find(s => s.an === yearData.year);
+                if (savedBalance) {
+                    displayBalance = savedBalance.nature === 'revenue' ? savedBalance.amount : -savedBalance.amount;
+                    balanceClass = savedBalance.nature === 'revenue' ? 'positive' : 'negative';
+                } else {
+                    // Fallback : essayer de récupérer depuis getYearEndBalance
+                    try {
+                        displayBalance = yearData.year === currentYear ? currentFunds : 0;
+                        balanceClass = displayBalance >= 0 ? 'positive' : 'negative';
+                        console.warn(`[Journal] No saved balance found for year ${yearData.year}, using fallback`);
+                    } catch (error) {
+                        displayBalance = 0;
+                        balanceClass = 'error';
+                        console.error(`[Journal] Error getting balance for year ${yearData.year}:`, error);
+                    }
+                }
+            }
+            
             html += `
                 <div class="journal-year-group">
                     <div class="journal-year-header">
@@ -4599,9 +4650,9 @@ async function loadJournalEntries(period = 'all') {
                                 <span class="label">Dépenses:</span>
                                 <span class="amount">-${yearData.expenses.total}€</span>
                             </div>
-                            <div class="journal-summary-item netflow ${yearData.netFlow >= 0 ? 'positive' : 'negative'}">
+                            <div class="journal-summary-item netflow ${balanceClass}">
                                 <span class="label">Solde:</span>
-                                <span class="amount">${yearData.netFlow >= 0 ? '+' : ''}${yearData.netFlow}€</span>
+                                <span class="amount">${displayBalance >= 0 ? '+' : ''}${displayBalance}€</span>
                             </div>
                         </div>
                     </div>

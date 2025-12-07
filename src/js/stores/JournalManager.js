@@ -811,15 +811,24 @@ class JournalManager {
             });
             
             // Detailed entries (first 100 entries to avoid PDF size issues)
+            // EXCLURE les cumuls et les balances (informatifs seulement)
             yPosition += 5;
             doc.setFontSize(14);
             doc.text('Détail des Écritures', margin, yPosition);
             yPosition += 10;
             
             doc.setFontSize(8);
-            const maxEntries = Math.min(entries.length, 100);
+            const entriesToExport = entries.filter(e => 
+                e.type !== 'cumul_maintenance' && 
+                e.type !== 'cumul_construction' && 
+                e.type !== 'cumul_exceptional_expenses' &&
+                e.type !== 'cumul_loan_interest' &&
+                e.type !== 'cumul_loan_repayment' &&
+                e.type !== 'balance'
+            );
+            const maxEntries = Math.min(entriesToExport.length, 100);
             for (let i = 0; i < maxEntries; i++) {
-                const entry = entries[i];
+                const entry = entriesToExport[i];
                 
                 // Check if we need a new page
                 if (yPosition > pageHeight - 20) {
