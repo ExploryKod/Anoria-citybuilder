@@ -813,10 +813,11 @@ class BudgetManager {
     }
 
     /**
-     * Add taxes based on population (100€ per citizen per month, only in November)
+     * Add taxes based on population (configurable amount per citizen, only in November)
      * Calculates taxes from houses in the database
      * Only collects taxes if there is population AND it's November (month index 10)
      * Taxes are collected only ONCE per year (first day of November)
+     * The amount per citizen is configurable via finances-tax-controls (default: 100€)
      * @param {number} time - Current simulation time (number of days)
      * @returns {Promise<Object>} Updated budget
      */
@@ -858,7 +859,12 @@ class BudgetManager {
                 
                 // Only collect taxes if there is population
                 if (pop > 0) {
-                    const taxPerHouse = Math.round(pop * 100); // 100€ per citizen in May
+                    // Get citizen tax amount from finances section manager (default: 100€)
+                    let citizenTaxAmount = 100;
+                    if (window.financesSectionManager && typeof window.financesSectionManager.citizenTaxAmount === 'number') {
+                        citizenTaxAmount = window.financesSectionManager.citizenTaxAmount;
+                    }
+                    const taxPerHouse = Math.round(pop * citizenTaxAmount);
                     
                     if (house.type.includes('House-Blue')) {
                         taxBreakdown['House-Blue'] = Math.round(taxBreakdown['House-Blue'] + taxPerHouse);
