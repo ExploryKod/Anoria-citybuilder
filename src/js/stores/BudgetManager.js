@@ -707,6 +707,57 @@ class BudgetManager {
     }
 
     /**
+     * Add salaries expense (salaire brut mensuel × population totale)
+     * Called once per month on the first turn of each month
+     * @param {number} salaryPerMonth - Salary per citizen per month (from workSectionManager)
+     * @param {number} population - Total population (from housesStore)
+     * @param {string} description - Optional custom description
+     * @returns {Promise<Object>} Updated budget
+     */
+    async addSalaries(salaryPerMonth, population, description = null) {
+        const budget = await this.getCurrentBudget();
+        
+        // Validate inputs
+        if (typeof salaryPerMonth !== 'number' || isNaN(salaryPerMonth) || !isFinite(salaryPerMonth) || salaryPerMonth < 0) {
+            console.error(`Invalid salary per month: ${salaryPerMonth}`);
+            return budget;
+        }
+        
+        if (typeof population !== 'number' || isNaN(population) || !isFinite(population) || population < 0) {
+            console.error(`Invalid population: ${population}`);
+            return budget;
+        }
+        
+        // Calculate total salary expense
+        const totalSalary = salaryPerMonth * population;
+        
+        if (totalSalary > 0) {
+            // Use provided description or create default
+            const salaryDescription = description || `Salaires fonctionnaires (${population} hab. × ${salaryPerMonth}€)`;
+            
+            // Add journal entry
+            await this.addJournalEntry(budget.turn, 'salary', totalSalary, salaryDescription);
+            
+            // Update budget
+            budget.funds -= totalSalary;
+            budget.expenses += totalSalary;
+            budget.dailyExpenses += totalSalary;
+            
+            // Track total salaries paid
+            if (!budget.totalSalaries) {
+                budget.totalSalaries = 0;
+            }
+            budget.totalSalaries += totalSalary;
+            budget.netFlow = budget.income - budget.expenses;
+            
+            await this.db.budget.put(budget);
+            console.log(`[BudgetManager] Salaries paid: ${totalSalary}€ (${population} hab. × ${salaryPerMonth}€/mois)`);
+        }
+        
+        return budget;
+    }
+
+    /**
      * Add taxes based on population (100€ per citizen per month, only in November)
      * Calculates taxes from houses in the database
      * Only collects taxes if there is population AND it's November (month index 10)

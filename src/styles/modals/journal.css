@@ -248,6 +248,11 @@
     color: #856404;
 }
 
+.journal-entry-type.salary {
+    background: #e7f3ff;
+    color: #004085;
+}
+
 .journal-entry-type.loan_interest {
     background: #d1ecf1;
     color: #0c5460;
@@ -280,6 +285,12 @@
 .journal-entry-type.cumul_construction {
     background: #f8d7da;
     color: #721c24;
+    font-weight: 600;
+}
+
+.journal-entry-type.cumul_salary {
+    background: #e7f3ff;
+    color: #004085;
     font-weight: 600;
 }
 
