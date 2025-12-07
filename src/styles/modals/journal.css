@@ -225,6 +225,11 @@
     color: #155724;
 }
 
+.journal-entry-type.payroll_tax {
+    background: #cfe2ff;
+    color: #084298;
+}
+
 .journal-entry-type.capital_funds {
     background: #cfe2ff;
     color: #084298;
