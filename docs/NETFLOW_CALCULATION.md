@@ -6,11 +6,11 @@ Le **flux net** (`netFlow`) représente la différence entre les **revenus totau
 
 ## Source de vérité
 
-**IMPORTANT** : Le `FinancialYearService` utilise maintenant le **`currentBudget`** (mis à jour en temps réel) comme source de vérité, exactement comme le journal de comptabilité. Cela garantit que les données affichées dans l'administrator-panel sont **synchronisées en temps réel** avec chaque transaction.
+**IMPORTANT** : Le panneau finances utilise maintenant **`JournalManager.getYearlyFinancialSummary()`** comme source de vérité, exactement comme le journal de comptabilité. Cela garantit que les données affichées dans l'administrator-panel sont **synchronisées en temps réel** avec chaque transaction.
 
-- **`currentBudget`** : Mis à jour instantanément à chaque transaction (`addIncome`, `addExpense`, etc.)
-- **`budgetStates`** : Snapshots sauvegardés tous les 3 tours (utilisés uniquement pour l'historique)
-- **Journal** : Entrées créées à chaque transaction (même timing que `currentBudget`)
+- **`JournalManager`** : Source de vérité unique pour toutes les données financières
+- **`getYearlyFinancialSummary()`** : Agrège les entrées du journal par année
+- **`currentBudget`** : Utilisé uniquement pour obtenir le solde actuel (balance)
 
 ### Synchronisation
 
@@ -18,7 +18,7 @@ Le **flux net** (`netFlow`) représente la différence entre les **revenus totau
 // À chaque transaction (addIncome, addExpense, etc.) :
 1. Mise à jour du currentBudget (IndexedDB)
 2. Création d'une entrée dans le journal (IndexedDB)
-3. L'administrator-panel lit le currentBudget → affichage instantané
+3. L'administrator-panel lit le journal via JournalManager → affichage instantané
 
 // Tous les 3 tours :
 - Sauvegarde d'un budgetState (snapshot pour historique)
@@ -32,47 +32,63 @@ balance = currentBudget.funds (solde actuel)
 previousYearBalance = solde de fin d'année précédente (affiché séparément)
 ```
 
-## Calcul pour "Cette Année" (`calculateThisYearData`)
+## Calcul pour "Cette Année" (`mapJournalDataToUI`)
 
 ### 1. Calcul des revenus et dépenses de l'année en cours
 
-Les valeurs sont calculées **en temps réel** depuis le `currentBudget` :
+Les valeurs sont calculées **en temps réel** depuis le journal via `JournalManager.getYearlyFinancialSummary()` :
 
 ```javascript
-// Si première année (année 0) :
-thisYearIncome = currentBudget.income
-thisYearExpenses = currentBudget.expenses
-thisYearTaxes = currentBudget.totalTaxes
-// etc.
+// Obtenir les données annuelles depuis le journal
+const yearlyData = await journalManager.getYearlyFinancialSummary();
+const thisYearData = yearlyData.find(y => y.year === currentYear);
 
-// Si année suivante :
-thisYearIncome = currentBudget.income - lastYearSnapshot.income
-thisYearExpenses = currentBudget.expenses - lastYearSnapshot.expenses
-// etc.
+// Extraire les montants par type depuis les entrées du journal
+const incomeTax = thisYearData.income.entries
+    .filter(e => e.type === 'income')
+    .reduce((sum, e) => sum + e.amount, 0);
+
+const gifts = thisYearData.income.entries
+    .filter(e => e.type === 'capital_funds')
+    .reduce((sum, e) => sum + e.amount, 0);
+
+const maintenance = thisYearData.expenses.entries
+    .filter(e => e.type === 'maintenance')
+    .reduce((sum, e) => sum + e.amount, 0);
+
+const construction = thisYearData.expenses.entries
+    .filter(e => e.type === 'construction')
+    .reduce((sum, e) => sum + e.amount, 0);
+
+const interestExpense = thisYearData.expenses.entries
+    .filter(e => e.type === 'loan_interest')
+    .reduce((sum, e) => sum + e.amount, 0);
 ```
 
 **Détail des composantes :**
 
 #### Revenus (`thisYearIncome`) :
-- **Impôts sur le revenu** (`thisYearTaxes`) : Taxes collectées depuis le début de l'année
-- **Dons** (`gifts`) : Fonds initiaux (première année) + dons réels de l'année
-- **Autres revenus** (`otherIncome`) : `thisYearIncome - thisYearTaxes - thisYearTotalGifts`
+- **Impôts sur le revenu** (`incomeTax`) : Entrées de type `'income'` (taxes collectées)
+- **Dons** (`gifts`) : Entrées de type `'capital_funds'` (fonds initiaux)
+- **TVA** (`vat`) : 0 (pas encore implémenté)
+- **Taxes commerciales** (`tradeTax`) : 0 (pas encore implémenté)
+- **Intérêts (gain)** (`interestIncome`) : 0 (pas encore implémenté)
 
 #### Dépenses (`thisYearExpenses`) :
 - **Salaires** (`salaries`) : 0 (pas encore implémenté)
-- **Intérêts** (`interestExpense`) : Intérêts sur les prêts
-- **Maintenance** (`maintenance`) : Maintenance des bâtiments (`totalBuildingMaintenance`)
-- **Construction** (`construction`) : Investissements (`totalInvestments`)
+- **Intérêts** (`interestExpense`) : Entrées de type `'loan_interest'`
+- **Maintenance** (`maintenance`) : Entrées de type `'maintenance'`
+- **Construction** (`construction`) : Entrées de type `'construction'`
+- **Dépenses exceptionnelles** : Entrées de type `'exceptional_expenses'` (incluses dans totalExpenses)
 
-### 2. Calcul du report de solde de l'année précédente
+### 2. Calcul du solde actuel
 
 ```javascript
-if (lastYearSnapshot) {
-    previousYearBalance = lastYearSnapshot.balance || lastYearSnapshot.funds || 0;
-}
+// Le solde actuel provient du currentBudget
+balance = currentBudget.funds
 ```
 
-Le report de solde est affiché séparément (pas inclus dans les totaux).
+Le solde est affiché dans la ligne "Balance" du tableau.
 
 ### 3. Calcul final du flux net
 
@@ -93,59 +109,27 @@ previousYearBalance = 150€ (affiché sur une ligne séparée)
 balance = fonds actuels dans IndexedDB
 ```
 
-## Calcul pour "Année Dernière" (`calculateLastYearData`)
+## Calcul pour "Année Dernière" (`mapJournalDataToUI`)
 
 ### 1. Calcul des revenus et dépenses de l'année dernière
 
-Les valeurs proviennent du snapshot de l'année dernière :
+Les valeurs proviennent directement du journal via `JournalManager.getYearlyFinancialSummary()` :
 
 ```javascript
-// Si l'année dernière était la première année (année 0) :
-totalIncome = snapshot.income  // Inclut les fonds initiaux
-lastYearRealGifts = snapshot.totalGifts  // Inclut les fonds initiaux
+// Obtenir les données annuelles depuis le journal
+const yearlyData = await journalManager.getYearlyFinancialSummary();
+const lastYearData = yearlyData.find(y => y.year === currentYear - 1);
 
-// Si année suivante :
-totalIncome = snapshot.income  // Revenus cumulés
-lastYearRealGifts = snapshot.totalGifts - previousYearGifts  // Dons de l'année uniquement
-```
-
-### 2. Calcul du report de solde de l'année précédente à l'année dernière
-
-Si l'année dernière n'était pas la première année, elle avait une année précédente (année - 2) :
-
-```javascript
-if (!isLastYearFirstYear) {
-    // Chercher l'état de fin d'année de l'année précédente (année - 2)
-    const previousYearStates = budgetStates.filter(state => {
-        const stateYear = Math.floor(state.turn / 12);
-        return stateYear === previousYear;  // previousYear = lastYear - 1
-    });
-    
-    if (previousYearStates.length > 0) {
-        const lastPreviousState = previousYearStates[previousYearStates.length - 1];
-        const previousYearBalance = lastPreviousState.funds || 0;
-        
-        if (previousYearBalance > 0) {
-            previousYearGains = previousYearBalance;
-        } else if (previousYearBalance < 0) {
-            previousYearDebts = Math.abs(previousYearBalance);
-        }
-    }
+// Si l'année dernière n'existe pas dans le journal, retourner des valeurs vides
+if (!lastYearData) {
+    return getEmptyYearData(currentYear - 1);
 }
+
+// Extraire les montants par type depuis les entrées du journal
+// (même logique que pour "Cette Année")
 ```
 
-### 3. Ajustement des totaux
-
-```javascript
-adjustedLastYearIncome = totalIncome + previousYearGains
-adjustedLastYearExpenses = snapshot.expenses + previousYearDebts
-```
-
-### 4. Calcul final du flux net
-
-```javascript
-netFlow = adjustedLastYearIncome - adjustedLastYearExpenses
-```
+Les données de l'année dernière sont calculées de la même manière que cette année, mais à partir des entrées du journal de l'année précédente.
 
 ## Cas particuliers
 
@@ -179,13 +163,13 @@ Balance : 350€ (fonds actuels = flux net + report)
 
 ## Notes importantes
 
-1. **Synchronisation en temps réel** : Le `FinancialYearService` utilise maintenant le `currentBudget` directement (pas les `budgetStates`), garantissant que les données sont à jour à chaque transaction, exactement comme le journal.
+1. **Synchronisation en temps réel** : Le `FinancesSectionManager` utilise maintenant `JournalManager.getYearlyFinancialSummary()` directement, garantissant que les données sont à jour à chaque transaction, exactement comme le journal.
 
-2. **Valeurs cumulées** : Le `currentBudget` contient des totaux cumulés depuis le début du jeu. Il faut donc soustraire les totaux de l'année précédente pour obtenir les totaux de l'année en cours.
+2. **Source de vérité unique** : Toutes les données financières proviennent du journal (IndexedDB), qui est la source de vérité unique pour toutes les transactions.
 
-3. **Protection contre les valeurs négatives** : Toutes les valeurs sont protégées avec `Math.max(0, value)` pour éviter d'afficher des valeurs négatives ou invalides.
+3. **Agrégation par année** : Les données sont agrégées par année depuis les entrées du journal, sans calculs complexes de soustraction ou de snapshot.
 
-4. **Vérification des données fantômes** : En première année, si `turn <= 1` et qu'il n'y a pas d'entrées de journal de maintenance, `thisYearMaintenance` est forcé à 0.
+4. **Mapping des types** : Les types du journal (`income`, `capital_funds`, `maintenance`, `construction`, `loan_interest`, `exceptional_expenses`) sont mappés vers les catégories de l'UI.
 
-5. **Report séparé** : Le report de solde est maintenant affiché sur une ligne séparée entre le flux net et la balance, au lieu d'être inclus dans les revenus/dépenses.
+5. **Solde actuel** : Le solde (balance) provient du `currentBudget` pour refléter l'état actuel des fonds.
 

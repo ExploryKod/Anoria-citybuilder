@@ -216,6 +216,18 @@
     color: #383d41;
 }
 
+.journal-entry-type.carry_forward {
+    background: #d1e7dd;
+    color: #0f5132;
+    font-weight: 500;
+}
+
+/* Report à nouveau en dépense (déficitaire) */
+.journal-entry-type.carry_forward.negative {
+    background: #f8d7da;
+    color: #721c24;
+}
+
 .journal-entry-amount {
     font-size: 16px;
     font-weight: 600;

@@ -14,17 +14,16 @@
 ## 📊 Budget (Panneau Finances)
 
 ### Source des données
-- **Service** : `FinancialYearService`
-- **Source** : `BudgetManager` → IndexedDB (`db.budget`)
+- **Service** : `FinancesSectionManager`
+- **Source** : `JournalManager` → IndexedDB (`db.journal`)
 - **Méthodes utilisées** :
-  - `getCurrentBudget()` - Budget actuel
-  - `getBudgetStates()` - États sauvegardés par tour
-  - Calculs annuels basés sur les totaux cumulés
+  - `getYearlyFinancialSummary()` - Agrégation annuelle depuis le journal
+  - `getCurrentBudget()` - Budget actuel (pour le solde uniquement)
 
 ### Données affichées
-- **Cette année** : Totaux actuels - Totaux de l'année dernière
-- **Année dernière** : Snapshot sauvegardé (créé à l'ouverture du panneau)
-- **Toutes les valeurs** : Depuis IndexedDB (pas de données hardcodées)
+- **Cette année** : Agrégation des entrées du journal de l'année en cours
+- **Année dernière** : Agrégation des entrées du journal de l'année précédente
+- **Toutes les valeurs** : Depuis IndexedDB via le journal (pas de données hardcodées)
 
 ---
 
@@ -84,8 +83,9 @@ Toutes les transactions financières créent automatiquement une entrée de jour
 ┌─────────────────────────────────────────────────────────┐
 │              Services & UI                               │
 │  ┌──────────────────────┐  ┌──────────────────────┐     │
-│  │ FinancialYearService │  │ loadJournalEntries()│     │
+│  │ FinancesSectionMgr   │  │ loadJournalEntries()│     │
 │  │ (Panneau Finances)   │  │ (Journal UI)        │     │
+│  │ via JournalManager   │  │ via JournalManager  │     │
 │  └──────────────────────┘  └──────────────────────┘     │
 └─────────────────────────────────────────────────────────┘
 ```
