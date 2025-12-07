@@ -1,3 +1,5 @@
+import commerceStore from '../stores/CommerceStore.js';
+
 class CommerceSectionManager {
     constructor() {
         this.selectedGood = null;
@@ -10,18 +12,77 @@ class CommerceSectionManager {
     }
 
     setupEventListeners() {
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.commerce-good-item') && !e.target.closest('.commerce-good-details')) {
-                const goodItem = e.target.closest('.commerce-good-item');
-                const goodId = goodItem.dataset.goodId;
+        // Utiliser la délégation d'événements pour gérer les clics sur les éléments dynamiques
+        // Écouter sur le conteneur parent qui existe toujours
+        const commerceBoard = document.getElementById('admin-section-commerce');
+        if (!commerceBoard) return;
+
+        // Supprimer l'ancien listener s'il existe pour éviter les doublons
+        if (this.clickHandler) {
+            commerceBoard.removeEventListener('click', this.clickHandler);
+        }
+
+        // Créer un nouveau handler
+        this.clickHandler = (e) => {
+            // Vérifier si on clique sur un commerce-good-item
+            const goodItem = e.target.closest('.commerce-good-item');
+            if (!goodItem) return;
+            
+            // Ne pas ouvrir si on clique directement sur les détails ou leurs enfants
+            if (e.target.closest('.commerce-good-details')) return;
+            
+            // Ne pas ouvrir si on clique sur les boutons de contrôle
+            if (e.target.closest('.commerce-threshold-btn') || 
+                e.target.closest('.commerce-price-btn') ||
+                e.target.closest('.commerce-switch-input') ||
+                e.target.closest('input') ||
+                e.target.closest('button')) {
+                return;
+            }
+
+            const goodId = goodItem.dataset.goodId;
+            if (goodId) {
+                e.preventDefault();
+                e.stopPropagation();
                 this.toggleGoodDetails(goodId);
             }
-        });
+        };
+
+        commerceBoard.addEventListener('click', this.clickHandler);
     }
 
     async loadGoodsData() {
-        this.goodsData = this.generatePlaceholderGoodsData();
+        // Charger depuis le store (ou générer si première fois)
+        const storedConfig = commerceStore.loadConfig();
+        if (storedConfig) {
+            this.goodsData = storedConfig;
+        } else {
+            this.goodsData = this.generatePlaceholderGoodsData();
+            commerceStore.saveConfig(this.goodsData);
+        }
+        
+        // Charger les stats dynamiques depuis le store
+        this.loadDynamicStats();
+        
         this.render();
+    }
+
+    /**
+     * Charge les statistiques dynamiques depuis le store (écrites par CommerceService)
+     */
+    loadDynamicStats() {
+        const stats = commerceStore.loadStats();
+        if (!stats || !this.goodsData) return;
+
+        // Mettre à jour les données avec les stats
+        this.goodsData.forEach(good => {
+            if (stats.yearlyImports && stats.yearlyImports[good.id] !== undefined) {
+                good.yearlyImports = stats.yearlyImports[good.id];
+            }
+            if (stats.yearlyExports && stats.yearlyExports[good.id] !== undefined) {
+                good.yearlyExports = stats.yearlyExports[good.id];
+            }
+        });
     }
 
     generatePlaceholderGoodsData() {
@@ -30,18 +91,20 @@ class CommerceSectionManager {
                 id: 'wheat',
                 name: 'Blé',
                 sellingPrice: 15,
-                buyingPrice: 12,
+                buyingPrice: 5,  // Prix par défaut : 5€
                 marketPrice: 14,
                 marketShare: 45,
                 marketPosition: 'normal',
                 stockpiling: false,
                 sellingMax: 1000,
                 sellingMin: 100,
-                buyingMax: 500,
-                buyingMin: 50,
+                buyingMax: 8,  // Seuil maximum d'achat annuel (8 paniers)
+                // buyingMin supprimé
                 tax: 10,
                 consumptionShare: 60,
-                consumptionStatus: 'able'
+                consumptionStatus: 'able',
+                yearlyImports: 0,  // Stats dynamiques
+                yearlyExports: 0
             },
             {
                 id: 'carrot',
@@ -55,10 +118,12 @@ class CommerceSectionManager {
                 sellingMax: 800,
                 sellingMin: 80,
                 buyingMax: 400,
-                buyingMin: 40,
+                // buyingMin supprimé
                 tax: 15,
                 consumptionShare: 40,
-                consumptionStatus: 'able'
+                consumptionStatus: 'able',
+                yearlyImports: 0,
+                yearlyExports: 0
             },
             {
                 id: 'cabbage',
@@ -72,10 +137,12 @@ class CommerceSectionManager {
                 sellingMax: 600,
                 sellingMin: 60,
                 buyingMax: 300,
-                buyingMin: 30,
+                // buyingMin supprimé
                 tax: 20,
                 consumptionShare: 30,
-                consumptionStatus: 'unable'
+                consumptionStatus: 'unable',
+                yearlyImports: 0,
+                yearlyExports: 0
             },
             {
                 id: 'wood',
@@ -89,10 +156,12 @@ class CommerceSectionManager {
                 sellingMax: 2000,
                 sellingMin: 200,
                 buyingMax: 1000,
-                buyingMin: 100,
+                // buyingMin supprimé
                 tax: 5,
                 consumptionShare: 80,
-                consumptionStatus: 'exceeding'
+                consumptionStatus: 'exceeding',
+                yearlyImports: 0,
+                yearlyExports: 0
             }
         ];
     }
@@ -162,6 +231,9 @@ class CommerceSectionManager {
 
         const goodsList = document.getElementById('commerce-goods-list');
         if (!goodsList) return;
+        
+        // Ré-attacher les listeners après le rendu (le DOM est recréé)
+        this.setupEventListeners();
 
         goodsList.innerHTML = this.goodsData.map(good => {
             const marketPositionClass = this.getMarketPositionClass(good.marketShare);
@@ -295,25 +367,6 @@ class CommerceSectionManager {
                                     </div>
                                 </div>
                             </div>
-                            <div class="commerce-details-row">
-                                <div class="commerce-details-label">Minimum</div>
-                                <div class="commerce-threshold-controls">
-                                    <div class="commerce-threshold-buttons">
-                                        <button type="button" class="commerce-threshold-btn" data-good-id="${good.id}" data-type="buying-min" data-action="decrease" aria-label="Diminuer le minimum d'achat">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus">
-                                                <path d="M5 12h14"/>
-                                            </svg>
-                                        </button>
-                                        <span class="commerce-threshold-value" id="buying-min-${good.id}">${good.buyingMin}</span>
-                                        <button type="button" class="commerce-threshold-btn" data-good-id="${good.id}" data-type="buying-min" data-action="increase" aria-label="Augmenter le minimum d'achat">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
-                                                <path d="M5 12h14"/>
-                                                <path d="M12 5v14"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
 
                         <div class="commerce-details-section">
@@ -427,6 +480,9 @@ class CommerceSectionManager {
             inputElement.value = newPrice;
             this.updatePriceStatus(goodId, type, newPrice, good.marketPrice);
         }
+
+        // Sauvegarder dans le store
+        commerceStore.saveConfig(this.goodsData);
     }
 
     updatePrice(goodId, type, price) {
@@ -440,6 +496,9 @@ class CommerceSectionManager {
                 good.buyingPrice = Math.max(0, price);
             }
             this.updatePriceStatus(goodId, type, price, good.marketPrice);
+            
+            // Sauvegarder dans le store
+            commerceStore.saveConfig(this.goodsData);
         }
     }
 
@@ -469,6 +528,9 @@ class CommerceSectionManager {
         if (valueElement) {
             valueElement.textContent = newValue;
         }
+
+        // Sauvegarder dans le store
+        commerceStore.saveConfig(this.goodsData);
     }
 
     updateTax(goodId, tax) {
@@ -477,6 +539,8 @@ class CommerceSectionManager {
         const good = this.goodsData.find(g => g.id === goodId);
         if (good) {
             good.tax = Math.max(0, Math.min(500, tax));
+            // Sauvegarder dans le store
+            commerceStore.saveConfig(this.goodsData);
         }
     }
 
@@ -486,6 +550,8 @@ class CommerceSectionManager {
         const good = this.goodsData.find(g => g.id === goodId);
         if (good) {
             good.stockpiling = stockpiling;
+            // Sauvegarder dans le store
+            commerceStore.saveConfig(this.goodsData);
         }
     }
 }
@@ -496,18 +562,25 @@ function initCommerceSection() {
 
     const manager = new CommerceSectionManager();
     
+    // Initialiser la configuration au démarrage (même si le panneau n'est pas ouvert)
+    // Cela garantit que CommerceService peut trouver la config dès le début
+    manager.loadGoodsData();
+    
     const observer = new MutationObserver(() => {
         if (commerceSection.classList.contains('active')) {
-            manager.init();
-            observer.disconnect();
+            // Recharger les données à chaque activation (pour mettre à jour les stats dynamiques)
+            manager.loadGoodsData();
         }
     });
 
     observer.observe(commerceSection, { attributes: true, attributeFilter: ['class'] });
 
+    // Initialiser si déjà actif
     if (commerceSection.classList.contains('active')) {
         manager.init();
-        observer.disconnect();
+    } else {
+        // Même si le panneau n'est pas actif, initialiser les event listeners
+        manager.setupEventListeners();
     }
 
     window.commerceSectionManager = manager;

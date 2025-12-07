@@ -2103,7 +2103,11 @@ export function createScene(housesStore, gameStore, assetManager) {
                 const isFirstTurnOfMonth = timeInfo.dayInMonth === 1;
                 
                 // Pay salaries on first turn of each month (if not already paid this month)
+                // IMPORTANT: Mettre à jour lastSalaryMonth AVANT les opérations asynchrones pour éviter les doubles paiements
                 if (isFirstTurnOfMonth && currentMonth !== lastSalaryMonth) {
+                    // Marquer immédiatement que les salaires sont payés ce mois-ci pour éviter les doubles paiements
+                    lastSalaryMonth = currentMonth;
+                    
                     // Get salary from workSectionManager (default: 100€/mois)
                     let salaryPerMonth = 100; // Default fallback
                     if (window.workSectionManager && typeof window.workSectionManager.salary === 'number') {
@@ -2133,8 +2137,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                             const taxDescription = `Impôt sur les salaires - ${monthName} ${yearDisplay} (${Math.round(salaryTaxRate * 100)}%)`;
                             await window.budgetManager.addSalaryTax(totalSalaryAmount, salaryTaxRate, taxDescription);
                         }
-                        
-                        lastSalaryMonth = currentMonth;
                     }
                 }
                 
