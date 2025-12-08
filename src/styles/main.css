@@ -1225,11 +1225,26 @@ footer span {
     margin: 5px;
 }
 
+footer .footer-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 8px;
+    font-weight: 600;
+    color: var(--lightgreen);
+    margin: 5px;
+}
 
-
-footer a:hover {
+footer .footer-links a {
     text-decoration: none;
     color: var(--lightgreen);
+    margin: 5px;
+}
+
+footer .footer-links a:hover {
+    color: var(--cta);
+    text-transform: underline;
 }
 
 .no-game {

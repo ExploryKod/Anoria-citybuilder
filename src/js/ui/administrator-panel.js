@@ -55,6 +55,18 @@ function initAdministratorPanel() {
         const targetSection = document.getElementById(`admin-section-${sectionId}`);
         if (targetSection) {
             targetSection.classList.add('active');
+            
+            // Initialize food traceability when section is shown
+            if (sectionId === 'food-traceability') {
+                if (typeof initializeFoodTraceabilityTabs === 'function') {
+                    initializeFoodTraceabilityTabs();
+                }
+                if (typeof loadFoodTraceabilityEntries === 'function') {
+                    const activeFilterBtn = document.querySelector('.food-traceability-filter-btn.active');
+                    const currentPeriod = activeFilterBtn ? activeFilterBtn.dataset.period : 'all';
+                    loadFoodTraceabilityEntries(currentPeriod);
+                }
+            }
         }
 
         // Add selected class to the corresponding nav button
