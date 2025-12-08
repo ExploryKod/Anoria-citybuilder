@@ -1060,18 +1060,17 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     return;
                 }
             
-                const houseStocks = await housesStore.getHouseItem(houseID, 'stocks');
-                const houseNeighbors = await housesStore.getHouseItem(houseID, 'neighbors');
-                const { roadCount } = checkRoadAccess(houseNeighbors || []);
-                const HouseRoads  = { roads: roadCount };
                 price = getAssetPrice(activeToolId, assetsPrices) || 0
                 
-                // Get funds from BudgetManager instead of game table
-                let funds = 0;
-                if (window.budgetManager) {
-                    const budgetData = await window.budgetManager.getCurrentBudget();
-                    funds = budgetData.funds;
-                }
+                const [houseStocks, houseNeighbors, budgetData] = await Promise.all([
+                    housesStore.getHouseItem(houseID, 'stocks'),
+                    housesStore.getHouseItem(houseID, 'neighbors'),
+                    window.budgetManager ? window.budgetManager.getCurrentBudget() : Promise.resolve({ funds: 0 })
+                ]);
+                
+                const { roadCount } = checkRoadAccess(houseNeighbors || []);
+                const HouseRoads  = { roads: roadCount };
+                const funds = budgetData.funds || 0;
                 
                 const dbHouseData = {
                     name: houseID,
