@@ -588,7 +588,7 @@ class BudgetManager {
      * @param {string} productId - ID du produit (wheat, carrot, etc.)
      * @returns {Promise<Object>} Updated budget
      */
-    async addImportExpense(amount, description, productId = 'unknown') {
+    async addImportExpense(amount, description, productId = 'unknown', partnerId = null) {
         const budget = await this.getCurrentBudget();
         
         // Validate input amount
@@ -602,8 +602,8 @@ class BudgetManager {
         // Créer le type d'entrée journal : 'import_wheat', 'import_carrot', etc.
         const journalType = `import_${productId}`;
         
-        // Add journal entry
-        await this.addJournalEntry(budget.turn, journalType, roundedAmount, description);
+        // Add journal entry with partner info
+        await this.addJournalEntry(budget.turn, journalType, roundedAmount, description, partnerId);
         
         // Update budget (import = dépense)
         budget.funds = Math.round(budget.funds - roundedAmount);
@@ -628,7 +628,7 @@ class BudgetManager {
      * @param {string} productId - ID du produit (wheat, carrot, etc.)
      * @returns {Promise<Object>} Updated budget
      */
-    async addExportIncome(amount, description, productId = 'unknown') {
+    async addExportIncome(amount, description, productId = 'unknown', partnerId = null) {
         const budget = await this.getCurrentBudget();
         
         // Validate input amount
@@ -642,8 +642,8 @@ class BudgetManager {
         // Créer le type d'entrée journal : 'export_wheat', 'export_carrot', etc.
         const journalType = `export_${productId}`;
         
-        // Add journal entry
-        await this.addJournalEntry(budget.turn, journalType, roundedAmount, description);
+        // Add journal entry with partner info
+        await this.addJournalEntry(budget.turn, journalType, roundedAmount, description, partnerId);
         
         // Update budget (export = revenu)
         budget.funds = Math.round(budget.funds + roundedAmount);

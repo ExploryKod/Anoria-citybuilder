@@ -4,11 +4,400 @@ class CommerceSectionManager {
     constructor() {
         this.selectedGood = null;
         this.goodsData = null;
+        this.partnersData = null;
+        this.currentTab = 'products';
     }
 
     init() {
         this.setupEventListeners();
+        this.setupTabs();
         this.loadGoodsData();
+        this.loadPartnersData();
+    }
+
+    setupTabs() {
+        const tabs = document.querySelectorAll('.commerce-tab');
+        const tabContents = document.querySelectorAll('.commerce-tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetTab = tab.dataset.tab;
+                
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    const expectedId = `commerce-${targetTab}-tab`;
+                    if (content.id === expectedId) {
+                        content.classList.add('active');
+                    }
+                });
+                
+                this.currentTab = targetTab;
+                
+                if (targetTab === 'partners') {
+                    this.renderPartners();
+                }
+            });
+        });
+    }
+
+    /**
+     * Generate initial partners data
+     * @returns {Array<Object>} Partners with trade configurations
+     * Dependencies: None
+     */
+    generatePartnersData() {
+        return [
+            {
+                id: 'deserta',
+                name: 'Deserta',
+                description: 'Ville désertique spécialisée dans les dattes',
+                isActive: false, // Relation commerciale désactivée par défaut
+                activationConditions: [], // Conditions requises pour activer (vide = aucune condition)
+                imports: [
+                    {
+                        productId: 'carrot',
+                        productName: 'Carotte',
+                        months: [7, 8, 11],
+                        maxPerTurn: 8,
+                        maxOccurrences: 9,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    },
+                    {
+                        productId: 'wood',
+                        productName: 'Bois',
+                        months: [11],
+                        maxPerTurn: 5,
+                        maxOccurrences: 2,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    }
+                ],
+                exports: [
+                    {
+                        productId: 'dattes',
+                        productName: 'Dattes',
+                        months: [0, 2],
+                        maxOccurrences: 2,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    }
+                ]
+            },
+            {
+                id: 'tropicala',
+                name: 'Tropicala',
+                description: 'Ville tropicale aux ressources exotiques',
+                isActive: false,
+                activationConditions: [],
+                imports: [
+                    {
+                        productId: 'wheat',
+                        productName: 'Blé',
+                        months: [3, 4, 9],
+                        maxPerTurn: 6,
+                        maxOccurrences: 8,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    },
+                    {
+                        productId: 'cabbage',
+                        productName: 'Chou',
+                        months: [5, 6, 10],
+                        maxPerTurn: 4,
+                        maxOccurrences: 6,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    }
+                ],
+                exports: [
+                    {
+                        productId: 'wood',
+                        productName: 'Bois tropical',
+                        months: [1, 2, 8],
+                        maxOccurrences: 4,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    }
+                ]
+            },
+            {
+                id: 'arctica',
+                name: 'Arctica',
+                description: 'Ville du nord aux ressources rares',
+                isActive: false,
+                activationConditions: [],
+                imports: [
+                    {
+                        productId: 'carrot',
+                        productName: 'Carotte',
+                        months: [1, 2, 6, 10],
+                        maxPerTurn: 5,
+                        maxOccurrences: 10,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    }
+                ],
+                exports: [
+                    {
+                        productId: 'wood',
+                        productName: 'Bois du nord',
+                        months: [4, 5, 9, 11],
+                        maxOccurrences: 6,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    }
+                ]
+            }
+        ];
+    }
+
+    /**
+     * Load partners data from localStorage
+     * Dependencies: localStorage
+     */
+    loadPartnersData() {
+        const stored = localStorage.getItem('commerce_partners');
+        if (stored) {
+            try {
+                this.partnersData = JSON.parse(stored);
+            } catch (e) {
+                this.partnersData = this.generatePartnersData();
+                this.savePartnersData();
+            }
+        } else {
+            this.partnersData = this.generatePartnersData();
+            this.savePartnersData();
+        }
+    }
+
+    /**
+     * Check if partner activation conditions are met
+     * @param {Object} partner - Partner object
+     * @returns {Object} { canActivate: boolean, unmetConditions: Array<string> }
+     * Dependencies: None (extensible for future conditions)
+     */
+    checkPartnerActivationConditions(partner) {
+        if (!partner.activationConditions || partner.activationConditions.length === 0) {
+            return { canActivate: true, unmetConditions: [] };
+        }
+
+        const unmetConditions = [];
+
+        // Exemple de conditions futures (à implémenter) :
+        // - 'population_min_100': Nécessite 100 habitants minimum
+        // - 'building_windmill': Nécessite un moulin construit
+        // - 'funds_min_500': Nécessite 500€ en trésorerie
+
+        for (const condition of partner.activationConditions) {
+            // TODO: Implémenter la vérification des conditions ici
+            // Pour l'instant, on considère toutes les conditions comme non remplies
+            unmetConditions.push(condition);
+        }
+
+        return {
+            canActivate: unmetConditions.length === 0,
+            unmetConditions
+        };
+    }
+
+    /**
+     * Toggle partner active status
+     * @param {string} partnerId - Partner ID
+     * @returns {boolean} New active status or false if activation failed
+     * Dependencies: localStorage
+     */
+    togglePartnerActivation(partnerId) {
+        const partner = this.partnersData.find(p => p.id === partnerId);
+        if (!partner) return false;
+
+        const conditionCheck = this.checkPartnerActivationConditions(partner);
+
+        // Si on active, vérifier les conditions
+        if (!partner.isActive && !conditionCheck.canActivate) {
+            console.warn(`Cannot activate partner ${partnerId}: conditions not met`, conditionCheck.unmetConditions);
+            return false;
+        }
+
+        partner.isActive = !partner.isActive;
+        this.savePartnersData();
+
+        return partner.isActive;
+    }
+
+    savePartnersData() {
+        localStorage.setItem('commerce_partners', JSON.stringify(this.partnersData));
+    }
+
+    /**
+     * Render partners list with activation controls
+     * Dependencies: commerceStore
+     */
+    renderPartners() {
+        const partnersList = document.getElementById('commerce-partners-list');
+        if (!partnersList || !this.partnersData) return;
+
+        // Initialiser les champs manquants pour compatibilité avec anciennes données
+        let needsSave = false;
+        this.partnersData.forEach(partner => {
+            if (partner.isActive === undefined) {
+                partner.isActive = false;
+                needsSave = true;
+            }
+            if (!partner.activationConditions) {
+                partner.activationConditions = [];
+                needsSave = true;
+            }
+        });
+        if (needsSave) this.savePartnersData();
+
+        const stats = commerceStore.loadStats();
+        const yearlyExports = stats?.yearlyExports || {};
+        const yearlyImports = stats?.yearlyImports || {};
+
+        partnersList.innerHTML = this.partnersData.map(partner => {
+            const importsHTML = partner.imports.map(imp => {
+                const monthsNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+                const monthsText = imp.months.map(m => monthsNames[m]).join(', ');
+                const isPartnerLimitReached = imp.currentOccurrences >= imp.maxOccurrences;
+                
+                const productConfig = this.goodsData?.find(g => g.id === imp.productId);
+                const internalLimit = productConfig?.sellingMax || 0;
+                const currentYearly = yearlyExports[imp.productId] || 0;
+                const isInternalLimitReached = currentYearly >= internalLimit;
+                
+                const statusClass = (isPartnerLimitReached || isInternalLimitReached) ? 'limit-reached' : 'active';
+                const statusText = isPartnerLimitReached ? 'Limite partenaire atteinte' : 
+                                  isInternalLimitReached ? 'Seuil interne dépassé' : 'Actif';
+                
+                return `
+                    <div class="partner-trade-item ${statusClass}">
+                        <div class="partner-trade-header">
+                            <span class="partner-trade-product">${imp.productName}</span>
+                            <span class="partner-trade-status ${statusClass}">
+                                ${statusText}
+                            </span>
+                        </div>
+                        <div class="partner-trade-details">
+                            <div class="partner-trade-detail">
+                                <span class="detail-label">Mois:</span>
+                                <span class="detail-value">${monthsText}</span>
+                            </div>
+                            <div class="partner-trade-detail">
+                                <span class="detail-label">Max/tour:</span>
+                                <span class="detail-value">${imp.maxPerTurn}</span>
+                            </div>
+                            <div class="partner-trade-detail">
+                                <span class="detail-label">Nombre d'imports avant fin du contrat:</span>
+                                <span class="detail-value">${imp.currentOccurrences}/${imp.maxOccurrences}</span>
+                            </div>
+                            <div class="partner-trade-detail">
+                                <span class="detail-label">Seuil interne:</span>
+                                <span class="detail-value ${isInternalLimitReached ? 'limit-reached' : ''}">${currentYearly}/${internalLimit}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const exportsHTML = partner.exports.map(exp => {
+                const monthsNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+                const monthsText = exp.months.map(m => monthsNames[m]).join(', ');
+                const isPartnerLimitReached = exp.currentOccurrences >= exp.maxOccurrences;
+                
+                const productConfig = this.goodsData?.find(g => g.id === exp.productId);
+                const internalLimit = productConfig?.buyingMax || 0;
+                const currentYearly = yearlyImports[exp.productId] || 0;
+                const isInternalLimitReached = currentYearly >= internalLimit;
+                
+                const statusClass = (isPartnerLimitReached || isInternalLimitReached) ? 'limit-reached' : 'active';
+                const statusText = isPartnerLimitReached ? 'Limite partenaire atteinte' : 
+                                  isInternalLimitReached ? 'Seuil interne dépassé' : 'Actif';
+                
+                return `
+                    <div class="partner-trade-item ${statusClass}">
+                        <div class="partner-trade-header">
+                            <span class="partner-trade-product">${exp.productName}</span>
+                            <span class="partner-trade-status ${statusClass}">
+                                ${statusText}
+                            </span>
+                        </div>
+                        <div class="partner-trade-details">
+                            <div class="partner-trade-detail">
+                                <span class="detail-label">Mois:</span>
+                                <span class="detail-value">${monthsText}</span>
+                            </div>
+                            <div class="partner-trade-detail">
+                                <span class="detail-label">Nombre d'exports avant fin du contrat:</span>
+                                <span class="detail-value">${exp.currentOccurrences}/${exp.maxOccurrences}</span>
+                            </div>
+                            <div class="partner-trade-detail">
+                                <span class="detail-label">Seuil interne:</span>
+                                <span class="detail-value ${isInternalLimitReached ? 'limit-reached' : ''}">${currentYearly}/${internalLimit}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Vérifier les conditions d'activation
+            const conditionCheck = this.checkPartnerActivationConditions(partner);
+            const canActivate = conditionCheck.canActivate;
+            const conditionsText = partner.activationConditions.length === 0
+                ? 'Aucune condition'
+                : conditionCheck.unmetConditions.join(', ');
+
+            return `
+                <div class="commerce-partner-item ${partner.isActive ? 'active' : 'inactive'}" data-partner-id="${partner.id}">
+                    <div class="commerce-partner-header">
+                        <h4 class="commerce-partner-name">${partner.name}</h4>
+                        <p class="commerce-partner-description">${partner.description}</p>
+                    </div>
+
+                    <div class="commerce-partner-activation">
+                        <div class="partner-activation-status">
+                            <span class="status-label">Statut:</span>
+                            <span class="status-value ${partner.isActive ? 'active' : 'inactive'}">
+                                ${partner.isActive ? '✅ Relation active' : '❌ Relation inactive'}
+                            </span>
+                        </div>
+                        <button class="partner-activation-btn ${!canActivate && !partner.isActive ? 'disabled' : ''}"
+                                data-partner-id="${partner.id}"
+                                ${!canActivate && !partner.isActive ? 'disabled' : ''}>
+                            ${partner.isActive ? 'Désactiver la relation' : 'Activer la relation'}
+                        </button>
+                        <div class="partner-activation-conditions">
+                            <span class="conditions-label">Conditions d'activation:</span>
+                            <span class="conditions-value">${conditionsText}</span>
+                        </div>
+                    </div>
+
+                    <div class="commerce-partner-trades ${!partner.isActive ? 'disabled' : ''}">
+                        ${partner.imports.length > 0 ? `
+                            <div class="partner-trades-section">
+                                <h5 class="partner-trades-title">Importe (nos exports)</h5>
+                                ${importsHTML}
+                            </div>
+                        ` : ''}
+                        ${partner.exports.length > 0 ? `
+                            <div class="partner-trades-section">
+                                <h5 class="partner-trades-title">Exporte (nos imports)</h5>
+                                ${exportsHTML}
+                            </div>
+                        ` : ''}
+                        ${partner.imports.length === 0 && partner.exports.length === 0 ? `
+                            <div class="partner-no-trades">
+                                <p>Aucun accord commercial actif</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
     setupEventListeners() {
@@ -24,6 +413,17 @@ class CommerceSectionManager {
 
         // Créer un nouveau handler
         this.clickHandler = (e) => {
+            // Gérer les clics sur les boutons d'activation des partenaires
+            const activationBtn = e.target.closest('.partner-activation-btn');
+            if (activationBtn) {
+                const partnerId = activationBtn.dataset.partnerId;
+                const newStatus = this.togglePartnerActivation(partnerId);
+                if (newStatus !== false) {
+                    this.renderPartners();
+                }
+                return;
+            }
+
             // Vérifier si on clique sur un commerce-good-item
             const goodItem = e.target.closest('.commerce-good-item');
             if (!goodItem) return;
@@ -160,6 +560,23 @@ class CommerceSectionManager {
                 tax: 5,
                 consumptionShare: 80,
                 consumptionStatus: 'exceeding',
+                yearlyImports: 0,
+                yearlyExports: 0
+            },
+            {
+                id: 'dattes',
+                name: 'Dattes',
+                sellingPrice: 22,
+                buyingPrice: 12,
+                marketPrice: 16,
+                marketShare: 5,
+                marketPosition: 'inferior',
+                stockpiling: false,
+                sellingMax: 0,  // On n'exporte pas de dattes (produit exotique importé)
+                buyingMax: 200,
+                tax: 8,
+                consumptionShare: 15,
+                consumptionStatus: 'unable',
                 yearlyImports: 0,
                 yearlyExports: 0
             }
@@ -560,8 +977,10 @@ function initCommerceSection() {
     if (commerceSection.classList.contains('active')) {
         manager.init();
     } else {
-        // Même si le panneau n'est pas actif, initialiser les event listeners
+        // Même si le panneau n'est pas actif, initialiser les event listeners et les tabs
         manager.setupEventListeners();
+        manager.setupTabs();
+        manager.loadPartnersData();
     }
 
     window.commerceSectionManager = manager;

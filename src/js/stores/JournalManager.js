@@ -137,7 +137,7 @@ class JournalManager {
      * @param {number} amount - Amount
      * @param {string} description - Description
      */
-    async addJournalEntry(turn, type, amount, description) {
+    async addJournalEntry(turn, type, amount, description, partnerId = null) {
         try {
             // Obtenir le mois et l'année depuis TimeManager
             let month = null;
@@ -151,7 +151,7 @@ class JournalManager {
                 year = timeInfo.year;
             }
             
-            await this.db.journal.add({
+            const entry = {
                 turn: turn,
                 date: new Date().toISOString(),
                 type: type,
@@ -159,7 +159,13 @@ class JournalManager {
                 description: description,
                 month: month,
                 year: year
-            });
+            };
+            
+            if (partnerId) {
+                entry.partnerId = partnerId;
+            }
+            
+            await this.db.journal.add(entry);
         } catch (error) {
             console.error('Error adding journal entry:', error);
         }

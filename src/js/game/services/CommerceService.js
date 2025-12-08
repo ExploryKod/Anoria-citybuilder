@@ -1,8 +1,8 @@
 import { SimService } from './SimService.js';
 import commerceStore from '../../stores/CommerceStore.js';
 
-const STOCKABLE_PRODUCTS = ['wheat', 'carrot', 'cabbage'];
-const ALL_PRODUCTS = ['wheat', 'carrot', 'cabbage', 'wood'];
+const STOCKABLE_PRODUCTS = ['wheat', 'carrot', 'cabbage', 'dattes'];
+const ALL_PRODUCTS = ['wheat', 'carrot', 'cabbage', 'wood', 'dattes'];
 
 const DEFAULT_CONDITIONS = {
     import: {
@@ -31,6 +31,10 @@ const PRODUCT_CONDITIONS = {
     wood: {
         import: { requiresStock: false, requiresWindmill: false },
         export: { requiresStock: false, requiresWindmill: false }
+    },
+    dattes: {
+        import: { requiresStock: false, requiresWindmill: false },
+        export: { requiresStock: true, requiresWindmill: true }
     }
 };
 
@@ -40,6 +44,122 @@ export class CommerceService extends SimService {
         this.yearlyImports = {};
         this.yearlyExports = {};
         this.lastProcessedYear = -1;
+        this.partnersData = null;
+    }
+
+    loadPartners() {
+        this.partnersData = commerceStore.loadPartners();
+        if (!this.partnersData && typeof window !== 'undefined' && window.commerceSectionManager) {
+            if (window.commerceSectionManager.partnersData) {
+                this.partnersData = window.commerceSectionManager.partnersData;
+                commerceStore.savePartners(this.partnersData);
+            }
+        }
+        return this.partnersData;
+    }
+
+    getPartner(partnerId) {
+        if (!this.partnersData) this.loadPartners();
+        if (!this.partnersData) return null;
+        return this.partnersData.find(p => p.id === partnerId) || null;
+    }
+
+    /**
+     * Check if trading with partner is allowed
+     * @param {string} partnerId - Partner ID
+     * @param {string} productId - Product ID
+     * @param {string} operation - 'import' or 'export'
+     * @param {number} time - Current game turn
+     * @returns {boolean} True if trading is allowed
+     * Dependencies: TimeManager (global), partnersData
+     */
+    canTradeWithPartner(partnerId, productId, operation, time) {
+        const partner = this.getPartner(partnerId);
+        if (!partner) return false;
+
+        // Vérifier que la relation commerciale est active
+        if (!partner.isActive) {
+            console.log(`[CommerceService] Cannot trade with ${partnerId}: relation not active`);
+            return false;
+        }
+
+        const globalObj = typeof window !== 'undefined' ? window : global;
+        const timeInfo = globalObj.TimeManager.getTimeInfo(time);
+        const currentMonth = timeInfo.monthIndex;
+
+        if (operation === 'export') {
+            const trade = partner.imports.find(imp => imp.productId === productId);
+            console.log("[partner trade object] > ", trade);
+            if (!trade) return false;
+            
+            if (!trade.months.includes(currentMonth)) return false;
+            if (trade.currentOccurrences >= trade.maxOccurrences) return false;
+
+            
+            return true;
+        } else if (operation === 'import') {
+            const trade = partner.exports.find(exp => exp.productId === productId);
+            if (!trade) return false;
+            
+            if (!trade.months.includes(currentMonth)) return false;
+            if (trade.currentOccurrences >= trade.maxOccurrences) return false;
+            
+            return true;
+        }
+
+        return false;
+    }
+
+    updatePartnerTrade(partnerId, productId, operation) {
+        const partner = this.getPartner(partnerId);
+        if (!partner) return false;
+
+        if (operation === 'export') {
+            const trade = partner.imports.find(imp => imp.productId === productId);
+            if (trade) {
+                trade.currentOccurrences = (trade.currentOccurrences || 0) + 1;
+                trade.currentYearly = (trade.currentYearly || 0) + 1;
+                commerceStore.savePartners(this.partnersData);
+                return true;
+            }
+        } else if (operation === 'import') {
+            const trade = partner.exports.find(exp => exp.productId === productId);
+            if (trade) {
+                trade.currentOccurrences = (trade.currentOccurrences || 0) + 1;
+                trade.currentYearly = (trade.currentYearly || 0) + 1;
+                commerceStore.savePartners(this.partnersData);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    getPartnerTradeLimit(partnerId, productId, operation) {
+        const partner = this.getPartner(partnerId);
+        if (!partner) return null;
+
+        if (operation === 'export') {
+            const trade = partner.imports.find(imp => imp.productId === productId);
+            if (trade) {
+                return {
+                    maxPerTurn: trade.maxPerTurn,
+                    maxOccurrences: trade.maxOccurrences,
+                    currentOccurrences: trade.currentOccurrences || 0
+                };
+            }
+        } else if (operation === 'import') {
+            const trade = partner.exports.find(exp => exp.productId === productId);
+            if (trade) {
+                return {
+                    maxPerTurn: 1,
+                    maxOccurrences: trade.maxOccurrences,
+                    currentOccurrences: trade.currentOccurrences || 0
+                };
+            }
+        }
+
+        return null;
     }
 
     getProductConfig(productId) {
@@ -135,47 +255,78 @@ export class CommerceService extends SimService {
         }
     }
 
-    async addToWindmillStock(housesStore, productId, quantity) {
+    async addToWindmillStock(housesStore, productId, quantity, partnerId = null) {
         if (!housesStore || quantity <= 0 || !this.isStockable(productId)) return null;
-        
+
         try {
             const allHouses = await housesStore.listAllHouses();
             const windmills = allHouses.filter(house => {
                 const type = house.type || '';
                 return type.includes('Windmill') || type.includes('windmill');
             });
-            
+
             if (windmills.length === 0) return null;
-            
+
             const stockKey = this.getStockKey(productId);
             if (!stockKey) return null;
-            
+
             const firstWindmill = windmills[0];
             const windmillData = await housesStore.getHouse(firstWindmill.id || firstWindmill.name);
             if (!windmillData) {
                 console.warn(`[CommerceService] Windmill not found: ${firstWindmill.id || firstWindmill.name}`);
                 return null;
             }
-            
+
             const stocks = windmillData.stocks || {};
             const updatedStocks = {
                 ...stocks,
                 [stockKey]: (stocks[stockKey] || 0) + quantity,
                 food: (stocks.food || 0) + quantity
             };
-            
+
             const existingLastImport = windmillData.lastImport || {};
             const lastImport = {
                 ...existingLastImport,
                 [stockKey]: (existingLastImport[stockKey] || 0) + quantity,
                 total: (existingLastImport.total || 0) + quantity
             };
-            
+
+            // Update lastImportDetails with partner information
+            const existingLastImportDetails = windmillData.lastImportDetails || {};
+            const lastImportDetails = { ...existingLastImportDetails };
+
+            if (partnerId) {
+                // Get partner name
+                const partner = this.getPartner(partnerId);
+                const partnerName = partner ? partner.name : partnerId;
+
+                // Initialize product array if it doesn't exist
+                if (!lastImportDetails[stockKey]) {
+                    lastImportDetails[stockKey] = [];
+                }
+
+                // Check if partner already exists in the array for this product
+                const existingPartnerIndex = lastImportDetails[stockKey].findIndex(p => p.partnerId === partnerId);
+
+                if (existingPartnerIndex >= 0) {
+                    // Update existing partner entry
+                    lastImportDetails[stockKey][existingPartnerIndex].quantity += quantity;
+                } else {
+                    // Add new partner entry
+                    lastImportDetails[stockKey].push({
+                        partnerId: partnerId,
+                        partnerName: partnerName,
+                        quantity: quantity
+                    });
+                }
+            }
+
             await housesStore.updateHouseFields(firstWindmill.id || firstWindmill.name, {
                 stocks: updatedStocks,
-                lastImport: lastImport
+                lastImport: lastImport,
+                lastImportDetails: lastImportDetails
             });
-            
+
             return {
                 windmillId: firstWindmill.id || firstWindmill.name,
                 addedQuantity: quantity
@@ -231,11 +382,21 @@ export class CommerceService extends SimService {
         }
     }
 
-    async processProductImport({ productId, housesStore, time, quantity = 1, conditions = null }) {
+    async processProductImport({ productId, housesStore, time, quantity = 1, conditions = null, partnerId = null }) {
         const config = this.getProductConfig(productId);
         if (!config) {
             console.warn(`[CommerceService] No config found for product: ${productId}`);
             return null;
+        }
+
+        if (partnerId) {
+            if (!this.canTradeWithPartner(partnerId, productId, 'import', time)) {
+                return null;
+            }
+            const partnerLimit = this.getPartnerTradeLimit(partnerId, productId, 'import');
+            if (partnerLimit && quantity > partnerLimit.maxPerTurn) {
+                quantity = partnerLimit.maxPerTurn;
+            }
         }
 
         if (!this.canImportProduct(productId, quantity, conditions)) {
@@ -245,14 +406,35 @@ export class CommerceService extends SimService {
         const pricePerUnit = config.buyingPrice || 5;
         const totalCost = quantity * pricePerUnit;
 
-        if (!window.budgetManager) return null;
+        const globalObj = typeof window !== 'undefined' ? window : global;
+        if (!globalObj.budgetManager) return null;
 
-        const description = `Import ${productId} (${quantity} panier × ${pricePerUnit}€)`;
-        await window.budgetManager.addImportExpense(totalCost, description, productId);
+        const partner = partnerId ? this.getPartner(partnerId) : null;
+        const partnerName = partner ? partner.name : null;
+
+        // Créer le breakdown pour le journal (comme la maintenance)
+        let description = `Import ${productId}`;
+        if (partnerName) {
+            const breakdown = [{
+                label: partnerName,
+                quantity: quantity,
+                unitCost: pricePerUnit,
+                total: totalCost
+            }];
+            description += ` |BREAKDOWN|${JSON.stringify(breakdown)}|BREAKDOWN|`;
+        } else {
+            description += ` (${quantity} panier × ${pricePerUnit}€)`;
+        }
+
+        await globalObj.budgetManager.addImportExpense(totalCost, description, productId, partnerId);
+
+        if (partnerId) {
+            this.updatePartnerTrade(partnerId, productId, 'import');
+        }
 
         let stockAdded = false;
         if (housesStore && this.isStockable(productId)) {
-            const stockResult = await this.addToWindmillStock(housesStore, productId, quantity);
+            const stockResult = await this.addToWindmillStock(housesStore, productId, quantity, partnerId);
             stockAdded = stockResult !== null;
         }
 
@@ -272,11 +454,21 @@ export class CommerceService extends SimService {
         };
     }
 
-    async processProductExport({ productId, housesStore, time, quantity = 1, conditions = null }) {
+    async processProductExport({ productId, housesStore, time, quantity = 1, conditions = null, partnerId = null }) {
         const config = this.getProductConfig(productId);
         if (!config) {
             console.warn(`[CommerceService] No config found for product: ${productId}`);
             return null;
+        }
+
+        if (partnerId) {
+            if (!this.canTradeWithPartner(partnerId, productId, 'export', time)) {
+                return null;
+            }
+            const partnerLimit = this.getPartnerTradeLimit(partnerId, productId, 'export');
+            if (partnerLimit && quantity > partnerLimit.maxPerTurn) {
+                quantity = partnerLimit.maxPerTurn;
+            }
         }
 
         const availableStock = await this.getTotalWindmillStock(housesStore, productId);
@@ -288,7 +480,8 @@ export class CommerceService extends SimService {
         const pricePerUnit = config.sellingPrice || 15;
         const totalRevenue = quantity * pricePerUnit;
 
-        if (!window.budgetManager) return null;
+        const globalObj = typeof window !== 'undefined' ? window : global;
+        if (!globalObj.budgetManager) return null;
 
         if (this.isStockable(productId)) {
             const stockReduced = await this.reduceWindmillStock(housesStore, productId, quantity);
@@ -298,9 +491,32 @@ export class CommerceService extends SimService {
             }
         }
 
+        const partner = partnerId ? this.getPartner(partnerId) : null;
+        const partnerName = partner ? partner.name : null;
         const remainingStock = this.isStockable(productId) ? availableStock - quantity : 0;
-        const description = `Export ${productId} (${quantity} panier × ${pricePerUnit}€)${remainingStock > 0 ? ` - Stock restant: ${remainingStock}` : ''}`;
-        await window.budgetManager.addExportIncome(totalRevenue, description, productId);
+
+        // Créer le breakdown pour le journal
+        let description = `Export ${productId}`;
+        if (partnerName) {
+            const breakdown = [{
+                label: partnerName,
+                quantity: quantity,
+                unitCost: pricePerUnit,
+                total: totalRevenue
+            }];
+            description += ` |BREAKDOWN|${JSON.stringify(breakdown)}|BREAKDOWN|`;
+            if (remainingStock > 0) {
+                description += ` - Stock restant: ${remainingStock}`;
+            }
+        } else {
+            description += ` (${quantity} panier × ${pricePerUnit}€)${remainingStock > 0 ? ` - Stock restant: ${remainingStock}` : ''}`;
+        }
+
+        await globalObj.budgetManager.addExportIncome(totalRevenue, description, productId, partnerId);
+
+        if (partnerId) {
+            this.updatePartnerTrade(partnerId, productId, 'export');
+        }
 
         this.yearlyExports[productId] = (this.yearlyExports[productId] || 0) + quantity;
 
@@ -334,7 +550,8 @@ export class CommerceService extends SimService {
                     const windmillData = await housesStore.getHouse(windmillId);
                     if (windmillData && windmillData.lastImport !== undefined) {
                         await housesStore.updateHouseFields(windmillId, {
-                            lastImport: { wheat: 0, carrot: 0, cabbage: 0, total: 0 }
+                            lastImport: { wheat: 0, carrot: 0, cabbage: 0, dattes: 0, total: 0 },
+                            lastImportDetails: {}
                         });
                     }
                 } catch (error) {
@@ -357,6 +574,16 @@ export class CommerceService extends SimService {
                 this.yearlyImports = {};
                 this.yearlyExports = {};
                 commerceStore.resetYearlyStats();
+                
+                this.loadPartners();
+                if (this.partnersData) {
+                    this.partnersData.forEach(partner => {
+                        partner.imports.forEach(imp => {
+                            imp.currentYearly = 0;
+                        });
+                    });
+                    commerceStore.savePartners(this.partnersData);
+                }
             }
             this.lastProcessedYear = timeInfo.year;
         }
@@ -373,28 +600,56 @@ export class CommerceService extends SimService {
             return { imports: [], exports: [] };
         }
 
+        this.loadPartners();
+        
         const imports = [];
         const exports = [];
+        const processedProducts = new Set();
 
-        for (const productId of ALL_PRODUCTS) {
-            const importResult = await this.processProductImport({
-                productId,
-                housesStore,
-                time
-            });
-            if (importResult) {
-                imports.push(importResult);
-            }
+        if (this.partnersData) {
+            for (const partner of this.partnersData) {
+                for (const importTrade of partner.exports) {
+                    if (this.canTradeWithPartner(partner.id, importTrade.productId, 'import', time)) {
+                        const limit = this.getPartnerTradeLimit(partner.id, importTrade.productId, 'import');
+                        const quantity = limit ? Math.min(limit.maxPerTurn, 1) : 1;
+                        
+                        const importResult = await this.processProductImport({
+                            productId: importTrade.productId,
+                            housesStore,
+                            time,
+                            quantity,
+                            partnerId: partner.id
+                        });
+                        if (importResult) {
+                            imports.push(importResult);
+                            processedProducts.add(importTrade.productId);
+                        }
+                    }
+                }
 
-            const exportResult = await this.processProductExport({
-                productId,
-                housesStore,
-                time
-            });
-            if (exportResult) {
-                exports.push(exportResult);
+                for (const exportTrade of partner.imports) {
+                    if (this.canTradeWithPartner(partner.id, exportTrade.productId, 'export', time)) {
+                        const limit = this.getPartnerTradeLimit(partner.id, exportTrade.productId, 'export');
+                        const quantity = limit ? Math.min(limit.maxPerTurn, 1) : 1;
+                        
+                        const exportResult = await this.processProductExport({
+                            productId: exportTrade.productId,
+                            housesStore,
+                            time,
+                            quantity,
+                            partnerId: partner.id
+                        });
+                        if (exportResult) {
+                            exports.push(exportResult);
+                            processedProducts.add(exportTrade.productId);
+                        }
+                    }
+                }
             }
         }
+
+        // Note: Les imports/exports sont maintenant uniquement gérés via les partenaires commerciaux
+        // Le code de test pour les imports/exports sans partenaire a été supprimé
 
         await this.resetWindmillImportsDisplay(housesStore);
 
