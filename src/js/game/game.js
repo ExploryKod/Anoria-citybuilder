@@ -466,11 +466,11 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                           config?.simulation?.citySize || 
                           16;
     
-    // Enforce maximum size of 24 to prevent WebGL shader compilation errors
+    // Enforce maximum size of 18 to prevent WebGL shader compilation errors
     // Larger sizes cause BackgroundMaterial shader validation failures
     // In test mode, allow larger sizes to test detection
     const testMode = localStorage.getItem('webgl-test-mode');
-    const absoluteMaxSize = testMode ? 32 : 24; // Allow up to 32x32 in test mode
+    const absoluteMaxSize = testMode ? 24 : 18; // Allow up to 24x24 in test mode, 18x18 otherwise
     selectedCitySize = Math.max(12, Math.min(absoluteMaxSize, selectedCitySize));
     
     // City size adjustment is only done during initial selection in the modal

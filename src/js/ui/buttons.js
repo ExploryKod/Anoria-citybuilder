@@ -848,7 +848,7 @@ function showCitySizeSelection() {
         const isMobile = window.innerWidth <= 1024;
         // In test mode, allow larger sizes to test detection
         const testMode = localStorage.getItem('webgl-test-mode');
-        const theoreticalMaxSize = testMode ? (isMobile ? 24 : 32) : (isMobile ? 16 : 24);
+        const theoreticalMaxSize = testMode ? (isMobile ? 18 : 24) : (isMobile ? 16 : 18);
         // Use the lower of theoretical max or WebGL-safe max
         const maxSize = Math.min(theoreticalMaxSize, maxSafeCitySize);
         
@@ -4968,54 +4968,22 @@ function createJournalEntryHTML(entry) {
 
 // Food Traceability Popup Functions
 function initFoodTraceabilityPopup() {
-    const foodTraceabilityBtn = document.getElementById('food-traceability-btn');
-    const foodTraceabilityPanel = document.getElementById('food-traceability-panel');
-    const foodTraceabilityCloseBtn = document.querySelector('.food-traceability-close-btn');
     const foodTraceabilityRefreshBtn = document.getElementById('food-traceability-refresh-btn');
     const filterButtons = document.querySelectorAll('.food-traceability-filter-btn');
     
-    if (!foodTraceabilityBtn || !foodTraceabilityPanel || !foodTraceabilityCloseBtn || !foodTraceabilityRefreshBtn) {
-        console.warn('Food traceability popup elements not found');
+    if (!foodTraceabilityRefreshBtn) {
+        console.warn('Food traceability refresh button not found');
         return;
     }
     
-    // Toggle food traceability popup on button click
-    foodTraceabilityBtn.addEventListener('click', () => {
-        foodTraceabilityPanel.classList.add('active');
-        if (window.popupManager) {
-            window.popupManager.forceOpenPopup('food-traceability-panel');
-        }
-        // Ensure tabs are initialized when opening
-        initializeFoodTraceabilityTabs();
-        loadFoodTraceabilityEntries('all');
-    });
-    
-    // Close food traceability popup
-    foodTraceabilityCloseBtn.addEventListener('click', () => {
-        foodTraceabilityPanel.classList.remove('active');
-        if (window.popupManager) {
-            window.popupManager.forceClosePopup('food-traceability-panel');
-        }
-    });
-    
-    // Close popup when clicking outside
-    foodTraceabilityPanel.addEventListener('click', (e) => {
-        if (e.target === foodTraceabilityPanel) {
-            foodTraceabilityPanel.classList.remove('active');
-            if (window.popupManager) {
-                window.popupManager.forceClosePopup('food-traceability-panel');
-            }
-        }
-    });
-    
-    // Refresh button
+    // Refresh button (works in administrator panel)
     foodTraceabilityRefreshBtn.addEventListener('click', () => {
         const activeFilterBtn = document.querySelector('.food-traceability-filter-btn.active');
         const currentPeriod = activeFilterBtn ? activeFilterBtn.dataset.period : 'all';
         loadFoodTraceabilityEntries(currentPeriod);
     });
     
-    // Filter buttons
+    // Filter buttons (works in administrator panel)
     filterButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             filterButtons.forEach(b => b.classList.remove('active'));
