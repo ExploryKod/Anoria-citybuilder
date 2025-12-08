@@ -449,29 +449,15 @@ class JournalManager {
         const yearEndBalance = this.getYearEndBalance(previousYear);
         
         if (!yearEndBalance || typeof yearEndBalance.amount !== 'number' || isNaN(yearEndBalance.amount)) {
-            console.warn(`[JournalManager] No valid year end balance found in localStorage for year ${previousYear}, calculating from journal...`);
-            // Fallback: calculer depuis le journal si pas trouvé dans localStorage
-            const yearlyData = await this.getYearlyFinancialSummary();
-            const previousYearData = yearlyData.find(y => y.year === previousYear);
+            const previousYearNetFlow = await this.calculateAndSaveYearEndBalance(previousYear);
             
-            if (!previousYearData) {
-                console.warn(`[JournalManager] No data found for previous year ${previousYear}`);
-                return;
-            }
-            
-            const previousYearNetFlow = previousYearData.netFlow;
-            
-            // Validation : vérifier que le netFlow est un nombre valide
             if (typeof previousYearNetFlow !== 'number' || isNaN(previousYearNetFlow)) {
-                console.error(`[JournalManager] Invalid netFlow for year ${previousYear}: ${previousYearNetFlow}`);
+                console.warn(`[JournalManager] Could not calculate year end balance for year ${previousYear}`);
                 return;
             }
             
             const nature = previousYearNetFlow >= 0 ? 'revenue' : 'deficit';
             const amount = Math.abs(previousYearNetFlow);
-            
-            // Sauvegarder pour la prochaine fois
-            this.saveYearEndBalance(previousYear, previousYearNetFlow);
             
             const yearDisplay = previousYear === 0 ? '0 JC' : `${previousYear} ap JC`;
             const signIndicator = nature === 'revenue' ? '+' : '-';

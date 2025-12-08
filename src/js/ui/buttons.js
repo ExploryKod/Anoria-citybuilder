@@ -1458,8 +1458,13 @@ window.onload = async () => {
         ];
         
         initialDisabledBuildings.forEach(buildingId => {
-            window.buttonStateManager.disable(buildingId);
-            console.log(`🚫 Disabled: ${buildingId}`);
+            const button = document.getElementById(buildingId);
+            if (button) {
+                window.buttonStateManager.disable(buildingId);
+                console.log(`🚫 Disabled: ${buildingId}`);
+            } else {
+                console.warn(`⚠️ Button ${buildingId} not found in DOM, will be disabled when created`);
+            }
         });
     } else {
         console.warn('⚠️ ButtonStateManager not available');
