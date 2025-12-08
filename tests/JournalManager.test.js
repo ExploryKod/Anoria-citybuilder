@@ -78,6 +78,32 @@ describe('JournalManager', () => {
             });
         });
 
+        test('should add import/export entries for all products', async () => {
+            await journalManager.addJournalEntry(1, 'import_wheat', 5, 'Import blé');
+            await journalManager.addJournalEntry(2, 'import_carrot', 15, 'Import carotte');
+            await journalManager.addJournalEntry(3, 'import_cabbage', 17, 'Import chou');
+            await journalManager.addJournalEntry(4, 'import_wood', 20, 'Import bois');
+            await journalManager.addJournalEntry(5, 'export_wheat', 15, 'Export blé');
+            await journalManager.addJournalEntry(6, 'export_carrot', 18, 'Export carotte');
+            await journalManager.addJournalEntry(7, 'export_cabbage', 20, 'Export chou');
+            await journalManager.addJournalEntry(8, 'export_wood', 25, 'Export bois');
+            
+            const entries = await testDb.journal.toArray();
+            expect(entries).toHaveLength(8);
+            
+            const importTypes = entries.filter(e => e.type.startsWith('import_')).map(e => e.type);
+            const exportTypes = entries.filter(e => e.type.startsWith('export_')).map(e => e.type);
+            
+            expect(importTypes).toContain('import_wheat');
+            expect(importTypes).toContain('import_carrot');
+            expect(importTypes).toContain('import_cabbage');
+            expect(importTypes).toContain('import_wood');
+            expect(exportTypes).toContain('export_wheat');
+            expect(exportTypes).toContain('export_carrot');
+            expect(exportTypes).toContain('export_cabbage');
+            expect(exportTypes).toContain('export_wood');
+        });
+
         test('should add multiple journal entries', async () => {
             await journalManager.addJournalEntry(1, 'citizen_tax', 1000, 'Taxes');
             await journalManager.addJournalEntry(1, 'maintenance', 500, 'Maintenance mensuelle');
@@ -178,17 +204,35 @@ describe('JournalManager', () => {
             await journalManager.addJournalEntry(5, 'import_wheat', 5, 'Import blé');
             await new Promise(resolve => setTimeout(resolve, 10));
             await journalManager.addJournalEntry(6, 'export_wheat', 15, 'Export blé');
+            await new Promise(resolve => setTimeout(resolve, 10));
+            await journalManager.addJournalEntry(7, 'import_carrot', 15, 'Import carotte');
+            await new Promise(resolve => setTimeout(resolve, 10));
+            await journalManager.addJournalEntry(8, 'export_carrot', 18, 'Export carotte');
+            await new Promise(resolve => setTimeout(resolve, 10));
+            await journalManager.addJournalEntry(9, 'import_cabbage', 17, 'Import chou');
+            await new Promise(resolve => setTimeout(resolve, 10));
+            await journalManager.addJournalEntry(10, 'export_cabbage', 20, 'Export chou');
+            await new Promise(resolve => setTimeout(resolve, 10));
+            await journalManager.addJournalEntry(11, 'import_wood', 20, 'Import bois');
+            await new Promise(resolve => setTimeout(resolve, 10));
+            await journalManager.addJournalEntry(12, 'export_wood', 25, 'Export bois');
             
             const stats = await journalManager.getStatistics();
             
-            expect(stats.totalEntries).toBe(6);
-            expect(stats.totalIncome).toBe(1515); // citizen_tax entries + export_wheat
-            expect(stats.totalExpenses).toBe(505); // construction + maintenance + import_wheat
+            expect(stats.totalEntries).toBe(12);
+            expect(stats.totalIncome).toBe(1578); // citizen_tax (1500) + exports (15+18+20+25=78)
+            expect(stats.totalExpenses).toBe(557); // construction (300) + maintenance (200) + imports (5+15+17+20=57)
             expect(stats.byType.citizen_tax).toBe(2);
             expect(stats.byType.construction).toBe(1);
             expect(stats.byType.maintenance).toBe(1);
             expect(stats.byType.import_wheat).toBe(1);
             expect(stats.byType.export_wheat).toBe(1);
+            expect(stats.byType.import_carrot).toBe(1);
+            expect(stats.byType.export_carrot).toBe(1);
+            expect(stats.byType.import_cabbage).toBe(1);
+            expect(stats.byType.export_cabbage).toBe(1);
+            expect(stats.byType.import_wood).toBe(1);
+            expect(stats.byType.export_wood).toBe(1);
             expect(stats.earliestEntry).toBeDefined();
             expect(stats.latestEntry).toBeDefined();
         });
