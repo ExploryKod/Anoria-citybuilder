@@ -6,6 +6,7 @@ class CommerceStore {
     constructor() {
         this.STORAGE_KEY_CONFIG = 'commerce_config';
         this.STORAGE_KEY_STATS = 'commerce_stats';
+        this.STORAGE_KEY_PARTNERS = 'commerce_partners';
     }
 
     /**
@@ -111,12 +112,57 @@ class CommerceStore {
 
 
     /**
+     * Charge les données des partenaires commerciaux
+     * @returns {Array|null} Données des partenaires ou null
+     */
+    loadPartners() {
+        try {
+            const stored = localStorage.getItem(this.STORAGE_KEY_PARTNERS);
+            if (stored) {
+                return JSON.parse(stored);
+            }
+        } catch (error) {
+            console.warn('[CommerceStore] Error loading partners:', error);
+        }
+        return null;
+    }
+
+    /**
+     * Sauvegarde les données des partenaires commerciaux
+     * @param {Array} partnersData - Données des partenaires
+     */
+    savePartners(partnersData) {
+        try {
+            localStorage.setItem(this.STORAGE_KEY_PARTNERS, JSON.stringify(partnersData));
+        } catch (error) {
+            console.warn('[CommerceStore] Error saving partners:', error);
+        }
+    }
+
+    /**
+     * Met à jour les statistiques d'un partenaire
+     * @param {string} partnerId - ID du partenaire
+     * @param {Object} partnerStats - Statistiques du partenaire
+     */
+    updatePartnerStats(partnerId, partnerStats) {
+        const partners = this.loadPartners();
+        if (!partners) return;
+
+        const partner = partners.find(p => p.id === partnerId);
+        if (partner) {
+            Object.assign(partner, partnerStats);
+            this.savePartners(partners);
+        }
+    }
+
+    /**
      * Nettoie toutes les données du store (appelé au replay)
      */
     clear() {
         try {
             localStorage.removeItem(this.STORAGE_KEY_CONFIG);
             localStorage.removeItem(this.STORAGE_KEY_STATS);
+            localStorage.removeItem(this.STORAGE_KEY_PARTNERS);
         } catch (error) {
             console.warn('[CommerceStore] Error clearing:', error);
         }

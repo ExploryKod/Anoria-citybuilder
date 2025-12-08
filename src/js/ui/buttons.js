@@ -4900,10 +4900,12 @@ function createJournalEntryHTML(entry) {
         'import_carrot': 'Import Carotte',
         'import_cabbage': 'Import Chou',
         'import_wood': 'Import Bois',
+        'import_dattes': 'Import Dattes',
         'export_wheat': 'Export Blé',
         'export_carrot': 'Export Carotte',
         'export_cabbage': 'Export Chou',
         'export_wood': 'Export Bois',
+        'export_dattes': 'Export Dattes',
         'loan_interest': 'Intérêts prêt',
         'loan_repayment': 'Remboursement prêt',
         'cumul_maintenance': 'Cumul Maintenance',
@@ -4919,21 +4921,44 @@ function createJournalEntryHTML(entry) {
     const breakdownMatch = entry.description?.match(/\|BREAKDOWN\|(.*?)\|BREAKDOWN\|/);
     let descriptionText = entry.description || '';
     let breakdownItems = null;
-    
-    if (breakdownMatch && entry.type === 'maintenance') {
+
+    // Support breakdown for maintenance, imports, and exports
+    const supportsBreakdown = entry.type === 'maintenance' ||
+                              entry.type.startsWith('import_') ||
+                              entry.type.startsWith('export_');
+
+    if (breakdownMatch && supportsBreakdown) {
         try {
             breakdownItems = JSON.parse(breakdownMatch[1]);
             // Remove breakdown data from description text
             descriptionText = entry.description.replace(/\|BREAKDOWN\|.*?\|BREAKDOWN\|/, '').trim();
         } catch (e) {
-            console.warn('Failed to parse maintenance breakdown:', e);
+            console.warn('Failed to parse breakdown:', e);
         }
     }
-    
+
+    // Get partner name if partnerId exists
+    let partnerName = null;
+    if (entry.partnerId && (entry.type.startsWith('import_') || entry.type.startsWith('export_'))) {
+        try {
+            const partnersData = localStorage.getItem('commerce_partners');
+            if (partnersData) {
+                const partners = JSON.parse(partnersData);
+                const partner = partners.find(p => p.id === entry.partnerId);
+                if (partner) {
+                    partnerName = partner.name;
+                }
+            }
+        } catch (e) {
+            console.warn('Failed to get partner name:', e);
+        }
+    }
+
     return `
         <div class="journal-entry">
             <div class="journal-entry-header">
                 <span class="journal-entry-type ${entry.type}">${typeLabels[entry.type] || entry.type}</span>
+                ${partnerName ? `<span class="journal-entry-partner">🤝 ${partnerName}</span>` : ''}
                 <span class="journal-entry-amount ${typeClass}">
                     ${typeClass === 'positive' ? '+' : '-'}${Math.abs(entry.amount)}€
                 </span>
@@ -4945,7 +4970,7 @@ function createJournalEntryHTML(entry) {
                     ${breakdownItems.map(item => `
                         <li class="journal-breakdown-item">
                             <span class="breakdown-label">${item.label}:</span>
-                            <span class="breakdown-count">${item.count}</span>
+                            <span class="breakdown-count">${item.quantity || item.count}</span>
                             <span class="breakdown-multiply">×</span>
                             <span class="breakdown-unit-cost">${item.unitCost}€</span>
                             <span class="breakdown-equals">=</span>

@@ -894,7 +894,16 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         // lastImport n'existe pas encore, c'est normal
                         lastImport = null;
                     }
-                    
+
+                    // Get last import details by partner (peut ne pas exister)
+                    let lastImportDetails = null;
+                    try {
+                        lastImportDetails = await housesStore.getHouseItem(uniqueId, 'lastImportDetails');
+                    } catch (e) {
+                        // lastImportDetails n'existe pas encore, c'est normal
+                        lastImportDetails = null;
+                    }
+
                     makeInfoSection('Stock moulin');
                     
                     // Show stocks with last collection and import amounts
@@ -905,30 +914,57 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     const wheatImportAmount = lastImport?.wheat !== undefined ? lastImport.wheat : 0;
                     const wheatImportText = `+${wheatImportAmount} paniers importés`;
                     const wheatSubtext = `${wheatCollectionText}, ${wheatImportText}`;
-                    
+
                     const cabbageCollectionAmount = lastCollection?.cabbage || 0;
                     const cabbageCollectionText = `+${cabbageCollectionAmount} dernière collecte`;
                     const cabbageImportAmount = lastImport?.cabbage !== undefined ? lastImport.cabbage : 0;
                     const cabbageImportText = `+${cabbageImportAmount} paniers importés`;
                     const cabbageSubtext = `${cabbageCollectionText}, ${cabbageImportText}`;
-                    
+
                     const carrotCollectionAmount = lastCollection?.carrot || 0;
                     const carrotCollectionText = `+${carrotCollectionAmount} dernière collecte`;
                     const carrotImportAmount = lastImport?.carrot !== undefined ? lastImport.carrot : 0;
                     const carrotImportText = `+${carrotImportAmount} paniers importés`;
                     const carrotSubtext = `${carrotCollectionText}, ${carrotImportText}`;
-                    
+
+                    const dattesCollectionAmount = lastCollection?.dattes || 0;
+                    const dattesCollectionText = `+${dattesCollectionAmount} dernière collecte`;
+                    const dattesImportAmount = lastImport?.dattes !== undefined ? lastImport.dattes : 0;
+                    const dattesImportText = `+${dattesImportAmount} paniers importés`;
+                    const dattesSubtext = `${dattesCollectionText}, ${dattesImportText}`;
+
                     const totalCollectionAmount = lastCollection?.total || 0;
                     const totalCollectionText = `+${totalCollectionAmount} dernière collecte`;
                     const totalImportAmount = lastImport?.total !== undefined ? lastImport.total : 0;
                     const totalImportText = `+${totalImportAmount} paniers importés`;
                     const totalSubtext = `${totalCollectionText}, ${totalImportText}`;
-                    
+
                     makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`, wheatSubtext);
                     makeInfoKeyValue('Chou', `${houseStocks.cabbage || 0} paniers`, cabbageSubtext);
                     makeInfoKeyValue('Carotte', `${houseStocks.carrot || 0} paniers`, carrotSubtext);
+                    makeInfoKeyValue('Dattes', `${houseStocks.dattes || 0} paniers`, dattesSubtext);
                     makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers collectés`, totalSubtext);
-                    
+
+                    // Display imports by partner if any
+                    if (lastImportDetails && Object.keys(lastImportDetails).length > 0) {
+                        makeInfoSection('Imports par partenaire');
+
+                        const productNames = { wheat: 'Blé', carrot: 'Carotte', cabbage: 'Chou', dattes: 'Dattes' };
+
+                        for (const [productId, partners] of Object.entries(lastImportDetails)) {
+                            if (partners && partners.length > 0) {
+                                const productName = productNames[productId] || productId;
+                                partners.forEach(partnerInfo => {
+                                    makeInfoKeyValue(
+                                        `${productName}`,
+                                        `${partnerInfo.quantity} paniers`,
+                                        `depuis ${partnerInfo.partnerName}`
+                                    );
+                                });
+                            }
+                        }
+                    }
+
                     makeInfoSection('Approvisionnement');
                     if (hasRoadAccess) {
                         makeInfoKeyValue('Routes', '✅ Accès routier');
