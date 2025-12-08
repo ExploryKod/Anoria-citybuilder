@@ -925,8 +925,8 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     const totalSubtext = `${totalCollectionText}, ${totalImportText}`;
                     
                     makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`, wheatSubtext);
-                    makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`, cabbageSubtext);
-                    makeInfoKeyValue('Autres légumes', `${houseStocks.carrot || 0} paniers`, carrotSubtext);
+                    makeInfoKeyValue('Chou', `${houseStocks.cabbage || 0} paniers`, cabbageSubtext);
+                    makeInfoKeyValue('Carotte', `${houseStocks.carrot || 0} paniers`, carrotSubtext);
                     makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers collectés`, totalSubtext);
                     
                     makeInfoSection('Approvisionnement');

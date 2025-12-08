@@ -121,11 +121,11 @@ class StorageSectionManager {
                     <span class="storage-stock-value">${stocks.wheat || 0} / ${maxStock}</span>
                 </div>
                 <div class="storage-stock-item">
-                    <label>Légumes verts:</label>
+                    <label>Chou:</label>
                     <span class="storage-stock-value">${stocks.cabbage || 0} / ${maxStock}</span>
                 </div>
                 <div class="storage-stock-item">
-                    <label>Autres légumes:</label>
+                    <label>Carotte:</label>
                     <span class="storage-stock-value">${stocks.carrot || 0} / ${maxStock}</span>
                 </div>
                 <div class="storage-stock-item">

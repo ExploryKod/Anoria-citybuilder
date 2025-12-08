@@ -133,7 +133,7 @@ class CommerceSectionManager {
                 marketPrice: 18,
                 marketShare: 15,
                 marketPosition: 'inferior',
-                stockpiling: true,
+                stockpiling: false,
                 sellingMax: 8,  // Seuil maximum d'export annuel
                 // sellingMin supprimé
                 buyingMax: 300,

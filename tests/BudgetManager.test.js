@@ -252,15 +252,19 @@ describe('BudgetManager', () => {
         test('peut importer différents produits', async () => {
             await budgetManager.initialize(200);
             await budgetManager.addImportExpense(5, 'Import blé', 'wheat');
-            await budgetManager.addImportExpense(8, 'Import carotte', 'carrot');
+            await budgetManager.addImportExpense(15, 'Import carotte', 'carrot');
+            await budgetManager.addImportExpense(17, 'Import chou', 'cabbage');
+            await budgetManager.addImportExpense(20, 'Import bois', 'wood');
             
             const budgetData = await testDb.budget.toArray();
             const budget = budgetData[0];
             
-            expect(budget.funds).toBe(187); // 200 - 5 - 8
-            expect(budget.expenses).toBe(13);
+            expect(budget.funds).toBe(143); // 200 - 5 - 15 - 17 - 20
+            expect(budget.expenses).toBe(57);
             expect(budget.totalImports.wheat).toBe(5);
-            expect(budget.totalImports.carrot).toBe(8);
+            expect(budget.totalImports.carrot).toBe(15);
+            expect(budget.totalImports.cabbage).toBe(17);
+            expect(budget.totalImports.wood).toBe(20);
         });
 
         test('arrondit les montants', async () => {
@@ -317,6 +321,24 @@ describe('BudgetManager', () => {
             expect(exportEntry).toBeDefined();
             expect(exportEntry.amount).toBe(15);
             expect(exportEntry.description).toBe('Export blé (1 panier × 15€)');
+        });
+
+        test('peut exporter différents produits', async () => {
+            await budgetManager.initialize(200);
+            await budgetManager.addExportIncome(15, 'Export blé', 'wheat');
+            await budgetManager.addExportIncome(18, 'Export carotte', 'carrot');
+            await budgetManager.addExportIncome(20, 'Export chou', 'cabbage');
+            await budgetManager.addExportIncome(25, 'Export bois', 'wood');
+            
+            const budgetData = await testDb.budget.toArray();
+            const budget = budgetData[0];
+            
+            expect(budget.funds).toBe(278); // 200 + 15 + 18 + 20 + 25
+            expect(budget.income).toBe(78);
+            expect(budget.totalExports.wheat).toBe(15);
+            expect(budget.totalExports.carrot).toBe(18);
+            expect(budget.totalExports.cabbage).toBe(20);
+            expect(budget.totalExports.wood).toBe(25);
         });
 
         test('cumule plusieurs exports du même produit', async () => {
