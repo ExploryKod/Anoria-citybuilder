@@ -36,8 +36,10 @@ export const textures = Object.freeze({
 export const assetsPrices = Object.freeze({
     // Zones
     'grass': { price: 0, category: 'zones', gridSize: 1 },
-    'roads': { price: 5, category: 'zones', gridSize: 1 },
     'terrain': { price: 0, category: 'zones', gridSize: 1 },
+    
+    // Roads (use StonePath-001 mesh, but keep 'roads' as the tool ID for compatibility)
+    'roads': { price: 5, category: 'infrastructure', gridSize: 1 }, // Maps to StonePath-001 mesh
 
     // Houses
     'House-Blue': { price: 10, category: 'houses', gridSize: 1 },
@@ -69,6 +71,7 @@ export const assetsPrices = Object.freeze({
     'Well-001': { price: 15, category: 'infrastructure', gridSize: 1 },
     'Fountain-001': { price: 25, category: 'infrastructure', gridSize: 1 },
     'Streetlight-001': { price: 5, category: 'infrastructure', gridSize: 1 },
+    'StonePath-001': { price: 5, category: 'infrastructure', gridSize: 1 },
     
     // Public Buildings
     'Church-002': { price: 100, category: 'public', gridSize: 3 },
@@ -275,5 +278,17 @@ export const meshNameMapping = {
     'Crate032': 'Crate-001',
     'Crate033': 'Crate-001',
     'Crate034': 'Crate-001',
-    'Crate035': 'Crate-001'
+    'Crate035': 'Crate-001',
+    
+    // StonePath variants (all map to StonePath-001 for roads)
+    'StonePath': 'StonePath-001',
+    'StonePath001': 'StonePath-001',
+    'StonePath002': 'StonePath-001',
+    'StonePath003': 'StonePath-001',
+    'StonePath004': 'StonePath-001',
+    'StonePath005': 'StonePath-001',
+    'StonePath006': 'StonePath-001',
+    'StonePath007': 'StonePath-001',
+    'StonePath008': 'StonePath-001',
+    'StonePath009': 'StonePath-001'
 };

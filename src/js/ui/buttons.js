@@ -629,6 +629,26 @@ function toggleModal(e) {
                 }
             }
             break;
+        case 'roads':
+            getButtonsUnactive()
+            getButtonsDisabled()
+            panelLayoutInner.classList.add('loading-objects')
+            if(!panelLayout.classList.contains('active')) {
+                panelLayout.classList.add('active');
+                e.target.classList.toggle('selected')
+                createRoadsButtons(buttonData)
+                
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('panel-layout');
+                }
+            } else {
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('panel-layout');
+                }
+            }
+            break;
         default:
             e.target.classList.toggle('selected')
             panelLayout.classList.remove('active');
@@ -783,7 +803,7 @@ function createInfrastructureButtons(buttonData) {
     const svgStreetlight = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lamp"><path d="M8 2h8l4 10H4L8 2Z"/><path d="M12 12v6"/><path d="M8 22v-2c0-1.1.9-2 2-2h4a2 2 0 0 1 2 2v2H8Z"/></svg>`;
 
     let buttonsDuplicate = [];
-    buttonData.filter(buttonInfo => infrastructureToolIDs.includes(buttonInfo.tool)).forEach(buttonInfo => {
+    buttonData.filter(buttonInfo => infrastructureToolIDs.includes(buttonInfo.tool) && buttonInfo.tool !== 'StonePath-001').forEach(buttonInfo => {
         if (!buttonsDuplicate.includes(buttonInfo.tool)) {
             buttonsDuplicate.push(buttonInfo.tool);
             if (buttonInfo.tool === 'Well-001') {
@@ -795,6 +815,21 @@ function createInfrastructureButtons(buttonData) {
             } else {
                 makeNewButton(buttonInfo, svgWell); // Default
             }
+        }
+    });
+}
+
+function createRoadsButtons(buttonData) {
+    panelLayoutInner.innerHTML = '';
+    const infrastructureToolIDs = toolIds.infrastructure || [];
+
+    const svgRoad = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-route"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>`;
+
+    let buttonsDuplicate = [];
+    buttonData.filter(buttonInfo => infrastructureToolIDs.includes(buttonInfo.tool) && buttonInfo.tool === 'StonePath-001').forEach(buttonInfo => {
+        if (!buttonsDuplicate.includes(buttonInfo.tool)) {
+            buttonsDuplicate.push(buttonInfo.tool);
+            makeNewButton(buttonInfo, svgRoad);
         }
     });
 }
@@ -839,11 +874,12 @@ function createNatureButtons(buttonData) {
         <path d="m8 3 4 8 5-5 5 15H2L8 3z"/>
     </svg>`;
 
-    // Debug: Log available buttonData and natureToolIDs
-    console.log('🌳 createNatureButtons - natureToolIDs:', natureToolIDs);
-    console.log('🌳 createNatureButtons - buttonData:', buttonData);
+    const svgRoad = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-route">
+        <circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/>
+        <circle cx="18" cy="5" r="3"/>
+    </svg>`;
+
     const filteredButtons = buttonData.filter(buttonInfo => natureToolIDs.includes(buttonInfo.tool));
-    console.log('🌳 createNatureButtons - filteredButtons:', filteredButtons);
 
     let buttonsDuplicate = [];
     filteredButtons.forEach(buttonInfo => {
@@ -856,11 +892,6 @@ function createNatureButtons(buttonData) {
             }
         }
     });
-    
-    // If no buttons were created, show a message
-    if (buttonsDuplicate.length === 0) {
-        console.warn('⚠️ No nature buttons created. Check if assets are loaded and toolIds match.');
-    }
 }
 
 function makeNewButton(buttonInfo, svg="") {
@@ -1741,9 +1772,11 @@ window.onload = async () => {
         setActiveTool(e);
     })
 
-    roadButton.addEventListener('click', (e) => {
-        setActiveTool(e);
-    })
+    if (roadButton) {
+        roadButton.addEventListener('click', (e) => {
+            setActiveTool(e);
+        });
+    }
 
     housesButton.addEventListener('click', (e) => {
         if (window.setActiveTool) {

@@ -27,13 +27,13 @@ async function loadAssetCatalog() {
 class MeshLoaderOptimized {
 
     toolIds = {
-        zones: ['grass', 'roads'],
+        zones: ['grass'],
         houses: ['House-Blue', 'House-Red', 'House-Purple'],
         tombs: ['Tombstone-1', 'Tombstone-2', 'Tombstone-3'],
         farms: ['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage'],
         industry: ['Windmill-001', 'Barn-001', 'Crate-001'],
         markets: ['Market-Stall'],
-        infrastructure: ['Well-001', 'Fountain-001', 'Streetlight-001'],
+        infrastructure: ['Well-001', 'Fountain-001', 'Streetlight-001', 'StonePath-001'],
         public: ['Church-002'],
         palaces: ['House-2Story'],
         nature: ['Tree-Pine-001', 'Tree-Square-001', 'Tree-Tall-001', 'Boulder-001']
@@ -153,9 +153,19 @@ class MeshLoaderOptimized {
                 const toolName = this._parseMeshNameToToolName(meshName);
                 this.meshToToolName.set(meshName, toolName);
                 
+                // Special handling: StonePath meshes should be in 'infrastructure' category
+                if (toolName === 'StonePath-001' && this.categoryMeshSets['infrastructure']) {
+                    this.categoryMeshSets['infrastructure'].add(meshName);
+                }
+                
                 // Track which category this tool belongs to (use internal category)
                 if (this.toolIds[internalCategory]?.includes(toolName)) {
                     this.toolToCategory.set(toolName, internalCategory);
+                }
+                
+                // Also track if it belongs to 'infrastructure' category
+                if (this.toolIds['infrastructure']?.includes(toolName)) {
+                    this.toolToCategory.set(toolName, 'infrastructure');
                 }
             });
         });
@@ -206,6 +216,11 @@ class MeshLoaderOptimized {
         // Special handling for Boulder (all variants map to Boulder-001)
         if (parts[0] === 'Boulder') {
             return 'Boulder-001';
+        }
+        
+        // Special handling for StonePath (all variants map to StonePath-001)
+        if (parts[0] === 'StonePath') {
+            return 'StonePath-001';
         }
         
         let toolName = `${parts[0]}-${parts[1] || ''}`;
