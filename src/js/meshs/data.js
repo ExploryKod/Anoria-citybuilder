@@ -38,8 +38,12 @@ export const assetsPrices = Object.freeze({
     'grass': { price: 0, category: 'zones', gridSize: 1 },
     'terrain': { price: 0, category: 'zones', gridSize: 1 },
     
-    // Roads (use StonePath-001 mesh, but keep 'roads' as the tool ID for compatibility)
+    // Roads (use StonePath mesh variants with different rotations)
     'roads': { price: 5, category: 'infrastructure', gridSize: 1 }, // Maps to StonePath-001 mesh
+    'StonePath-001': { price: 5, category: 'infrastructure', gridSize: 1 }, // Straight road
+    'StonePath-Right-001': { price: 5, category: 'infrastructure', gridSize: 1 }, // Right turn (90° rotation)
+    'StonePath-Left-001': { price: 5, category: 'infrastructure', gridSize: 1 }, // Left turn (270° rotation)
+    'StonePath-Cross-001': { price: 5, category: 'infrastructure', gridSize: 1 }, // Crossroad
 
     // Houses
     'House-Blue': { price: 10, category: 'houses', gridSize: 1 },

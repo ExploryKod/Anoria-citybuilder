@@ -210,7 +210,14 @@ class AssetManager extends MeshLoader {
     #createBuilding(x, y, z, size, meshName, objectsData) {
         // Creating building
         const placerPos = new THREE.Vector3(x, y, z);
-        const sourceObject = objectsData[meshName];
+        
+        // For road variants, use the base StonePath-001 mesh
+        let sourceMeshName = meshName;
+        if (meshName.startsWith('StonePath-') && meshName !== 'StonePath-001') {
+            sourceMeshName = 'StonePath-001';
+        }
+        
+        const sourceObject = objectsData[sourceMeshName];
         
         // Clone the object
         const object3D = sourceObject.clone();
@@ -259,17 +266,29 @@ class AssetManager extends MeshLoader {
         const yOffset = placerPos.z + worldPlatformHeight;
         object3D.position.set(placerPos.x, yOffset, placerPos.y);
         object3D.scale.set(size, size, size);
+        
+        // Apply different rotations for road variants
+        // We rotate on Z axis to keep roads flat on the ground
+        let rotationZ = 180; // Default rotation for straight road
+        if (meshName === 'StonePath-Right-001') {
+            rotationZ = 270; // 90° clockwise turn (right)
+        } else if (meshName === 'StonePath-Left-001') {
+            rotationZ = 90; // 90° counter-clockwise turn (left)
+        } else if (meshName === 'StonePath-Cross-001') {
+            rotationZ = 180; // Crossroad (same as straight)
+        }
+        
         object3D.rotation.set(
-            THREE.MathUtils.degToRad(90),
-            THREE.MathUtils.degToRad(180),
-            THREE.MathUtils.degToRad(180)
+            THREE.MathUtils.degToRad(90),  // X: keeps road horizontal
+            THREE.MathUtils.degToRad(180), // Y: base orientation
+            THREE.MathUtils.degToRad(rotationZ) // Z: rotation for turns (keeps road flat)
         );
 
 
 
-        // For StonePath, mark it as a road for neighbor detection and road logic
-        // BUT keep isBuilding: true so it renders like other buildings
-        const isRoad = meshName === 'StonePath-001';
+        // For StonePath variants, mark them as roads for neighbor detection and road logic
+        // BUT keep isBuilding: true so they render like other buildings
+        const isRoad = meshName.startsWith('StonePath-');
         
         // Set mesh.name to 'roads' for compatibility with existing checks like mesh.name === 'roads'
         if (isRoad) {
@@ -451,6 +470,38 @@ class AssetManager extends MeshLoader {
                 this.#assets[toolId] = (x, y, z = 0) =>
                     this.#createBuilding(x, y, z, size, toolId, this.#getModelsObj(propertyKey));
             });
+            
+            // Special handling: Create road variants (Right, Left, Cross) that use StonePath-001 mesh
+            // These are virtual assets that reuse the same mesh with different rotations
+            if (propertyKey === 'infrastructure' && this.toolIds[propertyKey].includes('StonePath-001')) {
+                const size = this.assetSizeOverrides?.['StonePath-001'] ?? this.modelMetas[propertyKey].size;
+                const modelsObj = this.#getModelsObj(propertyKey);
+                
+                // Create variants that will use StonePath-001 mesh but with different rotations
+                this.#assets['StonePath-Right-001'] = (x, y, z = 0) =>
+                    this.#createBuilding(x, y, z, size, 'StonePath-Right-001', modelsObj);
+                this.#assets['StonePath-Left-001'] = (x, y, z = 0) =>
+                    this.#createBuilding(x, y, z, size, 'StonePath-Left-001', modelsObj);
+                this.#assets['StonePath-Cross-001'] = (x, y, z = 0) =>
+                    this.#createBuilding(x, y, z, size, 'StonePath-Cross-001', modelsObj);
+                
+                // Add button data for road variants
+                this.buttonData.push({
+                    text: 'StonePath Right',
+                    tool: 'StonePath-Right-001',
+                    group: 'StonePath'
+                });
+                this.buttonData.push({
+                    text: 'StonePath Left',
+                    tool: 'StonePath-Left-001',
+                    group: 'StonePath'
+                });
+                this.buttonData.push({
+                    text: 'StonePath Cross',
+                    tool: 'StonePath-Cross-001',
+                    group: 'StonePath'
+                });
+            }
             
             // Check if all loading is complete asynchronously (fires after all promises resolve)
             // Note: This is called after each building category loads, but will only fire callback once all complete

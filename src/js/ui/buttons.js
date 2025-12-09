@@ -823,13 +823,28 @@ function createRoadsButtons(buttonData) {
     panelLayoutInner.innerHTML = '';
     const infrastructureToolIDs = toolIds.infrastructure || [];
 
-    const svgRoad = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-route"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>`;
+    // Different SVG icons for different road types
+    const svgRoadStraight = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="8" y1="8" x2="8" y2="10"/><line x1="16" y1="8" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="16"/><line x1="16" y1="14" x2="16" y2="16"/></svg>`;
+    const svgRoadRight = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L12 12 L22 12"/><line x1="8" y1="8" x2="8" y2="10"/><line x1="14" y1="16" x2="16" y2="16"/></svg>`;
+    const svgRoadLeft = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L12 12 L2 12"/><line x1="16" y1="8" x2="16" y2="10"/><line x1="8" y1="16" x2="6" y2="16"/></svg>`;
+    const svgRoadCross = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>`;
 
     let buttonsDuplicate = [];
-    buttonData.filter(buttonInfo => infrastructureToolIDs.includes(buttonInfo.tool) && buttonInfo.tool === 'StonePath-001').forEach(buttonInfo => {
+    buttonData.filter(buttonInfo => infrastructureToolIDs.includes(buttonInfo.tool) && buttonInfo.tool.startsWith('StonePath-')).forEach(buttonInfo => {
         if (!buttonsDuplicate.includes(buttonInfo.tool)) {
             buttonsDuplicate.push(buttonInfo.tool);
-            makeNewButton(buttonInfo, svgRoad);
+            
+            // Choose appropriate icon based on road type
+            let svg = svgRoadStraight;
+            if (buttonInfo.tool === 'StonePath-Right-001') {
+                svg = svgRoadRight;
+            } else if (buttonInfo.tool === 'StonePath-Left-001') {
+                svg = svgRoadLeft;
+            } else if (buttonInfo.tool === 'StonePath-Cross-001') {
+                svg = svgRoadCross;
+            }
+            
+            makeNewButton(buttonInfo, svg);
         }
     });
 }
