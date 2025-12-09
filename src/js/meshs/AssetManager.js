@@ -251,7 +251,13 @@ class AssetManager extends MeshLoader {
         }
 
         object3D.name = `${meshName}`;
-        object3D.position.set(placerPos.x, placerPos.z, placerPos.y);
+        // Position assets above the World platform (World is at y = 0.2)
+        // Buildings should be on top of the World, so we add an offset
+        // Roads (StonePath) should be positioned like other buildings (houses, etc.)
+        const worldPlatformHeight = 0.2;
+        // All assets (including roads) use the same positioning formula
+        const yOffset = placerPos.z + worldPlatformHeight;
+        object3D.position.set(placerPos.x, yOffset, placerPos.y);
         object3D.scale.set(size, size, size);
         object3D.rotation.set(
             THREE.MathUtils.degToRad(90),
@@ -261,11 +267,21 @@ class AssetManager extends MeshLoader {
 
 
 
+        // For StonePath, mark it as a road for neighbor detection and road logic
+        // BUT keep isBuilding: true so it renders like other buildings
+        const isRoad = meshName === 'StonePath-001';
+        
+        // Set mesh.name to 'roads' for compatibility with existing checks like mesh.name === 'roads'
+        if (isRoad) {
+            object3D.name = 'roads';
+        }
+        
         object3D.userData = {
             id: meshName, 
-            type: meshName, 
-            name: meshName, 
-            isBuilding: true, 
+            type: isRoad ? 'roads' : meshName,  // Use 'roads' as type for StonePath for compatibility with road logic
+            name: isRoad ? 'roads' : meshName,  // Also in userData for consistency
+            isBuilding: true,  // Keep as building for visibility/rendering
+            isRoad: isRoad,  // Mark roads for road logic detection 
             x, 
             y,
             neighbors: [],
@@ -337,15 +353,23 @@ class AssetManager extends MeshLoader {
         // Use shared materials instead of creating new ones each time
         const materials = this.#getSharedTerrainMaterials();
 
+        // World platform is at y = 0.2
+        const worldPlatformHeight = 0.2;
+        
         switch (buildingId) {
             case 'roads':
                 material = materials['roads'];
-                mesh = new THREE.Mesh(this.#geometry, material);
+                // Use a flat plane geometry for roads instead of a cube
+                // This makes them visible as a flat surface above the World platform
+                const roadGeometry = new THREE.PlaneGeometry(1, 1);
+                mesh = new THREE.Mesh(roadGeometry, material);
                 mesh.userData = { id: buildingId, x, y, isBuilding: false, isRoad: true, time: 0 };
                 mesh.name = buildingId;
-                mesh.scale.set(1, 1, 1);
-                mesh.position.set(x, -0.5, y);
-                mesh.castShadow = true;
+                // Rotate the plane to be horizontal (lying flat on the ground)
+                mesh.rotation.x = -Math.PI / 2; // Rotate 90 degrees to lay flat
+                // Position well above World platform (y = 0.2) - roads need to be very visible
+                mesh.position.set(x, worldPlatformHeight + 0.3, y);
+                mesh.castShadow = false; // Planes don't cast shadows well
                 mesh.receiveShadow = true;
                 break;
 
@@ -355,6 +379,7 @@ class AssetManager extends MeshLoader {
                 mesh.name = buildingId;
                 mesh.userData = { id: buildingId, x, y, isBuilding: false, time: 0 };
                 mesh.scale.set(1, 1, 1);
+                // Grass terrain below the World platform
                 mesh.position.set(x, -0.5, y);
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
@@ -366,6 +391,7 @@ class AssetManager extends MeshLoader {
                 mesh.name = buildingId;
                 mesh.userData = { id: buildingId, x, y, isBuilding: false, isPlaceholder: true, time: 0 };
                 mesh.scale.set(1, 1, 1);
+                // Terrain below the World platform
                 mesh.position.set(x, -0.5, y);
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
@@ -403,7 +429,7 @@ class AssetManager extends MeshLoader {
 
     async initializeTerrains() {
 
-        // Zones
+        // Zones (only grass now, roads are 3D meshes)
         this.toolIds.zones.forEach(toolId => {
             this.#assets[toolId] = (x, y) => this.#createTerrain(x, y, toolId);
         });
@@ -469,7 +495,7 @@ class AssetManager extends MeshLoader {
         if (assetId in this.#assets) {
             return this.#assets[assetId](x, y);
         } else {
-            console.warn(`Asset ${assetId} does not exist, see assets: `, this.#assets);
+            console.warn(`[AssetManager] Asset ${assetId} does not exist`);
             return undefined;
         }
     }
@@ -478,9 +504,10 @@ class AssetManager extends MeshLoader {
      * Load the base world platform (World_Material005_0) and add it to the scene
      * This is called once at scene initialization
      * @param {THREE.Scene} scene - The Three.js scene to add the world platform to
+     * @param {number} citySize - Size of the city (number of tiles) to scale the World platform accordingly
      * @returns {Promise<THREE.Object3D>} The loaded world platform mesh
      */
-    async loadWorldPlatform(scene) {
+    async loadWorldPlatform(scene, citySize = 16) {
         return new Promise((resolve, reject) => {
             const gltfloader = new GLTFLoader();
             const dracoLoader = new DRACOLoader();
@@ -510,10 +537,26 @@ class AssetManager extends MeshLoader {
                                 THREE.MathUtils.degToRad(180)
                             );
                             
-                            // Position it at the same level as roads (y = -0.5)
-                            // The position uses (x, y, z) where y is up in Three.js
-                            // Later, we'll move all assets above the World and terrain below it
-                            worldMesh.position.set(0, -0.5, 0); // Same level as roads
+                            // Get the original bounding box BEFORE scaling and positioning
+                            // This gives us the original size of the World mesh in the GLB
+                            const originalBbox = new THREE.Box3().setFromObject(worldMesh);
+                            const originalWorldSize = Math.max(
+                                originalBbox.max.x - originalBbox.min.x,
+                                originalBbox.max.z - originalBbox.min.z
+                            );
+                            
+                            // Scale to match city size (with margin to absorb 3 cases more in circumference)
+                            // Each tile is 1 unit, so citySize tiles = citySize units
+                            // Add margin of 6 units total (+3 on each side) to absorb 3 cases in circumference
+                            const targetSize = citySize + 6; // +6 for margin (3 units on each side)
+                            const scaleFactor = originalWorldSize > 0 ? targetSize / originalWorldSize : 1;
+                            worldMesh.scale.set(scaleFactor, scaleFactor, scaleFactor);
+                            
+                            // Position and center the World at the city center
+                            // Roads are at y = 0.21 (just above World at 0.2), so we place World at 0.2
+                            const worldPlatformHeight = 0.2;
+                            const cityCenter = citySize / 2;
+                            worldMesh.position.set(cityCenter, worldPlatformHeight, cityCenter);
                             
                             // Make it visible and ensure it's not too small
                             worldMesh.visible = true;

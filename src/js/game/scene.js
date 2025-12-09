@@ -244,21 +244,35 @@ export function createScene(housesStore, gameStore, assetManager) {
         buildings = [];
         loadingPromises = [];
         
+        // Store city size for citizen pathfinding and World platform scaling
+        const citySize = city && typeof city.size === 'number' ? city.size : 16;
+        if (city && typeof city.size === 'number') {
+            currentCitySize = city.size;
+        }
+        
         // Re-add world platform if it existed, otherwise load it
+        // If it exists but city size changed, remove and reload with new size
         if (worldPlatform) {
-            scene.add(worldPlatform);
-        } else {
-            // Load world platform (base ground) first, before other assets
-            try {
-                await assetManager.loadWorldPlatform(scene);
-            } catch (error) {
-                console.warn('[Scene] Could not load world platform:', error);
+            // Check if we need to rescale (city size might have changed)
+            const existingScale = worldPlatform.scale.x;
+            const expectedScale = (citySize + 2) / (existingScale > 0 ? 1 / existingScale : 1);
+            if (Math.abs(existingScale - expectedScale) > 0.1) {
+                // City size changed, remove old and reload
+                scene.remove(worldPlatform);
+                worldPlatform = null;
+            } else {
+                scene.add(worldPlatform);
             }
         }
         
-        // Store city size for citizen pathfinding
-        if (city && typeof city.size === 'number') {
-            currentCitySize = city.size;
+        if (!worldPlatform) {
+            // Load world platform (base ground) first, before other assets
+            // Pass city size to scale the World platform accordingly
+            try {
+                await assetManager.loadWorldPlatform(scene, citySize);
+            } catch (error) {
+                console.warn('[Scene] Could not load world platform:', error);
+            }
         }
         
         // Reset citizen state
@@ -344,6 +358,13 @@ export function createScene(housesStore, gameStore, assetManager) {
                 const zoneX = Math.floor(x / ZONE_SIZE);
                 const zoneY = Math.floor(y / ZONE_SIZE);
                 const zoneIndex = zoneX * Math.ceil(city.size / ZONE_SIZE) + zoneY;
+                
+                // For roads, ensure they are properly positioned above World platform
+                // and force matrix update to ensure visibility
+                if (terrainId === 'roads' && mesh.userData?.isRoad) {
+                    mesh.updateMatrixWorld(true);
+                }
+                
                 if (zoneGroups[zoneIndex]) {
                     zoneGroups[zoneIndex].add(mesh);
                 } else {
@@ -1850,95 +1871,8 @@ export function createScene(housesStore, gameStore, assetManager) {
 
                   // if data model has changed as user add a new building, update the mesh 
             if(newBuildingId && (newBuildingId !== currentBuildingId)) {
-                // Special handling for roads: update terrain mesh AND add to buildings array for neighbor detection
-                if (newBuildingId === 'roads') {
-                    // Update terrain mesh material to show road texture
-                    if (terrain[x] && terrain[x][y]) {
-                        const terrainMesh = terrain[x][y];
-                        const sharedMaterials = assetManager.getSharedTerrainMaterials();
-                        if (sharedMaterials && sharedMaterials['roads']) {
-                            // Mettre à jour le matériau - utiliser directement le matériau partagé
-                            // Three.js peut partager le même matériau entre plusieurs meshes
-                            terrainMesh.material = sharedMaterials['roads'];
-                            terrainMesh.name = 'roads';
-                            terrainMesh.userData.id = 'roads';
-                            terrainMesh.userData.type = 'roads';
-                            terrainMesh.userData.x = x;
-                            terrainMesh.userData.y = y;
-                            terrainMesh.userData.isBuilding = false;
-                            terrainMesh.userData.isRoad = true; // Mark as road for easier detection
-                            
-                            // S'assurer que le mesh est visible
-                            terrainMesh.visible = true;
-                            
-                            // Forcer la mise à jour complète du mesh et du matériau
-                            if (terrainMesh.material) {
-                                terrainMesh.material.needsUpdate = true;
-                                // Forcer la mise à jour de la texture
-                                if (terrainMesh.material.map) {
-                                    terrainMesh.material.map.needsUpdate = true;
-                                }
-                            }
-                            
-                            // Forcer la mise à jour de la géométrie si nécessaire
-                            if (terrainMesh.geometry) {
-                                terrainMesh.geometry.attributesNeedUpdate = true;
-                            }
-                            
-                            // S'assurer que le parent du mesh est mis à jour
-                            if (terrainMesh.parent) {
-                                terrainMesh.parent.updateMatrixWorld(true);
-                            }
-                            
-                            // Debug: vérifier l'état du mesh
-                            console.log('[scene] Road material updated', {
-                                x, y,
-                                hasMaterial: !!terrainMesh.material,
-                                materialType: terrainMesh.material?.type,
-                                hasTexture: !!terrainMesh.material?.map,
-                                textureLoaded: terrainMesh.material?.map?.image?.complete,
-                                visible: terrainMesh.visible,
-                                inScene: terrainMesh.parent !== null,
-                                parentName: terrainMesh.parent?.name
-                            });
-                        } else {
-                            console.warn('[scene] Shared materials for roads not available', { x, y, sharedMaterials });
-                        }
-                    } else {
-                        console.warn('[scene] Terrain mesh not found for road placement', { x, y, terrainExists: !!terrain[x] });
-                    }
-                    // CRITICAL: Add terrain mesh to buildings array so it's detected as a neighbor
-                    // Roads need to be in buildings array for neighbor detection to work
-                    if (!buildings[x][y] && terrain[x] && terrain[x][y]) {
-                        buildings[x][y] = terrain[x][y];
-                    }
-                } else if (currentBuildingId === 'roads' || buildings[x][y]?.userData?.isRoad) {
-                    // FIX BUG 2: If removing a road, restore terrain to grass properly
-                    if (terrain[x] && terrain[x][y]) {
-                        const terrainMesh = terrain[x][y];
-                        const sharedMaterials = assetManager.getSharedTerrainMaterials();
-                        if (sharedMaterials && sharedMaterials['grass'] && terrainMesh.material) {
-                            terrainMesh.material = sharedMaterials['grass'];
-                            terrainMesh.name = 'grass';
-                            terrainMesh.userData.id = 'grass';
-                            terrainMesh.userData.type = 'grass';
-                            terrainMesh.userData.isRoad = false; // Clear road flag
-                            terrainMesh.userData.x = x;
-                            terrainMesh.userData.y = y;
-                            terrainMesh.userData.isBuilding = false;
-                            // Ensure mesh is visible and in scene
-                            terrainMesh.visible = true;
-                            // Force material update
-                            if (terrainMesh.material) {
-                                terrainMesh.material.needsUpdate = true;
-                            }
-                        }
-                    }
-                    // Remove from buildings array when road is removed
-                    if (buildings[x][y] === terrain[x][y]) {
-                        buildings[x][y] = undefined;
-                    }
-                }
+                // Roads are now 3D meshes (StonePath-001), they are created as buildings below
+                // Old terrain-based road code has been completely removed
                 
                 // Check if this is the origin tile for multi-tile buildings
                 // We only create a building at the origin (top-left) tile
@@ -1955,8 +1889,12 @@ export function createScene(housesStore, gameStore, assetManager) {
                     }
                 }
                 
-                // Only create the mesh if this is the origin tile (and it's not a road)
-                if (isOriginTile && newBuildingId !== 'roads') {
+                // Roads are now 3D meshes (StonePath-001), treat them like buildings
+                // Map 'roads' to 'StonePath-001' for asset creation
+                const assetId = (newBuildingId === 'roads') ? 'StonePath-001' : newBuildingId;
+                
+                // Only create the mesh if this is the origin tile
+                if (isOriginTile) {
                     //remove the initial building if needed
                     let isExistingBuilding;
                     if(currentBuildingId) {
@@ -1968,7 +1906,8 @@ export function createScene(housesStore, gameStore, assetManager) {
                         const interactiveGroupRef = scene.interactiveGroup || scene.getObjectByName('interactive-objects');
                         // Remove from both scene and interactive group
                         removeInteractiveObject(buildings[x][y]);
-                        buildings[x][y] = assetManager.createAsset(newBuildingId, x, y);
+                        // Use assetId (which maps roads to StonePath-001)
+                        buildings[x][y] = assetManager.createAsset(assetId, x, y);
                         // Add to appropriate zone group (NOT directly to scene)
                         const zoneX = Math.floor(x / ZONE_SIZE);
                         const zoneY = Math.floor(y / ZONE_SIZE);
@@ -4267,40 +4206,7 @@ function onTouchEnd(event) {
      * @param {number} x - X coordinate
      * @param {number} y - Y coordinate
      */
-    function updateRoadImmediate(x, y) {
-        if (!terrain[x] || !terrain[x][y]) return;
-        
-        const terrainMesh = terrain[x][y];
-        const sharedMaterials = assetManager.getSharedTerrainMaterials();
-        
-        if (sharedMaterials && sharedMaterials['roads']) {
-            // Update terrain mesh material to show road texture immediately
-            terrainMesh.material = sharedMaterials['roads'];
-            terrainMesh.name = 'roads';
-            terrainMesh.userData.id = 'roads';
-            terrainMesh.userData.type = 'roads';
-            terrainMesh.userData.x = x;
-            terrainMesh.userData.y = y;
-            terrainMesh.userData.isBuilding = false;
-            terrainMesh.userData.isRoad = true;
-            
-            // Ensure mesh is visible
-            terrainMesh.visible = true;
-            
-            // Force material update
-            if (terrainMesh.material) {
-                terrainMesh.material.needsUpdate = true;
-                if (terrainMesh.material.map) {
-                    terrainMesh.material.map.needsUpdate = true;
-                }
-            }
-            
-            // Add to buildings array for neighbor detection
-            if (!buildings[x][y]) {
-                buildings[x][y] = terrainMesh;
-            }
-        }
-    }
+    // updateRoadImmediate removed - roads are now 3D meshes created like other buildings
 
     // make the game know the object userData I selected (to reach x and y position of the object or its id from asset
     return {
@@ -4332,8 +4238,7 @@ function onTouchEnd(event) {
         // Expose pause/resume control for citizen characters
         pauseCitizen,
         resumeCitizen,
-        // Expose immediate road update for instant visual feedback
-        updateRoadImmediate
+        // updateRoadImmediate removed - roads are now 3D meshes
     }
 
     /**

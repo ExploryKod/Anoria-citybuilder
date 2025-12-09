@@ -4,42 +4,54 @@ function getBuildingZonesNeighbors(data, area=1) {
 
     const { city, buildings, x, y, currentBuildingId, terrain } = data;
  
+    // Helper: prefer building over terrain if building exists and is not grass
+    // This ensures StonePath (roads) in buildings array are detected as neighbors
+    const getNeighborMesh = (nx, ny) => {
+        const buildingMesh = buildings?.[nx]?.[ny];
+        const terrainMesh = terrain?.[nx]?.[ny];
+        // Prefer building if it exists and is not grass (roads, houses, etc.)
+        if (buildingMesh && buildingMesh.name !== 'grass') {
+            return buildingMesh;
+        }
+        return terrainMesh;
+    };
+ 
      // South
      const neighborSouth = city.tiles[x]?.[y + area];
-     const terrainS = terrain[x]?.[y + area];
+     const terrainS = getNeighborMesh(x, y + area);
  
      // North-East
      const neighborNorthEast = city.tiles[x + area]?.[y - 1];
-     const terrainNE = terrain[x + area]?.[y - area];
+     const terrainNE = getNeighborMesh(x + area, y - area);
    
      // East
      const neighborEast = city.tiles[x + area]?.[y];
-     const terrainE = terrain[x + area]?.[y];
+     const terrainE = getNeighborMesh(x + area, y);
  
  
      // South-East
      const neighborSouthEast = city.tiles[x + area]?.[y + area];
-     const terrainSE = terrain[x + area]?.[y + area];
+     const terrainSE = getNeighborMesh(x + area, y + area);
  
  
      // North
      const neighborNorth = city.tiles[x]?.[y - area];
-     const terrainN = terrain[x]?.[y - area];
+     const terrainN = getNeighborMesh(x, y - area);
  
  
      // South-West
      const neighborSouthWest = city.tiles[x - area]?.[y + area];
-     const terrainSW = terrain[x - area]?.[y + area];
+     const terrainSW = getNeighborMesh(x - area, y + area);
   
  
      // West
      const neighborWest = city.tiles[x - area]?.[y];
-     const terrainW = terrain[x - area]?.[y];
+     const terrainW = getNeighborMesh(x - area, y);
     
  
      // North-West
      const neighborNorthWest = city.tiles[x - area]?.[y - area];
-     const terrainNW = terrain[x - area]?.[y - area];
+     const terrainNW = getNeighborMesh(x - area, y - area);
 
      return {
         neighborSouth,
