@@ -677,6 +677,7 @@
 }
 
 .partner-activation-btn {
+    width: 250px;
     padding: 10px 20px;
     background: var(--cta);
     color: white;
@@ -689,7 +690,7 @@
 }
 
 .partner-activation-btn:hover:not(:disabled) {
-    background: var(--cta-hover);
+    background: var(--lightgreen);
     transform: translateY(-1px);
 }
 
@@ -816,3 +817,8 @@
     font-style: italic;
 }
 
+@media screen and (max-width:768px) {
+    .partner-activation-btn {
+        width: 200px;
+    }
+}

@@ -59,7 +59,7 @@ export const assetsPrices = Object.freeze({
     
     // Industry (agricultural industry)
     'Windmill-001': { price: 50, category: 'industry', gridSize: 1 },
-    'Barn-001': { price: 40, category: 'industry', gridSize: 3 },
+    'Barn-001': { price: 40, category: 'industry', gridSize: 1 },
 
     // Markets
     'Market-Stall': { price: 10, category: 'markets', gridSize: 1 },

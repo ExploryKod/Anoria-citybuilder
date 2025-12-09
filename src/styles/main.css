@@ -1089,6 +1089,28 @@ canvas.pointer-events-disabled {
     gap: 5px;
 }
 
+/* Border around global citizen count (first pop-box) */
+.info-panel .info-box.infos-pop .pop-box:first-child {
+    border: 2px solid var(--primary);
+    border-radius: var(--border-radius-small);
+    padding: 4px 8px;
+}
+
+/* Unemployed icon styling */
+.info-panel .pop-icon .unemployed-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    display: block;
+}
+
+/* Unemployed population display */
+.info-panel .display-unemployed-pop {
+    color: var(--primary);
+    font-size: 16px;
+    font-weight: 700;
+}
+
 .info-panel > .info-box.infos-time {
    min-width: 500px;
    justify-content: center;
@@ -1776,6 +1798,8 @@ button#pwa-refresh:hover {
     .info-panel .display-time,
     .info-panel .display-speed,
     .info-panel .display-pop,
+    .info-panel .display-hunger-pop,
+    .info-panel .display-unemployed-pop,
     .info-panel .display-funds {
         display: flex;
         align-items: center;

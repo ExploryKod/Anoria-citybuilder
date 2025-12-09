@@ -2254,6 +2254,60 @@ export function createScene(housesStore, gameStore, assetManager) {
         const currentPopulation = await housesStore.getGlobalPopulation();
         const famishedPopulation = await housesStore.getFamishedPopulation();
         
+        // Calculate unemployment (same logic as work-section.js)
+        let unemployedCount = 0;
+        let unemploymentPercentage = 0;
+        try {
+            // Get all buildings from IndexedDB
+            const allBuildings = await housesStore.listAllHouses();
+            
+            // Calculate available employees from houses (same logic as work-section.js)
+            let workerPopulation = 0;
+            let elitePopulation = 0;
+            for (const house of allBuildings) {
+                const type = house.type || '';
+                const pop = house.pop || 0;
+                
+                if (type.includes('House')) {
+                    // House-2Story (Palace): 1/6 becomes elite, 5/6 remain workers
+                    if (type.includes('2Story') || type.includes('2-Story')) {
+                        const elitesFromThisHouse = Math.floor(pop / 6);
+                        const workersFromThisHouse = pop - elitesFromThisHouse;
+                        elitePopulation += elitesFromThisHouse;
+                        workerPopulation += workersFromThisHouse;
+                    }
+                    // Other houses (Blue, Red, Purple): all population are workers
+                    else if (type.includes('Blue') || type.includes('Red') || type.includes('Purple')) {
+                        workerPopulation += pop;
+                    }
+                }
+            }
+            
+            // Calculate total assigned workers from all buildings
+            let totalAssignedWorkers = 0;
+            for (const building of allBuildings) {
+                if (!building.employees) continue;
+                const sector = building.employees.sector || 0;
+                // Skip residential (sector 0)
+                if (sector === 0) continue;
+                totalAssignedWorkers += building.employees.worker || 0;
+            }
+            
+            // Unemployed = available but not assigned
+            unemployedCount = Math.max(0, workerPopulation - totalAssignedWorkers);
+            
+            // Calculate unemployment percentage
+            if (workerPopulation > 0) {
+                unemploymentPercentage = Math.round((unemployedCount / workerPopulation) * 100);
+            } else {
+                unemploymentPercentage = 0;
+            }
+        } catch (error) {
+            console.warn('[scene.js] Error calculating unemployment:', error);
+            unemployedCount = 0;
+            unemploymentPercentage = 0;
+        }
+        
         // Manage multiple citizens based on current population state (from IndexedDB)
         const targetCitizenCount = Math.min(currentPopulation, MAX_CITIZENS);
         const currentCitizenCount = citizens.filter(c => c.spawned && c.character && c.character.visible).length;
@@ -2369,22 +2423,27 @@ export function createScene(housesStore, gameStore, assetManager) {
             funds = budgetData.funds;
         }
 
-        // Update population, famished population and funds display in general bar using GameUI
+        // Update population, famished population, unemployed population and funds display in general bar using GameUI
         // This ensures consistent UI updates (IndexedDB is source of truth)
         if (window.gameUI) {
             window.gameUI.updatePopulation(currentPopulation || 0);
             window.gameUI.updateFamishedPopulation(famishedPopulation || 0);
+            window.gameUI.updateUnemployedPopulation(unemployedCount, unemploymentPercentage);
             window.gameUI.updateFunds(funds);
         } else {
             // Fallback to direct DOM update if GameUI not available
             const displayPop = document.querySelector('.display-pop');
             const displayHungerPop = document.querySelector('.display-hunger-pop');
+            const displayUnemployedPop = document.querySelector('.display-unemployed-pop');
             const displayFunds = document.querySelector('.display-funds');
             if (displayPop) {
                 displayPop.textContent = (currentPopulation || 0).toString();
             }
             if (displayHungerPop) {
                 displayHungerPop.textContent = (famishedPopulation || 0).toString();
+            }
+            if (displayUnemployedPop) {
+                displayUnemployedPop.textContent = `${unemployedCount} (${unemploymentPercentage}%)`;
             }
             if (displayFunds) {
                 displayFunds.textContent = funds.toString();
@@ -2394,6 +2453,8 @@ export function createScene(housesStore, gameStore, assetManager) {
         console.log('[scene.js] Updated top bar display:', {
             population: currentPopulation,
             famishedPopulation: famishedPopulation,
+            unemployedCount,
+            unemploymentPercentage,
             funds,
             usingGameUI: !!window.gameUI
         });
