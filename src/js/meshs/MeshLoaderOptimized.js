@@ -31,13 +31,12 @@ class MeshLoaderOptimized {
         houses: ['House-Blue', 'House-Red', 'House-Purple'],
         tombs: ['Tombstone-1', 'Tombstone-2', 'Tombstone-3'],
         farms: ['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage'],
-        industry: ['Windmill-001', 'Barn-001'],
+        industry: ['Windmill-001', 'Barn-001', 'Crate-001'],
         markets: ['Market-Stall'],
         infrastructure: ['Well-001', 'Fountain-001', 'Streetlight-001'],
         public: ['Church-002'],
         palaces: ['House-2Story'],
-        nature: ['Tree-Pine-001', 'Tree-Square-001', 'Tree-Tall-001'],
-        decoration: ['Crate-001']
+        nature: ['Tree-Pine-001', 'Tree-Square-001', 'Tree-Tall-001', 'Boulder-001']
     }
 
     allAssetsNames = [
@@ -49,7 +48,6 @@ class MeshLoaderOptimized {
         { infrastructure: [] },
         { public: [] },
         { palaces: [] },
-        { decoration: [] },
         { other: [] }
     ];
 
@@ -63,8 +61,7 @@ class MeshLoaderOptimized {
         'infrastructure': {},
         'public': {},
         'palaces': {},
-        'nature': {},
-        'decoration': {}
+        'nature': {}
     }
 
     modelMetas = {
@@ -76,8 +73,7 @@ class MeshLoaderOptimized {
         'infrastructure': { size: 0.8 },
         'public': { size: 0.8 },
         'palaces': { size: 0.5 },
-        'nature': { size: 0.5 },
-        'decoration': { size: 0.3 }
+        'nature': { size: 0.5 }
     }
 
     // Per-asset size overrides (for assets that need different size than their category)
@@ -103,8 +99,7 @@ class MeshLoaderOptimized {
             infrastructure: new Set(),
             public: new Set(),
             palaces: new Set(),
-            nature: new Set(),
-            decoration: new Set()
+            nature: new Set()
         };
     }
 
@@ -134,15 +129,13 @@ class MeshLoaderOptimized {
             infrastructure: new Set(),
             public: new Set(),
             palaces: new Set(),
-            nature: new Set(),
-            decoration: new Set()
+            nature: new Set()
         };
 
         // Build catalog mappings
         // Map JSON categories to our internal categories
         const categoryMapping = {
-            'vegetation': 'nature',  // Map vegetation to nature
-            'decoration': 'decoration'
+            'vegetation': 'nature'  // Map vegetation to nature
         };
         
         Object.entries(assetCatalog.assets).forEach(([jsonCategory, data]) => {
@@ -210,6 +203,11 @@ class MeshLoaderOptimized {
             return 'Crate-001';
         }
         
+        // Special handling for Boulder (all variants map to Boulder-001)
+        if (parts[0] === 'Boulder') {
+            return 'Boulder-001';
+        }
+        
         let toolName = `${parts[0]}-${parts[1] || ''}`;
         
         // Apply mapping if needed
@@ -225,12 +223,7 @@ class MeshLoaderOptimized {
      */
     _getMeshCategory(meshName) {
         // Fast lookup in Sets
-        // Map JSON categories to internal categories
-        const categoryMapping = {
-            'vegetation': 'nature',  // Map vegetation to nature
-            'decoration': 'decoration'
-        };
-        
+        // Categories are already mapped in _buildLookupTables
         for (const [category, meshSet] of Object.entries(this.categoryMeshSets)) {
             if (meshSet.has(meshName)) {
                 // Return the internal category (already mapped in _buildLookupTables)
