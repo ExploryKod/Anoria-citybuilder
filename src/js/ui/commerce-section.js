@@ -8,10 +8,10 @@ class CommerceSectionManager {
         this.currentTab = 'products';
     }
 
-    init() {
+    async init() {
         this.setupEventListeners();
         this.setupTabs();
-        this.loadGoodsData();
+        await this.loadGoodsData();
         this.loadPartnersData();
     }
 
@@ -464,7 +464,41 @@ class CommerceSectionManager {
         // Charger les stats dynamiques depuis le store
         this.loadDynamicStats();
         
+        // Calculer les statuts de consommation pour les produits alimentaires
+        await this.updateConsumptionStatuses();
+        
         this.render();
+    }
+
+    /**
+     * Met à jour les statuts de consommation pour tous les produits alimentaires
+     */
+    async updateConsumptionStatuses() {
+        if (!this.goodsData) return;
+
+        // Récupérer housesStore et foodTraceabilityService
+        let housesStore = null;
+        if (window.app && window.app.housesStore) {
+            housesStore = window.app.housesStore;
+        } else if (window.housesStore) {
+            housesStore = window.housesStore;
+        } else if (window.game && window.game.housesStore) {
+            housesStore = window.game.housesStore;
+        }
+
+        const foodTraceabilityService = window.foodTraceabilityService || null;
+
+        // Mettre à jour chaque produit alimentaire
+        for (const good of this.goodsData) {
+            if (['wheat', 'carrot', 'cabbage'].includes(good.id)) {
+                const status = await this.calculateConsumptionStatus(good.id, housesStore, foodTraceabilityService);
+                good.consumptionShare = status.consumptionShare;
+                good.consumptionStatus = status.consumptionStatus;
+            }
+        }
+
+        // Sauvegarder la configuration mise à jour
+        commerceStore.saveConfig(this.goodsData);
     }
 
     /**
@@ -483,6 +517,141 @@ class CommerceSectionManager {
                 good.yearlyExports = stats.yearlyExports[good.id];
             }
         });
+    }
+
+    /**
+     * Calcule la consommation et le statut d'export pour un produit alimentaire
+     * @param {string} productId - ID du produit (wheat, carrot, cabbage)
+     * @param {HousesStore} housesStore - Store des maisons
+     * @param {FoodTraceabilityService} foodTraceabilityService - Service de traçabilité
+     * @returns {Promise<Object>} { consumptionShare, consumptionStatus, annualConsumption, annualProduction, netAvailable }
+     */
+    async calculateConsumptionStatus(productId, housesStore, foodTraceabilityService) {
+        // Seulement pour les produits alimentaires
+        const foodProducts = ['wheat', 'carrot', 'cabbage'];
+        if (!foodProducts.includes(productId)) {
+            return {
+                consumptionShare: 0,
+                consumptionStatus: 'able',
+                annualConsumption: 0,
+                annualProduction: 0,
+                netAvailable: 0
+            };
+        }
+
+        try {
+            // 1. Calculer la consommation annuelle réelle
+            let annualConsumption = 0;
+            if (foodTraceabilityService && typeof foodTraceabilityService.getAllTransactions === 'function') {
+                const allTransactions = await foodTraceabilityService.getAllTransactions();
+                // Obtenir l'année actuelle depuis TimeManager ou utiliser la dernière année dans les transactions
+                let currentYear = 0;
+                if (window.TimeManager && typeof window.TimeManager.getTimeInfo === 'function') {
+                    // Essayer d'obtenir le temps depuis le jeu si disponible
+                    const gameTime = window.game?.city?.time || window.game?.time || 0;
+                    const timeInfo = window.TimeManager.getTimeInfo(gameTime);
+                    currentYear = timeInfo.year;
+                } else if (allTransactions.length > 0) {
+                    // Utiliser la dernière année dans les transactions
+                    currentYear = Math.max(...allTransactions.map(t => t.year || 0));
+                }
+                
+                // Filtrer les transactions de consommation de l'année en cours
+                const consumptionTransactions = allTransactions.filter(t => 
+                    t.transactionType === 'house_consumption' &&
+                    t.foodType === productId &&
+                    t.year === currentYear
+                );
+                
+                // Somme de toutes les consommations de l'année
+                annualConsumption = consumptionTransactions.reduce((sum, t) => sum + (t.quantity || 0), 0);
+            }
+
+            // Si pas de données de traçabilité, estimer depuis la population
+            if (annualConsumption === 0 && housesStore) {
+                const totalPopulation = await housesStore.getGlobalPopulation();
+                // Estimation : chaque citoyen consomme 1 panier/mois = 12 paniers/an
+                // Répartition approximative : 40% wheat, 30% carrot, 30% cabbage
+                const consumptionRatios = {
+                    wheat: 0.4,
+                    carrot: 0.3,
+                    cabbage: 0.3
+                };
+                annualConsumption = Math.round(totalPopulation * 12 * (consumptionRatios[productId] || 0.33));
+            }
+
+            // 2. Calculer la production annuelle locale
+            let annualProduction = 0;
+            if (housesStore) {
+                const allBuildings = await housesStore.listAllHouses();
+                const farmTypeMap = {
+                    'wheat': ['Farm-Wheat', 'Farms-Wheat'],
+                    'carrot': ['Farm-Carrot', 'Farms-Carrot'],
+                    'cabbage': ['Farm-Cabbage', 'Farms-Cabbage']
+                };
+                const farmTypes = farmTypeMap[productId] || [];
+                
+                // Compter les fermes de ce type
+                const farms = allBuildings.filter(b => {
+                    if (!b.type) return false;
+                    return farmTypes.some(type => b.type === type) ||
+                           (b.type.includes('Farm') && b.type.toLowerCase().includes(productId));
+                });
+                
+                // Chaque ferme produit 78 paniers/an
+                annualProduction = farms.length * 78;
+            }
+
+            // 3. Récupérer les imports/exports actuels
+            const stats = commerceStore.loadStats();
+            const yearlyImports = stats?.yearlyImports?.[productId] || 0;
+            const yearlyExports = stats?.yearlyExports?.[productId] || 0;
+
+            // 4. Calculer le disponible net
+            // Disponible = Production locale + Imports - Exports actuels
+            const netAvailable = annualProduction + yearlyImports - yearlyExports;
+
+            // 5. Calculer le pourcentage de couverture
+            let consumptionShare = 0;
+            if (annualConsumption > 0) {
+                consumptionShare = Math.round((netAvailable / annualConsumption) * 100);
+            } else {
+                // Si pas de consommation, on considère qu'on peut exporter
+                consumptionShare = netAvailable > 0 ? 200 : 0;
+            }
+
+            // 6. Déterminer le statut
+            let consumptionStatus = 'able';
+            if (netAvailable >= annualConsumption * 1.2) {
+                // Dépasse largement (20% de marge)
+                consumptionStatus = 'exceeding';
+            } else if (netAvailable >= annualConsumption) {
+                // Capable de répondre aux besoins
+                consumptionStatus = 'able';
+            } else {
+                // Incapable de répondre aux besoins
+                consumptionStatus = 'unable';
+            }
+
+            return {
+                consumptionShare,
+                consumptionStatus,
+                annualConsumption,
+                annualProduction,
+                netAvailable,
+                yearlyImports,
+                yearlyExports
+            };
+        } catch (error) {
+            console.error('[CommerceSectionManager] Error calculating consumption status:', error);
+            return {
+                consumptionShare: 0,
+                consumptionStatus: 'unable',
+                annualConsumption: 0,
+                annualProduction: 0,
+                netAvailable: 0
+            };
+        }
     }
 
     generatePlaceholderGoodsData() {
@@ -643,11 +812,14 @@ class CommerceSectionManager {
         return texts[status] || texts['able'];
     }
 
-    render() {
+    async render() {
         if (!this.goodsData) return;
 
         const goodsList = document.getElementById('commerce-goods-list');
         if (!goodsList) return;
+        
+        // Mettre à jour les statuts de consommation avant le rendu
+        await this.updateConsumptionStatuses();
         
         // Ré-attacher les listeners après le rendu (le DOM est recréé)
         this.setupEventListeners();
@@ -954,7 +1126,7 @@ class CommerceSectionManager {
     }
 }
 
-function initCommerceSection() {
+async function initCommerceSection() {
     const commerceSection = document.getElementById('admin-section-commerce');
     if (!commerceSection) return;
 
@@ -962,12 +1134,12 @@ function initCommerceSection() {
     
     // Initialiser la configuration au démarrage (même si le panneau n'est pas ouvert)
     // Cela garantit que CommerceService peut trouver la config dès le début
-    manager.loadGoodsData();
+    await manager.loadGoodsData();
     
-    const observer = new MutationObserver(() => {
+    const observer = new MutationObserver(async () => {
         if (commerceSection.classList.contains('active')) {
             // Recharger les données à chaque activation (pour mettre à jour les stats dynamiques)
-            manager.loadGoodsData();
+            await manager.loadGoodsData();
         }
     });
 
@@ -975,7 +1147,7 @@ function initCommerceSection() {
 
     // Initialiser si déjà actif
     if (commerceSection.classList.contains('active')) {
-        manager.init();
+        await manager.init();
     } else {
         // Même si le panneau n'est pas actif, initialiser les event listeners et les tabs
         manager.setupEventListeners();
