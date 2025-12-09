@@ -60,6 +60,7 @@ export const assetsPrices = Object.freeze({
     // Industry (agricultural industry)
     'Windmill-001': { price: 50, category: 'industry', gridSize: 1 },
     'Barn-001': { price: 40, category: 'industry', gridSize: 1 },
+    'Crate-001': { price: 2, category: 'industry', gridSize: 1 },
 
     // Markets
     'Market-Stall': { price: 10, category: 'markets', gridSize: 1 },
@@ -72,13 +73,11 @@ export const assetsPrices = Object.freeze({
     // Public Buildings
     'Church-002': { price: 100, category: 'public', gridSize: 3 },
     
-    // Nature (Trees)
+    // Nature (Trees and Rocks)
     'Tree-Pine-001': { price: 3, category: 'nature', gridSize: 1 },
     'Tree-Square-001': { price: 3, category: 'nature', gridSize: 1 },
     'Tree-Tall-001': { price: 3, category: 'nature', gridSize: 1 },
-    
-    // Decoration
-    'Crate-001': { price: 2, category: 'decoration', gridSize: 1 }
+    'Boulder-001': { price: 2, category: 'nature', gridSize: 1 }
 });
 
 export const wantedHouses = [
@@ -226,6 +225,19 @@ export const meshNameMapping = {
     'TreeTall016': 'Tree-Tall-001',
     'TreeTall017': 'Tree-Tall-001',
     'TreeTall018': 'Tree-Tall-001',
+    
+    // Boulder variants (all map to Boulder-001)
+    'Boulder': 'Boulder-001',
+    'Boulder001': 'Boulder-001',
+    'Boulder002': 'Boulder-001',
+    'Boulder003': 'Boulder-001',
+    'Boulder004': 'Boulder-001',
+    'Boulder005': 'Boulder-001',
+    'Boulder006': 'Boulder-001',
+    'Boulder007': 'Boulder-001',
+    'Boulder008': 'Boulder-001',
+    'Boulder009': 'Boulder-001',
+    'Boulder010': 'Boulder-001',
     
     // Crate variants
     'Crate': 'Crate-001',

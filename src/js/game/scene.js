@@ -234,12 +234,27 @@ export function createScene(housesStore, gameStore, assetManager) {
     let delay = 0;
 
     async function initialize(city) {
+        // Store world platform before clearing scene
+        const worldPlatform = scene.getObjectByName('world-platform');
+        
         scene.clear();
         // Re-apply fog after clear
         try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
         terrain = [];
         buildings = [];
         loadingPromises = [];
+        
+        // Re-add world platform if it existed, otherwise load it
+        if (worldPlatform) {
+            scene.add(worldPlatform);
+        } else {
+            // Load world platform (base ground) first, before other assets
+            try {
+                await assetManager.loadWorldPlatform(scene);
+            } catch (error) {
+                console.warn('[Scene] Could not load world platform:', error);
+            }
+        }
         
         // Store city size for citizen pathfinding
         if (city && typeof city.size === 'number') {

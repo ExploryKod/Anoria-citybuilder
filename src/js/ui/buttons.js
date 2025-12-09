@@ -629,26 +629,6 @@ function toggleModal(e) {
                 }
             }
             break;
-        case 'decoration':
-            getButtonsUnactive()
-            getButtonsDisabled()
-            panelLayoutInner.classList.add('loading-objects')
-            if(!panelLayout.classList.contains('active')) {
-                panelLayout.classList.add('active');
-                e.target.classList.toggle('selected')
-                createDecorationButtons(buttonData)
-                
-                // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceOpenPopup('panel-layout');
-                }
-            } else {
-                // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceClosePopup('panel-layout');
-                }
-            }
-            break;
         default:
             e.target.classList.toggle('selected')
             panelLayout.classList.remove('active');
@@ -749,6 +729,12 @@ function createIndustryButtons(buttonData) {
 
     const svgWindmill = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cog"><circle cx="12" cy="12" r="3"/><path d="M12 5L7 7l2 5M12 5l5 2-2 5M7 17l2-5M17 17l-2-5M7 7L2 7l5 10M17 7l5 0-5 10"/></svg>`
     const svgBarn = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="12" x="6" y="10"/></svg>`
+    const svgCrate = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-package">
+        <path d="m7.5 4.27 9 5.15"/>
+        <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+        <path d="m3.3 7 8.7 5 8.7-5"/>
+        <path d="M12 22V12"/>
+    </svg>`
     
     let buttonsDuplicate = [];
     buttonData.filter(buttonInfo => industryToolIDs.includes(buttonInfo.tool)).forEach(buttonInfo => {
@@ -758,6 +744,8 @@ function createIndustryButtons(buttonData) {
                 makeNewButton(buttonInfo, svgWindmill)
             } else if (buttonInfo.tool === 'Barn-001') {
                 makeNewButton(buttonInfo, svgBarn)
+            } else if (buttonInfo.tool === 'Crate-001') {
+                makeNewButton(buttonInfo, svgCrate)
             } else {
                 makeNewButton(buttonInfo, svgBarn)
             }
@@ -846,6 +834,10 @@ function createNatureButtons(buttonData) {
         <path d="M12 22v-8"/>
         <path d="M12 2v4"/>
     </svg>`;
+    
+    const svgBoulder = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mountain">
+        <path d="m8 3 4 8 5-5 5 15H2L8 3z"/>
+    </svg>`;
 
     // Debug: Log available buttonData and natureToolIDs
     console.log('🌳 createNatureButtons - natureToolIDs:', natureToolIDs);
@@ -857,7 +849,11 @@ function createNatureButtons(buttonData) {
     filteredButtons.forEach(buttonInfo => {
         if (!buttonsDuplicate.includes(buttonInfo.tool)) {
             buttonsDuplicate.push(buttonInfo.tool);
-            makeNewButton(buttonInfo, svgTree);
+            if (buttonInfo.tool === 'Boulder-001') {
+                makeNewButton(buttonInfo, svgBoulder);
+            } else {
+                makeNewButton(buttonInfo, svgTree);
+            }
         }
     });
     
@@ -865,26 +861,6 @@ function createNatureButtons(buttonData) {
     if (buttonsDuplicate.length === 0) {
         console.warn('⚠️ No nature buttons created. Check if assets are loaded and toolIds match.');
     }
-}
-
-function createDecorationButtons(buttonData) {
-    panelLayoutInner.innerHTML = '';
-    const decorationToolIDs = toolIds.decoration || [];
-
-    const svgCrate = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-package">
-        <path d="m7.5 4.27 9 5.15"/>
-        <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
-        <path d="m3.3 7 8.7 5 8.7-5"/>
-        <path d="M12 22V12"/>
-    </svg>`;
-
-    let buttonsDuplicate = [];
-    buttonData.filter(buttonInfo => decorationToolIDs.includes(buttonInfo.tool)).forEach(buttonInfo => {
-        if (!buttonsDuplicate.includes(buttonInfo.tool)) {
-            buttonsDuplicate.push(buttonInfo.tool);
-            makeNewButton(buttonInfo, svgCrate);
-        }
-    });
 }
 
 function makeNewButton(buttonInfo, svg="") {
@@ -1487,11 +1463,10 @@ window.onload = async () => {
             assetManager.initializeBuildings('palaces'),
             assetManager.initializeBuildings('markets'),
             assetManager.initializeBuildings('farms'),
-            assetManager.initializeBuildings('industry'),
+            assetManager.initializeBuildings('industry'),  // Includes crates now
             assetManager.initializeBuildings('infrastructure'),
             assetManager.initializeBuildings('public'),
-            assetManager.initializeBuildings('nature'),
-            assetManager.initializeBuildings('decoration')
+            assetManager.initializeBuildings('nature')
         ]).catch(() => {
             // Silently fail - assets will load when needed
         });
@@ -1815,11 +1790,6 @@ window.onload = async () => {
     const natureButton = document.getElementById('nature-btn');
     if (natureButton) {
         natureButton.addEventListener('click', toggleModal);
-    }
-
-    const decorationButton = document.getElementById('decoration-btn');
-    if (decorationButton) {
-        decorationButton.addEventListener('click', toggleModal);
     }
 
     panelLayoutCloseBtn.addEventListener('click', closeModal)

@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { textures } from './data.js';
 import MeshLoader from "./MeshLoaderOptimized.js";
 import config from '../game/config.js';
@@ -394,8 +396,6 @@ class AssetManager extends MeshLoader {
                 return this.modelsObj['palaces'];
             case 'nature':
                 return this.modelsObj['nature'];
-            case 'decoration':
-                return this.modelsObj['decoration'];
             default:
                 throw new Error(`Unknown model type: ${type}`);
         }
@@ -472,6 +472,87 @@ class AssetManager extends MeshLoader {
             console.warn(`Asset ${assetId} does not exist, see assets: `, this.#assets);
             return undefined;
         }
+    }
+
+    /**
+     * Load the base world platform (World_Material005_0) and add it to the scene
+     * This is called once at scene initialization
+     * @param {THREE.Scene} scene - The Three.js scene to add the world platform to
+     * @returns {Promise<THREE.Object3D>} The loaded world platform mesh
+     */
+    async loadWorldPlatform(scene) {
+        return new Promise((resolve, reject) => {
+            const gltfloader = new GLTFLoader();
+            const dracoLoader = new DRACOLoader();
+            dracoLoader.setDecoderPath('/examples/jsm/libs/draco/');
+            gltfloader.setDRACOLoader(dracoLoader);
+
+            const modelPath = `./resources/lowpoly/village_town_assets_v2.glb`;
+            
+            gltfloader.load(
+                modelPath,
+                (gltf) => {
+                    let worldMesh = null;
+                    
+                    // Traverse the scene to find World_Material005_0
+                    gltf.scene.traverse((child) => {
+                        if (child instanceof THREE.Mesh && child.name === 'World_Material005_0') {
+                            // Clone the mesh
+                            worldMesh = child.clone();
+                            worldMesh.name = 'world-platform';
+                            
+                            // Apply the same rotation as all other assets to match the scene orientation
+                            // All buildings use: rotation.set(90deg X, 180deg Y, 180deg Z)
+                            // This ensures the World platform is horizontal like the terrain (grass)
+                            worldMesh.rotation.set(
+                                THREE.MathUtils.degToRad(90),
+                                THREE.MathUtils.degToRad(180),
+                                THREE.MathUtils.degToRad(180)
+                            );
+                            
+                            // Position it at the same level as roads (y = -0.5)
+                            // The position uses (x, y, z) where y is up in Three.js
+                            // Later, we'll move all assets above the World and terrain below it
+                            worldMesh.position.set(0, -0.5, 0); // Same level as roads
+                            
+                            // Make it visible and ensure it's not too small
+                            worldMesh.visible = true;
+                            
+                            // Make it non-interactive (not part of raycasting)
+                            worldMesh.userData = {
+                                isWorldPlatform: true,
+                                nonInteractive: true
+                            };
+                            
+                            // Add to scene
+                            scene.add(worldMesh);
+                            
+                            // Log final state
+                            const bbox = new THREE.Box3().setFromObject(worldMesh);
+                            console.log('[AssetManager] World platform loaded and added to scene:', {
+                                position: worldMesh.position,
+                                rotation: worldMesh.rotation,
+                                scale: worldMesh.scale,
+                                boundingBox: bbox,
+                                visible: worldMesh.visible
+                            });
+                        }
+                    });
+                    
+                    if (worldMesh) {
+                        resolve(worldMesh);
+                    } else {
+                        console.warn('[AssetManager] World_Material005_0 not found in GLB file');
+                        resolve(null);
+                    }
+                },
+                undefined,
+                (error) => {
+                    console.error('[AssetManager] Error loading world platform:', error);
+                    reject(error);
+                }
+            );
+        });
     }
 
     setSprite(texture = textures['no-roads'], name) {
