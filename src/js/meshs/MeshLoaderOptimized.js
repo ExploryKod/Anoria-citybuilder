@@ -68,7 +68,7 @@ class MeshLoaderOptimized {
         'houses': { size: 0.5 },
         'tombs': { size: 0.5 },
         'farms': { size: 1 },
-        'industry': { size: 1 },
+        'industry': { size: 0.5 },
         'markets': { size: 0.7 },
         'infrastructure': { size: 0.8 },
         'public': { size: 0.8 },
@@ -79,7 +79,8 @@ class MeshLoaderOptimized {
     // Per-asset size overrides (for assets that need different size than their category)
     assetSizeOverrides = {
         'Windmill-001': 0.5,  // Windmills should match one case size like houses
-        'Barn-001': 0.5       // Storehouse should match one case size like houses
+        'Barn-001': 0.2,
+        'Church-002': 0.5
     }
 
     assetNames = [];

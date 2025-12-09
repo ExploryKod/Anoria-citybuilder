@@ -11,6 +11,7 @@ import {
     gameWindow as gameWindowElement,
     displayPop,
     displayHungerPop,
+    displayUnemployedPop,
     displayFunds,
     infoObjectOverlay,
     infoObjectCloseBtn,
@@ -167,6 +168,21 @@ class GameUI {
     updateFamishedPopulation(famishedPopulation) {
         if (displayHungerPop) {
             displayHungerPop.textContent = (famishedPopulation || 0).toString();
+        }
+    }
+
+    /**
+     * Updates unemployed population display
+     * @param {number} unemployedPopulation - Number of unemployed people
+     * @param {number} unemploymentPercentage - Unemployment percentage (optional)
+     */
+    updateUnemployedPopulation(unemployedPopulation, unemploymentPercentage = null) {
+        if (displayUnemployedPop) {
+            if (unemploymentPercentage !== null && unemploymentPercentage !== undefined) {
+                displayUnemployedPop.textContent = `${unemployedPopulation || 0} (${unemploymentPercentage}%)`;
+            } else {
+                displayUnemployedPop.textContent = (unemployedPopulation || 0).toString();
+            }
         }
     }
 
