@@ -209,7 +209,7 @@
         <div id='loader' class="loader"></div>
 
         <div id="pause-overlay" class="pause-overlay">
-            <button type="button" id="play-btn" data-action="play" class="toolbar-btn">
+            <button type="button" class="play-btn" id="play-btn" data-action="play" class="toolbar-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play">
                     <polygon points="6 3 20 12 6 21 6 3"/>
                 </svg>
@@ -793,22 +793,19 @@
                                     <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                                 </svg>
                             </span>
-                            <div class="display-pop"></div>
+                            <div class="display-pop">0</div>
                         </article>
                         <article class="pop-box">
                             <span class="info-box pop-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
-                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                                </svg>
+                                <img src="/resources/textures/status/nofood.png" alt="Famished" class="famished-icon" style="width: 24px; height: 24px; object-fit: contain;">
                             </span>
-                            <div class="display-hunger-pop"></div>
+                            <div class="display-hunger-pop">0</div>
                         </article>
                         <article class="pop-box">
                             <span class="info-box pop-icon">
                                 <img src="/resources/textures/status/no-work_colored.png" alt="Unemployed" class="unemployed-icon" style="width: 24px; height: 24px; object-fit: contain;">
                             </span>
-                            <div class="display-unemployed-pop"></div>
+                            <div class="display-unemployed-pop">0 (0%)</div>
                         </article>
                     </section>
 
@@ -855,24 +852,29 @@
                             </span>
                         </article>
                     </div>
-                </section>
-
                     <!-- Game controls (pause/reset) -->
-                <section id="game-controls" class="game-controls">
-                    <button type="button" id="pause-btn" data-action="pause" class="game-control-btn" title="Pause">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause">
-                            <rect x="14" y="4" width="4" height="16" rx="1"/>
-                            <rect x="6" y="4" width="4" height="16" rx="1"/>
-                        </svg>
-                    </button>
-                    <button type="button" id="replay-btn" data-action="replay" class="game-control-btn" title="Reset">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" 
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
-                        class="lucide lucide-rotate-ccw-icon lucide-rotate-ccw">
-                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                        <path d="M3 3v5h5"/>
-                        </svg>
-                    </button>
+                    <div class="info-box game-control-box stats-buttons" id="pause-btn" data-action="pause" title="Pause" role="button" tabindex="0">
+                        <article class="budget-box">
+                            <span class="budget-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause">
+                                    <rect x="14" y="4" width="4" height="16" rx="1"/>
+                                    <rect x="6" y="4" width="4" height="16" rx="1"/>
+                                </svg>
+                            </span>
+                        </article>
+                    </div>
+                    <div class="info-box game-control-box stats-buttons" id="replay-btn" data-action="replay" title="Reset" role="button" tabindex="0">
+                        <article class="budget-box">
+                            <span class="budget-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" 
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+                                class="lucide lucide-rotate-ccw-icon lucide-rotate-ccw">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                <path d="M3 3v5h5"/>
+                                </svg>
+                            </span>
+                        </article>
+                    </div>
                 </section>
             </div>
         </section>
