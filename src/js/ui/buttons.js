@@ -609,6 +609,46 @@ function toggleModal(e) {
                 }
             }
             break;
+        case 'nature':
+            getButtonsUnactive()
+            getButtonsDisabled()
+            panelLayoutInner.classList.add('loading-objects')
+            if(!panelLayout.classList.contains('active')) {
+                panelLayout.classList.add('active');
+                e.target.classList.toggle('selected')
+                createNatureButtons(buttonData)
+                
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('panel-layout');
+                }
+            } else {
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('panel-layout');
+                }
+            }
+            break;
+        case 'decoration':
+            getButtonsUnactive()
+            getButtonsDisabled()
+            panelLayoutInner.classList.add('loading-objects')
+            if(!panelLayout.classList.contains('active')) {
+                panelLayout.classList.add('active');
+                e.target.classList.toggle('selected')
+                createDecorationButtons(buttonData)
+                
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('panel-layout');
+                }
+            } else {
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('panel-layout');
+                }
+            }
+            break;
         default:
             e.target.classList.toggle('selected')
             panelLayout.classList.remove('active');
@@ -792,6 +832,57 @@ function createPublicButtons(buttonData) {
             } else {
                 makeNewButton(buttonInfo, svg);
             }
+        }
+    });
+}
+
+function createNatureButtons(buttonData) {
+    panelLayoutInner.innerHTML = '';
+    const natureToolIDs = toolIds.nature || [];
+
+    const svgTree = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trees">
+        <path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-2.1-5.2l.3-.3h.2a2.5 2.5 0 0 1 2-4l.4-.4a2 2 0 0 1 2.9-.2 1 1 0 0 0 1.4 0"/>
+        <path d="M14 10v.2A3 3 0 0 0 15.1 16H19a3 3 0 0 0 2.1-5.2l-.3-.3h-.2a2.5 2.5 0 0 0-2-4l-.4-.4a2 2 0 0 0-2.9-.2 1 1 0 0 1-1.4 0"/>
+        <path d="M12 22v-8"/>
+        <path d="M12 2v4"/>
+    </svg>`;
+
+    // Debug: Log available buttonData and natureToolIDs
+    console.log('🌳 createNatureButtons - natureToolIDs:', natureToolIDs);
+    console.log('🌳 createNatureButtons - buttonData:', buttonData);
+    const filteredButtons = buttonData.filter(buttonInfo => natureToolIDs.includes(buttonInfo.tool));
+    console.log('🌳 createNatureButtons - filteredButtons:', filteredButtons);
+
+    let buttonsDuplicate = [];
+    filteredButtons.forEach(buttonInfo => {
+        if (!buttonsDuplicate.includes(buttonInfo.tool)) {
+            buttonsDuplicate.push(buttonInfo.tool);
+            makeNewButton(buttonInfo, svgTree);
+        }
+    });
+    
+    // If no buttons were created, show a message
+    if (buttonsDuplicate.length === 0) {
+        console.warn('⚠️ No nature buttons created. Check if assets are loaded and toolIds match.');
+    }
+}
+
+function createDecorationButtons(buttonData) {
+    panelLayoutInner.innerHTML = '';
+    const decorationToolIDs = toolIds.decoration || [];
+
+    const svgCrate = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-package">
+        <path d="m7.5 4.27 9 5.15"/>
+        <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+        <path d="m3.3 7 8.7 5 8.7-5"/>
+        <path d="M12 22V12"/>
+    </svg>`;
+
+    let buttonsDuplicate = [];
+    buttonData.filter(buttonInfo => decorationToolIDs.includes(buttonInfo.tool)).forEach(buttonInfo => {
+        if (!buttonsDuplicate.includes(buttonInfo.tool)) {
+            buttonsDuplicate.push(buttonInfo.tool);
+            makeNewButton(buttonInfo, svgCrate);
         }
     });
 }
@@ -1398,7 +1489,9 @@ window.onload = async () => {
             assetManager.initializeBuildings('farms'),
             assetManager.initializeBuildings('industry'),
             assetManager.initializeBuildings('infrastructure'),
-            assetManager.initializeBuildings('public')
+            assetManager.initializeBuildings('public'),
+            assetManager.initializeBuildings('nature'),
+            assetManager.initializeBuildings('decoration')
         ]).catch(() => {
             // Silently fail - assets will load when needed
         });
@@ -1448,13 +1541,10 @@ window.onload = async () => {
         }
         
         // Disable initial unavailable buildings
+        // All buttons are now enabled by default
+        // Disable functionality is kept for future use
         const initialDisabledBuildings = [
-            'palace-btn',           // Palace category button
-            'House-Red',            // Red house
-            'House-Purple',         // Purple house
-            // 'Windmill-001',      // Windmill - REACTIVATED
-            'Church-002',           // Church
-            'infrastructure-btn'    // Infrastructure category button
+            // Empty array - all buttons enabled
         ];
         
         initialDisabledBuildings.forEach(buildingId => {
@@ -1721,6 +1811,16 @@ window.onload = async () => {
             window.setActiveTool(e);
         }
     })
+
+    const natureButton = document.getElementById('nature-btn');
+    if (natureButton) {
+        natureButton.addEventListener('click', toggleModal);
+    }
+
+    const decorationButton = document.getElementById('decoration-btn');
+    if (decorationButton) {
+        decorationButton.addEventListener('click', toggleModal);
+    }
 
     panelLayoutCloseBtn.addEventListener('click', closeModal)
     

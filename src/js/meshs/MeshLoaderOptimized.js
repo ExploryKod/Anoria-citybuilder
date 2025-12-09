@@ -36,7 +36,8 @@ class MeshLoaderOptimized {
         infrastructure: ['Well-001', 'Fountain-001', 'Streetlight-001'],
         public: ['Church-002'],
         palaces: ['House-2Story'],
-        nature: []
+        nature: ['Tree-Pine-001', 'Tree-Square-001', 'Tree-Tall-001'],
+        decoration: ['Crate-001']
     }
 
     allAssetsNames = [
@@ -48,6 +49,7 @@ class MeshLoaderOptimized {
         { infrastructure: [] },
         { public: [] },
         { palaces: [] },
+        { decoration: [] },
         { other: [] }
     ];
 
@@ -61,7 +63,8 @@ class MeshLoaderOptimized {
         'infrastructure': {},
         'public': {},
         'palaces': {},
-        'nature': {}
+        'nature': {},
+        'decoration': {}
     }
 
     modelMetas = {
@@ -73,7 +76,8 @@ class MeshLoaderOptimized {
         'infrastructure': { size: 0.8 },
         'public': { size: 0.8 },
         'palaces': { size: 0.5 },
-        'nature': { size: 0.5 }
+        'nature': { size: 0.5 },
+        'decoration': { size: 0.3 }
     }
 
     // Per-asset size overrides (for assets that need different size than their category)
@@ -98,7 +102,9 @@ class MeshLoaderOptimized {
             tombs: new Set(),
             infrastructure: new Set(),
             public: new Set(),
-            palaces: new Set()
+            palaces: new Set(),
+            nature: new Set(),
+            decoration: new Set()
         };
     }
 
@@ -127,22 +133,36 @@ class MeshLoaderOptimized {
             tombs: new Set(),
             infrastructure: new Set(),
             public: new Set(),
-            palaces: new Set()
+            palaces: new Set(),
+            nature: new Set(),
+            decoration: new Set()
         };
 
         // Build catalog mappings
-        Object.entries(assetCatalog.assets).forEach(([category, data]) => {
+        // Map JSON categories to our internal categories
+        const categoryMapping = {
+            'vegetation': 'nature',  // Map vegetation to nature
+            'decoration': 'decoration'
+        };
+        
+        Object.entries(assetCatalog.assets).forEach(([jsonCategory, data]) => {
+            // Map JSON category to our internal category
+            const internalCategory = categoryMapping[jsonCategory] || jsonCategory;
+            
             data.mesh_names?.forEach(meshName => {
                 this.validMeshNames.add(meshName);
-                this.categoryMeshSets[category]?.add(meshName);
+                // Add to the internal category set
+                if (this.categoryMeshSets[internalCategory]) {
+                    this.categoryMeshSets[internalCategory].add(meshName);
+                }
                 
                 // Parse mesh name to tool name
                 const toolName = this._parseMeshNameToToolName(meshName);
                 this.meshToToolName.set(meshName, toolName);
                 
-                // Track which category this tool belongs to
-                if (this.toolIds[category]?.includes(toolName)) {
-                    this.toolToCategory.set(toolName, category);
+                // Track which category this tool belongs to (use internal category)
+                if (this.toolIds[internalCategory]?.includes(toolName)) {
+                    this.toolToCategory.set(toolName, internalCategory);
                 }
             });
         });
@@ -173,6 +193,23 @@ class MeshLoaderOptimized {
         // Standard parsing for objects like Farm_Wheat, House_Blue, etc.
         const normalized = baseName.replace(/[.\s]/g, '_');
         const parts = normalized.split('_');
+        
+        // Special handling for Tree variants (Tree_Pine, Tree_Square, Tree_Tall)
+        if (parts[0] === 'Tree' && parts.length >= 2) {
+            const treeType = parts[1]; // Pine, Square, or Tall
+            // Remove numbers from type (e.g., "Pine001" -> "Pine", "Tall018" -> "Tall")
+            const cleanType = treeType.replace(/\d+$/, '');
+            // Map to Tree-{Type}-001 format
+            if (cleanType === 'Pine') return 'Tree-Pine-001';
+            if (cleanType === 'Square') return 'Tree-Square-001';
+            if (cleanType === 'Tall') return 'Tree-Tall-001';
+        }
+        
+        // Special handling for Crate (all variants map to Crate-001)
+        if (parts[0] === 'Crate') {
+            return 'Crate-001';
+        }
+        
         let toolName = `${parts[0]}-${parts[1] || ''}`;
         
         // Apply mapping if needed
@@ -188,8 +225,15 @@ class MeshLoaderOptimized {
      */
     _getMeshCategory(meshName) {
         // Fast lookup in Sets
+        // Map JSON categories to internal categories
+        const categoryMapping = {
+            'vegetation': 'nature',  // Map vegetation to nature
+            'decoration': 'decoration'
+        };
+        
         for (const [category, meshSet] of Object.entries(this.categoryMeshSets)) {
             if (meshSet.has(meshName)) {
+                // Return the internal category (already mapped in _buildLookupTables)
                 return category;
             }
         }
@@ -239,7 +283,7 @@ class MeshLoaderOptimized {
                         }
                         processedMeshes.add(meshName);
 
-                        // Get category from JSON catalog
+                        // Get category from JSON catalog (already mapped in _buildLookupTables)
                         const category = this._getMeshCategory(meshName);
                         if (!category) {
                             return;
