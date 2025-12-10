@@ -742,12 +742,21 @@ export function createScene(housesStore, gameStore, assetManager) {
                   await housesStore.updateHouseFields(currentUniqueID, {markets: allMarketsInZone})
 
                 //  Remove a building from the scene if a player remove a building
+                
                 if(!newBuildingId && currentBuildingId) {
                     if(bulldozeSelected.classList.contains('selected') && currentBuildingId) {
-                        const uniqueBuildingId = makeDbItemId(currentBuildingId, x, y);
+                        // For roads: use userData.id (contains exact name like 'StonePath-001') instead of userData.type ('roads')
+                        // This matches how houses work: userData.type and userData.id are the same for houses
+                        // But for roads, type='roads' while id='StonePath-001', and DB uses the exact name
+                        let buildingIdForDeletion = currentBuildingId;
+                        const isRoad = currentBuildingId === 'roads' || (buildings[x][y]?.userData?.id && buildings[x][y].userData.id.startsWith('StonePath-'));
+                        if (isRoad && buildings[x][y]?.userData?.id) {
+                            buildingIdForDeletion = buildings[x][y].userData.id;
+                        }
+                        const uniqueBuildingId = makeDbItemId(buildingIdForDeletion, x, y);
                         if(houses.includes(currentBuildingId)) {
                             await housesStore.deleteOneHouse(uniqueBuildingId)
-                        } else if(currentBuildingId === 'roads') {
+                        } else if(isRoad) {
                             // Roads are now stored in database like other buildings
                             await housesStore.deleteOneHouse(uniqueBuildingId)
                         } else {
@@ -1943,10 +1952,18 @@ export function createScene(housesStore, gameStore, assetManager) {
                 if (x >= 0 && x < city.size && y >= 0 && y < city.size) {
                     const buildingInScene = buildings[x] && buildings[x][y];
                     const buildingType = buildingInScene?.userData?.type;
+                    const buildingId = buildingInScene?.userData?.id;
                     const expectedId = makeDbItemId(house.type, x, y);
                     
+                    // For roads: check both userData.type ('roads') and userData.id (exact name like 'StonePath-001')
+                    // For other buildings: check if buildingType matches house.type
+                    const isRoad = house.type === 'roads' || house.type === 'Road' || (house.type && house.type.startsWith('StonePath-'));
+                    const typeMatches = isRoad 
+                        ? (buildingType === 'roads' && buildingId === house.type) || buildingType === house.type
+                        : buildingType === house.type;
+                    
                     // If no building in scene, or building type doesn't match, it's orphaned
-                    if (!buildingInScene || buildingType !== house.type) {
+                    if (!buildingInScene || !typeMatches) {
                         orphanedHouses.push(expectedId);
                     }
                 } else {
