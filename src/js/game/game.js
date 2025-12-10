@@ -1036,8 +1036,9 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 window.game.play()
             }
             await scene.update(city, time)
-        } else if(!tile.buildingId) {
+        } else if(!tile.buildingId || (activeToolId && (activeToolId === 'roads' || activeToolId === 'Road' || activeToolId.startsWith('StonePath-')) && (tile.buildingId === 'roads' || tile.buildingId === 'Road' || (tile.buildingId && tile.buildingId.startsWith('StonePath-'))))) {
             // PLACING A BUILDING - Ensure game is NOT paused
+            // Allow placement if tile is empty OR if placing a road on an existing road (replacement)
             // Close info overlay if it's open from a previous selection
             if (infoObjectOverlay.classList.contains('active')) {
                 infoObjectOverlay.classList.remove('active');
@@ -1058,9 +1059,10 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
             // Check if area is available for this building
             const { x, y } = selectedObject.userData;
             // Special rule: roads can be placed on empty or existing road tiles without multi-tile checks
-            const isRoadTool = activeToolId === 'roads' || activeToolId === 'Road' || (activeToolId && activeToolId.toLowerCase() === 'roads');
+            const isRoadTool = activeToolId === 'roads' || activeToolId === 'Road' || (activeToolId && activeToolId.startsWith('StonePath-'));
             const targetTile = city.tiles?.[x]?.[y];
-            const canPlaceRoad = isRoadTool && (!targetTile?.buildingId || targetTile.buildingId === 'roads' || targetTile.buildingId === 'Road');
+            const isTargetRoad = targetTile?.buildingId === 'roads' || targetTile?.buildingId === 'Road' || (targetTile?.buildingId && targetTile.buildingId.startsWith('StonePath-'));
+            const canPlaceRoad = isRoadTool && (!targetTile?.buildingId || isTargetRoad);
             if (!canPlaceRoad && !isAreaAvailableForBuilding(city, x, y, gridSize)) {
                 showGenericErrorNotification(activeToolId, 'area_not_available');
                 return;
@@ -1130,7 +1132,16 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 }
 
                 // Validate payment BEFORE placing building
+                // Debug: log road placement
+                if (activeToolId && (activeToolId.startsWith('StonePath-') || activeToolId === 'roads' || activeToolId === 'Road')) {
+                    console.log('[game.js] Placing road:', { activeToolId, houseID, dbHouseData });
+                }
                 const paymentResult = await housesStore.addHouseAndPay(dbHouseData);
+                
+                // Debug: log payment result for roads
+                if (activeToolId && (activeToolId.startsWith('StonePath-') || activeToolId === 'roads' || activeToolId === 'Road')) {
+                    console.log('[game.js] Road payment result:', paymentResult);
+                }
                 
                 // Handle duplicate building error gracefully
                 if (!paymentResult.success && paymentResult.reason === 'duplicate') {
