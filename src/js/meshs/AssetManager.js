@@ -347,8 +347,8 @@ class AssetManager extends MeshLoader {
                     side: THREE.FrontSide
                 }),
                 'terrain': new THREE.MeshLambertMaterial({
-                    map: textures['grass'],
-                    color: 0x8b1e1e,
+                    // map: textures['grass'],
+                    color: 0x6DB973,
                     emissive: 0x220000,
                     transparent: false,
                     side: THREE.FrontSide

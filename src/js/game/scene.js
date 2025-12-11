@@ -77,6 +77,7 @@ export function createScene(housesStore, gameStore, assetManager) {
     const canvas = renderer.domElement;
     
     // Handle WebGL context lost (indicates insufficient GPU resources)
+    /*
     canvas.addEventListener('webglcontextlost', (event) => {
         event.preventDefault();
         console.error('[WebGL] Context lost - this may indicate insufficient GPU resources');
@@ -117,6 +118,7 @@ export function createScene(housesStore, gameStore, assetManager) {
     canvas.addEventListener('webglcontextrestored', () => {
         console.log('[WebGL] Context restored');
     });
+    */
     renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(window.devicePixelRatio);
     
@@ -3854,51 +3856,20 @@ export function createScene(housesStore, gameStore, assetManager) {
         const existingBase = scene.getObjectByName('infinite-ground-base');
         const existingRing = scene.getObjectByName('infinite-ground-ring');
         if (existingBase && existingRing) return;
-
-        // Get grass texture - use shared materials to reduce texture unit usage
-        const grassTex = (textures && textures['grass']) ? textures['grass'] : null;
         
-        // Create shared backdrop materials once
+        // Create shared backdrop materials once with solid color
         if (!sharedBackdropMaterials) {
-            if (grassTex && grassTex instanceof THREE.Texture) {
-                // Use original texture directly (don't clone) to save texture units
-                // Set repeat on a cloned texture only if needed
-                const baseTex = grassTex.clone();
-                baseTex.wrapS = THREE.RepeatWrapping;
-                baseTex.wrapT = THREE.RepeatWrapping;
-                baseTex.repeat.set(1500, 1500); // Tile texture across the plane
-                
-                const ringTex = grassTex.clone();
-                ringTex.wrapS = THREE.RepeatWrapping;
-                ringTex.wrapT = THREE.RepeatWrapping;
-                ringTex.repeat.set(120, 120);
-                
-                sharedBackdropMaterials = {
-                    base: new THREE.MeshLambertMaterial({
-                        map: baseTex,
-                        color: 0xA4B98B,
-                        fog: true
-                    }),
-                    ring: new THREE.MeshLambertMaterial({
-                        map: ringTex,
-                        color: 0xA4B98B,
-                        fog: true,
-                        depthWrite: true
-                    })
-                };
-            } else {
-                sharedBackdropMaterials = {
-                    base: new THREE.MeshLambertMaterial({
-                        color: 0xA4B98B,
-                        fog: true
-                    }),
-                    ring: new THREE.MeshLambertMaterial({
-                        color: 0xA4B98B,
-                        fog: true,
-                        depthWrite: true
-                    })
-                };
-            }
+            sharedBackdropMaterials = {
+                base: new THREE.MeshLambertMaterial({
+                    color: 0x6DB973,
+                    fog: true
+                }),
+                ring: new THREE.MeshLambertMaterial({
+                    color: 0x6DB973,
+                    fog: true,
+                    depthWrite: true
+                })
+            };
         }
         
         // Base ground plane with shared material
