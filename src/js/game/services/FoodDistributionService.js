@@ -395,9 +395,33 @@ export class FoodDistributionService extends SimService {
             return; // Cannot buy outside of buying period
         }
         
+        // Get market data to check current stocks and maxStock limit
+        const marketData = await housesStore.getHouse(marketId);
+        if (!marketData) {
+            console.warn('[FoodDistributionService] Market not found:', marketId);
+            return;
+        }
+        
+        const currentStocks = marketData.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+        const maxStock = marketData.maxStock || 500; // Default max stock capacity for market
+        const currentTotalStock = currentStocks.food || 0;
+        const remainingCapacity = Math.max(0, maxStock - currentTotalStock);
+        
+        // If market is already at capacity, skip collection
+        if (remainingCapacity <= 0) {
+            console.log('[FoodDistributionService] Market at capacity, skipping collection:', {
+                marketId,
+                currentTotalStock,
+                maxStock,
+                remainingCapacity
+            });
+            return;
+        }
+        
         let wheatCount = 0;
         let carrotCount = 0;
         let cabbageCount = 0;
+        let totalCollected = 0;
 
         // Buy stocks from each farm (get fresh data from IndexedDB)
         for (const farmNeighbor of farms) {
@@ -458,21 +482,42 @@ export class FoodDistributionService extends SimService {
                     neighborData: farmNeighbor
                 });
                 
+                // Check if market has reached its capacity limit
+                if (totalCollected >= remainingCapacity) {
+                    console.log('[FoodDistributionService] Market capacity reached, stopping collection:', {
+                        marketId,
+                        totalCollected,
+                        remainingCapacity
+                    });
+                    break; // Stop collecting from remaining farms
+                }
+                
                 // Buy stocks from farms (only in autumn - condition 1 already checked)
                 // Each farm type has stocks of its specific crop
                 if (farmType.includes('Farm-Wheat') || farmType.includes('Farms-Wheat') || farmType.includes('Wheat')) {
                     // Condition 2: Farm must have stocks available
                     // Condition 3: Can only buy up to available stocks (cannot buy more than available)
-                    const wheatToBuy = farmStocks.wheat || 0;
+                    // Condition 4: Respect market capacity limit
+                    const availableWheat = farmStocks.wheat || 0;
+                    const canCollect = remainingCapacity - totalCollected;
+                    const wheatToBuy = Math.min(availableWheat, canCollect);
+                    
                     if (wheatToBuy > 0) {
                         wheatCount += wheatToBuy;
-                        // Reduce farm stocks to 0
+                        totalCollected += wheatToBuy;
+                        
+                        // Reduce farm stocks (only what was bought)
+                        const remainingWheat = availableWheat - wheatToBuy;
                         const newFarmStocks = {
                             ...farmStocks,
-                            wheat: 0,
+                            wheat: remainingWheat,
                             food: Math.max(0, (farmStocks.food || 0) - wheatToBuy)
                         };
                         await housesStore.updateHouseFields(farmId, { stocks: newFarmStocks });
+                        
+                        // Track sale to market in farm data
+                        await this.trackFarmSaleToMarket(farmId, farmData, housesStore, timeInfo, 'wheat', wheatToBuy, marketId);
+                        
                         console.log('[FoodDistributionService] Bought wheat from farm:', {
                             farmId,
                             wheatBought: wheatToBuy,
@@ -500,16 +545,26 @@ export class FoodDistributionService extends SimService {
                 } else if (farmType.includes('Farm-Carrot') || farmType.includes('Farms-Carrot') || farmType.includes('Carrot')) {
                     // Condition 2: Farm must have stocks available
                     // Condition 3: Can only buy up to available stocks (cannot buy more than available)
-                    const carrotToBuy = farmStocks.carrot || 0;
+                    // Condition 4: Respect market capacity limit
+                    const availableCarrot = farmStocks.carrot || 0;
+                    const canCollect = remainingCapacity - totalCollected;
+                    const carrotToBuy = Math.min(availableCarrot, canCollect);
+                    
                     if (carrotToBuy > 0) {
                         carrotCount += carrotToBuy;
-                        // Reduce farm stocks to 0
+                        totalCollected += carrotToBuy;
+                        
+                        // Reduce farm stocks (only what was bought)
+                        const remainingCarrot = availableCarrot - carrotToBuy;
                         const newFarmStocks = {
                             ...farmStocks,
-                            carrot: 0,
+                            carrot: remainingCarrot,
                             food: Math.max(0, (farmStocks.food || 0) - carrotToBuy)
                         };
                         await housesStore.updateHouseFields(farmId, { stocks: newFarmStocks });
+                        
+                        // Track sale to market in farm data
+                        await this.trackFarmSaleToMarket(farmId, farmData, housesStore, timeInfo, 'carrot', carrotToBuy, marketId);
                         console.log('[FoodDistributionService] Bought carrot from farm:', {
                             farmId,
                             carrotBought: carrotToBuy,
@@ -537,16 +592,26 @@ export class FoodDistributionService extends SimService {
                 } else if (farmType.includes('Farm-Cabbage') || farmType.includes('Farms-Cabbage') || farmType.includes('Cabbage')) {
                     // Condition 2: Farm must have stocks available
                     // Condition 3: Can only buy up to available stocks (cannot buy more than available)
-                    const cabbageToBuy = farmStocks.cabbage || 0;
+                    // Condition 4: Respect market capacity limit
+                    const availableCabbage = farmStocks.cabbage || 0;
+                    const canCollect = remainingCapacity - totalCollected;
+                    const cabbageToBuy = Math.min(availableCabbage, canCollect);
+                    
                     if (cabbageToBuy > 0) {
                         cabbageCount += cabbageToBuy;
-                        // Reduce farm stocks to 0
+                        totalCollected += cabbageToBuy;
+                        
+                        // Reduce farm stocks (only what was bought)
+                        const remainingCabbage = availableCabbage - cabbageToBuy;
                         const newFarmStocks = {
                             ...farmStocks,
-                            cabbage: 0,
+                            cabbage: remainingCabbage,
                             food: Math.max(0, (farmStocks.food || 0) - cabbageToBuy)
                         };
                         await housesStore.updateHouseFields(farmId, { stocks: newFarmStocks });
+                        
+                        // Track sale to market in farm data
+                        await this.trackFarmSaleToMarket(farmId, farmData, housesStore, timeInfo, 'cabbage', cabbageToBuy, marketId);
                         console.log('[FoodDistributionService] Bought cabbage from farm:', {
                             farmId,
                             cabbageBought: cabbageToBuy,
@@ -597,26 +662,37 @@ export class FoodDistributionService extends SimService {
 
         // Update market stocks in IndexedDB (get fresh data first)
         if (wheatCount > 0 || carrotCount > 0 || cabbageCount > 0) {
-            // Get fresh market data from IndexedDB
-            const marketData = await housesStore.getHouse(marketId);
-            if (!marketData) {
+            // Get fresh market data from IndexedDB (already fetched above, but refresh to get latest stocks)
+            const freshMarketData = await housesStore.getHouse(marketId);
+            if (!freshMarketData) {
                 console.warn('[FoodDistributionService] Market not found when updating stocks:', marketId);
                 return;
             }
 
-            const currentStocks = marketData.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+            const freshStocks = freshMarketData.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
             
             console.log('[FoodDistributionService] Market stocks before farm collection:', {
                 marketId,
-                currentStocks
+                freshStocks
             });
             
-            // Add food collected from farms to market stocks
+            // Add food collected from farms to market stocks (respecting maxStock limit)
+            const maxStock = freshMarketData.maxStock || 500;
+            const currentTotal = freshStocks.food || 0;
+            const totalToAdd = wheatCount + carrotCount + cabbageCount;
+            const actualTotalToAdd = Math.min(totalToAdd, maxStock - currentTotal);
+            
+            // Calculate proportional reduction if we hit the limit
+            const reductionFactor = actualTotalToAdd / totalToAdd;
+            const actualWheatCount = Math.round(wheatCount * reductionFactor);
+            const actualCarrotCount = Math.round(carrotCount * reductionFactor);
+            const actualCabbageCount = Math.round(cabbageCount * reductionFactor);
+            
             const newStocks = {
-                wheat: (currentStocks.wheat || 0) + wheatCount,
-                carrot: (currentStocks.carrot || 0) + carrotCount,
-                cabbage: (currentStocks.cabbage || 0) + cabbageCount,
-                food: (currentStocks.food || 0) + (wheatCount + carrotCount + cabbageCount) // Total food units added
+                wheat: (freshStocks.wheat || 0) + actualWheatCount,
+                carrot: (freshStocks.carrot || 0) + actualCarrotCount,
+                cabbage: (freshStocks.cabbage || 0) + actualCabbageCount,
+                food: Math.min(maxStock, (freshStocks.food || 0) + actualTotalToAdd) // Cap at maxStock
             };
 
             console.log('[FoodDistributionService] Market stocks after farm collection:', {
@@ -943,5 +1019,57 @@ export class FoodDistributionService extends SimService {
                 error: err?.message || err
             });
         });
+    }
+
+    /**
+     * Track farm sale to market (for display in farm info panel)
+     * Records: month, turn, quantity, product type, market ID
+     * @param {string} farmId - Farm ID
+     * @param {Object} farmData - Farm data from IndexedDB
+     * @param {HousesStore} housesStore - Database store
+     * @param {Object} timeInfo - Time info object
+     * @param {string} productType - Product type (wheat, carrot, cabbage)
+     * @param {number} quantity - Quantity sold
+     * @param {string} marketId - Market ID that bought
+     */
+    async trackFarmSaleToMarket(farmId, farmData, housesStore, timeInfo, productType, quantity, marketId) {
+        try {
+            // Initialize sales tracking if not exists
+            const salesToMarket = farmData.salesToMarket || [];
+            const salesToWindmill = farmData.salesToWindmill || [];
+            
+            // Add new sale record
+            const saleRecord = {
+                year: timeInfo.year || 0,
+                month: timeInfo.monthIndex || 0,
+                monthName: timeInfo.month || '',
+                turn: timeInfo.turn || 0,
+                productType: productType,
+                quantity: quantity,
+                marketId: marketId,
+                date: new Date().toISOString()
+            };
+            
+            salesToMarket.push(saleRecord);
+            
+            // Keep only current year's sales (reset annually)
+            const currentYear = timeInfo.year || 0;
+            const filteredSales = salesToMarket.filter(sale => sale.year === currentYear);
+            
+            await housesStore.updateHouseFields(farmId, {
+                salesToMarket: filteredSales,
+                salesToWindmill: salesToWindmill // Preserve windmill sales
+            });
+            
+            console.log('[FoodDistributionService] Tracked farm sale to market:', {
+                farmId,
+                saleRecord
+            });
+        } catch (error) {
+            console.warn('[FoodDistributionService] Error tracking farm sale to market:', {
+                farmId,
+                error: error?.message || error
+            });
+        }
     }
 }
