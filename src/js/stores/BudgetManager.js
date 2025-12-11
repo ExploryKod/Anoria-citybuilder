@@ -582,6 +582,86 @@ class BudgetManager {
     }
 
     /**
+     * Add import expense (achat de produits depuis l'extérieur)
+     * @param {number} amount - Coût total de l'import
+     * @param {string} description - Description de l'import
+     * @param {string} productId - ID du produit (wheat, carrot, etc.)
+     * @returns {Promise<Object>} Updated budget
+     */
+    async addImportExpense(amount, description, productId = 'unknown', partnerId = null) {
+        const budget = await this.getCurrentBudget();
+        
+        // Validate input amount
+        if (typeof amount !== 'number' || isNaN(amount) || !isFinite(amount)) {
+            console.error(`Invalid import expense amount: ${amount}`);
+            return budget;
+        }
+        
+        const roundedAmount = Math.round(amount);
+        
+        // Créer le type d'entrée journal : 'import_wheat', 'import_carrot', etc.
+        const journalType = `import_${productId}`;
+        
+        // Add journal entry with partner info
+        await this.addJournalEntry(budget.turn, journalType, roundedAmount, description, partnerId);
+        
+        // Update budget (import = dépense)
+        budget.funds = Math.round(budget.funds - roundedAmount);
+        budget.expenses = Math.round(budget.expenses + roundedAmount);
+        budget.dailyExpenses = Math.round(budget.dailyExpenses + roundedAmount);
+        budget.netFlow = Math.round(budget.income - budget.expenses);
+        
+        // Track total imports if needed
+        if (!budget.totalImports) budget.totalImports = {};
+        if (!budget.totalImports[productId]) budget.totalImports[productId] = 0;
+        budget.totalImports[productId] = Math.round(budget.totalImports[productId] + roundedAmount);
+        
+        await this.db.budget.put(budget);
+        
+        return budget;
+    }
+
+    /**
+     * Add export income (vente de produits vers l'extérieur)
+     * @param {number} amount - Revenu total de l'export
+     * @param {string} description - Description de l'export
+     * @param {string} productId - ID du produit (wheat, carrot, etc.)
+     * @returns {Promise<Object>} Updated budget
+     */
+    async addExportIncome(amount, description, productId = 'unknown', partnerId = null) {
+        const budget = await this.getCurrentBudget();
+        
+        // Validate input amount
+        if (typeof amount !== 'number' || isNaN(amount) || !isFinite(amount)) {
+            console.error(`Invalid export income amount: ${amount}`);
+            return budget;
+        }
+        
+        const roundedAmount = Math.round(amount);
+        
+        // Créer le type d'entrée journal : 'export_wheat', 'export_carrot', etc.
+        const journalType = `export_${productId}`;
+        
+        // Add journal entry with partner info
+        await this.addJournalEntry(budget.turn, journalType, roundedAmount, description, partnerId);
+        
+        // Update budget (export = revenu)
+        budget.funds = Math.round(budget.funds + roundedAmount);
+        budget.income = Math.round(budget.income + roundedAmount);
+        budget.dailyIncome = Math.round(budget.dailyIncome + roundedAmount);
+        budget.netFlow = Math.round(budget.income - budget.expenses);
+        
+        // Track total exports if needed
+        if (!budget.totalExports) budget.totalExports = {};
+        if (!budget.totalExports[productId]) budget.totalExports[productId] = 0;
+        budget.totalExports[productId] = Math.round(budget.totalExports[productId] + roundedAmount);
+        
+        await this.db.budget.put(budget);
+        
+        return budget;
+    }
+
+    /**
      * Add daily income (taxes, sales, etc.)
      * @param {number} amount - Daily income amount
      * @param {string} source - Source of income
@@ -860,9 +940,11 @@ class BudgetManager {
                 // Only collect taxes if there is population
                 if (pop > 0) {
                     // Get citizen tax amount from finances section manager (default: 100€)
+                    // Support both window (browser) and global (Node/Jest)
+                    const globalObj = typeof window !== 'undefined' ? window : global;
                     let citizenTaxAmount = 100;
-                    if (window.financesSectionManager && typeof window.financesSectionManager.citizenTaxAmount === 'number') {
-                        citizenTaxAmount = window.financesSectionManager.citizenTaxAmount;
+                    if (globalObj.financesSectionManager && typeof globalObj.financesSectionManager.citizenTaxAmount === 'number') {
+                        citizenTaxAmount = globalObj.financesSectionManager.citizenTaxAmount;
                     }
                     const taxPerHouse = Math.round(pop * citizenTaxAmount);
                     

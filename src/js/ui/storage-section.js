@@ -96,14 +96,38 @@ class StorageSectionManager {
         card.className = 'storage-windmill-card';
         card.dataset.windmillId = windmill.name;
         
-        const stocks = windmill.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+        const stocks = windmill.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0, dattes: 0 };
         const maxStock = windmill.maxStock || 1000; // Default max stock (total capacity)
         const isActive = windmill.isActive !== false; // Default to true
         const distributionEnabled = windmill.distributionEnabled !== false; // Default to true
         const commercializeEnabled = windmill.commercializeEnabled !== false; // Default to true
         const distributionMonth = windmill.distributionMonth || 9; // Default to October (month 9)
         const sellAmounts = windmill.sellAmounts || { wheat: 0, carrot: 0, cabbage: 0 };
-        
+        const lastImportDetails = windmill.lastImportDetails || {};
+
+        // Build imports by partner HTML
+        let importsByPartnerHTML = '';
+        if (Object.keys(lastImportDetails).length > 0) {
+            const productNames = { wheat: 'Blé', carrot: 'Carotte', cabbage: 'Chou', dattes: 'Dattes' };
+            importsByPartnerHTML = '<div class="storage-imports-by-partner"><h4 class="storage-subtitle">Imports par partenaire</h4>';
+
+            for (const [productId, partners] of Object.entries(lastImportDetails)) {
+                if (partners && partners.length > 0) {
+                    const productName = productNames[productId] || productId;
+                    partners.forEach(partnerInfo => {
+                        importsByPartnerHTML += `
+                            <div class="storage-import-item">
+                                <label>${productName} depuis ${partnerInfo.partnerName}:</label>
+                                <span class="storage-import-value">+${partnerInfo.quantity} paniers</span>
+                            </div>
+                        `;
+                    });
+                }
+            }
+
+            importsByPartnerHTML += '</div>';
+        }
+
         card.innerHTML = `
             <div class="storage-windmill-header">
                 <div class="storage-windmill-id">
@@ -113,7 +137,7 @@ class StorageSectionManager {
                     Position: x: ${windmill.x || 0} | y: ${windmill.y || 0}
                 </div>
             </div>
-            
+
             <div class="storage-windmill-stocks">
                 <h4 class="storage-subtitle">Stocks</h4>
                 <div class="storage-stock-item">
@@ -121,19 +145,25 @@ class StorageSectionManager {
                     <span class="storage-stock-value">${stocks.wheat || 0} / ${maxStock}</span>
                 </div>
                 <div class="storage-stock-item">
-                    <label>Légumes verts:</label>
+                    <label>Chou:</label>
                     <span class="storage-stock-value">${stocks.cabbage || 0} / ${maxStock}</span>
                 </div>
                 <div class="storage-stock-item">
-                    <label>Autres légumes:</label>
+                    <label>Carotte:</label>
                     <span class="storage-stock-value">${stocks.carrot || 0} / ${maxStock}</span>
+                </div>
+                <div class="storage-stock-item">
+                    <label>Dattes:</label>
+                    <span class="storage-stock-value">${stocks.dattes || 0} / ${maxStock}</span>
                 </div>
                 <div class="storage-stock-item">
                     <label>Total:</label>
                     <span class="storage-stock-value">${stocks.food || 0} / <input type="number" class="storage-max-input" data-windmill="${windmill.name}" value="${maxStock}" min="0" step="10"></span>
                 </div>
             </div>
-            
+
+            ${importsByPartnerHTML}
+
             <div class="storage-windmill-controls">
                 <div class="storage-control-item">
                     <label class="storage-toggle-label">

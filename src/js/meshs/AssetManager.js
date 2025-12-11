@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { textures } from './data.js';
 import MeshLoader from "./MeshLoaderOptimized.js";
 import config from '../game/config.js';
@@ -208,7 +210,14 @@ class AssetManager extends MeshLoader {
     #createBuilding(x, y, z, size, meshName, objectsData) {
         // Creating building
         const placerPos = new THREE.Vector3(x, y, z);
-        const sourceObject = objectsData[meshName];
+        
+        // For road variants, use the base StonePath-001 mesh
+        let sourceMeshName = meshName;
+        if (meshName.startsWith('StonePath-') && meshName !== 'StonePath-001') {
+            sourceMeshName = 'StonePath-001';
+        }
+        
+        const sourceObject = objectsData[sourceMeshName];
         
         // Clone the object
         const object3D = sourceObject.clone();
@@ -249,21 +258,49 @@ class AssetManager extends MeshLoader {
         }
 
         object3D.name = `${meshName}`;
-        object3D.position.set(placerPos.x, placerPos.z, placerPos.y);
+        // Position assets above the World platform (World is at y = 0.2)
+        // Buildings should be on top of the World, so we add an offset
+        // Roads (StonePath) should be positioned like other buildings (houses, etc.)
+        const worldPlatformHeight = 0.2;
+        // All assets (including roads) use the same positioning formula
+        const yOffset = placerPos.z + worldPlatformHeight;
+        object3D.position.set(placerPos.x, yOffset, placerPos.y);
         object3D.scale.set(size, size, size);
+        
+        // Apply different rotations for road variants
+        // We rotate on Z axis to keep roads flat on the ground
+        let rotationZ = 180; // Default rotation for straight road
+        if (meshName === 'StonePath-Right-001') {
+            rotationZ = 270; // 90° clockwise turn (right)
+        } else if (meshName === 'StonePath-Left-001') {
+            rotationZ = 90; // 90° counter-clockwise turn (left)
+        } else if (meshName === 'StonePath-Cross-001') {
+            rotationZ = 180; // Crossroad (same as straight)
+        }
+        
         object3D.rotation.set(
-            THREE.MathUtils.degToRad(90),
-            THREE.MathUtils.degToRad(180),
-            THREE.MathUtils.degToRad(180)
+            THREE.MathUtils.degToRad(90),  // X: keeps road horizontal
+            THREE.MathUtils.degToRad(180), // Y: base orientation
+            THREE.MathUtils.degToRad(rotationZ) // Z: rotation for turns (keeps road flat)
         );
 
 
 
+        // For StonePath variants, mark them as roads for neighbor detection and road logic
+        // BUT keep isBuilding: true so they render like other buildings
+        const isRoad = meshName.startsWith('StonePath-');
+        
+        // Set mesh.name to 'roads' for compatibility with existing checks like mesh.name === 'roads'
+        if (isRoad) {
+            object3D.name = 'roads';
+        }
+        
         object3D.userData = {
             id: meshName, 
-            type: meshName, 
-            name: meshName, 
-            isBuilding: true, 
+            type: meshName,  // Use exact meshName for all buildings (including roads) - matches city.tiles.buildingId pattern
+            name: meshName,  // Also in userData for consistency
+            isBuilding: true,  // Keep as building for visibility/rendering
+            isRoad: isRoad,  // Mark roads for road logic detection 
             x, 
             y,
             neighbors: [],
@@ -304,7 +341,8 @@ class AssetManager extends MeshLoader {
                     side: THREE.FrontSide
                 }),
                 'grass': new THREE.MeshLambertMaterial({
-                    map: textures['grass'],
+                    // map: textures['grass'],  // Texture commented out - using solid color instead
+                    color: 0x6DB973,  // Match world platform color #6DB973
                     transparent: false,
                     side: THREE.FrontSide
                 }),
@@ -335,15 +373,23 @@ class AssetManager extends MeshLoader {
         // Use shared materials instead of creating new ones each time
         const materials = this.#getSharedTerrainMaterials();
 
+        // World platform is at y = 0.2
+        const worldPlatformHeight = 0.2;
+        
         switch (buildingId) {
             case 'roads':
                 material = materials['roads'];
-                mesh = new THREE.Mesh(this.#geometry, material);
+                // Use a flat plane geometry for roads instead of a cube
+                // This makes them visible as a flat surface above the World platform
+                const roadGeometry = new THREE.PlaneGeometry(1, 1);
+                mesh = new THREE.Mesh(roadGeometry, material);
                 mesh.userData = { id: buildingId, x, y, isBuilding: false, isRoad: true, time: 0 };
                 mesh.name = buildingId;
-                mesh.scale.set(1, 1, 1);
-                mesh.position.set(x, -0.5, y);
-                mesh.castShadow = true;
+                // Rotate the plane to be horizontal (lying flat on the ground)
+                mesh.rotation.x = -Math.PI / 2; // Rotate 90 degrees to lay flat
+                // Position well above World platform (y = 0.2) - roads need to be very visible
+                mesh.position.set(x, worldPlatformHeight + 0.3, y);
+                mesh.castShadow = false; // Planes don't cast shadows well
                 mesh.receiveShadow = true;
                 break;
 
@@ -353,7 +399,8 @@ class AssetManager extends MeshLoader {
                 mesh.name = buildingId;
                 mesh.userData = { id: buildingId, x, y, isBuilding: false, time: 0 };
                 mesh.scale.set(1, 1, 1);
-                mesh.position.set(x, -0.5, y);
+                // Grass terrain below the World platform
+                mesh.position.set(x, worldPlatformHeight - 0.48, y);
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
                 break;
@@ -364,7 +411,8 @@ class AssetManager extends MeshLoader {
                 mesh.name = buildingId;
                 mesh.userData = { id: buildingId, x, y, isBuilding: false, isPlaceholder: true, time: 0 };
                 mesh.scale.set(1, 1, 1);
-                mesh.position.set(x, -0.5, y);
+                // Terrain below the World platform
+                mesh.position.set(x, worldPlatformHeight - 0.4, y);
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
                 break;
@@ -392,6 +440,8 @@ class AssetManager extends MeshLoader {
                 return this.modelsObj['public'];
             case 'palaces':
                 return this.modelsObj['palaces'];
+            case 'nature':
+                return this.modelsObj['nature'];
             default:
                 throw new Error(`Unknown model type: ${type}`);
         }
@@ -399,7 +449,7 @@ class AssetManager extends MeshLoader {
 
     async initializeTerrains() {
 
-        // Zones
+        // Zones (only grass now, roads are 3D meshes)
         this.toolIds.zones.forEach(toolId => {
             this.#assets[toolId] = (x, y) => this.#createTerrain(x, y, toolId);
         });
@@ -421,6 +471,38 @@ class AssetManager extends MeshLoader {
                 this.#assets[toolId] = (x, y, z = 0) =>
                     this.#createBuilding(x, y, z, size, toolId, this.#getModelsObj(propertyKey));
             });
+            
+            // Special handling: Create road variants (Right, Left, Cross) that use StonePath-001 mesh
+            // These are virtual assets that reuse the same mesh with different rotations
+            if (propertyKey === 'infrastructure' && this.toolIds[propertyKey].includes('StonePath-001')) {
+                const size = this.assetSizeOverrides?.['StonePath-001'] ?? this.modelMetas[propertyKey].size;
+                const modelsObj = this.#getModelsObj(propertyKey);
+                
+                // Create variants that will use StonePath-001 mesh but with different rotations
+                this.#assets['StonePath-Right-001'] = (x, y, z = 0) =>
+                    this.#createBuilding(x, y, z, size, 'StonePath-Right-001', modelsObj);
+                this.#assets['StonePath-Left-001'] = (x, y, z = 0) =>
+                    this.#createBuilding(x, y, z, size, 'StonePath-Left-001', modelsObj);
+                this.#assets['StonePath-Cross-001'] = (x, y, z = 0) =>
+                    this.#createBuilding(x, y, z, size, 'StonePath-Cross-001', modelsObj);
+                
+                // Add button data for road variants
+                this.buttonData.push({
+                    text: 'StonePath Right',
+                    tool: 'StonePath-Right-001',
+                    group: 'StonePath'
+                });
+                this.buttonData.push({
+                    text: 'StonePath Left',
+                    tool: 'StonePath-Left-001',
+                    group: 'StonePath'
+                });
+                this.buttonData.push({
+                    text: 'StonePath Cross',
+                    tool: 'StonePath-Cross-001',
+                    group: 'StonePath'
+                });
+            }
             
             // Check if all loading is complete asynchronously (fires after all promises resolve)
             // Note: This is called after each building category loads, but will only fire callback once all complete
@@ -465,9 +547,240 @@ class AssetManager extends MeshLoader {
         if (assetId in this.#assets) {
             return this.#assets[assetId](x, y);
         } else {
-            console.warn(`Asset ${assetId} does not exist, see assets: `, this.#assets);
+            console.warn(`[AssetManager] Asset ${assetId} does not exist`);
             return undefined;
         }
+    }
+
+    /**
+     * Load the base world platform (World_Material005_0) and add it to the scene
+     * This is called once at scene initialization
+     * @param {THREE.Scene} scene - The Three.js scene to add the world platform to
+     * @param {number} citySize - Size of the city (number of tiles) to scale the World platform accordingly
+     * @returns {Promise<THREE.Object3D>} The loaded world platform mesh
+     */
+    async loadWorldPlatform(scene, citySize = 16) {
+        return new Promise((resolve, reject) => {
+            const gltfloader = new GLTFLoader();
+            const dracoLoader = new DRACOLoader();
+            dracoLoader.setDecoderPath('/examples/jsm/libs/draco/');
+            gltfloader.setDRACOLoader(dracoLoader);
+
+            const modelPath = `./resources/lowpoly/village_town_assets_v2.glb`;
+            
+            gltfloader.load(
+                modelPath,
+                (gltf) => {
+                    let worldMesh = null;
+                    
+                    // Traverse the scene to find World_Material005_0
+                    gltf.scene.traverse((child) => {
+                        if (child instanceof THREE.Mesh && child.name === 'World_Material005_0') {
+                            // Clone the mesh
+                            worldMesh = child.clone();
+                            worldMesh.name = 'world-platform';
+                            
+                            // Apply the same rotation as all other assets to match the scene orientation
+                            // All buildings use: rotation.set(90deg X, 180deg Y, 180deg Z)
+                            // This ensures the World platform is horizontal like the terrain (grass)
+                            worldMesh.rotation.set(
+                                THREE.MathUtils.degToRad(90),
+                                THREE.MathUtils.degToRad(180),
+                                THREE.MathUtils.degToRad(180)
+                            );
+                            
+                            // Get the original bounding box BEFORE scaling and positioning
+                            // This gives us the original size of the World mesh in the GLB
+                            const originalBbox = new THREE.Box3().setFromObject(worldMesh);
+                            const originalWorldSize = Math.max(
+                                originalBbox.max.x - originalBbox.min.x,
+                                originalBbox.max.z - originalBbox.min.z
+                            );
+                            
+                            // Scale to match city size (with margin to absorb 3 cases more in circumference)
+                            // Each tile is 1 unit, so citySize tiles = citySize units
+                            // Add margin of 6 units total (+3 on each side) to absorb 3 cases in circumference
+                            const targetSize = citySize + 6; // +6 for margin (3 units on each side)
+                            const scaleFactor = originalWorldSize > 0 ? targetSize / originalWorldSize : 1;
+                            worldMesh.scale.set(scaleFactor, scaleFactor, scaleFactor);
+                            
+                            // Position and center the World at the city center
+                            // Roads are at y = 0.21 (just above World at 0.2), so we place World at 0.2
+                            const worldPlatformHeight = 0.2;
+                            const cityCenter = citySize / 2;
+                            worldMesh.position.set(cityCenter, worldPlatformHeight, cityCenter);
+                            
+                            // Make it visible and ensure it's not too small
+                            worldMesh.visible = true;
+                            
+                            // Make it non-interactive (not part of raycasting)
+                            worldMesh.userData = {
+                                isWorldPlatform: true,
+                                nonInteractive: true
+                            };
+                            
+                            // Add to scene
+                            scene.add(worldMesh);
+                            
+                            // Log final state
+                            const bbox = new THREE.Box3().setFromObject(worldMesh);
+                            console.info('[AssetManager] World platform loaded and added to scene:', {
+                                position: worldMesh.position,
+                                rotation: worldMesh.rotation,
+                                scale: worldMesh.scale,
+                                boundingBox: bbox,
+                                visible: worldMesh.visible
+                            });
+                        }
+                    });
+                    
+                    if (worldMesh) {
+                        resolve(worldMesh);
+                    } else {
+                        console.warn('[AssetManager] World_Material005_0 not found in GLB file');
+                        resolve(null);
+                    }
+                },
+                undefined,
+                (error) => {
+                    console.error('[AssetManager] Error loading world platform:', error);
+                    reject(error);
+                }
+            );
+        });
+    }
+
+    /**
+     * Load and position fences at the scene boundaries (north, south, east, west)
+     * @param {THREE.Scene} scene - The Three.js scene
+     * @param {number} citySize - The size of the city (boundaries will be at 0 and citySize)
+     * @returns {Promise<void>}
+     */
+    async loadBoundaryFences(scene, citySize = 16) {
+        return new Promise((resolve, reject) => {
+            const gltfloader = new GLTFLoader();
+            const dracoLoader = new DRACOLoader();
+            dracoLoader.setDecoderPath('/examples/jsm/libs/draco/');
+            gltfloader.setDRACOLoader(dracoLoader);
+
+            const modelPath = `./resources/lowpoly/village_town_assets_v2.glb`;
+            
+            gltfloader.load(
+                modelPath,
+                (gltf) => {
+                    // Find fence models in the GLB file
+                    // Common fence names might be: Fence, Fence-001, Fence_001, etc.
+                    const fenceModels = [];
+                    
+                    gltf.scene.traverse((child) => {
+                        if (child instanceof THREE.Mesh) {
+                            const name = child.name.toLowerCase();
+                            // Check if this is a fence model (handle various naming conventions)
+                            // Common patterns: "fence", "Fence", "Fence_001", "Fence-001", etc.
+                            if (name.includes('fence') || name.includes('barrier') || name.includes('wall')) {
+                                fenceModels.push(child);
+                            }
+                        }
+                    });
+
+                    if (fenceModels.length === 0) {
+                        console.warn('[AssetManager] No fence models found in GLB file');
+                        resolve();
+                        return;
+                    }
+
+                    // Use the first fence model found (or you can use a specific one)
+                    const fenceTemplate = fenceModels[0];
+                    
+                    // Get fence bounding box to determine its size
+                    const fenceBbox = new THREE.Box3().setFromObject(fenceTemplate);
+                    const fenceLength = Math.max(
+                        fenceBbox.max.x - fenceBbox.min.x,
+                        fenceBbox.max.z - fenceBbox.min.z
+                    );
+
+                    // Calculate how many fence segments we need for each side
+                    // Each fence segment should be approximately 1 unit (1 tile)
+                    const fenceSegmentLength = fenceLength > 0 ? fenceLength : 1;
+                    const fenceSpacing = 2; // Spacing between fence segments (in units/tiles)
+                    const segmentWithSpacing = fenceSegmentLength + fenceSpacing;
+                    const segmentsPerSide = Math.ceil(citySize / segmentWithSpacing);
+
+                    // Position offset: place fences at the terrain boundaries
+                    // Terrain boundaries are from 0 to citySize (buildable area)
+                    // Place fences slightly outside (0.1 units) to mark the boundary clearly
+                    const boundaryOffset = 0.1;
+                    const fenceHeight = 0.5; // Height above ground (adjust as needed)
+
+                    // Create a group for all fences
+                    const fenceGroup = new THREE.Group();
+                    fenceGroup.name = 'boundary-fences';
+
+                    // Rotations for north and south fences to stand upright (vertical)
+                    // North fence: runs along X-axis, faces north (positive Z)
+                    const northRotationX = THREE.MathUtils.degToRad(90);
+                    const northRotationY = THREE.MathUtils.degToRad(0);
+                    const northRotationZ = THREE.MathUtils.degToRad(0);
+                    
+                    // South fence: runs along X-axis, faces south (negative Z) - rotated 180° from north
+                    const southRotationX = THREE.MathUtils.degToRad(90);
+                    const southRotationY = THREE.MathUtils.degToRad(180);
+                    const southRotationZ = THREE.MathUtils.degToRad(0);
+
+                    // North fence (z = citySize) - runs along x-axis from 0 to citySize
+                    for (let i = 0; i < segmentsPerSide; i++) {
+                        const fence = fenceTemplate.clone();
+                        fence.rotation.set(northRotationX, northRotationY, northRotationZ);
+                        const xPos = (i * segmentWithSpacing) + (fenceSegmentLength / 2);
+                        // Clamp to ensure we don't go beyond citySize
+                        if (xPos <= citySize) {
+                            fence.position.set(xPos, fenceHeight, citySize + boundaryOffset);
+                            fence.userData = {
+                                isBoundaryFence: true,
+                                nonInteractive: true,
+                                side: 'north'
+                            };
+                            fenceGroup.add(fence);
+                        }
+                    }
+
+                    // South fence (z = 0) - runs along x-axis from 0 to citySize
+                    for (let i = 0; i < segmentsPerSide; i++) {
+                        const fence = fenceTemplate.clone();
+                        fence.rotation.set(southRotationX, southRotationY, southRotationZ);
+                        const xPos = (i * segmentWithSpacing) + (fenceSegmentLength / 2);
+                        // Clamp to ensure we don't go beyond citySize
+                        if (xPos <= citySize) {
+                            fence.position.set(xPos, fenceHeight, 0 - boundaryOffset);
+                            fence.userData = {
+                                isBoundaryFence: true,
+                                nonInteractive: true,
+                                side: 'south'
+                            };
+                            fenceGroup.add(fence);
+                        }
+                    }
+
+
+                    // Add fence group to scene
+                    scene.add(fenceGroup);
+
+                    console.log('[AssetManager] Boundary fences loaded:', {
+                        fenceModel: fenceTemplate.name,
+                        segmentsPerSide,
+                        citySize,
+                        totalFences: fenceGroup.children.length
+                    });
+
+                    resolve();
+                },
+                undefined,
+                (error) => {
+                    console.error('[AssetManager] Error loading boundary fences:', error);
+                    reject(error);
+                }
+            );
+        });
     }
 
     setSprite(texture = textures['no-roads'], name) {

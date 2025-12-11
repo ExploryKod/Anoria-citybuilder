@@ -27,16 +27,16 @@ async function loadAssetCatalog() {
 class MeshLoaderOptimized {
 
     toolIds = {
-        zones: ['grass', 'roads'],
+        zones: ['grass'],
         houses: ['House-Blue', 'House-Red', 'House-Purple'],
         tombs: ['Tombstone-1', 'Tombstone-2', 'Tombstone-3'],
         farms: ['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage'],
-        industry: ['Windmill-001', 'Barn-001'],
+        industry: ['Windmill-001', 'Barn-001', 'Crate-001'],
         markets: ['Market-Stall'],
-        infrastructure: ['Well-001', 'Fountain-001', 'Streetlight-001'],
+        infrastructure: ['Well-001', 'Fountain-001', 'Streetlight-001', 'StonePath-001', 'StonePath-Right-001', 'StonePath-Left-001', 'StonePath-Cross-001'],
         public: ['Church-002'],
         palaces: ['House-2Story'],
-        nature: []
+        nature: ['Tree-Pine-001', 'Tree-Square-001', 'Tree-Tall-001', 'Boulder-001']
     }
 
     allAssetsNames = [
@@ -68,7 +68,7 @@ class MeshLoaderOptimized {
         'houses': { size: 0.5 },
         'tombs': { size: 0.5 },
         'farms': { size: 1 },
-        'industry': { size: 1 },
+        'industry': { size: 0.5 },
         'markets': { size: 0.7 },
         'infrastructure': { size: 0.8 },
         'public': { size: 0.8 },
@@ -79,7 +79,8 @@ class MeshLoaderOptimized {
     // Per-asset size overrides (for assets that need different size than their category)
     assetSizeOverrides = {
         'Windmill-001': 0.5,  // Windmills should match one case size like houses
-        'Barn-001': 0.5       // Storehouse should match one case size like houses
+        'Barn-001': 0.2,
+        'Church-002': 0.5
     }
 
     assetNames = [];
@@ -97,7 +98,8 @@ class MeshLoaderOptimized {
             tombs: new Set(),
             infrastructure: new Set(),
             public: new Set(),
-            palaces: new Set()
+            palaces: new Set(),
+            nature: new Set()
         };
     }
 
@@ -126,22 +128,44 @@ class MeshLoaderOptimized {
             tombs: new Set(),
             infrastructure: new Set(),
             public: new Set(),
-            palaces: new Set()
+            palaces: new Set(),
+            nature: new Set()
         };
 
         // Build catalog mappings
-        Object.entries(assetCatalog.assets).forEach(([category, data]) => {
+        // Map JSON categories to our internal categories
+        const categoryMapping = {
+            'vegetation': 'nature'  // Map vegetation to nature
+        };
+        
+        Object.entries(assetCatalog.assets).forEach(([jsonCategory, data]) => {
+            // Map JSON category to our internal category
+            const internalCategory = categoryMapping[jsonCategory] || jsonCategory;
+            
             data.mesh_names?.forEach(meshName => {
                 this.validMeshNames.add(meshName);
-                this.categoryMeshSets[category]?.add(meshName);
+                // Add to the internal category set
+                if (this.categoryMeshSets[internalCategory]) {
+                    this.categoryMeshSets[internalCategory].add(meshName);
+                }
                 
                 // Parse mesh name to tool name
                 const toolName = this._parseMeshNameToToolName(meshName);
                 this.meshToToolName.set(meshName, toolName);
                 
-                // Track which category this tool belongs to
-                if (this.toolIds[category]?.includes(toolName)) {
-                    this.toolToCategory.set(toolName, category);
+                // Special handling: StonePath meshes should be in 'infrastructure' category
+                if (toolName === 'StonePath-001' && this.categoryMeshSets['infrastructure']) {
+                    this.categoryMeshSets['infrastructure'].add(meshName);
+                }
+                
+                // Track which category this tool belongs to (use internal category)
+                if (this.toolIds[internalCategory]?.includes(toolName)) {
+                    this.toolToCategory.set(toolName, internalCategory);
+                }
+                
+                // Also track if it belongs to 'infrastructure' category
+                if (this.toolIds['infrastructure']?.includes(toolName)) {
+                    this.toolToCategory.set(toolName, 'infrastructure');
                 }
             });
         });
@@ -172,6 +196,33 @@ class MeshLoaderOptimized {
         // Standard parsing for objects like Farm_Wheat, House_Blue, etc.
         const normalized = baseName.replace(/[.\s]/g, '_');
         const parts = normalized.split('_');
+        
+        // Special handling for Tree variants (Tree_Pine, Tree_Square, Tree_Tall)
+        if (parts[0] === 'Tree' && parts.length >= 2) {
+            const treeType = parts[1]; // Pine, Square, or Tall
+            // Remove numbers from type (e.g., "Pine001" -> "Pine", "Tall018" -> "Tall")
+            const cleanType = treeType.replace(/\d+$/, '');
+            // Map to Tree-{Type}-001 format
+            if (cleanType === 'Pine') return 'Tree-Pine-001';
+            if (cleanType === 'Square') return 'Tree-Square-001';
+            if (cleanType === 'Tall') return 'Tree-Tall-001';
+        }
+        
+        // Special handling for Crate (all variants map to Crate-001)
+        if (parts[0] === 'Crate') {
+            return 'Crate-001';
+        }
+        
+        // Special handling for Boulder (all variants map to Boulder-001)
+        if (parts[0] === 'Boulder') {
+            return 'Boulder-001';
+        }
+        
+        // Special handling for StonePath (all variants map to StonePath-001)
+        if (parts[0] === 'StonePath') {
+            return 'StonePath-001';
+        }
+        
         let toolName = `${parts[0]}-${parts[1] || ''}`;
         
         // Apply mapping if needed
@@ -187,8 +238,10 @@ class MeshLoaderOptimized {
      */
     _getMeshCategory(meshName) {
         // Fast lookup in Sets
+        // Categories are already mapped in _buildLookupTables
         for (const [category, meshSet] of Object.entries(this.categoryMeshSets)) {
             if (meshSet.has(meshName)) {
+                // Return the internal category (already mapped in _buildLookupTables)
                 return category;
             }
         }
@@ -238,7 +291,7 @@ class MeshLoaderOptimized {
                         }
                         processedMeshes.add(meshName);
 
-                        // Get category from JSON catalog
+                        // Get category from JSON catalog (already mapped in _buildLookupTables)
                         const category = this._getMeshCategory(meshName);
                         if (!category) {
                             return;

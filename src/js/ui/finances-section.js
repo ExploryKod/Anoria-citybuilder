@@ -156,6 +156,11 @@ class FinancesSectionManager {
             .filter(e => e.type === 'payroll_tax')
             .reduce((sum, e) => sum + e.amount, 0);
         
+        // Exports : regrouper tous les types export_* (export_wheat, export_carrot, etc.)
+        const exports = incomeEntries
+            .filter(e => e.type && e.type.startsWith('export_'))
+            .reduce((sum, e) => sum + e.amount, 0);
+        
         // Report à nouveau en revenu (si positif)
         const carryForwardIncome = incomeEntries
             .filter(e => e.type === 'carry_forward')
@@ -178,6 +183,11 @@ class FinancesSectionManager {
             .filter(e => e.type === 'exceptional_expenses')
             .reduce((sum, e) => sum + e.amount, 0);
         
+        // Imports : regrouper tous les types import_* (import_wheat, import_carrot, etc.)
+        const imports = expenseEntries
+            .filter(e => e.type && e.type.startsWith('import_'))
+            .reduce((sum, e) => sum + e.amount, 0);
+        
         // Report à nouveau en dépense (si négatif)
         const carryForwardExpense = expenseEntries
             .filter(e => e.type === 'carry_forward')
@@ -187,12 +197,14 @@ class FinancesSectionManager {
             initialFunds: Math.round(initialFunds),
             incomeTax: Math.round(incomeTax),
             payrollTax: Math.round(payrollTax),
+            exports: Math.round(exports),
             carryForwardIncome: Math.round(carryForwardIncome),
             totalIncome: Math.round(yearData.income.total),
             construction: Math.round(construction),
             maintenance: Math.round(maintenance),
             salary: Math.round(salary),
             repairs: Math.round(repairs),
+            imports: Math.round(imports),
             carryForwardExpense: Math.round(carryForwardExpense),
             totalExpenses: Math.round(yearData.expenses.total),
             balance: Math.round(currentBalance)
@@ -204,12 +216,14 @@ class FinancesSectionManager {
             initialFunds: 0,
             incomeTax: 0,
             payrollTax: 0,
+            exports: 0,
             carryForwardIncome: 0,
             totalIncome: 0,
             construction: 0,
             maintenance: 0,
             salary: 0,
             repairs: 0,
+            imports: 0,
             carryForwardExpense: 0,
             totalExpenses: 0,
             balance: 0
@@ -296,6 +310,7 @@ class FinancesSectionManager {
             { key: 'initialFunds', thisYear: 'initialFundsThisYear', lastYear: 'initialFundsLastYear' },
             { key: 'incomeTax', thisYear: 'incomeTaxThisYear', lastYear: 'incomeTaxLastYear' },
             { key: 'payrollTax', thisYear: 'payrollTaxThisYear', lastYear: 'payrollTaxLastYear' },
+            { key: 'exports', thisYear: 'exportsThisYear', lastYear: 'exportsLastYear' },
             { key: 'carryForwardIncome', thisYear: 'carryForwardIncomeThisYear', lastYear: 'carryForwardIncomeLastYear' },
             { key: 'totalIncome', thisYear: 'totalIncomeThisYear', lastYear: 'totalIncomeLastYear' }
         ];
@@ -306,6 +321,7 @@ class FinancesSectionManager {
             { key: 'maintenance', thisYear: 'maintenanceThisYear', lastYear: 'maintenanceLastYear' },
             { key: 'salary', thisYear: 'salaryThisYear', lastYear: 'salaryLastYear' },
             { key: 'repairs', thisYear: 'repairsThisYear', lastYear: 'repairsLastYear' },
+            { key: 'imports', thisYear: 'importsThisYear', lastYear: 'importsLastYear' },
             { key: 'carryForwardExpense', thisYear: 'carryForwardExpenseThisYear', lastYear: 'carryForwardExpenseLastYear' },
             { key: 'totalExpenses', thisYear: 'totalExpensesThisYear', lastYear: 'totalExpensesLastYear' }
         ];

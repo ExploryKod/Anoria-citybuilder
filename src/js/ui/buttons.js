@@ -609,6 +609,46 @@ function toggleModal(e) {
                 }
             }
             break;
+        case 'nature':
+            getButtonsUnactive()
+            getButtonsDisabled()
+            panelLayoutInner.classList.add('loading-objects')
+            if(!panelLayout.classList.contains('active')) {
+                panelLayout.classList.add('active');
+                e.target.classList.toggle('selected')
+                createNatureButtons(buttonData)
+                
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('panel-layout');
+                }
+            } else {
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('panel-layout');
+                }
+            }
+            break;
+        case 'roads':
+            getButtonsUnactive()
+            getButtonsDisabled()
+            panelLayoutInner.classList.add('loading-objects')
+            if(!panelLayout.classList.contains('active')) {
+                panelLayout.classList.add('active');
+                e.target.classList.toggle('selected')
+                createRoadsButtons(buttonData)
+                
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceOpenPopup('panel-layout');
+                }
+            } else {
+                // Utiliser PopupManager pour gérer les événements
+                if (window.popupManager) {
+                    window.popupManager.forceClosePopup('panel-layout');
+                }
+            }
+            break;
         default:
             e.target.classList.toggle('selected')
             panelLayout.classList.remove('active');
@@ -709,6 +749,12 @@ function createIndustryButtons(buttonData) {
 
     const svgWindmill = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cog"><circle cx="12" cy="12" r="3"/><path d="M12 5L7 7l2 5M12 5l5 2-2 5M7 17l2-5M17 17l-2-5M7 7L2 7l5 10M17 7l5 0-5 10"/></svg>`
     const svgBarn = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="12" x="6" y="10"/></svg>`
+    const svgCrate = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-package">
+        <path d="m7.5 4.27 9 5.15"/>
+        <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+        <path d="m3.3 7 8.7 5 8.7-5"/>
+        <path d="M12 22V12"/>
+    </svg>`
     
     let buttonsDuplicate = [];
     buttonData.filter(buttonInfo => industryToolIDs.includes(buttonInfo.tool)).forEach(buttonInfo => {
@@ -718,6 +764,8 @@ function createIndustryButtons(buttonData) {
                 makeNewButton(buttonInfo, svgWindmill)
             } else if (buttonInfo.tool === 'Barn-001') {
                 makeNewButton(buttonInfo, svgBarn)
+            } else if (buttonInfo.tool === 'Crate-001') {
+                makeNewButton(buttonInfo, svgCrate)
             } else {
                 makeNewButton(buttonInfo, svgBarn)
             }
@@ -755,7 +803,7 @@ function createInfrastructureButtons(buttonData) {
     const svgStreetlight = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lamp"><path d="M8 2h8l4 10H4L8 2Z"/><path d="M12 12v6"/><path d="M8 22v-2c0-1.1.9-2 2-2h4a2 2 0 0 1 2 2v2H8Z"/></svg>`;
 
     let buttonsDuplicate = [];
-    buttonData.filter(buttonInfo => infrastructureToolIDs.includes(buttonInfo.tool)).forEach(buttonInfo => {
+    buttonData.filter(buttonInfo => infrastructureToolIDs.includes(buttonInfo.tool) && buttonInfo.tool !== 'StonePath-001').forEach(buttonInfo => {
         if (!buttonsDuplicate.includes(buttonInfo.tool)) {
             buttonsDuplicate.push(buttonInfo.tool);
             if (buttonInfo.tool === 'Well-001') {
@@ -767,6 +815,36 @@ function createInfrastructureButtons(buttonData) {
             } else {
                 makeNewButton(buttonInfo, svgWell); // Default
             }
+        }
+    });
+}
+
+function createRoadsButtons(buttonData) {
+    panelLayoutInner.innerHTML = '';
+    const infrastructureToolIDs = toolIds.infrastructure || [];
+
+    // Different SVG icons for different road types
+    const svgRoadStraight = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="8" y1="8" x2="8" y2="10"/><line x1="16" y1="8" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="16"/><line x1="16" y1="14" x2="16" y2="16"/></svg>`;
+    const svgRoadRight = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L12 12 L22 12"/><line x1="8" y1="8" x2="8" y2="10"/><line x1="14" y1="16" x2="16" y2="16"/></svg>`;
+    const svgRoadLeft = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L12 12 L2 12"/><line x1="16" y1="8" x2="16" y2="10"/><line x1="8" y1="16" x2="6" y2="16"/></svg>`;
+    const svgRoadCross = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>`;
+
+    let buttonsDuplicate = [];
+    buttonData.filter(buttonInfo => infrastructureToolIDs.includes(buttonInfo.tool) && buttonInfo.tool.startsWith('StonePath-')).forEach(buttonInfo => {
+        if (!buttonsDuplicate.includes(buttonInfo.tool)) {
+            buttonsDuplicate.push(buttonInfo.tool);
+            
+            // Choose appropriate icon based on road type
+            let svg = svgRoadStraight;
+            if (buttonInfo.tool === 'StonePath-Right-001') {
+                svg = svgRoadRight;
+            } else if (buttonInfo.tool === 'StonePath-Left-001') {
+                svg = svgRoadLeft;
+            } else if (buttonInfo.tool === 'StonePath-Cross-001') {
+                svg = svgRoadCross;
+            }
+            
+            makeNewButton(buttonInfo, svg);
         }
     });
 }
@@ -791,6 +869,41 @@ function createPublicButtons(buttonData) {
                 makeNewButton(buttonInfo, svgBigHouse);
             } else {
                 makeNewButton(buttonInfo, svg);
+            }
+        }
+    });
+}
+
+function createNatureButtons(buttonData) {
+    panelLayoutInner.innerHTML = '';
+    const natureToolIDs = toolIds.nature || [];
+
+    const svgTree = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trees">
+        <path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-2.1-5.2l.3-.3h.2a2.5 2.5 0 0 1 2-4l.4-.4a2 2 0 0 1 2.9-.2 1 1 0 0 0 1.4 0"/>
+        <path d="M14 10v.2A3 3 0 0 0 15.1 16H19a3 3 0 0 0 2.1-5.2l-.3-.3h-.2a2.5 2.5 0 0 0-2-4l-.4-.4a2 2 0 0 0-2.9-.2 1 1 0 0 1-1.4 0"/>
+        <path d="M12 22v-8"/>
+        <path d="M12 2v4"/>
+    </svg>`;
+    
+    const svgBoulder = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mountain">
+        <path d="m8 3 4 8 5-5 5 15H2L8 3z"/>
+    </svg>`;
+
+    const svgRoad = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-route">
+        <circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/>
+        <circle cx="18" cy="5" r="3"/>
+    </svg>`;
+
+    const filteredButtons = buttonData.filter(buttonInfo => natureToolIDs.includes(buttonInfo.tool));
+
+    let buttonsDuplicate = [];
+    filteredButtons.forEach(buttonInfo => {
+        if (!buttonsDuplicate.includes(buttonInfo.tool)) {
+            buttonsDuplicate.push(buttonInfo.tool);
+            if (buttonInfo.tool === 'Boulder-001') {
+                makeNewButton(buttonInfo, svgBoulder);
+            } else {
+                makeNewButton(buttonInfo, svgTree);
             }
         }
     });
@@ -848,7 +961,7 @@ function showCitySizeSelection() {
         const isMobile = window.innerWidth <= 1024;
         // In test mode, allow larger sizes to test detection
         const testMode = localStorage.getItem('webgl-test-mode');
-        const theoreticalMaxSize = testMode ? (isMobile ? 24 : 32) : (isMobile ? 16 : 24);
+        const theoreticalMaxSize = testMode ? (isMobile ? 18 : 24) : (isMobile ? 16 : 18);
         // Use the lower of theoretical max or WebGL-safe max
         const maxSize = Math.min(theoreticalMaxSize, maxSafeCitySize);
         
@@ -1396,9 +1509,10 @@ window.onload = async () => {
             assetManager.initializeBuildings('palaces'),
             assetManager.initializeBuildings('markets'),
             assetManager.initializeBuildings('farms'),
-            assetManager.initializeBuildings('industry'),
+            assetManager.initializeBuildings('industry'),  // Includes crates now
             assetManager.initializeBuildings('infrastructure'),
-            assetManager.initializeBuildings('public')
+            assetManager.initializeBuildings('public'),
+            assetManager.initializeBuildings('nature')
         ]).catch(() => {
             // Silently fail - assets will load when needed
         });
@@ -1448,18 +1562,20 @@ window.onload = async () => {
         }
         
         // Disable initial unavailable buildings
+        // All buttons are now enabled by default
+        // Disable functionality is kept for future use
         const initialDisabledBuildings = [
-            'palace-btn',           // Palace category button
-            'House-Red',            // Red house
-            'House-Purple',         // Purple house
-            // 'Windmill-001',      // Windmill - REACTIVATED
-            'Church-002',           // Church
-            'infrastructure-btn'    // Infrastructure category button
+            // Empty array - all buttons enabled
         ];
         
         initialDisabledBuildings.forEach(buildingId => {
-            window.buttonStateManager.disable(buildingId);
-            console.log(`🚫 Disabled: ${buildingId}`);
+            const button = document.getElementById(buildingId);
+            if (button) {
+                window.buttonStateManager.disable(buildingId);
+                console.log(`🚫 Disabled: ${buildingId}`);
+            } else {
+                console.warn(`⚠️ Button ${buildingId} not found in DOM, will be disabled when created`);
+            }
         });
     } else {
         console.warn('⚠️ ButtonStateManager not available');
@@ -1671,9 +1787,11 @@ window.onload = async () => {
         setActiveTool(e);
     })
 
-    roadButton.addEventListener('click', (e) => {
-        setActiveTool(e);
-    })
+    if (roadButton) {
+        roadButton.addEventListener('click', (e) => {
+            setActiveTool(e);
+        });
+    }
 
     housesButton.addEventListener('click', (e) => {
         if (window.setActiveTool) {
@@ -1716,6 +1834,11 @@ window.onload = async () => {
             window.setActiveTool(e);
         }
     })
+
+    const natureButton = document.getElementById('nature-btn');
+    if (natureButton) {
+        natureButton.addEventListener('click', toggleModal);
+    }
 
     panelLayoutCloseBtn.addEventListener('click', closeModal)
     
@@ -4869,6 +4992,10 @@ function createJournalEntryHTML(entry) {
         isIncome = entry.amount >= 0;
     } else if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds') {
         isIncome = true;
+    } else if (entry.type.startsWith('export_')) {
+        isIncome = true; // Tous les exports sont des revenus
+    } else if (entry.type.startsWith('import_')) {
+        isIncome = false; // Tous les imports sont des dépenses
     } else if (entry.type === 'salary' || entry.type === 'maintenance' || entry.type === 'construction' || entry.type === 'exceptional_expenses') {
         isIncome = false; // Dépenses
     } else if (entry.type === 'carry_forward') {
@@ -4887,6 +5014,16 @@ function createJournalEntryHTML(entry) {
         'exceptional_expenses': 'Réparation',
         'maintenance': 'Maintenance mensuelle',
         'salary': 'Salaires',
+        'import_wheat': 'Import Blé',
+        'import_carrot': 'Import Carotte',
+        'import_cabbage': 'Import Chou',
+        'import_wood': 'Import Bois',
+        'import_dattes': 'Import Dattes',
+        'export_wheat': 'Export Blé',
+        'export_carrot': 'Export Carotte',
+        'export_cabbage': 'Export Chou',
+        'export_wood': 'Export Bois',
+        'export_dattes': 'Export Dattes',
         'loan_interest': 'Intérêts prêt',
         'loan_repayment': 'Remboursement prêt',
         'cumul_maintenance': 'Cumul Maintenance',
@@ -4902,21 +5039,44 @@ function createJournalEntryHTML(entry) {
     const breakdownMatch = entry.description?.match(/\|BREAKDOWN\|(.*?)\|BREAKDOWN\|/);
     let descriptionText = entry.description || '';
     let breakdownItems = null;
-    
-    if (breakdownMatch && entry.type === 'maintenance') {
+
+    // Support breakdown for maintenance, imports, and exports
+    const supportsBreakdown = entry.type === 'maintenance' ||
+                              entry.type.startsWith('import_') ||
+                              entry.type.startsWith('export_');
+
+    if (breakdownMatch && supportsBreakdown) {
         try {
             breakdownItems = JSON.parse(breakdownMatch[1]);
             // Remove breakdown data from description text
             descriptionText = entry.description.replace(/\|BREAKDOWN\|.*?\|BREAKDOWN\|/, '').trim();
         } catch (e) {
-            console.warn('Failed to parse maintenance breakdown:', e);
+            console.warn('Failed to parse breakdown:', e);
         }
     }
-    
+
+    // Get partner name if partnerId exists
+    let partnerName = null;
+    if (entry.partnerId && (entry.type.startsWith('import_') || entry.type.startsWith('export_'))) {
+        try {
+            const partnersData = localStorage.getItem('commerce_partners');
+            if (partnersData) {
+                const partners = JSON.parse(partnersData);
+                const partner = partners.find(p => p.id === entry.partnerId);
+                if (partner) {
+                    partnerName = partner.name;
+                }
+            }
+        } catch (e) {
+            console.warn('Failed to get partner name:', e);
+        }
+    }
+
     return `
         <div class="journal-entry">
             <div class="journal-entry-header">
                 <span class="journal-entry-type ${entry.type}">${typeLabels[entry.type] || entry.type}</span>
+                ${partnerName ? `<span class="journal-entry-partner">🤝 ${partnerName}</span>` : ''}
                 <span class="journal-entry-amount ${typeClass}">
                     ${typeClass === 'positive' ? '+' : '-'}${Math.abs(entry.amount)}€
                 </span>
@@ -4928,7 +5088,7 @@ function createJournalEntryHTML(entry) {
                     ${breakdownItems.map(item => `
                         <li class="journal-breakdown-item">
                             <span class="breakdown-label">${item.label}:</span>
-                            <span class="breakdown-count">${item.count}</span>
+                            <span class="breakdown-count">${item.quantity || item.count}</span>
                             <span class="breakdown-multiply">×</span>
                             <span class="breakdown-unit-cost">${item.unitCost}€</span>
                             <span class="breakdown-equals">=</span>
@@ -4951,54 +5111,22 @@ function createJournalEntryHTML(entry) {
 
 // Food Traceability Popup Functions
 function initFoodTraceabilityPopup() {
-    const foodTraceabilityBtn = document.getElementById('food-traceability-btn');
-    const foodTraceabilityPanel = document.getElementById('food-traceability-panel');
-    const foodTraceabilityCloseBtn = document.querySelector('.food-traceability-close-btn');
     const foodTraceabilityRefreshBtn = document.getElementById('food-traceability-refresh-btn');
     const filterButtons = document.querySelectorAll('.food-traceability-filter-btn');
     
-    if (!foodTraceabilityBtn || !foodTraceabilityPanel || !foodTraceabilityCloseBtn || !foodTraceabilityRefreshBtn) {
-        console.warn('Food traceability popup elements not found');
+    if (!foodTraceabilityRefreshBtn) {
+        console.warn('Food traceability refresh button not found');
         return;
     }
     
-    // Toggle food traceability popup on button click
-    foodTraceabilityBtn.addEventListener('click', () => {
-        foodTraceabilityPanel.classList.add('active');
-        if (window.popupManager) {
-            window.popupManager.forceOpenPopup('food-traceability-panel');
-        }
-        // Ensure tabs are initialized when opening
-        initializeFoodTraceabilityTabs();
-        loadFoodTraceabilityEntries('all');
-    });
-    
-    // Close food traceability popup
-    foodTraceabilityCloseBtn.addEventListener('click', () => {
-        foodTraceabilityPanel.classList.remove('active');
-        if (window.popupManager) {
-            window.popupManager.forceClosePopup('food-traceability-panel');
-        }
-    });
-    
-    // Close popup when clicking outside
-    foodTraceabilityPanel.addEventListener('click', (e) => {
-        if (e.target === foodTraceabilityPanel) {
-            foodTraceabilityPanel.classList.remove('active');
-            if (window.popupManager) {
-                window.popupManager.forceClosePopup('food-traceability-panel');
-            }
-        }
-    });
-    
-    // Refresh button
+    // Refresh button (works in administrator panel)
     foodTraceabilityRefreshBtn.addEventListener('click', () => {
         const activeFilterBtn = document.querySelector('.food-traceability-filter-btn.active');
         const currentPeriod = activeFilterBtn ? activeFilterBtn.dataset.period : 'all';
         loadFoodTraceabilityEntries(currentPeriod);
     });
     
-    // Filter buttons
+    // Filter buttons (works in administrator panel)
     filterButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             filterButtons.forEach(b => b.classList.remove('active'));

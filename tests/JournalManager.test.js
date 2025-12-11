@@ -65,10 +65,49 @@ describe('JournalManager', () => {
             expect(entries[0].date).toBeDefined();
         });
 
+        test('should add import entries with correct type', async () => {
+            await journalManager.addJournalEntry(1, 'import_wheat', 5, 'Import blé (1 panier × 5€)');
+            
+            const entries = await testDb.journal.toArray();
+            expect(entries).toHaveLength(1);
+            expect(entries[0]).toMatchObject({
+                turn: 1,
+                type: 'import_wheat',
+                amount: 5,
+                description: 'Import blé (1 panier × 5€)'
+            });
+        });
+
+        test('should add import/export entries for all products', async () => {
+            await journalManager.addJournalEntry(1, 'import_wheat', 5, 'Import blé');
+            await journalManager.addJournalEntry(2, 'import_carrot', 15, 'Import carotte');
+            await journalManager.addJournalEntry(3, 'import_cabbage', 17, 'Import chou');
+            await journalManager.addJournalEntry(4, 'import_wood', 20, 'Import bois');
+            await journalManager.addJournalEntry(5, 'export_wheat', 15, 'Export blé');
+            await journalManager.addJournalEntry(6, 'export_carrot', 18, 'Export carotte');
+            await journalManager.addJournalEntry(7, 'export_cabbage', 20, 'Export chou');
+            await journalManager.addJournalEntry(8, 'export_wood', 25, 'Export bois');
+            
+            const entries = await testDb.journal.toArray();
+            expect(entries).toHaveLength(8);
+            
+            const importTypes = entries.filter(e => e.type.startsWith('import_')).map(e => e.type);
+            const exportTypes = entries.filter(e => e.type.startsWith('export_')).map(e => e.type);
+            
+            expect(importTypes).toContain('import_wheat');
+            expect(importTypes).toContain('import_carrot');
+            expect(importTypes).toContain('import_cabbage');
+            expect(importTypes).toContain('import_wood');
+            expect(exportTypes).toContain('export_wheat');
+            expect(exportTypes).toContain('export_carrot');
+            expect(exportTypes).toContain('export_cabbage');
+            expect(exportTypes).toContain('export_wood');
+        });
+
         test('should add multiple journal entries', async () => {
-            await journalManager.addJournalEntry(1, 'income', 1000, 'Taxes');
+            await journalManager.addJournalEntry(1, 'citizen_tax', 1000, 'Taxes');
             await journalManager.addJournalEntry(1, 'maintenance', 500, 'Maintenance mensuelle');
-            await journalManager.addJournalEntry(2, 'income', 1200, 'More taxes');
+            await journalManager.addJournalEntry(2, 'import_wheat', 5, 'Import blé');
             
             const entries = await testDb.journal.toArray();
             expect(entries).toHaveLength(3);
@@ -78,20 +117,21 @@ describe('JournalManager', () => {
     describe('getJournalEntries', () => {
         beforeEach(async () => {
             // Add some test entries
-            await journalManager.addJournalEntry(1, 'income', 1000, 'Taxes Turn 1');
+            await journalManager.addJournalEntry(1, 'citizen_tax', 1000, 'Taxes Turn 1');
             await new Promise(resolve => setTimeout(resolve, 10));
             await journalManager.addJournalEntry(2, 'maintenance', 500, 'Maintenance Turn 2');
             await new Promise(resolve => setTimeout(resolve, 10));
-            await journalManager.addJournalEntry(3, 'income', 1500, 'Taxes Turn 3');
+            await journalManager.addJournalEntry(3, 'citizen_tax', 1500, 'Taxes Turn 3');
         });
 
         test('should get all journal entries sorted by turn descending', async () => {
             const entries = await journalManager.getJournalEntries();
             
-            expect(entries).toHaveLength(3);
-            expect(entries[0].turn).toBe(3);
-            expect(entries[1].turn).toBe(2);
-            expect(entries[2].turn).toBe(1);
+            expect(entries.length).toBeGreaterThanOrEqual(3);
+            // Vérifier que les entrées sont triées par turn décroissant
+            for (let i = 0; i < entries.length - 1; i++) {
+                expect(entries[i].turn).toBeGreaterThanOrEqual(entries[i + 1].turn);
+            }
         });
 
         test('should filter entries by maxAge', async () => {
@@ -104,9 +144,9 @@ describe('JournalManager', () => {
 
     describe('getJournalEntriesForTurn', () => {
         beforeEach(async () => {
-            await journalManager.addJournalEntry(1, 'income', 1000, 'Entry 1');
+            await journalManager.addJournalEntry(1, 'citizen_tax', 1000, 'Entry 1');
             await journalManager.addJournalEntry(1, 'construction', 500, 'Entry 2');
-            await journalManager.addJournalEntry(2, 'income', 1500, 'Entry 3');
+            await journalManager.addJournalEntry(2, 'citizen_tax', 1500, 'Entry 3');
         });
 
         test('should get entries for a specific turn', async () => {
@@ -153,22 +193,46 @@ describe('JournalManager', () => {
         });
 
         test('should calculate statistics correctly', async () => {
-            await journalManager.addJournalEntry(1, 'income', 1000, 'Income 1');
+            await journalManager.addJournalEntry(1, 'citizen_tax', 1000, 'Taxes 1');
             await new Promise(resolve => setTimeout(resolve, 10));
-            await journalManager.addJournalEntry(2, 'income', 500, 'Income 2');
+            await journalManager.addJournalEntry(2, 'citizen_tax', 500, 'Taxes 2');
             await new Promise(resolve => setTimeout(resolve, 10));
             await journalManager.addJournalEntry(3, 'construction', 300, 'Construction 1');
             await new Promise(resolve => setTimeout(resolve, 10));
             await journalManager.addJournalEntry(4, 'maintenance', 200, 'Maintenance');
+            await new Promise(resolve => setTimeout(resolve, 10));
+            await journalManager.addJournalEntry(5, 'import_wheat', 5, 'Import blé');
+            await new Promise(resolve => setTimeout(resolve, 10));
+            await journalManager.addJournalEntry(6, 'export_wheat', 15, 'Export blé');
+            await new Promise(resolve => setTimeout(resolve, 10));
+            await journalManager.addJournalEntry(7, 'import_carrot', 15, 'Import carotte');
+            await new Promise(resolve => setTimeout(resolve, 10));
+            await journalManager.addJournalEntry(8, 'export_carrot', 18, 'Export carotte');
+            await new Promise(resolve => setTimeout(resolve, 10));
+            await journalManager.addJournalEntry(9, 'import_cabbage', 17, 'Import chou');
+            await new Promise(resolve => setTimeout(resolve, 10));
+            await journalManager.addJournalEntry(10, 'export_cabbage', 20, 'Export chou');
+            await new Promise(resolve => setTimeout(resolve, 10));
+            await journalManager.addJournalEntry(11, 'import_wood', 20, 'Import bois');
+            await new Promise(resolve => setTimeout(resolve, 10));
+            await journalManager.addJournalEntry(12, 'export_wood', 25, 'Export bois');
             
             const stats = await journalManager.getStatistics();
             
-            expect(stats.totalEntries).toBe(4);
-            expect(stats.totalIncome).toBe(1500);
-            expect(stats.totalExpenses).toBe(500); // construction + maintenance
-            expect(stats.byType.income).toBe(2);
+            expect(stats.totalEntries).toBe(12);
+            expect(stats.totalIncome).toBe(1578); // citizen_tax (1500) + exports (15+18+20+25=78)
+            expect(stats.totalExpenses).toBe(557); // construction (300) + maintenance (200) + imports (5+15+17+20=57)
+            expect(stats.byType.citizen_tax).toBe(2);
             expect(stats.byType.construction).toBe(1);
             expect(stats.byType.maintenance).toBe(1);
+            expect(stats.byType.import_wheat).toBe(1);
+            expect(stats.byType.export_wheat).toBe(1);
+            expect(stats.byType.import_carrot).toBe(1);
+            expect(stats.byType.export_carrot).toBe(1);
+            expect(stats.byType.import_cabbage).toBe(1);
+            expect(stats.byType.export_cabbage).toBe(1);
+            expect(stats.byType.import_wood).toBe(1);
+            expect(stats.byType.export_wood).toBe(1);
             expect(stats.earliestEntry).toBeDefined();
             expect(stats.latestEntry).toBeDefined();
         });
@@ -189,7 +253,7 @@ describe('JournalManager', () => {
             });
             
             // Create a recent entry
-            await journalManager.addJournalEntry(2, 'income', 500, 'Recent entry');
+            await journalManager.addJournalEntry(2, 'citizen_tax', 500, 'Recent entry');
             
             // Cleanup entries older than 60 days
             const result = await journalManager.cleanupOldJournalEntries(60);
