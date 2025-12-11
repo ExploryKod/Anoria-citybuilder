@@ -449,8 +449,8 @@ export function createScene(housesStore, gameStore, assetManager) {
             }
         }
 
-        // Add infinite backdrop (skydome + distant ground ring)
-        addBackdrop();
+        // Add infinite backdrop (skydome + distant ground ring) - aligned with World platform
+        addBackdrop(citySize);
         
         // Load and add citizen character to the scene
         loadCitizenAnimations();
@@ -3850,12 +3850,18 @@ export function createScene(housesStore, gameStore, assetManager) {
     // Shared backdrop materials - created once and reused to reduce texture units
     let sharedBackdropMaterials = null;
     
-    // Add a distant ground plane + ring to fake infinity (keep existing sky background)
-    function addBackdrop() {
+    // Add a distant ground plane aligned exactly with World platform (sharp cutoff with sky)
+    function addBackdrop(citySize = 16) {
         // Avoid duplicating if reinitializing
         const existingBase = scene.getObjectByName('infinite-ground-base');
         const existingRing = scene.getObjectByName('infinite-ground-ring');
         if (existingBase && existingRing) return;
+        
+        // Calculate World platform size to match exactly
+        // Same calculation as in AssetManager.loadWorldPlatform
+        const margin = Math.max(citySize * 0.5, 20); // Large margin: 50% of city size or minimum 20 units
+        const worldPlatformSize = citySize + (margin * 2); // margin on each side
+        const cityCenter = citySize / 2;
         
         // Create shared backdrop materials once with solid color
         if (!sharedBackdropMaterials) {
@@ -3872,31 +3878,21 @@ export function createScene(housesStore, gameStore, assetManager) {
             };
         }
         
-        // Base ground plane with shared material
+        // Base ground plane - exact same size as World platform for sharp cutoff
         try {
-            const baseSize = 3000;
-            const baseGeo = new THREE.PlaneGeometry(baseSize, baseSize, 1, 1);
+            const baseGeo = new THREE.PlaneGeometry(worldPlatformSize, worldPlatformSize, 1, 1);
             const base = new THREE.Mesh(baseGeo, sharedBackdropMaterials.base);
             base.rotation.x = -Math.PI / 2;
             base.position.y = -0.02;
+            base.position.x = cityCenter; // Center at city center, matching World platform
+            base.position.z = cityCenter;
             base.receiveShadow = true;
             base.name = 'infinite-ground-base';
             base.renderOrder = -10;
             scene.add(base);
         } catch (_) {}
 
-        // Distant ground ring with shared material
-        try {
-            const size = 1200;
-            const ringGeo = new THREE.PlaneGeometry(size, size, 1, 1);
-            const ring = new THREE.Mesh(ringGeo, sharedBackdropMaterials.ring);
-            ring.rotation.x = -Math.PI / 2;
-            ring.position.y = -0.01;
-            ring.receiveShadow = true;
-            ring.name = 'infinite-ground-ring';
-            ring.frustumCulled = false;
-            scene.add(ring);
-        } catch (_) {}
+        // Remove ring - no longer needed, base matches World platform exactly
     }
 
     let hoveredObject = null
