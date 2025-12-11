@@ -751,14 +751,42 @@ export function createScene(housesStore, gameStore, assetManager) {
 
                   updateBuildingNeighbors(buildingData, 1, time);
                   /** ALl buildings : create a neighbors array in indexDB **/
-                  const allNeighborsWithinZone = getBuildingsNamesInZone(buildingData, time, {buildingTarget: "", zones:[1,2]})
-                  const allMarketsInZone = getBuildingsNamesInZone(buildingData, time, {buildingTarget: "Market-Stall", zones:[1,2]})
-                  await housesStore.updateHouseFields(currentUniqueID, {neighbors: allNeighborsWithinZone})
-                  await housesStore.updateHouseFields(currentUniqueID, {markets: allMarketsInZone})
+                  // Wrap in try-catch to prevent errors from blocking removal
+                  try {
+                      const allNeighborsWithinZone = getBuildingsNamesInZone(buildingData, time, {buildingTarget: "", zones:[1,2]})
+                      const allMarketsInZone = getBuildingsNamesInZone(buildingData, time, {buildingTarget: "Market-Stall", zones:[1,2]})
+                      await housesStore.updateHouseFields(currentUniqueID, {neighbors: allNeighborsWithinZone})
+                      await housesStore.updateHouseFields(currentUniqueID, {markets: allMarketsInZone})
+                  } catch (err) {
+                      // Building might not exist in DB yet (e.g., newly placed StonePath road)
+                      // Don't block removal or other processing if this fails
+                      console.warn('[Scene] Failed to update neighbors/markets for', currentBuildingId, err);
+                  }
 
                 //  Remove a building from the scene if a player remove a building
                 if(!newBuildingId && currentBuildingId) {
+                    // Debug: Log removal attempt
+                    if (currentBuildingId && currentBuildingId.startsWith('StonePath-')) {
+                        console.log('[scene.js] Attempting to remove StonePath road:', {
+                            x, y,
+                            currentBuildingId,
+                            newBuildingId,
+                            bulldozeSelected: bulldozeSelected.classList.contains('selected'),
+                            buildingExists: !!buildings[x][y],
+                            buildingUserData: buildings[x][y]?.userData
+                        });
+                    }
                     if(bulldozeSelected.classList.contains('selected') && currentBuildingId) {
+                        // Debug: Verify building exists at coordinates
+                        if (!buildings[x] || !buildings[x][y]) {
+                            console.warn('[scene.js] Building not found in buildings array at removal:', {
+                                x, y,
+                                currentBuildingId,
+                                buildingsExists: !!buildings[x],
+                                buildingAtXY: !!buildings[x]?.[y]
+                            });
+                        }
+                        
                         // Handle geometry-based roads ('roads') - restore terrain to grass
                         if (currentBuildingId === 'roads') {
                             const uniqueBuildingId = makeDbItemId(currentBuildingId, x, y);
@@ -781,19 +809,14 @@ export function createScene(housesStore, gameStore, assetManager) {
                             if (buildings[x][y] === terrain[x][y]) {
                                 buildings[x][y] = undefined;
                             }
-                        } else {
-                            // Now roads follow the same pattern as houses: userData.type = meshName (e.g., 'StonePath-001')
-                            // So we can use currentBuildingId directly, just like for houses
-                            const uniqueBuildingId = makeDbItemId(currentBuildingId, x, y);
-                            if(houses.includes(currentBuildingId)) {
-                                await housesStore.deleteOneHouse(uniqueBuildingId)
-                            } else if(currentBuildingId && currentBuildingId.startsWith('StonePath-')) {
-                                // Roads are now stored in database like other buildings
-                                await housesStore.deleteOneHouse(uniqueBuildingId)
-                            } else {
-                                // Other building types (farms, markets, etc.)
-                                await housesStore.deleteOneHouse(uniqueBuildingId)
+                            // Clear buildingId from city.tiles
+                            if (city.tiles[x] && city.tiles[x][y]) {
+                                city.tiles[x][y].buildingId = undefined;
                             }
+                        } else {
+                            // Remove buildings (houses, StonePath roads, farms, markets, etc.) - all follow the same pattern
+                            const uniqueBuildingId = makeDbItemId(currentBuildingId, x, y);
+                            await housesStore.deleteOneHouse(uniqueBuildingId);
                             removeInteractiveObject(buildings[x][y]);
                             buildings[x][y] = undefined;
                         }
