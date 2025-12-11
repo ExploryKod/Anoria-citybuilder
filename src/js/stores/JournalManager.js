@@ -137,19 +137,21 @@ class JournalManager {
      * @param {number} amount - Amount
      * @param {string} description - Description
      */
-    async addJournalEntry(turn, type, amount, description) {
+    async addJournalEntry(turn, type, amount, description, partnerId = null) {
         try {
             // Obtenir le mois et l'année depuis TimeManager
             let month = null;
             let year = null;
             
-            if (window.TimeManager) {
-                const timeInfo = window.TimeManager.getTimeInfo(turn);
+            // Support both window (browser) and global (Node/Jest)
+            const timeManager = (typeof window !== 'undefined' ? window : global)?.TimeManager;
+            if (timeManager) {
+                const timeInfo = timeManager.getTimeInfo(turn);
                 month = timeInfo.monthIndex + 1; // monthIndex est 0-indexed (0=janvier), on veut 1-12
                 year = timeInfo.year;
             }
             
-            await this.db.journal.add({
+            const entry = {
                 turn: turn,
                 date: new Date().toISOString(),
                 type: type,
@@ -157,7 +159,13 @@ class JournalManager {
                 description: description,
                 month: month,
                 year: year
-            });
+            };
+            
+            if (partnerId) {
+                entry.partnerId = partnerId;
+            }
+            
+            await this.db.journal.add(entry);
         } catch (error) {
             console.error('Error adding journal entry:', error);
         }
@@ -254,7 +262,9 @@ class JournalManager {
             stats.byType[entry.type]++;
 
             // Calculate totals
-            if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax') {
+            // Revenus: citizen_tax, payroll_tax, capital_funds, export_*
+            // Dépenses: tout le reste (construction, maintenance, salary, import_*, etc.)
+            if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds' || entry.type.startsWith('export_')) {
                 stats.totalIncome += entry.amount;
             } else {
                 stats.totalExpenses += entry.amount;
@@ -314,9 +324,19 @@ class JournalManager {
             }
             
             // Classer comme revenu ou dépense
-            // Revenus: 'citizen_tax', 'payroll_tax', 'capital_funds', 'carry_forward' (si netFlow précédent positif)
-            // Dépenses: 'construction', 'maintenance', 'salary', 'loan_interest', 'loan_repayment', 'exceptional_expenses', 'carry_forward' (si netFlow précédent négatif)
+            // Revenus: 'citizen_tax', 'payroll_tax', 'capital_funds', 'export_*', 'carry_forward' (si netFlow précédent positif)
+            // Dépenses: 'construction', 'maintenance', 'salary', 'loan_interest', 'loan_repayment', 'exceptional_expenses', 'import_*', 'carry_forward' (si netFlow précédent négatif)
             let isIncome = entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds';
+            
+            // Les imports sont des dépenses
+            if (entry.type.startsWith('import_')) {
+                isIncome = false;
+            }
+            
+            // Les exports sont des revenus
+            if (entry.type.startsWith('export_')) {
+                isIncome = true;
+            }
             
             if (entry.type === 'carry_forward') {
                 // Pour le report à nouveau, déterminer si c'est un revenu ou une dépense
@@ -340,7 +360,13 @@ class JournalManager {
                             const eTimeInfo = window.TimeManager.getTimeInfo(e.turn);
                             
                             if (eTimeInfo.year === previousYear) {
-                                const isEIncome = e.type === 'citizen_tax' || e.type === 'payroll_tax' || e.type === 'capital_funds';
+                                let isEIncome = e.type === 'citizen_tax' || e.type === 'payroll_tax' || e.type === 'capital_funds';
+                                if (e.type.startsWith('import_')) {
+                                    isEIncome = false;
+                                }
+                                if (e.type.startsWith('export_')) {
+                                    isEIncome = true;
+                                }
                                 if (isEIncome) {
                                     prevYearIncome += e.amount;
                                 } else {
@@ -429,29 +455,15 @@ class JournalManager {
         const yearEndBalance = this.getYearEndBalance(previousYear);
         
         if (!yearEndBalance || typeof yearEndBalance.amount !== 'number' || isNaN(yearEndBalance.amount)) {
-            console.warn(`[JournalManager] No valid year end balance found in localStorage for year ${previousYear}, calculating from journal...`);
-            // Fallback: calculer depuis le journal si pas trouvé dans localStorage
-            const yearlyData = await this.getYearlyFinancialSummary();
-            const previousYearData = yearlyData.find(y => y.year === previousYear);
+            const previousYearNetFlow = await this.calculateAndSaveYearEndBalance(previousYear);
             
-            if (!previousYearData) {
-                console.warn(`[JournalManager] No data found for previous year ${previousYear}`);
-                return;
-            }
-            
-            const previousYearNetFlow = previousYearData.netFlow;
-            
-            // Validation : vérifier que le netFlow est un nombre valide
             if (typeof previousYearNetFlow !== 'number' || isNaN(previousYearNetFlow)) {
-                console.error(`[JournalManager] Invalid netFlow for year ${previousYear}: ${previousYearNetFlow}`);
+                console.warn(`[JournalManager] Could not calculate year end balance for year ${previousYear}`);
                 return;
             }
             
             const nature = previousYearNetFlow >= 0 ? 'revenue' : 'deficit';
             const amount = Math.abs(previousYearNetFlow);
-            
-            // Sauvegarder pour la prochaine fois
-            this.saveYearEndBalance(previousYear, previousYearNetFlow);
             
             const yearDisplay = previousYear === 0 ? '0 JC' : `${previousYear} ap JC`;
             const signIndicator = nature === 'revenue' ? '+' : '-';
@@ -625,6 +637,16 @@ class JournalManager {
             // Utiliser la même logique que getMonthlyFinancialSummary() pour classer les entrées
             let isIncome = entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds';
             
+            // Les imports sont des dépenses
+            if (entry.type.startsWith('import_')) {
+                isIncome = false;
+            }
+            
+            // Les exports sont des revenus
+            if (entry.type.startsWith('export_')) {
+                isIncome = true;
+            }
+            
             // Traiter les reports à nouveau de la même manière que dans getMonthlyFinancialSummary
             if (entry.type === 'carry_forward') {
                 // Pour le report à nouveau, déterminer si c'est un revenu ou une dépense
@@ -653,7 +675,13 @@ class JournalManager {
                                 const eTimeInfo = window.TimeManager.getTimeInfo(e.turn);
                                 
                                 if (eTimeInfo.year === previousYear) {
-                                    const isEIncome = e.type === 'citizen_tax' || e.type === 'payroll_tax' || e.type === 'capital_funds';
+                                    let isEIncome = e.type === 'citizen_tax' || e.type === 'payroll_tax' || e.type === 'capital_funds';
+                                    if (e.type.startsWith('import_')) {
+                                        isEIncome = false;
+                                    }
+                                    if (e.type.startsWith('export_')) {
+                                        isEIncome = true;
+                                    }
                                     if (isEIncome) {
                                         prevYearIncome += e.amount;
                                     } else {
@@ -865,15 +893,24 @@ class JournalManager {
                     'maintenance': 'Maintenance',
                     'salary': 'Salaires',
                     'exceptional_expenses': 'Réparation',
+                    'import_wheat': 'Import Blé',
+                    'import_carrot': 'Import Carotte',
+                    'import_cabbage': 'Import Chou',
+                    'import_wood': 'Import Bois',
+                    'export_wheat': 'Export Blé',
+                    'export_carrot': 'Export Carotte',
+                    'export_cabbage': 'Export Chou',
+                    'export_wood': 'Export Bois',
                     'loan_interest': 'Intérêts',
                     'loan_repayment': 'Remboursement',
                     'carry_forward': 'Report'
                 };
                 
                 const typeLabel = typeLabels[entry.type] || entry.type;
-                const amountText = entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds' || 
-                                 (entry.type === 'carry_forward' && entry.description?.includes('(+)')) 
-                                 ? `+${entry.amount}€` : `-${entry.amount}€`;
+                const isIncomeType = entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds' || 
+                                   entry.type.startsWith('export_') ||
+                                   (entry.type === 'carry_forward' && entry.description?.includes('(+)'));
+                const amountText = isIncomeType ? `+${entry.amount}€` : `-${entry.amount}€`;
                 
                 doc.text(`${date} - ${typeLabel}: ${amountText}`, margin, yPosition);
                 yPosition += lineHeight;

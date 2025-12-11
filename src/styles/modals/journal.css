@@ -220,6 +220,18 @@
     text-transform: uppercase;
 }
 
+.journal-entry-partner {
+    display: inline-block;
+    padding: 4px 10px;
+    margin-left: 8px;
+    border-radius: var(--border-radius-medium);
+    font-size: 11px;
+    font-weight: 500;
+    background: #e7f3ff;
+    color: #0066cc;
+    border: 1px solid #b3d9ff;
+}
+
 .journal-entry-type.citizen_tax {
     background: #d4edda;
     color: #155724;
@@ -256,6 +268,16 @@
 .journal-entry-type.salary {
     background: #e7f3ff;
     color: #004085;
+}
+
+.journal-entry-type[class*="import_"] {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.journal-entry-type[class*="export_"] {
+    background: #d4edda;
+    color: #155724;
 }
 
 .journal-entry-type.loan_interest {

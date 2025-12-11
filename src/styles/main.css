@@ -207,40 +207,7 @@ canvas.pointer-events-disabled {
     gap: 20px;
 }
 
-/* Game controls (pause/reset) in info-panel-wrapper */
-.game-controls {
-    display: flex;
-    flex-direction: row;
-    gap: 8px;
-}
-
-.game-control-btn {
-    width: 42px;
-    height: 42px;
-    border: none;
-    border-radius: var(--border-radius-small);
-    background-color: #009999;
-    color: #fff;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease-in-out;
-}
-
-.game-control-btn:hover {
-    opacity: 0.8;
-}
-
-.game-control-btn:active {
-    box-shadow: 0 0 10px #000235;
-}
-
-.game-control-btn.active {
-    background-color: var(--cta);
-    border-color: var(--cta);
-    color: #fff;
-}
+/* Game controls (pause/reset) are now in info-box-stats with lightgreen background */
 
 /* Toolbar sections */
 .toolbar-section {
@@ -637,8 +604,6 @@ canvas.pointer-events-disabled {
 }
 
 .game-window .pause-overlay .play-btn {
-    min-width: 200px;
-    min-height: 200px;
     font-size: 28px;
     font-weight: 700;
     border-radius: var(--border-radius);
@@ -1063,7 +1028,8 @@ canvas.pointer-events-disabled {
     display: flex;
     align-items: center;
     gap: 10px;
-   
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
 
     svg {
      height: 16px;
@@ -1080,6 +1046,25 @@ canvas.pointer-events-disabled {
     }
 }
 
+/* Game control buttons keep lightgreen color */
+.info-box-stats > .info-box.game-control-box {
+    background-color: #009999;
+}
+
+.info-box-stats > .info-box.game-control-box:hover {
+    opacity: 0.8;
+}
+
+.info-box-stats > .info-box.game-control-box:active,
+.info-box-stats > .info-box.game-control-box:focus {
+    box-shadow: 0 0 10px #000235;
+    outline: none;
+}
+
+.info-box-stats > .info-box.game-control-box.active {
+    background-color: var(--cta);
+}
+
 .info-panel .info-box-global-numbers > .info-box.infos-pop {
     background-color: #fff !important;
     min-width: 180px;
@@ -1088,6 +1073,45 @@ canvas.pointer-events-disabled {
     justify-content: space-evenly;
     gap: 5px;
 }
+
+/* Border around global citizen count (first pop-box) */
+.info-panel .info-box.infos-pop .pop-box:first-child {
+    border: 2px solid var(--primary);
+    border-radius: var(--border-radius-small);
+    padding: 4px 8px;
+}
+
+/* Unemployed icon styling */
+.info-panel .pop-icon .unemployed-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    display: block;
+}
+
+/* Famished icon styling */
+.info-panel .pop-icon .famished-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    display: block;
+}
+
+/* Unemployed population display */
+.info-panel .display-unemployed-pop {
+    color: var(--primary);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.display-unemployed-pop, .display-hunger-pop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+
 
 .info-panel > .info-box.infos-time {
    min-width: 500px;
@@ -1225,11 +1249,26 @@ footer span {
     margin: 5px;
 }
 
+footer .footer-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 8px;
+    font-weight: 600;
+    color: var(--lightgreen);
+    margin: 5px;
+}
 
-
-footer a:hover {
+footer .footer-links a {
     text-decoration: none;
     color: var(--lightgreen);
+    margin: 5px;
+}
+
+footer .footer-links a:hover {
+    color: var(--cta);
+    text-transform: underline;
 }
 
 .no-game {
@@ -1715,7 +1754,8 @@ button#pwa-refresh:hover {
     /* Boutons carrés pour les éléments interactifs uniquement */
     .info-panel > .info-box.realtime-budget-box,
     .info-panel > .info-box.administrator-box,
-    .info-panel > .info-box.city-map-box {
+    .info-panel > .info-box.city-map-box,
+    .info-panel > .info-box.game-control-box {
         width: 40px;
         height: 40px;
     }
@@ -1729,7 +1769,7 @@ button#pwa-refresh:hover {
     }
 
     /* Éléments informatifs s'adaptent au contenu */
-    .info-panel > .info-box:not(.realtime-budget-box):not(.budget-states-box):not(.journal-box):not(.city-map-box) {
+    .info-panel > .info-box:not(.realtime-budget-box):not(.budget-states-box):not(.journal-box):not(.city-map-box):not(.game-control-box) {
         width: auto;
         height: auto;
         min-width: fit-content;
@@ -1761,6 +1801,8 @@ button#pwa-refresh:hover {
     .info-panel .display-time,
     .info-panel .display-speed,
     .info-panel .display-pop,
+    .info-panel .display-hunger-pop,
+    .info-panel .display-unemployed-pop,
     .info-panel .display-funds {
         display: flex;
         align-items: center;
@@ -1782,7 +1824,7 @@ button#pwa-refresh:hover {
     }
 
     /* Taille de police spécifique pour les éléments informatifs */
-    .info-panel > .info-box:not(.realtime-budget-box):not(.administrator-box):not(.city-map-box) p {
+    .info-panel > .info-box:not(.realtime-budget-box):not(.administrator-box):not(.city-map-box):not(.game-control-box) p {
         font-size: 14px;
         font-weight: 700;
     }

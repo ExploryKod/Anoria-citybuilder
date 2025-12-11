@@ -119,21 +119,16 @@
                         <div class="city-size-value">16 × 16</div>
                         <div class="city-size-description">256 cases</div>
                     </button>
-                    <button class="city-size-option" data-size="20">
-                        <div class="city-size-label">Moyenne-Petite</div>
-                        <div class="city-size-value">20 × 20</div>
-                        <div class="city-size-description">400 cases</div>
-                    </button>
-                    <button class="city-size-option" data-size="24">
+                    <button class="city-size-option" data-size="18">
                         <div class="city-size-label">Moyenne</div>
-                        <div class="city-size-value">24 × 24</div>
-                        <div class="city-size-description">576 cases</div>
+                        <div class="city-size-value">18 × 18</div>
+                        <div class="city-size-description">324 cases</div>
                     </button>
                 </div>
                 <div class="city-size-custom">
-                    <label for="custom-city-size" class="custom-size-label">Taille personnalisée (12-24):</label>
+                    <label for="custom-city-size" class="custom-size-label">Taille personnalisée (12-18):</label>
                     <div class="custom-size-input-group">
-                        <input type="number" id="custom-city-size" class="custom-size-input" min="12" max="24" value="24" step="1">
+                        <input type="number" id="custom-city-size" class="custom-size-input" min="12" max="18" value="18" step="1">
                         <button id="custom-size-apply" class="custom-size-button">Appliquer</button>
                     </div>
                 </div>
@@ -156,8 +151,7 @@
                         <div class="multiplayer-create-room-options">
                             <button class="multiplayer-create-room-btn" data-size="12">12×12</button>
                             <button class="multiplayer-create-room-btn" data-size="16">16×16</button>
-                            <button class="multiplayer-create-room-btn" data-size="20">20×20</button>
-                            <button class="multiplayer-create-room-btn" data-size="24">24×24</button>
+                            <button class="multiplayer-create-room-btn" data-size="18">18×18</button>
                         </div>
                     </div>
                     
@@ -215,7 +209,7 @@
         <div id='loader' class="loader"></div>
 
         <div id="pause-overlay" class="pause-overlay">
-            <button type="button" id="play-btn" data-action="play" class="toolbar-btn">
+            <button type="button" class="play-btn" id="play-btn" data-action="play" class="toolbar-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play">
                     <polygon points="6 3 20 12 6 21 6 3"/>
                 </svg>
@@ -348,7 +342,7 @@
                     <button type="button" id="infrastructure-btn" class="toolbar-btn" data-group="infrastructure">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-utility-pole-icon lucide-utility-pole"><path d="M12 2v20"/><path d="M2 5h20"/><path d="M3 3v2"/><path d="M7 3v2"/><path d="M17 3v2"/><path d="M21 3v2"/><path d="m19 5-7 7-7-7"/></svg>
                     </button>
-                    <button type="button" id="roads-btn" data-toolid="roads" class="toolbar-btn">
+                    <button type="button" id="roads-btn" class="toolbar-btn" data-group="roads">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-route">
                             <circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/>
                             <circle cx="18" cy="5" r="3"/>
@@ -372,6 +366,23 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="toolbar__container">
+                    <div class="toolbar__sub-container">
+                        <div class="toolbar__label">Nature</div>
+                        <div class="toolbar__buttons">
+                            <button type="button" id="nature-btn" class="toolbar-btn" data-group="nature">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trees">
+                                    <path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-2.1-5.2l.3-.3h.2a2.5 2.5 0 0 1 2-4l.4-.4a2 2 0 0 1 2.9-.2 1 1 0 0 0 1.4 0"/>
+                                    <path d="M14 10v.2A3 3 0 0 0 15.1 16H19a3 3 0 0 0 2.1-5.2l-.3-.3h-.2a2.5 2.5 0 0 0-2-4l-.4-.4a2 2 0 0 0-2.9-.2 1 1 0 0 1-1.4 0"/>
+                                    <path d="M12 22v-8"/>
+                                    <path d="M12 2v4"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
             <!-- End Building section -->
 
@@ -799,16 +810,19 @@
                                     <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                                 </svg>
                             </span>
-                            <div class="display-pop"></div>
+                            <div class="display-pop">0</div>
                         </article>
                         <article class="pop-box">
                             <span class="info-box pop-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
-                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                                </svg>
+                                <img src="/resources/textures/status/nofood.png" alt="Famished" class="famished-icon" style="width: 24px; height: 24px; object-fit: contain;">
                             </span>
-                            <div class="display-hunger-pop"></div>
+                            <div class="display-hunger-pop">0</div>
+                        </article>
+                        <article class="pop-box">
+                            <span class="info-box pop-icon">
+                                <img src="/resources/textures/status/no-work_colored.png" alt="Unemployed" class="unemployed-icon" style="width: 24px; height: 24px; object-fit: contain;">
+                            </span>
+                            <div class="display-unemployed-pop">0 (0%)</div>
                         </article>
                     </section>
 
@@ -848,22 +862,6 @@
                             </span>
                         </article>
                     </div>
-                    <div class="info-box food-traceability-box stats-buttons" id="food-traceability-btn">
-                        <article class="budget-box">
-                            <span class="budget-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wheat">
-                                    <path d="M2 22 16 8"/>
-                                    <path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                                    <path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 14l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                                    <path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 10l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                                    <path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/>
-                                    <path d="M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                                    <path d="M15.47 13.47 17 15l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                                    <path d="M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                                </svg>
-                            </span>
-                        </article>
-                    </div>
                     <div class="info-box city-map-box stats-buttons" id="city-map-btn">
                         <article class="budget-box">
                             <span class="budget-icon">
@@ -871,24 +869,29 @@
                             </span>
                         </article>
                     </div>
-                </section>
-
                     <!-- Game controls (pause/reset) -->
-                <section id="game-controls" class="game-controls">
-                    <button type="button" id="pause-btn" data-action="pause" class="game-control-btn" title="Pause">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause">
-                            <rect x="14" y="4" width="4" height="16" rx="1"/>
-                            <rect x="6" y="4" width="4" height="16" rx="1"/>
-                        </svg>
-                    </button>
-                    <button type="button" id="replay-btn" data-action="replay" class="game-control-btn" title="Reset">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" 
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
-                        class="lucide lucide-rotate-ccw-icon lucide-rotate-ccw">
-                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                        <path d="M3 3v5h5"/>
-                        </svg>
-                    </button>
+                    <div class="info-box game-control-box stats-buttons" id="pause-btn" data-action="pause" title="Pause" role="button" tabindex="0">
+                        <article class="budget-box">
+                            <span class="budget-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause">
+                                    <rect x="14" y="4" width="4" height="16" rx="1"/>
+                                    <rect x="6" y="4" width="4" height="16" rx="1"/>
+                                </svg>
+                            </span>
+                        </article>
+                    </div>
+                    <div class="info-box game-control-box stats-buttons" id="replay-btn" data-action="replay" title="Reset" role="button" tabindex="0">
+                        <article class="budget-box">
+                            <span class="budget-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" 
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+                                class="lucide lucide-rotate-ccw-icon lucide-rotate-ccw">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                <path d="M3 3v5h5"/>
+                                </svg>
+                            </span>
+                        </article>
+                    </div>
                 </section>
             </div>
         </section>
@@ -914,6 +917,12 @@
 <footer>
     <div class="footer-content">
         <span>Projet de Amaury Franssen - 2024 &copy; Tout droit réservé </span>
+        <div class="footer-links">
+            <a href="https://github.com/ExploryKod/Anoria-citybuilder" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://github.com/ExploryKod/Anoria-citybuilder/blob/main/src/mentions-legales.md" target="_blank" rel="noopener noreferrer">Mentions légales</a>
+            <a href="https://github.com/ExploryKod/Anoria-citybuilder/blob/main/src/politique-de-confidentialite.md" target="_blank" rel="noopener noreferrer">Politique de confidentialité</a>
+            <a href="https://github.com/ExploryKod/Anoria-citybuilder/blob/main/src/credits.md" target="_blank" rel="noopener noreferrer">Crédits</a>
+        </div>
     </div>
 </footer>
 
@@ -1734,6 +1743,25 @@
                 </button>
                 
                 <button 
+                    class="administrator-nav-btn" 
+                    id="admin-nav-food-traceability"
+                    data-section="food-traceability"
+                    title="Traçabilité Alimentaire"
+                    aria-label="Ouvrir la section Traçabilité Alimentaire">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wheat">
+                        <path d="M2 22 16 8"/>
+                        <path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                        <path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 14l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                        <path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 10l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                        <path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/>
+                        <path d="M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
+                        <path d="M15.47 13.47 17 15l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
+                        <path d="M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
+                    </svg>
+                    <span class="sr-only">Traçabilité Alimentaire</span>
+                </button>
+                
+                <button 
                     class="administrator-nav-btn report-btn" 
                     id="admin-nav-report"
                     data-section="report"
@@ -1855,6 +1883,17 @@
                                     </tr>
                                     <tr>
                                         <td class="indicator-col">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ship">
+                                                <path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"></path>
+                                                <path d="M21 21V2l-9 6-9-6v19"></path>
+                                            </svg>
+                                        </td>
+                                        <td class="label-col finances-row-label">Exportations</td>
+                                        <td class="last-year-col finances-value-positive" data-field="exportsLastYear" id="exports-last-year">0</td>
+                                        <td class="this-year-col finances-value-positive" data-field="exportsThisYear" id="exports-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up">
                                                 <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
                                                 <polyline points="16 7 22 7 22 13"/>
@@ -1921,6 +1960,17 @@
                                         <td class="label-col finances-row-label">Réparation</td>
                                         <td class="last-year-col finances-value-negative" data-field="repairsLastYear" id="repairs-last-year">0</td>
                                         <td class="this-year-col finances-value-negative" data-field="repairsThisYear" id="repairs-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ship">
+                                                <path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"></path>
+                                                <path d="M21 21V2l-9 6-9-6v19"></path>
+                                            </svg>
+                                        </td>
+                                        <td class="label-col finances-row-label">Importations</td>
+                                        <td class="last-year-col finances-value-negative" data-field="importsLastYear" id="imports-last-year">0</td>
+                                        <td class="this-year-col finances-value-negative" data-field="importsThisYear" id="imports-this-year">0</td>
                                     </tr>
                                     <tr>
                                         <td class="indicator-col">
@@ -2013,8 +2063,24 @@
                                 <h3 class="commerce-header-title">Gestion Commerciale</h3>
                             </div>
 
-                            <div class="commerce-goods-list" id="commerce-goods-list">
-                                <!-- Goods will be dynamically generated -->
+                            <!-- Commerce Tabs -->
+                            <div class="commerce-tabs">
+                                <button class="commerce-tab active" data-tab="products">📦 Produits</button>
+                                <button class="commerce-tab" data-tab="partners">🤝 Partenaires</button>
+                            </div>
+
+                            <!-- Products Tab -->
+                            <div class="commerce-tab-content active" id="commerce-products-tab">
+                                <div class="commerce-goods-list" id="commerce-goods-list">
+                                    <!-- Goods will be dynamically generated -->
+                                </div>
+                            </div>
+
+                            <!-- Partners Tab -->
+                            <div class="commerce-tab-content" id="commerce-partners-tab">
+                                <div class="commerce-partners-list" id="commerce-partners-list">
+                                    <!-- Partners will be dynamically generated -->
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2185,11 +2251,90 @@
                                 <div class="storage-loading">Chargement des moulins...</div>
                             </div>
                         </div>
+                </div>
+            </div>
+            
+            <!-- Food Traceability Section -->
+            <div class="administrator-section" id="admin-section-food-traceability">
+                <div class="administrator-section-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wheat">
+                        <path d="M2 22 16 8"/>
+                        <path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                        <path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 14l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                        <path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 10l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                        <path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/>
+                        <path d="M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
+                        <path d="M15.47 13.47 17 15l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
+                        <path d="M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
+                    </svg>
+                    Traçabilité Alimentaire
+                </div>
+                <div class="administrator-section-content">
+                    <div class="food-traceability-content">
+                        <!-- Tabs -->
+                        <div class="food-traceability-tabs">
+                            <button class="food-traceability-tab active" data-tab="details">📋 Détails</button>
+                            <button class="food-traceability-tab" data-tab="charts">📊 Graphiques</button>
+                        </div>
+                        
+                        <!-- Details Tab -->
+                        <div class="food-traceability-tab-content active" id="food-traceability-details-tab">
+                            <div class="food-traceability-filters">
+                                <button class="food-traceability-filter-btn active" data-period="all">Tout l'historique</button>
+                                <button class="food-traceability-filter-btn" data-period="7">7 derniers jours</button>
+                                <button class="food-traceability-filter-btn" data-period="30">30 derniers jours</button>
+                                <button class="food-traceability-filter-btn" data-period="60">60 derniers jours</button>
+                            </div>
+                            
+                            <div class="food-traceability-refresh-section">
+                                <button class="food-traceability-refresh-btn" id="food-traceability-refresh-btn">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
+                                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                                        <path d="M21 3v5h-5"/>
+                                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                                        <path d="M3 21v-5h5"/>
+                                    </svg>
+                                    Actualiser
+                                </button>
+                            </div>
+                            
+                            <div class="food-traceability-list" id="food-traceability-list">
+                                <div class="food-traceability-loading">
+                                    <div class="loading-spinner"></div>
+                                    <p>Chargement de la traçabilité...</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Charts Tab -->
+                        <div class="food-traceability-tab-content" id="food-traceability-charts-tab">
+                            <div class="food-charts-controls">
+                                <select id="food-charts-year-select" class="food-charts-select">
+                                    <option value="all">Toutes les années</option>
+                                </select>
+                                <button class="food-traceability-refresh-btn" id="food-charts-refresh-btn">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
+                                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                                        <path d="M21 3v5h-5"/>
+                                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                                        <path d="M3 21v-5h5"/>
+                                    </svg>
+                                    Actualiser
+                                </button>
+                            </div>
+                            <div class="food-stats-container" id="food-stats-container">
+                                <div class="food-stats-loading">
+                                    <div class="loading-spinner"></div>
+                                    <p>Chargement des statistiques...</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                
-                <!-- Report Section -->
-                <div class="administrator-section" id="admin-section-report">
+            </div>
+            
+            <!-- Report Section -->
+            <div class="administrator-section" id="admin-section-report">
                     <div class="administrator-section-title">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text">
                             <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>

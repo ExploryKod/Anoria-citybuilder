@@ -234,6 +234,9 @@ export function createScene(housesStore, gameStore, assetManager) {
     let delay = 0;
 
     async function initialize(city) {
+        // Store world platform before clearing scene
+        const worldPlatform = scene.getObjectByName('world-platform');
+        
         scene.clear();
         // Re-apply fog after clear
         try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
@@ -241,9 +244,48 @@ export function createScene(housesStore, gameStore, assetManager) {
         buildings = [];
         loadingPromises = [];
         
-        // Store city size for citizen pathfinding
+        // Store city size for citizen pathfinding and World platform scaling
+        const citySize = city && typeof city.size === 'number' ? city.size : 16;
         if (city && typeof city.size === 'number') {
             currentCitySize = city.size;
+        }
+        
+        // Re-add world platform if it existed, otherwise load it
+        // If it exists but city size changed, remove and reload with new size
+        if (worldPlatform) {
+            // Check if we need to rescale (city size might have changed)
+            const existingScale = worldPlatform.scale.x;
+            const expectedScale = (citySize + 2) / (existingScale > 0 ? 1 / existingScale : 1);
+            if (Math.abs(existingScale - expectedScale) > 0.1) {
+                // City size changed, remove old and reload
+                scene.remove(worldPlatform);
+                worldPlatform = null;
+            } else {
+                scene.add(worldPlatform);
+            }
+        }
+        
+        if (!worldPlatform) {
+            // Load world platform (base ground) first, before other assets
+            // Pass city size to scale the World platform accordingly
+            try {
+                await assetManager.loadWorldPlatform(scene, citySize);
+            } catch (error) {
+                console.warn('[Scene] Could not load world platform:', error);
+            }
+        }
+        
+        // Load boundary fences at north, south, east, west limits
+        // Remove existing fences if they exist (in case of scene reset)
+        const existingFenceGroup = scene.getObjectByName('boundary-fences');
+        if (existingFenceGroup) {
+            scene.remove(existingFenceGroup);
+        }
+        
+        try {
+            await assetManager.loadBoundaryFences(scene, citySize);
+        } catch (error) {
+            console.warn('[Scene] Could not load boundary fences:', error);
         }
         
         // Reset citizen state
@@ -329,6 +371,13 @@ export function createScene(housesStore, gameStore, assetManager) {
                 const zoneX = Math.floor(x / ZONE_SIZE);
                 const zoneY = Math.floor(y / ZONE_SIZE);
                 const zoneIndex = zoneX * Math.ceil(city.size / ZONE_SIZE) + zoneY;
+                
+                // For roads, ensure they are properly positioned above World platform
+                // and force matrix update to ensure visibility
+                if (terrainId === 'roads' && mesh.userData?.isRoad) {
+                    mesh.updateMatrixWorld(true);
+                }
+                
                 if (zoneGroups[zoneIndex]) {
                     zoneGroups[zoneIndex].add(mesh);
                 } else {
@@ -556,14 +605,14 @@ export function createScene(housesStore, gameStore, assetManager) {
                 // Vérifier si le bâtiment existe encore dans la base de données
                 // Si non, le supprimer de la scène (cas des événements aléatoires, etc.)
                 // IMPORTANT: Ne pas supprimer si un nouveau bâtiment est en cours de création (newBuildingId existe)
-                const isRoad = currentBuildingId === 'roads' || buildings[x][y]?.userData?.isRoad;
+                const isRoad = buildings[x][y]?.userData?.isRoad || (currentBuildingId && currentBuildingId.startsWith('StonePath-'));
                 const hasNewBuilding = newBuildingId && newBuildingId !== currentBuildingId;
                 
                 // FIX BUG 1: For roads, use city.tiles as source of truth
                 // If city.tiles doesn't have a road but terrain shows road material, restore to grass
                 // This prevents "ghost" roads from terrain material when payment failed
                 if (isRoad) {
-                    const tileHasRoad = city.tiles[x][y]?.buildingId === 'roads' || city.tiles[x][y]?.buildingId === 'Road';
+                    const tileHasRoad = city.tiles[x][y]?.buildingId && city.tiles[x][y].buildingId.startsWith('StonePath-');
                     if (!tileHasRoad) {
                         // Terrain shows road but city.tiles doesn't - this means payment failed or road was removed
                         // Restore terrain to grass
@@ -708,10 +757,12 @@ export function createScene(housesStore, gameStore, assetManager) {
                 //  Remove a building from the scene if a player remove a building
                 if(!newBuildingId && currentBuildingId) {
                     if(bulldozeSelected.classList.contains('selected') && currentBuildingId) {
+                        // Now roads follow the same pattern as houses: userData.type = meshName (e.g., 'StonePath-001')
+                        // So we can use currentBuildingId directly, just like for houses
                         const uniqueBuildingId = makeDbItemId(currentBuildingId, x, y);
                         if(houses.includes(currentBuildingId)) {
                             await housesStore.deleteOneHouse(uniqueBuildingId)
-                        } else if(currentBuildingId === 'roads') {
+                        } else if(currentBuildingId && currentBuildingId.startsWith('StonePath-')) {
                             // Roads are now stored in database like other buildings
                             await housesStore.deleteOneHouse(uniqueBuildingId)
                         } else {
@@ -1251,7 +1302,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                     // Check if house has food AND road access before allowing population growth (using module helpers, DB remains source of truth)
                     // Read stocks from IndexedDB (FoodDistributionService's updates are here)
                     const houseFoodStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks');
-                    const houseNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
+                    let houseNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
                     const currentPop = await housesStore.getHouseItem(currentUniqueID, 'pop');
                     const worldTime = await housesStore.getHouseItem(currentUniqueID, 'worldTime');
                     
@@ -1835,95 +1886,8 @@ export function createScene(housesStore, gameStore, assetManager) {
 
                   // if data model has changed as user add a new building, update the mesh 
             if(newBuildingId && (newBuildingId !== currentBuildingId)) {
-                // Special handling for roads: update terrain mesh AND add to buildings array for neighbor detection
-                if (newBuildingId === 'roads') {
-                    // Update terrain mesh material to show road texture
-                    if (terrain[x] && terrain[x][y]) {
-                        const terrainMesh = terrain[x][y];
-                        const sharedMaterials = assetManager.getSharedTerrainMaterials();
-                        if (sharedMaterials && sharedMaterials['roads']) {
-                            // Mettre à jour le matériau - utiliser directement le matériau partagé
-                            // Three.js peut partager le même matériau entre plusieurs meshes
-                            terrainMesh.material = sharedMaterials['roads'];
-                            terrainMesh.name = 'roads';
-                            terrainMesh.userData.id = 'roads';
-                            terrainMesh.userData.type = 'roads';
-                            terrainMesh.userData.x = x;
-                            terrainMesh.userData.y = y;
-                            terrainMesh.userData.isBuilding = false;
-                            terrainMesh.userData.isRoad = true; // Mark as road for easier detection
-                            
-                            // S'assurer que le mesh est visible
-                            terrainMesh.visible = true;
-                            
-                            // Forcer la mise à jour complète du mesh et du matériau
-                            if (terrainMesh.material) {
-                                terrainMesh.material.needsUpdate = true;
-                                // Forcer la mise à jour de la texture
-                                if (terrainMesh.material.map) {
-                                    terrainMesh.material.map.needsUpdate = true;
-                                }
-                            }
-                            
-                            // Forcer la mise à jour de la géométrie si nécessaire
-                            if (terrainMesh.geometry) {
-                                terrainMesh.geometry.attributesNeedUpdate = true;
-                            }
-                            
-                            // S'assurer que le parent du mesh est mis à jour
-                            if (terrainMesh.parent) {
-                                terrainMesh.parent.updateMatrixWorld(true);
-                            }
-                            
-                            // Debug: vérifier l'état du mesh
-                            console.log('[scene] Road material updated', {
-                                x, y,
-                                hasMaterial: !!terrainMesh.material,
-                                materialType: terrainMesh.material?.type,
-                                hasTexture: !!terrainMesh.material?.map,
-                                textureLoaded: terrainMesh.material?.map?.image?.complete,
-                                visible: terrainMesh.visible,
-                                inScene: terrainMesh.parent !== null,
-                                parentName: terrainMesh.parent?.name
-                            });
-                        } else {
-                            console.warn('[scene] Shared materials for roads not available', { x, y, sharedMaterials });
-                        }
-                    } else {
-                        console.warn('[scene] Terrain mesh not found for road placement', { x, y, terrainExists: !!terrain[x] });
-                    }
-                    // CRITICAL: Add terrain mesh to buildings array so it's detected as a neighbor
-                    // Roads need to be in buildings array for neighbor detection to work
-                    if (!buildings[x][y] && terrain[x] && terrain[x][y]) {
-                        buildings[x][y] = terrain[x][y];
-                    }
-                } else if (currentBuildingId === 'roads' || buildings[x][y]?.userData?.isRoad) {
-                    // FIX BUG 2: If removing a road, restore terrain to grass properly
-                    if (terrain[x] && terrain[x][y]) {
-                        const terrainMesh = terrain[x][y];
-                        const sharedMaterials = assetManager.getSharedTerrainMaterials();
-                        if (sharedMaterials && sharedMaterials['grass'] && terrainMesh.material) {
-                            terrainMesh.material = sharedMaterials['grass'];
-                            terrainMesh.name = 'grass';
-                            terrainMesh.userData.id = 'grass';
-                            terrainMesh.userData.type = 'grass';
-                            terrainMesh.userData.isRoad = false; // Clear road flag
-                            terrainMesh.userData.x = x;
-                            terrainMesh.userData.y = y;
-                            terrainMesh.userData.isBuilding = false;
-                            // Ensure mesh is visible and in scene
-                            terrainMesh.visible = true;
-                            // Force material update
-                            if (terrainMesh.material) {
-                                terrainMesh.material.needsUpdate = true;
-                            }
-                        }
-                    }
-                    // Remove from buildings array when road is removed
-                    if (buildings[x][y] === terrain[x][y]) {
-                        buildings[x][y] = undefined;
-                    }
-                }
+                // Roads are now 3D meshes (StonePath-001), they are created as buildings below
+                // Old terrain-based road code has been completely removed
                 
                 // Check if this is the origin tile for multi-tile buildings
                 // We only create a building at the origin (top-left) tile
@@ -1940,8 +1904,12 @@ export function createScene(housesStore, gameStore, assetManager) {
                     }
                 }
                 
-                // Only create the mesh if this is the origin tile (and it's not a road)
-                if (isOriginTile && newBuildingId !== 'roads') {
+                // Roads are now 3D meshes (StonePath-001), treat them like buildings
+                // Map 'roads' to 'StonePath-001' for asset creation
+                const assetId = (newBuildingId === 'roads') ? 'StonePath-001' : newBuildingId;
+                
+                // Only create the mesh if this is the origin tile
+                if (isOriginTile) {
                     //remove the initial building if needed
                     let isExistingBuilding;
                     if(currentBuildingId) {
@@ -1953,7 +1921,8 @@ export function createScene(housesStore, gameStore, assetManager) {
                         const interactiveGroupRef = scene.interactiveGroup || scene.getObjectByName('interactive-objects');
                         // Remove from both scene and interactive group
                         removeInteractiveObject(buildings[x][y]);
-                        buildings[x][y] = assetManager.createAsset(newBuildingId, x, y);
+                        // Use assetId (which maps roads to StonePath-001)
+                        buildings[x][y] = assetManager.createAsset(assetId, x, y);
                         // Add to appropriate zone group (NOT directly to scene)
                         const zoneX = Math.floor(x / ZONE_SIZE);
                         const zoneY = Math.floor(y / ZONE_SIZE);
@@ -1989,10 +1958,18 @@ export function createScene(housesStore, gameStore, assetManager) {
                 if (x >= 0 && x < city.size && y >= 0 && y < city.size) {
                     const buildingInScene = buildings[x] && buildings[x][y];
                     const buildingType = buildingInScene?.userData?.type;
+                    const buildingId = buildingInScene?.userData?.id;
                     const expectedId = makeDbItemId(house.type, x, y);
                     
+                    // For roads: check both userData.type ('roads') and userData.id (exact name like 'StonePath-001')
+                    // For other buildings: check if buildingType matches house.type
+                    const isRoad = house.type === 'roads' || house.type === 'Road' || (house.type && house.type.startsWith('StonePath-'));
+                    const typeMatches = isRoad 
+                        ? (buildingType === 'roads' && buildingId === house.type) || buildingType === house.type
+                        : buildingType === house.type;
+                    
                     // If no building in scene, or building type doesn't match, it's orphaned
-                    if (!buildingInScene || buildingType !== house.type) {
+                    if (!buildingInScene || !typeMatches) {
                         orphanedHouses.push(expectedId);
                     }
                 } else {
@@ -2103,7 +2080,11 @@ export function createScene(housesStore, gameStore, assetManager) {
                 const isFirstTurnOfMonth = timeInfo.dayInMonth === 1;
                 
                 // Pay salaries on first turn of each month (if not already paid this month)
+                // IMPORTANT: Mettre à jour lastSalaryMonth AVANT les opérations asynchrones pour éviter les doubles paiements
                 if (isFirstTurnOfMonth && currentMonth !== lastSalaryMonth) {
+                    // Marquer immédiatement que les salaires sont payés ce mois-ci pour éviter les doubles paiements
+                    lastSalaryMonth = currentMonth;
+                    
                     // Get salary from workSectionManager (default: 100€/mois)
                     let salaryPerMonth = 100; // Default fallback
                     if (window.workSectionManager && typeof window.workSectionManager.salary === 'number') {
@@ -2133,8 +2114,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                             const taxDescription = `Impôt sur les salaires - ${monthName} ${yearDisplay} (${Math.round(salaryTaxRate * 100)}%)`;
                             await window.budgetManager.addSalaryTax(totalSalaryAmount, salaryTaxRate, taxDescription);
                         }
-                        
-                        lastSalaryMonth = currentMonth;
                     }
                 }
                 
@@ -2252,6 +2231,60 @@ export function createScene(housesStore, gameStore, assetManager) {
         const currentPopulation = await housesStore.getGlobalPopulation();
         const famishedPopulation = await housesStore.getFamishedPopulation();
         
+        // Calculate unemployment (same logic as work-section.js)
+        let unemployedCount = 0;
+        let unemploymentPercentage = 0;
+        try {
+            // Get all buildings from IndexedDB
+            const allBuildings = await housesStore.listAllHouses();
+            
+            // Calculate available employees from houses (same logic as work-section.js)
+            let workerPopulation = 0;
+            let elitePopulation = 0;
+            for (const house of allBuildings) {
+                const type = house.type || '';
+                const pop = house.pop || 0;
+                
+                if (type.includes('House')) {
+                    // House-2Story (Palace): 1/6 becomes elite, 5/6 remain workers
+                    if (type.includes('2Story') || type.includes('2-Story')) {
+                        const elitesFromThisHouse = Math.floor(pop / 6);
+                        const workersFromThisHouse = pop - elitesFromThisHouse;
+                        elitePopulation += elitesFromThisHouse;
+                        workerPopulation += workersFromThisHouse;
+                    }
+                    // Other houses (Blue, Red, Purple): all population are workers
+                    else if (type.includes('Blue') || type.includes('Red') || type.includes('Purple')) {
+                        workerPopulation += pop;
+                    }
+                }
+            }
+            
+            // Calculate total assigned workers from all buildings
+            let totalAssignedWorkers = 0;
+            for (const building of allBuildings) {
+                if (!building.employees) continue;
+                const sector = building.employees.sector || 0;
+                // Skip residential (sector 0)
+                if (sector === 0) continue;
+                totalAssignedWorkers += building.employees.worker || 0;
+            }
+            
+            // Unemployed = available but not assigned
+            unemployedCount = Math.max(0, workerPopulation - totalAssignedWorkers);
+            
+            // Calculate unemployment percentage
+            if (workerPopulation > 0) {
+                unemploymentPercentage = Math.round((unemployedCount / workerPopulation) * 100);
+            } else {
+                unemploymentPercentage = 0;
+            }
+        } catch (error) {
+            console.warn('[scene.js] Error calculating unemployment:', error);
+            unemployedCount = 0;
+            unemploymentPercentage = 0;
+        }
+        
         // Manage multiple citizens based on current population state (from IndexedDB)
         const targetCitizenCount = Math.min(currentPopulation, MAX_CITIZENS);
         const currentCitizenCount = citizens.filter(c => c.spawned && c.character && c.character.visible).length;
@@ -2367,22 +2400,27 @@ export function createScene(housesStore, gameStore, assetManager) {
             funds = budgetData.funds;
         }
 
-        // Update population, famished population and funds display in general bar using GameUI
+        // Update population, famished population, unemployed population and funds display in general bar using GameUI
         // This ensures consistent UI updates (IndexedDB is source of truth)
         if (window.gameUI) {
             window.gameUI.updatePopulation(currentPopulation || 0);
             window.gameUI.updateFamishedPopulation(famishedPopulation || 0);
+            window.gameUI.updateUnemployedPopulation(unemployedCount, unemploymentPercentage);
             window.gameUI.updateFunds(funds);
         } else {
             // Fallback to direct DOM update if GameUI not available
             const displayPop = document.querySelector('.display-pop');
             const displayHungerPop = document.querySelector('.display-hunger-pop');
+            const displayUnemployedPop = document.querySelector('.display-unemployed-pop');
             const displayFunds = document.querySelector('.display-funds');
             if (displayPop) {
                 displayPop.textContent = (currentPopulation || 0).toString();
             }
             if (displayHungerPop) {
                 displayHungerPop.textContent = (famishedPopulation || 0).toString();
+            }
+            if (displayUnemployedPop) {
+                displayUnemployedPop.textContent = `${unemployedCount} (${unemploymentPercentage}%)`;
             }
             if (displayFunds) {
                 displayFunds.textContent = funds.toString();
@@ -2392,6 +2430,8 @@ export function createScene(housesStore, gameStore, assetManager) {
         console.log('[scene.js] Updated top bar display:', {
             population: currentPopulation,
             famishedPopulation: famishedPopulation,
+            unemployedCount,
+            unemploymentPercentage,
             funds,
             usingGameUI: !!window.gameUI
         });
@@ -4189,40 +4229,7 @@ function onTouchEnd(event) {
      * @param {number} x - X coordinate
      * @param {number} y - Y coordinate
      */
-    function updateRoadImmediate(x, y) {
-        if (!terrain[x] || !terrain[x][y]) return;
-        
-        const terrainMesh = terrain[x][y];
-        const sharedMaterials = assetManager.getSharedTerrainMaterials();
-        
-        if (sharedMaterials && sharedMaterials['roads']) {
-            // Update terrain mesh material to show road texture immediately
-            terrainMesh.material = sharedMaterials['roads'];
-            terrainMesh.name = 'roads';
-            terrainMesh.userData.id = 'roads';
-            terrainMesh.userData.type = 'roads';
-            terrainMesh.userData.x = x;
-            terrainMesh.userData.y = y;
-            terrainMesh.userData.isBuilding = false;
-            terrainMesh.userData.isRoad = true;
-            
-            // Ensure mesh is visible
-            terrainMesh.visible = true;
-            
-            // Force material update
-            if (terrainMesh.material) {
-                terrainMesh.material.needsUpdate = true;
-                if (terrainMesh.material.map) {
-                    terrainMesh.material.map.needsUpdate = true;
-                }
-            }
-            
-            // Add to buildings array for neighbor detection
-            if (!buildings[x][y]) {
-                buildings[x][y] = terrainMesh;
-            }
-        }
-    }
+    // updateRoadImmediate removed - roads are now 3D meshes created like other buildings
 
     // make the game know the object userData I selected (to reach x and y position of the object or its id from asset
     return {
@@ -4254,8 +4261,7 @@ function onTouchEnd(event) {
         // Expose pause/resume control for citizen characters
         pauseCitizen,
         resumeCitizen,
-        // Expose immediate road update for instant visual feedback
-        updateRoadImmediate
+        // updateRoadImmediate removed - roads are now 3D meshes
     }
 
     /**

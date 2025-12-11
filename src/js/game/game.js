@@ -47,11 +47,13 @@ let services = [];
         const { RandomEventsService } = await import('./services/RandomEventsService.js');
         const { EmploymentPriorityService } = await import('./services/EmploymentPriorityService.js');
         const { EmploymentDistributionService } = await import('./services/EmploymentDistributionService.js');
+        const { CommerceService } = await import('./services/CommerceService.js');
         
         services.push(new RoadConnectivityService());
         services.push(new FoodDistributionService()); // Farm > Market > House logic using IndexedDB
         services.push(new WindmillService()); // Windmill collects from all farms in October
         services.push(new RandomEventsService()); // Événements aléatoires (ouragan, inondation)
+        services.push(new CommerceService()); // Gestion des imports/exports
         
         // Employment Priority Service - manages sector priorities in localStorage
         // Priority is stored in localStorage (not IndexedDB) for instant updates
@@ -464,11 +466,11 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                           config?.simulation?.citySize || 
                           16;
     
-    // Enforce maximum size of 24 to prevent WebGL shader compilation errors
+    // Enforce maximum size of 18 to prevent WebGL shader compilation errors
     // Larger sizes cause BackgroundMaterial shader validation failures
     // In test mode, allow larger sizes to test detection
     const testMode = localStorage.getItem('webgl-test-mode');
-    const absoluteMaxSize = testMode ? 32 : 24; // Allow up to 32x32 in test mode
+    const absoluteMaxSize = testMode ? 24 : 18; // Allow up to 24x24 in test mode, 18x18 otherwise
     selectedCitySize = Math.max(12, Math.min(absoluteMaxSize, selectedCitySize));
     
     // City size adjustment is only done during initial selection in the modal
@@ -875,22 +877,94 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     // Check if windmill is currently collecting (set by WindmillService in October)
                     const isCollecting = windmillData?.isCollecting === true;
                     
-                    // Get last collection data
-                    const lastCollection = await housesStore.getHouseItem(uniqueId, 'lastCollection');
+                    // Get last collection data (peut ne pas exister)
+                    let lastCollection = null;
+                    try {
+                        lastCollection = await housesStore.getHouseItem(uniqueId, 'lastCollection');
+                    } catch (e) {
+                        // lastCollection n'existe pas encore, c'est normal
+                        lastCollection = null;
+                    }
                     
+                    // Get last import data (peut ne pas exister)
+                    let lastImport = null;
+                    try {
+                        lastImport = await housesStore.getHouseItem(uniqueId, 'lastImport');
+                    } catch (e) {
+                        // lastImport n'existe pas encore, c'est normal
+                        lastImport = null;
+                    }
+
+                    // Get last import details by partner (peut ne pas exister)
+                    let lastImportDetails = null;
+                    try {
+                        lastImportDetails = await housesStore.getHouseItem(uniqueId, 'lastImportDetails');
+                    } catch (e) {
+                        // lastImportDetails n'existe pas encore, c'est normal
+                        lastImportDetails = null;
+                    }
+
                     makeInfoSection('Stock moulin');
                     
-                    // Show stocks with last collection amounts
-                    const wheatSubtext = lastCollection?.wheat ? `+${lastCollection.wheat} dernière collecte` : null;
-                    const cabbageSubtext = lastCollection?.cabbage ? `+${lastCollection.cabbage} dernière collecte` : null;
-                    const carrotSubtext = lastCollection?.carrot ? `+${lastCollection.carrot} dernière collecte` : null;
-                    const totalSubtext = lastCollection?.total ? `+${lastCollection.total} dernière collecte` : null;
-                    
+                    // Show stocks with last collection and import amounts
+                    // Format: "+X dernière collecte, +Y paniers importés" (toujours afficher les deux, même si 0)
+                    // Toujours afficher "+0 dernière collecte" et "+0 paniers importés" pour que le joueur voie les deux sources
+                    const wheatCollectionAmount = lastCollection?.wheat || 0;
+                    const wheatCollectionText = `+${wheatCollectionAmount} dernière collecte`;
+                    const wheatImportAmount = lastImport?.wheat !== undefined ? lastImport.wheat : 0;
+                    const wheatImportText = `+${wheatImportAmount} paniers importés`;
+                    const wheatSubtext = `${wheatCollectionText}, ${wheatImportText}`;
+
+                    const cabbageCollectionAmount = lastCollection?.cabbage || 0;
+                    const cabbageCollectionText = `+${cabbageCollectionAmount} dernière collecte`;
+                    const cabbageImportAmount = lastImport?.cabbage !== undefined ? lastImport.cabbage : 0;
+                    const cabbageImportText = `+${cabbageImportAmount} paniers importés`;
+                    const cabbageSubtext = `${cabbageCollectionText}, ${cabbageImportText}`;
+
+                    const carrotCollectionAmount = lastCollection?.carrot || 0;
+                    const carrotCollectionText = `+${carrotCollectionAmount} dernière collecte`;
+                    const carrotImportAmount = lastImport?.carrot !== undefined ? lastImport.carrot : 0;
+                    const carrotImportText = `+${carrotImportAmount} paniers importés`;
+                    const carrotSubtext = `${carrotCollectionText}, ${carrotImportText}`;
+
+                    const dattesCollectionAmount = lastCollection?.dattes || 0;
+                    const dattesCollectionText = `+${dattesCollectionAmount} dernière collecte`;
+                    const dattesImportAmount = lastImport?.dattes !== undefined ? lastImport.dattes : 0;
+                    const dattesImportText = `+${dattesImportAmount} paniers importés`;
+                    const dattesSubtext = `${dattesCollectionText}, ${dattesImportText}`;
+
+                    const totalCollectionAmount = lastCollection?.total || 0;
+                    const totalCollectionText = `+${totalCollectionAmount} dernière collecte`;
+                    const totalImportAmount = lastImport?.total !== undefined ? lastImport.total : 0;
+                    const totalImportText = `+${totalImportAmount} paniers importés`;
+                    const totalSubtext = `${totalCollectionText}, ${totalImportText}`;
+
                     makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`, wheatSubtext);
-                    makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`, cabbageSubtext);
-                    makeInfoKeyValue('Autres légumes', `${houseStocks.carrot || 0} paniers`, carrotSubtext);
+                    makeInfoKeyValue('Chou', `${houseStocks.cabbage || 0} paniers`, cabbageSubtext);
+                    makeInfoKeyValue('Carotte', `${houseStocks.carrot || 0} paniers`, carrotSubtext);
+                    makeInfoKeyValue('Dattes', `${houseStocks.dattes || 0} paniers`, dattesSubtext);
                     makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers collectés`, totalSubtext);
-                    
+
+                    // Display imports by partner if any
+                    if (lastImportDetails && Object.keys(lastImportDetails).length > 0) {
+                        makeInfoSection('Imports par partenaire');
+
+                        const productNames = { wheat: 'Blé', carrot: 'Carotte', cabbage: 'Chou', dattes: 'Dattes' };
+
+                        for (const [productId, partners] of Object.entries(lastImportDetails)) {
+                            if (partners && partners.length > 0) {
+                                const productName = productNames[productId] || productId;
+                                partners.forEach(partnerInfo => {
+                                    makeInfoKeyValue(
+                                        `${productName}`,
+                                        `${partnerInfo.quantity} paniers`,
+                                        `depuis ${partnerInfo.partnerName}`
+                                    );
+                                });
+                            }
+                        }
+                    }
+
                     makeInfoSection('Approvisionnement');
                     if (hasRoadAccess) {
                         makeInfoKeyValue('Routes', '✅ Accès routier');
@@ -962,8 +1036,9 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 window.game.play()
             }
             await scene.update(city, time)
-        } else if(!tile.buildingId) {
+        } else if(!tile.buildingId || (activeToolId && (activeToolId === 'roads' || activeToolId === 'Road' || activeToolId.startsWith('StonePath-')) && (tile.buildingId === 'roads' || tile.buildingId === 'Road' || (tile.buildingId && tile.buildingId.startsWith('StonePath-'))))) {
             // PLACING A BUILDING - Ensure game is NOT paused
+            // Allow placement if tile is empty OR if placing a road on an existing road (replacement)
             // Close info overlay if it's open from a previous selection
             if (infoObjectOverlay.classList.contains('active')) {
                 infoObjectOverlay.classList.remove('active');
@@ -984,9 +1059,10 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
             // Check if area is available for this building
             const { x, y } = selectedObject.userData;
             // Special rule: roads can be placed on empty or existing road tiles without multi-tile checks
-            const isRoadTool = activeToolId === 'roads' || activeToolId === 'Road' || (activeToolId && activeToolId.toLowerCase() === 'roads');
+            const isRoadTool = activeToolId === 'roads' || activeToolId === 'Road' || (activeToolId && activeToolId.startsWith('StonePath-'));
             const targetTile = city.tiles?.[x]?.[y];
-            const canPlaceRoad = isRoadTool && (!targetTile?.buildingId || targetTile.buildingId === 'roads' || targetTile.buildingId === 'Road');
+            const isTargetRoad = targetTile?.buildingId === 'roads' || targetTile?.buildingId === 'Road' || (targetTile?.buildingId && targetTile.buildingId.startsWith('StonePath-'));
+            const canPlaceRoad = isRoadTool && (!targetTile?.buildingId || isTargetRoad);
             if (!canPlaceRoad && !isAreaAvailableForBuilding(city, x, y, gridSize)) {
                 showGenericErrorNotification(activeToolId, 'area_not_available');
                 return;
@@ -1022,18 +1098,17 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     return;
                 }
             
-                const houseStocks = await housesStore.getHouseItem(houseID, 'stocks');
-                const houseNeighbors = await housesStore.getHouseItem(houseID, 'neighbors');
-                const { roadCount } = checkRoadAccess(houseNeighbors || []);
-                const HouseRoads  = { roads: roadCount };
                 price = getAssetPrice(activeToolId, assetsPrices) || 0
                 
-                // Get funds from BudgetManager instead of game table
-                let funds = 0;
-                if (window.budgetManager) {
-                    const budgetData = await window.budgetManager.getCurrentBudget();
-                    funds = budgetData.funds;
-                }
+                const [houseStocks, houseNeighbors, budgetData] = await Promise.all([
+                    housesStore.getHouseItem(houseID, 'stocks'),
+                    housesStore.getHouseItem(houseID, 'neighbors'),
+                    window.budgetManager ? window.budgetManager.getCurrentBudget() : Promise.resolve({ funds: 0 })
+                ]);
+                
+                const { roadCount } = checkRoadAccess(houseNeighbors || []);
+                const HouseRoads  = { roads: roadCount };
+                const funds = budgetData.funds || 0;
                 
                 const dbHouseData = {
                     name: houseID,
@@ -1057,7 +1132,16 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 }
 
                 // Validate payment BEFORE placing building
+                // Debug: log road placement
+                if (activeToolId && (activeToolId.startsWith('StonePath-') || activeToolId === 'roads' || activeToolId === 'Road')) {
+                    console.log('[game.js] Placing road:', { activeToolId, houseID, dbHouseData });
+                }
                 const paymentResult = await housesStore.addHouseAndPay(dbHouseData);
+                
+                // Debug: log payment result for roads
+                if (activeToolId && (activeToolId.startsWith('StonePath-') || activeToolId === 'roads' || activeToolId === 'Road')) {
+                    console.log('[game.js] Road payment result:', paymentResult);
+                }
                 
                 // Handle duplicate building error gracefully
                 if (!paymentResult.success && paymentResult.reason === 'duplicate') {
@@ -1079,20 +1163,8 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     }
                 }
                 
-                // FIX: For roads, update visually immediately for instant feedback
-                // Then do full scene update asynchronously
-                const isRoadTool = activeToolId === 'roads' || activeToolId === 'Road' || (activeToolId && activeToolId.toLowerCase() === 'roads');
-                if (isRoadTool && scene.updateRoadImmediate) {
-                    // Update road visually immediately
-                    scene.updateRoadImmediate(x, y);
-                    // Do full scene update asynchronously (don't await - let it run in background)
-                    scene.update(city, time).catch(err => {
-                        console.warn('[game.js] Scene update error after road placement:', err);
-                    });
-                } else {
-                    // For other buildings, do normal update
-                    await scene.update(city, time);
-                }
+                // Update scene to place the building (roads are now 3D meshes like other buildings)
+                await scene.update(city, time);
                 
                 // Envoyer au serveur multijoueur si activé
                 if (window.multiplayerManager && window.multiplayerManager.isMultiplayer) {

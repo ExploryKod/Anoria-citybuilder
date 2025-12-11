@@ -21,6 +21,8 @@ db.delete({ disableAutoOpen: false })
         try {
             localStorage.removeItem('journal_year_end_balances');
             localStorage.removeItem('citizen_tax_amount');
+            localStorage.removeItem('commerce_config');
+            localStorage.removeItem('commerce_stats');
         } catch (error) {
             console.warn('[db.js] Error clearing localStorage:', error);
         }
