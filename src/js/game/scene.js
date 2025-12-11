@@ -1160,7 +1160,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                     // First, clean up ALL possible farm sprites to prevent any leftover sprites
                     const allFarmSpriteNames = ['no-food', 'grow-food', 'harvest', 'sell-food', 
                                                 'no-food-bg', 'grow-food-bg', 'harvest-bg', 'sell-food-bg',
-                                                'no-work', 'no-work-bg'];
+                                                'no-work', 'no-work-bg', 'sold-to-windmill', 'sold-to-windmill-bg'];
                     allFarmSpriteNames.forEach(spriteName => {
                         assetManager.removeStatusSprite(buildings[x][y], spriteName);
                     });
@@ -1313,6 +1313,44 @@ export function createScene(housesStore, gameStore, assetManager) {
                             spriteColor, // Color (red for winter, null for others to keep original colors)
                             backgroundColor // Pastel colored circular background for season sprites (null for winter)
                         );
+                    }
+                    
+                    // In December, show additional sprite if farm sold to windmill
+                    // This sprite appears alongside the winter season sprite to indicate windmill collection
+                    if (buildings[x][y] && season === 'Hiver' && timeInfo.monthIndex === 11) {
+                        const soldToWindmill = await housesStore.getHouseItem(currentUniqueID, 'soldToWindmill');
+                        if (soldToWindmill === true) {
+                            // Show windmill collection sprite (green, similar to windmill's isCollecting)
+                            // Position it differently from the season sprite to avoid overlap
+                            const windmillSaleMeta = {
+                                position: {x: 0.5, y: 0.5, z: 0}, // Different position from season sprite (top-right)
+                                scale: {x: 0.5, y: 0.5, z: 1},
+                                spriteColor: 0x00FF00, // Green color
+                                backgroundColor: 0xFFFFFF // White background
+                            };
+                            assetManager.setStatusSprite(
+                                buildings[x][y],
+                                textures['isCollecting'], // Reuse windmill collecting icon
+                                'sold-to-windmill',
+                                windmillSaleMeta.scale,
+                                windmillSaleMeta.position,
+                                true,
+                                windmillSaleMeta.spriteColor,
+                                windmillSaleMeta.backgroundColor
+                            );
+                        } else {
+                            // Hide the sprite if not sold to windmill
+                            assetManager.setStatusSprite(
+                                buildings[x][y],
+                                textures['isCollecting'],
+                                'sold-to-windmill',
+                                {x: 0.5, y: 0.5, z: 1},
+                                {x: 0.5, y: 0.5, z: 0},
+                                false,
+                                null,
+                                null
+                            );
+                        }
                     }
                 }
 
