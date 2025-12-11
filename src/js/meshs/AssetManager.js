@@ -341,7 +341,8 @@ class AssetManager extends MeshLoader {
                     side: THREE.FrontSide
                 }),
                 'grass': new THREE.MeshLambertMaterial({
-                    map: textures['grass'],
+                    // map: textures['grass'],  // Texture commented out - using solid color instead
+                    color: 0x6DB973,  // Match world platform color #6DB973
                     transparent: false,
                     side: THREE.FrontSide
                 }),
@@ -399,7 +400,7 @@ class AssetManager extends MeshLoader {
                 mesh.userData = { id: buildingId, x, y, isBuilding: false, time: 0 };
                 mesh.scale.set(1, 1, 1);
                 // Grass terrain below the World platform
-                mesh.position.set(x, -0.5, y);
+                mesh.position.set(x, worldPlatformHeight - 0.48, y);
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
                 break;
@@ -411,7 +412,7 @@ class AssetManager extends MeshLoader {
                 mesh.userData = { id: buildingId, x, y, isBuilding: false, isPlaceholder: true, time: 0 };
                 mesh.scale.set(1, 1, 1);
                 // Terrain below the World platform
-                mesh.position.set(x, -0.5, y);
+                mesh.position.set(x, worldPlatformHeight - 0.4, y);
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
                 break;
@@ -623,7 +624,7 @@ class AssetManager extends MeshLoader {
                             
                             // Log final state
                             const bbox = new THREE.Box3().setFromObject(worldMesh);
-                            console.log('[AssetManager] World platform loaded and added to scene:', {
+                            console.info('[AssetManager] World platform loaded and added to scene:', {
                                 position: worldMesh.position,
                                 rotation: worldMesh.rotation,
                                 scale: worldMesh.scale,
