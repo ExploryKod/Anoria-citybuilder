@@ -522,10 +522,25 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
         }
         // Object placed on terrain
         if(activeToolId === 'bulldoze') {
+            // Debug: Log what we're trying to remove
+            console.log('[game.js] Bulldoze click:', {
+                selectedObjectName: selectedObject.name,
+                selectedObjectUserData: selectedObject.userData,
+                tileBuildingId: tile.buildingId,
+                x, y
+            });
+            
             // Find the building at this location and its size
             const buildingId = tile.buildingId;
             const buildingInfo = buildingId ? assetsPrices[buildingId] : null;
             const gridSize = buildingInfo?.gridSize || 1;
+            
+            // Debug: Log building info
+            console.log('[game.js] Building to remove:', {
+                buildingId,
+                buildingInfo,
+                gridSize
+            });
             
             // Remove building from all tiles it occupies
             for (let dx = 0; dx < gridSize; dx++) {

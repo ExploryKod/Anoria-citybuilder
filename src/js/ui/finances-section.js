@@ -95,9 +95,17 @@ class FinancesSectionManager {
             // Obtenir les données annuelles depuis le journal
             const yearlyData = await this.journalManager.getYearlyFinancialSummary();
             
-            // Le solde est déjà calculé dans yearlyData pour chaque année
-            // Pour l'année en cours, on utilise getCurrentBalance() qui calcule depuis toutes les entrées
-            const currentBalance = await this.journalManager.getCurrentBalance();
+            // IMPORTANT: Use budgetManager.getCurrentBudget().funds as source of truth for current balance
+            // This ensures consistency with display-funds (info-box)
+            // The journal is used for historical data, but current balance comes from budgetManager
+            let currentBalance = 0;
+            if (window.budgetManager) {
+                const currentBudget = await window.budgetManager.getCurrentBudget();
+                currentBalance = currentBudget.funds || 0;
+            } else {
+                // Fallback to journal calculation if budgetManager not available
+                currentBalance = await this.journalManager.getCurrentBalance();
+            }
             
             this.financialData = this.processFinancialData(currentBalance, yearlyData, currentYear);
             this.render();
@@ -112,10 +120,13 @@ class FinancesSectionManager {
         const thisYearData = yearlyData.find(y => y.year === currentYear) || this.getEmptyYearData(currentYear);
         const lastYearData = yearlyData.find(y => y.year === currentYear - 1) || this.getEmptyYearData(currentYear - 1);
         
-        // Pour chaque année, utiliser le solde de l'année (netFlow = revenus - dépenses)
-        // Le netFlow est calculé par getYearlyFinancialSummary() et représente le solde de l'année
-        const thisYearBalance = thisYearData.netFlow !== undefined ? thisYearData.netFlow : 0; // Solde de l'année en cours (revenus - dépenses)
-        const lastYearBalance = lastYearData.netFlow !== undefined ? lastYearData.netFlow : 0; // Solde de l'année dernière (revenus - dépenses)
+        // Pour l'année dernière, utiliser le netFlow (flux net de l'année)
+        const lastYearBalance = lastYearData.netFlow !== undefined ? lastYearData.netFlow : 0;
+        
+        // IMPORTANT: Pour l'année en cours, utiliser le solde total actuel (currentBalance)
+        // qui vient de budgetManager.getCurrentBudget().funds (source de vérité)
+        // Cela garantit la cohérence avec display-funds (info-box)
+        const thisYearBalance = currentBalance; // Solde total actuel, pas juste le flux net de l'année
         
         const thisYear = this.mapJournalDataToUI(thisYearData, thisYearBalance);
         const lastYear = this.mapJournalDataToUI(lastYearData, lastYearBalance);
