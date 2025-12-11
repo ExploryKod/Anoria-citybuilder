@@ -297,8 +297,8 @@ class AssetManager extends MeshLoader {
         
         object3D.userData = {
             id: meshName, 
-            type: isRoad ? 'roads' : meshName,  // Use 'roads' as type for StonePath for compatibility with road logic
-            name: isRoad ? 'roads' : meshName,  // Also in userData for consistency
+            type: meshName,  // Use exact meshName for all buildings (including roads) - matches city.tiles.buildingId pattern
+            name: meshName,  // Also in userData for consistency
             isBuilding: true,  // Keep as building for visibility/rendering
             isRoad: isRoad,  // Mark roads for road logic detection 
             x, 
@@ -643,6 +643,180 @@ class AssetManager extends MeshLoader {
                 undefined,
                 (error) => {
                     console.error('[AssetManager] Error loading world platform:', error);
+                    reject(error);
+                }
+            );
+        });
+    }
+
+    /**
+     * Load and position fences at the scene boundaries (north, south, east, west)
+     * @param {THREE.Scene} scene - The Three.js scene
+     * @param {number} citySize - The size of the city (boundaries will be at 0 and citySize)
+     * @returns {Promise<void>}
+     */
+    async loadBoundaryFences(scene, citySize = 16) {
+        return new Promise((resolve, reject) => {
+            const gltfloader = new GLTFLoader();
+            const dracoLoader = new DRACOLoader();
+            dracoLoader.setDecoderPath('/examples/jsm/libs/draco/');
+            gltfloader.setDRACOLoader(dracoLoader);
+
+            const modelPath = `./resources/lowpoly/village_town_assets_v2.glb`;
+            
+            gltfloader.load(
+                modelPath,
+                (gltf) => {
+                    // Find fence models in the GLB file
+                    // Common fence names might be: Fence, Fence-001, Fence_001, etc.
+                    const fenceModels = [];
+                    
+                    gltf.scene.traverse((child) => {
+                        if (child instanceof THREE.Mesh) {
+                            const name = child.name.toLowerCase();
+                            // Check if this is a fence model (handle various naming conventions)
+                            // Common patterns: "fence", "Fence", "Fence_001", "Fence-001", etc.
+                            if (name.includes('fence') || name.includes('barrier') || name.includes('wall')) {
+                                fenceModels.push(child);
+                            }
+                        }
+                    });
+
+                    if (fenceModels.length === 0) {
+                        console.warn('[AssetManager] No fence models found in GLB file');
+                        resolve();
+                        return;
+                    }
+
+                    // Use the first fence model found (or you can use a specific one)
+                    const fenceTemplate = fenceModels[0];
+                    
+                    // Get fence bounding box to determine its size
+                    const fenceBbox = new THREE.Box3().setFromObject(fenceTemplate);
+                    const fenceLength = Math.max(
+                        fenceBbox.max.x - fenceBbox.min.x,
+                        fenceBbox.max.z - fenceBbox.min.z
+                    );
+
+                    // Calculate how many fence segments we need for each side
+                    // Each fence segment should be approximately 1 unit (1 tile)
+                    const fenceSegmentLength = fenceLength > 0 ? fenceLength : 1;
+                    const fenceSpacing = 2; // Spacing between fence segments (in units/tiles)
+                    const segmentWithSpacing = fenceSegmentLength + fenceSpacing;
+                    const segmentsPerSide = Math.ceil(citySize / segmentWithSpacing);
+
+                    // Position offset: place fences at the terrain boundaries
+                    // Terrain boundaries are from 0 to citySize (buildable area)
+                    // Place fences slightly outside (0.1 units) to mark the boundary clearly
+                    const boundaryOffset = 0.1;
+                    const fenceHeight = 0.5; // Height above ground (adjust as needed)
+
+                    // Create a group for all fences
+                    const fenceGroup = new THREE.Group();
+                    fenceGroup.name = 'boundary-fences';
+
+                    // Base rotation for fences - try different combinations to find what works
+                    // The fence model might be oriented differently than expected
+                    // Try: X=90° (rotate horizontal to vertical), Z=0° (no Z rotation)
+                    const baseRotationX = THREE.MathUtils.degToRad(90);
+                    const baseRotationZ = THREE.MathUtils.degToRad(0);
+                    
+                    // Individual Y rotations for each side to ensure proper orientation around perimeter
+                    // North fence: runs along X-axis, faces north (positive Z)
+                    const northRotationY = THREE.MathUtils.degToRad(0);
+                    
+                    // South fence: runs along X-axis, faces south (negative Z) - rotated 180° from north
+                    const southRotationY = THREE.MathUtils.degToRad(180);
+                    
+                    // East fence: runs along Z-axis, faces east (positive X) - rotated 90° from north
+                    const eastRotationY = THREE.MathUtils.degToRad(90);
+                    
+                    // West fence: runs along Z-axis, faces west (negative X) - rotated -90° from north
+                    const westRotationY = THREE.MathUtils.degToRad(-90);
+
+                    // North fence (z = citySize) - runs along x-axis from 0 to citySize
+                    for (let i = 0; i < segmentsPerSide; i++) {
+                        const fence = fenceTemplate.clone();
+                        fence.rotation.set(baseRotationX, northRotationY, baseRotationZ);
+                        const xPos = (i * segmentWithSpacing) + (fenceSegmentLength / 2);
+                        // Clamp to ensure we don't go beyond citySize
+                        if (xPos <= citySize) {
+                            fence.position.set(xPos, fenceHeight, citySize + boundaryOffset);
+                            fence.userData = {
+                                isBoundaryFence: true,
+                                nonInteractive: true,
+                                side: 'north'
+                            };
+                            fenceGroup.add(fence);
+                        }
+                    }
+
+                    // South fence (z = 0) - runs along x-axis from 0 to citySize
+                    for (let i = 0; i < segmentsPerSide; i++) {
+                        const fence = fenceTemplate.clone();
+                        fence.rotation.set(baseRotationX, southRotationY, baseRotationZ);
+                        const xPos = (i * segmentWithSpacing) + (fenceSegmentLength / 2);
+                        // Clamp to ensure we don't go beyond citySize
+                        if (xPos <= citySize) {
+                            fence.position.set(xPos, fenceHeight, 0 - boundaryOffset);
+                            fence.userData = {
+                                isBoundaryFence: true,
+                                nonInteractive: true,
+                                side: 'south'
+                            };
+                            fenceGroup.add(fence);
+                        }
+                    }
+
+                    // East fence (x = citySize) - runs along z-axis from 0 to citySize
+                    for (let i = 0; i < segmentsPerSide; i++) {
+                        const fence = fenceTemplate.clone();
+                        fence.rotation.set(baseRotationX, eastRotationY, baseRotationZ);
+                        const zPos = (i * segmentWithSpacing) + (fenceSegmentLength / 2);
+                        // Clamp to ensure we don't go beyond citySize
+                        if (zPos <= citySize) {
+                            fence.position.set(citySize + boundaryOffset, fenceHeight, zPos);
+                            fence.userData = {
+                                isBoundaryFence: true,
+                                nonInteractive: true,
+                                side: 'east'
+                            };
+                            fenceGroup.add(fence);
+                        }
+                    }
+
+                    // West fence (x = 0) - runs along z-axis from 0 to citySize
+                    for (let i = 0; i < segmentsPerSide; i++) {
+                        const fence = fenceTemplate.clone();
+                        fence.rotation.set(baseRotationX, westRotationY, baseRotationZ);
+                        const zPos = (i * segmentWithSpacing) + (fenceSegmentLength / 2);
+                        // Clamp to ensure we don't go beyond citySize
+                        if (zPos <= citySize) {
+                            fence.position.set(0 - boundaryOffset, fenceHeight, zPos);
+                            fence.userData = {
+                                isBoundaryFence: true,
+                                nonInteractive: true,
+                                side: 'west'
+                            };
+                            fenceGroup.add(fence);
+                        }
+                    }
+
+                    // Add fence group to scene
+                    scene.add(fenceGroup);
+
+                    console.log('[AssetManager] Boundary fences loaded:', {
+                        fenceModel: fenceTemplate.name,
+                        segmentsPerSide,
+                        citySize,
+                        totalFences: fenceGroup.children.length
+                    });
+
+                    resolve();
+                },
+                undefined,
+                (error) => {
+                    console.error('[AssetManager] Error loading boundary fences:', error);
                     reject(error);
                 }
             );
