@@ -27,6 +27,8 @@ import { setRoadAccessIcon } from './modules/StatusIconHelper.js';
 import { getDefaultEmployees } from './modules/EmployeeHelper.js';
 import { TimeManager } from './utils/TimeManager.js';
 import config from './config.js';
+import { LightingManager } from './managers/LightingManager.js';
+import { BackdropManager } from './managers/BackdropManager.js';
 
 const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
 
@@ -58,24 +60,13 @@ export function createScene(housesStore, gameStore, assetManager) {
     // Subtle atmospheric fog to blend far terrain and sky (tuned to match background)
     try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
     
+    // Initialize managers
+    const lightingManager = new LightingManager(scene);
+    const backdropManager = new BackdropManager(scene);
+    
     // Use simple scene background with sky texture - this ensures sky covers everything
     // The backdrop (distant ground) will be positioned to match World platform exactly
-    let skyLoader = new THREE.TextureLoader();
-    skyLoader.load(
-        // URL of the image
-        SKY_URL,
-        function (texture) {
-            // Set the scene's background to the loaded texture
-            // This will cover the entire viewport, including horizon
-            scene.background = texture;
-        },
-        undefined,
-        function (error) {
-            // Fallback if texture fails to load
-            console.warn('[Scene] Sky texture failed to load:', error);
-            scene.background = new THREE.Color(0x87CEEB); // Sky blue fallback
-        }
-    );
+    backdropManager.initializeSky();
 
     const camera = createCamera(gameWindow);
     const renderer = new THREE.WebGLRenderer();
@@ -260,18 +251,7 @@ export function createScene(housesStore, gameStore, assetManager) {
         try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
         
         // Re-apply sky background
-        let skyLoader = new THREE.TextureLoader();
-        skyLoader.load(
-            SKY_URL,
-            function (texture) {
-                scene.background = texture;
-            },
-            undefined,
-            function (error) {
-                console.warn('[Scene] Sky texture failed to load:', error);
-                scene.background = new THREE.Color(0x87CEEB);
-            }
-        );
+        backdropManager.initializeSky();
         terrain = [];
         buildings = [];
         loadingPromises = [];
@@ -424,7 +404,7 @@ export function createScene(housesStore, gameStore, assetManager) {
         
         // CRITICAL FIX: Set up lights ONCE after terrain is created, not in the loop
         // Previously this was called 16 times for a 16×16 city, creating 80 lights!
-        setUpLights(city.size);
+        lightingManager.setUpLights(city.size);
         
         // OPTIMIZATION: Defer DOM updates to reduce main-thread work
         // Use requestIdleCallback or setTimeout to defer non-critical DOM operations
@@ -2549,97 +2529,7 @@ export function createScene(housesStore, gameStore, assetManager) {
 
     }
 
-    /**
-     * Sets up lighting and shadows for the scene
-     * Inspired by simcity-threejs-clone's explicit lighting pattern
-     * @param {number} citySize - Size of the city (used for dynamic intensity scaling)
-     */
-    function setUpLights(citySize) {
-        // CRITICAL FIX: Remove existing lights before adding new ones
-        // This prevents light accumulation when reinitializing the scene
-        const lightsToRemove = [];
-        scene.traverse((child) => {
-            if (child instanceof THREE.Light) {
-                lightsToRemove.push(child);
-            }
-        });
-        lightsToRemove.forEach(light => {
-            scene.remove(light);
-            // Dispose of shadow maps to free GPU memory
-            if (light.shadow && light.shadow.map) {
-                light.shadow.map.dispose();
-            }
-        });
-
-        // Calculate dynamic light intensity based on city size (Anoria-specific)
-        // Use the derived formula for light intensity
-        const b = Math.log10(0.1) / Math.log10(2); // Exponent
-        const a = 0.03 / Math.pow(16, b); // Coefficient
-        const c = 0.05 / Math.pow(16, b);
-        let AmbientLightIntensity = a * Math.pow(citySize, b);
-        let DirectionalLightIntensity = c * Math.pow(citySize, b);
-        
-        // BRIGHTNESS FIX: Compensate for the fact that lights were previously multiplied 16x
-        // Before optimization: setUpLights() was called 16 times = 16x ambient + 48x directional + 16x hemisphere
-        // Now: Only called once = 1x ambient + 3x directional + 1x hemisphere
-        // We need to multiply intensities to match the original brightness
-        // Approximate compensation factor: multiply by ~16 for ambient, ~16 for directional
-        // But we'll use a more conservative factor to avoid over-brightening
-        const brightnessCompensation = citySize; // Use city size as multiplier (16 for 16×16 city)
-        AmbientLightIntensity *= brightnessCompensation;
-        DirectionalLightIntensity *= brightnessCompensation;
-
-        // OPTIMIZED LIGHTING SETUP - Only 5 lights total (was 80+ before!)
-        // Setup ambient light (base illumination) - compensated intensity
-        const ambientLight = new THREE.AmbientLight(0xffffff, AmbientLightIntensity);
-        scene.add(ambientLight);
-
-        // Setup THREE directional lights - all with 0x999999 color (original Anoria)
-        // First light has shadows, others don't - compensated intensity
-        const dirLight1 = new THREE.DirectionalLight(0x999999, DirectionalLightIntensity);
-        dirLight1.position.set(0, 1, 0);
-        dirLight1.castShadow = config.rendering.shadows.enabled;
-
-        // Configure shadows for first directional light (dynamic resolution based on city size)
-        if (dirLight1.castShadow) {
-            dirLight1.shadow.camera.left = -10;
-            dirLight1.shadow.camera.right = 10;
-            dirLight1.shadow.camera.top = 0;
-            dirLight1.shadow.camera.bottom = -10;
-            // Dynamic shadow map resolution based on city size
-            // Smaller cities = lower resolution, larger cities = higher resolution
-            // This balances quality and performance
-            const shadowMapSize = citySize <= 12 ? 256 : citySize <= 16 ? 512 : 1024;
-            dirLight1.shadow.mapSize.width = shadowMapSize;
-            dirLight1.shadow.mapSize.height = shadowMapSize;
-            dirLight1.shadow.camera.near = 0.5;
-            dirLight1.shadow.camera.far = 50;
-            
-            // Store reference to light for dynamic resolution updates
-            scene.userData.shadowLight = dirLight1;
-            scene.userData.shadowMapBaseSize = shadowMapSize;
-        }
-
-        scene.add(dirLight1);
-
-        // Second directional light (no shadows) - compensated intensity
-        const dirLight2 = new THREE.DirectionalLight(0x999999, DirectionalLightIntensity);
-        dirLight2.position.set(0, 1, 0);
-        scene.add(dirLight2);
-
-        // Third directional light (no shadows) - compensated intensity
-        const dirLight3 = new THREE.DirectionalLight(0x999999, DirectionalLightIntensity);
-        dirLight3.position.set(0, 1, 0);
-        scene.add(dirLight3);
-
-        // Hemisphere light for atmospheric illumination - increased intensity to compensate
-        const hemiLightIntensity = 0.1 * brightnessCompensation; // Scale hemisphere light too
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, hemiLightIntensity);
-        hemiLight.position.set(0, 50, 0);
-        scene.add(hemiLight);
-    }
-
-    // Note: setupShadowRenderer() removed - using original inline setup for exact brightness match
+    // Note: setUpLights() moved to LightingManager
 
     /**
      * Checks if a tile at (x, y) is a road
@@ -3898,9 +3788,6 @@ export function createScene(housesStore, gameStore, assetManager) {
         renderer.setAnimationLoop(null);
     }
 
-    // Shared backdrop materials - created once and reused to reduce texture units
-    let sharedBackdropMaterials = null;
-    
     // Create decorative village around the playable area
     function createDecorativeVillage(citySize = 16) {
         // Remove existing decorative village if it exists
@@ -4262,65 +4149,7 @@ export function createScene(housesStore, gameStore, assetManager) {
         console.log(`[Scene] Created decorative village with ${decorativeElements.length} elements`);
     }
     
-    // Add a distant ground plane aligned exactly with World platform (sharp cutoff with sky)
-    function addBackdrop(citySize = 16) {
-        // Avoid duplicating if reinitializing
-        const existingBase = scene.getObjectByName('infinite-ground-base');
-        const existingRing = scene.getObjectByName('infinite-ground-ring');
-        if (existingBase && existingRing) return;
-        
-        // Calculate World platform size to match exactly
-        // Same calculation as in AssetManager.loadWorldPlatform
-        const margin = Math.max(citySize * 0.5, 20); // Large margin: 50% of city size or minimum 20 units
-        const worldPlatformSize = citySize + (margin * 2); // margin on each side
-        const cityCenter = citySize / 2;
-        
-        // Create shared backdrop materials once with solid color
-        if (!sharedBackdropMaterials) {
-            sharedBackdropMaterials = {
-                base: new THREE.MeshLambertMaterial({
-                    color: 0x6DB973,
-                    fog: true
-                }),
-                ring: new THREE.MeshLambertMaterial({
-                    color: 0x6DB973,
-                    fog: true,
-                    depthWrite: true
-                })
-            };
-        }
-        
-        // Base ground plane - exact same size as World platform for sharp cutoff with sky
-        try {
-            const baseGeo = new THREE.PlaneGeometry(worldPlatformSize, worldPlatformSize, 1, 1);
-            const base = new THREE.Mesh(baseGeo, sharedBackdropMaterials.base);
-            base.rotation.x = -Math.PI / 2;
-            base.position.y = -0.02;
-            base.position.x = cityCenter; // Center at city center, matching World platform exactly
-            base.position.z = cityCenter;
-            base.receiveShadow = true;
-            base.name = 'infinite-ground-base';
-            base.renderOrder = -10;
-            scene.add(base);
-        } catch (_) {}
-
-        // Large background plane behind the base to prevent visible edges when zooming/panning
-        // This is positioned slightly lower and much larger, but won't be visible due to render order
-        try {
-            const largeBackdropSize = Math.max(worldPlatformSize * 20, 5000); // Very large to fill view
-            const largeGeo = new THREE.PlaneGeometry(largeBackdropSize, largeBackdropSize, 1, 1);
-            const largeBackdrop = new THREE.Mesh(largeGeo, sharedBackdropMaterials.ring);
-            largeBackdrop.rotation.x = -Math.PI / 2;
-            largeBackdrop.position.y = -0.03; // Slightly lower than base
-            largeBackdrop.position.x = cityCenter;
-            largeBackdrop.position.z = cityCenter;
-            largeBackdrop.receiveShadow = true;
-            largeBackdrop.name = 'infinite-ground-large';
-            largeBackdrop.renderOrder = -11; // Render behind the base
-            largeBackdrop.frustumCulled = false; // Always render
-            scene.add(largeBackdrop);
-        } catch (_) {}
-    }
+    // Note: addBackdrop() moved to BackdropManager
 
     let hoveredObject = null
     let hoveredObjectName = null
