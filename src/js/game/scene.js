@@ -612,7 +612,9 @@ export function createScene(housesStore, gameStore, assetManager) {
                 // If city.tiles doesn't have a road but terrain shows road material, restore to grass
                 // This prevents "ghost" roads from terrain material when payment failed
                 if (isRoad) {
-                    const tileHasRoad = city.tiles[x][y]?.buildingId && city.tiles[x][y].buildingId.startsWith('StonePath-');
+                    const tileHasRoad = city.tiles[x][y]?.buildingId && 
+                                       (city.tiles[x][y].buildingId.startsWith('StonePath-') || 
+                                        city.tiles[x][y].buildingId === 'roads');
                     if (!tileHasRoad) {
                         // Terrain shows road but city.tiles doesn't - this means payment failed or road was removed
                         // Restore terrain to grass
@@ -757,20 +759,44 @@ export function createScene(housesStore, gameStore, assetManager) {
                 //  Remove a building from the scene if a player remove a building
                 if(!newBuildingId && currentBuildingId) {
                     if(bulldozeSelected.classList.contains('selected') && currentBuildingId) {
-                        // Now roads follow the same pattern as houses: userData.type = meshName (e.g., 'StonePath-001')
-                        // So we can use currentBuildingId directly, just like for houses
-                        const uniqueBuildingId = makeDbItemId(currentBuildingId, x, y);
-                        if(houses.includes(currentBuildingId)) {
-                            await housesStore.deleteOneHouse(uniqueBuildingId)
-                        } else if(currentBuildingId && currentBuildingId.startsWith('StonePath-')) {
-                            // Roads are now stored in database like other buildings
-                            await housesStore.deleteOneHouse(uniqueBuildingId)
+                        // Handle geometry-based roads ('roads') - restore terrain to grass
+                        if (currentBuildingId === 'roads') {
+                            const uniqueBuildingId = makeDbItemId(currentBuildingId, x, y);
+                            await housesStore.deleteOneHouse(uniqueBuildingId);
+                            // Restore terrain mesh to grass
+                            if (terrain[x] && terrain[x][y]) {
+                                const terrainMesh = terrain[x][y];
+                                const sharedMaterials = assetManager.getSharedTerrainMaterials();
+                                if (sharedMaterials && sharedMaterials['grass']) {
+                                    terrainMesh.material = sharedMaterials['grass'];
+                                    terrainMesh.name = 'grass';
+                                    terrainMesh.userData.id = 'grass';
+                                    terrainMesh.userData.type = 'grass';
+                                    terrainMesh.userData.isRoad = false;
+                                    terrainMesh.userData.x = x;
+                                    terrainMesh.userData.y = y;
+                                }
+                            }
+                            // Clear from buildings array
+                            if (buildings[x][y] === terrain[x][y]) {
+                                buildings[x][y] = undefined;
+                            }
                         } else {
-                            // Other building types (farms, markets, etc.)
-                            await housesStore.deleteOneHouse(uniqueBuildingId)
+                            // Now roads follow the same pattern as houses: userData.type = meshName (e.g., 'StonePath-001')
+                            // So we can use currentBuildingId directly, just like for houses
+                            const uniqueBuildingId = makeDbItemId(currentBuildingId, x, y);
+                            if(houses.includes(currentBuildingId)) {
+                                await housesStore.deleteOneHouse(uniqueBuildingId)
+                            } else if(currentBuildingId && currentBuildingId.startsWith('StonePath-')) {
+                                // Roads are now stored in database like other buildings
+                                await housesStore.deleteOneHouse(uniqueBuildingId)
+                            } else {
+                                // Other building types (farms, markets, etc.)
+                                await housesStore.deleteOneHouse(uniqueBuildingId)
+                            }
+                            removeInteractiveObject(buildings[x][y]);
+                            buildings[x][y] = undefined;
                         }
-                        removeInteractiveObject(buildings[x][y]);
-                        buildings[x][y] = undefined;
                     }
                 }
 
@@ -1886,6 +1912,31 @@ export function createScene(housesStore, gameStore, assetManager) {
 
                   // if data model has changed as user add a new building, update the mesh 
             if(newBuildingId && (newBuildingId !== currentBuildingId)) {
+                // Handle geometry-based roads ('roads') - update terrain mesh, don't create building
+                if (newBuildingId === 'roads') {
+                    // Update terrain mesh to show road material
+                    if (terrain[x] && terrain[x][y]) {
+                        const terrainMesh = terrain[x][y];
+                        const sharedMaterials = assetManager.getSharedTerrainMaterials();
+                        if (sharedMaterials && sharedMaterials['roads']) {
+                            terrainMesh.material = sharedMaterials['roads'];
+                            terrainMesh.name = 'roads';
+                            terrainMesh.userData.id = 'roads';
+                            terrainMesh.userData.type = 'roads';
+                            terrainMesh.userData.isRoad = true;
+                            terrainMesh.userData.x = x;
+                            terrainMesh.userData.y = y;
+                            // Ensure road is visible and properly positioned
+                            terrainMesh.updateMatrixWorld(true);
+                        }
+                    }
+                    // Also add to buildings array for neighbor detection
+                    if (!buildings[x][y] || buildings[x][y] !== terrain[x][y]) {
+                        buildings[x][y] = terrain[x][y];
+                    }
+                    continue; // Skip building creation code for geometry roads
+                }
+                
                 // Roads are now 3D meshes (StonePath-001), they are created as buildings below
                 // Old terrain-based road code has been completely removed
                 
