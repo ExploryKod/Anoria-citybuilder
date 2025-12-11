@@ -387,11 +387,13 @@ class AssetManager extends MeshLoader {
                 mesh.name = buildingId;
                 // Rotate the plane to be horizontal (lying flat on the ground)
                 mesh.rotation.x = -Math.PI / 2; // Rotate 90 degrees to lay flat
-                // Position well above World platform (y = 0.2) - roads need to be very visible
-                mesh.position.set(x, worldPlatformHeight + 0.3, y);
+                // Position well above grass - grass top is at (worldPlatformHeight - 0.48) + 0.5 = -0.28 + 0.5 = 0.22
+                // Set roads higher to be clearly elevated above grass
+                mesh.position.set(x, worldPlatformHeight + 0.5, y); // 0.2 + 0.5 = 0.7 (well above grass at ~0.22)
                 mesh.castShadow = false; // Planes don't cast shadows well
                 mesh.receiveShadow = true;
                 break;
+
 
             case 'grass':
                 material = materials['grass'];
