@@ -599,10 +599,11 @@ class AssetManager extends MeshLoader {
                                 originalBbox.max.z - originalBbox.min.z
                             );
                             
-                            // Scale to match city size (with margin to absorb 3 cases more in circumference)
+                            // Scale to match city size (with large margin for extended circumference)
                             // Each tile is 1 unit, so citySize tiles = citySize units
-                            // Add margin of 6 units total (+3 on each side) to absorb 3 cases in circumference
-                            const targetSize = citySize + 6; // +6 for margin (3 units on each side)
+                            // Add large margin to extend World platform well beyond city boundaries
+                            const margin = Math.max(citySize * 0.5, 20); // Large margin: 50% of city size or minimum 20 units
+                            const targetSize = citySize + (margin * 2); // margin on each side
                             const scaleFactor = originalWorldSize > 0 ? targetSize / originalWorldSize : 1;
                             worldMesh.scale.set(scaleFactor, scaleFactor, scaleFactor);
                             
