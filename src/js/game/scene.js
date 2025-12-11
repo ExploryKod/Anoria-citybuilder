@@ -57,15 +57,23 @@ export function createScene(housesStore, gameStore, assetManager) {
     const scene = new THREE.Scene();
     // Subtle atmospheric fog to blend far terrain and sky (tuned to match background)
     try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
-    // scene.background = new THREE.Color(0x79845);
-
+    
+    // Use simple scene background with sky texture - this ensures sky covers everything
+    // The backdrop (distant ground) will be positioned to match World platform exactly
     let skyLoader = new THREE.TextureLoader();
     skyLoader.load(
         // URL of the image
         SKY_URL,
         function (texture) {
             // Set the scene's background to the loaded texture
+            // This will cover the entire viewport, including horizon
             scene.background = texture;
+        },
+        undefined,
+        function (error) {
+            // Fallback if texture fails to load
+            console.warn('[Scene] Sky texture failed to load:', error);
+            scene.background = new THREE.Color(0x87CEEB); // Sky blue fallback
         }
     );
 
@@ -239,9 +247,31 @@ export function createScene(housesStore, gameStore, assetManager) {
         // Store world platform before clearing scene
         const worldPlatform = scene.getObjectByName('world-platform');
         
+        // Remove skybox sphere if it exists
+        const skySphere = scene.getObjectByName('sky-sphere');
+        if (skySphere) {
+            scene.remove(skySphere);
+            if (skySphere.geometry) skySphere.geometry.dispose();
+            if (skySphere.material) skySphere.material.dispose();
+        }
+        
         scene.clear();
         // Re-apply fog after clear
         try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
+        
+        // Re-apply sky background
+        let skyLoader = new THREE.TextureLoader();
+        skyLoader.load(
+            SKY_URL,
+            function (texture) {
+                scene.background = texture;
+            },
+            undefined,
+            function (error) {
+                console.warn('[Scene] Sky texture failed to load:', error);
+                scene.background = new THREE.Color(0x87CEEB);
+            }
+        );
         terrain = [];
         buildings = [];
         loadingPromises = [];
@@ -449,8 +479,8 @@ export function createScene(housesStore, gameStore, assetManager) {
             }
         }
 
-        // Add infinite backdrop (skydome + distant ground ring) - aligned with World platform
-        addBackdrop(citySize);
+        // No backdrop needed - World platform provides sharp cutoff with sky background
+        // addBackdrop(citySize); // Disabled to prevent visible edges at horizon
         
         // Load and add citizen character to the scene
         loadCitizenAnimations();
@@ -3878,13 +3908,13 @@ export function createScene(housesStore, gameStore, assetManager) {
             };
         }
         
-        // Base ground plane - exact same size as World platform for sharp cutoff
+        // Base ground plane - exact same size as World platform for sharp cutoff with sky
         try {
             const baseGeo = new THREE.PlaneGeometry(worldPlatformSize, worldPlatformSize, 1, 1);
             const base = new THREE.Mesh(baseGeo, sharedBackdropMaterials.base);
             base.rotation.x = -Math.PI / 2;
             base.position.y = -0.02;
-            base.position.x = cityCenter; // Center at city center, matching World platform
+            base.position.x = cityCenter; // Center at city center, matching World platform exactly
             base.position.z = cityCenter;
             base.receiveShadow = true;
             base.name = 'infinite-ground-base';
@@ -3892,7 +3922,22 @@ export function createScene(housesStore, gameStore, assetManager) {
             scene.add(base);
         } catch (_) {}
 
-        // Remove ring - no longer needed, base matches World platform exactly
+        // Large background plane behind the base to prevent visible edges when zooming/panning
+        // This is positioned slightly lower and much larger, but won't be visible due to render order
+        try {
+            const largeBackdropSize = Math.max(worldPlatformSize * 20, 5000); // Very large to fill view
+            const largeGeo = new THREE.PlaneGeometry(largeBackdropSize, largeBackdropSize, 1, 1);
+            const largeBackdrop = new THREE.Mesh(largeGeo, sharedBackdropMaterials.ring);
+            largeBackdrop.rotation.x = -Math.PI / 2;
+            largeBackdrop.position.y = -0.03; // Slightly lower than base
+            largeBackdrop.position.x = cityCenter;
+            largeBackdrop.position.z = cityCenter;
+            largeBackdrop.receiveShadow = true;
+            largeBackdrop.name = 'infinite-ground-large';
+            largeBackdrop.renderOrder = -11; // Render behind the base
+            largeBackdrop.frustumCulled = false; // Always render
+            scene.add(largeBackdrop);
+        } catch (_) {}
     }
 
     let hoveredObject = null
