@@ -482,6 +482,9 @@ export function createScene(housesStore, gameStore, assetManager) {
         // No backdrop needed - World platform provides sharp cutoff with sky background
         // addBackdrop(citySize); // Disabled to prevent visible edges at horizon
         
+        // Create decorative village around the playable area
+        createDecorativeVillage(citySize);
+        
         // Load and add citizen character to the scene
         loadCitizenAnimations();
     }
@@ -3376,15 +3379,33 @@ export function createScene(housesStore, gameStore, assetManager) {
      */
     function getInteractiveObjects() {
         // Collect all objects from zone groups (they contain buildings + terrain)
+        // Exclude decorative elements (non-interactive)
         const objects = [];
         zoneGroups.forEach(zoneGroup => {
             zoneGroup.children.forEach(child => {
-                if (child instanceof THREE.Mesh) {
+                if (child instanceof THREE.Mesh && 
+                    !child.userData.isDecorative && 
+                    !child.userData.nonInteractive &&
+                    child.name && !child.name.startsWith('decorative-')) {
                     objects.push(child);
                 }
             });
         });
-        return objects.length > 0 ? objects : scene.children;
+        // Fallback: filter scene children to exclude decorative elements
+        if (objects.length === 0) {
+            scene.children.forEach(child => {
+                if (child instanceof THREE.Mesh && 
+                    !child.userData.isDecorative && 
+                    !child.userData.nonInteractive &&
+                    child.name && !child.name.startsWith('decorative-') &&
+                    child.name !== 'world-platform' &&
+                    child.name !== 'infinite-ground-base' &&
+                    child.name !== 'infinite-ground-large') {
+                    objects.push(child);
+                }
+            });
+        }
+        return objects;
     }
 
     /**
@@ -3879,6 +3900,367 @@ export function createScene(housesStore, gameStore, assetManager) {
 
     // Shared backdrop materials - created once and reused to reduce texture units
     let sharedBackdropMaterials = null;
+    
+    // Create decorative village around the playable area
+    function createDecorativeVillage(citySize = 16) {
+        // Remove existing decorative village if it exists
+        const existingVillage = scene.getObjectByName('decorative-village');
+        if (existingVillage) {
+            scene.remove(existingVillage);
+            existingVillage.traverse((child) => {
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(mat => mat.dispose());
+                    } else {
+                        child.material.dispose();
+                    }
+                }
+            });
+        }
+        
+        // Calculate World platform boundaries
+        const margin = Math.max(citySize * 0.5, 20);
+        const worldPlatformSize = citySize + (margin * 2);
+        const worldMinX = -margin;
+        const worldMaxX = citySize + margin;
+        const worldMinZ = -margin;
+        const worldMaxZ = citySize + margin;
+        const worldPlatformHeight = 0.2;
+        
+        // Playable area boundaries (where grass/terrain exists) - elements must be OUTSIDE this
+        const playableMinX = 0;
+        const playableMaxX = citySize;
+        const playableMinZ = 0;
+        const playableMaxZ = citySize;
+        
+        // Create a group for all decorative elements
+        const villageGroup = new THREE.Group();
+        villageGroup.name = 'decorative-village';
+        
+        // Decorative elements configuration
+        const decorativeElements = [];
+        
+        // Create scattered hamlets (small groups of houses) in the margin area
+        // Distribute them throughout the margin, not just at boundaries
+        const houseTypes = ['House-Blue', 'House-Red', 'House-Purple'];
+        const treeTypes = ['Tree-Pine-001', 'Tree-Square-001', 'Tree-Tall-001'];
+        
+        // Define hamlet positions (small clusters of houses)
+        // Each hamlet is a small group of 2-4 houses with some trees and maybe a well/market
+        const hamlets = [
+            // North-west hamlet
+            {
+                centerX: playableMinX - 5,
+                centerZ: playableMinZ - 5,
+                houses: [
+                    { offsetX: -1, offsetZ: -1 },
+                    { offsetX: 1, offsetZ: -1 },
+                    { offsetX: -1, offsetZ: 1 },
+                ],
+                trees: [
+                    { offsetX: -2, offsetZ: -2 },
+                    { offsetX: 2, offsetZ: -2 },
+                    { offsetX: -2, offsetZ: 2 },
+                ],
+                hasMarket: true,
+                hasWell: true
+            },
+            // North-east hamlet
+            {
+                centerX: playableMaxX + 5,
+                centerZ: playableMinZ - 5,
+                houses: [
+                    { offsetX: -1, offsetZ: -1 },
+                    { offsetX: 1, offsetZ: -1 },
+                    { offsetX: 1, offsetZ: 1 },
+                ],
+                trees: [
+                    { offsetX: -2, offsetZ: -2 },
+                    { offsetX: 2, offsetZ: -2 },
+                    { offsetX: 2, offsetZ: 2 },
+                ],
+                hasMarket: false,
+                hasWell: true
+            },
+            // South-west hamlet
+            {
+                centerX: playableMinX - 5,
+                centerZ: playableMaxZ + 5,
+                houses: [
+                    { offsetX: -1, offsetZ: -1 },
+                    { offsetX: 1, offsetZ: -1 },
+                    { offsetX: -1, offsetZ: 1 },
+                    { offsetX: 1, offsetZ: 1 },
+                ],
+                trees: [
+                    { offsetX: -2, offsetZ: -2 },
+                    { offsetX: 2, offsetZ: -2 },
+                    { offsetX: -2, offsetZ: 2 },
+                ],
+                hasMarket: false,
+                hasWell: false
+            },
+            // South-east hamlet
+            {
+                centerX: playableMaxX + 5,
+                centerZ: playableMaxZ + 5,
+                houses: [
+                    { offsetX: -1, offsetZ: -1 },
+                    { offsetX: 1, offsetZ: -1 },
+                    { offsetX: -1, offsetZ: 1 },
+                ],
+                trees: [
+                    { offsetX: -2, offsetZ: -2 },
+                    { offsetX: 2, offsetZ: -2 },
+                    { offsetX: -2, offsetZ: 2 },
+                ],
+                hasMarket: true,
+                hasWell: false
+            },
+            // North center hamlet (if city is large enough)
+            ...(citySize >= 12 ? [{
+                centerX: citySize / 2,
+                centerZ: playableMinZ - 6,
+                houses: [
+                    { offsetX: -1, offsetZ: 0 },
+                    { offsetX: 1, offsetZ: 0 },
+                    { offsetX: 0, offsetZ: -1 },
+                ],
+                trees: [
+                    { offsetX: -2, offsetZ: 1 },
+                    { offsetX: 2, offsetZ: 1 },
+                ],
+                hasMarket: false,
+                hasWell: true
+            }] : []),
+            // South center hamlet (if city is large enough)
+            ...(citySize >= 12 ? [{
+                centerX: citySize / 2,
+                centerZ: playableMaxZ + 6,
+                houses: [
+                    { offsetX: -1, offsetZ: 0 },
+                    { offsetX: 1, offsetZ: 0 },
+                    { offsetX: 0, offsetZ: 1 },
+                ],
+                trees: [
+                    { offsetX: -2, offsetZ: -1 },
+                    { offsetX: 2, offsetZ: -1 },
+                ],
+                hasMarket: false,
+                hasWell: false
+            }] : []),
+            // East center hamlet (if city is large enough)
+            ...(citySize >= 12 ? [{
+                centerX: playableMaxX + 6,
+                centerZ: citySize / 2,
+                houses: [
+                    { offsetX: 0, offsetZ: -1 },
+                    { offsetX: 0, offsetZ: 1 },
+                    { offsetX: 1, offsetZ: 0 },
+                ],
+                trees: [
+                    { offsetX: -1, offsetZ: -2 },
+                    { offsetX: -1, offsetZ: 2 },
+                ],
+                hasMarket: false,
+                hasWell: true
+            }] : []),
+            // West center hamlet (if city is large enough)
+            ...(citySize >= 12 ? [{
+                centerX: playableMinX - 6,
+                centerZ: citySize / 2,
+                houses: [
+                    { offsetX: 0, offsetZ: -1 },
+                    { offsetX: 0, offsetZ: 1 },
+                    { offsetX: -1, offsetZ: 0 },
+                ],
+                trees: [
+                    { offsetX: 1, offsetZ: -2 },
+                    { offsetX: 1, offsetZ: 2 },
+                ],
+                hasMarket: false,
+                hasWell: false
+            }] : []),
+        ];
+        
+        // Create elements for each hamlet
+        hamlets.forEach((hamlet, hamletIndex) => {
+            // Place houses in the hamlet
+            hamlet.houses.forEach((houseOffset, houseIndex) => {
+                const x = hamlet.centerX + houseOffset.offsetX;
+                const z = hamlet.centerZ + houseOffset.offsetZ;
+                
+                // Ensure it's outside playable area but inside World platform
+                const isOutsidePlayable = (x < playableMinX || x > playableMaxX || 
+                                          z < playableMinZ || z > playableMaxZ);
+                const isInWorld = (x >= worldMinX + 1 && x <= worldMaxX - 1 &&
+                                  z >= worldMinZ + 1 && z <= worldMaxZ - 1);
+                
+                if (isOutsidePlayable && isInWorld) {
+                    decorativeElements.push({
+                        type: houseTypes[(hamletIndex + houseIndex) % houseTypes.length],
+                        x: x,
+                        z: z
+                    });
+                }
+            });
+            
+            // Place trees around the hamlet
+            hamlet.trees.forEach((treeOffset, treeIndex) => {
+                const x = hamlet.centerX + treeOffset.offsetX;
+                const z = hamlet.centerZ + treeOffset.offsetZ;
+                
+                const isOutsidePlayable = (x < playableMinX || x > playableMaxX || 
+                                          z < playableMinZ || z > playableMaxZ);
+                const isInWorld = (x >= worldMinX + 1 && x <= worldMaxX - 1 &&
+                                  z >= worldMinZ + 1 && z <= worldMaxZ - 1);
+                
+                if (isOutsidePlayable && isInWorld) {
+                    decorativeElements.push({
+                        type: treeTypes[(hamletIndex + treeIndex) % treeTypes.length],
+                        x: x,
+                        z: z
+                    });
+                }
+            });
+            
+            // Place market stall if hamlet has one
+            if (hamlet.hasMarket) {
+                const x = hamlet.centerX;
+                const z = hamlet.centerZ;
+                const isOutsidePlayable = (x < playableMinX || x > playableMaxX || 
+                                          z < playableMinZ || z > playableMaxZ);
+                const isInWorld = (x >= worldMinX + 1 && x <= worldMaxX - 1 &&
+                                  z >= worldMinZ + 1 && z <= worldMaxZ - 1);
+                
+                if (isOutsidePlayable && isInWorld) {
+                    decorativeElements.push({
+                        type: 'Market-Stall',
+                        x: x,
+                        z: z
+                    });
+                }
+            }
+            
+            // Place well if hamlet has one
+            if (hamlet.hasWell) {
+                const x = hamlet.centerX + 1;
+                const z = hamlet.centerZ;
+                const isOutsidePlayable = (x < playableMinX || x > playableMaxX || 
+                                          z < playableMinZ || z > playableMaxZ);
+                const isInWorld = (x >= worldMinX + 1 && x <= worldMaxX - 1 &&
+                                  z >= worldMinZ + 1 && z <= worldMaxZ - 1);
+                
+                if (isOutsidePlayable && isInWorld) {
+                    decorativeElements.push({
+                        type: 'Well-001',
+                        x: x,
+                        z: z
+                    });
+                }
+            }
+            
+            // Add a small road connecting houses in the hamlet
+            hamlet.houses.forEach((houseOffset, houseIndex) => {
+                if (houseIndex > 0) {
+                    const prevHouse = hamlet.houses[houseIndex - 1];
+                    const x1 = hamlet.centerX + prevHouse.offsetX;
+                    const z1 = hamlet.centerZ + prevHouse.offsetZ;
+                    const x2 = hamlet.centerX + houseOffset.offsetX;
+                    const z2 = hamlet.centerZ + houseOffset.offsetZ;
+                    
+                    // Add road between houses
+                    const midX = Math.round((x1 + x2) / 2);
+                    const midZ = Math.round((z1 + z2) / 2);
+                    
+                    const isOutsidePlayable = (midX < playableMinX || midX > playableMaxX || 
+                                              midZ < playableMinZ || midZ > playableMaxZ);
+                    const isInWorld = (midX >= worldMinX + 1 && midX <= worldMaxX - 1 &&
+                                      midZ >= worldMinZ + 1 && midZ <= worldMaxZ - 1);
+                    
+                    if (isOutsidePlayable && isInWorld) {
+                        decorativeElements.push({
+                            type: 'StonePath-001',
+                            x: midX,
+                            z: midZ
+                        });
+                    }
+                }
+            });
+        });
+        
+        // Add some scattered individual trees throughout the margin area
+        const scatteredTreeCount = Math.min(15, Math.floor(margin / 2));
+        for (let i = 0; i < scatteredTreeCount; i++) {
+            // Random position in margin area
+            let x, z;
+            const side = Math.floor(Math.random() * 4); // 0=north, 1=south, 2=east, 3=west
+            
+            switch (side) {
+                case 0: // North
+                    x = playableMinX + Math.random() * citySize;
+                    z = playableMinZ - (2 + Math.random() * (margin - 4));
+                    break;
+                case 1: // South
+                    x = playableMinX + Math.random() * citySize;
+                    z = playableMaxZ + (2 + Math.random() * (margin - 4));
+                    break;
+                case 2: // East
+                    x = playableMaxX + (2 + Math.random() * (margin - 4));
+                    z = playableMinZ + Math.random() * citySize;
+                    break;
+                case 3: // West
+                    x = playableMinX - (2 + Math.random() * (margin - 4));
+                    z = playableMinZ + Math.random() * citySize;
+                    break;
+            }
+            
+            const isOutsidePlayable = (x < playableMinX || x > playableMaxX || 
+                                      z < playableMinZ || z > playableMaxZ);
+            const isInWorld = (x >= worldMinX + 1 && x <= worldMaxX - 1 &&
+                              z >= worldMinZ + 1 && z <= worldMaxZ - 1);
+            
+            if (isOutsidePlayable && isInWorld) {
+                decorativeElements.push({
+                    type: treeTypes[i % treeTypes.length],
+                    x: Math.round(x),
+                    z: Math.round(z)
+                });
+            }
+        }
+        
+        // Create and place all decorative elements
+        decorativeElements.forEach(element => {
+            try {
+                // createAsset takes (x, y) where y becomes z in 3D space
+                // The asset will be positioned at (x, z+worldPlatformHeight, y) by createAsset
+                // So we pass (x, z) to get position (x, z+worldPlatformHeight, 0)
+                // Then we need to adjust to (x, worldPlatformHeight, z)
+                const asset = assetManager.createAsset(element.type, element.x, element.z);
+                if (asset) {
+                    // Mark as decorative and non-interactive
+                    asset.userData.isDecorative = true;
+                    asset.userData.nonInteractive = true;
+                    asset.name = `decorative-${element.type}-${element.x}-${element.z}`;
+                    
+                    // Correct positioning: createAsset uses formula yOffset = z + worldPlatformHeight
+                    // So we need to adjust: set position to (x, worldPlatformHeight, z)
+                    asset.position.set(element.x, worldPlatformHeight, element.z);
+                    
+                    // Add to village group
+                    villageGroup.add(asset);
+                }
+            } catch (error) {
+                console.warn(`[Scene] Failed to create decorative ${element.type} at (${element.x}, ${element.z}):`, error);
+            }
+        });
+        
+        // Add village group to scene
+        scene.add(villageGroup);
+        
+        console.log(`[Scene] Created decorative village with ${decorativeElements.length} elements`);
+    }
     
     // Add a distant ground plane aligned exactly with World platform (sharp cutoff with sky)
     function addBackdrop(citySize = 16) {
