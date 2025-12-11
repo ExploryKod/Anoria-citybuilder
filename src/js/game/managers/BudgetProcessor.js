@@ -99,8 +99,10 @@ export class BudgetProcessor {
             const currentMonth = timeInfo.monthNumber;
             const isFirstTurnOfMonth = timeInfo.dayInMonth === 1;
             
-            // Process salaries
+            // Process salaries (only once per month, on the first day)
+            // Update lastSalaryMonth BEFORE processing to prevent multiple calls in the same turn
             if (isFirstTurnOfMonth && currentMonth !== this.lastSalaryMonth) {
+                // Mark as processed immediately to prevent duplicate processing
                 this.lastSalaryMonth = currentMonth;
                 
                 let salaryPerMonth = 100;

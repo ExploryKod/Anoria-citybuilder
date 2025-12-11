@@ -157,6 +157,10 @@ class StorageSectionManager {
                     <span class="storage-stock-value">${stocks.dattes || 0} / ${maxStock}</span>
                 </div>
                 <div class="storage-stock-item">
+                    <label>Bois:</label>
+                    <span class="storage-stock-value">${stocks.wood || 0} / ${maxStock}</span>
+                </div>
+                <div class="storage-stock-item">
                     <label>Total:</label>
                     <span class="storage-stock-value">${stocks.food || 0} / <input type="number" class="storage-max-input" data-windmill="${windmill.name}" value="${maxStock}" min="0" step="10"></span>
                 </div>

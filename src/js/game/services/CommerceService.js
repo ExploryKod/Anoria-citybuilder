@@ -1,7 +1,7 @@
 import { SimService } from './SimService.js';
 import commerceStore from '../../stores/CommerceStore.js';
 
-const STOCKABLE_PRODUCTS = ['wheat', 'carrot', 'cabbage', 'dattes'];
+const STOCKABLE_PRODUCTS = ['wheat', 'carrot', 'cabbage', 'wood', 'dattes'];
 const ALL_PRODUCTS = ['wheat', 'carrot', 'cabbage', 'wood', 'dattes'];
 
 const DEFAULT_CONDITIONS = {
@@ -29,7 +29,7 @@ const PRODUCT_CONDITIONS = {
         export: { requiresStock: true, requiresWindmill: true }
     },
     wood: {
-        import: { requiresStock: false, requiresWindmill: false },
+        import: { requiresStock: false, requiresWindmill: true },
         export: { requiresStock: false, requiresWindmill: false }
     },
     dattes: {
@@ -44,6 +44,7 @@ export class CommerceService extends SimService {
         this.yearlyImports = {};
         this.yearlyExports = {};
         this.lastProcessedYear = -1;
+        this.lastResetMonth = -1;
         this.partnersData = null;
     }
 
@@ -110,6 +111,103 @@ export class CommerceService extends SimService {
         return false;
     }
 
+    /**
+     * Check if partner contract is completely finished
+     * A contract is finished when ALL products (both imports AND exports) have reached their maxOccurrences
+     * 
+     * Important: A single product can have its contract finished, but the partner remains active
+     * as long as at least one product still has an active contract.
+     * The partner is only deactivated when ALL products have finished contracts.
+     * 
+     * @param {Object} partner - Partner object
+     * @returns {boolean} True if ALL contracts for ALL products are finished
+     */
+    isContractFinished(partner) {
+        if (!partner || !partner.isActive) return false;
+
+        const hasImports = partner.imports && partner.imports.length > 0;
+        const hasExports = partner.exports && partner.exports.length > 0;
+
+        // If partner has no trades configured, contract cannot be finished
+        if (!hasImports && !hasExports) {
+            return false;
+        }
+
+        // Check if ALL imports (our exports to partner) have reached maxOccurrences
+        // Each import represents a product we export to the partner
+        const allImportsFinished = hasImports 
+            ? partner.imports.every(imp => (imp.currentOccurrences || 0) >= imp.maxOccurrences)
+            : true; // No imports means this part is "finished"
+
+        // Check if ALL exports (our imports from partner) have reached maxOccurrences
+        // Each export represents a product we import from the partner
+        const allExportsFinished = hasExports
+            ? partner.exports.every(exp => (exp.currentOccurrences || 0) >= exp.maxOccurrences)
+            : true; // No exports means this part is "finished"
+
+        // Contract is completely finished only if ALL products (both imports AND exports) are finished
+        // This means: all exports we make to them are done AND all imports we get from them are done
+        return allImportsFinished && allExportsFinished;
+    }
+
+    /**
+     * Automatically deactivate partner if contract is finished
+     * A contract is finished when ALL products (imports AND exports) have reached their maxOccurrences
+     * @param {string} partnerId - Partner ID
+     * @returns {boolean} True if partner was deactivated
+     */
+    checkAndDeactivateFinishedContract(partnerId) {
+        const partner = this.getPartner(partnerId);
+        if (!partner || !partner.isActive) return false;
+
+        if (this.isContractFinished(partner)) {
+            const partnerName = partner.name || partnerId;
+            
+            // Build list of finished products for the message
+            const finishedProducts = [];
+            partner.imports.forEach(imp => {
+                if ((imp.currentOccurrences || 0) >= imp.maxOccurrences) {
+                    finishedProducts.push(`${imp.productName || imp.productId} (export)`);
+                }
+            });
+            partner.exports.forEach(exp => {
+                if ((exp.currentOccurrences || 0) >= exp.maxOccurrences) {
+                    finishedProducts.push(`${exp.productName || exp.productId} (import)`);
+                }
+            });
+            
+            partner.isActive = false;
+            commerceStore.savePartners(this.partnersData);
+            console.log(`[CommerceService] Partner ${partnerId} automatically deactivated: all contracts finished`, {
+                finishedProducts
+            });
+            
+            // Notify UI if available (use setTimeout to avoid blocking)
+            if (typeof window !== 'undefined') {
+                setTimeout(() => {
+                    if (window.commerceSectionManager) {
+                        const message = finishedProducts.length > 0
+                            ? `✅ Tous les contrats avec ${partnerName} sont terminés (${finishedProducts.join(', ')}). Le partenaire a été désactivé automatiquement.`
+                            : `✅ Tous les contrats avec ${partnerName} sont terminés. Le partenaire a été désactivé automatiquement.`;
+                        
+                        window.commerceSectionManager.showPartnerMessage(message, 'info');
+                        
+                        // Refresh partners display
+                        if (typeof window.commerceSectionManager.renderPartners === 'function') {
+                            window.commerceSectionManager.renderPartners().catch(err => {
+                                console.error('[CommerceService] Error refreshing partners display:', err);
+                            });
+                        }
+                    }
+                }, 100);
+            }
+            
+            return true;
+        }
+
+        return false;
+    }
+
     updatePartnerTrade(partnerId, productId, operation) {
         const partner = this.getPartner(partnerId);
         if (!partner) return false;
@@ -120,6 +218,10 @@ export class CommerceService extends SimService {
                 trade.currentOccurrences = (trade.currentOccurrences || 0) + 1;
                 trade.currentYearly = (trade.currentYearly || 0) + 1;
                 commerceStore.savePartners(this.partnersData);
+                
+                // Check if contract is finished after this trade
+                this.checkAndDeactivateFinishedContract(partnerId);
+                
                 return true;
             }
         } else if (operation === 'import') {
@@ -128,6 +230,10 @@ export class CommerceService extends SimService {
                 trade.currentOccurrences = (trade.currentOccurrences || 0) + 1;
                 trade.currentYearly = (trade.currentYearly || 0) + 1;
                 commerceStore.savePartners(this.partnersData);
+                
+                // Check if contract is finished after this trade
+                this.checkAndDeactivateFinishedContract(partnerId);
+                
                 return true;
             }
         }
@@ -201,9 +307,10 @@ export class CommerceService extends SimService {
         if ((currentYearly + quantity) > buyingMax) return false;
         
         const conds = conditions || this.getConditions(productId, 'import');
-        if (conds.requiresStock) {
-            return false;
-        }
+        // requiresStock means we need existing stock in windmill to import (for activation conditions)
+        // For imports, if requiresStock is true, we need to check if windmill has stock
+        // But this is only for activation conditions, not for blocking imports
+        // So we don't block imports here based on requiresStock
         
         return true;
     }
@@ -278,10 +385,12 @@ export class CommerceService extends SimService {
             }
 
             const stocks = windmillData.stocks || {};
+            // Wood is not food, so don't add it to food total
+            const isFood = productId !== 'wood';
             const updatedStocks = {
                 ...stocks,
                 [stockKey]: (stocks[stockKey] || 0) + quantity,
-                food: (stocks.food || 0) + quantity
+                food: isFood ? (stocks.food || 0) + quantity : (stocks.food || 0)
             };
 
             const existingLastImport = windmillData.lastImport || {};
@@ -363,10 +472,12 @@ export class CommerceService extends SimService {
                     const newStock = currentStock - toReduce;
                     remaining -= toReduce;
                     
+                    // Wood is not food, so don't subtract it from food total
+                    const isFood = productId !== 'wood';
                     const updatedStocks = {
                         ...stocks,
                         [stockKey]: newStock,
-                        food: (stocks.food || 0) - toReduce
+                        food: isFood ? Math.max(0, (stocks.food || 0) - toReduce) : (stocks.food || 0)
                     };
                     
                     await housesStore.updateHouseFields(windmill.id || windmill.name, {
@@ -550,7 +661,7 @@ export class CommerceService extends SimService {
                     const windmillData = await housesStore.getHouse(windmillId);
                     if (windmillData && windmillData.lastImport !== undefined) {
                         await housesStore.updateHouseFields(windmillId, {
-                            lastImport: { wheat: 0, carrot: 0, cabbage: 0, dattes: 0, total: 0 },
+                            lastImport: { wheat: 0, carrot: 0, cabbage: 0, wood: 0, dattes: 0, total: 0 },
                             lastImportDetails: {}
                         });
                     }
@@ -569,13 +680,24 @@ export class CommerceService extends SimService {
 
         const timeInfo = window.TimeManager.getTimeInfo(time);
         
+        // Load partners data
+        this.loadPartners();
+        
+        // Check all active partners for finished contracts (every turn)
+        if (this.partnersData) {
+            for (const partner of this.partnersData) {
+                if (partner.isActive) {
+                    this.checkAndDeactivateFinishedContract(partner.id);
+                }
+            }
+        }
+        
         if (timeInfo.year !== this.lastProcessedYear) {
             if (this.lastProcessedYear !== -1) {
                 this.yearlyImports = {};
                 this.yearlyExports = {};
                 commerceStore.resetYearlyStats();
                 
-                this.loadPartners();
                 if (this.partnersData) {
                     this.partnersData.forEach(partner => {
                         partner.imports.forEach(imp => {
@@ -651,7 +773,12 @@ export class CommerceService extends SimService {
         // Note: Les imports/exports sont maintenant uniquement gérés via les partenaires commerciaux
         // Le code de test pour les imports/exports sans partenaire a été supprimé
 
-        await this.resetWindmillImportsDisplay(housesStore);
+        // Reset windmill imports display only at the start of a new month (first day)
+        // This allows imports to be visible in the info panel during the month
+        if (timeInfo.dayInMonth === 1 && timeInfo.monthIndex !== this.lastResetMonth) {
+            await this.resetWindmillImportsDisplay(housesStore);
+            this.lastResetMonth = timeInfo.monthIndex;
+        }
 
         return { imports, exports };
     }

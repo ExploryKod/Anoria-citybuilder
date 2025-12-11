@@ -346,6 +346,12 @@
     font-weight: 600;
 }
 
+/* Route commerciale (Commission Négociants) en violet */
+.journal-entry-type.commercial_route {
+    background: #e2d5f7;
+    color: #6f42c1;
+}
+
 .journal-entry-amount {
     font-size: 16px;
     font-weight: 600;

@@ -321,7 +321,7 @@ export class WindmillService extends SimService {
                 return;
             }
 
-            const currentStocks = windmillData.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+            const currentStocks = windmillData.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0, wood: 0 };
             
             console.log('[WindmillService] Windmill stocks before farm collection:', {
                 windmillId,
@@ -329,11 +329,13 @@ export class WindmillService extends SimService {
             });
             
             // Add food collected from farms to windmill stocks
+            // Preserve wood stock (not part of food collection)
             const newStocks = {
                 wheat: (currentStocks.wheat || 0) + wheatCount,
                 carrot: (currentStocks.carrot || 0) + carrotCount,
                 cabbage: (currentStocks.cabbage || 0) + cabbageCount,
-                food: (currentStocks.food || 0) + (wheatCount + carrotCount + cabbageCount) // Total food units added
+                wood: currentStocks.wood || 0, // Preserve wood stock
+                food: (currentStocks.food || 0) + (wheatCount + carrotCount + cabbageCount) // Total food units added (wood not included)
             };
 
             console.log('[WindmillService] Windmill stocks after farm collection:', {
