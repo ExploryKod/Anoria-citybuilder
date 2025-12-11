@@ -192,6 +192,201 @@ class CommerceSectionManager {
                         currentYearly: 0
                     }
                 ]
+            },
+            {
+                id: 'montana',
+                name: 'Montana',
+                description: 'Ville montagnarde spécialisée dans les légumes',
+                isActive: false,
+                activationConditions: [],
+                imports: [
+                    {
+                        productId: 'wood',
+                        productName: 'Bois',
+                        months: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                        maxPerTurn: 5,
+                        maxOccurrences: 20,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    }
+                ],
+                exports: [
+                    {
+                        productId: 'cabbage',
+                        productName: 'Chou',
+                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                        maxOccurrences: 15,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    }
+                ]
+            },
+            {
+                id: 'riviera',
+                name: 'Riviera',
+                description: 'Ville côtière méditerranéenne',
+                isActive: false,
+                activationConditions: [],
+                imports: [
+                    {
+                        productId: 'wood',
+                        productName: 'Bois',
+                        months: [3, 4, 5, 6, 7, 8, 9],
+                        maxPerTurn: 6,
+                        maxOccurrences: 18,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    }
+                ],
+                exports: [
+                    {
+                        productId: 'cabbage',
+                        productName: 'Chou',
+                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                        maxOccurrences: 12,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    }
+                ]
+            },
+            {
+                id: 'oceania',
+                name: 'Oceania',
+                description: 'Archipel océanique aux ressources variées',
+                isActive: false,
+                activationConditions: [],
+                imports: [
+                    {
+                        productId: 'carrot',
+                        productName: 'Carotte',
+                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                        maxPerTurn: 4,
+                        maxOccurrences: 24,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    }
+                ],
+                exports: [
+                    {
+                        productId: 'wood',
+                        productName: 'Bois',
+                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                        maxOccurrences: 20,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    }
+                ]
+            },
+            {
+                id: 'paysana',
+                name: 'Paysana',
+                description: 'Région agricole très productive',
+                isActive: false,
+                activationConditions: [],
+                imports: [
+                    {
+                        productId: 'carrot',
+                        productName: 'Carotte',
+                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                        maxPerTurn: 8,
+                        maxOccurrences: 30,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    },
+                    {
+                        productId: 'wheat',
+                        productName: 'Blé',
+                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                        maxPerTurn: 10,
+                        maxOccurrences: 36,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    },
+                    {
+                        productId: 'cabbage',
+                        productName: 'Chou',
+                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                        maxPerTurn: 7,
+                        maxOccurrences: 28,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    }
+                ],
+                exports: [
+                    {
+                        productId: 'wood',
+                        productName: 'Bois',
+                        months: [4, 5, 6, 7, 8],
+                        maxOccurrences: 8,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    }
+                ]
+            },
+            {
+                id: 'savana',
+                name: 'Savana',
+                description: 'Région de savane aux échanges variés',
+                isActive: false,
+                activationConditions: [],
+                imports: [
+                    {
+                        productId: 'carrot',
+                        productName: 'Carotte',
+                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                        maxPerTurn: 5,
+                        maxOccurrences: 20,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    },
+                    {
+                        productId: 'wood',
+                        productName: 'Bois',
+                        months: [2, 3, 4, 5, 6, 7, 8, 9],
+                        maxPerTurn: 4,
+                        maxOccurrences: 16,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    }
+                ],
+                exports: [
+                    {
+                        productId: 'wheat',
+                        productName: 'Blé',
+                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                        maxOccurrences: 25,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    }
+                ]
+            },
+            {
+                id: 'foresta',
+                name: 'Foresta',
+                description: 'Région forestière riche en bois',
+                isActive: false,
+                activationConditions: [],
+                imports: [
+                    {
+                        productId: 'wood',
+                        productName: 'Bois',
+                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                        maxPerTurn: 12,
+                        maxOccurrences: 40,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    }
+                ],
+                exports: [
+                    {
+                        productId: 'wheat',
+                        productName: 'Blé',
+                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                        maxOccurrences: 18,
+                        currentOccurrences: 0,
+                        currentYearly: 0
+                    }
+                ]
             }
         ];
     }
