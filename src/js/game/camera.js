@@ -11,8 +11,11 @@ export function createCamera(gameWindow) {
 
     // Camera constants for zooming in and out
     const MIN_CAMERA_RADIUS = 10;
-    const MAX_CAMERA_RADIUS = 30;
+    let MAX_CAMERA_RADIUS = 30; // Will be updated based on World platform size
     const PAN_STEP = 0.5;
+    
+    // Store city size to calculate max zoom
+    let currentCitySize = 16;
 
     // Classic isometric camera settings (Pharaoh/Caesar 3 style)
     const ISOMETRIC_ELEVATION = 45; // Fixed 45° angle
@@ -482,8 +485,33 @@ export function createCamera(gameWindow) {
         // Method to center camera on city (useful when city size changes)
         centerOnCity(citySize) {
             if (typeof citySize === 'number' && citySize > 0) {
+                currentCitySize = citySize;
                 const cityCenter = citySize / 2;
                 cameraOrigin.set(cityCenter, 0, cityCenter);
+                
+                // Calculate World platform size (same formula as AssetManager)
+                const margin = Math.max(citySize * 0.5, 20);
+                const worldPlatformSize = citySize + (margin * 2);
+                
+                // Calculate max camera radius to keep World platform visible
+                // For orthographic camera at 45° elevation, the view covers a square area
+                // The camera radius determines how far the camera is from the origin
+                // At 45° elevation, we need to ensure the World platform fits in the orthographic view
+                // ORTHO_CAMERA_SIZE determines the view size, and camera radius affects the distance
+                // To prevent zooming beyond World platform boundaries:
+                // Calculate based on World platform diagonal and camera's field of view
+                const worldHalfDiagonal = (worldPlatformSize * Math.sqrt(2)) / 2;
+                // For orthographic camera, the view size is ORTHO_CAMERA_SIZE
+                // We want to ensure that when zoomed out, the World platform still fits
+                // Use a factor that ensures World platform is always visible with some margin
+                const maxRadiusForWorld = worldHalfDiagonal * 1.5; // 50% margin for comfortable viewing
+                
+                // Update MAX_CAMERA_RADIUS but keep reasonable limits
+                MAX_CAMERA_RADIUS = Math.max(20, Math.min(60, maxRadiusForWorld));
+                
+                // Clamp current camera radius to new limits
+                cameraRadius = Math.min(MAX_CAMERA_RADIUS, Math.max(MIN_CAMERA_RADIUS, cameraRadius));
+                
                 clampOrigin();
                 updateCameraPosition();
             }
