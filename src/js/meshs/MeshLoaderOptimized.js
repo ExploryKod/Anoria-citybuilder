@@ -33,7 +33,7 @@ class MeshLoaderOptimized {
         farms: ['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage'],
         industry: ['Windmill-001', 'Barn-001', 'Crate-001'],
         markets: ['Market-Stall'],
-        infrastructure: ['Well-001', 'Fountain-001', 'Streetlight-001', 'StonePath-001', 'StonePath-Right-001', 'StonePath-Left-001', 'StonePath-Cross-001'],
+        infrastructure: ['Well-001', 'Fountain-001', 'Streetlight-001', 'roads', 'StonePath-001', 'StonePath-Right-001', 'StonePath-Left-001', 'StonePath-Cross-001'],
         public: ['Church-002'],
         palaces: ['House-2Story'],
         nature: ['Tree-Pine-001', 'Tree-Square-001', 'Tree-Tall-001', 'Boulder-001']

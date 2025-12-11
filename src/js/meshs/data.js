@@ -39,7 +39,7 @@ export const assetsPrices = Object.freeze({
     'terrain': { price: 0, category: 'zones', gridSize: 1 },
     
     // Roads (use StonePath mesh variants with different rotations)
-    'roads': { price: 5, category: 'infrastructure', gridSize: 1 }, // Maps to StonePath-001 mesh
+    'roads': { price: 5, category: 'infrastructure', gridSize: 1 }, // Modern road using texture material (no orientation needed)
     'StonePath-001': { price: 5, category: 'infrastructure', gridSize: 1 }, // Straight road
     'StonePath-Right-001': { price: 5, category: 'infrastructure', gridSize: 1 }, // Right turn (90° rotation)
     'StonePath-Left-001': { price: 5, category: 'infrastructure', gridSize: 1 }, // Left turn (270° rotation)

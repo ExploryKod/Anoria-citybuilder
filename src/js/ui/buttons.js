@@ -828,6 +828,16 @@ function createRoadsButtons(buttonData) {
     const svgRoadRight = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L12 12 L22 12"/><line x1="8" y1="8" x2="8" y2="10"/><line x1="14" y1="16" x2="16" y2="16"/></svg>`;
     const svgRoadLeft = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L12 12 L2 12"/><line x1="16" y1="8" x2="16" y2="10"/><line x1="8" y1="16" x2="6" y2="16"/></svg>`;
     const svgRoadCross = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>`;
+    const svgModernRoad = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="8" rx="1"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="10" x2="9" y2="14"/><line x1="15" y1="10" x2="15" y2="14"/></svg>`;
+
+    // Add roads button first (modern road using texture material)
+    if (infrastructureToolIDs.includes('roads')) {
+        makeNewButton({
+            text: 'Modern Road',
+            tool: 'roads',
+            group: 'Road'
+        }, svgModernRoad);
+    }
 
     let buttonsDuplicate = [];
     buttonData.filter(buttonInfo => infrastructureToolIDs.includes(buttonInfo.tool) && buttonInfo.tool.startsWith('StonePath-')).forEach(buttonInfo => {

@@ -347,8 +347,8 @@ class AssetManager extends MeshLoader {
                     side: THREE.FrontSide
                 }),
                 'terrain': new THREE.MeshLambertMaterial({
-                    map: textures['grass'],
-                    color: 0x8b1e1e,
+                    // map: textures['grass'],
+                    color: 0x6DB973,
                     emissive: 0x220000,
                     transparent: false,
                     side: THREE.FrontSide
@@ -387,11 +387,13 @@ class AssetManager extends MeshLoader {
                 mesh.name = buildingId;
                 // Rotate the plane to be horizontal (lying flat on the ground)
                 mesh.rotation.x = -Math.PI / 2; // Rotate 90 degrees to lay flat
-                // Position well above World platform (y = 0.2) - roads need to be very visible
-                mesh.position.set(x, worldPlatformHeight + 0.3, y);
+                // Position well above grass - grass top is at (worldPlatformHeight - 0.48) + 0.5 = -0.28 + 0.5 = 0.22
+                // Set roads higher to be clearly elevated above grass
+                mesh.position.set(x, worldPlatformHeight + 0.5, y); // 0.2 + 0.5 = 0.7 (well above grass at ~0.22)
                 mesh.castShadow = false; // Planes don't cast shadows well
                 mesh.receiveShadow = true;
                 break;
+
 
             case 'grass':
                 material = materials['grass'];
@@ -597,10 +599,11 @@ class AssetManager extends MeshLoader {
                                 originalBbox.max.z - originalBbox.min.z
                             );
                             
-                            // Scale to match city size (with margin to absorb 3 cases more in circumference)
+                            // Scale to match city size (with large margin for extended circumference)
                             // Each tile is 1 unit, so citySize tiles = citySize units
-                            // Add margin of 6 units total (+3 on each side) to absorb 3 cases in circumference
-                            const targetSize = citySize + 6; // +6 for margin (3 units on each side)
+                            // Add large margin to extend World platform well beyond city boundaries
+                            const margin = Math.max(citySize * 0.5, 20); // Large margin: 50% of city size or minimum 20 units
+                            const targetSize = citySize + (margin * 2); // margin on each side
                             const scaleFactor = originalWorldSize > 0 ? targetSize / originalWorldSize : 1;
                             worldMesh.scale.set(scaleFactor, scaleFactor, scaleFactor);
                             

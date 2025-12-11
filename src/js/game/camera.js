@@ -11,8 +11,11 @@ export function createCamera(gameWindow) {
 
     // Camera constants for zooming in and out
     const MIN_CAMERA_RADIUS = 10;
-    const MAX_CAMERA_RADIUS = 30;
+    let MAX_CAMERA_RADIUS = 30; // Will be updated based on World platform size
     const PAN_STEP = 0.5;
+    
+    // Store city size to calculate max zoom
+    let currentCitySize = 16;
 
     // Classic isometric camera settings (Pharaoh/Caesar 3 style)
     const ISOMETRIC_ELEVATION = 45; // Fixed 45° angle
@@ -61,7 +64,12 @@ export function createCamera(gameWindow) {
     // Dolly zoom support
     let dollyZoomEnabled = false;
     const baselineFov = camera.isPerspectiveCamera ? camera.fov : 75; // Default FOV for perspective
-    const baselineRadius = (MAX_CAMERA_RADIUS + MIN_CAMERA_RADIUS) / 2;
+    let baselineRadius = (MAX_CAMERA_RADIUS + MIN_CAMERA_RADIUS) / 2;
+    
+    // Function to recalculate baseline radius when MAX_CAMERA_RADIUS changes
+    function updateBaselineRadius() {
+        baselineRadius = (MAX_CAMERA_RADIUS + MIN_CAMERA_RADIUS) / 2;
+    }
     updateCameraPosition();
 
    
@@ -482,8 +490,48 @@ export function createCamera(gameWindow) {
         // Method to center camera on city (useful when city size changes)
         centerOnCity(citySize) {
             if (typeof citySize === 'number' && citySize > 0) {
+                currentCitySize = citySize;
                 const cityCenter = citySize / 2;
                 cameraOrigin.set(cityCenter, 0, cityCenter);
+                
+                // Calculate World platform size (same formula as AssetManager)
+                const margin = Math.max(citySize * 0.5, 20);
+                const worldPlatformSize = citySize + (margin * 2);
+                
+                // Calculate max camera radius to keep World platform visible
+                // For orthographic camera: camera.zoom = baselineRadius / cameraRadius
+                // When zoomed out (cameraRadius large), camera.zoom is small, showing more area
+                // The view size = ORTHO_CAMERA_SIZE * camera.zoom
+                // Minimum zoom is 0.3, so minimum view size = ORTHO_CAMERA_SIZE * 0.3 = 6 units
+                
+                // Calculate the diagonal of the World platform
+                const worldDiagonal = worldPlatformSize * Math.sqrt(2);
+                
+                // Calculate the minimum zoom needed to fit the World platform (with 10% margin)
+                const minZoomNeeded = (worldDiagonal / ORTHO_CAMERA_SIZE) * 1.1;
+                
+                // The effective minimum zoom is the larger of system minimum (0.3) and what we need
+                const effectiveMinZoom = Math.max(0.3, minZoomNeeded);
+                
+                // Use a fixed reference baseline radius (20) for calculation to avoid circular dependency
+                // This represents a typical middle value between min and max radius
+                const REF_BASELINE_RADIUS = 20;
+                
+                // Calculate max radius: cameraRadius <= baselineRadius / effectiveMinZoom
+                const maxRadiusForWorld = REF_BASELINE_RADIUS / effectiveMinZoom;
+                
+                // Update MAX_CAMERA_RADIUS but keep reasonable limits
+                MAX_CAMERA_RADIUS = Math.max(15, Math.min(200, maxRadiusForWorld));
+                
+                // Recalculate baseline radius with new MAX_CAMERA_RADIUS
+                updateBaselineRadius();
+                
+                // Debug log to verify calculation
+                console.log(`[Camera] City: ${citySize}x${citySize}, World: ${worldPlatformSize.toFixed(1)}, Diagonal: ${worldDiagonal.toFixed(1)}, Min zoom needed: ${minZoomNeeded.toFixed(2)}, Max radius: ${MAX_CAMERA_RADIUS.toFixed(2)}`);
+                
+                // Clamp current camera radius to new limits
+                cameraRadius = Math.min(MAX_CAMERA_RADIUS, Math.max(MIN_CAMERA_RADIUS, cameraRadius));
+                
                 clampOrigin();
                 updateCameraPosition();
             }
