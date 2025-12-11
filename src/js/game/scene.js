@@ -31,6 +31,7 @@ import { LightingManager } from './managers/LightingManager.js';
 import { BackdropManager } from './managers/BackdropManager.js';
 import { DecorativeVillageManager } from './managers/DecorativeVillageManager.js';
 import { PerformanceManager } from './managers/PerformanceManager.js';
+import { BudgetProcessor } from './managers/BudgetProcessor.js';
 
 const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
 
@@ -66,6 +67,7 @@ export function createScene(housesStore, gameStore, assetManager) {
     const lightingManager = new LightingManager(scene);
     const backdropManager = new BackdropManager(scene);
     const decorativeVillageManager = new DecorativeVillageManager(scene, assetManager);
+    const budgetProcessor = new BudgetProcessor();
     
     // Use simple scene background with sky texture - this ensures sky covers everything
     // The backdrop (distant ground) will be positioned to match World platform exactly
@@ -193,11 +195,7 @@ export function createScene(housesStore, gameStore, assetManager) {
     let loadingPromises = [];
     let currentCitySize = 16; // Store current city size for citizen pathfinding
     
-    // Track last month when maintenance was paid (to pay only once per month)
-    let lastMaintenanceMonth = -1;
-    
-    // Track last month when salaries were paid (to pay only once per month on first turn)
-    let lastSalaryMonth = -1;
+    // Note: lastMaintenanceMonth and lastSalaryMonth moved to BudgetProcessor
     
     // Multiple citizens support (max 3)
     const MAX_CITIZENS = 3;
@@ -327,9 +325,8 @@ export function createScene(housesStore, gameStore, assetManager) {
         citizens = [];
         previousPopulation = 0;
         
-        // Reset maintenance tracking
-        lastMaintenanceMonth = -1;
-        lastSalaryMonth = -1;
+        // Reset budget processor tracking
+        budgetProcessor.reset();
         
         // Recreate interactive group after scene.clear()
         const existingGroup = scene.getObjectByName('interactive-objects');
@@ -2052,12 +2049,22 @@ export function createScene(housesStore, gameStore, assetManager) {
                 const x = house.x;
                 const y = house.y;
                 
+                // Skip if house.type is invalid (makeDbItemId will return false)
+                if (!house.type || typeof house.type !== 'string') {
+                    continue;
+                }
+                
                 // Check if building exists in scene at this position
                 if (x >= 0 && x < city.size && y >= 0 && y < city.size) {
                     const buildingInScene = buildings[x] && buildings[x][y];
                     const buildingType = buildingInScene?.userData?.type;
                     const buildingId = buildingInScene?.userData?.id;
                     const expectedId = makeDbItemId(house.type, x, y);
+                    
+                    // Skip if makeDbItemId returned false (invalid building type)
+                    if (!expectedId) {
+                        continue;
+                    }
                     
                     // For roads: check both userData.type ('roads') and userData.id (exact name like 'StonePath-001')
                     // For other buildings: check if buildingType matches house.type
@@ -2073,7 +2080,10 @@ export function createScene(housesStore, gameStore, assetManager) {
                 } else {
                     // Invalid coordinates - definitely orphaned
                     const expectedId = makeDbItemId(house.type, x, y);
-                    orphanedHouses.push(expectedId);
+                    // Only add if expectedId is valid (not false)
+                    if (expectedId) {
+                        orphanedHouses.push(expectedId);
+                    }
                 }
             }
             
@@ -2081,7 +2091,14 @@ export function createScene(housesStore, gameStore, assetManager) {
             if (orphanedHouses.length > 0) {
                 console.log(`[Scene] Cleaning up ${orphanedHouses.length} orphaned house records from IndexedDB`);
                 for (const houseId of orphanedHouses) {
-                    await housesStore.deleteOneHouse(houseId);
+                    // Double-check that houseId is valid before deletion
+                    if (houseId && typeof houseId === 'string') {
+                        try {
+                            await housesStore.deleteOneHouse(houseId);
+                        } catch (error) {
+                            console.warn(`[Scene] Failed to delete orphaned house ${houseId}:`, error);
+                        }
+                    }
                 }
             }
         } catch (error) {
@@ -2100,229 +2117,10 @@ export function createScene(housesStore, gameStore, assetManager) {
         }
 
         // Calculate building counts and maintenance costs for budget operations
-        let buildingCounts = {
-            houses: 0,
-            farms: 0,
-            markets: 0,
-            roads: 0,
-            total: 0
-        };
-        
-        // Maintenance costs per building type (per month)
-        const maintenanceCosts = {
-            'roads': 2,
-            'House-Blue': 3,
-            'House-Red': 3,
-            'House-Purple': 3,
-            'House-2Story': 3,
-            'Farm': 1,
-            'Market': 1
-        };
-        
-        // Detailed breakdown for journal
-        let maintenanceBreakdown = {
-            roads: { count: 0, cost: 0 },
-            houses: { count: 0, cost: 0 },
-            farms: { count: 0, cost: 0 },
-            markets: { count: 0, cost: 0 }
-        };
-        
-        for(let x = 0; x < city.size; x++) {
-            for(let y = 0; y < city.size; y++) {
-                const building = buildings[x][y];
-                if (building && building.userData && building.userData.type) {
-                    const type = building.userData.type;
-                    
-                    // Calculate maintenance cost based on building type
-                    let cost = 2; // Default cost
-                    if (type.includes('roads')) {
-                        cost = maintenanceCosts['roads'];
-                        buildingCounts.roads++;
-                        maintenanceBreakdown.roads.count++;
-                        maintenanceBreakdown.roads.cost += cost;
-                    } else if (type === 'House-Blue' || type === 'House-Red' || type === 'House-Purple' || type === 'House-2Story') {
-                        cost = maintenanceCosts['House-Blue']; // All houses cost 3€
-                        buildingCounts.houses++;
-                        maintenanceBreakdown.houses.count++;
-                        maintenanceBreakdown.houses.cost += cost;
-                    } else if (type.includes('Farm')) {
-                        cost = maintenanceCosts['Farm'];
-                        buildingCounts.farms++;
-                        maintenanceBreakdown.farms.count++;
-                        maintenanceBreakdown.farms.cost += cost;
-                    } else if (type.includes('Market')) {
-                        cost = maintenanceCosts['Market'];
-                        buildingCounts.markets++;
-                        maintenanceBreakdown.markets.count++;
-                        maintenanceBreakdown.markets.cost += cost;
-                    }
-                    
-                    buildingCounts.total++;
-                }
-            }
-        }
+        const { buildingCounts, maintenanceBreakdown } = budgetProcessor.calculateBuildingCounts(city, buildings);
 
-        // Daily budget operations - expenses and income
-        try {
-            if (window.budgetManager) {
-                // Update turn FIRST so all journal entries have the correct turn number
-                await window.budgetManager.updateTurn(time);
-                
-                // Add taxes from houses (100€ per citizen, only in November)
-                // Only collects if there is population
-                await window.budgetManager.addTaxes(time);
-                
-                // Add salaries expense - only once per month on first turn (dayInMonth === 1)
-                const timeInfo = TimeManager.getTimeInfo(time);
-                const currentMonth = timeInfo.monthNumber; // Month number (1-12, then continues)
-                const isFirstTurnOfMonth = timeInfo.dayInMonth === 1;
-                
-                // Pay salaries on first turn of each month (if not already paid this month)
-                // IMPORTANT: Mettre à jour lastSalaryMonth AVANT les opérations asynchrones pour éviter les doubles paiements
-                if (isFirstTurnOfMonth && currentMonth !== lastSalaryMonth) {
-                    // Marquer immédiatement que les salaires sont payés ce mois-ci pour éviter les doubles paiements
-                    lastSalaryMonth = currentMonth;
-                    
-                    // Get salary from workSectionManager (default: 100€/mois)
-                    let salaryPerMonth = 100; // Default fallback
-                    if (window.workSectionManager && typeof window.workSectionManager.salary === 'number') {
-                        salaryPerMonth = window.workSectionManager.salary;
-                    }
-                    
-                    // Get total population from housesStore
-                    let totalPopulation = 0;
-                    if (window.housesStore && typeof window.housesStore.getGlobalPopulation === 'function') {
-                        totalPopulation = await window.housesStore.getGlobalPopulation();
-                    }
-                    
-                    if (totalPopulation > 0 && salaryPerMonth > 0) {
-                        const yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
-                        const monthName = timeInfo.month || 'Mois';
-                        const salaryDescription = `Salaires fonctionnaires - ${monthName} ${yearDisplay} (${totalPopulation} hab. × ${salaryPerMonth}€)`;
-                        
-                        const totalSalaryAmount = totalPopulation * salaryPerMonth;
-                        await window.budgetManager.addSalaries(salaryPerMonth, totalPopulation, salaryDescription);
-                        
-                        let salaryTaxRate = 0.2;
-                        if (window.workSectionManager && typeof window.workSectionManager.salaryTaxRate === 'number') {
-                            salaryTaxRate = window.workSectionManager.salaryTaxRate;
-                        }
-                        
-                        if (salaryTaxRate > 0) {
-                            const taxDescription = `Impôt sur les salaires - ${monthName} ${yearDisplay} (${Math.round(salaryTaxRate * 100)}%)`;
-                            await window.budgetManager.addSalaryTax(totalSalaryAmount, salaryTaxRate, taxDescription);
-                        }
-                    }
-                }
-                
-                // Add building maintenance expenses - only once per month
-                // Only pay maintenance if we're in a different month than last time
-                if (currentMonth !== lastMaintenanceMonth) {
-                    // Calculate total maintenance cost from breakdown
-                    const buildingAmount = maintenanceBreakdown.roads.cost + 
-                                         maintenanceBreakdown.houses.cost + 
-                                         maintenanceBreakdown.farms.cost + 
-                                         maintenanceBreakdown.markets.cost;
-                    
-                    if (buildingAmount > 0) {
-                        // Create detailed description with month name, year, and breakdown
-                        const year = timeInfo.year + 1; // Year is 0-indexed, so add 1 for display
-                        const monthName = timeInfo.month || 'Mois'; // Use 'month' property from TimeManager
-                        
-                        // Build structured breakdown data for journal display
-                        const breakdownItems = [];
-                        if (maintenanceBreakdown.roads.count > 0) {
-                            breakdownItems.push({
-                                label: 'Routes',
-                                count: maintenanceBreakdown.roads.count,
-                                unitCost: 2,
-                                total: maintenanceBreakdown.roads.cost
-                            });
-                        }
-                        if (maintenanceBreakdown.houses.count > 0) {
-                            breakdownItems.push({
-                                label: 'Maisons',
-                                count: maintenanceBreakdown.houses.count,
-                                unitCost: 3,
-                                total: maintenanceBreakdown.houses.cost
-                            });
-                        }
-                        if (maintenanceBreakdown.farms.count > 0) {
-                            breakdownItems.push({
-                                label: 'Fermes',
-                                count: maintenanceBreakdown.farms.count,
-                                unitCost: 1,
-                                total: maintenanceBreakdown.farms.cost
-                            });
-                        }
-                        if (maintenanceBreakdown.markets.count > 0) {
-                            breakdownItems.push({
-                                label: 'Marchés',
-                                count: maintenanceBreakdown.markets.count,
-                                unitCost: 1,
-                                total: maintenanceBreakdown.markets.cost
-                            });
-                        }
-                        
-                        // Create description with structured data (JSON format for parsing)
-                        const breakdownData = JSON.stringify(breakdownItems);
-                        const maintenanceDescription = `Maintenance mensuelle - ${monthName} ${year} |BREAKDOWN|${breakdownData}|BREAKDOWN|`;
-                        
-                        await window.budgetManager.addBuildingMaintenance(buildingAmount, maintenanceDescription);
-                        lastMaintenanceMonth = currentMonth;
-                        console.log(`[Scene] Building maintenance paid for month ${currentMonth} (${monthName} ${year})`, {
-                            amount: buildingAmount,
-                            breakdown: maintenanceBreakdown
-                        });
-                    }
-                }
-                
-                // Process population/food logic
-                if (window.housesStore) {
-                    const populationResult = await window.housesStore.processPopulationFoodLogic();
-                    if (populationResult.totalPopulationLost > 0) {
-                        console.warn(`⚠️ ${populationResult.message}`);
-                    }
-                }
-                
-                // Process loan payments BEFORE saving budget state
-                if (window.processLoanPayments) {
-                    await window.processLoanPayments();
-                    
-                    // Recalculate loan totals to ensure cumulative values are correct
-                    const budget = await window.budgetManager.getCurrentBudget();
-                    await window.budgetManager.calculateLoanTotals(budget);
-                }
-                
-                // Save budget state every 3 turns (AFTER loan payments)
-                if (time % 3 === 0 && time > 0) {
-                    try {
-                        const additionalData = {
-                            population: totalPop,
-                            buildingCounts: buildingCounts
-                        };
-                        
-                        await window.budgetManager.saveBudgetState(time, additionalData);
-                        
-                        // Clean up old states by age (60+ days)
-                        const cleanupResult = await window.budgetManager.cleanupOldBudgetStatesByAge();
-                        if (cleanupResult.deleted > 0) {
-                            // Show notification to user only once
-                            showCleanupNotificationOnce(cleanupResult);
-                        }
-                        
-                        // Also cleanup old journal entries (60+ days)
-                        if (window.budgetManager.cleanupOldJournalEntries) {
-                            await window.budgetManager.cleanupOldJournalEntries(60);
-                        }
-                    } catch (error) {
-                        console.warn('Failed to save budget state:', error);
-                    }
-                }
-            }
-        } catch (error) {
-            console.warn('Budget operations failed:', error);
-        }
+        // Process budget operations (taxes, salaries, maintenance, loans, etc.)
+        await budgetProcessor.processBudget(time, totalPop, buildingCounts, maintenanceBreakdown);
 
         //  Display results in UI - Use IndexedDB as source of truth
         // Get population from housesStore (IndexedDB) instead of gameStore
@@ -3974,56 +3772,7 @@ function onTouchEnd(event) {
         }
     }
 
-    /**
-     * Show cleanup notification to user only once
-     * @param {Object} cleanupResult - Result from cleanupOldBudgetStatesByAge
-     */
-    function showCleanupNotificationOnce(cleanupResult) {
-        // Check if user has already seen this notification
-        const hasSeenCleanupNotification = localStorage.getItem('hasSeenCleanupNotification');
-        
-        if (hasSeenCleanupNotification === 'true') {
-            // User has already seen this notification, don't show it again
-            return;
-        }
-        
-        // Mark that user has seen this notification
-        localStorage.setItem('hasSeenCleanupNotification', 'true');
-        
-        // Show the notification
-        showCleanupNotification(cleanupResult);
-    }
-
-    /**
-     * Show cleanup notification to user
-     * @param {Object} cleanupResult - Result from cleanupOldBudgetStatesByAge
-     */
-    function showCleanupNotification(cleanupResult) {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = 'cleanup-notification';
-        notification.innerHTML = `
-            <div class="cleanup-content">
-                <div class="cleanup-icon">🧹</div>
-                <div class="cleanup-text">
-                    <strong>Nettoyage automatique</strong><br>
-                    Les états financiers de plus de 60 jours seront supprimés
-                    ${cleanupResult.deletedTurns ? `<br><small>Tours: ${cleanupResult.deletedTurns.join(', ')}</small>` : ''}
-                </div>
-                <button class="cleanup-close" onclick="this.parentElement.parentElement.remove()">×</button>
-            </div>
-        `;
-
-        // Add to page
-        document.body.appendChild(notification);
-
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            if (notification.parentElement) {
-                notification.remove();
-            }
-        }, 5000);
-    }
+    // Note: showCleanupNotification() and showCleanupNotificationOnce() moved to BudgetProcessor
 
     /**
      * Immediately update a road tile visually without waiting for full scene update
