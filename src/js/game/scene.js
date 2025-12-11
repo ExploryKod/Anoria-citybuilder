@@ -2672,12 +2672,12 @@ export function createScene(housesStore, gameStore, assetManager) {
                 const nearestRoad = adjacentRoads[0];
                 citizen.path = createRoadPath(nearestRoad.x, nearestRoad.y);
                 // Move character to nearest road
-                citizen.character.position.set(nearestRoad.x, 0, nearestRoad.y);
+                citizen.character.position.set(nearestRoad.x, 0.21, nearestRoad.y);
                 citizen.currentPathIndex = 0;
                 citizen.pathDirection = 1;
                 if (citizen.path.length > 1) {
                     const nextTile = citizen.path[1];
-                    citizen.targetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
+                    citizen.targetPosition = new THREE.Vector3(nextTile.x, 0.21, nextTile.y);
                 }
                 return true;
             } else {
@@ -2723,12 +2723,12 @@ export function createScene(housesStore, gameStore, assetManager) {
             // Set next target
             if (citizen.currentPathIndex < citizen.path.length - 1) {
                 const nextTile = citizen.path[citizen.currentPathIndex + 1];
-                citizen.targetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
+                citizen.targetPosition = new THREE.Vector3(nextTile.x, 0.21, nextTile.y);
             } else if (citizen.currentPathIndex > 0) {
                 // At end of path, go backwards
                 citizen.pathDirection = -1;
                 const nextTile = citizen.path[citizen.currentPathIndex - 1];
-                citizen.targetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
+                citizen.targetPosition = new THREE.Vector3(nextTile.x, 0.21, nextTile.y);
             }
             
             return true;
@@ -2877,7 +2877,7 @@ export function createScene(housesStore, gameStore, assetManager) {
             // Position outside scene
             const spawnX = -3;
             const spawnZ = -3;
-            citizen.character.position.set(spawnX, 0, spawnZ);
+            citizen.character.position.set(spawnX, 0.21, spawnZ);
             citizen.character.visible = true;
             scene.add(citizen.character);
             
@@ -2929,12 +2929,12 @@ export function createScene(housesStore, gameStore, assetManager) {
         }
         
         // Set initial position (outside scene)
-        citizen.character.position.set(spawnX, 0, spawnZ);
+        citizen.character.position.set(spawnX, 0.21, spawnZ);
         citizen.character.visible = true;
         scene.add(citizen.character);
         
         // Set target position (the border road)
-        citizen.targetPosition = new THREE.Vector3(targetRoad.x, 0, targetRoad.y);
+        citizen.targetPosition = new THREE.Vector3(targetRoad.x, 0.21, targetRoad.y);
         citizen.onRoad = false;
         
         // Switch to walk animation
@@ -3587,7 +3587,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                 // Road access available - start walking to it
                 citizen.waitingForRoad = false;
                 const targetRoad = borderRoads[0];
-                citizen.targetPosition = new THREE.Vector3(targetRoad.x, 0, targetRoad.y);
+                citizen.targetPosition = new THREE.Vector3(targetRoad.x, 0.21, targetRoad.y);
                 citizen.onRoad = false;
                 citizen.isWalking = true;
                 
@@ -3641,7 +3641,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                 if (citizen.path.length > 1) {
                     // Set next target in path
                     const nextTile = citizen.path[1];
-                    citizen.targetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
+                    citizen.targetPosition = new THREE.Vector3(nextTile.x, 0.21, nextTile.y);
                 } else {
                     // No path found, switch to idle
                     citizen.isWalking = false;
@@ -3730,7 +3730,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                 if (citizen.path.length > 1 && citizen.currentPathIndex >= 0 && citizen.currentPathIndex < citizen.path.length) {
                     // Get next tile in path based on direction
                     const nextTile = citizen.path[citizen.currentPathIndex];
-                    citizen.targetPosition = new THREE.Vector3(nextTile.x, 0, nextTile.y);
+                    citizen.targetPosition = new THREE.Vector3(nextTile.x, 0.21, nextTile.y);
                     // Continue walking - no idle pauses
                 } else {
                     // Path issue - recalculate
