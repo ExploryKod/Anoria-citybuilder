@@ -275,6 +275,19 @@ export function createScene(housesStore, gameStore, assetManager) {
             }
         }
         
+        // Load boundary fences at north, south, east, west limits
+        // Remove existing fences if they exist (in case of scene reset)
+        const existingFenceGroup = scene.getObjectByName('boundary-fences');
+        if (existingFenceGroup) {
+            scene.remove(existingFenceGroup);
+        }
+        
+        try {
+            await assetManager.loadBoundaryFences(scene, citySize);
+        } catch (error) {
+            console.warn('[Scene] Could not load boundary fences:', error);
+        }
+        
         // Reset citizen state
         // Remove all existing citizens
         citizens.forEach(citizen => {
@@ -592,14 +605,14 @@ export function createScene(housesStore, gameStore, assetManager) {
                 // Vérifier si le bâtiment existe encore dans la base de données
                 // Si non, le supprimer de la scène (cas des événements aléatoires, etc.)
                 // IMPORTANT: Ne pas supprimer si un nouveau bâtiment est en cours de création (newBuildingId existe)
-                const isRoad = currentBuildingId === 'roads' || buildings[x][y]?.userData?.isRoad;
+                const isRoad = buildings[x][y]?.userData?.isRoad || (currentBuildingId && currentBuildingId.startsWith('StonePath-'));
                 const hasNewBuilding = newBuildingId && newBuildingId !== currentBuildingId;
                 
                 // FIX BUG 1: For roads, use city.tiles as source of truth
                 // If city.tiles doesn't have a road but terrain shows road material, restore to grass
                 // This prevents "ghost" roads from terrain material when payment failed
                 if (isRoad) {
-                    const tileHasRoad = city.tiles[x][y]?.buildingId === 'roads' || city.tiles[x][y]?.buildingId === 'Road';
+                    const tileHasRoad = city.tiles[x][y]?.buildingId && city.tiles[x][y].buildingId.startsWith('StonePath-');
                     if (!tileHasRoad) {
                         // Terrain shows road but city.tiles doesn't - this means payment failed or road was removed
                         // Restore terrain to grass
@@ -742,21 +755,14 @@ export function createScene(housesStore, gameStore, assetManager) {
                   await housesStore.updateHouseFields(currentUniqueID, {markets: allMarketsInZone})
 
                 //  Remove a building from the scene if a player remove a building
-                
                 if(!newBuildingId && currentBuildingId) {
                     if(bulldozeSelected.classList.contains('selected') && currentBuildingId) {
-                        // For roads: use userData.id (contains exact name like 'StonePath-001') instead of userData.type ('roads')
-                        // This matches how houses work: userData.type and userData.id are the same for houses
-                        // But for roads, type='roads' while id='StonePath-001', and DB uses the exact name
-                        let buildingIdForDeletion = currentBuildingId;
-                        const isRoad = currentBuildingId === 'roads' || (buildings[x][y]?.userData?.id && buildings[x][y].userData.id.startsWith('StonePath-'));
-                        if (isRoad && buildings[x][y]?.userData?.id) {
-                            buildingIdForDeletion = buildings[x][y].userData.id;
-                        }
-                        const uniqueBuildingId = makeDbItemId(buildingIdForDeletion, x, y);
+                        // Now roads follow the same pattern as houses: userData.type = meshName (e.g., 'StonePath-001')
+                        // So we can use currentBuildingId directly, just like for houses
+                        const uniqueBuildingId = makeDbItemId(currentBuildingId, x, y);
                         if(houses.includes(currentBuildingId)) {
                             await housesStore.deleteOneHouse(uniqueBuildingId)
-                        } else if(isRoad) {
+                        } else if(currentBuildingId && currentBuildingId.startsWith('StonePath-')) {
                             // Roads are now stored in database like other buildings
                             await housesStore.deleteOneHouse(uniqueBuildingId)
                         } else {
@@ -1296,7 +1302,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                     // Check if house has food AND road access before allowing population growth (using module helpers, DB remains source of truth)
                     // Read stocks from IndexedDB (FoodDistributionService's updates are here)
                     const houseFoodStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks');
-                    const houseNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
+                    let houseNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
                     const currentPop = await housesStore.getHouseItem(currentUniqueID, 'pop');
                     const worldTime = await housesStore.getHouseItem(currentUniqueID, 'worldTime');
                     
