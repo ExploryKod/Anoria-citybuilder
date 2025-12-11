@@ -715,33 +715,21 @@ class AssetManager extends MeshLoader {
                     const fenceGroup = new THREE.Group();
                     fenceGroup.name = 'boundary-fences';
 
-                    // Base rotation for fences to lie horizontally (flat on ground)
-                    // Use same X rotation for all sides, adjust Y and Z rotations for orientation
-                    const baseRotationX = THREE.MathUtils.degToRad(90);  // Makes fence horizontal
-                    
-                    // Individual rotations for each side
+                    // Rotations for north and south fences to stand upright (vertical)
                     // North fence: runs along X-axis, faces north (positive Z)
+                    const northRotationX = THREE.MathUtils.degToRad(90);
                     const northRotationY = THREE.MathUtils.degToRad(0);
                     const northRotationZ = THREE.MathUtils.degToRad(0);
                     
                     // South fence: runs along X-axis, faces south (negative Z) - rotated 180° from north
+                    const southRotationX = THREE.MathUtils.degToRad(90);
                     const southRotationY = THREE.MathUtils.degToRad(180);
                     const southRotationZ = THREE.MathUtils.degToRad(0);
-                    
-                    // East fence: runs along Z-axis, faces east (positive X)
-                    // Adjust Z rotation to keep fence horizontal when Y=90°
-                    const eastRotationY = THREE.MathUtils.degToRad(90);
-                    const eastRotationZ = THREE.MathUtils.degToRad(90);  // Rotate Z to compensate
-                    
-                    // West fence: runs along Z-axis, faces west (negative X)
-                    // Adjust Z rotation to keep fence horizontal when Y=-90°
-                    const westRotationY = THREE.MathUtils.degToRad(-90);
-                    const westRotationZ = THREE.MathUtils.degToRad(-90);  // Rotate Z to compensate
 
                     // North fence (z = citySize) - runs along x-axis from 0 to citySize
                     for (let i = 0; i < segmentsPerSide; i++) {
                         const fence = fenceTemplate.clone();
-                        fence.rotation.set(baseRotationX, northRotationY, northRotationZ);
+                        fence.rotation.set(northRotationX, northRotationY, northRotationZ);
                         const xPos = (i * segmentWithSpacing) + (fenceSegmentLength / 2);
                         // Clamp to ensure we don't go beyond citySize
                         if (xPos <= citySize) {
@@ -758,7 +746,7 @@ class AssetManager extends MeshLoader {
                     // South fence (z = 0) - runs along x-axis from 0 to citySize
                     for (let i = 0; i < segmentsPerSide; i++) {
                         const fence = fenceTemplate.clone();
-                        fence.rotation.set(baseRotationX, southRotationY, southRotationZ);
+                        fence.rotation.set(southRotationX, southRotationY, southRotationZ);
                         const xPos = (i * segmentWithSpacing) + (fenceSegmentLength / 2);
                         // Clamp to ensure we don't go beyond citySize
                         if (xPos <= citySize) {
@@ -772,39 +760,6 @@ class AssetManager extends MeshLoader {
                         }
                     }
 
-                    // East fence (x = citySize) - runs along z-axis from 0 to citySize
-                    for (let i = 0; i < segmentsPerSide; i++) {
-                        const fence = fenceTemplate.clone();
-                        fence.rotation.set(baseRotationX, eastRotationY, eastRotationZ);
-                        const zPos = (i * segmentWithSpacing) + (fenceSegmentLength / 2);
-                        // Clamp to ensure we don't go beyond citySize
-                        if (zPos <= citySize) {
-                            fence.position.set(citySize + boundaryOffset, fenceHeight, zPos);
-                            fence.userData = {
-                                isBoundaryFence: true,
-                                nonInteractive: true,
-                                side: 'east'
-                            };
-                            fenceGroup.add(fence);
-                        }
-                    }
-
-                    // West fence (x = 0) - runs along z-axis from 0 to citySize
-                    for (let i = 0; i < segmentsPerSide; i++) {
-                        const fence = fenceTemplate.clone();
-                        fence.rotation.set(baseRotationX, westRotationY, westRotationZ);
-                        const zPos = (i * segmentWithSpacing) + (fenceSegmentLength / 2);
-                        // Clamp to ensure we don't go beyond citySize
-                        if (zPos <= citySize) {
-                            fence.position.set(0 - boundaryOffset, fenceHeight, zPos);
-                            fence.userData = {
-                                isBoundaryFence: true,
-                                nonInteractive: true,
-                                side: 'west'
-                            };
-                            fenceGroup.add(fence);
-                        }
-                    }
 
                     // Add fence group to scene
                     scene.add(fenceGroup);
