@@ -1698,6 +1698,21 @@ window.onload = async () => {
         document.addEventListener('keydown', handleEscape);
     }
 
+    /**
+     * Reset localStorage completely - this is the single place where localStorage is cleared
+     * Removes all items individually first, then calls clear() to ensure complete cleanup
+     */
+    function resetLocalStorage() {
+        // Remove all items individually first to ensure complete cleanup
+        const localStorageKeys = Object.keys(localStorage);
+        localStorageKeys.forEach(key => {
+            localStorage.removeItem(key);
+        });
+        // Then clear all remaining items
+        localStorage.clear();
+        console.log('LocalStorage completely cleared. Removed keys:', localStorageKeys);
+    }
+
     // Function to perform the actual reset
     async function performReset() {
         // Hard reload - unregister service worker and clear caches
@@ -1720,9 +1735,8 @@ window.onload = async () => {
                 }
             }
             
-            // Clear localStorage
-            localStorage.clear();
-            console.log('LocalStorage cleared');
+            // Clear localStorage completely - using dedicated function
+            resetLocalStorage();
             
             // Clear IndexedDB - for all databases
             if ('indexedDB' in window) {
@@ -1735,6 +1749,9 @@ window.onload = async () => {
                     });
                 });
             }
+            
+            // Small delay to ensure localStorage clear is fully processed before reload
+            await new Promise(resolve => setTimeout(resolve, 100));
             
             // Reload the page
             window.location.reload(true);
@@ -5006,7 +5023,7 @@ function createJournalEntryHTML(entry) {
         isIncome = true; // Tous les exports sont des revenus
     } else if (entry.type.startsWith('import_')) {
         isIncome = false; // Tous les imports sont des dépenses
-    } else if (entry.type === 'salary' || entry.type === 'maintenance' || entry.type === 'construction' || entry.type === 'exceptional_expenses') {
+    } else if (entry.type === 'salary' || entry.type === 'maintenance' || entry.type === 'construction' || entry.type === 'exceptional_expenses' || entry.type === 'commercial_route') {
         isIncome = false; // Dépenses
     } else if (entry.type === 'carry_forward') {
         // Pour carry_forward, utiliser la propriété isCarryForwardIncome si disponible
@@ -5034,6 +5051,7 @@ function createJournalEntryHTML(entry) {
         'export_cabbage': 'Export Chou',
         'export_wood': 'Export Bois',
         'export_dattes': 'Export Dattes',
+        'commercial_route': 'Commission Négociants',
         'loan_interest': 'Intérêts prêt',
         'loan_repayment': 'Remboursement prêt',
         'cumul_maintenance': 'Cumul Maintenance',
@@ -5050,8 +5068,9 @@ function createJournalEntryHTML(entry) {
     let descriptionText = entry.description || '';
     let breakdownItems = null;
 
-    // Support breakdown for maintenance, imports, and exports
+    // Support breakdown for maintenance, imports, exports, and commercial routes
     const supportsBreakdown = entry.type === 'maintenance' ||
+                              entry.type === 'commercial_route' ||
                               entry.type.startsWith('import_') ||
                               entry.type.startsWith('export_');
 
@@ -5067,7 +5086,7 @@ function createJournalEntryHTML(entry) {
 
     // Get partner name if partnerId exists
     let partnerName = null;
-    if (entry.partnerId && (entry.type.startsWith('import_') || entry.type.startsWith('export_'))) {
+    if (entry.partnerId && (entry.type.startsWith('import_') || entry.type.startsWith('export_') || entry.type === 'commercial_route')) {
         try {
             const partnersData = localStorage.getItem('commerce_partners');
             if (partnersData) {

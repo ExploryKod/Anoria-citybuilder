@@ -508,7 +508,7 @@ export class CitizenManager {
     /**
      * Updates a single citizen's movement and animation
      */
-    updateCitizen(citizen, deltaTime, city, isRoadTile, hasBuilding, worldToTile, getAdjacentRoads, createRoadPath, recalculateCitizenPath, validatePath) {
+    updateCitizen(citizen, deltaTime, city, isRoadTile, hasBuilding, worldToTile, getAdjacentRoads, createRoadPath, recalculateCitizenPath, validatePath, findBorderRoads) {
         if (!citizen || !citizen.character || !citizen.character.visible) {
             return;
         }
@@ -656,9 +656,9 @@ export class CitizenManager {
     /**
      * Update all citizens (called every frame)
      */
-    updateAllCitizens(deltaTime, city, isRoadTile, hasBuilding, worldToTile, getAdjacentRoads, createRoadPath, recalculateCitizenPath, validatePath) {
+    updateAllCitizens(deltaTime, city, isRoadTile, hasBuilding, worldToTile, getAdjacentRoads, createRoadPath, recalculateCitizenPath, validatePath, findBorderRoads) {
         this.citizens.forEach(citizen => {
-            this.updateCitizen(citizen, deltaTime, city, isRoadTile, hasBuilding, worldToTile, getAdjacentRoads, createRoadPath, recalculateCitizenPath, validatePath);
+            this.updateCitizen(citizen, deltaTime, city, isRoadTile, hasBuilding, worldToTile, getAdjacentRoads, createRoadPath, recalculateCitizenPath, validatePath, findBorderRoads);
         });
     }
 

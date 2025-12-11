@@ -38,9 +38,45 @@ class CommerceSectionManager {
                 this.currentTab = targetTab;
                 
                 if (targetTab === 'partners') {
-                    this.renderPartners();
+                    // Setup refresh button when partners tab is opened
+                    this.setupRefreshButton();
+                    this.renderPartners().catch(error => {
+                        console.error('[CommerceSectionManager] Error rendering partners:', error);
+                    });
                 }
             });
+        });
+    }
+
+    /**
+     * Setup refresh button for partners tab
+     */
+    setupRefreshButton() {
+        const refreshBtn = document.getElementById('commerce-refresh-btn');
+        if (!refreshBtn) return;
+
+        // Remove existing listener by cloning the button
+        const newRefreshBtn = refreshBtn.cloneNode(true);
+        refreshBtn.parentNode.replaceChild(newRefreshBtn, refreshBtn);
+        
+        newRefreshBtn.addEventListener('click', async () => {
+            // Disable button during refresh
+            newRefreshBtn.disabled = true;
+            const originalHTML = newRefreshBtn.innerHTML;
+            newRefreshBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Actualisation...';
+            
+            try {
+                // Re-render partners to refresh all data (population, unemployment, stocks, etc.)
+                await this.renderPartners();
+                this.showPartnerMessage('Données actualisées avec succès', 'success');
+            } catch (error) {
+                console.error('[CommerceSectionManager] Error refreshing partners:', error);
+                this.showPartnerMessage('Erreur lors de l\'actualisation', 'error');
+            } finally {
+                // Re-enable button
+                newRefreshBtn.disabled = false;
+                newRefreshBtn.innerHTML = originalHTML;
+            }
         });
     }
 
@@ -56,7 +92,11 @@ class CommerceSectionManager {
                 name: 'Deserta',
                 description: 'Ville désertique spécialisée dans les dattes',
                 isActive: false, // Relation commerciale désactivée par défaut
-                activationConditions: [], // Conditions requises pour activer (vide = aucune condition)
+                activationConditions: [
+                    'population_min_5',
+                    'unemployment_max_10',
+                    'windmill_stocks_available'
+                ], // Conditions requises pour activer
                 imports: [
                     {
                         productId: 'carrot',
@@ -165,6 +205,20 @@ class CommerceSectionManager {
         if (stored) {
             try {
                 this.partnersData = JSON.parse(stored);
+                // Migration: Remove deprecated condition 'funds_min_3000_deficit'
+                let needsSave = false;
+                this.partnersData.forEach(partner => {
+                    if (partner.activationConditions && Array.isArray(partner.activationConditions)) {
+                        const index = partner.activationConditions.indexOf('funds_min_3000_deficit');
+                        if (index !== -1) {
+                            partner.activationConditions.splice(index, 1);
+                            needsSave = true;
+                        }
+                    }
+                });
+                if (needsSave) {
+                    this.savePartnersData();
+                }
             } catch (e) {
                 this.partnersData = this.generatePartnersData();
                 this.savePartnersData();
@@ -176,27 +230,294 @@ class CommerceSectionManager {
     }
 
     /**
+     * Get housesStore instance
+     * @returns {HousesStore|null} HousesStore instance or null
+     */
+    getHousesStore() {
+        if (window.app && window.app.housesStore) {
+            return window.app.housesStore;
+        } else if (window.housesStore) {
+            return window.housesStore;
+        } else if (window.game && window.game.housesStore) {
+            return window.game.housesStore;
+        }
+        return null;
+    }
+
+    /**
+     * Check if partner has active contract (not all occurrences used)
+     * @param {Object} partner - Partner object
+     * @returns {boolean} True if contract is still active
+     */
+    hasActiveContract(partner) {
+        // Check imports (our exports to partner)
+        const hasActiveImports = partner.imports.some(imp => 
+            (imp.currentOccurrences || 0) < imp.maxOccurrences
+        );
+        
+        // Check exports (our imports from partner)
+        const hasActiveExports = partner.exports.some(exp => 
+            (exp.currentOccurrences || 0) < exp.maxOccurrences
+        );
+        
+        return hasActiveImports || hasActiveExports;
+    }
+
+    /**
+     * Get information about finished contracts per product
+     * @param {Object} partner - Partner object
+     * @returns {Object} { finishedImports: Array, finishedExports: Array, hasActiveContract: boolean }
+     */
+    getContractStatus(partner) {
+        const finishedImports = partner.imports.filter(imp => 
+            (imp.currentOccurrences || 0) >= imp.maxOccurrences
+        ).map(imp => ({
+            productId: imp.productId,
+            productName: imp.productName,
+            currentOccurrences: imp.currentOccurrences || 0,
+            maxOccurrences: imp.maxOccurrences
+        }));
+
+        const finishedExports = partner.exports.filter(exp => 
+            (exp.currentOccurrences || 0) >= exp.maxOccurrences
+        ).map(exp => ({
+            productId: exp.productId,
+            productName: exp.productName,
+            currentOccurrences: exp.currentOccurrences || 0,
+            maxOccurrences: exp.maxOccurrences
+        }));
+
+        const hasActiveContract = this.hasActiveContract(partner);
+
+        return {
+            finishedImports,
+            finishedExports,
+            hasActiveContract
+        };
+    }
+
+    /**
+     * Check if windmills have sufficient stocks for partner's required products
+     * @param {Object} partner - Partner object
+     * @returns {Promise<Object>} { hasStocks: boolean, missingProducts: Array<string> }
+     */
+    async checkWindmillStocks(partner) {
+        const housesStore = this.getHousesStore();
+        if (!housesStore) {
+            return { hasStocks: false, missingProducts: ['HousesStore non disponible'] };
+        }
+
+        try {
+            // Get all windmills
+            const allHouses = await housesStore.listAllHouses();
+            const windmills = allHouses.filter(house => {
+                const type = house.type || '';
+                return type.includes('Windmill') || type.includes('windmill');
+            });
+
+            if (windmills.length === 0) {
+                return { hasStocks: false, missingProducts: ['Aucun moulin construit'] };
+            }
+
+            // Get products required for exports (partner imports from us)
+            const requiredProducts = partner.imports.map(imp => imp.productId);
+            const missingProducts = [];
+
+            // Check each required product
+            for (const productId of requiredProducts) {
+                const stockKey = this.getStockKey(productId);
+                if (!stockKey) continue;
+
+                // Sum stocks from all windmills
+                let totalStock = 0;
+                for (const windmill of windmills) {
+                    const stocks = windmill.stocks || {};
+                    totalStock += stocks[stockKey] || 0;
+                }
+
+                // For now, require at least 1 unit in stock (can be adjusted)
+                if (totalStock < 1) {
+                    const productName = this.getProductName(productId);
+                    missingProducts.push(`${productName} (stock: ${totalStock})`);
+                }
+            }
+
+            return {
+                hasStocks: missingProducts.length === 0,
+                missingProducts
+            };
+        } catch (error) {
+            console.error('[CommerceSectionManager] Error checking windmill stocks:', error);
+            return { hasStocks: false, missingProducts: ['Erreur lors de la vérification'] };
+        }
+    }
+
+    /**
+     * Get stock key for a product ID
+     * @param {string} productId - Product ID
+     * @returns {string|null} Stock key or null
+     */
+    getStockKey(productId) {
+        const stockMap = {
+            'wheat': 'wheat',
+            'carrot': 'carrot',
+            'cabbage': 'cabbage',
+            'wood': 'wood',
+            'dattes': 'dattes'
+        };
+        return stockMap[productId] || null;
+    }
+
+    /**
+     * Get product name for a product ID
+     * @param {string} productId - Product ID
+     * @returns {string} Product name
+     */
+    getProductName(productId) {
+        const productNames = {
+            'wheat': 'Blé',
+            'carrot': 'Carotte',
+            'cabbage': 'Chou',
+            'wood': 'Bois',
+            'dattes': 'Dattes'
+        };
+        return productNames[productId] || productId;
+    }
+
+    /**
+     * Get current population
+     * @returns {Promise<number>} Current population
+     */
+    async getCurrentPopulation() {
+        const housesStore = this.getHousesStore();
+        if (!housesStore) return 0;
+
+        try {
+            if (typeof housesStore.getGlobalPopulation === 'function') {
+                return await housesStore.getGlobalPopulation();
+            }
+        } catch (error) {
+            console.error('[CommerceSectionManager] Error getting population:', error);
+        }
+        return 0;
+    }
+
+    /**
+     * Get current unemployment percentage
+     * @returns {Promise<number>} Unemployment percentage (0-100)
+     */
+    async getUnemploymentPercentage() {
+        const housesStore = this.getHousesStore();
+        if (!housesStore) return 0;
+
+        try {
+            const allBuildings = await housesStore.listAllHouses();
+            
+            // Calculate available workers from houses
+            let workerPopulation = 0;
+            for (const house of allBuildings) {
+                const type = house.type || '';
+                const pop = house.pop || 0;
+                
+                if (type.includes('House')) {
+                    if (type.includes('2Story') || type.includes('2-Story')) {
+                        // Palace: 1/6 becomes elite, 5/6 remain workers
+                        const elitesFromThisHouse = Math.floor(pop / 6);
+                        workerPopulation += (pop - elitesFromThisHouse);
+                    } else if (type.includes('Blue') || type.includes('Red') || type.includes('Purple')) {
+                        workerPopulation += pop;
+                    }
+                }
+            }
+            
+            if (workerPopulation === 0) return 0;
+            
+            // Calculate total assigned workers
+            let totalAssignedWorkers = 0;
+            for (const building of allBuildings) {
+                if (!building.employees) continue;
+                const sector = building.employees.sector || 0;
+                if (sector === 0) continue; // Skip residential
+                totalAssignedWorkers += building.employees.worker || 0;
+            }
+            
+            // Calculate unemployment percentage
+            const unemployedCount = Math.max(0, workerPopulation - totalAssignedWorkers);
+            return Math.round((unemployedCount / workerPopulation) * 100);
+        } catch (error) {
+            console.error('[CommerceSectionManager] Error calculating unemployment:', error);
+            return 0;
+        }
+    }
+
+    /**
+     * Get current budget funds
+     * @returns {Promise<number>} Current funds (can be negative)
+     */
+    async getCurrentFunds() {
+        if (window.budgetManager) {
+            try {
+                const budget = await window.budgetManager.getCurrentBudget();
+                return budget.funds || 0;
+            } catch (error) {
+                console.error('[CommerceSectionManager] Error getting funds:', error);
+            }
+        }
+        return 0;
+    }
+
+    /**
      * Check if partner activation conditions are met
      * @param {Object} partner - Partner object
-     * @returns {Object} { canActivate: boolean, unmetConditions: Array<string> }
-     * Dependencies: None (extensible for future conditions)
+     * @returns {Promise<Object>} { canActivate: boolean, unmetConditions: Array<string> }
      */
-    checkPartnerActivationConditions(partner) {
+    async checkPartnerActivationConditions(partner) {
+        // If no conditions specified, allow activation
         if (!partner.activationConditions || partner.activationConditions.length === 0) {
+            // Apply default conditions for first partner (Deserta)
+            if (partner.id === 'deserta') {
+                return await this.checkDefaultActivationConditions(partner);
+            }
             return { canActivate: true, unmetConditions: [] };
         }
 
         const unmetConditions = [];
 
-        // Exemple de conditions futures (à implémenter) :
-        // - 'population_min_100': Nécessite 100 habitants minimum
-        // - 'building_windmill': Nécessite un moulin construit
-        // - 'funds_min_500': Nécessite 500€ en trésorerie
-
+        // Check each condition
         for (const condition of partner.activationConditions) {
-            // TODO: Implémenter la vérification des conditions ici
-            // Pour l'instant, on considère toutes les conditions comme non remplies
-            unmetConditions.push(condition);
+            let conditionMet = false;
+            let conditionMessage = '';
+
+            switch (condition) {
+                case 'population_min_5':
+                    const population = await this.getCurrentPopulation();
+                    conditionMet = population > 5;
+                    conditionMessage = `Population > 5 (actuelle: ${population})`;
+                    break;
+
+                case 'unemployment_max_10':
+                    const unemployment = await this.getUnemploymentPercentage();
+                    conditionMet = unemployment < 10;
+                    conditionMessage = `Chômage < 10% (actuel: ${unemployment}%)`;
+                    break;
+
+                case 'windmill_stocks_available':
+                    const stocksCheck = await this.checkWindmillStocks(partner);
+                    conditionMet = stocksCheck.hasStocks;
+                    conditionMessage = stocksCheck.hasStocks 
+                        ? 'Stocks disponibles dans les moulins'
+                        : `Stocks manquants: ${stocksCheck.missingProducts.join(', ')}`;
+                    break;
+
+                default:
+                    // Unknown condition - consider unmet
+                    conditionMessage = `Condition inconnue: ${condition}`;
+                    break;
+            }
+
+            if (!conditionMet) {
+                unmetConditions.push(conditionMessage);
+            }
         }
 
         return {
@@ -206,27 +527,128 @@ class CommerceSectionManager {
     }
 
     /**
-     * Toggle partner active status
-     * @param {string} partnerId - Partner ID
-     * @returns {boolean} New active status or false if activation failed
-     * Dependencies: localStorage
+     * Check default activation conditions for first partner (Deserta)
+     * @param {Object} partner - Partner object
+     * @returns {Promise<Object>} { canActivate: boolean, unmetConditions: Array<string> }
      */
-    togglePartnerActivation(partnerId) {
-        const partner = this.partnersData.find(p => p.id === partnerId);
-        if (!partner) return false;
+    async checkDefaultActivationConditions(partner) {
+        const unmetConditions = [];
 
-        const conditionCheck = this.checkPartnerActivationConditions(partner);
-
-        // Si on active, vérifier les conditions
-        if (!partner.isActive && !conditionCheck.canActivate) {
-            console.warn(`Cannot activate partner ${partnerId}: conditions not met`, conditionCheck.unmetConditions);
-            return false;
+        // Check population > 5
+        const population = await this.getCurrentPopulation();
+        if (population <= 5) {
+            unmetConditions.push(`Population > 5 (actuelle: ${population})`);
         }
 
-        partner.isActive = !partner.isActive;
-        this.savePartnersData();
+        // Check unemployment < 10%
+        const unemployment = await this.getUnemploymentPercentage();
+        if (unemployment >= 10) {
+            unmetConditions.push(`Chômage < 10% (actuel: ${unemployment}%)`);
+        }
 
-        return partner.isActive;
+        // Check windmill stocks
+        const stocksCheck = await this.checkWindmillStocks(partner);
+        if (!stocksCheck.hasStocks) {
+            unmetConditions.push(`Stocks manquants: ${stocksCheck.missingProducts.join(', ')}`);
+        }
+
+        return {
+            canActivate: unmetConditions.length === 0,
+            unmetConditions
+        };
+    }
+
+    /**
+     * Activate partner (deactivation is automatic when contract finishes)
+     * @param {string} partnerId - Partner ID
+     * @returns {Promise<Object>} { success: boolean, newStatus: boolean|null, message: string }
+     * Dependencies: localStorage
+     */
+    async activatePartner(partnerId) {
+        const partner = this.partnersData.find(p => p.id === partnerId);
+        if (!partner) {
+            return { success: false, newStatus: null, message: 'Partenaire non trouvé' };
+        }
+
+        // Cannot activate if already active
+        if (partner.isActive) {
+            return { success: false, newStatus: true, message: 'Le partenaire est déjà actif' };
+        }
+
+        // Vérifier les conditions d'activation
+        const conditionCheck = await this.checkPartnerActivationConditions(partner);
+        if (!conditionCheck.canActivate) {
+            const message = `Conditions non remplies : ${conditionCheck.unmetConditions.join(', ')}`;
+            console.warn(`Cannot activate partner ${partnerId}: conditions not met`, conditionCheck.unmetConditions);
+            return { success: false, newStatus: false, message };
+        }
+
+        // Conditions remplies, activer le partenaire
+        // Note: La désactivation se fera automatiquement quand le contrat sera terminé
+        
+        // Pay commercial route fee (one-time payment to open commercial road)
+        const commercialRouteFee = 500; // Cost to open commercial route (negotiators)
+        const globalObj = typeof window !== 'undefined' ? window : global;
+        
+        if (globalObj.budgetManager) {
+            try {
+                const budget = await globalObj.budgetManager.getCurrentBudget();
+                const timeInfo = globalObj.TimeManager ? globalObj.TimeManager.getTimeInfo(budget.turn) : null;
+                const yearDisplay = timeInfo && timeInfo.year === 0 ? '0 JC' : timeInfo ? `${timeInfo.year} ap JC` : '';
+                const monthName = timeInfo ? timeInfo.month || 'Mois' : 'Mois';
+                const dateDisplay = `${monthName} ${yearDisplay}`;
+                
+                // Create description with breakdown to clearly show the partner
+                const breakdown = [{
+                    label: partner.name,
+                    quantity: 1,
+                    unitCost: commercialRouteFee,
+                    total: commercialRouteFee
+                }];
+                const description = `Route commerciale - ${dateDisplay} |BREAKDOWN|${JSON.stringify(breakdown)}|BREAKDOWN|`;
+                
+                // Deduct funds and update budget
+                const roundedAmount = Math.round(commercialRouteFee);
+                budget.funds = Math.round(budget.funds - roundedAmount);
+                budget.expenses = Math.round(budget.expenses + roundedAmount);
+                budget.netFlow = Math.round(budget.income - budget.expenses);
+                
+                // Add journal entry
+                await globalObj.budgetManager.addJournalEntry(
+                    budget.turn,
+                    'commercial_route',
+                    roundedAmount,
+                    description,
+                    partnerId
+                );
+                
+                // Save budget
+                await globalObj.budgetManager.db.budget.put(budget);
+                
+                // Update funds display if available
+                if (window.gameUI) {
+                    window.gameUI.updateFunds(budget.funds);
+                } else {
+                    const displayFunds = document.querySelector('.display-funds');
+                    if (displayFunds) {
+                        displayFunds.textContent = budget.funds.toString();
+                    }
+                }
+                
+                console.log(`[CommerceSectionManager] Commercial route fee paid: ${roundedAmount}€ for partner ${partner.name}`);
+            } catch (error) {
+                console.error('[CommerceSectionManager] Error paying commercial route fee:', error);
+                // Continue with activation even if payment fails (for now)
+            }
+        }
+        
+        partner.isActive = true;
+        this.savePartnersData();
+        return { 
+            success: true, 
+            newStatus: true, 
+            message: `Partenaire activé avec succès. Route commerciale ouverte (${commercialRouteFee}€). Le contrat se terminera automatiquement une fois tous les exports/imports effectués.` 
+        };
     }
 
     savePartnersData() {
@@ -234,12 +656,77 @@ class CommerceSectionManager {
     }
 
     /**
+     * Show a message to the user about partner operations
+     * @param {string} message - Message to display
+     * @param {string} type - Message type ('success' or 'error')
+     */
+    showPartnerMessage(message, type = 'info') {
+        // Create or get message container
+        let messageContainer = document.getElementById('commerce-partner-message');
+        if (!messageContainer) {
+            messageContainer = document.createElement('div');
+            messageContainer.id = 'commerce-partner-message';
+            messageContainer.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                z-index: 10000;
+                max-width: 400px;
+                font-size: 14px;
+                font-weight: 500;
+                animation: slideIn 0.3s ease-out;
+            `;
+            document.body.appendChild(messageContainer);
+        }
+
+        // Set message and style based on type
+        messageContainer.textContent = message;
+        if (type === 'success') {
+            messageContainer.style.background = '#d4edda';
+            messageContainer.style.color = '#155724';
+            messageContainer.style.borderLeft = '4px solid #28a745';
+        } else if (type === 'error') {
+            messageContainer.style.background = '#f8d7da';
+            messageContainer.style.color = '#721c24';
+            messageContainer.style.borderLeft = '4px solid #dc3545';
+        } else {
+            messageContainer.style.background = '#d1ecf1';
+            messageContainer.style.color = '#0c5460';
+            messageContainer.style.borderLeft = '4px solid #17a2b8';
+        }
+
+        // Show message
+        messageContainer.style.display = 'block';
+
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            if (messageContainer) {
+                messageContainer.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => {
+                    if (messageContainer) {
+                        messageContainer.style.display = 'none';
+                    }
+                }, 300);
+            }
+        }, 5000);
+    }
+
+    /**
      * Render partners list with activation controls
      * Dependencies: commerceStore
      */
-    renderPartners() {
+    async renderPartners() {
         const partnersList = document.getElementById('commerce-partners-list');
-        if (!partnersList || !this.partnersData) return;
+        if (!partnersList) return;
+
+        // Reload partners data from store to get latest currentOccurrences values
+        // This ensures we display the most up-to-date trade statistics
+        this.loadPartnersData();
+
+        if (!this.partnersData) return;
 
         // Initialiser les champs manquants pour compatibilité avec anciennes données
         let needsSave = false;
@@ -259,23 +746,27 @@ class CommerceSectionManager {
         const yearlyExports = stats?.yearlyExports || {};
         const yearlyImports = stats?.yearlyImports || {};
 
+        // Render partners HTML first
         partnersList.innerHTML = this.partnersData.map(partner => {
             const importsHTML = partner.imports.map(imp => {
                 const monthsNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
                 const monthsText = imp.months.map(m => monthsNames[m]).join(', ');
-                const isPartnerLimitReached = imp.currentOccurrences >= imp.maxOccurrences;
+                const isContractFinished = (imp.currentOccurrences || 0) >= imp.maxOccurrences;
                 
                 const productConfig = this.goodsData?.find(g => g.id === imp.productId);
                 const internalLimit = productConfig?.sellingMax || 0;
                 const currentYearly = yearlyExports[imp.productId] || 0;
                 const isInternalLimitReached = currentYearly >= internalLimit;
                 
-                const statusClass = (isPartnerLimitReached || isInternalLimitReached) ? 'limit-reached' : 'active';
-                const statusText = isPartnerLimitReached ? 'Limite partenaire atteinte' : 
-                                  isInternalLimitReached ? 'Seuil interne dépassé' : 'Actif';
+                // Product is unavailable if contract is finished OR internal limit is reached
+                const isUnavailable = isContractFinished || isInternalLimitReached;
+                
+                const statusClass = isContractFinished ? 'contract-finished' : (isInternalLimitReached ? 'limit-reached' : 'active');
+                const statusText = isContractFinished ? '✅ Contrat terminé' : 
+                                  isInternalLimitReached ? 'Seuil interne dépassé' : 'Contrat actif';
                 
                 return `
-                    <div class="partner-trade-item ${statusClass}">
+                    <div class="partner-trade-item ${statusClass} ${isUnavailable ? 'unavailable' : ''}">
                         <div class="partner-trade-header">
                             <span class="partner-trade-product">${imp.productName}</span>
                             <span class="partner-trade-status ${statusClass}">
@@ -292,8 +783,8 @@ class CommerceSectionManager {
                                 <span class="detail-value">${imp.maxPerTurn}</span>
                             </div>
                             <div class="partner-trade-detail">
-                                <span class="detail-label">Nombre d'imports avant fin du contrat:</span>
-                                <span class="detail-value">${imp.currentOccurrences}/${imp.maxOccurrences}</span>
+                                <span class="detail-label">Exports effectués:</span>
+                                <span class="detail-value ${isContractFinished ? 'contract-finished' : ''}">${imp.currentOccurrences || 0}/${imp.maxOccurrences}</span>
                             </div>
                             <div class="partner-trade-detail">
                                 <span class="detail-label">Seuil interne:</span>
@@ -307,19 +798,22 @@ class CommerceSectionManager {
             const exportsHTML = partner.exports.map(exp => {
                 const monthsNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
                 const monthsText = exp.months.map(m => monthsNames[m]).join(', ');
-                const isPartnerLimitReached = exp.currentOccurrences >= exp.maxOccurrences;
+                const isContractFinished = (exp.currentOccurrences || 0) >= exp.maxOccurrences;
                 
                 const productConfig = this.goodsData?.find(g => g.id === exp.productId);
                 const internalLimit = productConfig?.buyingMax || 0;
                 const currentYearly = yearlyImports[exp.productId] || 0;
                 const isInternalLimitReached = currentYearly >= internalLimit;
                 
-                const statusClass = (isPartnerLimitReached || isInternalLimitReached) ? 'limit-reached' : 'active';
-                const statusText = isPartnerLimitReached ? 'Limite partenaire atteinte' : 
-                                  isInternalLimitReached ? 'Seuil interne dépassé' : 'Actif';
+                // Product is unavailable if contract is finished OR internal limit is reached
+                const isUnavailable = isContractFinished || isInternalLimitReached;
+                
+                const statusClass = isContractFinished ? 'contract-finished' : (isInternalLimitReached ? 'limit-reached' : 'active');
+                const statusText = isContractFinished ? '✅ Contrat terminé' : 
+                                  isInternalLimitReached ? 'Seuil interne dépassé' : 'Contrat actif';
                 
                 return `
-                    <div class="partner-trade-item ${statusClass}">
+                    <div class="partner-trade-item ${statusClass} ${isUnavailable ? 'unavailable' : ''}">
                         <div class="partner-trade-header">
                             <span class="partner-trade-product">${exp.productName}</span>
                             <span class="partner-trade-status ${statusClass}">
@@ -332,8 +826,8 @@ class CommerceSectionManager {
                                 <span class="detail-value">${monthsText}</span>
                             </div>
                             <div class="partner-trade-detail">
-                                <span class="detail-label">Nombre d'exports avant fin du contrat:</span>
-                                <span class="detail-value">${exp.currentOccurrences}/${exp.maxOccurrences}</span>
+                                <span class="detail-label">Imports effectués:</span>
+                                <span class="detail-value ${isContractFinished ? 'contract-finished' : ''}">${exp.currentOccurrences || 0}/${exp.maxOccurrences}</span>
                             </div>
                             <div class="partner-trade-detail">
                                 <span class="detail-label">Seuil interne:</span>
@@ -344,12 +838,33 @@ class CommerceSectionManager {
                 `;
             }).join('');
 
-            // Vérifier les conditions d'activation
-            const conditionCheck = this.checkPartnerActivationConditions(partner);
-            const canActivate = conditionCheck.canActivate;
-            const conditionsText = partner.activationConditions.length === 0
-                ? 'Aucune condition'
-                : conditionCheck.unmetConditions.join(', ');
+            // Get contract status (which products have finished contracts)
+            const contractStatus = this.getContractStatus(partner);
+            const hasActiveContract = contractStatus.hasActiveContract;
+            const hasFinishedProducts = contractStatus.finishedImports.length > 0 || contractStatus.finishedExports.length > 0;
+
+            // Build finished products list
+            let finishedProductsHTML = '';
+            if (hasFinishedProducts && partner.isActive) {
+                const finishedProductsList = [];
+                contractStatus.finishedImports.forEach(imp => {
+                    finishedProductsList.push(`✅ ${imp.productName} (export terminé: ${imp.currentOccurrences}/${imp.maxOccurrences})`);
+                });
+                contractStatus.finishedExports.forEach(exp => {
+                    finishedProductsList.push(`✅ ${exp.productName} (import terminé: ${exp.currentOccurrences}/${exp.maxOccurrences})`);
+                });
+                
+                if (finishedProductsList.length > 0) {
+                    finishedProductsHTML = `
+                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(133, 100, 4, 0.2);">
+                            <div style="font-size: 12px; font-weight: 600; color: #856404; margin-bottom: 4px;">Contrats terminés par denrée:</div>
+                            <div style="font-size: 12px; color: #856404;">
+                                ${finishedProductsList.map(p => `<div>• ${p}</div>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
 
             return `
                 <div class="commerce-partner-item ${partner.isActive ? 'active' : 'inactive'}" data-partner-id="${partner.id}">
@@ -365,14 +880,31 @@ class CommerceSectionManager {
                                 ${partner.isActive ? '✅ Relation active' : '❌ Relation inactive'}
                             </span>
                         </div>
-                        <button class="partner-activation-btn ${!canActivate && !partner.isActive ? 'disabled' : ''}"
-                                data-partner-id="${partner.id}"
-                                ${!canActivate && !partner.isActive ? 'disabled' : ''}>
-                            ${partner.isActive ? 'Désactiver la relation' : 'Activer la relation'}
-                        </button>
-                        <div class="partner-activation-conditions">
+                        ${partner.isActive ? `
+                            <div class="partner-contract-info" style="background: ${hasActiveContract ? '#fff3cd' : '#d1ecf1'}; padding: 10px; border-radius: 6px; margin: 10px 0; border-left: 4px solid ${hasActiveContract ? '#ffc107' : '#17a2b8'};">
+                                <div style="font-weight: 600; color: ${hasActiveContract ? '#856404' : '#0c5460'}; margin-bottom: 5px;">
+                                    ${hasActiveContract ? '⚠️ Contrat en cours' : '✅ Tous les contrats sont terminés'}
+                                </div>
+                                <div style="font-size: 13px; color: ${hasActiveContract ? '#856404' : '#0c5460'};">
+                                    ${hasActiveContract 
+                                        ? 'Le contrat est actif. Certaines denrées peuvent avoir leur contrat terminé (voir ci-dessous), mais le partenaire reste actif tant qu\'au moins une denrée a un contrat actif. Une fois TOUTES les denrées terminées, le partenaire sera désactivé automatiquement. Vous ne pouvez pas le désactiver manuellement.'
+                                        : 'Tous les contrats de toutes les denrées sont terminés. Le partenaire sera désactivé automatiquement lors du prochain tour.'}
+                                </div>
+                                ${finishedProductsHTML}
+                            </div>
+                        ` : ''}
+                        ${!partner.isActive ? `
+                            <button class="partner-activation-btn"
+                                    id="activation-btn-${partner.id}"
+                                    data-partner-id="${partner.id}"
+                                    data-partner-active="false"
+                                    disabled>
+                                Conclure un contrat
+                            </button>
+                        ` : ''}
+                        <div class="partner-activation-conditions" id="conditions-${partner.id}">
                             <span class="conditions-label">Conditions d'activation:</span>
-                            <span class="conditions-value">${conditionsText}</span>
+                            <span class="conditions-value" id="conditions-value-${partner.id}">Vérification...</span>
                         </div>
                     </div>
 
@@ -398,6 +930,42 @@ class CommerceSectionManager {
                 </div>
             `;
         }).join('');
+
+        // Load and display activation conditions for each partner (async)
+        // Also enable/disable activation button based on conditions
+        for (const partner of this.partnersData) {
+            const conditionsEl = document.getElementById(`conditions-value-${partner.id}`);
+            const activationBtn = document.getElementById(`activation-btn-${partner.id}`);
+            
+            if (conditionsEl) {
+                try {
+                    const conditionCheck = await this.checkPartnerActivationConditions(partner);
+                    const canActivate = conditionCheck.unmetConditions.length === 0;
+                    
+                    if (canActivate) {
+                        conditionsEl.textContent = '✅ Toutes les conditions sont remplies';
+                        conditionsEl.style.color = '#28a745';
+                    } else {
+                        conditionsEl.textContent = conditionCheck.unmetConditions.join(' | ');
+                        conditionsEl.style.color = '#dc3545';
+                    }
+                    
+                    // Enable/disable activation button based on conditions
+                    if (activationBtn && !partner.isActive) {
+                        activationBtn.disabled = !canActivate;
+                    }
+                } catch (error) {
+                    console.error(`[CommerceSectionManager] Error loading conditions for ${partner.id}:`, error);
+                    conditionsEl.textContent = 'Erreur lors de la vérification';
+                    conditionsEl.style.color = '#dc3545';
+                    
+                    // Disable button on error
+                    if (activationBtn && !partner.isActive) {
+                        activationBtn.disabled = true;
+                    }
+                }
+            }
+        }
     }
 
     setupEventListeners() {
@@ -412,14 +980,64 @@ class CommerceSectionManager {
         }
 
         // Créer un nouveau handler
-        this.clickHandler = (e) => {
+        this.clickHandler = async (e) => {
             // Gérer les clics sur les boutons d'activation des partenaires
             const activationBtn = e.target.closest('.partner-activation-btn');
             if (activationBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                
                 const partnerId = activationBtn.dataset.partnerId;
-                const newStatus = this.togglePartnerActivation(partnerId);
-                if (newStatus !== false) {
-                    this.renderPartners();
+                const isCurrentlyActive = activationBtn.dataset.partnerActive === 'true';
+                
+                // Only allow activation (deactivation is automatic)
+                if (isCurrentlyActive) {
+                    this.showPartnerMessage('Les partenaires actifs ne peuvent pas être désactivés manuellement. Le partenaire sera désactivé automatiquement à la fin du contrat.', 'info');
+                    return;
+                }
+                
+                // Check if button is disabled (conditions not met)
+                if (activationBtn.disabled) {
+                    this.showPartnerMessage('Les conditions d\'activation ne sont pas encore remplies.', 'info');
+                    return;
+                }
+                
+                // Disable button during processing
+                activationBtn.disabled = true;
+                activationBtn.textContent = 'Activation...';
+                
+                try {
+                    const result = await this.activatePartner(partnerId);
+                    
+                    if (result.success) {
+                        // Success - re-render partners
+                        await this.renderPartners();
+                        
+                        // Show success message
+                        this.showPartnerMessage(result.message, 'success');
+                    } else {
+                        // Failure - show error message
+                        this.showPartnerMessage(result.message, 'error');
+                        
+                        // Re-enable button if conditions are still met
+                        const partner = this.partnersData.find(p => p.id === partnerId);
+                        if (partner && !partner.isActive) {
+                            const conditionCheck = await this.checkPartnerActivationConditions(partner);
+                            activationBtn.disabled = conditionCheck.unmetConditions.length > 0;
+                            activationBtn.textContent = 'Conclure un contrat';
+                        }
+                    }
+                } catch (error) {
+                    console.error('[CommerceSectionManager] Error activating partner:', error);
+                    this.showPartnerMessage('Erreur lors de l\'activation', 'error');
+                    
+                    // Re-enable button if conditions are still met
+                    const partner = this.partnersData.find(p => p.id === partnerId);
+                    if (partner && !partner.isActive) {
+                        const conditionCheck = await this.checkPartnerActivationConditions(partner);
+                        activationBtn.disabled = conditionCheck.unmetConditions.length > 0;
+                        activationBtn.textContent = 'Conclure un contrat';
+                    }
                 }
                 return;
             }

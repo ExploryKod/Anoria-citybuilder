@@ -2400,7 +2400,8 @@ export function createScene(housesStore, gameStore, assetManager) {
                 citizenPathfinding.getAdjacentRoads.bind(citizenPathfinding),
                 citizenPathfinding.createRoadPath.bind(citizenPathfinding),
                 (citizen) => citizenPathfinding.recalculateCitizenPath(citizen, citizenManager),
-                citizenPathfinding.validatePath.bind(citizenPathfinding)
+                citizenPathfinding.validatePath.bind(citizenPathfinding),
+                citizenPathfinding.findBorderRoads.bind(citizenPathfinding)
             );
         }
         

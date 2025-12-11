@@ -29,6 +29,7 @@ import InputManager from './InputManager.js';
 import gameUI from './GameUI.js';
 import appRegistry from './AppRegistry.js';
 import webglDetector from '../utils/WebGLResourceDetector.js';
+import commerceStore from '../stores/CommerceStore.js';
 
 // Initialiser le cache de TimeManager au démarrage
 TimeManager.initializeCache().catch(err => {
@@ -964,7 +965,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     if (lastImportDetails && Object.keys(lastImportDetails).length > 0) {
                         makeInfoSection('Imports par partenaire');
 
-                        const productNames = { wheat: 'Blé', carrot: 'Carotte', cabbage: 'Chou', dattes: 'Dattes' };
+                        const productNames = { wheat: 'Blé', carrot: 'Carotte', cabbage: 'Chou', dattes: 'Dattes', wood: 'Bois' };
 
                         for (const [productId, partners] of Object.entries(lastImportDetails)) {
                             if (partners && partners.length > 0) {
@@ -1322,8 +1323,28 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
 
         replay() {
             isOver = false;
-            overOverlay.classList.remove('active')
-            window.location.href = '/'
+            overOverlay.classList.remove('active');
+            
+            // Clear localStorage before replay
+            try {
+                commerceStore.clear();
+                // Also clear other localStorage items that should be reset on replay
+                localStorage.removeItem('journal_year_end_balances');
+                localStorage.removeItem('citizen_tax_amount');
+                localStorage.removeItem('show-performance-stats');
+                localStorage.removeItem('hasSeenCleanupNotification');
+                localStorage.removeItem('speed');
+                localStorage.removeItem('selectedCitySize');
+                localStorage.removeItem('multiplayer-enabled');
+                localStorage.removeItem('multiplayer-pseudo');
+                localStorage.removeItem('multiplayer-room-name');
+                localStorage.removeItem('activeLoans');
+                console.log('[Game] LocalStorage cleared for replay');
+            } catch (error) {
+                console.warn('[Game] Error clearing localStorage on replay:', error);
+            }
+            
+            window.location.href = '/';
         },
 
         setInfo(key, info) {

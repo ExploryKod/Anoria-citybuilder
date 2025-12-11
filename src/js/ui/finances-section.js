@@ -194,6 +194,10 @@ class FinancesSectionManager {
             .filter(e => e.type === 'exceptional_expenses')
             .reduce((sum, e) => sum + e.amount, 0);
         
+        const commercialRoutes = expenseEntries
+            .filter(e => e.type === 'commercial_route')
+            .reduce((sum, e) => sum + e.amount, 0);
+        
         // Imports : regrouper tous les types import_* (import_wheat, import_carrot, etc.)
         const imports = expenseEntries
             .filter(e => e.type && e.type.startsWith('import_'))
@@ -215,6 +219,7 @@ class FinancesSectionManager {
             maintenance: Math.round(maintenance),
             salary: Math.round(salary),
             repairs: Math.round(repairs),
+            commercialRoutes: Math.round(commercialRoutes),
             imports: Math.round(imports),
             carryForwardExpense: Math.round(carryForwardExpense),
             totalExpenses: Math.round(yearData.expenses.total),
@@ -234,6 +239,7 @@ class FinancesSectionManager {
             maintenance: 0,
             salary: 0,
             repairs: 0,
+            commercialRoutes: 0,
             imports: 0,
             carryForwardExpense: 0,
             totalExpenses: 0,
