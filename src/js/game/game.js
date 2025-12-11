@@ -744,14 +744,17 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
 
                 // Display market food stocks (similar to houses)
                 if((selectedObject.userData.id.includes('Market') || selectedObject.userData.id.includes('market')) && Object.hasOwn(houseStocks, 'food')) {
+                    // Get market data to access maxStock
+                    const marketData = await housesStore.getHouse(uniqueId);
+                    const maxStock = marketData?.maxStock || 500; // Default max stock for markets
+                    
                     makeInfoSection('Stock marché');
-                    makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`);
-                    makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`);
-                    makeInfoKeyValue('Autres légumes', `${houseStocks.carrot || 0} paniers`);
-                    makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers disponibles`);
+                    makeInfoKeyValue('Blé', `${houseStocks.wheat || 0}/${maxStock} paniers`);
+                    makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0}/${maxStock} paniers`);
+                    makeInfoKeyValue('Autres légumes', `${houseStocks.carrot || 0}/${maxStock} paniers`);
+                    makeInfoKeyValue('Total', `${houseStocks.food || 0}/${maxStock} paniers disponibles`);
                     
                     // Display employee information for markets
-                    const marketData = await housesStore.getHouse(uniqueId);
                     if (marketData) {
                         // Check supply chain status (farms and houses)
                         const noFarmsNearby = marketData.noFarmsNearby === true;
@@ -968,6 +971,9 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         lastImportDetails = null;
                     }
 
+                    // Get maxStock for windmill
+                    const maxStock = windmillData?.maxStock || 1000; // Default max stock for windmill
+                    
                     makeInfoSection('Stock moulin');
                     
                     // Show stocks with last collection and import amounts
@@ -1003,11 +1009,12 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     const totalImportText = `+${totalImportAmount} paniers importés`;
                     const totalSubtext = `${totalCollectionText}, ${totalImportText}`;
 
-                    makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`, wheatSubtext);
-                    makeInfoKeyValue('Chou', `${houseStocks.cabbage || 0} paniers`, cabbageSubtext);
-                    makeInfoKeyValue('Carotte', `${houseStocks.carrot || 0} paniers`, carrotSubtext);
-                    makeInfoKeyValue('Dattes', `${houseStocks.dattes || 0} paniers`, dattesSubtext);
-                    makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers collectés`, totalSubtext);
+                    makeInfoKeyValue('Blé', `${houseStocks.wheat || 0}/${maxStock} paniers`, wheatSubtext);
+                    makeInfoKeyValue('Chou', `${houseStocks.cabbage || 0}/${maxStock} paniers`, cabbageSubtext);
+                    makeInfoKeyValue('Carotte', `${houseStocks.carrot || 0}/${maxStock} paniers`, carrotSubtext);
+                    makeInfoKeyValue('Dattes', `${houseStocks.dattes || 0}/${maxStock} paniers`, dattesSubtext);
+                    makeInfoKeyValue('Bois', `${houseStocks.wood || 0}/${maxStock} paniers`);
+                    makeInfoKeyValue('Total', `${houseStocks.food || 0}/${maxStock} paniers collectés`, totalSubtext);
 
                     // Display imports by partner if any
                     if (lastImportDetails && Object.keys(lastImportDetails).length > 0) {
