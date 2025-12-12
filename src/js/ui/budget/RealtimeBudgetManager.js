@@ -325,7 +325,7 @@ export async function updateRealtimeBudget() {
 /**
  * Retourne le texte du statut de santé financière
  */
-function getHealthStatusText(status) {
+export function getHealthStatusText(status) {
     const statusMap = {
         'healthy': 'Sain',
         'warning': 'Attention',
