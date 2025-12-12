@@ -318,7 +318,6 @@ class StorageSectionManager {
                 // If commercialize or isActive toggle changed, notify commerce service
                 if (setting === 'commercializeEnabled' || setting === 'isActive') {
                     // The commerce service will check these settings when processing trades
-                    console.log('[StorageSection] Windmill setting changed:', { windmillId, setting, value });
                 }
             });
         });
@@ -355,12 +354,6 @@ class StorageSectionManager {
             if (windmill) {
                 windmill[setting] = value;
             }
-            
-            console.log('[StorageSection] Updated windmill setting:', {
-                windmillId,
-                setting,
-                value
-            });
         } catch (error) {
             console.error('[StorageSection] Error updating windmill setting:', {
                 windmillId,

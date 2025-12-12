@@ -842,7 +842,6 @@ class CommerceSectionManager {
                     }
                 }
                 
-                console.log(`[CommerceSectionManager] Commercial route fee paid: ${roundedAmount}€ for partner ${partner.name}`);
             } catch (error) {
                 console.error('[CommerceSectionManager] Error paying commercial route fee:', error);
                 // Continue with activation even if payment fails (for now)

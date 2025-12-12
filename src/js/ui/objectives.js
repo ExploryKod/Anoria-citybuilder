@@ -82,13 +82,6 @@ class ObjectivesManager {
             const objectives = window.objectivesTracker.objectives;
             const activeObjectives = objectives.filter(obj => obj.active && !obj.completed);
             
-            console.log('📋 setupDefaultSteps - Objectives state:', {
-                total: objectives.length,
-                active: objectives.filter(obj => obj.active).length,
-                completed: objectives.filter(obj => obj.completed).length,
-                activeObjectivesCount: activeObjectives.length
-            });
-            
             // Initialiser les étapes
             this.steps = [];
             
@@ -293,9 +286,7 @@ class ObjectivesManager {
             if (historyBtn) {
                 historyBtn.addEventListener('click', (e) => {
                     e.preventDefault();
-                    console.log('History button clicked');
                     if (window.objectivesHistory && window.objectivesHistory.showHistory) {
-                        console.log('Calling window.objectivesHistory.showHistory()');
                         window.objectivesHistory.showHistory();
                     } else {
                         console.warn('window.objectivesHistory not available');
