@@ -130,7 +130,6 @@ export function createScene(housesStore, gameStore, assetManager) {
     
     // Handle WebGL context restored
     canvas.addEventListener('webglcontextrestored', () => {
-        console.log('[WebGL] Context restored');
     });
     */
     renderer.setClearColor(0x000000, 0);
@@ -753,17 +752,6 @@ export function createScene(housesStore, gameStore, assetManager) {
 
                 //  Remove a building from the scene if a player remove a building
                 if(!newBuildingId && currentBuildingId) {
-                    // Debug: Log removal attempt
-                    if (currentBuildingId && currentBuildingId.startsWith('StonePath-')) {
-                        console.log('[scene.js] Attempting to remove StonePath road:', {
-                            x, y,
-                            currentBuildingId,
-                            newBuildingId,
-                            bulldozeSelected: bulldozeSelected.classList.contains('selected'),
-                            buildingExists: !!buildings[x][y],
-                            buildingUserData: buildings[x][y]?.userData
-                        });
-                    }
                     if(bulldozeSelected.classList.contains('selected') && currentBuildingId) {
                         // Debug: Verify building exists at coordinates
                         if (!buildings[x] || !buildings[x][y]) {
@@ -970,12 +958,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                             statutsIconsMeta['no-food'].position,
                             showNoFoodIcon
                         );
-                        console.log('[scene.js] Market food sprite update:', {
-                            marketId: currentUniqueID,
-                            hasFoodBaskets,
-                            showNoFoodIcon,
-                            stocks: marketStocks
-                        });
                     }
 
                     /**
@@ -1251,14 +1233,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                                 lastProductionYear: currentYear,
                                 lastProductionMonth: currentMonthIndex // Keep for compatibility
                             });
-                            
-                            console.log('[scene.js] Farm produced annual harvest:', {
-                                farmId: currentUniqueID,
-                                farmType,
-                                productionAmount,
-                                newStocks,
-                                year: currentYear
-                            });
                         }
                     }
                     
@@ -1390,11 +1364,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                             carrot: houseFoodStocks.carrot || 0,
                             cabbage: houseFoodStocks.cabbage || 0
                         };
-                        console.log('[scene.js] Synced house stocks from IndexedDB to userData:', {
-                            houseId: currentUniqueID,
-                            stocks: buildings[x][y].userData.stocks,
-                            x, y
-                        });
                     }
                     
                     // NEW: Monthly food consumption - 1 basket per citizen per month
@@ -1485,15 +1454,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                             }
                         }
                         
-                        console.log('[scene.js] Monthly food consumption:', {
-                            houseId: currentUniqueID,
-                            citizens: currentPop,
-                            consumed: consumptionAmount - remainingConsumption,
-                            remainingToConsume: remainingConsumption,
-                            oldStocks: currentStocks,
-                            newStocks: newStocks
-                        });
-                        
                         // Get updated stocks after consumption for further processing
                         const updatedStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks');
                         if (updatedStocks) {
@@ -1507,23 +1467,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                     // Get house type to determine max population capacity (reuse houseData from above)
                     const houseType = houseData?.type || currentBuildingId;
                     const maxPopulation = getHouseMaxPopulation(houseType);
-                    
-                    console.log('[scene.js] Population check for house:', {
-                        houseId: currentUniqueID,
-                        houseType,
-                        maxPopulation,
-                        hasFood,
-                        totalFood,
-                        hasRoadAccess,
-                        currentPop,
-                        stocks: houseFoodStocks,
-                        stocksDetail: {
-                            food: houseFoodStocks?.food || 0,
-                            wheat: houseFoodStocks?.wheat || 0,
-                            carrot: houseFoodStocks?.carrot || 0,
-                            cabbage: houseFoodStocks?.cabbage || 0
-                        }
-                    });
                     
                     // Population management: population grows independently of food up to house capacity
                     // Population can exceed food (creating un nourished people)
@@ -1548,39 +1491,18 @@ export function createScene(housesStore, gameStore, assetManager) {
                                     pop: targetPopulation,
                                     lastPopulationGrowthMonth: currentMonthIndex
                                 });
-                                console.log('[scene.js] Population updated (monthly growth):', {
-                                    houseId: currentUniqueID,
-                                    oldPop: currentPop,
-                                    newPop: targetPopulation,
-                                    maxPopulation,
-                                    foodStocks: houseFoodStocks?.food || 0,
-                                    change: 'increased',
-                                    note: targetPopulation > (houseFoodStocks?.food || 0) ? 'un nourished people possible' : 'all fed'
-                                });
                             }
                         } else if (currentPop >= maxPopulation) {
                             // House is at capacity - ensure it doesn't exceed max
                             if (currentPop > maxPopulation) {
                                 targetPopulation = maxPopulation;
                                 await housesStore.updateHouseFields(currentUniqueID, { pop: targetPopulation });
-                                console.log('[scene.js] Population capped at max capacity:', {
-                                    houseId: currentUniqueID,
-                                    oldPop: currentPop,
-                                    newPop: targetPopulation,
-                                    maxPopulation
-                                });
                             }
                         }
                     } else {
                         // No road access OR not a house - reset population to 0
                         if (currentPop > 0) {
                             await housesStore.updateHouseFields(currentUniqueID, { pop: 0 });
-                            console.log('[scene.js] Population reset to 0 (no road access or not a house):', {
-                                houseId: currentUniqueID,
-                                hasRoadAccess,
-                                maxPopulation,
-                                reason: !hasRoadAccess ? 'no road access' : 'not a house'
-                            });
                         }
                     }
 
@@ -1627,13 +1549,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                             statutsIconsMeta.food.position,
                             showNoFoodIcon
                         );
-                        console.log('[scene.js] Food sprite update:', {
-                            houseId: currentUniqueID,
-                            hasFood,
-                            showNoFoodIcon,
-                            totalFood,
-                            stocks: houseFoodStocks
-                        });
                     }
                     
                   
@@ -1662,11 +1577,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                             // Fallback: add directly to scene if zone group doesn't exist
                             scene.add(buildings[x][y]);
                         }
-                        console.log('[scene.js] House evolved: House-Blue → House-Red (inhabited)', {
-                            houseId: currentUniqueID,
-                            newId: newUniqueBuildingId,
-                            population: currentPop
-                        });
                     }
                     // House-Red becomes House-Blue when uninhabited (pop === 0)
                     else if (currentBuildingId === 'House-Red' && currentPop === 0) {
@@ -1686,11 +1596,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                             // Fallback: add directly to scene if zone group doesn't exist
                             scene.add(buildings[x][y]);
                         }
-                        console.log('[scene.js] House regressed: House-Red → House-Blue (uninhabited)', {
-                            houseId: currentUniqueID,
-                            newId: newUniqueBuildingId,
-                            population: currentPop
-                        });
                     }
                     
                     /* house evolution: Red → Purple based on food conditions */
@@ -1722,12 +1627,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                                 // Fallback: add directly to scene if zone group doesn't exist
                                 scene.add(buildings[x][y]);
                             }
-                            console.log('[scene.js] House evolved: House-Red → House-Purple (well-fed)', {
-                                houseId: currentUniqueID,
-                                newId: newUniqueBuildingId,
-                                population: currentPop,
-                                foodStocks: houseFoodStocks
-                            });
                         }
                     }
                     
@@ -1758,13 +1657,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                                 // Fallback: add directly to scene if zone group doesn't exist
                                 scene.add(buildings[x][y]);
                             }
-                            console.log('[scene.js] House regressed: House-Purple → House-Red (conditions no longer met)', {
-                                houseId: currentUniqueID,
-                                newId: newUniqueBuildingId,
-                                population: currentPop,
-                                reason: purpleEvolutionCheck.reason,
-                                foodStocks: houseFoodStocks
-                            });
                         }
                     }
 
@@ -1836,14 +1728,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                             // Fallback: add directly to scene if zone group doesn't exist
                             scene.add(buildings[x][y]);
                         }
-                        console.log('[scene.js] House evolved to palace:', {
-                            houseId: oldUniqueID,
-                            newId: currentUniqueID,
-                            age: buildingAge,
-                            population: currentPop,
-                            roads: roadsBeforeEvolution,
-                            neighborsCount: houseNeighborsBeforeEvolution.length
-                        });
                     }
 
                     /* house regression: 2Story → Purple/Red/Blue if conditions no longer met */
@@ -1943,15 +1827,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                             
                             // Force neighbor recalculation
                             houseNeighbors = null;
-                            
-                            console.log('[scene.js] House regressed: House-2Story → ' + targetType + ' (conditions no longer met)', {
-                                houseId: oldUniqueID,
-                                newId: currentUniqueID,
-                                population: currentPop,
-                                reason: palaceEvolutionCheck.reason,
-                                foodStocks: houseFoodStocks,
-                                targetType: targetType
-                            });
                         }
                     }
 
@@ -2094,7 +1969,6 @@ export function createScene(housesStore, gameStore, assetManager) {
             
             // Delete orphaned houses
             if (orphanedHouses.length > 0) {
-                console.log(`[Scene] Cleaning up ${orphanedHouses.length} orphaned house records from IndexedDB`);
                 for (const houseId of orphanedHouses) {
                     // Double-check that houseId is valid before deletion
                     if (houseId && typeof houseId === 'string') {
@@ -2232,15 +2106,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                 displayFunds.textContent = funds.toString();
             }
         }
-
-        console.log('[scene.js] Updated top bar display:', {
-            population: currentPopulation,
-            famishedPopulation: famishedPopulation,
-            unemployedCount,
-            unemploymentPercentage,
-            funds,
-            usingGameUI: !!window.gameUI
-        });
 
         // End turn processing
 
@@ -2401,7 +2266,6 @@ export function createScene(housesStore, gameStore, assetManager) {
             const textures = info.memory.textures;
             
             // Removed console.log to reduce JavaScript execution time
-            // Uncomment for debugging: console.log(`[Performance] FPS: ~${fps} | Draw Calls: ${drawCalls} | Triangles: ${triangles.toLocaleString()} | Geometries: ${geometries} | Textures: ${textures}`);
             
             performanceStats.frameCount = 0;
             performanceStats.lastLogTime = now;
@@ -2412,7 +2276,6 @@ export function createScene(housesStore, gameStore, assetManager) {
     window.togglePerformanceStats = function() {
         performanceStats.enabled = !performanceStats.enabled;
         localStorage.setItem('show-performance-stats', performanceStats.enabled.toString());
-        console.log(`Performance stats ${performanceStats.enabled ? 'enabled' : 'disabled'}`);
         return performanceStats.enabled;
     };
     
@@ -2588,12 +2451,6 @@ function onTouchStart(event) {
         raycaster.setFromCamera(mouse, camera.camera);
         const intersections = raycaster.intersectObjects(getInteractiveObjects(), false);
         touchStartObject = intersections.length > 0 ? intersections[0].object : null;
-        
-        console.log('[Touch] Touch start', {
-            pos: touchStartPos,
-            intersections: intersections.length,
-            object: touchStartObject?.name || touchStartObject?.userData?.id || 'none'
-        });
         
         // Don't update selection yet - wait for touchEnd to determine if it was a tap
         
