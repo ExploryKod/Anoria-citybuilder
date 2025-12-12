@@ -38,7 +38,6 @@ class ButtonStateManager {
         
         // Log if the button was pre-disabled
         if (this.stateMap.get(buttonId) === false) {
-            console.log(`ButtonStateManager: Button "${buttonId}" registered and applied pre-disabled state`);
         }
     }
 

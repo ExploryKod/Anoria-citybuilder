@@ -152,9 +152,7 @@ export function coloredAbuildingOnHover(intersections, data={color: 0xff0000, de
 
            if(Object.hasOwn(hoveredObject.userData, 'neighborsMeshs')) {
             neighborsHoveredObjects = hoveredObject.userData.neighborsMeshs
-            console.log(" [coloredABuildingOnHover] the neighbors mesh of hovered", neighborsHoveredObjects)
                 neighborsHoveredObjects.forEach((neighborsHoveredObject) => {
-                    console.log(" [coloredABuildingOnHover] a neighbor object", neighborsHoveredObject)
                     setColorOnMaterialArray(neighborsHoveredObject, 0x000000)
                 })
             } 
