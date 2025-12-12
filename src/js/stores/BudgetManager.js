@@ -29,12 +29,6 @@ class BudgetManager {
             ? import.meta.env.VITE_INITIAL_FUNDS 
             : undefined;
         
-        console.log('[BudgetManager] initialize called with:', {
-            provided: startingFunds,
-            fromConfig: config?.budget?.initialFunds,
-            envValue: envValue
-        });
-        
         // Clear any existing budget data to ensure fresh start
         await this.db.budget.clear();
         
@@ -153,8 +147,6 @@ class BudgetManager {
             // Store old initialFunds before updating
             const oldInitialFunds = budget.initialFunds || 200;
             
-            console.log('[BudgetManager] initialFunds mismatch detected. Updating from', oldInitialFunds, 'to', expectedInitialFunds);
-            
             // Update initialFunds to match config
             budget.initialFunds = expectedInitialFunds;
             needsUpdate = true;
@@ -172,14 +164,13 @@ class BudgetManager {
                 
                 if (fundsMatchOldInitial && noTransactions) {
                     // Funds haven't changed from initial AND no transactions - update to new initial funds
-                    console.log('[BudgetManager] Updating funds from', budget.funds, 'to', expectedInitialFunds, '(fresh start detected, turn=0, no transactions)');
                     budget.funds = expectedInitialFunds;
                     needsUpdate = true;
                 } else {
-                    console.log('[BudgetManager] Funds do not match old initialFunds or transactions exist, keeping current funds:', budget.funds);
+                    console.info('[BudgetManager] Funds do not match old initialFunds or transactions exist, keeping current funds:', budget.funds);
                 }
             } else {
-                console.log('[BudgetManager] Budget has turn > 0, not updating funds (game in progress)');
+                console.info('[BudgetManager] Budget has turn > 0, not updating funds (game in progress)');
             }
         } else if (budget.turn === 0 && Math.abs(budget.funds - expectedInitialFunds) > 1) {
             // Even if initialFunds matches, if turn is 0 and funds don't match, update funds
@@ -188,11 +179,10 @@ class BudgetManager {
                                   (budget.expenses === 0 || budget.expenses === undefined);
             
             if (noTransactions) {
-                console.log('[BudgetManager] Turn is 0 but funds don\'t match expected initial funds. Updating funds from', budget.funds, 'to', expectedInitialFunds, '(no transactions detected)');
                 budget.funds = expectedInitialFunds;
                 needsUpdate = true;
             } else {
-                console.log('[BudgetManager] Turn is 0 but transactions exist, keeping current funds:', budget.funds);
+                console.info('[BudgetManager] Turn is 0 but transactions exist, keeping current funds:', budget.funds);
             }
         }
         
@@ -868,7 +858,6 @@ class BudgetManager {
             budget.netFlow = Math.round(budget.income - budget.expenses);
             
             await this.db.budget.put(budget);
-            console.log(`[BudgetManager] Salaries paid: ${totalSalary}€ (${population} hab. × ${salaryPerMonth}€/mois)`);
         }
         
         return budget;
@@ -994,7 +983,6 @@ class BudgetManager {
             budget.netFlow = Math.round(budget.income - budget.expenses);
             
             await this.db.budget.put(budget);
-            console.log(`[BudgetManager] Taxes collected for year ${timeInfo.year}: ${taxBreakdown.total}€ from ${taxBreakdown.population} habitants`);
             return budget;
         }
         
@@ -1041,19 +1029,9 @@ class BudgetManager {
             startingFunds = config?.budget?.initialFunds || 200;
         }
         
-        console.log('[BudgetManager] forceReinitialize called with:', {
-            provided: startingFunds,
-            fromConfig: config?.budget?.initialFunds,
-            envValue: typeof import.meta !== 'undefined' && import.meta.env 
-                ? import.meta.env.VITE_INITIAL_FUNDS 
-                : undefined
-        });
-        
         await this.db.budget.clear();
         
         const result = await this.initialize(startingFunds);
-        
-        console.log('[BudgetManager] forceReinitialize completed, new budget:', result);
         
         return result;
     }

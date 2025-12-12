@@ -170,7 +170,6 @@ class FoodTraceabilityService {
             if (oldTransactions.length > 0) {
                 const ids = oldTransactions.map(t => t.id);
                 await this.db.foodTraceability.bulkDelete(ids);
-                console.log(`[FoodTraceabilityService] Cleaned up ${oldTransactions.length} old transactions`);
             }
         } catch (error) {
             console.error('[FoodTraceabilityService] Error cleaning up old transactions:', error);
