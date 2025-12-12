@@ -17,6 +17,12 @@
 
 > "Village / Town Assets" [source ici](https://skfb.ly/otGwo) by imwolfgang is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
 
+#### Autres assets contribuant au village
+
+"Game Art Village House: Ancient Greek Winery" [source](https://skfb.ly/6T7Dq) by Watse D'haene is licensed under [Creative Commons Attribution](http://creativecommons.org/licenses/by/4.0/).
+
+"Ancient Greek book shop" [source](https://skfb.ly/6TIZZ) by YunaOthmer is licensed under [Creative Commons Attribution](http://creativecommons.org/licenses/by/4.0/).
+
 ## Icones 
 
 ### Icones issues de <a href="https://lucide.dev">lucide.dev</a> :

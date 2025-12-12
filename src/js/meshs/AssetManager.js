@@ -460,11 +460,35 @@ class AssetManager extends MeshLoader {
     async initializeBuildings(propertyKey) {
 
         if(Object.hasOwn(this.modelMetas, propertyKey) && Object.hasOwn(this.toolIds, propertyKey)) {
-            // Track loading promise for completion signaling
-            const loadPromise = this.loadAssets(this.assetFullName, propertyKey, this.modelsObj, this.allAssetsNames, this.assetNames, this.toolIds, this.buttonData);
-            this.#loadingPromises.push(loadPromise);
-            
-            await loadPromise;
+            if (propertyKey === 'public') {
+                // Public category has Church-002 from main GLB and BookShop-001 as standalone (autonomous button)
+                // Load main GLB assets first (Church-002)
+                const loadMainPromise = this.loadAssets(this.assetFullName, propertyKey, this.modelsObj, this.allAssetsNames, this.assetNames, this.toolIds, this.buttonData);
+                this.#loadingPromises.push(loadMainPromise);
+                await loadMainPromise;
+                
+                // Then load BookShop-001 as standalone for autonomous button
+                const loadBookShopPromise = this.#loadStandaloneGLB('bookshop');
+                this.#loadingPromises.push(loadBookShopPromise);
+                await loadBookShopPromise;
+            } else if (propertyKey === 'industry') {
+                // Industry category has assets from main GLB and Winery-001 as standalone (autonomous button)
+                // Load main GLB assets first (Windmill-001, Barn-001, Crate-001)
+                const loadMainPromise = this.loadAssets(this.assetFullName, propertyKey, this.modelsObj, this.allAssetsNames, this.assetNames, this.toolIds, this.buttonData);
+                this.#loadingPromises.push(loadMainPromise);
+                await loadMainPromise;
+                
+                // Then load Winery-001 as standalone for autonomous button
+                const loadWineryPromise = this.#loadStandaloneGLB('winery');
+                this.#loadingPromises.push(loadWineryPromise);
+                await loadWineryPromise;
+            } else {
+                // Track loading promise for completion signaling
+                const loadPromise = this.loadAssets(this.assetFullName, propertyKey, this.modelsObj, this.allAssetsNames, this.assetNames, this.toolIds, this.buttonData);
+                this.#loadingPromises.push(loadPromise);
+                
+                await loadPromise;
+            }
             
             // Houses
             this.toolIds[propertyKey].forEach(toolId => {
@@ -512,6 +536,150 @@ class AssetManager extends MeshLoader {
         } else {
             console.warn(`Unknown property property type ${propertyKey}`);
         }
+    }
+
+    /**
+     * Load standalone GLB files (like winery_v3.glb, book_shop.glb) that are not in the main asset file
+     * @param {string} propertyKey - The category key (e.g., 'workshop') or 'bookshop' for autonomous button
+     * @returns {Promise<void>}
+     */
+    async #loadStandaloneGLB(propertyKey) {
+        return new Promise((resolve, reject) => {
+            const gltfloader = new GLTFLoader();
+            const dracoLoader = new DRACOLoader();
+            dracoLoader.setDecoderPath('/examples/jsm/libs/draco/');
+            gltfloader.setDRACOLoader(dracoLoader);
+
+            // Map of tool IDs to their GLB file paths
+            const standaloneAssets = {
+                'Winery-001': './resources/lowpoly/winery_v3.glb',
+                'BookShop-001': './resources/lowpoly/bookshop_v1.glb'
+            };
+
+            // Handle special cases for autonomous buttons (bookshop, winery)
+            let toolIds;
+            let targetPropertyKey = propertyKey;
+            if (propertyKey === 'bookshop') {
+                toolIds = ['BookShop-001'];
+                targetPropertyKey = 'public'; // Store in public modelsObj but as standalone
+            } else if (propertyKey === 'winery') {
+                toolIds = ['Winery-001'];
+                targetPropertyKey = 'industry'; // Store in industry modelsObj but as standalone
+            } else {
+                toolIds = this.toolIds[propertyKey] || [];
+            }
+
+            const loadPromises = [];
+
+            toolIds.forEach(toolId => {
+                const glbPath = standaloneAssets[toolId];
+                if (!glbPath) {
+                    // Skip if no standalone GLB path (asset might be in main GLB file)
+                    return;
+                }
+
+                const loadPromise = new Promise((resolveAsset, rejectAsset) => {
+                    gltfloader.load(
+                        glbPath,
+                        (gltf) => {
+                            // Find the main mesh in the GLB file
+                            let mainMesh = null;
+                            
+                            gltf.scene.traverse((child) => {
+                                if (child instanceof THREE.Mesh && !mainMesh) {
+                                    // Use the first mesh found, or you can search for a specific name
+                                    mainMesh = child;
+                                }
+                            });
+
+                            // If no mesh found, use the scene itself
+                            if (!mainMesh && gltf.scene) {
+                                mainMesh = gltf.scene;
+                            }
+
+                            if (mainMesh) {
+                                // Apply standard rotation like other assets
+                                mainMesh.rotation.set(
+                                    THREE.MathUtils.degToRad(90),
+                                    THREE.MathUtils.degToRad(180),
+                                    THREE.MathUtils.degToRad(180)
+                                );
+
+                                // Enable shadows
+                                mainMesh.traverse((obj) => {
+                                    if (obj instanceof THREE.Mesh) {
+                                        obj.castShadow = true;
+                                        obj.receiveShadow = true;
+                                        
+                                        // Convert materials to MeshLambertMaterial for proper lighting
+                                        if (obj.material) {
+                                            if (obj.material instanceof THREE.MeshBasicMaterial) {
+                                                const newMaterial = new THREE.MeshLambertMaterial({
+                                                    map: obj.material.map,
+                                                    color: obj.material.color,
+                                                    transparent: obj.material.transparent,
+                                                    opacity: obj.material.opacity
+                                                });
+                                                obj.material = newMaterial;
+                                            }
+                                        }
+                                    }
+                                });
+
+                                // Store the mesh
+                                this.modelsObj[targetPropertyKey][toolId] = mainMesh;
+                                
+                                // Winery-001 and BookShop-001 are autonomous buttons, so we don't add them to buttonData
+
+                                // Add to asset array
+                                const assetArray = this.allAssetsNames.find(a => a[targetPropertyKey]);
+                                if (assetArray) {
+                                    assetArray[targetPropertyKey].push({
+                                        fullName: toolId,
+                                        name: toolId,
+                                        mesh: mainMesh
+                                    });
+                                }
+                                
+                                // Create the asset function for placement
+                                const size = this.assetSizeOverrides?.[toolId] ?? this.modelMetas[targetPropertyKey].size;
+                                this.#assets[toolId] = (x, y, z = 0) =>
+                                    this.#createBuilding(x, y, z, size, toolId, this.#getModelsObj(targetPropertyKey));
+
+                                console.log(`[AssetManager] Loaded standalone asset: ${toolId} from ${glbPath}`);
+                                resolveAsset();
+                            } else {
+                                console.error(`[AssetManager] No mesh found in ${glbPath}`);
+                                rejectAsset(new Error(`No mesh found in ${glbPath}`));
+                            }
+                        },
+                        (xhr) => {
+                            // Progress callback
+                        },
+                        (error) => {
+                            console.error(`[AssetManager] Error loading ${glbPath}:`, error);
+                            rejectAsset(error);
+                        }
+                    );
+                });
+
+                loadPromises.push(loadPromise);
+            });
+
+            // Wait for all standalone assets to load
+            if (loadPromises.length === 0) {
+                resolve();
+            } else {
+                Promise.all(loadPromises)
+                    .then(() => {
+                        resolve();
+                    })
+                    .catch((error) => {
+                        console.error('[AssetManager] Error loading standalone GLB files:', error);
+                        reject(error);
+                    });
+            }
+        });
     }
 
     /**

@@ -31,7 +31,7 @@ class MeshLoaderOptimized {
         houses: ['House-Blue', 'House-Red', 'House-Purple'],
         tombs: ['Tombstone-1', 'Tombstone-2', 'Tombstone-3'],
         farms: ['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage'],
-        industry: ['Windmill-001', 'Barn-001', 'Crate-001'],
+        industry: ['Windmill-001', 'Barn-001', 'Crate-001', 'Winery-001'],
         markets: ['Market-Stall'],
         infrastructure: ['Well-001', 'Fountain-001', 'Streetlight-001', 'roads', 'StonePath-001', 'StonePath-Right-001', 'StonePath-Left-001', 'StonePath-Cross-001'],
         public: ['Church-002'],
@@ -80,7 +80,9 @@ class MeshLoaderOptimized {
     assetSizeOverrides = {
         'Windmill-001': 0.5,  // Windmills should match one case size like houses
         'Barn-001': 0.2,
-        'Church-002': 0.5
+        'Church-002': 0.5,
+        'Winery-001': 0.015,
+        'BookShop-001': 0.015
     }
 
     assetNames = [];

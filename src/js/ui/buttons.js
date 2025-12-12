@@ -24,7 +24,8 @@ import {
     roadButton,
     selectButton,
     slowerButton,
-    toolBarButtons
+    toolBarButtons,
+    workshopButton
 } from "./nodes.js";
 import { createGame } from '../game/game.js';
 import webglDetector from '../utils/WebGLResourceDetector.js';
@@ -458,14 +459,15 @@ function closeModal() {
 }
 
 function toggleModal(e) {
+    // Get the button element (in case click was on SVG or other child)
+    const button = e.target.closest('.toolbar-btn') || e.target;
+    const group = button.dataset.group;
 
-
-
-    switch(e.target.dataset.group) {
+    switch(group) {
         case 'residential':
             getButtonsUnactive()
             getButtonsDisabled()
-            e.target.classList.toggle('selected')
+            button.classList.toggle('selected')
 
             panelLayoutInner.classList.add('loading-objects')
             if(!panelLayout.classList.contains('active')) {
@@ -492,7 +494,7 @@ function toggleModal(e) {
             if(!panelLayout.classList.contains('active')) {
                 loaderButton.classList.add('active');
                 panelLayout.classList.add('active');
-                e.target.classList.toggle('selected')
+                button.classList.toggle('selected')
                 createFarmsButtons(buttonData);
                 
                 // Utiliser PopupManager pour gérer les événements
@@ -513,7 +515,7 @@ function toggleModal(e) {
             if(!panelLayout.classList.contains('active')) {
                 loaderButton.classList.add('active');
                 panelLayout.classList.add('active');
-                e.target.classList.toggle('selected')
+                button.classList.toggle('selected')
                 createIndustryButtons(buttonData);
                 
                 // Utiliser PopupManager pour gérer les événements
@@ -533,7 +535,7 @@ function toggleModal(e) {
             panelLayoutInner.classList.add('loading-objects')
             if(!panelLayout.classList.contains('active')) {
                 panelLayout.classList.add('active');
-                e.target.classList.toggle('selected')
+                button.classList.toggle('selected')
                 createMarketsStallsButtons(buttonData)
                 
                 // Utiliser PopupManager pour gérer les événements
@@ -553,7 +555,7 @@ function toggleModal(e) {
             panelLayoutInner.classList.add('loading-objects')
             if(!panelLayout.classList.contains('active')) {
                 panelLayout.classList.add('active');
-                e.target.classList.toggle('selected')
+                button.classList.toggle('selected')
                 createInfrastructureButtons(buttonData)
                 
                 // Utiliser PopupManager pour gérer les événements
@@ -573,7 +575,7 @@ function toggleModal(e) {
             panelLayoutInner.classList.add('loading-objects')
             if(!panelLayout.classList.contains('active')) {
                 panelLayout.classList.add('active');
-                e.target.classList.toggle('selected')
+                button.classList.toggle('selected')
                 createPublicButtons(buttonData)
                 
                 // Utiliser PopupManager pour gérer les événements
@@ -599,7 +601,7 @@ function toggleModal(e) {
             panelLayoutInner.classList.add('loading-objects')
             if(!panelLayout.classList.contains('active')) {
                 panelLayout.classList.add('active');
-                e.target.classList.toggle('selected')
+                button.classList.toggle('selected')
                 createPalacesButtons(buttonData)
                 
                 // Utiliser PopupManager pour gérer les événements
@@ -619,7 +621,7 @@ function toggleModal(e) {
             panelLayoutInner.classList.add('loading-objects')
             if(!panelLayout.classList.contains('active')) {
                 panelLayout.classList.add('active');
-                e.target.classList.toggle('selected')
+                button.classList.toggle('selected')
                 createNatureButtons(buttonData)
                 
                 // Utiliser PopupManager pour gérer les événements
@@ -876,7 +878,8 @@ function createPublicButtons(buttonData) {
                         </svg>`
 
     let buttonsDuplicate = [];
-    buttonData.filter(buttonInfo => publicToolIDs.includes(buttonInfo.tool)).forEach(buttonInfo => {
+    // Filter to only show Church-002 (BookShop-001 will be autonomous button)
+    buttonData.filter(buttonInfo => publicToolIDs.includes(buttonInfo.tool) && buttonInfo.tool === 'Church-002').forEach(buttonInfo => {
         if (!buttonsDuplicate.includes(buttonInfo.tool)) {
             buttonsDuplicate.push(buttonInfo.tool);
             if (buttonInfo.tool === 'Church-002') {
@@ -1523,7 +1526,8 @@ window.onload = async () => {
             assetManager.initializeBuildings('industry'),  // Includes crates now
             assetManager.initializeBuildings('infrastructure'),
             assetManager.initializeBuildings('public'),
-            assetManager.initializeBuildings('nature')
+            assetManager.initializeBuildings('nature'),
+            assetManager.initializeBuildings('workshop')
         ]).catch(() => {
             // Silently fail - assets will load when needed
         });
@@ -1568,6 +1572,11 @@ window.onload = async () => {
         const infrastructureBtn = document.getElementById('infrastructure-btn');
         if (infrastructureBtn) {
             window.buttonStateManager.registerButton('infrastructure-btn', infrastructureBtn);
+        }
+        
+        const workshopBtn = document.getElementById('workshop-btn');
+        if (workshopBtn) {
+            window.buttonStateManager.registerButton('workshop-btn', workshopBtn);
         }
         
         // Disable initial unavailable buildings
@@ -1851,10 +1860,31 @@ window.onload = async () => {
     })
     
     publicButton.addEventListener('click', (e) => {
-        if (window.setActiveTool) {
-            window.setActiveTool(e);
+        // Check if public button is disabled before toggling modal
+        if (window.buttonStateManager && !window.buttonStateManager.isEnabled('public-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
         }
+        toggleModal(e);
     })
+
+    const bookshopButton = document.getElementById('bookshop-btn');
+    if (bookshopButton) {
+        bookshopButton.addEventListener('click', (e) => {
+            if (window.setActiveTool) {
+                window.setActiveTool(e);
+            }
+        });
+    }
+
+    if (workshopButton) {
+        workshopButton.addEventListener('click', (e) => {
+            if (window.setActiveTool) {
+                window.setActiveTool(e);
+            }
+        });
+    }
 
     const natureButton = document.getElementById('nature-btn');
     if (natureButton) {
