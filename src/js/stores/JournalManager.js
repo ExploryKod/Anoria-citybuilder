@@ -338,6 +338,17 @@ class JournalManager {
                 isIncome = true;
             }
             
+            // Les intérêts et remboursements de prêt sont des dépenses
+            if (entry.type === 'loan_interest' || entry.type === 'loan_repayment') {
+                isIncome = false;
+            }
+            
+            // Les autres dépenses explicites
+            if (entry.type === 'construction' || entry.type === 'maintenance' || entry.type === 'salary' || 
+                entry.type === 'exceptional_expenses' || entry.type === 'commercial_route') {
+                isIncome = false;
+            }
+            
             if (entry.type === 'carry_forward') {
                 // Pour le report à nouveau, déterminer si c'est un revenu ou une dépense
                 // en fonction du signe stocké dans la description
@@ -360,12 +371,19 @@ class JournalManager {
                             const eTimeInfo = window.TimeManager.getTimeInfo(e.turn);
                             
                             if (eTimeInfo.year === previousYear) {
-                                let isEIncome = e.type === 'citizen_tax' || e.type === 'payroll_tax' || e.type === 'capital_funds';
+                                let isEIncome = e.type === 'citizen_tax' || e.type === 'payroll_tax' || e.type === 'capital_funds' || e.type === 'loan_capital';
                                 if (e.type.startsWith('import_')) {
                                     isEIncome = false;
                                 }
                                 if (e.type.startsWith('export_')) {
                                     isEIncome = true;
+                                }
+                                if (e.type === 'loan_interest' || e.type === 'loan_repayment') {
+                                    isEIncome = false;
+                                }
+                                if (e.type === 'construction' || e.type === 'maintenance' || e.type === 'salary' || 
+                                    e.type === 'exceptional_expenses' || e.type === 'commercial_route') {
+                                    isEIncome = false;
                                 }
                                 if (isEIncome) {
                                     prevYearIncome += e.amount;
