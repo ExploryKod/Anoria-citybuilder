@@ -72,7 +72,6 @@ class InstancingManager {
             this.instanceCounters.set(buildingType, 0);
             
             this.instancedMeshes.set(buildingType, instancedMesh);
-            console.log(`[Instancing] Created InstancedMesh for ${buildingType} (max ${maxInstances} instances)`);
         }
         
         return this.instancedMeshes.get(buildingType);

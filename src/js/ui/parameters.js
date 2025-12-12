@@ -157,7 +157,6 @@ class ParametersPanelManager {
         try {
             const eventsConfig = await import('../../config/events.js');
             eventsConfig.setEventsEnabled(enabled);
-            console.log('[ParametersPanel] Events enabled:', enabled);
         } catch (error) {
             console.error('[ParametersPanel] Error setting events enabled:', error);
         }
@@ -170,7 +169,6 @@ class ParametersPanelManager {
         try {
             const eventsConfig = await import('../../config/events.js');
             eventsConfig.setEventProbability(probability);
-            console.log('[ParametersPanel] Event probability:', probability);
         } catch (error) {
             console.error('[ParametersPanel] Error setting event probability:', error);
         }
@@ -183,7 +181,6 @@ class ParametersPanelManager {
         try {
             const eventsConfig = await import('../../config/events.js');
             eventsConfig.setDaysPerMonth(days);
-            console.log('[ParametersPanel] Days per month:', days);
             
             // Mettre à jour le cache de TimeManager
             if (window.TimeManager && typeof window.TimeManager.refreshCache === 'function') {
@@ -197,8 +194,6 @@ class ParametersPanelManager {
                     console.warn('[ParametersPanel] Could not refresh TimeManager cache:', err);
                 }
             }
-            
-            console.log('[ParametersPanel] TimeManager cache updated. Changes will take effect immediately.');
         } catch (error) {
             console.error('[ParametersPanel] Error setting days per month:', error);
         }

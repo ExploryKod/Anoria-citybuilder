@@ -101,7 +101,6 @@ export class CitizenManager {
                 if (gltf.animations && gltf.animations.length > 0) {
                     gltf.animations.forEach((clip) => {
                         this.citizenAnimations[clip.name] = clip;
-                        console.log('[CitizenManager] Found citizen02 animation:', clip.name, `(${clip.duration.toFixed(2)}s)`);
                     });
                     this.citizenAnimationsLoaded = true;
                 } else {
@@ -133,7 +132,6 @@ export class CitizenManager {
                 if (gltf.animations && gltf.animations.length > 0) {
                     gltf.animations.forEach((clip) => {
                         this.citizenCoolAnimations[clip.name] = clip;
-                        console.log('[CitizenManager] Found citizen-cool animation:', clip.name, `(${clip.duration.toFixed(2)}s)`);
                     });
                     this.citizenCoolAnimationsLoaded = true;
                 } else {
@@ -508,7 +506,7 @@ export class CitizenManager {
     /**
      * Updates a single citizen's movement and animation
      */
-    updateCitizen(citizen, deltaTime, city, isRoadTile, hasBuilding, worldToTile, getAdjacentRoads, createRoadPath, recalculateCitizenPath, validatePath) {
+    updateCitizen(citizen, deltaTime, city, isRoadTile, hasBuilding, worldToTile, getAdjacentRoads, createRoadPath, recalculateCitizenPath, validatePath, findBorderRoads) {
         if (!citizen || !citizen.character || !citizen.character.visible) {
             return;
         }
@@ -656,9 +654,9 @@ export class CitizenManager {
     /**
      * Update all citizens (called every frame)
      */
-    updateAllCitizens(deltaTime, city, isRoadTile, hasBuilding, worldToTile, getAdjacentRoads, createRoadPath, recalculateCitizenPath, validatePath) {
+    updateAllCitizens(deltaTime, city, isRoadTile, hasBuilding, worldToTile, getAdjacentRoads, createRoadPath, recalculateCitizenPath, validatePath, findBorderRoads) {
         this.citizens.forEach(citizen => {
-            this.updateCitizen(citizen, deltaTime, city, isRoadTile, hasBuilding, worldToTile, getAdjacentRoads, createRoadPath, recalculateCitizenPath, validatePath);
+            this.updateCitizen(citizen, deltaTime, city, isRoadTile, hasBuilding, worldToTile, getAdjacentRoads, createRoadPath, recalculateCitizenPath, validatePath, findBorderRoads);
         });
     }
 

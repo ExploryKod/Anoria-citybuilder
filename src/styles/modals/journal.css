@@ -36,12 +36,79 @@
     border-bottom: 2px solid var(--cta);
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.journal-header-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
 .journal-header h3 {
     margin: 0;
     font-size: 20px;
+    color: var(--primary);
+}
+
+.journal-filter-pills {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.journal-filter-pills-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.journal-filter-pills-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6c757d;
+    margin-right: 4px;
+}
+
+.journal-filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid #dee2e6;
+    background: white;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.journal-filter-pill:hover {
+    background: #f8f9fa;
+    border-color: var(--cta);
+}
+
+.journal-filter-pill.active {
+    background: #f8f9fa;
+    border-color: var(--cta);
+    border-width: 2px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.journal-filter-pill .pill-color {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.journal-filter-pill .pill-label {
     color: var(--primary);
 }
 
@@ -232,9 +299,10 @@
     border: 1px solid #b3d9ff;
 }
 
+/* Revenus issus de taxes en bleu */
 .journal-entry-type.citizen_tax {
-    background: #d4edda;
-    color: #155724;
+    background: #cfe2ff;
+    color: #084298;
 }
 
 .journal-entry-type.payroll_tax {
@@ -242,32 +310,33 @@
     color: #084298;
 }
 
+/* Revenus issus de commerce en vert */
 .journal-entry-type.capital_funds {
-    background: #cfe2ff;
-    color: #084298;
+    background: #d4edda;
+    color: #155724;
 }
 
-/* Construction en rouge */
+/* Dépenses - Construction en rouge */
 .journal-entry-type.construction {
     background: #f8d7da;
     color: #721c24;
 }
 
-/* Dépenses exceptionnelles (réparations) en orange/rouge foncé */
-.journal-entry-type.exceptional_expenses {
-    background: #fd7e14;
-    color: #842029;
-}
-
-/* Maintenance en jaune/orange */
+/* Dépenses - Maintenance en jaune */
 .journal-entry-type.maintenance {
     background: #fff3cd;
     color: #856404;
 }
 
+/* Dépenses exceptionnelles (réparations) - marron */
+.journal-entry-type.exceptional_expenses {
+    background: #d7ccc8;
+    color: #5d4037;
+}
+
 .journal-entry-type.salary {
-    background: #e7f3ff;
-    color: #004085;
+    background: #ffe0b2;
+    color: #e65100;
 }
 
 .journal-entry-type[class*="import_"] {
@@ -280,14 +349,21 @@
     color: #155724;
 }
 
+/* Revenus issus de prêts en violet */
+.journal-entry-type.loan_capital {
+    background: #e2d5f7;
+    color: #6f42c1;
+}
+
+/* Dépenses - Intérêts et remboursement de prêt (même famille de couleur avec variante) */
 .journal-entry-type.loan_interest {
-    background: #d1ecf1;
-    color: #0c5460;
+    background: #ffe0b2;
+    color: #e65100;
 }
 
 .journal-entry-type.loan_repayment {
-    background: #e2e3e5;
-    color: #383d41;
+    background: #ffccbc;
+    color: #bf360c;
 }
 
 .journal-entry-type.carry_forward {
@@ -302,34 +378,34 @@
     color: #721c24;
 }
 
-/* Cumuls */
+/* Cumuls - informatifs, tous en gris */
 .journal-entry-type.cumul_maintenance {
-    background: #fff3cd;
-    color: #856404;
+    background: #e2e3e5;
+    color: #383d41;
     font-weight: 600;
 }
 
 .journal-entry-type.cumul_construction {
-    background: #f8d7da;
-    color: #721c24;
+    background: #e2e3e5;
+    color: #383d41;
     font-weight: 600;
 }
 
 .journal-entry-type.cumul_salary {
-    background: #e7f3ff;
-    color: #004085;
+    background: #e2e3e5;
+    color: #383d41;
     font-weight: 600;
 }
 
 .journal-entry-type.cumul_exceptional_expenses {
-    background: #ffe0b2;
-    color: #e65100;
+    background: #e2e3e5;
+    color: #383d41;
     font-weight: 600;
 }
 
 .journal-entry-type.cumul_loan_interest {
-    background: #d1ecf1;
-    color: #0c5460;
+    background: #e2e3e5;
+    color: #383d41;
     font-weight: 600;
 }
 
@@ -344,6 +420,12 @@
     background: #e7f3ff;
     color: #004085;
     font-weight: 600;
+}
+
+/* Route commerciale (Commission Négociants) en orange */
+.journal-entry-type.commercial_route {
+    background: #ffe0b2;
+    color: #e65100;
 }
 
 .journal-entry-amount {
