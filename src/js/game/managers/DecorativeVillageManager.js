@@ -344,6 +344,5 @@ export class DecorativeVillageManager {
         });
         
         this.scene.add(villageGroup);
-        console.log(`[DecorativeVillageManager] Created decorative village with ${decorativeElements.length} elements`);
     }
 }
