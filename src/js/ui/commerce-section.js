@@ -499,19 +499,30 @@ class CommerceSectionManager {
     async checkWindmillStocks(partner) {
         const housesStore = this.getHousesStore();
         if (!housesStore) {
-            return { hasStocks: false, missingProducts: ['HousesStore non disponible'] };
+            return { hasStocks: false, missingProducts: ['HousesStore non disponible'], noCommercializableWindmills: false };
         }
 
         try {
-            // Get all windmills
+            // Get commercializable windmills (active and commercializeEnabled)
             const allHouses = await housesStore.listAllHouses();
-            const windmills = allHouses.filter(house => {
+            const allWindmills = allHouses.filter(house => {
                 const type = house.type || '';
                 return type.includes('Windmill') || type.includes('windmill');
             });
 
-            if (windmills.length === 0) {
-                return { hasStocks: false, missingProducts: ['Aucun moulin construit'] };
+            if (allWindmills.length === 0) {
+                return { hasStocks: false, missingProducts: ['Aucun moulin construit'], noCommercializableWindmills: false };
+            }
+
+            // Filter commercializable windmills
+            const commercializableWindmills = allWindmills.filter(windmill => {
+                const isActive = windmill.isActive !== false; // Default to true
+                const commercializeEnabled = windmill.commercializeEnabled !== false; // Default to true
+                return isActive && commercializeEnabled;
+            });
+
+            if (commercializableWindmills.length === 0) {
+                return { hasStocks: false, missingProducts: ['Commerce impossible : aucun moulin'], noCommercializableWindmills: true };
             }
 
             // Get products required for exports (partner imports from us)
@@ -523,9 +534,9 @@ class CommerceSectionManager {
                 const stockKey = this.getStockKey(productId);
                 if (!stockKey) continue;
 
-                // Sum stocks from all windmills
+                // Sum stocks from commercializable windmills only
                 let totalStock = 0;
-                for (const windmill of windmills) {
+                for (const windmill of commercializableWindmills) {
                     const stocks = windmill.stocks || {};
                     totalStock += stocks[stockKey] || 0;
                 }
@@ -539,11 +550,12 @@ class CommerceSectionManager {
 
             return {
                 hasStocks: missingProducts.length === 0,
-                missingProducts
+                missingProducts,
+                noCommercializableWindmills: false
             };
         } catch (error) {
             console.error('[CommerceSectionManager] Error checking windmill stocks:', error);
-            return { hasStocks: false, missingProducts: ['Erreur lors de la vérification'] };
+            return { hasStocks: false, missingProducts: ['Erreur lors de la vérification'], noCommercializableWindmills: false };
         }
     }
 
@@ -941,6 +953,27 @@ class CommerceSectionManager {
         const yearlyExports = stats?.yearlyExports || {};
         const yearlyImports = stats?.yearlyImports || {};
 
+        // Check if there are any commercializable windmills
+        const housesStore = this.getHousesStore();
+        let hasCommercializableWindmills = false;
+        if (housesStore) {
+            try {
+                const allHouses = await housesStore.listAllHouses();
+                const allWindmills = allHouses.filter(house => {
+                    const type = house.type || '';
+                    return type.includes('Windmill') || type.includes('windmill');
+                });
+                const commercializableWindmills = allWindmills.filter(windmill => {
+                    const isActive = windmill.isActive !== false;
+                    const commercializeEnabled = windmill.commercializeEnabled !== false;
+                    return isActive && commercializeEnabled;
+                });
+                hasCommercializableWindmills = commercializableWindmills.length > 0;
+            } catch (error) {
+                console.warn('[CommerceSection] Error checking commercializable windmills:', error);
+            }
+        }
+
         // Render partners HTML first
         partnersList.innerHTML = this.partnersData.map(partner => {
             const importsHTML = partner.imports.map(imp => {
@@ -953,12 +986,13 @@ class CommerceSectionManager {
                 const currentYearly = yearlyExports[imp.productId] || 0;
                 const isInternalLimitReached = currentYearly >= internalLimit;
                 
-                // Product is unavailable if contract is finished OR internal limit is reached
-                const isUnavailable = isContractFinished || isInternalLimitReached;
+                // Product is unavailable if contract is finished OR internal limit is reached OR no commercializable windmills
+                const isUnavailable = isContractFinished || isInternalLimitReached || !hasCommercializableWindmills;
                 
-                const statusClass = isContractFinished ? 'contract-finished' : (isInternalLimitReached ? 'limit-reached' : 'active');
+                const statusClass = isContractFinished ? 'contract-finished' : (isInternalLimitReached ? 'limit-reached' : (!hasCommercializableWindmills ? 'no-windmill' : 'active'));
                 const statusText = isContractFinished ? '✅ Contrat terminé' : 
-                                  isInternalLimitReached ? 'Seuil interne dépassé' : 'Contrat actif';
+                                  isInternalLimitReached ? 'Seuil interne dépassé' : 
+                                  !hasCommercializableWindmills ? 'Commerce impossible : aucun moulin' : 'Contrat actif';
                 
                 return `
                     <div class="partner-trade-item ${statusClass} ${isUnavailable ? 'unavailable' : ''}">
@@ -1000,12 +1034,13 @@ class CommerceSectionManager {
                 const currentYearly = yearlyImports[exp.productId] || 0;
                 const isInternalLimitReached = currentYearly >= internalLimit;
                 
-                // Product is unavailable if contract is finished OR internal limit is reached
-                const isUnavailable = isContractFinished || isInternalLimitReached;
+                // Product is unavailable if contract is finished OR internal limit is reached OR no commercializable windmills
+                const isUnavailable = isContractFinished || isInternalLimitReached || !hasCommercializableWindmills;
                 
-                const statusClass = isContractFinished ? 'contract-finished' : (isInternalLimitReached ? 'limit-reached' : 'active');
+                const statusClass = isContractFinished ? 'contract-finished' : (isInternalLimitReached ? 'limit-reached' : (!hasCommercializableWindmills ? 'no-windmill' : 'active'));
                 const statusText = isContractFinished ? '✅ Contrat terminé' : 
-                                  isInternalLimitReached ? 'Seuil interne dépassé' : 'Contrat actif';
+                                  isInternalLimitReached ? 'Seuil interne dépassé' : 
+                                  !hasCommercializableWindmills ? 'Commerce impossible : aucun moulin' : 'Contrat actif';
                 
                 return `
                     <div class="partner-trade-item ${statusClass} ${isUnavailable ? 'unavailable' : ''}">

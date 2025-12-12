@@ -803,6 +803,12 @@
     opacity: 0.8;
 }
 
+.partner-trade-item.no-windmill {
+    border-left-color: #6c757d;
+    background: #f8f9fa;
+    opacity: 0.8;
+}
+
 .partner-trade-item.unavailable {
     opacity: 0.5;
     pointer-events: none;
@@ -858,6 +864,11 @@
 
 .partner-trade-status.contract-finished {
     background: #17a2b8;
+    color: white;
+}
+
+.partner-trade-status.no-windmill {
+    background: #6c757d;
     color: white;
 }
 
