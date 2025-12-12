@@ -101,7 +101,6 @@ export class CitizenManager {
                 if (gltf.animations && gltf.animations.length > 0) {
                     gltf.animations.forEach((clip) => {
                         this.citizenAnimations[clip.name] = clip;
-                        console.log('[CitizenManager] Found citizen02 animation:', clip.name, `(${clip.duration.toFixed(2)}s)`);
                     });
                     this.citizenAnimationsLoaded = true;
                 } else {
@@ -133,7 +132,6 @@ export class CitizenManager {
                 if (gltf.animations && gltf.animations.length > 0) {
                     gltf.animations.forEach((clip) => {
                         this.citizenCoolAnimations[clip.name] = clip;
-                        console.log('[CitizenManager] Found citizen-cool animation:', clip.name, `(${clip.duration.toFixed(2)}s)`);
                     });
                     this.citizenCoolAnimationsLoaded = true;
                 } else {

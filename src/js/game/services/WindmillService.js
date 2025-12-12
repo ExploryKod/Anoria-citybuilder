@@ -106,17 +106,10 @@ export class WindmillService extends SimService {
                 });
             }
 
-            console.log('[WindmillService] December detected - windmills collecting from farms (after markets collected in autumn)');
-
             // Find all farms
             const farms = houses.filter(house => {
                 const type = house.type || '';
                 return type.includes('Farm') || type.includes('farm');
-            });
-
-            console.log('[WindmillService] Found buildings:', {
-                windmills: windmills.length,
-                farms: farms.length
             });
 
             // Process each windmill: collect from all farms
@@ -146,11 +139,6 @@ export class WindmillService extends SimService {
      */
     async processWindmill(windmill, allFarms, housesStore, time = 0) {
         const windmillId = windmill.id || windmill.name;
-        console.log('[WindmillService] Processing windmill:', {
-            windmillId,
-            windmillType: windmill.type,
-            totalFarms: allFarms.length
-        });
         
         // Get fresh data from IndexedDB (source of truth)
         const windmillData = await housesStore.getHouse(windmillId);
@@ -163,16 +151,8 @@ export class WindmillService extends SimService {
         const neighbors = windmillData.neighbors || [];
         const { hasAccess: hasRoadAccess, roadCount } = checkRoadAccess(neighbors);
         
-        console.log('[WindmillService] Windmill road access check:', {
-            windmillId,
-            hasRoadAccess,
-            roadCount,
-            totalNeighbors: neighbors.length
-        });
-        
         if (!hasRoadAccess) {
             // Windmill has no road access - CANNOT collect food from farms
-            console.log('[WindmillService] Windmill has no road access, skipping:', windmillId);
             // Set isCollecting to false (no road access = cannot collect)
             await housesStore.updateHouseFields(windmillId, { isCollecting: false }).catch(err => {
                 console.warn('[WindmillService] Failed to update windmill isCollecting flag:', {
@@ -191,11 +171,6 @@ export class WindmillService extends SimService {
         
         if (hasNoWorkers) {
             // Windmill has no workers - CANNOT collect food from farms
-            console.log('[WindmillService] Windmill has no workers, skipping:', {
-                windmillId,
-                workers: windmillWorkers,
-                workerNeed: windmillWorkerNeed
-            });
             // Set isCollecting to false (no workers = cannot collect)
             await housesStore.updateHouseFields(windmillId, { isCollecting: false }).catch(err => {
                 console.warn('[WindmillService] Failed to update windmill isCollecting flag:', {
@@ -254,14 +229,6 @@ export class WindmillService extends SimService {
         let cabbageCount = 0;
         let farmsProcessed = 0;
 
-        console.log('[WindmillService] Starting farm collection for windmill:', {
-            windmillId,
-            totalFarms: farms.length,
-            maxStock,
-            currentTotalStock,
-            remainingCapacity
-        });
-
         // Collect from each farm
         for (const farm of farms) {
             const farmId = farm.id || farm.name;
@@ -286,30 +253,14 @@ export class WindmillService extends SimService {
                 const { hasAccess: farmHasRoadAccess } = checkRoadAccess(farmNeighbors);
                 
                 if (!farmHasRoadAccess) {
-                    console.log('[WindmillService] Farm has no road access, skipping:', {
-                        farmId,
-                        farmType: farmData.type
-                    });
                     continue;
                 }
 
                 const farmType = farmData.type || '';
                 const farmStocks = farmData.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                 
-                console.log('[WindmillService] Processing farm:', {
-                    farmId,
-                    farmType,
-                    hasRoadAccess: farmHasRoadAccess,
-                    stocks: farmStocks
-                });
-                
                 // Check if windmill has reached its capacity limit
                 if (remainingCapacity <= 0) {
-                    console.log('[WindmillService] Windmill capacity reached, stopping collection:', {
-                        windmillId,
-                        maxStock,
-                        currentTotalStock
-                    });
                     break; // Stop collecting from remaining farms
                 }
                 
@@ -339,12 +290,6 @@ export class WindmillService extends SimService {
                         
                         // Track sale to windmill in farm data
                         await this.trackFarmSaleToWindmill(farmId, farmData, housesStore, timeInfo, 'wheat', wheatToCollect, windmillId);
-                        
-                        console.log('[WindmillService] Collected wheat from farm:', {
-                            farmId,
-                            wheatCollected: wheatToCollect,
-                            remainingStocks: newFarmStocks
-                        });
                     }
                 } else if (farmType.includes('Farm-Carrot') || farmType.includes('Farms-Carrot') || farmType.includes('Carrot')) {
                     const availableCarrot = farmStocks.carrot || 0;
@@ -367,12 +312,6 @@ export class WindmillService extends SimService {
                         
                         // Track sale to windmill in farm data
                         await this.trackFarmSaleToWindmill(farmId, farmData, housesStore, timeInfo, 'carrot', carrotToCollect, windmillId);
-                        
-                        console.log('[WindmillService] Collected carrot from farm:', {
-                            farmId,
-                            carrotCollected: carrotToCollect,
-                            remainingStocks: newFarmStocks
-                        });
                     }
                 } else if (farmType.includes('Farm-Cabbage') || farmType.includes('Farms-Cabbage') || farmType.includes('Cabbage')) {
                     const availableCabbage = farmStocks.cabbage || 0;
@@ -398,12 +337,6 @@ export class WindmillService extends SimService {
                         
                         // Track sale to windmill in farm data
                         await this.trackFarmSaleToWindmill(farmId, farmData, housesStore, timeInfo, 'cabbage', cabbageToCollect, windmillId);
-                        
-                        console.log('[WindmillService] Collected cabbage from farm:', {
-                            farmId,
-                            cabbageCollected: cabbageToCollect,
-                            remainingStocks: newFarmStocks
-                        });
                     }
                 } else {
                     console.warn('[WindmillService] Unknown farm type:', {
@@ -419,15 +352,6 @@ export class WindmillService extends SimService {
             }
         }
 
-        console.log('[WindmillService] Farm collection results:', {
-            windmillId,
-            wheatCount,
-            carrotCount,
-            cabbageCount,
-            totalFood: wheatCount + carrotCount + cabbageCount,
-            farmsProcessed
-        });
-
         // Update windmill stocks in IndexedDB (get fresh data first)
         if (wheatCount > 0 || carrotCount > 0 || cabbageCount > 0) {
             // Get fresh windmill data from IndexedDB (already fetched above, but refresh to get latest stocks)
@@ -440,13 +364,6 @@ export class WindmillService extends SimService {
             const freshStocks = freshWindmillData.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0, wood: 0 };
             const maxStock = freshWindmillData.maxStock || 1000; // Default max stock capacity for windmill
             
-            console.log('[WindmillService] Windmill stocks before farm collection:', {
-                windmillId,
-                freshStocks,
-                maxStock,
-                collected: { wheatCount, carrotCount, cabbageCount }
-            });
-            
             // Add food collected from farms to windmill stocks (already respecting maxStock limit from collection loop)
             // Preserve wood stock (not part of food collection)
             const newStocks = {
@@ -456,11 +373,6 @@ export class WindmillService extends SimService {
                 wood: freshStocks.wood || 0, // Preserve wood stock
                 food: Math.min(maxStock, (freshStocks.food || 0) + (wheatCount + carrotCount + cabbageCount)) // Cap at maxStock
             };
-
-            console.log('[WindmillService] Windmill stocks after farm collection:', {
-                windmillId,
-                newStocks
-            });
 
             // Track last collection amounts for display in info panel
             const lastCollection = {
@@ -480,8 +392,6 @@ export class WindmillService extends SimService {
                 });
             });
         } else {
-            console.log('[WindmillService] No food collected from farms (no valid farms found):', windmillId);
-            
             // Still update lastCollection to show 0 for this collection cycle
             const lastCollection = {
                 wheat: 0,
@@ -548,13 +458,6 @@ export class WindmillService extends SimService {
                 salesToMarket: salesToMarket, // Preserve market sales
                 salesToWindmill: filteredSales
             });
-            
-            console.log('[WindmillService] Tracked farm sale to windmill:', {
-                farmId,
-                productType,
-                quantity,
-                year: currentYear
-            });
         } catch (error) {
             console.warn('[WindmillService] Error tracking farm sale to windmill:', {
                 farmId,
@@ -591,11 +494,6 @@ export class WindmillService extends SimService {
                     });
                 }
             }
-            
-            console.log('[WindmillService] Reset farm sales tracking for new year:', {
-                year: currentYear,
-                farmsProcessed: farms.length
-            });
         } catch (error) {
             console.warn('[WindmillService] Error resetting farm sales tracking:', {
                 error: error?.message || error

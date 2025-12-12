@@ -132,7 +132,6 @@ export class RandomEventsService extends SimService {
             const houseToDestroy = await this.findRandomHouse(housesStore);
             
             if (!houseToDestroy) {
-                console.log('[RandomEventsService] No houses available to destroy');
                 return;
             }
 
@@ -180,8 +179,6 @@ export class RandomEventsService extends SimService {
 
             // Afficher une notification
             this.showEventNotification(event, houseToDestroy);
-
-            console.log(`[RandomEventsService] ${event.name} déclenché ! Maison détruite à (${houseToDestroy.x}, ${houseToDestroy.y}), coût: ${event.cost}€`);
 
             return true;
         } catch (error) {

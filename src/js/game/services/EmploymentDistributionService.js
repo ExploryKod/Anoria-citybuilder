@@ -37,12 +37,6 @@ export class EmploymentDistributionService extends SimService {
         try {
             const timeInfo = TimeManager.getTimeInfo(time);
             
-            console.log('[EmploymentDistributionService] Starting employment distribution:', {
-                time,
-                month: timeInfo.month,
-                year: timeInfo.year
-            });
-
             // Step 1: Reset all building workers (fresh distribution each tick)
             await this.resetAllWorkers(housesStore);
 
@@ -50,7 +44,6 @@ export class EmploymentDistributionService extends SimService {
             const availableWorkers = await this.calculateAvailableWorkers(housesStore);
             
             if (availableWorkers === 0) {
-                console.log('[EmploymentDistributionService] No workers available');
                 return;
             }
 
@@ -58,7 +51,6 @@ export class EmploymentDistributionService extends SimService {
             const buildingsNeedingWorkers = await this.getBuildingsNeedingWorkers(housesStore);
             
             if (buildingsNeedingWorkers.length === 0) {
-                console.log('[EmploymentDistributionService] No buildings need workers');
                 return;
             }
 
@@ -138,9 +130,6 @@ export class EmploymentDistributionService extends SimService {
             const { hasAccess } = checkRoadAccess(neighbors);
             
             if (!hasAccess) {
-                console.log('[EmploymentDistributionService] House has no road access, skipping:', {
-                    houseId: building.id || building.name
-                });
                 continue;
             }
             
@@ -149,7 +138,6 @@ export class EmploymentDistributionService extends SimService {
             totalWorkers += population;
         }
         
-        console.log('[EmploymentDistributionService] Total available workers:', totalWorkers);
         return totalWorkers;
     }
 
@@ -167,7 +155,6 @@ export class EmploymentDistributionService extends SimService {
         
         // Get current priority mapping from localStorage (read once for all buildings)
         const currentPriorities = getAllSectorPriorities();
-        console.log('[EmploymentDistributionService] Current sector priorities from localStorage:', currentPriorities);
         
         for (const building of allBuildings) {
             // Skip houses and roads
@@ -178,10 +165,6 @@ export class EmploymentDistributionService extends SimService {
             const { hasAccess } = checkRoadAccess(neighbors);
             
             if (!hasAccess) {
-                console.log('[EmploymentDistributionService] Building has no road access, skipping:', {
-                    buildingId: building.id || building.name,
-                    buildingType: building.type
-                });
                 continue;
             }
             
@@ -218,17 +201,6 @@ export class EmploymentDistributionService extends SimService {
         // This matches user-set priorities where 1 is most important
         buildingsNeedingWorkers.sort((a, b) => a.priority - b.priority);
         
-        console.log('[EmploymentDistributionService] Buildings needing workers (sorted by priority):', {
-            count: buildingsNeedingWorkers.length,
-            buildings: buildingsNeedingWorkers.map(b => ({
-                id: b.id,
-                type: b.type,
-                sector: b.sector,
-                priority: b.priority,
-                deficit: b.workerDeficit
-            }))
-        });
-        
         return buildingsNeedingWorkers;
     }
 
@@ -245,16 +217,10 @@ export class EmploymentDistributionService extends SimService {
     async distributeWorkers(availableWorkers, buildings, housesStore, time) {
         let remainingWorkers = availableWorkers;
         let totalDistributed = 0;
-        
-        console.log('[EmploymentDistributionService] Starting worker distribution:', {
-            availableWorkers,
-            buildingsToFill: buildings.length
-        });
 
         for (const building of buildings) {
             // Stop if no workers left
             if (remainingWorkers <= 0) {
-                console.log('[EmploymentDistributionService] No more workers available');
                 break;
             }
             
@@ -288,24 +254,8 @@ export class EmploymentDistributionService extends SimService {
                 
                 remainingWorkers -= workersToAssign;
                 totalDistributed += workersToAssign;
-                
-                console.log('[EmploymentDistributionService] Assigned workers to building:', {
-                    buildingId: building.id,
-                    buildingType: building.type,
-                    priority: building.priority,
-                    workersAssigned: workersToAssign,
-                    newWorkerCount: newEmployees.worker,
-                    workerNeed: newEmployees.worker_need,
-                    remainingWorkers
-                });
             }
         }
-        
-        console.log('[EmploymentDistributionService] Distribution complete:', {
-            totalDistributed,
-            unemployedWorkers: remainingWorkers,
-            buildingsFullyStaffed: buildings.filter(b => b.workerDeficit <= totalDistributed).length
-        });
     }
 
     /**
@@ -323,10 +273,6 @@ export class EmploymentDistributionService extends SimService {
         const sector = sectorMap[buildingType];
         
         if (!sector) {
-            console.log('[EmploymentDistributionService] Unknown building type, using default priority:', {
-                buildingType,
-                defaultPriority: 1
-            });
             return 1;
         }
         

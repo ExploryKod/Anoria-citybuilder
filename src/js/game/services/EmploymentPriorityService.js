@@ -40,7 +40,6 @@ export class EmploymentPriorityService extends SimService {
                 // First run - initialize with defaults from config
                 const defaultPriorities = config.employment?.defaultPriorities || {};
                 this.saveUserPriorities(defaultPriorities);
-                console.log('[EmploymentPriorityService] Initialized localStorage with default priorities:', defaultPriorities);
             }
             
             // No IndexedDB updates needed anymore!
@@ -77,7 +76,6 @@ export class EmploymentPriorityService extends SimService {
     saveUserPriorities(priorities) {
         try {
             localStorage.setItem(this.PRIORITIES_STORAGE_KEY, JSON.stringify(priorities));
-            console.log('[EmploymentPriorityService] Saved priorities to localStorage:', priorities);
         } catch (err) {
             console.error('[EmploymentPriorityService] Error saving priorities to localStorage:', err);
         }
@@ -104,8 +102,6 @@ export class EmploymentPriorityService extends SimService {
         const currentPriority = priorities[sector] !== undefined 
             ? priorities[sector] 
             : (defaultPriorities[sector] || 1);
-        
-        console.log(`[EmploymentPriorityService] Updating sector ${sector}: ${currentPriority} → ${clampedPriority}`);
         
         // If priority hasn't changed, do nothing
         if (currentPriority === clampedPriority) {
@@ -134,14 +130,10 @@ export class EmploymentPriorityService extends SimService {
         priorities[sector] = clampedPriority;
         if (sectorWithNewPriority !== null) {
             priorities[sectorWithNewPriority] = currentPriority;
-            console.log(`[EmploymentPriorityService] Swapped: Sector ${sector} ↔ Sector ${sectorWithNewPriority}`);
         }
         
         // Save immediately to localStorage
         this.saveUserPriorities(priorities);
-        
-        // Effect is INSTANT - next worker distribution will use new priorities!
-        console.log('[EmploymentPriorityService] ✅ Priority updated instantly in localStorage');
     }
 
     /**
