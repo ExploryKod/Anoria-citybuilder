@@ -267,6 +267,13 @@ class BudgetManager {
         const roundedAmount = Math.round(amount);
         budget.funds = Math.round(budget.funds + roundedAmount);
         
+        // Add journal entry for loan capital (income)
+        await this.addJournalEntry(budget.turn, 'loan_capital', roundedAmount, description);
+        
+        // Update income to reflect the loan capital received
+        budget.income = Math.round(budget.income + roundedAmount);
+        budget.netFlow = Math.round(budget.income - budget.expenses);
+        
         // Initialize loans array if not exists
         if (!budget.loans) budget.loans = [];
         
@@ -277,6 +284,9 @@ class BudgetManager {
         
         // Recalculate loan totals
         await this.calculateLoanTotals(budget);
+        
+        // Save budget
+        await this.db.budget.put(budget);
 
         return budget;
     }

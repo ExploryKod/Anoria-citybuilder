@@ -5017,7 +5017,7 @@ function createJournalEntryHTML(entry) {
     } else if (entry.type === 'balance') {
         // La balance peut être positive ou négative selon le montant
         isIncome = entry.amount >= 0;
-    } else if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds') {
+    } else if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds' || entry.type === 'loan_capital') {
         isIncome = true;
     } else if (entry.type.startsWith('export_')) {
         isIncome = true; // Tous les exports sont des revenus
@@ -5052,6 +5052,7 @@ function createJournalEntryHTML(entry) {
         'export_wood': 'Export Bois',
         'export_dattes': 'Export Dattes',
         'commercial_route': 'Commission Négociants',
+        'loan_capital': 'Capital Prêt',
         'loan_interest': 'Intérêts prêt',
         'loan_repayment': 'Remboursement prêt',
         'cumul_maintenance': 'Cumul Maintenance',
