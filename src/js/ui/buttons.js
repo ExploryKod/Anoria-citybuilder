@@ -4607,12 +4607,38 @@ function initJournalPopup() {
         loadJournalEntries(currentPeriod);
     });
     
-    // Filter buttons
+    // Filter buttons (period)
     filterButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             filterButtons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            loadJournalEntries(btn.dataset.period);
+            // Réinitialiser le filtre de type quand on change de période
+            const activePill = document.querySelector('.journal-filter-pill.active');
+            const typeFilter = activePill ? JSON.parse(activePill.dataset.types || '[]') : null;
+            loadJournalEntries(btn.dataset.period, typeFilter);
+        });
+    });
+    
+    // Filter pills (type)
+    const filterPills = document.querySelectorAll('.journal-filter-pill');
+    filterPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            // Toggle active state
+            if (pill.classList.contains('active')) {
+                // Désactiver le filtre
+                pill.classList.remove('active');
+                const activeFilterBtn = document.querySelector('.journal-filter-btn.active');
+                const currentPeriod = activeFilterBtn ? activeFilterBtn.dataset.period : 'all';
+                loadJournalEntries(currentPeriod, null);
+            } else {
+                // Activer ce filtre et désactiver les autres
+                filterPills.forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                const typeFilter = JSON.parse(pill.dataset.types || '[]');
+                const activeFilterBtn = document.querySelector('.journal-filter-btn.active');
+                const currentPeriod = activeFilterBtn ? activeFilterBtn.dataset.period : 'all';
+                loadJournalEntries(currentPeriod, typeFilter);
+            }
         });
     });
     
@@ -4633,7 +4659,7 @@ function initJournalPopup() {
     }
 }
 
-async function loadJournalEntries(period = 'all') {
+async function loadJournalEntries(period = 'all', typeFilter = null) {
     const journalList = document.getElementById('journal-list');
     if (!journalList) return;
     
@@ -4859,11 +4885,45 @@ async function loadJournalEntries(period = 'all') {
                                 
                                 <div class="journal-month-entries">
                                     ${(() => {
+                                        // Filtrer les entrées selon typeFilter si défini
+                                        let filteredIncome = monthData.income.entries;
+                                        let filteredExpenses = monthData.expenses.entries;
+                                        
+                                        if (typeFilter && typeFilter.length > 0) {
+                                            filteredIncome = monthData.income.entries.filter(e => {
+                                                // Vérifier si le type correspond exactement ou commence par un préfixe dans typeFilter
+                                                return typeFilter.some(filterType => {
+                                                    // Type exact (ex: "citizen_tax", "loan_capital")
+                                                    if (e.type === filterType) {
+                                                        return true;
+                                                    }
+                                                    // Préfixe avec underscore (ex: "export_" pour tous les exports)
+                                                    if (filterType.endsWith('_') && e.type.startsWith(filterType)) {
+                                                        return true;
+                                                    }
+                                                    return false;
+                                                });
+                                            });
+                                            filteredExpenses = monthData.expenses.entries.filter(e => {
+                                                return typeFilter.some(filterType => {
+                                                    // Type exact
+                                                    if (e.type === filterType) {
+                                                        return true;
+                                                    }
+                                                    // Préfixe avec underscore
+                                                    if (filterType.endsWith('_') && e.type.startsWith(filterType)) {
+                                                        return true;
+                                                    }
+                                                    return false;
+                                                });
+                                            });
+                                        }
+                                        
                                         // Séparer les entrées : report à nouveau en premier, puis les autres
-                                        const carryForwardIncome = monthData.income.entries.filter(e => e.type === 'carry_forward');
-                                        const carryForwardExpenses = monthData.expenses.entries.filter(e => e.type === 'carry_forward');
-                                        const otherIncome = monthData.income.entries.filter(e => e.type !== 'carry_forward');
-                                        const otherExpenses = monthData.expenses.entries.filter(e => e.type !== 'carry_forward');
+                                        const carryForwardIncome = filteredIncome.filter(e => e.type === 'carry_forward');
+                                        const carryForwardExpenses = filteredExpenses.filter(e => e.type === 'carry_forward');
+                                        const otherIncome = filteredIncome.filter(e => e.type !== 'carry_forward');
+                                        const otherExpenses = filteredExpenses.filter(e => e.type !== 'carry_forward');
                                         
                                         // Afficher d'abord les reports à nouveau (revenus puis dépenses), puis les autres
                                         return [

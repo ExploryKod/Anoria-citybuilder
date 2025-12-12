@@ -1837,9 +1837,12 @@
                                     </tr>
                                 </thead>
                                 <tbody id="finances-table-body">
-                                    <!-- Revenus -->
+                                    <!-- Revenus bruts -->
                                     <tr class="finances-section-header">
-                                        <td colspan="4" style="background: rgba(251, 129, 34, 0.1); font-weight: 600; padding: 12px;">Revenus</td>
+                                        <td colspan="4" style="background: rgba(251, 129, 34, 0.1); font-weight: 600; padding: 12px;">
+                                            Revenus bruts
+                                            <span class="finances-explanation">Revenus de l'année sans report de l'année précédente</span>
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td class="indicator-col">
@@ -1894,25 +1897,31 @@
                                     </tr>
                                     <tr>
                                         <td class="indicator-col">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up">
-                                                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
-                                                <polyline points="16 7 22 7 22 13"/>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet">
+                                                <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
+                                                <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
                                             </svg>
                                         </td>
-                                        <td class="label-col finances-row-label">Solde</td>
-                                        <td class="last-year-col finances-value-positive" data-field="carryForwardIncomeLastYear" id="carry-forward-income-last-year">0</td>
-                                        <td class="this-year-col finances-value-positive" data-field="carryForwardIncomeThisYear" id="carry-forward-income-this-year">0</td>
+                                        <td class="label-col finances-row-label">Capitaux prêts</td>
+                                        <td class="last-year-col finances-value-positive" data-field="loanCapitalLastYear" id="loan-capital-last-year">0</td>
+                                        <td class="this-year-col finances-value-positive" data-field="loanCapitalThisYear" id="loan-capital-this-year">0</td>
                                     </tr>
                                     <tr class="finances-row-total">
                                         <td class="indicator-col"></td>
-                                        <td class="label-col finances-row-label">Total Revenus</td>
+                                        <td class="label-col finances-row-label">
+                                            Total Revenus bruts
+                                            <span class="finances-explanation">Somme des revenus de l'année</span>
+                                        </td>
                                         <td class="last-year-col finances-value-positive" data-field="totalIncomeLastYear" id="total-income-last-year">0</td>
                                         <td class="this-year-col finances-value-positive" data-field="totalIncomeThisYear" id="total-income-this-year">0</td>
                                     </tr>
 
-                                    <!-- Dépenses -->
+                                    <!-- Dépenses brutes -->
                                     <tr class="finances-section-header">
-                                        <td colspan="4" style="background: rgba(251, 129, 34, 0.1); font-weight: 600; padding: 12px;">Dépenses</td>
+                                        <td colspan="4" style="background: rgba(251, 129, 34, 0.1); font-weight: 600; padding: 12px;">
+                                            Dépenses brutes
+                                            <span class="finances-explanation">Dépenses de l'année sans report de l'année précédente</span>
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td class="indicator-col">
@@ -1974,26 +1983,122 @@
                                     </tr>
                                     <tr>
                                         <td class="indicator-col">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-percent">
+                                                <line x1="19" x2="5" y1="5" y2="19"/>
+                                                <circle cx="6.5" cy="6.5" r="2.5"/>
+                                                <circle cx="17.5" cy="17.5" r="2.5"/>
+                                            </svg>
+                                        </td>
+                                        <td class="label-col finances-row-label">Intérêts</td>
+                                        <td class="last-year-col finances-value-negative" data-field="loanInterestLastYear" id="loan-interest-last-year">0</td>
+                                        <td class="this-year-col finances-value-negative" data-field="loanInterestThisYear" id="loan-interest-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet">
+                                                <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
+                                                <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
+                                            </svg>
+                                        </td>
+                                        <td class="label-col finances-row-label">Remboursements</td>
+                                        <td class="last-year-col finances-value-negative" data-field="loanRepaymentLastYear" id="loan-repayment-last-year">0</td>
+                                        <td class="this-year-col finances-value-negative" data-field="loanRepaymentThisYear" id="loan-repayment-this-year">0</td>
+                                    </tr>
+                                    <tr class="finances-row-total">
+                                        <td class="indicator-col"></td>
+                                        <td class="label-col finances-row-label">
+                                            Total Dépenses brutes
+                                            <span class="finances-explanation">Somme des dépenses de l'année</span>
+                                        </td>
+                                        <td class="last-year-col finances-value-negative" data-field="totalExpensesLastYear" id="total-expenses-last-year">0</td>
+                                        <td class="this-year-col finances-value-negative" data-field="totalExpensesThisYear" id="total-expenses-this-year">0</td>
+                                    </tr>
+
+                                    <!-- Espace -->
+                                    <tr class="finances-row-spacer">
+                                        <td colspan="4" style="height: 20px; border: none; background: transparent;"></td>
+                                    </tr>
+
+                                    <!-- Revenus nets -->
+                                    <tr class="finances-row-benefit">
+                                        <td class="indicator-col">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up">
+                                                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+                                                <polyline points="16 7 22 7 22 13"/>
+                                            </svg>
+                                        </td>
+                                        <td class="label-col finances-row-label">
+                                            Bénéfice n-1
+                                            <span class="finances-explanation">Report positif de l'année précédente</span>
+                                        </td>
+                                        <td class="last-year-col finances-value-positive" data-field="benefitLastYear" id="benefit-last-year">0</td>
+                                        <td class="this-year-col finances-value-positive">-</td>
+                                    </tr>
+                                    <tr class="finances-row-net">
+                                        <td class="indicator-col"></td>
+                                        <td class="label-col finances-row-label">
+                                            Revenus nets
+                                            <span class="finances-explanation">Revenus bruts + bénéfice n-1</span>
+                                        </td>
+                                        <td class="last-year-col finances-value-positive" data-field="netIncomeLastYear" id="net-income-last-year">-</td>
+                                        <td class="this-year-col finances-value-positive" data-field="netIncomeThisYear" id="net-income-this-year">0</td>
+                                    </tr>
+
+                                    <!-- Dépenses nettes -->
+                                    <tr class="finances-row-deficit">
+                                        <td class="indicator-col">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-down">
                                                 <polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/>
                                                 <polyline points="16 17 22 17 22 11"/>
                                             </svg>
                                         </td>
-                                        <td class="label-col finances-row-label">Solde</td>
-                                        <td class="last-year-col finances-value-negative" data-field="carryForwardExpenseLastYear" id="carry-forward-expense-last-year">0</td>
-                                        <td class="this-year-col finances-value-negative" data-field="carryForwardExpenseThisYear" id="carry-forward-expense-this-year">0</td>
+                                        <td class="label-col finances-row-label">
+                                            Déficit n-1
+                                            <span class="finances-explanation">Report négatif de l'année précédente</span>
+                                        </td>
+                                        <td class="last-year-col finances-value-negative" data-field="deficitLastYear" id="deficit-last-year">0</td>
+                                        <td class="this-year-col finances-value-negative">-</td>
                                     </tr>
-                                    <tr class="finances-row-total">
+                                    <tr class="finances-row-net">
                                         <td class="indicator-col"></td>
-                                        <td class="label-col finances-row-label">Total Dépenses</td>
-                                        <td class="last-year-col finances-value-negative" data-field="totalExpensesLastYear" id="total-expenses-last-year">0</td>
-                                        <td class="this-year-col finances-value-negative" data-field="totalExpensesThisYear" id="total-expenses-this-year">0</td>
+                                        <td class="label-col finances-row-label">
+                                            Dépenses nettes
+                                            <span class="finances-explanation">Dépenses brutes + déficit n-1</span>
+                                        </td>
+                                        <td class="last-year-col finances-value-negative" data-field="netExpensesLastYear" id="net-expenses-last-year">-</td>
+                                        <td class="this-year-col finances-value-negative" data-field="netExpensesThisYear" id="net-expenses-this-year">0</td>
+                                    </tr>
+
+                                    <!-- Flux net -->
+                                    <tr class="finances-row-netflow">
+                                        <td class="indicator-col">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right-left">
+                                                <path d="m16 3 4 4-4 4"/>
+                                                <path d="M20 7H4"/>
+                                                <path d="m8 21-4-4 4-4"/>
+                                                <path d="M4 17h16"/>
+                                            </svg>
+                                        </td>
+                                        <td class="label-col finances-row-label">
+                                            Flux net
+                                            <span class="finances-explanation">Revenus nets - Dépenses nettes</span>
+                                        </td>
+                                        <td class="last-year-col finances-value-netflow" data-field="netFlowLastYear" id="net-flow-last-year">-</td>
+                                        <td class="this-year-col finances-value-netflow" data-field="netFlowThisYear" id="net-flow-this-year">0</td>
+                                    </tr>
+
+                                    <!-- Espace -->
+                                    <tr class="finances-row-spacer">
+                                        <td colspan="4" style="height: 20px; border: none; background: transparent;"></td>
                                     </tr>
 
                                     <!-- Balance -->
                                     <tr class="finances-row-balance">
                                         <td class="indicator-col"></td>
-                                        <td class="label-col finances-row-label">Balance</td>
+                                        <td class="label-col finances-row-label">
+                                            Balance
+                                            <span class="finances-explanation">Solde total actuel de la ville</span>
+                                        </td>
                                         <td class="last-year-col finances-value-positive" data-field="balanceLastYear" id="balance-last-year">0</td>
                                         <td class="this-year-col finances-value-positive" data-field="balanceThisYear" id="balance-this-year">0</td>
                                     </tr>
@@ -2538,7 +2643,45 @@
 <div id="journal-panel" class="journal-panel">
     <div class="journal-wrapper">
         <div class="journal-header">
-            <h3>📔 Journal des Écritures</h3>
+            <div class="journal-header-left">
+                <h3>📔 Journal des Écritures</h3>
+                <div class="journal-filter-pills">
+                    <div class="journal-filter-pills-section">
+                        <span class="journal-filter-pills-label">Revenus:</span>
+                        <button class="journal-filter-pill" data-filter="taxes" data-types='["citizen_tax","payroll_tax"]'>
+                            <span class="pill-color" style="background: #cfe2ff; color: #084298;"></span>
+                            <span class="pill-label">Impôts et taxes</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="exports" data-types='["export_"]'>
+                            <span class="pill-color" style="background: #d4edda; color: #155724;"></span>
+                            <span class="pill-label">Exports</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="loan_capital" data-types='["loan_capital"]'>
+                            <span class="pill-color" style="background: #e2d5f7; color: #6f42c1;"></span>
+                            <span class="pill-label">Revenus exceptionnels</span>
+                        </button>
+                    </div>
+                    <div class="journal-filter-pills-section">
+                        <span class="journal-filter-pills-label">Dépenses:</span>
+                        <button class="journal-filter-pill" data-filter="loan_interest" data-types='["loan_interest"]'>
+                            <span class="pill-color" style="background: #ffe0b2; color: #e65100;"></span>
+                            <span class="pill-label">Intérêts</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="salary" data-types='["salary"]'>
+                            <span class="pill-color" style="background: #ffe0b2; color: #e65100;"></span>
+                            <span class="pill-label">Salaires</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="imports" data-types='["import_"]'>
+                            <span class="pill-color" style="background: #fff3cd; color: #856404;"></span>
+                            <span class="pill-label">Imports</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="exceptional_expenses" data-types='["exceptional_expenses"]'>
+                            <span class="pill-color" style="background: #d7ccc8; color: #5d4037;"></span>
+                            <span class="pill-label">Dépenses exceptionnelles</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
             <div class="journal-close-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
                     <path d="M18 6L6 18"/>
