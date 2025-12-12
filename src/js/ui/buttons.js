@@ -296,7 +296,7 @@ async function updateBudgetDisplay() {
             updateBalanceSheetElement('net-result', `${adjustedNetResult.toLocaleString('fr-FR')}€`);
             updateBalanceSheetElement('total-liabilities', `${totalAssets.toLocaleString('fr-FR')}€`);
         } else {
-            console.log(`✅ Bilan équilibré: ACTIF = PASSIF = ${totalAssets}€`);
+            console.info(`✅ Bilan équilibré: ACTIF = PASSIF = ${totalAssets}€`);
         }
         
         // Update financial health indicator in header
@@ -388,8 +388,6 @@ function applyBalanceSheetFilter(filter) {
             // Show everything (already visible)
             break;
     }
-    
-    console.log(`Balance sheet filter applied: ${filter}`);
 }
 
 // Animation panel buttons
@@ -586,7 +584,7 @@ function toggleModal(e) {
         case 'palaces':
             // Check if palace button is disabled
             if (window.buttonStateManager && !window.buttonStateManager.isEnabled('palace-btn')) {
-                console.log('🏛️ Palace button is disabled');
+                console.warn('🏛️ Palace button is disabled');
                 return; // Don't open panel if disabled
             }
             
@@ -1105,18 +1103,15 @@ function showCitySizeSelection() {
                 
                 ws.onopen = () => {
                     // La liste sera envoyée automatiquement par le serveur
-                    console.log('[Rooms] Connexion WebSocket établie pour charger les salons');
                 };
                 
                 ws.onmessage = (event) => {
                     try {
                         const data = JSON.parse(event.data);
-                        console.log('[Rooms] Message reçu:', data.type, data);
                         if (data.type === 'AVAILABLE_ROOMS') {
                             roomsReceived = true;
                             connectionClosed = true;
                             clearTimeout(timeout);
-                            console.log('[Rooms] Salons reçus:', data.rooms);
                             displayRooms(roomsList, data.rooms, maxSafeCitySizeToUse, modal);
                             // Ne pas fermer immédiatement, attendre un peu pour recevoir d'autres mises à jour
                             setTimeout(() => {
@@ -1558,8 +1553,6 @@ window.onload = async () => {
     
     // Initialize button states for game start
     if (window.buttonStateManager) {
-        console.log('✅ ButtonStateManager loaded successfully');
-        
         // Register category buttons
         const palaceBtn = document.getElementById('palace-btn');
         if (palaceBtn) {
@@ -1582,7 +1575,6 @@ window.onload = async () => {
             const button = document.getElementById(buildingId);
             if (button) {
                 window.buttonStateManager.disable(buildingId);
-                console.log(`🚫 Disabled: ${buildingId}`);
             } else {
                 console.warn(`⚠️ Button ${buildingId} not found in DOM, will be disabled when created`);
             }
@@ -1698,6 +1690,20 @@ window.onload = async () => {
         document.addEventListener('keydown', handleEscape);
     }
 
+    /**
+     * Reset localStorage completely - this is the single place where localStorage is cleared
+     * Removes all items individually first, then calls clear() to ensure complete cleanup
+     */
+    function resetLocalStorage() {
+        // Remove all items individually first to ensure complete cleanup
+        const localStorageKeys = Object.keys(localStorage);
+        localStorageKeys.forEach(key => {
+            localStorage.removeItem(key);
+        });
+        // Then clear all remaining items
+        localStorage.clear();
+    }
+
     // Function to perform the actual reset
     async function performReset() {
         // Hard reload - unregister service worker and clear caches
@@ -1707,7 +1713,6 @@ window.onload = async () => {
                 const registrations = await navigator.serviceWorker.getRegistrations();
                 for (let registration of registrations) {
                     await registration.unregister();
-                    console.log('Service worker unregistered');
                 }
             }
             
@@ -1716,13 +1721,11 @@ window.onload = async () => {
                 const cacheNames = await caches.keys();
                 for (let cacheName of cacheNames) {
                     await caches.delete(cacheName);
-                    console.log('Cache deleted:', cacheName);
                 }
             }
             
-            // Clear localStorage
-            localStorage.clear();
-            console.log('LocalStorage cleared');
+            // Clear localStorage completely - using dedicated function
+            resetLocalStorage();
             
             // Clear IndexedDB - for all databases
             if ('indexedDB' in window) {
@@ -1730,11 +1733,13 @@ window.onload = async () => {
                     databases.forEach(db => {
                         if (db.name) {
                             indexedDB.deleteDatabase(db.name);
-                            console.log('IndexedDB deleted:', db.name);
                         }
                     });
                 });
             }
+            
+            // Small delay to ensure localStorage clear is fully processed before reload
+            await new Promise(resolve => setTimeout(resolve, 100));
             
             // Reload the page
             window.location.reload(true);
@@ -2264,15 +2269,12 @@ window.onload = async () => {
                 roomName = selectionResult.roomName || null;
             }
             
-            console.log('[Multiplayer] Activation avec:', { action, roomIdOrCitySize, playerPseudo, selectedCitySize, roomName });
-            
             // Importer la configuration WebSocket
             const getWebSocketUrl = (await import('../../config/websocket.js')).default;
             const wsUrl = getWebSocketUrl();
             
             await multiplayerManager.enable(wsUrl, playerPseudo, roomIdOrCitySize, action, roomName);
             window.multiplayerManager = multiplayerManager;
-            console.log(`[Multiplayer] Mode multijoueur activé avec pseudo: ${playerPseudo}`);
         } catch (error) {
             console.error('[Multiplayer] Erreur d\'activation:', error);
             
@@ -2456,11 +2458,9 @@ async function updateRealtimeBudget() {
                 if (housesStore && typeof housesStore.getGlobalPopulation === 'function') {
                     population = await housesStore.getGlobalPopulation();
                     population = population || 0;
-                    console.log('[buttons.js > updateRealtimeBudget] Population from housesStore (IndexedDB):', population);
                 } else if (window.housesStore && typeof window.housesStore.getGlobalPopulation === 'function') {
                     population = await window.housesStore.getGlobalPopulation();
                     population = population || 0;
-                    console.log('[buttons.js > updateRealtimeBudget] Population from housesStore (IndexedDB, window):', population);
                 } else {
                     // Fallback to gameStore (also IndexedDB, but may be stale)
                     console.warn('[buttons.js > updateRealtimeBudget] ⚠️ housesStore.getGlobalPopulation not available, FALLING BACK to gameStore (may be stale)');
@@ -2545,12 +2545,6 @@ async function updateRealtimeBudget() {
                 } else {
                     realtimePopulationEl.textContent = population.toString();
                 }
-                
-                console.log('[buttons.js > updateRealtimeBudget] Updated realtime population display:', {
-                    population,
-                    hasError: populationError,
-                    elementExists: !!realtimePopulationEl
-                });
             }
             
             // Mettre à jour la santé financière
@@ -4017,7 +4011,6 @@ function initLoansPopup() {
 
     // Toggle popup on loans button click
     loansBtn.addEventListener('click', () => {
-        console.log('Loans button clicked!');
         loansPanel.classList.add('active');
         
         // Utiliser PopupManager pour gérer les événements
@@ -4443,8 +4436,6 @@ async function processLoanPayments() {
         const activeLoans = await budgetManager.getActiveLoans();
         if (activeLoans.length === 0) return;
         
-        console.log(`💰 Processing loan payments for ${activeLoans.length} active loan(s)`);
-        
         const loansToRemove = [];
         
         for (let i = 0; i < activeLoans.length; i++) {
@@ -4455,30 +4446,25 @@ async function processLoanPayments() {
             const interestPayment = Math.round(loan.amount * (loan.interestRate / 100) / loan.duration);
             const principalPayment = monthlyPayment - interestPayment;
             
-            console.log(`Loan ${loan.id}: payment=${monthlyPayment}, interest=${interestPayment}, principal=${principalPayment}`);
-            
             // Check if we have enough funds
             const currentBudget = await budgetManager.getCurrentBudget();
             if (currentBudget.funds >= monthlyPayment) {
                 // Pay interest first
                 await budgetManager.addLoanInterest(interestPayment, `Intérêts prêt ${loan.type} (${loan.id})`);
-                console.log(`✅ Paid ${interestPayment}€ in interest for loan ${loan.id}`);
                 
                 // Pay principal
                 await budgetManager.repayLoan(principalPayment, `Remboursement prêt ${loan.type} (${loan.id})`, loan.id);
-                console.log(`✅ Paid ${principalPayment}€ in principal for loan ${loan.id}`);
                 
                 // Remove loan if fully paid
                 if (loan.remainingTurns <= 0 || loan.amount <= 0) {
                     loansToRemove.push(i);
-                    console.log(`Loan ${loan.id} fully repaid and removed`);
                 }
             } else {
                 // Not enough funds - just pay interest if possible
                 if (currentBudget.funds >= interestPayment) {
                     await budgetManager.addLoanInterest(interestPayment, `Intérêts prêt ${loan.type} (${loan.id})`);
                     loan.remainingTurns--; // Still count as a turn
-                    console.log(`⚠️ Only paid ${interestPayment}€ in interest (not enough funds for full payment)`);
+                    console.warn(`⚠️ Only paid ${interestPayment}€ in interest (not enough funds for full payment)`);
                 } else {
                     // Can't even pay interest - loan goes into default
                     console.warn(`Loan ${loan.id} in default - cannot pay interest`);
@@ -4489,13 +4475,6 @@ async function processLoanPayments() {
         
         // Update displays
         updateBudgetDisplay();
-        
-        // Log final totals
-        const finalBudget = await budgetManager.getCurrentBudget();
-        console.log(`📊 Budget totals after loan payments:`, {
-            totalLoanInterestExpenses: finalBudget.totalLoanInterestExpenses,
-            totalLoanRepayments: finalBudget.totalLoanRepayments
-        });
         
     } catch (error) {
         console.error('Error processing loan payments:', error);
@@ -4590,12 +4569,38 @@ function initJournalPopup() {
         loadJournalEntries(currentPeriod);
     });
     
-    // Filter buttons
+    // Filter buttons (period)
     filterButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             filterButtons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            loadJournalEntries(btn.dataset.period);
+            // Réinitialiser le filtre de type quand on change de période
+            const activePill = document.querySelector('.journal-filter-pill.active');
+            const typeFilter = activePill ? JSON.parse(activePill.dataset.types || '[]') : null;
+            loadJournalEntries(btn.dataset.period, typeFilter);
+        });
+    });
+    
+    // Filter pills (type)
+    const filterPills = document.querySelectorAll('.journal-filter-pill');
+    filterPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            // Toggle active state
+            if (pill.classList.contains('active')) {
+                // Désactiver le filtre
+                pill.classList.remove('active');
+                const activeFilterBtn = document.querySelector('.journal-filter-btn.active');
+                const currentPeriod = activeFilterBtn ? activeFilterBtn.dataset.period : 'all';
+                loadJournalEntries(currentPeriod, null);
+            } else {
+                // Activer ce filtre et désactiver les autres
+                filterPills.forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                const typeFilter = JSON.parse(pill.dataset.types || '[]');
+                const activeFilterBtn = document.querySelector('.journal-filter-btn.active');
+                const currentPeriod = activeFilterBtn ? activeFilterBtn.dataset.period : 'all';
+                loadJournalEntries(currentPeriod, typeFilter);
+            }
         });
     });
     
@@ -4616,7 +4621,7 @@ function initJournalPopup() {
     }
 }
 
-async function loadJournalEntries(period = 'all') {
+async function loadJournalEntries(period = 'all', typeFilter = null) {
     const journalList = document.getElementById('journal-list');
     if (!journalList) return;
     
@@ -4746,7 +4751,6 @@ async function loadJournalEntries(period = 'all') {
             });
             
             localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(soldes));
-            console.log('[Journal] Saved balances to localStorage:', soldes);
         } catch (error) {
             console.error('[Journal] Error saving balances to localStorage:', error);
         }
@@ -4842,11 +4846,45 @@ async function loadJournalEntries(period = 'all') {
                                 
                                 <div class="journal-month-entries">
                                     ${(() => {
+                                        // Filtrer les entrées selon typeFilter si défini
+                                        let filteredIncome = monthData.income.entries;
+                                        let filteredExpenses = monthData.expenses.entries;
+                                        
+                                        if (typeFilter && typeFilter.length > 0) {
+                                            filteredIncome = monthData.income.entries.filter(e => {
+                                                // Vérifier si le type correspond exactement ou commence par un préfixe dans typeFilter
+                                                return typeFilter.some(filterType => {
+                                                    // Type exact (ex: "citizen_tax", "loan_capital")
+                                                    if (e.type === filterType) {
+                                                        return true;
+                                                    }
+                                                    // Préfixe avec underscore (ex: "export_" pour tous les exports)
+                                                    if (filterType.endsWith('_') && e.type.startsWith(filterType)) {
+                                                        return true;
+                                                    }
+                                                    return false;
+                                                });
+                                            });
+                                            filteredExpenses = monthData.expenses.entries.filter(e => {
+                                                return typeFilter.some(filterType => {
+                                                    // Type exact
+                                                    if (e.type === filterType) {
+                                                        return true;
+                                                    }
+                                                    // Préfixe avec underscore
+                                                    if (filterType.endsWith('_') && e.type.startsWith(filterType)) {
+                                                        return true;
+                                                    }
+                                                    return false;
+                                                });
+                                            });
+                                        }
+                                        
                                         // Séparer les entrées : report à nouveau en premier, puis les autres
-                                        const carryForwardIncome = monthData.income.entries.filter(e => e.type === 'carry_forward');
-                                        const carryForwardExpenses = monthData.expenses.entries.filter(e => e.type === 'carry_forward');
-                                        const otherIncome = monthData.income.entries.filter(e => e.type !== 'carry_forward');
-                                        const otherExpenses = monthData.expenses.entries.filter(e => e.type !== 'carry_forward');
+                                        const carryForwardIncome = filteredIncome.filter(e => e.type === 'carry_forward');
+                                        const carryForwardExpenses = filteredExpenses.filter(e => e.type === 'carry_forward');
+                                        const otherIncome = filteredIncome.filter(e => e.type !== 'carry_forward');
+                                        const otherExpenses = filteredExpenses.filter(e => e.type !== 'carry_forward');
                                         
                                         // Afficher d'abord les reports à nouveau (revenus puis dépenses), puis les autres
                                         return [
@@ -4896,8 +4934,6 @@ async function exportJournalToJSON() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        
-        console.log('[Journal] Exported to JSON successfully');
     } catch (error) {
         console.error('[Journal] Error exporting to JSON:', error);
         alert('Erreur lors de l\'export JSON: ' + error.message);
@@ -4945,8 +4981,6 @@ async function exportJournalToPDF() {
                 PDF
             `;
         }
-        
-        console.log('[Journal] Exported to PDF successfully');
     } catch (error) {
         console.error('[Journal] Error exporting to PDF:', error);
         alert('Erreur lors de l\'export PDF: ' + error.message);
@@ -5000,13 +5034,13 @@ function createJournalEntryHTML(entry) {
     } else if (entry.type === 'balance') {
         // La balance peut être positive ou négative selon le montant
         isIncome = entry.amount >= 0;
-    } else if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds') {
+    } else if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds' || entry.type === 'loan_capital') {
         isIncome = true;
     } else if (entry.type.startsWith('export_')) {
         isIncome = true; // Tous les exports sont des revenus
     } else if (entry.type.startsWith('import_')) {
         isIncome = false; // Tous les imports sont des dépenses
-    } else if (entry.type === 'salary' || entry.type === 'maintenance' || entry.type === 'construction' || entry.type === 'exceptional_expenses') {
+    } else if (entry.type === 'salary' || entry.type === 'maintenance' || entry.type === 'construction' || entry.type === 'exceptional_expenses' || entry.type === 'commercial_route') {
         isIncome = false; // Dépenses
     } else if (entry.type === 'carry_forward') {
         // Pour carry_forward, utiliser la propriété isCarryForwardIncome si disponible
@@ -5034,6 +5068,8 @@ function createJournalEntryHTML(entry) {
         'export_cabbage': 'Export Chou',
         'export_wood': 'Export Bois',
         'export_dattes': 'Export Dattes',
+        'commercial_route': 'Commission Négociants',
+        'loan_capital': 'Capital Prêt',
         'loan_interest': 'Intérêts prêt',
         'loan_repayment': 'Remboursement prêt',
         'cumul_maintenance': 'Cumul Maintenance',
@@ -5050,8 +5086,9 @@ function createJournalEntryHTML(entry) {
     let descriptionText = entry.description || '';
     let breakdownItems = null;
 
-    // Support breakdown for maintenance, imports, and exports
+    // Support breakdown for maintenance, imports, exports, and commercial routes
     const supportsBreakdown = entry.type === 'maintenance' ||
+                              entry.type === 'commercial_route' ||
                               entry.type.startsWith('import_') ||
                               entry.type.startsWith('export_');
 
@@ -5067,7 +5104,7 @@ function createJournalEntryHTML(entry) {
 
     // Get partner name if partnerId exists
     let partnerName = null;
-    if (entry.partnerId && (entry.type.startsWith('import_') || entry.type.startsWith('export_'))) {
+    if (entry.partnerId && (entry.type.startsWith('import_') || entry.type.startsWith('export_') || entry.type === 'commercial_route')) {
         try {
             const partnersData = localStorage.getItem('commerce_partners');
             if (partnersData) {

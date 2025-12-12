@@ -1,5 +1,42 @@
 /* Commerce Section - Goods Trading Management */
 
+.commerce-refresh-section {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+}
+
+.commerce-refresh-btn {
+    padding: 10px 20px;
+    background: var(--cta);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.commerce-refresh-btn:hover:not(:disabled) {
+    background: #009999;
+}
+
+.commerce-refresh-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.commerce-refresh-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
 .commerce-board {
     background: #fafafa;
     border-radius: var(--border-radius-small);
@@ -696,8 +733,10 @@
 
 .partner-activation-btn:disabled {
     background: #ccc;
+    color: #666;
     cursor: not-allowed;
     opacity: 0.6;
+    transform: none;
 }
 
 .partner-activation-conditions {
@@ -758,6 +797,41 @@
     background: #fff5f5;
 }
 
+.partner-trade-item.contract-finished {
+    border-left-color: #17a2b8;
+    background: #d1ecf1;
+    opacity: 0.8;
+}
+
+.partner-trade-item.no-windmill {
+    border-left-color: #6c757d;
+    background: #f8f9fa;
+    opacity: 0.8;
+}
+
+.partner-trade-item.unavailable {
+    opacity: 0.5;
+    pointer-events: none;
+    position: relative;
+}
+
+.partner-trade-item.unavailable::after {
+    content: '❌ Indisponible';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 10;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
 .partner-trade-header {
     display: flex;
     justify-content: space-between;
@@ -785,6 +859,16 @@
 
 .partner-trade-status.limit-reached {
     background: var(--danger);
+    color: white;
+}
+
+.partner-trade-status.contract-finished {
+    background: #17a2b8;
+    color: white;
+}
+
+.partner-trade-status.no-windmill {
+    background: #6c757d;
     color: white;
 }
 
@@ -817,8 +901,57 @@
     font-style: italic;
 }
 
+/* Partner contract info */
+.partner-contract-info {
+    background: #fff3cd;
+    padding: 10px;
+    border-radius: 6px;
+    margin: 10px 0;
+    border-left: 4px solid #ffc107;
+}
+
+.partner-contract-info > div:first-child {
+    font-weight: 600;
+    color: #856404;
+    margin-bottom: 5px;
+}
+
+.partner-contract-info > div:last-child {
+    font-size: 13px;
+    color: #856404;
+}
+
+/* Partner message animations */
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
 @media screen and (max-width:768px) {
     .partner-activation-btn {
         width: 200px;
+    }
+    
+    #commerce-partner-message {
+        max-width: calc(100% - 40px) !important;
+        right: 20px !important;
+        left: 20px !important;
     }
 }

@@ -29,6 +29,7 @@ import InputManager from './InputManager.js';
 import gameUI from './GameUI.js';
 import appRegistry from './AppRegistry.js';
 import webglDetector from '../utils/WebGLResourceDetector.js';
+import commerceStore from '../stores/CommerceStore.js';
 
 // Initialiser le cache de TimeManager au démarrage
 TimeManager.initializeCache().catch(err => {
@@ -51,7 +52,7 @@ let services = [];
         
         services.push(new RoadConnectivityService());
         services.push(new FoodDistributionService()); // Farm > Market > House logic using IndexedDB
-        services.push(new WindmillService()); // Windmill collects from all farms in October
+        services.push(new WindmillService()); // Windmill collects from all farms in December (after markets collect in autumn)
         services.push(new RandomEventsService()); // Événements aléatoires (ouragan, inondation)
         services.push(new CommerceService()); // Gestion des imports/exports
         
@@ -743,14 +744,17 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
 
                 // Display market food stocks (similar to houses)
                 if((selectedObject.userData.id.includes('Market') || selectedObject.userData.id.includes('market')) && Object.hasOwn(houseStocks, 'food')) {
+                    // Get market data to access maxStock
+                    const marketData = await housesStore.getHouse(uniqueId);
+                    const maxStock = marketData?.maxStock || 500; // Default max stock for markets
+                    
                     makeInfoSection('Stock marché');
-                    makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`);
-                    makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`);
-                    makeInfoKeyValue('Autres légumes', `${houseStocks.carrot || 0} paniers`);
-                    makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers disponibles`);
+                    makeInfoKeyValue('Blé', `${houseStocks.wheat || 0}/${maxStock} paniers`);
+                    makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0}/${maxStock} paniers`);
+                    makeInfoKeyValue('Autres légumes', `${houseStocks.carrot || 0}/${maxStock} paniers`);
+                    makeInfoKeyValue('Total', `${houseStocks.food || 0}/${maxStock} paniers disponibles`);
                     
                     // Display employee information for markets
-                    const marketData = await housesStore.getHouse(uniqueId);
                     if (marketData) {
                         // Check supply chain status (farms and houses)
                         const noFarmsNearby = marketData.noFarmsNearby === true;
@@ -845,8 +849,56 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     }
                     makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers`);
                     
-                    // Display employee information for farms
+                    // Display sales history for farms
                     const farmData = await housesStore.getHouse(uniqueId);
+                    if (farmData) {
+                        const salesToMarket = farmData.salesToMarket || [];
+                        const salesToWindmill = farmData.salesToWindmill || [];
+                        
+                        // Get current time from budget
+                        let currentYear = 0;
+                        if (window.budgetManager) {
+                            const budget = await window.budgetManager.getCurrentBudget();
+                            if (budget && budget.turn !== undefined && window.TimeManager) {
+                                const timeInfo = window.TimeManager.getTimeInfo(budget.turn);
+                                currentYear = timeInfo ? timeInfo.year : 0;
+                            }
+                        }
+                        
+                        // Filter sales for current year
+                        const currentYearMarketSales = salesToMarket.filter(sale => sale.year === currentYear);
+                        const currentYearWindmillSales = salesToWindmill.filter(sale => sale.year === currentYear);
+                        
+                        if (currentYearMarketSales.length > 0 || currentYearWindmillSales.length > 0) {
+                            makeInfoSection('Ventes de l\'année');
+                            
+                            // Display market sales (with month and turn)
+                            if (currentYearMarketSales.length > 0) {
+                                makeInfoKeyValue('Ventes au marché', `${currentYearMarketSales.length} vente(s)`);
+                                currentYearMarketSales.forEach(sale => {
+                                    const productName = sale.productType === 'wheat' ? 'Blé' : 
+                                                       sale.productType === 'carrot' ? 'Carotte' : 
+                                                       sale.productType === 'cabbage' ? 'Chou' : sale.productType;
+                                    const subtext = `${sale.monthName || `Mois ${sale.month + 1}`} - Tour ${sale.turn}: ${sale.quantity} paniers`;
+                                    makeInfoKeyValue(`  → ${productName}`, `${sale.quantity} paniers`, subtext);
+                                });
+                            }
+                            
+                            // Display windmill sales (aggregated by product type)
+                            if (currentYearWindmillSales.length > 0) {
+                                makeInfoKeyValue('Ventes au moulin', `${currentYearWindmillSales.length} type(s) de produit`);
+                                currentYearWindmillSales.forEach(sale => {
+                                    const productName = sale.productType === 'wheat' ? 'Blé' : 
+                                                       sale.productType === 'carrot' ? 'Carotte' : 
+                                                       sale.productType === 'cabbage' ? 'Chou' : sale.productType;
+                                    const subtext = `${sale.count || 1} collecte(s) cette année`;
+                                    makeInfoKeyValue(`  → ${productName}`, `${sale.quantity} paniers`, subtext);
+                                });
+                            }
+                        }
+                    }
+                    
+                    // Display employee information for farms
                     if (farmData && farmData.employees) {
                         const employees = farmData.employees;
                         const workerNeed = employees.worker_need || 0;
@@ -880,7 +932,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     }
                 }
 
-                // Display windmill food stocks (collected from all farms in October)
+                // Display windmill food stocks (collected from all farms in December)
                 if((selectedObject.userData.id.includes('Windmill') || selectedObject.userData.id.includes('windmill')) && Object.hasOwn(houseStocks, 'food')) {
                     // Get windmill data for status checks
                     const windmillData = await housesStore.getHouse(uniqueId);
@@ -919,6 +971,9 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         lastImportDetails = null;
                     }
 
+                    // Get maxStock for windmill
+                    const maxStock = windmillData?.maxStock || 1000; // Default max stock for windmill
+                    
                     makeInfoSection('Stock moulin');
                     
                     // Show stocks with last collection and import amounts
@@ -954,17 +1009,18 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     const totalImportText = `+${totalImportAmount} paniers importés`;
                     const totalSubtext = `${totalCollectionText}, ${totalImportText}`;
 
-                    makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`, wheatSubtext);
-                    makeInfoKeyValue('Chou', `${houseStocks.cabbage || 0} paniers`, cabbageSubtext);
-                    makeInfoKeyValue('Carotte', `${houseStocks.carrot || 0} paniers`, carrotSubtext);
-                    makeInfoKeyValue('Dattes', `${houseStocks.dattes || 0} paniers`, dattesSubtext);
-                    makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers collectés`, totalSubtext);
+                    makeInfoKeyValue('Blé', `${houseStocks.wheat || 0}/${maxStock} paniers`, wheatSubtext);
+                    makeInfoKeyValue('Chou', `${houseStocks.cabbage || 0}/${maxStock} paniers`, cabbageSubtext);
+                    makeInfoKeyValue('Carotte', `${houseStocks.carrot || 0}/${maxStock} paniers`, carrotSubtext);
+                    makeInfoKeyValue('Dattes', `${houseStocks.dattes || 0}/${maxStock} paniers`, dattesSubtext);
+                    makeInfoKeyValue('Bois', `${houseStocks.wood || 0}/${maxStock} paniers`);
+                    makeInfoKeyValue('Total', `${houseStocks.food || 0}/${maxStock} paniers collectés`, totalSubtext);
 
                     // Display imports by partner if any
                     if (lastImportDetails && Object.keys(lastImportDetails).length > 0) {
                         makeInfoSection('Imports par partenaire');
 
-                        const productNames = { wheat: 'Blé', carrot: 'Carotte', cabbage: 'Chou', dattes: 'Dattes' };
+                        const productNames = { wheat: 'Blé', carrot: 'Carotte', cabbage: 'Chou', dattes: 'Dattes', wood: 'Bois' };
 
                         for (const [productId, partners] of Object.entries(lastImportDetails)) {
                             if (partners && partners.length > 0) {
@@ -988,9 +1044,9 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     }
                     makeInfoKeyValue('Source', 'Toutes les fermes du jeu');
                     if (isCollecting) {
-                        makeInfoKeyValue('État', '🟢 En collecte (octobre)');
+                        makeInfoKeyValue('État', '🟢 En collecte (décembre)');
                     } else {
-                        makeInfoKeyValue('État', '⏸️ En attente (collecte en octobre)');
+                        makeInfoKeyValue('État', '⏸️ En attente (collecte en décembre)');
                     }
                     
                     // Show warning if no road access
@@ -1322,8 +1378,28 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
 
         replay() {
             isOver = false;
-            overOverlay.classList.remove('active')
-            window.location.href = '/'
+            overOverlay.classList.remove('active');
+            
+            // Clear localStorage before replay
+            try {
+                commerceStore.clear();
+                // Also clear other localStorage items that should be reset on replay
+                localStorage.removeItem('journal_year_end_balances');
+                localStorage.removeItem('citizen_tax_amount');
+                localStorage.removeItem('show-performance-stats');
+                localStorage.removeItem('hasSeenCleanupNotification');
+                localStorage.removeItem('speed');
+                localStorage.removeItem('selectedCitySize');
+                localStorage.removeItem('multiplayer-enabled');
+                localStorage.removeItem('multiplayer-pseudo');
+                localStorage.removeItem('multiplayer-room-name');
+                localStorage.removeItem('activeLoans');
+                console.log('[Game] LocalStorage cleared for replay');
+            } catch (error) {
+                console.warn('[Game] Error clearing localStorage on replay:', error);
+            }
+            
+            window.location.href = '/';
         },
 
         setInfo(key, info) {

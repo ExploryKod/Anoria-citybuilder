@@ -251,7 +251,6 @@ class PopupManager {
         // Mettre le jeu en pause si nécessaire
         if (config.shouldPauseGame && window.game && typeof window.game.pause === 'function') {
             window.game.pause();
-            console.log(`Game paused for ${popupId}`);
         }
 
         // Callback d'ouverture

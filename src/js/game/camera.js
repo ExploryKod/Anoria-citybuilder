@@ -526,9 +526,6 @@ export function createCamera(gameWindow) {
                 // Recalculate baseline radius with new MAX_CAMERA_RADIUS
                 updateBaselineRadius();
                 
-                // Debug log to verify calculation
-                console.log(`[Camera] City: ${citySize}x${citySize}, World: ${worldPlatformSize.toFixed(1)}, Diagonal: ${worldDiagonal.toFixed(1)}, Min zoom needed: ${minZoomNeeded.toFixed(2)}, Max radius: ${MAX_CAMERA_RADIUS.toFixed(2)}`);
-                
                 // Clamp current camera radius to new limits
                 cameraRadius = Math.min(MAX_CAMERA_RADIUS, Math.max(MIN_CAMERA_RADIUS, cameraRadius));
                 

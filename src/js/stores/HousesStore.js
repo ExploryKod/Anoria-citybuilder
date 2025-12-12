@@ -175,11 +175,6 @@ class HouseStore {
     async addHouse(data) {
         const houseName = data.name;
         
-        // Debug: log road additions
-        if (data.type && (data.type.startsWith('StonePath-') || data.type === 'roads' || data.type === 'Road')) {
-            console.log('[HousesStore] Adding road to DB:', { houseName, type: data.type, data });
-        }
-        
         // Check if this house is already being added (prevent race conditions)
         if (this.pendingAdditions.has(houseName)) {
             console.warn(`[HousesStore] House ${houseName} is already being added, skipping duplicate request`);
@@ -201,12 +196,6 @@ class HouseStore {
             }
             
             await this.db.houses.add(data);
-            
-            // Debug: verify road was added
-            if (data.type && (data.type.startsWith('StonePath-') || data.type === 'roads' || data.type === 'Road')) {
-                const verify = await this.db.houses.get(houseName);
-                console.log('[HousesStore] Road added, verification:', { houseName, found: !!verify, verify });
-            }
             
             this.pendingAdditions.delete(houseName);
             this._clearPendingTimeout(houseName);
