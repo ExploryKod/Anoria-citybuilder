@@ -768,13 +768,6 @@ class AssetManager extends MeshLoader {
                     // Add fence group to scene
                     scene.add(fenceGroup);
 
-                    console.log('[AssetManager] Boundary fences loaded:', {
-                        fenceModel: fenceTemplate.name,
-                        segmentsPerSide,
-                        citySize,
-                        totalFences: fenceGroup.children.length
-                    });
-
                     resolve();
                 },
                 undefined,

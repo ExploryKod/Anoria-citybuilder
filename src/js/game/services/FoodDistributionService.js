@@ -61,7 +61,6 @@ export class FoodDistributionService extends SimService {
         const isWinter = timeInfo.monthIndex >= 0 && timeInfo.monthIndex <= 2;
         
         if (isWinter) {
-            console.log('[FoodDistributionService] Winter season - farms do not produce food');
             // Still process markets to distribute existing stocks, but skip farm collection
             // We'll handle this in processMarket by checking isWinter
         }
@@ -122,10 +121,6 @@ export class FoodDistributionService extends SimService {
     async processMarket(market, housesStore, allHouses = [], time = 0) {
         // Get fresh data from IndexedDB (source of truth)
         const marketId = market.id || market.name;
-        console.log('[FoodDistributionService] Processing market:', {
-            marketId,
-            marketType: market.type
-        });
         
         const marketData = await housesStore.getHouse(marketId);
         if (!marketData) {
@@ -137,16 +132,8 @@ export class FoodDistributionService extends SimService {
         const neighbors = marketData.neighbors || [];
         const { hasAccess: hasRoadAccess, roadCount } = checkRoadAccess(neighbors);
         
-        console.log('[FoodDistributionService] Market road access check:', {
-            marketId,
-            hasRoadAccess,
-            roadCount,
-            totalNeighbors: neighbors.length
-        });
-        
         if (!hasRoadAccess) {
             // Market has no road access - CANNOT receive food from farms OR distribute to houses
-            console.log('[FoodDistributionService] Market has no road access, skipping:', marketId);
             return;
         }
 
@@ -158,11 +145,6 @@ export class FoodDistributionService extends SimService {
         
         if (hasNoWorkers) {
             // Market has no workers - CANNOT receive food from farms OR distribute to houses
-            console.log('[FoodDistributionService] Market has no workers, skipping:', {
-                marketId,
-                workers: marketWorkers,
-                workerNeed: marketWorkerNeed
-            });
             return;
         }
 
@@ -183,7 +165,7 @@ export class FoodDistributionService extends SimService {
             return name.includes('House') || name.includes('house');
         });
 
-        console.log('[FoodDistributionService] Market neighbors:', {
+        console.info('[FoodDistributionService] Market neighbors:', {
             marketId,
             farmsNearby: farmsNearby.length,
             marketHouses: marketHouses.length,
@@ -220,8 +202,6 @@ export class FoodDistributionService extends SimService {
         
         if (hasFarmsNearby) {
             await this.collectFoodFromFarms(marketId, farmsNearby, housesStore, time);
-        } else {
-            console.log('[FoodDistributionService] No farms nearby for market:', marketId);
         }
 
         // Step 2: Distribute food from market to houses within distance (Market → House)
@@ -231,8 +211,6 @@ export class FoodDistributionService extends SimService {
         
         if (housesInRange.length > 0) {
             await this.distributeFoodToHouses(marketId, housesInRange, housesStore, time);
-        } else {
-            console.log('[FoodDistributionService] No houses within range for market:', marketId);
         }
     }
 
@@ -280,14 +258,6 @@ export class FoodDistributionService extends SimService {
             const { hasAccess: hasRoadAccess } = checkRoadAccess(neighbors);
             
             return hasRoadAccess;
-        });
-
-        console.log('[FoodDistributionService] Houses in range of market:', {
-            marketId: market.id || market.name,
-            marketPosition: { x: marketX, y: marketY },
-            maxDistance,
-            housesInRange: housesInRange.length,
-            houseIds: housesInRange.map(h => h.id || h.name)
         });
 
         return housesInRange;
@@ -386,7 +356,7 @@ export class FoodDistributionService extends SimService {
         
         // Markets can only buy from farms during autumn (buying period)
         if (!isAutumn) {
-            console.log('[FoodDistributionService] Not autumn season - markets can only buy from farms in autumn:', {
+            console.info('[FoodDistributionService] Not autumn season - markets can only buy from farms in autumn:', {
                 marketId,
                 month: timeInfo.month,
                 season: timeInfo.season,
@@ -409,12 +379,6 @@ export class FoodDistributionService extends SimService {
         
         // If market is already at capacity, skip collection
         if (remainingCapacity <= 0) {
-            console.log('[FoodDistributionService] Market at capacity, skipping collection:', {
-                marketId,
-                currentTotalStock,
-                maxStock,
-                remainingCapacity
-            });
             return;
         }
         
@@ -464,7 +428,7 @@ export class FoodDistributionService extends SimService {
                 const { hasAccess: farmHasRoadAccess } = checkRoadAccess(farmNeighbors);
                 
                 if (!farmHasRoadAccess) {
-                    console.log('[FoodDistributionService] Farm has no road access, skipping:', {
+                    console.warn('[FoodDistributionService] Farm has no road access, skipping:', {
                         farmId,
                         farmType: farmData.type
                     });
@@ -474,21 +438,8 @@ export class FoodDistributionService extends SimService {
                 const farmType = farmData.type || '';
                 const farmStocks = farmData.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                 
-                console.log('[FoodDistributionService] Processing farm:', {
-                    farmId,
-                    farmType,
-                    hasRoadAccess: farmHasRoadAccess,
-                    stocks: farmStocks,
-                    neighborData: farmNeighbor
-                });
-                
                 // Check if market has reached its capacity limit
                 if (totalCollected >= remainingCapacity) {
-                    console.log('[FoodDistributionService] Market capacity reached, stopping collection:', {
-                        marketId,
-                        totalCollected,
-                        remainingCapacity
-                    });
                     break; // Stop collecting from remaining farms
                 }
                 
@@ -517,12 +468,6 @@ export class FoodDistributionService extends SimService {
                         
                         // Track sale to market in farm data
                         await this.trackFarmSaleToMarket(farmId, farmData, housesStore, timeInfo, 'wheat', wheatToBuy, marketId);
-                        
-                        console.log('[FoodDistributionService] Bought wheat from farm:', {
-                            farmId,
-                            wheatBought: wheatToBuy,
-                            remainingStocks: newFarmStocks
-                        });
                         
                         // Enregistrer la transaction ferme → marché
                         if (window.foodTraceabilityService) {
@@ -565,7 +510,7 @@ export class FoodDistributionService extends SimService {
                         
                         // Track sale to market in farm data
                         await this.trackFarmSaleToMarket(farmId, farmData, housesStore, timeInfo, 'carrot', carrotToBuy, marketId);
-                        console.log('[FoodDistributionService] Bought carrot from farm:', {
+                        console.info('[FoodDistributionService] Bought carrot from farm:', {
                             farmId,
                             carrotBought: carrotToBuy,
                             remainingStocks: newFarmStocks
@@ -612,7 +557,7 @@ export class FoodDistributionService extends SimService {
                         
                         // Track sale to market in farm data
                         await this.trackFarmSaleToMarket(farmId, farmData, housesStore, timeInfo, 'cabbage', cabbageToBuy, marketId);
-                        console.log('[FoodDistributionService] Bought cabbage from farm:', {
+                        console.info('[FoodDistributionService] Bought cabbage from farm:', {
                             farmId,
                             cabbageBought: cabbageToBuy,
                             remainingStocks: newFarmStocks
@@ -652,7 +597,7 @@ export class FoodDistributionService extends SimService {
             }
         }
 
-        console.log('[FoodDistributionService] Farm collection results:', {
+        console.info('[FoodDistributionService] Farm collection results:', {
             marketId,
             wheatCount,
             carrotCount,
@@ -671,7 +616,7 @@ export class FoodDistributionService extends SimService {
 
             const freshStocks = freshMarketData.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
             
-            console.log('[FoodDistributionService] Market stocks before farm collection:', {
+            console.info('[FoodDistributionService] Market stocks before farm collection:', {
                 marketId,
                 freshStocks
             });
@@ -695,7 +640,7 @@ export class FoodDistributionService extends SimService {
                 food: Math.min(maxStock, (freshStocks.food || 0) + actualTotalToAdd) // Cap at maxStock
             };
 
-            console.log('[FoodDistributionService] Market stocks after farm collection:', {
+            console.info('[FoodDistributionService] Market stocks after farm collection:', {
                 marketId,
                 newStocks
             });
@@ -707,7 +652,7 @@ export class FoodDistributionService extends SimService {
                 });
             });
         } else {
-            console.log('[FoodDistributionService] No food collected from farms (no valid farms found):', marketId);
+            console.info('[FoodDistributionService] No food collected from farms (no valid farms found):', marketId);
         }
     }
 
@@ -734,7 +679,7 @@ export class FoodDistributionService extends SimService {
         const isAutumn = timeInfo.season === 'Automne';
         
         if (isAutumn) {
-            console.log('[FoodDistributionService] Autumn season - houses do not buy from markets, they live on existing stocks:', {
+            console.info('[FoodDistributionService] Autumn season - houses do not buy from markets, they live on existing stocks:', {
                 marketId,
                 month: timeInfo.month,
                 season: timeInfo.season,
@@ -751,7 +696,7 @@ export class FoodDistributionService extends SimService {
 
         const marketStocks = marketData.stocks || { wheat: 0, carrot: 0, cabbage: 0, food: 0 };
         
-        console.log('[FoodDistributionService] Distribution check:', {
+        console.info('[FoodDistributionService] Distribution check:', {
             marketId,
             marketStocks,
             housesCount: houses.length,
@@ -766,14 +711,14 @@ export class FoodDistributionService extends SimService {
         
         // Check if market has ANY food to distribute
         if (totalFoodAvailable === 0) {
-            console.log('[FoodDistributionService] Market has no food to distribute:', {
+            console.warn('[FoodDistributionService] Market has no food to distribute:', {
                 marketId,
                 marketStocks
             });
             return;
         }
 
-        console.log('[FoodDistributionService] Distributing to all houses (they can buy as much as available):', {
+        console.info('[FoodDistributionService] Distributing to all houses (they can buy as much as available):', {
             marketId,
             totalHouses: houses.length,
             wheatAvailable,
@@ -879,7 +824,7 @@ export class FoodDistributionService extends SimService {
                     // Calculate total food as sum of all types
                     newHouseStocks.food = newHouseStocks.wheat + newHouseStocks.carrot + newHouseStocks.cabbage;
 
-                    console.log('[FoodDistributionService] House buying stocks:', {
+                    console.info('[FoodDistributionService] House buying stocks:', {
                         houseId,
                         iteration,
                         wheatBought: wheatToBuy,
@@ -897,7 +842,7 @@ export class FoodDistributionService extends SimService {
 
                     // Wait for this update to complete before continuing (prevents race conditions)
                     const updatePromise = housesStore.updateHouseFields(houseId, { stocks: newHouseStocks }).then(async () => {
-                        console.log('[FoodDistributionService] Successfully updated house stocks:', {
+                        console.info('[FoodDistributionService] Successfully updated house stocks:', {
                             houseId,
                             stocks: newHouseStocks
                         });
@@ -979,7 +924,7 @@ export class FoodDistributionService extends SimService {
             }
         }
         
-        console.log('[FoodDistributionService] Distribution iterations completed:', {
+        console.info('[FoodDistributionService] Distribution iterations completed:', {
             marketId,
             iterations: iteration,
             housesProcessed: houses.length,
@@ -991,7 +936,7 @@ export class FoodDistributionService extends SimService {
         // Wait for all house updates to complete
         await Promise.allSettled(allUpdatePromises);
 
-        console.log('[FoodDistributionService] Distribution complete:', {
+        console.info('[FoodDistributionService] Distribution complete:', {
             marketId,
             totalWheatDistributed,
             totalCarrotDistributed,
@@ -1007,7 +952,7 @@ export class FoodDistributionService extends SimService {
             food: Math.max(0, (marketStocks.food || 0) - (totalWheatDistributed + totalCarrotDistributed + totalCabbageDistributed))
         };
 
-        console.log('[FoodDistributionService] Market stocks after distribution:', {
+        console.info('[FoodDistributionService] Market stocks after distribution:', {
             marketId,
             before: marketStocks,
             after: newMarketStocks
@@ -1061,7 +1006,7 @@ export class FoodDistributionService extends SimService {
                 salesToWindmill: salesToWindmill // Preserve windmill sales
             });
             
-            console.log('[FoodDistributionService] Tracked farm sale to market:', {
+            console.info('[FoodDistributionService] Tracked farm sale to market:', {
                 farmId,
                 saleRecord
             });

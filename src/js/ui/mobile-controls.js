@@ -191,6 +191,5 @@ export function initMobileControls(camera) {
         });
     });
 
-    console.log('[MobileControls] Initialized mobile camera controls');
 }
 

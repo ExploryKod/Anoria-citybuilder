@@ -134,8 +134,6 @@ export class PerformanceManager {
         }
         
         if (shadowUpdates > 0) {
-            const shadowRes = shadowLight?.shadow?.mapSize?.width || 'N/A';
-            console.log(`[PerformanceManager] Updated shadows for ${shadowUpdates} meshes | Shadow map: ${shadowRes}px`);
         }
     }
 }

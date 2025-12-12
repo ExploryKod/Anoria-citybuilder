@@ -39,14 +39,6 @@ class JournalManager {
         // Sauvegarder dans localStorage avec la même valeur exacte
         this.saveYearEndBalance(year, netFlow);
         
-        console.log(`[JournalManager] Calculated and saved year end balance for year ${year} (same method as journal display):`, {
-            netFlow,
-            income: yearData.income.total,
-            expenses: yearData.expenses.total,
-            calculation: `${yearData.income.total} - ${yearData.expenses.total} = ${netFlow}`,
-            source: 'getYearlyFinancialSummary() - EXACT same as loadJournalEntries() line 4489'
-        });
-        
         return netFlow;
     }
 
@@ -77,13 +69,6 @@ class JournalManager {
             soldes.sort((a, b) => a.an - b.an);
             
             localStorage.setItem(this.LOCALSTORAGE_KEY, JSON.stringify(soldes));
-            
-            console.log('[JournalManager] Saved year end balance:', {
-                year,
-                netFlow,
-                nature,
-                amount
-            });
         } catch (error) {
             console.error('[JournalManager] Error saving year end balance:', error);
         }
@@ -452,7 +437,6 @@ class JournalManager {
         const hasCarryForward = existingEntries.some(entry => entry.type === 'carry_forward');
         
         if (hasCarryForward) {
-            console.log('[JournalManager] Carry forward entry already exists for turn', turn);
             return;
         }
         
@@ -488,14 +472,6 @@ class JournalManager {
             const description = `Report à nouveau de l'année ${yearDisplay} (${signIndicator})`;
             
             await this.addJournalEntry(turn, 'carry_forward', amount, description);
-            console.log('[JournalManager] Created carry forward entry (fallback):', {
-                turn,
-                amount,
-                previousYearNetFlow,
-                previousYear,
-                nature,
-                isIncome: nature === 'revenue'
-            });
             return;
         }
         
@@ -508,14 +484,6 @@ class JournalManager {
         const description = `Report à nouveau de l'année ${yearDisplay} (${signIndicator})`;
         
         await this.addJournalEntry(turn, 'carry_forward', amount, description);
-        console.log('[JournalManager] Created carry forward entry from localStorage:', {
-            turn,
-            amount,
-            previousYear,
-            nature,
-            isIncome: isPositive,
-            source: 'localStorage'
-        });
     }
 
     /**
@@ -577,32 +545,26 @@ class JournalManager {
         // Créer les entrées de cumul si elles n'existent pas et si le cumul > 0
         if (!hasMaintenanceCumul && maintenanceCumul > 0) {
             await this.addJournalEntry(turn, 'cumul_maintenance', maintenanceCumul, `Cumul Maintenance - Année ${yearDisplay}`);
-            console.log(`[JournalManager] Created maintenance cumul entry for year ${year}: ${maintenanceCumul}€`);
         }
 
         if (!hasConstructionCumul && constructionCumul > 0) {
             await this.addJournalEntry(turn, 'cumul_construction', constructionCumul, `Cumul Construction - Année ${yearDisplay}`);
-            console.log(`[JournalManager] Created construction cumul entry for year ${year}: ${constructionCumul}€`);
         }
 
         if (!hasSalaryCumul && salaryCumul > 0) {
             await this.addJournalEntry(turn, 'cumul_salary', salaryCumul, `Cumul Salaires - Année ${yearDisplay}`);
-            console.log(`[JournalManager] Created salary cumul entry for year ${year}: ${salaryCumul}€`);
         }
 
         if (!hasExceptionalExpensesCumul && exceptionalExpensesCumul > 0) {
             await this.addJournalEntry(turn, 'cumul_exceptional_expenses', exceptionalExpensesCumul, `Cumul Réparations - Année ${yearDisplay}`);
-            console.log(`[JournalManager] Created exceptional expenses cumul entry for year ${year}: ${exceptionalExpensesCumul}€`);
         }
 
         if (!hasLoanInterestCumul && loanInterestCumul > 0) {
             await this.addJournalEntry(turn, 'cumul_loan_interest', loanInterestCumul, `Cumul Intérêts Prêt - Année ${yearDisplay}`);
-            console.log(`[JournalManager] Created loan interest cumul entry for year ${year}: ${loanInterestCumul}€`);
         }
 
         if (!hasLoanRepaymentCumul && loanRepaymentCumul > 0) {
             await this.addJournalEntry(turn, 'cumul_loan_repayment', loanRepaymentCumul, `Cumul Remboursement Prêt - Année ${yearDisplay}`);
-            console.log(`[JournalManager] Created loan repayment cumul entry for year ${year}: ${loanRepaymentCumul}€`);
         }
     }
 
@@ -620,14 +582,13 @@ class JournalManager {
         
         if (!hasBalance) {
             await this.addJournalEntry(turn, 'balance', balance, 'Solde');
-            console.log(`[JournalManager] Created balance entry for turn ${turn}: ${balance}€`);
         } else {
             // Mettre à jour l'entrée existante si le solde a changé
             const existingBalance = existingEntries.find(e => e.type === 'balance');
             if (existingBalance && existingBalance.amount !== balance) {
                 // Mettre à jour l'entrée existante
                 await this.db.journal.update(existingBalance.id, { amount: balance });
-                console.log(`[JournalManager] Updated balance entry for turn ${turn}: ${balance}€`);
+                console.info(`[JournalManager] Updated balance entry for turn ${turn}: ${balance}€`);
             }
         }
     }

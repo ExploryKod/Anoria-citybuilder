@@ -317,7 +317,6 @@ if (typeof window !== 'undefined') {
             }
             
             this.detectionComplete = true;
-            console.log(`[WebGL Test Mode] Simulating ${testMode} resources. Max safe city size: ${this.maxSafeCitySize}×${this.maxSafeCitySize}`);
             return this.capabilities;
         };
     }
@@ -333,13 +332,12 @@ if (typeof window !== 'undefined') {
         set: (mode) => {
             if (mode === 'limited' || mode === 'moderate' || mode === 'none') {
                 localStorage.setItem('webgl-test-mode', mode);
-                console.log(`[WebGL Test Mode] Set to: ${mode}. Please reload the page for changes to take effect.`);
                 if (mode === 'limited') {
-                    console.log('  → Will simulate very limited system (12×12 max)');
+                    console.info('  → Will simulate very limited system (12×12 max)');
                 } else if (mode === 'moderate') {
-                    console.log('  → Will simulate moderate limitations (16×16 max)');
+                    console.info('  → Will simulate moderate limitations (16×16 max)');
                 } else {
-                    console.log('  → Will use normal WebGL detection');
+                    console.info('  → Will use normal WebGL detection');
                 }
             } else {
                 console.error('Invalid mode. Use: "limited", "moderate", or "none"');
@@ -350,7 +348,6 @@ if (typeof window !== 'undefined') {
          */
         get: () => {
             const mode = localStorage.getItem('webgl-test-mode');
-            console.log(`[WebGL Test Mode] Current: ${mode || 'none (normal detection)'}`);
             return mode;
         },
         /**
@@ -358,13 +355,12 @@ if (typeof window !== 'undefined') {
          */
         disable: () => {
             localStorage.removeItem('webgl-test-mode');
-            console.log('[WebGL Test Mode] Disabled. Please reload the page.');
         },
         /**
          * Show help
          */
         help: () => {
-            console.log(`
+            console.info(`
 WebGL Test Mode Helper
 ======================
 Usage:
@@ -383,7 +379,7 @@ After setting a mode, reload the page (F5) for changes to take effect.
     // Show help on first load if test mode is active
     const testMode = localStorage.getItem('webgl-test-mode');
     if (testMode === 'limited' || testMode === 'moderate') {
-        console.log(`[WebGL Test Mode] Active: ${testMode}. Use webglTestMode.help() for more info.`);
+        console.info(`[WebGL Test Mode] Active: ${testMode}. Use webglTestMode.help() for more info.`);
     }
 }
 

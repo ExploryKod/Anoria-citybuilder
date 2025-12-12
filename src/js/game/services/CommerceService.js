@@ -80,7 +80,6 @@ export class CommerceService extends SimService {
 
         // Vérifier que la relation commerciale est active
         if (!partner.isActive) {
-            console.log(`[CommerceService] Cannot trade with ${partnerId}: relation not active`);
             return false;
         }
 
@@ -90,7 +89,6 @@ export class CommerceService extends SimService {
 
         if (operation === 'export') {
             const trade = partner.imports.find(imp => imp.productId === productId);
-            console.log("[partner trade object] > ", trade);
             if (!trade) return false;
             
             if (!trade.months.includes(currentMonth)) return false;
@@ -178,9 +176,6 @@ export class CommerceService extends SimService {
             
             partner.isActive = false;
             commerceStore.savePartners(this.partnersData);
-            console.log(`[CommerceService] Partner ${partnerId} automatically deactivated: all contracts finished`, {
-                finishedProducts
-            });
             
             // Notify UI if available (use setTimeout to avoid blocking)
             if (typeof window !== 'undefined') {
