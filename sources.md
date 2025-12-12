@@ -16,3 +16,5 @@
 
 # Lucid-dev : toggle isométric (land-plot icon)
 Url website of the author: https://github.com/danielbayley
+
+"Viking Carrot Farm" (https://skfb.ly/o69Lt) by Tom Verbeeck is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).

@@ -23,6 +23,8 @@
 
 "Ancient Greek book shop" [source](https://skfb.ly/6TIZZ) by YunaOthmer is licensed under [Creative Commons Attribution](http://creativecommons.org/licenses/by/4.0/).
 
+"Viking Carrot Farm" [source](https://skfb.ly/o69Lt) by Tom Verbeeck is licensed under [Creative Commons Attribution](http://creativecommons.org/licenses/by/4.0/).
+
 ## Icones 
 
 ### Icones issues de <a href="https://lucide.dev">lucide.dev</a> :

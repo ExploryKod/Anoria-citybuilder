@@ -267,22 +267,32 @@ class AssetManager extends MeshLoader {
         object3D.position.set(placerPos.x, yOffset, placerPos.y);
         object3D.scale.set(size, size, size);
         
-        // Apply different rotations for road variants
-        // We rotate on Z axis to keep roads flat on the ground
-        let rotationZ = 180; // Default rotation for straight road
-        if (meshName === 'StonePath-Right-001') {
-            rotationZ = 270; // 90° clockwise turn (right)
-        } else if (meshName === 'StonePath-Left-001') {
-            rotationZ = 90; // 90° counter-clockwise turn (left)
-        } else if (meshName === 'StonePath-Cross-001') {
-            rotationZ = 180; // Crossroad (same as straight)
+        // Apply different rotations for road variants and special buildings
+        if (meshName === 'BookShop-001') {
+            // BookShop needs to be vertical/straight on its foundations
+            object3D.rotation.set(
+                THREE.MathUtils.degToRad(0),    // X: no rotation (vertical)
+                THREE.MathUtils.degToRad(180), // Y: 180 degrees
+                THREE.MathUtils.degToRad(0)     // Z: no rotation
+            );
+        } else {
+            // Apply different rotations for road variants
+            // We rotate on Z axis to keep roads flat on the ground
+            let rotationZ = 180; // Default rotation for straight road
+            if (meshName === 'StonePath-Right-001') {
+                rotationZ = 270; // 90° clockwise turn (right)
+            } else if (meshName === 'StonePath-Left-001') {
+                rotationZ = 90; // 90° counter-clockwise turn (left)
+            } else if (meshName === 'StonePath-Cross-001') {
+                rotationZ = 180; // Crossroad (same as straight)
+            }
+            
+            object3D.rotation.set(
+                THREE.MathUtils.degToRad(90),  // X: keeps road horizontal
+                THREE.MathUtils.degToRad(180), // Y: base orientation
+                THREE.MathUtils.degToRad(rotationZ) // Z: rotation for turns (keeps road flat)
+            );
         }
-        
-        object3D.rotation.set(
-            THREE.MathUtils.degToRad(90),  // X: keeps road horizontal
-            THREE.MathUtils.degToRad(180), // Y: base orientation
-            THREE.MathUtils.degToRad(rotationZ) // Z: rotation for turns (keeps road flat)
-        );
 
 
 
@@ -553,7 +563,7 @@ class AssetManager extends MeshLoader {
             // Map of tool IDs to their GLB file paths
             const standaloneAssets = {
                 'Winery-001': './resources/lowpoly/winery_v3.glb',
-                'BookShop-001': './resources/lowpoly/bookshop_v1.glb'
+                'BookShop-001': './resources/lowpoly/viking_carrot_farm_v1.glb'
             };
 
             // Handle special cases for autonomous buttons (bookshop, winery)
@@ -582,51 +592,160 @@ class AssetManager extends MeshLoader {
                     gltfloader.load(
                         glbPath,
                         (gltf) => {
-                            // Find the main mesh in the GLB file
+                            // For BookShop-001, collect all meshes into a Group to preserve all parts
+                            // For Winery-001, use the first mesh (original working approach)
                             let mainMesh = null;
                             
-                            gltf.scene.traverse((child) => {
-                                if (child instanceof THREE.Mesh && !mainMesh) {
-                                    // Use the first mesh found, or you can search for a specific name
-                                    mainMesh = child;
+                            if (toolId === 'BookShop-001') {
+                                // First, convert all materials in the original scene
+                                gltf.scene.traverse((obj) => {
+                                    if (obj instanceof THREE.Mesh && obj.material) {
+                                        // Convert all material types for bookshop
+                                        if (Array.isArray(obj.material)) {
+                                            obj.material = obj.material.map(mat => {
+                                                if (mat instanceof THREE.MeshBasicMaterial || 
+                                                    mat instanceof THREE.MeshStandardMaterial ||
+                                                    mat instanceof THREE.MeshPhongMaterial) {
+                                                    return new THREE.MeshLambertMaterial({
+                                                        map: mat.map,
+                                                        color: mat.color,
+                                                        transparent: mat.transparent,
+                                                        opacity: mat.opacity,
+                                                        emissive: mat.emissive || new THREE.Color(0x000000),
+                                                        emissiveIntensity: mat.emissiveIntensity || 0
+                                                    });
+                                                }
+                                                return mat;
+                                            });
+                                        } else {
+                                            if (obj.material instanceof THREE.MeshBasicMaterial || 
+                                                obj.material instanceof THREE.MeshStandardMaterial ||
+                                                obj.material instanceof THREE.MeshPhongMaterial) {
+                                                obj.material = new THREE.MeshLambertMaterial({
+                                                    map: obj.material.map,
+                                                    color: obj.material.color,
+                                                    transparent: obj.material.transparent,
+                                                    opacity: obj.material.opacity,
+                                                    emissive: obj.material.emissive || new THREE.Color(0x000000),
+                                                    emissiveIntensity: obj.material.emissiveIntensity || 0
+                                                });
+                                            }
+                                        }
+                                    }
+                                });
+                                
+                                // Now collect all meshes from the scene into a new Group
+                                const meshGroup = new THREE.Group();
+                                gltf.scene.traverse((child) => {
+                                    if (child instanceof THREE.Mesh) {
+                                        // Clone the mesh (with converted materials) and add to group
+                                        const meshClone = child.clone();
+                                        // Ensure materials are shared (not cloned) to avoid texture unit limit
+                                        meshClone.material = child.material;
+                                        meshGroup.add(meshClone);
+                                    }
+                                });
+                                
+                                // If we found meshes, use the group; otherwise fall back to scene
+                                if (meshGroup.children.length > 0) {
+                                    mainMesh = meshGroup;
+                                } else {
+                                    // Fallback: use scene if no meshes found
+                                    mainMesh = gltf.scene;
                                 }
-                            });
-
-                            // If no mesh found, use the scene itself
-                            if (!mainMesh && gltf.scene) {
-                                mainMesh = gltf.scene;
+                            } else {
+                                // For winery and others, first convert all materials in the scene
+                                gltf.scene.traverse((obj) => {
+                                    if (obj instanceof THREE.Mesh && obj.material) {
+                                        // Convert all material types for winery
+                                        if (Array.isArray(obj.material)) {
+                                            obj.material = obj.material.map(mat => {
+                                                if (mat instanceof THREE.MeshBasicMaterial || 
+                                                    mat instanceof THREE.MeshStandardMaterial ||
+                                                    mat instanceof THREE.MeshPhongMaterial) {
+                                                    return new THREE.MeshLambertMaterial({
+                                                        map: mat.map,
+                                                        color: mat.color,
+                                                        transparent: mat.transparent,
+                                                        opacity: mat.opacity,
+                                                        emissive: mat.emissive || new THREE.Color(0x000000),
+                                                        emissiveIntensity: mat.emissiveIntensity || 0
+                                                    });
+                                                }
+                                                return mat;
+                                            });
+                                        } else {
+                                            if (obj.material instanceof THREE.MeshBasicMaterial || 
+                                                obj.material instanceof THREE.MeshStandardMaterial ||
+                                                obj.material instanceof THREE.MeshPhongMaterial) {
+                                                obj.material = new THREE.MeshLambertMaterial({
+                                                    map: obj.material.map,
+                                                    color: obj.material.color,
+                                                    transparent: obj.material.transparent,
+                                                    opacity: obj.material.opacity,
+                                                    emissive: obj.material.emissive || new THREE.Color(0x000000),
+                                                    emissiveIntensity: obj.material.emissiveIntensity || 0
+                                                });
+                                            }
+                                        }
+                                    }
+                                });
+                                
+                                // Then find the first mesh (original working approach)
+                                gltf.scene.traverse((child) => {
+                                    if (child instanceof THREE.Mesh && !mainMesh) {
+                                        mainMesh = child;
+                                    }
+                                });
+                                
+                                // If no mesh found, use the scene itself
+                                if (!mainMesh && gltf.scene) {
+                                    mainMesh = gltf.scene;
+                                }
                             }
 
                             if (mainMesh) {
-                                // Apply standard rotation like other assets
-                                mainMesh.rotation.set(
-                                    THREE.MathUtils.degToRad(90),
-                                    THREE.MathUtils.degToRad(180),
-                                    THREE.MathUtils.degToRad(180)
-                                );
+                                // Apply rotation - special handling for BookShop-001 to make it vertical
+                                if (toolId === 'BookShop-001') {
+                                    // BookShop needs to be vertical/straight on its foundations
+                                    // Adjust rotation to make it stand upright
+                                    mainMesh.rotation.set(
+                                        THREE.MathUtils.degToRad(0),    // X: no rotation (vertical)
+                                        THREE.MathUtils.degToRad(180), // Y: 180 degrees
+                                        THREE.MathUtils.degToRad(0)     // Z: no rotation
+                                    );
+                                } else {
+                                    // Standard rotation for other assets
+                                    mainMesh.rotation.set(
+                                        THREE.MathUtils.degToRad(90),
+                                        THREE.MathUtils.degToRad(180),
+                                        THREE.MathUtils.degToRad(180)
+                                    );
+                                }
 
-                                // Enable shadows
+                                // Enable shadows and ensure material updates
+                                // Materials are already converted above for both winery and bookshop
                                 mainMesh.traverse((obj) => {
                                     if (obj instanceof THREE.Mesh) {
                                         obj.castShadow = true;
                                         obj.receiveShadow = true;
                                         
-                                        // Convert materials to MeshLambertMaterial for proper lighting
+                                        // Ensure material updates
                                         if (obj.material) {
-                                            if (obj.material instanceof THREE.MeshBasicMaterial) {
-                                                const newMaterial = new THREE.MeshLambertMaterial({
-                                                    map: obj.material.map,
-                                                    color: obj.material.color,
-                                                    transparent: obj.material.transparent,
-                                                    opacity: obj.material.opacity
+                                            if (Array.isArray(obj.material)) {
+                                                obj.material.forEach(mat => {
+                                                    if (mat.needsUpdate !== undefined) {
+                                                        mat.needsUpdate = true;
+                                                    }
                                                 });
-                                                obj.material = newMaterial;
+                                            } else if (obj.material.needsUpdate !== undefined) {
+                                                obj.material.needsUpdate = true;
                                             }
                                         }
                                     }
                                 });
 
-                                // Store the mesh
+                                // Store the mesh/scene
                                 this.modelsObj[targetPropertyKey][toolId] = mainMesh;
                                 
                                 // Winery-001 and BookShop-001 are autonomous buttons, so we don't add them to buttonData
