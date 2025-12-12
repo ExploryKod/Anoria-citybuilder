@@ -338,11 +338,8 @@ export class CommerceService extends SimService {
         if (!housesStore || !this.isStockable(productId)) return 0;
         
         try {
-            const allHouses = await housesStore.listAllHouses();
-            const windmills = allHouses.filter(house => {
-                const type = house.type || '';
-                return type.includes('Windmill') || type.includes('windmill');
-            });
+            // Only count stock from commercializable windmills
+            const windmills = await this.getCommercializableWindmills(housesStore);
             
             const stockKey = this.getStockKey(productId);
             if (!stockKey) return 0;
@@ -362,8 +359,13 @@ export class CommerceService extends SimService {
         }
     }
 
-    async addToWindmillStock(housesStore, productId, quantity, partnerId = null) {
-        if (!housesStore || quantity <= 0 || !this.isStockable(productId)) return null;
+    /**
+     * Get all commercializable windmills (active and commercializeEnabled)
+     * @param {HousesStore} housesStore - Database store
+     * @returns {Promise<Array>} Array of commercializable windmills
+     */
+    async getCommercializableWindmills(housesStore) {
+        if (!housesStore) return [];
 
         try {
             const allHouses = await housesStore.listAllHouses();
@@ -372,7 +374,29 @@ export class CommerceService extends SimService {
                 return type.includes('Windmill') || type.includes('windmill');
             });
 
-            if (windmills.length === 0) return null;
+            // Filter only active and commercialized windmills
+            return windmills.filter(windmill => {
+                const isActive = windmill.isActive !== false; // Default to true
+                const commercializeEnabled = windmill.commercializeEnabled !== false; // Default to true
+                return isActive && commercializeEnabled;
+            });
+        } catch (error) {
+            console.warn('[CommerceService] Error getting commercializable windmills:', error);
+            return [];
+        }
+    }
+
+    async addToWindmillStock(housesStore, productId, quantity, partnerId = null) {
+        if (!housesStore || quantity <= 0 || !this.isStockable(productId)) return null;
+
+        try {
+            // Only use commercializable windmills for imports
+            const windmills = await this.getCommercializableWindmills(housesStore);
+
+            if (windmills.length === 0) {
+                console.warn('[CommerceService] No commercializable windmills available for import');
+                return null;
+            }
 
             const stockKey = this.getStockKey(productId);
             if (!stockKey) return null;
@@ -446,24 +470,28 @@ export class CommerceService extends SimService {
         }
     }
 
-    async reduceWindmillStock(housesStore, productId, quantity) {
+    async reduceWindmillStock(housesStore, productId, quantity, partnerId = null) {
         if (!housesStore || quantity <= 0 || !this.isStockable(productId)) return false;
         
         try {
-            const allHouses = await housesStore.listAllHouses();
-            const windmills = allHouses.filter(house => {
-                const type = house.type || '';
-                return type.includes('Windmill') || type.includes('windmill');
-            });
+            // Only use commercializable windmills
+            const windmills = await this.getCommercializableWindmills(housesStore);
+            
+            if (windmills.length === 0) {
+                console.warn('[CommerceService] No commercializable windmills available for export');
+                return false;
+            }
             
             const stockKey = this.getStockKey(productId);
             if (!stockKey) return false;
             
             let remaining = quantity;
+            const exportDetailsByWindmill = {};
             
             for (const windmill of windmills) {
                 if (remaining <= 0) break;
                 
+                const windmillId = windmill.id || windmill.name;
                 const stocks = windmill.stocks || {};
                 const currentStock = stocks[stockKey] || 0;
                 
@@ -480,9 +508,39 @@ export class CommerceService extends SimService {
                         food: isFood ? Math.max(0, (stocks.food || 0) - toReduce) : (stocks.food || 0)
                     };
                     
-                    await housesStore.updateHouseFields(windmill.id || windmill.name, {
-                        stocks: updatedStocks
-                    });
+                    // Track export details by partner
+                    if (partnerId) {
+                        const existingLastExportDetails = windmill.lastExportDetails || {};
+                        const lastExportDetails = { ...existingLastExportDetails };
+                        
+                        if (!lastExportDetails[stockKey]) {
+                            lastExportDetails[stockKey] = [];
+                        }
+                        
+                        const partner = this.getPartner(partnerId);
+                        const partnerName = partner ? partner.name : partnerId;
+                        
+                        const existingPartnerIndex = lastExportDetails[stockKey].findIndex(p => p.partnerId === partnerId);
+                        
+                        if (existingPartnerIndex >= 0) {
+                            lastExportDetails[stockKey][existingPartnerIndex].quantity += toReduce;
+                        } else {
+                            lastExportDetails[stockKey].push({
+                                partnerId: partnerId,
+                                partnerName: partnerName,
+                                quantity: toReduce
+                            });
+                        }
+                        
+                        await housesStore.updateHouseFields(windmillId, {
+                            stocks: updatedStocks,
+                            lastExportDetails: lastExportDetails
+                        });
+                    } else {
+                        await housesStore.updateHouseFields(windmillId, {
+                            stocks: updatedStocks
+                        });
+                    }
                 }
             }
             
@@ -595,7 +653,7 @@ export class CommerceService extends SimService {
         if (!globalObj.budgetManager) return null;
 
         if (this.isStockable(productId)) {
-            const stockReduced = await this.reduceWindmillStock(housesStore, productId, quantity);
+            const stockReduced = await this.reduceWindmillStock(housesStore, productId, quantity, partnerId);
             if (!stockReduced) {
                 console.warn(`[CommerceService] Failed to reduce windmill stock for ${productId}`);
                 return null;

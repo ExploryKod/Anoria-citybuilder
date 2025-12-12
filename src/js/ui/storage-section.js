@@ -102,31 +102,36 @@ class StorageSectionManager {
         const distributionEnabled = windmill.distributionEnabled !== false; // Default to true
         const commercializeEnabled = windmill.commercializeEnabled !== false; // Default to true
         const distributionMonth = windmill.distributionMonth || 9; // Default to October (month 9)
-        const sellAmounts = windmill.sellAmounts || { wheat: 0, carrot: 0, cabbage: 0 };
         const lastImportDetails = windmill.lastImportDetails || {};
+        const lastExportDetails = windmill.lastExportDetails || {};
 
-        // Build imports by partner HTML
-        let importsByPartnerHTML = '';
-        if (Object.keys(lastImportDetails).length > 0) {
-            const productNames = { wheat: 'Blé', carrot: 'Carotte', cabbage: 'Chou', dattes: 'Dattes' };
-            importsByPartnerHTML = '<div class="storage-imports-by-partner"><h4 class="storage-subtitle">Imports par partenaire</h4>';
+        // Helper function to calculate total imports/exports for a product
+        const getTotalImports = (productId) => {
+            const partners = lastImportDetails[productId] || [];
+            return partners.reduce((sum, p) => sum + (p.quantity || 0), 0);
+        };
 
-            for (const [productId, partners] of Object.entries(lastImportDetails)) {
-                if (partners && partners.length > 0) {
-                    const productName = productNames[productId] || productId;
-                    partners.forEach(partnerInfo => {
-                        importsByPartnerHTML += `
-                            <div class="storage-import-item">
-                                <label>${productName} depuis ${partnerInfo.partnerName}:</label>
-                                <span class="storage-import-value">+${partnerInfo.quantity} paniers</span>
-                            </div>
-                        `;
-                    });
-                }
-            }
+        const getTotalExports = (productId) => {
+            const partners = lastExportDetails[productId] || [];
+            return partners.reduce((sum, p) => sum + (p.quantity || 0), 0);
+        };
 
-            importsByPartnerHTML += '</div>';
-        }
+        // Helper function to build partner details HTML
+        const buildPartnerDetailsHTML = (productId, partners, type) => {
+            if (!partners || partners.length === 0) return '';
+            const productNames = { wheat: 'Blé', carrot: 'Carotte', cabbage: 'Chou', dattes: 'Dattes', wood: 'Bois' };
+            const productName = productNames[productId] || productId;
+            let html = '';
+            partners.forEach(partnerInfo => {
+                html += `
+                    <div class="storage-partner-detail">
+                        <span class="storage-partner-name">${partnerInfo.partnerName}:</span>
+                        <span class="storage-partner-quantity">${type === 'import' ? '+' : '-'}${partnerInfo.quantity} paniers</span>
+                    </div>
+                `;
+            });
+            return html;
+        };
 
         card.innerHTML = `
             <div class="storage-windmill-header">
@@ -143,30 +148,68 @@ class StorageSectionManager {
                 <div class="storage-stock-item">
                     <label>Blé:</label>
                     <span class="storage-stock-value">${stocks.wheat || 0} / ${maxStock}</span>
+                    <div class="storage-trade-info">
+                        <span class="storage-export-info">Exportés: ${getTotalExports('wheat')}</span>
+                        <span class="storage-import-info">Importés: ${getTotalImports('wheat')}</span>
+                    </div>
+                    <div class="storage-partner-details">
+                        ${buildPartnerDetailsHTML('wheat', lastExportDetails['wheat'], 'export')}
+                        ${buildPartnerDetailsHTML('wheat', lastImportDetails['wheat'], 'import')}
+                    </div>
                 </div>
                 <div class="storage-stock-item">
                     <label>Chou:</label>
                     <span class="storage-stock-value">${stocks.cabbage || 0} / ${maxStock}</span>
+                    <div class="storage-trade-info">
+                        <span class="storage-export-info">Exportés: ${getTotalExports('cabbage')}</span>
+                        <span class="storage-import-info">Importés: ${getTotalImports('cabbage')}</span>
+                    </div>
+                    <div class="storage-partner-details">
+                        ${buildPartnerDetailsHTML('cabbage', lastExportDetails['cabbage'], 'export')}
+                        ${buildPartnerDetailsHTML('cabbage', lastImportDetails['cabbage'], 'import')}
+                    </div>
                 </div>
                 <div class="storage-stock-item">
                     <label>Carotte:</label>
                     <span class="storage-stock-value">${stocks.carrot || 0} / ${maxStock}</span>
+                    <div class="storage-trade-info">
+                        <span class="storage-export-info">Exportés: ${getTotalExports('carrot')}</span>
+                        <span class="storage-import-info">Importés: ${getTotalImports('carrot')}</span>
+                    </div>
+                    <div class="storage-partner-details">
+                        ${buildPartnerDetailsHTML('carrot', lastExportDetails['carrot'], 'export')}
+                        ${buildPartnerDetailsHTML('carrot', lastImportDetails['carrot'], 'import')}
+                    </div>
                 </div>
                 <div class="storage-stock-item">
                     <label>Dattes:</label>
                     <span class="storage-stock-value">${stocks.dattes || 0} / ${maxStock}</span>
+                    <div class="storage-trade-info">
+                        <span class="storage-export-info">Exportés: ${getTotalExports('dattes')}</span>
+                        <span class="storage-import-info">Importés: ${getTotalImports('dattes')}</span>
+                    </div>
+                    <div class="storage-partner-details">
+                        ${buildPartnerDetailsHTML('dattes', lastExportDetails['dattes'], 'export')}
+                        ${buildPartnerDetailsHTML('dattes', lastImportDetails['dattes'], 'import')}
+                    </div>
                 </div>
                 <div class="storage-stock-item">
                     <label>Bois:</label>
                     <span class="storage-stock-value">${stocks.wood || 0} / ${maxStock}</span>
+                    <div class="storage-trade-info">
+                        <span class="storage-export-info">Exportés: ${getTotalExports('wood')}</span>
+                        <span class="storage-import-info">Importés: ${getTotalImports('wood')}</span>
+                    </div>
+                    <div class="storage-partner-details">
+                        ${buildPartnerDetailsHTML('wood', lastExportDetails['wood'], 'export')}
+                        ${buildPartnerDetailsHTML('wood', lastImportDetails['wood'], 'import')}
+                    </div>
                 </div>
                 <div class="storage-stock-item">
-                    <label>Total:</label>
-                    <span class="storage-stock-value">${stocks.food || 0} / <input type="number" class="storage-max-input" data-windmill="${windmill.name}" value="${maxStock}" min="0" step="10"></span>
+                    <label>Capacité maximale:</label>
+                    <span class="storage-stock-value"><input type="number" class="storage-max-input" data-windmill="${windmill.name}" value="${maxStock}" min="0" step="10"></span>
                 </div>
             </div>
-
-            ${importsByPartnerHTML}
 
             <div class="storage-windmill-controls">
                 <div class="storage-control-item">
@@ -228,29 +271,10 @@ class StorageSectionManager {
                     </div>
                 ` : '<div class="storage-employee-status">Aucune donnée d\'employés</div>'}
             </div>
-            
-            <div class="storage-windmill-sell ${!commercializeEnabled ? 'storage-sell-disabled' : ''}">
-                <h4 class="storage-subtitle">Quantités de vente</h4>
-                <div class="storage-sell-item">
-                    <label>Blé:</label>
-                    <input type="number" class="storage-sell-input" data-windmill="${windmill.name}" data-type="wheat" value="${sellAmounts.wheat || 0}" min="0" step="1" ${!commercializeEnabled ? 'disabled' : ''}>
-                </div>
-                <div class="storage-sell-item">
-                    <label>Légumes verts:</label>
-                    <input type="number" class="storage-sell-input" data-windmill="${windmill.name}" data-type="cabbage" value="${sellAmounts.cabbage || 0}" min="0" step="1" ${!commercializeEnabled ? 'disabled' : ''}>
-                </div>
-                <div class="storage-sell-item">
-                    <label>Autres légumes:</label>
-                    <input type="number" class="storage-sell-input" data-windmill="${windmill.name}" data-type="carrot" value="${sellAmounts.carrot || 0}" min="0" step="1" ${!commercializeEnabled ? 'disabled' : ''}>
-                </div>
-            </div>
         `;
         
         // Add event listeners to this card
         this.attachEventListeners(card, windmill);
-        
-        // Set initial state of sell inputs based on commercializeEnabled
-        this.updateSellInputsState(card, commercializeEnabled);
         
         return card;
     }
@@ -291,9 +315,10 @@ class StorageSectionManager {
                 const value = e.target.checked;
                 await this.updateWindmillSetting(windmillId, setting, value);
                 
-                // If commercialize toggle changed, update sell inputs state
-                if (setting === 'commercializeEnabled') {
-                    this.updateSellInputsState(card, value);
+                // If commercialize or isActive toggle changed, notify commerce service
+                if (setting === 'commercializeEnabled' || setting === 'isActive') {
+                    // The commerce service will check these settings when processing trades
+                    console.log('[StorageSection] Windmill setting changed:', { windmillId, setting, value });
                 }
             });
         });
@@ -306,49 +331,6 @@ class StorageSectionManager {
                 await this.updateWindmillSetting(windmillId, 'distributionMonth', month);
             });
         }
-        
-        // Sell amount inputs
-        const sellInputs = card.querySelectorAll('.storage-sell-input');
-        sellInputs.forEach(input => {
-            input.addEventListener('change', async (e) => {
-                const type = e.target.dataset.type;
-                const amount = parseInt(e.target.value) || 0;
-                
-                // Get current sellAmounts or create new
-                const windmill = this.windmills.find(w => w.name === windmillId);
-                const currentSellAmounts = windmill?.sellAmounts || { wheat: 0, carrot: 0, cabbage: 0 };
-                
-                // Update specific type
-                const newSellAmounts = {
-                    ...currentSellAmounts,
-                    [type]: amount
-                };
-                
-                await this.updateWindmillSetting(windmillId, 'sellAmounts', newSellAmounts);
-            });
-        });
-    }
-    
-    /**
-     * Update sell inputs state based on commercialize toggle
-     * @param {HTMLElement} card - Windmill card element
-     * @param {boolean} enabled - Whether commercialize is enabled
-     */
-    updateSellInputsState(card, enabled) {
-        const sellSection = card.querySelector('.storage-windmill-sell');
-        const sellInputs = card.querySelectorAll('.storage-sell-input');
-        
-        if (sellSection) {
-            if (enabled) {
-                sellSection.classList.remove('storage-sell-disabled');
-            } else {
-                sellSection.classList.add('storage-sell-disabled');
-            }
-        }
-        
-        sellInputs.forEach(input => {
-            input.disabled = !enabled;
-        });
     }
     
     /**
