@@ -296,7 +296,7 @@ async function updateBudgetDisplay() {
             updateBalanceSheetElement('net-result', `${adjustedNetResult.toLocaleString('fr-FR')}€`);
             updateBalanceSheetElement('total-liabilities', `${totalAssets.toLocaleString('fr-FR')}€`);
         } else {
-            console.log(`✅ Bilan équilibré: ACTIF = PASSIF = ${totalAssets}€`);
+            console.info(`✅ Bilan équilibré: ACTIF = PASSIF = ${totalAssets}€`);
         }
         
         // Update financial health indicator in header
@@ -388,8 +388,6 @@ function applyBalanceSheetFilter(filter) {
             // Show everything (already visible)
             break;
     }
-    
-    console.log(`Balance sheet filter applied: ${filter}`);
 }
 
 // Animation panel buttons
@@ -586,7 +584,7 @@ function toggleModal(e) {
         case 'palaces':
             // Check if palace button is disabled
             if (window.buttonStateManager && !window.buttonStateManager.isEnabled('palace-btn')) {
-                console.log('🏛️ Palace button is disabled');
+                console.warn('🏛️ Palace button is disabled');
                 return; // Don't open panel if disabled
             }
             
@@ -1105,18 +1103,15 @@ function showCitySizeSelection() {
                 
                 ws.onopen = () => {
                     // La liste sera envoyée automatiquement par le serveur
-                    console.log('[Rooms] Connexion WebSocket établie pour charger les salons');
                 };
                 
                 ws.onmessage = (event) => {
                     try {
                         const data = JSON.parse(event.data);
-                        console.log('[Rooms] Message reçu:', data.type, data);
                         if (data.type === 'AVAILABLE_ROOMS') {
                             roomsReceived = true;
                             connectionClosed = true;
                             clearTimeout(timeout);
-                            console.log('[Rooms] Salons reçus:', data.rooms);
                             displayRooms(roomsList, data.rooms, maxSafeCitySizeToUse, modal);
                             // Ne pas fermer immédiatement, attendre un peu pour recevoir d'autres mises à jour
                             setTimeout(() => {
@@ -1558,8 +1553,6 @@ window.onload = async () => {
     
     // Initialize button states for game start
     if (window.buttonStateManager) {
-        console.log('✅ ButtonStateManager loaded successfully');
-        
         // Register category buttons
         const palaceBtn = document.getElementById('palace-btn');
         if (palaceBtn) {
@@ -1582,7 +1575,6 @@ window.onload = async () => {
             const button = document.getElementById(buildingId);
             if (button) {
                 window.buttonStateManager.disable(buildingId);
-                console.log(`🚫 Disabled: ${buildingId}`);
             } else {
                 console.warn(`⚠️ Button ${buildingId} not found in DOM, will be disabled when created`);
             }
@@ -1710,7 +1702,6 @@ window.onload = async () => {
         });
         // Then clear all remaining items
         localStorage.clear();
-        console.log('LocalStorage completely cleared. Removed keys:', localStorageKeys);
     }
 
     // Function to perform the actual reset
@@ -1722,7 +1713,6 @@ window.onload = async () => {
                 const registrations = await navigator.serviceWorker.getRegistrations();
                 for (let registration of registrations) {
                     await registration.unregister();
-                    console.log('Service worker unregistered');
                 }
             }
             
@@ -1731,7 +1721,6 @@ window.onload = async () => {
                 const cacheNames = await caches.keys();
                 for (let cacheName of cacheNames) {
                     await caches.delete(cacheName);
-                    console.log('Cache deleted:', cacheName);
                 }
             }
             
@@ -1744,7 +1733,6 @@ window.onload = async () => {
                     databases.forEach(db => {
                         if (db.name) {
                             indexedDB.deleteDatabase(db.name);
-                            console.log('IndexedDB deleted:', db.name);
                         }
                     });
                 });
@@ -2281,15 +2269,12 @@ window.onload = async () => {
                 roomName = selectionResult.roomName || null;
             }
             
-            console.log('[Multiplayer] Activation avec:', { action, roomIdOrCitySize, playerPseudo, selectedCitySize, roomName });
-            
             // Importer la configuration WebSocket
             const getWebSocketUrl = (await import('../../config/websocket.js')).default;
             const wsUrl = getWebSocketUrl();
             
             await multiplayerManager.enable(wsUrl, playerPseudo, roomIdOrCitySize, action, roomName);
             window.multiplayerManager = multiplayerManager;
-            console.log(`[Multiplayer] Mode multijoueur activé avec pseudo: ${playerPseudo}`);
         } catch (error) {
             console.error('[Multiplayer] Erreur d\'activation:', error);
             
@@ -2473,11 +2458,9 @@ async function updateRealtimeBudget() {
                 if (housesStore && typeof housesStore.getGlobalPopulation === 'function') {
                     population = await housesStore.getGlobalPopulation();
                     population = population || 0;
-                    console.log('[buttons.js > updateRealtimeBudget] Population from housesStore (IndexedDB):', population);
                 } else if (window.housesStore && typeof window.housesStore.getGlobalPopulation === 'function') {
                     population = await window.housesStore.getGlobalPopulation();
                     population = population || 0;
-                    console.log('[buttons.js > updateRealtimeBudget] Population from housesStore (IndexedDB, window):', population);
                 } else {
                     // Fallback to gameStore (also IndexedDB, but may be stale)
                     console.warn('[buttons.js > updateRealtimeBudget] ⚠️ housesStore.getGlobalPopulation not available, FALLING BACK to gameStore (may be stale)');
@@ -2562,12 +2545,6 @@ async function updateRealtimeBudget() {
                 } else {
                     realtimePopulationEl.textContent = population.toString();
                 }
-                
-                console.log('[buttons.js > updateRealtimeBudget] Updated realtime population display:', {
-                    population,
-                    hasError: populationError,
-                    elementExists: !!realtimePopulationEl
-                });
             }
             
             // Mettre à jour la santé financière
@@ -4034,7 +4011,6 @@ function initLoansPopup() {
 
     // Toggle popup on loans button click
     loansBtn.addEventListener('click', () => {
-        console.log('Loans button clicked!');
         loansPanel.classList.add('active');
         
         // Utiliser PopupManager pour gérer les événements
@@ -4460,8 +4436,6 @@ async function processLoanPayments() {
         const activeLoans = await budgetManager.getActiveLoans();
         if (activeLoans.length === 0) return;
         
-        console.log(`💰 Processing loan payments for ${activeLoans.length} active loan(s)`);
-        
         const loansToRemove = [];
         
         for (let i = 0; i < activeLoans.length; i++) {
@@ -4472,30 +4446,25 @@ async function processLoanPayments() {
             const interestPayment = Math.round(loan.amount * (loan.interestRate / 100) / loan.duration);
             const principalPayment = monthlyPayment - interestPayment;
             
-            console.log(`Loan ${loan.id}: payment=${monthlyPayment}, interest=${interestPayment}, principal=${principalPayment}`);
-            
             // Check if we have enough funds
             const currentBudget = await budgetManager.getCurrentBudget();
             if (currentBudget.funds >= monthlyPayment) {
                 // Pay interest first
                 await budgetManager.addLoanInterest(interestPayment, `Intérêts prêt ${loan.type} (${loan.id})`);
-                console.log(`✅ Paid ${interestPayment}€ in interest for loan ${loan.id}`);
                 
                 // Pay principal
                 await budgetManager.repayLoan(principalPayment, `Remboursement prêt ${loan.type} (${loan.id})`, loan.id);
-                console.log(`✅ Paid ${principalPayment}€ in principal for loan ${loan.id}`);
                 
                 // Remove loan if fully paid
                 if (loan.remainingTurns <= 0 || loan.amount <= 0) {
                     loansToRemove.push(i);
-                    console.log(`Loan ${loan.id} fully repaid and removed`);
                 }
             } else {
                 // Not enough funds - just pay interest if possible
                 if (currentBudget.funds >= interestPayment) {
                     await budgetManager.addLoanInterest(interestPayment, `Intérêts prêt ${loan.type} (${loan.id})`);
                     loan.remainingTurns--; // Still count as a turn
-                    console.log(`⚠️ Only paid ${interestPayment}€ in interest (not enough funds for full payment)`);
+                    console.warn(`⚠️ Only paid ${interestPayment}€ in interest (not enough funds for full payment)`);
                 } else {
                     // Can't even pay interest - loan goes into default
                     console.warn(`Loan ${loan.id} in default - cannot pay interest`);
@@ -4506,13 +4475,6 @@ async function processLoanPayments() {
         
         // Update displays
         updateBudgetDisplay();
-        
-        // Log final totals
-        const finalBudget = await budgetManager.getCurrentBudget();
-        console.log(`📊 Budget totals after loan payments:`, {
-            totalLoanInterestExpenses: finalBudget.totalLoanInterestExpenses,
-            totalLoanRepayments: finalBudget.totalLoanRepayments
-        });
         
     } catch (error) {
         console.error('Error processing loan payments:', error);
@@ -4789,7 +4751,6 @@ async function loadJournalEntries(period = 'all', typeFilter = null) {
             });
             
             localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(soldes));
-            console.log('[Journal] Saved balances to localStorage:', soldes);
         } catch (error) {
             console.error('[Journal] Error saving balances to localStorage:', error);
         }
@@ -4973,8 +4934,6 @@ async function exportJournalToJSON() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        
-        console.log('[Journal] Exported to JSON successfully');
     } catch (error) {
         console.error('[Journal] Error exporting to JSON:', error);
         alert('Erreur lors de l\'export JSON: ' + error.message);
@@ -5022,8 +4981,6 @@ async function exportJournalToPDF() {
                 PDF
             `;
         }
-        
-        console.log('[Journal] Exported to PDF successfully');
     } catch (error) {
         console.error('[Journal] Error exporting to PDF:', error);
         alert('Erreur lors de l\'export PDF: ' + error.message);

@@ -24,9 +24,9 @@ class ObjectivesTracker {
         
         // Log pour debug
         if (envDisabled) {
-            console.log('🎯 Objectifs désactivés via variable d\'environnement VITE_IS_GOAL=false');
+            console.info('🎯 Objectifs désactivés via variable d\'environnement VITE_IS_GOAL=false');
         } else if (localStorageDisabled) {
-            console.log('🎯 Objectifs désactivés via localStorage');
+            console.info('🎯 Objectifs désactivés via localStorage');
         }
         
         this.objectives = [
@@ -90,11 +90,6 @@ class ObjectivesTracker {
                 // Toujours réactiver au tour 0 pour un nouveau jeu
                 objective.active = true;
                 objective.completed = false;
-                console.log('🎯 Objective activated at turn 0:', {
-                    id: objective.id,
-                    active: objective.active,
-                    completed: objective.completed
-                });
             }
 
             // Mettre à jour les données de tracking
@@ -120,7 +115,6 @@ class ObjectivesTracker {
      */
     showRescheduleModal() {
         // This function is deprecated - simplified objective doesn't need rescheduling
-        console.log('showRescheduleModal called but no longer needed with simplified objective');
         return;
         
         // Styles inline pour la modale
@@ -250,7 +244,6 @@ class ObjectivesTracker {
      */
     async rescheduleObjective() {
         // No longer needed with simplified objective
-        console.log('Reschedule no longer needed with simplified objective');
     }
 
     /**
@@ -336,7 +329,6 @@ class ObjectivesTracker {
         // Déverrouiller House-Purple quand l'objectif est complété
         if (window.buttonStateManager) {
             window.buttonStateManager.enable('House-Purple');
-            console.log('✅ House-Purple déverrouillé grâce à l\'objectif !');
             
             // Animation pour attirer l'attention sur le bouton déverrouillé
             setTimeout(() => {
