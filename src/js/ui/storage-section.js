@@ -97,7 +97,7 @@ class StorageSectionManager {
         card.dataset.windmillId = windmill.name;
         
         const stocks = windmill.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0, dattes: 0 };
-        const maxStock = windmill.maxStock || 1000; // Default max stock (total capacity)
+        const maxStock = 1000;
         const isActive = windmill.isActive !== false; // Default to true
         const distributionEnabled = windmill.distributionEnabled !== false; // Default to true
         const commercializeEnabled = windmill.commercializeEnabled !== false; // Default to true
@@ -205,10 +205,6 @@ class StorageSectionManager {
                         ${buildPartnerDetailsHTML('wood', lastImportDetails['wood'], 'import')}
                     </div>
                 </div>
-                <div class="storage-stock-item">
-                    <label>Capacité maximale:</label>
-                    <span class="storage-stock-value"><input type="number" class="storage-max-input" data-windmill="${windmill.name}" value="${maxStock}" min="0" step="10"></span>
-                </div>
             </div>
 
             <div class="storage-windmill-controls">
@@ -288,25 +284,6 @@ class StorageSectionManager {
         const windmillId = windmill.name;
         
         // Max stock input (single input for total capacity)
-        const maxInput = card.querySelector('.storage-max-input');
-        if (maxInput) {
-            maxInput.addEventListener('change', async (e) => {
-                const maxValue = parseInt(e.target.value) || 0;
-                await this.updateWindmillSetting(windmillId, 'maxStock', maxValue);
-                // Update display to show new max for all products
-                const stockItems = card.querySelectorAll('.storage-stock-item');
-                stockItems.forEach((item, index) => {
-                    if (index < 3) { // First 3 items (wheat, cabbage, carrot)
-                        const valueSpan = item.querySelector('.storage-stock-value');
-                        if (valueSpan) {
-                            const currentAmount = valueSpan.textContent.split(' / ')[0];
-                            valueSpan.textContent = `${currentAmount} / ${maxValue}`;
-                        }
-                    }
-                });
-            });
-        }
-        
         // Toggle switches
         const toggles = card.querySelectorAll('.storage-toggle');
         toggles.forEach(toggle => {

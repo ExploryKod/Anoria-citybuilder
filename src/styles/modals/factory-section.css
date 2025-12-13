@@ -94,10 +94,21 @@
 
 .factory-stock-item {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
     padding: 10px 0;
     border-bottom: 1px solid #f0f0f0;
+    gap: 5px;
+}
+
+.factory-stock-item > label {
+    font-weight: 500;
+    color: #333;
+}
+
+.factory-stock-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .factory-stock-item:last-child {
@@ -139,6 +150,37 @@
 
 .factory-import-info {
     color: #28a745;
+}
+
+.factory-employee-info {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+    color: #666;
+    margin-top: 3px;
+}
+
+.factory-employee-label {
+    font-weight: 500;
+}
+
+.factory-employee-value {
+    color: #007bff;
+    font-weight: 600;
+}
+
+.factory-production-status {
+    margin-top: 5px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.factory-status-full {
+    color: #28a745;
+}
+
+.factory-status-reduced {
+    color: #ffc107;
 }
 
 .factory-controls {
