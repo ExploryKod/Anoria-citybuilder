@@ -3,7 +3,9 @@ import config from '../game/config.js';
 class FactorySectionManager {
     constructor() {
         this.factories = [];
+        this.naturalResources = [];
         this.housesStore = null;
+        this.naturalResourcesExpanded = true; // Par défaut, le panneau est ouvert
     }
     
     setHousesStore(housesStore) {
@@ -44,6 +46,12 @@ class FactorySectionManager {
                 return type.includes('Winery-001');
             });
             
+            // Charger les ressources naturelles (trees et boulders)
+            this.naturalResources = allHouses.filter(house => {
+                const category = house.category || '';
+                return category === 'nature';
+            });
+            
             this.render();
         } catch (error) {
             // Error handling
@@ -51,6 +59,13 @@ class FactorySectionManager {
     }
     
     render() {
+        const factoryBoard = document.getElementById('factory-board');
+        if (!factoryBoard) return;
+        
+        // Rendre le panneau des ressources naturelles
+        this.renderNaturalResources(factoryBoard);
+        
+        // Rendre les factories
         const factoriesList = document.getElementById('factory-factories-list');
         if (!factoriesList) return;
         
@@ -65,6 +80,88 @@ class FactorySectionManager {
             const factoryCard = this.createFactoryCard(factory);
             factoriesList.appendChild(factoryCard);
         });
+    }
+    
+    renderNaturalResources(container) {
+        // Créer ou récupérer le conteneur des ressources naturelles
+        let naturalResourcesContainer = document.getElementById('factory-natural-resources');
+        if (!naturalResourcesContainer) {
+            naturalResourcesContainer = document.createElement('div');
+            naturalResourcesContainer.id = 'factory-natural-resources';
+            naturalResourcesContainer.className = 'factory-natural-resources';
+            container.insertBefore(naturalResourcesContainer, container.firstChild);
+        }
+        
+        // Calculer les totaux par ressource
+        const resourceTotals = {
+            wood: { current: 0, max: 0 },
+            rock: { current: 0, max: 0 },
+            gold: { current: 0, max: 0 },
+            iron: { current: 0, max: 0 }
+        };
+        
+        this.naturalResources.forEach(resource => {
+            const stocks = resource.stocks || {};
+            const maxStocks = resource.maxStocks || {};
+            
+            // Trees ont du wood
+            if (resource.type && resource.type.includes('Tree')) {
+                resourceTotals.wood.current += stocks.wood || 0;
+                resourceTotals.wood.max += maxStocks.wood || 0;
+            }
+            
+            // Boulders ont rock, gold, iron
+            if (resource.type && resource.type.includes('Boulder')) {
+                resourceTotals.rock.current += stocks.rock || 0;
+                resourceTotals.rock.max += maxStocks.rock || 0;
+                resourceTotals.gold.current += stocks.gold || 0;
+                resourceTotals.gold.max += maxStocks.gold || 0;
+                resourceTotals.iron.current += stocks.iron || 0;
+                resourceTotals.iron.max += maxStocks.iron || 0;
+            }
+        });
+        
+        const resourceNames = {
+            wood: 'Bois',
+            rock: 'Pierre',
+            gold: 'Or',
+            iron: 'Fer'
+        };
+        
+        const isExpanded = this.naturalResourcesExpanded;
+        
+        naturalResourcesContainer.innerHTML = `
+            <div class="factory-natural-resources-header">
+                <h3 class="factory-natural-resources-title">Ressources naturelles disponibles</h3>
+                <button class="factory-toggle-resources-btn" id="factory-toggle-resources-btn">
+                    ${isExpanded ? '▼' : '▶'}
+                </button>
+            </div>
+            <div class="factory-natural-resources-content" style="display: ${isExpanded ? 'block' : 'none'};">
+                ${Object.entries(resourceNames).map(([key, name]) => {
+                    const total = resourceTotals[key];
+                    if (total.max === 0) return ''; // Ne pas afficher les ressources qui n'existent pas
+                    return `
+                        <div class="factory-natural-resource-item">
+                            <span class="factory-natural-resource-name">${name}:</span>
+                            <span class="factory-natural-resource-value">${total.current} / ${total.max}</span>
+                        </div>
+                    `;
+                }).filter(html => html !== '').join('')}
+                ${Object.values(resourceTotals).every(total => total.max === 0) 
+                    ? '<div class="factory-empty">Aucune ressource naturelle disponible</div>' 
+                    : ''}
+            </div>
+        `;
+        
+        // Ajouter l'event listener pour le toggle
+        const toggleBtn = document.getElementById('factory-toggle-resources-btn');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                this.naturalResourcesExpanded = !this.naturalResourcesExpanded;
+                this.render();
+            });
+        }
     }
     
     createFactoryCard(factory) {

@@ -638,11 +638,56 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         .filter(neighbor => neighbor && neighbor.buildingId && neighbor.buildingId !== "");
                 }
 
-                makeInfoSection('Bâtiment');
-                makeInfoKeyValue('Type', `${selectedObject.userData.id}`);
-                makeInfoKeyValue('Adresse', `x: ${selectedObject.userData.x} | y: ${selectedObject.userData.y}`);
-                makeInfoKeyValue(`Habitants`, buildingPop);
-                makeInfoKeyValue('Routes desservies', houseRoads ? houseRoads : 0);
+                // Vérifier si c'est un item nature (tree ou boulder)
+                const isNatureItem = fullHouse?.category === 'nature';
+                
+                if (isNatureItem) {
+                    // Affichage pour les items nature
+                    makeInfoSection('Ressource naturelle');
+                    makeInfoKeyValue('Type', `${selectedObject.userData.id}`);
+                    makeInfoKeyValue('Adresse', `x: ${selectedObject.userData.x} | y: ${selectedObject.userData.y}`);
+                    
+                    // Afficher les stocks avec maxStocks
+                    const maxStocks = fullHouse?.maxStocks || {};
+                    if (houseStocks && Object.keys(houseStocks).length > 0) {
+                        makeInfoSection('Stocks disponibles');
+                        
+                        // Trees: afficher wood
+                        if (selectedObject.userData.id.includes('Tree')) {
+                            const wood = houseStocks.wood || 0;
+                            const maxWood = maxStocks.wood || 0;
+                            makeInfoKeyValue('Bois', `${wood} / ${maxWood}`);
+                        }
+                        
+                        // Boulders: afficher rock, gold, iron
+                        if (selectedObject.userData.id.includes('Boulder')) {
+                            const rock = houseStocks.rock || 0;
+                            const maxRock = maxStocks.rock || 0;
+                            if (maxRock > 0) {
+                                makeInfoKeyValue('Pierre', `${rock} / ${maxRock}`);
+                            }
+                            
+                            const gold = houseStocks.gold || 0;
+                            const maxGold = maxStocks.gold || 0;
+                            if (maxGold > 0) {
+                                makeInfoKeyValue('Or', `${gold} / ${maxGold}`);
+                            }
+                            
+                            const iron = houseStocks.iron || 0;
+                            const maxIron = maxStocks.iron || 0;
+                            if (maxIron > 0) {
+                                makeInfoKeyValue('Fer', `${iron} / ${maxIron}`);
+                            }
+                        }
+                    }
+                } else {
+                    // Affichage normal pour les autres bâtiments
+                    makeInfoSection('Bâtiment');
+                    makeInfoKeyValue('Type', `${selectedObject.userData.id}`);
+                    makeInfoKeyValue('Adresse', `x: ${selectedObject.userData.x} | y: ${selectedObject.userData.y}`);
+                    makeInfoKeyValue(`Habitants`, buildingPop);
+                    makeInfoKeyValue('Routes desservies', houseRoads ? houseRoads : 0);
+                }
 
                 if(neighbors.length > 0) {
                     makeInfoSection('Voisins immédiats');
@@ -1186,6 +1231,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 const dbHouseData = {
                     name: houseID,
                     type: activeToolId,
+                    category: 'construction',
                     neighbors: [],
                     pop: 0,
                     stocks : houseStocks ? houseStocks : {food: 0, cabbage : 0, wheat: 0, carrot: 0},
