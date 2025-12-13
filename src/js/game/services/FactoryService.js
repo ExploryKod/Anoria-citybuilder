@@ -60,10 +60,38 @@ export class FactoryService extends SimService {
     }
 
     async produceProducts(factoryId, rawMaterials, products, housesStore) {
+        // Récupérer la répartition des workers depuis IndexedDB
+        const factoryData = await housesStore.getHouse(factoryId);
+        if (!factoryData) return;
+        
+        const productWorkerDistribution = factoryData.productWorkerDistribution || {};
+        const productProductionPercentages = factoryData.productProductionPercentages || {};
+        
         for (const [productType, recipe] of Object.entries(PRODUCT_RECIPES)) {
-            const maxStorage = this.getMaxStorage(productType);
+            // Vérifier qu'il y a des workers alloués à ce produit
+            const allocatedWorkers = productWorkerDistribution[productType] || 0;
+            if (allocatedWorkers === 0) {
+                // Pas de workers alloués = pas de production, s'assurer que le stock est à 0
+                if (products[productType] && products[productType] > 0) {
+                    const newProducts = { ...products };
+                    newProducts[productType] = 0;
+                    await housesStore.updateHouseFields(factoryId, { products: newProducts });
+                }
+                continue;
+            }
+            
+            // Calculer le max de stock selon le pourcentage de production
+            const maxWorkersPerProduct = 2;
+            let productionPercentage = productProductionPercentages[productType];
+            if (productionPercentage === undefined) {
+                productionPercentage = Math.floor((allocatedWorkers / maxWorkersPerProduct) * 100);
+            }
+            
+            const baseMaxStorage = this.getMaxStorage(productType);
+            const effectiveMaxStorage = Math.floor(baseMaxStorage * (productionPercentage / 100));
+            
             const currentStock = products[productType] || 0;
-            const remainingCapacity = Math.max(0, maxStorage - currentStock);
+            const remainingCapacity = Math.max(0, effectiveMaxStorage - currentStock);
 
             if (remainingCapacity <= 0) continue;
 
@@ -95,6 +123,13 @@ export class FactoryService extends SimService {
     }
 
     async collectResources(factoryId, rawMaterials, housesStore, city) {
+        // Récupérer la répartition des workers depuis IndexedDB
+        const factoryData = await housesStore.getHouse(factoryId);
+        if (!factoryData) return;
+        
+        const productWorkerDistribution = factoryData.productWorkerDistribution || {};
+        const productProductionPercentages = factoryData.productProductionPercentages || {};
+        
         const resources = await this.getCityResources(city, housesStore);
         const newRawMaterials = { ...rawMaterials };
         let collected = false;
@@ -102,9 +137,29 @@ export class FactoryService extends SimService {
         for (const [resourceType, available] of Object.entries(resources)) {
             if (available <= 0) continue;
 
-            const maxStorage = this.getMaxStorage(resourceType);
+            // Vérifier qu'il y a des workers alloués à cette ressource
+            const allocatedWorkers = productWorkerDistribution[resourceType] || 0;
+            if (allocatedWorkers === 0) {
+                // Pas de workers alloués = pas de collecte, s'assurer que le stock est à 0
+                if (rawMaterials[resourceType] && rawMaterials[resourceType] > 0) {
+                    newRawMaterials[resourceType] = 0;
+                    collected = true;
+                }
+                continue;
+            }
+            
+            // Calculer le max de stock selon le pourcentage de production
+            const maxWorkersPerProduct = 2;
+            let productionPercentage = productProductionPercentages[resourceType];
+            if (productionPercentage === undefined) {
+                productionPercentage = Math.floor((allocatedWorkers / maxWorkersPerProduct) * 100);
+            }
+            
+            const baseMaxStorage = this.getMaxStorage(resourceType);
+            const effectiveMaxStorage = Math.floor(baseMaxStorage * (productionPercentage / 100));
+
             const currentStock = rawMaterials[resourceType] || 0;
-            const remainingCapacity = Math.max(0, maxStorage - currentStock);
+            const remainingCapacity = Math.max(0, effectiveMaxStorage - currentStock);
 
             if (remainingCapacity <= 0) continue;
 

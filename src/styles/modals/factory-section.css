@@ -183,6 +183,10 @@
     color: #ffc107;
 }
 
+.factory-status-no-workers {
+    color: #dc3545;
+}
+
 .factory-controls {
     margin-top: 20px;
     padding-top: 20px;
