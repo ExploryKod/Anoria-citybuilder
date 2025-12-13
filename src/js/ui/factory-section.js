@@ -134,6 +134,12 @@ class FactorySectionManager {
         const getProductionStatus = (resourceType, isProduct = false) => {
             // Utiliser les workers alloués via productWorkerDistribution
             const allocatedWorkers = getWorkersForProduct(resourceType);
+            
+            // Si aucun worker n'est alloué, pas de production possible (0/0)
+            if (allocatedWorkers === 0) {
+                return { status: 'no-workers', max: 0, percentage: 0 };
+            }
+            
             const maxWorkersPerProduct = 2; // Maximum de workers par produit
             
             // Utiliser le pourcentage stocké dans IndexedDB s'il existe, sinon le calculer
@@ -203,9 +209,13 @@ class FactorySectionManager {
                 <h4 class="factory-subtitle">Matières Premières</h4>
                 ${Object.entries(rawMaterialNames).map(([key, name]) => {
                     const status = getProductionStatus(key, false);
-                    const statusClass = status.status === 'full' ? 'factory-status-full' : 'factory-status-reduced';
+                    const statusClass = status.status === 'full' ? 'factory-status-full' : 
+                                      status.status === 'no-workers' ? 'factory-status-no-workers' : 
+                                      'factory-status-reduced';
                     const statusText = status.status === 'full' 
                         ? '<span class="factory-status-full">✓ Production à son maximum</span>'
+                        : status.status === 'no-workers'
+                        ? '<span class="factory-status-no-workers">❌ Aucune production (pas de workers alloués)</span>'
                         : `<span class="factory-status-reduced">⚠ Production réduite (${status.percentage}%)</span>`;
                     
                     const productWorkers = getWorkersForProduct(key);
@@ -246,9 +256,13 @@ class FactorySectionManager {
                 <h4 class="factory-subtitle">Produits Finis</h4>
                 ${Object.entries(productNames).map(([key, name]) => {
                     const status = getProductionStatus(key, true);
-                    const statusClass = status.status === 'full' ? 'factory-status-full' : 'factory-status-reduced';
+                    const statusClass = status.status === 'full' ? 'factory-status-full' : 
+                                      status.status === 'no-workers' ? 'factory-status-no-workers' : 
+                                      'factory-status-reduced';
                     const statusText = status.status === 'full' 
                         ? '<span class="factory-status-full">✓ Production à son maximum</span>'
+                        : status.status === 'no-workers'
+                        ? '<span class="factory-status-no-workers">❌ Aucune production (pas de workers alloués)</span>'
                         : `<span class="factory-status-reduced">⚠ Production réduite (${status.percentage}%)</span>`;
                     
                     const productWorkers = getWorkersForProduct(key);
