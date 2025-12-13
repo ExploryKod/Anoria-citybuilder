@@ -78,7 +78,7 @@ class FactorySectionManager {
         const imports = factory.imports || {};
         const keepInStock = factory.keepInStock !== false;
         const factoryEmployees = factory.factoryEmployees || {};
-        const employees = factory.employees || { worker: 0, worker_need: 0 };
+        const employees = factory.employees || { worker: 0, worker_need: 0, elite: 0, elite_need: 0 };
 
         const rawMaterialNames = {
             wood: 'Bois',
@@ -244,6 +244,26 @@ class FactorySectionManager {
                         <span>Usine active</span>
                     </label>
                 </div>
+            </div>
+            
+            <div class="factory-employees">
+                <h4 class="factory-subtitle">Employés</h4>
+                ${employees ? `
+                    <div class="factory-employee-item">
+                        <label>Ouvriers:</label>
+                        <span class="factory-employee-value">${employees.worker || 0} / ${employees.worker_need || 0}</span>
+                    </div>
+                    <div class="factory-employee-item">
+                        <label>Élites:</label>
+                        <span class="factory-employee-value">${employees.elite || 0} / ${employees.elite_need || 0}</span>
+                    </div>
+                    <div class="factory-employee-status">
+                        ${(employees.worker || 0) >= (employees.worker_need || 0) && 
+                          (employees.elite || 0) >= (employees.elite_need || 0) 
+                            ? '<span class="factory-status-success">✅ L\'usine a tout ce qu\'il faut pour fonctionner</span>'
+                            : '<span class="factory-status-warning">⚠️ L\'usine ne peut fonctionner à sa pleine capacité</span>'}
+                    </div>
+                ` : '<div class="factory-employee-status">Aucune donnée d\'employés</div>'}
             </div>
         `;
         
