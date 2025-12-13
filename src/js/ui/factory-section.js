@@ -81,6 +81,8 @@ class FactorySectionManager {
         const employees = factory.employees || { worker: 0, worker_need: 0, elite: 0, elite_need: 0 };
         // Répartition des workers par produit (stockée dans IndexedDB)
         const productWorkerDistribution = factory.productWorkerDistribution || {};
+        // Pourcentages de production par produit (stockés dans IndexedDB)
+        const productProductionPercentages = factory.productProductionPercentages || {};
 
         const rawMaterialNames = {
             wood: 'Bois',
@@ -130,22 +132,26 @@ class FactorySectionManager {
         };
 
         const getProductionStatus = (resourceType, isProduct = false) => {
-            const employeeType = getEmployeeType(resourceType);
-            const emp = factoryEmployees[employeeType];
-            const singleNeed = getEmployeeNeed(resourceType);
-            const workerNeed = emp?.worker_need || singleNeed;
-            const worker = emp?.worker || 0;
+            // Utiliser les workers alloués via productWorkerDistribution
+            const allocatedWorkers = getWorkersForProduct(resourceType);
+            const maxWorkersPerProduct = 2; // Maximum de workers par produit
             
-            if (workerNeed === 0) return { status: 'full', max: getMaxStorage(resourceType) };
+            // Utiliser le pourcentage stocké dans IndexedDB s'il existe, sinon le calculer
+            let percentageDisplay = productProductionPercentages[resourceType];
+            if (percentageDisplay === undefined) {
+                // Calculer le pourcentage basé sur les workers alloués
+                const percentage = maxWorkersPerProduct > 0 ? (allocatedWorkers / maxWorkersPerProduct) : 0;
+                percentageDisplay = Math.floor(percentage * 100);
+            }
             
-            const percentage = workerNeed > 0 ? (worker / workerNeed) : 1;
+            const percentage = percentageDisplay / 100;
             const maxStorage = getMaxStorage(resourceType);
             const effectiveMax = Math.floor(maxStorage * percentage);
             
             if (percentage >= 1) {
                 return { status: 'full', max: maxStorage, percentage: 100 };
             } else {
-                return { status: 'reduced', max: effectiveMax, percentage: Math.floor(percentage * 100) };
+                return { status: 'reduced', max: effectiveMax, percentage: percentageDisplay };
             }
         };
 
@@ -197,9 +203,6 @@ class FactorySectionManager {
                 <h4 class="factory-subtitle">Matières Premières</h4>
                 ${Object.entries(rawMaterialNames).map(([key, name]) => {
                     const status = getProductionStatus(key, false);
-                    const emp = getEmployeesForResource(key);
-                    const employeeType = getEmployeeType(key);
-                    const employeeTypeName = employeeTypeNames[employeeType] || employeeType;
                     const statusClass = status.status === 'full' ? 'factory-status-full' : 'factory-status-reduced';
                     const statusText = status.status === 'full' 
                         ? '<span class="factory-status-full">✓ Production à son maximum</span>'
@@ -214,10 +217,6 @@ class FactorySectionManager {
                         <div class="factory-stock-item-row">
                             <label>${name}:</label>
                             <span class="factory-stock-value">${rawMaterials[key] || 0} / ${status.max}</span>
-                        </div>
-                        <div class="factory-employee-info">
-                            <span class="factory-employee-label">${employeeTypeName}:</span>
-                            <span class="factory-employee-value">${emp.worker || 0} / ${emp.worker_need || 2}</span>
                         </div>
                         <div class="factory-production-status ${statusClass}">
                             ${statusText}
@@ -247,9 +246,6 @@ class FactorySectionManager {
                 <h4 class="factory-subtitle">Produits Finis</h4>
                 ${Object.entries(productNames).map(([key, name]) => {
                     const status = getProductionStatus(key, true);
-                    const emp = getEmployeesForResource(key);
-                    const employeeType = getEmployeeType(key);
-                    const employeeTypeName = employeeTypeNames[employeeType] || employeeType;
                     const statusClass = status.status === 'full' ? 'factory-status-full' : 'factory-status-reduced';
                     const statusText = status.status === 'full' 
                         ? '<span class="factory-status-full">✓ Production à son maximum</span>'
@@ -264,10 +260,6 @@ class FactorySectionManager {
                         <div class="factory-stock-item-row">
                             <label>${name}:</label>
                             <span class="factory-stock-value">${products[key] || 0} / ${status.max}</span>
-                        </div>
-                        <div class="factory-employee-info">
-                            <span class="factory-employee-label">${employeeTypeName}:</span>
-                            <span class="factory-employee-value">${emp.worker || 0} / ${emp.worker_need || 2}</span>
                         </div>
                         <div class="factory-production-status ${statusClass}">
                             ${statusText}
@@ -414,20 +406,34 @@ class FactorySectionManager {
             }
 
             // Ajouter un worker au produit
+            const newWorkersForProduct = (currentWorkers || 0) + 1;
             const newDistribution = {
                 ...productWorkerDistribution,
-                [productKey]: (currentWorkers || 0) + 1
+                [productKey]: newWorkersForProduct
             };
 
-            // Sauvegarder dans IndexedDB
+            // Calculer le pourcentage de production pour ce produit
+            const maxWorkersPerProduct = 2;
+            const productionPercentage = Math.floor((newWorkersForProduct / maxWorkersPerProduct) * 100);
+
+            // Récupérer ou initialiser les pourcentages de production
+            const productProductionPercentages = factoryData.productProductionPercentages || {};
+            const newProductionPercentages = {
+                ...productProductionPercentages,
+                [productKey]: productionPercentage
+            };
+
+            // Sauvegarder dans IndexedDB : workers alloués + pourcentages de production
             await this.housesStore.updateHouseFields(factoryId, {
-                productWorkerDistribution: newDistribution
+                productWorkerDistribution: newDistribution,
+                productProductionPercentages: newProductionPercentages
             });
 
             // Mettre à jour les données locales
             const factory = this.factories.find(f => f.name === factoryId);
             if (factory) {
                 factory.productWorkerDistribution = newDistribution;
+                factory.productProductionPercentages = newProductionPercentages;
             }
 
             // Re-render la carte pour mettre à jour l'UI
