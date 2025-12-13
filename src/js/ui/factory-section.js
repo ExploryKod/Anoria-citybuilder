@@ -79,6 +79,8 @@ class FactorySectionManager {
         const keepInStock = factory.keepInStock !== false;
         const factoryEmployees = factory.factoryEmployees || {};
         const employees = factory.employees || { worker: 0, worker_need: 0, elite: 0, elite_need: 0 };
+        // Répartition des workers par produit (stockée dans IndexedDB)
+        const productWorkerDistribution = factory.productWorkerDistribution || {};
 
         const rawMaterialNames = {
             wood: 'Bois',
@@ -155,6 +157,32 @@ class FactorySectionManager {
             return imports[materialType] || 0;
         };
 
+        // Calcul des workers disponibles pour distribution
+        const getWorkersForProduct = (productKey) => {
+            return productWorkerDistribution[productKey] || 0;
+        };
+
+        const getTotalDistributedWorkers = () => {
+            return Object.values(productWorkerDistribution).reduce((sum, count) => sum + (count || 0), 0);
+        };
+
+        const getAvailableWorkers = () => {
+            const totalWorkers = employees.worker || 0;
+            const distributed = getTotalDistributedWorkers();
+            return Math.max(0, totalWorkers - distributed);
+        };
+
+        const canRecruitForProduct = (productKey) => {
+            const currentWorkers = getWorkersForProduct(productKey);
+            const availableWorkers = getAvailableWorkers();
+            // Maximum 2 workers par produit
+            return currentWorkers < 2 && availableWorkers > 0;
+        };
+
+        const isRecruitButtonDisabled = (productKey) => {
+            return !canRecruitForProduct(productKey);
+        };
+
         card.innerHTML = `
             <div class="factory-header">
                 <div class="factory-id">
@@ -177,6 +205,10 @@ class FactorySectionManager {
                         ? '<span class="factory-status-full">✓ Production à son maximum</span>'
                         : `<span class="factory-status-reduced">⚠ Production réduite (${status.percentage}%)</span>`;
                     
+                    const productWorkers = getWorkersForProduct(key);
+                    const isDisabled = isRecruitButtonDisabled(key);
+                    const buttonOpacity = isDisabled ? '0.5' : '1';
+                    
                     return `
                     <div class="factory-stock-item">
                         <div class="factory-stock-item-row">
@@ -192,6 +224,19 @@ class FactorySectionManager {
                         </div>
                         <div class="factory-trade-info">
                             <span class="factory-import-info">Importés: ${getTotalImports(key)}</span>
+                        </div>
+                        <div class="factory-recruit-section">
+                            <span class="factory-product-workers">Workers: ${productWorkers} / 2</span>
+                            <button 
+                                class="factory-recruit-btn" 
+                                data-factory="${factory.name}" 
+                                data-product="${key}"
+                                data-product-type="rawMaterial"
+                                ${isDisabled ? 'disabled' : ''}
+                                style="opacity: ${buttonOpacity};"
+                            >
+                                Recruter
+                            </button>
                         </div>
                     </div>
                 `;
@@ -210,6 +255,10 @@ class FactorySectionManager {
                         ? '<span class="factory-status-full">✓ Production à son maximum</span>'
                         : `<span class="factory-status-reduced">⚠ Production réduite (${status.percentage}%)</span>`;
                     
+                    const productWorkers = getWorkersForProduct(key);
+                    const isDisabled = isRecruitButtonDisabled(key);
+                    const buttonOpacity = isDisabled ? '0.5' : '1';
+                    
                     return `
                     <div class="factory-stock-item">
                         <div class="factory-stock-item-row">
@@ -225,6 +274,19 @@ class FactorySectionManager {
                         </div>
                         <div class="factory-trade-info">
                             <span class="factory-export-info">Exportés: ${getTotalExports(key)}</span>
+                        </div>
+                        <div class="factory-recruit-section">
+                            <span class="factory-product-workers">Workers: ${productWorkers} / 2</span>
+                            <button 
+                                class="factory-recruit-btn" 
+                                data-factory="${factory.name}" 
+                                data-product="${key}"
+                                data-product-type="product"
+                                ${isDisabled ? 'disabled' : ''}
+                                style="opacity: ${buttonOpacity};"
+                            >
+                                Recruter
+                            </button>
                         </div>
                     </div>
                 `;
@@ -283,6 +345,15 @@ class FactorySectionManager {
                 await this.updateFactorySetting(factoryId, setting, value);
             });
         });
+
+        // Event listeners pour les boutons de recrutement
+        const recruitButtons = card.querySelectorAll('.factory-recruit-btn');
+        recruitButtons.forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const productKey = e.target.dataset.product;
+                await this.recruitWorkerForProduct(factoryId, productKey);
+            });
+        });
     }
     
     async updateFactorySetting(factoryId, setting, value) {
@@ -301,6 +372,72 @@ class FactorySectionManager {
             }
         } catch (error) {
             // Error handling
+        }
+    }
+
+    /**
+     * Recrute un worker pour un produit spécifique
+     * @param {string} factoryId - ID de la factory
+     * @param {string} productKey - Clé du produit (ex: 'wood', 'furniture')
+     */
+    async recruitWorkerForProduct(factoryId, productKey) {
+        if (!this.housesStore) {
+            console.warn('[FactorySection] Cannot recruit: housesStore not available');
+            return;
+        }
+
+        try {
+            // Récupérer les données actuelles de la factory depuis IndexedDB
+            const factoryData = await this.housesStore.getHouse(factoryId);
+            if (!factoryData) {
+                console.warn('[FactorySection] Factory not found:', factoryId);
+                return;
+            }
+
+            const employees = factoryData.employees || { worker: 0, worker_need: 0 };
+            const productWorkerDistribution = factoryData.productWorkerDistribution || {};
+            
+            // Vérifier qu'on peut recruter
+            const currentWorkers = productWorkerDistribution[productKey] || 0;
+            const totalDistributed = Object.values(productWorkerDistribution).reduce((sum, count) => sum + (count || 0), 0);
+            const availableWorkers = Math.max(0, (employees.worker || 0) - totalDistributed);
+
+            // Vérifications
+            if (currentWorkers >= 2) {
+                console.warn('[FactorySection] Maximum workers reached for product:', productKey);
+                return;
+            }
+
+            if (availableWorkers <= 0) {
+                console.warn('[FactorySection] No available workers to distribute');
+                return;
+            }
+
+            // Ajouter un worker au produit
+            const newDistribution = {
+                ...productWorkerDistribution,
+                [productKey]: (currentWorkers || 0) + 1
+            };
+
+            // Sauvegarder dans IndexedDB
+            await this.housesStore.updateHouseFields(factoryId, {
+                productWorkerDistribution: newDistribution
+            });
+
+            // Mettre à jour les données locales
+            const factory = this.factories.find(f => f.name === factoryId);
+            if (factory) {
+                factory.productWorkerDistribution = newDistribution;
+            }
+
+            // Re-render la carte pour mettre à jour l'UI
+            await this.refresh();
+        } catch (error) {
+            console.error('[FactorySection] Error recruiting worker for product:', {
+                factoryId,
+                productKey,
+                error: error?.message || error
+            });
         }
     }
     
