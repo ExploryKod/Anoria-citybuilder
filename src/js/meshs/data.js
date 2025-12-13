@@ -67,6 +67,7 @@ export const assetsPrices = Object.freeze({
     'Windmill-001': { price: 50, category: 'industry', gridSize: 1 },
     'Barn-001': { price: 40, category: 'industry', gridSize: 1 },
     'Crate-001': { price: 2, category: 'industry', gridSize: 1 },
+    'Winery-001': { price: 50, category: 'industry', gridSize: 1 },
 
     // Markets
     'Market-Stall': { price: 10, category: 'markets', gridSize: 1 },
@@ -79,6 +80,7 @@ export const assetsPrices = Object.freeze({
     
     // Public Buildings
     'Church-002': { price: 100, category: 'public', gridSize: 3 },
+    'BookShop-001': { price: 60, category: 'public', gridSize: 1 }, // Autonomous button
     
     // Nature (Trees and Rocks)
     'Tree-Pine-001': { price: 3, category: 'nature', gridSize: 1 },

@@ -58,7 +58,8 @@ export const farmsButton = document.getElementById('farm-btn');
 export const industryButton = document.getElementById('industry-btn');
 export const marketButton = document.getElementById('market-btn');
 export const infrastructureButton = document.getElementById('infrastructure-btn');
-export const publicButton = document.getElementById('public-btn');
+export const workshopButton = document.getElementById('workshop-btn');
+export const bookshopButton = document.getElementById('bookshop-btn');
 
 export const panelLayoutCloseBtn = document.querySelector('.panel-layout .panel-close-btn')
 
