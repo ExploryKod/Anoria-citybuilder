@@ -36,6 +36,7 @@ export const firstHouses = ['House-Red', 'House-Purple', 'House-Blue'];
 export const palaces = ['House-2Story'];
 export const farms = ['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage'];
 export const commerce = ['Market-Stall'];
+export const factories = ['Winery-001'];
 
 // index.html
 export const panelLayout = document.getElementById('panel-layout')

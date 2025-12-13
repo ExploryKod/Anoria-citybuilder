@@ -70,6 +70,7 @@ export function getDefaultEmployees(buildingType) {
         };
     }
     
+
     // Return structure with needs from config
     // NOTE: No priority here - priority is looked up from localStorage at runtime
     return {

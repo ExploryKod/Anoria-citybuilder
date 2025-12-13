@@ -1,6 +1,7 @@
 import { SimService } from './SimService.js';
 import { checkRoadAccess } from '../modules/ModuleHelper.js';
 import { TimeManager } from '../utils/TimeManager.js';
+import config from '../config.js';
 
 const PRODUCT_RECIPES = {
     furniture: { wood: 2 },
@@ -42,28 +43,29 @@ export class FactoryService extends SimService {
 
         const rawMaterials = factoryData.rawMaterials || {};
         const products = factoryData.products || {};
-        const maxRawMaterials = factoryData.maxRawMaterials || 500;
-        const maxProducts = factoryData.maxProducts || 500;
 
         const lastProductionTime = factoryData.lastProductionTime || 0;
         const timeSinceProduction = time - lastProductionTime;
 
         if (timeSinceProduction >= PRODUCTION_TIME_DAYS) {
-            await this.produceProducts(factoryId, rawMaterials, products, maxProducts, housesStore);
+            await this.produceProducts(factoryId, rawMaterials, products, housesStore);
             await housesStore.updateHouseFields(factoryId, { lastProductionTime: time });
         }
 
-        await this.collectResources(factoryId, rawMaterials, maxRawMaterials, housesStore, city);
+        await this.collectResources(factoryId, rawMaterials, housesStore, city);
     }
 
-    async produceProducts(factoryId, rawMaterials, products, maxProducts, housesStore) {
-        const totalProducts = Object.values(products).reduce((sum, qty) => sum + qty, 0);
-        const remainingCapacity = Math.max(0, maxProducts - totalProducts);
+    getMaxStorage(resourceType) {
+        return config.factoryMaxStorage?.[resourceType] || 200;
+    }
 
-        if (remainingCapacity <= 0) return;
-
+    async produceProducts(factoryId, rawMaterials, products, housesStore) {
         for (const [productType, recipe] of Object.entries(PRODUCT_RECIPES)) {
-            if (remainingCapacity <= 0) break;
+            const maxStorage = this.getMaxStorage(productType);
+            const currentStock = products[productType] || 0;
+            const remainingCapacity = Math.max(0, maxStorage - currentStock);
+
+            if (remainingCapacity <= 0) continue;
 
             const canProduce = this.canProduceProduct(recipe, rawMaterials);
             if (!canProduce) continue;
@@ -92,26 +94,23 @@ export class FactoryService extends SimService {
         return true;
     }
 
-    async collectResources(factoryId, rawMaterials, maxRawMaterials, housesStore, city) {
-        const totalRawMaterials = Object.values(rawMaterials).reduce((sum, qty) => sum + qty, 0);
-        const remainingCapacity = Math.max(0, maxRawMaterials - totalRawMaterials);
-
-        if (remainingCapacity <= 0) return;
-
+    async collectResources(factoryId, rawMaterials, housesStore, city) {
         const resources = await this.getCityResources(city, housesStore);
-        
         const newRawMaterials = { ...rawMaterials };
         let collected = false;
-        let capacityUsed = 0;
 
         for (const [resourceType, available] of Object.entries(resources)) {
-            if (capacityUsed >= remainingCapacity) break;
             if (available <= 0) continue;
 
-            const toCollect = Math.min(available, remainingCapacity - capacityUsed);
+            const maxStorage = this.getMaxStorage(resourceType);
+            const currentStock = rawMaterials[resourceType] || 0;
+            const remainingCapacity = Math.max(0, maxStorage - currentStock);
+
+            if (remainingCapacity <= 0) continue;
+
+            const toCollect = Math.min(available, remainingCapacity, 1);
             if (toCollect > 0) {
                 newRawMaterials[resourceType] = (newRawMaterials[resourceType] || 0) + toCollect;
-                capacityUsed += toCollect;
                 collected = true;
             }
         }

@@ -15,6 +15,7 @@ import {
     commerce,
     delayBox,
     displayDelayUI,
+    factories,
     farms,
     firstHouses,
     gameWindow,
@@ -1330,6 +1331,38 @@ export function createScene(housesStore, gameStore, assetManager) {
                                 null
                             );
                         }
+                    }
+                }
+
+                // Process factories: show no-work sprite if no employees
+                if(factories.includes(currentBuildingId) && buildings[x][y]) {
+                    // Clean up factory sprites (including no-work)
+                    const factorySpriteNames = ['no-work', 'no-work-bg'];
+                    factorySpriteNames.forEach(spriteName => {
+                        assetManager.removeStatusSprite(buildings[x][y], spriteName);
+                    });
+
+                    // Check if factory has workers (required to operate)
+                    const factoryDataForWorkers = await housesStore.getHouse(currentUniqueID);
+                    const factoryEmployees = factoryDataForWorkers?.employees || { worker: 0, worker_need: 0 };
+                    const factoryWorkers = factoryEmployees.worker || 0;
+                    const factoryWorkerNeed = factoryEmployees.worker_need || 0;
+                    const factoryHasNoWorkers = factoryWorkers === 0 && factoryWorkerNeed > 0;
+
+                    // If no workers, show no-work sprite (red)
+                    if (factoryHasNoWorkers && buildings[x][y]) {
+                        const noWorkMeta = statutsIconsMeta['no-work'];
+                        const factoryNoWorkPosition = { x: -0.8, y: 0.5, z: -0.2 };
+                        assetManager.setStatusSprite(
+                            buildings[x][y],
+                            textures['no-work'],
+                            'no-work',
+                            noWorkMeta.scale,
+                            factoryNoWorkPosition,
+                            true, // visible
+                            noWorkMeta.spriteColor,
+                            noWorkMeta.backgroundColor
+                        );
                     }
                 }
 

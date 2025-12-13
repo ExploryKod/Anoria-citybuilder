@@ -86,6 +86,7 @@ export class EmploymentDistributionService extends SimService {
             if (this.isHouse(building) || this.isRoad(building)) continue;
             
             const buildingId = building.id || building.name;
+            const buildingType = building.type || '';
             const currentEmployees = building.employees || {};
             
             // Only reset if building has worker_need defined
@@ -235,7 +236,7 @@ export class EmploymentDistributionService extends SimService {
                     continue;
                 }
                 
-                // Update employees object
+                // Update employees object for all buildings (including factories)
                 const currentEmployees = freshData.employees || { worker: 0, worker_need: 0 };
                 const newEmployees = {
                     ...currentEmployees,
@@ -257,6 +258,7 @@ export class EmploymentDistributionService extends SimService {
             }
         }
     }
+
 
     /**
      * Gets building priority from config
