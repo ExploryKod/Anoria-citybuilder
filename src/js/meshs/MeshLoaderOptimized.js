@@ -36,7 +36,7 @@ class MeshLoaderOptimized {
         infrastructure: ['Well-001', 'Fountain-001', 'Streetlight-001', 'roads', 'StonePath-001', 'StonePath-Right-001', 'StonePath-Left-001', 'StonePath-Cross-001'],
         public: ['Church-002'],
         palaces: ['House-2Story'],
-        nature: ['Tree-Pine-001', 'Tree-Square-001', 'Tree-Tall-001', 'Boulder-001']
+        nature: ['Tree-Pine-001', 'Tree-Square-001', 'Tree-Tall-001', 'Tree-Sapin', 'Tree-Arbuste', 'Tree-Chene', 'Boulder-001']
     }
 
     allAssetsNames = [
@@ -137,7 +137,8 @@ class MeshLoaderOptimized {
         // Build catalog mappings
         // Map JSON categories to our internal categories
         const categoryMapping = {
-            'vegetation': 'nature'  // Map vegetation to nature
+            'vegetation': 'nature',  // Map vegetation to nature
+            'decoration': 'nature'   // Map decoration (boulders, benches) to nature
         };
         
         Object.entries(assetCatalog.assets).forEach(([jsonCategory, data]) => {
@@ -160,6 +161,11 @@ class MeshLoaderOptimized {
                     this.categoryMeshSets['infrastructure'].add(meshName);
                 }
                 
+                // Special handling: Boulder meshes should be in 'nature' category
+                if (toolName === 'Boulder-001' && this.categoryMeshSets['nature']) {
+                    this.categoryMeshSets['nature'].add(meshName);
+                }
+                
                 // Track which category this tool belongs to (use internal category)
                 if (this.toolIds[internalCategory]?.includes(toolName)) {
                     this.toolToCategory.set(toolName, internalCategory);
@@ -168,6 +174,11 @@ class MeshLoaderOptimized {
                 // Also track if it belongs to 'infrastructure' category
                 if (this.toolIds['infrastructure']?.includes(toolName)) {
                     this.toolToCategory.set(toolName, 'infrastructure');
+                }
+                
+                // Also track if it belongs to 'nature' category
+                if (this.toolIds['nature']?.includes(toolName)) {
+                    this.toolToCategory.set(toolName, 'nature');
                 }
             });
         });
@@ -195,6 +206,11 @@ class MeshLoaderOptimized {
             }
         }
         
+        // Check if it's already a mapped tree name (Tree-Sapin, Tree-Arbuste, Tree-Chene)
+        if (baseName === 'Tree-Sapin') return 'Tree-Pine-001';
+        if (baseName === 'Tree-Arbuste') return 'Tree-Square-001';
+        if (baseName === 'Tree-Chene') return 'Tree-Tall-001';
+        
         // Standard parsing for objects like Farm_Wheat, House_Blue, etc.
         const normalized = baseName.replace(/[.\s]/g, '_');
         const parts = normalized.split('_');
@@ -208,6 +224,9 @@ class MeshLoaderOptimized {
             if (cleanType === 'Pine') return 'Tree-Pine-001';
             if (cleanType === 'Square') return 'Tree-Square-001';
             if (cleanType === 'Tall') return 'Tree-Tall-001';
+            if (cleanType === 'Sapin') return 'Tree-Pine-001';
+            if (cleanType === 'Arbuste') return 'Tree-Square-001';
+            if (cleanType === 'Chene') return 'Tree-Tall-001';
         }
         
         // Special handling for Crate (all variants map to Crate-001)
