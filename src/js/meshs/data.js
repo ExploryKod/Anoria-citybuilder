@@ -86,6 +86,9 @@ export const assetsPrices = Object.freeze({
     'Tree-Pine-001': { price: 3, category: 'nature', gridSize: 1 },
     'Tree-Square-001': { price: 3, category: 'nature', gridSize: 1 },
     'Tree-Tall-001': { price: 3, category: 'nature', gridSize: 1 },
+    'Tree-Sapin': { price: 3, category: 'nature', gridSize: 1 },
+    'Tree-Arbuste': { price: 3, category: 'nature', gridSize: 1 },
+    'Tree-Chene': { price: 3, category: 'nature', gridSize: 1 },
     'Boulder-001': { price: 2, category: 'nature', gridSize: 1 }
 });
 
@@ -234,6 +237,11 @@ export const meshNameMapping = {
     'TreeTall016': 'Tree-Tall-001',
     'TreeTall017': 'Tree-Tall-001',
     'TreeTall018': 'Tree-Tall-001',
+    
+    // Tree type mappings (descriptive names to asset names)
+    'Tree-Sapin': 'Tree-Pine-001',
+    'Tree-Arbuste': 'Tree-Square-001',
+    'Tree-Chene': 'Tree-Tall-001',
     
     // Boulder variants (all map to Boulder-001)
     'Boulder': 'Boulder-001',

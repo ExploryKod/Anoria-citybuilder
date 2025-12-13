@@ -30,6 +30,7 @@ import config from './config.js';
 import { LightingManager } from './managers/LightingManager.js';
 import { BackdropManager } from './managers/BackdropManager.js';
 import { DecorativeVillageManager } from './managers/DecorativeVillageManager.js';
+import { ResourceManager } from './managers/ResourceManager.js';
 import { PerformanceManager } from './managers/PerformanceManager.js';
 import { BudgetProcessor } from './managers/BudgetProcessor.js';
 import { CitizenManager } from './managers/CitizenManager.js';
@@ -430,6 +431,10 @@ export function createScene(housesStore, gameStore, assetManager) {
 
         // No backdrop needed - World platform provides sharp cutoff with sky background
         // addBackdrop(citySize); // Disabled to prevent visible edges at horizon
+        
+        // Initialize resources (trees, boulders, clay, iron, gold) before decorative village
+        const resourceManager = new ResourceManager();
+        await resourceManager.initializeResources(city, housesStore, assetManager, buildings, zoneGroups);
         
         // Create decorative village around the playable area
         decorativeVillageManager.createDecorativeVillage(citySize);
