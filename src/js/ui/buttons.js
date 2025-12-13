@@ -18,7 +18,6 @@ import {
     pauseButton,
     pauseOverlay,
     playButton,
-    publicButton,
     replayButton,
     resetButton,
     roadButton,
@@ -574,6 +573,7 @@ function toggleModal(e) {
             getButtonsDisabled()
             panelLayoutInner.classList.add('loading-objects')
             if(!panelLayout.classList.contains('active')) {
+                loaderButton.classList.add('active');
                 panelLayout.classList.add('active');
                 button.classList.toggle('selected')
                 createPublicButtons(buttonData)
@@ -867,28 +867,46 @@ function createRoadsButtons(buttonData) {
 
 function createPublicButtons(buttonData) {
     panelLayoutInner.innerHTML = '';
+    
+    // Check if toolIds is available
+    if (!toolIds || !toolIds.public) {
+        console.warn('[createPublicButtons] toolIds not initialized or public category missing');
+        panelLayoutInner.classList.remove('loading-objects');
+        return;
+    }
+    
     const publicToolIDs = toolIds.public || [];
-
-    // Réutiliser le même SVG que les maisons (temporaire)
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home">
-            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-            <polyline points="9 22 9 12 15 12 15 22"/>
-        </svg>`
     const svgBigHouse = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-castle"><path d="M22 20v-9H2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2Z"/><path d="M18 11V4H6v7"/><path d="M15 22v-4a3 3 0 0 0-3-3v0a3 3 0 0 0-3 3v4"/><path d="M22 11V9"/><path d="M2 11V9"/><path d="M6 4V2"/><path d="M18 4V2"/><path d="M10 4V2"/><path d="M14 4V2"/>
                         </svg>`
 
     let buttonsDuplicate = [];
+    let foundChurch = false;
+    
     // Filter to only show Church-002 (BookShop-001 will be autonomous button)
-    buttonData.filter(buttonInfo => publicToolIDs.includes(buttonInfo.tool) && buttonInfo.tool === 'Church-002').forEach(buttonInfo => {
+    buttonData.filter(buttonInfo => {
+        // Check if it's in public category and is Church-002
+        return publicToolIDs.includes(buttonInfo.tool) && buttonInfo.tool === 'Church-002';
+    }).forEach(buttonInfo => {
         if (!buttonsDuplicate.includes(buttonInfo.tool)) {
             buttonsDuplicate.push(buttonInfo.tool);
             if (buttonInfo.tool === 'Church-002') {
                 makeNewButton(buttonInfo, svgBigHouse);
-            } else {
-                makeNewButton(buttonInfo, svg);
+                foundChurch = true;
             }
         }
     });
+    
+    // If Church-002 not found in buttonData, create it manually from toolIds
+    if (!foundChurch && publicToolIDs.includes('Church-002')) {
+        console.warn('[createPublicButtons] Church-002 not in buttonData, creating manually');
+        makeNewButton({
+            text: 'Church',
+            tool: 'Church-002',
+            group: 'Public'
+        }, svgBigHouse);
+    }
+    
+    panelLayoutInner.classList.remove('loading-objects');
 }
 
 function createNatureButtons(buttonData) {
@@ -1859,16 +1877,6 @@ window.onload = async () => {
         toggleModal(e);
     })
     
-    publicButton.addEventListener('click', (e) => {
-        // Check if public button is disabled before toggling modal
-        if (window.buttonStateManager && !window.buttonStateManager.isEnabled('public-btn')) {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-        }
-        toggleModal(e);
-    })
-
     const bookshopButton = document.getElementById('bookshop-btn');
     if (bookshopButton) {
         bookshopButton.addEventListener('click', (e) => {
