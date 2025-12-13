@@ -216,3 +216,53 @@
     user-select: none;
 }
 
+.factory-employees {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #e9ecef;
+}
+
+.factory-employee-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.factory-employee-item:last-of-type {
+    border-bottom: none;
+}
+
+.factory-employee-item label {
+    font-weight: 500;
+    color: var(--primary);
+    min-width: 120px;
+}
+
+.factory-employee-status {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.factory-status-success {
+    color: #2d7a2d;
+    background: #e8f5e9;
+    padding: 10px;
+    border-radius: 4px;
+    display: block;
+    border-left: 4px solid #4caf50;
+}
+
+.factory-status-warning {
+    color: #b8860b;
+    background: #fff8e1;
+    padding: 10px;
+    border-radius: 4px;
+    display: block;
+    border-left: 4px solid #ff9800;
+}
+
