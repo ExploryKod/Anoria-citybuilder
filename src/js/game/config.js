@@ -111,7 +111,7 @@ const config = {
         factoryEmployeeNeeds: {
             // Raw materials collection
             wood: { worker_need: 2, type: 'bucheron' },
-            stone: { worker_need: 2, type: 'mineur' },
+            rock: { worker_need: 2, type: 'mineur' },
             clay: { worker_need: 2, type: 'creuseur' },
             iron: { worker_need: 2, type: 'mineur' },
             gold: { worker_need: 2, type: 'mineur' },
@@ -125,7 +125,7 @@ const config = {
         factoryMaxStorage: {
             // Raw materials
             wood: 200,
-            stone: 200,
+            rock: 200,
             clay: 200,
             iron: 200,
             gold: 200,

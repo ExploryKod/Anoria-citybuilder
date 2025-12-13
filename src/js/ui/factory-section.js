@@ -58,12 +58,12 @@ class FactorySectionManager {
         }
     }
     
-    render() {
+    async render() {
         const factoryBoard = document.getElementById('factory-board');
         if (!factoryBoard) return;
         
-        // Rendre le panneau des ressources naturelles
-        this.renderNaturalResources(factoryBoard);
+        // Rendre le panneau des ressources naturelles (async pour recharger depuis IndexedDB)
+        await this.renderNaturalResources(factoryBoard);
         
         // Rendre les factories
         const factoriesList = document.getElementById('factory-factories-list');
@@ -82,7 +82,7 @@ class FactorySectionManager {
         });
     }
     
-    renderNaturalResources(container) {
+    async renderNaturalResources(container) {
         // Créer ou récupérer le conteneur des ressources naturelles
         let naturalResourcesContainer = document.getElementById('factory-natural-resources');
         if (!naturalResourcesContainer) {
@@ -90,6 +90,19 @@ class FactorySectionManager {
             naturalResourcesContainer.id = 'factory-natural-resources';
             naturalResourcesContainer.className = 'factory-natural-resources';
             container.insertBefore(naturalResourcesContainer, container.firstChild);
+        }
+        
+        // Recharger les ressources naturelles depuis IndexedDB pour avoir les données à jour
+        if (this.housesStore) {
+            try {
+                const allHouses = await this.housesStore.listAllHouses();
+                this.naturalResources = allHouses.filter(house => {
+                    const category = house.category || '';
+                    return category === 'nature';
+                });
+            } catch (error) {
+                console.error('[FactorySection] Error reloading natural resources:', error);
+            }
         }
         
         // Calculer les totaux par ressource
@@ -183,7 +196,7 @@ class FactorySectionManager {
 
         const rawMaterialNames = {
             wood: 'Bois',
-            stone: 'Pierre',
+            rock: 'Pierre',
             clay: 'Argile',
             iron: 'Fer',
             gold: 'Or'
