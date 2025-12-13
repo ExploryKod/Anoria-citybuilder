@@ -54,7 +54,6 @@ class FactorySectionManager {
             
             this.render();
         } catch (error) {
-            // Error handling
         }
     }
     
@@ -101,7 +100,6 @@ class FactorySectionManager {
                     return category === 'nature';
                 });
             } catch (error) {
-                console.error('[FactorySection] Error reloading natural resources:', error);
             }
         }
         
@@ -487,7 +485,6 @@ class FactorySectionManager {
                 factory[setting] = value;
             }
         } catch (error) {
-            // Error handling
         }
     }
 
@@ -498,7 +495,6 @@ class FactorySectionManager {
      */
     async recruitWorkerForProduct(factoryId, productKey) {
         if (!this.housesStore) {
-            console.warn('[FactorySection] Cannot recruit: housesStore not available');
             return;
         }
 
@@ -506,7 +502,6 @@ class FactorySectionManager {
             // Récupérer les données actuelles de la factory depuis IndexedDB
             const factoryData = await this.housesStore.getHouse(factoryId);
             if (!factoryData) {
-                console.warn('[FactorySection] Factory not found:', factoryId);
                 return;
             }
 
@@ -520,12 +515,10 @@ class FactorySectionManager {
 
             // Vérifications
             if (currentWorkers >= 2) {
-                console.warn('[FactorySection] Maximum workers reached for product:', productKey);
                 return;
             }
 
             if (availableWorkers <= 0) {
-                console.warn('[FactorySection] No available workers to distribute');
                 return;
             }
 
@@ -563,11 +556,6 @@ class FactorySectionManager {
             // Re-render la carte pour mettre à jour l'UI
             await this.refresh();
         } catch (error) {
-            console.error('[FactorySection] Error recruiting worker for product:', {
-                factoryId,
-                productKey,
-                error: error?.message || error
-            });
         }
     }
     

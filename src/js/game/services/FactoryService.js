@@ -25,7 +25,6 @@ export class FactoryService extends SimService {
                 await this.processFactory(factory, housesStore, time, city);
             }
         } catch (error) {
-            // Error handling
         }
     }
 
@@ -290,7 +289,6 @@ export class FactoryService extends SimService {
                 }
             }
         } catch (error) {
-            console.error('[FactoryService] Error getting city resources:', error);
         }
 
         return resources;
