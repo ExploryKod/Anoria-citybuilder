@@ -58,14 +58,24 @@ export class ResourceManager {
                         buildings[x][y] = mesh;
                     }
 
+                    // Définir les stocks de bois selon le type d'arbre
+                    const treeWoodStocks = {
+                        'Tree-Sapin': 100,
+                        'Tree-Arbuste': 80,
+                        'Tree-Chene': 120
+                    };
+                    const woodAmount = treeWoodStocks[treeTypeId] || 100;
+                    
                     const treeData = {
                         name: treeId,
                         type: treeTypeId,
+                        category: 'nature',
                         x: x,
                         y: y,
                         neighbors: [],
                         pop: 0,
-                        stocks: {},
+                        stocks: { wood: woodAmount },
+                        maxStocks: { wood: woodAmount }, // Stocker le maximum initial
                         roads: 0,
                         worldTime: 0,
                         price: 0,
@@ -118,14 +128,32 @@ export class ResourceManager {
                         buildings[x][y] = mesh;
                     }
 
+                    // Générer les stocks aléatoires pour le boulder
+                    // Rock: minimum 50, peut être plus élevé (50-150)
+                    const rockAmount = 50 + Math.floor(Math.random() * 100);
+                    // Gold: parfois 0, sinon entre 20-50
+                    const goldAmount = Math.random() < 0.3 ? 0 : 20 + Math.floor(Math.random() * 30);
+                    // Iron: plus élevé que l'or mais moins que la pierre, parfois 0
+                    const ironAmount = Math.random() < 0.2 ? 0 : 30 + Math.floor(Math.random() * 40);
+                    
                     const boulderData = {
                         name: boulderId,
                         type: boulderType,
+                        category: 'nature',
                         x: x,
                         y: y,
                         neighbors: [],
                         pop: 0,
-                        stocks: {},
+                        stocks: { 
+                            rock: rockAmount,
+                            gold: goldAmount,
+                            iron: ironAmount
+                        },
+                        maxStocks: { 
+                            rock: rockAmount,
+                            gold: goldAmount,
+                            iron: ironAmount
+                        }, // Stocker le maximum initial
                         roads: 0,
                         worldTime: 0,
                         price: 0,

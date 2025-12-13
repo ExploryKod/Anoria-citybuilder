@@ -2,6 +2,70 @@
     padding: 20px;
 }
 
+.factory-natural-resources {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-left: 4px solid #28a745;
+    margin-bottom: 20px;
+}
+
+.factory-natural-resources-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    cursor: pointer;
+}
+
+.factory-natural-resources-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary);
+    margin: 0;
+}
+
+.factory-toggle-resources-btn {
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: #666;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.factory-toggle-resources-btn:hover {
+    background: #f0f0f0;
+}
+
+.factory-natural-resources-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.factory-natural-resource-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.factory-natural-resource-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.factory-natural-resource-value {
+    font-weight: 600;
+    color: #007bff;
+}
+
 .factory-header-section {
     display: flex;
     flex-direction: column;
