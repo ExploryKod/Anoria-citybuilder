@@ -6,7 +6,7 @@ import config from '../config.js';
 const PRODUCT_RECIPES = {
     furniture: { wood: 2 },
     weapons: { wood: 1, iron: 1 },
-    pottery: { clay: 1, stone: 1 },
+    pottery: { clay: 1, rock: 1 },
     jewelry: { gold: 1, iron: 1, wood: 1 }
 };
 
@@ -122,26 +122,37 @@ export class FactoryService extends SimService {
         return true;
     }
 
+    /**
+     * Collecte les ressources naturelles depuis les trees et boulders
+     * Décrémente les stocks des ressources naturelles et incrémente les rawMaterials de la factory
+     */
     async collectResources(factoryId, rawMaterials, housesStore, city) {
-        // Récupérer la répartition des workers depuis IndexedDB
+        // Récupérer les données fraîches de la factory depuis IndexedDB
         const factoryData = await housesStore.getHouse(factoryId);
         if (!factoryData) return;
+        
+        // Utiliser les rawMaterials actuels depuis IndexedDB (source of truth)
+        const currentRawMaterials = factoryData.rawMaterials || {};
         
         const productWorkerDistribution = factoryData.productWorkerDistribution || {};
         const productProductionPercentages = factoryData.productProductionPercentages || {};
         
-        const resources = await this.getCityResources(city, housesStore);
-        const newRawMaterials = { ...rawMaterials };
+        const newRawMaterials = { ...currentRawMaterials };
         let collected = false;
+        
+        // Récupérer tous les items nature (trees et boulders) depuis IndexedDB
+        const allHouses = await housesStore.listAllHouses();
+        const natureItems = allHouses.filter(house => (house.category || '') === 'nature');
 
-        for (const [resourceType, available] of Object.entries(resources)) {
-            if (available <= 0) continue;
-
+        // Pour chaque type de ressource que la factory peut collecter
+        const resourceTypes = ['wood', 'rock', 'clay', 'iron', 'gold'];
+        
+        for (const resourceType of resourceTypes) {
             // Vérifier qu'il y a des workers alloués à cette ressource
             const allocatedWorkers = productWorkerDistribution[resourceType] || 0;
             if (allocatedWorkers === 0) {
                 // Pas de workers alloués = pas de collecte, s'assurer que le stock est à 0
-                if (rawMaterials[resourceType] && rawMaterials[resourceType] > 0) {
+                if (currentRawMaterials[resourceType] && currentRawMaterials[resourceType] > 0) {
                     newRawMaterials[resourceType] = 0;
                     collected = true;
                 }
@@ -158,14 +169,68 @@ export class FactoryService extends SimService {
             const baseMaxStorage = this.getMaxStorage(resourceType);
             const effectiveMaxStorage = Math.floor(baseMaxStorage * (productionPercentage / 100));
 
-            const currentStock = rawMaterials[resourceType] || 0;
+            const currentStock = currentRawMaterials[resourceType] || 0;
             const remainingCapacity = Math.max(0, effectiveMaxStorage - currentStock);
 
             if (remainingCapacity <= 0) continue;
 
-            const toCollect = Math.min(available, remainingCapacity, 1);
-            if (toCollect > 0) {
-                newRawMaterials[resourceType] = (newRawMaterials[resourceType] || 0) + toCollect;
+            // Gérer clay séparément (vient des tiles, pas des stocks IndexedDB)
+            if (resourceType === 'clay') {
+                // Pour l'instant, on garde l'ancienne logique pour clay
+                // TODO: Implémenter la collecte de clay depuis les tiles si nécessaire
+                continue;
+            }
+            
+            // Collecter depuis les stocks naturels disponibles
+            let totalCollected = 0;
+            
+            for (const natureItem of natureItems) {
+                if (totalCollected >= remainingCapacity) break;
+                
+                // Récupérer les données fraîches depuis IndexedDB pour avoir les stocks à jour
+                const freshNatureItem = await housesStore.getHouse(natureItem.name);
+                if (!freshNatureItem) continue;
+                
+                const stocks = freshNatureItem.stocks || {};
+                const available = stocks[resourceType] || 0;
+                
+                if (available <= 0) continue;
+                
+                // Vérifier le type d'item
+                const type = freshNatureItem.type || '';
+                let canCollectFromThis = false;
+                
+                if (resourceType === 'wood' && type.includes('Tree')) {
+                    canCollectFromThis = true;
+                } else if ((resourceType === 'rock' || resourceType === 'iron' || resourceType === 'gold') && type.includes('Boulder')) {
+                    canCollectFromThis = true;
+                }
+                
+                if (!canCollectFromThis) continue;
+                
+                // Calculer combien on peut collecter depuis cet item
+                const toCollectFromItem = Math.min(available, remainingCapacity - totalCollected, 1);
+                
+                if (toCollectFromItem > 0) {
+                    // Décrémenter le stock de l'item nature
+                    const newStocks = { ...stocks };
+                    const newStockValue = Math.max(0, available - toCollectFromItem);
+                    newStocks[resourceType] = newStockValue;
+                    
+                    // Mettre à jour dans IndexedDB
+                    await housesStore.updateHouseFields(freshNatureItem.name, {
+                        stocks: newStocks
+                    });
+                    
+                    // Mettre à jour aussi dans natureItem pour les prochaines itérations
+                    natureItem.stocks = newStocks;
+                    
+                    totalCollected += toCollectFromItem;
+                }
+            }
+            
+            if (totalCollected > 0) {
+                newRawMaterials[resourceType] = (newRawMaterials[resourceType] || 0) + totalCollected;
                 collected = true;
             }
         }
@@ -175,10 +240,16 @@ export class FactoryService extends SimService {
         }
     }
 
+    /**
+     * Récupère les ressources disponibles depuis les stocks des trees et boulders dans IndexedDB
+     * @param {Object} city - City object
+     * @param {HousesStore} housesStore - Database store
+     * @returns {Promise<Object>} Object avec les ressources disponibles (wood, rock, clay, iron, gold)
+     */
     async getCityResources(city, housesStore) {
         const resources = {
             wood: 0,
-            stone: 0,
+            rock: 0,
             clay: 0,
             iron: 0,
             gold: 0
@@ -188,27 +259,28 @@ export class FactoryService extends SimService {
             const houses = await housesStore.listAllHouses();
             
             for (const house of houses) {
-                const type = house.type || '';
+                const category = house.category || '';
                 
+                // Ne prendre que les items nature
+                if (category !== 'nature') continue;
+                
+                const type = house.type || '';
+                const stocks = house.stocks || {};
+                
+                // Trees: collecter le bois disponible
                 if (type.includes('Tree')) {
-                    resources.wood += 1;
-                } else if (type.includes('Boulder')) {
-                    const x = house.x;
-                    const y = house.y;
-                    const tile = city.tiles[x]?.[y];
-                    
-                    if (tile) {
-                        if (tile.hasIron) {
-                            resources.iron += 1;
-                        } else if (tile.hasGold) {
-                            resources.gold += 1;
-                        } else {
-                            resources.stone += 1;
-                        }
-                    }
+                    resources.wood += stocks.wood || 0;
+                } 
+                // Boulders: collecter rock, iron, gold
+                else if (type.includes('Boulder')) {
+                    resources.rock += stocks.rock || 0;
+                    resources.iron += stocks.iron || 0;
+                    resources.gold += stocks.gold || 0;
                 }
             }
 
+            // Clay vient des tiles (pas de stocks dans IndexedDB pour l'instant)
+            // On garde l'ancienne logique pour clay
             for (let x = 0; x < city.size; x++) {
                 for (let y = 0; y < city.size; y++) {
                     const tile = city.tiles[x]?.[y];
@@ -218,7 +290,7 @@ export class FactoryService extends SimService {
                 }
             }
         } catch (error) {
-            // Error handling
+            console.error('[FactoryService] Error getting city resources:', error);
         }
 
         return resources;
