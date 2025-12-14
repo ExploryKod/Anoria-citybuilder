@@ -98,7 +98,10 @@ const config = {
             // Commerces
             'Market-Stall': { worker_need: 2, elite_need: 1 },
             // Industries
-            'Winery-001': { worker_need: 6, elite_need: 0 },
+            // Note: worker_need pour Winery-001 est calculé dynamiquement dans EmployeeHelper.js
+            // Formule: (nombre de matières premières + nombre de produits finis) * 2
+            // Actuellement: (5 matières premières + 4 produits finis) * 2 = 18
+            'Winery-001': { worker_need: 18, elite_need: 0 }, // Valeur calculée dynamiquement
             // Stockage
             'Barn-001': { worker_need: 1, elite_need: 0 },
             // Infrastructure
