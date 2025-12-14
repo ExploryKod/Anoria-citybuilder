@@ -383,3 +383,159 @@
     display: block;
 }
 
+/* Factory Tabs */
+.factory-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.factory-tab {
+    padding: 10px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.2s ease;
+}
+
+.factory-tab:hover {
+    color: var(--primary);
+    background: #f8f9fa;
+}
+
+.factory-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    font-weight: 600;
+}
+
+.factory-tab-content {
+    display: none;
+}
+
+.factory-tab-content.active {
+    display: block;
+}
+
+/* Production Journal */
+.production-journal-header {
+    padding: 15px 20px;
+    border-bottom: 2px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.production-journal-content {
+    padding: 20px;
+}
+
+.production-journal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.production-journal-factory {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-left: 4px solid #007bff;
+}
+
+.production-journal-factory-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.production-journal-entries {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.production-journal-entry {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 3px solid #28a745;
+}
+
+.production-journal-entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #666;
+}
+
+.production-journal-turn {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.production-journal-date {
+    color: #999;
+}
+
+.production-journal-event {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 10px;
+    line-height: 1.6;
+}
+
+.production-journal-details {
+    display: flex;
+    gap: 15px;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.production-journal-quantity,
+.production-journal-price {
+    font-weight: 600;
+    color: #007bff;
+}
+
+.production-journal-stocks {
+    padding-top: 10px;
+    border-top: 1px solid #e9ecef;
+    margin-top: 10px;
+}
+
+.production-journal-stocks-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.production-journal-stocks-items {
+    display: flex;
+    gap: 15px;
+    font-size: 12px;
+}
+
+.production-journal-stock-item {
+    color: #666;
+}
+
+.production-journal-stock-item::before {
+    content: '• ';
+    color: #28a745;
+    font-weight: bold;
+}
+
