@@ -3,11 +3,20 @@ import { checkRoadAccess } from '../modules/ModuleHelper.js';
 import { TimeManager } from '../utils/TimeManager.js';
 import config from '../config.js';
 
+// Recettes utilisant les bûches (logs) au lieu du bois brut
 const PRODUCT_RECIPES = {
-    furniture: { wood: 2 },
+    furniture: { logs: 4 }, // 4 bûches pour 1 meuble
     weapons: { wood: 1, iron: 1 },
     pottery: { clay: 1, rock: 1 },
     jewelry: { gold: 1, iron: 1, wood: 1 }
+};
+
+// Durées de production par produit (en tours)
+const PRODUCT_PRODUCTION_TURNS = {
+    furniture: 2, // 2 tours pour fabriquer des meubles
+    weapons: 1,
+    pottery: 1,
+    jewelry: 1
 };
 
 const PRODUCTION_TIME_DAYS = 7;
@@ -40,31 +49,126 @@ export class FactoryService extends SimService {
         const isActive = factoryData.isActive !== false;
         if (!isActive) return;
 
-        const rawMaterials = factoryData.rawMaterials || {};
-        const products = factoryData.products || {};
+        // Récupérer les données fraîches à chaque étape
+        let factoryDataFresh = await housesStore.getHouse(factoryId);
+        const rawMaterials = factoryDataFresh.rawMaterials || {};
+        const products = factoryDataFresh.products || {};
+        
+        // Stocker le stock de bois actuel (avant collecte) comme stock du tour précédent pour le prochain tour
+        const currentWoodStock = rawMaterials.wood || 0;
+        
+        // Étape 1: Transformation du bois du tour précédent en bûches (si bûcherons recrutés)
+        // Cette transformation utilise previousWoodStock (stock du tour précédent)
+        await this.transformWoodToLogs(factoryId, housesStore, time);
 
-        const lastProductionTime = factoryData.lastProductionTime || 0;
-        const timeSinceProduction = time - lastProductionTime;
+        // Récupérer les données fraîches après transformation
+        factoryDataFresh = await housesStore.getHouse(factoryId);
+        const rawMaterialsAfterTransform = factoryDataFresh.rawMaterials || {};
+        const productsAfterTransform = factoryDataFresh.products || {};
 
-        if (timeSinceProduction >= PRODUCTION_TIME_DAYS) {
-            await this.produceProducts(factoryId, rawMaterials, products, housesStore);
-            await housesStore.updateHouseFields(factoryId, { lastProductionTime: time });
-        }
+        // Étape 2: Production des produits finis
+        await this.produceProducts(factoryId, rawMaterialsAfterTransform, productsAfterTransform, housesStore, time);
 
-        await this.collectResources(factoryId, rawMaterials, housesStore, city);
+        // Récupérer les données fraîches après production
+        factoryDataFresh = await housesStore.getHouse(factoryId);
+        const rawMaterialsAfterProduction = factoryDataFresh.rawMaterials || {};
+
+        // Étape 3: Collecte des ressources naturelles (augmente le stock de bois)
+        await this.collectResources(factoryId, rawMaterialsAfterProduction, housesStore, city);
+        
+        // Stocker le stock de bois actuel (avant collecte) pour la transformation du prochain tour
+        await housesStore.updateHouseFields(factoryId, { 
+            previousWoodStock: currentWoodStock,
+            lastProcessTurn: time
+        });
     }
 
     getMaxStorage(resourceType) {
+        // Les bûches (logs) ont le même stock max que le bois
+        if (resourceType === 'logs') {
+            return config.factoryMaxStorage?.wood || 200;
+        }
         return config.factoryMaxStorage?.[resourceType] || 200;
     }
 
-    async produceProducts(factoryId, rawMaterials, products, housesStore) {
+    /**
+     * Transforme le bois collecté en bûches (logs)
+     * Basé sur le stock de bois du tour précédent
+     * Limitation: ne peut pas transformer plus de 50% du stock si effectif de 1/2
+     */
+    async transformWoodToLogs(factoryId, housesStore, time) {
+        const factoryData = await housesStore.getHouse(factoryId);
+        if (!factoryData) return;
+
+        const productWorkerDistribution = factoryData.productWorkerDistribution || {};
+        const allocatedWorkers = productWorkerDistribution['wood'] || 0;
+        
+        // Si aucun bûcheron n'est recruté, pas de transformation
+        if (allocatedWorkers === 0) {
+            return;
+        }
+
+        // Récupérer le stock de bois du tour précédent
+        const previousWoodStock = factoryData.previousWoodStock || 0;
+        
+        // Si pas de bois au tour précédent, pas de transformation
+        if (previousWoodStock <= 0) {
+            return;
+        }
+
+        // Calculer le pourcentage de transformation selon l'effectif
+        // Si effectif 1/2 (1 worker sur 2), limitation à 50%
+        const maxWorkersPerProduct = 2;
+        const transformationPercentage = allocatedWorkers / maxWorkersPerProduct;
+        
+        // Calculer combien de bois peut être transformé (basé sur le stock du tour précédent)
+        const maxTransformable = Math.floor(previousWoodStock * transformationPercentage);
+        
+        // Récupérer le stock actuel de bûches et de bois
+        const currentLogs = factoryData.logs || 0;
+        const maxLogsStorage = this.getMaxStorage('logs');
+        const remainingLogsCapacity = Math.max(0, maxLogsStorage - currentLogs);
+        
+        const rawMaterials = factoryData.rawMaterials || {};
+        const currentWoodStock = rawMaterials.wood || 0;
+        
+        // Transformer le minimum entre ce qui peut être transformé, la capacité restante, et le stock actuel
+        // On ne peut pas transformer plus que ce qui est disponible actuellement
+        const woodToTransform = Math.min(maxTransformable, remainingLogsCapacity, currentWoodStock, previousWoodStock);
+        
+        if (woodToTransform > 0) {
+            const newLogs = (currentLogs || 0) + woodToTransform;
+            const newRawMaterials = { ...rawMaterials };
+            
+            // Consommer le bois transformé du stock actuel
+            newRawMaterials.wood = Math.max(0, (newRawMaterials.wood || 0) - woodToTransform);
+            
+            // Stocker le message de transformation pour l'affichage
+            const transformationMessage = `Les bûcherons ont transformé ${woodToTransform} bois en bûches`;
+            
+            await housesStore.updateHouseFields(factoryId, {
+                logs: newLogs,
+                rawMaterials: newRawMaterials,
+                lastTransformationMessage: transformationMessage,
+                lastTransformationTurn: time,
+                lastTransformationAmount: woodToTransform
+            });
+        }
+    }
+
+    async produceProducts(factoryId, rawMaterials, products, housesStore, time) {
         // Récupérer la répartition des workers depuis IndexedDB
         const factoryData = await housesStore.getHouse(factoryId);
         if (!factoryData) return;
         
         const productWorkerDistribution = factoryData.productWorkerDistribution || {};
         const productProductionPercentages = factoryData.productProductionPercentages || {};
+        
+        // Récupérer les bûches (logs) depuis la factory
+        const logs = factoryData.logs || 0;
+        
+        // Créer un objet combinant rawMaterials et logs pour les recettes
+        const availableMaterials = { ...rawMaterials, logs: logs };
         
         for (const [productType, recipe] of Object.entries(PRODUCT_RECIPES)) {
             // Vérifier qu'il y a des workers alloués à ce produit
@@ -76,6 +180,16 @@ export class FactoryService extends SimService {
                     newProducts[productType] = 0;
                     await housesStore.updateHouseFields(factoryId, { products: newProducts });
                 }
+                continue;
+            }
+            
+            // Vérifier la durée de production pour ce produit
+            const productionTurns = PRODUCT_PRODUCTION_TURNS[productType] || 1;
+            const lastProductionTurn = factoryData[`lastProductionTurn_${productType}`] || 0;
+            const turnsSinceProduction = time - lastProductionTurn;
+            
+            // Si pas assez de tours écoulés, continuer au produit suivant
+            if (turnsSinceProduction < productionTurns) {
                 continue;
             }
             
@@ -94,21 +208,44 @@ export class FactoryService extends SimService {
 
             if (remainingCapacity <= 0) continue;
 
-            const canProduce = this.canProduceProduct(recipe, rawMaterials);
+            const canProduce = this.canProduceProduct(recipe, availableMaterials);
             if (!canProduce) continue;
 
-            const quantityToProduce = Math.min(1, remainingCapacity);
+            // Pour les meubles: 100 bûches / 4 = 25 meubles
+            // Mais on produit progressivement selon la capacité
+            let quantityToProduce = 1;
+            
+            // Si c'est des meubles, calculer combien on peut produire avec les bûches disponibles
+            if (productType === 'furniture') {
+                const logsNeededPerUnit = recipe.logs || 4;
+                const maxFromLogs = Math.floor(logs / logsNeededPerUnit);
+                quantityToProduce = Math.min(maxFromLogs, remainingCapacity);
+            } else {
+                quantityToProduce = Math.min(1, remainingCapacity);
+            }
+
+            if (quantityToProduce <= 0) continue;
+
             const newProducts = { ...products };
             newProducts[productType] = (newProducts[productType] || 0) + quantityToProduce;
 
+            // Consommer les matières premières
             const newRawMaterials = { ...rawMaterials };
+            let newLogs = logs;
+            
             for (const [material, amount] of Object.entries(recipe)) {
-                newRawMaterials[material] = Math.max(0, (newRawMaterials[material] || 0) - amount);
+                if (material === 'logs') {
+                    newLogs = Math.max(0, newLogs - (amount * quantityToProduce));
+                } else {
+                    newRawMaterials[material] = Math.max(0, (newRawMaterials[material] || 0) - (amount * quantityToProduce));
+                }
             }
 
             await housesStore.updateHouseFields(factoryId, {
                 products: newProducts,
-                rawMaterials: newRawMaterials
+                rawMaterials: newRawMaterials,
+                logs: newLogs,
+                [`lastProductionTurn_${productType}`]: time
             });
         }
     }
@@ -119,6 +256,13 @@ export class FactoryService extends SimService {
             if (available < amount) return false;
         }
         return true;
+    }
+    
+    /**
+     * Récupère les durées de production pour chaque produit
+     */
+    getProductionTurns(productType) {
+        return PRODUCT_PRODUCTION_TURNS[productType] || 1;
     }
 
     /**

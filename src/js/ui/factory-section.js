@@ -191,6 +191,12 @@ class FactorySectionManager {
         const productWorkerDistribution = factory.productWorkerDistribution || {};
         // Pourcentages de production par produit (stockés dans IndexedDB)
         const productProductionPercentages = factory.productProductionPercentages || {};
+        // Stock de bûches (logs)
+        const logs = factory.logs || 0;
+        // Messages de transformation et étapes de production
+        const lastTransformationMessage = factory.lastTransformationMessage || '';
+        const lastTransformationTurn = factory.lastTransformationTurn || 0;
+        const lastProcessTurn = factory.lastProcessTurn || 0;
 
         const rawMaterialNames = {
             wood: 'Bois',
@@ -360,6 +366,24 @@ class FactorySectionManager {
                 }).join('')}
             </div>
 
+            <!-- Section Bûches (étape intermédiaire) -->
+            ${logs > 0 || lastTransformationMessage ? `
+            <div class="factory-intermediate-products">
+                <h4 class="factory-subtitle">Étapes de Transformation</h4>
+                <div class="factory-stock-item">
+                    <div class="factory-stock-item-row">
+                        <label>Bûches:</label>
+                        <span class="factory-stock-value">${logs} / ${getMaxStorage('logs')}</span>
+                    </div>
+                    ${lastTransformationMessage && lastTransformationTurn === lastProcessTurn ? `
+                        <div class="factory-step-message">
+                            <span class="factory-step-text">${lastTransformationMessage}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+            ` : ''}
+
             <div class="factory-products">
                 <h4 class="factory-subtitle">Produits Finis</h4>
                 ${Object.entries(productNames).map(([key, name]) => {
@@ -377,6 +401,24 @@ class FactorySectionManager {
                     const isDisabled = isRecruitButtonDisabled(key);
                     const buttonOpacity = isDisabled ? '0.5' : '1';
                     
+                    // Récupérer la durée de production pour ce produit
+                    const productionTurns = key === 'furniture' ? 2 : 1;
+                    const lastProductionTurn = factory[`lastProductionTurn_${key}`] || 0;
+                    const currentTurn = lastProcessTurn || 0;
+                    const turnsSinceProduction = currentTurn - lastProductionTurn;
+                    const turnsRemaining = Math.max(0, productionTurns - turnsSinceProduction);
+                    
+                    // Message d'étape pour les meubles
+                    let stepMessage = '';
+                    if (key === 'furniture' && productWorkers > 0) {
+                        if (turnsRemaining > 0) {
+                            stepMessage = `<div class="factory-step-message"><span class="factory-step-text">Production en cours: ${turnsRemaining} tour${turnsRemaining > 1 ? 's' : ''} restant${turnsRemaining > 1 ? 's' : ''}</span></div>`;
+                        } else if (logs >= 4) {
+                            const possibleFurniture = Math.floor(logs / 4);
+                            stepMessage = `<div class="factory-step-message"><span class="factory-step-text">Les menuisiers peuvent fabriquer ${possibleFurniture} meuble${possibleFurniture > 1 ? 's' : ''} (${logs} bûches / 4)</span></div>`;
+                        }
+                    }
+                    
                     return `
                     <div class="factory-stock-item">
                         <div class="factory-stock-item-row">
@@ -386,6 +428,7 @@ class FactorySectionManager {
                         <div class="factory-production-status ${statusClass}">
                             ${statusText}
                         </div>
+                        ${stepMessage}
                         <div class="factory-trade-info">
                             <span class="factory-export-info">Exportés: ${getTotalExports(key)}</span>
                         </div>
