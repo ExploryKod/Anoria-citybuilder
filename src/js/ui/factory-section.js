@@ -1,4 +1,5 @@
 import config from '../game/config.js';
+import productionJournalManager from '../stores/ProductionJournalManager.js';
 
 class FactorySectionManager {
     constructor() {
@@ -6,6 +7,7 @@ class FactorySectionManager {
         this.naturalResources = [];
         this.housesStore = null;
         this.naturalResourcesExpanded = true; // Par défaut, le panneau est ouvert
+        this.currentTab = 'factories'; // 'factories' ou 'production-journal'
     }
     
     setHousesStore(housesStore) {
@@ -13,8 +15,8 @@ class FactorySectionManager {
     }
     
     async init() {
-        this.setupEventListeners();
         await this.loadFactories();
+        this.setupEventListeners();
     }
     
     setupEventListeners() {
@@ -23,6 +25,67 @@ class FactorySectionManager {
             refreshBtn.addEventListener('click', () => {
                 this.refresh();
             });
+        }
+        
+        // Bouton d'actualisation spécifique pour le journal de production
+        const journalRefreshBtn = document.getElementById('production-journal-refresh-btn');
+        if (journalRefreshBtn) {
+            journalRefreshBtn.addEventListener('click', async () => {
+                await this.renderProductionJournal();
+            });
+        }
+        
+        // Gestion des onglets - utiliser la délégation d'événements pour s'assurer que ça fonctionne
+        const factoryBoard = document.getElementById('factory-board');
+        if (factoryBoard) {
+            // Supprimer les anciens listeners pour éviter les doublons
+            if (this.handleTabClick) {
+                factoryBoard.removeEventListener('click', this.handleTabClick);
+            }
+            // Créer une nouvelle fonction liée
+            this.handleTabClick = (e) => {
+                const tab = e.target.closest('.factory-tab');
+                if (tab) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const tabName = tab.dataset.tab;
+                    if (tabName) {
+                        this.switchTab(tabName);
+                    }
+                }
+            };
+            factoryBoard.addEventListener('click', this.handleTabClick);
+        }
+    }
+    
+    async switchTab(tabName) {
+        this.currentTab = tabName;
+        
+        // Mettre à jour les onglets
+        const tabs = document.querySelectorAll('.factory-tab');
+        tabs.forEach(tab => {
+            if (tab.dataset.tab === tabName) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
+        
+        // Mettre à jour le contenu
+        const tabContents = document.querySelectorAll('.factory-tab-content');
+        tabContents.forEach(content => {
+            if (content.id === `factory-tab-${tabName}`) {
+                content.classList.add('active');
+            } else {
+                content.classList.remove('active');
+            }
+        });
+        
+        // Charger le contenu approprié
+        if (tabName === 'production-journal') {
+            await this.renderProductionJournal();
+        } else {
+            await this.render();
         }
     }
     
@@ -75,10 +138,10 @@ class FactorySectionManager {
         
         factoriesList.innerHTML = '';
         
-        this.factories.forEach(factory => {
-            const factoryCard = this.createFactoryCard(factory);
+        for (const factory of this.factories) {
+            const factoryCard = await this.createFactoryCard(factory);
             factoriesList.appendChild(factoryCard);
-        });
+        }
     }
     
     async renderNaturalResources(container) {
@@ -175,7 +238,7 @@ class FactorySectionManager {
         }
     }
     
-    createFactoryCard(factory) {
+    async createFactoryCard(factory) {
         const card = document.createElement('div');
         card.className = 'factory-card';
         card.dataset.factoryId = factory.name;
@@ -197,6 +260,43 @@ class FactorySectionManager {
         const lastTransformationMessage = factory.lastTransformationMessage || '';
         const lastTransformationTurn = factory.lastTransformationTurn || 0;
         const lastProcessTurn = factory.lastProcessTurn || 0;
+        
+        // Récupérer les entrées du journal de production pour cette factory
+        const factoryId = `${factory.name}-${factory.x || 0}-${factory.y || 0}`;
+        const journalEntries = await productionJournalManager.getFactoryProductionEntries(factoryId);
+        
+        // Trouver la dernière transformation de bois en bûches
+        const lastTransformEntry = journalEntries
+            .filter(e => e.eventType === 'transform_wood_to_logs')
+            .sort((a, b) => b.turn - a.turn)[0];
+        
+        // Déterminer le message de transformation précis
+        let transformationMessage = '';
+        if (lastTransformEntry) {
+            const transformQuantity = lastTransformEntry.quantity;
+            const transformStocks = lastTransformEntry.remainingStocks || {};
+            const transformLogsAfter = transformStocks.logs || 0;
+            
+            // Si les bûches sont maintenant à 0 mais qu'elles étaient > 0 après transformation
+            // alors elles ont été transformées en meubles
+            if (logs === 0 && transformLogsAfter > 0) {
+                // Trouver les entrées de production de meubles après cette transformation
+                const furnitureEntries = journalEntries
+                    .filter(e => e.eventType === 'produce_furniture' && e.turn > lastTransformEntry.turn)
+                    .sort((a, b) => a.turn - b.turn);
+                
+                if (furnitureEntries.length > 0) {
+                    const totalFurniture = furnitureEntries.reduce((sum, e) => sum + (e.quantity || 0), 0);
+                    transformationMessage = `Les bûcherons ont transformé ${transformQuantity} bois en bûches. Les bûches ont ensuite été transformées en ${totalFurniture} meuble${totalFurniture > 1 ? 's' : ''}`;
+                } else {
+                    transformationMessage = `Les bûcherons ont transformé ${transformQuantity} bois en bûches`;
+                }
+            } else {
+                transformationMessage = `Les bûcherons ont transformé ${transformQuantity} bois en bûches`;
+            }
+        } else if (lastTransformationMessage && lastTransformationTurn === lastProcessTurn) {
+            transformationMessage = lastTransformationMessage;
+        }
 
         const rawMaterialNames = {
             wood: 'Bois',
@@ -367,7 +467,7 @@ class FactorySectionManager {
             </div>
 
             <!-- Section Bûches (étape intermédiaire) -->
-            ${logs > 0 || lastTransformationMessage ? `
+            ${logs > 0 || transformationMessage ? `
             <div class="factory-intermediate-products">
                 <h4 class="factory-subtitle">Étapes de Transformation</h4>
                 <div class="factory-stock-item">
@@ -375,9 +475,9 @@ class FactorySectionManager {
                         <label>Bûches:</label>
                         <span class="factory-stock-value">${logs} / ${getMaxStorage('logs')}</span>
                     </div>
-                    ${lastTransformationMessage && lastTransformationTurn === lastProcessTurn ? `
+                    ${transformationMessage ? `
                         <div class="factory-step-message">
-                            <span class="factory-step-text">${lastTransformationMessage}</span>
+                            <span class="factory-step-text">${transformationMessage}</span>
                         </div>
                     ` : ''}
                 </div>
@@ -604,6 +704,156 @@ class FactorySectionManager {
     
     async refresh() {
         await this.loadFactories();
+        if (this.currentTab === 'production-journal') {
+            await this.renderProductionJournal();
+        }
+    }
+    
+    /**
+     * Affiche le journal de production
+     */
+    async renderProductionJournal() {
+        const journalContent = document.getElementById('production-journal-content');
+        if (!journalContent) return;
+        
+        try {
+            // Afficher un indicateur de chargement
+            journalContent.innerHTML = '<div class="factory-loading">Chargement du journal...</div>';
+            
+            // Récupérer toutes les entrées du journal depuis IndexedDB
+            const entries = await productionJournalManager.getProductionEntries();
+            
+            if (entries.length === 0) {
+                journalContent.innerHTML = '<div class="factory-empty">Aucune entrée dans le journal de production</div>';
+                return;
+            }
+            
+            // Grouper par factory
+            const entriesByFactory = {};
+            entries.forEach(entry => {
+                if (!entriesByFactory[entry.factoryId]) {
+                    entriesByFactory[entry.factoryId] = [];
+                }
+                entriesByFactory[entry.factoryId].push(entry);
+            });
+            
+            // Créer le HTML
+            let html = '<div class="production-journal-list">';
+            
+            // Pour chaque factory
+            for (const [factoryId, factoryEntries] of Object.entries(entriesByFactory)) {
+                // Trier par tour décroissant
+                factoryEntries.sort((a, b) => b.turn - a.turn);
+                
+                html += `<div class="production-journal-factory">`;
+                html += `<h4 class="production-journal-factory-title">Factory: ${factoryId}</h4>`;
+                html += `<div class="production-journal-entries">`;
+                
+                factoryEntries.forEach(entry => {
+                    html += this.createProductionJournalEntryHTML(entry);
+                });
+                
+                html += `</div></div>`;
+            }
+            
+            html += '</div>';
+            journalContent.innerHTML = html;
+        } catch (error) {
+            console.error('[FactorySectionManager] Error rendering production journal:', error);
+            journalContent.innerHTML = '<div class="factory-empty">Erreur lors du chargement du journal</div>';
+        }
+    }
+    
+    /**
+     * Crée le HTML pour une entrée du journal de production
+     */
+    createProductionJournalEntryHTML(entry) {
+        const date = new Date(entry.date);
+        const formattedDate = date.toLocaleString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        // Obtenir le mois et l'année depuis TimeManager
+        let monthDisplay = '';
+        let yearDisplay = '';
+        if (window.TimeManager && entry.turn !== undefined) {
+            const timeInfo = window.TimeManager.getTimeInfo(entry.turn);
+            monthDisplay = timeInfo.month;
+            yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
+        }
+        
+        // Créer le message selon le type d'événement
+        let eventMessage = '';
+        switch (entry.eventType) {
+            case 'collect_wood':
+                eventMessage = `Les bûcherons collectent ${entry.quantity} bois depuis les arbres de la carte`;
+                break;
+            case 'transform_wood_to_logs':
+                eventMessage = `Les bûcherons transforment ${entry.quantity} bois en bûches`;
+                break;
+            case 'deliver_logs_to_carpenters':
+                eventMessage = `Les bûcherons livrent ${entry.quantity} bûches aux menuisiers`;
+                break;
+            case 'produce_furniture':
+                // Si logsConsumed est présent, regrouper les deux étapes
+                if (entry.logsConsumed !== undefined && entry.logsConsumed !== null) {
+                    let durationMessage = '';
+                    // Si productionTurns est présent, afficher les tours de production
+                    if (entry.productionTurns && Array.isArray(entry.productionTurns) && entry.productionTurns.length > 0) {
+                        const turnsStr = entry.productionTurns.join(', ');
+                        const turnsCount = entry.productionTurns.length;
+                        durationMessage = `<br>en ${turnsCount} tour${turnsCount > 1 ? 's' : ''} : ${turnsStr}`;
+                    }
+                    eventMessage = `Les bûcherons livrent ${entry.logsConsumed} bûches aux menuisiers<br>Les menuisiers fabriquent ${entry.quantity} meuble${entry.quantity > 1 ? 's' : ''} avec ${entry.logsConsumed} bûches${durationMessage}`;
+                } else {
+                    let durationMessage = '';
+                    // Si productionTurns est présent, afficher les tours de production
+                    if (entry.productionTurns && Array.isArray(entry.productionTurns) && entry.productionTurns.length > 0) {
+                        const turnsStr = entry.productionTurns.join(', ');
+                        const turnsCount = entry.productionTurns.length;
+                        durationMessage = ` en ${turnsCount} tour${turnsCount > 1 ? 's' : ''} : ${turnsStr}`;
+                    }
+                    eventMessage = `Les menuisiers fabriquent ${entry.quantity} meuble${entry.quantity > 1 ? 's' : ''} avec ${entry.quantity * 4} bûches${durationMessage}`;
+                }
+                break;
+            default:
+                eventMessage = `Événement: ${entry.eventType}`;
+        }
+        
+        const stocks = entry.remainingStocks || {};
+        const hasStocks = (stocks.wood || 0) > 0 || (stocks.logs || 0) > 0 || (stocks.furniture || 0) > 0;
+        
+        const stocksMessage = hasStocks ? `
+            <div class="production-journal-stocks">
+                <div class="production-journal-stocks-title">Stocks restants:</div>
+                <div class="production-journal-stocks-items">
+                    <span class="production-journal-stock-item">Bois: ${stocks.wood || 0}</span>
+                    <span class="production-journal-stock-item">Bûches: ${stocks.logs || 0}</span>
+                    <span class="production-journal-stock-item">Meubles: ${stocks.furniture || 0}</span>
+                </div>
+            </div>
+        ` : '';
+        
+        return `
+            <div class="production-journal-entry">
+                <div class="production-journal-entry-header">
+                    <span class="production-journal-turn">Tour ${entry.turn}</span>
+                    <span class="production-journal-date">${monthDisplay} ${yearDisplay} - ${formattedDate}</span>
+                </div>
+                <div class="production-journal-event">
+                    ${eventMessage}
+                </div>
+                <div class="production-journal-details">
+                    <span class="production-journal-quantity">Quantité: ${entry.quantity}</span>
+                    <span class="production-journal-price">Prix: ${entry.price}€</span>
+                </div>
+                ${stocksMessage}
+            </div>
+        `;
     }
 }
 
@@ -623,6 +873,8 @@ function initFactorySection() {
     
     const observer = new MutationObserver(() => {
         if (factorySection.classList.contains('active')) {
+            // Réinitialiser les event listeners quand la section devient active
+            manager.setupEventListeners();
             manager.refresh();
         }
     });

@@ -2,6 +2,7 @@ import { SimService } from './SimService.js';
 import { checkRoadAccess } from '../modules/ModuleHelper.js';
 import { TimeManager } from '../utils/TimeManager.js';
 import config from '../config.js';
+import productionJournalManager from '../../stores/ProductionJournalManager.js';
 
 // Recettes utilisant les bûches (logs) au lieu du bois brut
 const PRODUCT_RECIPES = {
@@ -20,6 +21,32 @@ const PRODUCT_PRODUCTION_TURNS = {
 };
 
 const PRODUCTION_TIME_DAYS = 7;
+
+/**
+ * Helper function to get factory ID in format name-x-y
+ * @param {Object} factoryData - Factory data from IndexedDB
+ * @returns {string} Factory ID in format name-x-y
+ */
+function getFactoryId(factoryData) {
+    const name = factoryData.name || factoryData.id || '';
+    const x = factoryData.x || 0;
+    const y = factoryData.y || 0;
+    
+    // Si le name contient déjà les coordonnées (format name-x-y), ne pas les ajouter en double
+    const nameParts = name.split('-');
+    if (nameParts.length >= 3) {
+        // Vérifier si les deux derniers éléments sont des nombres (coordonnées)
+        const lastPart = nameParts[nameParts.length - 1];
+        const secondLastPart = nameParts[nameParts.length - 2];
+        if (!isNaN(lastPart) && !isNaN(secondLastPart)) {
+            // Le name contient déjà les coordonnées, retourner tel quel
+            return name;
+        }
+    }
+    
+    // Sinon, ajouter les coordonnées
+    return `${name}-${x}-${y}`;
+}
 
 export class FactoryService extends SimService {
     async simulate(city, housesStore, time = 0) {
@@ -49,38 +76,73 @@ export class FactoryService extends SimService {
         const isActive = factoryData.isActive !== false;
         if (!isActive) return;
 
-        // Récupérer les données fraîches à chaque étape
+        // Récupérer les données fraîches
         let factoryDataFresh = await housesStore.getHouse(factoryId);
         const rawMaterials = factoryDataFresh.rawMaterials || {};
         const products = factoryDataFresh.products || {};
         
-        // Stocker le stock de bois actuel (avant collecte) comme stock du tour précédent pour le prochain tour
-        const currentWoodStock = rawMaterials.wood || 0;
+        // Récupérer les tours de dernière exécution de chaque étape
+        const lastCollectTurn = factoryData.lastCollectTurn || -1;
+        const lastTransformTurn = factoryData.lastTransformTurn || -1;
+        const lastProductionTurn = factoryData.lastProductionTurn || -1;
         
-        // Étape 1: Transformation du bois du tour précédent en bûches (si bûcherons recrutés)
-        // Cette transformation utilise previousWoodStock (stock du tour précédent)
-        await this.transformWoodToLogs(factoryId, housesStore, time);
-
-        // Récupérer les données fraîches après transformation
-        factoryDataFresh = await housesStore.getHouse(factoryId);
-        const rawMaterialsAfterTransform = factoryDataFresh.rawMaterials || {};
-        const productsAfterTransform = factoryDataFresh.products || {};
-
-        // Étape 2: Production des produits finis
-        await this.produceProducts(factoryId, rawMaterialsAfterTransform, productsAfterTransform, housesStore, time);
-
-        // Récupérer les données fraîches après production
-        factoryDataFresh = await housesStore.getHouse(factoryId);
-        const rawMaterialsAfterProduction = factoryDataFresh.rawMaterials || {};
-
-        // Étape 3: Collecte des ressources naturelles (augmente le stock de bois)
-        await this.collectResources(factoryId, rawMaterialsAfterProduction, housesStore, city);
+        // Déterminer quelle étape doit être exécutée ce tour
+        // Ordre : Collecte → Transformation → Production
+        // Une seule étape par tour
         
-        // Stocker le stock de bois actuel (avant collecte) pour la transformation du prochain tour
-        await housesStore.updateHouseFields(factoryId, { 
-            previousWoodStock: currentWoodStock,
-            lastProcessTurn: time
-        });
+        const updates = {};
+        let stepExecuted = false;
+        
+        // Étape 1: Collecte (si pas faite ce tour)
+        // Conditions : pas de collecte ce tour ET (première fois OU après production OU cycle cassé)
+        if (lastCollectTurn < time) {
+            const shouldCollect = 
+                lastCollectTurn === -1 ||  // Première fois
+                lastProductionTurn === time - 1 ||  // Après production
+                (lastCollectTurn < time - 2 && lastTransformTurn < time - 1);  // Cycle cassé
+            
+            if (shouldCollect) {
+                await this.collectResources(factoryId, rawMaterials, housesStore, city, time);
+                
+                // Récupérer le stock de bois APRÈS collecte pour le stocker comme previousWoodStock
+                // Ce stock sera utilisé pour la transformation au tour suivant
+                factoryDataFresh = await housesStore.getHouse(factoryId);
+                const woodStockAfterCollect = factoryDataFresh.rawMaterials?.wood || 0;
+                updates.previousWoodStock = woodStockAfterCollect;
+                updates.lastCollectTurn = time;
+                stepExecuted = true;
+            }
+        }
+        
+        // Étape 2: Transformation (si collecte faite au tour précédent et pas de transformation ce tour)
+        if (!stepExecuted && lastCollectTurn === time - 1 && lastTransformTurn < time) {
+            await this.transformWoodToLogs(factoryId, housesStore, time);
+            updates.lastTransformTurn = time;
+            stepExecuted = true;
+        }
+        
+        // Étape 3: Production (si transformation faite il y a assez de tours et pas de production ce tour)
+        // Pour les meubles, il faut 2 tours après la transformation
+        if (!stepExecuted && lastTransformTurn > 0 && lastProductionTurn < time) {
+            const turnsSinceTransform = time - lastTransformTurn;
+            // Pour les meubles, on attend 2 tours après la transformation
+            // Pour les autres produits, 1 tour suffit
+            const requiredTurnsAfterTransform = 2; // 2 tours pour les meubles
+            if (turnsSinceTransform >= requiredTurnsAfterTransform) {
+                factoryDataFresh = await housesStore.getHouse(factoryId);
+                const rawMaterialsAfterTransform = factoryDataFresh.rawMaterials || {};
+                const productsAfterTransform = factoryDataFresh.products || {};
+                await this.produceProducts(factoryId, rawMaterialsAfterTransform, productsAfterTransform, housesStore, time, lastTransformTurn);
+                updates.lastProductionTurn = time;
+                stepExecuted = true;
+            }
+        }
+        
+        // Mettre à jour les tours de dernière exécution
+        updates.lastProcessTurn = time;
+        if (Object.keys(updates).length > 0) {
+            await housesStore.updateHouseFields(factoryId, updates);
+        }
     }
 
     getMaxStorage(resourceType) {
@@ -153,10 +215,33 @@ export class FactoryService extends SimService {
                 lastTransformationTurn: time,
                 lastTransformationAmount: woodToTransform
             });
+            
+            // Récupérer les stocks restants APRÈS la mise à jour dans IndexedDB
+            const factoryDataAfterUpdate = await housesStore.getHouse(factoryId);
+            const remainingStocks = {
+                wood: factoryDataAfterUpdate.rawMaterials?.wood || 0,
+                logs: factoryDataAfterUpdate.logs || 0,
+                furniture: factoryDataAfterUpdate.products?.furniture || 0
+            };
+            
+            // Enregistrer dans le journal de production
+            const factoryIdFormatted = getFactoryId(factoryData);
+            try {
+                await productionJournalManager.addProductionEntry(
+                    time,
+                    factoryIdFormatted,
+                    'transform_wood_to_logs',
+                    'logs',
+                    woodToTransform,
+                    remainingStocks
+                );
+            } catch (error) {
+                console.error('[FactoryService] Error adding production entry (transform_wood_to_logs):', error);
+            }
         }
     }
 
-    async produceProducts(factoryId, rawMaterials, products, housesStore, time) {
+    async produceProducts(factoryId, rawMaterials, products, housesStore, time, lastTransformTurn = null) {
         // Récupérer la répartition des workers depuis IndexedDB
         const factoryData = await housesStore.getHouse(factoryId);
         if (!factoryData) return;
@@ -167,6 +252,9 @@ export class FactoryService extends SimService {
         // Récupérer les bûches (logs) depuis la factory
         const logs = factoryData.logs || 0;
         
+        // Utiliser les produits depuis IndexedDB (source of truth) plutôt que le paramètre
+        const currentProducts = factoryData.products || {};
+        
         // Créer un objet combinant rawMaterials et logs pour les recettes
         const availableMaterials = { ...rawMaterials, logs: logs };
         
@@ -175,8 +263,8 @@ export class FactoryService extends SimService {
             const allocatedWorkers = productWorkerDistribution[productType] || 0;
             if (allocatedWorkers === 0) {
                 // Pas de workers alloués = pas de production, s'assurer que le stock est à 0
-                if (products[productType] && products[productType] > 0) {
-                    const newProducts = { ...products };
+                if (currentProducts[productType] && currentProducts[productType] > 0) {
+                    const newProducts = { ...currentProducts };
                     newProducts[productType] = 0;
                     await housesStore.updateHouseFields(factoryId, { products: newProducts });
                 }
@@ -185,8 +273,17 @@ export class FactoryService extends SimService {
             
             // Vérifier la durée de production pour ce produit
             const productionTurns = PRODUCT_PRODUCTION_TURNS[productType] || 1;
-            const lastProductionTurn = factoryData[`lastProductionTurn_${productType}`] || 0;
-            const turnsSinceProduction = time - lastProductionTurn;
+            
+            // Si lastTransformTurn est fourni, utiliser la transformation comme référence
+            // Sinon, utiliser lastProductionTurn_${productType}
+            let turnsSinceProduction;
+            if (lastTransformTurn !== null && productType === 'furniture') {
+                // Pour les meubles, compter depuis la transformation
+                turnsSinceProduction = time - lastTransformTurn;
+            } else {
+                const lastProductionTurn = factoryData[`lastProductionTurn_${productType}`] || 0;
+                turnsSinceProduction = time - lastProductionTurn;
+            }
             
             // Si pas assez de tours écoulés, continuer au produit suivant
             if (turnsSinceProduction < productionTurns) {
@@ -203,7 +300,7 @@ export class FactoryService extends SimService {
             const baseMaxStorage = this.getMaxStorage(productType);
             const effectiveMaxStorage = Math.floor(baseMaxStorage * (productionPercentage / 100));
             
-            const currentStock = products[productType] || 0;
+            const currentStock = currentProducts[productType] || 0;
             const remainingCapacity = Math.max(0, effectiveMaxStorage - currentStock);
 
             if (remainingCapacity <= 0) continue;
@@ -226,16 +323,18 @@ export class FactoryService extends SimService {
 
             if (quantityToProduce <= 0) continue;
 
-            const newProducts = { ...products };
+            const newProducts = { ...currentProducts };
             newProducts[productType] = (newProducts[productType] || 0) + quantityToProduce;
 
             // Consommer les matières premières
             const newRawMaterials = { ...rawMaterials };
             let newLogs = logs;
             
+            let logsConsumed = 0;
             for (const [material, amount] of Object.entries(recipe)) {
                 if (material === 'logs') {
-                    newLogs = Math.max(0, newLogs - (amount * quantityToProduce));
+                    logsConsumed = amount * quantityToProduce;
+                    newLogs = Math.max(0, newLogs - logsConsumed);
                 } else {
                     newRawMaterials[material] = Math.max(0, (newRawMaterials[material] || 0) - (amount * quantityToProduce));
                 }
@@ -247,6 +346,56 @@ export class FactoryService extends SimService {
                 logs: newLogs,
                 [`lastProductionTurn_${productType}`]: time
             });
+            
+            // Enregistrer dans le journal de production pour les meubles
+            // Regrouper la livraison et la fabrication en une seule entrée
+            if (productType === 'furniture' && quantityToProduce > 0) {
+                // Récupérer les stocks restants APRÈS la mise à jour dans IndexedDB
+                const factoryDataAfterUpdate = await housesStore.getHouse(factoryId);
+                if (factoryDataAfterUpdate) {
+                    const factoryIdFormatted = getFactoryId(factoryDataAfterUpdate);
+                    const remainingStocks = {
+                        wood: factoryDataAfterUpdate.rawMaterials?.wood || 0,
+                        logs: factoryDataAfterUpdate.logs || 0,
+                        furniture: factoryDataAfterUpdate.products?.furniture || 0
+                    };
+                    
+                    // Enregistrer une seule entrée combinée pour la livraison + fabrication
+                    // Le prix total = prix des bûches livrées + prix des meubles fabriqués
+                    try {
+                        const logsPrice = productionJournalManager.getPrice('logs') * logsConsumed;
+                        const furniturePrice = productionJournalManager.getPrice('furniture') * quantityToProduce;
+                        const totalPrice = logsPrice + furniturePrice;
+                        
+                        // Calculer les tours de production
+                        // Si lastTransformTurn est fourni, la production a duré 2 tours après la transformation
+                        // Exemple: transformation au tour 23, production aux tours 24 et 25
+                        let productionTurns = null;
+                        if (lastTransformTurn !== null && lastTransformTurn !== undefined) {
+                            const productionTurnsCount = PRODUCT_PRODUCTION_TURNS[productType] || 1;
+                            productionTurns = [];
+                            for (let i = 1; i <= productionTurnsCount; i++) {
+                                productionTurns.push(lastTransformTurn + i);
+                            }
+                        }
+                        
+                        // Créer une entrée avec le prix total, logsConsumed et productionTurns
+                        await productionJournalManager.addProductionEntry(
+                            time,
+                            factoryIdFormatted,
+                            'produce_furniture',
+                            'furniture',
+                            quantityToProduce,
+                            remainingStocks,
+                            logsConsumed,
+                            totalPrice,
+                            productionTurns
+                        );
+                    } catch (error) {
+                        console.error('[FactoryService] Error adding production entry (produce_furniture):', error);
+                    }
+                }
+            }
         }
     }
 
@@ -269,7 +418,7 @@ export class FactoryService extends SimService {
      * Collecte les ressources naturelles depuis les trees et boulders
      * Décrémente les stocks des ressources naturelles et incrémente les rawMaterials de la factory
      */
-    async collectResources(factoryId, rawMaterials, housesStore, city) {
+    async collectResources(factoryId, rawMaterials, housesStore, city, time) {
         // Récupérer les données fraîches de la factory depuis IndexedDB
         const factoryData = await housesStore.getHouse(factoryId);
         if (!factoryData) return;
@@ -377,9 +526,40 @@ export class FactoryService extends SimService {
                 collected = true;
             }
         }
-
+        
+        // Mettre à jour les rawMaterials dans IndexedDB si quelque chose a été collecté
         if (collected) {
             await housesStore.updateHouseFields(factoryId, { rawMaterials: newRawMaterials });
+            
+            // Enregistrer la collecte de bois dans le journal de production (si du bois a été collecté)
+            if (newRawMaterials.wood !== undefined && newRawMaterials.wood > (currentRawMaterials.wood || 0)) {
+                const woodCollected = newRawMaterials.wood - (currentRawMaterials.wood || 0);
+                if (woodCollected > 0) {
+                    // Récupérer les stocks restants APRÈS la mise à jour
+                    const factoryDataAfterUpdate = await housesStore.getHouse(factoryId);
+                    if (factoryDataAfterUpdate) {
+                        const factoryIdFormatted = getFactoryId(factoryDataAfterUpdate);
+                        const remainingStocks = {
+                            wood: factoryDataAfterUpdate.rawMaterials?.wood || 0,
+                            logs: factoryDataAfterUpdate.logs || 0,
+                            furniture: factoryDataAfterUpdate.products?.furniture || 0
+                        };
+                        
+                        try {
+                            await productionJournalManager.addProductionEntry(
+                                time,
+                                factoryIdFormatted,
+                                'collect_wood',
+                                'wood',
+                                woodCollected,
+                                remainingStocks
+                            );
+                        } catch (error) {
+                            console.error('[FactoryService] Error adding production entry (collect_wood):', error);
+                        }
+                    }
+                }
+            }
         }
     }
 
