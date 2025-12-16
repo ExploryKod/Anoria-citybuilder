@@ -14,7 +14,7 @@ const PRODUCT_RECIPES = {
 
 // Durées de production par produit (en tours)
 const PRODUCT_PRODUCTION_TURNS = {
-    furniture: 2, // 2 tours pour fabriquer des meubles
+    furniture: 1, // 1 tour pour fabriquer des meubles (le tour suivant la transformation)
     weapons: 1,
     pottery: 1,
     jewelry: 1
@@ -122,18 +122,25 @@ export class FactoryService extends SimService {
         }
         
         // Étape 3: Production (si transformation faite il y a assez de tours et pas de production ce tour)
-        // Pour les meubles, il faut 2 tours après la transformation
+        // Pour les meubles, le meuble est produit 1 tour après la transformation
+        // Tour N : transformation bois → bûches
+        // Tour N+1 : le meuble est produit (4 bûches consommées, 1 meuble ajouté)
         if (!stepExecuted && lastTransformTurn > 0 && lastProductionTurn < time) {
             const turnsSinceTransform = time - lastTransformTurn;
-            // Pour les meubles, on attend 2 tours après la transformation
-            // Pour les autres produits, 1 tour suffit
-            const requiredTurnsAfterTransform = 2; // 2 tours pour les meubles
+            // Pour les meubles, on produit 1 tour après la transformation
+            const requiredTurnsAfterTransform = 1; // 1 tour après la transformation
             if (turnsSinceTransform >= requiredTurnsAfterTransform) {
                 factoryDataFresh = await housesStore.getHouse(factoryId);
                 const rawMaterialsAfterTransform = factoryDataFresh.rawMaterials || {};
                 const productsAfterTransform = factoryDataFresh.products || {};
+                // On passe lastTransformTurn pour que produceProducts puisse calculer correctement
+                // Le meuble sera produit si turnsSinceTransform >= 1
                 await this.produceProducts(factoryId, rawMaterialsAfterTransform, productsAfterTransform, housesStore, time, lastTransformTurn);
-                updates.lastProductionTurn = time;
+                // On met à jour lastProductionTurn seulement si la production a réellement eu lieu
+                // Si turnsSinceTransform >= 1, la production s'est faite, donc on met à jour lastProductionTurn
+                if (turnsSinceTransform >= 1) {
+                    updates.lastProductionTurn = time;
+                }
                 stepExecuted = true;
             }
         }
@@ -279,6 +286,9 @@ export class FactoryService extends SimService {
             let turnsSinceProduction;
             if (lastTransformTurn !== null && productType === 'furniture') {
                 // Pour les meubles, compter depuis la transformation
+                // Le meuble est produit 1 tour après la transformation (tour N+1)
+                // Tour N : transformation bois → bûches
+                // Tour N+1 : le meuble est produit (4 bûches consommées, 1 meuble ajouté)
                 turnsSinceProduction = time - lastTransformTurn;
             } else {
                 const lastProductionTurn = factoryData[`lastProductionTurn_${productType}`] || 0;
@@ -286,6 +296,7 @@ export class FactoryService extends SimService {
             }
             
             // Si pas assez de tours écoulés, continuer au produit suivant
+            // Pour les meubles, on doit attendre 1 tour après la transformation (turnsSinceProduction >= 1)
             if (turnsSinceProduction < productionTurns) {
                 continue;
             }
@@ -368,8 +379,8 @@ export class FactoryService extends SimService {
                         const totalPrice = logsPrice + furniturePrice;
                         
                         // Calculer les tours de production
-                        // Si lastTransformTurn est fourni, la production a duré 2 tours après la transformation
-                        // Exemple: transformation au tour 23, production aux tours 24 et 25
+                        // Si lastTransformTurn est fourni, la production a duré 1 tour après la transformation
+                        // Exemple: transformation au tour 23, production au tour 24
                         let productionTurns = null;
                         if (lastTransformTurn !== null && lastTransformTurn !== undefined) {
                             const productionTurnsCount = PRODUCT_PRODUCTION_TURNS[productType] || 1;
