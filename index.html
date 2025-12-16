@@ -2422,6 +2422,12 @@
                             </div>
                             <!-- Factory Tab Content -->
                             <div class="factory-tab-content active" id="factory-tab-factories">
+                                <div class="factory-select-section">
+                                    <label for="factory-select" class="factory-select-label">Sélectionner une usine:</label>
+                                    <select id="factory-select" class="factory-select">
+                                        <option value="all">Toutes les usines</option>
+                                    </select>
+                                </div>
                                 <div class="factory-factories-list" id="factory-factories-list">
                                     <div class="factory-loading">Chargement des usines...</div>
                                 </div>
@@ -2429,6 +2435,12 @@
                             <!-- Production Journal Tab Content -->
                             <div class="factory-tab-content" id="factory-tab-production-journal">
                                 <div class="production-journal-header">
+                                    <div class="factory-select-section">
+                                        <label for="production-journal-factory-select" class="factory-select-label">Sélectionner une usine:</label>
+                                        <select id="production-journal-factory-select" class="factory-select">
+                                            <option value="all">Toutes les usines</option>
+                                        </select>
+                                    </div>
                                     <button class="factory-refresh-btn" id="production-journal-refresh-btn">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
                                             <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
