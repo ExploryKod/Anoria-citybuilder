@@ -277,20 +277,15 @@ class FactorySectionManager {
             const transformStocks = lastTransformEntry.remainingStocks || {};
             const transformLogsAfter = transformStocks.logs || 0;
             
-            // Si les bûches sont maintenant à 0 mais qu'elles étaient > 0 après transformation
-            // alors elles ont été transformées en meubles
-            if (logs === 0 && transformLogsAfter > 0) {
-                // Trouver les entrées de production de meubles après cette transformation
-                const furnitureEntries = journalEntries
-                    .filter(e => e.eventType === 'produce_furniture' && e.turn > lastTransformEntry.turn)
-                    .sort((a, b) => a.turn - b.turn);
-                
-                if (furnitureEntries.length > 0) {
-                    const totalFurniture = furnitureEntries.reduce((sum, e) => sum + (e.quantity || 0), 0);
-                    transformationMessage = `Les bûcherons ont transformé ${transformQuantity} bois en bûches. Les bûches ont ensuite été transformées en ${totalFurniture} meuble${totalFurniture > 1 ? 's' : ''}`;
-                } else {
-                    transformationMessage = `Les bûcherons ont transformé ${transformQuantity} bois en bûches`;
-                }
+            // Trouver les entrées de production de meubles après cette transformation
+            const furnitureEntries = journalEntries
+                .filter(e => e.eventType === 'produce_furniture' && e.turn > lastTransformEntry.turn)
+                .sort((a, b) => a.turn - b.turn);
+            
+            if (furnitureEntries.length > 0) {
+                const totalFurniture = furnitureEntries.reduce((sum, e) => sum + (e.quantity || 0), 0);
+                const totalLogsConsumed = furnitureEntries.reduce((sum, e) => sum + (e.logsConsumed || 0), 0);
+                transformationMessage = `Les bûcherons ont transformé ${transformQuantity} bois en bûches. Les menuisiers ont transformé ${totalLogsConsumed} bûches en ${totalFurniture} meuble${totalFurniture > 1 ? 's' : ''}`;
             } else {
                 transformationMessage = `Les bûcherons ont transformé ${transformQuantity} bois en bûches`;
             }
@@ -502,7 +497,7 @@ class FactorySectionManager {
                     const buttonOpacity = isDisabled ? '0.5' : '1';
                     
                     // Récupérer la durée de production pour ce produit
-                    const productionTurns = key === 'furniture' ? 2 : 1;
+                    const productionTurns = key === 'furniture' ? 1 : 1;
                     const lastProductionTurn = factory[`lastProductionTurn_${key}`] || 0;
                     const currentTurn = lastProcessTurn || 0;
                     const turnsSinceProduction = currentTurn - lastProductionTurn;
