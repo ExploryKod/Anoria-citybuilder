@@ -8,6 +8,8 @@ class FactorySectionManager {
         this.housesStore = null;
         this.naturalResourcesExpanded = true; // Par défaut, le panneau est ouvert
         this.currentTab = 'factories'; // 'factories' ou 'production-journal'
+        this.selectedFactoryId = 'all'; // ID de la factory sélectionnée, 'all' pour toutes
+        this.selectedJournalFactoryId = 'all'; // ID de la factory sélectionnée dans le journal, 'all' pour toutes
     }
     
     setHousesStore(housesStore) {
@@ -33,6 +35,36 @@ class FactorySectionManager {
             journalRefreshBtn.addEventListener('click', async () => {
                 await this.renderProductionJournal();
             });
+        }
+        
+        // Gestion du select de factory - supprimer l'ancien listener avant d'en ajouter un nouveau
+        const factorySelect = document.getElementById('factory-select');
+        if (factorySelect) {
+            // Supprimer l'ancien listener s'il existe
+            if (this.handleFactorySelectChange) {
+                factorySelect.removeEventListener('change', this.handleFactorySelectChange);
+            }
+            // Créer une nouvelle fonction liée
+            this.handleFactorySelectChange = (e) => {
+                this.selectedFactoryId = e.target.value;
+                this.render();
+            };
+            factorySelect.addEventListener('change', this.handleFactorySelectChange);
+        }
+        
+        // Gestion du select de factory pour le journal de production
+        const journalFactorySelect = document.getElementById('production-journal-factory-select');
+        if (journalFactorySelect) {
+            // Supprimer l'ancien listener s'il existe
+            if (this.handleJournalFactorySelectChange) {
+                journalFactorySelect.removeEventListener('change', this.handleJournalFactorySelectChange);
+            }
+            // Créer une nouvelle fonction liée
+            this.handleJournalFactorySelectChange = (e) => {
+                this.selectedJournalFactoryId = e.target.value;
+                this.renderProductionJournal();
+            };
+            journalFactorySelect.addEventListener('change', this.handleJournalFactorySelectChange);
         }
         
         // Gestion des onglets - utiliser la délégation d'événements pour s'assurer que ça fonctionne
@@ -81,7 +113,7 @@ class FactorySectionManager {
             }
         });
         
-        // Charger le contenu approprié
+        // Charger le contenu approprié - chaque onglet gère son propre select
         if (tabName === 'production-journal') {
             await this.renderProductionJournal();
         } else {
@@ -104,10 +136,23 @@ class FactorySectionManager {
         
         try {
             const allHouses = await this.housesStore.listAllHouses();
-            this.factories = allHouses.filter(house => {
+            const filteredFactories = allHouses.filter(house => {
                 const type = house.type || '';
                 return type.includes('Winery-001');
             });
+            
+            // Éviter les doublons basés sur le nom de la factory
+            const uniqueFactories = [];
+            const seenFactories = new Set();
+            filteredFactories.forEach(factory => {
+                const factoryKey = factory.name;
+                if (!seenFactories.has(factoryKey)) {
+                    seenFactories.add(factoryKey);
+                    uniqueFactories.push(factory);
+                }
+            });
+            
+            this.factories = uniqueFactories;
             
             // Charger les ressources naturelles (trees et boulders)
             this.naturalResources = allHouses.filter(house => {
@@ -127,6 +172,9 @@ class FactorySectionManager {
         // Rendre le panneau des ressources naturelles (async pour recharger depuis IndexedDB)
         await this.renderNaturalResources(factoryBoard);
         
+        // Mettre à jour uniquement le select de la vue par factory (pas celui du journal)
+        this.updateFactorySelect();
+        
         // Rendre les factories
         const factoriesList = document.getElementById('factory-factories-list');
         if (!factoriesList) return;
@@ -136,11 +184,67 @@ class FactorySectionManager {
             return;
         }
         
+        // Filtrer les factories selon la sélection
+        let factoriesToDisplay = this.factories;
+        if (this.selectedFactoryId !== 'all') {
+            factoriesToDisplay = this.factories.filter(f => f.name === this.selectedFactoryId);
+        }
+        
+        if (factoriesToDisplay.length === 0) {
+            factoriesList.innerHTML = '<div class="factory-empty">Aucune usine sélectionnée</div>';
+            return;
+        }
+        
+        // Vider complètement la liste avant d'ajouter les nouvelles factories
         factoriesList.innerHTML = '';
         
-        for (const factory of this.factories) {
-            const factoryCard = await this.createFactoryCard(factory);
-            factoriesList.appendChild(factoryCard);
+        // S'assurer qu'il n'y a pas de doublons dans factoriesToDisplay
+        const displayedFactories = new Set();
+        for (const factory of factoriesToDisplay) {
+            const factoryKey = factory.name;
+            if (!displayedFactories.has(factoryKey)) {
+                displayedFactories.add(factoryKey);
+                const factoryCard = await this.createFactoryCard(factory);
+                factoriesList.appendChild(factoryCard);
+            }
+        }
+    }
+    
+    /**
+     * Met à jour le select de factory pour la vue par factory (onglet "Vue par Factory")
+     * Ce select est complètement indépendant du select du journal de production
+     */
+    updateFactorySelect() {
+        const factorySelect = document.getElementById('factory-select');
+        if (!factorySelect) return;
+        
+        // Sauvegarder la valeur actuelle
+        const currentValue = factorySelect.value;
+        
+        // Vider le select (garder l'option "Toutes les usines")
+        factorySelect.innerHTML = '<option value="all">Toutes les usines</option>';
+        
+        // Ajouter chaque factory au select (s'assurer qu'il n'y a pas de doublons)
+        const addedFactories = new Set();
+        this.factories.forEach(factory => {
+            // Éviter les doublons basés sur le nom
+            if (!addedFactories.has(factory.name)) {
+                const option = document.createElement('option');
+                option.value = factory.name;
+                option.textContent = `${factory.name} (x: ${factory.x || 0}, y: ${factory.y || 0})`;
+                factorySelect.appendChild(option);
+                addedFactories.add(factory.name);
+            }
+        });
+        
+        // Restaurer la valeur précédente si elle existe toujours
+        if (currentValue && Array.from(factorySelect.options).some(opt => opt.value === currentValue)) {
+            factorySelect.value = currentValue;
+            this.selectedFactoryId = currentValue;
+        } else {
+            // Si la factory précédemment sélectionnée n'existe plus, revenir à "all"
+            factorySelect.value = 'all';
+            this.selectedFactoryId = 'all';
         }
     }
     
@@ -243,26 +347,39 @@ class FactorySectionManager {
         card.className = 'factory-card';
         card.dataset.factoryId = factory.name;
         
-        const rawMaterials = factory.rawMaterials || {};
-        const products = factory.products || {};
-        const exports = factory.exports || {};
-        const imports = factory.imports || {};
-        const keepInStock = factory.keepInStock !== false;
-        const factoryEmployees = factory.factoryEmployees || {};
-        const employees = factory.employees || { worker: 0, worker_need: 0, elite: 0, elite_need: 0 };
+        // Recharger les données depuis IndexedDB pour avoir les données à jour (notamment employees et productWorkerDistribution)
+        let factoryData = factory;
+        if (this.housesStore) {
+            try {
+                const freshData = await this.housesStore.getHouse(factory.name);
+                if (freshData) {
+                    factoryData = freshData;
+                }
+            } catch (error) {
+                console.warn('[FactorySectionManager] Failed to reload factory data:', error);
+            }
+        }
+        
+        const rawMaterials = factoryData.rawMaterials || {};
+        const products = factoryData.products || {};
+        const exports = factoryData.exports || {};
+        const imports = factoryData.imports || {};
+        const keepInStock = factoryData.keepInStock !== false;
+        const factoryEmployees = factoryData.factoryEmployees || {};
+        const employees = factoryData.employees || { worker: 0, worker_need: 0, elite: 0, elite_need: 0 };
         // Répartition des workers par produit (stockée dans IndexedDB)
-        const productWorkerDistribution = factory.productWorkerDistribution || {};
+        const productWorkerDistribution = factoryData.productWorkerDistribution || {};
         // Pourcentages de production par produit (stockés dans IndexedDB)
-        const productProductionPercentages = factory.productProductionPercentages || {};
+        const productProductionPercentages = factoryData.productProductionPercentages || {};
         // Stock de bûches (logs)
-        const logs = factory.logs || 0;
+        const logs = factoryData.logs || 0;
         // Messages de transformation et étapes de production
-        const lastTransformationMessage = factory.lastTransformationMessage || '';
-        const lastTransformationTurn = factory.lastTransformationTurn || 0;
-        const lastProcessTurn = factory.lastProcessTurn || 0;
+        const lastTransformationMessage = factoryData.lastTransformationMessage || '';
+        const lastTransformationTurn = factoryData.lastTransformationTurn || 0;
+        const lastProcessTurn = factoryData.lastProcessTurn || 0;
         
         // Récupérer les entrées du journal de production pour cette factory
-        const factoryId = `${factory.name}-${factory.x || 0}-${factory.y || 0}`;
+        const factoryId = `${factoryData.name}-${factoryData.x || 0}-${factoryData.y || 0}`;
         const journalEntries = await productionJournalManager.getFactoryProductionEntries(factoryId);
         
         // Trouver la dernière transformation de bois en bûches
@@ -407,10 +524,10 @@ class FactorySectionManager {
         card.innerHTML = `
             <div class="factory-header">
                 <div class="factory-id">
-                    <strong>Usine ID:</strong> ${factory.name}
+                    <strong>Usine ID:</strong> ${factoryData.name}
                 </div>
                 <div class="factory-location">
-                    Position: x: ${factory.x || 0} | y: ${factory.y || 0}
+                    Position: x: ${factoryData.x || 0} | y: ${factoryData.y || 0}
                 </div>
             </div>
 
@@ -447,7 +564,7 @@ class FactorySectionManager {
                             <span class="factory-product-workers">Workers: ${productWorkers} / 2</span>
                             <button 
                                 class="factory-recruit-btn" 
-                                data-factory="${factory.name}" 
+                                data-factory="${factoryData.name}" 
                                 data-product="${key}"
                                 data-product-type="rawMaterial"
                                 ${isDisabled ? 'disabled' : ''}
@@ -498,7 +615,7 @@ class FactorySectionManager {
                     
                     // Récupérer la durée de production pour ce produit
                     const productionTurns = key === 'furniture' ? 1 : 1;
-                    const lastProductionTurn = factory[`lastProductionTurn_${key}`] || 0;
+                    const lastProductionTurn = factoryData[`lastProductionTurn_${key}`] || 0;
                     const currentTurn = lastProcessTurn || 0;
                     const turnsSinceProduction = currentTurn - lastProductionTurn;
                     const turnsRemaining = Math.max(0, productionTurns - turnsSinceProduction);
@@ -531,7 +648,7 @@ class FactorySectionManager {
                             <span class="factory-product-workers">Workers: ${productWorkers} / 2</span>
                             <button 
                                 class="factory-recruit-btn" 
-                                data-factory="${factory.name}" 
+                                data-factory="${factoryData.name}" 
                                 data-product="${key}"
                                 data-product-type="product"
                                 ${isDisabled ? 'disabled' : ''}
@@ -548,13 +665,13 @@ class FactorySectionManager {
             <div class="factory-controls">
                 <div class="factory-control-item">
                     <label class="factory-toggle-label">
-                        <input type="checkbox" class="factory-toggle" data-factory="${factory.name}" data-setting="keepInStock" ${keepInStock ? 'checked' : ''}>
+                        <input type="checkbox" class="factory-toggle" data-factory="${factoryData.name}" data-setting="keepInStock" ${keepInStock ? 'checked' : ''}>
                         <span>Conserver en stock (ne pas exporter)</span>
                     </label>
                 </div>
                 <div class="factory-control-item">
                     <label class="factory-toggle-label">
-                        <input type="checkbox" class="factory-toggle" data-factory="${factory.name}" data-setting="isActive" ${factory.isActive !== false ? 'checked' : ''}>
+                        <input type="checkbox" class="factory-toggle" data-factory="${factoryData.name}" data-setting="isActive" ${factoryData.isActive !== false ? 'checked' : ''}>
                         <span>Usine active</span>
                     </label>
                 </div>
@@ -581,7 +698,7 @@ class FactorySectionManager {
             </div>
         `;
         
-        this.attachEventListeners(card, factory);
+        this.attachEventListeners(card, factoryData);
         
         return card;
     }
@@ -711,6 +828,9 @@ class FactorySectionManager {
         const journalContent = document.getElementById('production-journal-content');
         if (!journalContent) return;
         
+        // Mettre à jour le select avec toutes les factories disponibles dans le journal
+        await this.updateJournalFactorySelect();
+        
         try {
             // Afficher un indicateur de chargement
             journalContent.innerHTML = '<div class="factory-loading">Chargement du journal...</div>';
@@ -723,9 +843,20 @@ class FactorySectionManager {
                 return;
             }
             
+            // Filtrer les entrées selon la sélection
+            let filteredEntries = entries;
+            if (this.selectedJournalFactoryId !== 'all') {
+                filteredEntries = entries.filter(entry => entry.factoryId === this.selectedJournalFactoryId);
+            }
+            
+            if (filteredEntries.length === 0) {
+                journalContent.innerHTML = '<div class="factory-empty">Aucune entrée pour l\'usine sélectionnée</div>';
+                return;
+            }
+            
             // Grouper par factory
             const entriesByFactory = {};
-            entries.forEach(entry => {
+            filteredEntries.forEach(entry => {
                 if (!entriesByFactory[entry.factoryId]) {
                     entriesByFactory[entry.factoryId] = [];
                 }
@@ -760,6 +891,51 @@ class FactorySectionManager {
     }
     
     /**
+     * Met à jour le select de factory pour le journal de production (onglet "Journal de Production")
+     * Ce select est complètement indépendant du select de la vue par factory
+     * Il liste uniquement les factories qui ont des entrées dans le journal
+     */
+    async updateJournalFactorySelect() {
+        const journalFactorySelect = document.getElementById('production-journal-factory-select');
+        if (!journalFactorySelect) return;
+        
+        // Récupérer toutes les entrées du journal pour obtenir la liste des factories
+        const entries = await productionJournalManager.getProductionEntries();
+        
+        // Extraire les IDs de factories uniques
+        const factoryIds = new Set();
+        entries.forEach(entry => {
+            if (entry.factoryId) {
+                factoryIds.add(entry.factoryId);
+            }
+        });
+        
+        // Sauvegarder la valeur actuelle
+        const currentValue = journalFactorySelect.value;
+        
+        // Vider le select (garder l'option "Toutes les usines")
+        journalFactorySelect.innerHTML = '<option value="all">Toutes les usines</option>';
+        
+        // Ajouter chaque factory au select
+        Array.from(factoryIds).sort().forEach(factoryId => {
+            const option = document.createElement('option');
+            option.value = factoryId;
+            option.textContent = factoryId;
+            journalFactorySelect.appendChild(option);
+        });
+        
+        // Restaurer la valeur précédente si elle existe toujours
+        if (currentValue && Array.from(journalFactorySelect.options).some(opt => opt.value === currentValue)) {
+            journalFactorySelect.value = currentValue;
+            this.selectedJournalFactoryId = currentValue;
+        } else {
+            // Si la factory précédemment sélectionnée n'existe plus, revenir à "all"
+            journalFactorySelect.value = 'all';
+            this.selectedJournalFactoryId = 'all';
+        }
+    }
+    
+    /**
      * Crée le HTML pour une entrée du journal de production
      */
     createProductionJournalEntryHTML(entry) {
@@ -781,6 +957,14 @@ class FactorySectionManager {
             yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
         }
         
+        // Mapping des noms de produits
+        const productNames = {
+            furniture: 'meuble',
+            weapons: 'arme',
+            pottery: 'poterie',
+            jewelry: 'bijou'
+        };
+        
         // Créer le message selon le type d'événement
         let eventMessage = '';
         switch (entry.eventType) {
@@ -794,6 +978,14 @@ class FactorySectionManager {
                 eventMessage = `Les bûcherons livrent ${entry.quantity} bûches aux menuisiers`;
                 break;
             case 'produce_furniture':
+                // Obtenir le nom du produit
+                const productType = entry.resourceType || 'furniture';
+                const productName = productNames[productType] || 'produit';
+                const productNamePlural = productType === 'furniture' ? 'meubles' : 
+                                         productType === 'weapons' ? 'armes' :
+                                         productType === 'pottery' ? 'poteries' :
+                                         productType === 'jewelry' ? 'bijoux' : 'produits';
+                
                 // Si logsConsumed est présent, regrouper les deux étapes
                 if (entry.logsConsumed !== undefined && entry.logsConsumed !== null) {
                     let durationMessage = '';
@@ -801,18 +993,26 @@ class FactorySectionManager {
                     if (entry.productionTurns && Array.isArray(entry.productionTurns) && entry.productionTurns.length > 0) {
                         const turnsStr = entry.productionTurns.join(', ');
                         const turnsCount = entry.productionTurns.length;
-                        durationMessage = `<br>en ${turnsCount} tour${turnsCount > 1 ? 's' : ''} : ${turnsStr}`;
+                        if (turnsCount === 1) {
+                            durationMessage = `<br>Production de ${entry.quantity} ${entry.quantity > 1 ? productNamePlural : productName} au tour ${turnsStr}`;
+                        } else {
+                            durationMessage = `<br>Production de ${entry.quantity} ${productNamePlural} en ${turnsCount} tours (tours ${turnsStr})`;
+                        }
                     }
-                    eventMessage = `Les bûcherons livrent ${entry.logsConsumed} bûches aux menuisiers<br>Les menuisiers fabriquent ${entry.quantity} meuble${entry.quantity > 1 ? 's' : ''} avec ${entry.logsConsumed} bûches${durationMessage}`;
+                    eventMessage = `Les bûcherons livrent ${entry.logsConsumed} bûches aux menuisiers<br>Les menuisiers fabriquent ${entry.quantity} ${entry.quantity > 1 ? productNamePlural : productName} avec ${entry.logsConsumed} bûches${durationMessage}`;
                 } else {
                     let durationMessage = '';
                     // Si productionTurns est présent, afficher les tours de production
                     if (entry.productionTurns && Array.isArray(entry.productionTurns) && entry.productionTurns.length > 0) {
                         const turnsStr = entry.productionTurns.join(', ');
                         const turnsCount = entry.productionTurns.length;
-                        durationMessage = ` en ${turnsCount} tour${turnsCount > 1 ? 's' : ''} : ${turnsStr}`;
+                        if (turnsCount === 1) {
+                            durationMessage = ` Production de ${entry.quantity} ${entry.quantity > 1 ? productNamePlural : productName} au tour ${turnsStr}`;
+                        } else {
+                            durationMessage = ` Production de ${entry.quantity} ${productNamePlural} en ${turnsCount} tours (tours ${turnsStr})`;
+                        }
                     }
-                    eventMessage = `Les menuisiers fabriquent ${entry.quantity} meuble${entry.quantity > 1 ? 's' : ''} avec ${entry.quantity * 4} bûches${durationMessage}`;
+                    eventMessage = `Les menuisiers fabriquent ${entry.quantity} ${entry.quantity > 1 ? productNamePlural : productName} avec ${entry.quantity * 4} bûches${durationMessage}`;
                 }
                 break;
             default:
