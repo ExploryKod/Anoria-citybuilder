@@ -13,19 +13,34 @@ class ProductionJournalManager {
      * Prix des ressources et produits
      */
     static PRICES = {
-        wood: 2,      // 2 euros pour 1 bois
-        logs: 4,       // 4 euros pour 1 bûche
-        furniture: 6   // 6 euros pour 1 meuble
+        wood: 2,          // 2 euros pour 1 bois
+        logs: 4,          // 4 euros pour 1 bûche
+        furniture: 6,      // 6 euros pour 1 meuble
+        gold: 5,          // 5 euros pour 1 or
+        refinedGold: 8,   // 8 euros pour 1 or raffiné
+        jewelry: 12,      // 12 euros pour 1 bijou
+        clay: 2,          // 2 euros pour 1 argile
+        refinedClay: 4,   // 4 euros pour 1 argile raffinée
+        pottery: 6,       // 6 euros pour 1 poterie
+        iron: 3,          // 3 euros pour 1 fer
+        refinedIron: 6,   // 6 euros pour 1 fer raffiné
+        weapons: 10       // 10 euros pour 1 arme
     };
 
     /**
      * Types d'événements de production
      */
     static EVENT_TYPES = {
-        COLLECT_WOOD: 'collect_wood',           // Les bûcherons collectent du bois
+        COLLECT_WOOD: 'collect_wood',                    // Les bûcherons collectent du bois
         TRANSFORM_WOOD_TO_LOGS: 'transform_wood_to_logs', // Transformation bois → bûches
+        TRANSFORM_GOLD_TO_REFINED_GOLD: 'transform_gold_to_refined_gold', // Transformation or → or raffiné
+        TRANSFORM_CLAY_TO_REFINED_CLAY: 'transform_clay_to_refined_clay', // Transformation argile → argile raffinée
+        TRANSFORM_IRON_TO_REFINED_IRON: 'transform_iron_to_refined_iron', // Transformation fer → fer raffiné
         DELIVER_LOGS_TO_CARPENTERS: 'deliver_logs_to_carpenters', // Livraison bûches aux menuisiers
-        PRODUCE_FURNITURE: 'produce_furniture'  // Fabrication de meubles
+        PRODUCE_FURNITURE: 'produce_furniture',         // Fabrication de meubles
+        PRODUCE_JEWELRY: 'produce_jewelry',             // Fabrication de bijoux
+        PRODUCE_POTTERY: 'produce_pottery',             // Fabrication de poteries
+        PRODUCE_WEAPONS: 'produce_weapons'              // Fabrication d'armes
     };
 
     /**
@@ -33,15 +48,15 @@ class ProductionJournalManager {
      * @param {number} turn - Turn number
      * @param {string} factoryId - Factory ID (name-x-y)
      * @param {string} eventType - Type of event (EVENT_TYPES)
-     * @param {string} resourceType - Type of resource (wood, logs, furniture)
+     * @param {string} resourceType - Type of resource (wood, logs, furniture, gold, refinedGold, jewelry, clay, refinedClay, pottery, iron, refinedIron, weapons)
      * @param {number} quantity - Quantity
-     * @param {Object} remainingStocks - Remaining stocks {wood, logs, furniture}
-     * @param {number} logsConsumed - Optional: number of logs consumed (for furniture production)
+     * @param {Object} remainingStocks - Remaining stocks
+     * @param {number} materialConsumed - Optional: number of refined material consumed (logs for furniture, refinedGold for jewelry, refinedClay for pottery, refinedIron for weapons)
      * @param {number} customPrice - Optional: custom price (if not provided, calculated automatically)
      * @param {Array<number>} productionTurns - Optional: array of turns during which production occurred (e.g., [24, 25] for 2-turn production)
      * @returns {Promise<number>} Entry ID
      */
-    async addProductionEntry(turn, factoryId, eventType, resourceType, quantity, remainingStocks = {}, logsConsumed = null, customPrice = null, productionTurns = null) {
+    async addProductionEntry(turn, factoryId, eventType, resourceType, quantity, remainingStocks = {}, materialConsumed = null, customPrice = null, productionTurns = null) {
         try {
             // Vérifier que le store existe
             if (!this.db.productionJournal) {
@@ -78,9 +93,14 @@ class ProductionJournalManager {
                 remainingStocks: remainingStocks
             };
             
-            // Si logsConsumed est fourni, l'ajouter à l'entrée (pour la production de meubles)
-            if (logsConsumed !== null && logsConsumed !== undefined) {
-                entry.logsConsumed = logsConsumed;
+            // Si materialConsumed est fourni, l'ajouter à l'entrée
+            // Pour la rétrocompatibilité, on garde aussi logsConsumed pour les meubles
+            if (materialConsumed !== null && materialConsumed !== undefined) {
+                entry.materialConsumed = materialConsumed;
+                // Pour la rétrocompatibilité avec les meubles
+                if (eventType === 'produce_furniture') {
+                    entry.logsConsumed = materialConsumed;
+                }
             }
             
             // Si productionTurns est fourni, l'ajouter à l'entrée (pour indiquer les tours de production)
