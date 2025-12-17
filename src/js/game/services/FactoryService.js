@@ -7,9 +7,9 @@ import productionJournalManager from '../../stores/ProductionJournalManager.js';
 // Recettes utilisant les bûches (logs) au lieu du bois brut
 const PRODUCT_RECIPES = {
     furniture: { logs: 4 }, // 4 bûches pour 1 meuble
-    weapons: { wood: 1, iron: 1 },
-    pottery: { clay: 1, rock: 1 },
-    jewelry: { gold: 1, iron: 1, wood: 1 }
+    weapons: { refinedIron: 4 }, // 4 fer raffiné pour 1 arme
+    pottery: { refinedClay: 4 }, // 4 argile raffinée pour 1 poterie
+    jewelry: { refinedGold: 4 } // 4 or raffiné pour 1 bijou
 };
 
 // Durées de production par produit (en tours)
@@ -104,40 +104,42 @@ export class FactoryService extends SimService {
             if (shouldCollect) {
                 await this.collectResources(factoryId, rawMaterials, housesStore, city, time);
                 
-                // Récupérer le stock de bois APRÈS collecte pour le stocker comme previousWoodStock
-                // Ce stock sera utilisé pour la transformation au tour suivant
+                // Récupérer les stocks APRÈS collecte pour les stocker comme previousStock
+                // Ces stocks seront utilisés pour la transformation au tour suivant
                 factoryDataFresh = await housesStore.getHouse(factoryId);
-                const woodStockAfterCollect = factoryDataFresh.rawMaterials?.wood || 0;
-                updates.previousWoodStock = woodStockAfterCollect;
+                const rawMaterialsAfterCollect = factoryDataFresh.rawMaterials || {};
+                updates.previousWoodStock = rawMaterialsAfterCollect.wood || 0;
+                updates.previousGoldStock = rawMaterialsAfterCollect.gold || 0;
+                updates.previousClayStock = rawMaterialsAfterCollect.clay || 0;
+                updates.previousIronStock = rawMaterialsAfterCollect.iron || 0;
                 updates.lastCollectTurn = time;
                 stepExecuted = true;
             }
         }
         
         // Étape 2: Transformation (si collecte faite au tour précédent et pas de transformation ce tour)
+        // On transforme tous les matériaux en parallèle
         if (!stepExecuted && lastCollectTurn === time - 1 && lastTransformTurn < time) {
-            await this.transformWoodToLogs(factoryId, housesStore, time);
+            await this.transformAllMaterials(factoryId, housesStore, time);
             updates.lastTransformTurn = time;
             stepExecuted = true;
         }
         
         // Étape 3: Production (si transformation faite il y a assez de tours et pas de production ce tour)
-        // Pour les meubles, le meuble est produit 1 tour après la transformation
-        // Tour N : transformation bois → bûches
-        // Tour N+1 : le meuble est produit (4 bûches consommées, 1 meuble ajouté)
+        // Pour tous les produits, ils sont produits 1 tour après la transformation
+        // Tour N : transformation matériaux → matériaux raffinés
+        // Tour N+1 : les produits sont fabriqués
         if (!stepExecuted && lastTransformTurn > 0 && lastProductionTurn < time) {
             const turnsSinceTransform = time - lastTransformTurn;
-            // Pour les meubles, on produit 1 tour après la transformation
+            // Pour tous les produits, on produit 1 tour après la transformation
             const requiredTurnsAfterTransform = 1; // 1 tour après la transformation
             if (turnsSinceTransform >= requiredTurnsAfterTransform) {
                 factoryDataFresh = await housesStore.getHouse(factoryId);
                 const rawMaterialsAfterTransform = factoryDataFresh.rawMaterials || {};
                 const productsAfterTransform = factoryDataFresh.products || {};
                 // On passe lastTransformTurn pour que produceProducts puisse calculer correctement
-                // Le meuble sera produit si turnsSinceTransform >= 1
                 await this.produceProducts(factoryId, rawMaterialsAfterTransform, productsAfterTransform, housesStore, time, lastTransformTurn);
                 // On met à jour lastProductionTurn seulement si la production a réellement eu lieu
-                // Si turnsSinceTransform >= 1, la production s'est faite, donc on met à jour lastProductionTurn
                 if (turnsSinceTransform >= 1) {
                     updates.lastProductionTurn = time;
                 }
@@ -153,11 +155,32 @@ export class FactoryService extends SimService {
     }
 
     getMaxStorage(resourceType) {
-        // Les bûches (logs) ont le même stock max que le bois
+        // Les matériaux raffinés ont le même stock max que leur matière première
         if (resourceType === 'logs') {
             return config.factoryMaxStorage?.wood || 200;
         }
+        if (resourceType === 'refinedGold') {
+            return config.factoryMaxStorage?.gold || 200;
+        }
+        if (resourceType === 'refinedClay') {
+            return config.factoryMaxStorage?.clay || 200;
+        }
+        if (resourceType === 'refinedIron') {
+            return config.factoryMaxStorage?.iron || 200;
+        }
         return config.factoryMaxStorage?.[resourceType] || 200;
+    }
+
+    /**
+     * Transforme tous les matériaux collectés en matériaux raffinés
+     * Basé sur les stocks du tour précédent
+     * Limitation: ne peut pas transformer plus de 50% du stock si effectif de 1/2
+     */
+    async transformAllMaterials(factoryId, housesStore, time) {
+        await this.transformWoodToLogs(factoryId, housesStore, time);
+        await this.transformGoldToRefinedGold(factoryId, housesStore, time);
+        await this.transformClayToRefinedClay(factoryId, housesStore, time);
+        await this.transformIronToRefinedIron(factoryId, housesStore, time);
     }
 
     /**
@@ -248,6 +271,204 @@ export class FactoryService extends SimService {
         }
     }
 
+    /**
+     * Transforme l'or collecté en or raffiné (refinedGold)
+     * Basé sur le stock d'or du tour précédent
+     */
+    async transformGoldToRefinedGold(factoryId, housesStore, time) {
+        const factoryData = await housesStore.getHouse(factoryId);
+        if (!factoryData) return;
+
+        const productWorkerDistribution = factoryData.productWorkerDistribution || {};
+        const allocatedWorkers = productWorkerDistribution['gold'] || 0;
+        
+        if (allocatedWorkers === 0) {
+            return;
+        }
+
+        const previousGoldStock = factoryData.previousGoldStock || 0;
+        if (previousGoldStock <= 0) {
+            return;
+        }
+
+        const maxWorkersPerProduct = 2;
+        const transformationPercentage = allocatedWorkers / maxWorkersPerProduct;
+        const maxTransformable = Math.floor(previousGoldStock * transformationPercentage);
+        
+        const currentRefinedGold = factoryData.refinedGold || 0;
+        const maxRefinedGoldStorage = this.getMaxStorage('refinedGold');
+        const remainingRefinedGoldCapacity = Math.max(0, maxRefinedGoldStorage - currentRefinedGold);
+        
+        const rawMaterials = factoryData.rawMaterials || {};
+        const currentGoldStock = rawMaterials.gold || 0;
+        
+        const goldToTransform = Math.min(maxTransformable, remainingRefinedGoldCapacity, currentGoldStock, previousGoldStock);
+        
+        if (goldToTransform > 0) {
+            const newRefinedGold = (currentRefinedGold || 0) + goldToTransform;
+            const newRawMaterials = { ...rawMaterials };
+            newRawMaterials.gold = Math.max(0, (newRawMaterials.gold || 0) - goldToTransform);
+            
+            await housesStore.updateHouseFields(factoryId, {
+                refinedGold: newRefinedGold,
+                rawMaterials: newRawMaterials
+            });
+            
+            const factoryDataAfterUpdate = await housesStore.getHouse(factoryId);
+            const remainingStocks = {
+                gold: factoryDataAfterUpdate.rawMaterials?.gold || 0,
+                refinedGold: factoryDataAfterUpdate.refinedGold || 0,
+                jewelry: factoryDataAfterUpdate.products?.jewelry || 0
+            };
+            
+            const factoryIdFormatted = getFactoryId(factoryData);
+            try {
+                await productionJournalManager.addProductionEntry(
+                    time,
+                    factoryIdFormatted,
+                    'transform_gold_to_refined_gold',
+                    'refinedGold',
+                    goldToTransform,
+                    remainingStocks
+                );
+            } catch (error) {
+                console.error('[FactoryService] Error adding production entry (transform_gold_to_refined_gold):', error);
+            }
+        }
+    }
+
+    /**
+     * Transforme l'argile collectée en argile raffinée (refinedClay)
+     * Basé sur le stock d'argile du tour précédent
+     */
+    async transformClayToRefinedClay(factoryId, housesStore, time) {
+        const factoryData = await housesStore.getHouse(factoryId);
+        if (!factoryData) return;
+
+        const productWorkerDistribution = factoryData.productWorkerDistribution || {};
+        const allocatedWorkers = productWorkerDistribution['clay'] || 0;
+        
+        if (allocatedWorkers === 0) {
+            return;
+        }
+
+        const previousClayStock = factoryData.previousClayStock || 0;
+        if (previousClayStock <= 0) {
+            return;
+        }
+
+        const maxWorkersPerProduct = 2;
+        const transformationPercentage = allocatedWorkers / maxWorkersPerProduct;
+        const maxTransformable = Math.floor(previousClayStock * transformationPercentage);
+        
+        const currentRefinedClay = factoryData.refinedClay || 0;
+        const maxRefinedClayStorage = this.getMaxStorage('refinedClay');
+        const remainingRefinedClayCapacity = Math.max(0, maxRefinedClayStorage - currentRefinedClay);
+        
+        const rawMaterials = factoryData.rawMaterials || {};
+        const currentClayStock = rawMaterials.clay || 0;
+        
+        const clayToTransform = Math.min(maxTransformable, remainingRefinedClayCapacity, currentClayStock, previousClayStock);
+        
+        if (clayToTransform > 0) {
+            const newRefinedClay = (currentRefinedClay || 0) + clayToTransform;
+            const newRawMaterials = { ...rawMaterials };
+            newRawMaterials.clay = Math.max(0, (newRawMaterials.clay || 0) - clayToTransform);
+            
+            await housesStore.updateHouseFields(factoryId, {
+                refinedClay: newRefinedClay,
+                rawMaterials: newRawMaterials
+            });
+            
+            const factoryDataAfterUpdate = await housesStore.getHouse(factoryId);
+            const remainingStocks = {
+                clay: factoryDataAfterUpdate.rawMaterials?.clay || 0,
+                refinedClay: factoryDataAfterUpdate.refinedClay || 0,
+                pottery: factoryDataAfterUpdate.products?.pottery || 0
+            };
+            
+            const factoryIdFormatted = getFactoryId(factoryData);
+            try {
+                await productionJournalManager.addProductionEntry(
+                    time,
+                    factoryIdFormatted,
+                    'transform_clay_to_refined_clay',
+                    'refinedClay',
+                    clayToTransform,
+                    remainingStocks
+                );
+            } catch (error) {
+                console.error('[FactoryService] Error adding production entry (transform_clay_to_refined_clay):', error);
+            }
+        }
+    }
+
+    /**
+     * Transforme le fer collecté en fer raffiné (refinedIron)
+     * Basé sur le stock de fer du tour précédent
+     */
+    async transformIronToRefinedIron(factoryId, housesStore, time) {
+        const factoryData = await housesStore.getHouse(factoryId);
+        if (!factoryData) return;
+
+        const productWorkerDistribution = factoryData.productWorkerDistribution || {};
+        const allocatedWorkers = productWorkerDistribution['iron'] || 0;
+        
+        if (allocatedWorkers === 0) {
+            return;
+        }
+
+        const previousIronStock = factoryData.previousIronStock || 0;
+        if (previousIronStock <= 0) {
+            return;
+        }
+
+        const maxWorkersPerProduct = 2;
+        const transformationPercentage = allocatedWorkers / maxWorkersPerProduct;
+        const maxTransformable = Math.floor(previousIronStock * transformationPercentage);
+        
+        const currentRefinedIron = factoryData.refinedIron || 0;
+        const maxRefinedIronStorage = this.getMaxStorage('refinedIron');
+        const remainingRefinedIronCapacity = Math.max(0, maxRefinedIronStorage - currentRefinedIron);
+        
+        const rawMaterials = factoryData.rawMaterials || {};
+        const currentIronStock = rawMaterials.iron || 0;
+        
+        const ironToTransform = Math.min(maxTransformable, remainingRefinedIronCapacity, currentIronStock, previousIronStock);
+        
+        if (ironToTransform > 0) {
+            const newRefinedIron = (currentRefinedIron || 0) + ironToTransform;
+            const newRawMaterials = { ...rawMaterials };
+            newRawMaterials.iron = Math.max(0, (newRawMaterials.iron || 0) - ironToTransform);
+            
+            await housesStore.updateHouseFields(factoryId, {
+                refinedIron: newRefinedIron,
+                rawMaterials: newRawMaterials
+            });
+            
+            const factoryDataAfterUpdate = await housesStore.getHouse(factoryId);
+            const remainingStocks = {
+                iron: factoryDataAfterUpdate.rawMaterials?.iron || 0,
+                refinedIron: factoryDataAfterUpdate.refinedIron || 0,
+                weapons: factoryDataAfterUpdate.products?.weapons || 0
+            };
+            
+            const factoryIdFormatted = getFactoryId(factoryData);
+            try {
+                await productionJournalManager.addProductionEntry(
+                    time,
+                    factoryIdFormatted,
+                    'transform_iron_to_refined_iron',
+                    'refinedIron',
+                    ironToTransform,
+                    remainingStocks
+                );
+            } catch (error) {
+                console.error('[FactoryService] Error adding production entry (transform_iron_to_refined_iron):', error);
+            }
+        }
+    }
+
     async produceProducts(factoryId, rawMaterials, products, housesStore, time, lastTransformTurn = null) {
         // Récupérer la répartition des workers depuis IndexedDB
         const factoryData = await housesStore.getHouse(factoryId);
@@ -256,14 +477,23 @@ export class FactoryService extends SimService {
         const productWorkerDistribution = factoryData.productWorkerDistribution || {};
         const productProductionPercentages = factoryData.productProductionPercentages || {};
         
-        // Récupérer les bûches (logs) depuis la factory
+        // Récupérer les matériaux raffinés depuis la factory
         const logs = factoryData.logs || 0;
+        const refinedGold = factoryData.refinedGold || 0;
+        const refinedClay = factoryData.refinedClay || 0;
+        const refinedIron = factoryData.refinedIron || 0;
         
         // Utiliser les produits depuis IndexedDB (source of truth) plutôt que le paramètre
         const currentProducts = factoryData.products || {};
         
-        // Créer un objet combinant rawMaterials et logs pour les recettes
-        const availableMaterials = { ...rawMaterials, logs: logs };
+        // Créer un objet combinant rawMaterials et matériaux raffinés pour les recettes
+        const availableMaterials = { 
+            ...rawMaterials, 
+            logs: logs,
+            refinedGold: refinedGold,
+            refinedClay: refinedClay,
+            refinedIron: refinedIron
+        };
         
         for (const [productType, recipe] of Object.entries(PRODUCT_RECIPES)) {
             // Vérifier qu'il y a des workers alloués à ce produit
@@ -284,11 +514,13 @@ export class FactoryService extends SimService {
             // Si lastTransformTurn est fourni, utiliser la transformation comme référence
             // Sinon, utiliser lastProductionTurn_${productType}
             let turnsSinceProduction;
-            if (lastTransformTurn !== null && productType === 'furniture') {
-                // Pour les meubles, compter depuis la transformation
-                // Le meuble est produit 1 tour après la transformation (tour N+1)
-                // Tour N : transformation bois → bûches
-                // Tour N+1 : le meuble est produit (4 bûches consommées, 1 meuble ajouté)
+            // Pour tous les produits qui nécessitent une transformation (furniture, jewelry, pottery, weapons)
+            const productsWithTransformation = ['furniture', 'jewelry', 'pottery', 'weapons'];
+            if (lastTransformTurn !== null && productsWithTransformation.includes(productType)) {
+                // Pour ces produits, compter depuis la transformation
+                // Le produit est fabriqué 1 tour après la transformation (tour N+1)
+                // Tour N : transformation matériau → matériau raffiné
+                // Tour N+1 : le produit est fabriqué
                 turnsSinceProduction = time - lastTransformTurn;
             } else {
                 const lastProductionTurn = factoryData[`lastProductionTurn_${productType}`] || 0;
@@ -296,7 +528,7 @@ export class FactoryService extends SimService {
             }
             
             // Si pas assez de tours écoulés, continuer au produit suivant
-            // Pour les meubles, on doit attendre 1 tour après la transformation (turnsSinceProduction >= 1)
+            // Pour les produits avec transformation, on doit attendre 1 tour après la transformation (turnsSinceProduction >= 1)
             if (turnsSinceProduction < productionTurns) {
                 continue;
             }
@@ -319,15 +551,25 @@ export class FactoryService extends SimService {
             const canProduce = this.canProduceProduct(recipe, availableMaterials);
             if (!canProduce) continue;
 
-            // Pour les meubles: 100 bûches / 4 = 25 meubles
-            // Mais on produit progressivement selon la capacité
+            // Pour tous les produits: calculer combien on peut produire avec les matériaux raffinés disponibles
             let quantityToProduce = 1;
             
-            // Si c'est des meubles, calculer combien on peut produire avec les bûches disponibles
             if (productType === 'furniture') {
                 const logsNeededPerUnit = recipe.logs || 4;
                 const maxFromLogs = Math.floor(logs / logsNeededPerUnit);
                 quantityToProduce = Math.min(maxFromLogs, remainingCapacity);
+            } else if (productType === 'jewelry') {
+                const refinedGoldNeededPerUnit = recipe.refinedGold || 4;
+                const maxFromRefinedGold = Math.floor(refinedGold / refinedGoldNeededPerUnit);
+                quantityToProduce = Math.min(maxFromRefinedGold, remainingCapacity);
+            } else if (productType === 'pottery') {
+                const refinedClayNeededPerUnit = recipe.refinedClay || 4;
+                const maxFromRefinedClay = Math.floor(refinedClay / refinedClayNeededPerUnit);
+                quantityToProduce = Math.min(maxFromRefinedClay, remainingCapacity);
+            } else if (productType === 'weapons') {
+                const refinedIronNeededPerUnit = recipe.refinedIron || 4;
+                const maxFromRefinedIron = Math.floor(refinedIron / refinedIronNeededPerUnit);
+                quantityToProduce = Math.min(maxFromRefinedIron, remainingCapacity);
             } else {
                 quantityToProduce = Math.min(1, remainingCapacity);
             }
@@ -337,15 +579,31 @@ export class FactoryService extends SimService {
             const newProducts = { ...currentProducts };
             newProducts[productType] = (newProducts[productType] || 0) + quantityToProduce;
 
-            // Consommer les matières premières
+            // Consommer les matières premières et matériaux raffinés
             const newRawMaterials = { ...rawMaterials };
             let newLogs = logs;
+            let newRefinedGold = refinedGold;
+            let newRefinedClay = refinedClay;
+            let newRefinedIron = refinedIron;
             
             let logsConsumed = 0;
+            let refinedGoldConsumed = 0;
+            let refinedClayConsumed = 0;
+            let refinedIronConsumed = 0;
+            
             for (const [material, amount] of Object.entries(recipe)) {
                 if (material === 'logs') {
                     logsConsumed = amount * quantityToProduce;
                     newLogs = Math.max(0, newLogs - logsConsumed);
+                } else if (material === 'refinedGold') {
+                    refinedGoldConsumed = amount * quantityToProduce;
+                    newRefinedGold = Math.max(0, newRefinedGold - refinedGoldConsumed);
+                } else if (material === 'refinedClay') {
+                    refinedClayConsumed = amount * quantityToProduce;
+                    newRefinedClay = Math.max(0, newRefinedClay - refinedClayConsumed);
+                } else if (material === 'refinedIron') {
+                    refinedIronConsumed = amount * quantityToProduce;
+                    newRefinedIron = Math.max(0, newRefinedIron - refinedIronConsumed);
                 } else {
                     newRawMaterials[material] = Math.max(0, (newRawMaterials[material] || 0) - (amount * quantityToProduce));
                 }
@@ -355,12 +613,16 @@ export class FactoryService extends SimService {
                 products: newProducts,
                 rawMaterials: newRawMaterials,
                 logs: newLogs,
+                refinedGold: newRefinedGold,
+                refinedClay: newRefinedClay,
+                refinedIron: newRefinedIron,
                 [`lastProductionTurn_${productType}`]: time
             });
             
-            // Enregistrer dans le journal de production pour les meubles
+            // Enregistrer dans le journal de production pour tous les produits avec transformation
             // Regrouper la livraison et la fabrication en une seule entrée
-            if (productType === 'furniture' && quantityToProduce > 0) {
+            const productsWithJournal = ['furniture', 'jewelry', 'pottery', 'weapons'];
+            if (productsWithJournal.includes(productType) && quantityToProduce > 0) {
                 // Récupérer les stocks restants APRÈS la mise à jour dans IndexedDB
                 const factoryDataAfterUpdate = await housesStore.getHouse(factoryId);
                 if (factoryDataAfterUpdate) {
@@ -368,19 +630,46 @@ export class FactoryService extends SimService {
                     const remainingStocks = {
                         wood: factoryDataAfterUpdate.rawMaterials?.wood || 0,
                         logs: factoryDataAfterUpdate.logs || 0,
-                        furniture: factoryDataAfterUpdate.products?.furniture || 0
+                        furniture: factoryDataAfterUpdate.products?.furniture || 0,
+                        gold: factoryDataAfterUpdate.rawMaterials?.gold || 0,
+                        refinedGold: factoryDataAfterUpdate.refinedGold || 0,
+                        jewelry: factoryDataAfterUpdate.products?.jewelry || 0,
+                        clay: factoryDataAfterUpdate.rawMaterials?.clay || 0,
+                        refinedClay: factoryDataAfterUpdate.refinedClay || 0,
+                        pottery: factoryDataAfterUpdate.products?.pottery || 0,
+                        iron: factoryDataAfterUpdate.rawMaterials?.iron || 0,
+                        refinedIron: factoryDataAfterUpdate.refinedIron || 0,
+                        weapons: factoryDataAfterUpdate.products?.weapons || 0
                     };
                     
                     // Enregistrer une seule entrée combinée pour la livraison + fabrication
-                    // Le prix total = prix des bûches livrées + prix des meubles fabriqués
                     try {
-                        const logsPrice = productionJournalManager.getPrice('logs') * logsConsumed;
-                        const furniturePrice = productionJournalManager.getPrice('furniture') * quantityToProduce;
-                        const totalPrice = logsPrice + furniturePrice;
+                        let materialPrice = 0;
+                        let materialConsumed = 0;
+                        let eventType = '';
+                        
+                        if (productType === 'furniture') {
+                            materialPrice = productionJournalManager.getPrice('logs') * logsConsumed;
+                            materialConsumed = logsConsumed;
+                            eventType = 'produce_furniture';
+                        } else if (productType === 'jewelry') {
+                            materialPrice = productionJournalManager.getPrice('refinedGold') * refinedGoldConsumed;
+                            materialConsumed = refinedGoldConsumed;
+                            eventType = 'produce_jewelry';
+                        } else if (productType === 'pottery') {
+                            materialPrice = productionJournalManager.getPrice('refinedClay') * refinedClayConsumed;
+                            materialConsumed = refinedClayConsumed;
+                            eventType = 'produce_pottery';
+                        } else if (productType === 'weapons') {
+                            materialPrice = productionJournalManager.getPrice('refinedIron') * refinedIronConsumed;
+                            materialConsumed = refinedIronConsumed;
+                            eventType = 'produce_weapons';
+                        }
+                        
+                        const productPrice = productionJournalManager.getPrice(productType) * quantityToProduce;
+                        const totalPrice = materialPrice + productPrice;
                         
                         // Calculer les tours de production
-                        // Si lastTransformTurn est fourni, la production a duré 1 tour après la transformation
-                        // Exemple: transformation au tour 23, production au tour 24
                         let productionTurns = null;
                         if (lastTransformTurn !== null && lastTransformTurn !== undefined) {
                             const productionTurnsCount = PRODUCT_PRODUCTION_TURNS[productType] || 1;
@@ -390,20 +679,20 @@ export class FactoryService extends SimService {
                             }
                         }
                         
-                        // Créer une entrée avec le prix total, logsConsumed et productionTurns
+                        // Créer une entrée avec le prix total, materialConsumed et productionTurns
                         await productionJournalManager.addProductionEntry(
                             time,
                             factoryIdFormatted,
-                            'produce_furniture',
-                            'furniture',
+                            eventType,
+                            productType,
                             quantityToProduce,
                             remainingStocks,
-                            logsConsumed,
+                            materialConsumed,
                             totalPrice,
                             productionTurns
                         );
                     } catch (error) {
-                        console.error('[FactoryService] Error adding production entry (produce_furniture):', error);
+                        console.error(`[FactoryService] Error adding production entry (${productType}):`, error);
                     }
                 }
             }

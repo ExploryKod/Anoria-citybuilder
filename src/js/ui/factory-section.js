@@ -371,8 +371,11 @@ class FactorySectionManager {
         const productWorkerDistribution = factoryData.productWorkerDistribution || {};
         // Pourcentages de production par produit (stockés dans IndexedDB)
         const productProductionPercentages = factoryData.productProductionPercentages || {};
-        // Stock de bûches (logs)
+        // Stock de matériaux raffinés
         const logs = factoryData.logs || 0;
+        const refinedGold = factoryData.refinedGold || 0;
+        const refinedClay = factoryData.refinedClay || 0;
+        const refinedIron = factoryData.refinedIron || 0;
         // Messages de transformation et étapes de production
         const lastTransformationMessage = factoryData.lastTransformationMessage || '';
         const lastTransformationTurn = factoryData.lastTransformationTurn || 0;
@@ -382,33 +385,84 @@ class FactorySectionManager {
         const factoryId = `${factoryData.name}-${factoryData.x || 0}-${factoryData.y || 0}`;
         const journalEntries = await productionJournalManager.getFactoryProductionEntries(factoryId);
         
-        // Trouver la dernière transformation de bois en bûches
-        const lastTransformEntry = journalEntries
+        // Trouver les dernières transformations
+        const lastWoodTransformEntry = journalEntries
             .filter(e => e.eventType === 'transform_wood_to_logs')
             .sort((a, b) => b.turn - a.turn)[0];
+        const lastGoldTransformEntry = journalEntries
+            .filter(e => e.eventType === 'transform_gold_to_refined_gold')
+            .sort((a, b) => b.turn - a.turn)[0];
+        const lastClayTransformEntry = journalEntries
+            .filter(e => e.eventType === 'transform_clay_to_refined_clay')
+            .sort((a, b) => b.turn - a.turn)[0];
+        const lastIronTransformEntry = journalEntries
+            .filter(e => e.eventType === 'transform_iron_to_refined_iron')
+            .sort((a, b) => b.turn - a.turn)[0];
         
-        // Déterminer le message de transformation précis
-        let transformationMessage = '';
-        if (lastTransformEntry) {
-            const transformQuantity = lastTransformEntry.quantity;
-            const transformStocks = lastTransformEntry.remainingStocks || {};
-            const transformLogsAfter = transformStocks.logs || 0;
-            
-            // Trouver les entrées de production de meubles après cette transformation
+        // Déterminer les messages de transformation
+        const transformationMessages = [];
+        
+        if (lastWoodTransformEntry) {
+            const transformQuantity = lastWoodTransformEntry.quantity;
             const furnitureEntries = journalEntries
-                .filter(e => e.eventType === 'produce_furniture' && e.turn > lastTransformEntry.turn)
+                .filter(e => e.eventType === 'produce_furniture' && e.turn > lastWoodTransformEntry.turn)
                 .sort((a, b) => a.turn - b.turn);
             
             if (furnitureEntries.length > 0) {
                 const totalFurniture = furnitureEntries.reduce((sum, e) => sum + (e.quantity || 0), 0);
-                const totalLogsConsumed = furnitureEntries.reduce((sum, e) => sum + (e.logsConsumed || 0), 0);
-                transformationMessage = `Les bûcherons ont transformé ${transformQuantity} bois en bûches. Les menuisiers ont transformé ${totalLogsConsumed} bûches en ${totalFurniture} meuble${totalFurniture > 1 ? 's' : ''}`;
+                const totalLogsConsumed = furnitureEntries.reduce((sum, e) => sum + ((e.logsConsumed || e.materialConsumed) || 0), 0);
+                transformationMessages.push(`Les bûcherons ont transformé ${transformQuantity} bois en bûches. Les menuisiers ont transformé ${totalLogsConsumed} bûches en ${totalFurniture} meuble${totalFurniture > 1 ? 's' : ''}`);
             } else {
-                transformationMessage = `Les bûcherons ont transformé ${transformQuantity} bois en bûches`;
+                transformationMessages.push(`Les bûcherons ont transformé ${transformQuantity} bois en bûches`);
             }
-        } else if (lastTransformationMessage && lastTransformationTurn === lastProcessTurn) {
-            transformationMessage = lastTransformationMessage;
         }
+        
+        if (lastGoldTransformEntry) {
+            const transformQuantity = lastGoldTransformEntry.quantity;
+            const jewelryEntries = journalEntries
+                .filter(e => e.eventType === 'produce_jewelry' && e.turn > lastGoldTransformEntry.turn)
+                .sort((a, b) => a.turn - b.turn);
+            
+            if (jewelryEntries.length > 0) {
+                const totalJewelry = jewelryEntries.reduce((sum, e) => sum + (e.quantity || 0), 0);
+                const totalRefinedGoldConsumed = jewelryEntries.reduce((sum, e) => sum + ((e.materialConsumed) || 0), 0);
+                transformationMessages.push(`Les mineurs ont transformé ${transformQuantity} or en or raffiné. Les bijoutiers ont transformé ${totalRefinedGoldConsumed} or raffiné en ${totalJewelry} bijou${totalJewelry > 1 ? 'x' : ''}`);
+            } else {
+                transformationMessages.push(`Les mineurs ont transformé ${transformQuantity} or en or raffiné`);
+            }
+        }
+        
+        if (lastClayTransformEntry) {
+            const transformQuantity = lastClayTransformEntry.quantity;
+            const potteryEntries = journalEntries
+                .filter(e => e.eventType === 'produce_pottery' && e.turn > lastClayTransformEntry.turn)
+                .sort((a, b) => a.turn - b.turn);
+            
+            if (potteryEntries.length > 0) {
+                const totalPottery = potteryEntries.reduce((sum, e) => sum + (e.quantity || 0), 0);
+                const totalRefinedClayConsumed = potteryEntries.reduce((sum, e) => sum + ((e.materialConsumed) || 0), 0);
+                transformationMessages.push(`Les creuseurs ont transformé ${transformQuantity} argile en argile raffinée. Les potiers ont transformé ${totalRefinedClayConsumed} argile raffinée en ${totalPottery} poterie${totalPottery > 1 ? 's' : ''}`);
+            } else {
+                transformationMessages.push(`Les creuseurs ont transformé ${transformQuantity} argile en argile raffinée`);
+            }
+        }
+        
+        if (lastIronTransformEntry) {
+            const transformQuantity = lastIronTransformEntry.quantity;
+            const weaponsEntries = journalEntries
+                .filter(e => e.eventType === 'produce_weapons' && e.turn > lastIronTransformEntry.turn)
+                .sort((a, b) => a.turn - b.turn);
+            
+            if (weaponsEntries.length > 0) {
+                const totalWeapons = weaponsEntries.reduce((sum, e) => sum + (e.quantity || 0), 0);
+                const totalRefinedIronConsumed = weaponsEntries.reduce((sum, e) => sum + ((e.materialConsumed) || 0), 0);
+                transformationMessages.push(`Les mineurs ont transformé ${transformQuantity} fer en fer raffiné. Les armuriers ont transformé ${totalRefinedIronConsumed} fer raffiné en ${totalWeapons} arme${totalWeapons > 1 ? 's' : ''}`);
+            } else {
+                transformationMessages.push(`Les mineurs ont transformé ${transformQuantity} fer en fer raffiné`);
+            }
+        }
+        
+        const transformationMessage = transformationMessages.join('. ');
 
         const rawMaterialNames = {
             wood: 'Bois',
@@ -578,21 +632,47 @@ class FactorySectionManager {
                 }).join('')}
             </div>
 
-            <!-- Section Bûches (étape intermédiaire) -->
-            ${logs > 0 || transformationMessage ? `
+            <!-- Section Matériaux raffinés (étapes intermédiaires) -->
+            ${logs > 0 || refinedGold > 0 || refinedClay > 0 || refinedIron > 0 || transformationMessage ? `
             <div class="factory-intermediate-products">
                 <h4 class="factory-subtitle">Étapes de Transformation</h4>
+                ${logs > 0 ? `
                 <div class="factory-stock-item">
                     <div class="factory-stock-item-row">
                         <label>Bûches:</label>
                         <span class="factory-stock-value">${logs} / ${getMaxStorage('logs')}</span>
                     </div>
-                    ${transformationMessage ? `
-                        <div class="factory-step-message">
-                            <span class="factory-step-text">${transformationMessage}</span>
-                        </div>
-                    ` : ''}
                 </div>
+                ` : ''}
+                ${refinedGold > 0 ? `
+                <div class="factory-stock-item">
+                    <div class="factory-stock-item-row">
+                        <label>Or raffiné:</label>
+                        <span class="factory-stock-value">${refinedGold} / ${getMaxStorage('refinedGold')}</span>
+                    </div>
+                </div>
+                ` : ''}
+                ${refinedClay > 0 ? `
+                <div class="factory-stock-item">
+                    <div class="factory-stock-item-row">
+                        <label>Argile raffinée:</label>
+                        <span class="factory-stock-value">${refinedClay} / ${getMaxStorage('refinedClay')}</span>
+                    </div>
+                </div>
+                ` : ''}
+                ${refinedIron > 0 ? `
+                <div class="factory-stock-item">
+                    <div class="factory-stock-item-row">
+                        <label>Fer raffiné:</label>
+                        <span class="factory-stock-value">${refinedIron} / ${getMaxStorage('refinedIron')}</span>
+                    </div>
+                </div>
+                ` : ''}
+                ${transformationMessage ? `
+                    <div class="factory-step-message">
+                        <span class="factory-step-text">${transformationMessage}</span>
+                    </div>
+                ` : ''}
             </div>
             ` : ''}
 
@@ -620,14 +700,23 @@ class FactorySectionManager {
                     const turnsSinceProduction = currentTurn - lastProductionTurn;
                     const turnsRemaining = Math.max(0, productionTurns - turnsSinceProduction);
                     
-                    // Message d'étape pour les meubles
+                    // Message d'étape pour tous les produits
                     let stepMessage = '';
-                    if (key === 'furniture' && productWorkers > 0) {
+                    if (productWorkers > 0) {
                         if (turnsRemaining > 0) {
                             stepMessage = `<div class="factory-step-message"><span class="factory-step-text">Production en cours: ${turnsRemaining} tour${turnsRemaining > 1 ? 's' : ''} restant${turnsRemaining > 1 ? 's' : ''}</span></div>`;
-                        } else if (logs >= 4) {
+                        } else if (key === 'furniture' && logs >= 4) {
                             const possibleFurniture = Math.floor(logs / 4);
                             stepMessage = `<div class="factory-step-message"><span class="factory-step-text">Les menuisiers peuvent fabriquer ${possibleFurniture} meuble${possibleFurniture > 1 ? 's' : ''} (${logs} bûches / 4)</span></div>`;
+                        } else if (key === 'jewelry' && refinedGold >= 4) {
+                            const possibleJewelry = Math.floor(refinedGold / 4);
+                            stepMessage = `<div class="factory-step-message"><span class="factory-step-text">Les bijoutiers peuvent fabriquer ${possibleJewelry} bijou${possibleJewelry > 1 ? 'x' : ''} (${refinedGold} or raffiné / 4)</span></div>`;
+                        } else if (key === 'pottery' && refinedClay >= 4) {
+                            const possiblePottery = Math.floor(refinedClay / 4);
+                            stepMessage = `<div class="factory-step-message"><span class="factory-step-text">Les potiers peuvent fabriquer ${possiblePottery} poterie${possiblePottery > 1 ? 's' : ''} (${refinedClay} argile raffinée / 4)</span></div>`;
+                        } else if (key === 'weapons' && refinedIron >= 4) {
+                            const possibleWeapons = Math.floor(refinedIron / 4);
+                            stepMessage = `<div class="factory-step-message"><span class="factory-step-text">Les armuriers peuvent fabriquer ${possibleWeapons} arme${possibleWeapons > 1 ? 's' : ''} (${refinedIron} fer raffiné / 4)</span></div>`;
                         }
                     }
                     
@@ -974,45 +1063,136 @@ class FactorySectionManager {
             case 'transform_wood_to_logs':
                 eventMessage = `Les bûcherons transforment ${entry.quantity} bois en bûches`;
                 break;
+            case 'transform_gold_to_refined_gold':
+                eventMessage = `Les mineurs transforment ${entry.quantity} or en or raffiné`;
+                break;
+            case 'transform_clay_to_refined_clay':
+                eventMessage = `Les creuseurs transforment ${entry.quantity} argile en argile raffinée`;
+                break;
+            case 'transform_iron_to_refined_iron':
+                eventMessage = `Les mineurs transforment ${entry.quantity} fer en fer raffiné`;
+                break;
             case 'deliver_logs_to_carpenters':
                 eventMessage = `Les bûcherons livrent ${entry.quantity} bûches aux menuisiers`;
                 break;
             case 'produce_furniture':
-                // Obtenir le nom du produit
-                const productType = entry.resourceType || 'furniture';
-                const productName = productNames[productType] || 'produit';
-                const productNamePlural = productType === 'furniture' ? 'meubles' : 
-                                         productType === 'weapons' ? 'armes' :
-                                         productType === 'pottery' ? 'poteries' :
-                                         productType === 'jewelry' ? 'bijoux' : 'produits';
-                
-                // Si logsConsumed est présent, regrouper les deux étapes
-                if (entry.logsConsumed !== undefined && entry.logsConsumed !== null) {
+                const furnitureName = productNames['furniture'] || 'meuble';
+                const furnitureNamePlural = 'meubles';
+                const materialConsumed = entry.logsConsumed || entry.materialConsumed || 0;
+                if (materialConsumed > 0) {
                     let durationMessage = '';
-                    // Si productionTurns est présent, afficher les tours de production
                     if (entry.productionTurns && Array.isArray(entry.productionTurns) && entry.productionTurns.length > 0) {
                         const turnsStr = entry.productionTurns.join(', ');
                         const turnsCount = entry.productionTurns.length;
                         if (turnsCount === 1) {
-                            durationMessage = `<br>Production de ${entry.quantity} ${entry.quantity > 1 ? productNamePlural : productName} au tour ${turnsStr}`;
+                            durationMessage = `<br>Production de ${entry.quantity} ${entry.quantity > 1 ? furnitureNamePlural : furnitureName} au tour ${turnsStr}`;
                         } else {
-                            durationMessage = `<br>Production de ${entry.quantity} ${productNamePlural} en ${turnsCount} tours (tours ${turnsStr})`;
+                            durationMessage = `<br>Production de ${entry.quantity} ${furnitureNamePlural} en ${turnsCount} tours (tours ${turnsStr})`;
                         }
                     }
-                    eventMessage = `Les bûcherons livrent ${entry.logsConsumed} bûches aux menuisiers<br>Les menuisiers fabriquent ${entry.quantity} ${entry.quantity > 1 ? productNamePlural : productName} avec ${entry.logsConsumed} bûches${durationMessage}`;
+                    eventMessage = `Les bûcherons livrent ${materialConsumed} bûches aux menuisiers<br>Les menuisiers fabriquent ${entry.quantity} ${entry.quantity > 1 ? furnitureNamePlural : furnitureName} avec ${materialConsumed} bûches${durationMessage}`;
                 } else {
                     let durationMessage = '';
-                    // Si productionTurns est présent, afficher les tours de production
                     if (entry.productionTurns && Array.isArray(entry.productionTurns) && entry.productionTurns.length > 0) {
                         const turnsStr = entry.productionTurns.join(', ');
                         const turnsCount = entry.productionTurns.length;
                         if (turnsCount === 1) {
-                            durationMessage = ` Production de ${entry.quantity} ${entry.quantity > 1 ? productNamePlural : productName} au tour ${turnsStr}`;
+                            durationMessage = ` Production de ${entry.quantity} ${entry.quantity > 1 ? furnitureNamePlural : furnitureName} au tour ${turnsStr}`;
                         } else {
-                            durationMessage = ` Production de ${entry.quantity} ${productNamePlural} en ${turnsCount} tours (tours ${turnsStr})`;
+                            durationMessage = ` Production de ${entry.quantity} ${furnitureNamePlural} en ${turnsCount} tours (tours ${turnsStr})`;
                         }
                     }
-                    eventMessage = `Les menuisiers fabriquent ${entry.quantity} ${entry.quantity > 1 ? productNamePlural : productName} avec ${entry.quantity * 4} bûches${durationMessage}`;
+                    eventMessage = `Les menuisiers fabriquent ${entry.quantity} ${entry.quantity > 1 ? furnitureNamePlural : furnitureName} avec ${entry.quantity * 4} bûches${durationMessage}`;
+                }
+                break;
+            case 'produce_jewelry':
+                const jewelryName = productNames['jewelry'] || 'bijou';
+                const jewelryNamePlural = 'bijoux';
+                const refinedGoldConsumed = entry.materialConsumed || 0;
+                if (refinedGoldConsumed > 0) {
+                    let durationMessage = '';
+                    if (entry.productionTurns && Array.isArray(entry.productionTurns) && entry.productionTurns.length > 0) {
+                        const turnsStr = entry.productionTurns.join(', ');
+                        const turnsCount = entry.productionTurns.length;
+                        if (turnsCount === 1) {
+                            durationMessage = `<br>Production de ${entry.quantity} ${entry.quantity > 1 ? jewelryNamePlural : jewelryName} au tour ${turnsStr}`;
+                        } else {
+                            durationMessage = `<br>Production de ${entry.quantity} ${jewelryNamePlural} en ${turnsCount} tours (tours ${turnsStr})`;
+                        }
+                    }
+                    eventMessage = `Les mineurs livrent ${refinedGoldConsumed} or raffiné aux bijoutiers<br>Les bijoutiers fabriquent ${entry.quantity} ${entry.quantity > 1 ? jewelryNamePlural : jewelryName} avec ${refinedGoldConsumed} or raffiné${durationMessage}`;
+                } else {
+                    let durationMessage = '';
+                    if (entry.productionTurns && Array.isArray(entry.productionTurns) && entry.productionTurns.length > 0) {
+                        const turnsStr = entry.productionTurns.join(', ');
+                        const turnsCount = entry.productionTurns.length;
+                        if (turnsCount === 1) {
+                            durationMessage = ` Production de ${entry.quantity} ${entry.quantity > 1 ? jewelryNamePlural : jewelryName} au tour ${turnsStr}`;
+                        } else {
+                            durationMessage = ` Production de ${entry.quantity} ${jewelryNamePlural} en ${turnsCount} tours (tours ${turnsStr})`;
+                        }
+                    }
+                    eventMessage = `Les bijoutiers fabriquent ${entry.quantity} ${entry.quantity > 1 ? jewelryNamePlural : jewelryName} avec ${entry.quantity * 4} or raffiné${durationMessage}`;
+                }
+                break;
+            case 'produce_pottery':
+                const potteryName = productNames['pottery'] || 'poterie';
+                const potteryNamePlural = 'poteries';
+                const refinedClayConsumed = entry.materialConsumed || 0;
+                if (refinedClayConsumed > 0) {
+                    let durationMessage = '';
+                    if (entry.productionTurns && Array.isArray(entry.productionTurns) && entry.productionTurns.length > 0) {
+                        const turnsStr = entry.productionTurns.join(', ');
+                        const turnsCount = entry.productionTurns.length;
+                        if (turnsCount === 1) {
+                            durationMessage = `<br>Production de ${entry.quantity} ${entry.quantity > 1 ? potteryNamePlural : potteryName} au tour ${turnsStr}`;
+                        } else {
+                            durationMessage = `<br>Production de ${entry.quantity} ${potteryNamePlural} en ${turnsCount} tours (tours ${turnsStr})`;
+                        }
+                    }
+                    eventMessage = `Les creuseurs livrent ${refinedClayConsumed} argile raffinée aux potiers<br>Les potiers fabriquent ${entry.quantity} ${entry.quantity > 1 ? potteryNamePlural : potteryName} avec ${refinedClayConsumed} argile raffinée${durationMessage}`;
+                } else {
+                    let durationMessage = '';
+                    if (entry.productionTurns && Array.isArray(entry.productionTurns) && entry.productionTurns.length > 0) {
+                        const turnsStr = entry.productionTurns.join(', ');
+                        const turnsCount = entry.productionTurns.length;
+                        if (turnsCount === 1) {
+                            durationMessage = ` Production de ${entry.quantity} ${entry.quantity > 1 ? potteryNamePlural : potteryName} au tour ${turnsStr}`;
+                        } else {
+                            durationMessage = ` Production de ${entry.quantity} ${potteryNamePlural} en ${turnsCount} tours (tours ${turnsStr})`;
+                        }
+                    }
+                    eventMessage = `Les potiers fabriquent ${entry.quantity} ${entry.quantity > 1 ? potteryNamePlural : potteryName} avec ${entry.quantity * 4} argile raffinée${durationMessage}`;
+                }
+                break;
+            case 'produce_weapons':
+                const weaponsName = productNames['weapons'] || 'arme';
+                const weaponsNamePlural = 'armes';
+                const refinedIronConsumed = entry.materialConsumed || 0;
+                if (refinedIronConsumed > 0) {
+                    let durationMessage = '';
+                    if (entry.productionTurns && Array.isArray(entry.productionTurns) && entry.productionTurns.length > 0) {
+                        const turnsStr = entry.productionTurns.join(', ');
+                        const turnsCount = entry.productionTurns.length;
+                        if (turnsCount === 1) {
+                            durationMessage = `<br>Production de ${entry.quantity} ${entry.quantity > 1 ? weaponsNamePlural : weaponsName} au tour ${turnsStr}`;
+                        } else {
+                            durationMessage = `<br>Production de ${entry.quantity} ${weaponsNamePlural} en ${turnsCount} tours (tours ${turnsStr})`;
+                        }
+                    }
+                    eventMessage = `Les mineurs livrent ${refinedIronConsumed} fer raffiné aux armuriers<br>Les armuriers fabriquent ${entry.quantity} ${entry.quantity > 1 ? weaponsNamePlural : weaponsName} avec ${refinedIronConsumed} fer raffiné${durationMessage}`;
+                } else {
+                    let durationMessage = '';
+                    if (entry.productionTurns && Array.isArray(entry.productionTurns) && entry.productionTurns.length > 0) {
+                        const turnsStr = entry.productionTurns.join(', ');
+                        const turnsCount = entry.productionTurns.length;
+                        if (turnsCount === 1) {
+                            durationMessage = ` Production de ${entry.quantity} ${entry.quantity > 1 ? weaponsNamePlural : weaponsName} au tour ${turnsStr}`;
+                        } else {
+                            durationMessage = ` Production de ${entry.quantity} ${weaponsNamePlural} en ${turnsCount} tours (tours ${turnsStr})`;
+                        }
+                    }
+                    eventMessage = `Les armuriers fabriquent ${entry.quantity} ${entry.quantity > 1 ? weaponsNamePlural : weaponsName} avec ${entry.quantity * 4} fer raffiné${durationMessage}`;
                 }
                 break;
             default:
@@ -1020,15 +1200,27 @@ class FactorySectionManager {
         }
         
         const stocks = entry.remainingStocks || {};
-        const hasStocks = (stocks.wood || 0) > 0 || (stocks.logs || 0) > 0 || (stocks.furniture || 0) > 0;
+        const hasStocks = (stocks.wood || 0) > 0 || (stocks.logs || 0) > 0 || (stocks.furniture || 0) > 0 ||
+                         (stocks.gold || 0) > 0 || (stocks.refinedGold || 0) > 0 || (stocks.jewelry || 0) > 0 ||
+                         (stocks.clay || 0) > 0 || (stocks.refinedClay || 0) > 0 || (stocks.pottery || 0) > 0 ||
+                         (stocks.iron || 0) > 0 || (stocks.refinedIron || 0) > 0 || (stocks.weapons || 0) > 0;
         
         const stocksMessage = hasStocks ? `
             <div class="production-journal-stocks">
                 <div class="production-journal-stocks-title">Stocks restants:</div>
                 <div class="production-journal-stocks-items">
-                    <span class="production-journal-stock-item">Bois: ${stocks.wood || 0}</span>
-                    <span class="production-journal-stock-item">Bûches: ${stocks.logs || 0}</span>
-                    <span class="production-journal-stock-item">Meubles: ${stocks.furniture || 0}</span>
+                    ${(stocks.wood || 0) > 0 ? `<span class="production-journal-stock-item">Bois: ${stocks.wood || 0}</span>` : ''}
+                    ${(stocks.logs || 0) > 0 ? `<span class="production-journal-stock-item">Bûches: ${stocks.logs || 0}</span>` : ''}
+                    ${(stocks.furniture || 0) > 0 ? `<span class="production-journal-stock-item">Meubles: ${stocks.furniture || 0}</span>` : ''}
+                    ${(stocks.gold || 0) > 0 ? `<span class="production-journal-stock-item">Or: ${stocks.gold || 0}</span>` : ''}
+                    ${(stocks.refinedGold || 0) > 0 ? `<span class="production-journal-stock-item">Or raffiné: ${stocks.refinedGold || 0}</span>` : ''}
+                    ${(stocks.jewelry || 0) > 0 ? `<span class="production-journal-stock-item">Bijoux: ${stocks.jewelry || 0}</span>` : ''}
+                    ${(stocks.clay || 0) > 0 ? `<span class="production-journal-stock-item">Argile: ${stocks.clay || 0}</span>` : ''}
+                    ${(stocks.refinedClay || 0) > 0 ? `<span class="production-journal-stock-item">Argile raffinée: ${stocks.refinedClay || 0}</span>` : ''}
+                    ${(stocks.pottery || 0) > 0 ? `<span class="production-journal-stock-item">Poteries: ${stocks.pottery || 0}</span>` : ''}
+                    ${(stocks.iron || 0) > 0 ? `<span class="production-journal-stock-item">Fer: ${stocks.iron || 0}</span>` : ''}
+                    ${(stocks.refinedIron || 0) > 0 ? `<span class="production-journal-stock-item">Fer raffiné: ${stocks.refinedIron || 0}</span>` : ''}
+                    ${(stocks.weapons || 0) > 0 ? `<span class="production-journal-stock-item">Armes: ${stocks.weapons || 0}</span>` : ''}
                 </div>
             </div>
         ` : '';
