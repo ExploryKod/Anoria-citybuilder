@@ -15,7 +15,7 @@
   "dependencies": {
     "dexie": "^4.0.11",
     "gsap": "^3.13.0",
-    "tarteaucitronjs": "^1.26.0",
+    "tarteaucitronjs": "^1.29.0",
     "three": "^0.162.0"
   },
   "devDependencies": {
