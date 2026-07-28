@@ -4,7 +4,7 @@
  */
 import { isEventsEnabled, getEventProbability, getDaysPerMonth } from '../../../config/events.js';
 import { SimService } from './SimService.js';
-import { toBuildingIdString } from '../../../contexts/urban/domain/value-objects/BuildingId.js';
+import { toBuildingIdString } from '../../acl/urban.js';
 import { TimeManager } from '../utils/TimeManager.js';
 
 export class RandomEventsService extends SimService {

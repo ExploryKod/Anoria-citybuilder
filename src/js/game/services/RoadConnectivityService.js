@@ -1,5 +1,5 @@
 import { SimService } from './SimService.js';
-import { getOrCreateUrbanContext } from '../../../composition/createUrbanContext.js';
+import { getOrCreateUrbanContext } from '../../acl/urban.js';
 
 /**
  * RoadConnectivityService - Validates and updates road access city-wide

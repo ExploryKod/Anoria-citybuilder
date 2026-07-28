@@ -9,7 +9,7 @@ import {
     getBuildingsNamesInZone,
     updateBuildingNeighbors,
 } from "../utils/utils.js";
-import { toBuildingIdString } from '../../contexts/urban/domain/value-objects/BuildingId.js';
+import { toBuildingIdString, getOrCreateUrbanContext } from '../acl/urban.js';
 import {
     bulldozeSelected,
     commerce,
@@ -24,7 +24,6 @@ import {
 } from '../ui/nodes.js';
 import {assetsPrices} from "../meshs/data.js";
 import { checkFoodAvailability, canHouseEvolveToPalace, canHouseEvolveToPurple } from './modules/ModuleHelper.js';
-import { getOrCreateUrbanContext } from '../../composition/createUrbanContext.js';
 import { setupRoadAccessIcons } from '../../infrastructure/roadAccessIcons.js';
 import { getDefaultEmployees } from './modules/EmployeeHelper.js';
 import { TimeManager } from './utils/TimeManager.js';
