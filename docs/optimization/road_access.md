@@ -127,3 +127,15 @@ La policy `RoadAccessPolicy.evaluate(neighbors)` reste la source de vérité. Se
 - Domaine : `src/contexts/urban/domain/policies/RoadAccessPolicy.js`
 - Legacy : `src/js/game/services/RoadConnectivityService.js`
 - Composition : `src/composition/createUrbanContext.js`
+- Rendu icônes : `src/infrastructure/roadAccessIcons.js`
+
+## Migration legacy (terminée)
+
+| Ancien | Nouveau |
+|---|---|
+| `checkRoadAccess(neighbors)` | `evaluateRoadAccess` (domaine) ou `hasRoadAccessFromCount(roads)` |
+| `RoadAccessModule` | supprimé |
+| `ModuleHelper.checkRoadAccess` | supprimé |
+| `makeDbItemId(type, x, y)` | `toBuildingIdString(type, x, y)` (`BuildingId`) |
+| Panneau info | `urban.getRoadAccess(buildingId)` |
+| Icônes 3D | `setupRoadAccessIcons` + bus `RoadAccessChanged` |

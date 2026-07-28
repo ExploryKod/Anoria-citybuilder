@@ -39,6 +39,7 @@ function appRegister(name, instance) {
 }
 import gameStore from "../stores/GameStore.js";
 import housesStore from "../stores/HousesStore.js";
+import { hasRoadAccessFromCount } from '../../contexts/urban/domain/value-objects/RoadAccess.js';
 import budgetManager from "../stores/BudgetManager.js";
 import AssetManager from "../meshs/AssetManager.js";
 import { initRealtimeBudgetPopup, updateRealtimeBudget } from "./budget/RealtimeBudgetManager.js";
@@ -2634,20 +2635,7 @@ async function generateCityMap() {
                     const isRoad = building.type.includes('roads') || building.type.includes('Road');
                     const needsRoadAccess = !isRoad;
                     
-                    // Check for road access (only for buildings that need it)
-                    let hasRoad = true;
-                    try {
-                        const { checkRoadAccess } = await import('../game/modules/ModuleHelper.js');
-                        hasRoad = needsRoadAccess ? checkRoadAccess(neighbors).hasAccess : true;
-                    } catch (err) {
-                        console.warn('[ui/buttons.js > generateCityMap] Falling back to inline road access check because ModuleHelper import failed.', {
-                            error: err?.message || err,
-                            buildingType: building.type,
-                            neighborsCount: neighbors?.length ?? 0
-                        });
-                        // Fallback to previous inline logic if helper not available
-                        hasRoad = needsRoadAccess ? neighbors.some(neighbor => neighbor.name === 'roads' || neighbor.name === 'Road') : true;
-                    }
+                    const hasRoad = needsRoadAccess ? hasRoadAccessFromCount(building.roads) : true;
                     
                     // Check if building can have food (houses, markets, but not roads, wells, etc.)
                     const canHaveFood = building.type.includes('House') || building.type.includes('Market') || building.type.includes('Farm');

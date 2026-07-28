@@ -6,10 +6,10 @@ import { AnimationMixer } from 'three';
 import {applyHoverColor, resetHoveredObject, resetObjectColor} from '../utils/meshUtils.js';
 import {  textures  } from '../meshs/data.js'
 import {
-    makeDbItemId,
     getBuildingsNamesInZone,
     updateBuildingNeighbors,
 } from "../utils/utils.js";
+import { toBuildingIdString } from '../../contexts/urban/domain/value-objects/BuildingId.js';
 import {
     bulldozeSelected,
     commerce,
@@ -23,8 +23,9 @@ import {
     palaces
 } from '../ui/nodes.js';
 import {assetsPrices} from "../meshs/data.js";
-import { checkRoadAccess, checkFoodAvailability, canHouseEvolveToPalace, canHouseEvolveToPurple } from './modules/ModuleHelper.js';
-import { setRoadAccessIcon } from './modules/StatusIconHelper.js';
+import { checkFoodAvailability, canHouseEvolveToPalace, canHouseEvolveToPurple } from './modules/ModuleHelper.js';
+import { getOrCreateUrbanContext } from '../../composition/createUrbanContext.js';
+import { setupRoadAccessIcons } from '../../infrastructure/roadAccessIcons.js';
 import { getDefaultEmployees } from './modules/EmployeeHelper.js';
 import { TimeManager } from './utils/TimeManager.js';
 import config from './config.js';
@@ -60,7 +61,7 @@ function getHouseMaxPopulation(houseType) {
     return 0;
 }
 
-export function createScene(housesStore, gameStore, assetManager) {
+export function createScene(housesStore, gameStore, assetManager, urbanOption) {
     // BudgetManager will be set by the game initialization
 
     const scene = new THREE.Scene();
@@ -73,7 +74,9 @@ export function createScene(housesStore, gameStore, assetManager) {
     const decorativeVillageManager = new DecorativeVillageManager(scene, assetManager);
     const budgetProcessor = new BudgetProcessor();
     const citizenManager = new CitizenManager(scene, assetManager);
-    
+    const urban = urbanOption ?? getOrCreateUrbanContext(housesStore);
+    const syncRoadAccess = setupRoadAccessIcons(urban, { assetManager, textures });
+
     // Use simple scene background with sky texture - this ensures sky covers everything
     // The backdrop (distant ground) will be positioned to match World platform exactly
     backdropManager.initializeSky();
@@ -589,8 +592,8 @@ export function createScene(housesStore, gameStore, assetManager) {
               const isOnEdge = x === 0 || x === city.size - 1 || y === 0 || y === city.size - 1;
 
               if(currentBuildingId && isInCityLimits) {
-                let currentUniqueID =  makeDbItemId(currentBuildingId, x, y)
-                // Skip if makeDbItemId returned false (invalid building ID or coordinates)
+                let currentUniqueID =  toBuildingIdString(currentBuildingId, x, y)
+                // Skip if toBuildingIdString returned null (invalid building ID or coordinates)
                 if(!currentUniqueID) {
                     continue;
                 }
@@ -771,7 +774,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                         
                         // Handle geometry-based roads ('roads') - restore terrain to grass
                         if (currentBuildingId === 'roads') {
-                            const uniqueBuildingId = makeDbItemId(currentBuildingId, x, y);
+                            const uniqueBuildingId = toBuildingIdString(currentBuildingId, x, y);
                             await housesStore.deleteOneHouse(uniqueBuildingId);
                             // Restore terrain mesh to grass
                             if (terrain[x] && terrain[x][y]) {
@@ -797,7 +800,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                             }
                         } else {
                             // Remove buildings (houses, StonePath roads, farms, markets, etc.) - all follow the same pattern
-                            const uniqueBuildingId = makeDbItemId(currentBuildingId, x, y);
+                            const uniqueBuildingId = toBuildingIdString(currentBuildingId, x, y);
                             await housesStore.deleteOneHouse(uniqueBuildingId);
                             removeInteractiveObject(buildings[x][y]);
                             buildings[x][y] = undefined;
@@ -834,36 +837,19 @@ export function createScene(housesStore, gameStore, assetManager) {
                         });
                     }
 
-                    // Check road access for markets (using module helper, DB remains source of truth)
-                    const marketNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
-                    // Adjust icon scale for markets (smaller than houses)
+                    // Accès routier marché (BC Urban + icône)
                     const marketRoadScale = {
-                        x: statutsIconsMeta.road.scale.x * 0.714, // 0.5/0.7 ratio
+                        x: statutsIconsMeta.road.scale.x * 0.714,
                         y: statutsIconsMeta.road.scale.y * 0.714,
                         z: statutsIconsMeta.road.scale.z * 0.714
                     };
 
-                    if (marketNeighbors && buildings[x][y]) {
-                        const { hasAccess, roadCount } = checkRoadAccess(marketNeighbors);
-                        await housesStore.updateHouseFields(currentUniqueID, { roads: roadCount });
-
-                        setRoadAccessIcon({
-                            assetManager,
+                    if (buildings[x][y]) {
+                        await syncRoadAccess({
+                            buildingId: currentUniqueID,
                             mesh: buildings[x][y],
-                            textures,
                             position: statutsIconsMeta.road.position,
                             scale: marketRoadScale,
-                            hasAccess
-                        });
-                    } else if (buildings[x][y]) {
-                        // No neighbors → treat as no road access
-                        setRoadAccessIcon({
-                            assetManager,
-                            mesh: buildings[x][y],
-                            textures,
-                            position: statutsIconsMeta.road.position,
-                            scale: marketRoadScale,
-                            hasAccess: false
                         });
                     }
 
@@ -1047,37 +1033,19 @@ export function createScene(housesStore, gameStore, assetManager) {
                         assetManager.removeStatusSprite(buildings[x][y], spriteName);
                     });
                     
-                    // Check road access for windmills (using module helper, DB remains source of truth)
-                    const windmillNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
-                    
-                    // Adjust icon scale for windmills (similar to markets)
+                    // Accès routier moulin (BC Urban + icône)
                     const windmillRoadScale = {
                         x: statutsIconsMeta.road.scale.x * 0.714,
                         y: statutsIconsMeta.road.scale.y * 0.714,
                         z: statutsIconsMeta.road.scale.z * 0.714
                     };
 
-                    if (windmillNeighbors && buildings[x][y]) {
-                        const { hasAccess, roadCount } = checkRoadAccess(windmillNeighbors);
-                        await housesStore.updateHouseFields(currentUniqueID, { roads: roadCount });
-
-                        setRoadAccessIcon({
-                            assetManager,
+                    if (buildings[x][y]) {
+                        await syncRoadAccess({
+                            buildingId: currentUniqueID,
                             mesh: buildings[x][y],
-                            textures,
                             position: statutsIconsMeta.road.position,
                             scale: windmillRoadScale,
-                            hasAccess
-                        });
-                    } else if (buildings[x][y]) {
-                        // No neighbors → treat as no road access
-                        setRoadAccessIcon({
-                            assetManager,
-                            mesh: buildings[x][y],
-                            textures,
-                            position: statutsIconsMeta.road.position,
-                            scale: windmillRoadScale,
-                            hasAccess: false
                         });
                     }
 
@@ -1500,7 +1468,12 @@ export function createScene(housesStore, gameStore, assetManager) {
                     }
                     
                     const { hasFood, totalFood } = checkFoodAvailability(houseFoodStocks || {}, currentPop);
-                    const { hasAccess: hasRoadAccess } = checkRoadAccess(houseNeighbors || []);
+                    const { hasAccess: hasRoadAccess } = await syncRoadAccess({
+                        buildingId: currentUniqueID,
+                        mesh: buildings[x][y] || null,
+                        position: statutsIconsMeta.road.position,
+                        scale: statutsIconsMeta.road.scale,
+                    });
                     
                     // Get house type to determine max population capacity (reuse houseData from above)
                     const houseType = houseData?.type || currentBuildingId;
@@ -1544,29 +1517,6 @@ export function createScene(housesStore, gameStore, assetManager) {
                         }
                     }
 
-                    if(houseNeighbors && buildings[x][y]) {
-                        const { hasAccess, roadCount } = checkRoadAccess(houseNeighbors);
-                        await housesStore.updateHouseFields(currentUniqueID, { roads: roadCount });
-
-                        setRoadAccessIcon({
-                            assetManager,
-                            mesh: buildings[x][y],
-                            textures,
-                            position: statutsIconsMeta.road.position,
-                            scale: statutsIconsMeta.road.scale,
-                            hasAccess
-                        });
-                    } else if(buildings[x][y]) {
-                        setRoadAccessIcon({
-                            assetManager,
-                            mesh: buildings[x][y],
-                            textures,
-                            position: statutsIconsMeta.road.position,
-                            scale: statutsIconsMeta.road.scale,
-                            hasAccess: false
-                        });
-                    }
-
                     /* house evolution to stage 2 */
                     // Use food module for calculations (DB stocks remain source of truth, reuse already-fetched values)
                     const { meetsFoodGoal, isInsufficient } = checkFoodAvailability(houseFoodStocks, currentPop);
@@ -1600,7 +1550,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                     // House-Blue becomes House-Red when inhabited (pop > 0)
                     if (currentBuildingId === 'House-Blue' && currentPop > 0) {
                         removeInteractiveObject(buildings[x][y]);
-                        const newUniqueBuildingId = makeDbItemId('House-Red', x, y);
+                        const newUniqueBuildingId = toBuildingIdString('House-Red', x, y);
                         const keys = { type : "House-Red", price: assetsPrices["House-Red"].price}
                         await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
                         buildings[x][y] = assetManager.createAsset('House-Red', x, y);
@@ -1619,7 +1569,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                     // House-Red becomes House-Blue when uninhabited (pop === 0)
                     else if (currentBuildingId === 'House-Red' && currentPop === 0) {
                         removeInteractiveObject(buildings[x][y]);
-                        const newUniqueBuildingId = makeDbItemId('House-Blue', x, y);
+                        const newUniqueBuildingId = toBuildingIdString('House-Blue', x, y);
                         const keys = { type : "House-Blue", price: assetsPrices["House-Blue"].price}
                         await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
                         buildings[x][y] = assetManager.createAsset('House-Blue', x, y);
@@ -1650,7 +1600,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                         
                         if (purpleEvolutionCheck.canEvolve) {
                             removeInteractiveObject(buildings[x][y]);
-                            const newUniqueBuildingId = makeDbItemId('House-Purple', x, y);
+                            const newUniqueBuildingId = toBuildingIdString('House-Purple', x, y);
                             const keys = { type : "House-Purple", price: assetsPrices["House-Purple"].price}
                             await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
                             buildings[x][y] = assetManager.createAsset('House-Purple', x, y);
@@ -1680,7 +1630,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                         
                         if (!purpleEvolutionCheck.canEvolve) {
                             removeInteractiveObject(buildings[x][y]);
-                            const newUniqueBuildingId = makeDbItemId('House-Red', x, y);
+                            const newUniqueBuildingId = toBuildingIdString('House-Red', x, y);
                             const keys = { type : "House-Red", price: assetsPrices["House-Red"].price}
                             await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
                             buildings[x][y] = assetManager.createAsset('House-Red', x, y);
@@ -1708,12 +1658,12 @@ export function createScene(housesStore, gameStore, assetManager) {
                     
                     if(evolutionCheck.canEvolve) {
                         removeInteractiveObject(buildings[x][y]);
-                        const newUniqueBuildingId = makeDbItemId('House-2Story', x, y);
+                        const newUniqueBuildingId = toBuildingIdString('House-2Story', x, y);
                         const keys = { type : "House-2Story", price: assetsPrices["House-2Story"].price}
                         
                         // Preserve neighbors and roads data before evolution
                         const houseNeighborsBeforeEvolution = houseNeighbors || [];
-                        const { roadCount: roadsBeforeEvolution } = checkRoadAccess(houseNeighborsBeforeEvolution);
+                        const roadsBeforeEvolution = (await housesStore.getHouseItem(currentUniqueID, 'roads')) || 0;
                         
                         // Update house name in database (same pattern as House-Red evolution)
                         const updateResult = await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
@@ -1806,12 +1756,12 @@ export function createScene(housesStore, gameStore, assetManager) {
                             }
                             
                             removeInteractiveObject(buildings[x][y]);
-                            const newUniqueBuildingId = makeDbItemId(targetType, x, y);
+                            const newUniqueBuildingId = toBuildingIdString(targetType, x, y);
                             const keys = { type: targetType, price: assetsPrices[targetType].price };
                             
                             // Preserve neighbors and roads data before regression
                             const houseNeighborsBeforeRegression = houseNeighbors || [];
-                            const { roadCount: roadsBeforeRegression } = checkRoadAccess(houseNeighborsBeforeRegression);
+                            const roadsBeforeRegression = (await housesStore.getHouseItem(currentUniqueID, 'roads')) || 0;
                             
                             // Update house name in database
                             const updateResult = await housesStore.updateHouseName(currentUniqueID, newUniqueBuildingId, keys);
@@ -1967,7 +1917,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                 const x = house.x;
                 const y = house.y;
                 
-                // Skip if house.type is invalid (makeDbItemId will return false)
+                // Skip if house.type is invalid (toBuildingIdString will return null)
                 if (!house.type || typeof house.type !== 'string') {
                     continue;
                 }
@@ -1977,9 +1927,9 @@ export function createScene(housesStore, gameStore, assetManager) {
                     const buildingInScene = buildings[x] && buildings[x][y];
                     const buildingType = buildingInScene?.userData?.type;
                     const buildingId = buildingInScene?.userData?.id;
-                    const expectedId = makeDbItemId(house.type, x, y);
+                    const expectedId = toBuildingIdString(house.type, x, y);
                     
-                    // Skip if makeDbItemId returned false (invalid building type)
+                    // Skip if toBuildingIdString returned null (invalid building type)
                     if (!expectedId) {
                         continue;
                     }
@@ -1997,7 +1947,7 @@ export function createScene(housesStore, gameStore, assetManager) {
                     }
                 } else {
                     // Invalid coordinates - definitely orphaned
-                    const expectedId = makeDbItemId(house.type, x, y);
+                    const expectedId = toBuildingIdString(house.type, x, y);
                     // Only add if expectedId is valid (not false)
                     if (expectedId) {
                         orphanedHouses.push(expectedId);

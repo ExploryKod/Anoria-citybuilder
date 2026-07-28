@@ -3,67 +3,8 @@
  * Non-invasive: can be used alongside existing logic without refactoring everything
  */
 
-import { RoadAccessModule } from './RoadAccessModule.js';
 import { FoodModule } from './FoodModule.js';
 import { TimeManager } from '../utils/TimeManager.js';
-import { fromLegacyNeighbor } from '../../../contexts/urban/domain/value-objects/NeighborRef.js';
-import { evaluateRoadAccess } from '../../../contexts/urban/domain/policies/RoadAccessPolicy.js';
-
-/**
- * Creates a road access module for a building
- * Can be attached to building userData or used standalone
- * @param {Object} building - Building object or userData
- * @returns {RoadAccessModule}
- */
-export function createRoadAccessModule(building) {
-    return new RoadAccessModule(building);
-}
-
-/**
- * Gets or creates a road access module for a building
- * Useful for gradually migrating existing code to use modules
- * @param {Object} building - Building object or userData
- * @param {Array} neighbors - Current neighbors array
- * @returns {RoadAccessModule}
- */
-export function getOrCreateRoadAccessModule(building, neighbors = []) {
-    // If module already exists, return it
-    if (building.roadAccess && building.roadAccess instanceof RoadAccessModule) {
-        return building.roadAccess;
-    }
-
-    // Create new module
-    const module = createRoadAccessModule(building);
-    
-    // Update from neighbors if provided
-    if (neighbors && neighbors.length > 0) {
-        module.updateFromNeighbors(neighbors);
-    }
-
-    // Optionally attach to building for reuse
-    if (building.userData) {
-        building.userData.roadAccess = module;
-    } else {
-        building.roadAccess = module;
-    }
-
-    return module;
-}
-
-/**
- * Helper to check road access using module (standalone function)
- * Non-invasive: can replace inline logic gradually
- * @param {Array} neighbors - Neighbors array
- * @returns {Object} { hasAccess: boolean, roadCount: number }
- */
-export function checkRoadAccess(neighbors) {
-    const normalized = (neighbors || []).map(fromLegacyNeighbor);
-    const roadAccess = evaluateRoadAccess(normalized);
-    return {
-        hasAccess: roadAccess.hasAccess,
-        roadCount: roadAccess.roadCount,
-    };
-}
 
 /**
  * Creates a food module for a building

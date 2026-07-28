@@ -1,5 +1,13 @@
+import { toPublishedBuildingId } from '../value-objects/BuildingId.js';
+
 /**
  * Événement de domaine : l'accès routier d'un bâtiment a changé.
+ * `buildingId` dans le payload = Published Language (string).
+ *
+ * @param {object} params
+ * @param {string | Readonly<{ value: string }>} params.buildingId
+ * @param {number} params.previousRoadCount
+ * @param {Readonly<{ roadCount: number, hasAccess: boolean }>} params.newRoadAccess
  */
 export function createRoadAccessChanged({
   buildingId,
@@ -8,7 +16,7 @@ export function createRoadAccessChanged({
 }) {
   return Object.freeze({
     type: 'urban.RoadAccessChanged',
-    buildingId,
+    buildingId: toPublishedBuildingId(buildingId),
     previousRoadCount,
     newRoadCount: newRoadAccess.roadCount,
     hasAccess: newRoadAccess.hasAccess,

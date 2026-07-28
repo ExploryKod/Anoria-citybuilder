@@ -134,7 +134,7 @@ describe('FoodDistributionService', () => {
                     type: 'House-Blue',
                     x: 5,
                     y: 3, // Distance = 2 (dans la portée)
-                    neighbors: [{ name: 'roads', isRoad: true }]
+                    roads: 1,
                 },
                 {
                     id: 'House-Red-7-5',
@@ -142,7 +142,7 @@ describe('FoodDistributionService', () => {
                     type: 'House-Red',
                     x: 7,
                     y: 5, // Distance = 2 (dans la portée)
-                    neighbors: [{ name: 'roads', isRoad: true }]
+                    roads: 1,
                 }
             ];
             
@@ -159,7 +159,7 @@ describe('FoodDistributionService', () => {
                     type: 'House-Blue',
                     x: 5,
                     y: 3, // Distance = 2 (dans la portée)
-                    neighbors: [{ name: 'roads', isRoad: true }]
+                    roads: 1,
                 },
                 {
                     id: 'House-Red-15-15',
@@ -167,7 +167,7 @@ describe('FoodDistributionService', () => {
                     type: 'House-Red',
                     x: 15,
                     y: 15, // Distance = 20 (trop loin)
-                    neighbors: [{ name: 'roads', isRoad: true }]
+                    roads: 1,
                 }
             ];
             
@@ -185,7 +185,7 @@ describe('FoodDistributionService', () => {
                     type: 'House-Blue',
                     x: 5,
                     y: 3,
-                    neighbors: [] // Pas de route
+                    roads: 0,
                 }
             ];
             
@@ -202,7 +202,7 @@ describe('FoodDistributionService', () => {
                     type: 'Farm-Wheat',
                     x: 5,
                     y: 3,
-                    neighbors: [{ name: 'roads', isRoad: true }]
+                    roads: 1,
                 }
             ];
             
@@ -250,7 +250,8 @@ describe('FoodDistributionService', () => {
                 type: 'Market-Stall',
                 x: 5,
                 y: 5,
-                neighbors: [] // Pas de route
+                roads: 0,
+                neighbors: [],
             };
             
             await housesStore.addHouse(market);
@@ -268,6 +269,7 @@ describe('FoodDistributionService', () => {
                 type: 'Market-Stall',
                 x: 5,
                 y: 5,
+                roads: 1,
                 neighbors: [{ name: 'roads', isRoad: true }],
                 employees: { worker: 0, worker_need: 3 } // Pas d'employés
             };
@@ -287,6 +289,8 @@ describe('FoodDistributionService', () => {
                 type: 'Market-Stall',
                 x: 5,
                 y: 5,
+                roads: 1,
+                roads: 1,
                 neighbors: [{ name: 'roads', isRoad: true }], // Pas de fermes
                 employees: { worker: 2, worker_need: 2 }
             };
@@ -305,6 +309,7 @@ describe('FoodDistributionService', () => {
                 type: 'Market-Stall',
                 x: 5,
                 y: 5,
+                roads: 1,
                 neighbors: [
                     { name: 'roads', isRoad: true },
                     { name: 'Farm-Wheat-5-4', type: 'Farm-Wheat', x: 5, y: 4 }
@@ -333,6 +338,7 @@ describe('FoodDistributionService', () => {
                 type: 'Market-Stall',
                 x: 5,
                 y: 5,
+                roads: 1,
                 neighbors: [{ name: 'roads', isRoad: true }],
                 employees: { worker: 2, worker_need: 2 }
             };
@@ -355,6 +361,7 @@ describe('FoodDistributionService', () => {
                 type: 'Market-Stall',
                 x: 5,
                 y: 5,
+                roads: 1,
                 neighbors: [{ name: 'roads', isRoad: true }],
                 employees: { worker: 2, worker_need: 2 },
                 isBuying: true // Initialement true
@@ -377,6 +384,7 @@ describe('FoodDistributionService', () => {
                 type: 'Market-Stall',
                 x: 5,
                 y: 5,
+                roads: 1,
                 neighbors: [{ name: 'roads', isRoad: true }],
                 employees: { worker: 2, worker_need: 2 }
             };
@@ -387,6 +395,7 @@ describe('FoodDistributionService', () => {
                 type: 'Market-Stall',
                 x: 10,
                 y: 10,
+                roads: 1,
                 neighbors: [{ name: 'roads', isRoad: true }],
                 employees: { worker: 2, worker_need: 2 }
             };

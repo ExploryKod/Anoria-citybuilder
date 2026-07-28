@@ -1,79 +1,18 @@
 /**
  * Tests pour ModuleHelper
- * 
+ *
  * Ce module fournit des fonctions utilitaires pour :
- * - Vérifier l'accès routier des bâtiments
  * - Vérifier la disponibilité de nourriture
  * - Déterminer si une maison peut évoluer (Blue → Red → Purple → Palace)
+ *
+ * Accès routier : voir tests/contexts/urban/domain/RoadAccessPolicy.test.js
  */
 
-import { 
-    checkRoadAccess,
+import {
     checkFoodAvailability,
     canHouseEvolveToPurple,
     canHouseEvolveToPalace
 } from '../src/js/game/modules/ModuleHelper.js';
-
-// ============================================================================
-// checkRoadAccess - Vérifie si un bâtiment a accès à une route
-// ============================================================================
-describe('checkRoadAccess', () => {
-    
-    describe('Détection des routes dans les voisins', () => {
-        test('retourne hasAccess: true si une route est présente', () => {
-            const neighbors = [
-                { name: 'House-Blue' },
-                { name: 'roads' },
-                { name: 'Farm-Wheat' }
-            ];
-            
-            const result = checkRoadAccess(neighbors);
-            
-            expect(result.hasAccess).toBe(true);
-            expect(result.roadCount).toBe(1);
-        });
-
-        test('retourne hasAccess: false si aucune route', () => {
-            const neighbors = [
-                { name: 'House-Blue' },
-                { name: 'Farm-Wheat' }
-            ];
-            
-            const result = checkRoadAccess(neighbors);
-            
-            expect(result.hasAccess).toBe(false);
-            expect(result.roadCount).toBe(0);
-        });
-
-        test('compte plusieurs routes correctement', () => {
-            const neighbors = [
-                { name: 'roads' },
-                { name: 'roads' },
-                { name: 'House-Blue' }
-            ];
-            
-            const result = checkRoadAccess(neighbors);
-            
-            expect(result.hasAccess).toBe(true);
-            expect(result.roadCount).toBe(2);
-        });
-    });
-
-    describe('Cas limites', () => {
-        test('tableau vide retourne hasAccess: false', () => {
-            const result = checkRoadAccess([]);
-            
-            expect(result.hasAccess).toBe(false);
-            expect(result.roadCount).toBe(0);
-        });
-
-        test('undefined traité comme tableau vide', () => {
-            const result = checkRoadAccess(undefined);
-            
-            expect(result.hasAccess).toBe(false);
-        });
-    });
-});
 
 // ============================================================================
 // checkFoodAvailability - Vérifie la disponibilité de nourriture

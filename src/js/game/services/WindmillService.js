@@ -1,6 +1,5 @@
 import { SimService } from './SimService.js';
-import { checkRoadAccess } from '../modules/ModuleHelper.js';
-import { makeDbItemId } from '../../utils/utils.js';
+import { hasRoadAccessFromCount } from '../../../contexts/urban/domain/value-objects/RoadAccess.js';
 import { TimeManager } from '../utils/TimeManager.js';
 import config from '../config.js';
 
@@ -147,11 +146,7 @@ export class WindmillService extends SimService {
             return;
         }
 
-        // Check if windmill has road access (REQUIRED for collecting food)
-        const neighbors = windmillData.neighbors || [];
-        const { hasAccess: hasRoadAccess, roadCount } = checkRoadAccess(neighbors);
-        
-        if (!hasRoadAccess) {
+        if (!hasRoadAccessFromCount(windmillData.roads)) {
             // Windmill has no road access - CANNOT collect food from farms
             // Set isCollecting to false (no road access = cannot collect)
             await housesStore.updateHouseFields(windmillId, { isCollecting: false }).catch(err => {
@@ -248,11 +243,7 @@ export class WindmillService extends SimService {
                     continue;
                 }
 
-                // Check if farm has road access (required for production)
-                const farmNeighbors = farmData.neighbors || [];
-                const { hasAccess: farmHasRoadAccess } = checkRoadAccess(farmNeighbors);
-                
-                if (!farmHasRoadAccess) {
+                if (!hasRoadAccessFromCount(farmData.roads)) {
                     continue;
                 }
 

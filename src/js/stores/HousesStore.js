@@ -113,7 +113,7 @@ class HouseStore {
 
         for (const house of houses) {
             if (house.type && house.type.includes('House')) { // Only process houses
-                const hasRoadAccess = house.neighbors && house.neighbors.filter(neighbor => neighbor.name === 'roads').length > 0;
+                const hasRoadAccess = (house.roads ?? 0) > 0;
                 const currentPop = house.pop || 0;
                 
                 if (!hasRoadAccess) {

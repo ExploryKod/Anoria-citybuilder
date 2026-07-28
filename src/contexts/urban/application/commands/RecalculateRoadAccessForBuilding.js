@@ -41,11 +41,11 @@ export class RecalculateRoadAccessForBuilding {
       return { updated: false, buildingId, roadAccess };
     }
 
-    await this.buildingRepository.saveRoadAccess(buildingId, roadAccess.roadCount);
+    await this.buildingRepository.saveRoadAccess(building.id, roadAccess.roadCount);
 
     this.eventPublisher.publish(
       createRoadAccessChanged({
-        buildingId,
+        buildingId: building.buildingId ?? building.id,
         previousRoadCount,
         newRoadAccess: roadAccess,
       })
