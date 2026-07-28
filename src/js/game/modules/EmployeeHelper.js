@@ -51,7 +51,25 @@ export function getDefaultEmployees(buildingType) {
     const buildingNeeds = config.employment?.buildingNeeds || {};
     
     // Get worker_need and elite_need from config
-    const needs = buildingNeeds[buildingType] || { worker_need: 0, elite_need: 0 };
+    let needs = buildingNeeds[buildingType] || { worker_need: 0, elite_need: 0 };
+    
+    // Pour les factories (Winery-001), calculer dynamiquement le worker_need
+    // worker_need = (nombre de matières premières + nombre de produits finis) * 2
+    if (buildingType === 'Winery-001') {
+        const factoryEmployeeNeeds = config.employment?.factoryEmployeeNeeds || {};
+        
+        // Compter les matières premières et produits finis
+        const rawMaterials = ['wood', 'rock', 'clay', 'iron', 'gold'];
+        const finishedProducts = ['furniture', 'weapons', 'pottery', 'jewelry'];
+        
+        const totalItems = rawMaterials.length + finishedProducts.length;
+        const calculatedWorkerNeed = totalItems * 2;
+        
+        needs = {
+            worker_need: calculatedWorkerNeed,
+            elite_need: needs.elite_need || 0
+        };
+    }
     
     // Calculate salary based on needs (assuming 10 per worker/elite)
     const salary = (needs.worker_need || 0) * 10 + (needs.elite_need || 0) * 10;
@@ -70,6 +88,7 @@ export function getDefaultEmployees(buildingType) {
         };
     }
     
+
     // Return structure with needs from config
     // NOTE: No priority here - priority is looked up from localStorage at runtime
     return {

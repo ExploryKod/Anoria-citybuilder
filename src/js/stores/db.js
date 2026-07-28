@@ -13,7 +13,8 @@ db.delete({ disableAutoOpen: false })
             budget: 'name',
             objectives: 'name', // Store pour les échecs et succès d'objectifs
             journal: '++id, turn, date, type, amount, description', // Journal des écritures comptables
-            foodTraceability: '++id, turn, month, year, date, transactionType, fromId, fromCoords, toId, toCoords, foodType, quantity, price' // Traçabilité alimentaire
+            foodTraceability: '++id, turn, month, year, date, transactionType, fromId, fromCoords, toId, toCoords, foodType, quantity, price', // Traçabilité alimentaire
+            productionJournal: '++id, turn, month, year, date, factoryId, eventType, resourceType, quantity, price, remainingStocks, logsConsumed, productionTurns' // Journal de production des factories
         });
         // Database cleared and recreated successfully
         
