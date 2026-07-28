@@ -1,6 +1,8 @@
 /**
  * Port : persistance des bâtiments (aggregate snapshot).
  * Implémentation : infrastructure/persistence/dexie/
+ *
+ * Les buildingId au port sont en Published Language (string).
  */
 export class BuildingRepository {
   async findById(_buildingId) {

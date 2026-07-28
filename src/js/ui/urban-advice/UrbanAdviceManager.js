@@ -2,6 +2,7 @@
  * UrbanAdviceManager - Gère le centre de conseils urbains
  */
 import { initLoanSystem, loadActiveLoans } from '../loans/LoansManager.js';
+import { hasRoadAccessFromCount } from '../../contexts/urban/domain/value-objects/RoadAccess.js';
 
 /**
  * Initialise le centre de conseils urbains
@@ -189,18 +190,7 @@ export async function loadAdvice() {
         const housesWithoutRoads = [];
         for (const house of houses) {
             if (!house.type || !house.type.includes('House')) continue;
-            let hasRoadAccess = false;
-            try {
-                const { checkRoadAccess } = await import('../../game/modules/ModuleHelper.js');
-                hasRoadAccess = !!(house.neighbors && checkRoadAccess(house.neighbors).hasAccess);
-            } catch (err) {
-                console.warn('[UrbanAdviceManager] Falling back to inline road access check because ModuleHelper import failed.', {
-                    error: err?.message || err,
-                    houseId: house.id,
-                    neighborsCount: house.neighbors?.length ?? 0
-                });
-                hasRoadAccess = !!(house.neighbors && house.neighbors.filter(n => n.name === 'roads').length > 0);
-            }
+            const hasRoadAccess = hasRoadAccessFromCount(house.roads);
             if (!hasRoadAccess) housesWithoutRoads.push(house);
         }
 

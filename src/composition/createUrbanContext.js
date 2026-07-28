@@ -31,5 +31,27 @@ export function createUrbanContext({ housesStore, eventPublisher }) {
     recalculateRoadAccessForBuilding,
     recalculateAllRoadAccess,
     getBuildingRoadAccess,
+
+    /** Raccourci UI : accès routier d'un bâtiment */
+    async getRoadAccess(buildingId) {
+      const result = await getBuildingRoadAccess.execute(buildingId);
+      return result?.roadAccess ?? { roadCount: 0, hasAccess: false };
+    },
   };
+}
+
+/** @type {ReturnType<typeof createUrbanContext> | null} */
+let sharedUrban = null;
+
+/** Un seul contexte Urban par partie (même bus d'événements partout). */
+export function getOrCreateUrbanContext(housesStore) {
+  if (!sharedUrban) {
+    sharedUrban = createUrbanContext({ housesStore });
+  }
+  return sharedUrban;
+}
+
+/** @internal Tests uniquement */
+export function resetUrbanContextForTests() {
+  sharedUrban = null;
 }

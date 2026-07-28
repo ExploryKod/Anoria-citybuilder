@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import {  assetsPrices } from '../meshs/data.js';
-import { checkRoadAccess, canHouseEvolveToPurple, canHouseEvolveToPalace, checkFoodAvailability } from './modules/ModuleHelper.js';
+import { canHouseEvolveToPurple, canHouseEvolveToPalace, checkFoodAvailability } from './modules/ModuleHelper.js';
 import { getDefaultEmployees, getSectorPriority, getSectorName } from './modules/EmployeeHelper.js';
 import { firstHouses } from '../ui/nodes.js';
 import { TimeManager } from './utils/TimeManager.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
-import {getAssetPrice, makeDbItemId, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, isAreaAvailableForBuilding} from '../utils/utils.js';
+import {getAssetPrice, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, isAreaAvailableForBuilding} from '../utils/utils.js';
+import { toBuildingIdString } from '../../contexts/urban/domain/value-objects/BuildingId.js';
 import config from './config.js';
 import {
     displayTime,
@@ -30,6 +31,7 @@ import gameUI from './GameUI.js';
 import appRegistry from './AppRegistry.js';
 import webglDetector from '../utils/WebGLResourceDetector.js';
 import commerceStore from '../stores/CommerceStore.js';
+import { getOrCreateUrbanContext } from '../../composition/createUrbanContext.js';
 
 // Initialiser le cache de TimeManager au démarrage
 TimeManager.initializeCache().catch(err => {
@@ -455,7 +457,8 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
 
 
     /* Scene initialization */
-    const scene = createScene(housesStore, gameStore, assetManager);
+    const urban = getOrCreateUrbanContext(housesStore);
+    const scene = createScene(housesStore, gameStore, assetManager, urban);
 
     /* City initialization */
     // Detect WebGL capabilities first
@@ -599,7 +602,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
 
             if(buildingsObjects.includes(selectedObject.userData.id)) {
                 // Building selection
-                const uniqueId = makeDbItemId(selectedObject.userData.id, selectedObject.userData.x, selectedObject.userData.y)
+                const uniqueId = toBuildingIdString(selectedObject.userData.id, selectedObject.userData.x, selectedObject.userData.y)
                 
                 // Debug: Log the ID construction and retrieved data
                 console.log('[game.js] Building info popup:', {
@@ -610,14 +613,14 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 });
                 
                 const buildingPop = await housesStore.getHouseItem(uniqueId, 'pop')
-                const houseRoads = await housesStore.getHouseItem(uniqueId, 'roads');
+                const roadAccess = await urban.getRoadAccess(uniqueId);
                 let houseStocks = await housesStore.getHouseItem(uniqueId, 'stocks');
                 
                 // Debug: Log retrieved data
                 console.log('[game.js] Retrieved data from DB:', {
                     uniqueId,
                     pop: buildingPop,
-                    roads: houseRoads,
+                    roads: roadAccess.roadCount,
                     hasStocks: !!houseStocks
                 });
                 
@@ -686,7 +689,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     makeInfoKeyValue('Type', `${selectedObject.userData.id}`);
                     makeInfoKeyValue('Adresse', `x: ${selectedObject.userData.x} | y: ${selectedObject.userData.y}`);
                     makeInfoKeyValue(`Habitants`, buildingPop);
-                    makeInfoKeyValue('Routes desservies', houseRoads ? houseRoads : 0);
+                    makeInfoKeyValue('Routes desservies', roadAccess.roadCount);
                 }
 
                 if(neighbors.length > 0) {
@@ -707,7 +710,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     
                     // Evolution section - show conditions for next evolution step
                     const buildingType = selectedObject.userData.id;
-                    const { hasAccess: hasRoadAccess } = checkRoadAccess(neighbors || []);
+                    const hasRoadAccess = roadAccess.hasAccess;
                     const { totalFood } = checkFoodAvailability(houseStocks || {}, buildingPop || 0);
                     
                     makeInfoSection('Évolution');
@@ -1218,14 +1221,11 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
             
                 price = getAssetPrice(activeToolId, assetsPrices) || 0
                 
-                const [houseStocks, houseNeighbors, budgetData] = await Promise.all([
+                const [houseStocks, budgetData] = await Promise.all([
                     housesStore.getHouseItem(houseID, 'stocks'),
-                    housesStore.getHouseItem(houseID, 'neighbors'),
                     window.budgetManager ? window.budgetManager.getCurrentBudget() : Promise.resolve({ funds: 0 })
                 ]);
-                
-                const { roadCount } = checkRoadAccess(houseNeighbors || []);
-                const HouseRoads  = { roads: roadCount };
+
                 const funds = budgetData.funds || 0;
                 
                 const dbHouseData = {
@@ -1238,7 +1238,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     gameTurn: time,
                     time: 0,
                     isBuilding: true,
-                    roads:  HouseRoads.roads ?? 0,
+                    roads: 0, // recalculé au prochain tick (RoadConnectivityService)
                     stage : 0,
                     stageName: "",
                     price : price ? price : 0,

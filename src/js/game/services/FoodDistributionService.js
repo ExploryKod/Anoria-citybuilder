@@ -1,6 +1,6 @@
 import { SimService } from './SimService.js';
-import { checkRoadAccess } from '../modules/ModuleHelper.js';
-import { makeDbItemId } from '../../utils/utils.js';
+import { hasRoadAccessFromCount } from '../../../contexts/urban/domain/value-objects/RoadAccess.js';
+import { toBuildingIdString } from '../../../contexts/urban/domain/value-objects/BuildingId.js';
 import { TimeManager } from '../utils/TimeManager.js';
 import config from '../config.js';
 import FoodTraceabilityService from '../../stores/FoodTraceabilityService.js';
@@ -128,11 +128,7 @@ export class FoodDistributionService extends SimService {
             return;
         }
 
-        // Check if market has road access (REQUIRED for both receiving and distributing food)
-        const neighbors = marketData.neighbors || [];
-        const { hasAccess: hasRoadAccess, roadCount } = checkRoadAccess(neighbors);
-        
-        if (!hasRoadAccess) {
+        if (!hasRoadAccessFromCount(marketData.roads)) {
             // Market has no road access - CANNOT receive food from farms OR distribute to houses
             return;
         }
@@ -149,6 +145,7 @@ export class FoodDistributionService extends SimService {
         }
 
         // Separate neighbors into farms and houses
+        const neighbors = marketData.neighbors || [];
         // Neighbors can have either 'name' or 'buildingId' field (check both)
         // Also check the type field if available
         const farmsNearby = neighbors.filter(neighbor => {
@@ -175,7 +172,7 @@ export class FoodDistributionService extends SimService {
                 buildingId: f.buildingId,
                 x: f.x,
                 y: f.y,
-                constructedId: (f.x !== undefined && f.y !== undefined && f.name) ? makeDbItemId(f.name, f.x, f.y) : null
+                constructedId: (f.x !== undefined && f.y !== undefined && f.name) ? toBuildingIdString(f.name, f.x, f.y) : null
             })),
             houseNeighbors: marketHouses.map(h => ({
                 id: h.id,
@@ -183,7 +180,7 @@ export class FoodDistributionService extends SimService {
                 buildingId: h.buildingId,
                 x: h.x,
                 y: h.y,
-                constructedId: (h.x !== undefined && h.y !== undefined && h.name) ? makeDbItemId(h.name, h.x, h.y) : null
+                constructedId: (h.x !== undefined && h.y !== undefined && h.name) ? toBuildingIdString(h.name, h.x, h.y) : null
             })),
             allNeighborsSample: neighbors.length > 0 ? neighbors[0] : null,
             totalNeighbors: neighbors.length
@@ -253,11 +250,11 @@ export class FoodDistributionService extends SimService {
                 return false;
             }
 
-            // Check if house has road access (required for food distribution)
-            const neighbors = house.neighbors || [];
-            const { hasAccess: hasRoadAccess } = checkRoadAccess(neighbors);
-            
-            return hasRoadAccess;
+            if (!hasRoadAccessFromCount(house.roads)) {
+                return false;
+            }
+
+            return true;
         });
 
         return housesInRange;
@@ -277,12 +274,8 @@ export class FoodDistributionService extends SimService {
         const marketsWithRoadAccess = [];
         for (const market of markets) {
             const marketData = await housesStore.getHouse(market.id || market.name);
-            if (marketData) {
-                const neighbors = marketData.neighbors || [];
-                const { hasAccess: hasRoadAccess } = checkRoadAccess(neighbors);
-                if (hasRoadAccess && marketData.x !== undefined && marketData.y !== undefined) {
+            if (marketData && hasRoadAccessFromCount(marketData.roads) && marketData.x !== undefined && marketData.y !== undefined) {
                     marketsWithRoadAccess.push(marketData);
-                }
             }
         }
 
@@ -396,7 +389,7 @@ export class FoodDistributionService extends SimService {
                 // Try to construct ID from name (type) and coordinates
                 const farmType = farmNeighbor.name || farmNeighbor.type || '';
                 if (farmType && farmNeighbor.x !== undefined && farmNeighbor.y !== undefined) {
-                    farmId = makeDbItemId(farmType, farmNeighbor.x, farmNeighbor.y);
+                    farmId = toBuildingIdString(farmType, farmNeighbor.x, farmNeighbor.y);
                     if (!farmId) {
                         console.warn('[FoodDistributionService] Failed to construct farm ID from neighbor:', {
                             type: farmType,
@@ -423,11 +416,7 @@ export class FoodDistributionService extends SimService {
                     continue;
                 }
 
-                // Check if farm has road access (required for production)
-                const farmNeighbors = farmData.neighbors || [];
-                const { hasAccess: farmHasRoadAccess } = checkRoadAccess(farmNeighbors);
-                
-                if (!farmHasRoadAccess) {
+                if (!hasRoadAccessFromCount(farmData.roads)) {
                     console.warn('[FoodDistributionService] Farm has no road access, skipping:', {
                         farmId,
                         farmType: farmData.type
@@ -771,7 +760,7 @@ export class FoodDistributionService extends SimService {
                     // Try to construct ID from type and coordinates
                     const houseType = house.type || house.name;
                     if (houseType) {
-                        houseId = makeDbItemId(houseType, house.x, house.y);
+                        houseId = toBuildingIdString(houseType, house.x, house.y);
                     }
                 }
                 if (!houseId) {

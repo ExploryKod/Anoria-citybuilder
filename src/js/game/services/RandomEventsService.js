@@ -4,7 +4,7 @@
  */
 import { isEventsEnabled, getEventProbability, getDaysPerMonth } from '../../../config/events.js';
 import { SimService } from './SimService.js';
-import { makeDbItemId } from '../../utils/utils.js';
+import { toBuildingIdString } from '../../../contexts/urban/domain/value-objects/BuildingId.js';
 import { TimeManager } from '../utils/TimeManager.js';
 
 export class RandomEventsService extends SimService {
@@ -157,7 +157,7 @@ export class RandomEventsService extends SimService {
             }
 
             // Supprimer la maison de la base de données EN PREMIER
-            const houseId = makeDbItemId(houseToDestroy.type, houseToDestroy.x, houseToDestroy.y);
+            const houseId = toBuildingIdString(houseToDestroy.type, houseToDestroy.x, houseToDestroy.y);
             if (houseId) {
                 await housesStore.deleteOneHouse(houseId);
             }

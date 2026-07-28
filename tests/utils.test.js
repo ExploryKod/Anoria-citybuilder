@@ -1,92 +1,21 @@
 /**
  * Tests pour utils.js
- * 
- * Ce module contient des fonctions utilitaires pures :
- * - Génération d'identifiants pour la base de données
+ *
+ * Ce module contient des fonctions utilitaires :
  * - Récupération des prix des bâtiments
  * - Vérification de disponibilité des zones de construction
  * - Filtrage et manipulation d'assets
+ *
+ * Identifiants bâtiment : tests/contexts/urban/buildingId.behavior.test.js
  */
 
-import { 
-    makeDbItemId,
+import {
     getAssetPrice,
     isAreaAvailableForBuilding,
     getAssetsByCategory,
     updateAssetsPrices,
     getBuildingNeighbors
 } from '../src/js/utils/utils.js';
-
-// ============================================================================
-// makeDbItemId - Génère un identifiant unique pour IndexedDB
-// Format: "buildingType-x-y" (ex: "Farm-Wheat-5-3")
-// ============================================================================
-describe('makeDbItemId', () => {
-    
-    describe('Génération d\'ID valide', () => {
-        test('crée un ID au format "type-x-y"', () => {
-            const id = makeDbItemId('Farm-Wheat', 5, 3);
-            
-            expect(id).toBe('Farm-Wheat-5-3');
-        });
-
-        test('fonctionne avec des coordonnées à 0', () => {
-            const id = makeDbItemId('House-Blue', 0, 0);
-            
-            expect(id).toBe('House-Blue-0-0');
-        });
-
-        test('fonctionne avec de grandes coordonnées', () => {
-            const id = makeDbItemId('roads', 15, 15);
-            
-            expect(id).toBe('roads-15-15');
-        });
-    });
-
-    describe('Validation du buildingId', () => {
-        test('retourne false si buildingId est undefined', () => {
-            expect(makeDbItemId(undefined, 5, 3)).toBe(false);
-        });
-
-        test('retourne false si buildingId est null', () => {
-            expect(makeDbItemId(null, 5, 3)).toBe(false);
-        });
-
-        test('retourne false si buildingId est vide', () => {
-            expect(makeDbItemId('', 5, 3)).toBe(false);
-        });
-
-        test('retourne false si buildingId n\'est pas une chaîne', () => {
-            expect(makeDbItemId(123, 5, 3)).toBe(false);
-        });
-    });
-
-    describe('Validation des coordonnées x et y', () => {
-        test('retourne false si x est undefined', () => {
-            expect(makeDbItemId('Farm-Wheat', undefined, 3)).toBe(false);
-        });
-
-        test('retourne false si y est undefined', () => {
-            expect(makeDbItemId('Farm-Wheat', 5, undefined)).toBe(false);
-        });
-
-        test('retourne false si x est null', () => {
-            expect(makeDbItemId('Farm-Wheat', null, 3)).toBe(false);
-        });
-
-        test('retourne false si y est null', () => {
-            expect(makeDbItemId('Farm-Wheat', 5, null)).toBe(false);
-        });
-
-        test('retourne false si x est NaN', () => {
-            expect(makeDbItemId('Farm-Wheat', NaN, 3)).toBe(false);
-        });
-
-        test('retourne false si y est NaN', () => {
-            expect(makeDbItemId('Farm-Wheat', 5, NaN)).toBe(false);
-        });
-    });
-});
 
 // ============================================================================
 // getAssetPrice - Récupère le prix d'un bâtiment depuis le catalogue

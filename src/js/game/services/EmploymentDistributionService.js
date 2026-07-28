@@ -1,5 +1,5 @@
 import { SimService } from './SimService.js';
-import { checkRoadAccess } from '../modules/ModuleHelper.js';
+import { hasRoadAccessFromCount } from '../../../contexts/urban/domain/value-objects/RoadAccess.js';
 import { TimeManager } from '../utils/TimeManager.js';
 import { getSectorPriority, getAllSectorPriorities } from '../modules/EmployeeHelper.js';
 import config from '../config.js';
@@ -134,11 +134,7 @@ export class EmploymentDistributionService extends SimService {
             // Only houses provide workers
             if (!this.isHouse(building)) continue;
             
-            // Check road access (required to send workers)
-            const neighbors = building.neighbors || [];
-            const { hasAccess } = checkRoadAccess(neighbors);
-            
-            if (!hasAccess) {
+            if (!hasRoadAccessFromCount(building.roads)) {
                 continue;
             }
             
@@ -169,11 +165,7 @@ export class EmploymentDistributionService extends SimService {
             // Skip houses and roads
             if (this.isHouse(building) || this.isRoad(building)) continue;
             
-            // Check road access (required to receive workers)
-            const neighbors = building.neighbors || [];
-            const { hasAccess } = checkRoadAccess(neighbors);
-            
-            if (!hasAccess) {
+            if (!hasRoadAccessFromCount(building.roads)) {
                 continue;
             }
             

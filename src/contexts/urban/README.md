@@ -16,13 +16,24 @@ Urbanisme, voirie, voisinage et desserte routière des bâtiments.
 
 - Une route n'a pas besoin d'accès routier
 - `roadCount` = nombre de voisins identifiés comme routes
-- Identifiant métier : `{type}-{x}-{y}` (ex. `House-Blue-3-7`)
+- Identifiant métier : `{type}-{x}-{y}` (ex. `House-Blue-3-7`) — VO `BuildingId`, string `.value` en Published Language
+- Tuile : VO `TileCoord` `(x, y)` entiers
+- Snapshot Urban : `id` (string) + `buildingId` (VO) + `tile` (VO)
 
 ## Use cases (application)
 
 - `RecalculateRoadAccessForBuilding` — recalcule l'accès routier d'un bâtiment
 - `RecalculateAllRoadAccess` — recalcule pour toute la ville
 - `GetBuildingRoadAccess` — lecture pour l'UI (query)
+
+## Tests
+
+Comportement métier (sociable, use cases / contrats) :
+
+- `tests/contexts/urban/roadAccess.behavior.test.js` — desserte routière
+- `tests/contexts/urban/buildingId.behavior.test.js` — identifiants / tuiles
+
+Les tests décrivent des **scénarios**, pas une classe du domaine par fichier. Refactoriser `RoadAccessPolicy` ou les value objects ne doit pas casser ces tests tant que le comportement observable reste identique.
 
 ## Hors scope
 
@@ -32,5 +43,5 @@ Urbanisme, voirie, voisinage et desserte routière des bâtiments.
 
 ## Relations (context map)
 
-- **ACL** vers `src/js/` (legacy POO)
-- **Published Language** (futur) vers Economy : `buildingId: string`
+- **ACL** vers `src/js/` (legacy POO) — `makeDbItemId` supprimé, call sites → `toBuildingIdString`
+- **Published Language** : `buildingId: string` (`House-Blue-3-7`)

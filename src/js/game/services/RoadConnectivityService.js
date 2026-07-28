@@ -1,5 +1,5 @@
 import { SimService } from './SimService.js';
-import { createUrbanContext } from '../../../composition/createUrbanContext.js';
+import { getOrCreateUrbanContext } from '../../../composition/createUrbanContext.js';
 
 /**
  * RoadConnectivityService - Validates and updates road access city-wide
@@ -12,7 +12,7 @@ export class RoadConnectivityService extends SimService {
 
     async simulate(city, housesStore, time = 0) {
         try {
-            const urban = createUrbanContext({ housesStore });
+            const urban = getOrCreateUrbanContext(housesStore);
             await urban.recalculateAllRoadAccess.execute();
             this.lastUpdateTime = time;
         } catch (error) {
@@ -26,7 +26,7 @@ export class RoadConnectivityService extends SimService {
 
     async updateBuilding(housesStore, buildingId) {
         try {
-            const urban = createUrbanContext({ housesStore });
+            const urban = getOrCreateUrbanContext(housesStore);
             await urban.recalculateRoadAccessForBuilding.execute(buildingId);
         } catch (error) {
             console.error('[RoadConnectivityService] Error updating building:', {

@@ -1,68 +1,39 @@
 # Module System Usage Examples
 
-## Non-Invasive Integration
+## Accès routier & identifiants (BC Urban)
 
-The module system can be used **alongside existing code** without breaking anything. Here are examples:
-
-### Example 1: Standalone Helper Function (Easiest)
-
-Replace inline road access checks with the helper:
-
-**Before:**
 ```javascript
-const isRoad = marketNeighbors.filter(neighbor => neighbor.name === 'roads').length;
-const hasRoadAccess = isRoad > 0;
+import { getOrCreateUrbanContext } from '../../composition/createUrbanContext.js';
+import { hasRoadAccessFromCount } from '../../contexts/urban/domain/value-objects/RoadAccess.js';
+import { toBuildingIdString } from '../../contexts/urban/domain/value-objects/BuildingId.js';
+import { setupRoadAccessIcons } from '../../infrastructure/roadAccessIcons.js';
+
+const urban = getOrCreateUrbanContext(housesStore);
+
+// Identifiant IndexedDB (remplace makeDbItemId)
+const id = toBuildingIdString('House-Blue', x, y); // "House-Blue-3-7" | null
+
+// Services / UI : champ `roads` en base
+if (hasRoadAccessFromCount(building.roads)) { /* ... */ }
+
+// Panneau info
+const { hasAccess, roadCount } = await urban.getRoadAccess(id);
+
+// Rendu 3D : icône no-road
+const syncRoadAccess = setupRoadAccessIcons(urban, { assetManager, textures });
+await syncRoadAccess({ buildingId: id, mesh, position, scale });
 ```
 
-**After (using module helper):**
-```javascript
-import { checkRoadAccess } from './modules/ModuleHelper.js';
+## Nourriture (ModuleHelper)
 
-const { hasAccess, roadCount } = checkRoadAccess(marketNeighbors);
-const hasRoadAccess = hasAccess;
-// roadCount is also available if needed
+```javascript
+import { checkFoodAvailability } from './modules/ModuleHelper.js';
+
+const { hasFood, totalFood } = checkFoodAvailability(stocks, population);
 ```
 
-### Example 2: Attach Module to Building (Whole Building Benefits)
+## Migration modules
 
-**In scene.js update loop:**
-```javascript
-import { getOrCreateRoadAccessModule } from './modules/ModuleHelper.js';
-
-// For a building at buildings[x][y]:
-const building = buildings[x][y];
-const neighbors = await housesStore.getHouseItem(uniqueId, 'neighbors');
-
-// Get or create module (creates once, reuses after)
-const roadAccess = getOrCreateRoadAccessModule(building, neighbors);
-
-// Now you can use:
-if (roadAccess.value) {
-    // Building has road access
-    assetManager.setStatusSprite(building, textures['no-roads'], 'no-road', ...);
-} else {
-    // No road access
-    assetManager.setStatusSprite(building, sentence['no-roads'], 'no-road', ...);
-}
-
-// Update roads count in DB if needed
-await housesStore.updateHouseFields(uniqueId, {roads: roadAccess.getRoadCount()});
-
-// Use module's toHTML() for info panels
-const html = roadAccess.toHTML(); // "Road Access: Yes (2 roads)"
-```
-
-### Example 3: Gradual Migration Strategy
-
-1. **Phase 1:** Use standalone helper in new code
-2. **Phase 2:** Replace existing checks with helper
-3. **Phase 3:** Attach modules to buildings for persistent state
-4. **Phase 4:** Full integration with building lifecycle
-
-### Benefits
-
-- ✅ **Non-breaking:** Existing code continues to work
-- ✅ **Gradual:** Can adopt module-by-module
-- ✅ **Testable:** Modules can be tested independently
-- ✅ **Extensible:** Easy to add new modules (FoodModule, PowerModule, etc.)
-
+- ✅ Accès routier → `contexts/urban/`
+- ✅ Identifiants → `toBuildingIdString` / `BuildingId` (plus de `makeDbItemId`)
+- FoodModule, EmploymentModule → modules legacy (à migrer plus tard)

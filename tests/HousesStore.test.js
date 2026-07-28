@@ -697,10 +697,10 @@ describe('HousesStore', () => {
         test('réinitialise la population si pas d\'accès routier', async () => {
             await housesStore.addHouse({
                 name: 'House-Blue-1-1',
-                id: 'House-Blue-1-1', // id est utilisé par processPopulationFoodLogic
+                id: 'House-Blue-1-1',
                 type: 'House-Blue',
                 pop: 3,
-                neighbors: [] // Pas de routes
+                roads: 0,
             });
             
             const result = await housesStore.processPopulationFoodLogic();
@@ -715,9 +715,10 @@ describe('HousesStore', () => {
         test('conserve la population si accès routier', async () => {
             await housesStore.addHouse({
                 name: 'House-Blue-1-1',
+                id: 'House-Blue-1-1',
                 type: 'House-Blue',
                 pop: 3,
-                neighbors: [{ name: 'roads' }] // Avec route
+                roads: 1,
             });
             
             const result = await housesStore.processPopulationFoodLogic();
@@ -746,10 +747,10 @@ describe('HousesStore', () => {
         test('retourne un message approprié', async () => {
             await housesStore.addHouse({
                 name: 'House-Blue-1-1',
-                id: 'House-Blue-1-1', // id est utilisé par processPopulationFoodLogic
+                id: 'House-Blue-1-1',
                 type: 'House-Blue',
                 pop: 2,
-                neighbors: []
+                roads: 0,
             });
             
             const result = await housesStore.processPopulationFoodLogic();

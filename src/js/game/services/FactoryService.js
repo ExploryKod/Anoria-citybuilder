@@ -1,5 +1,5 @@
 import { SimService } from './SimService.js';
-import { checkRoadAccess } from '../modules/ModuleHelper.js';
+import { hasRoadAccessFromCount } from '../../../contexts/urban/domain/value-objects/RoadAccess.js';
 import { TimeManager } from '../utils/TimeManager.js';
 import config from '../config.js';
 import productionJournalManager from '../../stores/ProductionJournalManager.js';
@@ -69,9 +69,7 @@ export class FactoryService extends SimService {
         const factoryData = await housesStore.getHouse(factoryId);
         if (!factoryData) return;
 
-        const neighbors = factoryData.neighbors || [];
-        const { hasAccess } = checkRoadAccess(neighbors);
-        if (!hasAccess) return;
+        if (!hasRoadAccessFromCount(factoryData.roads)) return;
 
         const isActive = factoryData.isActive !== false;
         if (!isActive) return;
