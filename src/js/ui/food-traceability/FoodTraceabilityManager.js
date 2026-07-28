@@ -2,6 +2,7 @@
  * FoodTraceabilityManager - Gère l'affichage de la traçabilité alimentaire
  */
 import housesStore from "../../stores/HousesStore.js";
+import { getOrCreateSupplyContext } from "../../acl/supply.js";
 
 // Initialize food traceability tabs (separate function so it can be called when modal opens)
 let tabsInitialized = false;
@@ -168,11 +169,12 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             return monthA - monthB;
         });
         
-        // Get current stocks from IndexedDB for all buildings
+        // Current stocks via Supply BC (not raw Dexie)
         let currentStocks = {};
         let allBuildingsData = [];
         try {
-            allBuildingsData = await housesStore.listAllHouses();
+            const supply = getOrCreateSupplyContext(housesStore);
+            allBuildingsData = await supply.listSupplyStockSnapshots();
             allBuildingsData.forEach(building => {
                 const buildingKey = building.id || building.name;
                 if (buildingKey && building.stocks) {
@@ -180,7 +182,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                 }
             });
         } catch (err) {
-            console.warn('Could not fetch current stocks from IndexedDB:', err);
+            console.warn('Could not fetch current stocks from Supply:', err);
         }
         
         // Calculate stocks for each month by going backwards from current stocks
@@ -462,7 +464,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             
             // Show stocks for all farms this month
             allBuildingsData.forEach(building => {
-                if (building.type && (building.type.includes('Farm') || building.type.includes('Farms'))) {
+                if (building.kind === 'farm' || (building.type && (building.type.includes('Farm') || building.type.includes('Farms')))) {
                     const farmKey = building.id || building.name;
                     const farmStocks = stocksByMonth[farmKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                     const farmStocksAfter = stocksByMonth[farmKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
@@ -492,7 +494,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             
             // Show stocks for all markets this month
             allBuildingsData.forEach(building => {
-                if (building.type && (building.type.includes('Market') || building.type.includes('Commerce'))) {
+                if (building.kind === 'market' || (building.type && (building.type.includes('Market') || building.type.includes('Commerce')))) {
                     const marketKey = building.id || building.name;
                     const marketStocks = stocksByMonth[marketKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                     const marketStocksAfter = { ...marketStocks };
@@ -526,7 +528,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             
             // Show stocks for all houses this month
             allBuildingsData.forEach(building => {
-                if (building.type && (building.type.includes('House') || building.type.includes('Maison'))) {
+                if (building.kind === 'house' || (building.type && (building.type.includes('House') || building.type.includes('Maison')))) {
                     const houseKey = building.id || building.name;
                     const houseStocks = stocksByMonth[houseKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                     const houseStocksAfter = { ...houseStocks };
@@ -956,14 +958,13 @@ export async function loadFoodCharts() {
             throw new Error('FoodTraceabilityService not available');
         }
         
-        if (!housesStore) {
-            throw new Error('HousesStore not available');
-        }
-        
         const transactions = await window.foodTraceabilityService.getAllTransactions();
         
-        // Get current houses data from IndexedDB to calculate current population
-        const allHouses = await housesStore.listAllHouses();
+        // House pop via Supply BC (not raw Dexie)
+        const supply = getOrCreateSupplyContext(housesStore);
+        const allHouses = (await supply.listSupplyStockSnapshots()).filter(
+            (b) => b.kind === 'house' || (b.type && (b.type.includes('House') || b.type.includes('Maison')))
+        );
         
         // Group consumption transactions by year and month to get fed population
         const dataByYearMonth = {};

@@ -43,6 +43,7 @@ Code and ubiquitous language are **English**. UI copy may stay French.
 - `GetBuildingSupplyView` — per-building DTO (info panel + sprites)
 - `ListSupplyMapBuildings` — city map cells (`hasFood`, `marketTooFar`, layout)
 - `ListWindmillSupplyViews` — storage section stocks
+- `ListSupplyStockSnapshots` — admin food-traceability stocks + house pop
 
 **Later**
 - ECS pipeline system `supply.*`
@@ -57,6 +58,6 @@ Code and ubiquitous language are **English**. UI copy may stay French.
 - **ACL**: `src/js/acl/supply.js` (also exports `isWithinMarketRange`)
 - **Composition**: `createSupplyContext.js`
 - Legacy facades: `FoodDistributionService` / `WindmillService` (sales traceability side-effects)
-- UI: `game.js` info panel, `scene.js` sprites, `buttons.js` map, `storage-section.js` stocks — via Supply queries
+- UI: `game.js` info panel, `scene.js` sprites, `buttons.js` map, `storage-section.js` stocks, `FoodTraceabilityManager` — via Supply queries
 
 Rule: `src/js/**` must not import `contexts/supply/domain/**` directly.
