@@ -1,18 +1,18 @@
 import { SimService } from './SimService.js';
 import { hasRoadAccessFromCount } from '../../acl/parcels.js';
+import { createSupplyContext, toSupplyMonth } from '../../acl/supply.js';
 import { TimeManager } from '../utils/TimeManager.js';
-import config from '../config.js';
 
 /**
  * WindmillService - Manages windmill food collection from farms
- * 
+ *
  * Windmill logic:
  * 1. Every December (Décembre), windmills collect available food from ALL farms in the game
  * 2. Collects AFTER markets have finished collecting in autumn (Sept-Oct-Nov)
  * 3. No distance condition - windmills collect from every farm regardless of location
  * 4. Collects whatever food type is available from each farm (wheat, carrot, or cabbage)
- * 
- * Works with IndexedDB as source of truth - all reads/writes go through housesStore
+ *
+ * Stock transfers go through Supply BC; UI flags / sales tracking stay here.
  */
 export class WindmillService extends SimService {
     /**
@@ -176,7 +176,7 @@ export class WindmillService extends SimService {
             return;
         }
 
-        // Set isCollecting to true (windmill has road access, workers, and it's October)
+        // Set isCollecting to true (windmill has road access, workers, and it's December)
         await housesStore.updateHouseFields(windmillId, { isCollecting: true }).catch(err => {
             console.warn('[WindmillService] Failed to update windmill isCollecting flag:', {
                 windmillId,
@@ -184,222 +184,110 @@ export class WindmillService extends SimService {
             });
         });
 
-        // Collect food from ALL farms (no distance condition)
+        // Collect food from ALL farms (no distance condition) via Supply BC
         await this.collectFoodFromFarms(windmillId, allFarms, housesStore, time);
     }
 
     /**
-     * Collects food from all farms into windmill stocks
-     * 
-     * IMPORTANT: This method is only called for windmills WITH road access.
-     * Windmills without road access cannot collect food from farms.
-     * 
-     * Collection rules:
-     * 1. Collects from ALL farms in the game (no distance condition)
-     * 2. Only collects from farms with road access
-     * 3. Collects whatever food type is available (wheat, carrot, or cabbage)
-     * 4. Takes all available stocks from each farm
-     * 
-     * @param {string} windmillId - Windmill ID (must have road access)
-     * @param {Array} farms - Array of all farm objects in the game
-     * @param {HousesStore} housesStore - Database store
-     * @param {number} time - Current simulation time (number of days)
+     * Collects food from all farms into windmill stocks via Supply BC.
+     *
+     * Side effects kept here: salesToWindmill, soldToWindmill, lastCollection.
+     *
+     * @param {string} windmillId
+     * @param {Array} farms
+     * @param {HousesStore} housesStore
+     * @param {number} time
      * @returns {Promise<void>}
      */
     async collectFoodFromFarms(windmillId, farms, housesStore, time = 0) {
-        // Get windmill data to check maxStock limit
-        const windmillData = await housesStore.getHouse(windmillId);
-        if (!windmillData) {
-            console.warn('[WindmillService] Windmill not found:', windmillId);
-            return;
-        }
-        
-        const currentStocks = windmillData.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0, wood: 0 };
-        const maxStock = windmillData.maxStock || 1000; // Default max stock capacity for windmill
-        const currentTotalStock = currentStocks.food || 0;
-        let remainingCapacity = Math.max(0, maxStock - currentTotalStock);
-        
-        let wheatCount = 0;
-        let carrotCount = 0;
-        let cabbageCount = 0;
-        let farmsProcessed = 0;
+        const timeInfo = TimeManager.getTimeInfo(time);
+        const month = toSupplyMonth(timeInfo.month);
+        const supply = createSupplyContext({ housesStore });
 
-        // Collect from each farm
-        for (const farm of farms) {
-            const farmId = farm.id || farm.name;
-            if (!farmId) {
-                console.warn('[WindmillService] Farm missing ID:', farm);
-                continue;
-            }
+        const outcome = await supply.collectFromAllFarms(
+            windmillId,
+            farms ?? [],
+            month
+        );
 
-            try {
-                // Get fresh farm data from IndexedDB (source of truth)
-                const farmData = await housesStore.getHouse(farmId);
-                if (!farmData) {
-                    console.warn('[WindmillService] Farm not found in database:', {
-                        farmId,
-                        farmData: farm
+        if (!outcome.collected) {
+            if (outcome.reason === 'windmill_not_operational') {
+                await housesStore.updateHouseFields(windmillId, { isCollecting: false }).catch(err => {
+                    console.warn('[WindmillService] Failed to update windmill isCollecting flag:', {
+                        windmillId,
+                        error: err?.message || err
                     });
-                    continue;
-                }
-
-                if (!hasRoadAccessFromCount(farmData.roads)) {
-                    continue;
-                }
-
-                const farmType = farmData.type || '';
-                const farmStocks = farmData.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
-                
-                // Check if windmill has reached its capacity limit
-                if (remainingCapacity <= 0) {
-                    break; // Stop collecting from remaining farms
-                }
-                
-                // Collect stocks from farms based on their type
-                // Only collect what remains after markets have collected (in autumn)
-                if (farmType.includes('Farm-Wheat') || farmType.includes('Farms-Wheat') || farmType.includes('Wheat')) {
-                    const availableWheat = farmStocks.wheat || 0;
-                    const canCollect = remainingCapacity;
-                    const wheatToCollect = Math.min(availableWheat, canCollect);
-                    
-                    if (wheatToCollect > 0) {
-                        wheatCount += wheatToCollect;
-                        remainingCapacity -= wheatToCollect;
-                        farmsProcessed++;
-                        
-                        // Reduce farm stocks (only what was collected)
-                        const remainingWheat = availableWheat - wheatToCollect;
-                        const newFarmStocks = {
-                            ...farmStocks,
-                            wheat: remainingWheat,
-                            food: Math.max(0, (farmStocks.food || 0) - wheatToCollect)
-                        };
-                        await housesStore.updateHouseFields(farmId, { 
-                            stocks: newFarmStocks,
-                            soldToWindmill: true // Flag to show sprite in December
-                        });
-                        
-                        // Track sale to windmill in farm data
-                        await this.trackFarmSaleToWindmill(farmId, farmData, housesStore, timeInfo, 'wheat', wheatToCollect, windmillId);
-                    }
-                } else if (farmType.includes('Farm-Carrot') || farmType.includes('Farms-Carrot') || farmType.includes('Carrot')) {
-                    const availableCarrot = farmStocks.carrot || 0;
-                    const canCollect = remainingCapacity;
-                    const carrotToCollect = Math.min(availableCarrot, canCollect);
-                    
-                    if (carrotToCollect > 0) {
-                        carrotCount += carrotToCollect;
-                        remainingCapacity -= carrotToCollect;
-                        farmsProcessed++;
-                        
-                        // Reduce farm stocks (only what was collected)
-                        const remainingCarrot = availableCarrot - carrotToCollect;
-                        const newFarmStocks = {
-                            ...farmStocks,
-                            carrot: remainingCarrot,
-                            food: Math.max(0, (farmStocks.food || 0) - carrotToCollect)
-                        };
-                        await housesStore.updateHouseFields(farmId, { stocks: newFarmStocks });
-                        
-                        // Track sale to windmill in farm data
-                        await this.trackFarmSaleToWindmill(farmId, farmData, housesStore, timeInfo, 'carrot', carrotToCollect, windmillId);
-                    }
-                } else if (farmType.includes('Farm-Cabbage') || farmType.includes('Farms-Cabbage') || farmType.includes('Cabbage')) {
-                    const availableCabbage = farmStocks.cabbage || 0;
-                    const canCollect = remainingCapacity;
-                    const cabbageToCollect = Math.min(availableCabbage, canCollect);
-                    
-                    if (cabbageToCollect > 0) {
-                        cabbageCount += cabbageToCollect;
-                        remainingCapacity -= cabbageToCollect;
-                        farmsProcessed++;
-                        
-                        // Reduce farm stocks (only what was collected)
-                        const remainingCabbage = availableCabbage - cabbageToCollect;
-                        const newFarmStocks = {
-                            ...farmStocks,
-                            cabbage: remainingCabbage,
-                            food: Math.max(0, (farmStocks.food || 0) - cabbageToCollect)
-                        };
-                        await housesStore.updateHouseFields(farmId, { 
-                            stocks: newFarmStocks,
-                            soldToWindmill: true // Flag to show sprite in December
-                        });
-                        
-                        // Track sale to windmill in farm data
-                        await this.trackFarmSaleToWindmill(farmId, farmData, housesStore, timeInfo, 'cabbage', cabbageToCollect, windmillId);
-                    }
-                } else {
-                    console.warn('[WindmillService] Unknown farm type:', {
-                        farmId,
-                        farmType
-                    });
-                }
-            } catch (err) {
-                console.warn('[WindmillService] Failed to get farm data:', {
-                    farmId,
-                    error: err?.message || err
                 });
             }
-        }
 
-        // Update windmill stocks in IndexedDB (get fresh data first)
-        if (wheatCount > 0 || carrotCount > 0 || cabbageCount > 0) {
-            // Get fresh windmill data from IndexedDB (already fetched above, but refresh to get latest stocks)
-            const freshWindmillData = await housesStore.getHouse(windmillId);
-            if (!freshWindmillData) {
-                console.warn('[WindmillService] Windmill not found when updating stocks:', windmillId);
-                return;
-            }
-
-            const freshStocks = freshWindmillData.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0, wood: 0 };
-            const maxStock = freshWindmillData.maxStock || 1000; // Default max stock capacity for windmill
-            
-            // Add food collected from farms to windmill stocks (already respecting maxStock limit from collection loop)
-            // Preserve wood stock (not part of food collection)
-            const newStocks = {
-                wheat: (freshStocks.wheat || 0) + wheatCount,
-                carrot: (freshStocks.carrot || 0) + carrotCount,
-                cabbage: (freshStocks.cabbage || 0) + cabbageCount,
-                wood: freshStocks.wood || 0, // Preserve wood stock
-                food: Math.min(maxStock, (freshStocks.food || 0) + (wheatCount + carrotCount + cabbageCount)) // Cap at maxStock
-            };
-
-            // Track last collection amounts for display in info panel
-            const lastCollection = {
-                wheat: wheatCount,
-                carrot: carrotCount,
-                cabbage: cabbageCount,
-                total: wheatCount + carrotCount + cabbageCount
-            };
-
-            await housesStore.updateHouseFields(windmillId, { 
-                stocks: newStocks,
-                lastCollection: lastCollection
-            }).catch(err => {
-                console.warn('[WindmillService] Failed to update windmill stocks from farms:', {
-                    windmillId,
-                    error: err?.message || err
-                });
-            });
-        } else {
-            // Still update lastCollection to show 0 for this collection cycle
-            const lastCollection = {
-                wheat: 0,
-                carrot: 0,
-                cabbage: 0,
-                total: 0
-            };
-            
-            await housesStore.updateHouseFields(windmillId, { 
-                lastCollection: lastCollection
+            await housesStore.updateHouseFields(windmillId, {
+                lastCollection: { wheat: 0, carrot: 0, cabbage: 0, total: 0 },
             }).catch(err => {
                 console.warn('[WindmillService] Failed to update windmill lastCollection:', {
                     windmillId,
                     error: err?.message || err
                 });
             });
+
+            if (outcome.reason && outcome.reason !== 'nothing_to_collect') {
+                console.info('[WindmillService] Collection skipped:', {
+                    windmillId,
+                    reason: outcome.reason,
+                    month: timeInfo.month,
+                });
+            }
+            return;
         }
+
+        const lastCollection = {
+            wheat: 0,
+            carrot: 0,
+            cabbage: 0,
+            total: outcome.totalBaskets,
+        };
+
+        for (const transfer of outcome.transfers) {
+            if (transfer.crop === 'wheat' || transfer.crop === 'cabbage') {
+                await housesStore.updateHouseFields(transfer.farmId, {
+                    soldToWindmill: true,
+                }).catch(err => {
+                    console.warn('[WindmillService] Failed to set soldToWindmill:', {
+                        farmId: transfer.farmId,
+                        error: err?.message || err
+                    });
+                });
+            }
+
+            if (lastCollection[transfer.crop] != null) {
+                lastCollection[transfer.crop] += transfer.amount;
+            }
+
+            const farmData = await housesStore.getHouse(transfer.farmId);
+            if (farmData) {
+                await this.trackFarmSaleToWindmill(
+                    transfer.farmId,
+                    farmData,
+                    housesStore,
+                    timeInfo,
+                    transfer.crop,
+                    transfer.amount,
+                    windmillId
+                );
+            }
+        }
+
+        await housesStore.updateHouseFields(windmillId, { lastCollection }).catch(err => {
+            console.warn('[WindmillService] Failed to update windmill lastCollection:', {
+                windmillId,
+                error: err?.message || err
+            });
+        });
+
+        console.info('[WindmillService] Collection via Supply BC:', {
+            windmillId,
+            totalBaskets: outcome.totalBaskets,
+            transfers: outcome.transfers.length,
+        });
     }
 
     /**
