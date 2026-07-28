@@ -1,5 +1,5 @@
 import { SimService } from './SimService.js';
-import { hasRoadAccessFromCount, toBuildingIdString } from '../../acl/urban.js';
+import { hasRoadAccessFromCount, toBuildingIdString } from '../../acl/parcels.js';
 import { TimeManager } from '../utils/TimeManager.js';
 import config from '../config.js';
 import FoodTraceabilityService from '../../stores/FoodTraceabilityService.js';

@@ -1,4 +1,4 @@
-# Optimisation : accès routier (Urban)
+# Optimisation : accès routier (Parcels)
 
 ## Contexte
 
@@ -16,10 +16,10 @@ Ce n'est pas une propriété intrinsèque du bâtiment : elle dépend de ses **v
 
 | Use case | Fichier | Rôle |
 |---|---|---|
-| `RecalculateAllRoadAccess` | `contexts/urban/application/commands/RecalculateAllRoadAccess.js` | Recalcule **tous** les bâtiments |
-| `RecalculateRoadAccessForBuilding` | `contexts/urban/application/commands/RecalculateRoadAccessForBuilding.js` | Recalcule **un** bâtiment |
+| `RecalculateAllRoadAccess` | `contexts/parcels/application/commands/RecalculateAllRoadAccess.js` | Recalcule **tous** les bâtiments |
+| `RecalculateRoadAccessForBuilding` | `contexts/parcels/application/commands/RecalculateRoadAccessForBuilding.js` | Recalcule **un** bâtiment |
 
-Appel legacy : `RoadConnectivityService` délègue à `RecalculateAllRoadAccess` à chaque tour (`game.update()`).
+Appel tick : pipeline ECS `parcels.roadAccess` via `createGameRuntime` / `game.update()` (ex-`RoadConnectivityService`).
 
 ## À quoi sert le recalcul « toute la ville » ?
 
@@ -62,60 +62,32 @@ Ne recalculer que les bâtiments **impactés** par une action :
 
 Use case existant : `RecalculateRoadAccessForBuilding`.
 
-Nouveau use case possible :
+Use case ciblé :
 
 ```
-RecalculateRoadAccessForNeighbors(tileX, tileY)
-  → résout les buildingId des tuiles adjacentes
-  → appelle RecalculateRoadAccessForBuilding pour chacun
+RecalculateRoadAccessForNeighbors(buildingIds[])
+  → appelle RecalculateRoadAccessForBuilding pour chaque id unique
 ```
 
-### 2. Flag « dirty » (ECS / runtime)
+Orchestration actions joueur :
 
-Marquer les entités dont l'accès routier est potentiellement obsolète :
+- `PlaceBuilding` / `RemoveBuilding` (via `parcels.syncPlacedBuilding` / `syncRemovedBuilding`)
+- Port `SpatialNeighborhoodPort` + adapter scène Three.js
+- Filet : `RecalculateAllRoadAccess` au tick via ECS (`parcels.roadAccess`)
 
-```
-Composant Dirty { roadAccess: true }
-```
-
-- Pose route → marquer `Dirty` sur les entités voisines
-- `roadAccessSystem` → ne traite que `query(Dirty, Neighbors)`
-- Après traitement → `Dirty.roadAccess = false`
-
-Réduit le travail au tick sans perdre le recalcul global occasionnel.
-
-### 3. Recalcul global en filet de sécurité
-
-Garder `RecalculateAllRoadAccess` mais moins souvent :
-
-- au chargement de partie
-- toutes les N tours (ex. tous les 10 tours)
-- après une opération bulk (import sauvegarde, reset ville)
-
-Évite les dérives silencieuses si un chemin de code oublie le recalcul ciblé.
-
-### 4. Skip si inchangé (déjà en place)
-
-Les deux use cases ne persistent que si `roadCount` a changé. Pas d'écriture IndexedDB inutile.
-
-Amélioration possible : skip **avant** le calcul si `neighbors` n'a pas changé depuis le dernier recalcul (hash ou version sur le snapshot).
-
-## Stratégie de migration suggérée
+## Stratégie de migration
 
 ```
-Phase actuelle (OK)
-  └─ RecalculateAllRoadAccess à chaque tour
-
-Phase 1 — Actions joueur
-  └─ placement route/bâtiment → RecalculateRoadAccessForNeighbors
-  └─ garder le recalcul global au tour (sécurité)
+Phase 1 (en place)
+  └─ placement / bulldoze → PlaceBuilding / RemoveBuilding (voisins + road ciblé)
+  └─ recalcul global au tour (sécurité)
 
 Phase 2 — Réduire le global
   └─ recalcul global → chargement + resync périodique
   └─ tick → uniquement entités Dirty (ECS)
 
 Phase 3 — Mesure
-  └─ profiler si n > 1000 bâtiments (villes plus grandes)
+  └─ profiler si n > 1000 bâtiments
 ```
 
 ## Règle métier (inchangée par l'optimisation)
@@ -124,9 +96,11 @@ La policy `RoadAccessPolicy.evaluate(neighbors)` reste la source de vérité. Se
 
 ## Fichiers liés
 
-- Domaine : `src/contexts/urban/domain/policies/RoadAccessPolicy.js`
-- Legacy : `src/js/game/services/RoadConnectivityService.js`
-- Composition : `src/composition/createUrbanContext.js`
+- Domaine : `src/contexts/parcels/domain/policies/RoadAccessPolicy.js`
+- Legacy (deprecated) : `src/js/game/services/RoadConnectivityService.js`
+- Composition : `src/composition/createParcelsContext.js`, `createGameRuntime.js`
+- Spatial : `src/infrastructure/spatial/SceneSpatialNeighborhoodAdapter.js`
+- Runtime ECS : `src/infrastructure/runtime/systems/parcelsRoadAccessSystem.js`
 - Rendu icônes : `src/infrastructure/roadAccessIcons.js`
 
 ## Migration legacy (terminée)
@@ -134,8 +108,9 @@ La policy `RoadAccessPolicy.evaluate(neighbors)` reste la source de vérité. Se
 | Ancien | Nouveau |
 |---|---|
 | `checkRoadAccess(neighbors)` | `evaluateRoadAccess` (domaine) ou `hasRoadAccessFromCount(roads)` |
-| `RoadAccessModule` | supprimé |
-| `ModuleHelper.checkRoadAccess` | supprimé |
+| `RoadAccessModule` | **supprimé** — remplacer par use cases Parcels + ACL |
+| `ModuleHelper.checkRoadAccess` | **supprimé** |
 | `makeDbItemId(type, x, y)` | `toBuildingIdString(type, x, y)` (`BuildingId`) |
-| Panneau info | `urban.getRoadAccess(buildingId)` |
+| Panneau info | `parcels.getRoadAccess` / `parcels.getNeighbors` |
 | Icônes 3D | `setupRoadAccessIcons` + bus `RoadAccessChanged` |
+| `userData.neighbors` (UI) | query Parcels ; meshes hover = `userData.neighborsMeshs` |

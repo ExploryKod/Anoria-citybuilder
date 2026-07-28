@@ -16,4 +16,17 @@ export class BuildingRepository {
   async saveRoadAccess(_buildingId, _roadCount) {
     throw new Error('BuildingRepository: port not implemented');
   }
+
+  async saveNeighbors(_buildingId, _neighbors) {
+    throw new Error('BuildingRepository: port not implemented');
+  }
+
+  /** @returns {Promise<object[]>} voisins bruts (forme IndexedDB) */
+  async findNeighbors(_buildingId) {
+    throw new Error('BuildingRepository: port not implemented');
+  }
+
+  async deleteById(_buildingId) {
+    throw new Error('BuildingRepository: port not implemented');
+  }
 }

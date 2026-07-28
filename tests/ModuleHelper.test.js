@@ -5,7 +5,7 @@
  * - Vérifier la disponibilité de nourriture
  * - Déterminer si une maison peut évoluer (Blue → Red → Purple → Palace)
  *
- * Accès routier : voir tests/contexts/urban/domain/RoadAccessPolicy.test.js
+ * Accès routier : voir tests/contexts/parcels/domain/RoadAccessPolicy.test.js
  */
 
 import {

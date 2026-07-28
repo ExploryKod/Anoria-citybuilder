@@ -6,7 +6,7 @@
  * - Vérification de disponibilité des zones de construction
  * - Filtrage et manipulation d'assets
  *
- * Identifiants bâtiment : tests/contexts/urban/buildingId.behavior.test.js
+ * Identifiants bâtiment : tests/contexts/parcels/buildingId.behavior.test.js
  */
 
 import {

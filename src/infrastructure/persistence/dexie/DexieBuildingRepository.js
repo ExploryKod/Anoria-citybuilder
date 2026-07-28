@@ -1,9 +1,9 @@
-import { createBuildingSnapshot } from '../../../contexts/urban/domain/BuildingSnapshot.js';
-import { toPublishedBuildingId } from '../../../contexts/urban/domain/value-objects/BuildingId.js';
+import { createBuildingSnapshot } from '../../../contexts/parcels/domain/BuildingSnapshot.js';
+import { toPublishedBuildingId } from '../../../contexts/parcels/domain/value-objects/BuildingId.js';
 
 /**
  * Adapter : traduit HousesStore (legacy) vers le port BuildingRepository.
- * Frontière : strings IndexedDB ↔ snapshots Urban (BuildingId / TileCoord).
+ * Frontière : strings IndexedDB ↔ snapshots Parcels (BuildingId / TileCoord).
  */
 export class DexieBuildingRepository {
   /**
@@ -49,5 +49,29 @@ export class DexieBuildingRepository {
   async saveRoadAccess(buildingId, roadCount) {
     const id = toPublishedBuildingId(buildingId);
     await this.housesStore.updateHouseFields(id, { roads: roadCount });
+  }
+
+  /**
+   * @param {string | Readonly<{ value: string }>} buildingId
+   * @param {object[]} neighbors
+   */
+  async saveNeighbors(buildingId, neighbors) {
+    const id = toPublishedBuildingId(buildingId);
+    await this.housesStore.updateHouseFields(id, { neighbors });
+  }
+
+  async findNeighbors(buildingId) {
+    const id = toPublishedBuildingId(buildingId);
+    const house = await this.housesStore.getHouse(id);
+    if (!house) return [];
+    return Array.isArray(house.neighbors) ? house.neighbors : [];
+  }
+
+  /**
+   * @param {string | Readonly<{ value: string }>} buildingId
+   */
+  async deleteById(buildingId) {
+    const id = toPublishedBuildingId(buildingId);
+    await this.housesStore.deleteOneHouse(id);
   }
 }

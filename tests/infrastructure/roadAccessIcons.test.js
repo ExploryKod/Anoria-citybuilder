@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { setupRoadAccessIcons, clearRoadAccessIconViews } from '../../src/infrastructure/roadAccessIcons.js';
 import { InMemoryDomainEventPublisher } from '../../src/infrastructure/events/InMemoryDomainEventPublisher.js';
-import { createRoadAccessChanged } from '../../src/contexts/urban/domain/events/RoadAccessChanged.js';
+import { createRoadAccessChanged } from '../../src/contexts/parcels/domain/events/RoadAccessChanged.js';
 
 describe('roadAccessIcons', () => {
   beforeEach(() => {

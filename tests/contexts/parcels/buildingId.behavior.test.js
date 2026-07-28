@@ -1,5 +1,5 @@
 /**
- * Tests de comportement — identifiants de bâtiment (BC Urban)
+ * Tests de comportement — identifiants de bâtiment (BC Parcels)
  *
  * Couplés au contrat métier Published Language (`"{type}-{x}-{y}"`),
  * pas à la structure interne des value objects.
@@ -13,9 +13,9 @@ import {
   toPublishedBuildingId,
   parseBuildingId,
   tryParseBuildingId,
-} from '../../../src/contexts/urban/domain/value-objects/BuildingId.js';
-import { createTileCoord, tryCreateTileCoord } from '../../../src/contexts/urban/domain/value-objects/TileCoord.js';
-import { createBuildingSnapshot } from '../../../src/contexts/urban/domain/BuildingSnapshot.js';
+} from '../../../src/contexts/parcels/domain/value-objects/BuildingId.js';
+import { createTileCoord, tryCreateTileCoord } from '../../../src/contexts/parcels/domain/value-objects/TileCoord.js';
+import { createBuildingSnapshot } from '../../../src/contexts/parcels/domain/BuildingSnapshot.js';
 
 describe('Identifiant de bâtiment', () => {
   describe('quand on identifie un bâtiment sur la grille', () => {
@@ -99,7 +99,7 @@ describe('Identifiant de bâtiment', () => {
     });
   });
 
-  describe('quand le BC Urban lit un bâtiment (snapshot)', () => {
+  describe('quand le BC Parcels lit un bâtiment (snapshot)', () => {
     test('reconstruit BuildingId et TileCoord depuis l\'id IndexedDB', () => {
       const building = createBuildingSnapshot({
         id: 'House-Blue-3-7',
