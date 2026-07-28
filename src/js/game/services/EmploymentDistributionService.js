@@ -62,6 +62,11 @@ export class EmploymentDistributionService extends SimService {
                 time
             );
 
+            // Step 5: Synchronize productWorkerDistribution for all factories
+            // This ensures productWorkerDistribution doesn't exceed employees.worker
+            // even for factories that didn't receive new workers this tick
+            await this.synchronizeFactoryWorkerDistribution(housesStore);
+
         } catch (error) {
             console.error('[EmploymentDistributionService] Error processing employment distribution:', {
                 error: error?.message || error,
@@ -91,6 +96,9 @@ export class EmploymentDistributionService extends SimService {
             
             // Only reset if building has worker_need defined
             if (currentEmployees.worker_need > 0) {
+                // For factories (Winery-001), we need to preserve productWorkerDistribution
+                // but reset employees.worker to 0 so it can be redistributed
+                // The productWorkerDistribution will be capped to employees.worker after redistribution
                 const resetEmployees = {
                     ...currentEmployees,
                     worker: 0
@@ -243,10 +251,39 @@ export class EmploymentDistributionService extends SimService {
                     worker: (currentEmployees.worker || 0) + workersToAssign
                 };
                 
+                // For factories (Winery-001), synchronize productWorkerDistribution with employees.worker
+                // This ensures productWorkerDistribution doesn't exceed employees.worker
+                const buildingType = freshData.type || '';
+                const isFactory = buildingType.includes('Winery-001');
+                const updates = { employees: newEmployees };
+                
+                if (isFactory) {
+                    const productWorkerDistribution = freshData.productWorkerDistribution || {};
+                    const totalDistributedWorkers = Object.values(productWorkerDistribution).reduce(
+                        (sum, count) => sum + (count || 0), 0
+                    );
+                    const newTotalWorkers = newEmployees.worker || 0;
+                    
+                    // Always synchronize: if productWorkerDistribution exceeds new employees.worker, cap it
+                    // This ensures consistency even if workers were reset but productWorkerDistribution wasn't
+                    if (totalDistributedWorkers > newTotalWorkers) {
+                        if (newTotalWorkers === 0) {
+                            // If no workers assigned, clear all productWorkerDistribution
+                            updates.productWorkerDistribution = {};
+                        } else {
+                            // Scale down productWorkerDistribution proportionally
+                            const scaleFactor = newTotalWorkers / totalDistributedWorkers;
+                            const adjustedDistribution = {};
+                            for (const [key, value] of Object.entries(productWorkerDistribution)) {
+                                adjustedDistribution[key] = Math.floor((value || 0) * scaleFactor);
+                            }
+                            updates.productWorkerDistribution = adjustedDistribution;
+                        }
+                    }
+                }
+                
                 // Save to IndexedDB
-                await housesStore.updateHouseFields(building.id, { 
-                    employees: newEmployees 
-                }).catch(err => {
+                await housesStore.updateHouseFields(building.id, updates).catch(err => {
                     console.warn('[EmploymentDistributionService] Failed to assign workers:', {
                         buildingId: building.id,
                         error: err?.message || err
@@ -259,6 +296,54 @@ export class EmploymentDistributionService extends SimService {
         }
     }
 
+
+    /**
+     * Synchronizes productWorkerDistribution with employees.worker for all factories
+     * This ensures consistency: productWorkerDistribution total <= employees.worker
+     * Called after worker distribution to fix any inconsistencies
+     * 
+     * @param {HousesStore} housesStore
+     * @returns {Promise<void>}
+     */
+    async synchronizeFactoryWorkerDistribution(housesStore) {
+        const allBuildings = await housesStore.listAllHouses();
+        
+        for (const building of allBuildings) {
+            const buildingType = building.type || '';
+            if (!buildingType.includes('Winery-001')) continue;
+            
+            const buildingId = building.id || building.name;
+            const freshData = await housesStore.getHouse(buildingId);
+            if (!freshData) continue;
+            
+            const employees = freshData.employees || { worker: 0, worker_need: 0 };
+            const productWorkerDistribution = freshData.productWorkerDistribution || {};
+            const totalWorkers = employees.worker || 0;
+            const totalDistributedWorkers = Object.values(productWorkerDistribution).reduce(
+                (sum, count) => sum + (count || 0), 0
+            );
+            
+            // If productWorkerDistribution exceeds employees.worker, cap it
+            if (totalDistributedWorkers > totalWorkers) {
+                if (totalWorkers === 0) {
+                    // If no workers assigned, clear all productWorkerDistribution
+                    await housesStore.updateHouseFields(buildingId, {
+                        productWorkerDistribution: {}
+                    });
+                } else {
+                    // Scale down productWorkerDistribution proportionally
+                    const scaleFactor = totalWorkers / totalDistributedWorkers;
+                    const adjustedDistribution = {};
+                    for (const [key, value] of Object.entries(productWorkerDistribution)) {
+                        adjustedDistribution[key] = Math.floor((value || 0) * scaleFactor);
+                    }
+                    await housesStore.updateHouseFields(buildingId, {
+                        productWorkerDistribution: adjustedDistribution
+                    });
+                }
+            }
+        }
+    }
 
     /**
      * Gets building priority from config
