@@ -611,7 +611,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 
                 const buildingPop = await housesStore.getHouseItem(uniqueId, 'pop')
                 const houseRoads = await housesStore.getHouseItem(uniqueId, 'roads');
-                const houseStocks = await housesStore.getHouseItem(uniqueId, 'stocks');
+                let houseStocks = await housesStore.getHouseItem(uniqueId, 'stocks');
                 
                 // Debug: Log retrieved data
                 console.log('[game.js] Retrieved data from DB:', {
