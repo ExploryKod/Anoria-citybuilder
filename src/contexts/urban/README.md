@@ -43,5 +43,9 @@ Les tests décrivent des **scénarios**, pas une classe du domaine par fichier. 
 
 ## Relations (context map)
 
-- **ACL** vers `src/js/` (legacy POO) — `makeDbItemId` supprimé, call sites → `toBuildingIdString`
+- **ACL** pour le legacy : `src/js/acl/urban.js` (seule porte d'entrée UI/services)
+- **Composition** : `src/composition/createUrbanContext.js` (wiring interne)
+- **Infrastructure** : adapters Dexie / events / rendu (peuvent importer le domaine)
 - **Published Language** : `buildingId: string` (`House-Blue-3-7`)
+
+Règle : `src/js/**` n'importe **jamais** `contexts/urban/domain/**` directement.

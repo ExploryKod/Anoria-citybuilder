@@ -2,24 +2,24 @@
 
 ## Accès routier & identifiants (BC Urban)
 
+Passer **uniquement** par l'ACL — ne pas importer `contexts/urban/domain/**` depuis le legacy :
+
 ```javascript
-import { getOrCreateUrbanContext } from '../../composition/createUrbanContext.js';
-import { hasRoadAccessFromCount } from '../../contexts/urban/domain/value-objects/RoadAccess.js';
-import { toBuildingIdString } from '../../contexts/urban/domain/value-objects/BuildingId.js';
+import {
+  getOrCreateUrbanContext,
+  hasRoadAccessFromCount,
+  toBuildingIdString,
+} from '../acl/urban.js';
 import { setupRoadAccessIcons } from '../../infrastructure/roadAccessIcons.js';
 
 const urban = getOrCreateUrbanContext(housesStore);
 
-// Identifiant IndexedDB (remplace makeDbItemId)
 const id = toBuildingIdString('House-Blue', x, y); // "House-Blue-3-7" | null
 
-// Services / UI : champ `roads` en base
 if (hasRoadAccessFromCount(building.roads)) { /* ... */ }
 
-// Panneau info
 const { hasAccess, roadCount } = await urban.getRoadAccess(id);
 
-// Rendu 3D : icône no-road
 const syncRoadAccess = setupRoadAccessIcons(urban, { assetManager, textures });
 await syncRoadAccess({ buildingId: id, mesh, position, scale });
 ```
@@ -34,6 +34,6 @@ const { hasFood, totalFood } = checkFoodAvailability(stocks, population);
 
 ## Migration modules
 
-- ✅ Accès routier → `contexts/urban/`
-- ✅ Identifiants → `toBuildingIdString` / `BuildingId` (plus de `makeDbItemId`)
+- ✅ Accès routier → `contexts/urban/` via `src/js/acl/urban.js`
+- ✅ Identifiants → `toBuildingIdString` / `BuildingId`
 - FoodModule, EmploymentModule → modules legacy (à migrer plus tard)

@@ -7,7 +7,7 @@ import { TimeManager } from './utils/TimeManager.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
 import {getAssetPrice, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, isAreaAvailableForBuilding} from '../utils/utils.js';
-import { toBuildingIdString } from '../../contexts/urban/domain/value-objects/BuildingId.js';
+import { toBuildingIdString, getOrCreateUrbanContext } from '../acl/urban.js';
 import config from './config.js';
 import {
     displayTime,
@@ -31,7 +31,6 @@ import gameUI from './GameUI.js';
 import appRegistry from './AppRegistry.js';
 import webglDetector from '../utils/WebGLResourceDetector.js';
 import commerceStore from '../stores/CommerceStore.js';
-import { getOrCreateUrbanContext } from '../../composition/createUrbanContext.js';
 
 // Initialiser le cache de TimeManager au démarrage
 TimeManager.initializeCache().catch(err => {

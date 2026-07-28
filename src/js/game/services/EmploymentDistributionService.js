@@ -1,5 +1,5 @@
 import { SimService } from './SimService.js';
-import { hasRoadAccessFromCount } from '../../../contexts/urban/domain/value-objects/RoadAccess.js';
+import { hasRoadAccessFromCount } from '../../acl/urban.js';
 import { TimeManager } from '../utils/TimeManager.js';
 import { getSectorPriority, getAllSectorPriorities } from '../modules/EmployeeHelper.js';
 import config from '../config.js';
