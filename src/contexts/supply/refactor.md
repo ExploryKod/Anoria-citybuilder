@@ -15,7 +15,7 @@ Until then, treat `resolveBuildingId` as temporary compatibility debt, not domai
 
 ## Presentation boundary (done)
 
-Scene sprites, city map (`buttons.js`), storage windmill stocks, and the info panel now read Supply fields via ACL queries (`GetBuildingSupplyView`, `ListSupplyMapBuildings`, `ListWindmillSupplyViews`). Flag writes (`isBuying`, `isCollecting`, `noFarmsNearby`, `soldToWindmill`, `marketTooFar`) go through Supply commands. Remaining facade Dexie use is for non-Supply data (employees, pop, commerce settings, sales history arrays).
+Scene sprites, city map (`buttons.js`), storage windmill stocks, info panel, and admin food-traceability now read Supply fields via ACL queries (`GetBuildingSupplyView`, `ListSupplyMapBuildings`, `ListWindmillSupplyViews`, `ListSupplyStockSnapshots`). Flag writes (`isBuying`, `isCollecting`, `noFarmsNearby`, `soldToWindmill`, `marketTooFar`) go through Supply commands. Remaining facade Dexie use is for non-Supply data (employees, commerce settings, sales history arrays).
 
 ## Market reach: panel vs logistics (two definitions)
 

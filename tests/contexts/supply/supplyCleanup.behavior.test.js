@@ -8,6 +8,7 @@ import { createSupplyBuildingView } from '../../../src/contexts/supply/domain/Su
 import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
 import { ListSupplyMapBuildings } from '../../../src/contexts/supply/application/queries/ListSupplyMapBuildings.js';
 import { ListWindmillSupplyViews } from '../../../src/contexts/supply/application/queries/ListWindmillSupplyViews.js';
+import { ListSupplyStockSnapshots } from '../../../src/contexts/supply/application/queries/ListSupplyStockSnapshots.js';
 import { MarkWindmillCollectingSeason } from '../../../src/contexts/supply/application/commands/MarkWindmillCollectingSeason.js';
 import { ResetFarmsSoldToWindmill } from '../../../src/contexts/supply/application/commands/ResetFarmsSoldToWindmill.js';
 import { UpdateMarketFarmProximity } from '../../../src/contexts/supply/application/commands/UpdateMarketFarmProximity.js';
@@ -113,6 +114,42 @@ describe('Supply — cleanup queries and flag commands', () => {
     expect(house.pop).toBe(3);
     expect(market.hasFood).toBe(true);
     expect(market.marketTooFar).toBe(false);
+  });
+
+  test('ListSupplyStockSnapshots returns stocks, kind, and pop for all buildings', async () => {
+    const repo = new InMemorySupplyBuildingRepository({
+      views: [
+        createSupplyBuildingView({
+          id: 'House-Blue-1-1',
+          type: 'House-Blue',
+          x: 1,
+          y: 1,
+          stocks: { wheat: 2, carrot: 1, cabbage: 0, food: 3 },
+          pop: 4,
+        }),
+        createSupplyBuildingView({
+          id: 'Market-Stall-2-2',
+          type: 'Market-Stall',
+          x: 2,
+          y: 2,
+          stocks: { wheat: 8, food: 8 },
+        }),
+      ],
+    });
+
+    const list = await new ListSupplyStockSnapshots(repo).execute();
+    expect(list).toHaveLength(2);
+
+    const house = list.find((b) => b.id === 'House-Blue-1-1');
+    expect(house.kind).toBe('house');
+    expect(house.stocks.wheat).toBe(2);
+    expect(house.stocks.food).toBe(3);
+    expect(house.pop).toBe(4);
+    expect(house.name).toBe('House-Blue-1-1');
+
+    const market = list.find((b) => b.id === 'Market-Stall-2-2');
+    expect(market.kind).toBe('market');
+    expect(market.stocks.wheat).toBe(8);
   });
 
   test('ListWindmillSupplyViews returns windmills only', async () => {

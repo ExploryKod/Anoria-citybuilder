@@ -12,6 +12,7 @@ import { MarkFarmSoldToWindmill } from '../contexts/supply/application/commands/
 import { GetBuildingSupplyView } from '../contexts/supply/application/queries/GetBuildingSupplyView.js';
 import { ListSupplyMapBuildings } from '../contexts/supply/application/queries/ListSupplyMapBuildings.js';
 import { ListWindmillSupplyViews } from '../contexts/supply/application/queries/ListWindmillSupplyViews.js';
+import { ListSupplyStockSnapshots } from '../contexts/supply/application/queries/ListSupplyStockSnapshots.js';
 
 /**
  * Composition root — Supply bounded context.
@@ -58,6 +59,9 @@ export function createSupplyContext({ housesStore }) {
   const listWindmillSupplyViewsQuery = new ListWindmillSupplyViews(
     supplyBuildingRepository
   );
+  const listSupplyStockSnapshotsQuery = new ListSupplyStockSnapshots(
+    supplyBuildingRepository
+  );
 
   return {
     supplyBuildingRepository,
@@ -74,6 +78,7 @@ export function createSupplyContext({ housesStore }) {
     getBuildingSupplyViewQuery,
     listSupplyMapBuildingsQuery,
     listWindmillSupplyViewsQuery,
+    listSupplyStockSnapshotsQuery,
 
     async buyFromNearbyFarms(marketId, farmRefs, season) {
       return marketBuysFromNearbyFarms.execute({ marketId, farmRefs, season });
@@ -133,6 +138,10 @@ export function createSupplyContext({ housesStore }) {
 
     async listWindmillSupplyViews() {
       return listWindmillSupplyViewsQuery.execute();
+    },
+
+    async listSupplyStockSnapshots() {
+      return listSupplyStockSnapshotsQuery.execute();
     },
   };
 }
