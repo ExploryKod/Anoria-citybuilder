@@ -1,5 +1,5 @@
 /**
- * Tests de comportement — accès routier (BC Urban)
+ * Tests de comportement — accès routier (BC Parcels)
  *
  * Couplés aux scénarios métier, pas à la structure du domaine.
  * On peut refactoriser RoadAccessPolicy, RoadAccess, etc. sans casser ces tests
@@ -9,10 +9,10 @@
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
-import { createBuildingSnapshot } from '../../../src/contexts/urban/domain/BuildingSnapshot.js';
-import { RecalculateRoadAccessForBuilding } from '../../../src/contexts/urban/application/commands/RecalculateRoadAccessForBuilding.js';
-import { RecalculateAllRoadAccess } from '../../../src/contexts/urban/application/commands/RecalculateAllRoadAccess.js';
-import { GetBuildingRoadAccess } from '../../../src/contexts/urban/application/queries/GetBuildingRoadAccess.js';
+import { createBuildingSnapshot } from '../../../src/contexts/parcels/domain/BuildingSnapshot.js';
+import { RecalculateRoadAccessForBuilding } from '../../../src/contexts/parcels/application/commands/RecalculateRoadAccessForBuilding.js';
+import { RecalculateAllRoadAccess } from '../../../src/contexts/parcels/application/commands/RecalculateAllRoadAccess.js';
+import { GetBuildingRoadAccess } from '../../../src/contexts/parcels/application/queries/GetBuildingRoadAccess.js';
 import { InMemoryDomainEventPublisher } from '../../../src/infrastructure/events/InMemoryDomainEventPublisher.js';
 
 class InMemoryBuildingRepository {
@@ -40,7 +40,7 @@ class InMemoryBuildingRepository {
   }
 }
 
-/** Harness : même câblage que createUrbanContext, API orientée scénarios */
+/** Harness : même câblage que createParcelsContext, API orientée scénarios */
 function createRoadAccessHarness(buildings = []) {
   const repository = new InMemoryBuildingRepository(buildings);
   const events = new InMemoryDomainEventPublisher();
@@ -66,7 +66,7 @@ function createRoadAccessHarness(buildings = []) {
       return [...repository.savedRoadAccess];
     },
     roadAccessChangedEvents() {
-      return events.getHistory('urban.RoadAccessChanged');
+      return events.getHistory('parcels.RoadAccessChanged');
     },
   };
 }

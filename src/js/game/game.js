@@ -7,7 +7,8 @@ import { TimeManager } from './utils/TimeManager.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
 import {getAssetPrice, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, isAreaAvailableForBuilding} from '../utils/utils.js';
-import { toBuildingIdString, getOrCreateUrbanContext } from '../acl/urban.js';
+import { toBuildingIdString, getOrCreateParcelsContext } from '../acl/parcels.js';
+import { createGameRuntime } from '../../composition/createGameRuntime.js';
 import config from './config.js';
 import {
     displayTime,
@@ -42,8 +43,7 @@ let services = [];
 // Load services asynchronously (non-blocking)
 (async () => {
     try {
-        // Load all available services
-        const { RoadConnectivityService } = await import('./services/RoadConnectivityService.js');
+        // Load all available services (road access → ECS pipeline, see createGameRuntime)
         const { FoodDistributionService } = await import('./services/FoodDistributionService.js');
         const { WindmillService } = await import('./services/WindmillService.js');
         const { RandomEventsService } = await import('./services/RandomEventsService.js');
@@ -52,7 +52,6 @@ let services = [];
         const { CommerceService } = await import('./services/CommerceService.js');
         const { FactoryService } = await import('./services/FactoryService.js');
         
-        services.push(new RoadConnectivityService());
         services.push(new FoodDistributionService()); // Farm > Market > House logic using IndexedDB
         services.push(new WindmillService()); // Windmill collects from all farms in December (after markets collect in autumn)
         services.push(new RandomEventsService()); // Événements aléatoires (ouragan, inondation)
@@ -455,9 +454,10 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
     });
 
 
-    /* Scene initialization */
-    const urban = getOrCreateUrbanContext(housesStore);
-    const scene = createScene(housesStore, gameStore, assetManager, urban);
+    /* Scene + ECS runtime */
+    const parcels = getOrCreateParcelsContext(housesStore);
+    const runtime = createGameRuntime({ parcels });
+    const scene = createScene(housesStore, gameStore, assetManager, parcels);
 
     /* City initialization */
     // Detect WebGL capabilities first
@@ -612,7 +612,8 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 });
                 
                 const buildingPop = await housesStore.getHouseItem(uniqueId, 'pop')
-                const roadAccess = await urban.getRoadAccess(uniqueId);
+                const roadAccess = await parcels.getRoadAccess(uniqueId);
+                const neighbors = uniqueId ? await parcels.getNeighbors(uniqueId) : [];
                 let houseStocks = await housesStore.getHouseItem(uniqueId, 'stocks');
                 
                 // Debug: Log retrieved data
@@ -620,6 +621,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     uniqueId,
                     pop: buildingPop,
                     roads: roadAccess.roadCount,
+                    neighborsCount: neighbors.length,
                     hasStocks: !!houseStocks
                 });
                 
@@ -632,13 +634,6 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     neighborsCount: fullHouse?.neighbors?.length || 0,
                     hasNeighbors: !!fullHouse?.neighbors
                 });
-
-                /* Check if neighbor */
-                let neighbors = [];
-                if(selectedObject.userData.neighbors) {
-                    neighbors = selectedObject.userData.neighbors
-                        .filter(neighbor => neighbor && neighbor.buildingId && neighbor.buildingId !== "");
-                }
 
                 // Vérifier si c'est un item nature (tree ou boulder)
                 const isNatureItem = fullHouse?.category === 'nature';
@@ -693,9 +688,12 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
 
                 if(neighbors.length > 0) {
                     makeInfoSection('Voisins immédiats');
-                    neighbors.filter(neigh => neigh.x && neigh.y).forEach(neighbor => {
-                        makeInfoKeyValue(neighbor.buildingId, `x: ${neighbor.x} | y: ${neighbor.y}`);
-                    })
+                    neighbors
+                        .filter((neigh) => neigh.x != null && neigh.y != null)
+                        .forEach((neighbor) => {
+                            const label = neighbor.type || neighbor.buildingId;
+                            makeInfoKeyValue(label, `x: ${neighbor.x} | y: ${neighbor.y}`);
+                        });
                 } else {
                     makeInfoKeyValue('Voisinage', 'Maison isolée');
                 }
@@ -1237,7 +1235,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     gameTurn: time,
                     time: 0,
                     isBuilding: true,
-                    roads: 0, // recalculé au prochain tick (RoadConnectivityService)
+                    roads: 0, // syncPlacedBuilding / ECS parcels.roadAccess (filet)
                     stage : 0,
                     stageName: "",
                     price : price ? price : 0,
@@ -1373,10 +1371,21 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
     const game = {
         scene: scene,
         city: city,
+        runtime,
 
         async update(time) {
             gameUI.updateTimeDisplay(time);
             city.update();
+
+            // ECS simulation (Parcels road access filet, puis autres systèmes à venir)
+            try {
+                await runtime.runSimulation({ city, housesStore, time });
+            } catch (err) {
+                console.error('[game.js > update] ECS simulation error:', {
+                    error: err?.message || err,
+                    time,
+                });
+            }
             
             // Run city-wide services before individual building simulation (services read/write to IndexedDB)
             if (services.length > 0) {

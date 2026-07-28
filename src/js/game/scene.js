@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import Stats from 'stats.js';
 import {createCamera} from './camera.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -9,7 +10,7 @@ import {
     getBuildingsNamesInZone,
     updateBuildingNeighbors,
 } from "../utils/utils.js";
-import { toBuildingIdString, getOrCreateUrbanContext } from '../acl/urban.js';
+import { toBuildingIdString, getOrCreateParcelsContext } from '../acl/parcels.js';
 import {
     bulldozeSelected,
     commerce,
@@ -60,7 +61,7 @@ function getHouseMaxPopulation(houseType) {
     return 0;
 }
 
-export function createScene(housesStore, gameStore, assetManager, urbanOption) {
+export function createScene(housesStore, gameStore, assetManager, parcelsOption) {
     // BudgetManager will be set by the game initialization
 
     const scene = new THREE.Scene();
@@ -73,8 +74,8 @@ export function createScene(housesStore, gameStore, assetManager, urbanOption) {
     const decorativeVillageManager = new DecorativeVillageManager(scene, assetManager);
     const budgetProcessor = new BudgetProcessor();
     const citizenManager = new CitizenManager(scene, assetManager);
-    const urban = urbanOption ?? getOrCreateUrbanContext(housesStore);
-    const syncRoadAccess = setupRoadAccessIcons(urban, { assetManager, textures });
+    const parcels = parcelsOption ?? getOrCreateParcelsContext(housesStore);
+    const syncRoadAccess = setupRoadAccessIcons(parcels, { assetManager, textures });
 
     // Use simple scene background with sky texture - this ensures sky covers everything
     // The backdrop (distant ground) will be positioned to match World platform exactly
@@ -90,6 +91,14 @@ export function createScene(housesStore, gameStore, assetManager, urbanOption) {
     const camera = createCamera(gameWindow);
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(gameWindow.offsetWidth, gameWindow.offsetHeight);
+
+    // Overlay FPS / ms (stats.js) — clic pour basculer FPS ↔ MS ↔ MB
+    const stats = new Stats();
+    stats.showPanel(0);
+    stats.dom.style.zIndex = '10001';
+    const statsVisible = localStorage.getItem('show-stats-js') !== 'false';
+    stats.dom.style.display = statsVisible ? 'block' : 'none';
+    document.body.appendChild(stats.dom);
     
     // Add WebGL error handling
     const canvas = renderer.domElement;
@@ -492,6 +501,7 @@ export function createScene(housesStore, gameStore, assetManager, urbanOption) {
             await gameStore.addGameItems(infoGameplay);
 
         // --- BOUCLE SUR LA VILLE ----
+        parcels.bindSpatialContext({ city, buildings, terrain, time });
 
         // Define status icons metadata for all buildings
         const statutsIconsMeta = {
@@ -750,7 +760,7 @@ export function createScene(housesStore, gameStore, assetManager, urbanOption) {
                   try {
                       const allNeighborsWithinZone = getBuildingsNamesInZone(buildingData, time, {buildingTarget: "", zones:[1,2]})
                       const allMarketsInZone = getBuildingsNamesInZone(buildingData, time, {buildingTarget: "Market-Stall", zones:[1,2]})
-                      await housesStore.updateHouseFields(currentUniqueID, {neighbors: allNeighborsWithinZone})
+                      await parcels.updateNeighbors(currentUniqueID, allNeighborsWithinZone ?? [])
                       await housesStore.updateHouseFields(currentUniqueID, {markets: allMarketsInZone})
                   } catch (err) {
                       // Building might not exist in DB yet (e.g., newly placed StonePath road)
@@ -774,7 +784,12 @@ export function createScene(housesStore, gameStore, assetManager, urbanOption) {
                         // Handle geometry-based roads ('roads') - restore terrain to grass
                         if (currentBuildingId === 'roads') {
                             const uniqueBuildingId = toBuildingIdString(currentBuildingId, x, y);
-                            await housesStore.deleteOneHouse(uniqueBuildingId);
+                            try {
+                                await parcels.syncRemovedBuilding({ buildingId: uniqueBuildingId });
+                            } catch (err) {
+                                console.warn('[Scene] Failed parcels remove for road', uniqueBuildingId, err);
+                                await housesStore.deleteOneHouse(uniqueBuildingId);
+                            }
                             // Restore terrain mesh to grass
                             if (terrain[x] && terrain[x][y]) {
                                 const terrainMesh = terrain[x][y];
@@ -800,7 +815,12 @@ export function createScene(housesStore, gameStore, assetManager, urbanOption) {
                         } else {
                             // Remove buildings (houses, StonePath roads, farms, markets, etc.) - all follow the same pattern
                             const uniqueBuildingId = toBuildingIdString(currentBuildingId, x, y);
-                            await housesStore.deleteOneHouse(uniqueBuildingId);
+                            try {
+                                await parcels.syncRemovedBuilding({ buildingId: uniqueBuildingId });
+                            } catch (err) {
+                                console.warn('[Scene] Failed parcels remove for', uniqueBuildingId, err);
+                                await housesStore.deleteOneHouse(uniqueBuildingId);
+                            }
                             removeInteractiveObject(buildings[x][y]);
                             buildings[x][y] = undefined;
                         }
@@ -836,7 +856,7 @@ export function createScene(housesStore, gameStore, assetManager, urbanOption) {
                         });
                     }
 
-                    // Accès routier marché (BC Urban + icône)
+                    // Accès routier marché (BC Parcels + icône)
                     const marketRoadScale = {
                         x: statutsIconsMeta.road.scale.x * 0.714,
                         y: statutsIconsMeta.road.scale.y * 0.714,
@@ -1032,7 +1052,7 @@ export function createScene(housesStore, gameStore, assetManager, urbanOption) {
                         assetManager.removeStatusSprite(buildings[x][y], spriteName);
                     });
                     
-                    // Accès routier moulin (BC Urban + icône)
+                    // Accès routier moulin (BC Parcels + icône)
                     const windmillRoadScale = {
                         x: statutsIconsMeta.road.scale.x * 0.714,
                         y: statutsIconsMeta.road.scale.y * 0.714,
@@ -1845,6 +1865,19 @@ export function createScene(housesStore, gameStore, assetManager, urbanOption) {
                     if (!buildings[x][y] || buildings[x][y] !== terrain[x][y]) {
                         buildings[x][y] = terrain[x][y];
                     }
+                    const roadId = toBuildingIdString('roads', x, y);
+                    if (roadId) {
+                        try {
+                            await parcels.syncPlacedBuilding({
+                                buildingId: roadId,
+                                x,
+                                y,
+                                type: 'roads',
+                            });
+                        } catch (err) {
+                            console.warn('[Scene] Failed parcels place for road', roadId, err);
+                        }
+                    }
                     continue; // Skip building creation code for geometry roads
                 }
                 
@@ -1895,6 +1928,20 @@ export function createScene(housesStore, gameStore, assetManager, urbanOption) {
                         } else {
                             // Fallback: add directly to scene if zone group doesn't exist
                             scene.add(buildings[x][y]);
+                        }
+
+                        const placedId = toBuildingIdString(newBuildingId, x, y);
+                        if (placedId) {
+                            try {
+                                await parcels.syncPlacedBuilding({
+                                    buildingId: placedId,
+                                    x,
+                                    y,
+                                    type: newBuildingId,
+                                });
+                            } catch (err) {
+                                console.warn('[Scene] Failed parcels place for', placedId, err);
+                            }
                         }
                     }
 
@@ -2265,6 +2312,13 @@ export function createScene(housesStore, gameStore, assetManager, urbanOption) {
         localStorage.setItem('show-performance-stats', performanceStats.enabled.toString());
         return performanceStats.enabled;
     };
+
+    window.toggleStatsJs = function() {
+        const next = stats.dom.style.display === 'none';
+        stats.dom.style.display = next ? 'block' : 'none';
+        localStorage.setItem('show-stats-js', next ? 'true' : 'false');
+        return next;
+    };
     
     // Store last frame time for animation delta calculation
     let lastFrameTime = performance.now();
@@ -2272,6 +2326,8 @@ export function createScene(housesStore, gameStore, assetManager, urbanOption) {
     // Note: updateCitizen() moved to CitizenManager.updateAllCitizens()
     
     function draw() {
+        stats.begin();
+
         // Calculate delta time for animations (in seconds)
         const currentTime = performance.now();
         const deltaTime = (currentTime - lastFrameTime) / 1000; // Convert to seconds
@@ -2302,6 +2358,8 @@ export function createScene(housesStore, gameStore, assetManager, urbanOption) {
         }
         renderer.render(scene, camera.camera);
         logPerformanceStats(); // Log performance stats if enabled
+
+        stats.end();
     }
 
     function start() {

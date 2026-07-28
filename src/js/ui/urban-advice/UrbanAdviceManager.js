@@ -2,7 +2,7 @@
  * UrbanAdviceManager - Gère le centre de conseils urbains
  */
 import { initLoanSystem, loadActiveLoans } from '../loans/LoansManager.js';
-import { hasRoadAccessFromCount } from '../../acl/urban.js';
+import { hasRoadAccessFromCount } from '../../acl/parcels.js';
 
 /**
  * Initialise le centre de conseils urbains

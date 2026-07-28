@@ -1,4 +1,4 @@
-import { DomainEventPublisher } from '../../contexts/urban/application/ports/DomainEventPublisher.js';
+import { DomainEventPublisher } from '../../contexts/parcels/application/ports/DomainEventPublisher.js';
 
 /**
  * Adapter : bus d'événements en mémoire (tests + dev).

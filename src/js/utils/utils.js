@@ -127,23 +127,8 @@ export function updateBuildingNeighbors(buildingData, area=1, time=0) {
     Object.assign(buildings[x][y].userData, { neighborW: neighbors.neighborWest?.buildingId });
     Object.assign(buildings[x][y].userData, { neighborNW: neighbors.neighborNorthWest?.buildingId });
 
- 
-
+    // Voisins métier : BC Parcels (IndexedDB / getNeighbors). Ici : meshes pour hover UI.
   
-    // Add all neighbors to a single array for convenience
-    Object.assign(buildings[x][y].userData, {
-        neighbors: [
-            neighbors.neighborNorth,
-            neighbors.neighborNorthWest,
-            neighbors.neighborNorthEast,
-            neighbors.neighborEast,
-            neighbors.neighborSouthEast,
-            neighbors.neighborSouthWest,
-            neighbors.neighborSouth,
-            neighbors.neighborWest,
-        ],
-    });
-
       // Add all neighbors to a single array for convenience
       Object.assign(buildings[x][y].userData, {
         neighborsNames: [

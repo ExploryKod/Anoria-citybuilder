@@ -39,7 +39,7 @@ function appRegister(name, instance) {
 }
 import gameStore from "../stores/GameStore.js";
 import housesStore from "../stores/HousesStore.js";
-import { hasRoadAccessFromCount } from '../acl/urban.js';
+import { hasRoadAccessFromCount } from '../acl/parcels.js';
 import budgetManager from "../stores/BudgetManager.js";
 import AssetManager from "../meshs/AssetManager.js";
 import { initRealtimeBudgetPopup, updateRealtimeBudget } from "./budget/RealtimeBudgetManager.js";

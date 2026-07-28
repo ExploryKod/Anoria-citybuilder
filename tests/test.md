@@ -14,7 +14,7 @@
 - ✅ utils (30 tests)
 - ✅ config (29 tests)
 - ✅ **FoodModule (32 tests)** 🆕
-- ✅ **RoadAccessModule (30 tests)** 🆕
+- ✅ **Parcels road access** (behavior tests, `RoadAccessModule` supprimé)
 - ✅ **EmploymentModule (30 tests)** 🆕
 - ✅ EmployeeHelper.localStorage (8 tests)
 - ✅ **HousesStore (46 tests)** 🆕
@@ -109,17 +109,12 @@
 - **Statut** : ✅ 32 tests passent
 - **Notes** : Fonctions pures, pas de dépendances externes. Tests complets avec cas limites.
 
-#### RoadAccessModule ✅ **IMPLÉMENTÉ**
-- **Fichier** : `src/js/game/modules/RoadAccessModule.js`
-- **Tests** : `tests/RoadAccessModule.test.js` (30 tests)
-- **Fonctionnalités testées** :
-  - ✅ `checkRoadAccess()` - Détection par `isRoad`, `userData.isRoad`, `name`, `buildingId`
-  - ✅ `updateFromNeighbors()` - Mise à jour depuis la base
-  - ✅ `getRoadCount()` - Comptage des routes
-  - ✅ `toHTML()` - Génération HTML
-  - ✅ `dispose()` - Nettoyage des ressources
-- **Statut** : ✅ 30 tests passent
-- **Notes** : Logique simple, données mockées. Tests de tous les cas de détection.
+#### RoadAccess (BC Parcels) ✅ **MIGRÉ**
+- **Ancien** : `RoadAccessModule.js` — **supprimé**
+- **Nouveau** : `contexts/parcels` (`RecalculateRoadAccess*`, `GetBuildingRoadAccess`, `PlaceBuilding` / `RemoveBuilding`)
+- **Tests** : `tests/contexts/parcels/roadAccess.behavior.test.js`, `placeRemove.behavior.test.js`
+- **ACL** : `hasRoadAccessFromCount`, `parcels.getRoadAccess(id)`
+- **Notes** : plus de module Three.js ; filet tick = `RecalculateAllRoadAccess`
 
 #### EmploymentModule ✅ **IMPLÉMENTÉ**
 - **Fichier** : `src/js/game/modules/EmploymentModule.js`
@@ -230,7 +225,7 @@
 
 ### ✅ Terminé (177 tests)
 - **FoodModule** - 32 tests ✅
-- **RoadAccessModule** - 30 tests ✅
+- **Parcels road access** - behavior tests (`contexts/parcels`) ✅
 - **EmploymentModule** - 30 tests ✅
 - **HousesStore** - 46 tests ✅
 - **Utils supplémentaires** - 20 tests ✅
@@ -252,7 +247,7 @@
 
 ## 🎯 Recommandations
 
-1. ✅ **Modules terminés** - FoodModule, RoadAccessModule, EmploymentModule (92 tests)
+1. ✅ **Modules** - FoodModule, EmploymentModule ; road access → BC Parcels
 2. ✅ **Stores terminés** - HousesStore pour les opérations CRUD de base (46 tests)
 3. **Services simples** - EmploymentDistributionService avec mocking minimal
 4. **Services complexes** - FoodDistributionService avec structures complètes
@@ -279,7 +274,7 @@
 | Module | Fichier de test | Tests | Statut |
 |--------|----------------|-------|--------|
 | FoodModule | `FoodModule.test.js` | 32 | ✅ |
-| RoadAccessModule | `RoadAccessModule.test.js` | 30 | ✅ |
+| Parcels road access | `tests/contexts/parcels/*.behavior.test.js` | — | ✅ |
 | EmploymentModule | `EmploymentModule.test.js` | 30 | ✅ |
 | HousesStore | `HousesStore.test.js` | 46 | ✅ |
 | Utils supplémentaires | `utils.test.js` (extensions) | 20 | ✅ |

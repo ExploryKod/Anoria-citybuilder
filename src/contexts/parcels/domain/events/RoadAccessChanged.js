@@ -15,7 +15,7 @@ export function createRoadAccessChanged({
   newRoadAccess,
 }) {
   return Object.freeze({
-    type: 'urban.RoadAccessChanged',
+    type: 'parcels.RoadAccessChanged',
     buildingId: toPublishedBuildingId(buildingId),
     previousRoadCount,
     newRoadCount: newRoadAccess.roadCount,

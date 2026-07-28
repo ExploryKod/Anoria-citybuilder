@@ -4,15 +4,15 @@ import { setRoadAccessIcon } from '../js/game/modules/StatusIconHelper.js';
 const views = new Map();
 
 /**
- * Branche le rendu des icônes "no-road" sur le bus Urban.
+ * Branche le rendu des icônes "no-road" sur le bus Parcels.
  * Retourne une fonction à appeler depuis scene.js à chaque tick.
  *
  * @example
- * const syncRoadAccess = setupRoadAccessIcons(urban, { assetManager, textures });
+ * const syncRoadAccess = setupRoadAccessIcons(parcels, { assetManager, textures });
  * await syncRoadAccess({ buildingId, mesh, position, scale });
  */
-export function setupRoadAccessIcons(urban, { assetManager, textures }) {
-  urban.eventPublisher.subscribe('urban.RoadAccessChanged', (event) => {
+export function setupRoadAccessIcons(parcels, { assetManager, textures }) {
+  parcels.eventPublisher.subscribe('parcels.RoadAccessChanged', (event) => {
     const view = views.get(event.buildingId);
     if (!view?.mesh) return;
 
@@ -31,7 +31,7 @@ export function setupRoadAccessIcons(urban, { assetManager, textures }) {
       views.set(buildingId, { mesh, position, scale });
     }
 
-    const result = await urban.recalculateRoadAccessForBuilding.execute(buildingId);
+    const result = await parcels.recalculateRoadAccessForBuilding.execute(buildingId);
     const hasAccess = result?.roadAccess?.hasAccess ?? false;
     const roadCount = result?.roadAccess?.roadCount ?? 0;
 

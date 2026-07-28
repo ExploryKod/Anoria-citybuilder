@@ -1,4 +1,4 @@
-import { fromLegacyNeighbor } from './value-objects/NeighborRef.js';
+import { fromLegacyNeighbor } from './value-objects/Neighbor.js';
 import {
   tryParseBuildingId,
   tryCreateBuildingId,
@@ -6,12 +6,12 @@ import {
 import { tryCreateTileCoord } from './value-objects/TileCoord.js';
 
 /**
- * Lecture immuable d'un bâtiment pour les use cases Urban.
- * Ce n'est pas l'aggregate root complet — snapshot pour recalcul d'accès routier.
+ * Lecture immuable d'un bâtiment pour les use cases Parcels.
  *
  * - `id` : Published Language (string IndexedDB)
- * - `buildingId` : VO métier si l'identité est parseable
- * - `tile` : VO TileCoord si les coordonnées sont connues
+ * - `buildingId` : VO BuildingId si parseable
+ * - `tile` : TileCoord
+ * - `neighbors` : Neighbor[] (domaine Parcels)
  */
 export function createBuildingSnapshot({
   id,
@@ -42,9 +42,9 @@ export function createBuildingSnapshot({
       ? tryCreateTileCoord(buildingId.x, buildingId.y)
       : tryCreateTileCoord(x, y);
 
-  const normalizedNeighbors = neighbors.map((neighbor) =>
-    neighbor.isRoad !== undefined ? neighbor : fromLegacyNeighbor(neighbor)
-  );
+  const normalizedNeighbors = (neighbors || [])
+    .filter((neighbor) => neighbor && typeof neighbor === 'object')
+    .map(fromLegacyNeighbor);
 
   return Object.freeze({
     id: buildingId?.value ?? id,

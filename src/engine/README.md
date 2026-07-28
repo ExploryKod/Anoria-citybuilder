@@ -6,7 +6,7 @@ Couche technique du jeu (generic subdomain). Équivalent du runtime Unity/Bevy.
 
 - Gérer les entités (IDs) et les composants (données pures)
 - Exécuter les systèmes dans un ordre défini (`SystemRunner`, `Pipeline`)
-- Fournir une boucle de tick (`GameLoop`)
+- Fournir une boucle de tick (`GameLoop`) — optionnelle ; Anoria utilise encore TimeManager + `game.update`
 
 ## Interdictions
 
@@ -19,13 +19,31 @@ Couche technique du jeu (generic subdomain). Équivalent du runtime Unity/Bevy.
 ```text
 engine/
   ecs/
-    defineComponent.js   # typage des composants
-    World.js             # entités + query
-    SystemRunner.js      # exécution ordonnée de systèmes
+    defineComponent.js
+    World.js
+    SystemRunner.js
   loop/
-    Pipeline.js          # groupes de systèmes (sim, render…)
-    GameLoop.js          # setInterval / rAF
+    Pipeline.js
+    GameLoop.js
 ```
+
+## Branchement jeu (refactor)
+
+```text
+composition/createGameRuntime.js
+  → World + Pipeline
+  → group('simulation').register('parcels.roadAccess', …)
+
+infrastructure/runtime/systems/parcelsRoadAccessSystem.js
+  → délègue à parcels.recalculateAllRoadAccess
+
+game.js → update()
+  → await runtime.runSimulation({ city, housesStore, time })
+  → puis SimServices legacy (food, emploi, …)
+  → puis scene.update
+```
+
+Road access n’est plus dans `RoadConnectivityService` au tick (fichier conservé, deprecated).
 
 ## Usage minimal
 
@@ -52,5 +70,6 @@ await pipeline.runGroup('simulation', world);
 
 ## Ce qui branche l'engine
 
-- `infrastructure/runtime/*/systems/` — systèmes minces métier
-- `composition/` — câblage DI
+- `composition/createGameRuntime.js` — DI runtime
+- `infrastructure/runtime/systems/` — systèmes minces (appellent les BC)
+- `GameLoop` — disponible pour remplacer TimeManager plus tard (hors scope immédiat)
