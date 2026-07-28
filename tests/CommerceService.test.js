@@ -139,6 +139,7 @@ describe('CommerceService - Partenaires', () => {
             {
                 id: 'deserta',
                 name: 'Deserta',
+                isActive: true,
                 imports: [
                     {
                         productId: 'carrot',
@@ -266,6 +267,7 @@ describe('CommerceService - Partenaires', () => {
             {
                 id: 'deserta',
                 name: 'Deserta',
+                isActive: true,
                 imports: [],
                 exports: [
                     {

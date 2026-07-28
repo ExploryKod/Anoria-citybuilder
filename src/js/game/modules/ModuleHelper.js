@@ -6,6 +6,8 @@
 import { RoadAccessModule } from './RoadAccessModule.js';
 import { FoodModule } from './FoodModule.js';
 import { TimeManager } from '../utils/TimeManager.js';
+import { fromLegacyNeighbor } from '../../../contexts/urban/domain/value-objects/NeighborRef.js';
+import { evaluateRoadAccess } from '../../../contexts/urban/domain/policies/RoadAccessPolicy.js';
 
 /**
  * Creates a road access module for a building
@@ -55,13 +57,11 @@ export function getOrCreateRoadAccessModule(building, neighbors = []) {
  * @returns {Object} { hasAccess: boolean, roadCount: number }
  */
 export function checkRoadAccess(neighbors) {
-    const tempBuilding = {};
-    const module = createRoadAccessModule(tempBuilding);
-    module.checkRoadAccess(neighbors);
-    
+    const normalized = (neighbors || []).map(fromLegacyNeighbor);
+    const roadAccess = evaluateRoadAccess(normalized);
     return {
-        hasAccess: module.value,
-        roadCount: module.roadCount
+        hasAccess: roadAccess.hasAccess,
+        roadCount: roadAccess.roadCount,
     };
 }
 
