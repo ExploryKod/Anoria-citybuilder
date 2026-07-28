@@ -8,6 +8,7 @@ import { createScene } from './scene.js';
 import { createCity } from './city.js';
 import {getAssetPrice, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, isAreaAvailableForBuilding} from '../utils/utils.js';
 import { toBuildingIdString, getOrCreateParcelsContext } from '../acl/parcels.js';
+import { getOrCreateSupplyContext } from '../acl/supply.js';
 import { createGameRuntime } from '../../composition/createGameRuntime.js';
 import config from './config.js';
 import {
@@ -456,6 +457,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
 
     /* Scene + ECS runtime */
     const parcels = getOrCreateParcelsContext(housesStore);
+    const supply = getOrCreateSupplyContext(housesStore);
     const runtime = createGameRuntime({ parcels });
     const scene = createScene(housesStore, gameStore, assetManager, parcels);
 
@@ -614,7 +616,11 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 const buildingPop = await housesStore.getHouseItem(uniqueId, 'pop')
                 const roadAccess = await parcels.getRoadAccess(uniqueId);
                 const neighbors = uniqueId ? await parcels.getNeighbors(uniqueId) : [];
-                let houseStocks = await housesStore.getHouseItem(uniqueId, 'stocks');
+                const supplyView = uniqueId
+                    ? await supply.getBuildingSupplyView(uniqueId)
+                    : null;
+                // Food stocks for Supply buildings come from the BC query (not raw Dexie)
+                let houseStocks = supplyView?.stocks ?? null;
                 
                 // Debug: Log retrieved data
                 console.log('[game.js] Retrieved data from DB:', {
@@ -622,10 +628,11 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     pop: buildingPop,
                     roads: roadAccess.roadCount,
                     neighborsCount: neighbors.length,
-                    hasStocks: !!houseStocks
+                    hasStocks: !!houseStocks,
+                    supplyKind: supplyView?.kind ?? null,
                 });
                 
-                // Also try to get the full house record to see what's actually stored
+                // Non-Supply fields (nature category, employees, …) still via housesStore
                 const fullHouse = await housesStore.getHouse(uniqueId);
                 console.log('[game.js] Full house record:', {
                     uniqueId,
@@ -644,7 +651,8 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     makeInfoKeyValue('Type', `${selectedObject.userData.id}`);
                     makeInfoKeyValue('Adresse', `x: ${selectedObject.userData.x} | y: ${selectedObject.userData.y}`);
                     
-                    // Afficher les stocks avec maxStocks
+                    // Nature stocks are not Supply — read Dexie for wood/rock/etc.
+                    houseStocks = await housesStore.getHouseItem(uniqueId, 'stocks');
                     const maxStocks = fullHouse?.maxStocks || {};
                     if (houseStocks && Object.keys(houseStocks).length > 0) {
                         makeInfoSection('Stocks disponibles');
@@ -698,7 +706,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     makeInfoKeyValue('Voisinage', 'Maison isolée');
                 }
 
-                if(selectedObject.userData.id.includes('House') && Object.hasOwn(houseStocks, 'food')) {
+                if(supplyView?.kind === 'house' && Object.hasOwn(houseStocks || {}, 'food')) {
                     makeInfoSection('Stocks nourriture');
                     makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`);
                     makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`);
@@ -790,10 +798,8 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 }
 
                 // Display market food stocks (similar to houses)
-                if((selectedObject.userData.id.includes('Market') || selectedObject.userData.id.includes('market')) && Object.hasOwn(houseStocks, 'food')) {
-                    // Get market data to access maxStock
-                    const marketData = await housesStore.getHouse(uniqueId);
-                    const maxStock = marketData?.maxStock || 500; // Default max stock for markets
+                if(supplyView?.kind === 'market' && Object.hasOwn(houseStocks || {}, 'food')) {
+                    const maxStock = supplyView.maxStock || 500;
                     
                     makeInfoSection('Stock marché');
                     makeInfoKeyValue('Blé', `${houseStocks.wheat || 0}/${maxStock} paniers`);
@@ -801,158 +807,43 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     makeInfoKeyValue('Autres légumes', `${houseStocks.carrot || 0}/${maxStock} paniers`);
                     makeInfoKeyValue('Total', `${houseStocks.food || 0}/${maxStock} paniers disponibles`);
                     
-                    // Display employee information for markets
-                    if (marketData) {
-                        // Check supply chain status (farms and houses)
-                        const noFarmsNearby = marketData.noFarmsNearby === true;
-                        
-                        // Check if there are houses within distribution range
-                        // Houses in range are determined by FoodDistributionService.findHousesInRange()
-                        // For now, we check neighbors for houses
-                        const marketNeighbors = marketData.neighbors || [];
-                        const housesNearby = marketNeighbors.filter(neighbor => {
-                            if (!neighbor) return false;
-                            const name = neighbor.name || neighbor.buildingId || neighbor.type || '';
-                            return name.includes('House') || name.includes('house');
-                        });
-                        const noHousesNearby = housesNearby.length === 0;
-                        
-                        // Check buying status and show market state
-                        const isBuying = marketData.isBuying === true;
-                        const hasNoWorkersForState = (marketData.employees?.worker || 0) === 0 && (marketData.employees?.worker_need || 0) > 0;
-                        
-                        // Buying period configuration (easy to change)
-                        const buyingPeriodName = 'Automne'; // Season when markets buy from farms
-                        
-                        makeInfoSection('État du marché');
-                        if (hasNoWorkersForState) {
-                            makeInfoKeyValue('État', '🔴 Inactif : pas d\'employés');
-                        } else if (isBuying) {
-                            makeInfoKeyValue('État', '🟢 Achats en cours : c\'est le mois des affaires !');
-                        } else {
-                            makeInfoKeyValue('État', `⏸️ En attente : le marché n'achète qu'en ${buyingPeriodName}`);
-                        }
-                        
-                        makeInfoSection('Approvisionnement');
-                        if (noFarmsNearby) {
-                            makeInfoKeyValue('Fermes', '❌ Aucune ferme à proximité');
-                        } else {
-                            makeInfoKeyValue('Fermes', '✅ Fermes accessibles');
-                        }
-                        if (noHousesNearby) {
-                            makeInfoKeyValue('Distribution', '❌ Aucune maison à portée');
-                        } else {
-                            makeInfoKeyValue('Distribution', '✅ Maisons à portée');
-                        }
-                        
-                        if (marketData.employees) {
-                            const employees = marketData.employees;
-                            const workerNeed = employees.worker_need || 0;
-                            const eliteNeed = employees.elite_need || 0;
-                            const workers = employees.worker || 0;
-                            const elites = employees.elite || 0;
-                            // Get priority from localStorage based on sector (not from IndexedDB)
-                            const sector = employees.sector || 0;
-                            const priority = getSectorPriority(sector);
-                            
-                            const hasEnoughWorkers = workers >= workerNeed;
-                            const hasEnoughElites = elites >= eliteNeed;
-                            const hasNoWorkers = workers === 0 && workerNeed > 0;
-                            const hasPartialWorkers = workers > 0 && workers < workerNeed;
-                            const isFullyStaffed = hasEnoughWorkers && hasEnoughElites;
-                            
-                            makeInfoSection('Employés');
-                            makeInfoKeyValue('Secteur', `${sector} : ${getSectorName(sector)}`);
-                            makeInfoKeyValue('Priorité', `${priority}`);
-                            makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
-                            makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
-                            
-                            // Show status message based on employee status
-                            if (isFullyStaffed) {
-                                makeInfoBuildingText('✅ Le marché marche à plein régime', false, 'success-message');
-                            } else if (hasNoWorkers) {
-                                makeInfoBuildingText('❌ Le marché manque de bras, il ne peut fonctionner', false, 'error-message');
-                            } else if (hasPartialWorkers) {
-                                makeInfoBuildingText('⚠️ Le marché tente de vendre avec peine car trop peu d\'employés', false, 'warning-message');
-                            }
-                        }
-                    }
-                }
+                    const noFarmsNearby = supplyView.noFarmsNearby === true;
+                    const noHousesNearby = !supplyView.hasHousesNearby;
+                    const isBuying = supplyView.isBuying === true;
 
-                if(selectedObject.userData.id.includes('Farm')) {
-                    // Initialize stocks if not present
-                    if (!houseStocks) {
-                        houseStocks = { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
-                    }
-                    makeInfoSection('Stocks ferme');
-                    if(selectedObject.userData.id.includes('Farm-Wheat')) {
-                        makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`);
-                    }
-                    if(selectedObject.userData.id.includes('Farm-Carrot')) {
-                        makeInfoKeyValue('Carottes', `${houseStocks.carrot || 0} paniers`);
-                    }
-                    if(selectedObject.userData.id.includes('Farm-Cabbage')) {
-                        makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`);
-                    }
-                    makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers`);
+                    // Employment still via housesStore until Employment BC
+                    const marketData = await housesStore.getHouse(uniqueId);
+                    const hasNoWorkersForState = (marketData?.employees?.worker || 0) === 0 && (marketData?.employees?.worker_need || 0) > 0;
                     
-                    // Display sales history for farms
-                    const farmData = await housesStore.getHouse(uniqueId);
-                    if (farmData) {
-                        const salesToMarket = farmData.salesToMarket || [];
-                        const salesToWindmill = farmData.salesToWindmill || [];
-                        
-                        // Get current time from budget
-                        let currentYear = 0;
-                        if (window.budgetManager) {
-                            const budget = await window.budgetManager.getCurrentBudget();
-                            if (budget && budget.turn !== undefined && window.TimeManager) {
-                                const timeInfo = window.TimeManager.getTimeInfo(budget.turn);
-                                currentYear = timeInfo ? timeInfo.year : 0;
-                            }
-                        }
-                        
-                        // Filter sales for current year
-                        const currentYearMarketSales = salesToMarket.filter(sale => sale.year === currentYear);
-                        const currentYearWindmillSales = salesToWindmill.filter(sale => sale.year === currentYear);
-                        
-                        if (currentYearMarketSales.length > 0 || currentYearWindmillSales.length > 0) {
-                            makeInfoSection('Ventes de l\'année');
-                            
-                            // Display market sales (with month and turn)
-                            if (currentYearMarketSales.length > 0) {
-                                makeInfoKeyValue('Ventes au marché', `${currentYearMarketSales.length} vente(s)`);
-                                currentYearMarketSales.forEach(sale => {
-                                    const productName = sale.productType === 'wheat' ? 'Blé' : 
-                                                       sale.productType === 'carrot' ? 'Carotte' : 
-                                                       sale.productType === 'cabbage' ? 'Chou' : sale.productType;
-                                    const subtext = `${sale.monthName || `Mois ${sale.month + 1}`} - Tour ${sale.turn}: ${sale.quantity} paniers`;
-                                    makeInfoKeyValue(`  → ${productName}`, `${sale.quantity} paniers`, subtext);
-                                });
-                            }
-                            
-                            // Display windmill sales (aggregated by product type)
-                            if (currentYearWindmillSales.length > 0) {
-                                makeInfoKeyValue('Ventes au moulin', `${currentYearWindmillSales.length} type(s) de produit`);
-                                currentYearWindmillSales.forEach(sale => {
-                                    const productName = sale.productType === 'wheat' ? 'Blé' : 
-                                                       sale.productType === 'carrot' ? 'Carotte' : 
-                                                       sale.productType === 'cabbage' ? 'Chou' : sale.productType;
-                                    const subtext = `${sale.count || 1} collecte(s) cette année`;
-                                    makeInfoKeyValue(`  → ${productName}`, `${sale.quantity} paniers`, subtext);
-                                });
-                            }
-                        }
+                    const buyingPeriodName = 'Automne';
+                    
+                    makeInfoSection('État du marché');
+                    if (hasNoWorkersForState) {
+                        makeInfoKeyValue('État', '🔴 Inactif : pas d\'employés');
+                    } else if (isBuying) {
+                        makeInfoKeyValue('État', '🟢 Achats en cours : c\'est le mois des affaires !');
+                    } else {
+                        makeInfoKeyValue('État', `⏸️ En attente : le marché n'achète qu'en ${buyingPeriodName}`);
                     }
                     
-                    // Display employee information for farms
-                    if (farmData && farmData.employees) {
-                        const employees = farmData.employees;
+                    makeInfoSection('Approvisionnement');
+                    if (noFarmsNearby) {
+                        makeInfoKeyValue('Fermes', '❌ Aucune ferme à proximité');
+                    } else {
+                        makeInfoKeyValue('Fermes', '✅ Fermes accessibles');
+                    }
+                    if (noHousesNearby) {
+                        makeInfoKeyValue('Distribution', '❌ Aucune maison à portée');
+                    } else {
+                        makeInfoKeyValue('Distribution', '✅ Maisons à portée');
+                    }
+                    
+                    if (marketData?.employees) {
+                        const employees = marketData.employees;
                         const workerNeed = employees.worker_need || 0;
                         const eliteNeed = employees.elite_need || 0;
                         const workers = employees.worker || 0;
                         const elites = employees.elite || 0;
-                        // Get priority from localStorage based on sector (not from IndexedDB)
                         const sector = employees.sector || 0;
                         const priority = getSectorPriority(sector);
                         
@@ -968,7 +859,95 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
                         makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
                         
-                        // Show status message based on employee status
+                        if (isFullyStaffed) {
+                            makeInfoBuildingText('✅ Le marché marche à plein régime', false, 'success-message');
+                        } else if (hasNoWorkers) {
+                            makeInfoBuildingText('❌ Le marché manque de bras, il ne peut fonctionner', false, 'error-message');
+                        } else if (hasPartialWorkers) {
+                            makeInfoBuildingText('⚠️ Le marché tente de vendre avec peine car trop peu d\'employés', false, 'warning-message');
+                        }
+                    }
+                }
+
+                if(supplyView?.kind === 'farm') {
+                    if (!houseStocks) {
+                        houseStocks = { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+                    }
+                    makeInfoSection('Stocks ferme');
+                    if(selectedObject.userData.id.includes('Farm-Wheat')) {
+                        makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`);
+                    }
+                    if(selectedObject.userData.id.includes('Farm-Carrot')) {
+                        makeInfoKeyValue('Carottes', `${houseStocks.carrot || 0} paniers`);
+                    }
+                    if(selectedObject.userData.id.includes('Farm-Cabbage')) {
+                        makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`);
+                    }
+                    makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers`);
+                    
+                    const salesToMarket = supplyView.salesToMarket || [];
+                    const salesToWindmill = supplyView.salesToWindmill || [];
+                    
+                    let currentYear = 0;
+                    if (window.budgetManager) {
+                        const budget = await window.budgetManager.getCurrentBudget();
+                        if (budget && budget.turn !== undefined && window.TimeManager) {
+                            const timeInfo = window.TimeManager.getTimeInfo(budget.turn);
+                            currentYear = timeInfo ? timeInfo.year : 0;
+                        }
+                    }
+                    
+                    const currentYearMarketSales = salesToMarket.filter(sale => sale.year === currentYear);
+                    const currentYearWindmillSales = salesToWindmill.filter(sale => sale.year === currentYear);
+                    
+                    if (currentYearMarketSales.length > 0 || currentYearWindmillSales.length > 0) {
+                        makeInfoSection('Ventes de l\'année');
+                        
+                        if (currentYearMarketSales.length > 0) {
+                            makeInfoKeyValue('Ventes au marché', `${currentYearMarketSales.length} vente(s)`);
+                            currentYearMarketSales.forEach(sale => {
+                                const productName = sale.productType === 'wheat' ? 'Blé' : 
+                                                   sale.productType === 'carrot' ? 'Carotte' : 
+                                                   sale.productType === 'cabbage' ? 'Chou' : sale.productType;
+                                const subtext = `${sale.monthName || `Mois ${sale.month + 1}`} - Tour ${sale.turn}: ${sale.quantity} paniers`;
+                                makeInfoKeyValue(`  → ${productName}`, `${sale.quantity} paniers`, subtext);
+                            });
+                        }
+                        
+                        if (currentYearWindmillSales.length > 0) {
+                            makeInfoKeyValue('Ventes au moulin', `${currentYearWindmillSales.length} type(s) de produit`);
+                            currentYearWindmillSales.forEach(sale => {
+                                const productName = sale.productType === 'wheat' ? 'Blé' : 
+                                                   sale.productType === 'carrot' ? 'Carotte' : 
+                                                   sale.productType === 'cabbage' ? 'Chou' : sale.productType;
+                                const subtext = `${sale.count || 1} collecte(s) cette année`;
+                                makeInfoKeyValue(`  → ${productName}`, `${sale.quantity} paniers`, subtext);
+                            });
+                        }
+                    }
+                    
+                    const farmData = await housesStore.getHouse(uniqueId);
+                    if (farmData && farmData.employees) {
+                        const employees = farmData.employees;
+                        const workerNeed = employees.worker_need || 0;
+                        const eliteNeed = employees.elite_need || 0;
+                        const workers = employees.worker || 0;
+                        const elites = employees.elite || 0;
+                        const sector = employees.sector || 0;
+                        const priority = getSectorPriority(sector);
+                        
+                        const hasEnoughWorkers = workers >= workerNeed;
+                        const hasEnoughElites = elites >= eliteNeed;
+                        const hasNoWorkers = workers === 0 && workerNeed > 0;
+                        const hasPartialWorkers = workers > 0 && workers < workerNeed;
+                        const isFullyStaffed = hasEnoughWorkers && hasEnoughElites;
+                        
+                        makeInfoSection('Employés');
+                        makeInfoKeyValue('Secteur', `${sector} : ${getSectorName(sector)}`);
+                        makeInfoKeyValue('Priorité', `${priority}`);
+                        makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
+                        makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
+                        
                         if (isFullyStaffed) {
                             makeInfoBuildingText('✅ La ferme a tout ce qu\'il faut pour fonctionner', false, 'success-message');
                         } else if (hasNoWorkers) {
@@ -980,52 +959,16 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 }
 
                 // Display windmill food stocks (collected from all farms in December)
-                if((selectedObject.userData.id.includes('Windmill') || selectedObject.userData.id.includes('windmill')) && Object.hasOwn(houseStocks, 'food')) {
-                    // Get windmill data for status checks
-                    const windmillData = await housesStore.getHouse(uniqueId);
-                    
-                    // Check if windmill has road access
-                    const windmillRoads = houseRoads || 0;
-                    const hasRoadAccess = windmillRoads > 0;
-                    
-                    // Check if windmill is currently collecting (set by WindmillService in October)
-                    const isCollecting = windmillData?.isCollecting === true;
-                    
-                    // Get last collection data (peut ne pas exister)
-                    let lastCollection = null;
-                    try {
-                        lastCollection = await housesStore.getHouseItem(uniqueId, 'lastCollection');
-                    } catch (e) {
-                        // lastCollection n'existe pas encore, c'est normal
-                        lastCollection = null;
-                    }
-                    
-                    // Get last import data (peut ne pas exister)
-                    let lastImport = null;
-                    try {
-                        lastImport = await housesStore.getHouseItem(uniqueId, 'lastImport');
-                    } catch (e) {
-                        // lastImport n'existe pas encore, c'est normal
-                        lastImport = null;
-                    }
-
-                    // Get last import details by partner (peut ne pas exister)
-                    let lastImportDetails = null;
-                    try {
-                        lastImportDetails = await housesStore.getHouseItem(uniqueId, 'lastImportDetails');
-                    } catch (e) {
-                        // lastImportDetails n'existe pas encore, c'est normal
-                        lastImportDetails = null;
-                    }
-
-                    // Get maxStock for windmill
-                    const maxStock = windmillData?.maxStock || 1000; // Default max stock for windmill
+                if(supplyView?.kind === 'windmill' && Object.hasOwn(houseStocks || {}, 'food')) {
+                    const hasRoadAccess = roadAccess.hasAccess;
+                    const isCollecting = supplyView.isCollecting === true;
+                    const lastCollection = supplyView.lastCollection;
+                    const lastImport = supplyView.lastImport;
+                    const lastImportDetails = supplyView.lastImportDetails;
+                    const maxStock = supplyView.maxStock || 1000;
                     
                     makeInfoSection('Stock moulin');
                     
-                    // Show stocks with last collection and import amounts
-                    // Format: "+X dernière collecte, +Y paniers importés" (toujours afficher les deux, même si 0)
-                    // Toujours afficher "+0 dernière collecte" et "+0 paniers importés" pour que le joueur voie les deux sources
                     const wheatCollectionAmount = lastCollection?.wheat || 0;
                     const wheatCollectionText = `+${wheatCollectionAmount} dernière collecte`;
                     const wheatImportAmount = lastImport?.wheat !== undefined ? lastImport.wheat : 0;
@@ -1063,7 +1006,6 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     makeInfoKeyValue('Bois', `${houseStocks.wood || 0}/${maxStock} paniers`);
                     makeInfoKeyValue('Total', `${houseStocks.food || 0}/${maxStock} paniers collectés`, totalSubtext);
 
-                    // Display imports by partner if any
                     if (lastImportDetails && Object.keys(lastImportDetails).length > 0) {
                         makeInfoSection('Imports par partenaire');
 
@@ -1096,19 +1038,17 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         makeInfoKeyValue('État', '⏸️ En attente (collecte en décembre)');
                     }
                     
-                    // Show warning if no road access
                     if (!hasRoadAccess) {
                         makeInfoBuildingText('⚠️ Sans route le moulin ne peut stocker', false, 'warning-message');
                     }
                     
-                    // Display employee information
+                    const windmillData = await housesStore.getHouse(uniqueId);
                     if (windmillData && windmillData.employees) {
                         const employees = windmillData.employees;
                         const workerNeed = employees.worker_need || 0;
                         const eliteNeed = employees.elite_need || 0;
                         const workers = employees.worker || 0;
                         const elites = employees.elite || 0;
-                        // Get priority from localStorage based on sector (not from IndexedDB)
                         const sector = employees.sector || 0;
                         const priority = getSectorPriority(sector);
                         
@@ -1124,7 +1064,6 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
                         makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
                         
-                        // Show status message based on employee status
                         if (isFullyStaffed) {
                             makeInfoBuildingText('✅ Le moulin tourne à plein régime', false, 'success-message');
                         } else if (hasNoWorkers) {

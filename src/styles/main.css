@@ -142,6 +142,22 @@ canvas {
     z-index: var(--z-index-canvas);
 }
 
+/* Perf HUD : annule le canvas 100vw/100vh (tailles posées en inline !important) */
+#stats-js {
+    width: auto !important;
+    height: auto !important;
+    pointer-events: auto;
+}
+
+#stats-js canvas.perf-hud-canvas {
+    max-width: none !important;
+    max-height: none !important;
+    display: block;
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+}
+
 /* Ajuster le canvas pour mobile paysage */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
     canvas {

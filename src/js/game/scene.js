@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import Stats from 'stats.js';
 import {createCamera} from './camera.js';
+import { createPerfHud } from './PerfHud.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { AnimationMixer } from 'three';
@@ -92,10 +92,9 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption)
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(gameWindow.offsetWidth, gameWindow.offsetHeight);
 
-    // Overlay FPS / ms (stats.js) — clic pour basculer FPS ↔ MS ↔ MB
-    const stats = new Stats();
-    stats.showPanel(0);
-    stats.dom.style.zIndex = '10001';
+    // Overlay perf : FPS + MS + MB, net, ~20% largeur, bas-droite
+    // (stats.js en CSS scale était flou et ne montrait qu'un panneau)
+    const stats = createPerfHud({ widthRatio: 0.2, bottom: 96, right: 16 });
     const statsVisible = localStorage.getItem('show-stats-js') !== 'false';
     stats.dom.style.display = statsVisible ? 'block' : 'none';
     document.body.appendChild(stats.dom);
@@ -2359,7 +2358,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption)
         renderer.render(scene, camera.camera);
         logPerformanceStats(); // Log performance stats if enabled
 
-        stats.end();
+        stats.end({ drawCalls: renderer.info.render.calls });
     }
 
     function start() {
