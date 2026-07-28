@@ -224,7 +224,7 @@ export function createScene(housesStore, gameStore, assetManager) {
 
     async function initialize(city) {
         // Store world platform before clearing scene
-        const worldPlatform = scene.getObjectByName('world-platform');
+        let worldPlatform = scene.getObjectByName('world-platform');
         
         // Remove skybox sphere if it exists
         const skySphere = scene.getObjectByName('sky-sphere');
