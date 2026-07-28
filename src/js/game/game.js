@@ -459,7 +459,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
     const parcels = getOrCreateParcelsContext(housesStore);
     const supply = getOrCreateSupplyContext(housesStore);
     const runtime = createGameRuntime({ parcels });
-    const scene = createScene(housesStore, gameStore, assetManager, parcels);
+    const scene = createScene(housesStore, gameStore, assetManager, parcels, supply);
 
     /* City initialization */
     // Detect WebGL capabilities first

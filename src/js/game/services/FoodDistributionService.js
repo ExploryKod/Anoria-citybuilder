@@ -1,6 +1,6 @@
 import { SimService } from './SimService.js';
 import { hasRoadAccessFromCount, toBuildingIdString } from '../../acl/parcels.js';
-import { createSupplyContext, toSupplySeason } from '../../acl/supply.js';
+import { createSupplyContext, toSupplySeason, isWithinMarketRange } from '../../acl/supply.js';
 import { TimeManager } from '../utils/TimeManager.js';
 import config from '../config.js';
 import FoodTraceabilityService from '../../stores/FoodTraceabilityService.js';
@@ -37,11 +37,7 @@ export class FoodDistributionService extends SimService {
 
     /**
      * Calculate Manhattan distance between two points
-     * @param {number} x1 - X coordinate of first point
-     * @param {number} y1 - Y coordinate of first point
-     * @param {number} x2 - X coordinate of second point
-     * @param {number} y2 - Y coordinate of second point
-     * @returns {number} Manhattan distance
+     * @deprecated Prefer isWithinMarketRange from Supply ACL
      */
     calculateDistance(x1, y1, x2, y2) {
         return Math.abs(x1 - x2) + Math.abs(y1 - y2);
@@ -182,12 +178,8 @@ export class FoodDistributionService extends SimService {
         // Skip collection during winter (Janvier-Février-Mars) - farms don't produce
         // Also update noFarmsNearby status for UI display
         const hasFarmsNearby = farmsNearby.length > 0;
-        await housesStore.updateHouseFields(marketId, { noFarmsNearby: !hasFarmsNearby }).catch(err => {
-            console.warn('[FoodDistributionService] Failed to update market noFarmsNearby status:', {
-                marketId,
-                error: err?.message || err
-            });
-        });
+        const supply = createSupplyContext({ housesStore });
+        await supply.updateFarmProximity(marketId, hasFarmsNearby);
         
         if (hasFarmsNearby) {
             await this.collectFoodFromFarms(marketId, farmsNearby, housesStore, time);
@@ -217,28 +209,23 @@ export class FoodDistributionService extends SimService {
             return [];
         }
 
-        const marketX = market.x;
-        const marketY = market.y;
         const maxDistance = this.foodDistributionDistance;
 
-        // Filter houses that are within range and have road access
-        const housesInRange = allHouses.filter(house => {
-            // Only process houses (not markets, farms, etc.)
+        return allHouses.filter(house => {
             const houseType = house.type || '';
             if (!houseType.includes('House') && !houseType.includes('house')) {
                 return false;
             }
 
-            // Check if house has coordinates
             if (house.x === undefined || house.y === undefined) {
                 return false;
             }
 
-            // Calculate distance
-            const distance = this.calculateDistance(marketX, marketY, house.x, house.y);
-            
-            // Check if house is within range
-            if (distance > maxDistance) {
+            if (!isWithinMarketRange(
+                { x: market.x, y: market.y },
+                { x: house.x, y: house.y },
+                maxDistance
+            )) {
                 return false;
             }
 
@@ -248,8 +235,6 @@ export class FoodDistributionService extends SimService {
 
             return true;
         });
-
-        return housesInRange;
     }
 
     /**
@@ -398,7 +383,7 @@ export class FoodDistributionService extends SimService {
                     season: timeInfo.season,
                 });
             } else if (outcome.reason === 'market_empty') {
-                console.warn('[FoodDistributionService] Market has no food to distribute:', {
+                console.info('[FoodDistributionService] Market has no food to distribute:', {
                     marketId,
                 });
             } else {

@@ -13,6 +13,10 @@
 
 Until then, treat `resolveBuildingId` as temporary compatibility debt, not domain logic.
 
+## Presentation boundary (done)
+
+Scene sprites, city map (`buttons.js`), storage windmill stocks, and the info panel now read Supply fields via ACL queries (`GetBuildingSupplyView`, `ListSupplyMapBuildings`, `ListWindmillSupplyViews`). Flag writes (`isBuying`, `isCollecting`, `noFarmsNearby`, `soldToWindmill`, `marketTooFar`) go through Supply commands. Remaining facade Dexie use is for non-Supply data (employees, pop, commerce settings, sales history arrays).
+
 ## Market reach: panel vs logistics (two definitions)
 
 **Current behavior (do not change casually — player-facing):**
@@ -20,7 +24,7 @@ Until then, treat `resolveBuildingId` as temporary compatibility debt, not domai
 | Surface | Rule | Source |
 |---|---|---|
 | Logistics | House in range if Manhattan ≤ `foodDistributionDistance` (default 5) to a road-connected market | `UpdateHousesMarketReach`, `findHousesInRange`, distribute |
-| Market info panel | « Maisons à portée » if any **neighbor** looks like a house | `game.js` — `marketData.neighbors` |
+| Market info panel | « Maisons à portée » if any **neighbor** looks like a house | `GetBuildingSupplyView.hasHousesNearby` (neighbor filter) |
 
 **Why it hurts**
 
@@ -30,7 +34,7 @@ Until then, treat `resolveBuildingId` as temporary compatibility debt, not domai
 
 **Desirable later (feature change, needs an explicit product decision)**
 
-- Align the market info panel (and any UI copy) on the **same** Manhattan reach used by Supply (`isWithinMarketRange` / `UpdateHousesMarketReach`), ideally via a Supply query rather than re-reading raw neighbors in `game.js`.
+- Align the market info panel (and any UI copy) on the **same** Manhattan reach used by Supply (`isWithinMarketRange` / `UpdateHousesMarketReach`).
 - Keep neighbor lists for placement / road / farm adjacency only — not as a synonym for distribution range.
 
 **Risk if done without care:** players who learned « maison voisine du marché = desservie » will see different panel text and possibly different expectations after the change; treat as a deliberate UX/rules update, not a silent fix.

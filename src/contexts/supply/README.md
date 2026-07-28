@@ -35,25 +35,28 @@ Code and ubiquitous language are **English**. UI copy may stay French.
 - `DistributeFoodFromMarketToHouses` — market → house round-robin (not autumn)
 - `WindmillCollectsFromAllFarms` — farm → windmill stock transfer (December, city-wide)
 - `UpdateHousesMarketReach` — persist house `marketTooFar` from market Manhattan range
+- `UpdateMarketFarmProximity` — persist `noFarmsNearby`
+- `MarkWindmillCollectingSeason` / `SetWindmillCollectingFlag` — `isCollecting`
+- `ResetFarmsSoldToWindmill` / `MarkFarmSoldToWindmill` — farm sprite flags
 
 **Queries**
-- `GetBuildingSupplyView` — flat DTO for info panel (stocks, flags, sales, collection). Market « maisons à portée » still uses **neighbors** (legacy feature).
+- `GetBuildingSupplyView` — per-building DTO (info panel + sprites)
+- `ListSupplyMapBuildings` — city map cells (`hasFood`, `marketTooFar`, layout)
+- `ListWindmillSupplyViews` — storage section stocks
 
 **Later**
 - ECS pipeline system `supply.*`
-- Wire remaining UI reads (scene sprites, buttons map) through Supply queries
 
 ## Ports
 
-- `SupplyBuildingRepository` (`findById`, `findSupplyView`, …)
-- `DomainEventPublisher` (optional events later)
+- `SupplyBuildingRepository` (`findById`, `findSupplyView`, `listAllSupplyViews`, `findWindmills`, `findFarms`, …)
 
 ## Relations
 
-- **Parcels**: road access (`roads` count / `hasRoadAccessFromCount`) — do not own the road graph
-- **ACL**: `src/js/acl/supply.js`
+- **Parcels**: road access — do not own the road graph
+- **ACL**: `src/js/acl/supply.js` (also exports `isWithinMarketRange`)
 - **Composition**: `createSupplyContext.js`
-- Legacy facade: `FoodDistributionService` / `WindmillService`
-- Info panel: `game.js` reads Supply via `supply.getBuildingSupplyView` (not raw Dexie for Supply fields)
+- Legacy facades: `FoodDistributionService` / `WindmillService` (sales traceability side-effects)
+- UI: `game.js` info panel, `scene.js` sprites, `buttons.js` map, `storage-section.js` stocks — via Supply queries
 
 Rule: `src/js/**` must not import `contexts/supply/domain/**` directly.
