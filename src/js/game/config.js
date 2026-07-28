@@ -78,7 +78,7 @@ const config = {
             // Commerces (2)
             'Market-Stall': 2,
             // Industries (3)
-            // (Future industrial buildings)
+            'Winery-001': 3,
             // Stockage (4) - Storage buildings
             'Windmill-001': 4,
             'Barn-001': 4,
@@ -98,13 +98,45 @@ const config = {
             // Commerces
             'Market-Stall': { worker_need: 2, elite_need: 1 },
             // Industries
-            // (Future industrial buildings)
+            // Note: worker_need pour Winery-001 est calculé dynamiquement dans EmployeeHelper.js
+            // Formule: (nombre de matières premières + nombre de produits finis) * 2
+            // Actuellement: (5 matières premières + 4 produits finis) * 2 = 18
+            'Winery-001': { worker_need: 18, elite_need: 0 }, // Valeur calculée dynamiquement
             // Stockage
             'Barn-001': { worker_need: 1, elite_need: 0 },
             // Infrastructure
             'roads': { worker_need: 0, elite_need: 0 },
             // Services Publics
             // (Future public buildings)
+        },
+        // Factory employee needs per resource/product
+        // Each resource/product needs 2 workers
+        factoryEmployeeNeeds: {
+            // Raw materials collection
+            wood: { worker_need: 2, type: 'bucheron' },
+            rock: { worker_need: 2, type: 'mineur' },
+            clay: { worker_need: 2, type: 'creuseur' },
+            iron: { worker_need: 2, type: 'mineur' },
+            gold: { worker_need: 2, type: 'mineur' },
+            // Finished products
+            furniture: { worker_need: 2, type: 'menuisier' },
+            weapons: { worker_need: 2, type: 'armurier' },
+            pottery: { worker_need: 2, type: 'potier' },
+            jewelry: { worker_need: 2, type: 'bijoutier' }
+        },
+        // Max storage per resource/product (fixed, not modifiable)
+        factoryMaxStorage: {
+            // Raw materials
+            wood: 200,
+            rock: 200,
+            clay: 200,
+            iron: 200,
+            gold: 200,
+            // Finished products
+            furniture: 100,
+            weapons: 100,
+            pottery: 100,
+            jewelry: 100
         }
     },
 
