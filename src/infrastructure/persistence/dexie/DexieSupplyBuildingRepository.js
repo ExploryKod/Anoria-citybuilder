@@ -46,6 +46,7 @@ export class DexieSupplyBuildingRepository {
       stocks: house.stocks || {},
       maxStock: house.maxStock ?? this.#defaultMaxStock(type),
       neighbors: house.neighbors || [],
+      pop: house.pop ?? 0,
       isBuying: house.isBuying === true,
       noFarmsNearby: house.noFarmsNearby === true,
       marketTooFar: house.marketTooFar === true,
@@ -71,6 +72,11 @@ export class DexieSupplyBuildingRepository {
     const house = await this.housesStore.getHouse(buildingId);
     if (!house) return null;
     return this.#toView(house);
+  }
+
+  async listAllSupplyViews() {
+    const houses = await this.housesStore.listAllHouses();
+    return houses.map((house) => this.#toView(house));
   }
 
   async saveStocks(buildingId, stocks) {
@@ -105,6 +111,26 @@ export class DexieSupplyBuildingRepository {
       .filter((house) => {
         const type = house.type || '';
         return type.includes('House') || type.includes('house');
+      })
+      .map((house) => this.#toSnapshot(house));
+  }
+
+  async findWindmills() {
+    const houses = await this.housesStore.listAllHouses();
+    return houses
+      .filter((house) => {
+        const type = house.type || '';
+        return type.includes('Windmill') || type.includes('windmill');
+      })
+      .map((house) => this.#toSnapshot(house));
+  }
+
+  async findFarms() {
+    const houses = await this.housesStore.listAllHouses();
+    return houses
+      .filter((house) => {
+        const type = house.type || '';
+        return type.includes('Farm') || type.includes('farm');
       })
       .map((house) => this.#toSnapshot(house));
   }

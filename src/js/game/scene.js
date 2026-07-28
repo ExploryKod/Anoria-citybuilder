@@ -11,6 +11,7 @@ import {
     updateBuildingNeighbors,
 } from "../utils/utils.js";
 import { toBuildingIdString, getOrCreateParcelsContext } from '../acl/parcels.js';
+import { getOrCreateSupplyContext } from '../acl/supply.js';
 import {
     bulldozeSelected,
     commerce,
@@ -61,7 +62,7 @@ function getHouseMaxPopulation(houseType) {
     return 0;
 }
 
-export function createScene(housesStore, gameStore, assetManager, parcelsOption) {
+export function createScene(housesStore, gameStore, assetManager, parcelsOption, supplyOption) {
     // BudgetManager will be set by the game initialization
 
     const scene = new THREE.Scene();
@@ -75,6 +76,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption)
     const budgetProcessor = new BudgetProcessor();
     const citizenManager = new CitizenManager(scene, assetManager);
     const parcels = parcelsOption ?? getOrCreateParcelsContext(housesStore);
+    const supply = supplyOption ?? getOrCreateSupplyContext(housesStore);
     const syncRoadAccess = setupRoadAccessIcons(parcels, { assetManager, textures });
 
     // Use simple scene background with sky texture - this ensures sky covers everything
@@ -896,22 +898,14 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption)
                         // Skip buying icon display - market cannot operate without workers
                     } else if (buildings[x][y]) {
                     // Display buying icon during autumn (when markets buy from farms)
-                    // Show green buying icon if market is in buying period (isBuying === true)
-                    // isBuying indicates that conditions are met to buy food from nearest farms
-                        const isBuying = await housesStore.getHouseItem(currentUniqueID, 'isBuying');
+                        const marketSupply = await supply.getBuildingSupplyView(currentUniqueID);
+                        const isBuying = marketSupply?.isBuying === true;
+                        const noFarmsNearby = marketSupply?.noFarmsNearby === true;
                         
-                        // Check if farms are too far (using same rule as FoodDistributionService)
-                        // noFarmsNearby is set by FoodDistributionService based on neighbors
-                        const noFarmsNearby = marketDataForWorkers?.noFarmsNearby === true;
-                        
-                        // Show/hide buying icon based on buying status
-                        // isBuying means market can buy food from farms (conditions are met)
                         if (isBuying === true) {
-                            // Market is in buying period
                             const buyingMeta = statutsIconsMeta['isBuying'];
                             
                             if (!noFarmsNearby) {
-                                // Farms nearby - show green buying icon with white background
                             assetManager.setStatusSprite(
                                 buildings[x][y],
                                 textures['isBuying'],
@@ -919,11 +913,10 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption)
                                 buyingMeta.scale,
                                 buyingMeta.position,
                                 true,
-                                buyingMeta.spriteColor, // Green color from metadata
-                                buyingMeta.backgroundColor // White background from metadata
+                                buyingMeta.spriteColor,
+                                buyingMeta.backgroundColor
                             );
                             } else {
-                                // No farms nearby - show buying icon with RED background
                                 assetManager.setStatusSprite(
                                     buildings[x][y],
                                     textures['isBuying'],
@@ -931,12 +924,11 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption)
                                     buyingMeta.scale,
                                     buyingMeta.position,
                                     true,
-                                    0xFF6600, // Orange/red color to indicate problem
-                                    0xFFCCCC // Light red background - farms too far
+                                    0xFF6600,
+                                    0xFFCCCC
                                 );
                             }
                         } else {
-                            // Not in buying period - hide buying icon
                             assetManager.setStatusSprite(
                                 buildings[x][y],
                                 textures['isBuying'],
@@ -948,18 +940,16 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption)
                                 null
                             );
                         }
-                    }
                     
                     // Set no-food icon for markets (independent of other sprites, like houses)
-                    // Show "no-food" icon when market has no food stocks (same logic as houses)
-                    if (buildings[x][y]) {
-                        const marketStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks') || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
-                        const hasFoodBaskets = (marketStocks.wheat || 0) > 0 || 
-                                               (marketStocks.carrot || 0) > 0 || 
-                                               (marketStocks.cabbage || 0) > 0 || 
-                                               (marketStocks.food || 0) > 0;
+                        const marketSupplyStocks = marketSupply?.stocks
+                            || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+                        const hasFoodBaskets = (marketSupplyStocks.wheat || 0) > 0 || 
+                                               (marketSupplyStocks.carrot || 0) > 0 || 
+                                               (marketSupplyStocks.cabbage || 0) > 0 || 
+                                               (marketSupplyStocks.food || 0) > 0;
                         
-                        const showNoFoodIcon = !hasFoodBaskets; // Show icon when NO food
+                        const showNoFoodIcon = !hasFoodBaskets;
                         assetManager.setStatusSprite(
                             buildings[x][y],
                             textures['nofood'],
@@ -967,6 +957,22 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption)
                             statutsIconsMeta['no-food'].scale,
                             statutsIconsMeta['no-food'].position,
                             showNoFoodIcon
+                        );
+                    } else if (buildings[x][y]) {
+                        // No-workers branch skipped buying UI; still show no-food from Supply
+                        const marketSupplyStocks = (await supply.getBuildingSupplyView(currentUniqueID))?.stocks
+                            || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+                        const hasFoodBaskets = (marketSupplyStocks.wheat || 0) > 0 ||
+                            (marketSupplyStocks.carrot || 0) > 0 ||
+                            (marketSupplyStocks.cabbage || 0) > 0 ||
+                            (marketSupplyStocks.food || 0) > 0;
+                        assetManager.setStatusSprite(
+                            buildings[x][y],
+                            textures['nofood'],
+                            'no-food',
+                            statutsIconsMeta['no-food'].scale,
+                            statutsIconsMeta['no-food'].position,
+                            !hasFoodBaskets
                         );
                     }
 
@@ -991,9 +997,9 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption)
                             return;
                         }
 
-                        // Initialize stocks if they don't exist - get from database first
+                        // Initialize stocks if they don't exist - get from Supply BC first
                         if (!buildings[x][y].userData.stocks) {
-                            const existingStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks');
+                            const existingStocks = (await supply.getBuildingSupplyView(currentUniqueID))?.stocks;
                             buildings[x][y].userData.stocks = existingStocks || {
                                 food: 0,
                                 cabbage: 0,
@@ -1090,18 +1096,16 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption)
                         );
                         // Skip collecting icon display - windmill cannot operate without workers
                     } else if (buildings[x][y]) {
-                    // Display collecting icon during October (when windmills collect from farms)
-                    // Show green collecting icon if windmill is collecting (isCollecting === true)
-                        const isCollecting = await housesStore.getHouseItem(currentUniqueID, 'isCollecting');
+                    // Display collecting icon during December (when windmills collect from farms)
+                        const windmillSupply = await supply.getBuildingSupplyView(currentUniqueID);
+                        const isCollecting = windmillSupply?.isCollecting === true;
                         
-                        // Show/hide collecting icon based on collecting status
                         if (isCollecting === true) {
-                            // Windmill is collecting food - show green collecting icon
                             const collectingMeta = {
                                 position: {x: -0.5, y: 0.5, z: 0},
                                 scale: {x: 0.6, y: 0.6, z: 1},
-                                spriteColor: 0x00FF00, // Green color
-                                backgroundColor: 0xFFFFFF // White background
+                                spriteColor: 0x00FF00,
+                                backgroundColor: 0xFFFFFF
                             };
                             assetManager.setStatusSprite(
                                 buildings[x][y],
@@ -1114,7 +1118,6 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption)
                                 collectingMeta.backgroundColor
                             );
                         } else {
-                            // Not collecting - hide collecting icon
                             assetManager.setStatusSprite(
                                 buildings[x][y],
                                 textures['isCollecting'],
@@ -1168,7 +1171,8 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption)
                     }
                     
                     // Initialize farm stocks in IndexedDB if not present
-                    const farmStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks');
+                    const farmSupply = await supply.getBuildingSupplyView(currentUniqueID);
+                    const farmStocks = farmSupply?.stocks;
                     if (!farmStocks) {
                         await housesStore.updateHouseFields(currentUniqueID, {
                             stocks: { food: 0, wheat: 0, carrot: 0, cabbage: 0 }
@@ -1192,7 +1196,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption)
                         // Only produce if we haven't produced this year yet (produce once per year in autumn)
                         if (lastProductionYear !== currentYear) {
                             // Get current stocks
-                            const currentFarmStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks') || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+                            const currentFarmStocks = (await supply.getBuildingSupplyView(currentUniqueID))?.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                             
                             // Determine farm type and add 78 paniers of that type (enough to feed 6 citizens for 1 year + buffer)
                             let farmType = currentBuildingId;
@@ -1284,7 +1288,8 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption)
                     // In December, show additional sprite if farm sold to windmill
                     // This sprite appears alongside the winter season sprite to indicate windmill collection
                     if (buildings[x][y] && season === 'Hiver' && timeInfo.monthIndex === 11) {
-                        const soldToWindmill = await housesStore.getHouseItem(currentUniqueID, 'soldToWindmill');
+                        const farmSupply = await supply.getBuildingSupplyView(currentUniqueID);
+                        const soldToWindmill = farmSupply?.soldToWindmill === true;
                         if (soldToWindmill === true) {
                             // Show windmill collection sprite (green, similar to windmill's isCollecting)
                             // Position it differently from the season sprite to avoid overlap
@@ -1372,15 +1377,14 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption)
                     // The service writes: stocks = {wheat: 0, carrot: 1, cabbage: 0, food: 1}
                     // Then this code was reading empty userData.stocks and overwriting IndexedDB with 0s!
 
-                    // Check if house has food AND road access before allowing population growth (using module helpers, DB remains source of truth)
-                    // Read stocks from IndexedDB (FoodDistributionService's updates are here)
-                    const houseFoodStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks');
+                    // Read stocks from Supply BC (FoodDistributionService's updates are here)
+                    const houseSupply = await supply.getBuildingSupplyView(currentUniqueID);
+                    const houseFoodStocks = houseSupply?.stocks || null;
                     let houseNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
                     const currentPop = await housesStore.getHouseItem(currentUniqueID, 'pop');
                     const worldTime = await housesStore.getHouseItem(currentUniqueID, 'worldTime');
                     
-                    // IMPORTANT: Sync IndexedDB stocks to userData for visual display
-                    // This ensures stocks updated by FoodDistributionService are reflected in UI
+                    // Sync Supply stocks to userData for visual display
                     if (houseFoodStocks && buildings[x][y] && buildings[x][y].userData) {
                         buildings[x][y].userData.stocks = {
                             food: houseFoodStocks.food || 0,
@@ -1479,8 +1483,8 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption)
                         }
                         
                         // Get updated stocks after consumption for further processing
-                        const updatedStocks = await housesStore.getHouseItem(currentUniqueID, 'stocks');
-                        if (updatedStocks) {
+                        const updatedStocks = (await supply.getBuildingSupplyView(currentUniqueID))?.stocks;
+                        if (updatedStocks && houseFoodStocks) {
                             Object.assign(houseFoodStocks, updatedStocks);
                         }
                     }

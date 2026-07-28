@@ -11,6 +11,11 @@ export class SupplyBuildingRepository {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
+  /** Read-side: all buildings as supply views. */
+  async listAllSupplyViews() {
+    throw new Error('SupplyBuildingRepository: port not implemented');
+  }
+
   async saveStocks(_buildingId, _stocks) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
@@ -25,6 +30,14 @@ export class SupplyBuildingRepository {
   }
 
   async findHouses() {
+    throw new Error('SupplyBuildingRepository: port not implemented');
+  }
+
+  async findWindmills() {
+    throw new Error('SupplyBuildingRepository: port not implemented');
+  }
+
+  async findFarms() {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 }

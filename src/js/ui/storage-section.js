@@ -1,4 +1,5 @@
 import config from '../game/config.js';
+import { getOrCreateSupplyContext } from '../acl/supply.js';
 
 /**
  * StorageSectionManager - Manages the Storage Units (Unités de Stock) section
@@ -24,8 +25,6 @@ class StorageSectionManager {
     async init() {
         this.setupEventListeners();
         await this.loadWindmills();
-        // No automatic refresh - data is read directly from IndexedDB when panel opens
-        // Just like info panel, it shows current state at that moment
     }
     
     /**
@@ -34,31 +33,50 @@ class StorageSectionManager {
     setupEventListeners() {
         // Event listeners will be added dynamically when windmills are rendered
     }
+
+    #resolveHousesStore() {
+        if (this.housesStore) return this.housesStore;
+        if (window.app && window.app.housesStore) return window.app.housesStore;
+        if (window.housesStore) return window.housesStore;
+        if (window.game && window.game.housesStore) return window.game.housesStore;
+        return null;
+    }
     
     /**
-     * Load all windmills from IndexedDB
+     * Load all windmills — Supply stocks via BC; settings/employees via Dexie (commerce/UI).
      */
     async loadWindmills() {
+        this.housesStore = this.#resolveHousesStore();
         if (!this.housesStore) {
-            // Try to get housesStore from window
-            if (window.app && window.app.housesStore) {
-                this.housesStore = window.app.housesStore;
-            } else if (window.housesStore) {
-                this.housesStore = window.housesStore;
-            } else if (window.game && window.game.housesStore) {
-                this.housesStore = window.game.housesStore;
-            } else {
-                console.warn('[StorageSection] housesStore not available');
-                return;
-            }
+            console.warn('[StorageSection] housesStore not available');
+            return;
         }
         
         try {
-            const allHouses = await this.housesStore.listAllHouses();
-            this.windmills = allHouses.filter(house => {
-                const type = house.type || '';
-                return type.includes('Windmill') || type.includes('windmill');
-            });
+            const supply = getOrCreateSupplyContext(this.housesStore);
+            const supplyViews = await supply.listWindmillSupplyViews();
+
+            this.windmills = [];
+            for (const view of supplyViews) {
+                const raw = await this.housesStore.getHouse(view.buildingId);
+                this.windmills.push({
+                    ...(raw || {}),
+                    name: view.buildingId,
+                    id: view.buildingId,
+                    type: view.type,
+                    x: view.x,
+                    y: view.y,
+                    stocks: view.stocks,
+                    maxStock: view.maxStock,
+                    lastImportDetails: view.lastImportDetails || raw?.lastImportDetails || {},
+                    lastExportDetails: raw?.lastExportDetails || {},
+                    employees: raw?.employees,
+                    isActive: raw?.isActive,
+                    distributionEnabled: raw?.distributionEnabled,
+                    commercializeEnabled: raw?.commercializeEnabled,
+                    distributionMonth: raw?.distributionMonth,
+                });
+            }
             
             this.render();
         } catch (error) {
@@ -97,7 +115,7 @@ class StorageSectionManager {
         card.dataset.windmillId = windmill.name;
         
         const stocks = windmill.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0, dattes: 0 };
-        const maxStock = 1000;
+        const maxStock = windmill.maxStock || 1000;
         const isActive = windmill.isActive !== false; // Default to true
         const distributionEnabled = windmill.distributionEnabled !== false; // Default to true
         const commercializeEnabled = windmill.commercializeEnabled !== false; // Default to true

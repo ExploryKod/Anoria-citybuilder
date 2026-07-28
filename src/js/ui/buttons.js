@@ -40,6 +40,7 @@ function appRegister(name, instance) {
 import gameStore from "../stores/GameStore.js";
 import housesStore from "../stores/HousesStore.js";
 import { hasRoadAccessFromCount } from '../acl/parcels.js';
+import { getOrCreateSupplyContext } from '../acl/supply.js';
 import budgetManager from "../stores/BudgetManager.js";
 import AssetManager from "../meshs/AssetManager.js";
 import { initRealtimeBudgetPopup, updateRealtimeBudget } from "./budget/RealtimeBudgetManager.js";
@@ -2583,27 +2584,28 @@ async function generateCityMap() {
             citySize = window.scene.city.size;
         }
         
-        // Get all houses from database - use local housesStore or fallback to window
-        let houses = [];
+        // Get all buildings via Supply BC (hasFood / marketTooFar + layout fields)
+        let buildings = [];
         try {
-            if (housesStore && typeof housesStore.listAllHouses === 'function') {
-                houses = await housesStore.listAllHouses();
-            } else if (window.housesStore && typeof window.housesStore.listAllHouses === 'function') {
-                houses = await window.housesStore.listAllHouses();
-            } else {
+            const store = (housesStore && typeof housesStore.listAllHouses === 'function')
+                ? housesStore
+                : (window.housesStore || null);
+            if (!store) {
                 throw new Error('housesStore not available');
             }
+            const supply = getOrCreateSupplyContext(store);
+            buildings = await supply.listSupplyMapBuildings();
         } catch (error) {
-            console.warn('Could not access housesStore:', error);
-            houses = [];
+            console.warn('Could not load Supply map buildings:', error);
+            buildings = [];
         }
         
         // Create a map of buildings by position (x,y)
         const buildingMap = new Map();
-        houses.forEach(house => {
-            if (house.x !== undefined && house.y !== undefined) {
-                const key = `${house.x},${house.y}`;
-                buildingMap.set(key, house);
+        buildings.forEach(building => {
+            if (building.x !== undefined && building.y !== undefined && building.x != null && building.y != null) {
+                const key = `${building.x},${building.y}`;
+                buildingMap.set(key, building);
             }
         });
         
@@ -2635,17 +2637,16 @@ async function generateCityMap() {
                     const isRoad = building.type.includes('roads') || building.type.includes('Road');
                     const needsRoadAccess = !isRoad;
                     
-                    const hasRoad = needsRoadAccess ? hasRoadAccessFromCount(building.roads) : true;
+                    const hasRoad = needsRoadAccess ? hasRoadAccessFromCount(building.roadCount) : true;
                     
                     // Check if building can have food (houses, markets, but not roads, wells, etc.)
                     const canHaveFood = building.type.includes('House') || building.type.includes('Market') || building.type.includes('Farm');
                     
-                    // Check for food stocks (only for buildings that can have food)
-                    const stocks = building.stocks || {};
-                    const hasFood = canHaveFood ? (stocks.food > 0 || stocks.wheat > 0 || stocks.carrot > 0 || stocks.cabbage > 0) : true;
+                    // Supply BC fields
+                    const hasFood = canHaveFood ? building.hasFood === true : true;
                     
                     // Check if house is too far from market (for houses only)
-                    const isHouse = building.type && (building.type.includes('House') || building.type.includes('house'));
+                    const isHouse = building.kind === 'house';
                     const marketTooFar = isHouse ? (building.marketTooFar === true) : false;
                     
                     // Determine category for filtering
