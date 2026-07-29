@@ -7,8 +7,8 @@ import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domai
 import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
 import { canFarmHarvest } from '../../../src/contexts/supply/domain/policies/HarvestSeasonPolicy.js';
 import { annualFarmYield } from '../../../src/contexts/supply/domain/policies/FarmYieldPolicy.js';
-import { HarvestFarmCrop } from '../../../src/contexts/supply/application/harvest/HarvestFarmCrop.js';
-import { HarvestAllFarmCrops } from '../../../src/contexts/supply/application/harvest/HarvestAllFarmCrops.js';
+import { HarvestFarmCrop } from '../../../src/contexts/supply/application/commands/harvest/HarvestFarmCrop.js';
+import { HarvestAllFarmCrops } from '../../../src/contexts/supply/application/commands/harvest/HarvestAllFarmCrops.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {

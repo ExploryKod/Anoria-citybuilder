@@ -114,6 +114,71 @@ export class DexieSupplyBuildingRepository {
     });
   }
 
+  async saveWindmillLastCollection(windmillId, lastCollection) {
+    await this.housesStore.updateHouseFields(windmillId, { lastCollection });
+  }
+
+  async recordFarmSaleToWindmill(farmId, { year, productType, quantity, windmillId }) {
+    const farmData = await this.housesStore.getHouse(farmId);
+    if (!farmData) return;
+
+    const salesToMarket = farmData.salesToMarket || [];
+    const salesToWindmill = farmData.salesToWindmill || [];
+    const currentYear = Number.isFinite(year) ? Math.floor(year) : 0;
+
+    const existingSaleIndex = salesToWindmill.findIndex(
+      (sale) => sale.year === currentYear && sale.productType === productType
+    );
+
+    if (existingSaleIndex >= 0) {
+      salesToWindmill[existingSaleIndex].quantity += quantity;
+      salesToWindmill[existingSaleIndex].count += 1;
+    } else {
+      salesToWindmill.push({
+        year: currentYear,
+        productType,
+        quantity,
+        count: 1,
+        windmillId,
+        date: new Date().toISOString(),
+      });
+    }
+
+    const filteredSales = salesToWindmill.filter((sale) => sale.year === currentYear);
+
+    await this.housesStore.updateHouseFields(farmId, {
+      salesToMarket,
+      salesToWindmill: filteredSales,
+    });
+  }
+
+  async resetFarmSalesForYear(currentYear) {
+    const year = Number.isFinite(currentYear) ? Math.floor(currentYear) : 0;
+    const allHouses = await this.housesStore.listAllHouses();
+    const farms = allHouses.filter((house) => {
+      const type = house.type || '';
+      return type.includes('Farm') || type.includes('farm');
+    });
+
+    for (const farm of farms) {
+      const farmId = publishedIdFromHouseRow(farm);
+      const farmData = await this.housesStore.getHouse(farmId);
+      if (!farmData) continue;
+
+      const salesToMarket = (farmData.salesToMarket || []).filter(
+        (sale) => sale.year === year
+      );
+      const salesToWindmill = (farmData.salesToWindmill || []).filter(
+        (sale) => sale.year === year
+      );
+
+      await this.housesStore.updateHouseFields(farmId, {
+        salesToMarket,
+        salesToWindmill,
+      });
+    }
+  }
+
   async saveMarketFlags(buildingId, flags) {
     await this.housesStore.updateHouseFields(buildingId, flags);
   }
@@ -156,5 +221,41 @@ export class DexieSupplyBuildingRepository {
         return type.includes('Farm') || type.includes('farm');
       })
       .map((house) => this.#toSnapshot(house));
+  }
+
+  async listAllBuildingRows() {
+    return this.housesStore.listAllHouses();
+  }
+
+  async findBuildingRow(buildingId) {
+    if (!buildingId) return null;
+    return this.housesStore.getHouse(buildingId);
+  }
+
+  async recordFarmSaleToMarket(farmId, sale) {
+    const farmData = await this.housesStore.getHouse(farmId);
+    if (!farmData) return;
+
+    const salesToMarket = farmData.salesToMarket || [];
+    const salesToWindmill = farmData.salesToWindmill || [];
+    const currentYear = sale.year ?? 0;
+
+    salesToMarket.push({
+      year: currentYear,
+      month: sale.month ?? 0,
+      monthName: sale.monthName || '',
+      turn: sale.turn ?? 0,
+      productType: sale.productType,
+      quantity: sale.quantity,
+      marketId: sale.marketId,
+      date: new Date().toISOString(),
+    });
+
+    const filteredSales = salesToMarket.filter((entry) => entry.year === currentYear);
+
+    await this.housesStore.updateHouseFields(farmId, {
+      salesToMarket: filteredSales,
+      salesToWindmill,
+    });
   }
 }

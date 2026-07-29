@@ -1,5 +1,6 @@
 import commerceStore from '../stores/CommerceStore.js';
 import { getCityEmploymentSummary } from '../acl/employment.js';
+import { getCityTotalPopulation } from '../acl/housing.js';
 
 class CommerceSectionManager {
     constructor() {
@@ -601,9 +602,7 @@ class CommerceSectionManager {
         if (!housesStore) return 0;
 
         try {
-            if (typeof housesStore.getGlobalPopulation === 'function') {
-                return await housesStore.getGlobalPopulation();
-            }
+            return await getCityTotalPopulation(housesStore);
         } catch (error) {
             console.error('[CommerceSectionManager] Error getting population:', error);
         }
@@ -1386,7 +1385,7 @@ class CommerceSectionManager {
 
             // Si pas de données de traçabilité, estimer depuis la population
             if (annualConsumption === 0 && housesStore) {
-                const totalPopulation = await housesStore.getGlobalPopulation();
+                const totalPopulation = await getCityTotalPopulation(housesStore);
                 // Estimation : chaque citoyen consomme 1 panier/mois = 12 paniers/an
                 // Répartition approximative : 40% wheat, 30% carrot, 30% cabbage
                 const consumptionRatios = {

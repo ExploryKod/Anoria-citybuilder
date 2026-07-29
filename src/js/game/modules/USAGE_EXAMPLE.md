@@ -24,12 +24,13 @@ const syncRoadAccess = setupRoadAccessIcons(parcels, { assetManager, textures })
 await syncRoadAccess({ buildingId: id, mesh, position, scale });
 ```
 
-## Nourriture (ModuleHelper)
+## Nourriture (Housing context)
 
 ```javascript
-import { checkFoodAvailability } from './modules/ModuleHelper.js';
+import { getOrCreateHousingContext } from '../acl/housing.js';
 
-const { hasFood, totalFood } = checkFoodAvailability(stocks, population);
+const housing = getOrCreateHousingContext(housesStore);
+const { hasFood, totalFood } = housing.evaluateHouseFoodAffluence({ stocks, population });
 ```
 
 ## Migration modules

@@ -9,7 +9,7 @@ import { cropFromFarmType } from '../../../src/contexts/supply/domain/value-obje
 import { canMarketBuyFromFarms } from '../../../src/contexts/supply/domain/policies/BuyingSeasonPolicy.js';
 import { remainingMarketCapacity } from '../../../src/contexts/supply/domain/policies/MarketCapacityPolicy.js';
 import { isOperational } from '../../../src/contexts/supply/domain/policies/OperationalGatePolicy.js';
-import { MarketBuysFromNearbyFarms } from '../../../src/contexts/supply/application/commands/MarketBuysFromNearbyFarms.js';
+import { MarketBuysFromNearbyFarms } from '../../../src/contexts/supply/application/commands/procurement/MarketBuysFromNearbyFarms.js';
 import { toSupplySeason } from '../../../src/js/acl/supply.js';
 
 class InMemorySupplyBuildingRepository {

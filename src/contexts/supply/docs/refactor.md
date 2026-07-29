@@ -1,19 +1,51 @@
 ## Supply Chain BC
 
-**Vision:** one bounded context for all city internal supply chains (food now; manufactured goods and external trade later). Use cases grouped by chain leg under `application/`.
+**Vision:** one bounded context for all city internal supply chains (food now; manufactured goods and external trade later). Use cases grouped by chain leg under `application/commands/`.
 
 ## Done
 
-- **Harvest (S1):** `HarvestFarmCrop`, `HarvestAllFarmCrops` — autumn annual yield; wired in `FoodDistributionService` before market procurement; removed from `scene.js`.
-- **Consumption (S3):** `ConsumeHouseFood`, `ConsumeAllHouseFood` — monthly house food use; wired in `FoodDistributionService` after distribution; traceability in facade; removed from `scene.js`.
+- **Harvest (S1):** `HarvestFarmCrop`, `HarvestAllFarmCrops`
+- **Consumption (S3):** `ConsumeHouseFood`, `ConsumeAllHouseFood`
+- **Surplus (S4):** `ProcessWindmillCollection`, `RunWindmillSurplusCycle`
+- **Procurement (S5):** `RunCityMarketFoodCycle`
+- **Pipeline (S6):** `RunMonthlyFoodSupplyCycle` + ECS `supply.monthlyFood`
+- **Manufacturing (S7):** factory production cycle + ECS `supply.factoryProduction`
+- **Manufacturing split (S7b):** `CollectFactoryResources`, `TransformFactoryMaterials`, `ProduceFactoryGoods`, `ProcessFactoryProductionStep`, `RunCityFactoryProductionCycle`; domain `FactoryTransformPolicy`
+- **CQRS layout (S8):** `commands/{leg}/`, `queries/`, `workflows/` — business legs nested under commands, not alongside
 
-## Next
+## ECS simulation order
 
-- **ProductStock** — generalize beyond `FoodStock` when market distributes manufactured goods
-- **Monthly pipeline** — explicit orchestration in composition root
+```
+1. parcels.roadAccess
+2. supply.monthlyFood
+3. supply.factoryProduction   ← winery collect / transform / produce
+```
 
-## Building identity
+## Folder layout
 
-**Source of truth:** [`src/shared/building-identity/README.md`](../../shared/building-identity/README.md)
+```
+application/
+  commands/
+    harvest/
+    consumption/
+    procurement/
+    distribution/
+    surplus/
+    manufacturing/
+  queries/
+  workflows/           ← cross-leg orchestrators (RunMonthlyFoodSupplyCycle)
+  ports/
+infrastructure/
+  runtime/supplyMonthlyFoodSystem.js
+  runtime/supplyFactoryProductionSystem.js
+  presentation/SupplyFoodTraceability.js
+  presentation/SupplyProductionJournal.js
+  dexie/
+```
 
-Supply commands import `resolvePublishedBuildingIdFromRef` from the Shared Kernel directly.
+## Removed legacy
+
+- `FoodDistributionService.js`
+- `WindmillService.js`
+- `RoadConnectivityService.js`
+- `FactoryService.js`

@@ -1,14 +1,13 @@
 import * as THREE from 'three';
 import {  assetsPrices } from '../meshs/data.js';
-import { canHouseEvolveToPurple, canHouseEvolveToPalace, checkFoodAvailability } from './modules/ModuleHelper.js';
 import { getDefaultEmployees, getSectorPriority, getSectorName } from './modules/EmployeeHelper.js';
-import { firstHouses } from '../ui/nodes.js';
 import { TimeManager } from './utils/TimeManager.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
 import {getAssetPrice, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, isAreaAvailableForBuilding} from '../utils/utils.js';
 import { toBuildingIdString, getOrCreateParcelsContext } from '../acl/parcels.js';
-import { getOrCreateSupplyContext } from '../acl/supply.js';
+import { getOrCreateSupplyContext, toSupplySeason, toSupplyMonth } from '../acl/supply.js';
+import { getOrCreateHousingContext } from '../acl/housing.js';
 import { redistributeCityEmployment, syncEmploymentAfterBuildingChange } from '../acl/employment.js';
 import { createGameRuntime } from '../../composition/createGameRuntime.js';
 import config from './config.js';
@@ -85,20 +84,14 @@ let services = [];
 // Load services asynchronously (non-blocking)
 (async () => {
     try {
-        // Load all available services (road access → ECS pipeline, see createGameRuntime)
-        const { FoodDistributionService } = await import('./services/FoodDistributionService.js');
-        const { WindmillService } = await import('./services/WindmillService.js');
+        // Load city-wide simulation services (food chain → ECS supply.monthlyFood)
         const { RandomEventsService } = await import('./services/RandomEventsService.js');
         const { EmploymentPriorityService } = await import('./services/EmploymentPriorityService.js');
         const { EmploymentDistributionService } = await import('./services/EmploymentDistributionService.js');
         const { CommerceService } = await import('./services/CommerceService.js');
-        const { FactoryService } = await import('./services/FactoryService.js');
         
-        services.push(new FoodDistributionService()); // Farm > Market > House logic using IndexedDB
-        services.push(new WindmillService()); // Windmill collects from all farms in December (after markets collect in autumn)
         services.push(new RandomEventsService()); // Événements aléatoires (ouragan, inondation)
         services.push(new CommerceService()); // Gestion des imports/exports
-        services.push(new FactoryService()); // Factory production system
         
         // Employment Priority Service - manages sector priorities in localStorage
         // Priority is stored in localStorage (not IndexedDB) for instant updates
@@ -498,8 +491,17 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
     /* Scene + ECS runtime */
     const parcels = getOrCreateParcelsContext(housesStore);
     const supply = getOrCreateSupplyContext(housesStore);
-    const runtime = createGameRuntime({ parcels });
-    const scene = createScene(housesStore, gameStore, assetManager, parcels, supply);
+    const housing = getOrCreateHousingContext(housesStore);
+    const runtime = createGameRuntime({
+        parcels,
+        supply,
+        housing,
+        timeManager: TimeManager,
+        toSupplySeason,
+        toSupplyMonth,
+        foodDistributionDistance: config?.simulation?.foodDistributionDistance || 5,
+    });
+    const scene = createScene(housesStore, gameStore, assetManager, parcels, supply, housing);
 
     /* City initialization */
     // Detect WebGL capabilities first
@@ -757,7 +759,16 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     // Evolution section - show conditions for next evolution step
                     const buildingType = selectedObject.userData.id;
                     const hasRoadAccess = roadAccess.hasAccess;
-                    const { totalFood } = checkFoodAvailability(houseStocks || {}, buildingPop || 0);
+                    const { totalFood, meetsFoodGoal } = housing.evaluateHouseFoodAffluence({
+                        stocks: houseStocks || {},
+                        population: buildingPop || 0,
+                    });
+                    const evolutionPreview = housing.previewHouseEvolution({
+                        stocks: houseStocks || {},
+                        population: buildingPop || 0,
+                        buildingType,
+                        hasRoadAccess,
+                    });
                     
                     makeInfoSection('Évolution');
                     
@@ -775,13 +786,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     // House-Red: Show conditions to become House-Purple (only Purple-specific conditions)
                     else if (buildingType === 'House-Red') {
                         makeInfoKeyValue('→ Maison Violette', '');
-                        const purpleCheck = canHouseEvolveToPurple({
-                            stocks: houseStocks || {},
-                            population: buildingPop || 0,
-                            buildingType: buildingType,
-                            hasRoadAccess: hasRoadAccess
-                        });
-                        
+                        const purpleCheck = evolutionPreview.toPurple;
                         // Show Purple-specific conditions
                         makeInfoKeyValue('  • Population > 5', `${(buildingPop || 0) > 5 ? '✅' : '❌'} ${buildingPop || 0}`);
                         const foodStatus = totalFood >= (buildingPop || 0) ? '✅' : '❌';
@@ -801,15 +806,9 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     // House-Purple: Show conditions to become Palace (only Palace-specific conditions)
                     else if (buildingType === 'House-Purple') {
                         makeInfoKeyValue('→ Palais', '');
-                        const palaceCheck = canHouseEvolveToPalace({
-                            stocks: houseStocks || {},
-                            population: buildingPop || 0,
-                            buildingType: buildingType,
-                            firstHouses: firstHouses
-                        });
+                        const palaceCheck = evolutionPreview.toPalace;
                         
                         // Palace-specific conditions (food goal, not basic conditions)
-                        const { meetsFoodGoal } = checkFoodAvailability(houseStocks || {}, buildingPop || 0);
                         const foodGoalStatus = meetsFoodGoal ? '✅' : '❌';
                         const foodGoalText = meetsFoodGoal 
                             ? `Oui (${totalFood} > ${(buildingPop || 0) * 2})`
@@ -819,9 +818,9 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         const foodTypes = {
                             wheat: (houseStocks?.wheat || 0) > 0,
                             carrot: (houseStocks?.carrot || 0) > 0,
-                            cabbage: (houseStocks?.cabbage || 0) > 0
+                            cabbage: (houseStocks?.cabbage || 0) > 0,
                         };
-                        const availableFoodTypesCount = Object.values(foodTypes).filter(Boolean).length;
+                        const availableFoodTypesCount = evolutionPreview.availableCropTypesCount;
                         const foodVarietyStatus = availableFoodTypesCount >= 2 ? '✅' : '❌';
                         const foodVarietyText = availableFoodTypesCount >= 2 
                             ? `Oui (${availableFoodTypesCount} types: ${Object.entries(foodTypes).filter(([_, available]) => available).map(([type]) => type).join(', ')})`

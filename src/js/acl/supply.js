@@ -9,7 +9,7 @@ export {
   getOrCreateSupplyContext,
 } from '../../composition/createSupplyContext.js';
 
-export { isWithinMarketRange, manhattanDistance } from '../../contexts/supply/domain/policies/MarketRangePolicy.js';
+export { isWithinMarketRange, manhattanDistance, findHousesInMarketRange } from '../../contexts/supply/domain/policies/MarketRangePolicy.js';
 
 /** Map TimeManager French season labels → Supply English seasons. */
 const LEGACY_SEASON_TO_SUPPLY = Object.freeze({

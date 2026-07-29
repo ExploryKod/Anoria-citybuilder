@@ -89,37 +89,28 @@ class HouseStore {
         return expensesByType;
     }
 
+    /**
+     * @deprecated Use Housing BC `getCityPopulationSummary()` via `src/js/acl/housing.js`.
+     * @returns {Promise<number>}
+     */
     async getGlobalPopulation() {
-        const houses = await this.listAllHouses();
-        return houses.reduce((total, house) => total + (house.pop || 0), 0);
+        const { getOrCreateHousingContext } = await import(
+            '../../composition/createHousingContext.js'
+        );
+        const { totalPop } = await getOrCreateHousingContext(this).getCityPopulationSummary();
+        return totalPop;
     }
 
     /**
-     * Calculate the number of famished (hungry) people in the city
-     * Famished people = total population - fed population
-     * Fed population = min(population, food stocks) for each house
-     * @returns {Promise<number>} Number of famished people
+     * @deprecated Use Housing BC `getFamishedPopulation()` via `src/js/acl/housing.js`.
+     * @returns {Promise<number>}
      */
     async getFamishedPopulation() {
-        const houses = await this.listAllHouses();
-        let totalPopulation = 0;
-        let fedPopulation = 0;
-
-        for (const house of houses) {
-            if (house.type && house.type.includes('House')) {
-                const housePop = house.pop || 0;
-                const houseStocks = house.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
-                const totalFood = houseStocks.food || 0;
-                
-                totalPopulation += housePop;
-                // Fed population = min(population, available food)
-                // If house has 6 people but only 3 food, only 3 are fed
-                fedPopulation += Math.min(housePop, totalFood);
-            }
-        }
-
-        const famishedPopulation = Math.max(0, totalPopulation - fedPopulation);
-        return famishedPopulation;
+        const { getOrCreateHousingContext } = await import(
+            '../../composition/createHousingContext.js'
+        );
+        const result = await getOrCreateHousingContext(this).getFamishedPopulation();
+        return result.famishedPopulation;
     }
 
     /**

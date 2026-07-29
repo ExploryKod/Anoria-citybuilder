@@ -22,7 +22,7 @@ Supply Chain owns every **source → hub → sink** flow inside the city:
 
 - **Parcels** — road access, neighborhood, distance
 - **Employment** — staffing (`OperationalGatePolicy`)
-- **Housing** — population, evolution (reads stocks)
+- **Housing** — population, evolution (reads stocks) → `contexts/housing/` (H1: growth done)
 - **Budget** — payments (reacts to flows later)
 
 ## Ubiquitous language
@@ -72,6 +72,8 @@ Supply Chain owns every **source → hub → sink** flow inside the city:
 
 ### Surplus
 - `WindmillCollectsFromAllFarms` — farm → windmill (December)
+- `ProcessWindmillCollection` — one windmill + flags + sales history
+- `RunWindmillSurplusCycle` — city-wide windmill monthly cycle
 - `MarkWindmillCollectingSeason` / `SetWindmillCollectingFlag` / `MarkFarmSoldToWindmill` / `ResetFarmsSoldToWindmill`
 
 ### Proximity flags
@@ -91,25 +93,33 @@ Supply Chain owns every **source → hub → sink** flow inside the city:
 2. markBuyingSeason
 3. marketBuy           ← autumn procurement
 4. distributeToHouses  ← outside autumn
-5. windmillCollect     ← december
+5. windmillCollect     ← december + off-season flags
 6. consumeAllHouses    ← monthly
 ```
 
-Wired today: steps 1–6 via `FoodDistributionService` + Supply ACL; windmill via `WindmillService`.
+Wired today: ECS pipeline `supply.monthlyFood` via `createGameRuntime`.
 
 ## Folder layout
 
 ```
 application/
-  harvest/           ← source leg (farm yield)
-  consumption/       ← sink leg (house food use)
-  commands/          ← procurement, distribution, surplus (legacy flat layout)
+  commands/
+    harvest/           ← source leg (farm yield)
+    consumption/       ← sink leg (house food use)
+    procurement/       ← market buys, proximity flags
+    distribution/      ← market → houses
+    surplus/           ← windmill collection cycle
+    manufacturing/     ← factory collect / transform / produce
   queries/
+  workflows/           ← cross-leg orchestrators (monthly food pipeline)
+  ports/
 domain/
   policies/          ← shared gates (season, operational, range, capacity)
   value-objects/     ← FoodStock (v1), ProductStock (future)
 infrastructure/dexie/
 ```
+
+CQRS rule: **commands** and **queries** are the top-level axes; chain legs (`harvest`, `procurement`, …) are subfolders under `commands/`, not siblings of `commands/`.
 
 ## Ports
 
@@ -123,7 +133,7 @@ infrastructure/dexie/
 
 - **Shared Kernel**: `building-identity` for published ids
 - **ACL**: `src/js/acl/supply.js`
-- **Composition**: `createSupplyContext.js`
-- Legacy facades: `FoodDistributionService`, `WindmillService` (traceability side-effects)
+- **Composition**: `createSupplyContext.js`, `createGameRuntime.js`, `createMonthlySupplyPipeline.js`
+- **Traceability**: `SupplyFoodTraceability` → legacy `window.foodTraceabilityService`
 
 Rule: `src/js/**` must not import `contexts/supply/domain/**` directly.

@@ -42,6 +42,7 @@ Code and ubiquitous language are **English**. UI copy may stay French.
 
 ## Relations
 
+- **Housing** (upstream): reads persisted `type` + `pop`; owns `LaborPoolPolicy` locally — see [`docs/boundaries.md`](docs/boundaries.md)
 - **Parcels**: road access via persisted `roadCount` (no Parcels domain import)
 - **Supply**: reads staffing (`worker` / `workerNeed`) from persistence for operational gates — no Employment→Supply coupling
 - **ACL**: `src/js/acl/employment.js`

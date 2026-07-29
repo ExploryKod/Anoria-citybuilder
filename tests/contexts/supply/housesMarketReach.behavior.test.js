@@ -6,7 +6,7 @@ import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
 import { isWithinMarketRange } from '../../../src/contexts/supply/domain/policies/MarketRangePolicy.js';
-import { UpdateHousesMarketReach } from '../../../src/contexts/supply/application/commands/UpdateHousesMarketReach.js';
+import { UpdateHousesMarketReach } from '../../../src/contexts/supply/application/commands/distribution/UpdateHousesMarketReach.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {

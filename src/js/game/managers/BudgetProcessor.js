@@ -1,4 +1,5 @@
 import { TimeManager } from '../utils/TimeManager.js';
+import { getCityTotalPopulation } from '../../acl/housing.js';
 
 /**
  * Processes budget-related operations
@@ -111,8 +112,8 @@ export class BudgetProcessor {
                 }
                 
                 let totalPopulation = 0;
-                if (window.housesStore && typeof window.housesStore.getGlobalPopulation === 'function') {
-                    totalPopulation = await window.housesStore.getGlobalPopulation();
+                if (window.housesStore) {
+                    totalPopulation = await getCityTotalPopulation(window.housesStore);
                 }
                 
                 if (totalPopulation > 0 && salaryPerMonth > 0) {

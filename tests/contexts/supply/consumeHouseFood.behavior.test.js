@@ -10,8 +10,8 @@ import {
   basketsPerCitizenPerMonth,
   HOUSE_FOOD_CONSUMPTION_ORDER,
 } from '../../../src/contexts/supply/domain/policies/HouseConsumptionPolicy.js';
-import { ConsumeHouseFood } from '../../../src/contexts/supply/application/consumption/ConsumeHouseFood.js';
-import { ConsumeAllHouseFood } from '../../../src/contexts/supply/application/consumption/ConsumeAllHouseFood.js';
+import { ConsumeHouseFood } from '../../../src/contexts/supply/application/commands/consumption/ConsumeHouseFood.js';
+import { ConsumeAllHouseFood } from '../../../src/contexts/supply/application/commands/consumption/ConsumeAllHouseFood.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {
