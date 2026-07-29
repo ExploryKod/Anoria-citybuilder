@@ -1,7 +1,7 @@
 import { createBuildingSnapshot } from '../../domain/BuildingSnapshot.js';
 import {
   toPublishedBuildingId,
-  publishedIdFromHouseRow,
+  instanceIdFromHouseRow,
 } from '../../../../shared/building-identity/index.js';
 
 /**
@@ -21,7 +21,7 @@ export class DexieBuildingRepository {
    */
   #toSnapshot(house) {
     return createBuildingSnapshot({
-      id: publishedIdFromHouseRow(house),
+      id: instanceIdFromHouseRow(house),
       type: house.type || '',
       neighbors: house.neighbors || [],
       roadCount: house.roads ?? 0,

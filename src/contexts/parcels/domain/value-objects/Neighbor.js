@@ -70,8 +70,10 @@ export function fromLegacyNeighbor(raw) {
     raw.userData?.isRoad ||
     type === 'roads' ||
     type === 'Road' ||
+    (type && type.startsWith('StonePath-')) ||
     raw.name === 'roads' ||
     raw.name === 'Road' ||
+    (raw.name && raw.name.startsWith('StonePath-')) ||
     raw.buildingId === 'roads'
   );
 

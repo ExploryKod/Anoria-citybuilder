@@ -307,7 +307,7 @@ export class ProduceFactoryGoods {
 
       await this.productionJournal.addProductionEntry(
         time,
-        this.repository.publishedId(factoryDataAfterUpdate),
+        this.repository.instanceId(factoryDataAfterUpdate),
         eventByProduct[productType],
         productType,
         quantityToProduce,

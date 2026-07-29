@@ -141,7 +141,7 @@ export class TransformFactoryMaterials {
     try {
       await this.productionJournal.addProductionEntry(
         time,
-        this.repository.publishedId(factoryData),
+        this.repository.instanceId(factoryData),
         step.journalEvent,
         step.journalProduct,
         amountToTransform,
