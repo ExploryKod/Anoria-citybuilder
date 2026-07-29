@@ -228,7 +228,7 @@ export const IsInZoneLimits = (zoneLimit, city) => {
 
 export const zoneBordersBuildings = (buildingData, time=0) => {
 
-    const { buildings, x, y, currentBuildingId } = buildingData;
+    const { buildings, x, y, currentBuildingId, city } = buildingData;
     const theCurrentBuilding = currentBuildingId
 
     if (x == null || y == null) {
@@ -261,24 +261,36 @@ export const zoneBordersBuildings = (buildingData, time=0) => {
                     const deltaZ = Math.abs(mesh.position.z - y); // Note: y represents mesh.position.z
                     // Calculate the zone based on the maximum delta of x or z
                     const zone = Math.max(deltaX, deltaZ);
+                    const meshType = mesh.userData?.type || mesh.name;
+                    const tileX = mesh.userData?.x ?? mesh.position.x;
+                    const tileY = mesh.userData?.y ?? mesh.position.z;
+                    const meshInstanceId =
+                        mesh.userData?.instanceId
+                        ?? city?.tiles?.[tileX]?.[tileY]?.instanceId
+                        ?? null;
+                    const isRoadNeighbor = Boolean(
+                        mesh.userData?.isRoad ||
+                        meshType === 'roads' ||
+                        meshType === 'Road' ||
+                        (meshType && meshType.startsWith('StonePath-'))
+                    );
                     let neighborData = {
                         time: time,
-                        name: mesh.name,
-                        id : mesh.name + '-' + mesh.position.x + '-' + mesh.position.z,
-                        x: mesh.position.x,
-                        y: mesh.position.z,
+                        name: meshType,
+                        type: meshType,
+                        id: meshInstanceId ?? `${meshType}-${tileX}-${tileY}`,
+                        buildingId: meshInstanceId ?? `${meshType}-${tileX}-${tileY}`,
+                        x: tileX,
+                        y: tileY,
                         deltaX: deltaX,
                         deltaZ: deltaZ,
-                        zone: zone
+                        zone: zone,
+                        isRoad: isRoadNeighbor,
                     };
 
                     if(Object.hasOwn(mesh, 'userData')) {
                         if(Object.hasOwn(mesh.userData, 'stocks')) {
                            neighborData = { ...neighborData, stocks: mesh.userData.stocks };
-                        }
-                        // Include isRoad property for road detection
-                        if(Object.hasOwn(mesh.userData, 'isRoad')) {
-                           neighborData = { ...neighborData, isRoad: mesh.userData.isRoad };
                         }
                     }
 

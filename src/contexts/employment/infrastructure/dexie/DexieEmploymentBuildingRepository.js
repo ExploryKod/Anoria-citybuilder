@@ -4,7 +4,7 @@ import {
   isRoadType,
   isWorkplace,
 } from '../../domain/policies/BuildingRolePolicy.js';
-import { publishedIdFromHouseRow } from '../../../../shared/building-identity/index.js';
+import { instanceIdFromHouseRow } from '../../../../shared/building-identity/index.js';
 
 /**
  * Dexie / HousesStore adapter for Employment.
@@ -20,7 +20,7 @@ export class DexieEmploymentBuildingRepository {
   #toSnapshot(house) {
     const employees = house.employees || {};
     return createEmploymentBuildingSnapshot({
-      id: publishedIdFromHouseRow(house),
+      id: instanceIdFromHouseRow(house),
       type: house.type || '',
       x: house.x ?? null,
       y: house.y ?? null,
@@ -60,7 +60,7 @@ export class DexieEmploymentBuildingRepository {
       const employees = house.employees || {};
       if (!(employees.worker_need > 0)) continue;
 
-      const buildingId = publishedIdFromHouseRow(house);
+      const buildingId = instanceIdFromHouseRow(house);
       await this.housesStore
         .updateHouseFields(buildingId, {
           employees: { ...employees, worker: 0 },

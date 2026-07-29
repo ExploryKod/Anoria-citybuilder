@@ -48,7 +48,7 @@ export class UpdateNeighborsForBuilding {
 
     this.eventPublisher.publish(
       createNeighborsChanged({
-        buildingId: building.buildingId ?? building.id,
+        buildingId: building.id,
         neighborCount: nextDomain.length,
         previousCount: previousPersisted.length,
       })

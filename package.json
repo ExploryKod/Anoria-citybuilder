@@ -17,7 +17,8 @@
     "gsap": "^3.13.0",
     "stats.js": "^0.17.0",
     "tarteaucitronjs": "^1.26.0",
-    "three": "^0.162.0"
+    "three": "^0.162.0",
+    "uuid": "^14.0.1"
   },
   "devDependencies": {
     "@gltf-transform/core": "^4.2.1",

@@ -4,8 +4,11 @@ import {
   normalizeResidentialType,
   priceForResidentialType,
 } from '../../domain/HouseTypeCatalog.js';
-import { toBuildingIdString } from '../../../../shared/building-identity/BuildingId.js';
-import { publishedIdFromHouseRow, tryParseBuildingId } from '../../../../shared/building-identity/index.js';
+import {
+  instanceIdFromHouseRow,
+  residentialTierPatch,
+} from '../../../../shared/building-identity/index.js';
+import { footprintFromRecord, footprintOccupiesTile } from '../../../../shared/building-identity/Footprint.js';
 
 /**
  * Dexie / HousesStore adapter for Housing.
@@ -20,7 +23,7 @@ export class DexieHousingBuildingRepository {
 
   #toSnapshot(house) {
     return createHousingBuildingSnapshot({
-      id: publishedIdFromHouseRow(house),
+      id: instanceIdFromHouseRow(house),
       type: house.type || '',
       x: house.x ?? null,
       y: house.y ?? null,
@@ -40,15 +43,6 @@ export class DexieHousingBuildingRepository {
     return this.#toSnapshot(house);
   }
 
-  #tileCoordsFromRow(row) {
-    if (Number.isFinite(row.x) && Number.isFinite(row.y)) {
-      return { x: Math.floor(Number(row.x)), y: Math.floor(Number(row.y)) };
-    }
-    const parsed = tryParseBuildingId(publishedIdFromHouseRow(row));
-    if (!parsed) return null;
-    return { x: parsed.x, y: parsed.y };
-  }
-
   async findResidentialAt(x, y) {
     if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
     const tileX = Math.floor(x);
@@ -58,8 +52,8 @@ export class DexieHousingBuildingRepository {
       if (!isResidentialHouseType(normalizeResidentialType(row.type || ''))) {
         return false;
       }
-      const coords = this.#tileCoordsFromRow(row);
-      return coords?.x === tileX && coords?.y === tileY;
+      const footprint = footprintFromRecord(row);
+      return footprint && footprintOccupiesTile(footprint, tileX, tileY);
     });
     return house ? this.#toSnapshot(house) : null;
   }
@@ -97,54 +91,23 @@ export class DexieHousingBuildingRepository {
    */
   async applyEvolution({ oldId, targetType, targetPop }) {
     const house = await this.housesStore.getHouse(oldId);
-    const x = house?.x;
-    const y = house?.y;
-
-    if (!Number.isFinite(x) || !Number.isFinite(y)) {
-      throw new Error(`DexieHousingBuildingRepository: missing coordinates for ${oldId}`);
+    if (!house) {
+      throw new Error(`DexieHousingBuildingRepository: house not found ${oldId}`);
     }
 
-    const newId = toBuildingIdString(targetType, x, y);
-    if (!newId) {
-      throw new Error(`DexieHousingBuildingRepository: invalid evolution target ${targetType}`);
-    }
-
+    const instanceId = instanceIdFromHouseRow(house);
     const price = priceForResidentialType(targetType);
-    const neighbors = house?.neighbors || [];
-    const roads = house?.roads ?? 0;
-    const stocks = house?.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
-    const worldTime = house?.worldTime ?? 0;
+    const tierPatch = residentialTierPatch({
+      instanceId,
+      targetType,
+    });
 
-    if (newId !== oldId) {
-      const updateResult = await this.housesStore.updateHouseName(oldId, newId, {
-        type: targetType,
-        price,
-      });
+    await this.housesStore.updateHouseFields(instanceId, {
+      ...tierPatch,
+      price,
+      pop: targetPop,
+    });
 
-      if (!updateResult?.success) {
-        await this.housesStore.addHouse({
-          name: newId,
-          type: targetType,
-          price,
-          x,
-          y,
-          neighbors,
-          pop: targetPop,
-          stocks,
-          roads,
-          worldTime,
-        });
-      } else {
-        await this.housesStore.updateHouseFields(newId, {
-          neighbors,
-          roads,
-          pop: targetPop,
-        });
-      }
-    } else {
-      await this.housesStore.updateHouseFields(oldId, { pop: targetPop });
-    }
-
-    return { newId, previousId: oldId };
+    return { newId: instanceId, previousId: instanceId };
   }
 }

@@ -113,7 +113,7 @@ export class CollectFactoryResources {
     try {
       await this.productionJournal.addProductionEntry(
         time,
-        this.repository.publishedId(factoryDataAfterUpdate),
+        this.repository.instanceId(factoryDataAfterUpdate),
         'collect_wood',
         'wood',
         woodCollected,

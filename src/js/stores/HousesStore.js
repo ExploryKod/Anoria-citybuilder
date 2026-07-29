@@ -1,68 +1,41 @@
 import db from './db';
 import budgetManager from './BudgetManager.js';
-import { canonicalizeHouseRecord, isPublishedBuildingIdString } from '../acl/building-identity.js';
-
-/**
- * Minimal HousesStore row from published id (`{type}-{x}-{y}`).
- * @param {string} name
- * @param {Record<string, unknown>} [extra]
- */
-function buildHouseStubFromName(name, extra = {}) {
-    if (!isPublishedBuildingIdString(name)) {
-        throw new Error(`buildHouseStubFromName: invalid published id "${name}"`);
-    }
-    return canonicalizeHouseRecord({
-        name,
-        neighbors: [],
-        pop: 0,
-        stocks: { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
-        roads: 0,
-        worldTime: 0,
-        price: 0,
-        ...extra,
-    });
-}
+import {
+    canonicalizeHouseRecord,
+    createBuildingInstanceId,
+    footprintFromRecord,
+    footprintOccupiesTile,
+} from '../acl/building-identity.js';
 
 class HouseStore {
     constructor() {
         this.db = db;
-        // Track pending building additions to prevent race conditions
         this.pendingAdditions = new Set();
-        // Track timeouts for pending additions (safety mechanism)
         this.pendingTimeouts = new Map();
     }
-    
-    /**
-     * Clear a pending addition after a timeout (safety mechanism)
-     * @param {string} houseName - Name of the house
-     * @param {number} timeoutMs - Timeout in milliseconds (default: 5000ms)
-     */
-    _setPendingTimeout(houseName, timeoutMs = 5000) {
-        // Clear any existing timeout for this house
-        if (this.pendingTimeouts.has(houseName)) {
-            clearTimeout(this.pendingTimeouts.get(houseName));
+
+    /** @param {string} instanceId */
+    _setPendingTimeout(instanceId, timeoutMs = 5000) {
+        if (this.pendingTimeouts.has(instanceId)) {
+            clearTimeout(this.pendingTimeouts.get(instanceId));
         }
-        
-        // Set new timeout
+
         const timeout = setTimeout(() => {
-            if (this.pendingAdditions.has(houseName)) {
-                console.warn(`[HousesStore] Clearing stuck pending addition for ${houseName} after timeout`);
-                this.pendingAdditions.delete(houseName);
-                this.pendingTimeouts.delete(houseName);
+            if (this.pendingAdditions.has(instanceId)) {
+                console.warn(`[HousesStore] Clearing stuck pending addition for ${instanceId} after timeout`);
+                this.pendingAdditions.delete(instanceId);
+                this.pendingTimeouts.delete(instanceId);
             }
         }, timeoutMs);
-        
-        this.pendingTimeouts.set(houseName, timeout);
+
+        this.pendingTimeouts.set(instanceId, timeout);
     }
-    
-    /**
-     * Clear pending timeout for a house
-     * @param {string} houseName - Name of the house
-     */
-    _clearPendingTimeout(houseName) {
-        if (this.pendingTimeouts.has(houseName)) {
-            clearTimeout(this.pendingTimeouts.get(houseName));
-            this.pendingTimeouts.delete(houseName);
+
+    /** @param {string} instanceId */
+    _clearPendingTimeout(instanceId) {
+        if (this.pendingTimeouts.has(instanceId)) {
+            clearTimeout(this.pendingTimeouts.get(instanceId));
+            this.pendingTimeouts.delete(instanceId);
         }
     }
 
@@ -70,16 +43,21 @@ class HouseStore {
         return await this.db.houses.toArray();
     }
 
+    async getAllHousesSortedByTypeAndPrice() {
+        return this.db.houses.orderBy(['type', 'price']).toArray();
+    }
+
+    /** @deprecated Use getAllHousesSortedByTypeAndPrice */
     async getAllHousesSortedByNameAndPrice() {
-        return this.db.houses.orderBy(['name', 'price']).toArray();
+        return this.getAllHousesSortedByTypeAndPrice();
     }
 
     async getTotalBuildingExpensesByType() {
         const houses = await this.db.houses.toArray();
         const expensesByType = {};
 
-        houses.forEach(house => {
-            const houseType = house.name.split('-').slice(0, 2).join('-');
+        houses.forEach((house) => {
+            const houseType = house.type || 'unknown';
             if (!expensesByType[houseType]) {
                 expensesByType[houseType] = 0;
             }
@@ -90,8 +68,23 @@ class HouseStore {
     }
 
     /**
+     * @param {number} x
+     * @param {number} y
+     */
+    async findHouseAtTile(x, y) {
+        const tileX = Math.floor(x);
+        const tileY = Math.floor(y);
+        const houses = await this.listAllHouses();
+        return (
+            houses.find((house) => {
+                const footprint = footprintFromRecord(house);
+                return footprint && footprintOccupiesTile(footprint, tileX, tileY);
+            }) ?? null
+        );
+    }
+
+    /**
      * @deprecated Use Housing BC `getCityPopulationSummary()` via `src/js/acl/housing.js`.
-     * @returns {Promise<number>}
      */
     async getGlobalPopulation() {
         const { getOrCreateHousingContext } = await import(
@@ -103,7 +96,6 @@ class HouseStore {
 
     /**
      * @deprecated Use Housing BC `getFamishedPopulation()` via `src/js/acl/housing.js`.
-     * @returns {Promise<number>}
      */
     async getFamishedPopulation() {
         const { getOrCreateHousingContext } = await import(
@@ -113,11 +105,6 @@ class HouseStore {
         return result.famishedPopulation;
     }
 
-    /**
-     * Process population based on road access (food is no longer required)
-     * Population can exist without food (un nourished people), but requires road access
-     * @returns {Promise<Object>} Result with population changes
-     */
     async processPopulationFoodLogic() {
         const houses = await this.listAllHouses();
         let totalPopulationLost = 0;
@@ -125,20 +112,18 @@ class HouseStore {
         let housesAffected = 0;
 
         for (const house of houses) {
-            if (house.type && house.type.includes('House')) { // Only process houses
+            if (house.type && house.type.includes('House')) {
                 const hasRoadAccess = (house.roads ?? 0) > 0;
                 const currentPop = house.pop || 0;
-                
-                if (!hasRoadAccess) {
-                    // No road access - reset population to 0 (food is not required)
-                    if (currentPop > 0) {
-                        totalPopulationLost += currentPop;
-                        housesAffected++;
-                        
-                        await this.updateHouseFields(house.id, {
-                            pop: 0
-                        });
-                    }
+                const instanceId = house.instanceId ?? house.id;
+
+                if (!hasRoadAccess && currentPop > 0) {
+                    totalPopulationLost += currentPop;
+                    housesAffected++;
+
+                    await this.updateHouseFields(instanceId, {
+                        pop: 0,
+                    });
                 }
             }
         }
@@ -147,9 +132,9 @@ class HouseStore {
             totalPopulationLost,
             totalPopulationGained,
             housesAffected,
-            message: totalPopulationLost > 0 ? 
-                `${totalPopulationLost} inhabitants lost due to no road access in ${housesAffected} houses` : 
-                'All houses with population have road access'
+            message: totalPopulationLost > 0 ?
+                `${totalPopulationLost} inhabitants lost due to no road access in ${housesAffected} houses` :
+                'All houses with population have road access',
         };
     }
 
@@ -162,21 +147,8 @@ class HouseStore {
         const houses = await this.listAllHouses();
         const pricesByType = {};
 
-        houses.forEach(house => {
-            // Extract base type from name (e.g., "House-Red-1" -> "House-Red", "Road-1" -> "Road")
-            let houseType;
-            if (house.name.includes('House-')) {
-                houseType = house.name.split('-').slice(0, 2).join('-');
-            } else if (house.name.includes('Farm-')) {
-                houseType = house.name.split('-').slice(0, 2).join('-');
-            } else if (house.name.includes('Market')) {
-                houseType = 'Market';
-            } else if (house.name.includes('roads')) {
-                houseType = 'roads';
-            } else {
-                houseType = house.name.split('-')[0];
-            }
-            
+        houses.forEach((house) => {
+            const houseType = house.type || 'unknown';
             if (!pricesByType[houseType]) {
                 pricesByType[houseType] = house.price || 0;
             }
@@ -186,41 +158,37 @@ class HouseStore {
     }
 
     async addHouse(data) {
-        const houseName = data.name;
-        
-        // Check if this house is already being added (prevent race conditions)
-        if (this.pendingAdditions.has(houseName)) {
-            console.warn(`[HousesStore] House ${houseName} is already being added, skipping duplicate request`);
+        const instanceId = data.instanceId ?? data.id ?? createBuildingInstanceId();
+
+        if (this.pendingAdditions.has(instanceId)) {
+            console.warn(`[HousesStore] House ${instanceId} is already being added, skipping duplicate request`);
             return { success: false, error: 'Building is already being added.', reason: 'duplicate' };
         }
-        
-        // Mark as pending and set safety timeout
-        this.pendingAdditions.add(houseName);
-        this._setPendingTimeout(houseName, 5000); // 5 second timeout
-        
+
+        this.pendingAdditions.add(instanceId);
+        this._setPendingTimeout(instanceId, 5000);
+
         try {
-            // Check if house already exists before attempting to add
-            const existingHouse = await this.db.houses.get(houseName);
+            const existingHouse = await this.db.houses.get(instanceId);
             if (existingHouse) {
-                console.warn(`[HousesStore] House ${houseName} already exists, skipping add`);
-                this.pendingAdditions.delete(houseName);
-                this._clearPendingTimeout(houseName);
+                console.warn(`[HousesStore] House ${instanceId} already exists, skipping add`);
+                this.pendingAdditions.delete(instanceId);
+                this._clearPendingTimeout(instanceId);
                 return { success: false, error: 'Key already exists in the object store.', reason: 'duplicate' };
             }
-            
-            await this.db.houses.add(canonicalizeHouseRecord(data));
-            
-            this.pendingAdditions.delete(houseName);
-            this._clearPendingTimeout(houseName);
-            return { success: true };
+
+            const record = canonicalizeHouseRecord({ ...data, instanceId });
+            await this.db.houses.add(record);
+
+            this.pendingAdditions.delete(instanceId);
+            this._clearPendingTimeout(instanceId);
+            return { success: true, instanceId };
         } catch (err) {
-            // Always remove from pending, even on error
-            this.pendingAdditions.delete(houseName);
-            this._clearPendingTimeout(houseName);
-            
-            // Handle ConstraintError specifically (duplicate key)
+            this.pendingAdditions.delete(instanceId);
+            this._clearPendingTimeout(instanceId);
+
             if (err.name === 'ConstraintError' || err.message.includes('Key already exists')) {
-                console.warn(`[HousesStore] House ${houseName} already exists (ConstraintError)`);
+                console.warn(`[HousesStore] House ${instanceId} already exists (ConstraintError)`);
                 return { success: false, error: 'Key already exists in the object store.', reason: 'duplicate' };
             }
             console.error(`[HousesStore] Error adding house: ${err.message}`);
@@ -229,103 +197,92 @@ class HouseStore {
     }
 
     async addHouseAndPay(data) {
-        const houseName = data.name;
-        
-        // Check if this house is already being added (prevent race conditions)
-        if (this.pendingAdditions.has(houseName)) {
-            console.warn(`[HousesStore] House ${houseName} is already being added, skipping duplicate request`);
-            return { 
-                success: false, 
-                reason: 'duplicate', 
+        const instanceId = data.instanceId ?? data.id ?? createBuildingInstanceId();
+
+        if (this.pendingAdditions.has(instanceId)) {
+            console.warn(`[HousesStore] House ${instanceId} is already being added, skipping duplicate request`);
+            return {
+                success: false,
+                reason: 'duplicate',
                 error: 'Building is already being added',
-                message: 'Building is already being added. Please wait.'
-            };
-        }
-        
-        // Check if house already exists BEFORE processing payment
-        const existingHouse = await this.getHouse(houseName);
-        if (existingHouse) {
-            console.warn(`[HousesStore] Cannot add house ${houseName}: already exists`);
-            return { 
-                success: false, 
-                reason: 'duplicate', 
-                error: 'Building already exists at this location',
-                message: 'Building already exists at this location'
+                message: 'Building is already being added. Please wait.',
             };
         }
 
-        // Use the new BudgetManager for proper financial handling
+        const existingHouse = await this.getHouse(instanceId);
+        if (existingHouse) {
+            console.warn(`[HousesStore] Cannot add house ${instanceId}: already exists`);
+            return {
+                success: false,
+                reason: 'duplicate',
+                error: 'Building already exists at this location',
+                message: 'Building already exists at this location',
+            };
+        }
+
         const expenseResult = await budgetManager.addConstructionExpense(data.price, `Building: ${data.type}`);
-        
+
         if (!expenseResult.success) {
             console.warn(`Cannot build ${data.type}: ${expenseResult.message}`);
             return expenseResult;
         }
 
-        const addHouseResult = await this.addHouse(data);
-        
+        const addHouseResult = await this.addHouse({ ...data, instanceId });
+
         if (!addHouseResult.success) {
             console.error('[HousesStore] Error adding house after payment:', addHouseResult.error);
-            
-            // If it's a duplicate error, we already checked, so this shouldn't happen
-            // But if it does, refund the expense
+
             if (addHouseResult.reason === 'duplicate') {
                 await budgetManager.addIncome(data.price, `Refund for duplicate ${data.type}`);
-                return { 
-                    success: false, 
-                    reason: 'duplicate', 
+                return {
+                    success: false,
+                    reason: 'duplicate',
                     error: 'Building already exists at this location',
-                    message: 'Building already exists at this location'
+                    message: 'Building already exists at this location',
                 };
             }
-            
-            // For other errors, refund the expense
+
             await budgetManager.addIncome(data.price, `Refund for failed ${data.type}`);
             return { success: false, reason: 'database_error', error: addHouseResult.error };
         }
-        
-        return { success: true, budget: expenseResult.budget };
+
+        return { success: true, budget: expenseResult.budget, instanceId: addHouseResult.instanceId };
     }
 
-    async getHouse(name) {
-        return await this.db.houses.get(name);
+    /** @param {string} instanceId */
+    async getHouse(instanceId) {
+        return await this.db.houses.get(instanceId);
     }
 
-    async getHouseItem(name, key) {
-        const house = await this.getHouse(name);
+    /** @param {string} instanceId */
+    async getHouseItem(instanceId, key) {
+        const house = await this.getHouse(instanceId);
         if (house && key in house) {
             return house[key];
         }
-        
-        // Return default values for missing keys instead of warning
+
         const defaults = {
-            'stocks': { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
-            'neighbors': [],
-            'pop': 0,
-            'roads': 0
+            stocks: { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
+            neighbors: [],
+            pop: 0,
+            roads: 0,
         };
-        
+
         if (defaults[key] !== undefined) {
             return defaults[key];
         }
-        
-        console.warn(`Key ${key} not found in house ${name}`);
+
+        console.warn(`Key ${key} not found in house ${instanceId}`);
         return false;
     }
 
-    async updateHouseFields(name, updates, appendToArrays = false) {
-        let house = await this.db.houses.get(name);
-        
-        // If house doesn't exist, create it with the updates
+    /** @param {string} instanceId */
+    async updateHouseFields(instanceId, updates, appendToArrays = false) {
+        const house = await this.db.houses.get(instanceId);
         if (!house) {
-            try {
-                house = buildHouseStubFromName(name);
-            } catch {
-                return;
-            }
+            return;
         }
-        
-        // Update house fields
+
         for (const key in updates) {
             if (updates[key] !== undefined) {
                 if (Array.isArray(house[key]) && appendToArrays) {
@@ -335,39 +292,14 @@ class HouseStore {
                 }
             }
         }
-        
+
         await this.db.houses.put(canonicalizeHouseRecord(house));
     }
 
-    async updateHouseName(oldName, newName, keys = {}) {
-        try {
-            const house = await this.db.houses.get(oldName);
-            if (house) {
-                await this.db.houses.delete(oldName);
-                
-                const updatedHouse = canonicalizeHouseRecord({
-                    ...house,
-                    id: newName,
-                    name: newName,
-                    ...(keys.type ? { type: keys.type } : {}),
-                    ...(keys.price ? { price: keys.price } : {}),
-                });
-                
-                await this.db.houses.put(updatedHouse);
-                return { success: true, message: `House ${oldName} updated to ${newName}` };
-            } else {
-                console.warn(`[HousesStore] House with oldName ${oldName} not found for update.`);
-                return { success: false, message: `House ${oldName} not found.` };
-            }
-        } catch (error) {
-            console.error(`[HousesStore] Error updating house name from ${oldName} to ${newName}:`, error);
-            return { success: false, message: `Error updating house name: ${error.message}` };
-        }
-    }
-
+    /** @param {{ name: string, increment: number, field: string }} entries */
     async incrementHouseField(entries, condition = false) {
-        const { name, increment, field } = entries;
-        const house = await this.db.houses.get(name);
+        const { name: instanceId, increment, field } = entries;
+        const house = await this.db.houses.get(instanceId);
         if (house && house[field] !== undefined) {
             if (!condition || (house[field] < condition.limit)) {
                 house[field] += increment;
@@ -376,8 +308,9 @@ class HouseStore {
         }
     }
 
-    async deleteOneHouse(name) {
-        await this.db.houses.delete(name);
+    /** @param {string} instanceId */
+    async deleteOneHouse(instanceId) {
+        await this.db.houses.delete(instanceId);
     }
 
     async clearHouses() {
@@ -389,7 +322,7 @@ class HouseStore {
         const expensesByType = {};
         let globalExpense = 0;
 
-        houses.forEach(house => {
+        houses.forEach((house) => {
             const houseType = house.type;
             if (!expensesByType[houseType]) {
                 expensesByType[houseType] = { price: 0, number: 0 };
@@ -405,7 +338,6 @@ class HouseStore {
     }
 }
 
-// Export both the class (for testing) and the singleton instance (for production)
 export { HouseStore };
 const houseStore = new HouseStore();
 export default houseStore;

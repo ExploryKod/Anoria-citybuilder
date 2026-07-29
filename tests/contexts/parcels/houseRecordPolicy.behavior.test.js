@@ -3,47 +3,64 @@
  */
 
 import { describe, test, expect } from '@jest/globals';
-import { canonicalizeHouseRecord } from '../../../src/contexts/parcels/domain/policies/HouseRecordPolicy.js';
+import {
+  canonicalizeHouseRecord,
+  createBuildingInstanceId,
+  instanceIdFromHouseRow,
+  residentialTierPatch,
+} from '../../../src/shared/building-identity/index.js';
 
 describe('HouseRecordPolicy — canonicalizeHouseRecord', () => {
-  test('sets id and name to published id on placement row', () => {
+  test('sets instanceId as stable PK on placement row', () => {
+    const instanceId = createBuildingInstanceId();
     const row = canonicalizeHouseRecord({
-      name: 'House-Blue-3-7',
+      instanceId,
       type: 'House-Blue',
       x: 3,
       y: 7,
       pop: 0,
     });
 
-    expect(row.id).toBe('House-Blue-3-7');
-    expect(row.name).toBe('House-Blue-3-7');
+    expect(row.instanceId).toBe(instanceId);
+    expect(row.id).toBe(instanceId);
     expect(row.type).toBe('House-Blue');
     expect(row.x).toBe(3);
     expect(row.y).toBe(7);
   });
 
-  test('syncs id on evolution rename (type changes, tile unchanged)', () => {
+  test('evolution patch updates type/tier without changing instanceId', () => {
+    const instanceId = createBuildingInstanceId();
     const row = canonicalizeHouseRecord({
-      name: 'House-2Story-3-7',
-      type: 'House-2Story',
+      instanceId,
+      type: 'House-Blue',
       x: 3,
       y: 7,
       pop: 7,
     });
 
-    expect(row.id).toBe('House-2Story-3-7');
-    expect(row.name).toBe('House-2Story-3-7');
-  });
-
-  test('repairs missing id on legacy row that only had name', () => {
-    const row = canonicalizeHouseRecord({
-      name: 'Farm-Wheat-5-5',
-      type: 'Farm-Wheat',
-      x: 5,
-      y: 5,
+    const patch = residentialTierPatch({
+      instanceId,
+      targetType: 'House-Red',
     });
 
-    expect(row.id).toBe('Farm-Wheat-5-5');
-    expect(row.name).toBe('Farm-Wheat-5-5');
+    const evolved = canonicalizeHouseRecord({
+      ...row,
+      ...patch,
+    });
+
+    expect(instanceIdFromHouseRow(evolved)).toBe(instanceId);
+    expect(evolved.type).toBe('House-Red');
+    expect(evolved.tier).toBe(2);
+  });
+
+  test('rejects row without UUID instanceId', () => {
+    expect(() =>
+      canonicalizeHouseRecord({
+        name: 'Farm-Wheat-5-5',
+        type: 'Farm-Wheat',
+        x: 5,
+        y: 5,
+      })
+    ).toThrow(/instanceId/);
   });
 });
