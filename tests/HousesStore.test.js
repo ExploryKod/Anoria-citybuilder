@@ -317,7 +317,7 @@ describe('HousesStore', () => {
             expect(population).toBe(0);
         });
 
-        test('additionne la population de tous les bâtiments', async () => {
+        test('additionne la population des maisons résidentielles', async () => {
             await housesStore.addHouse({ name: 'House-Blue-1-1', type: 'House-Blue', pop: 3 });
             await housesStore.addHouse({ name: 'House-Red-2-2', type: 'House-Red', pop: 4 });
             await housesStore.addHouse({ name: 'House-Purple-3-3', type: 'House-Purple', pop: 6 });
@@ -327,7 +327,17 @@ describe('HousesStore', () => {
             expect(population).toBe(13); // 3 + 4 + 6
         });
 
-        test('ignore les bâtiments sans population (pop = 0 ou undefined)', async () => {
+        test('ignore les bâtiments non résidentiels même avec pop', async () => {
+            await housesStore.addHouse({ name: 'House-Blue-1-1', type: 'House-Blue', pop: 3 });
+            await housesStore.addHouse({ name: 'Farm-Wheat-2-2', type: 'Farm-Wheat', pop: 99 });
+            await housesStore.addHouse({ name: 'Market-Stall-3-3', type: 'Market-Stall', pop: 5 });
+            
+            const population = await housesStore.getGlobalPopulation();
+            
+            expect(population).toBe(3);
+        });
+
+        test('ignore les maisons sans population (pop = 0 ou undefined)', async () => {
             await housesStore.addHouse({ name: 'House-Blue-1-1', type: 'House-Blue', pop: 3 });
             await housesStore.addHouse({ name: 'Farm-Wheat-2-2', type: 'Farm-Wheat', pop: 0 });
             await housesStore.addHouse({ name: 'Market-Stall-3-3', type: 'Market-Stall' }); // pas de pop

@@ -9,9 +9,9 @@ import { createFoodStock } from '../../../src/contexts/supply/domain/value-objec
 import { ListSupplyMapBuildings } from '../../../src/contexts/supply/application/queries/ListSupplyMapBuildings.js';
 import { ListWindmillSupplyViews } from '../../../src/contexts/supply/application/queries/ListWindmillSupplyViews.js';
 import { ListSupplyStockSnapshots } from '../../../src/contexts/supply/application/queries/ListSupplyStockSnapshots.js';
-import { MarkWindmillCollectingSeason } from '../../../src/contexts/supply/application/commands/MarkWindmillCollectingSeason.js';
-import { ResetFarmsSoldToWindmill } from '../../../src/contexts/supply/application/commands/ResetFarmsSoldToWindmill.js';
-import { UpdateMarketFarmProximity } from '../../../src/contexts/supply/application/commands/UpdateMarketFarmProximity.js';
+import { MarkWindmillCollectingSeason } from '../../../src/contexts/supply/application/commands/surplus/MarkWindmillCollectingSeason.js';
+import { ResetFarmsSoldToWindmill } from '../../../src/contexts/supply/application/commands/surplus/ResetFarmsSoldToWindmill.js';
+import { UpdateMarketFarmProximity } from '../../../src/contexts/supply/application/commands/procurement/UpdateMarketFarmProximity.js';
 import { isWithinMarketRange } from '../../../src/js/acl/supply.js';
 
 class InMemorySupplyBuildingRepository {

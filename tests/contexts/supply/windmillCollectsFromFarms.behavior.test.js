@@ -6,7 +6,7 @@ import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
 import { canWindmillCollectFromFarms } from '../../../src/contexts/supply/domain/policies/CollectingMonthPolicy.js';
-import { WindmillCollectsFromAllFarms } from '../../../src/contexts/supply/application/commands/WindmillCollectsFromAllFarms.js';
+import { WindmillCollectsFromAllFarms } from '../../../src/contexts/supply/application/commands/surplus/WindmillCollectsFromAllFarms.js';
 import { toSupplyMonth } from '../../../src/js/acl/supply.js';
 
 class InMemorySupplyBuildingRepository {

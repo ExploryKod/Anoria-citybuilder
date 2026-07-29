@@ -5,7 +5,7 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
-import { DistributeFoodFromMarketToHouses } from '../../../src/contexts/supply/application/commands/DistributeFoodFromMarketToHouses.js';
+import { DistributeFoodFromMarketToHouses } from '../../../src/contexts/supply/application/commands/distribution/DistributeFoodFromMarketToHouses.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {

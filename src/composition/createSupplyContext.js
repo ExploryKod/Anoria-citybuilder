@@ -1,18 +1,31 @@
 import { DexieSupplyBuildingRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyBuildingRepository.js';
-import { MarketBuysFromNearbyFarms } from '../contexts/supply/application/commands/MarketBuysFromNearbyFarms.js';
-import { MarkMarketBuyingSeason } from '../contexts/supply/application/commands/MarkMarketBuyingSeason.js';
-import { DistributeFoodFromMarketToHouses } from '../contexts/supply/application/commands/DistributeFoodFromMarketToHouses.js';
-import { WindmillCollectsFromAllFarms } from '../contexts/supply/application/commands/WindmillCollectsFromAllFarms.js';
-import { UpdateHousesMarketReach } from '../contexts/supply/application/commands/UpdateHousesMarketReach.js';
-import { UpdateMarketFarmProximity } from '../contexts/supply/application/commands/UpdateMarketFarmProximity.js';
-import { MarkWindmillCollectingSeason } from '../contexts/supply/application/commands/MarkWindmillCollectingSeason.js';
-import { ResetFarmsSoldToWindmill } from '../contexts/supply/application/commands/ResetFarmsSoldToWindmill.js';
-import { SetWindmillCollectingFlag } from '../contexts/supply/application/commands/SetWindmillCollectingFlag.js';
-import { MarkFarmSoldToWindmill } from '../contexts/supply/application/commands/MarkFarmSoldToWindmill.js';
-import { HarvestFarmCrop } from '../contexts/supply/application/harvest/HarvestFarmCrop.js';
-import { HarvestAllFarmCrops } from '../contexts/supply/application/harvest/HarvestAllFarmCrops.js';
-import { ConsumeHouseFood } from '../contexts/supply/application/consumption/ConsumeHouseFood.js';
-import { ConsumeAllHouseFood } from '../contexts/supply/application/consumption/ConsumeAllHouseFood.js';
+import { MarketBuysFromNearbyFarms } from '../contexts/supply/application/commands/procurement/MarketBuysFromNearbyFarms.js';
+import { MarkMarketBuyingSeason } from '../contexts/supply/application/commands/procurement/MarkMarketBuyingSeason.js';
+import { DistributeFoodFromMarketToHouses } from '../contexts/supply/application/commands/distribution/DistributeFoodFromMarketToHouses.js';
+import { WindmillCollectsFromAllFarms } from '../contexts/supply/application/commands/surplus/WindmillCollectsFromAllFarms.js';
+import { UpdateHousesMarketReach } from '../contexts/supply/application/commands/distribution/UpdateHousesMarketReach.js';
+import { UpdateMarketFarmProximity } from '../contexts/supply/application/commands/procurement/UpdateMarketFarmProximity.js';
+import { MarkWindmillCollectingSeason } from '../contexts/supply/application/commands/surplus/MarkWindmillCollectingSeason.js';
+import { ResetFarmsSoldToWindmill } from '../contexts/supply/application/commands/surplus/ResetFarmsSoldToWindmill.js';
+import { SetWindmillCollectingFlag } from '../contexts/supply/application/commands/surplus/SetWindmillCollectingFlag.js';
+import { MarkFarmSoldToWindmill } from '../contexts/supply/application/commands/surplus/MarkFarmSoldToWindmill.js';
+import { HarvestFarmCrop } from '../contexts/supply/application/commands/harvest/HarvestFarmCrop.js';
+import { HarvestAllFarmCrops } from '../contexts/supply/application/commands/harvest/HarvestAllFarmCrops.js';
+import { ConsumeHouseFood } from '../contexts/supply/application/commands/consumption/ConsumeHouseFood.js';
+import { ConsumeAllHouseFood } from '../contexts/supply/application/commands/consumption/ConsumeAllHouseFood.js';
+import { ProcessWindmillCollection } from '../contexts/supply/application/commands/surplus/ProcessWindmillCollection.js';
+import { RunWindmillSurplusCycle } from '../contexts/supply/application/commands/surplus/RunWindmillSurplusCycle.js';
+import { RunCityMarketFoodCycle } from '../contexts/supply/application/commands/procurement/RunCityMarketFoodCycle.js';
+import { RunMonthlyFoodSupplyCycle } from '../contexts/supply/application/workflows/RunMonthlyFoodSupplyCycle.js';
+import { CollectFactoryResources } from '../contexts/supply/application/commands/manufacturing/CollectFactoryResources.js';
+import { TransformFactoryMaterials } from '../contexts/supply/application/commands/manufacturing/TransformFactoryMaterials.js';
+import { ProduceFactoryGoods } from '../contexts/supply/application/commands/manufacturing/ProduceFactoryGoods.js';
+import { ProcessFactoryProductionStep } from '../contexts/supply/application/commands/manufacturing/ProcessFactoryProductionStep.js';
+import { RunCityFactoryProductionCycle } from '../contexts/supply/application/commands/manufacturing/RunCityFactoryProductionCycle.js';
+import { GetCityFactoryResources } from '../contexts/supply/application/queries/GetCityFactoryResources.js';
+import { DexieFactoryBuildingRepository } from '../contexts/supply/infrastructure/dexie/DexieFactoryBuildingRepository.js';
+import { SupplyProductionJournal } from '../contexts/supply/infrastructure/presentation/SupplyProductionJournal.js';
+import { SupplyFoodTraceability } from '../contexts/supply/infrastructure/presentation/SupplyFoodTraceability.js';
 import { GetBuildingSupplyView } from '../contexts/supply/application/queries/GetBuildingSupplyView.js';
 import { ListSupplyMapBuildings } from '../contexts/supply/application/queries/ListSupplyMapBuildings.js';
 import { ListWindmillSupplyViews } from '../contexts/supply/application/queries/ListWindmillSupplyViews.js';
@@ -26,6 +39,8 @@ import { ListSupplyStockSnapshots } from '../contexts/supply/application/queries
  */
 export function createSupplyContext({ housesStore }) {
   const supplyBuildingRepository = new DexieSupplyBuildingRepository(housesStore);
+  const factoryBuildingRepository = new DexieFactoryBuildingRepository(housesStore);
+  const productionJournal = new SupplyProductionJournal();
   const marketBuysFromNearbyFarms = new MarketBuysFromNearbyFarms(
     supplyBuildingRepository
   );
@@ -64,6 +79,60 @@ export function createSupplyContext({ housesStore }) {
     supplyBuildingRepository,
     consumeHouseFood
   );
+  const processWindmillCollection = new ProcessWindmillCollection(
+    supplyBuildingRepository,
+    windmillCollectsFromAllFarms,
+    setWindmillCollectingFlag,
+    markFarmSoldToWindmill
+  );
+  const runWindmillSurplusCycle = new RunWindmillSurplusCycle(
+    supplyBuildingRepository,
+    markWindmillCollectingSeason,
+    resetFarmsSoldToWindmill,
+    processWindmillCollection
+  );
+  const traceability = new SupplyFoodTraceability(housesStore);
+  const runCityMarketFoodCycle = new RunCityMarketFoodCycle(
+    supplyBuildingRepository,
+    marketBuysFromNearbyFarms,
+    distributeFoodFromMarketToHouses,
+    updateMarketFarmProximity,
+    traceability
+  );
+  const runMonthlyFoodSupplyCycle = new RunMonthlyFoodSupplyCycle(
+    harvestAllFarmCrops,
+    markMarketBuyingSeason,
+    runCityMarketFoodCycle,
+    updateHousesMarketReach,
+    runWindmillSurplusCycle,
+    consumeAllHouseFood,
+    traceability
+  );
+  const collectFactoryResources = new CollectFactoryResources(
+    factoryBuildingRepository,
+    productionJournal
+  );
+  const transformFactoryMaterials = new TransformFactoryMaterials(
+    factoryBuildingRepository,
+    productionJournal
+  );
+  const produceFactoryGoods = new ProduceFactoryGoods(
+    factoryBuildingRepository,
+    productionJournal
+  );
+  const processFactoryProductionStep = new ProcessFactoryProductionStep(
+    factoryBuildingRepository,
+    collectFactoryResources,
+    transformFactoryMaterials,
+    produceFactoryGoods
+  );
+  const runCityFactoryProductionCycle = new RunCityFactoryProductionCycle(
+    factoryBuildingRepository,
+    processFactoryProductionStep
+  );
+  const getCityFactoryResourcesQuery = new GetCityFactoryResources(
+    factoryBuildingRepository
+  );
   const getBuildingSupplyViewQuery = new GetBuildingSupplyView(
     supplyBuildingRepository
   );
@@ -93,6 +162,17 @@ export function createSupplyContext({ housesStore }) {
     harvestAllFarmCrops,
     consumeHouseFood,
     consumeAllHouseFood,
+    processWindmillCollection,
+    runWindmillSurplusCycle,
+    runCityMarketFoodCycle,
+    runMonthlyFoodSupplyCycle,
+    runCityFactoryProductionCycle,
+    collectFactoryResources,
+    transformFactoryMaterials,
+    produceFactoryGoods,
+    processFactoryProductionStep,
+    getCityFactoryResourcesQuery,
+    factoryBuildingRepository,
     getBuildingSupplyViewQuery,
     listSupplyMapBuildingsQuery,
     listWindmillSupplyViewsQuery,
@@ -160,6 +240,32 @@ export function createSupplyContext({ housesStore }) {
 
     async consumeAllHouseFood({ monthIndex }) {
       return consumeAllHouseFood.execute({ monthIndex });
+    },
+
+    async runWindmillSurplusCycle({ month, monthIndex, dayInMonth, year }) {
+      return runWindmillSurplusCycle.execute({
+        month,
+        monthIndex,
+        dayInMonth,
+        year,
+      });
+    },
+
+    async runMonthlyFoodSupplyCycle({ season, month, timeInfo, maxDistance = 5 }) {
+      return runMonthlyFoodSupplyCycle.execute({
+        season,
+        month,
+        timeInfo,
+        maxDistance,
+      });
+    },
+
+    async runCityFactoryProductionCycle({ city, time = 0 }) {
+      return runCityFactoryProductionCycle.execute({ city, time });
+    },
+
+    async getCityFactoryResources(city) {
+      return getCityFactoryResourcesQuery.execute({ city });
     },
 
     async getBuildingSupplyView(buildingId) {

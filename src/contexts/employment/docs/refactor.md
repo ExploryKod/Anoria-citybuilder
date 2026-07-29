@@ -20,7 +20,7 @@
 
 **Single read model** — `GetCityEmploymentSummary` returns `{ workerPool, totalAssigned, unemployed, lack, understaffedBuildingIds, bySector }` from the same rules as `DistributeCityWorkers`. Status bar, work-section, and icons consume the ACL helper.
 
-**One labor-pool policy** — `LaborPoolPolicy` : pop totale inclut les élites (additives au palais, +1 à l’évolution) ; pool ouvrier = citoyens seulement ; barre `total (citoyens, élites)`.
+**One labor-pool policy (Employment BC)** — `LaborPoolPolicy` interprets persisted `type` + `pop` into worker vs élite pools. Housing owns `pop` mutations (growth, palace +1); Employment does **not** import Housing domain. See [`boundaries.md`](boundaries.md).
 
 **Same-turn consistency** — monthly turn order in `game.js`:
 

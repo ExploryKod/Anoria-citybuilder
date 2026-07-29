@@ -1,5 +1,13 @@
 import config from '../game/config.js';
 import { getCityEmploymentSummary } from '../acl/employment.js';
+import { getCityTotalPopulation } from '../acl/housing.js';
+
+function resolveHousesStore() {
+    if (window.app?.housesStore) return window.app.housesStore;
+    if (window.housesStore) return window.housesStore;
+    if (window.game?.housesStore) return window.game.housesStore;
+    return null;
+}
 
 class WorkSectionManager {
     constructor() {
@@ -304,18 +312,7 @@ class WorkSectionManager {
 
         let totalPopulation = 0;
         try {
-            let housesStore = null;
-            if (window.app && window.app.housesStore) {
-                housesStore = window.app.housesStore;
-            } else if (window.housesStore) {
-                housesStore = window.housesStore;
-            } else if (window.game && window.game.housesStore) {
-                housesStore = window.game.housesStore;
-            }
-
-            if (housesStore && typeof housesStore.getGlobalPopulation === 'function') {
-                totalPopulation = await housesStore.getGlobalPopulation();
-            }
+            totalPopulation = await getCityTotalPopulation(resolveHousesStore());
         } catch (error) {
             console.warn('[WorkSection] Error getting population for salary display:', error);
         }
@@ -343,18 +340,7 @@ class WorkSectionManager {
 
         let totalPopulation = 0;
         try {
-            let housesStore = null;
-            if (window.app && window.app.housesStore) {
-                housesStore = window.app.housesStore;
-            } else if (window.housesStore) {
-                housesStore = window.housesStore;
-            } else if (window.game && window.game.housesStore) {
-                housesStore = window.game.housesStore;
-            }
-
-            if (housesStore && typeof housesStore.getGlobalPopulation === 'function') {
-                totalPopulation = await housesStore.getGlobalPopulation();
-            }
+            totalPopulation = await getCityTotalPopulation(resolveHousesStore());
         } catch (error) {
             console.warn('[WorkSection] Error getting population for salary tax display:', error);
         }

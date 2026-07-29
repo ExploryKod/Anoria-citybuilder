@@ -43,7 +43,7 @@ game.js → update()
   → puis scene.update
 ```
 
-Road access n’est plus dans `RoadConnectivityService` au tick (fichier conservé, deprecated).
+Road access : pipeline ECS `parcels.roadAccess` via `createGameRuntime` / `game.update()` (ex-`RoadConnectivityService`, supprimé).
 
 ## Usage minimal
 

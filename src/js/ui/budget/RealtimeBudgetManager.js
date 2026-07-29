@@ -4,6 +4,7 @@
 import budgetManager from "../../stores/BudgetManager.js";
 import housesStore from "../../stores/HousesStore.js";
 import gameStore from "../../stores/GameStore.js";
+import { getCityTotalPopulation } from "../../acl/housing.js";
 
 /**
  * Initialise le popup de budget en temps réel
@@ -107,22 +108,17 @@ export async function updateRealtimeBudget() {
             const incomeBreakdown = await window.budgetManager.getIncomeBreakdown();
             const expenseBreakdown = await window.budgetManager.getExpenseBreakdown();
             
-            // Get population data from IndexedDB
-            // Primary source: housesStore (sums house.pop from houses table) - source of truth
+            // Primary source: Housing BC via housesStore (residential pop sum)
             // Fallback: gameStore (game table) for backwards compatibility
             let population = 0;
             let populationError = false;
             try {
-                // Try housesStore first (source of truth - calculates from house.pop)
-                if (housesStore && typeof housesStore.getGlobalPopulation === 'function') {
-                    population = await housesStore.getGlobalPopulation();
-                    population = population || 0;
-                } else if (window.housesStore && typeof window.housesStore.getGlobalPopulation === 'function') {
-                    population = await window.housesStore.getGlobalPopulation();
-                    population = population || 0;
+                const store = housesStore || window.housesStore;
+                if (store) {
+                    population = await getCityTotalPopulation(store);
                 } else {
                     // Fallback to gameStore (also IndexedDB, but may be stale)
-                    console.warn('[RealtimeBudgetManager] ⚠️ housesStore.getGlobalPopulation not available, FALLING BACK to gameStore (may be stale)');
+                    console.warn('[RealtimeBudgetManager] ⚠️ housesStore unavailable, FALLING BACK to gameStore (may be stale)');
                     if (window.gameStore && typeof window.gameStore.getLatestGameItemByField === 'function') {
                         const gamePop = await window.gameStore.getLatestGameItemByField('population');
                         population = gamePop !== null && gamePop !== undefined ? gamePop : 0;
