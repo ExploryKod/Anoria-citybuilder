@@ -1,5 +1,6 @@
 import { DexieEmploymentBuildingRepository } from '../infrastructure/persistence/dexie/DexieEmploymentBuildingRepository.js';
 import { DistributeCityWorkers } from '../contexts/employment/application/commands/DistributeCityWorkers.js';
+import { GetCityEmploymentSummary } from '../contexts/employment/application/queries/GetCityEmploymentSummary.js';
 
 /**
  * Composition root — Employment bounded context.
@@ -14,16 +15,25 @@ export function createEmploymentContext({ housesStore }) {
   const distributeCityWorkersCommand = new DistributeCityWorkers(
     employmentBuildingRepository
   );
+  const getCityEmploymentSummaryQuery = new GetCityEmploymentSummary(
+    employmentBuildingRepository
+  );
 
   return {
     employmentBuildingRepository,
     distributeCityWorkersCommand,
+    getCityEmploymentSummaryQuery,
 
     /**
      * @param {{ sectorPriorities?: Record<number|string, number> }} [params]
      */
     async distributeCityWorkers(params = {}) {
       return distributeCityWorkersCommand.execute(params);
+    },
+
+    /** @returns {Promise<import('../contexts/employment/domain/computeCityEmploymentSummary.js').ReturnType<typeof import('../contexts/employment/domain/computeCityEmploymentSummary.js').computeCityEmploymentSummary>>} */
+    async getCityEmploymentSummary() {
+      return getCityEmploymentSummaryQuery.execute();
     },
   };
 }

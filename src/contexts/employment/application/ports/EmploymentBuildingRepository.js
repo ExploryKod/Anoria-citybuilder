@@ -25,4 +25,9 @@ export class EmploymentBuildingRepository {
   async saveWorkers(_buildingId, _workerCount) {
     throw new Error('EmploymentBuildingRepository: port not implemented');
   }
+
+  /** All buildings as employment snapshots (single IndexedDB read). */
+  async listAllSnapshots() {
+    throw new Error('EmploymentBuildingRepository: port not implemented');
+  }
 }

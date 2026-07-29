@@ -1,4 +1,5 @@
 import commerceStore from '../stores/CommerceStore.js';
+import { getCityEmploymentSummary } from '../acl/employment.js';
 
 class CommerceSectionManager {
     constructor() {
@@ -618,39 +619,8 @@ class CommerceSectionManager {
         if (!housesStore) return 0;
 
         try {
-            const allBuildings = await housesStore.listAllHouses();
-            
-            // Calculate available workers from houses
-            let workerPopulation = 0;
-            for (const house of allBuildings) {
-                const type = house.type || '';
-                const pop = house.pop || 0;
-                
-                if (type.includes('House')) {
-                    if (type.includes('2Story') || type.includes('2-Story')) {
-                        // Palace: 1/6 becomes elite, 5/6 remain workers
-                        const elitesFromThisHouse = Math.floor(pop / 6);
-                        workerPopulation += (pop - elitesFromThisHouse);
-                    } else if (type.includes('Blue') || type.includes('Red') || type.includes('Purple')) {
-                        workerPopulation += pop;
-                    }
-                }
-            }
-            
-            if (workerPopulation === 0) return 0;
-            
-            // Calculate total assigned workers
-            let totalAssignedWorkers = 0;
-            for (const building of allBuildings) {
-                if (!building.employees) continue;
-                const sector = building.employees.sector || 0;
-                if (sector === 0) continue; // Skip residential
-                totalAssignedWorkers += building.employees.worker || 0;
-            }
-            
-            // Calculate unemployment percentage
-            const unemployedCount = Math.max(0, workerPopulation - totalAssignedWorkers);
-            return Math.round((unemployedCount / workerPopulation) * 100);
+            const summary = await getCityEmploymentSummary(housesStore);
+            return summary.unemploymentPercentage;
         } catch (error) {
             console.error('[CommerceSectionManager] Error calculating unemployment:', error);
             return 0;

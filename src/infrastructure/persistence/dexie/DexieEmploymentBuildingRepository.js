@@ -45,6 +45,11 @@ export class DexieEmploymentBuildingRepository {
       .filter((s) => isWorkplace(s));
   }
 
+  async listAllSnapshots() {
+    const houses = await this.housesStore.listAllHouses();
+    return houses.map((h) => this.#toSnapshot(h));
+  }
+
   async resetWorkplaceWorkers() {
     const houses = await this.housesStore.listAllHouses();
     for (const house of houses) {
