@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {  assetsPrices } from '../meshs/data.js';
-import { getDefaultEmployees, getSectorPriority, getSectorName } from './modules/EmployeeHelper.js';
+import { getDefaultEmployees, getSectorPriority, getSectorName, getAllSectorPriorities } from './modules/EmployeeHelper.js';
 import { TimeManager } from './utils/TimeManager.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
@@ -8,7 +8,7 @@ import {getAssetPrice, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, 
 import { toBuildingIdString, createBuildingInstanceId, getOrCreateParcelsContext } from '../acl/parcels.js';
 import { getOrCreateSupplyContext, toSupplySeason, toSupplyMonth } from '../acl/supply.js';
 import { getOrCreateHousingContext } from '../acl/housing.js';
-import { redistributeCityEmployment, syncEmploymentAfterBuildingChange } from '../acl/employment.js';
+import { syncEmploymentAfterBuildingChange, getOrCreateEmploymentContext } from '../acl/employment.js';
 import { createGameRuntime } from '../../composition/createGameRuntime.js';
 import config from './config.js';
 import {
@@ -87,7 +87,6 @@ let services = [];
         // Load city-wide simulation services (food chain → ECS supply.monthlyFood)
         const { RandomEventsService } = await import('./services/RandomEventsService.js');
         const { EmploymentPriorityService } = await import('./services/EmploymentPriorityService.js');
-        const { EmploymentDistributionService } = await import('./services/EmploymentDistributionService.js');
         const { CommerceService } = await import('./services/CommerceService.js');
         
         services.push(new RandomEventsService()); // Événements aléatoires (ouragan, inondation)
@@ -98,9 +97,6 @@ let services = [];
         const employmentPriorityService = new EmploymentPriorityService();
         services.push(employmentPriorityService);
         
-        // Employment Distribution Service — registered for compatibility; redistribution
-        // runs after pop evolution in game.update (see redistributeCityEmployment ACL).
-        services.push(new EmploymentDistributionService());
         console.log('[game.js] Employment services registered (priority from localStorage, sector from IndexedDB)');
         
         // Note: Initial simulation will run on first game.update() call
@@ -492,13 +488,16 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
     const parcels = getOrCreateParcelsContext(housesStore);
     const supply = getOrCreateSupplyContext(housesStore);
     const housing = getOrCreateHousingContext(housesStore);
+    const employment = getOrCreateEmploymentContext(housesStore);
     const runtime = createGameRuntime({
         parcels,
         supply,
         housing,
+        employment,
         timeManager: TimeManager,
         toSupplySeason,
         toSupplyMonth,
+        getSectorPriorities: getAllSectorPriorities,
         foodDistributionDistance: config?.simulation?.foodDistributionDistance || 5,
     });
     const scene = createScene(housesStore, gameStore, assetManager, parcels, supply, housing);
@@ -1284,7 +1283,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
             // Scene first: meshes + neighbor graph (source for Parcels road access)
             await scene.update(city, time);
 
-            // ECS: road access → food → pop growth → house evolution (Blue→Red, etc.)
+            // ECS: road access → food → pop growth → evolution → employment → factory production
             try {
                 await runtime.runSimulation({ city, housesStore, time });
             } catch (err) {
@@ -1294,7 +1293,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 });
             }
             
-            // Run city-wide services before individual building simulation (services read/write to IndexedDB)
+            // City-wide services (random events, commerce, employment priority init)
             if (services.length > 0) {
                 try {
                     await Promise.allSettled(
@@ -1310,7 +1309,6 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
 
             // Second pass: apply evolution mesh swaps + road/no-road icons from ECS writes
             await scene.update(city, time);
-            await redistributeCityEmployment(housesStore);
             await scene.refreshEmploymentPresentation(city);
             
             // Vérifier les objectifs à chaque tour (seulement si activés)

@@ -4,6 +4,7 @@ import { createParcelsRoadAccessSystem } from '../contexts/parcels/infrastructur
 import { createSupplyMonthlyFoodSystem } from '../contexts/supply/infrastructure/runtime/supplyMonthlyFoodSystem.js';
 import { createHousingPopulationGrowthSystem } from '../contexts/housing/infrastructure/runtime/housingPopulationGrowthSystem.js';
 import { createHousingEvolutionSystem } from '../contexts/housing/infrastructure/runtime/housingEvolutionSystem.js';
+import { createEmploymentRedistributeSystem } from '../contexts/employment/infrastructure/runtime/employmentRedistributeSystem.js';
 import { createFactoryProductionSystem } from '../contexts/supply/infrastructure/runtime/supplyFactoryProductionSystem.js';
 
 /**
@@ -14,18 +15,22 @@ import { createFactoryProductionSystem } from '../contexts/supply/infrastructure
  * @param {ReturnType<import('./createParcelsContext.js').createParcelsContext>} deps.parcels
  * @param {ReturnType<import('./createSupplyContext.js').createSupplyContext>} deps.supply
  * @param {ReturnType<import('./createHousingContext.js').createHousingContext>} deps.housing
+ * @param {ReturnType<import('./createEmploymentContext.js').createEmploymentContext>} deps.employment
  * @param {import('../js/game/utils/TimeManager.js').TimeManager} deps.timeManager
  * @param {Function} deps.toSupplySeason
  * @param {Function} deps.toSupplyMonth
+ * @param {() => Record<number|string, number>} deps.getSectorPriorities
  * @param {number} [deps.foodDistributionDistance=5]
  */
 export function createGameRuntime({
   parcels,
   supply,
   housing,
+  employment,
   timeManager,
   toSupplySeason,
   toSupplyMonth,
+  getSectorPriorities,
   foodDistributionDistance = 5,
 }) {
   if (!parcels) {
@@ -36,6 +41,12 @@ export function createGameRuntime({
   }
   if (!housing) {
     throw new Error('createGameRuntime: housing context required');
+  }
+  if (!employment) {
+    throw new Error('createGameRuntime: employment context required');
+  }
+  if (typeof getSectorPriorities !== 'function') {
+    throw new Error('createGameRuntime: getSectorPriorities required');
   }
 
   const world = new World();
@@ -53,6 +64,10 @@ export function createGameRuntime({
     timeManager,
   });
   const housingEvolution = createHousingEvolutionSystem({ housing });
+  const employmentRedistribute = createEmploymentRedistributeSystem({
+    employment,
+    getSectorPriorities,
+  });
   const supplyFactoryProduction = createFactoryProductionSystem({ supply });
 
   pipeline
@@ -61,6 +76,7 @@ export function createGameRuntime({
     .register('supply.monthlyFood', supplyMonthlyFood)
     .register('housing.populationGrowth', housingPopulationGrowth)
     .register('housing.evolution', housingEvolution)
+    .register('employment.redistribute', employmentRedistribute)
     .register('supply.factoryProduction', supplyFactoryProduction);
 
   return {

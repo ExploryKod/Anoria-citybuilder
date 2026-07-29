@@ -9,7 +9,7 @@ import {
   getOrCreateEmploymentContext,
 } from '../../composition/createEmploymentContext.js';
 import { getAllSectorPriorities, getDefaultEmployees } from '../game/modules/EmployeeHelper.js';
-import { synchronizeFactoryWorkerDistribution } from '../game/services/EmploymentDistributionService.js';
+import { synchronizeFactoryWorkerDistribution } from '../../contexts/employment/infrastructure/runtime/synchronizeFactoryWorkerDistribution.js';
 import {
   isHouseType,
   isRoadType,

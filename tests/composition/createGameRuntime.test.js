@@ -51,15 +51,28 @@ function fakeHousing() {
   };
 }
 
+function fakeEmployment() {
+  let redistributeCalls = 0;
+  return {
+    redistributeCalls: () => redistributeCalls,
+    distributeCityWorkers: async () => {
+      redistributeCalls += 1;
+      return { assigned: 0, workplacesProcessed: 0 };
+    },
+  };
+}
+
 describe('createGameRuntime', () => {
-  test('enregistre parcels, supply et housing dans le pipeline simulation', () => {
+  test('enregistre parcels, supply, housing et employment dans le pipeline simulation', () => {
     const runtime = createGameRuntime({
       parcels: fakeParcels(),
       supply: fakeSupply(),
       housing: fakeHousing(),
+      employment: fakeEmployment(),
       timeManager: TimeManager,
       toSupplySeason: () => 'summer',
       toSupplyMonth: () => 'july',
+      getSectorPriorities: () => ({}),
     });
 
     expect(runtime.pipeline.getGroupNames()).toEqual(['simulation']);
@@ -68,30 +81,39 @@ describe('createGameRuntime', () => {
       'supply.monthlyFood',
       'housing.populationGrowth',
       'housing.evolution',
+      'employment.redistribute',
       'supply.factoryProduction',
     ]);
     expect(runtime.world).toBeDefined();
   });
 
-  test('runSimulation délègue aux BC Parcels, Supply et Housing', async () => {
+  test('runSimulation délègue aux BC Parcels, Supply, Housing et Employment', async () => {
     const parcels = fakeParcels();
     const supply = fakeSupply();
     const housing = fakeHousing();
+    const employment = fakeEmployment();
     const runtime = createGameRuntime({
       parcels,
       supply,
       housing,
+      employment,
       timeManager: TimeManager,
       toSupplySeason: () => 'summer',
       toSupplyMonth: () => 'july',
+      getSectorPriorities: () => ({}),
     });
 
-    await runtime.runSimulation({ time: 3, city: { size: 1, tiles: [[]] } });
+    await runtime.runSimulation({
+      time: 3,
+      city: { size: 1, tiles: [[]] },
+      housesStore: { listAllHouses: async () => [] },
+    });
 
     expect(parcels.calls()).toBe(1);
     expect(supply.foodCalls()).toBe(1);
     expect(housing.growthCalls()).toBe(1);
     expect(housing.evolutionCalls()).toBe(1);
+    expect(employment.redistributeCalls()).toBe(1);
     expect(supply.factoryCalls()).toBe(1);
   });
 
@@ -101,5 +123,12 @@ describe('createGameRuntime', () => {
     expect(() =>
       createGameRuntime({ parcels: fakeParcels(), supply: fakeSupply() })
     ).toThrow(/housing/);
+    expect(() =>
+      createGameRuntime({
+        parcels: fakeParcels(),
+        supply: fakeSupply(),
+        housing: fakeHousing(),
+      })
+    ).toThrow(/employment/);
   });
 });

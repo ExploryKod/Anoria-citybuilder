@@ -25,11 +25,12 @@
 **Same-turn consistency** — monthly turn order in `game.js`:
 
 ```
+scene.update (meshes + neighbors)
 ECS runtime
-  → services (Food, Windmill, … — no redistribution)
-  → scene.update (pop evolution, sprites, budget)
-  → redistributeCityEmployment()
-  → scene.refreshEmploymentPresentation()
+  → parcels.roadAccess → supply.monthlyFood → housing.* → employment.redistribute → supply.factoryProduction
+services (random events, commerce, employment priority init)
+scene.update (mesh sync)
+scene.refreshEmploymentPresentation()
 ```
 
 **roadCount** — no-work icons and lack metrics only for road-eligible workplaces (`roadCount > 0`).
@@ -61,8 +62,10 @@ ECS runtime
 
 ```
 game.js update(time)
-  └── scene.update → pop evolution
-  └── redistributeCityEmployment
+  └── scene.update
+  └── runtime.runSimulation (includes employment.redistribute)
+  └── services
+  └── scene.update
   └── refreshEmploymentPresentation
         → GetCityEmploymentSummary
         → bar: unemployed + lack

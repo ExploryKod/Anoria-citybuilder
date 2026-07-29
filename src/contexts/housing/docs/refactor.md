@@ -19,9 +19,10 @@
 2. supply.monthlyFood
 3. housing.populationGrowth
 4. housing.evolution
-5. supply.factoryProduction
+5. employment.redistribute
+6. supply.factoryProduction
 --- scene.update (mesh sync, food icons, famished UI) ---
-6. employment.redistribute
+--- scene.refreshEmploymentPresentation (bar + no-work icons) ---
 ```
 
 ## DDD — boundaries with Employment
