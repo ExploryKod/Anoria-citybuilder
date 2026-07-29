@@ -7,7 +7,7 @@ import { createBuildingSnapshot } from '../../../src/contexts/parcels/domain/Bui
 import { createNeighbor, fromLegacyNeighbor } from '../../../src/contexts/parcels/domain/value-objects/Neighbor.js';
 import { UpdateNeighborsForBuilding } from '../../../src/contexts/parcels/application/commands/UpdateNeighborsForBuilding.js';
 import { GetBuildingNeighbors } from '../../../src/contexts/parcels/application/queries/GetBuildingNeighbors.js';
-import { InMemoryDomainEventPublisher } from '../../../src/infrastructure/events/InMemoryDomainEventPublisher.js';
+import { InMemoryDomainEventPublisher } from '../../../src/contexts/parcels/infrastructure/events/InMemoryDomainEventPublisher.js';
 
 class InMemoryBuildingRepository {
   constructor(buildings = []) {

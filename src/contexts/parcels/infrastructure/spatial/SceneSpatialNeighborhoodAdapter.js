@@ -1,4 +1,4 @@
-import { getBuildingsNamesInZone } from '../../js/utils/utils.js';
+import { getBuildingsNamesInZone } from '../../../../js/utils/utils.js';
 
 /**
  * Adapter : scan voisinage via la grille Three.js / scene (getBuildingsNamesInZone).

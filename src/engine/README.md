@@ -34,7 +34,7 @@ composition/createGameRuntime.js
   → World + Pipeline
   → group('simulation').register('parcels.roadAccess', …)
 
-infrastructure/runtime/systems/parcelsRoadAccessSystem.js
+contexts/parcels/infrastructure/runtime/parcelsRoadAccessSystem.js
   → délègue à parcels.recalculateAllRoadAccess
 
 game.js → update()
@@ -71,5 +71,5 @@ await pipeline.runGroup('simulation', world);
 ## Ce qui branche l'engine
 
 - `composition/createGameRuntime.js` — DI runtime
-- `infrastructure/runtime/systems/` — systèmes minces (appellent les BC)
+- `contexts/parcels/infrastructure/runtime/` — systèmes minces ECS (appellent le BC Parcels)
 - `GameLoop` — disponible pour remplacer TimeManager plus tard (hors scope immédiat)

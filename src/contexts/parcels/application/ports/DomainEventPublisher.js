@@ -1,6 +1,6 @@
 /**
  * Port : publication d'événements de domaine.
- * Implémentation : infrastructure/events/
+ * Implémentation : contexts/parcels/infrastructure/events/
  */
 export class DomainEventPublisher {
   publish(_event) {

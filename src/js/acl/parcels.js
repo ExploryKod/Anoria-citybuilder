@@ -4,8 +4,7 @@
  * Ne pas importer `contexts/parcels/domain/**` depuis l'UI ou les services :
  * passer par ce module (chemins stables, surface contrôlée).
  *
- * Infrastructure (`src/infrastructure/`) et composition restent libres
- * d'importer le domaine / les ports directement.
+ * Building identity : voir `acl/building-identity.js` (Shared Kernel).
  */
 
 export {
@@ -19,9 +18,19 @@ export {
   parseBuildingId,
   tryParseBuildingId,
   toPublishedBuildingId,
-} from '../../contexts/parcels/domain/value-objects/BuildingId.js';
+  isPublishedBuildingIdString,
+  resolvePublishedBuildingIdFromRef,
+  canonicalizeHouseRecord,
+  tryCanonicalizeHouseRecord,
+  publishedIdFromHouseRow,
+} from './building-identity.js';
 
 export {
   createParcelsContext,
   getOrCreateParcelsContext,
 } from '../../composition/createParcelsContext.js';
+
+export {
+  setupRoadAccessIcons,
+  clearRoadAccessIconViews,
+} from '../../contexts/parcels/infrastructure/presentation/roadAccessIcons.js';

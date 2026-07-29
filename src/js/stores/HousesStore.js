@@ -1,5 +1,27 @@
 import db from './db';
 import budgetManager from './BudgetManager.js';
+import { canonicalizeHouseRecord, isPublishedBuildingIdString } from '../acl/building-identity.js';
+
+/**
+ * Minimal HousesStore row from published id (`{type}-{x}-{y}`).
+ * @param {string} name
+ * @param {Record<string, unknown>} [extra]
+ */
+function buildHouseStubFromName(name, extra = {}) {
+    if (!isPublishedBuildingIdString(name)) {
+        throw new Error(`buildHouseStubFromName: invalid published id "${name}"`);
+    }
+    return canonicalizeHouseRecord({
+        name,
+        neighbors: [],
+        pop: 0,
+        stocks: { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
+        roads: 0,
+        worldTime: 0,
+        price: 0,
+        ...extra,
+    });
+}
 
 class HouseStore {
     constructor() {
@@ -195,7 +217,7 @@ class HouseStore {
                 return { success: false, error: 'Key already exists in the object store.', reason: 'duplicate' };
             }
             
-            await this.db.houses.add(data);
+            await this.db.houses.add(canonicalizeHouseRecord(data));
             
             this.pendingAdditions.delete(houseName);
             this._clearPendingTimeout(houseName);
@@ -305,32 +327,9 @@ class HouseStore {
         
         // If house doesn't exist, create it with the updates
         if (!house) {
-            // Extract x, y from name (format: "Type-x-y")
-            const parts = name.split('-');
-            if (parts.length >= 3) {
-                const x = parseInt(parts[parts.length - 2]);
-                const y = parseInt(parts[parts.length - 1]);
-                
-                if (!isNaN(x) && !isNaN(y)) {
-                    // Create new house entry with basic structure
-                    house = {
-                        name: name,
-                        type: parts.slice(0, -2).join('-'), // Get type part (handles "House-2Story")
-                        price: 0,
-                        x: x,
-                        y: y,
-                        neighbors: [],
-                        pop: 0,
-                        stocks: { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
-                        roads: 0,
-                        worldTime: 0
-                    };
-                } else {
-                    // Cannot create house without valid coordinates
-                    return;
-                }
-            } else {
-                // Cannot create house without valid name format
+            try {
+                house = buildHouseStubFromName(name);
+            } catch {
                 return;
             }
         }
@@ -346,26 +345,23 @@ class HouseStore {
             }
         }
         
-        await this.db.houses.put(house);
+        await this.db.houses.put(canonicalizeHouseRecord(house));
     }
 
     async updateHouseName(oldName, newName, keys = {}) {
         try {
             const house = await this.db.houses.get(oldName);
             if (house) {
-                // Delete old entry first to avoid key conflicts
                 await this.db.houses.delete(oldName);
                 
-                // Create new entry with updated name and keys, preserving all other fields
-                const updatedHouse = {
+                const updatedHouse = canonicalizeHouseRecord({
                     ...house,
-                    name: newName
-                };
+                    id: newName,
+                    name: newName,
+                    ...(keys.type ? { type: keys.type } : {}),
+                    ...(keys.price ? { price: keys.price } : {}),
+                });
                 
-                if (keys.type) updatedHouse.type = keys.type;
-                if (keys.price) updatedHouse.price = keys.price;
-                
-                // Put the new entry (will create if doesn't exist, update if exists)
                 await this.db.houses.put(updatedHouse);
                 return { success: true, message: `House ${oldName} updated to ${newName}` };
             } else {
@@ -384,7 +380,7 @@ class HouseStore {
         if (house && house[field] !== undefined) {
             if (!condition || (house[field] < condition.limit)) {
                 house[field] += increment;
-                await this.db.houses.put(house);
+                await this.db.houses.put(canonicalizeHouseRecord(house));
             }
         }
     }
