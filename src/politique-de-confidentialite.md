@@ -9,7 +9,7 @@ La présente politique de confidentialité décrit la manière dont **Eraanurbs*
 
 Le responsable du traitement des données personnelles est Eraanurbs, éditeur du Site accessible à l'adresse : [https://anoria.vercel.app/](https://anoria.vercel.app/)
 
-**Contact :** contact@amaury-franssen-dev.com
+**Contact :** eklati@protonmail.com
 
 ## 2. Données collectées
 
