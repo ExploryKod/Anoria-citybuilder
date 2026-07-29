@@ -63,7 +63,7 @@ Conformément au Règlement Général sur la Protection des Données (RGPD), vou
 - **Droit d'opposition** : vous pouvez vous opposer au traitement de vos données
 - **Droit de retirer votre consentement** : à tout moment pour les cookies non essentiels
 
-Pour exercer ces droits, vous pouvez nous contacter à l'adresse suivante : **contact@amaury-franssen-dev.com**
+Pour exercer ces droits, vous pouvez nous contacter à l'adresse suivante : ** eklati@protonmail.com**
 
 ## 7. Cookies et technologies similaires
 
@@ -127,7 +127,7 @@ Nous vous encourageons à consulter régulièrement cette page pour prendre conn
 
 Pour toute question concernant cette politique de confidentialité ou pour exercer vos droits, vous pouvez nous contacter à l'adresse suivante :
 
-**Email :** contact@amaury-franssen-dev.com
+**Email :** eklati@protonmail.com
 
 ## 14. Autorité de contrôle
 
