@@ -1,5 +1,5 @@
 /**
- * Behavior tests — Supply: market buys from farms
+ * Behavior tests — Supply: market buys from farms (UUID)
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
@@ -11,6 +11,7 @@ import { remainingMarketCapacity } from '../../../src/contexts/supply/domain/pol
 import { isOperational } from '../../../src/contexts/supply/domain/policies/OperationalGatePolicy.js';
 import { MarketBuysFromNearbyFarms } from '../../../src/contexts/supply/application/commands/procurement/MarketBuysFromNearbyFarms.js';
 import { toSupplySeason } from '../../../src/js/acl/supply.js';
+import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {
@@ -88,50 +89,53 @@ describe('Supply — market buying', () => {
   describe('MarketBuysFromNearbyFarms', () => {
     let repo;
     let useCase;
+    let marketId;
+    let wheatFarmId;
+    let carrotFarmId;
 
     beforeEach(() => {
+      marketId = createBuildingInstanceId();
+      wheatFarmId = createBuildingInstanceId();
+      carrotFarmId = createBuildingInstanceId();
       repo = new InMemorySupplyBuildingRepository([
-        market('Market-Stall-5-5', { wheat: 0, carrot: 0, cabbage: 0, food: 0 }),
-        farm('Farm-Wheat-4-5', 'Farm-Wheat', { wheat: 10, food: 10 }),
-        farm('Farm-Carrot-6-5', 'Farm-Carrot', { carrot: 5, food: 5 }),
+        market(marketId, { wheat: 0, carrot: 0, cabbage: 0, food: 0 }),
+        farm(wheatFarmId, 'Farm-Wheat', { wheat: 10, food: 10 }),
+        farm(carrotFarmId, 'Farm-Carrot', { carrot: 5, food: 5 }),
       ]);
       useCase = new MarketBuysFromNearbyFarms(repo);
     });
 
     test('buys available crops from nearby farms in autumn', async () => {
       const outcome = await useCase.execute({
-        marketId: 'Market-Stall-5-5',
+        marketId,
         season: 'autumn',
-        farmRefs: [
-          { id: 'Farm-Wheat-4-5' },
-          { id: 'Farm-Carrot-6-5' },
-        ],
+        farmRefs: [{ instanceId: wheatFarmId }, { instanceId: carrotFarmId }],
       });
 
       expect(outcome.bought).toBe(true);
       expect(outcome.totalBaskets).toBe(15);
       expect(outcome.transfers).toEqual(
         expect.arrayContaining([
-          { farmId: 'Farm-Wheat-4-5', crop: 'wheat', amount: 10 },
-          { farmId: 'Farm-Carrot-6-5', crop: 'carrot', amount: 5 },
+          { farmId: wheatFarmId, crop: 'wheat', amount: 10 },
+          { farmId: carrotFarmId, crop: 'carrot', amount: 5 },
         ])
       );
 
-      const m = await repo.findById('Market-Stall-5-5');
+      const m = await repo.findById(marketId);
       expect(m.stocks.wheat).toBe(10);
       expect(m.stocks.carrot).toBe(5);
       expect(m.stocks.food).toBe(15);
 
-      const wheatFarm = await repo.findById('Farm-Wheat-4-5');
+      const wheatFarm = await repo.findById(wheatFarmId);
       expect(wheatFarm.stocks.wheat).toBe(0);
       expect(wheatFarm.stocks.food).toBe(0);
     });
 
     test('refuses outside autumn', async () => {
       const outcome = await useCase.execute({
-        marketId: 'Market-Stall-5-5',
+        marketId,
         season: 'summer',
-        farmRefs: [{ id: 'Farm-Wheat-4-5' }],
+        farmRefs: [{ instanceId: wheatFarmId }],
       });
       expect(outcome.bought).toBe(false);
       expect(outcome.reason).toBe('not_buying_season');
@@ -139,41 +143,50 @@ describe('Supply — market buying', () => {
 
     test('skips farms without road access', async () => {
       repo = new InMemorySupplyBuildingRepository([
-        market('Market-Stall-5-5', { food: 0 }),
-        farm('Farm-Wheat-4-5', 'Farm-Wheat', { wheat: 10, food: 10 }, 0),
+        market(marketId, { food: 0 }),
+        farm(wheatFarmId, 'Farm-Wheat', { wheat: 10, food: 10 }, 0),
       ]);
       useCase = new MarketBuysFromNearbyFarms(repo);
 
       const outcome = await useCase.execute({
-        marketId: 'Market-Stall-5-5',
+        marketId,
         season: 'autumn',
-        farmRefs: [{ id: 'Farm-Wheat-4-5' }],
+        farmRefs: [{ instanceId: wheatFarmId }],
       });
 
       expect(outcome.bought).toBe(false);
-      expect((await repo.findById('Farm-Wheat-4-5')).stocks.wheat).toBe(10);
+      expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(10);
     });
 
     test('respects market capacity', async () => {
       repo = new InMemorySupplyBuildingRepository([
         market(
-          'Market-Stall-5-5',
+          marketId,
           { wheat: 0, carrot: 0, cabbage: 0, food: 498 },
           { maxStock: 500 }
         ),
-        farm('Farm-Wheat-4-5', 'Farm-Wheat', { wheat: 10, food: 10 }),
+        farm(wheatFarmId, 'Farm-Wheat', { wheat: 10, food: 10 }),
       ]);
       useCase = new MarketBuysFromNearbyFarms(repo);
 
       const outcome = await useCase.execute({
-        marketId: 'Market-Stall-5-5',
+        marketId,
         season: 'autumn',
-        farmRefs: [{ id: 'Farm-Wheat-4-5' }],
+        farmRefs: [{ instanceId: wheatFarmId }],
       });
 
       expect(outcome.totalBaskets).toBe(2);
-      expect((await repo.findById('Market-Stall-5-5')).stocks.food).toBe(500);
-      expect((await repo.findById('Farm-Wheat-4-5')).stocks.wheat).toBe(8);
+      expect((await repo.findById(marketId)).stocks.food).toBe(500);
+      expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(8);
+    });
+
+    test('ignore farm refs without UUID', async () => {
+      const outcome = await useCase.execute({
+        marketId,
+        season: 'autumn',
+        farmRefs: [{ name: 'Farm-Wheat-4-5', type: 'Farm-Wheat', x: 4, y: 5 }],
+      });
+      expect(outcome.bought).toBe(false);
     });
   });
 });

@@ -1,5 +1,5 @@
 /**
- * Behavior tests — Supply: windmill collects from all farms (December)
+ * Behavior tests — Supply: windmill collects from all farms (UUID)
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
@@ -8,6 +8,7 @@ import { createFoodStock } from '../../../src/contexts/supply/domain/value-objec
 import { canWindmillCollectFromFarms } from '../../../src/contexts/supply/domain/policies/CollectingMonthPolicy.js';
 import { WindmillCollectsFromAllFarms } from '../../../src/contexts/supply/application/commands/surplus/WindmillCollectsFromAllFarms.js';
 import { toSupplyMonth } from '../../../src/js/acl/supply.js';
+import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {
@@ -68,25 +69,33 @@ describe('Supply — windmill collection', () => {
   describe('WindmillCollectsFromAllFarms', () => {
     let repo;
     let useCase;
+    let windmillId;
+    let wheatFarmId;
+    let carrotFarmId;
+    let cabbageFarmId;
 
     beforeEach(() => {
+      windmillId = createBuildingInstanceId();
+      wheatFarmId = createBuildingInstanceId();
+      carrotFarmId = createBuildingInstanceId();
+      cabbageFarmId = createBuildingInstanceId();
       repo = new InMemorySupplyBuildingRepository([
-        windmill('Windmill-001-8-8', { wheat: 0, carrot: 0, cabbage: 0, food: 0 }),
-        farm('Farm-Wheat-4-5', 'Farm-Wheat', { wheat: 10, food: 10 }),
-        farm('Farm-Carrot-6-5', 'Farm-Carrot', { carrot: 5, food: 5 }),
-        farm('Farm-Cabbage-7-5', 'Farm-Cabbage', { cabbage: 3, food: 3 }),
+        windmill(windmillId, { wheat: 0, carrot: 0, cabbage: 0, food: 0 }),
+        farm(wheatFarmId, 'Farm-Wheat', { wheat: 10, food: 10 }),
+        farm(carrotFarmId, 'Farm-Carrot', { carrot: 5, food: 5 }),
+        farm(cabbageFarmId, 'Farm-Cabbage', { cabbage: 3, food: 3 }),
       ]);
       useCase = new WindmillCollectsFromAllFarms(repo);
     });
 
     test('collects from all farms in december', async () => {
       const outcome = await useCase.execute({
-        windmillId: 'Windmill-001-8-8',
+        windmillId,
         month: 'december',
         farmRefs: [
-          { id: 'Farm-Wheat-4-5' },
-          { id: 'Farm-Carrot-6-5' },
-          { id: 'Farm-Cabbage-7-5' },
+          { instanceId: wheatFarmId },
+          { instanceId: carrotFarmId },
+          { instanceId: cabbageFarmId },
         ],
       });
 
@@ -94,57 +103,57 @@ describe('Supply — windmill collection', () => {
       expect(outcome.totalBaskets).toBe(18);
       expect(outcome.transfers).toHaveLength(3);
 
-      const mill = await repo.findById('Windmill-001-8-8');
+      const mill = await repo.findById(windmillId);
       expect(mill.stocks.wheat).toBe(10);
       expect(mill.stocks.carrot).toBe(5);
       expect(mill.stocks.cabbage).toBe(3);
       expect(mill.stocks.food).toBe(18);
 
-      expect((await repo.findById('Farm-Wheat-4-5')).stocks.wheat).toBe(0);
-      expect((await repo.findById('Farm-Carrot-6-5')).stocks.carrot).toBe(0);
+      expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(0);
+      expect((await repo.findById(carrotFarmId)).stocks.carrot).toBe(0);
     });
 
     test('refuses outside december', async () => {
       const outcome = await useCase.execute({
-        windmillId: 'Windmill-001-8-8',
+        windmillId,
         month: 'november',
-        farmRefs: [{ id: 'Farm-Wheat-4-5' }],
+        farmRefs: [{ instanceId: wheatFarmId }],
       });
 
       expect(outcome.collected).toBe(false);
       expect(outcome.reason).toBe('not_collecting_month');
-      expect((await repo.findById('Farm-Wheat-4-5')).stocks.wheat).toBe(10);
+      expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(10);
     });
 
     test('skips farms without road access', async () => {
       repo = new InMemorySupplyBuildingRepository([
-        windmill('Windmill-001-8-8', { food: 0 }),
-        farm('Farm-Wheat-4-5', 'Farm-Wheat', { wheat: 10, food: 10 }, 0),
+        windmill(windmillId, { food: 0 }),
+        farm(wheatFarmId, 'Farm-Wheat', { wheat: 10, food: 10 }, 0),
       ]);
       useCase = new WindmillCollectsFromAllFarms(repo);
 
       const outcome = await useCase.execute({
-        windmillId: 'Windmill-001-8-8',
+        windmillId,
         month: 'december',
-        farmRefs: [{ id: 'Farm-Wheat-4-5' }],
+        farmRefs: [{ instanceId: wheatFarmId }],
       });
 
       expect(outcome.collected).toBe(false);
       expect(outcome.reason).toBe('nothing_to_collect');
-      expect((await repo.findById('Farm-Wheat-4-5')).stocks.wheat).toBe(10);
+      expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(10);
     });
 
     test('refuses when windmill has no road access', async () => {
       repo = new InMemorySupplyBuildingRepository([
-        windmill('Windmill-001-8-8', { food: 0 }, { roadCount: 0 }),
-        farm('Farm-Wheat-4-5', 'Farm-Wheat', { wheat: 10, food: 10 }),
+        windmill(windmillId, { food: 0 }, { roadCount: 0 }),
+        farm(wheatFarmId, 'Farm-Wheat', { wheat: 10, food: 10 }),
       ]);
       useCase = new WindmillCollectsFromAllFarms(repo);
 
       const outcome = await useCase.execute({
-        windmillId: 'Windmill-001-8-8',
+        windmillId,
         month: 'december',
-        farmRefs: [{ id: 'Farm-Wheat-4-5' }],
+        farmRefs: [{ instanceId: wheatFarmId }],
       });
 
       expect(outcome.collected).toBe(false);
@@ -153,26 +162,23 @@ describe('Supply — windmill collection', () => {
 
     test('respects windmill capacity', async () => {
       repo = new InMemorySupplyBuildingRepository([
-        windmill('Windmill-001-8-8', { wheat: 0, food: 0 }, { maxStock: 4 }),
-        farm('Farm-Wheat-4-5', 'Farm-Wheat', { wheat: 10, food: 10 }),
-        farm('Farm-Carrot-6-5', 'Farm-Carrot', { carrot: 5, food: 5 }),
+        windmill(windmillId, { wheat: 0, food: 0 }, { maxStock: 4 }),
+        farm(wheatFarmId, 'Farm-Wheat', { wheat: 10, food: 10 }),
+        farm(carrotFarmId, 'Farm-Carrot', { carrot: 5, food: 5 }),
       ]);
       useCase = new WindmillCollectsFromAllFarms(repo);
 
       const outcome = await useCase.execute({
-        windmillId: 'Windmill-001-8-8',
+        windmillId,
         month: 'december',
-        farmRefs: [
-          { id: 'Farm-Wheat-4-5' },
-          { id: 'Farm-Carrot-6-5' },
-        ],
+        farmRefs: [{ instanceId: wheatFarmId }, { instanceId: carrotFarmId }],
       });
 
       expect(outcome.collected).toBe(true);
       expect(outcome.totalBaskets).toBe(4);
-      expect((await repo.findById('Windmill-001-8-8')).stocks.food).toBe(4);
-      expect((await repo.findById('Farm-Wheat-4-5')).stocks.wheat).toBe(6);
-      expect((await repo.findById('Farm-Carrot-6-5')).stocks.carrot).toBe(5);
+      expect((await repo.findById(windmillId)).stocks.food).toBe(4);
+      expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(6);
+      expect((await repo.findById(carrotFarmId)).stocks.carrot).toBe(5);
     });
   });
 });

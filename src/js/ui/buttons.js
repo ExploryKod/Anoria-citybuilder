@@ -2555,7 +2555,7 @@ function getNeighborCodes(neighbors) {
     
     return neighbors.map(neighbor => {
         // Prefer explicit fields, fallback to buildingId used in DB
-        const typeLike = neighbor.name || neighbor.type || neighbor.buildingId || '';
+        const typeLike = neighbor.type || neighbor.name || '';
         const code = getBuildingCode(typeLike);
         if (neighbor.x !== undefined && neighbor.y !== undefined) {
             return `${code}(${neighbor.x},${neighbor.y})`;

@@ -49,7 +49,7 @@ export class PlaceBuilding {
 
     const affected = new Set([buildingId]);
     for (const neighbor of normalizeNeighborList(rawNeighbors)) {
-      if (neighbor.buildingId) affected.add(neighbor.buildingId);
+      if (neighbor.instanceId) affected.add(neighbor.instanceId);
     }
 
     for (const adjId of [...affected]) {

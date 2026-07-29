@@ -56,7 +56,9 @@ export class CollectFactoryResources {
       for (const natureItem of natureItems) {
         if (totalCollected >= remainingCapacity) break;
 
-        const freshNatureItem = await this.repository.findById(natureItem.name);
+        const freshNatureItem = await this.repository.findById(
+          this.repository.instanceId(natureItem)
+        );
         if (!freshNatureItem) continue;
 
         const stocks = freshNatureItem.stocks || {};
@@ -81,7 +83,9 @@ export class CollectFactoryResources {
           [resourceType]: Math.max(0, available - toCollect),
         };
 
-        await this.repository.updateFields(freshNatureItem.name, { stocks: newStocks });
+        await this.repository.updateFields(this.repository.instanceId(natureItem), {
+          stocks: newStocks,
+        });
         natureItem.stocks = newStocks;
         totalCollected += toCollect;
       }

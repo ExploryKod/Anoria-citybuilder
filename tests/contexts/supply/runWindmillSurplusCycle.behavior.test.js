@@ -1,5 +1,5 @@
 /**
- * Behavior tests — Supply: windmill surplus cycle
+ * Behavior tests — Supply: windmill surplus cycle (UUID)
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
@@ -12,6 +12,7 @@ import { MarkWindmillCollectingSeason } from '../../../src/contexts/supply/appli
 import { ResetFarmsSoldToWindmill } from '../../../src/contexts/supply/application/commands/surplus/ResetFarmsSoldToWindmill.js';
 import { ProcessWindmillCollection } from '../../../src/contexts/supply/application/commands/surplus/ProcessWindmillCollection.js';
 import { RunWindmillSurplusCycle } from '../../../src/contexts/supply/application/commands/surplus/RunWindmillSurplusCycle.js';
+import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {
@@ -138,12 +139,18 @@ function farm(id, type, stocks, extras = {}) {
 describe('Supply — windmill surplus cycle', () => {
   let repo;
   let runCycle;
+  let windmillId;
+  let wheatFarmId;
+  let cabbageFarmId;
 
   beforeEach(() => {
+    windmillId = createBuildingInstanceId();
+    wheatFarmId = createBuildingInstanceId();
+    cabbageFarmId = createBuildingInstanceId();
     repo = new InMemorySupplyBuildingRepository([
-      windmill('Windmill-001-8-8'),
-      farm('Farm-Wheat-4-5', 'Farm-Wheat', { wheat: 10, food: 10 }),
-      farm('Farm-Cabbage-7-5', 'Farm-Cabbage', { cabbage: 4, food: 4 }, {
+      windmill(windmillId),
+      farm(wheatFarmId, 'Farm-Wheat', { wheat: 10, food: 10 }),
+      farm(cabbageFarmId, 'Farm-Cabbage', { cabbage: 4, food: 4 }, {
         flags: { soldToWindmill: true },
       }),
     ]);
@@ -176,8 +183,8 @@ describe('Supply — windmill surplus cycle', () => {
     });
 
     expect(outcome.ranCollection).toBe(false);
-    expect((await repo.findSupplyView('Farm-Cabbage-7-5')).soldToWindmill).toBe(false);
-    expect((await repo.findById('Farm-Wheat-4-5')).stocks.wheat).toBe(10);
+    expect((await repo.findSupplyView(cabbageFarmId)).soldToWindmill).toBe(false);
+    expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(10);
   });
 
   test('December collects surplus and marks farms sold to windmill', async () => {
@@ -193,15 +200,15 @@ describe('Supply — windmill surplus cycle', () => {
     expect(outcome.windmills[0].collected).toBe(true);
     expect(outcome.windmills[0].totalBaskets).toBe(14);
 
-    const mill = await repo.findById('Windmill-001-8-8');
+    const mill = await repo.findById(windmillId);
     expect(mill.stocks.food).toBe(14);
-    expect((await repo.findSupplyView('Farm-Wheat-4-5')).soldToWindmill).toBe(true);
-    expect((await repo.findSupplyView('Farm-Cabbage-7-5')).soldToWindmill).toBe(true);
-    expect(repo.raw.get('Farm-Wheat-4-5').salesToWindmill).toHaveLength(1);
+    expect((await repo.findSupplyView(wheatFarmId)).soldToWindmill).toBe(true);
+    expect((await repo.findSupplyView(cabbageFarmId)).soldToWindmill).toBe(true);
+    expect(repo.raw.get(wheatFarmId).salesToWindmill).toHaveLength(1);
   });
 
   test('December day 1 resets farm sales for the year', async () => {
-    repo.raw.get('Farm-Wheat-4-5').salesToWindmill = [
+    repo.raw.get(wheatFarmId).salesToWindmill = [
       { year: 1, productType: 'wheat', quantity: 5 },
       { year: 2, productType: 'wheat', quantity: 3 },
     ];
@@ -213,7 +220,7 @@ describe('Supply — windmill surplus cycle', () => {
       year: 2,
     });
 
-    const sales = repo.raw.get('Farm-Wheat-4-5').salesToWindmill;
+    const sales = repo.raw.get(wheatFarmId).salesToWindmill;
     expect(sales.find((sale) => sale.year === 1)).toBeUndefined();
     expect(sales.some((sale) => sale.year === 2)).toBe(true);
   });

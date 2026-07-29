@@ -738,7 +738,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     neighbors
                         .filter((neigh) => neigh.x != null && neigh.y != null)
                         .forEach((neighbor) => {
-                            const label = neighbor.type || neighbor.buildingId;
+                            const label = neighbor.type || neighbor.instanceId;
                             makeInfoKeyValue(label, `x: ${neighbor.x} | y: ${neighbor.y}`);
                         });
                 } else {

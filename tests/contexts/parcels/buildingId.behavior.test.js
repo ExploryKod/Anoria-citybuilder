@@ -17,6 +17,10 @@ import {
 } from '../../../src/contexts/parcels/domain/value-objects/BuildingId.js';
 import { createTileCoord, tryCreateTileCoord } from '../../../src/contexts/parcels/domain/value-objects/TileCoord.js';
 import { createBuildingSnapshot } from '../../../src/contexts/parcels/domain/BuildingSnapshot.js';
+import {
+  createBuildingInstanceId,
+  makeRoadNeighborRef,
+} from '../../fixtures/parcelsFixtures.js';
 
 describe('Identifiant de bâtiment', () => {
   describe('quand on identifie un bâtiment sur la grille', () => {
@@ -101,21 +105,24 @@ describe('Identifiant de bâtiment', () => {
   });
 
   describe('quand le BC Parcels lit un bâtiment (snapshot)', () => {
-    test('reconstruit BuildingId et TileCoord depuis l\'id IndexedDB', () => {
+    test('reconstruit BuildingId display et TileCoord depuis type + coords (PK = UUID)', () => {
+      const instanceId = createBuildingInstanceId();
+      const roadId = createBuildingInstanceId();
       const building = createBuildingSnapshot({
-        id: 'House-Blue-3-7',
+        id: instanceId,
         type: 'House-Blue',
-        neighbors: [{ name: 'roads', isRoad: true }],
+        x: 3,
+        y: 7,
+        neighbors: [makeRoadNeighborRef(3, 6, roadId)],
         roadCount: 1,
       });
 
-      expect(building.id).toBe('House-Blue-3-7');
+      expect(building.id).toBe(instanceId);
       expect(building.buildingId).toEqual(
         createBuildingId('House-Blue', 3, 7)
       );
       expect(building.tile).toEqual({ x: 3, y: 7 });
-      expect(building.x).toBe(3);
-      expect(building.y).toBe(7);
+      expect(building.neighbors[0].instanceId).toBe(roadId);
     });
 
     test('conserve instanceId UUID comme clé Dexie (ne le remplace pas par type-x-y)', () => {

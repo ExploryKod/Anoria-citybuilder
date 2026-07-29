@@ -3,6 +3,7 @@ import {
   shouldRunTransformStep,
   shouldRunProduceStep,
 } from '../../../domain/manufacturing/FactoryStepPolicy.js';
+import { instanceIdFromHouseRow } from '../../../../../shared/building-identity/index.js';
 
 /**
  * Command: run one collect → transform → produce step for a single factory.
@@ -32,7 +33,7 @@ export class ProcessFactoryProductionStep {
    * @param {number} params.time
    */
   async execute({ factory, time }) {
-    const factoryId = factory.id || factory.name;
+    const factoryId = instanceIdFromHouseRow(factory);
     const factoryData = await this.repository.findById(factoryId);
     if (!factoryData) return;
 

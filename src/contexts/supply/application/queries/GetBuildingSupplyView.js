@@ -90,6 +90,6 @@ function neighborsMatch(neighbors, predicate) {
 
 /** Same filters as legacy game.js neighbor checks for houses. */
 function isHouseNeighbor(neighbor) {
-  const name = neighbor.name || neighbor.buildingId || neighbor.type || '';
+  const name = neighbor.type || neighbor.name || '';
   return name.includes('House') || name.includes('house');
 }

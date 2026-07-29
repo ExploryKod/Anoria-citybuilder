@@ -268,6 +268,11 @@ export const zoneBordersBuildings = (buildingData, time=0) => {
                         mesh.userData?.instanceId
                         ?? city?.tiles?.[tileX]?.[tileY]?.instanceId
                         ?? null;
+
+                    if (!meshInstanceId) {
+                        return;
+                    }
+
                     const isRoadNeighbor = Boolean(
                         mesh.userData?.isRoad ||
                         meshType === 'roads' ||
@@ -276,10 +281,9 @@ export const zoneBordersBuildings = (buildingData, time=0) => {
                     );
                     let neighborData = {
                         time: time,
-                        name: meshType,
                         type: meshType,
-                        id: meshInstanceId ?? `${meshType}-${tileX}-${tileY}`,
-                        buildingId: meshInstanceId ?? `${meshType}-${tileX}-${tileY}`,
+                        instanceId: meshInstanceId,
+                        id: meshInstanceId,
                         x: tileX,
                         y: tileY,
                         deltaX: deltaX,
@@ -324,12 +328,14 @@ export function getBuildingsNamesInZone(buildingData, time=0, targets = {buildin
 
     if(targets.buildingTarget !== "" && targets.zones.length > 0) {
         // house is filtered also to match a specific building
-        return zoneBuildings.filter(buildingId => (buildingId.name === targets.buildingTarget) && targets.zones.includes(buildingId.zone));
+        return zoneBuildings.filter(
+            (entry) => entry.type === targets.buildingTarget && targets.zones.includes(entry.zone)
+        );
     }
 
     if(targets.buildingTarget !== "") {
         // house is filtered also to match a specific building
-        return zoneBuildings.filter(buildingId => (buildingId.name === targets.buildingTarget));
+        return zoneBuildings.filter((entry) => entry.type === targets.buildingTarget);
     }
 
     if(targets.zones.length > 0) {

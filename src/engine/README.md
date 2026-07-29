@@ -39,7 +39,7 @@ contexts/parcels/infrastructure/runtime/parcelsRoadAccessSystem.js
 
 game.js → update()
   → await runtime.runSimulation({ city, housesStore, time })
-  → puis SimServices legacy (food, emploi, …)
+  → puis SimServices legacy (commerce, random events, …)
   → puis scene.update
 ```
 

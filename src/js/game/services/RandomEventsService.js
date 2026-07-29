@@ -4,7 +4,7 @@
  */
 import { isEventsEnabled, getEventProbability, getDaysPerMonth } from '../../../config/events.js';
 import { SimService } from './SimService.js';
-import { toBuildingIdString } from '../../acl/parcels.js';
+import { instanceIdFromHouseRow } from '../../acl/building-identity.js';
 import { TimeManager } from '../utils/TimeManager.js';
 
 export class RandomEventsService extends SimService {
@@ -157,7 +157,7 @@ export class RandomEventsService extends SimService {
             }
 
             // Supprimer la maison de la base de données EN PREMIER
-            const houseId = toBuildingIdString(houseToDestroy.type, houseToDestroy.x, houseToDestroy.y);
+            const houseId = instanceIdFromHouseRow(houseToDestroy);
             if (houseId) {
                 await housesStore.deleteOneHouse(houseId);
             }

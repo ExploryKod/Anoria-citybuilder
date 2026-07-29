@@ -1,5 +1,5 @@
 /**
- * Tests de comportement — place / remove + recalc ciblé (BC Parcels)
+ * Tests de comportement — place / remove + recalc ciblé (BC Parcels, UUID)
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
@@ -11,6 +11,12 @@ import { PlaceBuilding } from '../../../src/contexts/parcels/application/command
 import { RemoveBuilding } from '../../../src/contexts/parcels/application/commands/RemoveBuilding.js';
 import { GetBuildingRoadAccess } from '../../../src/contexts/parcels/application/queries/GetBuildingRoadAccess.js';
 import { InMemoryDomainEventPublisher } from '../../../src/contexts/parcels/infrastructure/events/InMemoryDomainEventPublisher.js';
+import {
+  createBuildingInstanceId,
+  makeParcelHouseSnapshot,
+  makeRoadNeighborRef,
+  makeNeighborRef,
+} from '../../fixtures/parcelsFixtures.js';
 
 class InMemoryBuildingRepository {
   constructor(buildings = []) {
@@ -21,14 +27,13 @@ class InMemoryBuildingRepository {
           snapshot: { ...b },
           neighbors: Array.isArray(b.neighbors)
             ? b.neighbors.map((n) =>
-                n.x !== undefined || n.name !== undefined
+                n.instanceId
                   ? n
                   : {
-                      id: n.buildingId,
-                      name: n.type,
+                      instanceId: n.id,
                       type: n.type,
-                      x: n.tile?.x ?? null,
-                      y: n.tile?.y ?? null,
+                      x: n.x ?? n.tile?.x ?? null,
+                      y: n.y ?? n.tile?.y ?? null,
                       zone: n.zone,
                       isRoad: n.isRoad,
                     }
@@ -76,7 +81,6 @@ class InMemoryBuildingRepository {
   }
 }
 
-/** Spatial fake : clé "x,y" → liste voisins bruts */
 class FakeSpatialNeighborhood {
   constructor(byTile = new Map()) {
     this.byTile = byTile;
@@ -85,15 +89,6 @@ class FakeSpatialNeighborhood {
   async discoverInZones({ x, y }) {
     return this.byTile.get(`${x},${y}`) ?? [];
   }
-}
-
-function house(id, neighbors = [], roadCount = 0) {
-  return createBuildingSnapshot({
-    id,
-    type: id.replace(/-\d+-\d+$/, ''),
-    neighbors,
-    roadCount,
-  });
 }
 
 function createHarness({ buildings = [], spatialByTile = new Map() } = {}) {
@@ -148,79 +143,80 @@ describe('Place / remove et accès routier ciblé', () => {
 
   describe('RecalculateRoadAccessForNeighbors', () => {
     test('ne traite que les ids fournis', async () => {
+      const servedId = createBuildingInstanceId();
+      const isolatedId = createBuildingInstanceId();
       harness = createHarness({
         buildings: [
-          house('House-Blue-3-7', [{ name: 'roads', isRoad: true, x: 3, y: 6 }], 0),
-          house('House-Blue-1-1', [], 0),
+          makeParcelHouseSnapshot({
+            instanceId: servedId,
+            neighbors: [makeRoadNeighborRef(3, 6)],
+          }),
+          makeParcelHouseSnapshot({ instanceId: isolatedId, x: 1, y: 1, neighbors: [] }),
         ],
       });
 
-      const outcome = await harness.whenRoadAccessIsRecalculatedForNeighbors([
-        'House-Blue-3-7',
-      ]);
+      const outcome = await harness.whenRoadAccessIsRecalculatedForNeighbors([servedId]);
 
       expect(outcome.processed).toBe(1);
       expect(outcome.updated).toBe(1);
-      expect((await harness.roadAccessOf('House-Blue-3-7')).hasAccess).toBe(true);
-      expect((await harness.roadAccessOf('House-Blue-1-1')).roadCount).toBe(0);
+      expect((await harness.roadAccessOf(servedId)).hasAccess).toBe(true);
+      expect((await harness.roadAccessOf(isolatedId)).roadCount).toBe(0);
     });
   });
 
   describe('quand on place un bâtiment', () => {
     test('persiste ses voisins et dessert une maison adjacente à une route', async () => {
+      const roadId = createBuildingInstanceId();
+      const houseId = createBuildingInstanceId();
+
       const spatialByTile = new Map([
         [
           '3,6',
           [
-            {
-              name: 'House-Blue',
-              id: 'House-Blue-3-7',
+            makeNeighborRef({
+              instanceId: houseId,
+              type: 'House-Blue',
               x: 3,
               y: 7,
-              zone: 1,
               isRoad: false,
-            },
+            }),
           ],
         ],
         [
           '3,7',
-          [
-            {
-              name: 'roads',
-              id: 'roads-3-6',
-              x: 3,
-              y: 6,
-              zone: 1,
-              isRoad: true,
-            },
-          ],
+          [makeRoadNeighborRef(3, 6, roadId)],
         ],
       ]);
 
       harness = createHarness({
         buildings: [
-          house('roads-3-6', [], 0),
-          house('House-Blue-3-7', [], 0),
+          createBuildingSnapshot({
+            id: roadId,
+            type: 'roads',
+            x: 3,
+            y: 6,
+            neighbors: [],
+            roadCount: 0,
+          }),
+          makeParcelHouseSnapshot({ instanceId: houseId, x: 3, y: 7, neighbors: [] }),
         ],
         spatialByTile,
       });
 
       const outcome = await harness.whenBuildingIsPlaced({
-        buildingId: 'roads-3-6',
+        buildingId: roadId,
         x: 3,
         y: 6,
         type: 'roads',
       });
 
       expect(outcome).not.toBeNull();
-      expect(outcome.affectedIds).toEqual(
-        expect.arrayContaining(['roads-3-6', 'House-Blue-3-7'])
-      );
-      expect((await harness.roadAccessOf('House-Blue-3-7')).hasAccess).toBe(true);
-      expect(await harness.neighborsOf('House-Blue-3-7')).toEqual(
+      expect(outcome.affectedIds).toEqual(expect.arrayContaining([roadId, houseId]));
+      expect((await harness.roadAccessOf(houseId)).hasAccess).toBe(true);
+      expect(await harness.neighborsOf(houseId)).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            id: 'roads-3-6',
+            instanceId: roadId,
             isRoad: true,
           }),
         ])
@@ -230,7 +226,7 @@ describe('Place / remove et accès routier ciblé', () => {
     test('ignore un bâtiment absent de la base', async () => {
       expect(
         await harness.whenBuildingIsPlaced({
-          buildingId: 'missing-0-0',
+          buildingId: createBuildingInstanceId(),
           x: 0,
           y: 0,
           type: 'House-Blue',
@@ -241,53 +237,46 @@ describe('Place / remove et accès routier ciblé', () => {
 
   describe('quand on retire un bâtiment', () => {
     test('supprime la fiche et retire la desserte des voisins', async () => {
-      const spatialByTile = new Map([
-        ['3,7', []],
-      ]);
+      const roadId = createBuildingInstanceId();
+      const houseId = createBuildingInstanceId();
+
+      const spatialByTile = new Map([['3,7', []]]);
 
       harness = createHarness({
         buildings: [
-          house(
-            'House-Blue-3-7',
-            [
-              {
-                name: 'roads',
-                id: 'roads-3-6',
-                type: 'roads',
-                x: 3,
-                y: 6,
-                zone: 1,
-                isRoad: true,
-              },
-            ],
-            1
-          ),
-          house(
-            'roads-3-6',
-            [
-              {
-                name: 'House-Blue',
-                id: 'House-Blue-3-7',
+          makeParcelHouseSnapshot({
+            instanceId: houseId,
+            x: 3,
+            y: 7,
+            neighbors: [makeRoadNeighborRef(3, 6, roadId)],
+            roadCount: 1,
+          }),
+          createBuildingSnapshot({
+            id: roadId,
+            type: 'roads',
+            x: 3,
+            y: 6,
+            neighbors: [
+              makeNeighborRef({
+                instanceId: houseId,
                 type: 'House-Blue',
                 x: 3,
                 y: 7,
-                zone: 1,
-              },
+                isRoad: false,
+              }),
             ],
-            0
-          ),
+            roadCount: 0,
+          }),
         ],
         spatialByTile,
       });
 
-      const outcome = await harness.whenBuildingIsRemoved({
-        buildingId: 'roads-3-6',
-      });
+      const outcome = await harness.whenBuildingIsRemoved({ buildingId: roadId });
 
       expect(outcome.deleted).toBe(true);
-      expect(await harness.repository.findById('roads-3-6')).toBeNull();
-      expect((await harness.roadAccessOf('House-Blue-3-7')).hasAccess).toBe(false);
-      expect(await harness.neighborsOf('House-Blue-3-7')).toEqual([]);
+      expect(await harness.repository.findById(roadId)).toBeNull();
+      expect((await harness.roadAccessOf(houseId)).hasAccess).toBe(false);
+      expect(await harness.neighborsOf(houseId)).toEqual([]);
     });
   });
 });

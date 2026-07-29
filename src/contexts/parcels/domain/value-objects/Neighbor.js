@@ -1,15 +1,19 @@
 import { tryCreateTileCoord } from './TileCoord.js';
-import { toBuildingIdString } from './BuildingId.js';
+import {
+  isBuildingInstanceId,
+  assertBuildingInstanceId,
+} from '../../../../shared/building-identity/BuildingInstanceId.js';
 
 /**
  * Voisin sur la grille (domaine Parcels).
- * Champs parcels uniquement — pas de stocks, meshes, ni deltas Three.js.
+ * `instanceId` = UUID Dexie du bâtiment voisin (seule clé de référence).
+ * `type` + `tile` = données spatiales / filtres (pas des clés).
  */
 
 /**
  * @param {object} [params]
  * @returns {Readonly<{
- *   buildingId: string,
+ *   instanceId: string,
  *   type: string,
  *   tile: Readonly<{ x: number, y: number }> | null,
  *   isRoad: boolean,
@@ -17,14 +21,19 @@ import { toBuildingIdString } from './BuildingId.js';
  * }>}
  */
 export function createNeighbor({
-  buildingId = '',
+  instanceId = '',
   type = '',
   tile = null,
   isRoad = false,
   zone = null,
 } = {}) {
+  const id =
+    typeof instanceId === 'string' && isBuildingInstanceId(instanceId)
+      ? instanceId
+      : '';
+
   return Object.freeze({
-    buildingId: typeof buildingId === 'string' ? buildingId : '',
+    instanceId: id,
     type: typeof type === 'string' ? type : '',
     tile: tile ? Object.freeze({ x: tile.x, y: tile.y }) : null,
     isRoad: Boolean(isRoad),
@@ -33,23 +42,42 @@ export function createNeighbor({
 }
 
 /**
- * Legacy IndexedDB / scan grille → Neighbor Parcels.
- * Ignore stocks, time, deltaX/deltaZ.
+ * Normalise un blob scan grille / Dexie → Neighbor domaine.
+ * Ignore les entrées sans UUID (pas de fallback type-x-y).
+ *
+ * @param {unknown} raw
+ * @returns {import('../../../../shared/building-identity/BuildingInstanceId.js').BuildingInstanceId | null}
  */
-export function fromLegacyNeighbor(raw) {
+export function resolveNeighborInstanceId(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+
+  const candidates = [raw.instanceId, raw.id, raw.buildingId];
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && isBuildingInstanceId(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+/**
+ * @param {unknown} raw
+ * @returns {ReturnType<typeof createNeighbor>}
+ */
+export function normalizeNeighborFromRef(raw) {
   if (!raw || typeof raw !== 'object') {
     return createNeighbor();
   }
 
-  // Déjà un Neighbor domaine (pas de x plat — la tuile est dans tile)
+  // Déjà un Neighbor domaine
   if (
     raw.tile !== undefined &&
-    typeof raw.buildingId === 'string' &&
+    typeof raw.instanceId === 'string' &&
     typeof raw.type === 'string' &&
     raw.x === undefined
   ) {
     return createNeighbor({
-      buildingId: raw.buildingId,
+      instanceId: resolveNeighborInstanceId(raw) ?? raw.instanceId,
       type: raw.type,
       tile: raw.tile,
       isRoad: raw.isRoad,
@@ -57,13 +85,15 @@ export function fromLegacyNeighbor(raw) {
     });
   }
 
-  const type = raw.type || raw.name || (raw.buildingId === 'roads' ? 'roads' : '');
+  const instanceId = resolveNeighborInstanceId(raw);
+  const type =
+    (typeof raw.type === 'string' && raw.type) ||
+    (typeof raw.name === 'string' && raw.name && !isBuildingInstanceId(raw.name)
+      ? raw.name
+      : '') ||
+    (raw.buildingId === 'roads' ? 'roads' : '');
+
   const tile = tryCreateTileCoord(raw.x, raw.y);
-  const buildingId =
-    (typeof raw.id === 'string' && raw.id) ||
-    (typeof raw.buildingId === 'string' && raw.buildingId) ||
-    (type && tile ? toBuildingIdString(type, tile.x, tile.y) : '') ||
-    type;
 
   const isRoad = Boolean(
     raw.isRoad ||
@@ -78,7 +108,7 @@ export function fromLegacyNeighbor(raw) {
   );
 
   return createNeighbor({
-    buildingId,
+    instanceId: instanceId ?? '',
     type,
     tile,
     isRoad,
@@ -87,18 +117,20 @@ export function fromLegacyNeighbor(raw) {
 }
 
 /**
- * Neighbor → enregistrement IndexedDB (compat lecteurs legacy Food/UI).
- * `name` reprend `type` pour les filtres existants.
+ * Neighbor → enregistrement IndexedDB (UUID + champs spatiaux).
  */
-export function toLegacyNeighborRecord(neighbor) {
+export function toPersistedNeighborRecord(neighbor) {
   const n =
     neighbor?.tile !== undefined && neighbor?.x === undefined
       ? createNeighbor(neighbor)
-      : fromLegacyNeighbor(neighbor);
+      : normalizeNeighborFromRef(neighbor);
+
+  if (!n.instanceId) {
+    return null;
+  }
 
   return {
-    id: n.buildingId,
-    name: n.type,
+    instanceId: n.instanceId,
     type: n.type,
     x: n.tile?.x ?? null,
     y: n.tile?.y ?? null,
@@ -106,3 +138,9 @@ export function toLegacyNeighborRecord(neighbor) {
     isRoad: n.isRoad,
   };
 }
+
+/** @deprecated Use normalizeNeighborFromRef */
+export const fromLegacyNeighbor = normalizeNeighborFromRef;
+
+/** @deprecated Use toPersistedNeighborRecord */
+export const toLegacyNeighborRecord = toPersistedNeighborRecord;

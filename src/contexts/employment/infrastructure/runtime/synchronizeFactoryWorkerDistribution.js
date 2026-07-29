@@ -1,3 +1,5 @@
+import { instanceIdFromHouseRow } from '../../../../shared/building-identity/index.js';
+
 /**
  * Legacy sync: align Winery productWorkerDistribution with assigned workers.
  * Runs after DistributeCityWorkers (ECS employment.redistribute or ACL placement hook).
@@ -11,7 +13,7 @@ export async function synchronizeFactoryWorkerDistribution(housesStore) {
     const buildingType = building.type || '';
     if (!buildingType.includes('Winery-001')) continue;
 
-    const buildingId = building.instanceId || building.id || building.name;
+    const buildingId = instanceIdFromHouseRow(building);
     const freshData = await housesStore.getHouse(buildingId);
     if (!freshData) continue;
 

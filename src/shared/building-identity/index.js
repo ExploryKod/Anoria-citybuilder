@@ -59,6 +59,10 @@ export {
   tryCanonicalizeHouseRecord,
   instanceIdFromHouseRow,
   tryInstanceIdFromHouseRow,
+  resolveBuildingInstanceIdFromRef,
+  tryResolveBuildingInstanceIdFromRef,
+  resolveInstanceIdFromNeighborRef,
+  displayLabelFromHouseRow,
   toDisplayLabel,
   residentialTierPatch,
 } from './BuildingRecord.js';

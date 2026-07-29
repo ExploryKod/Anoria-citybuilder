@@ -1,5 +1,13 @@
 import config from '../game/config.js';
 import { getOrCreateSupplyContext } from '../acl/supply.js';
+import {
+    instanceIdFromHouseRow,
+    displayLabelFromHouseRow,
+} from '../acl/building-identity.js';
+
+function windmillInstanceId(windmill) {
+    return instanceIdFromHouseRow(windmill);
+}
 
 /**
  * StorageSectionManager - Manages the Storage Units (Unités de Stock) section
@@ -61,7 +69,7 @@ class StorageSectionManager {
                 const raw = await this.housesStore.getHouse(view.buildingId);
                 this.windmills.push({
                     ...(raw || {}),
-                    name: view.buildingId,
+                    instanceId: view.buildingId,
                     id: view.buildingId,
                     type: view.type,
                     x: view.x,
@@ -112,7 +120,7 @@ class StorageSectionManager {
     createWindmillCard(windmill) {
         const card = document.createElement('div');
         card.className = 'storage-windmill-card';
-        card.dataset.windmillId = windmill.name;
+        card.dataset.windmillId = windmillInstanceId(windmill);
         
         const stocks = windmill.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0, dattes: 0 };
         const maxStock = windmill.maxStock || 1000;
@@ -154,7 +162,7 @@ class StorageSectionManager {
         card.innerHTML = `
             <div class="storage-windmill-header">
                 <div class="storage-windmill-id">
-                    <strong>Moulin ID:</strong> ${windmill.name}
+                    <strong>Moulin:</strong> ${displayLabelFromHouseRow(windmill)}
                 </div>
                 <div class="storage-windmill-location">
                     Position: x: ${windmill.x || 0} | y: ${windmill.y || 0}
@@ -228,28 +236,28 @@ class StorageSectionManager {
             <div class="storage-windmill-controls">
                 <div class="storage-control-item">
                     <label class="storage-toggle-label">
-                        <input type="checkbox" class="storage-toggle" data-windmill="${windmill.name}" data-setting="isActive" ${isActive ? 'checked' : ''}>
+                        <input type="checkbox" class="storage-toggle" data-windmill="${windmillInstanceId(windmill)}" data-setting="isActive" ${isActive ? 'checked' : ''}>
                         <span>Moulin actif</span>
                     </label>
                 </div>
                 
                 <div class="storage-control-item">
                     <label class="storage-toggle-label">
-                        <input type="checkbox" class="storage-toggle" data-windmill="${windmill.name}" data-setting="distributionEnabled" ${distributionEnabled ? 'checked' : ''}>
+                        <input type="checkbox" class="storage-toggle" data-windmill="${windmillInstanceId(windmill)}" data-setting="distributionEnabled" ${distributionEnabled ? 'checked' : ''}>
                         <span>Distribuer les stocks</span>
                     </label>
                 </div>
                 
                 <div class="storage-control-item">
                     <label class="storage-toggle-label">
-                        <input type="checkbox" class="storage-toggle" data-windmill="${windmill.name}" data-setting="commercializeEnabled" ${commercializeEnabled ? 'checked' : ''}>
+                        <input type="checkbox" class="storage-toggle" data-windmill="${windmillInstanceId(windmill)}" data-setting="commercializeEnabled" ${commercializeEnabled ? 'checked' : ''}>
                         <span>Commercialiser</span>
                     </label>
                 </div>
                 
                 <div class="storage-control-item">
                     <label>Période de distribution:</label>
-                    <select class="storage-month-select" data-windmill="${windmill.name}" data-setting="distributionMonth">
+                    <select class="storage-month-select" data-windmill="${windmillInstanceId(windmill)}" data-setting="distributionMonth">
                         <option value="0" ${distributionMonth === 0 ? 'selected' : ''}>Janvier</option>
                         <option value="1" ${distributionMonth === 1 ? 'selected' : ''}>Février</option>
                         <option value="2" ${distributionMonth === 2 ? 'selected' : ''}>Mars</option>
@@ -299,7 +307,7 @@ class StorageSectionManager {
      * @param {Object} windmill - Windmill data
      */
     attachEventListeners(card, windmill) {
-        const windmillId = windmill.name;
+        const windmillId = windmillInstanceId(windmill);
         
         // Max stock input (single input for total capacity)
         // Toggle switches
@@ -345,7 +353,7 @@ class StorageSectionManager {
             });
             
             // Update local data
-            const windmill = this.windmills.find(w => w.name === windmillId);
+            const windmill = this.windmills.find((w) => windmillInstanceId(w) === windmillId);
             if (windmill) {
                 windmill[setting] = value;
             }
