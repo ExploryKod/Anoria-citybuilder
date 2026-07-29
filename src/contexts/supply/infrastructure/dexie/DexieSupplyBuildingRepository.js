@@ -33,6 +33,9 @@ export class DexieSupplyBuildingRepository {
       worker: employees.worker ?? 0,
       workerNeed: employees.worker_need ?? 0,
       neighbors: house.neighbors || [],
+      lastProductionYear: house.lastProductionYear ?? null,
+      lastConsumptionMonth: house.lastConsumptionMonth ?? null,
+      pop: house.pop ?? 0,
     });
   }
 
@@ -89,6 +92,25 @@ export class DexieSupplyBuildingRepository {
         cabbage: normalized.cabbage,
         food: normalized.food,
       },
+    });
+  }
+
+  async saveHarvestMetadata(buildingId, { lastProductionYear, lastProductionMonth }) {
+    const fields = {};
+    if (lastProductionYear !== undefined) {
+      fields.lastProductionYear = lastProductionYear;
+    }
+    if (lastProductionMonth !== undefined && lastProductionMonth !== null) {
+      fields.lastProductionMonth = lastProductionMonth;
+    }
+    if (Object.keys(fields).length === 0) return;
+    await this.housesStore.updateHouseFields(buildingId, fields);
+  }
+
+  async saveConsumptionMetadata(buildingId, { lastConsumptionMonth }) {
+    if (lastConsumptionMonth === undefined || lastConsumptionMonth === null) return;
+    await this.housesStore.updateHouseFields(buildingId, {
+      lastConsumptionMonth,
     });
   }
 

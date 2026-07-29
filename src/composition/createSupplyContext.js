@@ -9,6 +9,10 @@ import { MarkWindmillCollectingSeason } from '../contexts/supply/application/com
 import { ResetFarmsSoldToWindmill } from '../contexts/supply/application/commands/ResetFarmsSoldToWindmill.js';
 import { SetWindmillCollectingFlag } from '../contexts/supply/application/commands/SetWindmillCollectingFlag.js';
 import { MarkFarmSoldToWindmill } from '../contexts/supply/application/commands/MarkFarmSoldToWindmill.js';
+import { HarvestFarmCrop } from '../contexts/supply/application/harvest/HarvestFarmCrop.js';
+import { HarvestAllFarmCrops } from '../contexts/supply/application/harvest/HarvestAllFarmCrops.js';
+import { ConsumeHouseFood } from '../contexts/supply/application/consumption/ConsumeHouseFood.js';
+import { ConsumeAllHouseFood } from '../contexts/supply/application/consumption/ConsumeAllHouseFood.js';
 import { GetBuildingSupplyView } from '../contexts/supply/application/queries/GetBuildingSupplyView.js';
 import { ListSupplyMapBuildings } from '../contexts/supply/application/queries/ListSupplyMapBuildings.js';
 import { ListWindmillSupplyViews } from '../contexts/supply/application/queries/ListWindmillSupplyViews.js';
@@ -50,6 +54,16 @@ export function createSupplyContext({ housesStore }) {
   const markFarmSoldToWindmill = new MarkFarmSoldToWindmill(
     supplyBuildingRepository
   );
+  const harvestFarmCrop = new HarvestFarmCrop(supplyBuildingRepository);
+  const harvestAllFarmCrops = new HarvestAllFarmCrops(
+    supplyBuildingRepository,
+    harvestFarmCrop
+  );
+  const consumeHouseFood = new ConsumeHouseFood(supplyBuildingRepository);
+  const consumeAllHouseFood = new ConsumeAllHouseFood(
+    supplyBuildingRepository,
+    consumeHouseFood
+  );
   const getBuildingSupplyViewQuery = new GetBuildingSupplyView(
     supplyBuildingRepository
   );
@@ -75,6 +89,10 @@ export function createSupplyContext({ housesStore }) {
     resetFarmsSoldToWindmill,
     setWindmillCollectingFlag,
     markFarmSoldToWindmill,
+    harvestFarmCrop,
+    harvestAllFarmCrops,
+    consumeHouseFood,
+    consumeAllHouseFood,
     getBuildingSupplyViewQuery,
     listSupplyMapBuildingsQuery,
     listWindmillSupplyViewsQuery,
@@ -126,6 +144,22 @@ export function createSupplyContext({ housesStore }) {
 
     async markFarmSoldToWindmill(farmId, soldToWindmill = true) {
       return markFarmSoldToWindmill.execute({ farmId, soldToWindmill });
+    },
+
+    async harvestFarmCrop(farmId, season, year, monthIndex = null) {
+      return harvestFarmCrop.execute({ farmId, season, year, monthIndex });
+    },
+
+    async harvestAllFarmCrops({ season, year, monthIndex = null }) {
+      return harvestAllFarmCrops.execute({ season, year, monthIndex });
+    },
+
+    async consumeHouseFood(houseId, monthIndex) {
+      return consumeHouseFood.execute({ houseId, monthIndex });
+    },
+
+    async consumeAllHouseFood({ monthIndex }) {
+      return consumeAllHouseFood.execute({ monthIndex });
     },
 
     async getBuildingSupplyView(buildingId) {

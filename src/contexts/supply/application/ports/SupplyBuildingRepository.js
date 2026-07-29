@@ -20,6 +20,16 @@ export class SupplyBuildingRepository {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
+  /** Persist farm harvest timing (`lastProductionYear`, …). */
+  async saveHarvestMetadata(_buildingId, _metadata) {
+    throw new Error('SupplyBuildingRepository: port not implemented');
+  }
+
+  /** Persist house consumption timing (`lastConsumptionMonth`). */
+  async saveConsumptionMetadata(_buildingId, _metadata) {
+    throw new Error('SupplyBuildingRepository: port not implemented');
+  }
+
   /** Persist UI / status flags (isBuying, marketTooFar, …). */
   async saveMarketFlags(_buildingId, _flags) {
     throw new Error('SupplyBuildingRepository: port not implemented');

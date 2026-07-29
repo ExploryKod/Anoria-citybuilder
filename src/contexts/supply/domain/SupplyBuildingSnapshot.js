@@ -14,6 +14,9 @@ export function createSupplyBuildingSnapshot({
   worker = 0,
   workerNeed = 0,
   neighbors = [],
+  lastProductionYear = null,
+  lastConsumptionMonth = null,
+  pop = 0,
 } = {}) {
   if (!id || typeof id !== 'string') {
     throw new Error('SupplyBuildingSnapshot: id is required');
@@ -30,5 +33,18 @@ export function createSupplyBuildingSnapshot({
     worker: Number.isFinite(worker) ? worker : 0,
     workerNeed: Number.isFinite(workerNeed) ? workerNeed : 0,
     neighbors: Object.freeze(Array.isArray(neighbors) ? [...neighbors] : []),
+    lastProductionYear:
+      lastProductionYear === null || lastProductionYear === undefined
+        ? null
+        : Number.isFinite(lastProductionYear)
+          ? Math.floor(lastProductionYear)
+          : null,
+    lastConsumptionMonth:
+      lastConsumptionMonth === null || lastConsumptionMonth === undefined
+        ? null
+        : Number.isFinite(lastConsumptionMonth)
+          ? Math.floor(lastConsumptionMonth)
+          : null,
+    pop: Number.isFinite(pop) ? Math.max(0, Math.floor(pop)) : 0,
   });
 }
