@@ -43,7 +43,7 @@ export class EmploymentPriorityService extends SimService {
             }
             
             // No IndexedDB updates needed anymore!
-            // Priority is looked up at runtime by EmploymentDistributionService
+            // Priority is looked up at runtime by employment.redistribute (ECS pipeline)
             
         } catch (error) {
             console.error('[EmploymentPriorityService] Error:', {

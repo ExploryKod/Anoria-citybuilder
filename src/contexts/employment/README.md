@@ -30,7 +30,12 @@ Code and ubiquitous language are **English**. UI copy may stay French.
 - `DistributeCityWorkers` — monthly city-wide reset + priority allocation
 
 **Later**
-- Elite workers, distance-based hiring, admin priority commands, UI queries, ECS `employment.*`
+- Elite workers, distance-based hiring, admin priority commands, UI queries
+
+## ECS
+
+- `employment.redistribute` — monthly worker allocation (after `housing.evolution`, before `supply.factoryProduction`)
+- `infrastructure/runtime/synchronizeFactoryWorkerDistribution.js` — Winery productWorkerDistribution sync after allocation
 
 ## Ports
 
@@ -46,7 +51,6 @@ Code and ubiquitous language are **English**. UI copy may stay French.
 - **Parcels**: road access via persisted `roadCount` (no Parcels domain import)
 - **Supply**: reads staffing (`worker` / `workerNeed`) from persistence for operational gates — no Employment→Supply coupling
 - **ACL**: `src/js/acl/employment.js`
-- **Composition**: `createEmploymentContext.js`
-- Legacy facade: `EmploymentDistributionService` (factory `productWorkerDistribution` sync stays in facade)
+- **Composition**: `createEmploymentContext.js`, `createGameRuntime.js`
 
 Rule: `src/js/**` must not import `contexts/employment/domain/**` directly.
