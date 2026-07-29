@@ -5,7 +5,7 @@ import {
   priceForResidentialType,
 } from '../../domain/HouseTypeCatalog.js';
 import { toBuildingIdString } from '../../../../shared/building-identity/BuildingId.js';
-import { publishedIdFromHouseRow } from '../../../../shared/building-identity/index.js';
+import { publishedIdFromHouseRow, tryParseBuildingId } from '../../../../shared/building-identity/index.js';
 
 /**
  * Dexie / HousesStore adapter for Housing.
@@ -40,15 +40,27 @@ export class DexieHousingBuildingRepository {
     return this.#toSnapshot(house);
   }
 
+  #tileCoordsFromRow(row) {
+    if (Number.isFinite(row.x) && Number.isFinite(row.y)) {
+      return { x: Math.floor(Number(row.x)), y: Math.floor(Number(row.y)) };
+    }
+    const parsed = tryParseBuildingId(publishedIdFromHouseRow(row));
+    if (!parsed) return null;
+    return { x: parsed.x, y: parsed.y };
+  }
+
   async findResidentialAt(x, y) {
     if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    const tileX = Math.floor(x);
+    const tileY = Math.floor(y);
     const houses = await this.housesStore.listAllHouses();
-    const house = houses.find(
-      (row) =>
-        row.x === x &&
-        row.y === y &&
-        isResidentialHouseType(normalizeResidentialType(row.type || ''))
-    );
+    const house = houses.find((row) => {
+      if (!isResidentialHouseType(normalizeResidentialType(row.type || ''))) {
+        return false;
+      }
+      const coords = this.#tileCoordsFromRow(row);
+      return coords?.x === tileX && coords?.y === tileY;
+    });
     return house ? this.#toSnapshot(house) : null;
   }
 

@@ -441,6 +441,51 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
 
     async function update(city, time=0) {
 
+        /**
+         * Housing ECS may rename persisted id/type (Blue→Red, etc.) while the mesh
+         * still carries the old userData. Resolve by tile before existence checks.
+         */
+        async function syncResidentialHouseMeshFromDb(x, y, meshBuildingId) {
+            if (
+                !meshBuildingId ||
+                (!houses.includes(meshBuildingId) && !palaces.includes(meshBuildingId))
+            ) {
+                return { buildingId: meshBuildingId, uniqueId: null, synced: false };
+            }
+
+            const tileHouse = await housing.getResidentialHouseAt({ x, y });
+            if (!tileHouse || !buildings[x]?.[y]) {
+                return {
+                    buildingId: meshBuildingId,
+                    uniqueId: toBuildingIdString(meshBuildingId, x, y),
+                    synced: false,
+                };
+            }
+
+            const nextType = tileHouse.type;
+            const nextId = tileHouse.id;
+
+            if (city.tiles[x]?.[y] && city.tiles[x][y].buildingId !== nextType) {
+                city.tiles[x][y].buildingId = nextType;
+            }
+
+            if (nextType !== meshBuildingId) {
+                removeInteractiveObject(buildings[x][y]);
+                buildings[x][y] = assetManager.createAsset(nextType, x, y);
+                const zoneX = Math.floor(x / ZONE_SIZE);
+                const zoneY = Math.floor(y / ZONE_SIZE);
+                const citySize = city.size || 16;
+                const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
+                if (zoneGroups[zoneIndex]) {
+                    zoneGroups[zoneIndex].add(buildings[x][y]);
+                } else {
+                    scene.add(buildings[x][y]);
+                }
+            }
+
+            return { buildingId: nextType, uniqueId: nextId, synced: true };
+        }
+
         // Time turn processing
         const gamePlayVersion = 'gameplay_' + time
         const popSummary = await housing.getCityPopulationSummary();
@@ -588,6 +633,18 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                 if(!currentUniqueID) {
                     continue;
                 }
+
+                if (houses.includes(currentBuildingId) || palaces.includes(currentBuildingId)) {
+                    const residentialSync = await syncResidentialHouseMeshFromDb(
+                        x,
+                        y,
+                        currentBuildingId
+                    );
+                    currentBuildingId = residentialSync.buildingId;
+                    if (residentialSync.uniqueId) {
+                        currentUniqueID = residentialSync.uniqueId;
+                    }
+                }
                 
                 // Vérifier si le bâtiment existe encore dans la base de données
                 // Si non, le supprimer de la scène (cas des événements aléatoires, etc.)
@@ -628,7 +685,27 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                 
                 // Ne vérifier la suppression que si aucun nouveau bâtiment n'est en cours de création
                 if (!isRoad && !hasNewBuilding) {
-                    const buildingExists = await housesStore.getHouse(currentUniqueID);
+                    let buildingExists = await housesStore.getHouse(currentUniqueID);
+                    if (
+                        !buildingExists &&
+                        (houses.includes(currentBuildingId) || palaces.includes(currentBuildingId))
+                    ) {
+                        const tileHouse = await housing.getResidentialHouseAt({ x, y });
+                        if (tileHouse) {
+                            currentUniqueID = tileHouse.id;
+                            currentBuildingId = tileHouse.type;
+                            if (city.tiles[x]?.[y]) {
+                                city.tiles[x][y].buildingId = tileHouse.type;
+                            }
+                            const meshType =
+                                buildings[x][y]?.userData?.type ||
+                                buildings[x][y]?.userData?.id;
+                            if (tileHouse.type !== meshType) {
+                                await syncResidentialHouseMeshFromDb(x, y, meshType);
+                            }
+                            buildingExists = await housesStore.getHouse(currentUniqueID);
+                        }
+                    }
                     if (!buildingExists) {
                         // Le bâtiment n'existe plus dans la DB, le supprimer visuellement
                         // IMPORTANT: Ne pas supprimer si c'est aussi le terrain (routes)
@@ -1289,30 +1366,6 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                             ...buildings[x][y].userData,
                             stocks: {food: 0, carrot: 0, cabbage: 0, wheat: 0}
                         };
-                    }
-
-                    // Housing BC owns evolution in ECS; scene syncs mesh + ids from IndexedDB
-                    const tileHouse = await housing.getResidentialHouseAt({ x, y });
-                    if (tileHouse) {
-                        if (tileHouse.type !== currentBuildingId) {
-                            removeInteractiveObject(buildings[x][y]);
-                            buildings[x][y] = assetManager.createAsset(tileHouse.type, x, y);
-                            const zoneX = Math.floor(x / ZONE_SIZE);
-                            const zoneY = Math.floor(y / ZONE_SIZE);
-                            const citySize = city.size || 16;
-                            const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
-                            if (zoneGroups[zoneIndex]) {
-                                zoneGroups[zoneIndex].add(buildings[x][y]);
-                            } else {
-                                scene.add(buildings[x][y]);
-                            }
-                        }
-                        currentUniqueID = tileHouse.id;
-                        currentBuildingId = tileHouse.type;
-                        if (buildingData) {
-                            buildingData.currentBuildingId = currentBuildingId;
-                            buildingData.currentUniqueID = currentUniqueID;
-                        }
                     }
 
                     // IMPORTANT: IndexedDB is the source of truth for stocks
