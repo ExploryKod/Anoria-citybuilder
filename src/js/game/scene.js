@@ -1137,7 +1137,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                     }
                 }
 
-                // Process farms: show season-specific sprites and manage harvest stocks
+                // Process farms: season-specific sprites (harvest stocks → Supply BC)
                 if(farms.includes(currentBuildingId) && buildings[x][y]) {
                     // First, clean up ALL possible farm sprites to prevent any leftover sprites
                     const allFarmSpriteNames = ['no-food', 'grow-food', 'harvest', 'sell-food', 
@@ -1174,68 +1174,6 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                         );
                         // Skip all production and season sprites - farm cannot operate without workers
                         continue;
-                    }
-                    
-                    // Initialize farm stocks in IndexedDB if not present
-                    const farmSupply = await supply.getBuildingSupplyView(currentUniqueID);
-                    const farmStocks = farmSupply?.stocks;
-                    if (!farmStocks) {
-                        await housesStore.updateHouseFields(currentUniqueID, {
-                            stocks: { food: 0, wheat: 0, carrot: 0, cabbage: 0 }
-                        });
-                    }
-                    
-                    // Harvest season (Automne): produce 78 paniers once per year (enough to feed 6 citizens for 1 year + buffer)
-                    // 1 citizen consumes 1 panier per month = 12 paniers per year
-                    // 6 citizens × 12 paniers/year = 72 paniers/year for consumption
-                    // + 6 paniers buffer needed during the time market is buying a new load for one year
-                    // Total: 72 + 6 = 78 paniers/year
-                    // Only produce once per year - track the last year when production happened
-                    // NOTE: Production only happens if farm has workers (checked above)
-                    if (season === 'Automne') {
-                        // Get farm data to check last production year
-                        const farmData = await housesStore.getHouse(currentUniqueID);
-                        const lastProductionYear = farmData?.lastProductionYear;
-                        const currentYear = timeInfo.year || 0;
-                        const currentMonthIndex = timeInfo.monthIndex;
-                        
-                        // Only produce if we haven't produced this year yet (produce once per year in autumn)
-                        if (lastProductionYear !== currentYear) {
-                            // Get current stocks
-                            const currentFarmStocks = (await supply.getBuildingSupplyView(currentUniqueID))?.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
-                            
-                            // Determine farm type and add 78 paniers of that type (enough to feed 6 citizens for 1 year + buffer)
-                            let farmType = currentBuildingId;
-                            let newStocks = { ...currentFarmStocks };
-                            
-                            // Production: 78 paniers = enough to feed 6 citizens for 1 year + 6 paniers buffer
-                            // 1 citizen consumes 1 panier/month = 12 paniers/year
-                            // 6 citizens × 12 paniers/year = 72 paniers/year for consumption
-                            // + 6 paniers buffer needed during the time market is buying a new load
-                            // Total: (1×12×6) + (1×6) = 72 + 6 = 78 paniers/year
-                            const productionAmount = 78;
-                            
-                            if (farmType.includes('Farm-Wheat') || farmType.includes('Wheat')) {
-                                // Add 78 wheat paniers (enough to feed 6 citizens for 1 year + buffer)
-                                newStocks.wheat = (currentFarmStocks.wheat || 0) + productionAmount;
-                                newStocks.food = (newStocks.food || 0) + productionAmount;
-                            } else if (farmType.includes('Farm-Carrot') || farmType.includes('Carrot')) {
-                                // Add 78 carrot paniers (enough to feed 6 citizens for 1 year + buffer)
-                                newStocks.carrot = (currentFarmStocks.carrot || 0) + productionAmount;
-                                newStocks.food = (newStocks.food || 0) + productionAmount;
-                            } else if (farmType.includes('Farm-Cabbage') || farmType.includes('Cabbage')) {
-                                // Add 78 cabbage paniers (enough to feed 6 citizens for 1 year + buffer)
-                                newStocks.cabbage = (currentFarmStocks.cabbage || 0) + productionAmount;
-                                newStocks.food = (newStocks.food || 0) + productionAmount;
-                            }
-                            
-                            // Update stocks and track production year in IndexedDB
-                            await housesStore.updateHouseFields(currentUniqueID, { 
-                                stocks: newStocks,
-                                lastProductionYear: currentYear,
-                                lastProductionMonth: currentMonthIndex // Keep for compatibility
-                            });
-                        }
                     }
                     
                     // Determine which sprite to show based on season (only if farm has workers)
@@ -1401,101 +1339,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                         };
                     }
                     
-                    // NEW: Monthly food consumption - 1 basket per citizen per month
-                    // Fetch house data once for use in both food consumption and population logic
                     const houseData = await housesStore.getHouse(currentUniqueID);
-                    const timeInfo = TimeManager.getTimeInfo(time);
-                    const currentMonthIndex = timeInfo.monthIndex;
-                    const lastConsumptionMonth = houseData?.lastConsumptionMonth;
-                    
-                    // Only consume food once per month
-                    if (lastConsumptionMonth !== currentMonthIndex && currentPop > 0) {
-                        const currentStocks = houseFoodStocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
-                        const consumptionAmount = currentPop; // 1 basket per citizen
-                        
-                        // Consume food: prioritize wheat, then carrot, then cabbage
-                        let remainingConsumption = consumptionAmount;
-                        const newStocks = { ...currentStocks };
-                        
-                        // Track what was consumed for traceability
-                        let wheatConsumed = 0;
-                        let carrotConsumed = 0;
-                        let cabbageConsumed = 0;
-                        
-                        // Consume wheat first
-                        if (remainingConsumption > 0 && newStocks.wheat > 0) {
-                            wheatConsumed = Math.min(remainingConsumption, newStocks.wheat);
-                            newStocks.wheat -= wheatConsumed;
-                            remainingConsumption -= wheatConsumed;
-                        }
-                        
-                        // Then consume carrot
-                        if (remainingConsumption > 0 && newStocks.carrot > 0) {
-                            carrotConsumed = Math.min(remainingConsumption, newStocks.carrot);
-                            newStocks.carrot -= carrotConsumed;
-                            remainingConsumption -= carrotConsumed;
-                        }
-                        
-                        // Finally consume cabbage
-                        if (remainingConsumption > 0 && newStocks.cabbage > 0) {
-                            cabbageConsumed = Math.min(remainingConsumption, newStocks.cabbage);
-                            newStocks.cabbage -= cabbageConsumed;
-                            remainingConsumption -= cabbageConsumed;
-                        }
-                        
-                        // Update total food
-                        newStocks.food = newStocks.wheat + newStocks.carrot + newStocks.cabbage;
-                        
-                        // Update stocks and track consumption month
-                        await housesStore.updateHouseFields(currentUniqueID, {
-                            stocks: newStocks,
-                            lastConsumptionMonth: currentMonthIndex
-                        });
-                        
-                        // Enregistrer la consommation dans la traçabilité
-                        if (window.foodTraceabilityService && houseData) {
-                            if (wheatConsumed > 0) {
-                                await window.foodTraceabilityService.recordHouseConsumption(
-                                    timeInfo.turn || 0,
-                                    currentMonthIndex,
-                                    timeInfo.year || 0,
-                                    { id: currentUniqueID, x: houseData.x, y: houseData.y, type: houseData.type },
-                                    'wheat',
-                                    wheatConsumed,
-                                    currentPop
-                                );
-                            }
-                            if (carrotConsumed > 0) {
-                                await window.foodTraceabilityService.recordHouseConsumption(
-                                    timeInfo.turn || 0,
-                                    currentMonthIndex,
-                                    timeInfo.year || 0,
-                                    { id: currentUniqueID, x: houseData.x, y: houseData.y, type: houseData.type },
-                                    'carrot',
-                                    carrotConsumed,
-                                    currentPop
-                                );
-                            }
-                            if (cabbageConsumed > 0) {
-                                await window.foodTraceabilityService.recordHouseConsumption(
-                                    timeInfo.turn || 0,
-                                    currentMonthIndex,
-                                    timeInfo.year || 0,
-                                    { id: currentUniqueID, x: houseData.x, y: houseData.y, type: houseData.type },
-                                    'cabbage',
-                                    cabbageConsumed,
-                                    currentPop
-                                );
-                            }
-                        }
-                        
-                        // Get updated stocks after consumption for further processing
-                        const updatedStocks = (await supply.getBuildingSupplyView(currentUniqueID))?.stocks;
-                        if (updatedStocks && houseFoodStocks) {
-                            Object.assign(houseFoodStocks, updatedStocks);
-                        }
-                    }
-                    
                     const { hasFood, totalFood } = checkFoodAvailability(houseFoodStocks || {}, currentPop);
                     const { hasAccess: hasRoadAccess } = await syncRoadAccess({
                         buildingId: currentUniqueID,

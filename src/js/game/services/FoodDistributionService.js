@@ -9,9 +9,10 @@ import FoodTraceabilityService from '../../stores/FoodTraceabilityService.js';
  * FoodDistributionService - Manages city-wide food distribution
  * 
  * Farm > Market > House logic:
- * 1. Farms produce their specific crop (Farms-Wheat → wheat, Farms-Carrot → carrot, Farms-Cabbage → cabbage)
+ * 1. Farms harvest annual crop in autumn (Supply BC — HarvestAllFarmCrops)
  * 2. Markets collect food from nearby farms (adds to market stocks in IndexedDB)
  * 3. Markets distribute food to houses within distance (decreases market stocks, increases house stocks)
+ * 4. Houses consume food monthly (Supply BC — ConsumeAllHouseFood)
  * 
  * Works with IndexedDB as source of truth - all reads/writes go through housesStore
  */
@@ -63,7 +64,18 @@ export class FoodDistributionService extends SimService {
         try {
             // Get all buildings from IndexedDB (source of truth)
             const houses = await housesStore.listAllHouses();
-            
+            const supply = createSupplyContext({ housesStore });
+            const season = toSupplySeason(timeInfo.season);
+
+            // Autumn harvest before market procurement (Supply BC)
+            if (season === 'autumn') {
+                await supply.harvestAllFarmCrops({
+                    season,
+                    year: timeInfo.year ?? 0,
+                    monthIndex: timeInfo.monthIndex,
+                });
+            }
+
             // Find all markets
             const markets = houses.filter(house => {
                 const type = house.type || '';
@@ -71,8 +83,6 @@ export class FoodDistributionService extends SimService {
             });
 
             // Update isBuying flag for all markets based on season (Supply BC)
-            const supply = createSupplyContext({ housesStore });
-            const season = toSupplySeason(timeInfo.season);
             if (season) {
                 await supply.markBuyingSeason(season);
             }
@@ -84,6 +94,12 @@ export class FoodDistributionService extends SimService {
 
             // After processing all markets, update houses that are too far from any market
             await this.updateHousesMarketDistanceStatus(housesStore);
+
+            // Monthly house food consumption (Supply BC)
+            const consumeOutcome = await supply.consumeAllHouseFood({
+                monthIndex: timeInfo.monthIndex,
+            });
+            await this.recordHouseConsumptions(housesStore, timeInfo, consumeOutcome.consumptions);
         } catch (error) {
             console.error('[FoodDistributionService] Error processing food distribution:', {
                 error: error?.message || error,
@@ -482,6 +498,44 @@ export class FoodDistributionService extends SimService {
                 farmId,
                 error: error?.message || error
             });
+        }
+    }
+
+    /**
+     * Traceability side-effect for house consumption (legacy).
+     * @param {import('../../stores/HousesStore.js').default} housesStore
+     * @param {object} timeInfo
+     * @param {object[]} consumptions
+     */
+    async recordHouseConsumptions(housesStore, timeInfo, consumptions = []) {
+        if (!window.foodTraceabilityService || consumptions.length === 0) return;
+
+        for (const entry of consumptions) {
+            const houseData = await housesStore.getHouse(entry.houseId);
+            if (!houseData) continue;
+
+            const houseRef = {
+                id: entry.houseId,
+                x: houseData.x,
+                y: houseData.y,
+                type: houseData.type,
+            };
+            const crops = entry.crops || {};
+
+            for (const crop of ['wheat', 'carrot', 'cabbage']) {
+                const amount = crops[crop] || 0;
+                if (amount <= 0) continue;
+
+                await window.foodTraceabilityService.recordHouseConsumption(
+                    timeInfo.turn || 0,
+                    timeInfo.monthIndex,
+                    timeInfo.year || 0,
+                    houseRef,
+                    crop,
+                    amount,
+                    entry.pop
+                );
+            }
         }
     }
 }
