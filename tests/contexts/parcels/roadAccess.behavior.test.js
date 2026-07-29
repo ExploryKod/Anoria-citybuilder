@@ -1,11 +1,5 @@
 /**
  * Tests de comportement — accès routier (BC Parcels)
- *
- * Couplés aux scénarios métier, pas à la structure du domaine.
- * On peut refactoriser RoadAccessPolicy, RoadAccess, etc. sans casser ces tests
- * tant que le comportement observable des use cases reste le même.
- *
- * @see https://journal.optivem.com/p/unit-tests-should-not-mirror-source-code-michael-azerhad
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
@@ -14,6 +8,12 @@ import { RecalculateRoadAccessForBuilding } from '../../../src/contexts/parcels/
 import { RecalculateAllRoadAccess } from '../../../src/contexts/parcels/application/commands/RecalculateAllRoadAccess.js';
 import { GetBuildingRoadAccess } from '../../../src/contexts/parcels/application/queries/GetBuildingRoadAccess.js';
 import { InMemoryDomainEventPublisher } from '../../../src/contexts/parcels/infrastructure/events/InMemoryDomainEventPublisher.js';
+import {
+  createBuildingInstanceId,
+  makeParcelHouseSnapshot,
+  makeRoadNeighborRef,
+  makeNeighborRef,
+} from '../../fixtures/parcelsFixtures.js';
 
 class InMemoryBuildingRepository {
   constructor(buildings = []) {
@@ -40,7 +40,6 @@ class InMemoryBuildingRepository {
   }
 }
 
-/** Harness : même câblage que createParcelsContext, API orientée scénarios */
 function createRoadAccessHarness(buildings = []) {
   const repository = new InMemoryBuildingRepository(buildings);
   const events = new InMemoryDomainEventPublisher();
@@ -71,15 +70,6 @@ function createRoadAccessHarness(buildings = []) {
   };
 }
 
-function house(id, neighbors, roadCount = 0) {
-  return createBuildingSnapshot({
-    id,
-    type: 'House-Blue',
-    neighbors,
-    roadCount,
-  });
-}
-
 describe('Accès routier des bâtiments', () => {
   let harness;
 
@@ -89,26 +79,36 @@ describe('Accès routier des bâtiments', () => {
 
   describe('quand on recalcule la desserte d\'un bâtiment', () => {
     test('une maison bordée d\'une route est desservie et enregistrée', async () => {
+      const houseId = createBuildingInstanceId();
       harness = createRoadAccessHarness([
-        house('House-Blue-3-7', [{ name: 'roads', isRoad: true }], 0),
+        makeParcelHouseSnapshot({
+          instanceId: houseId,
+          neighbors: [makeRoadNeighborRef(3, 6)],
+        }),
       ]);
 
-      const outcome = await harness.whenRoadAccessIsRecalculatedFor('House-Blue-3-7');
+      const outcome = await harness.whenRoadAccessIsRecalculatedFor(houseId);
 
       expect(outcome.roadAccess.hasAccess).toBe(true);
       expect(outcome.roadAccess.roadCount).toBe(1);
       expect(harness.persistedRoadCounts()).toEqual([
-        { buildingId: 'House-Blue-3-7', roadCount: 1 },
+        { buildingId: houseId, roadCount: 1 },
       ]);
       expect(harness.roadAccessChangedEvents()).toHaveLength(1);
     });
 
     test('une maison isolée n\'est pas desservie', async () => {
+      const houseId = createBuildingInstanceId();
       harness = createRoadAccessHarness([
-        house('House-Blue-1-1', [{ name: 'Farm-Wheat' }], 0),
+        makeParcelHouseSnapshot({
+          instanceId: houseId,
+          neighbors: [
+            makeNeighborRef({ type: 'Farm-Wheat', x: 4, y: 7, isRoad: false }),
+          ],
+        }),
       ]);
 
-      const outcome = await harness.whenRoadAccessIsRecalculatedFor('House-Blue-1-1');
+      const outcome = await harness.whenRoadAccessIsRecalculatedFor(houseId);
 
       expect(outcome.roadAccess.hasAccess).toBe(false);
       expect(outcome.roadAccess.roadCount).toBe(0);
@@ -117,25 +117,37 @@ describe('Accès routier des bâtiments', () => {
     });
 
     test('quand une route disparaît, la desserte est corrigée en base', async () => {
+      const houseId = createBuildingInstanceId();
       harness = createRoadAccessHarness([
-        house('House-Blue-1-1', [{ name: 'Farm-Wheat' }], 1),
+        makeParcelHouseSnapshot({
+          instanceId: houseId,
+          neighbors: [
+            makeNeighborRef({ type: 'Farm-Wheat', x: 4, y: 7, isRoad: false }),
+          ],
+          roadCount: 1,
+        }),
       ]);
 
-      const outcome = await harness.whenRoadAccessIsRecalculatedFor('House-Blue-1-1');
+      const outcome = await harness.whenRoadAccessIsRecalculatedFor(houseId);
 
       expect(outcome.roadAccess.hasAccess).toBe(false);
       expect(harness.persistedRoadCounts()).toEqual([
-        { buildingId: 'House-Blue-1-1', roadCount: 0 },
+        { buildingId: houseId, roadCount: 0 },
       ]);
       expect(harness.roadAccessChangedEvents()).toHaveLength(1);
     });
 
     test('si la desserte n\'a pas changé, rien n\'est publié', async () => {
+      const houseId = createBuildingInstanceId();
       harness = createRoadAccessHarness([
-        house('House-Blue-3-7', [{ isRoad: true }], 1),
+        makeParcelHouseSnapshot({
+          instanceId: houseId,
+          neighbors: [makeRoadNeighborRef(3, 6)],
+          roadCount: 1,
+        }),
       ]);
 
-      const outcome = await harness.whenRoadAccessIsRecalculatedFor('House-Blue-3-7');
+      const outcome = await harness.whenRoadAccessIsRecalculatedFor(houseId);
 
       expect(outcome.updated).toBe(false);
       expect(harness.persistedRoadCounts()).toHaveLength(0);
@@ -143,56 +155,95 @@ describe('Accès routier des bâtiments', () => {
     });
 
     test('un bâtiment inconnu ne déclenche aucune action', async () => {
-      expect(await harness.whenRoadAccessIsRecalculatedFor('missing')).toBeNull();
+      expect(await harness.whenRoadAccessIsRecalculatedFor(createBuildingInstanceId())).toBeNull();
     });
 
     test('une tuile route n\'est pas concernée par la desserte', async () => {
+      const roadId = createBuildingInstanceId();
       harness = createRoadAccessHarness([
         createBuildingSnapshot({
-          id: 'roads-1-1',
+          id: roadId,
           type: 'roads',
-          neighbors: [{ isRoad: true }],
+          x: 1,
+          y: 1,
+          neighbors: [makeRoadNeighborRef(1, 2)],
           roadCount: 0,
         }),
       ]);
 
-      const outcome = await harness.whenRoadAccessIsRecalculatedFor('roads-1-1');
+      const outcome = await harness.whenRoadAccessIsRecalculatedFor(roadId);
 
       expect(outcome.skipped).toBe(true);
       expect(harness.persistedRoadCounts()).toHaveLength(0);
     });
   });
 
-  describe('quand les voisins viennent du format legacy (IndexedDB)', () => {
+  describe('quand les voisins sont persistés avec UUID', () => {
     test.each([
-      ['name "roads"', [{ name: 'roads' }]],
-      ['name "Road"', [{ name: 'Road' }]],
-      ['buildingId "roads"', [{ buildingId: 'roads' }]],
-      ['userData.isRoad', [{ name: 'StonePath', userData: { isRoad: true } }]],
+      ['type roads', [makeRoadNeighborRef(2, 2)]],
+      ['type Road', [makeNeighborRef({ type: 'Road', x: 2, y: 2, isRoad: true })]],
+      ['StonePath', [makeNeighborRef({ type: 'StonePath-001', x: 2, y: 2, isRoad: true })]],
+      ['userData.isRoad', [
+        makeNeighborRef({
+          type: 'StonePath',
+          x: 2,
+          y: 2,
+          userData: { isRoad: true },
+        }),
+      ]],
     ])('reconnaît une route via %s', async (_label, neighbors) => {
-      harness = createRoadAccessHarness([house('House-Blue-2-2', neighbors, 0)]);
+      const houseId = createBuildingInstanceId();
+      harness = createRoadAccessHarness([
+        makeParcelHouseSnapshot({ instanceId: houseId, neighbors }),
+      ]);
 
-      const outcome = await harness.whenRoadAccessIsRecalculatedFor('House-Blue-2-2');
+      const outcome = await harness.whenRoadAccessIsRecalculatedFor(houseId);
 
       expect(outcome.roadAccess.hasAccess).toBe(true);
       expect(outcome.roadAccess.roadCount).toBe(1);
     });
 
     test('compte plusieurs routes adjacentes', async () => {
+      const houseId = createBuildingInstanceId();
       harness = createRoadAccessHarness([
-        house('House-Blue-4-4', [{ isRoad: true }, { isRoad: true }, { name: 'Farm' }], 0),
+        makeParcelHouseSnapshot({
+          instanceId: houseId,
+          neighbors: [
+            makeRoadNeighborRef(4, 5),
+            makeRoadNeighborRef(4, 3),
+            makeNeighborRef({ type: 'Farm-Wheat', x: 5, y: 4, isRoad: false }),
+          ],
+        }),
       ]);
 
-      const outcome = await harness.whenRoadAccessIsRecalculatedFor('House-Blue-4-4');
+      const outcome = await harness.whenRoadAccessIsRecalculatedFor(houseId);
 
       expect(outcome.roadAccess.roadCount).toBe(2);
       expect(outcome.roadAccess.hasAccess).toBe(true);
     });
 
     test('voisins absents ou vides → aucune desserte', async () => {
-      harness = createRoadAccessHarness([house('House-Blue-0-0', [], 0)]);
+      const houseId = createBuildingInstanceId();
+      harness = createRoadAccessHarness([
+        makeParcelHouseSnapshot({ instanceId: houseId, neighbors: [] }),
+      ]);
 
-      const outcome = await harness.whenRoadAccessIsRecalculatedFor('House-Blue-0-0');
+      const outcome = await harness.whenRoadAccessIsRecalculatedFor(houseId);
+
+      expect(outcome.roadAccess.hasAccess).toBe(false);
+      expect(outcome.roadAccess.roadCount).toBe(0);
+    });
+
+    test('ignore les voisins sans UUID', async () => {
+      const houseId = createBuildingInstanceId();
+      harness = createRoadAccessHarness([
+        makeParcelHouseSnapshot({
+          instanceId: houseId,
+          neighbors: [{ name: 'roads', isRoad: true, x: 1, y: 2 }],
+        }),
+      ]);
+
+      const outcome = await harness.whenRoadAccessIsRecalculatedFor(houseId);
 
       expect(outcome.roadAccess.hasAccess).toBe(false);
       expect(outcome.roadAccess.roadCount).toBe(0);
@@ -201,10 +252,23 @@ describe('Accès routier des bâtiments', () => {
 
   describe('quand on recalcule la desserte de toute la ville', () => {
     test('seules les maisons sont traitées ; seules les dessertes modifiées sont persistées', async () => {
+      const servedId = createBuildingInstanceId();
+      const isolatedId = createBuildingInstanceId();
+      const roadId = createBuildingInstanceId();
       harness = createRoadAccessHarness([
-        house('House-Blue-1-1', [{ isRoad: true }], 0),
-        house('House-Red-2-2', [], 0),
-        createBuildingSnapshot({ id: 'roads-0-0', type: 'roads', neighbors: [], roadCount: 0 }),
+        makeParcelHouseSnapshot({
+          instanceId: servedId,
+          neighbors: [makeRoadNeighborRef(1, 2)],
+        }),
+        makeParcelHouseSnapshot({ instanceId: isolatedId, x: 2, y: 2, neighbors: [] }),
+        createBuildingSnapshot({
+          id: roadId,
+          type: 'roads',
+          x: 0,
+          y: 0,
+          neighbors: [],
+          roadCount: 0,
+        }),
       ]);
 
       const outcome = await harness.whenAllRoadAccessIsRecalculated();
@@ -212,7 +276,7 @@ describe('Accès routier des bâtiments', () => {
       expect(outcome.processed).toBe(2);
       expect(outcome.updated).toBe(1);
       expect(harness.persistedRoadCounts()).toEqual([
-        { buildingId: 'House-Blue-1-1', roadCount: 1 },
+        { buildingId: servedId, roadCount: 1 },
       ]);
       expect(harness.roadAccessChangedEvents()).toHaveLength(1);
     });
@@ -220,11 +284,15 @@ describe('Accès routier des bâtiments', () => {
 
   describe('quand on consulte la desserte d\'un bâtiment', () => {
     test('la consultation reflète les voisins en base sans persister', async () => {
+      const houseId = createBuildingInstanceId();
       harness = createRoadAccessHarness([
-        house('House-Blue-5-5', [{ name: 'roads' }], 0),
+        makeParcelHouseSnapshot({
+          instanceId: houseId,
+          neighbors: [makeRoadNeighborRef(5, 4)],
+        }),
       ]);
 
-      const access = await harness.roadAccessOf('House-Blue-5-5');
+      const access = await harness.roadAccessOf(houseId);
 
       expect(access.hasAccess).toBe(true);
       expect(access.roadCount).toBe(1);

@@ -57,7 +57,7 @@ export function findHousesInMarketRange(market, buildings, maxDistance = 5) {
  * @param {object} neighbor
  */
 export function isFarmNeighborRef(neighbor) {
-  const name = neighbor.name || neighbor.buildingId || neighbor.type || '';
+  const name = neighbor.type || neighbor.name || '';
   const type = neighbor.type || '';
   return (
     name.includes('Farm') ||

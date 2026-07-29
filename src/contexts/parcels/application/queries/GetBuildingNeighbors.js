@@ -45,7 +45,7 @@ export class GetBuildingNeighbors {
 /** Read model plat pour UI (pas de TileCoord imbriqué). */
 function toNeighborReadModel(neighbor) {
   return {
-    buildingId: neighbor.buildingId,
+    instanceId: neighbor.instanceId,
     type: neighbor.type,
     x: neighbor.tile?.x ?? null,
     y: neighbor.tile?.y ?? null,

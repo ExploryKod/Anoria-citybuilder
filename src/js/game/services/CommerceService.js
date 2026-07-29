@@ -1,5 +1,6 @@
 import { SimService } from './SimService.js';
 import commerceStore from '../../stores/CommerceStore.js';
+import { instanceIdFromHouseRow } from '../../acl/building-identity.js';
 
 const STOCKABLE_PRODUCTS = ['wheat', 'carrot', 'cabbage', 'wood', 'dattes'];
 const ALL_PRODUCTS = ['wheat', 'carrot', 'cabbage', 'wood', 'dattes'];
@@ -397,9 +398,10 @@ export class CommerceService extends SimService {
             if (!stockKey) return null;
 
             const firstWindmill = windmills[0];
-            const windmillData = await housesStore.getHouse(firstWindmill.id || firstWindmill.name);
+            const windmillId = instanceIdFromHouseRow(firstWindmill);
+            const windmillData = await housesStore.getHouse(windmillId);
             if (!windmillData) {
-                console.warn(`[CommerceService] Windmill not found: ${firstWindmill.id || firstWindmill.name}`);
+                console.warn(`[CommerceService] Windmill not found: ${windmillId}`);
                 return null;
             }
 
@@ -449,14 +451,14 @@ export class CommerceService extends SimService {
                 }
             }
 
-            await housesStore.updateHouseFields(firstWindmill.id || firstWindmill.name, {
+            await housesStore.updateHouseFields(windmillId, {
                 stocks: updatedStocks,
                 lastImport: lastImport,
                 lastImportDetails: lastImportDetails
             });
 
             return {
-                windmillId: firstWindmill.id || firstWindmill.name,
+                windmillId,
                 addedQuantity: quantity
             };
         } catch (error) {
@@ -486,7 +488,7 @@ export class CommerceService extends SimService {
             for (const windmill of windmills) {
                 if (remaining <= 0) break;
                 
-                const windmillId = windmill.id || windmill.name;
+                const windmillId = instanceIdFromHouseRow(windmill);
                 const stocks = windmill.stocks || {};
                 const currentStock = stocks[stockKey] || 0;
                 
@@ -709,7 +711,7 @@ export class CommerceService extends SimService {
             });
             
             for (const windmill of windmills) {
-                const windmillId = windmill.id || windmill.name;
+                const windmillId = instanceIdFromHouseRow(windmill);
                 try {
                     const windmillData = await housesStore.getHouse(windmillId);
                     if (windmillData && windmillData.lastImport !== undefined) {

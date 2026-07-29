@@ -38,7 +38,7 @@ export class RemoveBuilding {
       await this.buildingRepository.findNeighbors(buildingId)
     );
     const affected = new Set(
-      formerNeighbors.map((n) => n.buildingId).filter(Boolean)
+      formerNeighbors.map((n) => n.instanceId).filter(Boolean)
     );
 
     await this.buildingRepository.deleteById(buildingId);

@@ -1,6 +1,6 @@
 import {
-  fromLegacyNeighbor,
-  toLegacyNeighborRecord,
+  normalizeNeighborFromRef,
+  toPersistedNeighborRecord,
 } from '../value-objects/Neighbor.js';
 
 /**
@@ -12,16 +12,18 @@ export function normalizeNeighborList(neighbors) {
     return [];
   }
   return neighbors
-    .filter((neighbor) => neighbor && typeof neighbor === 'object')
-    .map(fromLegacyNeighbor);
+    .map(normalizeNeighborFromRef)
+    .filter((neighbor) => neighbor.instanceId.length > 0);
 }
 
 /**
- * Neighbor[] → forme persistée IndexedDB (sans stocks / deltas).
+ * Neighbor[] → forme persistée IndexedDB (UUID + type + tuile).
  * @param {unknown} neighbors
  */
 export function toPersistedNeighborList(neighbors) {
-  return normalizeNeighborList(neighbors).map(toLegacyNeighborRecord);
+  return normalizeNeighborList(neighbors)
+    .map(toPersistedNeighborRecord)
+    .filter(Boolean);
 }
 
 /**

@@ -2,68 +2,45 @@
 
 **Source de vérité unique** pour les identifiants de bâtiments, transverse à tous les bounded contexts.
 
-## Published Language
+## Clés vs labels
 
-```
-{type}-{x}-{y}
-```
+| Concept | Format | Usage |
+|---|---|---|
+| **instanceId** (PK Dexie) | UUID v4 | `getHouse`, `updateHouseFields`, voisins, events ECS, repos BC |
+| **Display label** | `{type}-{x}-{y}` | UI, logs uniquement — **jamais** comme clé Dexie |
 
-Exemples : `House-Blue-3-7`, `Farm-Wheat-5-5`, `roads-2-4`
+## Voisins persistés (`neighbors[]`)
 
-## Modules
+Chaque entrée :
 
-| Module | Rôle |
-|---|---|
-| `TileCoord.js` | Coordonnées grille (entiers) |
-| `BuildingId.js` | VO, parse, create, `resolvePublishedBuildingIdFromRef` |
-| `BuildingRecord.js` | `canonicalizeHouseRecord` (write), `publishedIdFromHouseRow` (read) |
-
-## Règles Dexie (`houses` table)
-
-| Champ | Sémantique |
-|---|---|
-| `id` | Published Language (canonique) |
-| `name` | Clé Dexie — **toujours égale à `id`** après écriture |
-| `type` | Type seul (`House-Purple`, pas l'id complet) |
-| `x`, `y` | Tuile |
-
-## Qui importe quoi
-
-```
-src/shared/building-identity/     ← source de vérité
-    ↑
-    ├── contexts/parcels/         (re-exports compat)
-    ├── contexts/supply/
-    ├── contexts/employment/
-    ├── contexts/parcels/infrastructure/
-    ├── contexts/supply/infrastructure/
-    └── contexts/employment/infrastructure/
-    └── src/js/acl/building-identity.js  (legacy UI / stores)
+```js
+{
+  instanceId: 'uuid-v4',   // référence au bâtiment voisin
+  type: 'Farm-Wheat',      // label asset (filtres, isRoad)
+  x: 4, y: 7,              // tuile (calculs spatiaux)
+  zone: 1,
+  isRoad: false,
+}
 ```
 
-**Legacy `src/js/**`** : importer uniquement via `src/js/acl/building-identity.js`.
-
-**Bounded contexts & infrastructure** : importer directement depuis `src/shared/building-identity/`.
+Pas de fallback `type-x-y` : un voisin sans UUID est ignoré à la normalisation.
 
 ## API principale
 
 ```js
-// Création
-toBuildingIdString('House-Blue', 3, 7)  // → 'House-Blue-3-7'
+// PK
+createBuildingInstanceId()
+instanceIdFromHouseRow(houseRow)
+resolveBuildingInstanceIdFromRef(rowOrUuidString)
 
-// Écriture Dexie
-canonicalizeHouseRecord({ name: 'House-Blue-3-7', type: 'House-Blue', ... })
+// Voisins / scan grille
+resolveInstanceIdFromNeighborRef(neighborBlob)
 
-// Lecture Dexie / legacy blob
-publishedIdFromHouseRow(houseRow)
-resolvePublishedBuildingIdFromRef(neighborBlob)
-
-// Normalisation pour commandes BC
-toPublishedBuildingId(buildingId)
+// UI only
+toDisplayLabel('House-Blue', 3, 7)
+displayLabelFromHouseRow(houseRow)
 ```
 
-## Tests
+## Règle d'or
 
-`tests/shared/building-identity/` — contrat du Shared Kernel.
-
-Les tests sous `tests/contexts/parcels/buildingId.*` restent en re-export du même contrat.
+**Tout accès Dexie et toute référence voisin → `instanceId` UUID.** Les coordonnées servent aux calculs spatiaux, pas à identifier un bâtiment.

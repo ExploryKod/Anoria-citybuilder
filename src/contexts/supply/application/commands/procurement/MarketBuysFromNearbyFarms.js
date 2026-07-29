@@ -8,7 +8,7 @@ import {
   getCropAmount,
   takeCrop,
 } from '../../../domain/value-objects/FoodStock.js';
-import { resolvePublishedBuildingIdFromRef } from '../../../../../shared/building-identity/BuildingId.js';
+import { resolveInstanceIdFromNeighborRef } from '../../../../../shared/building-identity/BuildingRecord.js';
 
 /**
  * Command: market buys crop baskets from nearby farm refs (autumn only).
@@ -65,7 +65,7 @@ export class MarketBuysFromNearbyFarms {
     for (const ref of farmRefs) {
       if (capacity <= 0) break;
 
-      const farmId = resolvePublishedBuildingIdFromRef(ref);
+      const farmId = resolveInstanceIdFromNeighborRef(ref);
       if (!farmId) continue;
 
       const farm = await this.supplyBuildingRepository.findById(farmId);

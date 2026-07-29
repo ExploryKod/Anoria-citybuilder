@@ -1,4 +1,5 @@
 import { assertBuildingInstanceId, isBuildingInstanceId } from './BuildingInstanceId.js';
+import { formatInstanceIdForLog } from './BuildingInstanceId.js';
 import {
   footprintFromRecord,
   footprintTilesAsPairs,
@@ -96,6 +97,76 @@ export function tryInstanceIdFromHouseRow(row) {
   } catch {
     return null;
   }
+}
+
+/**
+ * Resolve Dexie PK from a UUID string or house row.
+ *
+ * @param {unknown} ref
+ * @returns {string}
+ */
+export function resolveBuildingInstanceIdFromRef(ref) {
+  if (typeof ref === 'string') {
+    return assertBuildingInstanceId(ref);
+  }
+  if (ref && typeof ref === 'object') {
+    return instanceIdFromHouseRow(ref);
+  }
+  throw new Error('resolveBuildingInstanceIdFromRef: invalid ref');
+}
+
+/**
+ * @param {unknown} ref
+ * @returns {string | null}
+ */
+export function tryResolveBuildingInstanceIdFromRef(ref) {
+  try {
+    return resolveBuildingInstanceIdFromRef(ref);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Resolve neighbor / scan blob → UUID (ignores type-x-y labels).
+ *
+ * @param {unknown} ref
+ * @returns {string | null}
+ */
+export function resolveInstanceIdFromNeighborRef(ref) {
+  if (!ref || typeof ref !== 'object') return null;
+
+  const candidates = [ref.instanceId, ref.id, ref.buildingId];
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && isBuildingInstanceId(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+/**
+ * Human-readable label for UI (display only — not a Dexie key).
+ *
+ * @param {Record<string, unknown> | null | undefined} row
+ * @returns {string}
+ */
+export function displayLabelFromHouseRow(row) {
+  if (!row || typeof row !== 'object') {
+    return '';
+  }
+
+  const type = typeof row.type === 'string' ? row.type : '';
+  const x = row.x ?? row.anchorX;
+  const y = row.y ?? row.anchorY;
+
+  if (type && typeof x === 'number' && typeof y === 'number') {
+    const label = toDisplayLabel(type, x, y);
+    if (label) return label;
+  }
+
+  const instanceId = tryInstanceIdFromHouseRow(row);
+  return instanceId ? formatInstanceIdForLog(instanceId) : '';
 }
 
 /**

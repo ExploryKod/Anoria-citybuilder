@@ -31,6 +31,10 @@ export {
   tryCanonicalizeHouseRecord,
   instanceIdFromHouseRow,
   tryInstanceIdFromHouseRow,
+  resolveBuildingInstanceIdFromRef,
+  tryResolveBuildingInstanceIdFromRef,
+  resolveInstanceIdFromNeighborRef,
+  displayLabelFromHouseRow,
   toDisplayLabel,
   residentialTierPatch,
 } from '../../shared/building-identity/index.js';

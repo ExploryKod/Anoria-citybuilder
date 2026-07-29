@@ -3,6 +3,11 @@
  */
 import housesStore from "../../stores/HousesStore.js";
 import { getOrCreateSupplyContext } from "../../acl/supply.js";
+import { tryResolveBuildingInstanceIdFromRef } from "../../acl/building-identity.js";
+
+function buildingStockKey(building) {
+    return tryResolveBuildingInstanceIdFromRef(building) ?? building?.id ?? null;
+}
 
 // Initialize food traceability tabs (separate function so it can be called when modal opens)
 let tabsInitialized = false;
@@ -176,7 +181,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             const supply = getOrCreateSupplyContext(housesStore);
             allBuildingsData = await supply.listSupplyStockSnapshots();
             allBuildingsData.forEach(building => {
-                const buildingKey = building.id || building.name;
+                const buildingKey = buildingStockKey(building);
                 if (buildingKey && building.stocks) {
                     currentStocks[buildingKey] = building.stocks;
                 }
@@ -197,7 +202,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
         });
         // Also add buildings from IndexedDB
         allBuildingsData.forEach(building => {
-            const buildingKey = building.id || building.name;
+            const buildingKey = buildingStockKey(building);
             if (buildingKey) allBuildingKeys.add(buildingKey);
         });
         
@@ -465,7 +470,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             // Show stocks for all farms this month
             allBuildingsData.forEach(building => {
                 if (building.kind === 'farm' || (building.type && (building.type.includes('Farm') || building.type.includes('Farms')))) {
-                    const farmKey = building.id || building.name;
+                    const farmKey = buildingStockKey(building);
                     const farmStocks = stocksByMonth[farmKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                     const farmStocksAfter = stocksByMonth[farmKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                     
@@ -495,7 +500,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             // Show stocks for all markets this month
             allBuildingsData.forEach(building => {
                 if (building.kind === 'market' || (building.type && (building.type.includes('Market') || building.type.includes('Commerce')))) {
-                    const marketKey = building.id || building.name;
+                    const marketKey = buildingStockKey(building);
                     const marketStocks = stocksByMonth[marketKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                     const marketStocksAfter = { ...marketStocks };
                     
@@ -529,7 +534,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             // Show stocks for all houses this month
             allBuildingsData.forEach(building => {
                 if (building.kind === 'house' || (building.type && (building.type.includes('House') || building.type.includes('Maison')))) {
-                    const houseKey = building.id || building.name;
+                    const houseKey = buildingStockKey(building);
                     const houseStocks = stocksByMonth[houseKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                     const houseStocksAfter = { ...houseStocks };
                     
@@ -1019,7 +1024,7 @@ export async function loadFoodCharts() {
                 
                 allHouses.forEach(house => {
                     if (house.type && (house.type.includes('House') || house.type.includes('Maison'))) {
-                        const houseKey = house.id || house.name;
+                        const houseKey = buildingStockKey(house);
                         const houseCoords = house.x !== undefined && house.y !== undefined ? `${house.x},${house.y}` : null;
                         const housePop = house.pop || 0;
                         

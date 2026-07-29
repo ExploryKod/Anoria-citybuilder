@@ -1,18 +1,15 @@
-import { fromLegacyNeighbor } from './value-objects/Neighbor.js';
-import {
-  tryParseBuildingId,
-  tryCreateBuildingId,
-} from './value-objects/BuildingId.js';
+import { normalizeNeighborFromRef } from './value-objects/Neighbor.js';
+import { tryCreateBuildingId } from './value-objects/BuildingId.js';
 import { tryCreateTileCoord } from './value-objects/TileCoord.js';
-import { isBuildingInstanceId } from '../../../shared/building-identity/BuildingInstanceId.js';
+import { assertBuildingInstanceId } from '../../../shared/building-identity/BuildingInstanceId.js';
 
 /**
  * Lecture immuable d'un bâtiment pour les use cases Parcels.
  *
- * - `id` : Dexie PK (`instanceId` UUID) or legacy Published Language (`"{type}-{x}-{y}"`)
- * - `buildingId` : VO BuildingId (display / tile) when derivable from type + coords
+ * - `id` : Dexie PK (`instanceId` UUID)
+ * - `buildingId` : VO display `{type}-{x}-{y}` when derivable (UI only)
  * - `tile` : TileCoord
- * - `neighbors` : Neighbor[] (domaine Parcels)
+ * - `neighbors` : Neighbor[] avec `instanceId` UUID
  */
 export function createBuildingSnapshot({
   id,
@@ -26,15 +23,11 @@ export function createBuildingSnapshot({
     throw new Error('BuildingSnapshot: id is required');
   }
 
-  const parsed = tryParseBuildingId(id);
-  const fromCoords =
-    !parsed && type ? tryCreateBuildingId(type, x, y) : null;
-  const buildingId = parsed ?? fromCoords;
-
-  // UUID instanceId is the Dexie PK — do not replace with type-x-y display label
-  const persistedId = isBuildingInstanceId(id)
-    ? id
-    : (buildingId?.value ?? id);
+  const persistedId = assertBuildingInstanceId(id);
+  const buildingId =
+    typeof type === 'string' && type.length > 0
+      ? tryCreateBuildingId(type, x, y)
+      : null;
 
   const resolvedType =
     (typeof type === 'string' && type.length > 0 ? type : null) ||
@@ -47,8 +40,8 @@ export function createBuildingSnapshot({
       : tryCreateTileCoord(x, y);
 
   const normalizedNeighbors = (neighbors || [])
-    .filter((neighbor) => neighbor && typeof neighbor === 'object')
-    .map(fromLegacyNeighbor);
+    .map(normalizeNeighborFromRef)
+    .filter((neighbor) => neighbor.instanceId.length > 0);
 
   return Object.freeze({
     id: persistedId,
