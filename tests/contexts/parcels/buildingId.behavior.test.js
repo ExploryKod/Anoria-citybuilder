@@ -118,6 +118,22 @@ describe('Identifiant de bâtiment', () => {
       expect(building.y).toBe(7);
     });
 
+    test('conserve instanceId UUID comme clé Dexie (ne le remplace pas par type-x-y)', () => {
+      const instanceId = 'a1b2c3d4-e5f6-4789-a012-3456789abcde';
+      const building = createBuildingSnapshot({
+        id: instanceId,
+        type: 'House-Blue',
+        x: 8,
+        y: 10,
+        neighbors: [],
+        roadCount: 0,
+      });
+
+      expect(building.id).toBe(instanceId);
+      expect(building.buildingId).toEqual(createBuildingId('House-Blue', 8, 10));
+      expect(building.tile).toEqual({ x: 8, y: 10 });
+    });
+
     test('Published Language accepte VO ou string', () => {
       const vo = createBuildingId('roads', 1, 2);
       expect(toPublishedBuildingId(vo)).toBe('roads-1-2');

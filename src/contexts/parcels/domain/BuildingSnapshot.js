@@ -4,12 +4,13 @@ import {
   tryCreateBuildingId,
 } from './value-objects/BuildingId.js';
 import { tryCreateTileCoord } from './value-objects/TileCoord.js';
+import { isBuildingInstanceId } from '../../../shared/building-identity/BuildingInstanceId.js';
 
 /**
  * Lecture immuable d'un bâtiment pour les use cases Parcels.
  *
- * - `id` : Published Language (string IndexedDB)
- * - `buildingId` : VO BuildingId si parseable
+ * - `id` : Dexie PK (`instanceId` UUID) or legacy Published Language (`"{type}-{x}-{y}"`)
+ * - `buildingId` : VO BuildingId (display / tile) when derivable from type + coords
  * - `tile` : TileCoord
  * - `neighbors` : Neighbor[] (domaine Parcels)
  */
@@ -27,10 +28,13 @@ export function createBuildingSnapshot({
 
   const parsed = tryParseBuildingId(id);
   const fromCoords =
-    !parsed && type
-      ? tryCreateBuildingId(type, x, y)
-      : null;
+    !parsed && type ? tryCreateBuildingId(type, x, y) : null;
   const buildingId = parsed ?? fromCoords;
+
+  // UUID instanceId is the Dexie PK — do not replace with type-x-y display label
+  const persistedId = isBuildingInstanceId(id)
+    ? id
+    : (buildingId?.value ?? id);
 
   const resolvedType =
     (typeof type === 'string' && type.length > 0 ? type : null) ||
@@ -47,7 +51,7 @@ export function createBuildingSnapshot({
     .map(fromLegacyNeighbor);
 
   return Object.freeze({
-    id: buildingId?.value ?? id,
+    id: persistedId,
     buildingId: buildingId ?? null,
     tile,
     type: resolvedType,

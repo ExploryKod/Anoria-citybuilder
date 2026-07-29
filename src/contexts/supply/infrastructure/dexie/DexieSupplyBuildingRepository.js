@@ -1,7 +1,7 @@
 import { createSupplyBuildingSnapshot } from '../../domain/SupplyBuildingSnapshot.js';
 import { createSupplyBuildingView } from '../../domain/SupplyBuildingView.js';
 import { createFoodStock } from '../../domain/value-objects/FoodStock.js';
-import { publishedIdFromHouseRow } from '../../../../shared/building-identity/index.js';
+import { instanceIdFromHouseRow } from '../../../../shared/building-identity/index.js';
 
 /**
  * Dexie / HousesStore adapter for Supply.
@@ -23,7 +23,7 @@ export class DexieSupplyBuildingRepository {
     const employees = house.employees || {};
     const type = house.type || '';
     return createSupplyBuildingSnapshot({
-      id: publishedIdFromHouseRow(house),
+      id: instanceIdFromHouseRow(house),
       type,
       x: house.x ?? null,
       y: house.y ?? null,
@@ -42,7 +42,7 @@ export class DexieSupplyBuildingRepository {
   #toView(house) {
     const type = house.type || '';
     return createSupplyBuildingView({
-      id: publishedIdFromHouseRow(house),
+      id: instanceIdFromHouseRow(house),
       type,
       x: house.x ?? null,
       y: house.y ?? null,
@@ -161,7 +161,7 @@ export class DexieSupplyBuildingRepository {
     });
 
     for (const farm of farms) {
-      const farmId = publishedIdFromHouseRow(farm);
+      const farmId = instanceIdFromHouseRow(farm);
       const farmData = await this.housesStore.getHouse(farmId);
       if (!farmData) continue;
 

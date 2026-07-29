@@ -2,6 +2,6 @@
 export {
   canonicalizeHouseRecord,
   tryCanonicalizeHouseRecord,
-  publishedIdFromHouseRow,
-  tryPublishedIdFromHouseRow,
+  instanceIdFromHouseRow,
+  tryInstanceIdFromHouseRow,
 } from '../../../../shared/building-identity/BuildingRecord.js';

@@ -1,4 +1,4 @@
-import { publishedIdFromHouseRow } from '../../../../shared/building-identity/index.js';
+import { instanceIdFromHouseRow } from '../../../../shared/building-identity/index.js';
 
 /**
  * Dexie / HousesStore adapter for factory production.
@@ -37,7 +37,7 @@ export class DexieFactoryBuildingRepository {
     return this.housesStore.listAllHouses();
   }
 
-  publishedId(row) {
-    return publishedIdFromHouseRow(row);
+  instanceId(row) {
+    return instanceIdFromHouseRow(row);
   }
 }
