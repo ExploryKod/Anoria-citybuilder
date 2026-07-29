@@ -3,7 +3,10 @@
  * Flat DTO — French copy stays in presentation (game.js).
  *
  * Market « maisons à portée » uses neighbor houses (legacy feature), not Manhattan.
+ * isBuying / isCollecting are gated by OperationalGatePolicy (route + staff).
  */
+import { isOperational } from '../../domain/policies/OperationalGatePolicy.js';
+
 export class GetBuildingSupplyView {
   /**
    * @param {import('../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
@@ -22,6 +25,15 @@ export class GetBuildingSupplyView {
     const view = await this.supplyBuildingRepository.findSupplyView(buildingId);
     if (!view) return null;
 
+    const snapshot = await this.supplyBuildingRepository.findById(buildingId);
+    const operational =
+      snapshot &&
+      isOperational({
+        roadCount: snapshot.roadCount,
+        worker: snapshot.worker,
+        workerNeed: snapshot.workerNeed,
+      });
+
     const kind = classifySupplyKind(view.type);
     const base = {
       buildingId: view.id,
@@ -34,7 +46,7 @@ export class GetBuildingSupplyView {
     if (kind === 'market') {
       return {
         ...base,
-        isBuying: view.isBuying,
+        isBuying: operational === true && view.isBuying,
         noFarmsNearby: view.noFarmsNearby,
         hasHousesNearby: neighborsMatch(view.neighbors, isHouseNeighbor),
         marketTooFar: view.marketTooFar,
@@ -60,7 +72,7 @@ export class GetBuildingSupplyView {
     if (kind === 'windmill') {
       return {
         ...base,
-        isCollecting: view.isCollecting,
+        isCollecting: operational === true && view.isCollecting,
         lastCollection: view.lastCollection ? { ...view.lastCollection } : null,
         lastImport: view.lastImport ? { ...view.lastImport } : null,
         lastImportDetails: view.lastImportDetails

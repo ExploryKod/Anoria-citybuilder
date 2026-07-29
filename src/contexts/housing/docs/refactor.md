@@ -14,15 +14,15 @@
 
 ## ECS simulation order
 
+Full tick (including double `scene.update`) : [`employment/docs/presentation.md`](../employment/docs/presentation.md).
+
 ```
-1. parcels.roadAccess
-2. supply.monthlyFood
-3. housing.populationGrowth
-4. housing.evolution
-5. employment.redistribute
-6. supply.factoryProduction
---- scene.update (mesh sync, food icons, famished UI) ---
---- scene.refreshEmploymentPresentation (bar + no-work icons) ---
+game.update
+  scene.update (pass 1)
+  ECS: parcels → supply.monthlyFood → housing.* → employment → factory
+  services
+  scene.update (pass 2)
+  refreshEmploymentPresentation
 ```
 
 ## DDD — boundaries with Employment

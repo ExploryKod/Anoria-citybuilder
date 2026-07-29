@@ -27,14 +27,23 @@ Code and ubiquitous language are **English**. UI copy may stay French.
 ## Use cases
 
 **Commands**
-- `DistributeCityWorkers` — monthly city-wide reset + priority allocation
+- `DistributeCityWorkers` — city-wide reset + priority allocation (each simulation tick)
+
+**Queries**
+- `GetCityEmploymentSummary` — read model for bar, work-section, `no-work` icons
 
 **Later**
-- Elite workers, distance-based hiring, admin priority commands, UI queries
+- Elite workers, distance-based hiring, admin priority commands
+
+## Presentation (UI / 3D)
+
+Single read model → bar + icons. **`scene.update` does not set `no-work` sprites.**
+
+See [`docs/presentation.md`](docs/presentation.md).
 
 ## ECS
 
-- `employment.redistribute` — monthly worker allocation (after `housing.evolution`, before `supply.factoryProduction`)
+- `employment.redistribute` — worker allocation each simulation tick (after `housing.evolution`, before `supply.factoryProduction`)
 - `infrastructure/runtime/synchronizeFactoryWorkerDistribution.js` — Winery productWorkerDistribution sync after allocation
 
 ## Ports

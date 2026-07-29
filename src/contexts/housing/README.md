@@ -67,15 +67,21 @@ Worker-eligible **citizens** and **élites** (labor-market terms) are defined in
 
 ## ECS simulation order
 
+Each **simulation tick** (`game.update`) — see [`employment/docs/presentation.md`](../employment/docs/presentation.md) for full presentation flow:
+
 ```
-1. parcels.roadAccess
-2. supply.monthlyFood
-3. housing.populationGrowth
-4. housing.evolution
-5. employment.redistribute
-6. supply.factoryProduction
---- scene.update (mesh sync, food icons) ---
---- scene.refreshEmploymentPresentation (bar + no-work icons) ---
+game.update
+  scene.update                    ← pass 1
+  ECS:
+    1. parcels.roadAccess
+    2. supply.monthlyFood
+    3. housing.populationGrowth
+    4. housing.evolution
+    5. employment.redistribute
+    6. supply.factoryProduction
+  services (RandomEvents, Commerce, …)
+  scene.update                    ← pass 2
+  refreshEmploymentPresentation   ← bar + no-work icons only
 ```
 
 ## Folder layout

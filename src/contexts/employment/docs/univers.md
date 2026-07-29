@@ -1,24 +1,29 @@
 # Règle métier (Employment bounded context)
 
-À chaque tour de redistribution (mensuel), le bounded context **Employment** remplit les bâtiments qui peuvent employer des travailleurs à partir de la main-d'oeuvre disponible dans les maisons.
+À chaque **tick de simulation** (un mois en jeu), le bounded context **Employment** remplit les postes à partir de la main-d'œuvre disponible dans les maisons routées.
 
-## 1. Source de main-d'oeuvre
-- Seules les **maisons** qui ont un **accès routier** (`roadCount > 0`) contribuent au pool.
-- Le pool de main-d'oeuvre augmente de `pop` (population) pour chaque maison contributrice.
+Présentation UI / icônes : [`presentation.md`](presentation.md).  
+Règles détaillées (pool, chômage, manque) : [`rules.md`](rules.md).
+
+## 1. Source de main-d'œuvre
+
+- Seules les **maisons** avec **`roadCount > 0`** contribuent au pool.
+- Pool ouvrier = Σ **citoyens** (`LaborPoolPolicy.workerPopFromHouse`) — élites exclues.
 
 ## 2. Postes à pourvoir
-- Un **poste** est un bâtiment **non-maison** et **non-route** avec `workerNeed > 0`.
-- Les postes doivent aussi avoir `roadCount > 0` (sinon ils sont ignorés).
+
+- Bâtiment **non-maison**, **non-route**, `workerNeed > 0`, **`roadCount > 0`**.
 
 ## 3. Redistribution (gloutonne par priorité)
-1. On réinitialise d'abord tous les postes : `employees.worker = 0` (en conservant `workerNeed` et `sector`).
-2. On trie les postes par **priorité de secteur** (priorité **1 = la plus haute**, puis 2, 3, ...).
-   - Le `sector` appartient au snapshot du bâtiment ; la correspondance `sector -> priorité` vient de l’extérieur (priorités admin en `localStorage`).
-3. Pour chaque poste dans l’ordre :
-   - on affecte `workers = min(workerNeed - worker, workersRemaining)`
-   - on n’affecte jamais plus que `workerNeed`
-   - dès que le pool est épuisé, on s’arrête.
 
-## 4. Définition importante (présentation)
-- `workerNeed`/`worker` décrivent le **niveau de staffing des postes**.
-- “chômage” (main-d'oeuvre non utilisée) est une **autre métrique** calculée à partir du pool vs la somme des `employees.worker`. Les deux ne doivent pas être confondus.
+1. Reset : `employees.worker = 0` sur tous les postes.
+2. Tri par priorité secteur (**1 = la plus haute** ; config + localStorage).
+3. Affectation : `min(déficit, pool restant)` jusqu'à épuisement du pool.
+
+## 4. Métriques (read model)
+
+- **Chômage** = citoyens non assignés (`workerPool − totalAssigned`).
+- **Manque** = déficit sur les postes (`Σ max(0, need − worker)`).
+- **Icône no-work** = poste routé avec **`worker === 0`** uniquement (pas sous-effectif partiel).
+
+Ne pas confondre chômage et manque — voir [`rules.md`](rules.md) §5.

@@ -13,6 +13,8 @@ From persisted house rows (today: `DexieEmploymentBuildingRepository` → Houses
 
 Employment **does not** import `contexts/housing/domain/**`. Legacy UI uses `src/js/acl/employment.js`.
 
+Presentation flow (bar + `no-work` icons): [`docs/presentation.md`](presentation.md).
+
 ## Ubiquitous language stays local
 
 | Term in Employment | Meaning here |

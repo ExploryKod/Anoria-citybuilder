@@ -82,6 +82,16 @@ Supply Chain owns every **source → hub → sink** flow inside the city:
 ### Queries
 - `GetBuildingSupplyView`, `ListSupplyMapBuildings`, `ListWindmillSupplyViews`, `ListSupplyStockSnapshots`
 
+`GetBuildingSupplyView` gates UI flags for presentation:
+
+```javascript
+isBuying: operational && view.isBuying      // OperationalGatePolicy
+isCollecting: operational && view.isCollecting
+```
+
+→ `scene.update` reads these flags for market/mill sprites without checking `employees.worker` directly.  
+Employment icons (`no-work`) : Employment BC via `refreshEmploymentPresentation` — see [`employment/docs/presentation.md`](../employment/docs/presentation.md).
+
 ### Planned
 - Generic `ProductStock` + market distribution of manufactured goods
 - ECS pipeline systems `supply.*`
