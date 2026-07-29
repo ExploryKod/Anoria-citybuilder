@@ -16,7 +16,9 @@ Parcellaire : occupation de la grille, voisinage, voirie et desserte routière.
 
 - Une route n'a pas besoin d'accès routier
 - `roadCount` = nombre de voisins route
-- `BuildingId` : `{type}-{x}-{y}` (Published Language = `.value`)
+- `BuildingId` : `{type}-{x}-{y}` — **Shared Kernel** `src/shared/building-identity/`
+- `id` = `name` = Published Language on every HousesStore write
+- Legacy UI : `src/js/acl/building-identity.js`
 - `TileCoord` : `(x, y)` entiers
 - `Neighbor` : pas de stocks / meshes / deltas Three.js
 - Snapshot : `id` + `buildingId` + `tile` + `neighbors: Neighbor[]`
@@ -48,6 +50,7 @@ Tick simulation : `createGameRuntime` → system `parcels.roadAccess` (filet `Re
 
 - `roadAccess.behavior.test.js`
 - `buildingId.behavior.test.js`
+- `houseRecordPolicy.behavior.test.js`
 - `neighbors.behavior.test.js`
 - `placeRemove.behavior.test.js`
 
@@ -58,11 +61,23 @@ Tick simulation : `createGameRuntime` → system `parcels.roadAccess` (filet `Re
 - Évolution des maisons, food, emploi
 - Liste `markets` en zone (hors Parcels, encore HousesStore)
 
+## Infrastructure (adapters)
+
+| Dossier | Rôle |
+|---|---|
+| `infrastructure/dexie/` | `DexieBuildingRepository` → port `BuildingRepository` |
+| `infrastructure/spatial/` | `SceneSpatialNeighborhoodAdapter` → port spatial |
+| `infrastructure/events/` | `InMemoryDomainEventPublisher` → port events |
+| `infrastructure/runtime/` | ECS `parcelsRoadAccessSystem` |
+| `infrastructure/presentation/` | `roadAccessIcons` (legacy Three.js) |
+
+Les adapters **implémentent** les ports application et **dépendent** du domaine (Clean Architecture).
+
 ## Relations (context map)
 
 - **ACL** legacy : `src/js/acl/parcels.js`
+- **Infrastructure** : `contexts/parcels/infrastructure/` (adapters Dexie, spatial, events, runtime)
 - **Composition** : `createParcelsContext.js`
-- **Infrastructure** : Dexie / events / spatial / rendu
 - **Published Language** voisin persisté : `{ id, name, type, x, y, zone, isRoad }` (`name` = alias de `type`)
 
 Règle : `src/js/**` n'importe jamais `contexts/parcels/domain/**` directement.

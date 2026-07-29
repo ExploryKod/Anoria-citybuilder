@@ -7,7 +7,7 @@ import {
   getCropAmount,
   takeCrop,
 } from '../../domain/value-objects/FoodStock.js';
-import { resolveBuildingId } from './resolveBuildingId.js';
+import { resolvePublishedBuildingIdFromRef } from '../../../../shared/building-identity/BuildingId.js';
 
 /**
  * Command: market sells baskets to houses in range (not in autumn).
@@ -85,7 +85,7 @@ export class DistributeFoodFromMarketToHouses {
 
     const houseIds = [
       ...new Set(
-        houseRefs.map(resolveBuildingId).filter((id) => typeof id === 'string' && id.length > 0)
+        houseRefs.map(resolvePublishedBuildingIdFromRef).filter((id) => typeof id === 'string' && id.length > 0)
       ),
     ];
     if (houseIds.length === 0) {

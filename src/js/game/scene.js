@@ -32,7 +32,7 @@ import {
 } from '../ui/nodes.js';
 import {assetsPrices} from "../meshs/data.js";
 import { checkFoodAvailability, canHouseEvolveToPalace, canHouseEvolveToPurple } from './modules/ModuleHelper.js';
-import { setupRoadAccessIcons } from '../../infrastructure/roadAccessIcons.js';
+import { setupRoadAccessIcons } from '../acl/parcels.js';
 import { getDefaultEmployees } from './modules/EmployeeHelper.js';
 import { TimeManager } from './utils/TimeManager.js';
 import config from './config.js';

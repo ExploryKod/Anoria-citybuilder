@@ -3,7 +3,7 @@
  * Pas de règle métier ici — délègue au use case.
  *
  * @param {{ recalculateAllRoadAccess: { execute: () => Promise<unknown> } }} parcels
- * @returns {(world: import('../../../engine/ecs/World.js').World, context?: object) => Promise<void>}
+ * @returns {(world: import('../../../../engine/ecs/World.js').World, context?: object) => Promise<void>}
  */
 export function createParcelsRoadAccessSystem(parcels) {
   if (!parcels?.recalculateAllRoadAccess?.execute) {

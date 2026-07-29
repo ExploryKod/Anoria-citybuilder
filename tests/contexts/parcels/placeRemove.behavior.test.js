@@ -10,7 +10,7 @@ import { RecalculateRoadAccessForNeighbors } from '../../../src/contexts/parcels
 import { PlaceBuilding } from '../../../src/contexts/parcels/application/commands/PlaceBuilding.js';
 import { RemoveBuilding } from '../../../src/contexts/parcels/application/commands/RemoveBuilding.js';
 import { GetBuildingRoadAccess } from '../../../src/contexts/parcels/application/queries/GetBuildingRoadAccess.js';
-import { InMemoryDomainEventPublisher } from '../../../src/infrastructure/events/InMemoryDomainEventPublisher.js';
+import { InMemoryDomainEventPublisher } from '../../../src/contexts/parcels/infrastructure/events/InMemoryDomainEventPublisher.js';
 
 class InMemoryBuildingRepository {
   constructor(buildings = []) {

@@ -1,4 +1,4 @@
-import { DexieEmploymentBuildingRepository } from '../infrastructure/persistence/dexie/DexieEmploymentBuildingRepository.js';
+import { DexieEmploymentBuildingRepository } from '../contexts/employment/infrastructure/dexie/DexieEmploymentBuildingRepository.js';
 import { DistributeCityWorkers } from '../contexts/employment/application/commands/DistributeCityWorkers.js';
 import { GetCityEmploymentSummary } from '../contexts/employment/application/queries/GetCityEmploymentSummary.js';
 

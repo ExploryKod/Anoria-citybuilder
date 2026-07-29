@@ -1,6 +1,6 @@
-import { DexieBuildingRepository } from '../infrastructure/persistence/dexie/DexieBuildingRepository.js';
-import { InMemoryDomainEventPublisher } from '../infrastructure/events/InMemoryDomainEventPublisher.js';
-import { SceneSpatialNeighborhoodAdapter } from '../infrastructure/spatial/SceneSpatialNeighborhoodAdapter.js';
+import { DexieBuildingRepository } from '../contexts/parcels/infrastructure/dexie/DexieBuildingRepository.js';
+import { InMemoryDomainEventPublisher } from '../contexts/parcels/infrastructure/events/InMemoryDomainEventPublisher.js';
+import { SceneSpatialNeighborhoodAdapter } from '../contexts/parcels/infrastructure/spatial/SceneSpatialNeighborhoodAdapter.js';
 import { RecalculateRoadAccessForBuilding } from '../contexts/parcels/application/commands/RecalculateRoadAccessForBuilding.js';
 import { RecalculateAllRoadAccess } from '../contexts/parcels/application/commands/RecalculateAllRoadAccess.js';
 import { RecalculateRoadAccessForNeighbors } from '../contexts/parcels/application/commands/RecalculateRoadAccessForNeighbors.js';

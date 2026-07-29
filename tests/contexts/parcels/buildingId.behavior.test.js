@@ -13,6 +13,7 @@ import {
   toPublishedBuildingId,
   parseBuildingId,
   tryParseBuildingId,
+  resolvePublishedBuildingIdFromRef,
 } from '../../../src/contexts/parcels/domain/value-objects/BuildingId.js';
 import { createTileCoord, tryCreateTileCoord } from '../../../src/contexts/parcels/domain/value-objects/TileCoord.js';
 import { createBuildingSnapshot } from '../../../src/contexts/parcels/domain/BuildingSnapshot.js';
@@ -121,6 +122,34 @@ describe('Identifiant de bâtiment', () => {
       const vo = createBuildingId('roads', 1, 2);
       expect(toPublishedBuildingId(vo)).toBe('roads-1-2');
       expect(toPublishedBuildingId('roads-1-2')).toBe('roads-1-2');
+    });
+  });
+
+  describe('resolvePublishedBuildingIdFromRef (legacy blobs → Published Language)', () => {
+    test('prefers id and buildingId', () => {
+      expect(
+        resolvePublishedBuildingIdFromRef({ id: 'Farm-Wheat-2-3', name: 'Farm-Wheat', x: 2, y: 3 })
+      ).toBe('Farm-Wheat-2-3');
+      expect(
+        resolvePublishedBuildingIdFromRef({ buildingId: 'Market-Stall-4-5', type: 'Market-Stall', x: 4, y: 5 })
+      ).toBe('Market-Stall-4-5');
+    });
+
+    test('uses published-looking name before reconstructing type-x-y (no ghost ids)', () => {
+      expect(
+        resolvePublishedBuildingIdFromRef({
+          name: 'House-Purple-3-7',
+          type: 'House-Purple',
+          x: 3,
+          y: 7,
+        })
+      ).toBe('House-Purple-3-7');
+    });
+
+    test('reconstructs from type + tile when name is bare type', () => {
+      expect(
+        resolvePublishedBuildingIdFromRef({ name: 'House-Purple', type: 'House-Purple', x: 3, y: 7 })
+      ).toBe('House-Purple-3-7');
     });
   });
 });

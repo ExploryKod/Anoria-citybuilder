@@ -1,4 +1,4 @@
-import { DexieSupplyBuildingRepository } from '../infrastructure/persistence/dexie/DexieSupplyBuildingRepository.js';
+import { DexieSupplyBuildingRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyBuildingRepository.js';
 import { MarketBuysFromNearbyFarms } from '../contexts/supply/application/commands/MarketBuysFromNearbyFarms.js';
 import { MarkMarketBuyingSeason } from '../contexts/supply/application/commands/MarkMarketBuyingSeason.js';
 import { DistributeFoodFromMarketToHouses } from '../contexts/supply/application/commands/DistributeFoodFromMarketToHouses.js';

@@ -36,6 +36,10 @@ Code and ubiquitous language are **English**. UI copy may stay French.
 
 - `EmploymentBuildingRepository` — labor sources, workplaces, reset / save workers
 
+## Infrastructure
+
+- `infrastructure/dexie/DexieEmploymentBuildingRepository.js` → port `EmploymentBuildingRepository`
+
 ## Relations
 
 - **Parcels**: road access via persisted `roadCount` (no Parcels domain import)

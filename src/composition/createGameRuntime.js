@@ -1,6 +1,6 @@
 import { World } from '../engine/ecs/World.js';
 import { Pipeline } from '../engine/loop/Pipeline.js';
-import { createParcelsRoadAccessSystem } from '../infrastructure/runtime/systems/parcelsRoadAccessSystem.js';
+import { createParcelsRoadAccessSystem } from '../contexts/parcels/infrastructure/runtime/parcelsRoadAccessSystem.js';
 
 /**
  * Composition root du runtime ECS (engine + systèmes minces).

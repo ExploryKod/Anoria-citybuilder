@@ -1,16 +1,17 @@
-import { createEmploymentBuildingSnapshot } from '../../../contexts/employment/domain/EmploymentBuildingSnapshot.js';
+import { createEmploymentBuildingSnapshot } from '../../domain/EmploymentBuildingSnapshot.js';
 import {
   isHouseType,
   isRoadType,
   isWorkplace,
-} from '../../../contexts/employment/domain/policies/BuildingRolePolicy.js';
+} from '../../domain/policies/BuildingRolePolicy.js';
+import { publishedIdFromHouseRow } from '../../../../shared/building-identity/index.js';
 
 /**
  * Dexie / HousesStore adapter for Employment.
  */
 export class DexieEmploymentBuildingRepository {
   /**
-   * @param {import('../../../js/stores/HousesStore.js').default} housesStore
+   * @param {import('../../../../js/stores/HousesStore.js').default} housesStore
    */
   constructor(housesStore) {
     this.housesStore = housesStore;
@@ -19,7 +20,7 @@ export class DexieEmploymentBuildingRepository {
   #toSnapshot(house) {
     const employees = house.employees || {};
     return createEmploymentBuildingSnapshot({
-      id: house.id || house.name,
+      id: publishedIdFromHouseRow(house),
       type: house.type || '',
       x: house.x ?? null,
       y: house.y ?? null,
@@ -59,7 +60,7 @@ export class DexieEmploymentBuildingRepository {
       const employees = house.employees || {};
       if (!(employees.worker_need > 0)) continue;
 
-      const buildingId = house.id || house.name;
+      const buildingId = publishedIdFromHouseRow(house);
       await this.housesStore
         .updateHouseFields(buildingId, {
           employees: { ...employees, worker: 0 },

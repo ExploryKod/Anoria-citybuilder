@@ -99,9 +99,9 @@ La policy `RoadAccessPolicy.evaluate(neighbors)` reste la source de vérité. Se
 - Domaine : `src/contexts/parcels/domain/policies/RoadAccessPolicy.js`
 - Legacy (deprecated) : `src/js/game/services/RoadConnectivityService.js`
 - Composition : `src/composition/createParcelsContext.js`, `createGameRuntime.js`
-- Spatial : `src/infrastructure/spatial/SceneSpatialNeighborhoodAdapter.js`
-- Runtime ECS : `src/infrastructure/runtime/systems/parcelsRoadAccessSystem.js`
-- Rendu icônes : `src/infrastructure/roadAccessIcons.js`
+- Spatial : `src/contexts/parcels/infrastructure/spatial/SceneSpatialNeighborhoodAdapter.js`
+- Runtime ECS : `src/contexts/parcels/infrastructure/runtime/parcelsRoadAccessSystem.js`
+- Rendu icônes : `src/contexts/parcels/infrastructure/presentation/roadAccessIcons.js`
 
 ## Migration legacy (terminée)
 

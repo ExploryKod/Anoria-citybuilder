@@ -1,13 +1,14 @@
-import { createSupplyBuildingSnapshot } from '../../../contexts/supply/domain/SupplyBuildingSnapshot.js';
-import { createSupplyBuildingView } from '../../../contexts/supply/domain/SupplyBuildingView.js';
-import { createFoodStock } from '../../../contexts/supply/domain/value-objects/FoodStock.js';
+import { createSupplyBuildingSnapshot } from '../../domain/SupplyBuildingSnapshot.js';
+import { createSupplyBuildingView } from '../../domain/SupplyBuildingView.js';
+import { createFoodStock } from '../../domain/value-objects/FoodStock.js';
+import { publishedIdFromHouseRow } from '../../../../shared/building-identity/index.js';
 
 /**
  * Dexie / HousesStore adapter for Supply.
  */
 export class DexieSupplyBuildingRepository {
   /**
-   * @param {import('../../../js/stores/HousesStore.js').default} housesStore
+   * @param {import('../../../../js/stores/HousesStore.js').default} housesStore
    */
   constructor(housesStore) {
     this.housesStore = housesStore;
@@ -22,7 +23,7 @@ export class DexieSupplyBuildingRepository {
     const employees = house.employees || {};
     const type = house.type || '';
     return createSupplyBuildingSnapshot({
-      id: house.id || house.name,
+      id: publishedIdFromHouseRow(house),
       type,
       x: house.x ?? null,
       y: house.y ?? null,
@@ -38,7 +39,7 @@ export class DexieSupplyBuildingRepository {
   #toView(house) {
     const type = house.type || '';
     return createSupplyBuildingView({
-      id: house.id || house.name,
+      id: publishedIdFromHouseRow(house),
       type,
       x: house.x ?? null,
       y: house.y ?? null,

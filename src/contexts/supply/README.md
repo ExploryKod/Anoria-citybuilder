@@ -52,6 +52,10 @@ Code and ubiquitous language are **English**. UI copy may stay French.
 
 - `SupplyBuildingRepository` (`findById`, `findSupplyView`, `listAllSupplyViews`, `findWindmills`, `findFarms`, …)
 
+## Infrastructure
+
+- `infrastructure/dexie/DexieSupplyBuildingRepository.js` → port `SupplyBuildingRepository`
+
 ## Relations
 
 - **Parcels**: road access — do not own the road graph

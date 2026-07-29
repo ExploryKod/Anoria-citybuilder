@@ -1,6 +1,6 @@
 /**
  * Port : persistance des bâtiments (aggregate snapshot).
- * Implémentation : infrastructure/persistence/dexie/
+ * Implémentation : contexts/parcels/infrastructure/dexie/
  *
  * Les buildingId au port sont en Published Language (string).
  */

@@ -1,7 +1,10 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
-import { setupRoadAccessIcons, clearRoadAccessIconViews } from '../../src/infrastructure/roadAccessIcons.js';
-import { InMemoryDomainEventPublisher } from '../../src/infrastructure/events/InMemoryDomainEventPublisher.js';
-import { createRoadAccessChanged } from '../../src/contexts/parcels/domain/events/RoadAccessChanged.js';
+import {
+  setupRoadAccessIcons,
+  clearRoadAccessIconViews,
+} from '../../../../src/contexts/parcels/infrastructure/presentation/roadAccessIcons.js';
+import { InMemoryDomainEventPublisher } from '../../../../src/contexts/parcels/infrastructure/events/InMemoryDomainEventPublisher.js';
+import { createRoadAccessChanged } from '../../../../src/contexts/parcels/domain/events/RoadAccessChanged.js';
 
 describe('roadAccessIcons', () => {
   beforeEach(() => {
@@ -35,7 +38,7 @@ describe('roadAccessIcons', () => {
       })
     );
 
-    expect(calls).toHaveLength(2); // fallback sync + événement
-    expect(calls[1][5]).toBe(false); // hasAccess → pas d'icône no-road
+    expect(calls).toHaveLength(2);
+    expect(calls[1][5]).toBe(false);
   });
 });

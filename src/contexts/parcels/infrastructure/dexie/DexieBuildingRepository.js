@@ -1,5 +1,8 @@
-import { createBuildingSnapshot } from '../../../contexts/parcels/domain/BuildingSnapshot.js';
-import { toPublishedBuildingId } from '../../../contexts/parcels/domain/value-objects/BuildingId.js';
+import { createBuildingSnapshot } from '../../domain/BuildingSnapshot.js';
+import {
+  toPublishedBuildingId,
+  publishedIdFromHouseRow,
+} from '../../../../shared/building-identity/index.js';
 
 /**
  * Adapter : traduit HousesStore (legacy) vers le port BuildingRepository.
@@ -7,7 +10,7 @@ import { toPublishedBuildingId } from '../../../contexts/parcels/domain/value-ob
  */
 export class DexieBuildingRepository {
   /**
-   * @param {import('../../../js/stores/HousesStore.js').default} housesStore
+   * @param {import('../../../../js/stores/HousesStore.js').default} housesStore
    */
   constructor(housesStore) {
     this.housesStore = housesStore;
@@ -18,7 +21,7 @@ export class DexieBuildingRepository {
    */
   #toSnapshot(house) {
     return createBuildingSnapshot({
-      id: house.id || house.name,
+      id: publishedIdFromHouseRow(house),
       type: house.type || '',
       neighbors: house.neighbors || [],
       roadCount: house.roads ?? 0,

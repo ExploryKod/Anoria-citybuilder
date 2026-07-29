@@ -10,7 +10,7 @@ import {
   hasRoadAccessFromCount,
   toBuildingIdString,
 } from '../acl/parcels.js';
-import { setupRoadAccessIcons } from '../../infrastructure/roadAccessIcons.js';
+import { setupRoadAccessIcons } from '../acl/parcels.js';
 
 const parcels = getOrCreateParcelsContext(housesStore);
 
