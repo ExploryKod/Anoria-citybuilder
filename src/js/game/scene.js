@@ -12,6 +12,12 @@ import {
 } from "../utils/utils.js";
 import { toBuildingIdString, getOrCreateParcelsContext } from '../acl/parcels.js';
 import { getOrCreateSupplyContext } from '../acl/supply.js';
+import { getCityEmploymentSummary } from '../acl/employment.js';
+import {
+    maxTotalPopForHouse,
+    popAfterPalaceEvolution,
+    popAfterPalaceRegression,
+} from '../../contexts/employment/domain/policies/LaborPoolPolicy.js';
 import {
     bulldozeSelected,
     commerce,
@@ -42,24 +48,22 @@ import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
 const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
 
 /**
- * Get the maximum population capacity for a house type
- * @param {string} houseType - The house type (e.g., 'House-Blue', 'House-2Story')
- * @returns {number} Maximum population capacity
+ * @param {string} houseType
+ * @returns {number}
  */
 function getHouseMaxPopulation(houseType) {
     if (!houseType) return 0;
-    
-    // All houses (Blue, Red, Purple, 2Story) can hold 6 people
-    if (houseType.includes('House-Blue') || 
-        houseType.includes('House-Red') || 
+
+    const isResidential =
+        houseType.includes('House-Blue') ||
+        houseType.includes('House-Red') ||
         houseType.includes('House-Purple') ||
-        houseType.includes('House-2Story') || 
-        houseType.includes('House_2Story')) {
-        return 6;
-    }
-    
-    // Default: no population for non-house buildings
-    return 0;
+        houseType.includes('House-2Story') ||
+        houseType.includes('House_2Story');
+
+    if (!isResidential) return 0;
+
+    return maxTotalPopForHouse(houseType);
 }
 
 export function createScene(housesStore, gameStore, assetManager, parcelsOption, supplyOption) {
@@ -393,11 +397,10 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
         // Use requestIdleCallback or setTimeout to defer non-critical DOM operations
         if (typeof requestIdleCallback !== 'undefined') {
             requestIdleCallback(() => {
-                // Update population and funds display in general bar
                 const displayPop = document.querySelector('.display-pop');
                 const displayFunds = document.querySelector('.display-funds');
                 if (displayPop) {
-                    displayPop.textContent = '0';
+                    displayPop.textContent = '0 (0, 0)';
                 }
                 if (displayFunds) {
                     displayFunds.textContent = '0';
@@ -414,7 +417,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
             setTimeout(() => {
                 const displayPop = document.querySelector('.display-pop');
                 const displayFunds = document.querySelector('.display-funds');
-                if (displayPop) displayPop.textContent = '0';
+                if (displayPop) displayPop.textContent = '0 (0, 0)';
                 if (displayFunds) displayFunds.textContent = '0';
                 const debtBox = document.querySelector('.debt-box');
                 if (debtBox) debtBox.style.display = 'none';
@@ -873,12 +876,13 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                         });
                     }
 
-                    // Check if market has workers (required to operate)
+                    // Check if market has workers (required to operate; no-road excluded)
                     const marketDataForWorkers = await housesStore.getHouse(currentUniqueID);
                     const marketEmployees = marketDataForWorkers?.employees || { worker: 0, worker_need: 0 };
                     const marketWorkers = marketEmployees.worker || 0;
                     const marketWorkerNeed = marketEmployees.worker_need || 0;
-                    const marketHasNoWorkers = marketWorkers === 0 && marketWorkerNeed > 0;
+                    const marketHasRoad = (marketDataForWorkers?.roads ?? 0) > 0;
+                    const marketHasNoWorkers = marketHasRoad && marketWorkers === 0 && marketWorkerNeed > 0;
 
                     // If no workers, show no-work sprite (red) and skip buying functionality
                     if (marketHasNoWorkers && buildings[x][y]) {
@@ -1073,12 +1077,13 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                         });
                     }
 
-                    // Check if windmill has workers (required to operate)
+                    // Check if windmill has workers (required to operate; no-road excluded)
                     const windmillDataForWorkers = await housesStore.getHouse(currentUniqueID);
                     const windmillEmployees = windmillDataForWorkers?.employees || { worker: 0, worker_need: 0 };
                     const windmillWorkers = windmillEmployees.worker || 0;
                     const windmillWorkerNeed = windmillEmployees.worker_need || 0;
-                    const windmillHasNoWorkers = windmillWorkers === 0 && windmillWorkerNeed > 0;
+                    const windmillHasRoad = (windmillDataForWorkers?.roads ?? 0) > 0;
+                    const windmillHasNoWorkers = windmillHasRoad && windmillWorkers === 0 && windmillWorkerNeed > 0;
 
                     // If no workers, show no-work sprite (red) and skip collecting functionality
                     if (windmillHasNoWorkers && buildings[x][y]) {
@@ -1146,12 +1151,13 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                     const timeInfo = TimeManager.getTimeInfo(time);
                     const season = timeInfo.season;
                     
-                    // Check if farm has workers (required to operate)
+                    // Check if farm has workers (required to operate; no-road excluded)
                     const farmDataForWorkers = await housesStore.getHouse(currentUniqueID);
                     const farmEmployees = farmDataForWorkers?.employees || { worker: 0, worker_need: 0 };
                     const farmWorkers = farmEmployees.worker || 0;
                     const farmWorkerNeed = farmEmployees.worker_need || 0;
-                    const hasNoWorkers = farmWorkers === 0 && farmWorkerNeed > 0;
+                    const farmHasRoad = (farmDataForWorkers?.roads ?? 0) > 0;
+                    const hasNoWorkers = farmHasRoad && farmWorkers === 0 && farmWorkerNeed > 0;
                     
                     // If no workers, show no-work sprite (red) and skip all production
                     if (hasNoWorkers) {
@@ -1333,12 +1339,13 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                         assetManager.removeStatusSprite(buildings[x][y], spriteName);
                     });
 
-                    // Check if factory has workers (required to operate)
+                    // Check if factory has workers (required to operate; no-road excluded)
                     const factoryDataForWorkers = await housesStore.getHouse(currentUniqueID);
                     const factoryEmployees = factoryDataForWorkers?.employees || { worker: 0, worker_need: 0 };
                     const factoryWorkers = factoryEmployees.worker || 0;
                     const factoryWorkerNeed = factoryEmployees.worker_need || 0;
-                    const factoryHasNoWorkers = factoryWorkers === 0 && factoryWorkerNeed > 0;
+                    const factoryHasRoad = (factoryDataForWorkers?.roads ?? 0) > 0;
+                    const factoryHasNoWorkers = factoryHasRoad && factoryWorkers === 0 && factoryWorkerNeed > 0;
 
                     // If no workers, show no-work sprite (red)
                     if (factoryHasNoWorkers && buildings[x][y]) {
@@ -1682,6 +1689,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                         removeInteractiveObject(buildings[x][y]);
                         const newUniqueBuildingId = toBuildingIdString('House-2Story', x, y);
                         const keys = { type : "House-2Story", price: assetsPrices["House-2Story"].price}
+                        const popAfterEvolution = popAfterPalaceEvolution(currentPop);
                         
                         // Preserve neighbors and roads data before evolution
                         const houseNeighborsBeforeEvolution = houseNeighbors || [];
@@ -1700,17 +1708,18 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                                 x: x,
                                 y: y,
                                 neighbors: houseNeighborsBeforeEvolution,
-                                pop: currentPop,
+                                pop: popAfterEvolution,
                                 stocks: houseFoodStocks || { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
                                 roads: roadsBeforeEvolution,
                                 worldTime: worldTime || time
                             };
                             await housesStore.addHouse(newHouseData);
                         } else {
-                            // House was successfully renamed - ensure neighbors and roads are preserved
+                            // House was successfully renamed - ensure neighbors, roads and +1 élite pop
                             await housesStore.updateHouseFields(newUniqueBuildingId, {
                                 neighbors: houseNeighborsBeforeEvolution,
-                                roads: roadsBeforeEvolution
+                                roads: roadsBeforeEvolution,
+                                pop: popAfterEvolution,
                             });
                         }
                         
@@ -1780,6 +1789,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                             removeInteractiveObject(buildings[x][y]);
                             const newUniqueBuildingId = toBuildingIdString(targetType, x, y);
                             const keys = { type: targetType, price: assetsPrices[targetType].price };
+                            const popAfterRegression = popAfterPalaceRegression(currentBuildingId, currentPop);
                             
                             // Preserve neighbors and roads data before regression
                             const houseNeighborsBeforeRegression = houseNeighbors || [];
@@ -1797,17 +1807,18 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                                     x: x,
                                     y: y,
                                     neighbors: houseNeighborsBeforeRegression,
-                                    pop: currentPop,
+                                    pop: popAfterRegression,
                                     stocks: houseFoodStocks || { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
                                     roads: roadsBeforeRegression,
                                     worldTime: worldTime || time
                                 };
                                 await housesStore.addHouse(newHouseData);
                             } else {
-                                // Ensure neighbors and roads are preserved
+                                // Ensure neighbors, roads and pop (élites removed) are preserved
                                 await housesStore.updateHouseFields(newUniqueBuildingId, {
                                     neighbors: houseNeighborsBeforeRegression,
-                                    roads: roadsBeforeRegression
+                                    roads: roadsBeforeRegression,
+                                    pop: popAfterRegression,
                                 });
                             }
                             
@@ -2043,60 +2054,6 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
         const currentPopulation = await housesStore.getGlobalPopulation();
         const famishedPopulation = await housesStore.getFamishedPopulation();
         
-        // Calculate unemployment (same logic as work-section.js)
-        let unemployedCount = 0;
-        let unemploymentPercentage = 0;
-        try {
-            // Get all buildings from IndexedDB
-            const allBuildings = await housesStore.listAllHouses();
-            
-            // Calculate available employees from houses (same logic as work-section.js)
-            let workerPopulation = 0;
-            let elitePopulation = 0;
-            for (const house of allBuildings) {
-                const type = house.type || '';
-                const pop = house.pop || 0;
-                
-                if (type.includes('House')) {
-                    // House-2Story (Palace): 1/6 becomes elite, 5/6 remain workers
-                    if (type.includes('2Story') || type.includes('2-Story')) {
-                        const elitesFromThisHouse = Math.floor(pop / 6);
-                        const workersFromThisHouse = pop - elitesFromThisHouse;
-                        elitePopulation += elitesFromThisHouse;
-                        workerPopulation += workersFromThisHouse;
-                    }
-                    // Other houses (Blue, Red, Purple): all population are workers
-                    else if (type.includes('Blue') || type.includes('Red') || type.includes('Purple')) {
-                        workerPopulation += pop;
-                    }
-                }
-            }
-            
-            // Calculate total assigned workers from all buildings
-            let totalAssignedWorkers = 0;
-            for (const building of allBuildings) {
-                if (!building.employees) continue;
-                const sector = building.employees.sector || 0;
-                // Skip residential (sector 0)
-                if (sector === 0) continue;
-                totalAssignedWorkers += building.employees.worker || 0;
-            }
-            
-            // Unemployed = available but not assigned
-            unemployedCount = Math.max(0, workerPopulation - totalAssignedWorkers);
-            
-            // Calculate unemployment percentage
-            if (workerPopulation > 0) {
-                unemploymentPercentage = Math.round((unemployedCount / workerPopulation) * 100);
-            } else {
-                unemploymentPercentage = 0;
-            }
-        } catch (error) {
-            console.warn('[scene.js] Error calculating unemployment:', error);
-            unemployedCount = 0;
-            unemploymentPercentage = 0;
-        }
-        
         // Manage multiple citizens based on current population state (from IndexedDB)
         // Only update if citizenPathfinding is initialized
         if (citizenPathfinding) {
@@ -2117,27 +2074,16 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
             funds = budgetData.funds;
         }
 
-        // Update population, famished population, unemployed population and funds display in general bar using GameUI
-        // This ensures consistent UI updates (IndexedDB is source of truth)
+        // Update famished population and funds (citizen/elite counts via refreshEmploymentPresentation)
         if (window.gameUI) {
-            window.gameUI.updatePopulation(currentPopulation || 0);
             window.gameUI.updateFamishedPopulation(famishedPopulation || 0);
-            window.gameUI.updateUnemployedPopulation(unemployedCount, unemploymentPercentage);
             window.gameUI.updateFunds(funds);
         } else {
             // Fallback to direct DOM update if GameUI not available
-            const displayPop = document.querySelector('.display-pop');
             const displayHungerPop = document.querySelector('.display-hunger-pop');
-            const displayUnemployedPop = document.querySelector('.display-unemployed-pop');
             const displayFunds = document.querySelector('.display-funds');
-            if (displayPop) {
-                displayPop.textContent = (currentPopulation || 0).toString();
-            }
             if (displayHungerPop) {
                 displayHungerPop.textContent = (famishedPopulation || 0).toString();
-            }
-            if (displayUnemployedPop) {
-                displayUnemployedPop.textContent = `${unemployedCount} (${unemploymentPercentage}%)`;
             }
             if (displayFunds) {
                 displayFunds.textContent = funds.toString();
@@ -2146,6 +2092,105 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
 
         // End turn processing
 
+    }
+
+    /**
+     * Refresh employment bar + no-work icons from BC read model.
+     * Call after scene.update; pass redistribute=true only on monthly turn (game.update).
+     * @param {object} city
+     */
+    async function refreshEmploymentPresentation(city) {
+        let unemployedCount = 0;
+        let unemploymentPercentage = 0;
+        let employmentLack = 0;
+        let citizenPopulation = 0;
+        let elitePopulation = 0;
+        /** @type {string[]} */
+        let understaffedBuildingIds = [];
+
+        try {
+            const summary = await getCityEmploymentSummary(housesStore);
+            unemployedCount = summary.unemployed;
+            unemploymentPercentage = summary.unemploymentPercentage;
+            employmentLack = summary.lack;
+            citizenPopulation = summary.workerPool;
+            elitePopulation = summary.elitePool;
+            understaffedBuildingIds = summary.understaffedBuildingIds;
+        } catch (error) {
+            console.warn('[scene.js] Error calculating employment summary:', error);
+        }
+
+        if (window.gameUI) {
+            window.gameUI.updatePopulationBreakdown(
+                citizenPopulation + elitePopulation,
+                citizenPopulation,
+                elitePopulation
+            );
+            window.gameUI.updateUnemployedPopulation(unemployedCount, unemploymentPercentage);
+            window.gameUI.updateWorkerLack(employmentLack);
+        } else {
+            const displayPop = document.querySelector('.display-pop');
+            const displayUnemployedPop = document.querySelector('.display-unemployed-pop');
+            const displayWorkerLackEl = document.querySelector('.display-worker-lack');
+            if (displayPop) {
+                const total = citizenPopulation + elitePopulation;
+                displayPop.textContent = `${total} (${citizenPopulation}, ${elitePopulation})`;
+            }
+            if (displayUnemployedPop) {
+                displayUnemployedPop.textContent = `${unemployedCount} (${unemploymentPercentage}%)`;
+            }
+            if (displayWorkerLackEl) {
+                displayWorkerLackEl.textContent = String(employmentLack);
+            }
+        }
+
+        const understaffed = new Set(understaffedBuildingIds);
+        const noWorkSpriteColor = 0xFF0000;
+        const noWorkBackgroundColor = 0xFFE8E8;
+
+        for (let x = 0; x < city.size; x++) {
+            for (let y = 0; y < city.size; y++) {
+                const mesh = buildings[x]?.[y];
+                if (!mesh?.userData) continue;
+
+                const currentBuildingId = mesh.userData.type || mesh.userData.id;
+                if (!currentBuildingId) continue;
+
+                const uniqueId = toBuildingIdString(currentBuildingId, x, y);
+                if (!uniqueId) continue;
+
+                const isMarket = commerce.includes(currentBuildingId);
+                const isFarm = farms.includes(currentBuildingId);
+                const isWindmill =
+                    currentBuildingId.includes('Windmill') || currentBuildingId.includes('windmill');
+                const isFactory = factories.includes(currentBuildingId);
+
+                if (!isMarket && !isFarm && !isWindmill && !isFactory) continue;
+
+                if (understaffed.has(uniqueId)) {
+                    let position = { x: -0.8, y: 0.5, z: -0.2 };
+                    let scale = { x: 0.5, y: 0.5, z: 0.5 };
+                    if (isMarket || isWindmill) {
+                        position = { x: -0.5, y: 0.5, z: 0 };
+                        scale = { x: 0.6, y: 0.6, z: 1 };
+                    }
+
+                    assetManager.setStatusSprite(
+                        mesh,
+                        textures['no-work'],
+                        'no-work',
+                        scale,
+                        position,
+                        true,
+                        noWorkSpriteColor,
+                        noWorkBackgroundColor
+                    );
+                } else {
+                    assetManager.removeStatusSprite(mesh, 'no-work');
+                    assetManager.removeStatusSprite(mesh, 'no-work-bg');
+                }
+            }
+        }
     }
 
     // Note: setUpLights() moved to LightingManager
@@ -2729,6 +2774,7 @@ function onTouchEnd(event) {
         // Expose pause/resume control for citizen characters
         pauseCitizen,
         resumeCitizen,
+        refreshEmploymentPresentation,
         // updateRoadImmediate removed - roads are now 3D meshes
     }
 

@@ -3,6 +3,7 @@ import {
   isLaborSource,
   isWorkplace,
 } from '../../domain/policies/BuildingRolePolicy.js';
+import { workerPopFromHouse } from '../../domain/policies/LaborPoolPolicy.js';
 import {
   allocateWorkers,
   orderWorkplacesByPriority,
@@ -36,7 +37,7 @@ export class DistributeCityWorkers {
     const laborSources = await this.employmentBuildingRepository.listLaborSources();
     const availableWorkers = laborSources
       .filter((b) => isLaborSource(b) && hasRoadAccess(b))
-      .reduce((sum, b) => sum + (b.pop || 0), 0);
+      .reduce((sum, b) => sum + workerPopFromHouse(b.type, b.pop), 0);
 
     if (availableWorkers <= 0) {
       return { availableWorkers: 0, assignments: [] };
