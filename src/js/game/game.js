@@ -9,6 +9,7 @@ import { createCity } from './city.js';
 import {getAssetPrice, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, isAreaAvailableForBuilding} from '../utils/utils.js';
 import { toBuildingIdString, getOrCreateParcelsContext } from '../acl/parcels.js';
 import { getOrCreateSupplyContext } from '../acl/supply.js';
+import { redistributeCityEmployment, syncEmploymentAfterBuildingChange } from '../acl/employment.js';
 import { createGameRuntime } from '../../composition/createGameRuntime.js';
 import config from './config.js';
 import {
@@ -28,6 +29,46 @@ import journalManager from '../stores/JournalManager.js';
 import FoodTraceabilityService from '../stores/FoodTraceabilityService.js';
 import loaderManager from '../utils/LoaderManager.js';
 import objectivesTracker from '../ui/ObjectivesTracker.js';
+
+/**
+ * Info panel: workplace staffing section (workers in aggregates; elites display-only).
+ */
+function renderWorkplaceEmployeesInfo(buildingData, messages) {
+    if (!buildingData?.employees) return;
+
+    const roadCount = buildingData.roads ?? 0;
+    const employees = buildingData.employees;
+    const workerNeed = employees.worker_need || 0;
+    const eliteNeed = employees.elite_need || 0;
+    const workers = employees.worker || 0;
+    const elites = employees.elite || 0;
+    const sector = employees.sector || 0;
+    const priority = getSectorPriority(sector);
+
+    makeInfoSection('Employés');
+
+    if (roadCount <= 0) {
+        makeInfoBuildingText('🚧 Route nécessaire pour embaucher', false, 'warning-message');
+        return;
+    }
+
+    const hasEnoughWorkers = workers >= workerNeed;
+    const hasNoWorkers = workers === 0 && workerNeed > 0;
+    const hasPartialWorkers = workers > 0 && workers < workerNeed;
+
+    makeInfoKeyValue('Secteur', `${sector} : ${getSectorName(sector)}`);
+    makeInfoKeyValue('Priorité', `${priority}`);
+    makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
+    makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
+
+    if (hasEnoughWorkers) {
+        makeInfoBuildingText(messages.fullyStaffed, false, 'success-message');
+    } else if (hasNoWorkers) {
+        makeInfoBuildingText(messages.noWorkers, false, 'error-message');
+    } else if (hasPartialWorkers) {
+        makeInfoBuildingText(messages.partialWorkers, false, 'warning-message');
+    }
+}
 import InputManager from './InputManager.js';
 import gameUI from './GameUI.js';
 import appRegistry from './AppRegistry.js';
@@ -64,9 +105,8 @@ let services = [];
         const employmentPriorityService = new EmploymentPriorityService();
         services.push(employmentPriorityService);
         
-        // Employment Distribution Service - distributes workers from houses to buildings
-        // Reads sector from IndexedDB, looks up priority from localStorage at runtime
-        // Lower priority number = higher importance (1 = first to get workers)
+        // Employment Distribution Service — registered for compatibility; redistribution
+        // runs after pop evolution in game.update (see redistributeCityEmployment ACL).
         services.push(new EmploymentDistributionService());
         console.log('[game.js] Employment services registered (priority from localStorage, sector from IndexedDB)');
         
@@ -563,6 +603,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 }
             }
             await scene.update(city, time);
+            await syncEmploymentAfterBuildingChange(housesStore, scene, city, buildingId);
         } else if(activeToolId === "select-object") {
             // Object selection - ONLY open info modal when using select tool
             // Only open the info modal if we actually have info to show (i.e., on building objects)
@@ -813,7 +854,9 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
 
                     // Employment still via housesStore until Employment BC
                     const marketData = await housesStore.getHouse(uniqueId);
-                    const hasNoWorkersForState = (marketData?.employees?.worker || 0) === 0 && (marketData?.employees?.worker_need || 0) > 0;
+                    const hasNoWorkersForState = (marketData?.roads ?? 0) > 0
+                        && (marketData?.employees?.worker || 0) === 0
+                        && (marketData?.employees?.worker_need || 0) > 0;
                     
                     const buyingPeriodName = 'Automne';
                     
@@ -838,35 +881,11 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         makeInfoKeyValue('Distribution', '✅ Maisons à portée');
                     }
                     
-                    if (marketData?.employees) {
-                        const employees = marketData.employees;
-                        const workerNeed = employees.worker_need || 0;
-                        const eliteNeed = employees.elite_need || 0;
-                        const workers = employees.worker || 0;
-                        const elites = employees.elite || 0;
-                        const sector = employees.sector || 0;
-                        const priority = getSectorPriority(sector);
-                        
-                        const hasEnoughWorkers = workers >= workerNeed;
-                        const hasEnoughElites = elites >= eliteNeed;
-                        const hasNoWorkers = workers === 0 && workerNeed > 0;
-                        const hasPartialWorkers = workers > 0 && workers < workerNeed;
-                        const isFullyStaffed = hasEnoughWorkers && hasEnoughElites;
-                        
-                        makeInfoSection('Employés');
-                        makeInfoKeyValue('Secteur', `${sector} : ${getSectorName(sector)}`);
-                        makeInfoKeyValue('Priorité', `${priority}`);
-                        makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
-                        makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
-                        
-                        if (isFullyStaffed) {
-                            makeInfoBuildingText('✅ Le marché marche à plein régime', false, 'success-message');
-                        } else if (hasNoWorkers) {
-                            makeInfoBuildingText('❌ Le marché manque de bras, il ne peut fonctionner', false, 'error-message');
-                        } else if (hasPartialWorkers) {
-                            makeInfoBuildingText('⚠️ Le marché tente de vendre avec peine car trop peu d\'employés', false, 'warning-message');
-                        }
-                    }
+                    renderWorkplaceEmployeesInfo(marketData, {
+                        fullyStaffed: '✅ Le marché marche à plein régime',
+                        noWorkers: '❌ Le marché manque de bras, il ne peut fonctionner',
+                        partialWorkers: '⚠️ Le marché tente de vendre avec peine car trop peu d\'employés',
+                    });
                 }
 
                 if(supplyView?.kind === 'farm') {
@@ -927,35 +946,11 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     }
                     
                     const farmData = await housesStore.getHouse(uniqueId);
-                    if (farmData && farmData.employees) {
-                        const employees = farmData.employees;
-                        const workerNeed = employees.worker_need || 0;
-                        const eliteNeed = employees.elite_need || 0;
-                        const workers = employees.worker || 0;
-                        const elites = employees.elite || 0;
-                        const sector = employees.sector || 0;
-                        const priority = getSectorPriority(sector);
-                        
-                        const hasEnoughWorkers = workers >= workerNeed;
-                        const hasEnoughElites = elites >= eliteNeed;
-                        const hasNoWorkers = workers === 0 && workerNeed > 0;
-                        const hasPartialWorkers = workers > 0 && workers < workerNeed;
-                        const isFullyStaffed = hasEnoughWorkers && hasEnoughElites;
-                        
-                        makeInfoSection('Employés');
-                        makeInfoKeyValue('Secteur', `${sector} : ${getSectorName(sector)}`);
-                        makeInfoKeyValue('Priorité', `${priority}`);
-                        makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
-                        makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
-                        
-                        if (isFullyStaffed) {
-                            makeInfoBuildingText('✅ La ferme a tout ce qu\'il faut pour fonctionner', false, 'success-message');
-                        } else if (hasNoWorkers) {
-                            makeInfoBuildingText('❌ La ferme n\'a aucun employé et ne peut pas fonctionner', false, 'error-message');
-                        } else if (hasPartialWorkers) {
-                            makeInfoBuildingText('⚠️ La ferme ne peut fonctionner à sa pleine capacité', false, 'warning-message');
-                        }
-                    }
+                    renderWorkplaceEmployeesInfo(farmData, {
+                        fullyStaffed: '✅ La ferme a tout ce qu\'il faut pour fonctionner',
+                        noWorkers: '❌ La ferme n\'a aucun employé et ne peut pas fonctionner',
+                        partialWorkers: '⚠️ La ferme ne peut fonctionner à sa pleine capacité',
+                    });
                 }
 
                 // Display windmill food stocks (collected from all farms in December)
@@ -1043,35 +1038,11 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     }
                     
                     const windmillData = await housesStore.getHouse(uniqueId);
-                    if (windmillData && windmillData.employees) {
-                        const employees = windmillData.employees;
-                        const workerNeed = employees.worker_need || 0;
-                        const eliteNeed = employees.elite_need || 0;
-                        const workers = employees.worker || 0;
-                        const elites = employees.elite || 0;
-                        const sector = employees.sector || 0;
-                        const priority = getSectorPriority(sector);
-                        
-                        const hasEnoughWorkers = workers >= workerNeed;
-                        const hasEnoughElites = elites >= eliteNeed;
-                        const hasNoWorkers = workers === 0 && workerNeed > 0;
-                        const hasPartialWorkers = workers > 0 && workers < workerNeed;
-                        const isFullyStaffed = hasEnoughWorkers && hasEnoughElites;
-                        
-                        makeInfoSection('Employés');
-                        makeInfoKeyValue('Secteur', `${sector} : ${getSectorName(sector)}`);
-                        makeInfoKeyValue('Priorité', `${priority}`);
-                        makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
-                        makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
-                        
-                        if (isFullyStaffed) {
-                            makeInfoBuildingText('✅ Le moulin tourne à plein régime', false, 'success-message');
-                        } else if (hasNoWorkers) {
-                            makeInfoBuildingText('❌ Le moulin manque de bras, il ne peut fonctionner', false, 'error-message');
-                        } else if (hasPartialWorkers) {
-                            makeInfoBuildingText('⚠️ Le moulin tourne avec peine car trop peu d\'employés', false, 'warning-message');
-                        }
-                    }
+                    renderWorkplaceEmployeesInfo(windmillData, {
+                        fullyStaffed: '✅ Le moulin tourne à plein régime',
+                        noWorkers: '❌ Le moulin manque de bras, il ne peut fonctionner',
+                        partialWorkers: '⚠️ Le moulin tourne avec peine car trop peu d\'employés',
+                    });
                 }
             }
            
@@ -1092,7 +1063,8 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 }
                 window.game.play()
             }
-            await scene.update(city, time)
+            await scene.update(city, time);
+            await scene.refreshEmploymentPresentation(city);
         } else if(!tile.buildingId || (activeToolId && (activeToolId === 'roads' || activeToolId === 'Road' || activeToolId.startsWith('StonePath-')) && (tile.buildingId === 'roads' || tile.buildingId === 'Road' || (tile.buildingId && tile.buildingId.startsWith('StonePath-'))))) {
             // PLACING A BUILDING - Ensure game is NOT paused
             // Allow placement if tile is empty OR if placing a road on an existing road (replacement)
@@ -1220,8 +1192,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 
                 // Update scene to place the building (roads are now 3D meshes like other buildings)
                 await scene.update(city, time);
-                
-                // Envoyer au serveur multijoueur si activé
+                await syncEmploymentAfterBuildingChange(housesStore, scene, city, activeToolId);
                 if (window.multiplayerManager && window.multiplayerManager.isMultiplayer) {
                     try {
                         await window.multiplayerManager.placeBuilding(activeToolId, x, y);
@@ -1341,6 +1312,8 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
             }
             
             await scene.update(city, time);
+            await redistributeCityEmployment(housesStore);
+            await scene.refreshEmploymentPresentation(city);
             
             // Vérifier les objectifs à chaque tour (seulement si activés)
             if (window.objectivesTracker && objectivesTracker.enabled) {
@@ -1440,6 +1413,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
     }, Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed')) || 4000)));
 
     scene.start();
+    void scene.refreshEmploymentPresentation(city);
 
     // Initialize and attach InputManager non-invasively
     try {

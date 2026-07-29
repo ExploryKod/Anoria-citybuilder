@@ -26,6 +26,7 @@ export const gameWindow = document.getElementById('game-window');
 export const displayPop = document.querySelector('.info-panel .display-pop');
 export const displayHungerPop = document.querySelector('.info-panel .display-hunger-pop');
 export const displayUnemployedPop = document.querySelector('.info-panel .display-unemployed-pop');
+export const displayWorkerLack = document.querySelector('.info-panel .display-worker-lack');
 export const displayDelay = document.querySelector('.info-panel .display-delay');
 export const displayDelayUI = document.querySelector('.delay-ui');
 export const bulldozeSelected = document.querySelector('.bulldoze-btn');
