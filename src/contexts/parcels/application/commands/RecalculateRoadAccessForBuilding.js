@@ -45,7 +45,7 @@ export class RecalculateRoadAccessForBuilding {
 
     this.eventPublisher.publish(
       createRoadAccessChanged({
-        buildingId: building.buildingId ?? building.id,
+        buildingId: building.id,
         previousRoadCount,
         newRoadAccess: roadAccess,
       })

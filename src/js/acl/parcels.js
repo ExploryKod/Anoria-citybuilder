@@ -20,9 +20,12 @@ export {
   toPublishedBuildingId,
   isPublishedBuildingIdString,
   resolvePublishedBuildingIdFromRef,
+  createBuildingInstanceId,
+  instanceIdFromHouseRow,
+  tryInstanceIdFromHouseRow,
   canonicalizeHouseRecord,
   tryCanonicalizeHouseRecord,
-  publishedIdFromHouseRow,
+  toDisplayLabel,
 } from './building-identity.js';
 
 export {

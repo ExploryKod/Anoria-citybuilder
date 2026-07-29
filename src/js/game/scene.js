@@ -450,23 +450,24 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                 !meshBuildingId ||
                 (!houses.includes(meshBuildingId) && !palaces.includes(meshBuildingId))
             ) {
-                return { buildingId: meshBuildingId, uniqueId: null, synced: false };
+                return { buildingId: meshBuildingId, instanceId: null, synced: false };
             }
 
             const tileHouse = await housing.getResidentialHouseAt({ x, y });
             if (!tileHouse || !buildings[x]?.[y]) {
                 return {
                     buildingId: meshBuildingId,
-                    uniqueId: toBuildingIdString(meshBuildingId, x, y),
+                    instanceId: city.tiles[x]?.[y]?.instanceId ?? buildings[x]?.[y]?.userData?.instanceId ?? null,
                     synced: false,
                 };
             }
 
             const nextType = tileHouse.type;
-            const nextId = tileHouse.id;
+            const instanceId = tileHouse.id;
 
-            if (city.tiles[x]?.[y] && city.tiles[x][y].buildingId !== nextType) {
+            if (city.tiles[x]?.[y]) {
                 city.tiles[x][y].buildingId = nextType;
+                city.tiles[x][y].instanceId = instanceId;
             }
 
             if (nextType !== meshBuildingId) {
@@ -483,7 +484,140 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                 }
             }
 
-            return { buildingId: nextType, uniqueId: nextId, synced: true };
+            if (buildings[x]?.[y]) {
+                buildings[x][y].userData.instanceId = instanceId;
+                buildings[x][y].userData.type = nextType;
+                buildings[x][y].userData.id = nextType;
+            }
+
+            return { buildingId: nextType, instanceId, synced: true };
+        }
+
+        async function persistTileNeighbors(x, y, buildingId, instanceId) {
+            const mesh = buildings[x]?.[y];
+            if (!mesh?.userData || !instanceId || !buildingId) {
+                return;
+            }
+            if (mesh.userData.instanceId !== instanceId) {
+                mesh.userData.instanceId = instanceId;
+            }
+            const buildingData = {
+                city,
+                buildings,
+                x,
+                y,
+                currentBuildingId: buildingId,
+                currentInstanceId: instanceId,
+                terrain,
+            };
+            updateBuildingNeighbors(buildingData, 1, time);
+            try {
+                const allNeighborsWithinZone = getBuildingsNamesInZone(
+                    buildingData,
+                    time,
+                    { buildingTarget: '', zones: [1, 2] }
+                );
+                const allMarketsInZone = getBuildingsNamesInZone(
+                    buildingData,
+                    time,
+                    { buildingTarget: 'Market-Stall', zones: [1, 2] }
+                );
+                await parcels.updateNeighbors(instanceId, allNeighborsWithinZone ?? []);
+                await housesStore.updateHouseFields(instanceId, { markets: allMarketsInZone });
+                await parcels.recalculateRoadAccessForBuilding.execute(instanceId);
+            } catch (err) {
+                console.warn('[Scene] Failed to update neighbors/markets for', buildingId, err);
+            }
+        }
+
+        async function placeTileMeshIfNeeded(x, y, needsMeshPlacement, tileBuildingId) {
+            if (!needsMeshPlacement || !tileBuildingId) {
+                return;
+            }
+            const newBuildingId = tileBuildingId;
+            if (newBuildingId === 'roads') {
+                if (terrain[x] && terrain[x][y]) {
+                    const terrainMesh = terrain[x][y];
+                    const sharedMaterials = assetManager.getSharedTerrainMaterials();
+                    if (sharedMaterials && sharedMaterials['roads']) {
+                        terrainMesh.material = sharedMaterials['roads'];
+                        terrainMesh.name = 'roads';
+                        terrainMesh.userData.id = 'roads';
+                        terrainMesh.userData.type = 'roads';
+                        terrainMesh.userData.isRoad = true;
+                        terrainMesh.userData.x = x;
+                        terrainMesh.userData.y = y;
+                        terrainMesh.updateMatrixWorld(true);
+                    }
+                }
+                if (!buildings[x][y] || buildings[x][y] !== terrain[x][y]) {
+                    buildings[x][y] = terrain[x][y];
+                }
+                const roadInstanceId = city.tiles[x]?.[y]?.instanceId;
+                if (roadInstanceId && terrain[x]?.[y]) {
+                    terrain[x][y].userData.instanceId = roadInstanceId;
+                }
+                if (roadInstanceId) {
+                    try {
+                        await parcels.syncPlacedBuilding({
+                            buildingId: roadInstanceId,
+                            x,
+                            y,
+                            type: 'roads',
+                        });
+                    } catch (err) {
+                        console.warn('[Scene] Failed parcels place for road', roadInstanceId, err);
+                    }
+                }
+                return;
+            }
+
+            const buildingData = assetsPrices[newBuildingId];
+            const gridSize = buildingData?.gridSize || 1;
+
+            let isOriginTile = true;
+            if (gridSize > 1) {
+                if (
+                    (x > 0 && city.tiles[x - 1][y].buildingId === newBuildingId) ||
+                    (y > 0 && city.tiles[x][y - 1].buildingId === newBuildingId)
+                ) {
+                    isOriginTile = false;
+                }
+            }
+
+            const assetId = newBuildingId === 'roads' ? 'StonePath-001' : newBuildingId;
+            const placedInstanceId = city.tiles[x]?.[y]?.instanceId;
+
+            if (isOriginTile) {
+                removeInteractiveObject(buildings[x][y]);
+                buildings[x][y] = assetManager.createAsset(assetId, x, y);
+                const zoneX = Math.floor(x / ZONE_SIZE);
+                const zoneY = Math.floor(y / ZONE_SIZE);
+                const citySize = city.size || 16;
+                const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
+                if (zoneGroups[zoneIndex]) {
+                    zoneGroups[zoneIndex].add(buildings[x][y]);
+                } else {
+                    scene.add(buildings[x][y]);
+                }
+
+                if (placedInstanceId && buildings[x][y]) {
+                    buildings[x][y].userData.instanceId = placedInstanceId;
+                }
+
+                if (placedInstanceId) {
+                    try {
+                        await parcels.syncPlacedBuilding({
+                            buildingId: placedInstanceId,
+                            x,
+                            y,
+                            type: newBuildingId,
+                        });
+                    } catch (err) {
+                        console.warn('[Scene] Failed parcels place for', placedInstanceId, err);
+                    }
+                }
+            }
         }
 
         // Time turn processing
@@ -529,6 +663,18 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
 
         // --- BOUCLE SUR LA VILLE ----
         parcels.bindSpatialContext({ city, buildings, terrain, time });
+
+        // UUID on meshes so spatial neighbor scans resolve Dexie rows (PlaceBuilding adjacents)
+        for (let sx = 0; sx < city.size; sx++) {
+            for (let sy = 0; sy < city.size; sy++) {
+                const inst = city.tiles[sx]?.[sy]?.instanceId;
+                if (!inst) continue;
+                const mesh = buildings[sx]?.[sy];
+                if (mesh?.userData) {
+                    mesh.userData.instanceId = inst;
+                }
+            }
+        }
 
         // Define status icons metadata for all buildings
         const statutsIconsMeta = {
@@ -594,9 +740,19 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
             for(let y = 0; y < city.size; y++) {
                 // Processing city tile
               let currentBuildingId = buildings[x][y]?.userData?.type || buildings[x][y]?.userData?.id;
-              // Also check terrain for roads using isRoad property (roads are in terrain array but may be in buildings array too)
-              // FIX BUG 1: Only detect road from terrain if it's also in city.tiles (meaning it was properly placed)
               const tileBuildingId = city.tiles[x][y]?.buildingId;
+              const tileInstanceId = city.tiles[x][y]?.instanceId;
+              // Mesh may still be grass while city.tiles already holds the placed building
+              if ((!currentBuildingId || currentBuildingId === 'grass') && tileBuildingId) {
+                  currentBuildingId = tileBuildingId;
+              }
+              const meshBuildingType =
+                  buildings[x][y]?.userData?.type || buildings[x][y]?.userData?.id;
+              const effectiveMeshType =
+                  meshBuildingType && meshBuildingType !== 'grass' ? meshBuildingType : null;
+              const needsMeshPlacement = Boolean(
+                  tileBuildingId && tileBuildingId !== effectiveMeshType
+              );
               if (!currentBuildingId && terrain[x] && terrain[x][y] && (terrain[x][y].userData?.isRoad || terrain[x][y].name === 'roads')) {
                   // Only treat as road if it's also marked in city.tiles (was properly placed)
                   if (tileBuildingId === 'roads' || tileBuildingId === 'Road') {
@@ -627,10 +783,33 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
               // Check if building is on edge (need special handling for neighbors)
               const isOnEdge = x === 0 || x === city.size - 1 || y === 0 || y === city.size - 1;
 
-              if(currentBuildingId && isInCityLimits) {
-                let currentUniqueID =  toBuildingIdString(currentBuildingId, x, y)
-                // Skip if toBuildingIdString returned null (invalid building ID or coordinates)
-                if(!currentUniqueID) {
+              // Create/replace mesh before neighbor scans (grass in terrain[] ≠ building in buildings[])
+              await placeTileMeshIfNeeded(x, y, needsMeshPlacement, tileBuildingId);
+
+              if (tileInstanceId && buildings[x]?.[y]?.userData) {
+                  buildings[x][y].userData.instanceId = tileInstanceId;
+              }
+
+              if((currentBuildingId || tileBuildingId) && isInCityLimits) {
+                let currentInstanceId =
+                    tileInstanceId
+                    ?? buildings[x][y]?.userData?.instanceId
+                    ?? null;
+
+                if (!currentInstanceId) {
+                    const atTile = await housesStore.findHouseAtTile(x, y);
+                    currentInstanceId = atTile?.instanceId ?? atTile?.id ?? null;
+                    if (currentInstanceId && city.tiles[x]?.[y]) {
+                        city.tiles[x][y].instanceId = currentInstanceId;
+                    }
+                }
+
+                // Tile claims a building but instanceId not resolved yet — wait for next frame
+                if (!currentInstanceId && tileBuildingId) {
+                    continue;
+                }
+
+                if (!currentInstanceId) {
                     continue;
                 }
 
@@ -641,8 +820,8 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                         currentBuildingId
                     );
                     currentBuildingId = residentialSync.buildingId;
-                    if (residentialSync.uniqueId) {
-                        currentUniqueID = residentialSync.uniqueId;
+                    if (residentialSync.instanceId) {
+                        currentInstanceId = residentialSync.instanceId;
                     }
                 }
                 
@@ -650,7 +829,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                 // Si non, le supprimer de la scène (cas des événements aléatoires, etc.)
                 // IMPORTANT: Ne pas supprimer si un nouveau bâtiment est en cours de création (newBuildingId existe)
                 const isRoad = buildings[x][y]?.userData?.isRoad || (currentBuildingId && currentBuildingId.startsWith('StonePath-'));
-                const hasNewBuilding = newBuildingId && newBuildingId !== currentBuildingId;
+                const hasNewBuilding = needsMeshPlacement;
                 
                 // FIX BUG 1: For roads, use city.tiles as source of truth
                 // If city.tiles doesn't have a road but terrain shows road material, restore to grass
@@ -685,17 +864,18 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                 
                 // Ne vérifier la suppression que si aucun nouveau bâtiment n'est en cours de création
                 if (!isRoad && !hasNewBuilding) {
-                    let buildingExists = await housesStore.getHouse(currentUniqueID);
+                    let buildingExists = await housesStore.getHouse(currentInstanceId);
                     if (
                         !buildingExists &&
                         (houses.includes(currentBuildingId) || palaces.includes(currentBuildingId))
                     ) {
                         const tileHouse = await housing.getResidentialHouseAt({ x, y });
                         if (tileHouse) {
-                            currentUniqueID = tileHouse.id;
+                            currentInstanceId = tileHouse.id;
                             currentBuildingId = tileHouse.type;
                             if (city.tiles[x]?.[y]) {
                                 city.tiles[x][y].buildingId = tileHouse.type;
+                                city.tiles[x][y].instanceId = tileHouse.id;
                             }
                             const meshType =
                                 buildings[x][y]?.userData?.type ||
@@ -703,76 +883,69 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                             if (tileHouse.type !== meshType) {
                                 await syncResidentialHouseMeshFromDb(x, y, meshType);
                             }
-                            buildingExists = await housesStore.getHouse(currentUniqueID);
+                            buildingExists = await housesStore.getHouse(currentInstanceId);
                         }
                     }
                     if (!buildingExists) {
-                        // Le bâtiment n'existe plus dans la DB, le supprimer visuellement
-                        // IMPORTANT: Ne pas supprimer si c'est aussi le terrain (routes)
                         const isTerrain = buildings[x][y] === terrain[x][y];
                         if (!isTerrain) {
                             removeInteractiveObject(buildings[x][y]);
                             buildings[x][y] = undefined;
                         }
-                        city.tiles[x][y].buildingId = undefined;
-                        continue; // Passer au prochain tile
+                        if (city.tiles[x]?.[y]) {
+                            city.tiles[x][y].buildingId = undefined;
+                            city.tiles[x][y].instanceId = undefined;
+                        }
+                        continue;
                     }
                 }
                 
                 // Update building data in database
                 if (!isRoad) {
-                    await housesStore.updateHouseFields(currentUniqueID, {worldTime: time})
-                    
-                    /* update userData in indexDB === real userData state from three mesh */
-                    const currentUserData = buildings[x][y].userData
-                    // Building userData processing
-                    await housesStore.updateHouseFields(currentUniqueID, {})
-                    
+                    await housesStore.updateHouseFields(currentInstanceId, {worldTime: time})
+
                     // Migration: Add employees object to existing buildings if missing, or migrate old structure
-                    const buildingData = await housesStore.getHouse(currentUniqueID);
+                    const buildingData = await housesStore.getHouse(currentInstanceId);
                     if (buildingData) {
                         if (!buildingData.employees) {
-                            // No employees object - create new one
                             const defaultEmployees = getDefaultEmployees(currentBuildingId);
-                            await housesStore.updateHouseFields(currentUniqueID, { employees: defaultEmployees });
+                            await housesStore.updateHouseFields(currentInstanceId, { employees: defaultEmployees });
                         } else {
-                            // Migrate old structure to new structure
                             const employees = buildingData.employees;
                             const needsUpdate = 
-                                employees.category !== undefined || // Old: category -> new: sector
-                                employees.worker_need === undefined || // Missing worker_need
-                                employees.elite_need === undefined; // Missing elite_need
+                                employees.category !== undefined ||
+                                employees.worker_need === undefined ||
+                                employees.elite_need === undefined;
                             
                             if (needsUpdate) {
                                 const defaultEmployees = getDefaultEmployees(currentBuildingId);
                                 const migratedEmployees = {
                                     priority: employees.priority !== undefined ? employees.priority : defaultEmployees.priority,
-                                    worker_need: defaultEmployees.worker_need, // From config
-                                    elite_need: defaultEmployees.elite_need, // From config
+                                    worker_need: defaultEmployees.worker_need,
+                                    elite_need: defaultEmployees.elite_need,
                                     worker: employees.worker || 0,
                                     elite: employees.elite || 0,
                                     sector: employees.category !== undefined ? employees.category : (employees.sector || defaultEmployees.sector),
                                     salary: employees.salary || 0
                                 };
-                                await housesStore.updateHouseFields(currentUniqueID, { employees: migratedEmployees });
+                                await housesStore.updateHouseFields(currentInstanceId, { employees: migratedEmployees });
                             }
                         }
                     }
                 } else {
                     // Pour les routes, on essaie de mettre à jour mais on ne bloque pas si ça échoue
                     try {
-                        await housesStore.updateHouseFields(currentUniqueID, {worldTime: time})
-                        const currentUserData = buildings[x][y].userData
-                        await housesStore.updateHouseFields(currentUniqueID, {})
+                        await housesStore.updateHouseFields(currentInstanceId, {worldTime: time})
+                        if (buildings[x][y]?.userData) {
+                            await housesStore.updateHouseFields(currentInstanceId, {})
+                        }
                         
-                        // Migration: Add employees object to roads if missing, or migrate old structure
-                        const roadData = await housesStore.getHouse(currentUniqueID);
+                        const roadData = await housesStore.getHouse(currentInstanceId);
                         if (roadData) {
                             if (!roadData.employees) {
                                 const defaultEmployees = getDefaultEmployees(currentBuildingId);
-                                await housesStore.updateHouseFields(currentUniqueID, { employees: defaultEmployees });
+                                await housesStore.updateHouseFields(currentInstanceId, { employees: defaultEmployees });
                             } else {
-                                // Migrate old structure to new structure
                                 const employees = roadData.employees;
                                 const needsUpdate = 
                                     employees.category !== undefined ||
@@ -790,15 +963,19 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                                         sector: employees.category !== undefined ? employees.category : (employees.sector || defaultEmployees.sector),
                                         salary: employees.salary || 0
                                     };
-                                    await housesStore.updateHouseFields(currentUniqueID, { employees: migratedEmployees });
+                                    await housesStore.updateHouseFields(currentInstanceId, { employees: migratedEmployees });
                                 }
                             }
                         }
                     } catch (err) {
                         // Route peut ne pas exister encore dans la DB, c'est normal lors de la création
-                        // On continue quand même pour permettre l'affichage visuel
                     }
                 }
+
+                // Defer sprites until the building mesh exists (grass in terrain[] is not a building mesh)
+                if (!buildings[x][y]?.userData) {
+                    continue;
+                } else {
 
 
 
@@ -809,25 +986,11 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                     x,
                     y,
                     currentBuildingId,
-                    currentUniqueID,
+                    currentInstanceId,
                     terrain
                 };
 
-                  updateBuildingNeighbors(buildingData, 1, time);
-                  /** ALl buildings : create a neighbors array in indexDB **/
-                  // Wrap in try-catch to prevent errors from blocking removal
-                  try {
-                      const allNeighborsWithinZone = getBuildingsNamesInZone(buildingData, time, {buildingTarget: "", zones:[1,2]})
-                      const allMarketsInZone = getBuildingsNamesInZone(buildingData, time, {buildingTarget: "Market-Stall", zones:[1,2]})
-                      await parcels.updateNeighbors(currentUniqueID, allNeighborsWithinZone ?? [])
-                      await housesStore.updateHouseFields(currentUniqueID, {markets: allMarketsInZone})
-                  } catch (err) {
-                      // Building might not exist in DB yet (e.g., newly placed StonePath road)
-                      // Don't block removal or other processing if this fails
-                      console.warn('[Scene] Failed to update neighbors/markets for', currentBuildingId, err);
-                  }
-
-                //  Remove a building from the scene if a player remove a building
+                // Neighbors persisted in second pass after all meshes exist
                 if(!newBuildingId && currentBuildingId) {
                     if(bulldozeSelected.classList.contains('selected') && currentBuildingId) {
                         // Debug: Verify building exists at coordinates
@@ -842,12 +1005,11 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                         
                         // Handle geometry-based roads ('roads') - restore terrain to grass
                         if (currentBuildingId === 'roads') {
-                            const uniqueBuildingId = toBuildingIdString(currentBuildingId, x, y);
                             try {
-                                await parcels.syncRemovedBuilding({ buildingId: uniqueBuildingId });
+                                await parcels.syncRemovedBuilding({ buildingId: currentInstanceId });
                             } catch (err) {
-                                console.warn('[Scene] Failed parcels remove for road', uniqueBuildingId, err);
-                                await housesStore.deleteOneHouse(uniqueBuildingId);
+                                console.warn('[Scene] Failed parcels remove for road', currentInstanceId, err);
+                                await housesStore.deleteOneHouse(currentInstanceId);
                             }
                             // Restore terrain mesh to grass
                             if (terrain[x] && terrain[x][y]) {
@@ -870,15 +1032,14 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                             // Clear buildingId from city.tiles
                             if (city.tiles[x] && city.tiles[x][y]) {
                                 city.tiles[x][y].buildingId = undefined;
+                                city.tiles[x][y].instanceId = undefined;
                             }
                         } else {
-                            // Remove buildings (houses, StonePath roads, farms, markets, etc.) - all follow the same pattern
-                            const uniqueBuildingId = toBuildingIdString(currentBuildingId, x, y);
                             try {
-                                await parcels.syncRemovedBuilding({ buildingId: uniqueBuildingId });
+                                await parcels.syncRemovedBuilding({ buildingId: currentInstanceId });
                             } catch (err) {
-                                console.warn('[Scene] Failed parcels remove for', uniqueBuildingId, err);
-                                await housesStore.deleteOneHouse(uniqueBuildingId);
+                                console.warn('[Scene] Failed parcels remove for', currentInstanceId, err);
+                                await housesStore.deleteOneHouse(currentInstanceId);
                             }
                             removeInteractiveObject(buildings[x][y]);
                             buildings[x][y] = undefined;
@@ -904,7 +1065,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
 
                 /* Only for commerce buildings */
                 if(commerce.includes(currentBuildingId)) {
-                    const marketTime = { name: currentUniqueID, increment: 1, field: 'time' };
+                    const marketTime = { name: currentInstanceId, increment: 1, field: 'time' };
                     await housesStore.incrementHouseField(marketTime, false)
 
                     // Clean up market sprites (including no-work)
@@ -924,7 +1085,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
 
                     if (buildings[x][y]) {
                         await syncRoadAccess({
-                            buildingId: currentUniqueID,
+                            buildingId: currentInstanceId,
                             mesh: buildings[x][y],
                             position: statutsIconsMeta.road.position,
                             scale: marketRoadScale,
@@ -932,7 +1093,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                     }
 
                     // Check if market has workers (required to operate; no-road excluded)
-                    const marketDataForWorkers = await housesStore.getHouse(currentUniqueID);
+                    const marketDataForWorkers = await housesStore.getHouse(currentInstanceId);
                     const marketEmployees = marketDataForWorkers?.employees || { worker: 0, worker_need: 0 };
                     const marketWorkers = marketEmployees.worker || 0;
                     const marketWorkerNeed = marketEmployees.worker_need || 0;
@@ -957,7 +1118,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                         // Skip buying icon display - market cannot operate without workers
                     } else if (buildings[x][y]) {
                     // Display buying icon during autumn (when markets buy from farms)
-                        const marketSupply = await supply.getBuildingSupplyView(currentUniqueID);
+                        const marketSupply = await supply.getBuildingSupplyView(currentInstanceId);
                         const isBuying = marketSupply?.isBuying === true;
                         const noFarmsNearby = marketSupply?.noFarmsNearby === true;
                         
@@ -1019,7 +1180,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                         );
                     } else if (buildings[x][y]) {
                         // No-workers branch skipped buying UI; still show no-food from Supply
-                        const marketSupplyStocks = (await supply.getBuildingSupplyView(currentUniqueID))?.stocks
+                        const marketSupplyStocks = (await supply.getBuildingSupplyView(currentInstanceId))?.stocks
                             || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                         const hasFoodBaskets = (marketSupplyStocks.wheat || 0) > 0 ||
                             (marketSupplyStocks.carrot || 0) > 0 ||
@@ -1058,7 +1219,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
 
                         // Initialize stocks if they don't exist - get from Supply BC first
                         if (!buildings[x][y].userData.stocks) {
-                            const existingStocks = (await supply.getBuildingSupplyView(currentUniqueID))?.stocks;
+                            const existingStocks = (await supply.getBuildingSupplyView(currentInstanceId))?.stocks;
                             buildings[x][y].userData.stocks = existingStocks || {
                                 food: 0,
                                 cabbage: 0,
@@ -1091,7 +1252,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                                 }
                         }
 
-                        await housesStore.updateHouseFields(currentUniqueID, commerceUserData)
+                        await housesStore.updateHouseFields(currentInstanceId, commerceUserData)
                     }
 
 
@@ -1125,7 +1286,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
 
                     if (buildings[x][y]) {
                         await syncRoadAccess({
-                            buildingId: currentUniqueID,
+                            buildingId: currentInstanceId,
                             mesh: buildings[x][y],
                             position: statutsIconsMeta.road.position,
                             scale: windmillRoadScale,
@@ -1133,7 +1294,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                     }
 
                     // Check if windmill has workers (required to operate; no-road excluded)
-                    const windmillDataForWorkers = await housesStore.getHouse(currentUniqueID);
+                    const windmillDataForWorkers = await housesStore.getHouse(currentInstanceId);
                     const windmillEmployees = windmillDataForWorkers?.employees || { worker: 0, worker_need: 0 };
                     const windmillWorkers = windmillEmployees.worker || 0;
                     const windmillWorkerNeed = windmillEmployees.worker_need || 0;
@@ -1157,7 +1318,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                         // Skip collecting icon display - windmill cannot operate without workers
                     } else if (buildings[x][y]) {
                     // Display collecting icon during December (when windmills collect from farms)
-                        const windmillSupply = await supply.getBuildingSupplyView(currentUniqueID);
+                        const windmillSupply = await supply.getBuildingSupplyView(currentInstanceId);
                         const isCollecting = windmillSupply?.isCollecting === true;
                         
                         if (isCollecting === true) {
@@ -1207,7 +1368,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                     const season = timeInfo.season;
                     
                     // Check if farm has workers (required to operate; no-road excluded)
-                    const farmDataForWorkers = await housesStore.getHouse(currentUniqueID);
+                    const farmDataForWorkers = await housesStore.getHouse(currentInstanceId);
                     const farmEmployees = farmDataForWorkers?.employees || { worker: 0, worker_need: 0 };
                     const farmWorkers = farmEmployees.worker || 0;
                     const farmWorkerNeed = farmEmployees.worker_need || 0;
@@ -1287,7 +1448,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                     // In December, show additional sprite if farm sold to windmill
                     // This sprite appears alongside the winter season sprite to indicate windmill collection
                     if (buildings[x][y] && season === 'Hiver' && timeInfo.monthIndex === 11) {
-                        const farmSupply = await supply.getBuildingSupplyView(currentUniqueID);
+                        const farmSupply = await supply.getBuildingSupplyView(currentInstanceId);
                         const soldToWindmill = farmSupply?.soldToWindmill === true;
                         if (soldToWindmill === true) {
                             // Show windmill collection sprite (green, similar to windmill's isCollecting)
@@ -1333,7 +1494,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                     });
 
                     // Check if factory has workers (required to operate; no-road excluded)
-                    const factoryDataForWorkers = await housesStore.getHouse(currentUniqueID);
+                    const factoryDataForWorkers = await housesStore.getHouse(currentInstanceId);
                     const factoryEmployees = factoryDataForWorkers?.employees || { worker: 0, worker_need: 0 };
                     const factoryWorkers = factoryEmployees.worker || 0;
                     const factoryWorkerNeed = factoryEmployees.worker_need || 0;
@@ -1378,11 +1539,11 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                     // Then this code was reading empty userData.stocks and overwriting IndexedDB with 0s!
 
                     // Read stocks from Supply BC
-                    const houseSupply = await supply.getBuildingSupplyView(currentUniqueID);
+                    const houseSupply = await supply.getBuildingSupplyView(currentInstanceId);
                     const houseFoodStocks = houseSupply?.stocks || null;
-                    let houseNeighbors = await housesStore.getHouseItem(currentUniqueID, 'neighbors');
-                    const currentPop = await housesStore.getHouseItem(currentUniqueID, 'pop');
-                    const worldTime = await housesStore.getHouseItem(currentUniqueID, 'worldTime');
+                    let houseNeighbors = await housesStore.getHouseItem(currentInstanceId, 'neighbors');
+                    const currentPop = await housesStore.getHouseItem(currentInstanceId, 'pop');
+                    const worldTime = await housesStore.getHouseItem(currentInstanceId, 'worldTime');
                     
                     // Sync Supply stocks to userData for visual display
                     if (houseFoodStocks && buildings[x][y] && buildings[x][y].userData) {
@@ -1394,18 +1555,13 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                         };
                     }
                     
-                    const houseData = await housesStore.getHouse(currentUniqueID);
+                    const houseData = await housesStore.getHouse(currentInstanceId);
                     const foodAffluence = housing.evaluateHouseFoodAffluence({
                         stocks: houseFoodStocks || {},
                         population: currentPop,
                     });
                     const { hasFood, isInsufficient } = foodAffluence;
-                    const { hasAccess: hasRoadAccess } = await syncRoadAccess({
-                        buildingId: currentUniqueID,
-                        mesh: buildings[x][y] || null,
-                        position: statutsIconsMeta.road.position,
-                        scale: statutsIconsMeta.road.scale,
-                    });
+                    // Road icon refreshed after neighbor pass (see refresh loop below)
                     // Use unified time system for decay check (worldTime is source of truth)
                     const buildingAge = TimeManager.getBuildingAge(time, worldTime);
                     const decay = buildingAge > 3 && isInsufficient;
@@ -1434,119 +1590,54 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
 
 
                 }
-          
+
+
+                }
+
               }
-
-                  // if data model has changed as user add a new building, update the mesh 
-            if(newBuildingId && (newBuildingId !== currentBuildingId)) {
-                // Handle geometry-based roads ('roads') - update terrain mesh, don't create building
-                if (newBuildingId === 'roads') {
-                    // Update terrain mesh to show road material
-                    if (terrain[x] && terrain[x][y]) {
-                        const terrainMesh = terrain[x][y];
-                        const sharedMaterials = assetManager.getSharedTerrainMaterials();
-                        if (sharedMaterials && sharedMaterials['roads']) {
-                            terrainMesh.material = sharedMaterials['roads'];
-                            terrainMesh.name = 'roads';
-                            terrainMesh.userData.id = 'roads';
-                            terrainMesh.userData.type = 'roads';
-                            terrainMesh.userData.isRoad = true;
-                            terrainMesh.userData.x = x;
-                            terrainMesh.userData.y = y;
-                            // Ensure road is visible and properly positioned
-                            terrainMesh.updateMatrixWorld(true);
-                        }
-                    }
-                    // Also add to buildings array for neighbor detection
-                    if (!buildings[x][y] || buildings[x][y] !== terrain[x][y]) {
-                        buildings[x][y] = terrain[x][y];
-                    }
-                    const roadId = toBuildingIdString('roads', x, y);
-                    if (roadId) {
-                        try {
-                            await parcels.syncPlacedBuilding({
-                                buildingId: roadId,
-                                x,
-                                y,
-                                type: 'roads',
-                            });
-                        } catch (err) {
-                            console.warn('[Scene] Failed parcels place for road', roadId, err);
-                        }
-                    }
-                    continue; // Skip building creation code for geometry roads
-                }
-                
-                // Roads are now 3D meshes (StonePath-001), they are created as buildings below
-                // Old terrain-based road code has been completely removed
-                
-                // Check if this is the origin tile for multi-tile buildings
-                // We only create a building at the origin (top-left) tile
-                const buildingData = assetsPrices[newBuildingId];
-                const gridSize = buildingData?.gridSize || 1;
-                
-                let isOriginTile = true;
-                if (gridSize > 1) {
-                    // Check if there's already a building at (x-1, y) or (x, y-1) with the same ID
-                    // If yes, this is NOT the origin tile
-                    if ((x > 0 && city.tiles[x-1][y].buildingId === newBuildingId) ||
-                        (y > 0 && city.tiles[x][y-1].buildingId === newBuildingId)) {
-                        isOriginTile = false;
-                    }
-                }
-                
-                // Roads are now 3D meshes (StonePath-001), treat them like buildings
-                // Map 'roads' to 'StonePath-001' for asset creation
-                const assetId = (newBuildingId === 'roads') ? 'StonePath-001' : newBuildingId;
-                
-                // Only create the mesh if this is the origin tile
-                if (isOriginTile) {
-                    //remove the initial building if needed
-                    let isExistingBuilding;
-                    if(currentBuildingId) {
-                        isExistingBuilding = housesStore.getHouse(currentBuildingId);
-                    }
-
-                    // Checking building existence
-                    if(!isExistingBuilding) {
-                        const interactiveGroupRef = scene.interactiveGroup || scene.getObjectByName('interactive-objects');
-                        // Remove from both scene and interactive group
-                        removeInteractiveObject(buildings[x][y]);
-                        // Use assetId (which maps roads to StonePath-001)
-                        buildings[x][y] = assetManager.createAsset(assetId, x, y);
-                        // Add to appropriate zone group (NOT directly to scene)
-                        const zoneX = Math.floor(x / ZONE_SIZE);
-                        const zoneY = Math.floor(y / ZONE_SIZE);
-                        const citySize = city.size || 16;
-                        const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
-                        if (zoneGroups[zoneIndex]) {
-                            zoneGroups[zoneIndex].add(buildings[x][y]);
-                        } else {
-                            // Fallback: add directly to scene if zone group doesn't exist
-                            scene.add(buildings[x][y]);
-                        }
-
-                        const placedId = toBuildingIdString(newBuildingId, x, y);
-                        if (placedId) {
-                            try {
-                                await parcels.syncPlacedBuilding({
-                                    buildingId: placedId,
-                                    x,
-                                    y,
-                                    type: newBuildingId,
-                                });
-                            } catch (err) {
-                                console.warn('[Scene] Failed parcels place for', placedId, err);
-                            }
-                        }
-                    }
-
-                    // Add the new building
-                }
-                }
 
             }
 
+        }
+
+        // Second pass: neighbor sync once every tile mesh is up to date this frame
+        for (let nx = 0; nx < city.size; nx++) {
+            for (let ny = 0; ny < city.size; ny++) {
+                const tileBuildingId = city.tiles[nx]?.[ny]?.buildingId;
+                const instanceId =
+                    city.tiles[nx]?.[ny]?.instanceId
+                    ?? buildings[nx]?.[ny]?.userData?.instanceId
+                    ?? null;
+                if (!tileBuildingId || !instanceId) {
+                    continue;
+                }
+                const mesh = buildings[nx]?.[ny];
+                if (!mesh?.userData) {
+                    continue;
+                }
+                const buildingId = mesh.userData.type || mesh.userData.id || tileBuildingId;
+                await persistTileNeighbors(nx, ny, buildingId, instanceId);
+            }
+        }
+
+        // Sync residential meshes + road icons after neighbors (evolution may have run in ECS)
+        for (let nx = 0; nx < city.size; nx++) {
+            for (let ny = 0; ny < city.size; ny++) {
+                const tileType = city.tiles[nx]?.[ny]?.buildingId;
+                const instanceId = city.tiles[nx]?.[ny]?.instanceId;
+                if (!instanceId || !tileType) continue;
+                if (!houses.includes(tileType) && !palaces.includes(tileType)) continue;
+                const meshType = buildings[nx]?.[ny]?.userData?.type || buildings[nx]?.[ny]?.userData?.id;
+                await syncResidentialHouseMeshFromDb(nx, ny, meshType || tileType);
+                const mesh = buildings[nx]?.[ny];
+                if (!mesh?.userData) continue;
+                await syncRoadAccess({
+                    buildingId: instanceId,
+                    mesh,
+                    position: statutsIconsMeta.road.position,
+                    scale: statutsIconsMeta.road.scale,
+                });
+            }
         }
 
         // Cleanup: Remove orphaned house records from IndexedDB (houses that don't exist in scene)
@@ -1558,42 +1649,33 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
             for (const house of allHousesInDb) {
                 const x = house.x;
                 const y = house.y;
-                
-                // Skip if house.type is invalid (toBuildingIdString will return null)
-                if (!house.type || typeof house.type !== 'string') {
+                const instanceId = house.instanceId ?? house.id;
+
+                if (!instanceId || !house.type || typeof house.type !== 'string') {
                     continue;
                 }
-                
-                // Check if building exists in scene at this position
+
+                const tile = city.tiles[x]?.[y];
+                // city.tiles is the placement source of truth — mesh may lag one frame
+                if (tile?.instanceId === instanceId) {
+                    continue;
+                }
+
                 if (x >= 0 && x < city.size && y >= 0 && y < city.size) {
                     const buildingInScene = buildings[x] && buildings[x][y];
                     const buildingType = buildingInScene?.userData?.type;
-                    const buildingId = buildingInScene?.userData?.id;
-                    const expectedId = toBuildingIdString(house.type, x, y);
-                    
-                    // Skip if toBuildingIdString returned null (invalid building type)
-                    if (!expectedId) {
-                        continue;
-                    }
-                    
-                    // For roads: check both userData.type ('roads') and userData.id (exact name like 'StonePath-001')
-                    // For other buildings: check if buildingType matches house.type
+                    const meshInstanceId = buildingInScene?.userData?.instanceId;
+
                     const isRoad = house.type === 'roads' || house.type === 'Road' || (house.type && house.type.startsWith('StonePath-'));
-                    const typeMatches = isRoad 
-                        ? (buildingType === 'roads' && buildingId === house.type) || buildingType === house.type
+                    const typeMatches = isRoad
+                        ? buildingType === 'roads' || buildingType === house.type
                         : buildingType === house.type;
-                    
-                    // If no building in scene, or building type doesn't match, it's orphaned
-                    if (!buildingInScene || !typeMatches) {
-                        orphanedHouses.push(expectedId);
+
+                    if (!buildingInScene || (!typeMatches && meshInstanceId !== instanceId)) {
+                        orphanedHouses.push(instanceId);
                     }
                 } else {
-                    // Invalid coordinates - definitely orphaned
-                    const expectedId = toBuildingIdString(house.type, x, y);
-                    // Only add if expectedId is valid (not false)
-                    if (expectedId) {
-                        orphanedHouses.push(expectedId);
-                    }
+                    orphanedHouses.push(instanceId);
                 }
             }
             
@@ -1737,8 +1819,11 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                 const currentBuildingId = mesh.userData.type || mesh.userData.id;
                 if (!currentBuildingId) continue;
 
-                const uniqueId = toBuildingIdString(currentBuildingId, x, y);
-                if (!uniqueId) continue;
+                const instanceId =
+                    mesh.userData.instanceId
+                    ?? city.tiles?.[x]?.[y]?.instanceId
+                    ?? null;
+                if (!instanceId) continue;
 
                 const isMarket = commerce.includes(currentBuildingId);
                 const isFarm = farms.includes(currentBuildingId);
@@ -1748,7 +1833,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
 
                 if (!isMarket && !isFarm && !isWindmill && !isFactory) continue;
 
-                if (understaffed.has(uniqueId)) {
+                if (understaffed.has(instanceId)) {
                     let position = { x: -0.8, y: 0.5, z: -0.2 };
                     let scale = { x: 0.5, y: 0.5, z: 0.5 };
                     if (isMarket || isWindmill) {

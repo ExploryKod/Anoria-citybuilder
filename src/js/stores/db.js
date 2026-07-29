@@ -6,19 +6,16 @@ const db = new Dexie('anoriaDb');
 // Delete the database upon initialization (fresh start each time)
 db.delete({ disableAutoOpen: false })
     .then(() => {
-        // Recreate the database with the desired schema
         db.version(1).stores({
-            houses: 'name, [name+price]',
+            houses: 'instanceId, kind, type, [anchorX+anchorY], [kind+type]',
             game: 'name',
             budget: 'name',
-            objectives: 'name', // Store pour les échecs et succès d'objectifs
-            journal: '++id, turn, date, type, amount, description', // Journal des écritures comptables
-            foodTraceability: '++id, turn, month, year, date, transactionType, fromId, fromCoords, toId, toCoords, foodType, quantity, price', // Traçabilité alimentaire
-            productionJournal: '++id, turn, month, year, date, factoryId, eventType, resourceType, quantity, price, remainingStocks, logsConsumed, productionTurns' // Journal de production des factories
+            objectives: 'name',
+            journal: '++id, turn, date, type, amount, description',
+            foodTraceability: '++id, turn, month, year, date, transactionType, fromInstanceId, fromCoords, toInstanceId, toCoords, foodType, quantity, price',
+            productionJournal: '++id, turn, month, year, date, factoryId, eventType, resourceType, quantity, price, remainingStocks, logsConsumed, productionTurns',
         });
-        // Database cleared and recreated successfully
-        
-        // Clear localStorage items (same reset logic as IndexedDB)
+
         try {
             localStorage.removeItem('journal_year_end_balances');
             localStorage.removeItem('citizen_tax_amount');

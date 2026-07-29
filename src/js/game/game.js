@@ -5,7 +5,7 @@ import { TimeManager } from './utils/TimeManager.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
 import {getAssetPrice, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, isAreaAvailableForBuilding} from '../utils/utils.js';
-import { toBuildingIdString, getOrCreateParcelsContext } from '../acl/parcels.js';
+import { toBuildingIdString, createBuildingInstanceId, getOrCreateParcelsContext } from '../acl/parcels.js';
 import { getOrCreateSupplyContext, toSupplySeason, toSupplyMonth } from '../acl/supply.js';
 import { getOrCreateHousingContext } from '../acl/housing.js';
 import { redistributeCityEmployment, syncEmploymentAfterBuildingChange } from '../acl/employment.js';
@@ -600,6 +600,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     if (tileX >= 0 && tileX < city.size && tileY >= 0 && tileY < city.size) {
                         if (city.tiles[tileX] && city.tiles[tileX][tileY]) {
                             city.tiles[tileX][tileY].buildingId = undefined;
+                            city.tiles[tileX][tileY].instanceId = undefined;
                         }
                     }
                 }
@@ -645,16 +646,12 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
 
 
             if(buildingsObjects.includes(selectedObject.userData.id)) {
-                // Building selection
-                const uniqueId = toBuildingIdString(selectedObject.userData.id, selectedObject.userData.x, selectedObject.userData.y)
-                
-                // Debug: Log the ID construction and retrieved data
-                console.log('[game.js] Building info popup:', {
-                    userDataId: selectedObject.userData.id,
-                    x: selectedObject.userData.x,
-                    y: selectedObject.userData.y,
-                    constructedId: uniqueId
-                });
+                const { x: selX, y: selY } = selectedObject.userData;
+                const uniqueId =
+                    selectedObject.userData.instanceId
+                    ?? city.tiles?.[selX]?.[selY]?.instanceId
+                    ?? (await housesStore.findHouseAtTile(selX, selY))?.instanceId
+                    ?? null;
                 
                 const buildingPop = await housesStore.getHouseItem(uniqueId, 'pop')
                 const roadAccess = await parcels.getRoadAccess(uniqueId);
@@ -1098,30 +1095,27 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
             
             // Prepare building data for payment validation
             let price = 0
-            const houseID = activeToolId + '-' + selectedObject.userData.x + '-' + selectedObject.userData.y
+            const placementKey = `${x}-${y}`;
+            const instanceId = createBuildingInstanceId();
             
-            // Check if this building is already being placed (prevent rapid duplicate clicks)
-            if (pendingPlacements.has(houseID)) {
-                console.warn('[game.js] Building placement already in progress:', houseID);
+            if (pendingPlacements.has(placementKey)) {
+                console.warn('[game.js] Building placement already in progress:', placementKey);
                 return;
             }
             
-            // Mark as pending
-            pendingPlacements.add(houseID);
+            pendingPlacements.add(placementKey);
             
-            // Set timeout to clear pending (safety mechanism - 10 seconds)
             setTimeout(() => {
-                if (pendingPlacements.has(houseID)) {
-                    console.warn('[game.js] Clearing stuck pending placement for:', houseID);
-                    pendingPlacements.delete(houseID);
+                if (pendingPlacements.has(placementKey)) {
+                    console.warn('[game.js] Clearing stuck pending placement for:', placementKey);
+                    pendingPlacements.delete(placementKey);
                 }
             }, 10000);
             
             try {
-                // Check if building already exists in database
-                const existingHouse = await housesStore.getHouse(houseID);
+                const existingHouse = await housesStore.findHouseAtTile(x, y);
                 if (existingHouse) {
-                    console.warn('[game.js] Building already exists at this location:', houseID);
+                    console.warn('[game.js] Building already exists at this location:', placementKey);
                     showGenericErrorNotification(activeToolId, 'building_already_exists');
                     return;
                 }
@@ -1129,14 +1123,14 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 price = getAssetPrice(activeToolId, assetsPrices) || 0
                 
                 const [houseStocks, budgetData] = await Promise.all([
-                    housesStore.getHouseItem(houseID, 'stocks'),
+                    Promise.resolve({ food: 0, cabbage: 0, wheat: 0, carrot: 0 }),
                     window.budgetManager ? window.budgetManager.getCurrentBudget() : Promise.resolve({ funds: 0 })
                 ]);
 
                 const funds = budgetData.funds || 0;
                 
                 const dbHouseData = {
-                    name: houseID,
+                    instanceId,
                     type: activeToolId,
                     category: 'construction',
                     neighbors: [],
@@ -1145,7 +1139,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     gameTurn: time,
                     time: 0,
                     isBuilding: true,
-                    roads: 0, // syncPlacedBuilding / ECS parcels.roadAccess (filet)
+                    roads: 0,
                     stage : 0,
                     stageName: "",
                     price : price ? price : 0,
@@ -1157,39 +1151,40 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     employees: getDefaultEmployees(activeToolId)
                 }
 
-                // Validate payment BEFORE placing building
-                // Debug: log road placement
                 if (activeToolId && (activeToolId.startsWith('StonePath-') || activeToolId === 'roads' || activeToolId === 'Road')) {
-                    console.log('[game.js] Placing road:', { activeToolId, houseID, dbHouseData });
+                    console.log('[game.js] Placing road:', { activeToolId, instanceId, dbHouseData });
                 }
                 const paymentResult = await housesStore.addHouseAndPay(dbHouseData);
                 
-                // Debug: log payment result for roads
                 if (activeToolId && (activeToolId.startsWith('StonePath-') || activeToolId === 'roads' || activeToolId === 'Road')) {
                     console.log('[game.js] Road payment result:', paymentResult);
                 }
                 
-                // Handle duplicate building error gracefully
                 if (!paymentResult.success && paymentResult.reason === 'duplicate') {
-                    console.warn('[game.js] Building already exists, skipping placement:', houseID);
+                    console.warn('[game.js] Building already exists, skipping placement:', placementKey);
                     showGenericErrorNotification(activeToolId, 'building_already_exists');
                     return;
                 }
                 
                 if (paymentResult.success) {
-                // Payment successful - place building visually
-                // Mark all tiles as occupied by this building
                 for (let dx = 0; dx < gridSize; dx++) {
                     for (let dy = 0; dy < gridSize; dy++) {
                         const tileX = x + dx;
                         const tileY = y + dy;
                         if (city.tiles[tileX] && city.tiles[tileX][tileY]) {
                             city.tiles[tileX][tileY].buildingId = activeToolId;
+                            city.tiles[tileX][tileY].instanceId = instanceId;
                         }
                     }
                 }
                 
-                // Update scene to place the building (roads are now 3D meshes like other buildings)
+                // Meshes + neighbors, then ECS evolution, then mesh/icon refresh
+                await scene.update(city, time);
+                try {
+                    await runtime.runSimulation({ city, housesStore, time });
+                } catch (err) {
+                    console.warn('[game.js] Post-placement simulation failed:', err);
+                }
                 await scene.update(city, time);
                 await syncEmploymentAfterBuildingChange(housesStore, scene, city, activeToolId);
                 if (window.multiplayerManager && window.multiplayerManager.isMultiplayer) {
@@ -1218,7 +1213,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 }
             } finally {
                 // Always clear pending placement, even if there was an error
-                pendingPlacements.delete(houseID);
+                pendingPlacements.delete(placementKey);
             }
         }
     }
@@ -1286,7 +1281,10 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
             gameUI.updateTimeDisplay(time);
             city.update();
 
-            // ECS simulation (Parcels road access filet, puis autres systèmes à venir)
+            // Scene first: meshes + neighbor graph (source for Parcels road access)
+            await scene.update(city, time);
+
+            // ECS: road access → food → pop growth → house evolution (Blue→Red, etc.)
             try {
                 await runtime.runSimulation({ city, housesStore, time });
             } catch (err) {
@@ -1309,7 +1307,8 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     });
                 }
             }
-            
+
+            // Second pass: apply evolution mesh swaps + road/no-road icons from ECS writes
             await scene.update(city, time);
             await redistributeCityEmployment(housesStore);
             await scene.refreshEmploymentPresentation(city);

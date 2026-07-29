@@ -8,6 +8,7 @@ import { createNeighbor, fromLegacyNeighbor } from '../../../src/contexts/parcel
 import { UpdateNeighborsForBuilding } from '../../../src/contexts/parcels/application/commands/UpdateNeighborsForBuilding.js';
 import { GetBuildingNeighbors } from '../../../src/contexts/parcels/application/queries/GetBuildingNeighbors.js';
 import { InMemoryDomainEventPublisher } from '../../../src/contexts/parcels/infrastructure/events/InMemoryDomainEventPublisher.js';
+import { createBuildingInstanceId } from '../../../src/shared/building-identity/BuildingInstanceId.js';
 
 class InMemoryBuildingRepository {
   constructor(buildings = []) {
@@ -85,10 +86,12 @@ function createNeighborsHarness(buildings = []) {
   };
 }
 
-function house(id, neighbors = []) {
+function house(id, neighbors = [], x = 3, y = 7) {
   return createBuildingSnapshot({
     id,
     type: 'House-Blue',
+    x,
+    y,
     neighbors,
     roadCount: 0,
   });
@@ -135,6 +138,30 @@ describe('Voisinage des bâtiments', () => {
   });
 
   describe('quand on met à jour les voisins d\'un bâtiment', () => {
+    test('persiste sous instanceId UUID quand la clé Dexie est un UUID', async () => {
+      const instanceId = createBuildingInstanceId();
+      harness = createNeighborsHarness([house(instanceId, [], 8, 10)]);
+
+      const outcome = await harness.whenNeighborsAreUpdated(instanceId, [
+        {
+          name: 'StonePath-001',
+          id: createBuildingInstanceId(),
+          x: 8,
+          y: 11,
+          zone: 1,
+          isRoad: true,
+        },
+      ]);
+
+      expect(outcome.updated).toBe(true);
+      expect(harness.persistedNeighbors()[0].buildingId).toBe(instanceId);
+
+      const query = await harness.whenNeighborsAreQueried(instanceId);
+      expect(query.buildingId).toBe(instanceId);
+      expect(query.neighbors).toHaveLength(1);
+      expect(query.neighbors[0].isRoad).toBe(true);
+    });
+
     test('persiste la forme parcels (sans stocks) et publie NeighborsChanged', async () => {
       harness = createNeighborsHarness([house('House-Blue-3-7', [])]);
 
