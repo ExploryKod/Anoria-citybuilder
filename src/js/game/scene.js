@@ -1578,10 +1578,8 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
         // Process budget operations (taxes, salaries, maintenance, loans, etc.)
         await budgetProcessor.processBudget(time, totalPop, buildingCounts, maintenanceBreakdown);
 
-        //  Display results in UI - Use IndexedDB as source of truth
-        // Get population from housesStore (IndexedDB) instead of gameStore
-        const popSummary = await housing.getCityPopulationSummary();
-        const currentPopulation = popSummary.totalPop;
+        // Display results in UI — population read at start of update (ECS already applied)
+        const currentPopulation = totalPop;
         const { famishedPopulation } = await housing.getFamishedPopulation();
         
         // Manage multiple citizens based on current population state (from IndexedDB)
