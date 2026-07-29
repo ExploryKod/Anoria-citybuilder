@@ -1068,9 +1068,9 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                     const marketTime = { name: currentInstanceId, increment: 1, field: 'time' };
                     await housesStore.incrementHouseField(marketTime, false)
 
-                    // Clean up market sprites (including no-work)
+                    // Clean up market supply sprites (no-work → refreshEmploymentPresentation only)
                     if (buildings[x][y]) {
-                        const marketSpriteNames = ['isBuying', 'isBuying-bg', 'no-work', 'no-work-bg'];
+                        const marketSpriteNames = ['isBuying', 'isBuying-bg', 'no-food', 'no-food-bg'];
                         marketSpriteNames.forEach(spriteName => {
                             assetManager.removeStatusSprite(buildings[x][y], spriteName);
                         });
@@ -1092,50 +1092,25 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                         });
                     }
 
-                    // Check if market has workers (required to operate; no-road excluded)
-                    const marketDataForWorkers = await housesStore.getHouse(currentInstanceId);
-                    const marketEmployees = marketDataForWorkers?.employees || { worker: 0, worker_need: 0 };
-                    const marketWorkers = marketEmployees.worker || 0;
-                    const marketWorkerNeed = marketEmployees.worker_need || 0;
-                    const marketHasRoad = (marketDataForWorkers?.roads ?? 0) > 0;
-                    const marketHasNoWorkers = marketHasRoad && marketWorkers === 0 && marketWorkerNeed > 0;
-
-                    // If no workers, show no-work sprite (red) and skip buying functionality
-                    if (marketHasNoWorkers && buildings[x][y]) {
-                        const noWorkMeta = statutsIconsMeta['no-work'];
-                        // Use market-specific position (similar to isBuying position)
-                        const marketNoWorkPosition = { x: -0.5, y: 0.5, z: 0 };
-                        assetManager.setStatusSprite(
-                            buildings[x][y],
-                            textures['no-work'],
-                            'no-work',
-                            { x: 0.6, y: 0.6, z: 1 }, // Same scale as isBuying
-                            marketNoWorkPosition,
-                            true, // visible
-                            0xFF0000, // Red color
-                            0xFFE8E8 // Light red background
-                        );
-                        // Skip buying icon display - market cannot operate without workers
-                    } else if (buildings[x][y]) {
-                    // Display buying icon during autumn (when markets buy from farms)
+                    if (buildings[x][y]) {
                         const marketSupply = await supply.getBuildingSupplyView(currentInstanceId);
                         const isBuying = marketSupply?.isBuying === true;
                         const noFarmsNearby = marketSupply?.noFarmsNearby === true;
-                        
+
                         if (isBuying === true) {
                             const buyingMeta = statutsIconsMeta['isBuying'];
-                            
+
                             if (!noFarmsNearby) {
-                            assetManager.setStatusSprite(
-                                buildings[x][y],
-                                textures['isBuying'],
-                                'isBuying',
-                                buyingMeta.scale,
-                                buyingMeta.position,
-                                true,
-                                buyingMeta.spriteColor,
-                                buyingMeta.backgroundColor
-                            );
+                                assetManager.setStatusSprite(
+                                    buildings[x][y],
+                                    textures['isBuying'],
+                                    'isBuying',
+                                    buyingMeta.scale,
+                                    buyingMeta.position,
+                                    true,
+                                    buyingMeta.spriteColor,
+                                    buyingMeta.backgroundColor
+                                );
                             } else {
                                 assetManager.setStatusSprite(
                                     buildings[x][y],
@@ -1160,32 +1135,14 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                                 null
                             );
                         }
-                    
-                    // Set no-food icon for markets (independent of other sprites, like houses)
+
                         const marketSupplyStocks = marketSupply?.stocks
-                            || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
-                        const hasFoodBaskets = (marketSupplyStocks.wheat || 0) > 0 || 
-                                               (marketSupplyStocks.carrot || 0) > 0 || 
-                                               (marketSupplyStocks.cabbage || 0) > 0 || 
-                                               (marketSupplyStocks.food || 0) > 0;
-                        
-                        const showNoFoodIcon = !hasFoodBaskets;
-                        assetManager.setStatusSprite(
-                            buildings[x][y],
-                            textures['nofood'],
-                            'no-food',
-                            statutsIconsMeta['no-food'].scale,
-                            statutsIconsMeta['no-food'].position,
-                            showNoFoodIcon
-                        );
-                    } else if (buildings[x][y]) {
-                        // No-workers branch skipped buying UI; still show no-food from Supply
-                        const marketSupplyStocks = (await supply.getBuildingSupplyView(currentInstanceId))?.stocks
                             || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                         const hasFoodBaskets = (marketSupplyStocks.wheat || 0) > 0 ||
                             (marketSupplyStocks.carrot || 0) > 0 ||
                             (marketSupplyStocks.cabbage || 0) > 0 ||
                             (marketSupplyStocks.food || 0) > 0;
+
                         assetManager.setStatusSprite(
                             buildings[x][y],
                             textures['nofood'],
@@ -1271,8 +1228,8 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
 
                 // Process windmills: show road access and collecting status sprites
                 if((currentBuildingId.includes('Windmill') || currentBuildingId.includes('windmill')) && buildings[x][y]) {
-                    // Clean up windmill sprites (including no-work)
-                    const windmillSpriteNames = ['isCollecting', 'isCollecting-bg', 'no-work', 'no-work-bg'];
+                    // Clean up windmill supply sprites (no-work → refreshEmploymentPresentation only)
+                    const windmillSpriteNames = ['isCollecting', 'isCollecting-bg'];
                     windmillSpriteNames.forEach(spriteName => {
                         assetManager.removeStatusSprite(buildings[x][y], spriteName);
                     });
@@ -1293,34 +1250,10 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                         });
                     }
 
-                    // Check if windmill has workers (required to operate; no-road excluded)
-                    const windmillDataForWorkers = await housesStore.getHouse(currentInstanceId);
-                    const windmillEmployees = windmillDataForWorkers?.employees || { worker: 0, worker_need: 0 };
-                    const windmillWorkers = windmillEmployees.worker || 0;
-                    const windmillWorkerNeed = windmillEmployees.worker_need || 0;
-                    const windmillHasRoad = (windmillDataForWorkers?.roads ?? 0) > 0;
-                    const windmillHasNoWorkers = windmillHasRoad && windmillWorkers === 0 && windmillWorkerNeed > 0;
-
-                    // If no workers, show no-work sprite (red) and skip collecting functionality
-                    if (windmillHasNoWorkers && buildings[x][y]) {
-                        // Use windmill-specific position (similar to isCollecting position)
-                        const windmillNoWorkPosition = { x: -0.5, y: 0.5, z: 0 };
-                        assetManager.setStatusSprite(
-                            buildings[x][y],
-                            textures['no-work'],
-                            'no-work',
-                            { x: 0.6, y: 0.6, z: 1 }, // Same scale as isCollecting
-                            windmillNoWorkPosition,
-                            true, // visible
-                            0xFF0000, // Red color
-                            0xFFE8E8 // Light red background
-                        );
-                        // Skip collecting icon display - windmill cannot operate without workers
-                    } else if (buildings[x][y]) {
-                    // Display collecting icon during December (when windmills collect from farms)
+                    if (buildings[x][y]) {
                         const windmillSupply = await supply.getBuildingSupplyView(currentInstanceId);
                         const isCollecting = windmillSupply?.isCollecting === true;
-                        
+
                         if (isCollecting === true) {
                             const collectingMeta = {
                                 position: {x: -0.5, y: 0.5, z: 0},
@@ -1356,43 +1289,17 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                 // Process farms: season-specific sprites (harvest stocks → Supply BC)
                 if(farms.includes(currentBuildingId) && buildings[x][y]) {
                     // First, clean up ALL possible farm sprites to prevent any leftover sprites
-                    const allFarmSpriteNames = ['no-food', 'grow-food', 'harvest', 'sell-food', 
+                    const allFarmSpriteNames = ['no-food', 'grow-food', 'harvest', 'sell-food',
                                                 'no-food-bg', 'grow-food-bg', 'harvest-bg', 'sell-food-bg',
-                                                'no-work', 'no-work-bg', 'sold-to-windmill', 'sold-to-windmill-bg'];
+                                                'sold-to-windmill', 'sold-to-windmill-bg'];
                     allFarmSpriteNames.forEach(spriteName => {
                         assetManager.removeStatusSprite(buildings[x][y], spriteName);
                     });
-                    
-                    // Get current time info to determine season
+
                     const timeInfo = TimeManager.getTimeInfo(time);
                     const season = timeInfo.season;
-                    
-                    // Check if farm has workers (required to operate; no-road excluded)
-                    const farmDataForWorkers = await housesStore.getHouse(currentInstanceId);
-                    const farmEmployees = farmDataForWorkers?.employees || { worker: 0, worker_need: 0 };
-                    const farmWorkers = farmEmployees.worker || 0;
-                    const farmWorkerNeed = farmEmployees.worker_need || 0;
-                    const farmHasRoad = (farmDataForWorkers?.roads ?? 0) > 0;
-                    const hasNoWorkers = farmHasRoad && farmWorkers === 0 && farmWorkerNeed > 0;
-                    
-                    // If no workers, show no-work sprite (red) and skip all production
-                    if (hasNoWorkers) {
-                        const noWorkMeta = statutsIconsMeta['no-work'];
-                        assetManager.setStatusSprite(
-                            buildings[x][y],
-                            textures['no-work'],
-                            'no-work',
-                            noWorkMeta.scale,
-                            noWorkMeta.position,
-                            true, // visible
-                            noWorkMeta.spriteColor,
-                            noWorkMeta.backgroundColor
-                        );
-                        // Skip all production and season sprites - farm cannot operate without workers
-                        continue;
-                    }
-                    
-                    // Determine which sprite to show based on season (only if farm has workers)
+
+                    // Season sprites from Supply/time — employment icons via refreshEmploymentPresentation
                     let spriteTexture, spriteName, spriteColor, spritePosition, spriteScale, backgroundColor;
                     
                     if (season === 'Hiver') {
@@ -1482,39 +1389,6 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                                 null
                             );
                         }
-                    }
-                }
-
-                // Process factories: show no-work sprite if no employees
-                if(factories.includes(currentBuildingId) && buildings[x][y]) {
-                    // Clean up factory sprites (including no-work)
-                    const factorySpriteNames = ['no-work', 'no-work-bg'];
-                    factorySpriteNames.forEach(spriteName => {
-                        assetManager.removeStatusSprite(buildings[x][y], spriteName);
-                    });
-
-                    // Check if factory has workers (required to operate; no-road excluded)
-                    const factoryDataForWorkers = await housesStore.getHouse(currentInstanceId);
-                    const factoryEmployees = factoryDataForWorkers?.employees || { worker: 0, worker_need: 0 };
-                    const factoryWorkers = factoryEmployees.worker || 0;
-                    const factoryWorkerNeed = factoryEmployees.worker_need || 0;
-                    const factoryHasRoad = (factoryDataForWorkers?.roads ?? 0) > 0;
-                    const factoryHasNoWorkers = factoryHasRoad && factoryWorkers === 0 && factoryWorkerNeed > 0;
-
-                    // If no workers, show no-work sprite (red)
-                    if (factoryHasNoWorkers && buildings[x][y]) {
-                        const noWorkMeta = statutsIconsMeta['no-work'];
-                        const factoryNoWorkPosition = { x: -0.8, y: 0.5, z: -0.2 };
-                        assetManager.setStatusSprite(
-                            buildings[x][y],
-                            textures['no-work'],
-                            'no-work',
-                            noWorkMeta.scale,
-                            factoryNoWorkPosition,
-                            true, // visible
-                            noWorkMeta.spriteColor,
-                            noWorkMeta.backgroundColor
-                        );
                     }
                 }
 
@@ -1758,8 +1632,9 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
     }
 
     /**
-     * Refresh employment bar + no-work icons from BC read model.
-     * Call after scene.update; pass redistribute=true only on monthly turn (game.update).
+     * Refresh employment bar + no-work icons from Employment BC read model.
+     * Sole source of truth for no-work sprites on workplaces.
+     * Call after scene.update; redistribution runs in ECS before the second scene pass.
      * @param {object} city
      */
     async function refreshEmploymentPresentation(city) {

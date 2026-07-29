@@ -4,15 +4,17 @@
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingView } from '../../../src/contexts/supply/domain/SupplyBuildingView.js';
+import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { GetBuildingSupplyView } from '../../../src/contexts/supply/application/queries/GetBuildingSupplyView.js';
 
 class InMemorySupplyBuildingRepository {
-  constructor(views = []) {
+  constructor(views = [], snapshots = {}) {
     this.views = new Map(views.map((v) => [v.id, v]));
+    this.snapshots = new Map(Object.entries(snapshots));
   }
 
-  async findById() {
-    return null;
+  async findById(id) {
+    return this.snapshots.get(id) ?? null;
   }
 
   async findSupplyView(id) {
@@ -33,7 +35,8 @@ describe('Supply — GetBuildingSupplyView', () => {
   let useCase;
 
   beforeEach(() => {
-    const repo = new InMemorySupplyBuildingRepository([
+    const repo = new InMemorySupplyBuildingRepository(
+      [
       createSupplyBuildingView({
         id: 'Market-Stall-5-5',
         type: 'Market-Stall',
@@ -67,7 +70,24 @@ describe('Supply — GetBuildingSupplyView', () => {
         isCollecting: true,
         lastCollection: { wheat: 20, total: 20 },
       }),
-    ]);
+      ],
+      {
+        'Market-Stall-5-5': createSupplyBuildingSnapshot({
+          id: 'Market-Stall-5-5',
+          type: 'Market-Stall',
+          roadCount: 1,
+          worker: 2,
+          workerNeed: 2,
+        }),
+        'Windmill-001-8-8': createSupplyBuildingSnapshot({
+          id: 'Windmill-001-8-8',
+          type: 'Windmill-001',
+          roadCount: 1,
+          worker: 4,
+          workerNeed: 4,
+        }),
+      }
+    );
     useCase = new GetBuildingSupplyView(repo);
   });
 
@@ -120,5 +140,43 @@ describe('Supply — GetBuildingSupplyView', () => {
     expect(dto.lastCollection.wheat).toBe(20);
     expect(dto.stocks.wood).toBe(1);
     expect(dto.maxStock).toBe(1000);
+  });
+
+  test('isBuying and isCollecting hidden when building is not operational', async () => {
+    const repo = new InMemorySupplyBuildingRepository(
+      [
+        createSupplyBuildingView({
+          id: 'Market-Stall-1-1',
+          type: 'Market-Stall',
+          stocks: { food: 0 },
+          isBuying: true,
+        }),
+        createSupplyBuildingView({
+          id: 'Windmill-001-1-1',
+          type: 'Windmill-001',
+          stocks: { food: 0 },
+          isCollecting: true,
+        }),
+      ],
+      {
+        'Market-Stall-1-1': createSupplyBuildingSnapshot({
+          id: 'Market-Stall-1-1',
+          type: 'Market-Stall',
+          roadCount: 1,
+          worker: 0,
+          workerNeed: 2,
+        }),
+        'Windmill-001-1-1': createSupplyBuildingSnapshot({
+          id: 'Windmill-001-1-1',
+          type: 'Windmill-001',
+          roadCount: 1,
+          worker: 0,
+          workerNeed: 4,
+        }),
+      }
+    );
+    const query = new GetBuildingSupplyView(repo);
+    expect((await query.execute('Market-Stall-1-1')).isBuying).toBe(false);
+    expect((await query.execute('Windmill-001-1-1')).isCollecting).toBe(false);
   });
 });

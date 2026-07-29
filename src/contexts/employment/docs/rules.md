@@ -99,24 +99,39 @@ unemploymentPercentage = round(unemployed / workerPool × 100)   si workerPool >
 
 ### 5.2 Manque global (déficit sur les postes)
 
-Mesure les **postes ouvriers non pourvus** alors qu’ils sont éligibles.
+Mesure les **postes ouvriers non pourvus** (y compris sous-effectif partiel) sur les bâtiments éligibles.
 
 ```
 lack = Σ max(0, workerNeed − employees.worker)   (postes éligibles, avec route)
 ```
 
-- Affichage : chiffre rouge seul (ex. `0`), sans icône.
-- Un manque > 0 déclenche les icônes **`no-work`** sur les bâtiments concernés.
+- Affichage : chiffre rouge seul (ex. `5`), sans icône dédiée dans la barre.
+- **Ne pas confondre avec les icônes `no-work`** : voir §5.4.
 
-### 5.3 Les deux peuvent coexister
+### 5.3 Après redistribution gloutonne
 
 | Situation | Chômage | Manque | Exemple |
 |---|---|---|---|
 | Plus d’ouvriers que de postes | > 0 | 0 | 18 citoyens, 14 emplois pourvus → `4 (22 %)`, manque `0` |
 | Plus de postes que d’ouvriers | 0 | > 0 | 10 citoyens, 15 postes → chômage `0`, manque `5` |
-| Pool épuisé, postes restants | > 0 | > 0 | Rare en pratique après redistribution gloutonne |
 
-### 5.4 Exemple vérifié (partie réelle)
+Chômage > 0 et manque > 0 **en même temps** n’existe pas après une redistribution complète : si des citoyens restent sans emploi, tous les postes éligibles sont déjà pourvus (`lack = 0`).
+
+### 5.4 Icônes `no-work` (présentation 3D)
+
+Condition (`computeCityEmploymentSummary` → `understaffedBuildingIds`) :
+
+```
+worker === 0  AND  workerNeed > 0  AND  roadCount > 0
+```
+
+- Affichées **uniquement** par `scene.refreshEmploymentPresentation` (pas par `scene.update`).
+- Un poste à **1/3 ouvriers** contribue au **manque** (`lack`) mais **n’a pas** d’icône `no-work`.
+- Clé bâtiment : `instanceId` (UUID).
+
+Flux et entry points : [`presentation.md`](presentation.md).
+
+### 5.5 Exemple vérifié (partie réelle)
 
 Capture du modèle en jeu — barre d’état et détail d’un palais (`pop = 7`) :
 
@@ -177,7 +192,6 @@ L’immigration est pilotée par le **taux d’attractivité**, sous réserve de
 
 ## Référence technique
 
-Read model unique : `GetCityEmploymentSummary` →  
-`{ workerPool, elitePool, totalPopulation, totalAssigned, unemployed, unemploymentPercentage, lack, understaffedBuildingIds, bySector }`
+Read model : `GetCityEmploymentSummary` → voir §5.4 et [`presentation.md`](presentation.md).
 
 Policy population : `LaborPoolPolicy` (`citizenPopFromHouse`, `elitePopFromHouse`, `workerPopFromHouse`).

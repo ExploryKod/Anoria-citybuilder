@@ -541,6 +541,44 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
         }, 800); // Délai après le masquage du loader pour une meilleure UX
     });
 
+    /** Employment bar + no-work icons — sole presentation entry (Employment BC read model). */
+    async function refreshEmploymentPresentationForCity() {
+        await scene.refreshEmploymentPresentation(city);
+    }
+
+    /** ECS + services + second scene.update (after an initial scene.update). */
+    async function runSimulationPass(time) {
+        try {
+            await runtime.runSimulation({ city, housesStore, time });
+        } catch (err) {
+            console.error('[game.js] ECS simulation error:', {
+                error: err?.message || err,
+                time,
+            });
+        }
+
+        if (services.length > 0) {
+            try {
+                await Promise.allSettled(
+                    services.map((service) => service.simulate(city, housesStore, time))
+                );
+            } catch (err) {
+                console.error('[game.js] Service simulation error:', {
+                    error: err?.message || err,
+                    time,
+                });
+            }
+        }
+
+        await scene.update(city, time);
+    }
+
+    /** scene.update + employment refresh — player interactions without full simulation tick. */
+    async function runScenePresentationPass(time) {
+        await scene.update(city, time);
+        await refreshEmploymentPresentationForCity();
+    }
+
     // handler function to extract coordinate of an object I click on (data from asset js and using scene js methods)
     scene.onObjectSelected = async (selectedObject) => {
         selectedObject.info = '';
@@ -1058,8 +1096,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 }
                 window.game.play()
             }
-            await scene.update(city, time);
-            await scene.refreshEmploymentPresentation(city);
+            await runScenePresentationPass(time);
         } else if(!tile.buildingId || (activeToolId && (activeToolId === 'roads' || activeToolId === 'Road' || activeToolId.startsWith('StonePath-')) && (tile.buildingId === 'roads' || tile.buildingId === 'Road' || (tile.buildingId && tile.buildingId.startsWith('StonePath-'))))) {
             // PLACING A BUILDING - Ensure game is NOT paused
             // Allow placement if tile is empty OR if placing a road on an existing road (replacement)
@@ -1177,14 +1214,9 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     }
                 }
                 
-                // Meshes + neighbors, then ECS evolution, then mesh/icon refresh
+                // Meshes + neighbors, then ECS evolution, then employment refresh
                 await scene.update(city, time);
-                try {
-                    await runtime.runSimulation({ city, housesStore, time });
-                } catch (err) {
-                    console.warn('[game.js] Post-placement simulation failed:', err);
-                }
-                await scene.update(city, time);
+                await runSimulationPass(time);
                 await syncEmploymentAfterBuildingChange(housesStore, scene, city, activeToolId);
                 if (window.multiplayerManager && window.multiplayerManager.isMultiplayer) {
                     try {
@@ -1280,42 +1312,19 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
             gameUI.updateTimeDisplay(time);
             city.update();
 
-            // Scene first: meshes + neighbor graph (source for Parcels road access)
             await scene.update(city, time);
+            await runSimulationPass(time);
+            await refreshEmploymentPresentationForCity();
 
-            // ECS: road access → food → pop growth → evolution → employment → factory production
-            try {
-                await runtime.runSimulation({ city, housesStore, time });
-            } catch (err) {
-                console.error('[game.js > update] ECS simulation error:', {
-                    error: err?.message || err,
-                    time,
-                });
-            }
-            
-            // City-wide services (random events, commerce, employment priority init)
-            if (services.length > 0) {
-                try {
-                    await Promise.allSettled(
-                        services.map(service => service.simulate(city, housesStore, time))
-                    );
-                } catch (err) {
-                    console.error('[game.js > update] Service simulation error:', {
-                        error: err?.message || err,
-                        time
-                    });
-                }
-            }
-
-            // Second pass: apply evolution mesh swaps + road/no-road icons from ECS writes
-            await scene.update(city, time);
-            await scene.refreshEmploymentPresentation(city);
-            
             // Vérifier les objectifs à chaque tour (seulement si activés)
             if (window.objectivesTracker && objectivesTracker.enabled) {
                 await objectivesTracker.checkObjectives(time);
             }
         },
+
+        refreshEmployment: refreshEmploymentPresentationForCity,
+        runSimulationPass,
+        runScenePresentationPass,
 
         pause() {
             isPause = true;
@@ -1409,7 +1418,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
     }, Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed')) || 4000)));
 
     scene.start();
-    void scene.refreshEmploymentPresentation(city);
+    void refreshEmploymentPresentationForCity();
 
     // Initialize and attach InputManager non-invasively
     try {
