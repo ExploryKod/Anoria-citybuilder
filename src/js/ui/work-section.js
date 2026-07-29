@@ -1,4 +1,5 @@
 import config from '../game/config.js';
+import { getCityEmploymentSummary } from '../acl/employment.js';
 
 class WorkSectionManager {
     constructor() {
@@ -121,43 +122,9 @@ class WorkSectionManager {
     }
     
     /**
-     * Calculate available workers and elites from houses (same logic as service but direct from IndexedDB)
-     * - Elites: 1/6 of House-2Story (Palace) population (or 0 if no 2Story)
-     * - Workers: All population from House-Blue, House-Red, House-Purple + remaining 5/6 of House-2Story
-     * @param {Array} allHouses - All houses from IndexedDB
-     * @returns {{workers: number, elites: number}}
-     */
-    calculateAvailableEmployees(allHouses) {
-        let workerPopulation = 0;
-        let elitePopulation = 0;
-        
-        for (const house of allHouses) {
-            const type = house.type || '';
-            const pop = house.pop || 0;
-            
-            if (type.includes('House')) {
-                // House-2Story (Palace): 1/6 becomes elite, 5/6 remain workers
-                if (type.includes('2Story') || type.includes('2-Story')) {
-                    const elitesFromThisHouse = Math.floor(pop / 6);
-                    const workersFromThisHouse = pop - elitesFromThisHouse;
-                    elitePopulation += elitesFromThisHouse;
-                    workerPopulation += workersFromThisHouse;
-                }
-                // Other houses (Blue, Red, Purple): all population are workers
-                else if (type.includes('Blue') || type.includes('Red') || type.includes('Purple')) {
-                    workerPopulation += pop;
-                }
-            }
-        }
-        
-        return { workers: workerPopulation, elites: elitePopulation };
-    }
-    
-    /**
-     * Update employee statistics directly from IndexedDB (like info panel does)
+     * Update employee statistics from Employment BC read model.
      */
     async updateEmployeeStatistics() {
-        // Get housesStore (same way info panel does)
         let housesStore = null;
         if (window.app && window.app.housesStore) {
             housesStore = window.app.housesStore;
@@ -173,117 +140,39 @@ class WorkSectionManager {
         }
         
         try {
-            // Read all buildings from IndexedDB (source of truth)
-            const allBuildings = await housesStore.listAllHouses();
-            
-            // Calculate available employees from houses
-            const available = this.calculateAvailableEmployees(allBuildings);
-            
-            // Calculate statistics by sector
-            let totalWorkerNeed = 0;
-            let totalEliteNeed = 0;
-            let totalWorkers = 0;
-            let totalElites = 0;
-            const bySector = {};
-            
-            for (const building of allBuildings) {
-                if (!building.employees) continue;
-                
-                const employees = building.employees;
-                const sector = employees.sector || 0;
-                
-                // Skip residential (sector 0)
-                if (sector === 0) continue;
-                
-                // Initialize sector if not exists
-                if (!bySector[sector]) {
-                    bySector[sector] = {
-                        workerNeed: 0,
-                        eliteNeed: 0,
-                        workers: 0,
-                        elites: 0
-                    };
-                }
-                
-                const workerNeed = employees.worker_need || 0;
-                const eliteNeed = employees.elite_need || 0;
-                const workers = employees.worker || 0;
-                const elites = employees.elite || 0;
-                
-                totalWorkerNeed += workerNeed;
-                totalEliteNeed += eliteNeed;
-                totalWorkers += workers;
-                totalElites += elites;
-                
-                bySector[sector].workerNeed += workerNeed;
-                bySector[sector].eliteNeed += eliteNeed;
-                bySector[sector].workers += workers;
-                bySector[sector].elites += elites;
-            }
-            
-            // Update sector data with real statistics
+            const summary = await getCityEmploymentSummary(housesStore);
+
             if (this.workData && this.workData.sectors) {
                 this.workData.sectors.forEach(sector => {
-                    if (sector.sectorNumber !== undefined) {
-                        const sectorStats = bySector[sector.sectorNumber] || {
-                            workerNeed: 0,
-                            eliteNeed: 0,
-                            workers: 0,
-                            elites: 0
-                        };
-                        
-                        // Store detailed breakdown
-                        sector.workerNeed = sectorStats.workerNeed || 0;
-                        sector.eliteNeed = sectorStats.eliteNeed || 0;
-                        sector.workers = sectorStats.workers || 0;
-                        sector.elites = sectorStats.elites || 0;
-                        // City-wide available (same for all sectors)
-                        sector.availableWorkers = available.workers;
-                        sector.availableElites = available.elites;
-                        
-                        // For now: only count WORKERS (not elites)
-                        // Initial need = total workers needed for this sector
-                        sector.initialNeed = sector.workerNeed;
-                        // Have = workers currently assigned
-                        sector.have = sector.workers;
-                        // Remaining need = workers still needed (after deducting assigned)
-                        sector.need = Math.max(0, sector.workerNeed - sector.workers);
-                    }
+                    if (sector.sectorNumber === undefined) return;
+
+                    const sectorStats = summary.bySector[sector.sectorNumber] || {
+                        workerNeed: 0,
+                        workers: 0,
+                        need: 0,
+                    };
+
+                    sector.workerNeed = sectorStats.workerNeed || 0;
+                    sector.eliteNeed = 0;
+                    sector.workers = sectorStats.workers || 0;
+                    sector.elites = 0;
+                    sector.availableWorkers = summary.workerPool;
+                    sector.availableElites = summary.elitePool;
+                    sector.initialNeed = sector.workerNeed;
+                    sector.have = sector.workers;
+                    sector.need = sectorStats.need || 0;
                 });
             }
-            
-            // Update total employed (workers only for now - elites not counted yet)
-            this.workData.totalEmployed = totalWorkers;
-            
-            // Calculate unemployment/lack (workers only for now)
-            const totalNeed = totalWorkerNeed;
-            const totalAvailable = available.workers;
-            const totalAssigned = totalWorkers;
-            
-            // Unemployed = available but not assigned
-            this.workData.totalUnemployed = Math.max(0, totalAvailable - totalAssigned);
-            
-            // Lack = need but not available/assigned
-            const totalLack = Math.max(0, totalNeed - totalAssigned);
-            
-            // Calculate unemployment percentage
-            if (totalAvailable > 0) {
-                this.workData.unemploymentPercentage = Math.round(
-                    (this.workData.totalUnemployed / totalAvailable) * 100
-                );
-            } else {
-                this.workData.unemploymentPercentage = 0;
-            }
-            
-            // Store lack for display
-            this.workData.totalLack = totalLack;
-            this.workData.totalAvailable = totalAvailable;
-            this.workData.totalNeed = totalNeed;
-            
-            // Store city-wide available workers/elites for all sectors
-            this.workData.totalAvailableWorkers = available.workers;
-            this.workData.totalAvailableElites = available.elites;
-            
+
+            this.workData.totalEmployed = summary.totalAssigned;
+            this.workData.totalUnemployed = summary.unemployed;
+            this.workData.unemploymentPercentage = summary.unemploymentPercentage;
+            this.workData.totalLack = summary.lack;
+            this.workData.totalAvailable = summary.workerPool;
+            this.workData.totalNeed = summary.totalNeed;
+            this.workData.totalAvailableWorkers = summary.workerPool;
+            this.workData.totalAvailableElites = summary.elitePool;
+
         } catch (error) {
             console.error('[WorkSection] Error updating employee statistics:', error);
         }

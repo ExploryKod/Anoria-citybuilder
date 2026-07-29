@@ -1083,7 +1083,7 @@ canvas.pointer-events-disabled {
 
 .info-panel .info-box-global-numbers > .info-box.infos-pop {
     background-color: #fff !important;
-    min-width: 180px;
+    min-width: 230px;
     display: flex;
     align-items: center;
     justify-content: space-evenly;
@@ -1118,6 +1118,19 @@ canvas.pointer-events-disabled {
     color: var(--primary);
     font-size: 16px;
     font-weight: 700;
+}
+
+/* Global worker shortage — number only (no icon), always red */
+.info-panel .worker-lack-box {
+    min-width: 28px;
+    padding: 4px 6px;
+}
+
+.info-panel .display-worker-lack {
+    color: #cc0000;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
 }
 
 .display-unemployed-pop, .display-hunger-pop {
@@ -1819,6 +1832,7 @@ button#pwa-refresh:hover {
     .info-panel .display-pop,
     .info-panel .display-hunger-pop,
     .info-panel .display-unemployed-pop,
+    .info-panel .display-worker-lack,
     .info-panel .display-funds {
         display: flex;
         align-items: center;
