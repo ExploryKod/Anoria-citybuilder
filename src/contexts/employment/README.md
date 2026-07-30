@@ -18,7 +18,9 @@ Code and ubiquitous language are **English**. UI copy may stay French.
 ## Invariants
 
 - Only houses with `roadCount > 0` contribute to the labor pool
-- Only workplaces with `roadCount > 0` and `workerNeed > 0` receive workers
+- Workplaces with `workerNeed > 0` receive workers when **eligible**:
+  - **Farms** (`Farm-*`): no road required (`isEligibleWorkplace`)
+  - **Other workplaces**: `roadCount > 0` required
 - Houses and roads are never workplaces
 - Allocation is greedy by ascending sector priority (1 before 6)
 - Assigned workers never exceed `workerNeed`

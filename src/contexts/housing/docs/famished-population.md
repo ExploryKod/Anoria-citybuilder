@@ -49,7 +49,7 @@ Evolution may use crop sum when `food` is unset; famished deliberately follows p
 
 ## ACL
 
-Legacy UI: `getOrCreateHousingContext(housesStore).getFamishedPopulation()`.
+Legacy UI: `getOrCreateHousingContext().getFamishedPopulation()`.
 
 `HousesStore.getFamishedPopulation()` delegates to Housing (deprecated facade).
 

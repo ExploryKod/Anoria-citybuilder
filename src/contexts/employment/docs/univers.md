@@ -12,7 +12,9 @@ Règles détaillées (pool, chômage, manque) : [`rules.md`](rules.md).
 
 ## 2. Postes à pourvoir
 
-- Bâtiment **non-maison**, **non-route**, `workerNeed > 0`, **`roadCount > 0`**.
+- Bâtiment **non-maison**, **non-route**, `workerNeed > 0`.
+- **Fermes** : embauche **sans route**.
+- **Autres postes** : `roadCount > 0` requis.
 
 ## 3. Redistribution (gloutonne par priorité)
 

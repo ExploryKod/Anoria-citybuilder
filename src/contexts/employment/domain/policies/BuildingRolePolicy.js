@@ -2,6 +2,12 @@
  * Classify buildings for employment roles.
  */
 
+/** @param {string} type */
+export function isFarmType(type) {
+  const t = type || '';
+  return t.includes('Farm') || t.includes('farm');
+}
+
 /**
  * @param {string} type
  * @returns {boolean}
@@ -44,4 +50,16 @@ export function isWorkplace(building) {
  */
 export function hasRoadAccess(building) {
   return (building?.roadCount || 0) > 0;
+}
+
+/**
+ * Workplace eligible for hiring / employment aggregates.
+ * Farms employ without road access; other workplaces require roadCount > 0.
+ *
+ * @param {{ type?: string, workerNeed?: number, roadCount?: number }} building
+ */
+export function isEligibleWorkplace(building) {
+  if (!isWorkplace(building)) return false;
+  if (isFarmType(building.type)) return true;
+  return hasRoadAccess(building);
 }

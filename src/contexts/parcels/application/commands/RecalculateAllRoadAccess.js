@@ -16,7 +16,7 @@ export class RecalculateAllRoadAccess {
   }
 
   /**
-   * @returns {Promise<{ processed: number, updated: number, results: Array<{ buildingId: string, updated: boolean }> }>}
+   * @returns {Promise<{ processed: number, updated: number, results: Array<{ instanceId: string, updated: boolean }> }>}
    */
   async execute() {
     const buildings = await this.buildingRepository.findAll();
@@ -36,7 +36,7 @@ export class RecalculateAllRoadAccess {
         await this.buildingRepository.saveRoadAccess(building.id, roadAccess.roadCount);
         this.eventPublisher.publish(
           createRoadAccessChanged({
-            buildingId: building.id,
+            instanceId: building.id,
             previousRoadCount,
             newRoadAccess: roadAccess,
           })
@@ -44,7 +44,7 @@ export class RecalculateAllRoadAccess {
         updated += 1;
       }
 
-      results.push({ buildingId: building.id, updated: hasChanged });
+      results.push({ instanceId: building.id, updated: hasChanged });
     }
 
     return {

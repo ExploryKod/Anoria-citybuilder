@@ -15,11 +15,9 @@ export { createHousingContext, getOrCreateHousingContext };
 /**
  * City total residential population (legacy UI helper).
  *
- * @param {import('../stores/HousesStore.js').default | null | undefined} housesStore
  * @returns {Promise<number>}
  */
-export async function getCityTotalPopulation(housesStore) {
-  if (!housesStore) return 0;
-  const { totalPop } = await getOrCreateHousingContext(housesStore).getCityPopulationSummary();
+export async function getCityTotalPopulation() {
+  const { totalPop } = await getOrCreateHousingContext().getCityPopulationSummary();
   return totalPop;
 }

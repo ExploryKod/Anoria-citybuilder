@@ -12,7 +12,7 @@ import {
 } from '../acl/parcels.js';
 import { setupRoadAccessIcons } from '../acl/parcels.js';
 
-const parcels = getOrCreateParcelsContext(housesStore);
+const parcels = getOrCreateParcelsContext();
 
 const id = toBuildingIdString('House-Blue', x, y); // "House-Blue-3-7" | null
 
@@ -21,7 +21,7 @@ if (hasRoadAccessFromCount(building.roads)) { /* ... */ }
 const { hasAccess, roadCount } = await parcels.getRoadAccess(id);
 
 const syncRoadAccess = setupRoadAccessIcons(parcels, { assetManager, textures });
-await syncRoadAccess({ buildingId: id, mesh, position, scale });
+await syncRoadAccess({ instanceId: id, mesh, position, scale });
 ```
 
 ## Nourriture (Housing context)
@@ -29,7 +29,7 @@ await syncRoadAccess({ buildingId: id, mesh, position, scale });
 ```javascript
 import { getOrCreateHousingContext } from '../acl/housing.js';
 
-const housing = getOrCreateHousingContext(housesStore);
+const housing = getOrCreateHousingContext();
 const { hasFood, totalFood } = housing.evaluateHouseFoodAffluence({ stocks, population });
 ```
 

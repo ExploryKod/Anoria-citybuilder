@@ -1,4 +1,4 @@
-import db from './db.js';
+import db from '../../core/persistence/dexie/db.js';
 
 /**
  * ObjectivesStore - Gestion du store des objectifs (échecs, succès, etc.)

@@ -1,10 +1,9 @@
 import { createTileCoord, tryCreateTileCoord } from './TileCoord.js';
 
 /**
- * Identifiant métier d'un bâtiment : "{type}-{x}-{y}"
+ * Label d'affichage d'un bâtiment : "{type}-{x}-{y}" (UI / logs uniquement).
  *
- * **Shared Kernel** — Published Language transverse (Parcels, Supply, Employment, Dexie).
- * La string `.value` / `toPublishedBuildingId()` est la source de vérité unique.
+ * **Shared Kernel** — pas une clé Dexie. La PK est `instanceId` (UUID).
  */
 
 export function createBuildingId(type, x, y) {
@@ -74,46 +73,6 @@ export function tryParseBuildingId(value) {
 /** @param {unknown} value */
 export function isPublishedBuildingIdString(value) {
   return typeof value === 'string' && value.length > 0 && tryParseBuildingId(value) !== null;
-}
-
-/**
- * Resolve Published Language id from a Dexie row, neighbor blob, or legacy ref.
- *
- * Priority: `id` → `buildingId` → published `name` → `{type}-{x}-{y}` → bare `name`.
- */
-export function resolvePublishedBuildingIdFromRef(ref) {
-  if (!ref || typeof ref !== 'object') return null;
-
-  if (typeof ref.id === 'string' && ref.id.length > 0) {
-    return ref.id;
-  }
-
-  if (typeof ref.buildingId === 'string' && ref.buildingId.length > 0) {
-    return ref.buildingId;
-  }
-
-  if (typeof ref.name === 'string' && isPublishedBuildingIdString(ref.name)) {
-    return ref.name;
-  }
-
-  const type =
-    (typeof ref.type === 'string' && ref.type.length > 0 && ref.type) ||
-    (typeof ref.name === 'string' && ref.name.length > 0 && !isPublishedBuildingIdString(ref.name) && ref.name) ||
-    null;
-
-  if (type && ref.x != null && ref.y != null) {
-    const x = Number(ref.x);
-    const y = Number(ref.y);
-    if (Number.isInteger(x) && Number.isInteger(y)) {
-      return toBuildingIdString(type, x, y);
-    }
-  }
-
-  if (typeof ref.name === 'string' && ref.name.length > 0) {
-    return ref.name;
-  }
-
-  return null;
 }
 
 export { tryCreateTileCoord };

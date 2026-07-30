@@ -6,6 +6,8 @@ import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createEmploymentBuildingSnapshot } from '../../../src/contexts/employment/domain/EmploymentBuildingSnapshot.js';
 import {
   hasRoadAccess,
+  isEligibleWorkplace,
+  isFarmType,
   isHouseType,
   isLaborSource,
   isRoadType,
@@ -86,6 +88,9 @@ describe('Employment — DistributeCityWorkers', () => {
       expect(isWorkplace({ type: 'Farm-Wheat', workerNeed: 3 })).toBe(true);
       expect(isWorkplace({ type: 'House-Blue', workerNeed: 0 })).toBe(false);
       expect(isWorkplace({ type: 'roads', workerNeed: 0 })).toBe(false);
+      expect(isFarmType('Farm-Wheat')).toBe(true);
+      expect(isEligibleWorkplace({ type: 'Farm-Wheat', workerNeed: 3, roadCount: 0 })).toBe(true);
+      expect(isEligibleWorkplace({ type: 'Market-Stall', workerNeed: 2, roadCount: 0 })).toBe(false);
       expect(hasRoadAccess({ roadCount: 1 })).toBe(true);
       expect(hasRoadAccess({ roadCount: 0 })).toBe(false);
     });
@@ -143,12 +148,26 @@ describe('Employment — DistributeCityWorkers', () => {
       expect(result.availableWorkers).toBe(5);
     });
 
-    test('workplaces without roads are skipped', async () => {
+    test('workplaces without roads are skipped except farms', async () => {
       const result = await useCase.execute({
         sectorPriorities: { 1: 1, 2: 2, 4: 3 },
       });
       expect(result.assignments.find((a) => a.buildingId === 'Windmill-001-5-5')).toBeUndefined();
       expect(repo.get('Windmill-001-5-5').worker).toBe(0);
+      expect(repo.get('Farm-Wheat-3-3').worker).toBe(3);
+    });
+
+    test('farms without road access receive workers', async () => {
+      repo = new InMemoryEmploymentBuildingRepository([
+        house('House-Blue-1-1', 4, 1),
+        workplace('Farm-Wheat-0-0', { workerNeed: 3, sector: 1, roadCount: 0 }),
+      ]);
+      useCase = new DistributeCityWorkers(repo);
+
+      const result = await useCase.execute({ sectorPriorities: { 1: 1 } });
+      expect(result.availableWorkers).toBe(4);
+      expect(result.assignments).toEqual([{ buildingId: 'Farm-Wheat-0-0', workers: 3 }]);
+      expect(repo.get('Farm-Wheat-0-0').worker).toBe(3);
     });
 
     test('priority 1 filled before lower priorities; capped at workerNeed', async () => {

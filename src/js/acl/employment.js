@@ -17,25 +17,19 @@ import {
 
 export { createEmploymentContext, getOrCreateEmploymentContext };
 
-/**
- * Single employment read model for UI (status bar, work-section, commerce checks).
- * @param {import('../stores/HousesStore.js').default} housesStore
- */
-export async function getCityEmploymentSummary(housesStore) {
-  const employment = getOrCreateEmploymentContext(housesStore);
+/** Single employment read model for UI (status bar, work-section, commerce checks). */
+export async function getCityEmploymentSummary() {
+  const employment = getOrCreateEmploymentContext();
   return employment.getCityEmploymentSummary();
 }
 
-/**
- * Monthly redistribution: after house pop evolution, assign workers then sync factory distribution.
- * @param {import('../stores/HousesStore.js').default} housesStore
- */
-export async function redistributeCityEmployment(housesStore) {
-  const employment = getOrCreateEmploymentContext(housesStore);
+/** Monthly redistribution: after house pop evolution, assign workers then sync factory distribution. */
+export async function redistributeCityEmployment() {
+  const employment = getOrCreateEmploymentContext();
   await employment.distributeCityWorkers({
     sectorPriorities: getAllSectorPriorities(),
   });
-  await synchronizeFactoryWorkerDistribution(housesStore);
+  await synchronizeFactoryWorkerDistribution();
 }
 
 /**
@@ -56,19 +50,13 @@ export function isEmploymentWorkplaceType(buildingType) {
 
 /**
  * After placement/demolition: redistribute if workplace changed, then refresh UI.
- * @param {import('../stores/HousesStore.js').default} housesStore
  * @param {{ refreshEmploymentPresentation: (city: object) => Promise<void> }} scene
  * @param {object} city
  * @param {string | null | undefined} buildingType
  */
-export async function syncEmploymentAfterBuildingChange(
-  housesStore,
-  scene,
-  city,
-  buildingType
-) {
+export async function syncEmploymentAfterBuildingChange(scene, city, buildingType) {
   if (isEmploymentWorkplaceType(buildingType)) {
-    await redistributeCityEmployment(housesStore);
+    await redistributeCityEmployment();
   }
   await scene.refreshEmploymentPresentation(city);
 }

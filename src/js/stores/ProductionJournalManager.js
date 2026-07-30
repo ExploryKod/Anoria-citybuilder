@@ -1,4 +1,4 @@
-import db from './db.js';
+import db from '../../core/persistence/dexie/db.js';
 
 /**
  * ProductionJournalManager - Manages production journal entries for factories

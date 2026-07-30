@@ -204,7 +204,7 @@ describe('Place / remove et accès routier ciblé', () => {
       });
 
       const outcome = await harness.whenBuildingIsPlaced({
-        buildingId: roadId,
+        instanceId: roadId,
         x: 3,
         y: 6,
         type: 'roads',
@@ -226,7 +226,7 @@ describe('Place / remove et accès routier ciblé', () => {
     test('ignore un bâtiment absent de la base', async () => {
       expect(
         await harness.whenBuildingIsPlaced({
-          buildingId: createBuildingInstanceId(),
+          instanceId: createBuildingInstanceId(),
           x: 0,
           y: 0,
           type: 'House-Blue',
@@ -271,7 +271,7 @@ describe('Place / remove et accès routier ciblé', () => {
         spatialByTile,
       });
 
-      const outcome = await harness.whenBuildingIsRemoved({ buildingId: roadId });
+      const outcome = await harness.whenBuildingIsRemoved({ instanceId: roadId });
 
       expect(outcome.deleted).toBe(true);
       expect(await harness.repository.findById(roadId)).toBeNull();

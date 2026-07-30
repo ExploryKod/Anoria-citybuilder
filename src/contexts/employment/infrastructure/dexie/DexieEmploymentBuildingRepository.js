@@ -1,22 +1,17 @@
+import db from '../../../../core/persistence/dexie/db.js';
 import { createEmploymentBuildingSnapshot } from '../../domain/EmploymentBuildingSnapshot.js';
 import {
   isHouseType,
   isRoadType,
   isWorkplace,
 } from '../../domain/policies/BuildingRolePolicy.js';
-import { instanceIdFromHouseRow } from '../../../../shared/building-identity/index.js';
+import {
+  canonicalizeHouseRecord,
+  instanceIdFromHouseRow,
+} from '../../../../shared/building-identity/index.js';
 
-/**
- * Dexie / HousesStore adapter for Employment.
- */
+/** Employment port adapter — accès direct Dexie (table `houses`). */
 export class DexieEmploymentBuildingRepository {
-  /**
-   * @param {import('../../../../js/stores/HousesStore.js').default} housesStore
-   */
-  constructor(housesStore) {
-    this.housesStore = housesStore;
-  }
-
   #toSnapshot(house) {
     const employees = house.employees || {};
     return createEmploymentBuildingSnapshot({
@@ -32,28 +27,44 @@ export class DexieEmploymentBuildingRepository {
     });
   }
 
+  /**
+   * @param {string} instanceId
+   * @param {Record<string, unknown>} updates
+   */
+  async #putFields(instanceId, updates) {
+    const row = await db.houses.get(instanceId);
+    if (!row) return;
+
+    const next = { ...row };
+    for (const key of Object.keys(updates)) {
+      if (updates[key] !== undefined) {
+        next[key] = updates[key];
+      }
+    }
+
+    await db.houses.put(canonicalizeHouseRecord(next));
+  }
+
   async listLaborSources() {
-    const houses = await this.housesStore.listAllHouses();
-    return houses
-      .filter((h) => isHouseType(h.type || ''))
-      .map((h) => this.#toSnapshot(h));
+    const rows = await db.houses.toArray();
+    return rows
+      .filter((row) => isHouseType(row.type || ''))
+      .map((row) => this.#toSnapshot(row));
   }
 
   async listWorkplaces() {
-    const houses = await this.housesStore.listAllHouses();
-    return houses
-      .map((h) => this.#toSnapshot(h))
-      .filter((s) => isWorkplace(s));
+    const rows = await db.houses.toArray();
+    return rows.map((row) => this.#toSnapshot(row)).filter((snapshot) => isWorkplace(snapshot));
   }
 
   async listAllSnapshots() {
-    const houses = await this.housesStore.listAllHouses();
-    return houses.map((h) => this.#toSnapshot(h));
+    const rows = await db.houses.toArray();
+    return rows.map((row) => this.#toSnapshot(row));
   }
 
   async resetWorkplaceWorkers() {
-    const houses = await this.housesStore.listAllHouses();
-    for (const house of houses) {
+    const rows = await db.houses.toArray();
+    for (const house of rows) {
       const type = house.type || '';
       if (isHouseType(type) || isRoadType(type)) continue;
 
@@ -61,37 +72,37 @@ export class DexieEmploymentBuildingRepository {
       if (!(employees.worker_need > 0)) continue;
 
       const buildingId = instanceIdFromHouseRow(house);
-      await this.housesStore
-        .updateHouseFields(buildingId, {
+      try {
+        await this.#putFields(buildingId, {
           employees: { ...employees, worker: 0 },
-        })
-        .catch((err) => {
-          console.warn('[DexieEmploymentBuildingRepository] Failed to reset workers:', {
-            buildingId,
-            error: err?.message || err,
-          });
         });
+      } catch (err) {
+        console.warn('[DexieEmploymentBuildingRepository] Failed to reset workers:', {
+          buildingId,
+          error: err?.message || err,
+        });
+      }
     }
   }
 
   async saveWorkers(buildingId, workerCount) {
     if (!buildingId) return;
-    const house = await this.housesStore.getHouse(buildingId);
-    if (!house) return;
+    const row = await db.houses.get(buildingId);
+    if (!row) return;
 
-    const employees = house.employees || { worker: 0, worker_need: 0 };
-    await this.housesStore
-      .updateHouseFields(buildingId, {
+    const employees = row.employees || { worker: 0, worker_need: 0 };
+    try {
+      await this.#putFields(buildingId, {
         employees: {
           ...employees,
           worker: Math.max(0, Math.floor(workerCount) || 0),
         },
-      })
-      .catch((err) => {
-        console.warn('[DexieEmploymentBuildingRepository] Failed to save workers:', {
-          buildingId,
-          error: err?.message || err,
-        });
       });
+    } catch (err) {
+      console.warn('[DexieEmploymentBuildingRepository] Failed to save workers:', {
+        buildingId,
+        error: err?.message || err,
+      });
+    }
   }
 }

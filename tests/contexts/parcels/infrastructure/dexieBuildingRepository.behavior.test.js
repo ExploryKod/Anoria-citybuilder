@@ -1,13 +1,13 @@
 /**
- * Integration tests — DexieBuildingRepository (BC Parcels ↔ HousesStore)
+ * Integration tests — DexieBuildingRepository (BC Parcels ↔ Dexie)
  *
  * Boundary tests: UUID PK in Dexie must survive #toSnapshot and round-trip
  * through saveNeighbors / saveRoadAccess. In-memory fakes do not exercise this path.
  */
 
 import 'fake-indexeddb/auto';
-import Dexie from 'dexie';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
+import db from '../../../../src/core/persistence/dexie/db.js';
 import { HouseStore } from '../../../../src/js/stores/HousesStore.js';
 import { DexieBuildingRepository } from '../../../../src/contexts/parcels/infrastructure/dexie/DexieBuildingRepository.js';
 import { UpdateNeighborsForBuilding } from '../../../../src/contexts/parcels/application/commands/UpdateNeighborsForBuilding.js';
@@ -18,37 +18,24 @@ import { InMemoryDomainEventPublisher } from '../../../../src/contexts/parcels/i
 import { createBuildingInstanceId } from '../../../../src/shared/building-identity/index.js';
 import { makeHouseRecord } from '../../../fixtures/buildingRecord.js';
 
-function createTestDb() {
-  const db = new Dexie('testParcelsDexieRepoDb');
-  db.version(1).stores({
-    houses: 'instanceId, kind, type, [anchorX+anchorY], [kind+type]',
-    game: 'name',
-    budget: 'name',
-    objectives: 'name',
-    journal: '++id, turn, date, type, amount, description',
-    foodTraceability:
-      '++id, turn, month, year, date, transactionType, fromInstanceId, fromCoords, toInstanceId, toCoords, foodType, quantity, price',
-  });
-  return db;
+async function clearHousesTable() {
+  await db.open();
+  await db.houses.clear();
 }
 
 describe('DexieBuildingRepository — boundary UUID ↔ Dexie', () => {
   let housesStore;
+  /** @type {DexieBuildingRepository} */
   let repository;
-  let testDb;
 
   beforeEach(async () => {
-    testDb = createTestDb();
-    await testDb.open();
+    await clearHousesTable();
     housesStore = new HouseStore();
-    housesStore.db = testDb;
-    repository = new DexieBuildingRepository(housesStore);
+    repository = new DexieBuildingRepository();
   });
 
   afterEach(async () => {
-    if (testDb?.isOpen()) {
-      await testDb.delete();
-    }
+    await clearHousesTable();
   });
 
   test('findById conserve instanceId UUID dans snapshot.id (avec x/y)', async () => {
@@ -126,15 +113,12 @@ describe('DexieBuildingRepository — use cases bout-en-bout (UUID)', () => {
   let housesStore;
   let repository;
   let events;
-  let testDb;
   let houseInstanceId;
 
   beforeEach(async () => {
-    testDb = createTestDb();
-    await testDb.open();
+    await clearHousesTable();
     housesStore = new HouseStore();
-    housesStore.db = testDb;
-    repository = new DexieBuildingRepository(housesStore);
+    repository = new DexieBuildingRepository();
     events = new InMemoryDomainEventPublisher();
 
     const record = makeHouseRecord({ type: 'House-Blue', x: 8, y: 10 });
@@ -143,9 +127,7 @@ describe('DexieBuildingRepository — use cases bout-en-bout (UUID)', () => {
   });
 
   afterEach(async () => {
-    if (testDb?.isOpen()) {
-      await testDb.delete();
-    }
+    await clearHousesTable();
   });
 
   test('UpdateNeighborsForBuilding → voisins lisibles via GetBuildingNeighbors', async () => {
@@ -168,7 +150,7 @@ describe('DexieBuildingRepository — use cases bout-en-bout (UUID)', () => {
     const result = await getNeighbors.execute(houseInstanceId);
     expect(result.neighbors).toHaveLength(1);
     expect(result.neighbors[0].isRoad).toBe(true);
-    expect(result.buildingId).toBe(houseInstanceId);
+    expect(result.instanceId).toBe(houseInstanceId);
   });
 
   test('voisins route → RecalculateRoadAccess → GetBuildingRoadAccess.hasAccess', async () => {

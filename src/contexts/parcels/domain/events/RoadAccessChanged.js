@@ -1,22 +1,21 @@
-import { toPublishedBuildingId } from '../value-objects/BuildingId.js';
+import { assertBuildingInstanceId } from '../../../../shared/building-identity/BuildingInstanceId.js';
 
 /**
  * Événement de domaine : l'accès routier d'un bâtiment a changé.
- * `buildingId` dans le payload = Published Language (string).
  *
  * @param {object} params
- * @param {string | Readonly<{ value: string }>} params.buildingId
+ * @param {string} params.instanceId
  * @param {number} params.previousRoadCount
  * @param {Readonly<{ roadCount: number, hasAccess: boolean }>} params.newRoadAccess
  */
 export function createRoadAccessChanged({
-  buildingId,
+  instanceId,
   previousRoadCount,
   newRoadAccess,
 }) {
   return Object.freeze({
     type: 'parcels.RoadAccessChanged',
-    buildingId: toPublishedBuildingId(buildingId),
+    instanceId: assertBuildingInstanceId(instanceId),
     previousRoadCount,
     newRoadCount: newRoadAccess.roadCount,
     hasAccess: newRoadAccess.hasAccess,

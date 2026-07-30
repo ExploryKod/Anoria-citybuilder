@@ -1,40 +1,53 @@
-import { instanceIdFromHouseRow } from '../../../../shared/building-identity/index.js';
+import db from '../../../../core/persistence/dexie/db.js';
+import {
+  canonicalizeHouseRecord,
+  instanceIdFromHouseRow,
+} from '../../../../shared/building-identity/index.js';
 
-/**
- * Dexie / HousesStore adapter for factory production.
- */
+/** Supply factory port adapter — accès direct Dexie (table `houses`). */
 export class DexieFactoryBuildingRepository {
   /**
-   * @param {import('../../../../js/stores/HousesStore.js').default} housesStore
+   * @param {string} factoryId
+   * @param {Record<string, unknown>} fields
    */
-  constructor(housesStore) {
-    this.housesStore = housesStore;
+  async #putFields(factoryId, fields) {
+    const row = await db.houses.get(factoryId);
+    if (!row) return;
+
+    const next = { ...row };
+    for (const key of Object.keys(fields)) {
+      if (fields[key] !== undefined) {
+        next[key] = fields[key];
+      }
+    }
+
+    await db.houses.put(canonicalizeHouseRecord(next));
   }
 
   async findFactories() {
-    const houses = await this.housesStore.listAllHouses();
-    return houses.filter((house) => {
-      const type = house.type || '';
+    const rows = await db.houses.toArray();
+    return rows.filter((row) => {
+      const type = row.type || '';
       return type.includes('Winery-001');
     });
   }
 
   async findById(factoryId) {
     if (!factoryId) return null;
-    return this.housesStore.getHouse(factoryId);
+    return db.houses.get(factoryId);
   }
 
   async updateFields(factoryId, fields) {
-    await this.housesStore.updateHouseFields(factoryId, fields);
+    await this.#putFields(factoryId, fields);
   }
 
   async listNatureItems() {
-    const houses = await this.housesStore.listAllHouses();
-    return houses.filter((house) => (house.category || '') === 'nature');
+    const rows = await db.houses.toArray();
+    return rows.filter((row) => (row.category || '') === 'nature');
   }
 
   async listAllRows() {
-    return this.housesStore.listAllHouses();
+    return db.houses.toArray();
   }
 
   instanceId(row) {

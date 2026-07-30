@@ -2593,7 +2593,7 @@ async function generateCityMap() {
             if (!store) {
                 throw new Error('housesStore not available');
             }
-            const supply = getOrCreateSupplyContext(store);
+            const supply = getOrCreateSupplyContext();
             buildings = await supply.listSupplyMapBuildings();
         } catch (error) {
             console.warn('Could not load Supply map buildings:', error);

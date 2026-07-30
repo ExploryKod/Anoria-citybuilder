@@ -1,14 +1,9 @@
+import db from '../../../../core/persistence/dexie/db.js';
+
 /**
  * Legacy food traceability side-effects (window.foodTraceabilityService).
  */
 export class SupplyFoodTraceability {
-  /**
-   * @param {import('../../../../js/stores/HousesStore.js').default} housesStore
-   */
-  constructor(housesStore) {
-    this.housesStore = housesStore;
-  }
-
   get #service() {
     if (typeof globalThis !== 'undefined' && globalThis.foodTraceabilityService) {
       return globalThis.foodTraceabilityService;
@@ -28,11 +23,11 @@ export class SupplyFoodTraceability {
     const service = this.#service;
     if (!service || transfers.length === 0) return;
 
-    const marketData = await this.housesStore.getHouse(marketId);
+    const marketData = await db.houses.get(marketId);
     if (!marketData) return;
 
     for (const transfer of transfers) {
-      const farmData = await this.housesStore.getHouse(transfer.farmId);
+      const farmData = await db.houses.get(transfer.farmId);
       if (!farmData) continue;
 
       await service.recordFarmToMarket(
@@ -67,11 +62,11 @@ export class SupplyFoodTraceability {
     const service = this.#service;
     if (!service || transfers.length === 0) return;
 
-    const marketData = await this.housesStore.getHouse(marketId);
+    const marketData = await db.houses.get(marketId);
     if (!marketData) return;
 
     for (const transfer of transfers) {
-      const houseData = await this.housesStore.getHouse(transfer.houseId);
+      const houseData = await db.houses.get(transfer.houseId);
       if (!houseData) continue;
 
       await service.recordMarketToHouse(
@@ -106,7 +101,7 @@ export class SupplyFoodTraceability {
     if (!service || consumptions.length === 0) return;
 
     for (const entry of consumptions) {
-      const houseData = await this.housesStore.getHouse(entry.houseId);
+      const houseData = await db.houses.get(entry.houseId);
       if (!houseData) continue;
 
       const houseRef = {

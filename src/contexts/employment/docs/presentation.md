@@ -20,7 +20,7 @@ Règle : **`scene.update` ne lit plus `employees.worker` pour afficher des icôn
 
 ## Read model unique — `GetCityEmploymentSummary`
 
-Implémentation : `computeCityEmploymentSummary.js` → query `GetCityEmploymentSummary` → ACL `getCityEmploymentSummary(housesStore)`.
+Implémentation : `computeCityEmploymentSummary.js` → query `GetCityEmploymentSummary` → ACL `getCityEmploymentSummary()`.
 
 ```javascript
 {
@@ -52,7 +52,8 @@ Consommateurs :
 **Condition** (identique allocation et affichage) :
 
 ```
-roadCount > 0  AND  workerNeed > 0  AND  worker === 0
+roadCount > 0  AND  workerNeed > 0  AND  worker === 0   (autres postes)
+workerNeed > 0  AND  worker === 0                        (fermes — route optionnelle)
 ```
 
 - Clé : `instanceId` (UUID), pas le label `type-x-y`.

@@ -13,48 +13,53 @@ import { GetBuildingNeighbors } from '../contexts/parcels/application/queries/Ge
 /**
  * Composition root du bounded context Parcels.
  *
- * @param {object} deps
- * @param {import('../js/stores/HousesStore.js').default} deps.housesStore - legacy store (ACL)
+ * @param {object} [deps]
+ * @param {import('../contexts/parcels/application/ports/BuildingRepository.js').BuildingRepository} [deps.buildingRepository]
  * @param {import('../contexts/parcels/application/ports/DomainEventPublisher.js').DomainEventPublisher} [deps.eventPublisher]
  * @param {import('../contexts/parcels/application/ports/SpatialNeighborhoodPort.js').SpatialNeighborhoodPort} [deps.spatialNeighborhood]
  */
-export function createParcelsContext({ housesStore, eventPublisher, spatialNeighborhood }) {
-  const buildingRepository = new DexieBuildingRepository(housesStore);
+export function createParcelsContext({
+  buildingRepository,
+  eventPublisher,
+  spatialNeighborhood,
+} = {}) {
+  const buildingRepositoryImpl =
+    buildingRepository ?? new DexieBuildingRepository();
   const events = eventPublisher ?? new InMemoryDomainEventPublisher();
   const spatial = spatialNeighborhood ?? new SceneSpatialNeighborhoodAdapter();
 
   const recalculateRoadAccessForBuilding = new RecalculateRoadAccessForBuilding(
-    buildingRepository,
+    buildingRepositoryImpl,
     events
   );
   const recalculateAllRoadAccess = new RecalculateAllRoadAccess(
-    buildingRepository,
+    buildingRepositoryImpl,
     events
   );
   const recalculateRoadAccessForNeighbors = new RecalculateRoadAccessForNeighbors(
     recalculateRoadAccessForBuilding
   );
   const updateNeighborsForBuilding = new UpdateNeighborsForBuilding(
-    buildingRepository,
+    buildingRepositoryImpl,
     events
   );
   const placeBuilding = new PlaceBuilding({
-    buildingRepository,
+    buildingRepository: buildingRepositoryImpl,
     spatialNeighborhood: spatial,
     updateNeighborsForBuilding,
     recalculateRoadAccessForNeighbors,
   });
   const removeBuilding = new RemoveBuilding({
-    buildingRepository,
+    buildingRepository: buildingRepositoryImpl,
     spatialNeighborhood: spatial,
     updateNeighborsForBuilding,
     recalculateRoadAccessForNeighbors,
   });
-  const getBuildingRoadAccess = new GetBuildingRoadAccess(buildingRepository);
-  const getBuildingNeighbors = new GetBuildingNeighbors(buildingRepository);
+  const getBuildingRoadAccess = new GetBuildingRoadAccess(buildingRepositoryImpl);
+  const getBuildingNeighbors = new GetBuildingNeighbors(buildingRepositoryImpl);
 
   return {
-    buildingRepository,
+    buildingRepository: buildingRepositoryImpl,
     eventPublisher: events,
     spatialNeighborhood: spatial,
     recalculateRoadAccessForBuilding,
@@ -74,20 +79,20 @@ export function createParcelsContext({ housesStore, eventPublisher, spatialNeigh
     },
 
     /** Query UI : accès routier */
-    async getRoadAccess(buildingId) {
-      const result = await getBuildingRoadAccess.execute(buildingId);
+    async getRoadAccess(instanceId) {
+      const result = await getBuildingRoadAccess.execute(instanceId);
       return result?.roadAccess ?? { roadCount: 0, hasAccess: false };
     },
 
     /** Query UI : voisins (read model plat) */
-    async getNeighbors(buildingId) {
-      const result = await getBuildingNeighbors.execute(buildingId);
+    async getNeighbors(instanceId) {
+      const result = await getBuildingNeighbors.execute(instanceId);
       return result?.neighbors ?? [];
     },
 
     /** Command : persister les voisins (liste déjà calculée côté grille) */
-    async updateNeighbors(buildingId, neighbors) {
-      return updateNeighborsForBuilding.execute(buildingId, neighbors);
+    async updateNeighbors(instanceId, neighbors) {
+      return updateNeighborsForBuilding.execute(instanceId, neighbors);
     },
 
     /** Command : sync voisins + road access après placement (DB déjà créée) */
@@ -105,10 +110,9 @@ export function createParcelsContext({ housesStore, eventPublisher, spatialNeigh
 /** @type {ReturnType<typeof createParcelsContext> | null} */
 let sharedParcels = null;
 
-/** Un seul contexte Parcels par partie (même bus d'événements partout). */
-export function getOrCreateParcelsContext(housesStore) {
+export function getOrCreateParcelsContext() {
   if (!sharedParcels) {
-    sharedParcels = createParcelsContext({ housesStore });
+    sharedParcels = createParcelsContext();
   }
   return sharedParcels;
 }

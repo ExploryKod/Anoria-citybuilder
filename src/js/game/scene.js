@@ -55,9 +55,9 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
     const decorativeVillageManager = new DecorativeVillageManager(scene, assetManager);
     const budgetProcessor = new BudgetProcessor();
     const citizenManager = new CitizenManager(scene, assetManager);
-    const parcels = parcelsOption ?? getOrCreateParcelsContext(housesStore);
-    const supply = supplyOption ?? getOrCreateSupplyContext(housesStore);
-    const housing = housingOption ?? getOrCreateHousingContext(housesStore);
+    const parcels = parcelsOption ?? getOrCreateParcelsContext();
+    const supply = supplyOption ?? getOrCreateSupplyContext();
+    const housing = housingOption ?? getOrCreateHousingContext();
     const syncRoadAccess = setupRoadAccessIcons(parcels, { assetManager, textures });
 
     // Use simple scene background with sky texture - this ensures sky covers everything
@@ -560,7 +560,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                 if (roadInstanceId) {
                     try {
                         await parcels.syncPlacedBuilding({
-                            buildingId: roadInstanceId,
+                            instanceId: roadInstanceId,
                             x,
                             y,
                             type: 'roads',
@@ -608,7 +608,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                 if (placedInstanceId) {
                     try {
                         await parcels.syncPlacedBuilding({
-                            buildingId: placedInstanceId,
+                            instanceId: placedInstanceId,
                             x,
                             y,
                             type: newBuildingId,
@@ -1006,7 +1006,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                         // Handle geometry-based roads ('roads') - restore terrain to grass
                         if (currentBuildingId === 'roads') {
                             try {
-                                await parcels.syncRemovedBuilding({ buildingId: currentInstanceId });
+                                await parcels.syncRemovedBuilding({ instanceId: currentInstanceId });
                             } catch (err) {
                                 console.warn('[Scene] Failed parcels remove for road', currentInstanceId, err);
                                 await housesStore.deleteOneHouse(currentInstanceId);
@@ -1036,7 +1036,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                             }
                         } else {
                             try {
-                                await parcels.syncRemovedBuilding({ buildingId: currentInstanceId });
+                                await parcels.syncRemovedBuilding({ instanceId: currentInstanceId });
                             } catch (err) {
                                 console.warn('[Scene] Failed parcels remove for', currentInstanceId, err);
                                 await housesStore.deleteOneHouse(currentInstanceId);
@@ -1085,7 +1085,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
 
                     if (buildings[x][y]) {
                         await syncRoadAccess({
-                            buildingId: currentInstanceId,
+                            instanceId: currentInstanceId,
                             mesh: buildings[x][y],
                             position: statutsIconsMeta.road.position,
                             scale: marketRoadScale,
@@ -1243,7 +1243,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
 
                     if (buildings[x][y]) {
                         await syncRoadAccess({
-                            buildingId: currentInstanceId,
+                            instanceId: currentInstanceId,
                             mesh: buildings[x][y],
                             position: statutsIconsMeta.road.position,
                             scale: windmillRoadScale,
@@ -1506,7 +1506,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                 const mesh = buildings[nx]?.[ny];
                 if (!mesh?.userData) continue;
                 await syncRoadAccess({
-                    buildingId: instanceId,
+                    instanceId,
                     mesh,
                     position: statutsIconsMeta.road.position,
                     scale: statutsIconsMeta.road.scale,
@@ -1647,7 +1647,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
         let understaffedBuildingIds = [];
 
         try {
-            const summary = await getCityEmploymentSummary(housesStore);
+            const summary = await getCityEmploymentSummary();
             unemployedCount = summary.unemployed;
             unemploymentPercentage = summary.unemploymentPercentage;
             employmentLack = summary.lack;

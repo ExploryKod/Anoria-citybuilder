@@ -51,7 +51,7 @@ export function createNeighbor({
 export function resolveNeighborInstanceId(raw) {
   if (!raw || typeof raw !== 'object') return null;
 
-  const candidates = [raw.instanceId, raw.id, raw.buildingId];
+  const candidates = [raw.instanceId, raw.id];
   for (const candidate of candidates) {
     if (typeof candidate === 'string' && isBuildingInstanceId(candidate)) {
       return candidate;
@@ -90,8 +90,7 @@ export function normalizeNeighborFromRef(raw) {
     (typeof raw.type === 'string' && raw.type) ||
     (typeof raw.name === 'string' && raw.name && !isBuildingInstanceId(raw.name)
       ? raw.name
-      : '') ||
-    (raw.buildingId === 'roads' ? 'roads' : '');
+      : '');
 
   const tile = tryCreateTileCoord(raw.x, raw.y);
 
@@ -103,8 +102,7 @@ export function normalizeNeighborFromRef(raw) {
     (type && type.startsWith('StonePath-')) ||
     raw.name === 'roads' ||
     raw.name === 'Road' ||
-    (raw.name && raw.name.startsWith('StonePath-')) ||
-    raw.buildingId === 'roads'
+    (raw.name && raw.name.startsWith('StonePath-'))
   );
 
   return createNeighbor({
@@ -138,9 +136,3 @@ export function toPersistedNeighborRecord(neighbor) {
     isRoad: n.isRoad,
   };
 }
-
-/** @deprecated Use normalizeNeighborFromRef */
-export const fromLegacyNeighbor = normalizeNeighborFromRef;
-
-/** @deprecated Use toPersistedNeighborRecord */
-export const toLegacyNeighborRecord = toPersistedNeighborRecord;

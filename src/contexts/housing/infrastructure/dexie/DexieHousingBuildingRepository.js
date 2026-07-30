@@ -1,3 +1,4 @@
+import db from '../../../../core/persistence/dexie/db.js';
 import { createHousingBuildingSnapshot } from '../../domain/HousingBuildingSnapshot.js';
 import { isResidentialHouseType } from '../../domain/policies/HouseCapacityPolicy.js';
 import {
@@ -5,22 +6,14 @@ import {
   priceForResidentialType,
 } from '../../domain/HouseTypeCatalog.js';
 import {
+  canonicalizeHouseRecord,
   instanceIdFromHouseRow,
   residentialTierPatch,
 } from '../../../../shared/building-identity/index.js';
 import { footprintFromRecord, footprintOccupiesTile } from '../../../../shared/building-identity/Footprint.js';
 
-/**
- * Dexie / HousesStore adapter for Housing.
- */
+/** Housing port adapter — accès direct Dexie (table `houses`). */
 export class DexieHousingBuildingRepository {
-  /**
-   * @param {import('../../../../js/stores/HousesStore.js').default} housesStore
-   */
-  constructor(housesStore) {
-    this.housesStore = housesStore;
-  }
-
   #toSnapshot(house) {
     return createHousingBuildingSnapshot({
       id: instanceIdFromHouseRow(house),
@@ -36,19 +29,37 @@ export class DexieHousingBuildingRepository {
     });
   }
 
-  async findById(buildingId) {
-    if (!buildingId) return null;
-    const house = await this.housesStore.getHouse(buildingId);
-    if (!house) return null;
-    return this.#toSnapshot(house);
+  /**
+   * @param {string} instanceId
+   * @param {Record<string, unknown>} updates
+   */
+  async #putFields(instanceId, updates) {
+    const row = await db.houses.get(instanceId);
+    if (!row) return;
+
+    const next = { ...row };
+    for (const key of Object.keys(updates)) {
+      if (updates[key] !== undefined) {
+        next[key] = updates[key];
+      }
+    }
+
+    await db.houses.put(canonicalizeHouseRecord(next));
+  }
+
+  async findById(instanceId) {
+    if (!instanceId) return null;
+    const row = await db.houses.get(instanceId);
+    if (!row) return null;
+    return this.#toSnapshot(row);
   }
 
   async findResidentialAt(x, y) {
     if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
     const tileX = Math.floor(x);
     const tileY = Math.floor(y);
-    const houses = await this.housesStore.listAllHouses();
-    const house = houses.find((row) => {
+    const rows = await db.houses.toArray();
+    const house = rows.find((row) => {
       if (!isResidentialHouseType(normalizeResidentialType(row.type || ''))) {
         return false;
       }
@@ -59,50 +70,39 @@ export class DexieHousingBuildingRepository {
   }
 
   async findResidentialHouses() {
-    const houses = await this.housesStore.listAllHouses();
-    return houses
-      .filter((house) => isResidentialHouseType(house.type || ''))
-      .map((house) => this.#toSnapshot(house));
+    const rows = await db.houses.toArray();
+    return rows
+      .filter((row) => isResidentialHouseType(row.type || ''))
+      .map((row) => this.#toSnapshot(row));
   }
 
   async listAllResidentialSnapshots() {
     return this.findResidentialHouses();
   }
 
-  /**
-   * @param {string} buildingId
-   * @param {{ pop: number, lastPopulationGrowthMonth?: number | null }} payload
-   */
-  async savePopulation(buildingId, payload) {
-    if (!buildingId) return;
+  async savePopulation(instanceId, payload) {
+    if (!instanceId) return;
     const fields = { pop: payload.pop };
     if (payload.lastPopulationGrowthMonth !== undefined) {
       fields.lastPopulationGrowthMonth = payload.lastPopulationGrowthMonth;
     }
-    await this.housesStore.updateHouseFields(buildingId, fields);
+    await this.#putFields(instanceId, fields);
   }
 
-  /**
-   * @param {object} params
-   * @param {string} params.oldId
-   * @param {string} params.targetType
-   * @param {number} params.targetPop
-   * @returns {Promise<{ newId: string, previousId: string }>}
-   */
   async applyEvolution({ oldId, targetType, targetPop }) {
-    const house = await this.housesStore.getHouse(oldId);
-    if (!house) {
+    const row = await db.houses.get(oldId);
+    if (!row) {
       throw new Error(`DexieHousingBuildingRepository: house not found ${oldId}`);
     }
 
-    const instanceId = instanceIdFromHouseRow(house);
+    const instanceId = instanceIdFromHouseRow(row);
     const price = priceForResidentialType(targetType);
     const tierPatch = residentialTierPatch({
       instanceId,
       targetType,
     });
 
-    await this.housesStore.updateHouseFields(instanceId, {
+    await this.#putFields(instanceId, {
       ...tierPatch,
       price,
       pop: targetPop,

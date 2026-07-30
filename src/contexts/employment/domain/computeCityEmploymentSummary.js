@@ -1,7 +1,7 @@
 import {
   hasRoadAccess,
+  isEligibleWorkplace,
   isLaborSource,
-  isWorkplace,
 } from './policies/BuildingRolePolicy.js';
 import {
   elitePopFromHouse,
@@ -42,7 +42,7 @@ export function computeCityEmploymentSummary(buildings) {
       elitePool += elitePopFromHouse(building.type, building.pop);
     }
 
-    if (!isWorkplace(building) || !hasRoadAccess(building)) {
+    if (!isEligibleWorkplace(building)) {
       continue;
     }
 

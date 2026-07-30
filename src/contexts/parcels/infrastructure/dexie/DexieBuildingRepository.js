@@ -1,24 +1,13 @@
+import db from '../../../../core/persistence/dexie/db.js';
 import { createBuildingSnapshot } from '../../domain/BuildingSnapshot.js';
 import {
-  toPublishedBuildingId,
+  assertBuildingInstanceId,
+  canonicalizeHouseRecord,
   instanceIdFromHouseRow,
 } from '../../../../shared/building-identity/index.js';
 
-/**
- * Adapter : traduit HousesStore (legacy) vers le port BuildingRepository.
- * Frontière : strings IndexedDB ↔ snapshots Parcels (BuildingId / TileCoord).
- */
+/** Parcels port adapter — accès direct Dexie (table `houses`). */
 export class DexieBuildingRepository {
-  /**
-   * @param {import('../../../../js/stores/HousesStore.js').default} housesStore
-   */
-  constructor(housesStore) {
-    this.housesStore = housesStore;
-  }
-
-  /**
-   * @param {object} house
-   */
   #toSnapshot(house) {
     return createBuildingSnapshot({
       id: instanceIdFromHouseRow(house),
@@ -31,50 +20,54 @@ export class DexieBuildingRepository {
   }
 
   /**
-   * @param {string | Readonly<{ value: string }>} buildingId
+   * @param {string} instanceId
+   * @param {Record<string, unknown>} updates
    */
-  async findById(buildingId) {
-    const id = toPublishedBuildingId(buildingId);
-    const house = await this.housesStore.getHouse(id);
-    if (!house) return null;
-    return this.#toSnapshot(house);
+  async #putFields(instanceId, updates) {
+    const row = await db.houses.get(instanceId);
+    if (!row) return;
+
+    const next = { ...row };
+    for (const key of Object.keys(updates)) {
+      if (updates[key] !== undefined) {
+        next[key] = updates[key];
+      }
+    }
+
+    await db.houses.put(canonicalizeHouseRecord(next));
+  }
+
+  async findById(instanceId) {
+    const id = assertBuildingInstanceId(instanceId);
+    const row = await db.houses.get(id);
+    if (!row) return null;
+    return this.#toSnapshot(row);
   }
 
   async findAll() {
-    const houses = await this.housesStore.listAllHouses();
-    return houses.map((house) => this.#toSnapshot(house));
+    const rows = await db.houses.toArray();
+    return rows.map((row) => this.#toSnapshot(row));
   }
 
-  /**
-   * @param {string | Readonly<{ value: string }>} buildingId
-   * @param {number} roadCount
-   */
-  async saveRoadAccess(buildingId, roadCount) {
-    const id = toPublishedBuildingId(buildingId);
-    await this.housesStore.updateHouseFields(id, { roads: roadCount });
+  async saveRoadAccess(instanceId, roadCount) {
+    const id = assertBuildingInstanceId(instanceId);
+    await this.#putFields(id, { roads: roadCount });
   }
 
-  /**
-   * @param {string | Readonly<{ value: string }>} buildingId
-   * @param {object[]} neighbors
-   */
-  async saveNeighbors(buildingId, neighbors) {
-    const id = toPublishedBuildingId(buildingId);
-    await this.housesStore.updateHouseFields(id, { neighbors });
+  async saveNeighbors(instanceId, neighbors) {
+    const id = assertBuildingInstanceId(instanceId);
+    await this.#putFields(id, { neighbors });
   }
 
-  async findNeighbors(buildingId) {
-    const id = toPublishedBuildingId(buildingId);
-    const house = await this.housesStore.getHouse(id);
-    if (!house) return [];
-    return Array.isArray(house.neighbors) ? house.neighbors : [];
+  async findNeighbors(instanceId) {
+    const id = assertBuildingInstanceId(instanceId);
+    const row = await db.houses.get(id);
+    if (!row) return [];
+    return Array.isArray(row.neighbors) ? row.neighbors : [];
   }
 
-  /**
-   * @param {string | Readonly<{ value: string }>} buildingId
-   */
-  async deleteById(buildingId) {
-    const id = toPublishedBuildingId(buildingId);
-    await this.housesStore.deleteOneHouse(id);
+  async deleteById(instanceId) {
+    const id = assertBuildingInstanceId(instanceId);
+    await db.houses.delete(id);
   }
 }

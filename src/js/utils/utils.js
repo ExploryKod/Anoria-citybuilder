@@ -3,7 +3,7 @@ import * as THREE from "three";
 function getBuildingZonesNeighbors(data, area=1) {
 
     const { city, buildings, x, y, currentBuildingId, terrain } = data;
- 
+
     // Helper: prefer building over terrain if building exists and is not grass
     // This ensures StonePath (roads) in buildings array are detected as neighbors
     const getNeighborMesh = (nx, ny) => {
@@ -118,28 +118,30 @@ export function updateBuildingNeighbors(buildingData, area=1, time=0) {
         buildings[x][y].userData.neighborZones = {};
     }
 
-    Object.assign(buildings[x][y].userData, { neighborS: neighbors.neighborSouth?.buildingId });
-    Object.assign(buildings[x][y].userData, { neighborE: neighbors.neighborEast?.buildingId });
-    Object.assign(buildings[x][y].userData, { neighborNE: neighbors.neighborNorthEast?.buildingId });
-    Object.assign(buildings[x][y].userData, { neighborSE: neighbors.neighborSouthEast?.buildingId });
-    Object.assign(buildings[x][y].userData, { neighborN: neighbors.neighborNorth?.buildingId });
-    Object.assign(buildings[x][y].userData, { neighborSW: neighbors.neighborSouthWest?.buildingId });
-    Object.assign(buildings[x][y].userData, { neighborW: neighbors.neighborWest?.buildingId });
-    Object.assign(buildings[x][y].userData, { neighborNW: neighbors.neighborNorthWest?.buildingId });
+    const instanceIdFromMesh = (mesh) =>
+        typeof mesh?.userData?.instanceId === 'string' ? mesh.userData.instanceId : undefined;
+
+    Object.assign(buildings[x][y].userData, { neighborS: instanceIdFromMesh(neighbors.terrainS) });
+    Object.assign(buildings[x][y].userData, { neighborE: instanceIdFromMesh(neighbors.terrainE) });
+    Object.assign(buildings[x][y].userData, { neighborNE: instanceIdFromMesh(neighbors.terrainNE) });
+    Object.assign(buildings[x][y].userData, { neighborSE: instanceIdFromMesh(neighbors.terrainSE) });
+    Object.assign(buildings[x][y].userData, { neighborN: instanceIdFromMesh(neighbors.terrainN) });
+    Object.assign(buildings[x][y].userData, { neighborSW: instanceIdFromMesh(neighbors.terrainSW) });
+    Object.assign(buildings[x][y].userData, { neighborW: instanceIdFromMesh(neighbors.terrainW) });
+    Object.assign(buildings[x][y].userData, { neighborNW: instanceIdFromMesh(neighbors.terrainNW) });
 
     // Voisins métier : BC Parcels (IndexedDB / getNeighbors). Ici : meshes pour hover UI.
-  
-      // Add all neighbors to a single array for convenience
+
       Object.assign(buildings[x][y].userData, {
-        neighborsNames: [
-            neighbors.neighborNorth?.buildingId,
-            neighbors.neighborNorthWest?.buildingId,
-            neighbors.neighborNorthEast?.buildingId,
-            neighbors.neighborEast?.buildingId,
-            neighbors.neighborSouthEast?.buildingId,
-            neighbors.neighborSouthWest?.buildingId,
-            neighbors.neighborSouth?.buildingId,
-            neighbors.neighborWest?.buildingId,
+        neighborInstanceIds: [
+            instanceIdFromMesh(neighbors.terrainN),
+            instanceIdFromMesh(neighbors.terrainNW),
+            instanceIdFromMesh(neighbors.terrainNE),
+            instanceIdFromMesh(neighbors.terrainE),
+            instanceIdFromMesh(neighbors.terrainSE),
+            instanceIdFromMesh(neighbors.terrainSW),
+            instanceIdFromMesh(neighbors.terrainS),
+            instanceIdFromMesh(neighbors.terrainW),
         ],
     });
 
@@ -347,16 +349,16 @@ export function getBuildingsNamesInZone(buildingData, time=0, targets = {buildin
 
 
 /**
- * Get a neighbor buildingId by its geographical position
+ * Get a neighbor instanceId by matching against known neighbor UUIDs on the mesh.
  * @param {Object} building - The building object building[x][y]
- * @param {Array} neighbors
+ * @param {Array<string>} instanceIds
  */
-export function getBuildingNeighbors(building, neighbors=[]) {
-    if(!building.userData || !building.userData.neighborsNames || neighbors.length <= 0) {
+export function getBuildingNeighbors(building, instanceIds = []) {
+    if(!building.userData || !building.userData.neighborInstanceIds || instanceIds.length <= 0) {
         return false
     }
-    const neighborNameFound = building.userData.neighborsNames.find((neighborName) => neighbors.includes(neighborName));
-    return neighborNameFound ? neighborNameFound : false;
+    const neighborIdFound = building.userData.neighborInstanceIds.find((neighborId) => instanceIds.includes(neighborId));
+    return neighborIdFound ? neighborIdFound : false;
 }
 
 /*

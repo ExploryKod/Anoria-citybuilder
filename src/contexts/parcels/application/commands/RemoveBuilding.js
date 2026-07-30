@@ -25,23 +25,23 @@ export class RemoveBuilding {
   }
 
   /**
-   * @param {{ buildingId: string, zones?: number[] }} params
-   * @returns {Promise<{ buildingId: string, affectedIds: string[], deleted: boolean } | null>}
+   * @param {{ instanceId: string, zones?: number[] }} params
+   * @returns {Promise<{ instanceId: string, affectedIds: string[], deleted: boolean } | null>}
    */
-  async execute({ buildingId, zones = [1, 2] }) {
-    const building = await this.buildingRepository.findById(buildingId);
+  async execute({ instanceId, zones = [1, 2] }) {
+    const building = await this.buildingRepository.findById(instanceId);
     if (!building) {
       return null;
     }
 
     const formerNeighbors = normalizeNeighborList(
-      await this.buildingRepository.findNeighbors(buildingId)
+      await this.buildingRepository.findNeighbors(instanceId)
     );
     const affected = new Set(
       formerNeighbors.map((n) => n.instanceId).filter(Boolean)
     );
 
-    await this.buildingRepository.deleteById(buildingId);
+    await this.buildingRepository.deleteById(instanceId);
 
     for (const adjId of [...affected]) {
       const adj = await this.buildingRepository.findById(adjId);
@@ -59,7 +59,7 @@ export class RemoveBuilding {
     await this.recalculateRoadAccessForNeighbors.execute([...affected]);
 
     return {
-      buildingId,
+      instanceId,
       affectedIds: [...affected],
       deleted: true,
     };

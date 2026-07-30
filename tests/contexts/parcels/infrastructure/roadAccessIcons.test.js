@@ -5,6 +5,7 @@ import {
 } from '../../../../src/contexts/parcels/infrastructure/presentation/roadAccessIcons.js';
 import { InMemoryDomainEventPublisher } from '../../../../src/contexts/parcels/infrastructure/events/InMemoryDomainEventPublisher.js';
 import { createRoadAccessChanged } from '../../../../src/contexts/parcels/domain/events/RoadAccessChanged.js';
+import { createBuildingInstanceId } from '../../../fixtures/parcelsFixtures.js';
 
 describe('roadAccessIcons', () => {
   beforeEach(() => {
@@ -13,6 +14,7 @@ describe('roadAccessIcons', () => {
 
   test('met à jour l\'icône via le bus quand roadCount change', async () => {
     const events = new InMemoryDomainEventPublisher();
+    const instanceId = createBuildingInstanceId();
     const mesh = { name: 'House-Blue' };
     const calls = [];
     const assetManager = { setStatusSprite: (...args) => calls.push(args) };
@@ -24,7 +26,7 @@ describe('roadAccessIcons', () => {
     );
 
     await syncRoadAccess({
-      buildingId: 'House-Blue-1-1',
+      instanceId,
       mesh,
       position: { x: 0, y: 1, z: 0 },
       scale: { x: 1, y: 1, z: 1 },
@@ -32,7 +34,7 @@ describe('roadAccessIcons', () => {
 
     events.publish(
       createRoadAccessChanged({
-        buildingId: 'House-Blue-1-1',
+        instanceId,
         previousRoadCount: 0,
         newRoadAccess: { roadCount: 2, hasAccess: true },
       })

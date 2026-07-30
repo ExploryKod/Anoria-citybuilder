@@ -3,50 +3,35 @@
  */
 
 import 'fake-indexeddb/auto';
-import Dexie from 'dexie';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
+import db from '../../src/core/persistence/dexie/db.js';
 import { HouseStore } from '../../src/js/stores/HousesStore.js';
 import { getCityTotalPopulation } from '../../src/js/acl/housing.js';
 import { resetHousingContextForTests } from '../../src/composition/createHousingContext.js';
 import { makeHouseRecord } from '../fixtures/buildingRecord.js';
 
-function createTestDb() {
-  const db = new Dexie('testHousingPopDb');
-  db.version(1).stores({
-    houses: 'instanceId, kind, type, [anchorX+anchorY], [kind+type]',
-    game: 'name',
-    budget: 'name',
-    objectives: 'name',
-    journal: '++id, turn, date, type, amount, description',
-    foodTraceability:
-      '++id, turn, month, year, date, transactionType, fromInstanceId, fromCoords, toInstanceId, toCoords, foodType, quantity, price',
-  });
-  return db;
+async function clearHousesTable() {
+  await db.open();
+  await db.houses.clear();
 }
 
 describe('getCityTotalPopulation (H6)', () => {
   /** @type {HouseStore} */
   let housesStore;
-  /** @type {Dexie} */
-  let testDb;
 
   beforeEach(async () => {
     resetHousingContextForTests();
-    testDb = createTestDb();
-    await testDb.open();
+    await clearHousesTable();
     housesStore = new HouseStore();
-    housesStore.db = testDb;
   });
 
   afterEach(async () => {
     resetHousingContextForTests();
-    if (testDb?.isOpen()) {
-      await testDb.delete();
-    }
+    await clearHousesTable();
   });
 
-  test('returns 0 without store', async () => {
-    expect(await getCityTotalPopulation(null)).toBe(0);
+  test('returns 0 on empty database', async () => {
+    expect(await getCityTotalPopulation()).toBe(0);
   });
 
   test('sums residential pop only', async () => {
@@ -54,6 +39,6 @@ describe('getCityTotalPopulation (H6)', () => {
     await housesStore.addHouse(makeHouseRecord({ type: 'House-Red', x: 2, y: 2, extra: { pop: 2 } }));
     await housesStore.addHouse(makeHouseRecord({ type: 'Farm-Wheat', x: 3, y: 3, extra: { pop: 50 } }));
 
-    expect(await getCityTotalPopulation(housesStore)).toBe(6);
+    expect(await getCityTotalPopulation()).toBe(6);
   });
 });

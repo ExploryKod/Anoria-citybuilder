@@ -178,7 +178,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
         let currentStocks = {};
         let allBuildingsData = [];
         try {
-            const supply = getOrCreateSupplyContext(housesStore);
+            const supply = getOrCreateSupplyContext();
             allBuildingsData = await supply.listSupplyStockSnapshots();
             allBuildingsData.forEach(building => {
                 const buildingKey = buildingStockKey(building);
@@ -966,7 +966,7 @@ export async function loadFoodCharts() {
         const transactions = await window.foodTraceabilityService.getAllTransactions();
         
         // House pop via Supply BC (not raw Dexie)
-        const supply = getOrCreateSupplyContext(housesStore);
+        const supply = getOrCreateSupplyContext();
         const allHouses = (await supply.listSupplyStockSnapshots()).filter(
             (b) => b.kind === 'house' || (b.type && (b.type.includes('House') || b.type.includes('Maison')))
         );

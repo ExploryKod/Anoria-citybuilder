@@ -61,7 +61,7 @@ class StorageSectionManager {
         }
         
         try {
-            const supply = getOrCreateSupplyContext(this.housesStore);
+            const supply = getOrCreateSupplyContext();
             const supplyViews = await supply.listWindmillSupplyViews();
 
             this.windmills = [];

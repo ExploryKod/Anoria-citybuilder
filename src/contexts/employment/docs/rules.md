@@ -57,14 +57,15 @@ Règles strictes :
 
 ## 3. Postes à pourvoir
 
-- Un **poste ouvrier** est un bâtiment **non-maison**, **non-route**, avec `workerNeed > 0` et `roadCount > 0`.
-- `employees.worker` / `workerNeed` décrivent le staffing **ouvrier** uniquement.
-- Les postes `elite_need` / `employees.elite` existent en config mais ne sont **pas encore alimentés** depuis `elitePool` *(chômage élite distinct — à faire)*.
+- Un **poste ouvrier** est un bâtiment **non-maison**, **non-route**, avec `workerNeed > 0`.
+- **Fermes** (`Farm-*`) : éligibles **sans route** — embauche et agrégats (manque, no-work) dès la pose.
+- **Autres postes** (marché, moulin, usine…) : `roadCount > 0` requis.
 
-### 3 bis. Éligibilité « manque » (no-road)
+### 3 bis. Éligibilité route
 
-- Un poste sans route (`roadCount <= 0`) est **ignoré** pour le manque global et les icônes `no-work`.
-- Tant que les seuls déficits concernent des bâtiments non routés, le chiffre **manque** reste à **0**.
+- Maisons : seules celles avec route contribuent au pool ouvrier.
+- Fermes : exemptées (pas de route requise pour emploi).
+- Autres postes sans route : ignorés pour manque, chômage-allocation et icônes `no-work`.
 
 ---
 
@@ -122,8 +123,10 @@ Chômage > 0 et manque > 0 **en même temps** n’existe pas après une redistri
 Condition (`computeCityEmploymentSummary` → `understaffedBuildingIds`) :
 
 ```
-worker === 0  AND  workerNeed > 0  AND  roadCount > 0
+worker === 0  AND  workerNeed > 0  AND  isEligibleWorkplace(building)
 ```
+
+(`isEligibleWorkplace` = ferme sans route OK ; autres postes → `roadCount > 0`.)
 
 - Affichées **uniquement** par `scene.refreshEmploymentPresentation` (pas par `scene.update`).
 - Un poste à **1/3 ouvriers** contribue au **manque** (`lack`) mais **n’a pas** d’icône `no-work`.

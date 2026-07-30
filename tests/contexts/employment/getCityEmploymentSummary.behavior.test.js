@@ -83,10 +83,15 @@ describe('Employment — GetCityEmploymentSummary', () => {
       expect(summary.totalPopulation).toBe(12);
     });
 
-    test('lack and understaffed only on road-eligible workplaces', () => {
+    test('lack and understaffed: farms without road count; other workplaces need road', () => {
       const summary = computeCityEmploymentSummary([
         house('h1', 2, 1),
-        workplace('farm-road', { workerNeed: 3, sector: 1, worker: 0 }),
+        workplace('farm-no-road', {
+          workerNeed: 3,
+          sector: 1,
+          worker: 0,
+          roadCount: 0,
+        }),
         workplace('mill-no-road', {
           workerNeed: 4,
           sector: 4,
@@ -97,8 +102,25 @@ describe('Employment — GetCityEmploymentSummary', () => {
       ]);
 
       expect(summary.lack).toBe(3);
-      expect(summary.understaffedBuildingIds).toEqual(['farm-road']);
+      expect(summary.understaffedBuildingIds).toEqual(['farm-no-road']);
       expect(summary.unemployed).toBe(2);
+    });
+
+    test('new farm without road absorbs unemployed workers', () => {
+      const summary = computeCityEmploymentSummary([
+        house('h1', 4, 1),
+        workplace('farm-a', { workerNeed: 3, sector: 1, worker: 3, roadCount: 0 }),
+      ]);
+      expect(summary.unemployed).toBe(1);
+      expect(summary.lack).toBe(0);
+
+      const afterFarm = computeCityEmploymentSummary([
+        house('h1', 4, 1),
+        workplace('farm-a', { workerNeed: 3, sector: 1, worker: 3, roadCount: 0 }),
+        workplace('farm-b', { workerNeed: 3, sector: 1, worker: 1, roadCount: 0 }),
+      ]);
+      expect(afterFarm.unemployed).toBe(0);
+      expect(afterFarm.lack).toBe(2);
     });
 
     test('unemployed = pool minus assigned on eligible workplaces', () => {
@@ -113,7 +135,7 @@ describe('Employment — GetCityEmploymentSummary', () => {
       expect(summary.unemploymentPercentage).toBe(60);
     });
 
-    test('bySector aggregates road-eligible workplaces only', () => {
+    test('bySector aggregates eligible workplaces (farms without road included)', () => {
       const summary = computeCityEmploymentSummary([
         workplace('farm', { workerNeed: 3, sector: 1, worker: 1 }),
         workplace('market-no-road', {

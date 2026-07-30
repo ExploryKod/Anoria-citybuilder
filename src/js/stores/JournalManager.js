@@ -1,4 +1,4 @@
-import db from './db.js';
+import db from '../../core/persistence/dexie/db.js';
 
 /**
  * JournalManager - Manages journal entries (accounting entries)

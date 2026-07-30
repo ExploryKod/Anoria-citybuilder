@@ -1,4 +1,4 @@
-import db from './db';
+import db from '../../core/persistence/dexie/db.js';
 import budgetManager from './BudgetManager.js';
 import {
     canonicalizeHouseRecord,
@@ -90,7 +90,7 @@ class HouseStore {
         const { getOrCreateHousingContext } = await import(
             '../../composition/createHousingContext.js'
         );
-        const { totalPop } = await getOrCreateHousingContext(this).getCityPopulationSummary();
+        const { totalPop } = await getOrCreateHousingContext().getCityPopulationSummary();
         return totalPop;
     }
 
@@ -101,7 +101,7 @@ class HouseStore {
         const { getOrCreateHousingContext } = await import(
             '../../composition/createHousingContext.js'
         );
-        const result = await getOrCreateHousingContext(this).getFamishedPopulation();
+        const result = await getOrCreateHousingContext().getFamishedPopulation();
         return result.famishedPopulation;
     }
 

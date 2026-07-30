@@ -1,19 +1,14 @@
+import db from '../../../../core/persistence/dexie/db.js';
 import { createSupplyBuildingSnapshot } from '../../domain/SupplyBuildingSnapshot.js';
 import { createSupplyBuildingView } from '../../domain/SupplyBuildingView.js';
 import { createFoodStock } from '../../domain/value-objects/FoodStock.js';
-import { instanceIdFromHouseRow } from '../../../../shared/building-identity/index.js';
+import {
+  canonicalizeHouseRecord,
+  instanceIdFromHouseRow,
+} from '../../../../shared/building-identity/index.js';
 
-/**
- * Dexie / HousesStore adapter for Supply.
- */
+/** Supply port adapter — accès direct Dexie (table `houses`). */
 export class DexieSupplyBuildingRepository {
-  /**
-   * @param {import('../../../../js/stores/HousesStore.js').default} housesStore
-   */
-  constructor(housesStore) {
-    this.housesStore = housesStore;
-  }
-
   #defaultMaxStock(type) {
     const t = type || '';
     return t.includes('Windmill') || t.includes('windmill') ? 1000 : 500;
@@ -64,28 +59,46 @@ export class DexieSupplyBuildingRepository {
     });
   }
 
+  /**
+   * @param {string} instanceId
+   * @param {Record<string, unknown>} updates
+   */
+  async #putFields(instanceId, updates) {
+    const row = await db.houses.get(instanceId);
+    if (!row) return;
+
+    const next = { ...row };
+    for (const key of Object.keys(updates)) {
+      if (updates[key] !== undefined) {
+        next[key] = updates[key];
+      }
+    }
+
+    await db.houses.put(canonicalizeHouseRecord(next));
+  }
+
   async findById(buildingId) {
     if (!buildingId) return null;
-    const house = await this.housesStore.getHouse(buildingId);
-    if (!house) return null;
-    return this.#toSnapshot(house);
+    const row = await db.houses.get(buildingId);
+    if (!row) return null;
+    return this.#toSnapshot(row);
   }
 
   async findSupplyView(buildingId) {
     if (!buildingId) return null;
-    const house = await this.housesStore.getHouse(buildingId);
-    if (!house) return null;
-    return this.#toView(house);
+    const row = await db.houses.get(buildingId);
+    if (!row) return null;
+    return this.#toView(row);
   }
 
   async listAllSupplyViews() {
-    const houses = await this.housesStore.listAllHouses();
-    return houses.map((house) => this.#toView(house));
+    const rows = await db.houses.toArray();
+    return rows.map((row) => this.#toView(row));
   }
 
   async saveStocks(buildingId, stocks) {
     const normalized = createFoodStock(stocks);
-    await this.housesStore.updateHouseFields(buildingId, {
+    await this.#putFields(buildingId, {
       stocks: {
         wheat: normalized.wheat,
         carrot: normalized.carrot,
@@ -104,22 +117,20 @@ export class DexieSupplyBuildingRepository {
       fields.lastProductionMonth = lastProductionMonth;
     }
     if (Object.keys(fields).length === 0) return;
-    await this.housesStore.updateHouseFields(buildingId, fields);
+    await this.#putFields(buildingId, fields);
   }
 
   async saveConsumptionMetadata(buildingId, { lastConsumptionMonth }) {
     if (lastConsumptionMonth === undefined || lastConsumptionMonth === null) return;
-    await this.housesStore.updateHouseFields(buildingId, {
-      lastConsumptionMonth,
-    });
+    await this.#putFields(buildingId, { lastConsumptionMonth });
   }
 
   async saveWindmillLastCollection(windmillId, lastCollection) {
-    await this.housesStore.updateHouseFields(windmillId, { lastCollection });
+    await this.#putFields(windmillId, { lastCollection });
   }
 
   async recordFarmSaleToWindmill(farmId, { year, productType, quantity, windmillId }) {
-    const farmData = await this.housesStore.getHouse(farmId);
+    const farmData = await db.houses.get(farmId);
     if (!farmData) return;
 
     const salesToMarket = farmData.salesToMarket || [];
@@ -146,7 +157,7 @@ export class DexieSupplyBuildingRepository {
 
     const filteredSales = salesToWindmill.filter((sale) => sale.year === currentYear);
 
-    await this.housesStore.updateHouseFields(farmId, {
+    await this.#putFields(farmId, {
       salesToMarket,
       salesToWindmill: filteredSales,
     });
@@ -154,15 +165,15 @@ export class DexieSupplyBuildingRepository {
 
   async resetFarmSalesForYear(currentYear) {
     const year = Number.isFinite(currentYear) ? Math.floor(currentYear) : 0;
-    const allHouses = await this.housesStore.listAllHouses();
-    const farms = allHouses.filter((house) => {
-      const type = house.type || '';
+    const rows = await db.houses.toArray();
+    const farms = rows.filter((row) => {
+      const type = row.type || '';
       return type.includes('Farm') || type.includes('farm');
     });
 
     for (const farm of farms) {
       const farmId = instanceIdFromHouseRow(farm);
-      const farmData = await this.housesStore.getHouse(farmId);
+      const farmData = await db.houses.get(farmId);
       if (!farmData) continue;
 
       const salesToMarket = (farmData.salesToMarket || []).filter(
@@ -172,7 +183,7 @@ export class DexieSupplyBuildingRepository {
         (sale) => sale.year === year
       );
 
-      await this.housesStore.updateHouseFields(farmId, {
+      await this.#putFields(farmId, {
         salesToMarket,
         salesToWindmill,
       });
@@ -180,60 +191,60 @@ export class DexieSupplyBuildingRepository {
   }
 
   async saveMarketFlags(buildingId, flags) {
-    await this.housesStore.updateHouseFields(buildingId, flags);
+    await this.#putFields(buildingId, flags);
   }
 
   async findMarkets() {
-    const houses = await this.housesStore.listAllHouses();
-    return houses
-      .filter((house) => {
-        const type = house.type || '';
+    const rows = await db.houses.toArray();
+    return rows
+      .filter((row) => {
+        const type = row.type || '';
         return type.includes('Market');
       })
-      .map((house) => this.#toSnapshot(house));
+      .map((row) => this.#toSnapshot(row));
   }
 
   async findHouses() {
-    const houses = await this.housesStore.listAllHouses();
-    return houses
-      .filter((house) => {
-        const type = house.type || '';
+    const rows = await db.houses.toArray();
+    return rows
+      .filter((row) => {
+        const type = row.type || '';
         return type.includes('House') || type.includes('house');
       })
-      .map((house) => this.#toSnapshot(house));
+      .map((row) => this.#toSnapshot(row));
   }
 
   async findWindmills() {
-    const houses = await this.housesStore.listAllHouses();
-    return houses
-      .filter((house) => {
-        const type = house.type || '';
+    const rows = await db.houses.toArray();
+    return rows
+      .filter((row) => {
+        const type = row.type || '';
         return type.includes('Windmill') || type.includes('windmill');
       })
-      .map((house) => this.#toSnapshot(house));
+      .map((row) => this.#toSnapshot(row));
   }
 
   async findFarms() {
-    const houses = await this.housesStore.listAllHouses();
-    return houses
-      .filter((house) => {
-        const type = house.type || '';
+    const rows = await db.houses.toArray();
+    return rows
+      .filter((row) => {
+        const type = row.type || '';
         return type.includes('Farm') || type.includes('farm');
       })
-      .map((house) => this.#toSnapshot(house));
+      .map((row) => this.#toSnapshot(row));
   }
 
   async listAllBuildingRows() {
-    return this.housesStore.listAllHouses();
+    return db.houses.toArray();
   }
 
   async findBuildingRow(buildingId) {
     if (!buildingId) return null;
-    return this.housesStore.getHouse(buildingId);
+    return db.houses.get(buildingId);
   }
 
   async recordFarmSaleToMarket(farmId, sale) {
-    const farmData = await this.housesStore.getHouse(farmId);
+    const farmData = await db.houses.get(farmId);
     if (!farmData) return;
 
     const salesToMarket = farmData.salesToMarket || [];
@@ -253,7 +264,7 @@ export class DexieSupplyBuildingRepository {
 
     const filteredSales = salesToMarket.filter((entry) => entry.year === currentYear);
 
-    await this.housesStore.updateHouseFields(farmId, {
+    await this.#putFields(farmId, {
       salesToMarket: filteredSales,
       salesToWindmill,
     });

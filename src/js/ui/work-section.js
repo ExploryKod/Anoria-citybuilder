@@ -148,7 +148,7 @@ class WorkSectionManager {
         }
         
         try {
-            const summary = await getCityEmploymentSummary(housesStore);
+            const summary = await getCityEmploymentSummary();
 
             if (this.workData && this.workData.sectors) {
                 this.workData.sectors.forEach(sector => {
@@ -312,7 +312,7 @@ class WorkSectionManager {
 
         let totalPopulation = 0;
         try {
-            totalPopulation = await getCityTotalPopulation(resolveHousesStore());
+            totalPopulation = await getCityTotalPopulation();
         } catch (error) {
             console.warn('[WorkSection] Error getting population for salary display:', error);
         }
@@ -340,7 +340,7 @@ class WorkSectionManager {
 
         let totalPopulation = 0;
         try {
-            totalPopulation = await getCityTotalPopulation(resolveHousesStore());
+            totalPopulation = await getCityTotalPopulation();
         } catch (error) {
             console.warn('[WorkSection] Error getting population for salary tax display:', error);
         }

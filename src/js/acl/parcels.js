@@ -19,7 +19,6 @@ export {
   tryParseBuildingId,
   toPublishedBuildingId,
   isPublishedBuildingIdString,
-  resolvePublishedBuildingIdFromRef,
   createBuildingInstanceId,
   instanceIdFromHouseRow,
   tryInstanceIdFromHouseRow,
