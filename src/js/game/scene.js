@@ -13,7 +13,16 @@ import {
 import { toBuildingIdString, getOrCreateParcelsContext } from '../acl/parcels.js';
 import { getOrCreateSupplyContext } from '../acl/supply.js';
 import { getOrCreateHousingContext } from '../acl/housing.js';
-import { getCityEmploymentSummary } from '../acl/employment.js';
+import { getCityEmploymentSummary, ensureBuildingEmployeesSchema } from '../acl/employment.js';
+import { getCityTotalBuildingValue } from '../acl/budget.js';
+import {
+    findBuildingAtTile,
+    getBuildingById,
+    updateBuildingFields,
+    getBuildingField,
+    incrementBuildingField,
+} from '../acl/construction.js';
+import { updateSupplyBuildingFields } from '../acl/supply.js';
 import {
     bulldozeSelected,
     commerce,
@@ -427,7 +436,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
         
         // Initialize resources (trees, boulders, clay, iron, gold) before decorative village
         const resourceManager = new ResourceManager();
-        await resourceManager.initializeResources(city, housesStore, assetManager, buildings, zoneGroups);
+        await resourceManager.initializeResources(city, assetManager, buildings, zoneGroups);
         
         // Create decorative village around the playable area
         decorativeVillageManager.createDecorativeVillage(citySize);
@@ -523,7 +532,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                     { buildingTarget: 'Market-Stall', zones: [1, 2] }
                 );
                 await parcels.updateNeighbors(instanceId, allNeighborsWithinZone ?? []);
-                await housesStore.updateHouseFields(instanceId, { markets: allMarketsInZone });
+                await updateBuildingFields(instanceId, { markets: allMarketsInZone });
                 await parcels.recalculateRoadAccessForBuilding.execute(instanceId);
             } catch (err) {
                 console.warn('[Scene] Failed to update neighbors/markets for', buildingId, err);
@@ -632,7 +641,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
             budgetData = await window.budgetManager.getCurrentBudget();
         }
         
-        totalImmoExpenses = await housesStore.getGlobalBuildingPrices() || 0
+        totalImmoExpenses = (await getCityTotalBuildingValue()) || 0
 
         const infoGameplay = {
             name: time === 0 ? 'gameplay_init' : gamePlayVersion,
@@ -797,7 +806,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                     ?? null;
 
                 if (!currentInstanceId) {
-                    const atTile = await housesStore.findHouseAtTile(x, y);
+                    const atTile = await findBuildingAtTile({ x, y });
                     currentInstanceId = atTile?.instanceId ?? atTile?.id ?? null;
                     if (currentInstanceId && city.tiles[x]?.[y]) {
                         city.tiles[x][y].instanceId = currentInstanceId;
@@ -864,7 +873,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                 
                 // Ne vérifier la suppression que si aucun nouveau bâtiment n'est en cours de création
                 if (!isRoad && !hasNewBuilding) {
-                    let buildingExists = await housesStore.getHouse(currentInstanceId);
+                    let buildingExists = await getBuildingById(currentInstanceId);
                     if (
                         !buildingExists &&
                         (houses.includes(currentBuildingId) || palaces.includes(currentBuildingId))
@@ -883,7 +892,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                             if (tileHouse.type !== meshType) {
                                 await syncResidentialHouseMeshFromDb(x, y, meshType);
                             }
-                            buildingExists = await housesStore.getHouse(currentInstanceId);
+                            buildingExists = await getBuildingById(currentInstanceId);
                         }
                     }
                     if (!buildingExists) {
@@ -902,72 +911,17 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                 
                 // Update building data in database
                 if (!isRoad) {
-                    await housesStore.updateHouseFields(currentInstanceId, {worldTime: time})
-
-                    // Migration: Add employees object to existing buildings if missing, or migrate old structure
-                    const buildingData = await housesStore.getHouse(currentInstanceId);
-                    if (buildingData) {
-                        if (!buildingData.employees) {
-                            const defaultEmployees = getDefaultEmployees(currentBuildingId);
-                            await housesStore.updateHouseFields(currentInstanceId, { employees: defaultEmployees });
-                        } else {
-                            const employees = buildingData.employees;
-                            const needsUpdate = 
-                                employees.category !== undefined ||
-                                employees.worker_need === undefined ||
-                                employees.elite_need === undefined;
-                            
-                            if (needsUpdate) {
-                                const defaultEmployees = getDefaultEmployees(currentBuildingId);
-                                const migratedEmployees = {
-                                    priority: employees.priority !== undefined ? employees.priority : defaultEmployees.priority,
-                                    worker_need: defaultEmployees.worker_need,
-                                    elite_need: defaultEmployees.elite_need,
-                                    worker: employees.worker || 0,
-                                    elite: employees.elite || 0,
-                                    sector: employees.category !== undefined ? employees.category : (employees.sector || defaultEmployees.sector),
-                                    salary: employees.salary || 0
-                                };
-                                await housesStore.updateHouseFields(currentInstanceId, { employees: migratedEmployees });
-                            }
-                        }
-                    }
+                    await updateBuildingFields(currentInstanceId, { worldTime: time });
+                    await ensureBuildingEmployeesSchema(currentInstanceId, currentBuildingId);
                 } else {
-                    // Pour les routes, on essaie de mettre à jour mais on ne bloque pas si ça échoue
                     try {
-                        await housesStore.updateHouseFields(currentInstanceId, {worldTime: time})
+                        await updateBuildingFields(currentInstanceId, { worldTime: time });
                         if (buildings[x][y]?.userData) {
-                            await housesStore.updateHouseFields(currentInstanceId, {})
+                            await updateBuildingFields(currentInstanceId, {});
                         }
-                        
-                        const roadData = await housesStore.getHouse(currentInstanceId);
-                        if (roadData) {
-                            if (!roadData.employees) {
-                                const defaultEmployees = getDefaultEmployees(currentBuildingId);
-                                await housesStore.updateHouseFields(currentInstanceId, { employees: defaultEmployees });
-                            } else {
-                                const employees = roadData.employees;
-                                const needsUpdate = 
-                                    employees.category !== undefined ||
-                                    employees.worker_need === undefined ||
-                                    employees.elite_need === undefined;
-                                
-                                if (needsUpdate) {
-                                    const defaultEmployees = getDefaultEmployees(currentBuildingId);
-                                    const migratedEmployees = {
-                                        priority: employees.priority !== undefined ? employees.priority : defaultEmployees.priority,
-                                        worker_need: defaultEmployees.worker_need,
-                                        elite_need: defaultEmployees.elite_need,
-                                        worker: employees.worker || 0,
-                                        elite: employees.elite || 0,
-                                        sector: employees.category !== undefined ? employees.category : (employees.sector || defaultEmployees.sector),
-                                        salary: employees.salary || 0
-                                    };
-                                    await housesStore.updateHouseFields(currentInstanceId, { employees: migratedEmployees });
-                                }
-                            }
-                        }
-                    } catch (err) {
+
+                        await ensureBuildingEmployeesSchema(currentInstanceId, currentBuildingId);
+                    } catch (_err) {
                         // Route peut ne pas exister encore dans la DB, c'est normal lors de la création
                     }
                 }
@@ -1065,8 +1019,12 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
 
                 /* Only for commerce buildings */
                 if(commerce.includes(currentBuildingId)) {
-                    const marketTime = { name: currentInstanceId, increment: 1, field: 'time' };
-                    await housesStore.incrementHouseField(marketTime, false)
+                    await incrementBuildingField({
+                        instanceId: currentInstanceId,
+                        field: 'time',
+                        increment: 1,
+                        condition: false,
+                    });
 
                     // Clean up market supply sprites (no-work → refreshEmploymentPresentation only)
                     if (buildings[x][y]) {
@@ -1160,13 +1118,9 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                      * @param datas
                      * @returns {Promise<void>}
                      */
-                    async function updateMarketStocks(buildings, housesStore, datas = [{key: "", number: 0, decrease: false}]) {
+                    async function updateMarketStocks(buildings, datas = [{key: "", number: 0, decrease: false}]) {
 
                         if(!buildings) {
-                            return;
-                        }
-
-                        if(!housesStore) {
                             return;
                         }
 
@@ -1209,7 +1163,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                                 }
                         }
 
-                        await housesStore.updateHouseFields(currentInstanceId, commerceUserData)
+                        await updateSupplyBuildingFields(currentInstanceId, commerceUserData)
                     }
 
 
@@ -1415,9 +1369,9 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                     // Read stocks from Supply BC
                     const houseSupply = await supply.getBuildingSupplyView(currentInstanceId);
                     const houseFoodStocks = houseSupply?.stocks || null;
-                    let houseNeighbors = await housesStore.getHouseItem(currentInstanceId, 'neighbors');
-                    const currentPop = await housesStore.getHouseItem(currentInstanceId, 'pop');
-                    const worldTime = await housesStore.getHouseItem(currentInstanceId, 'worldTime');
+                    let houseNeighbors = await getBuildingField(currentInstanceId, 'neighbors');
+                    const currentPop = await getBuildingField(currentInstanceId, 'pop');
+                    const worldTime = await getBuildingField(currentInstanceId, 'worldTime');
                     
                     // Sync Supply stocks to userData for visual display
                     if (houseFoodStocks && buildings[x][y] && buildings[x][y].userData) {
@@ -1429,7 +1383,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                         };
                     }
                     
-                    const houseData = await housesStore.getHouse(currentInstanceId);
+                    const houseData = await getBuildingById(currentInstanceId);
                     const foodAffluence = housing.evaluateHouseFoodAffluence({
                         stocks: houseFoodStocks || {},
                         population: currentPop,

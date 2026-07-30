@@ -42,6 +42,7 @@ import housesStore from "../stores/HousesStore.js";
 import { hasRoadAccessFromCount } from '../acl/parcels.js';
 import { getOrCreateSupplyContext } from '../acl/supply.js';
 import budgetManager from "../stores/BudgetManager.js";
+import { getCityBuildingValuation } from '../acl/budget.js';
 import AssetManager from "../meshs/AssetManager.js";
 import { initRealtimeBudgetPopup, updateRealtimeBudget } from "./budget/RealtimeBudgetManager.js";
 import { initBudgetStatesPopup, refreshBudgetStatesModal } from "./budget/BudgetStatesManager.js";
@@ -82,12 +83,10 @@ async function updateBudgetDisplay() {
         const financialHealth = await budgetManager.getFinancialHealth();
         const currentBudget = await budgetManager.getCurrentBudget();
         
-        // Get building data
+        // Get building valuation (patrimoine bâti)
+        const { totalValue: totalBuildingValue, pricesByType: buildingPrices } =
+            await getCityBuildingValuation();
         const houses = await housesStore.listAllHouses();
-        const totalBuildingValue = await housesStore.getGlobalBuildingPrices() || 0;
-        
-        // Get actual building prices from housesStore
-        const buildingPrices = await housesStore.getBuildingPricesByType() || {};
         
         // Analyze buildings by type and color
         const buildingAnalysis = {

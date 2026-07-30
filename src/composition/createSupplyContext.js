@@ -289,6 +289,30 @@ export function createSupplyContext({
     async listSupplyStockSnapshots() {
       return listSupplyStockSnapshotsQuery.execute();
     },
+
+    async listCityFactories() {
+      return factoryBuildingRepositoryImpl.findFactories();
+    },
+
+    async listNatureResources() {
+      return factoryBuildingRepositoryImpl.listNatureItems();
+    },
+
+    async getFactoryById(factoryId) {
+      return factoryBuildingRepositoryImpl.findById(factoryId);
+    },
+
+    async updateFactoryFields(factoryId, fields) {
+      return factoryBuildingRepositoryImpl.updateFields(factoryId, fields);
+    },
+
+    async getSupplyBuildingRow(buildingId) {
+      return supplyBuildingRepositoryImpl.findRowById(buildingId);
+    },
+
+    async updateSupplyBuildingFields(buildingId, fields) {
+      return supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, fields);
+    },
   };
 }
 

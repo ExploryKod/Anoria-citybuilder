@@ -23,6 +23,10 @@ export function createSupplyBuildingView({
   lastImportDetails = null,
   salesToMarket = [],
   salesToWindmill = [],
+  /** @deprecated until Commerce BC — windmill export UI flags */
+  isActive = true,
+  /** @deprecated until Commerce BC — windmill export UI flags */
+  commercializeEnabled = true,
 } = {}) {
   if (!id || typeof id !== 'string') {
     throw new Error('SupplyBuildingView: id is required');
@@ -67,6 +71,8 @@ export function createSupplyBuildingView({
         ? salesToWindmill.map((s) => ({ ...s }))
         : []
     ),
+    isActive: isActive !== false,
+    commercializeEnabled: commercializeEnabled !== false,
   });
 }
 

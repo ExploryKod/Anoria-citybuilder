@@ -2,13 +2,6 @@ import config from '../game/config.js';
 import { getCityEmploymentSummary } from '../acl/employment.js';
 import { getCityTotalPopulation } from '../acl/housing.js';
 
-function resolveHousesStore() {
-    if (window.app?.housesStore) return window.app.housesStore;
-    if (window.housesStore) return window.housesStore;
-    if (window.game?.housesStore) return window.game.housesStore;
-    return null;
-}
-
 class WorkSectionManager {
     constructor() {
         this.salary = 100; // Valeur par défaut : 100€/mois
@@ -133,20 +126,6 @@ class WorkSectionManager {
      * Update employee statistics from Employment BC read model.
      */
     async updateEmployeeStatistics() {
-        let housesStore = null;
-        if (window.app && window.app.housesStore) {
-            housesStore = window.app.housesStore;
-        } else if (window.housesStore) {
-            housesStore = window.housesStore;
-        } else if (window.game && window.game.housesStore) {
-            housesStore = window.game.housesStore;
-        }
-        
-        if (!housesStore) {
-            console.warn('[WorkSection] housesStore not available');
-            return;
-        }
-        
         try {
             const summary = await getCityEmploymentSummary();
 

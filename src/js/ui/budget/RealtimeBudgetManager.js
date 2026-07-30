@@ -2,7 +2,6 @@
  * RealtimeBudgetManager - Gère l'affichage et la mise à jour du budget en temps réel
  */
 import budgetManager from "../../stores/BudgetManager.js";
-import housesStore from "../../stores/HousesStore.js";
 import gameStore from "../../stores/GameStore.js";
 import { getCityTotalPopulation } from "../../acl/housing.js";
 
@@ -108,34 +107,23 @@ export async function updateRealtimeBudget() {
             const incomeBreakdown = await window.budgetManager.getIncomeBreakdown();
             const expenseBreakdown = await window.budgetManager.getExpenseBreakdown();
             
-            // Primary source: Housing BC via housesStore (residential pop sum)
+            // Primary source: Housing BC (residential pop sum)
             // Fallback: gameStore (game table) for backwards compatibility
             let population = 0;
             let populationError = false;
             try {
-                const store = housesStore || window.housesStore;
-                if (store) {
-                    population = await getCityTotalPopulation();
-                } else {
-                    // Fallback to gameStore (also IndexedDB, but may be stale)
-                    console.warn('[RealtimeBudgetManager] ⚠️ housesStore unavailable, FALLING BACK to gameStore (may be stale)');
-                    if (window.gameStore && typeof window.gameStore.getLatestGameItemByField === 'function') {
-                        const gamePop = await window.gameStore.getLatestGameItemByField('population');
-                        population = gamePop !== null && gamePop !== undefined ? gamePop : 0;
-                        console.warn('[RealtimeBudgetManager] ⚠️ Using FALLBACK population from gameStore:', {
-                            population,
-                            source: 'gameStore (IndexedDB game table)',
-                            note: 'This may not reflect real-time house population changes'
-                        });
-                    } else {
-                        console.error('[RealtimeBudgetManager] ❌ Both housesStore and gameStore unavailable! Population set to 0');
-                        population = 0;
-                    }
-                }
+                population = await getCityTotalPopulation();
             } catch (error) {
-                console.error('[RealtimeBudgetManager] Error fetching population from IndexedDB:', error);
-                population = 0;
                 populationError = true;
+                console.error('[RealtimeBudgetManager] Error fetching population from Housing BC:', error);
+                if (window.gameStore && typeof window.gameStore.getLatestGameItemByField === 'function') {
+                    console.warn('[RealtimeBudgetManager] ⚠️ FALLING BACK to gameStore (may be stale)');
+                    const gamePop = await window.gameStore.getLatestGameItemByField('population');
+                    population = gamePop !== null && gamePop !== undefined ? gamePop : 0;
+                } else {
+                    console.error('[RealtimeBudgetManager] ❌ Housing BC and gameStore unavailable! Population set to 0');
+                    population = 0;
+                }
             }
             
             // Mettre à jour les fonds principaux

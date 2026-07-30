@@ -9,6 +9,7 @@ import { toBuildingIdString, createBuildingInstanceId, getOrCreateParcelsContext
 import { getOrCreateSupplyContext, toSupplySeason, toSupplyMonth } from '../acl/supply.js';
 import { getOrCreateHousingContext } from '../acl/housing.js';
 import { syncEmploymentAfterBuildingChange, getOrCreateEmploymentContext } from '../acl/employment.js';
+import { findBuildingAtTile, placeBuildingWithPayment } from '../acl/construction.js';
 import { createGameRuntime } from '../../composition/createGameRuntime.js';
 import config from './config.js';
 import {
@@ -689,7 +690,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 const uniqueId =
                     selectedObject.userData.instanceId
                     ?? city.tiles?.[selX]?.[selY]?.instanceId
-                    ?? (await housesStore.findHouseAtTile(selX, selY))?.instanceId
+                    ?? (await findBuildingAtTile({ x: selX, y: selY }))?.instanceId
                     ?? null;
                 
                 const buildingPop = await housesStore.getHouseItem(uniqueId, 'pop')
@@ -1151,7 +1152,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
             }, 10000);
             
             try {
-                const existingHouse = await housesStore.findHouseAtTile(x, y);
+                const existingHouse = await findBuildingAtTile({ x, y });
                 if (existingHouse) {
                     console.warn('[game.js] Building already exists at this location:', placementKey);
                     showGenericErrorNotification(activeToolId, 'building_already_exists');
@@ -1192,7 +1193,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 if (activeToolId && (activeToolId.startsWith('StonePath-') || activeToolId === 'roads' || activeToolId === 'Road')) {
                     console.log('[game.js] Placing road:', { activeToolId, instanceId, dbHouseData });
                 }
-                const paymentResult = await housesStore.addHouseAndPay(dbHouseData);
+                const paymentResult = await placeBuildingWithPayment(dbHouseData);
                 
                 if (activeToolId && (activeToolId.startsWith('StonePath-') || activeToolId === 'roads' || activeToolId === 'Road')) {
                     console.log('[game.js] Road payment result:', paymentResult);
