@@ -1,4 +1,5 @@
 import { DexieHousingBuildingRepository } from '../contexts/housing/infrastructure/dexie/DexieHousingBuildingRepository.js';
+import { ClearPopulationWithoutRoadAccess } from '../contexts/housing/application/commands/ClearPopulationWithoutRoadAccess.js';
 import { GrowHousePopulation } from '../contexts/housing/application/commands/growth/GrowHousePopulation.js';
 import { GrowAllHousePopulation } from '../contexts/housing/application/commands/growth/GrowAllHousePopulation.js';
 import { EvolveHouseBuilding } from '../contexts/housing/application/commands/evolution/EvolveHouseBuilding.js';
@@ -19,6 +20,9 @@ import { PreviewHouseEvolution } from '../contexts/housing/application/queries/P
 export function createHousingContext({ housingBuildingRepository } = {}) {
   const housingBuildingRepositoryImpl =
     housingBuildingRepository ?? new DexieHousingBuildingRepository();
+  const clearPopulationWithoutRoadAccess = new ClearPopulationWithoutRoadAccess(
+    housingBuildingRepositoryImpl
+  );
   const growHousePopulation = new GrowHousePopulation(housingBuildingRepositoryImpl);
   const growAllHousePopulation = new GrowAllHousePopulation(
     housingBuildingRepositoryImpl,
@@ -53,6 +57,8 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
     evaluateHouseFoodAffluenceQuery,
     previewHouseEvolutionQuery,
 
+    clearPopulationWithoutRoadAccess,
+
     async growHousePopulation(houseId, monthIndex) {
       return growHousePopulation.execute({ houseId, monthIndex });
     },
@@ -79,6 +85,10 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
 
     async getFamishedPopulation() {
       return getFamishedPopulationQuery.execute();
+    },
+
+    async clearPopulationWithoutRoadAccess() {
+      return clearPopulationWithoutRoadAccess.execute();
     },
 
     evaluateHouseFoodAffluence({ stocks, population = 0 }) {

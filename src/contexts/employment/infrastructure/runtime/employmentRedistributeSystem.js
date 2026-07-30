@@ -9,12 +9,9 @@ export function createEmploymentRedistributeSystem({
   getSectorPriorities,
 }) {
   return async function employmentRedistribute(_world, context = {}) {
-    const housesStore = context.housesStore;
-    if (!housesStore) return;
-
     await employment.distributeCityWorkers({
       sectorPriorities: getSectorPriorities(),
     });
-    await synchronizeFactoryWorkerDistribution(housesStore);
+    await synchronizeFactoryWorkerDistribution();
   };
 }

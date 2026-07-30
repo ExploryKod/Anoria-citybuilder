@@ -8,7 +8,7 @@ Les slices A–F documentées ici sont implémentées dans le Shared Kernel.
 |---|---|
 | Shared Kernel `src/shared/building-identity/` | ✅ |
 | ACL legacy `src/js/acl/building-identity.js` | ✅ |
-| HousesStore writes via `canonicalizeHouseRecord` | ✅ |
+| BC repos write via `canonicalizeHouseRecord` | ✅ |
 | Dexie repos via `instanceIdFromHouseRow` | ✅ |
 | Supply shim `resolveBuildingId.js` | ✅ supprimé |
 | Parcels re-exports (compat) | ✅ |

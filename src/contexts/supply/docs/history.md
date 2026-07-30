@@ -14,14 +14,14 @@ Resolved Supply bugs, newest first. Keep entries short: symptom → cause → fi
 
 **Cause**
 - `DistributeFoodFromMarketToHouses` builds house ids via `resolveBuildingId`.
-- HousesStore rows use `name` as the full published id (`House-Purple-3-7`).
+- Legacy Dexie rows used `name` as the full published id (`House-Purple-3-7`).
 - Heuristic treated `name` as a *type* and appended `x-y` → ghost id `House-Purple-3-7-3-7`.
 - `findById` missed every house → `nothing_distributed` (was mostly silent).
 
 **Fix**
 - Prefer published-looking `name` / `id` / `buildingId` before reconstructing `${type}-${x}-${y}` (`resolveBuildingId.js`).
 - Log all non-success distribute reasons from `FoodDistributionService`.
-- Regression test: HousesStore-shaped refs without `id`.
+- Regression test: legacy-shaped refs without `id`.
 
 **Debt**
 - Identity shim remains — see `refactor.md` (Building identity).

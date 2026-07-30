@@ -28,14 +28,14 @@ Ajoutez l'import et l'initialisation :
 ```javascript
 import { getMultiplayerManager } from '../multiplayer/MultiplayerManager.js';
 
-export function createGame(housesStore, gameStore, assetManager, citySize = null) {
+export function createGame(gameStore, assetManager, citySize = null) {
     // ... code existant ...
     
-    const scene = createScene(housesStore, gameStore, assetManager);
+    const scene = createScene(gameStore, assetManager, parcels, supply, housing);
     const city = createCity(selectedCitySize);
     
     // Initialiser le gestionnaire multijoueur
-    const multiplayerManager = getMultiplayerManager(game, scene, housesStore);
+    const multiplayerManager = getMultiplayerManager(game, scene);
     
     // Activer le multijoueur (optionnel, peut être activé via UI)
     // await multiplayerManager.enable('ws://localhost:9876');
@@ -84,7 +84,7 @@ function createMultiplayerButton() {
     btn.onclick = async () => {
         if (!window.multiplayerManager) {
             const { getMultiplayerManager } = await import('../multiplayer/MultiplayerManager.js');
-            window.multiplayerManager = getMultiplayerManager(window.game, window.game.scene, window.housesStore);
+            window.multiplayerManager = getMultiplayerManager(window.game, window.game.scene);
         }
         
         if (window.multiplayerManager.isMultiplayer) {

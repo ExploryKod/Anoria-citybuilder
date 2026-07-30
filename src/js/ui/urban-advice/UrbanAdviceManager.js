@@ -3,6 +3,8 @@
  */
 import { initLoanSystem, loadActiveLoans } from '../loans/LoansManager.js';
 import { hasRoadAccessFromCount } from '../../acl/parcels.js';
+import { listAllBuildingRows } from '../../acl/construction.js';
+import { getCityTotalPopulation } from '../../acl/housing.js';
 
 /**
  * Initialise le centre de conseils urbains
@@ -82,7 +84,7 @@ export function initUrbanAdviceCenter() {
 export async function loadUrbanAnalysis() {
     try {
         // Get all houses from database
-        const houses = await window.housesStore.listAllHouses();
+        const houses = await listAllBuildingRows();
         
         // Analyze social classes
         const socialClasses = {
@@ -150,7 +152,7 @@ export async function loadAdvice() {
     
     try {
         // Get current city data
-        const houses = await window.housesStore.listAllHouses();
+        const houses = await listAllBuildingRows();
         const budget = await window.budgetManager.getCurrentBudget();
         
         const advice = [];
@@ -173,9 +175,7 @@ export async function loadAdvice() {
         const farms = houses.filter(house => 
             house.type && house.type.includes('Farm')
         );
-        const totalPopulation = houses.reduce((sum, house) => 
-            sum + (house.pop || 0), 0
-        );
+        const totalPopulation = await getCityTotalPopulation();
 
         if (totalPopulation > 0 && farms.length === 0) {
             advice.push({

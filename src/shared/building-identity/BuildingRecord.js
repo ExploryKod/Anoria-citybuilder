@@ -13,7 +13,7 @@ import {
 import { toBuildingIdString } from './BuildingId.js';
 
 /**
- * Normalize a HousesStore / Dexie row before persistence.
+ * Normalize a Dexie building row before persistence.
  * PK = `instanceId` (UUID). `type` is the asset / mesh label (mutable on evolution).
  *
  * @param {Record<string, unknown>} raw

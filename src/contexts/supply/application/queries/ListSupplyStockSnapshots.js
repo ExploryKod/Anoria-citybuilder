@@ -2,7 +2,7 @@ import { classifySupplyKind } from './GetBuildingSupplyView.js';
 
 /**
  * Query: all buildings with Supply stocks (+ layout/pop) for admin food-traceability.
- * Replaces raw housesStore.listAllHouses() stock peeks in FoodTraceabilityManager.
+ * Replaces raw Dexie stock peeks in FoodTraceabilityManager (via Supply BC).
  */
 export class ListSupplyStockSnapshots {
   /**

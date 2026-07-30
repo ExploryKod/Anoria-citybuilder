@@ -36,7 +36,7 @@ fedPopulation      = Σ fedAtHouse
 famishedPopulation = totalPopulation − fedPopulation
 ```
 
-Uses `stocks.food` only (same as legacy `HousesStore.getFamishedPopulation`). Supply keeps `food` in sync with crop baskets on write.
+Uses `stocks.food` only. Supply keeps `food` in sync with crop baskets on write.
 
 ## Not the same as evolution “hunger”
 
@@ -51,7 +51,7 @@ Evolution may use crop sum when `food` is unset; famished deliberately follows p
 
 Legacy UI: `getOrCreateHousingContext().getFamishedPopulation()`.
 
-`HousesStore.getFamishedPopulation()` delegates to Housing (deprecated facade).
+Legacy UI → `getFamishedPopulation()` in `src/js/acl/housing.js`.
 
 ## Tests
 

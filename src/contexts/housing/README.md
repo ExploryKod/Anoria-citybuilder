@@ -61,8 +61,7 @@ Worker-eligible **citizens** and **élites** (labor-market terms) are defined in
 
 ### City population summary (H6 — done)
 
-- `GetCityPopulationSummary`; legacy UI → `getCityTotalPopulation(housesStore)`
-- `HousesStore.getGlobalPopulation()` deprecated, delegates to Housing query
+- `GetCityPopulationSummary`; legacy UI → `getCityTotalPopulation()` (`acl/housing.js`)
 - Docs: `docs/city-population-summary.md`
 
 ## ECS simulation order

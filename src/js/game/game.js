@@ -9,7 +9,7 @@ import { toBuildingIdString, createBuildingInstanceId, getOrCreateParcelsContext
 import { getOrCreateSupplyContext, toSupplySeason, toSupplyMonth } from '../acl/supply.js';
 import { getOrCreateHousingContext } from '../acl/housing.js';
 import { syncEmploymentAfterBuildingChange, getOrCreateEmploymentContext } from '../acl/employment.js';
-import { findBuildingAtTile, placeBuildingWithPayment } from '../acl/construction.js';
+import { findBuildingAtTile, placeBuildingWithPayment, getBuildingById, getBuildingField } from '../acl/construction.js';
 import { createGameRuntime } from '../../composition/createGameRuntime.js';
 import config from './config.js';
 import {
@@ -435,7 +435,7 @@ function showWebGLResourceWarning(capabilities, requestedSize, maxSafeSize) {
     }, 6000);
 }
 
-export function createGame(housesStore, gameStore, assetManager, citySize = null) {
+export function createGame(gameStore, assetManager, citySize = null) {
     let activeToolId = '';
     let time = 0;
     let isPause;
@@ -503,7 +503,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
         getSectorPriorities: getAllSectorPriorities,
         foodDistributionDistance: config?.simulation?.foodDistributionDistance || 5,
     });
-    const scene = createScene(housesStore, gameStore, assetManager, parcels, supply, housing);
+    const scene = createScene(gameStore, assetManager, parcels, supply, housing);
 
     /* City initialization */
     // Detect WebGL capabilities first
@@ -552,7 +552,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
     /** ECS + services + second scene.update (after an initial scene.update). */
     async function runSimulationPass(time) {
         try {
-            await runtime.runSimulation({ city, housesStore, time });
+            await runtime.runSimulation({ city, time });
         } catch (err) {
             console.error('[game.js] ECS simulation error:', {
                 error: err?.message || err,
@@ -563,7 +563,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
         if (services.length > 0) {
             try {
                 await Promise.allSettled(
-                    services.map((service) => service.simulate(city, housesStore, time))
+                    services.map((service) => service.simulate(city, time))
                 );
             } catch (err) {
                 console.error('[game.js] Service simulation error:', {
@@ -693,7 +693,8 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     ?? (await findBuildingAtTile({ x: selX, y: selY }))?.instanceId
                     ?? null;
                 
-                const buildingPop = await housesStore.getHouseItem(uniqueId, 'pop')
+                const buildingRow = uniqueId ? await getBuildingById(uniqueId) : null;
+                const buildingPop = buildingRow?.pop ?? 0;
                 const roadAccess = await parcels.getRoadAccess(uniqueId);
                 const neighbors = uniqueId ? await parcels.getNeighbors(uniqueId) : [];
                 const supplyView = uniqueId
@@ -712,18 +713,16 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     supplyKind: supplyView?.kind ?? null,
                 });
                 
-                // Non-Supply fields (nature category, employees, …) still via housesStore
-                const fullHouse = await housesStore.getHouse(uniqueId);
                 console.log('[game.js] Full house record:', {
                     uniqueId,
-                    type: fullHouse?.type,
-                    roads: fullHouse?.roads,
-                    neighborsCount: fullHouse?.neighbors?.length || 0,
-                    hasNeighbors: !!fullHouse?.neighbors
+                    type: buildingRow?.type,
+                    roads: buildingRow?.roads,
+                    neighborsCount: buildingRow?.neighbors?.length || 0,
+                    hasNeighbors: !!buildingRow?.neighbors
                 });
 
                 // Vérifier si c'est un item nature (tree ou boulder)
-                const isNatureItem = fullHouse?.category === 'nature';
+                const isNatureItem = buildingRow?.category === 'nature';
                 
                 if (isNatureItem) {
                     // Affichage pour les items nature
@@ -731,9 +730,9 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     makeInfoKeyValue('Type', `${selectedObject.userData.id}`);
                     makeInfoKeyValue('Adresse', `x: ${selectedObject.userData.x} | y: ${selectedObject.userData.y}`);
                     
-                    // Nature stocks are not Supply — read Dexie for wood/rock/etc.
-                    houseStocks = await housesStore.getHouseItem(uniqueId, 'stocks');
-                    const maxStocks = fullHouse?.maxStocks || {};
+                    // Nature stocks are not Supply — read building row for wood/rock/etc.
+                    houseStocks = buildingRow?.stocks ?? (await getBuildingField(uniqueId, 'stocks'));
+                    const maxStocks = buildingRow?.maxStocks || {};
                     if (houseStocks && Object.keys(houseStocks).length > 0) {
                         makeInfoSection('Stocks disponibles');
                         
@@ -888,8 +887,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     const noHousesNearby = !supplyView.hasHousesNearby;
                     const isBuying = supplyView.isBuying === true;
 
-                    // Employment still via housesStore until Employment BC
-                    const marketData = await housesStore.getHouse(uniqueId);
+                    const marketData = buildingRow;
                     const hasNoWorkersForState = (marketData?.roads ?? 0) > 0
                         && (marketData?.employees?.worker || 0) === 0
                         && (marketData?.employees?.worker_need || 0) > 0;
@@ -981,8 +979,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         }
                     }
                     
-                    const farmData = await housesStore.getHouse(uniqueId);
-                    renderWorkplaceEmployeesInfo(farmData, {
+                    renderWorkplaceEmployeesInfo(buildingRow, {
                         fullyStaffed: '✅ La ferme a tout ce qu\'il faut pour fonctionner',
                         noWorkers: '❌ La ferme n\'a aucun employé et ne peut pas fonctionner',
                         partialWorkers: '⚠️ La ferme ne peut fonctionner à sa pleine capacité',
@@ -1073,8 +1070,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         makeInfoBuildingText('⚠️ Sans route le moulin ne peut stocker', false, 'warning-message');
                     }
                     
-                    const windmillData = await housesStore.getHouse(uniqueId);
-                    renderWorkplaceEmployeesInfo(windmillData, {
+                    renderWorkplaceEmployeesInfo(buildingRow, {
                         fullyStaffed: '✅ Le moulin tourne à plein régime',
                         noWorkers: '❌ Le moulin manque de bras, il ne peut fonctionner',
                         partialWorkers: '⚠️ Le moulin tourne avec peine car trop peu d\'employés',

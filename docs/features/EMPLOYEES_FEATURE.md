@@ -105,11 +105,13 @@ const dbHouseData = {
 The system automatically adds the `employees` object to existing buildings that don't have one:
 
 ```javascript
-// In scene.js update loop
-const buildingData = await housesStore.getHouse(currentUniqueID);
+// In scene.js update loop (via Construction ACL)
+import { getBuildingById, updateBuildingFields } from '../acl/construction.js';
+
+const buildingData = await getBuildingById(currentInstanceId);
 if (buildingData && !buildingData.employees) {
     const defaultEmployees = getDefaultEmployees(currentBuildingId);
-    await housesStore.updateHouseFields(currentUniqueID, { employees: defaultEmployees });
+    await updateBuildingFields(currentInstanceId, { employees: defaultEmployees });
 }
 ```
 

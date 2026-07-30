@@ -1,7 +1,7 @@
 /**
  * ACL Building identity — seule porte d'entrée legacy (`src/js/`) vers le Shared Kernel.
  *
- * Identifiants transverses : Parcels, Supply, Employment, HousesStore.
+ * Identifiants transverses : Parcels, Supply, Employment, Construction ACL.
  * Ne pas importer `shared/building-identity` directement depuis l'UI — passer par ce module.
  */
 

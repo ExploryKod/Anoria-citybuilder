@@ -4,8 +4,7 @@
 
 import 'fake-indexeddb/auto';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
-import db from '../../../../src/core/persistence/dexie/db.js';
-import { HouseStore } from '../../../../src/js/stores/HousesStore.js';
+import { clearBuildingsTable, seedBuilding, getBuildingRow } from '../../../helpers/buildingDb.js';
 import { DexieFactoryBuildingRepository } from '../../../../src/contexts/supply/infrastructure/dexie/DexieFactoryBuildingRepository.js';
 import { ProcessFactoryProductionStep } from '../../../../src/contexts/supply/application/commands/manufacturing/ProcessFactoryProductionStep.js';
 import { CollectFactoryResources } from '../../../../src/contexts/supply/application/commands/manufacturing/CollectFactoryResources.js';
@@ -14,20 +13,13 @@ import { ProduceFactoryGoods } from '../../../../src/contexts/supply/application
 import { instanceIdFromHouseRow } from '../../../../src/shared/building-identity/index.js';
 import { makeHouseRecord } from '../../../fixtures/buildingRecord.js';
 
-async function clearHousesTable() {
-  await db.open();
-  await db.houses.clear();
-}
-
 describe('Factory production — UUID Dexie keys', () => {
-  let housesStore;
   let repository;
   let factoryRecord;
   let treeRecord;
 
   beforeEach(async () => {
-    await clearHousesTable();
-    housesStore = new HouseStore();
+    await clearBuildingsTable();
     repository = new DexieFactoryBuildingRepository();
 
     factoryRecord = makeHouseRecord({
@@ -51,12 +43,12 @@ describe('Factory production — UUID Dexie keys', () => {
       },
     });
 
-    await housesStore.addHouse(factoryRecord);
-    await housesStore.addHouse(treeRecord);
+    await seedBuilding(factoryRecord);
+    await seedBuilding(treeRecord);
   });
 
   afterEach(async () => {
-    await clearHousesTable();
+    await clearBuildingsTable();
   });
 
   test('ProcessFactoryProductionStep resolves factory row by instanceId', async () => {
@@ -78,9 +70,9 @@ describe('Factory production — UUID Dexie keys', () => {
 
     await step.execute({ factory: factories[0], time: 1 });
 
-    const row = await housesStore.getHouse(factoryRecord.instanceId);
+    const row = await getBuildingRow(factoryRecord.instanceId);
     expect(row).toBeDefined();
-    expect(await housesStore.getHouse('Winery-001-4-4')).toBeUndefined();
+    expect(await getBuildingRow('Winery-001-4-4')).toBeUndefined();
   });
 
   test('CollectFactoryResources updates nature item by instanceId', async () => {
@@ -91,7 +83,7 @@ describe('Factory production — UUID Dexie keys', () => {
       time: 1,
     });
 
-    const tree = await housesStore.getHouse(treeRecord.instanceId);
+    const tree = await getBuildingRow(treeRecord.instanceId);
     expect(tree).toBeDefined();
   });
 });

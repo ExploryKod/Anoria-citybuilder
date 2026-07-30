@@ -21,3 +21,23 @@ export async function getCityTotalPopulation() {
   const { totalPop } = await getOrCreateHousingContext().getCityPopulationSummary();
   return totalPop;
 }
+
+/**
+ * Legacy budget safety net — zero pop on houses without road access.
+ *
+ * @returns {Promise<{
+ *   totalPopulationLost: number,
+ *   totalPopulationGained: number,
+ *   housesAffected: number,
+ *   message: string,
+ * }>}
+ */
+export async function clearPopulationWithoutRoadAccess() {
+  return getOrCreateHousingContext().clearPopulationWithoutRoadAccess();
+}
+
+/** @returns {Promise<number>} */
+export async function getFamishedPopulation() {
+  const { famishedPopulation } = await getOrCreateHousingContext().getFamishedPopulation();
+  return famishedPopulation;
+}

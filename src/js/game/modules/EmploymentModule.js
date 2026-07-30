@@ -19,7 +19,7 @@ export class EmploymentModule extends SimModule {
 
     /**
      * Updates module state from IndexedDB employees data
-     * @param {Object} employees - Employees object from housesStore
+     * @param {Object} employees - Employees object from building row (Dexie)
      */
     updateFromEmployees(employees) {
         this.employees = employees || { worker: 0, worker_need: 0 };
