@@ -5,6 +5,13 @@ import {
   computeJournalCurrentBalance,
   filterAndSortJournalEntries,
 } from '../../contexts/accounting/infrastructure/adapters/persistence/dexie/journalAggregations.js';
+import {
+  sessionLedgerBuffer,
+  toDexieRow,
+} from './SessionLedgerBuffer.js';
+import {
+  buildLedgerBusinessKey,
+} from './ledgerBusinessKeys.js';
 
 /**
  * JournalManager - Manages journal entries (accounting entries)
@@ -14,6 +21,66 @@ class JournalManager {
     constructor() {
         this.db = db;
         this.LOCALSTORAGE_KEY = 'journal_year_end_balances';
+        this._registerFlushHooks();
+    }
+
+    _registerFlushHooks() {
+        if (typeof document === 'undefined') {
+            return;
+        }
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                this.flushSessionToDexie().catch((error) => {
+                    console.error('[JournalManager] visibility flush failed:', error);
+                });
+            }
+        });
+    }
+
+    /**
+     * Load persisted journal rows into the session buffer once per session.
+     * @returns {Promise<void>}
+     */
+    async ensureHydrated() {
+        if (sessionLedgerBuffer.isHydrated()) {
+            return;
+        }
+        const idbEntries = await this.db.journal.toArray();
+        if (idbEntries.length > 0) {
+            sessionLedgerBuffer.hydrateFromIdb(idbEntries);
+        } else {
+            sessionLedgerBuffer.markHydratedEmpty();
+        }
+    }
+
+    /**
+     * Batch-write pending session entries to IndexedDB (end of turn / tab hidden).
+     * Balance snapshots are session-only and are never flushed.
+     * @returns {Promise<{ flushed: number, failed: boolean, pending?: number }>}
+     */
+    async flushSessionToDexie() {
+        await this.ensureHydrated();
+        const pending = sessionLedgerBuffer.getPendingPersist();
+        if (pending.length === 0) {
+            return { flushed: 0, failed: false };
+        }
+
+        try {
+            await this.db.transaction('rw', this.db.journal, async () => {
+                for (const entry of pending) {
+                    const id = await this.db.journal.add(toDexieRow(entry));
+                    sessionLedgerBuffer.markPersisted([{ sessionId: entry.sessionId, id }]);
+                }
+            });
+            return { flushed: pending.length, failed: false };
+        } catch (error) {
+            console.error('[JournalManager] flushSessionToDexie failed:', error);
+            return {
+                flushed: 0,
+                failed: true,
+                pending: pending.length,
+            };
+        }
     }
 
     /** @returns {(turn: number) => object|null} */
@@ -138,20 +205,29 @@ class JournalManager {
      * @param {number} amount - Amount
      * @param {string} description - Description
      */
-    async addJournalEntry(turn, type, amount, description, partnerId = null) {
+    async addJournalEntry(turn, type, amount, description, partnerId = null, options = {}) {
         try {
-            // Obtenir le mois et l'année depuis TimeManager
+            await this.ensureHydrated();
+
             let month = null;
             let year = null;
-            
-            // Support both window (browser) and global (Node/Jest)
+
             const timeManager = (typeof window !== 'undefined' ? window : global)?.TimeManager;
+            let timeInfo = null;
             if (timeManager) {
-                const timeInfo = timeManager.getTimeInfo(turn);
-                month = timeInfo.monthIndex + 1; // monthIndex est 0-indexed (0=janvier), on veut 1-12
+                timeInfo = timeManager.getTimeInfo(turn);
+                month = timeInfo.monthIndex + 1;
                 year = timeInfo.year;
             }
-            
+
+            const businessKey =
+                options.businessKey ??
+                (timeInfo ? buildLedgerBusinessKey(type, timeInfo) : null);
+
+            if (businessKey && sessionLedgerBuffer.hasBusinessKey(businessKey)) {
+                return;
+            }
+
             const entry = {
                 turn: turn,
                 date: new Date().toISOString(),
@@ -161,12 +237,19 @@ class JournalManager {
                 month: month,
                 year: year
             };
-            
+
             if (partnerId) {
                 entry.partnerId = partnerId;
             }
-            
-            await this.db.journal.add(entry);
+
+            if (businessKey) {
+                entry.businessKey = businessKey;
+            }
+
+            const persist =
+                options.persist ?? type !== 'balance';
+
+            sessionLedgerBuffer.append(entry, { persist });
         } catch (error) {
             console.error('Error adding journal entry:', error);
         }
@@ -178,7 +261,8 @@ class JournalManager {
      * @returns {Promise<Array>} Journal entries
      */
     async getJournalEntries(maxAge = null) {
-        const entries = await this.db.journal.toArray();
+        await this.ensureHydrated();
+        const entries = sessionLedgerBuffer.getAllPublic();
         return filterAndSortJournalEntries(entries, maxAge);
     }
 
@@ -188,7 +272,8 @@ class JournalManager {
      * @returns {Promise<Array>} Journal entries
      */
     async getJournalEntriesForTurn(turn) {
-        return await this.db.journal.where('turn').equals(turn).sortBy('date');
+        await this.ensureHydrated();
+        return sessionLedgerBuffer.getForTurn(turn);
     }
 
     /**
@@ -196,17 +281,21 @@ class JournalManager {
      * @param {number} maxAge - Maximum age in days
      */
     async cleanupOldJournalEntries(maxAge = 60) {
+        await this.ensureHydrated();
+
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - maxAge);
         const cutoffISO = cutoffDate.toISOString();
-        
+
+        sessionLedgerBuffer.removeEntriesBeforeDate(cutoffISO);
+
         const oldEntries = await this.db.journal.where('date').below(cutoffISO).toArray();
-        
+
         if (oldEntries.length > 0) {
             const ids = oldEntries.map(entry => entry.id);
             await this.db.journal.bulkDelete(ids);
         }
-        
+
         return { deleted: oldEntries.length };
     }
 
@@ -215,9 +304,11 @@ class JournalManager {
      * @returns {Promise<number>} Number of entries deleted
      */
     async clearAllEntries() {
-        const count = await this.db.journal.count();
+        await this.ensureHydrated();
+        const bufferCount = sessionLedgerBuffer.clear();
+        const idbCount = await this.db.journal.count();
         await this.db.journal.clear();
-        return count;
+        return Math.max(bufferCount, idbCount);
     }
 
     /**
@@ -225,7 +316,8 @@ class JournalManager {
      * @returns {Promise<Object>} Statistics about journal entries
      */
     async getStatistics() {
-        const entries = await this.db.journal.toArray();
+        await this.ensureHydrated();
+        const entries = sessionLedgerBuffer.getAllPublic();
         
         const stats = {
             totalEntries: entries.length,
@@ -433,20 +525,20 @@ class JournalManager {
      * @returns {Promise<void>}
      */
     async addBalanceEntry(turn, balance) {
-        // Vérifier si une entrée de balance existe déjà pour ce turn
-        const existingEntries = await this.getJournalEntriesForTurn(turn);
-        const hasBalance = existingEntries.some(e => e.type === 'balance');
-        
-        if (!hasBalance) {
-            await this.addJournalEntry(turn, 'balance', balance, 'Solde');
-        } else {
-            // Mettre à jour l'entrée existante si le solde a changé
-            const existingBalance = existingEntries.find(e => e.type === 'balance');
-            if (existingBalance && existingBalance.amount !== balance) {
-                // Mettre à jour l'entrée existante
-                await this.db.journal.update(existingBalance.id, { amount: balance });
-                console.info(`[JournalManager] Updated balance entry for turn ${turn}: ${balance}€`);
-            }
+        await this.ensureHydrated();
+
+        const existingBalance = sessionLedgerBuffer.findBalanceForTurn(turn);
+
+        if (!existingBalance) {
+            await this.addJournalEntry(turn, 'balance', balance, 'Solde', null, {
+                persist: false,
+            });
+            return;
+        }
+
+        if (existingBalance.amount !== balance) {
+            sessionLedgerBuffer.updateBalanceForTurn(turn, balance);
+            console.info(`[JournalManager] Updated balance entry for turn ${turn}: ${balance}€`);
         }
     }
 

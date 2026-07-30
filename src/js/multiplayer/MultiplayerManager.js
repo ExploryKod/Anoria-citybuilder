@@ -421,7 +421,7 @@ export class MultiplayerManager {
             }
 
             // Mettre à jour la scène pour afficher le bâtiment
-            await this.scene.update(city);
+            await this.scene.update(city, 0, { skipBudget: true });
 
             // Marquer comme placé
             this.remoteBuildings.set(id, building);

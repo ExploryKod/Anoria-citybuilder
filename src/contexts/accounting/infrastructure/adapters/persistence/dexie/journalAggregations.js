@@ -246,6 +246,9 @@ export function buildMonthlyFinancialSummary(entries, getTimeInfo) {
     if (isIncome) {
       grouped[key].income.total += entry.amount;
       grouped[key].income.entries.push({
+        id: entry.id,
+        businessKey: entry.businessKey,
+        partnerId: entry.partnerId,
         type: entry.type,
         amount: entry.amount,
         description: entry.description,
@@ -256,6 +259,9 @@ export function buildMonthlyFinancialSummary(entries, getTimeInfo) {
     } else {
       grouped[key].expenses.total += entry.amount;
       grouped[key].expenses.entries.push({
+        id: entry.id,
+        businessKey: entry.businessKey,
+        partnerId: entry.partnerId,
         type: entry.type,
         amount: entry.amount,
         description: entry.description,
@@ -305,6 +311,7 @@ export function buildYearlyFinancialSummary(monthlyData) {
 
   Object.values(grouped).forEach((year) => {
     year.netFlow = year.income.total - year.expenses.total;
+    year.months.sort((a, b) => a.month - b.month);
   });
 
   return Object.values(grouped).sort((a, b) => b.year - a.year);

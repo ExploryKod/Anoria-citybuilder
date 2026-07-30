@@ -10,6 +10,7 @@
 import Dexie from 'dexie';
 import { BudgetManager } from '../src/js/stores/BudgetManager.js';
 import { JournalManager } from '../src/js/stores/JournalManager.js';
+import { resetSessionLedgerBufferForTests } from '../src/js/stores/SessionLedgerBuffer.js';
 import config from '../src/js/game/config.js';
 
 // ============================================================================
@@ -36,6 +37,7 @@ describe('BudgetManager', () => {
     let testDb;
 
     beforeEach(async () => {
+        resetSessionLedgerBufferForTests();
         // Créer une nouvelle base de données pour chaque test
         testDb = createTestDb();
         await testDb.open();
@@ -226,6 +228,7 @@ describe('BudgetManager', () => {
         test('crée une entrée journal avec le type import_wheat', async () => {
             await budgetManager.initialize(200);
             await budgetManager.addImportExpense(5, 'Import blé (1 panier × 5€)', 'wheat');
+            await budgetManager.journalManager.flushSessionToDexie();
             
             const entries = await testDb.journal.toArray();
             expect(entries).toHaveLength(2); // 1 capital_funds + 1 import_wheat
@@ -313,6 +316,7 @@ describe('BudgetManager', () => {
         test('crée une entrée journal avec le type export_wheat', async () => {
             await budgetManager.initialize(200);
             await budgetManager.addExportIncome(15, 'Export blé (1 panier × 15€)', 'wheat');
+            await budgetManager.journalManager.flushSessionToDexie();
             
             const entries = await testDb.journal.toArray();
             expect(entries.length).toBeGreaterThanOrEqual(2); // 1 capital_funds + 1 export_wheat
@@ -537,6 +541,7 @@ describe('BudgetManager', () => {
             // Note: initialize() crée automatiquement une entrée capital_funds au tour 0
             await budgetManager.initialize(200);
             await budgetManager.addJournalEntry(1, 'citizen_tax', 50, 'Impôt Citoyen');
+            await budgetManager.journalManager.flushSessionToDexie();
             
             const entries = await testDb.journal.toArray();
             
@@ -556,6 +561,7 @@ describe('BudgetManager', () => {
             await budgetManager.initialize(200);
             await budgetManager.addJournalEntry(1, 'citizen_tax', 50, 'Impôt Citoyen');
             await budgetManager.addJournalEntry(1, 'maintenance', 30, 'Maintenance mensuelle');
+            await budgetManager.journalManager.flushSessionToDexie();
             
             const entries = await testDb.journal.toArray();
             
@@ -575,14 +581,13 @@ describe('BudgetManager', () => {
     describe('getJournalEntries', () => {
         
         beforeEach(async () => {
-            await budgetManager.initialize(200);
-            
-            // Créer des entrées de journal pour différents tours
             await testDb.journal.bulkAdd([
                 { turn: 1, date: new Date('2024-01-01').toISOString(), type: 'citizen_tax', amount: 50, description: 'Test 1' },
                 { turn: 2, date: new Date('2024-01-02').toISOString(), type: 'construction', amount: 30, description: 'Test 2' },
                 { turn: 3, date: new Date('2024-01-03').toISOString(), type: 'citizen_tax', amount: 20, description: 'Test 3' }
             ]);
+
+            await budgetManager.initialize(200);
         });
 
         test('récupère toutes les entrées du journal', async () => {
@@ -602,10 +607,9 @@ describe('BudgetManager', () => {
         });
 
         test('filtre les entrées par âge maximum (en jours)', async () => {
-            // Simuler des entrées anciennes (plus de 7 jours)
             const oldDate = new Date();
             oldDate.setDate(oldDate.getDate() - 10);
-            
+
             await testDb.journal.add({
                 turn: 0,
                 date: oldDate.toISOString(),
@@ -613,8 +617,9 @@ describe('BudgetManager', () => {
                 amount: 10,
                 description: 'Ancienne entrée'
             });
-            
-            // Récupérer seulement les 7 derniers jours
+
+            resetSessionLedgerBufferForTests();
+
             const entries = await budgetManager.getJournalEntries(7);
             
             // L'entrée ancienne ne devrait pas être incluse

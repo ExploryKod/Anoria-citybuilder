@@ -92,8 +92,7 @@ export class BudgetProcessor {
             if (!window.budgetManager) {
                 return;
             }
-            
-            await window.budgetManager.updateTurn(time);
+
             await window.budgetManager.addTaxes(time);
             
             const timeInfo = TimeManager.getTimeInfo(time);
@@ -220,6 +219,13 @@ export class BudgetProcessor {
                 } catch (error) {
                     console.warn('Failed to save budget state:', error);
                 }
+            }
+
+            const journalManager =
+                window.journalManager ||
+                window.budgetManager?.journalManager;
+            if (journalManager?.flushSessionToDexie) {
+                await journalManager.flushSessionToDexie();
             }
         } catch (error) {
             console.warn('Budget operations failed:', error);

@@ -30,19 +30,38 @@ export function filterLedgerEntriesByTypes(entries, types) {
 }
 
 /**
+ * Chronological order within a month (game turn, then persisted id).
+ * carry_forward stays first when the month/year opens.
+ *
+ * @param {object} a
+ * @param {object} b
+ */
+export function compareJournalEntriesInMonth(a, b) {
+  const aCarry = a.type === 'carry_forward' ? 0 : 1;
+  const bCarry = b.type === 'carry_forward' ? 0 : 1;
+  if (aCarry !== bCarry) {
+    return aCarry - bCarry;
+  }
+
+  const turnA = a.turn ?? 0;
+  const turnB = b.turn ?? 0;
+  if (turnA !== turnB) {
+    return turnA - turnB;
+  }
+
+  const idA = a.id ?? Number.MAX_SAFE_INTEGER;
+  const idB = b.id ?? Number.MAX_SAFE_INTEGER;
+  if (idA !== idB) {
+    return idA - idB;
+  }
+
+  return new Date(a.date).getTime() - new Date(b.date).getTime();
+}
+
+/**
  * @param {Array<object>} incomeEntries
  * @param {Array<object>} expenseEntries
  */
 export function orderGeneralLedgerEntries(incomeEntries, expenseEntries) {
-  const carryForwardIncome = incomeEntries.filter((e) => e.type === 'carry_forward');
-  const carryForwardExpenses = expenseEntries.filter((e) => e.type === 'carry_forward');
-  const otherIncome = incomeEntries.filter((e) => e.type !== 'carry_forward');
-  const otherExpenses = expenseEntries.filter((e) => e.type !== 'carry_forward');
-
-  return [
-    ...carryForwardIncome,
-    ...carryForwardExpenses,
-    ...otherIncome,
-    ...otherExpenses,
-  ];
+  return [...incomeEntries, ...expenseEntries].sort(compareJournalEntriesInMonth);
 }
