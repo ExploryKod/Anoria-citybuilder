@@ -11,6 +11,7 @@ import { getOrCreateHousingContext } from '../acl/housing.js';
 import { syncEmploymentAfterBuildingChange, getOrCreateEmploymentContext } from '../acl/employment.js';
 import { findBuildingAtTile, placeBuildingWithPayment, getBuildingById, getBuildingField } from '../acl/construction.js';
 import { createGameRuntime } from '../../composition/createGameRuntime.js';
+import { GameLoop } from '../../engine/loop/GameLoop.js';
 import config from './config.js';
 import {
     displayTime,
@@ -441,7 +442,12 @@ export function createGame(gameStore, assetManager, citySize = null) {
     let isPause;
     let isOver;
     let infos = {};
-    let intervalId = null;
+    /** @type {GameLoop | null} */
+    let gameLoop = null;
+
+    function getTickIntervalMs() {
+        return Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed'), 10) || 4000));
+    }
     // Track pending building placements to prevent race conditions from rapid clicks
     const pendingPlacements = new Set();
     // Set initial speed within limits (500ms - 20,000ms)
@@ -549,8 +555,12 @@ export function createGame(gameStore, assetManager, citySize = null) {
         await scene.refreshEmploymentPresentation(city);
     }
 
-    /** ECS + services + second scene.update (after an initial scene.update). */
-    async function runSimulationPass(time) {
+    /** ECS + services + second scene.update (budget once per tick when not skipped). */
+    async function runSimulationPass(time, options = {}) {
+        if (isPause || isOver) {
+            return;
+        }
+
         try {
             await runtime.runSimulation({ city, time });
         } catch (err) {
@@ -558,6 +568,10 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 error: err?.message || err,
                 time,
             });
+        }
+
+        if (isPause || isOver) {
+            return;
         }
 
         if (services.length > 0) {
@@ -573,12 +587,16 @@ export function createGame(gameStore, assetManager, citySize = null) {
             }
         }
 
-        await scene.update(city, time);
+        if (isPause || isOver) {
+            return;
+        }
+
+        await scene.update(city, time, options);
     }
 
     /** scene.update + employment refresh — player interactions without full simulation tick. */
     async function runScenePresentationPass(time) {
-        await scene.update(city, time);
+        await scene.update(city, time, { skipBudget: true });
         await refreshEmploymentPresentationForCity();
     }
 
@@ -645,7 +663,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
                     }
                 }
             }
-            await scene.update(city, time);
+            await scene.update(city, time, { skipBudget: true });
             await syncEmploymentAfterBuildingChange(scene, city, buildingId);
         } else if(activeToolId === "select-object") {
             // Object selection - ONLY open info modal when using select tool
@@ -1214,8 +1232,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 }
                 
                 // Meshes + neighbors, then ECS evolution, then employment refresh
-                await scene.update(city, time);
-                await runSimulationPass(time);
+                await scene.update(city, time, { skipBudget: true });
+                await runSimulationPass(time, { skipBudget: true });
                 await syncEmploymentAfterBuildingChange(scene, city, activeToolId);
                 if (window.multiplayerManager && window.multiplayerManager.isMultiplayer) {
                     try {
@@ -1308,14 +1326,33 @@ export function createGame(gameStore, assetManager, citySize = null) {
         runtime,
 
         async update(time) {
+            if (isPause || isOver) {
+                return;
+            }
+
             gameUI.updateTimeDisplay(time);
             city.update();
 
-            await scene.update(city, time);
+            // Turn boundary first (balance, carry-forward, cumuls) — survives pause mid-tick
+            if (window.budgetManager) {
+                await window.budgetManager.updateTurn(time);
+            }
+            if (isPause || isOver) {
+                return;
+            }
+
+            await scene.update(city, time, { skipBudget: true });
+            if (isPause || isOver) {
+                return;
+            }
+
             await runSimulationPass(time);
+            if (isPause || isOver) {
+                return;
+            }
+
             await refreshEmploymentPresentationForCity();
 
-            // Vérifier les objectifs à chaque tour (seulement si activés)
             if (window.objectivesTracker && objectivesTracker.enabled) {
                 await objectivesTracker.checkObjectives(time);
             }
@@ -1396,25 +1433,28 @@ export function createGame(gameStore, assetManager, citySize = null) {
         },
 
         startInterval() {
-            const speed = Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed')) || 4000));
-            if (intervalId) clearInterval(intervalId);
-            intervalId = setInterval(() => {
-                if (!isPause && !isOver) {
-                    time += 1;
-                    game.update(time);
-                }
-            }, speed);
-        }
-    }; 
-
-    setInterval(() => {
-        if(!isPause) {
-            if(!isOver) {
-                time += 1;
-                game.update(time);
+            if (!gameLoop) {
+                return;
             }
-        }
-    }, Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed')) || 4000)));
+            gameLoop.setIntervalMs(getTickIntervalMs());
+        },
+
+        get time() {
+            return time;
+        },
+    };
+
+    gameLoop = new GameLoop({
+        intervalMs: getTickIntervalMs(),
+        onTick: async () => {
+            if (isPause || isOver) {
+                return;
+            }
+            time += 1;
+            await game.update(time);
+        },
+    });
+    gameLoop.start();
 
     scene.start();
     void refreshEmploymentPresentationForCity();

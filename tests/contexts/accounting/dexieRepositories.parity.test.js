@@ -5,7 +5,8 @@
 import Dexie from 'dexie';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { JournalManager } from '../../../src/js/stores/JournalManager.js';
-import { DexieJournalRepository } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/dexie/DexieJournalRepository.js';
+import { SessionJournalRepository } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalRepository.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/js/stores/SessionLedgerBuffer.js';
 import { LegacyGameTimePort } from '../../../src/contexts/accounting/infrastructure/adapters/legacy/LegacyGameTimePort.js';
 import { TimeManager } from '../../../src/js/game/utils/TimeManager.js';
 
@@ -33,9 +34,10 @@ class TestGameTimePort extends LegacyGameTimePort {
 describe('Accounting — Dexie persistence adapters (Phase 2a)', () => {
   let testDb;
   let journalManager;
-  let dexieJournalRepository;
+  let sessionJournalRepository;
 
   beforeEach(async () => {
+    resetSessionLedgerBufferForTests();
     testDb = createTestDb();
     await testDb.open();
 
@@ -54,8 +56,8 @@ describe('Accounting — Dexie persistence adapters (Phase 2a)', () => {
     journalManager = new JournalManager();
     journalManager.db = testDb;
 
-    dexieJournalRepository = new DexieJournalRepository({
-      db: testDb,
+    sessionJournalRepository = new SessionJournalRepository({
+      journalManager,
       gameTimePort: new TestGameTimePort(timeManager),
     });
   });
@@ -67,16 +69,16 @@ describe('Accounting — Dexie persistence adapters (Phase 2a)', () => {
     }
   });
 
-  describe('DexieJournalRepository', () => {
+  describe('SessionJournalRepository', () => {
     test('getJournalEntries matches JournalManager sort order', async () => {
       await journalManager.addJournalEntry(1, 'citizen_tax', 100, 'T1');
       await journalManager.addJournalEntry(3, 'maintenance', 50, 'T3');
       await journalManager.addJournalEntry(2, 'citizen_tax', 200, 'T2');
 
       const legacyEntries = await journalManager.getJournalEntries();
-      const dexieEntries = await dexieJournalRepository.getJournalEntries();
+      const sessionEntries = await sessionJournalRepository.getJournalEntries();
 
-      expect(dexieEntries.map((e) => e.turn)).toEqual(
+      expect(sessionEntries.map((e) => e.turn)).toEqual(
         legacyEntries.map((e) => e.turn)
       );
     });
@@ -89,10 +91,10 @@ describe('Accounting — Dexie persistence adapters (Phase 2a)', () => {
       await journalManager.addJournalEntry(4, 'import_wheat', 5, 'Import');
 
       const legacyYearly = await journalManager.getYearlyFinancialSummary();
-      const dexieYearly =
-        await dexieJournalRepository.getYearlyFinancialSummary();
+      const sessionYearly =
+        await sessionJournalRepository.getYearlyFinancialSummary();
 
-      expect(dexieYearly).toEqual(legacyYearly);
+      expect(sessionYearly).toEqual(legacyYearly);
     });
 
     test('getCurrentBalance matches JournalManager', async () => {
@@ -101,9 +103,9 @@ describe('Accounting — Dexie persistence adapters (Phase 2a)', () => {
       await journalManager.addJournalEntry(2, 'maintenance', 30, 'Maint');
 
       const legacyBalance = await journalManager.getCurrentBalance();
-      const dexieBalance = await dexieJournalRepository.getCurrentBalance();
+      const sessionBalance = await sessionJournalRepository.getCurrentBalance();
 
-      expect(dexieBalance).toBe(legacyBalance);
+      expect(sessionBalance).toBe(legacyBalance);
     });
   });
 

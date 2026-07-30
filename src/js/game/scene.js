@@ -47,6 +47,7 @@ import { DecorativeVillageManager } from './managers/DecorativeVillageManager.js
 import { ResourceManager } from './managers/ResourceManager.js';
 import { PerformanceManager } from './managers/PerformanceManager.js';
 import { BudgetProcessor } from './managers/BudgetProcessor.js';
+import gameUI from './GameUI.js';
 import { CitizenManager } from './managers/CitizenManager.js';
 import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
 
@@ -449,7 +450,8 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
         citizenPathfinding = new CitizenPathfinding(buildings, terrain);
     }
 
-    async function update(city, time=0) {
+    async function update(city, time = 0, options = {}) {
+        const { skipBudget = false } = options;
 
         /**
          * Housing ECS may rename persisted id/type (Blue→Red, etc.) while the mesh
@@ -1533,11 +1535,16 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
             }
         }
 
-        // Calculate building counts and maintenance costs for budget operations
-        const { buildingCounts, maintenanceBreakdown } = budgetProcessor.calculateBuildingCounts(city, buildings);
-
-        // Process budget operations (taxes, salaries, maintenance, loans, etc.)
-        await budgetProcessor.processBudget(time, totalPop, buildingCounts, maintenanceBreakdown);
+        if (!skipBudget) {
+            const { buildingCounts, maintenanceBreakdown } =
+                budgetProcessor.calculateBuildingCounts(city, buildings);
+            await budgetProcessor.processBudget(
+                time,
+                totalPop,
+                buildingCounts,
+                maintenanceBreakdown
+            );
+        }
 
         // Display results in UI — population read at start of update (ECS already applied)
         const currentPopulation = totalPop;
@@ -1874,8 +1881,8 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
         const deltaTime = (currentTime - lastFrameTime) / 1000; // Convert to seconds
         lastFrameTime = currentTime;
         
-        // Update all citizens
-        if (citizenPathfinding && currentCity) {
+        // Update all citizens (skip while game is paused)
+        if (citizenPathfinding && currentCity && !gameUI.isPaused) {
             citizenManager.updateAllCitizens(
                 deltaTime,
                 currentCity,

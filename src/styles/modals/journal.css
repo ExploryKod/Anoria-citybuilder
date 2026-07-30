@@ -522,10 +522,41 @@
     margin-top: 4px;
 }
 
+.journal-entry-facts {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: #495057;
+    margin-top: 2px;
+}
+
+.journal-entry-fact {
+    display: inline-flex;
+    gap: 4px;
+    align-items: baseline;
+}
+
+.journal-entry-fact-label {
+    font-weight: 500;
+    color: #6c757d;
+}
+
+.journal-entry-fact-value {
+    color: #212529;
+}
+
 .journal-entry-year,
 .journal-entry-turn-number,
+.journal-entry-id,
 .journal-entry-date {
     display: inline-block;
+}
+
+.journal-entry-id {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    color: #868e96;
 }
 
 .journal-entry-year {

@@ -5,6 +5,9 @@
  */
 
 import { getGeneralLedger } from '../../acl/accounting.js';
+import {
+  formatJournalEntryDetails,
+} from './formatJournalEntryDescription.js';
 
 /**
  * Initialise le popup du journal
@@ -372,7 +375,6 @@ function createJournalEntryHTML(entry) {
     };
 
     const breakdownMatch = entry.description?.match(/\|BREAKDOWN\|(.*?)\|BREAKDOWN\|/);
-    let descriptionText = entry.description || '';
     let breakdownItems = null;
 
     const supportsBreakdown = entry.type === 'maintenance' ||
@@ -383,11 +385,12 @@ function createJournalEntryHTML(entry) {
     if (breakdownMatch && supportsBreakdown) {
         try {
             breakdownItems = JSON.parse(breakdownMatch[1]);
-            descriptionText = entry.description.replace(/\|BREAKDOWN\|.*?\|BREAKDOWN\|/, '').trim();
         } catch (e) {
             console.warn('Failed to parse breakdown:', e);
         }
     }
+
+    const entryDetails = formatJournalEntryDetails(entry);
 
     let partnerName = null;
     if (entry.partnerId && (entry.type.startsWith('import_') || entry.type.startsWith('export_') || entry.type === 'commercial_route')) {
@@ -415,7 +418,16 @@ function createJournalEntryHTML(entry) {
                 </span>
             </div>
             <div class="journal-entry-details">
-                <div class="journal-entry-description">${descriptionText}</div>
+                ${entryDetails.length ? `
+                <div class="journal-entry-facts">
+                    ${entryDetails.map(({ label, value }) => `
+                        <span class="journal-entry-fact">
+                            <span class="journal-entry-fact-label">${label}:</span>
+                            <span class="journal-entry-fact-value">${value}</span>
+                        </span>
+                    `).join('')}
+                </div>
+                ` : ''}
                 ${breakdownItems ? `
                 <ul class="journal-maintenance-breakdown">
                     ${breakdownItems.map(item => `
@@ -431,6 +443,7 @@ function createJournalEntryHTML(entry) {
                 </ul>
                 ` : ''}
                 <div class="journal-entry-meta">
+                    ${entry.id != null ? `<span class="journal-entry-id">N° ${entry.id}</span>` : ''}
                     ${yearDisplay ? `<span class="journal-entry-year">Année: ${yearDisplay}</span>` : ''}
                     ${entry.turn !== undefined ? `<span class="journal-entry-turn-number">Tour: ${entry.turn}</span>` : ''}
                     <span class="journal-entry-date">${formattedDate}</span>

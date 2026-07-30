@@ -16,7 +16,7 @@ Voir aussi [`../README.md`](../README.md) (spec Phase 0, cartographie, phases).
 | 2a | Persistence Dexie (`DexieJournalRepository`, `DexieTreasuryRepository`) | ✅ |
 | 2b | Journal UI → `GetGeneralLedger` + presenter pur | ✅ |
 | 2c | Calculs nets livret hors presenter | 🔲 |
-| **3½** | **Write path fiable + idempotence + réconciliation** | 🔲 **bloquant avant Phase 3** |
+| **3½** | **Write path fiable + idempotence + réconciliation** | 🟡 slice 1 (buffer session) |
 | 3 | Bilan + CR depuis journal (ports) | 🔲 **gated** |
 | 4 | Réduction `BudgetManager` (legacy write éteint) | 🔲 |
 
@@ -257,6 +257,59 @@ Tant que le journal n’est pas migré, **ne pas confondre** un bug d’affichag
 | Journal | Store → agrégats partagés, presenter legacy | ⚠️ UI |
 
 Cross-check manuel : totaux livret N / types journal **sans filtre actif** doivent rester alignés.
+
+---
+
+## Phase 3½ slice 1 — buffer session + flush batch (2026-07-30)
+
+### Objectif
+
+Réduire les écritures IndexedDB **sans perdre de données** : le buffer RAM est la source de vérité pendant la session ; IndexedDB reçoit un checkpoint par tour.
+
+### Faisabilité (validée)
+
+| Point | Décision | Risque data |
+|---|---|---|
+| Écritures opérationnelles (taxes, salaires, imports…) | Buffer → flush fin de `processBudget` | Aucune perte : buffer autoritaire ; flush échoué → entrées restent en RAM + retry visibility |
+| Snapshots `balance` | Session-only (`persist: false`) | OK : exclus des agrégats ; trésorerie HUD via `budget.funds` |
+| Trésorerie `budget.put` | **Inchangé** (immédiat) | Aucun |
+| Reprise de partie | `ensureHydrated()` charge IDB une fois | Aucun |
+| Export JSON/PDF | Lit le buffer (inclut balance session) | Aucun |
+| BC lecture | `SessionJournalRepository` → `JournalManager` | Aligné buffer |
+
+### Fichiers
+
+| Rôle | Chemin |
+|---|---|
+| Buffer session | `src/js/stores/SessionLedgerBuffer.js` |
+| Flush + hydrate | `src/js/stores/JournalManager.js` |
+| Hook flush fin de tour | `src/js/game/managers/BudgetProcessor.js` |
+| BC read adapter | `src/contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalRepository.js` |
+
+### Prochaines slices 3½
+
+- `RecordLedgerEntry` command BC
+- Test property vitesse rapide
+
+---
+
+## P0.5 + businessKey (2026-07-30)
+
+| Fix | Fichier |
+|---|---|
+| `updateTurn` en tête de `game.update` (balance/carry-forward même si pause mid-tick) | `game.js` |
+| Idempotence `businessKey` (salary, payroll_tax, maintenance, citizen_tax) | `ledgerBusinessKeys.js`, `JournalManager.js`, `SessionLedgerBuffer.js` |
+
+---
+
+## P0 game loop — tick sérialisé (2026-07-30)
+
+| Fix | Fichier |
+|---|---|
+| Suppression double `setInterval` | `game.js` → `GameLoop` unique |
+| Tick async sérialisé (`tickInFlight`) | `engine/loop/GameLoop.js` |
+| Pause : sortie anticipée + citoyens gelés | `game.js`, `scene.js` `draw()` |
+| `processBudget` une fois / tour | `scene.update(_, _, { skipBudget })` + 2e passe seulement dans `game.update` |
 
 ---
 

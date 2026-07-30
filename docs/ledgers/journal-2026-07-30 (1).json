@@ -1,0 +1,395 @@
+{
+  "exportDate": "2026-07-30T21:49:15.796Z",
+  "entries": [
+    {
+      "turn": 36,
+      "date": "2026-07-30T21:47:46.122Z",
+      "type": "balance",
+      "amount": 4807,
+      "description": "Solde"
+    },
+    {
+      "id": 16,
+      "turn": 35,
+      "date": "2026-07-30T21:47:45.719Z",
+      "type": "maintenance",
+      "amount": 11,
+      "description": "Maintenance mensuelle - Août 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":2,\"unitCost\":3,\"total\":6},{\"label\":\"Fermes\",\"count\":5,\"unitCost\":1,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "turn": 35,
+      "date": "2026-07-30T21:47:45.595Z",
+      "type": "balance",
+      "amount": 4818,
+      "description": "Solde"
+    },
+    {
+      "turn": 34,
+      "date": "2026-07-30T21:47:45.106Z",
+      "type": "balance",
+      "amount": 4818,
+      "description": "Solde"
+    },
+    {
+      "turn": 33,
+      "date": "2026-07-30T21:47:44.597Z",
+      "type": "balance",
+      "amount": 4818,
+      "description": "Solde"
+    },
+    {
+      "turn": 32,
+      "date": "2026-07-30T21:47:44.097Z",
+      "type": "balance",
+      "amount": 4818,
+      "description": "Solde"
+    },
+    {
+      "turn": 31,
+      "date": "2026-07-30T21:47:43.598Z",
+      "type": "balance",
+      "amount": 4818,
+      "description": "Solde"
+    },
+    {
+      "id": 15,
+      "turn": 30,
+      "date": "2026-07-30T21:47:43.212Z",
+      "type": "maintenance",
+      "amount": 11,
+      "description": "Maintenance mensuelle - Juillet 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":2,\"unitCost\":3,\"total\":6},{\"label\":\"Fermes\",\"count\":5,\"unitCost\":1,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "turn": 30,
+      "date": "2026-07-30T21:47:43.097Z",
+      "type": "balance",
+      "amount": 4829,
+      "description": "Solde"
+    },
+    {
+      "turn": 29,
+      "date": "2026-07-30T21:47:42.597Z",
+      "type": "balance",
+      "amount": 4829,
+      "description": "Solde"
+    },
+    {
+      "turn": 28,
+      "date": "2026-07-30T21:47:42.096Z",
+      "type": "balance",
+      "amount": 4829,
+      "description": "Solde"
+    },
+    {
+      "turn": 27,
+      "date": "2026-07-30T21:47:41.599Z",
+      "type": "balance",
+      "amount": 4829,
+      "description": "Solde"
+    },
+    {
+      "turn": 26,
+      "date": "2026-07-30T21:47:41.107Z",
+      "type": "balance",
+      "amount": 4829,
+      "description": "Solde"
+    },
+    {
+      "id": 14,
+      "turn": 25,
+      "date": "2026-07-30T21:47:36.710Z",
+      "type": "maintenance",
+      "amount": 11,
+      "description": "Maintenance mensuelle - Juin 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":2,\"unitCost\":3,\"total\":6},{\"label\":\"Fermes\",\"count\":5,\"unitCost\":1,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "turn": 25,
+      "date": "2026-07-30T21:47:36.598Z",
+      "type": "balance",
+      "amount": 4840,
+      "description": "Solde"
+    },
+    {
+      "turn": 24,
+      "date": "2026-07-30T21:47:36.096Z",
+      "type": "balance",
+      "amount": 4840,
+      "description": "Solde"
+    },
+    {
+      "turn": 23,
+      "date": "2026-07-30T21:47:35.595Z",
+      "type": "balance",
+      "amount": 4840,
+      "description": "Solde"
+    },
+    {
+      "turn": 22,
+      "date": "2026-07-30T21:47:35.096Z",
+      "type": "balance",
+      "amount": 4840,
+      "description": "Solde"
+    },
+    {
+      "turn": 21,
+      "date": "2026-07-30T21:47:34.597Z",
+      "type": "balance",
+      "amount": 4840,
+      "description": "Solde"
+    },
+    {
+      "id": 13,
+      "turn": 20,
+      "date": "2026-07-30T21:47:34.231Z",
+      "type": "maintenance",
+      "amount": 11,
+      "description": "Maintenance mensuelle - Mai 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":2,\"unitCost\":3,\"total\":6},{\"label\":\"Fermes\",\"count\":5,\"unitCost\":1,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "turn": 20,
+      "date": "2026-07-30T21:47:34.097Z",
+      "type": "balance",
+      "amount": 4851,
+      "description": "Solde"
+    },
+    {
+      "turn": 19,
+      "date": "2026-07-30T21:47:33.598Z",
+      "type": "balance",
+      "amount": 4851,
+      "description": "Solde"
+    },
+    {
+      "turn": 18,
+      "date": "2026-07-30T21:47:33.095Z",
+      "type": "balance",
+      "amount": 4851,
+      "description": "Solde"
+    },
+    {
+      "turn": 17,
+      "date": "2026-07-30T21:47:32.601Z",
+      "type": "balance",
+      "amount": 4851,
+      "description": "Solde"
+    },
+    {
+      "turn": 16,
+      "date": "2026-07-30T21:47:32.097Z",
+      "type": "balance",
+      "amount": 4851,
+      "description": "Solde"
+    },
+    {
+      "id": 12,
+      "turn": 15,
+      "date": "2026-07-30T21:47:31.995Z",
+      "type": "construction",
+      "amount": 20,
+      "description": "Building: Farm-Carrot"
+    },
+    {
+      "id": 11,
+      "turn": 15,
+      "date": "2026-07-30T21:47:31.739Z",
+      "type": "maintenance",
+      "amount": 10,
+      "description": "Maintenance mensuelle - Avril 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":2,\"unitCost\":3,\"total\":6},{\"label\":\"Fermes\",\"count\":4,\"unitCost\":1,\"total\":4}]|BREAKDOWN|"
+    },
+    {
+      "turn": 15,
+      "date": "2026-07-30T21:47:31.597Z",
+      "type": "balance",
+      "amount": 4881,
+      "description": "Solde"
+    },
+    {
+      "id": 10,
+      "turn": 14,
+      "date": "2026-07-30T21:47:31.179Z",
+      "type": "construction",
+      "amount": 20,
+      "description": "Building: Farm-Carrot"
+    },
+    {
+      "turn": 14,
+      "date": "2026-07-30T21:47:31.097Z",
+      "type": "balance",
+      "amount": 4901,
+      "description": "Solde"
+    },
+    {
+      "turn": 13,
+      "date": "2026-07-30T21:47:30.601Z",
+      "type": "balance",
+      "amount": 4901,
+      "description": "Solde"
+    },
+    {
+      "id": 9,
+      "turn": 12,
+      "date": "2026-07-30T21:47:30.344Z",
+      "type": "construction",
+      "amount": 20,
+      "description": "Building: Farm-Carrot"
+    },
+    {
+      "turn": 12,
+      "date": "2026-07-30T21:47:30.095Z",
+      "type": "balance",
+      "amount": 4921,
+      "description": "Solde"
+    },
+    {
+      "turn": 11,
+      "date": "2026-07-30T21:47:29.595Z",
+      "type": "balance",
+      "amount": 4921,
+      "description": "Solde"
+    },
+    {
+      "id": 8,
+      "turn": 10,
+      "date": "2026-07-30T21:47:29.560Z",
+      "type": "construction",
+      "amount": 20,
+      "description": "Building: Farm-Carrot"
+    },
+    {
+      "id": 7,
+      "turn": 10,
+      "date": "2026-07-30T21:47:29.256Z",
+      "type": "maintenance",
+      "amount": 7,
+      "description": "Maintenance mensuelle - Mars 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":2,\"unitCost\":3,\"total\":6},{\"label\":\"Fermes\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "turn": 10,
+      "date": "2026-07-30T21:47:29.095Z",
+      "type": "balance",
+      "amount": 4948,
+      "description": "Solde"
+    },
+    {
+      "id": 6,
+      "turn": 9,
+      "date": "2026-07-30T21:47:29.042Z",
+      "type": "construction",
+      "amount": 20,
+      "description": "Building: Farm-Carrot"
+    },
+    {
+      "turn": 9,
+      "date": "2026-07-30T21:47:28.595Z",
+      "type": "balance",
+      "amount": 4968,
+      "description": "Solde"
+    },
+    {
+      "turn": 8,
+      "date": "2026-07-30T21:47:28.096Z",
+      "type": "balance",
+      "amount": 4968,
+      "description": "Solde"
+    },
+    {
+      "turn": 7,
+      "date": "2026-07-30T21:47:27.598Z",
+      "type": "balance",
+      "amount": 4968,
+      "description": "Solde"
+    },
+    {
+      "turn": 6,
+      "date": "2026-07-30T21:47:24.249Z",
+      "type": "balance",
+      "amount": 4968,
+      "description": "Solde"
+    },
+    {
+      "id": 5,
+      "turn": 5,
+      "date": "2026-07-30T21:47:20.347Z",
+      "type": "maintenance",
+      "amount": 6,
+      "description": "Maintenance mensuelle - Février 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":2,\"unitCost\":3,\"total\":6}]|BREAKDOWN|"
+    },
+    {
+      "turn": 5,
+      "date": "2026-07-30T21:47:20.266Z",
+      "type": "balance",
+      "amount": 4974,
+      "description": "Solde"
+    },
+    {
+      "turn": 4,
+      "date": "2026-07-30T21:47:16.248Z",
+      "type": "balance",
+      "amount": 4974,
+      "description": "Solde"
+    },
+    {
+      "turn": 3,
+      "date": "2026-07-30T21:47:12.250Z",
+      "type": "balance",
+      "amount": 4974,
+      "description": "Solde"
+    },
+    {
+      "id": 4,
+      "turn": 2,
+      "date": "2026-07-30T21:47:08.352Z",
+      "type": "maintenance",
+      "amount": 6,
+      "description": "Maintenance mensuelle - Janvier 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":2,\"unitCost\":3,\"total\":6}]|BREAKDOWN|"
+    },
+    {
+      "turn": 2,
+      "date": "2026-07-30T21:47:08.254Z",
+      "type": "balance",
+      "amount": 4980,
+      "description": "Solde"
+    },
+    {
+      "id": 3,
+      "turn": 1,
+      "date": "2026-07-30T21:47:06.338Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "id": 2,
+      "turn": 1,
+      "date": "2026-07-30T21:47:05.857Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "turn": 1,
+      "date": "2026-07-30T21:47:04.256Z",
+      "type": "balance",
+      "amount": 5000,
+      "description": "Solde"
+    },
+    {
+      "id": 1,
+      "turn": 0,
+      "date": "2026-07-30T21:47:01.586Z",
+      "type": "capital_funds",
+      "amount": 5000,
+      "description": "Capital de départ: 5000€"
+    }
+  ],
+  "yearlySummary": [
+    {
+      "year": 0,
+      "income": 5000,
+      "expenses": 193,
+      "netFlow": 4807,
+      "monthCount": 8
+    }
+  ],
+  "yearEndBalances": []
+}

@@ -6,6 +6,7 @@
 
 import Dexie from 'dexie';
 import { JournalManager } from '../src/js/stores/JournalManager.js';
+import { resetSessionLedgerBufferForTests } from '../src/js/stores/SessionLedgerBuffer.js';
 
 // ============================================================================
 // Setup : Créer une base de données de test isolée
@@ -31,6 +32,7 @@ describe('JournalManager', () => {
     let testDb;
 
     beforeEach(async () => {
+        resetSessionLedgerBufferForTests();
         // Créer une nouvelle base de données pour chaque test
         testDb = createTestDb();
         await testDb.open();
@@ -53,6 +55,7 @@ describe('JournalManager', () => {
     describe('addJournalEntry', () => {
         test('should add a journal entry with correct fields', async () => {
             await journalManager.addJournalEntry(1, 'citizen_tax', 1000, 'Taxes from citizens');
+            await journalManager.flushSessionToDexie();
             
             const entries = await testDb.journal.toArray();
             expect(entries).toHaveLength(1);
@@ -67,6 +70,7 @@ describe('JournalManager', () => {
 
         test('should add import entries with correct type', async () => {
             await journalManager.addJournalEntry(1, 'import_wheat', 5, 'Import blé (1 panier × 5€)');
+            await journalManager.flushSessionToDexie();
             
             const entries = await testDb.journal.toArray();
             expect(entries).toHaveLength(1);
@@ -87,6 +91,7 @@ describe('JournalManager', () => {
             await journalManager.addJournalEntry(6, 'export_carrot', 18, 'Export carotte');
             await journalManager.addJournalEntry(7, 'export_cabbage', 20, 'Export chou');
             await journalManager.addJournalEntry(8, 'export_wood', 25, 'Export bois');
+            await journalManager.flushSessionToDexie();
             
             const entries = await testDb.journal.toArray();
             expect(entries).toHaveLength(8);
@@ -108,6 +113,7 @@ describe('JournalManager', () => {
             await journalManager.addJournalEntry(1, 'citizen_tax', 1000, 'Taxes');
             await journalManager.addJournalEntry(1, 'maintenance', 500, 'Maintenance mensuelle');
             await journalManager.addJournalEntry(2, 'import_wheat', 5, 'Import blé');
+            await journalManager.flushSessionToDexie();
             
             const entries = await testDb.journal.toArray();
             expect(entries).toHaveLength(3);
@@ -238,6 +244,93 @@ describe('JournalManager', () => {
         });
     });
 
+    describe('flushSessionToDexie', () => {
+        test('persists buffered entries and keeps them readable after flush', async () => {
+            await journalManager.addJournalEntry(1, 'citizen_tax', 100, 'Tax');
+            await journalManager.addJournalEntry(1, 'balance', 500, 'Solde', null, {
+                persist: false,
+            });
+
+            const beforeFlush = await journalManager.getJournalEntries();
+            expect(beforeFlush).toHaveLength(2);
+
+            const result = await journalManager.flushSessionToDexie();
+            expect(result.failed).toBe(false);
+            expect(result.flushed).toBe(1);
+
+            const idbEntries = await testDb.journal.toArray();
+            expect(idbEntries).toHaveLength(1);
+            expect(idbEntries[0].type).toBe('citizen_tax');
+
+            const afterFlush = await journalManager.getJournalEntries();
+            expect(afterFlush).toHaveLength(2);
+        });
+
+        test('leaves pending entries in buffer when flush fails', async () => {
+            await journalManager.addJournalEntry(1, 'maintenance', 20, 'Maint');
+
+            journalManager.db.journal.add = async () => {
+                throw new Error('IndexedDB unavailable');
+            };
+
+            const result = await journalManager.flushSessionToDexie();
+            expect(result.failed).toBe(true);
+            expect(result.pending).toBe(1);
+
+            const entries = await journalManager.getJournalEntries();
+            expect(entries).toHaveLength(1);
+        });
+    });
+
+    describe('addBalanceEntry', () => {
+        test('stores balance in session only without IndexedDB write', async () => {
+            await journalManager.addBalanceEntry(4, 750);
+            await journalManager.addBalanceEntry(4, 800);
+
+            const result = await journalManager.flushSessionToDexie();
+            expect(result.flushed).toBe(0);
+
+            const entries = await journalManager.getJournalEntriesForTurn(4);
+            expect(entries).toHaveLength(1);
+            expect(entries[0].type).toBe('balance');
+            expect(entries[0].amount).toBe(800);
+
+            const idbEntries = await testDb.journal.toArray();
+            expect(idbEntries).toHaveLength(0);
+        });
+    });
+
+    describe('businessKey idempotence', () => {
+        beforeEach(() => {
+            const globalObj = typeof window !== 'undefined' ? window : global;
+            globalObj.TimeManager = {
+                getTimeInfo: (turn) => ({
+                    year: Math.floor(turn / 12),
+                    monthIndex: turn % 12,
+                    month: 'TestMonth',
+                }),
+            };
+        });
+
+        test('skips duplicate salary for same civil month', async () => {
+            const globalObj = typeof window !== 'undefined' ? window : global;
+            globalObj.TimeManager = {
+                getTimeInfo: () => ({
+                    year: 0,
+                    monthIndex: 5,
+                    month: 'Juin',
+                }),
+            };
+
+            await journalManager.addJournalEntry(10, 'salary', 1000, 'Salary A');
+            await journalManager.addJournalEntry(11, 'salary', 2000, 'Salary B duplicate');
+
+            const entries = await journalManager.getJournalEntries();
+            expect(entries.filter((e) => e.type === 'salary')).toHaveLength(1);
+            expect(entries[0].amount).toBe(1000);
+        });
+    });
+
     describe('cleanupOldJournalEntries', () => {
         test('should delete old entries based on maxAge', async () => {
             // Create an old entry (61 days old)
@@ -254,6 +347,7 @@ describe('JournalManager', () => {
             
             // Create a recent entry
             await journalManager.addJournalEntry(2, 'citizen_tax', 500, 'Recent entry');
+            await journalManager.flushSessionToDexie();
             
             // Cleanup entries older than 60 days
             const result = await journalManager.cleanupOldJournalEntries(60);

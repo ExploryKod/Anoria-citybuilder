@@ -2,7 +2,7 @@ import { TimeManager } from '../js/game/utils/TimeManager.js';
 import { GetTreasuryBalance } from '../contexts/accounting/application/queries/treasury/GetTreasuryBalance.js';
 import { GetCityLedgerYearComparison } from '../contexts/accounting/application/queries/city-ledger/GetCityLedgerYearComparison.js';
 import { GetGeneralLedger } from '../contexts/accounting/application/queries/journal/GetGeneralLedger.js';
-import { DexieJournalRepository } from '../contexts/accounting/infrastructure/adapters/persistence/dexie/DexieJournalRepository.js';
+import { SessionJournalRepository } from '../contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalRepository.js';
 import { DexieTreasuryRepository } from '../contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryRepository.js';
 import { LegacyJournalRepository } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyJournalRepository.js';
 import { LegacyTreasuryRepository } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyTreasuryRepository.js';
@@ -13,7 +13,7 @@ import budgetManager from '../js/stores/BudgetManager.js';
 /**
  * Composition root — Accounting bounded context.
  *
- * Default: Dexie persistence adapters (Phase 2a).
+ * Default: session journal buffer + Dexie treasury (Phase 3½ slice 1).
  * Inject legacy adapters via deps for regression tests against stores.
  *
  * @param {object} [deps]
@@ -33,8 +33,8 @@ export function createAccountingContext(deps = {}) {
 
   const journalRepository =
     deps.journalRepository ??
-    new DexieJournalRepository({
-      db: deps.db,
+    new SessionJournalRepository({
+      journalManager,
       gameTimePort,
     });
   const treasuryRepository =
