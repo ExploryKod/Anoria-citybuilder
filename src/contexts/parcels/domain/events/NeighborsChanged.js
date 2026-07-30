@@ -1,13 +1,12 @@
+import { assertBuildingInstanceId } from '../../../../shared/building-identity/BuildingInstanceId.js';
+
 /**
  * Événement de domaine : la liste des voisins d'un bâtiment a été mise à jour.
- * `buildingId` = Published Language (string).
  */
-import { toPublishedBuildingId } from '../value-objects/BuildingId.js';
-
-export function createNeighborsChanged({ buildingId, neighborCount, previousCount }) {
+export function createNeighborsChanged({ instanceId, neighborCount, previousCount }) {
   return Object.freeze({
     type: 'parcels.NeighborsChanged',
-    buildingId: toPublishedBuildingId(buildingId),
+    instanceId: assertBuildingInstanceId(instanceId),
     neighborCount,
     previousCount,
     occurredAt: Date.now(),

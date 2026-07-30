@@ -20,12 +20,12 @@ export class UpdateNeighborsForBuilding {
   }
 
   /**
-   * @param {string} buildingId
+   * @param {string} instanceId
    * @param {unknown} neighbors
-   * @returns {Promise<{ updated: boolean, buildingId: string, neighborCount: number } | null>}
+   * @returns {Promise<{ updated: boolean, instanceId: string, neighborCount: number } | null>}
    */
-  async execute(buildingId, neighbors) {
-    const building = await this.buildingRepository.findById(buildingId);
+  async execute(instanceId, neighbors) {
+    const building = await this.buildingRepository.findById(instanceId);
     if (!building) {
       return null;
     }
@@ -39,7 +39,7 @@ export class UpdateNeighborsForBuilding {
     if (neighborListsEqual(previousPersisted, nextPersisted)) {
       return {
         updated: false,
-        buildingId: building.id,
+        instanceId: building.id,
         neighborCount: nextDomain.length,
       };
     }
@@ -48,7 +48,7 @@ export class UpdateNeighborsForBuilding {
 
     this.eventPublisher.publish(
       createNeighborsChanged({
-        buildingId: building.id,
+        instanceId: building.id,
         neighborCount: nextDomain.length,
         previousCount: previousPersisted.length,
       })
@@ -56,7 +56,7 @@ export class UpdateNeighborsForBuilding {
 
     return {
       updated: true,
-      buildingId: building.id,
+      instanceId: building.id,
       neighborCount: nextDomain.length,
     };
   }

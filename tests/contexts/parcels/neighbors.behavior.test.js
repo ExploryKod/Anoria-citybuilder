@@ -57,7 +57,7 @@ class InMemoryBuildingRepository {
     if (entry) {
       entry.neighbors = neighbors;
       entry.snapshot = { ...entry.snapshot, neighbors };
-      this.savedNeighbors.push({ buildingId: id, neighbors });
+      this.savedNeighbors.push({ instanceId: id, neighbors });
     }
   }
 }
@@ -149,7 +149,7 @@ describe('Voisinage des bâtiments', () => {
       ]);
 
       expect(outcome.updated).toBe(true);
-      expect(harness.persistedNeighbors()[0].buildingId).toBe(instanceId);
+      expect(harness.persistedNeighbors()[0].instanceId).toBe(instanceId);
 
       const saved = harness.persistedNeighbors()[0].neighbors;
       expect(saved[0].instanceId).toBe(roadId);
@@ -227,7 +227,7 @@ describe('Voisinage des bâtiments', () => {
 
       const result = await harness.whenNeighborsAreQueried(houseId);
 
-      expect(result.buildingId).toBe(houseId);
+      expect(result.instanceId).toBe(houseId);
       expect(result.neighbors).toEqual([
         {
           instanceId: roadId,

@@ -16,6 +16,7 @@ import {
     updateAssetsPrices,
     getBuildingNeighbors
 } from '../src/js/utils/utils.js';
+import { createBuildingInstanceId } from './fixtures/parcelsFixtures.js';
 
 // ============================================================================
 // getAssetPrice - Récupère le prix d'un bâtiment depuis le catalogue
@@ -330,33 +331,35 @@ describe('updateAssetsPrices', () => {
 // getBuildingNeighbors - Trouve un voisin dans la liste des voisins
 // ============================================================================
 describe('getBuildingNeighbors', () => {
-    
+    const houseId = createBuildingInstanceId();
+    const farmId = createBuildingInstanceId();
+    const roadId = createBuildingInstanceId();
+
     describe('Trouve un voisin existant', () => {
-        test('retourne le nom du voisin trouvé', () => {
+        test('retourne l\'instanceId du voisin trouvé', () => {
             const building = {
                 userData: {
-                    neighborsNames: ['House-Blue', 'Farm-Wheat', 'roads']
+                    neighborInstanceIds: [houseId, farmId, roadId]
                 }
             };
-            const neighbors = ['Farm-Wheat', 'Market-Stall'];
-            
-            const result = getBuildingNeighbors(building, neighbors);
-            
-            expect(result).toBe('Farm-Wheat');
+            const instanceIds = [farmId, createBuildingInstanceId()];
+
+            const result = getBuildingNeighbors(building, instanceIds);
+
+            expect(result).toBe(farmId);
         });
 
         test('retourne le premier voisin trouvé si plusieurs correspondances', () => {
             const building = {
                 userData: {
-                    neighborsNames: ['House-Blue', 'Farm-Wheat', 'roads']
+                    neighborInstanceIds: [houseId, farmId, roadId]
                 }
             };
-            const neighbors = ['Farm-Wheat', 'House-Blue'];
-            
-            const result = getBuildingNeighbors(building, neighbors);
-            
-            // Devrait retourner le premier trouvé dans neighborsNames
-            expect(['Farm-Wheat', 'House-Blue']).toContain(result);
+            const instanceIds = [farmId, houseId];
+
+            const result = getBuildingNeighbors(building, instanceIds);
+
+            expect([farmId, houseId]).toContain(result);
         });
     });
 
@@ -364,13 +367,13 @@ describe('getBuildingNeighbors', () => {
         test('retourne false si aucun voisin ne correspond', () => {
             const building = {
                 userData: {
-                    neighborsNames: ['House-Blue', 'Farm-Wheat']
+                    neighborInstanceIds: [houseId, farmId]
                 }
             };
-            const neighbors = ['Market-Stall', 'roads'];
-            
-            const result = getBuildingNeighbors(building, neighbors);
-            
+            const instanceIds = [createBuildingInstanceId(), roadId];
+
+            const result = getBuildingNeighbors(building, instanceIds);
+
             expect(result).toBe(false);
         });
     });
@@ -378,47 +381,47 @@ describe('getBuildingNeighbors', () => {
     describe('Cas limites', () => {
         test('retourne false si building n\'a pas de userData', () => {
             const building = {};
-            const neighbors = ['House-Blue'];
-            
-            const result = getBuildingNeighbors(building, neighbors);
-            
+            const instanceIds = [houseId];
+
+            const result = getBuildingNeighbors(building, instanceIds);
+
             expect(result).toBe(false);
         });
 
-        test('retourne false si userData n\'a pas de neighborsNames', () => {
+        test('retourne false si userData n\'a pas de neighborInstanceIds', () => {
             const building = {
                 userData: {}
             };
-            const neighbors = ['House-Blue'];
-            
-            const result = getBuildingNeighbors(building, neighbors);
-            
+            const instanceIds = [houseId];
+
+            const result = getBuildingNeighbors(building, instanceIds);
+
             expect(result).toBe(false);
         });
 
-        test('retourne false si neighbors est vide', () => {
+        test('retourne false si instanceIds est vide', () => {
             const building = {
                 userData: {
-                    neighborsNames: ['House-Blue']
+                    neighborInstanceIds: [houseId]
                 }
             };
-            const neighbors = [];
-            
-            const result = getBuildingNeighbors(building, neighbors);
-            
+            const instanceIds = [];
+
+            const result = getBuildingNeighbors(building, instanceIds);
+
             expect(result).toBe(false);
         });
 
-        test('retourne false si neighborsNames est vide', () => {
+        test('retourne false si neighborInstanceIds est vide', () => {
             const building = {
                 userData: {
-                    neighborsNames: []
+                    neighborInstanceIds: []
                 }
             };
-            const neighbors = ['House-Blue'];
-            
-            const result = getBuildingNeighbors(building, neighbors);
-            
+            const instanceIds = [houseId];
+
+            const result = getBuildingNeighbors(building, instanceIds);
+
             expect(result).toBe(false);
         });
     });

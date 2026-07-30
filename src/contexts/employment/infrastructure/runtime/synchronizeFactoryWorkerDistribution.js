@@ -1,20 +1,22 @@
-import { instanceIdFromHouseRow } from '../../../../shared/building-identity/index.js';
+import db from '../../../../core/persistence/dexie/db.js';
+import {
+  canonicalizeHouseRecord,
+  instanceIdFromHouseRow,
+} from '../../../../shared/building-identity/index.js';
 
 /**
  * Legacy sync: align Winery productWorkerDistribution with assigned workers.
  * Runs after DistributeCityWorkers (ECS employment.redistribute or ACL placement hook).
- *
- * @param {import('../../../../js/stores/HousesStore.js').default} housesStore
  */
-export async function synchronizeFactoryWorkerDistribution(housesStore) {
-  const allBuildings = await housesStore.listAllHouses();
+export async function synchronizeFactoryWorkerDistribution() {
+  const allBuildings = await db.houses.toArray();
 
   for (const building of allBuildings) {
     const buildingType = building.type || '';
     if (!buildingType.includes('Winery-001')) continue;
 
     const buildingId = instanceIdFromHouseRow(building);
-    const freshData = await housesStore.getHouse(buildingId);
+    const freshData = await db.houses.get(buildingId);
     if (!freshData) continue;
 
     const employees = freshData.employees || { worker: 0, worker_need: 0 };
@@ -26,20 +28,18 @@ export async function synchronizeFactoryWorkerDistribution(housesStore) {
     );
 
     if (totalDistributedWorkers > totalWorkers) {
+      const next = { ...freshData };
       if (totalWorkers === 0) {
-        await housesStore.updateHouseFields(buildingId, {
-          productWorkerDistribution: {},
-        });
+        next.productWorkerDistribution = {};
       } else {
         const scaleFactor = totalWorkers / totalDistributedWorkers;
         const adjustedDistribution = {};
         for (const [key, value] of Object.entries(productWorkerDistribution)) {
           adjustedDistribution[key] = Math.floor((value || 0) * scaleFactor);
         }
-        await housesStore.updateHouseFields(buildingId, {
-          productWorkerDistribution: adjustedDistribution,
-        });
+        next.productWorkerDistribution = adjustedDistribution;
       }
+      await db.houses.put(canonicalizeHouseRecord(next));
     }
   }
 }

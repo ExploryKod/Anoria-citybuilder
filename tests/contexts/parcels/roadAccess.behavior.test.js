@@ -35,7 +35,7 @@ class InMemoryBuildingRepository {
     const building = this.buildings.get(id);
     if (building) {
       building.roadCount = roadCount;
-      this.savedRoadAccess.push({ buildingId: id, roadCount });
+      this.savedRoadAccess.push({ instanceId: id, roadCount });
     }
   }
 }
@@ -92,7 +92,7 @@ describe('Accès routier des bâtiments', () => {
       expect(outcome.roadAccess.hasAccess).toBe(true);
       expect(outcome.roadAccess.roadCount).toBe(1);
       expect(harness.persistedRoadCounts()).toEqual([
-        { buildingId: houseId, roadCount: 1 },
+        { instanceId: houseId, roadCount: 1 },
       ]);
       expect(harness.roadAccessChangedEvents()).toHaveLength(1);
     });
@@ -132,7 +132,7 @@ describe('Accès routier des bâtiments', () => {
 
       expect(outcome.roadAccess.hasAccess).toBe(false);
       expect(harness.persistedRoadCounts()).toEqual([
-        { buildingId: houseId, roadCount: 0 },
+        { instanceId: houseId, roadCount: 0 },
       ]);
       expect(harness.roadAccessChangedEvents()).toHaveLength(1);
     });
@@ -276,7 +276,7 @@ describe('Accès routier des bâtiments', () => {
       expect(outcome.processed).toBe(2);
       expect(outcome.updated).toBe(1);
       expect(harness.persistedRoadCounts()).toEqual([
-        { buildingId: servedId, roadCount: 1 },
+        { instanceId: servedId, roadCount: 1 },
       ]);
       expect(harness.roadAccessChangedEvents()).toHaveLength(1);
     });

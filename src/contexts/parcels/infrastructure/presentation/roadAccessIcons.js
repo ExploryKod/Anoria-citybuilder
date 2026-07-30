@@ -1,6 +1,6 @@
 import { setRoadAccessIcon } from '../../../../js/game/modules/StatusIconHelper.js';
 
-/** buildingId → { mesh, position, scale } — pour mettre à jour l'icône quand le bus publie un changement */
+/** instanceId → { mesh, position, scale } — pour mettre à jour l'icône quand le bus publie un changement */
 const views = new Map();
 
 /**
@@ -9,7 +9,7 @@ const views = new Map();
  */
 export function setupRoadAccessIcons(parcels, { assetManager, textures }) {
   parcels.eventPublisher.subscribe('parcels.RoadAccessChanged', (event) => {
-    const view = views.get(event.buildingId);
+    const view = views.get(event.instanceId);
     if (!view?.mesh) return;
 
     setRoadAccessIcon({
@@ -22,12 +22,12 @@ export function setupRoadAccessIcons(parcels, { assetManager, textures }) {
     });
   });
 
-  return async function syncRoadAccess({ buildingId, mesh, position, scale }) {
+  return async function syncRoadAccess({ instanceId, mesh, position, scale }) {
     if (mesh) {
-      views.set(buildingId, { mesh, position, scale });
+      views.set(instanceId, { mesh, position, scale });
     }
 
-    const result = await parcels.recalculateRoadAccessForBuilding.execute(buildingId);
+    const result = await parcels.recalculateRoadAccessForBuilding.execute(instanceId);
     const hasAccess = result?.roadAccess?.hasAccess ?? false;
     const roadCount = result?.roadAccess?.roadCount ?? 0;
 

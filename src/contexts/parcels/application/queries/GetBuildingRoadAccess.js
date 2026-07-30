@@ -13,18 +13,18 @@ export class GetBuildingRoadAccess {
   }
 
   /**
-   * @param {string} buildingId
-   * @returns {Promise<{ buildingId: string, type: string, roadAccess: Readonly<{ roadCount: number, hasAccess: boolean }> } | null>}
+   * @param {string} instanceId
+   * @returns {Promise<{ instanceId: string, type: string, roadAccess: Readonly<{ roadCount: number, hasAccess: boolean }> } | null>}
    */
-  async execute(buildingId) {
-    const building = await this.buildingRepository.findById(buildingId);
+  async execute(instanceId) {
+    const building = await this.buildingRepository.findById(instanceId);
     if (!building) {
       return null;
     }
 
     if (!needsRoadAccess(building.type)) {
       return {
-        buildingId,
+        instanceId,
         type: building.type,
         roadAccess: evaluateRoadAccess([]),
         applicable: false,
@@ -32,7 +32,7 @@ export class GetBuildingRoadAccess {
     }
 
     return {
-      buildingId,
+      instanceId,
       type: building.type,
       roadAccess: evaluateRoadAccess(building.neighbors),
       applicable: true,

@@ -16,11 +16,11 @@ export class RecalculateRoadAccessForBuilding {
   }
 
   /**
-   * @param {string} buildingId
-   * @returns {Promise<{ updated: boolean, buildingId: string, roadAccess: import('../../domain/value-objects/RoadAccess.js').ReturnType<import('../../domain/value-objects/RoadAccess.js').createRoadAccess> } | null>}
+   * @param {string} instanceId
+   * @returns {Promise<{ updated: boolean, instanceId: string, roadAccess: import('../../domain/value-objects/RoadAccess.js').ReturnType<import('../../domain/value-objects/RoadAccess.js').createRoadAccess> } | null>}
    */
-  async execute(buildingId) {
-    const building = await this.buildingRepository.findById(buildingId);
+  async execute(instanceId) {
+    const building = await this.buildingRepository.findById(instanceId);
     if (!building) {
       return null;
     }
@@ -28,7 +28,7 @@ export class RecalculateRoadAccessForBuilding {
     if (!needsRoadAccess(building.type)) {
       return {
         updated: false,
-        buildingId,
+        instanceId,
         roadAccess: evaluateRoadAccess([]),
         skipped: true,
       };
@@ -38,19 +38,19 @@ export class RecalculateRoadAccessForBuilding {
     const previousRoadCount = building.roadCount;
 
     if (roadAccess.roadCount === previousRoadCount) {
-      return { updated: false, buildingId, roadAccess };
+      return { updated: false, instanceId, roadAccess };
     }
 
     await this.buildingRepository.saveRoadAccess(building.id, roadAccess.roadCount);
 
     this.eventPublisher.publish(
       createRoadAccessChanged({
-        buildingId: building.id,
+        instanceId: building.id,
         previousRoadCount,
         newRoadAccess: roadAccess,
       })
     );
 
-    return { updated: true, buildingId, roadAccess };
+    return { updated: true, instanceId, roadAccess };
   }
 }

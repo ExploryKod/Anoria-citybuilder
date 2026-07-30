@@ -1,4 +1,4 @@
-import db from './db.js';
+import db from '../../core/persistence/dexie/db.js';
 import config from '../game/config.js';
 import journalManager from './JournalManager.js';
 

@@ -5,22 +5,21 @@ import { GetCityEmploymentSummary } from '../contexts/employment/application/que
 /**
  * Composition root — Employment bounded context.
  *
- * @param {object} deps
- * @param {import('../js/stores/HousesStore.js').default} deps.housesStore
+ * @param {object} [deps]
+ * @param {import('../contexts/employment/application/ports/EmploymentBuildingRepository.js').EmploymentBuildingRepository} [deps.employmentBuildingRepository]
  */
-export function createEmploymentContext({ housesStore }) {
-  const employmentBuildingRepository = new DexieEmploymentBuildingRepository(
-    housesStore
-  );
+export function createEmploymentContext({ employmentBuildingRepository } = {}) {
+  const employmentBuildingRepositoryImpl =
+    employmentBuildingRepository ?? new DexieEmploymentBuildingRepository();
   const distributeCityWorkersCommand = new DistributeCityWorkers(
-    employmentBuildingRepository
+    employmentBuildingRepositoryImpl
   );
   const getCityEmploymentSummaryQuery = new GetCityEmploymentSummary(
-    employmentBuildingRepository
+    employmentBuildingRepositoryImpl
   );
 
   return {
-    employmentBuildingRepository,
+    employmentBuildingRepository: employmentBuildingRepositoryImpl,
     distributeCityWorkersCommand,
     getCityEmploymentSummaryQuery,
 
@@ -40,13 +39,10 @@ export function createEmploymentContext({ housesStore }) {
 
 /** @type {ReturnType<typeof createEmploymentContext> | null} */
 let sharedEmployment = null;
-/** @type {object | null} */
-let sharedHousesStore = null;
 
-export function getOrCreateEmploymentContext(housesStore) {
-  if (!sharedEmployment || sharedHousesStore !== housesStore) {
-    sharedEmployment = createEmploymentContext({ housesStore });
-    sharedHousesStore = housesStore;
+export function getOrCreateEmploymentContext() {
+  if (!sharedEmployment) {
+    sharedEmployment = createEmploymentContext();
   }
   return sharedEmployment;
 }
@@ -54,5 +50,4 @@ export function getOrCreateEmploymentContext(housesStore) {
 /** @internal Tests only */
 export function resetEmploymentContextForTests() {
   sharedEmployment = null;
-  sharedHousesStore = null;
 }

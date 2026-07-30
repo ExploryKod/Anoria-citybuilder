@@ -25,11 +25,11 @@ export class PlaceBuilding {
   }
 
   /**
-   * @param {{ buildingId: string, x: number, y: number, type: string, zones?: number[] }} params
-   * @returns {Promise<{ buildingId: string, affectedIds: string[], neighborCount: number } | null>}
+   * @param {{ instanceId: string, x: number, y: number, type: string, zones?: number[] }} params
+   * @returns {Promise<{ instanceId: string, affectedIds: string[], neighborCount: number } | null>}
    */
-  async execute({ buildingId, x, y, type, zones = [1, 2] }) {
-    const building = await this.buildingRepository.findById(buildingId);
+  async execute({ instanceId, x, y, type, zones = [1, 2] }) {
+    const building = await this.buildingRepository.findById(instanceId);
     if (!building) {
       return null;
     }
@@ -45,15 +45,15 @@ export class PlaceBuilding {
       zones,
     });
 
-    await this.updateNeighborsForBuilding.execute(buildingId, rawNeighbors);
+    await this.updateNeighborsForBuilding.execute(instanceId, rawNeighbors);
 
-    const affected = new Set([buildingId]);
+    const affected = new Set([instanceId]);
     for (const neighbor of normalizeNeighborList(rawNeighbors)) {
       if (neighbor.instanceId) affected.add(neighbor.instanceId);
     }
 
     for (const adjId of [...affected]) {
-      if (adjId === buildingId) continue;
+      if (adjId === instanceId) continue;
       const adj = await this.buildingRepository.findById(adjId);
       if (!adj || adj.x == null || adj.y == null) continue;
 
@@ -69,7 +69,7 @@ export class PlaceBuilding {
     await this.recalculateRoadAccessForNeighbors.execute([...affected]);
 
     return {
-      buildingId,
+      instanceId,
       affectedIds: [...affected],
       neighborCount: normalizeNeighborList(rawNeighbors).length,
     };

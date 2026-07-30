@@ -113,7 +113,7 @@ export class BudgetProcessor {
                 
                 let totalPopulation = 0;
                 if (window.housesStore) {
-                    totalPopulation = await getCityTotalPopulation(window.housesStore);
+                    totalPopulation = await getCityTotalPopulation();
                 }
                 
                 if (totalPopulation > 0 && salaryPerMonth > 0) {

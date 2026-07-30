@@ -1,7 +1,7 @@
 import {
   hasRoadAccess,
+  isEligibleWorkplace,
   isLaborSource,
-  isWorkplace,
 } from '../../domain/policies/BuildingRolePolicy.js';
 import { workerPopFromHouse } from '../../domain/policies/LaborPoolPolicy.js';
 import {
@@ -44,7 +44,7 @@ export class DistributeCityWorkers {
     }
 
     const workplaces = (await this.employmentBuildingRepository.listWorkplaces()).filter(
-      (b) => isWorkplace(b) && hasRoadAccess(b)
+      (b) => isEligibleWorkplace(b)
     );
 
     // After reset, workers are 0 — re-read via listWorkplaces which should reflect reset.

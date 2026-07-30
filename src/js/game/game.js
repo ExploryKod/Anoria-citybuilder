@@ -36,6 +36,8 @@ function renderWorkplaceEmployeesInfo(buildingData, messages) {
     if (!buildingData?.employees) return;
 
     const roadCount = buildingData.roads ?? 0;
+    const buildingType = buildingData.type || '';
+    const farmExemptFromRoad = buildingType.includes('Farm') || buildingType.includes('farm');
     const employees = buildingData.employees;
     const workerNeed = employees.worker_need || 0;
     const eliteNeed = employees.elite_need || 0;
@@ -46,7 +48,7 @@ function renderWorkplaceEmployeesInfo(buildingData, messages) {
 
     makeInfoSection('Employés');
 
-    if (roadCount <= 0) {
+    if (roadCount <= 0 && !farmExemptFromRoad) {
         makeInfoBuildingText('🚧 Route nécessaire pour embaucher', false, 'warning-message');
         return;
     }
@@ -485,10 +487,10 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
 
 
     /* Scene + ECS runtime */
-    const parcels = getOrCreateParcelsContext(housesStore);
-    const supply = getOrCreateSupplyContext(housesStore);
-    const housing = getOrCreateHousingContext(housesStore);
-    const employment = getOrCreateEmploymentContext(housesStore);
+    const parcels = getOrCreateParcelsContext();
+    const supply = getOrCreateSupplyContext();
+    const housing = getOrCreateHousingContext();
+    const employment = getOrCreateEmploymentContext();
     const runtime = createGameRuntime({
         parcels,
         supply,
@@ -643,7 +645,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 }
             }
             await scene.update(city, time);
-            await syncEmploymentAfterBuildingChange(housesStore, scene, city, buildingId);
+            await syncEmploymentAfterBuildingChange(scene, city, buildingId);
         } else if(activeToolId === "select-object") {
             // Object selection - ONLY open info modal when using select tool
             // Only open the info modal if we actually have info to show (i.e., on building objects)
@@ -1217,7 +1219,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 // Meshes + neighbors, then ECS evolution, then employment refresh
                 await scene.update(city, time);
                 await runSimulationPass(time);
-                await syncEmploymentAfterBuildingChange(housesStore, scene, city, activeToolId);
+                await syncEmploymentAfterBuildingChange(scene, city, activeToolId);
                 if (window.multiplayerManager && window.multiplayerManager.isMultiplayer) {
                     try {
                         await window.multiplayerManager.placeBuilding(activeToolId, x, y);

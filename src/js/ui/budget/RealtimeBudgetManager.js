@@ -115,7 +115,7 @@ export async function updateRealtimeBudget() {
             try {
                 const store = housesStore || window.housesStore;
                 if (store) {
-                    population = await getCityTotalPopulation(store);
+                    population = await getCityTotalPopulation();
                 } else {
                     // Fallback to gameStore (also IndexedDB, but may be stale)
                     console.warn('[RealtimeBudgetManager] ⚠️ housesStore unavailable, FALLING BACK to gameStore (may be stale)');

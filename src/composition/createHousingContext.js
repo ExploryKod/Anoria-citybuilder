@@ -12,35 +12,37 @@ import { PreviewHouseEvolution } from '../contexts/housing/application/queries/P
 /**
  * Composition root — Housing bounded context.
  *
- * @param {object} deps
- * @param {import('../js/stores/HousesStore.js').default} deps.housesStore
+ * @param {object} [deps]
+ * @param {import('../contexts/housing/application/ports/HousingBuildingRepository.js').HousingBuildingRepository} [deps.housingBuildingRepository]
+ *   Tests : injecter un fake in-memory, ou utiliser core/db + resetHousingContextForTests().
  */
-export function createHousingContext({ housesStore }) {
-  const housingBuildingRepository = new DexieHousingBuildingRepository(housesStore);
-  const growHousePopulation = new GrowHousePopulation(housingBuildingRepository);
+export function createHousingContext({ housingBuildingRepository } = {}) {
+  const housingBuildingRepositoryImpl =
+    housingBuildingRepository ?? new DexieHousingBuildingRepository();
+  const growHousePopulation = new GrowHousePopulation(housingBuildingRepositoryImpl);
   const growAllHousePopulation = new GrowAllHousePopulation(
-    housingBuildingRepository,
+    housingBuildingRepositoryImpl,
     growHousePopulation
   );
-  const evolveHouseBuilding = new EvolveHouseBuilding(housingBuildingRepository);
+  const evolveHouseBuilding = new EvolveHouseBuilding(housingBuildingRepositoryImpl);
   const evolveAllHouseBuildings = new EvolveAllHouseBuildings(
-    housingBuildingRepository,
+    housingBuildingRepositoryImpl,
     evolveHouseBuilding
   );
   const getCityPopulationSummaryQuery = new GetCityPopulationSummary(
-    housingBuildingRepository
+    housingBuildingRepositoryImpl
   );
   const getResidentialHouseAtTileQuery = new GetResidentialHouseAtTile(
-    housingBuildingRepository
+    housingBuildingRepositoryImpl
   );
   const getFamishedPopulationQuery = new GetFamishedPopulation(
-    housingBuildingRepository
+    housingBuildingRepositoryImpl
   );
   const evaluateHouseFoodAffluenceQuery = new EvaluateHouseFoodAffluence();
   const previewHouseEvolutionQuery = new PreviewHouseEvolution();
 
   return {
-    housingBuildingRepository,
+    housingBuildingRepository: housingBuildingRepositoryImpl,
     growHousePopulation,
     growAllHousePopulation,
     evolveHouseBuilding,
@@ -96,13 +98,10 @@ export function createHousingContext({ housesStore }) {
 
 /** @type {ReturnType<typeof createHousingContext> | null} */
 let sharedHousing = null;
-/** @type {object | null} */
-let sharedHousesStore = null;
 
-export function getOrCreateHousingContext(housesStore) {
-  if (!sharedHousing || sharedHousesStore !== housesStore) {
-    sharedHousing = createHousingContext({ housesStore });
-    sharedHousesStore = housesStore;
+export function getOrCreateHousingContext() {
+  if (!sharedHousing) {
+    sharedHousing = createHousingContext();
   }
   return sharedHousing;
 }
@@ -110,5 +109,4 @@ export function getOrCreateHousingContext(housesStore) {
 /** @internal Tests only */
 export function resetHousingContextForTests() {
   sharedHousing = null;
-  sharedHousesStore = null;
 }

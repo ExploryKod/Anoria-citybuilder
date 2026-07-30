@@ -12,7 +12,6 @@ export {
   parseBuildingId,
   tryParseBuildingId,
   isPublishedBuildingIdString,
-  resolvePublishedBuildingIdFromRef,
 } from './BuildingId.js';
 
 export {

@@ -3,8 +3,8 @@
  */
 
 import 'fake-indexeddb/auto';
-import Dexie from 'dexie';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
+import db from '../../../../src/core/persistence/dexie/db.js';
 import { HouseStore } from '../../../../src/js/stores/HousesStore.js';
 import { DexieFactoryBuildingRepository } from '../../../../src/contexts/supply/infrastructure/dexie/DexieFactoryBuildingRepository.js';
 import { ProcessFactoryProductionStep } from '../../../../src/contexts/supply/application/commands/manufacturing/ProcessFactoryProductionStep.js';
@@ -14,33 +14,21 @@ import { ProduceFactoryGoods } from '../../../../src/contexts/supply/application
 import { instanceIdFromHouseRow } from '../../../../src/shared/building-identity/index.js';
 import { makeHouseRecord } from '../../../fixtures/buildingRecord.js';
 
-function createTestDb() {
-  const db = new Dexie('testFactoryUuidDb');
-  db.version(1).stores({
-    houses: 'instanceId, kind, type, [anchorX+anchorY], [kind+type]',
-    game: 'name',
-    budget: 'name',
-    objectives: 'name',
-    journal: '++id, turn, date, type, amount, description',
-    foodTraceability:
-      '++id, turn, month, year, date, transactionType, fromInstanceId, fromCoords, toInstanceId, toCoords, foodType, quantity, price',
-  });
-  return db;
+async function clearHousesTable() {
+  await db.open();
+  await db.houses.clear();
 }
 
 describe('Factory production — UUID Dexie keys', () => {
   let housesStore;
   let repository;
-  let testDb;
   let factoryRecord;
   let treeRecord;
 
   beforeEach(async () => {
-    testDb = createTestDb();
-    await testDb.open();
+    await clearHousesTable();
     housesStore = new HouseStore();
-    housesStore.db = testDb;
-    repository = new DexieFactoryBuildingRepository(housesStore);
+    repository = new DexieFactoryBuildingRepository();
 
     factoryRecord = makeHouseRecord({
       type: 'Winery-001',
@@ -68,9 +56,7 @@ describe('Factory production — UUID Dexie keys', () => {
   });
 
   afterEach(async () => {
-    if (testDb?.isOpen()) {
-      await testDb.delete();
-    }
+    await clearHousesTable();
   });
 
   test('ProcessFactoryProductionStep resolves factory row by instanceId', async () => {

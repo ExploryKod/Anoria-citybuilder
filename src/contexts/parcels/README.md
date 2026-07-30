@@ -8,20 +8,20 @@ Parcellaire : occupation de la grille, voisinage, voirie et desserte routière.
 |---|---|
 | Bâtiment | Construction placée sur une tuile de la grille |
 | Route | Tuile de voirie (`roads`, `Road`, `isRoad`) |
-| Voisin | Adjacent sur la grille — VO `Neighbor` (id, type, tuile, isRoad, zone) |
+| Voisin | Adjacent sur la grille — VO `Neighbor` (`instanceId` UUID, type, tuile, isRoad, zone) |
 | Accès routier | ≥ 1 voisin route |
 | Desserte | `roadCount` |
+| Display label | `{type}-{x}-{y}` — UI / logs uniquement (Shared Kernel `toDisplayLabel`) |
 
 ## Invariants
 
 - Une route n'a pas besoin d'accès routier
 - `roadCount` = nombre de voisins route
-- `BuildingId` : `{type}-{x}-{y}` — **Shared Kernel** `src/shared/building-identity/`
-- `id` = `name` = Published Language on every HousesStore write
+- **PK Dexie** = `instanceId` (UUID) — Shared Kernel `src/shared/building-identity/`
 - Legacy UI : `src/js/acl/building-identity.js`
 - `TileCoord` : `(x, y)` entiers
 - `Neighbor` : pas de stocks / meshes / deltas Three.js
-- Snapshot : `id` + `buildingId` + `tile` + `neighbors: Neighbor[]`
+- Snapshot : `id` (UUID) + `buildingId` (VO display, UI only) + `tile` + `neighbors: Neighbor[]`
 
 ## Use cases (application)
 
@@ -35,7 +35,7 @@ Parcellaire : occupation de la grille, voisinage, voirie et desserte routière.
 
 **Queries (CQRS read)**
 - `GetBuildingRoadAccess`
-- `GetBuildingNeighbors` — read model plat `{ buildingId, type, x, y, isRoad, zone }`
+- `GetBuildingNeighbors` — read model plat `{ instanceId, type, x, y, isRoad, zone }`
 
 **Ports**
 - `BuildingRepository` (+ `deleteById`)
@@ -78,6 +78,6 @@ Les adapters **implémentent** les ports application et **dépendent** du domain
 - **ACL** legacy : `src/js/acl/parcels.js`
 - **Infrastructure** : `contexts/parcels/infrastructure/` (adapters Dexie, spatial, events, runtime)
 - **Composition** : `createParcelsContext.js`
-- **Published Language** voisin persisté : `{ id, name, type, x, y, zone, isRoad }` (`name` = alias de `type`)
+- **Voisin persisté** : `{ instanceId, type, x, y, zone, isRoad }`
 
 Règle : `src/js/**` n'importe jamais `contexts/parcels/domain/**` directement.

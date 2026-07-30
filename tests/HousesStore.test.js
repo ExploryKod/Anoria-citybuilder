@@ -3,40 +3,29 @@
  */
 
 import 'fake-indexeddb/auto';
-import Dexie from 'dexie';
 import { HouseStore } from '../src/js/stores/HousesStore.js';
+import db from '../src/core/persistence/dexie/db.js';
+import { resetHousingContextForTests } from '../src/composition/createHousingContext.js';
 import { createBuildingInstanceId } from '../src/shared/building-identity/index.js';
 import { makeHouseRecord } from './fixtures/buildingRecord.js';
 
-function createTestDb() {
-    const db = new Dexie('testHousesDb');
-    db.version(1).stores({
-        houses: 'instanceId, kind, type, [anchorX+anchorY], [kind+type]',
-        game: 'name',
-        budget: 'name',
-        objectives: 'name',
-        journal: '++id, turn, date, type, amount, description',
-        foodTraceability:
-            '++id, turn, month, year, date, transactionType, fromInstanceId, fromCoords, toInstanceId, toCoords, foodType, quantity, price',
-    });
-    return db;
+async function clearHousesTable() {
+    await db.open();
+    await db.houses.clear();
 }
 
 describe('HousesStore', () => {
     let housesStore;
-    let testDb;
 
     beforeEach(async () => {
-        testDb = createTestDb();
-        await testDb.open();
+        resetHousingContextForTests();
+        await clearHousesTable();
         housesStore = new HouseStore();
-        housesStore.db = testDb;
     });
 
     afterEach(async () => {
-        if (testDb?.isOpen()) {
-            await testDb.delete();
-        }
+        resetHousingContextForTests();
+        await clearHousesTable();
     });
 
     describe('addHouse', () => {

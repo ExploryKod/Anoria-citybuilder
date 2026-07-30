@@ -13,11 +13,11 @@ export class GetBuildingNeighbors {
   }
 
   /**
-   * @param {string} buildingId
+   * @param {string} instanceId
    * @returns {Promise<{
-   *   buildingId: string,
+   *   instanceId: string,
    *   neighbors: Array<{
-   *     buildingId: string,
+   *     instanceId: string,
    *     type: string,
    *     x: number | null,
    *     y: number | null,
@@ -26,8 +26,8 @@ export class GetBuildingNeighbors {
    *   }>,
    * } | null>}
    */
-  async execute(buildingId) {
-    const building = await this.buildingRepository.findById(buildingId);
+  async execute(instanceId) {
+    const building = await this.buildingRepository.findById(instanceId);
     if (!building) {
       return null;
     }
@@ -36,7 +36,7 @@ export class GetBuildingNeighbors {
     const neighbors = normalizeNeighborList(raw).map(toNeighborReadModel);
 
     return {
-      buildingId: building.id,
+      instanceId: building.id,
       neighbors,
     };
   }

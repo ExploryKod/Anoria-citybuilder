@@ -11,21 +11,21 @@ export class RecalculateRoadAccessForNeighbors {
   }
 
   /**
-   * @param {Iterable<string>} buildingIds
+   * @param {Iterable<string>} instanceIds
    * @returns {Promise<{ processed: number, updated: number, results: object[] }>}
    */
-  async execute(buildingIds) {
+  async execute(instanceIds) {
     const unique = [
       ...new Set(
-        [...(buildingIds ?? [])].filter((id) => typeof id === 'string' && id.length > 0)
+        [...(instanceIds ?? [])].filter((id) => typeof id === 'string' && id.length > 0)
       ),
     ];
 
     const results = [];
     let updated = 0;
 
-    for (const buildingId of unique) {
-      const outcome = await this.recalculateForBuilding.execute(buildingId);
+    for (const instanceId of unique) {
+      const outcome = await this.recalculateForBuilding.execute(instanceId);
       if (outcome) {
         results.push(outcome);
         if (outcome.updated) updated += 1;

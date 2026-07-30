@@ -3,8 +3,8 @@
  */
 
 import 'fake-indexeddb/auto';
-import Dexie from 'dexie';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
+import db from '../../../src/core/persistence/dexie/db.js';
 import { createSupplyContext, resetSupplyContextForTests } from '../../../src/composition/createSupplyContext.js';
 import { TimeManager } from '../../../src/js/game/utils/TimeManager.js';
 import { toSupplySeason, toSupplyMonth } from '../../../src/js/acl/supply.js';
@@ -12,41 +12,27 @@ import { HouseStore } from '../../../src/js/stores/HousesStore.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 import { makeHouseRecord } from '../../fixtures/buildingRecord.js';
 
-function createTestDb() {
-  const db = new Dexie('testMonthlySupplyDb');
-  db.version(1).stores({
-    houses: 'instanceId, kind, type, [anchorX+anchorY], [kind+type]',
-    game: 'name',
-    budget: 'name',
-    objectives: 'name',
-    journal: '++id, turn, date, type, amount, description',
-    foodTraceability:
-      '++id, turn, month, year, date, transactionType, fromInstanceId, fromCoords, toInstanceId, toCoords, foodType, quantity, price',
-  });
-  return db;
+async function clearHousesTable() {
+  await db.open();
+  await db.houses.clear();
 }
 
 describe('Supply — RunMonthlyFoodSupplyCycle', () => {
   let housesStore;
   let supply;
-  let testDb;
   let marketId;
 
   beforeEach(async () => {
     resetSupplyContextForTests();
-    testDb = createTestDb();
-    await testDb.open();
+    await clearHousesTable();
     housesStore = new HouseStore();
-    housesStore.db = testDb;
-    supply = createSupplyContext({ housesStore });
+    supply = createSupplyContext();
     marketId = createBuildingInstanceId();
   });
 
   afterEach(async () => {
     resetSupplyContextForTests();
-    if (testDb?.isOpen()) {
-      await testDb.delete();
-    }
+    await clearHousesTable();
   });
 
   async function runAtTime(time) {

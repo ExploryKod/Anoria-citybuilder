@@ -34,66 +34,72 @@ import { ListSupplyStockSnapshots } from '../contexts/supply/application/queries
 /**
  * Composition root — Supply bounded context.
  *
- * @param {object} deps
- * @param {import('../js/stores/HousesStore.js').default} deps.housesStore
+ * @param {object} [deps]
+ * @param {import('../contexts/supply/application/ports/SupplyBuildingRepository.js').SupplyBuildingRepository} [deps.supplyBuildingRepository]
+ * @param {import('../contexts/supply/application/ports/FactoryBuildingRepository.js').FactoryBuildingRepository} [deps.factoryBuildingRepository]
  */
-export function createSupplyContext({ housesStore }) {
-  const supplyBuildingRepository = new DexieSupplyBuildingRepository(housesStore);
-  const factoryBuildingRepository = new DexieFactoryBuildingRepository(housesStore);
+export function createSupplyContext({
+  supplyBuildingRepository,
+  factoryBuildingRepository,
+} = {}) {
+  const supplyBuildingRepositoryImpl =
+    supplyBuildingRepository ?? new DexieSupplyBuildingRepository();
+  const factoryBuildingRepositoryImpl =
+    factoryBuildingRepository ?? new DexieFactoryBuildingRepository();
   const productionJournal = new SupplyProductionJournal();
   const marketBuysFromNearbyFarms = new MarketBuysFromNearbyFarms(
-    supplyBuildingRepository
+    supplyBuildingRepositoryImpl
   );
-  const markMarketBuyingSeason = new MarkMarketBuyingSeason(supplyBuildingRepository);
+  const markMarketBuyingSeason = new MarkMarketBuyingSeason(supplyBuildingRepositoryImpl);
   const distributeFoodFromMarketToHouses = new DistributeFoodFromMarketToHouses(
-    supplyBuildingRepository
+    supplyBuildingRepositoryImpl
   );
   const windmillCollectsFromAllFarms = new WindmillCollectsFromAllFarms(
-    supplyBuildingRepository
+    supplyBuildingRepositoryImpl
   );
   const updateHousesMarketReach = new UpdateHousesMarketReach(
-    supplyBuildingRepository
+    supplyBuildingRepositoryImpl
   );
   const updateMarketFarmProximity = new UpdateMarketFarmProximity(
-    supplyBuildingRepository
+    supplyBuildingRepositoryImpl
   );
   const markWindmillCollectingSeason = new MarkWindmillCollectingSeason(
-    supplyBuildingRepository
+    supplyBuildingRepositoryImpl
   );
   const resetFarmsSoldToWindmill = new ResetFarmsSoldToWindmill(
-    supplyBuildingRepository
+    supplyBuildingRepositoryImpl
   );
   const setWindmillCollectingFlag = new SetWindmillCollectingFlag(
-    supplyBuildingRepository
+    supplyBuildingRepositoryImpl
   );
   const markFarmSoldToWindmill = new MarkFarmSoldToWindmill(
-    supplyBuildingRepository
+    supplyBuildingRepositoryImpl
   );
-  const harvestFarmCrop = new HarvestFarmCrop(supplyBuildingRepository);
+  const harvestFarmCrop = new HarvestFarmCrop(supplyBuildingRepositoryImpl);
   const harvestAllFarmCrops = new HarvestAllFarmCrops(
-    supplyBuildingRepository,
+    supplyBuildingRepositoryImpl,
     harvestFarmCrop
   );
-  const consumeHouseFood = new ConsumeHouseFood(supplyBuildingRepository);
+  const consumeHouseFood = new ConsumeHouseFood(supplyBuildingRepositoryImpl);
   const consumeAllHouseFood = new ConsumeAllHouseFood(
-    supplyBuildingRepository,
+    supplyBuildingRepositoryImpl,
     consumeHouseFood
   );
   const processWindmillCollection = new ProcessWindmillCollection(
-    supplyBuildingRepository,
+    supplyBuildingRepositoryImpl,
     windmillCollectsFromAllFarms,
     setWindmillCollectingFlag,
     markFarmSoldToWindmill
   );
   const runWindmillSurplusCycle = new RunWindmillSurplusCycle(
-    supplyBuildingRepository,
+    supplyBuildingRepositoryImpl,
     markWindmillCollectingSeason,
     resetFarmsSoldToWindmill,
     processWindmillCollection
   );
-  const traceability = new SupplyFoodTraceability(housesStore);
+  const traceability = new SupplyFoodTraceability();
   const runCityMarketFoodCycle = new RunCityMarketFoodCycle(
-    supplyBuildingRepository,
+    supplyBuildingRepositoryImpl,
     marketBuysFromNearbyFarms,
     distributeFoodFromMarketToHouses,
     updateMarketFarmProximity,
@@ -109,45 +115,45 @@ export function createSupplyContext({ housesStore }) {
     traceability
   );
   const collectFactoryResources = new CollectFactoryResources(
-    factoryBuildingRepository,
+    factoryBuildingRepositoryImpl,
     productionJournal
   );
   const transformFactoryMaterials = new TransformFactoryMaterials(
-    factoryBuildingRepository,
+    factoryBuildingRepositoryImpl,
     productionJournal
   );
   const produceFactoryGoods = new ProduceFactoryGoods(
-    factoryBuildingRepository,
+    factoryBuildingRepositoryImpl,
     productionJournal
   );
   const processFactoryProductionStep = new ProcessFactoryProductionStep(
-    factoryBuildingRepository,
+    factoryBuildingRepositoryImpl,
     collectFactoryResources,
     transformFactoryMaterials,
     produceFactoryGoods
   );
   const runCityFactoryProductionCycle = new RunCityFactoryProductionCycle(
-    factoryBuildingRepository,
+    factoryBuildingRepositoryImpl,
     processFactoryProductionStep
   );
   const getCityFactoryResourcesQuery = new GetCityFactoryResources(
-    factoryBuildingRepository
+    factoryBuildingRepositoryImpl
   );
   const getBuildingSupplyViewQuery = new GetBuildingSupplyView(
-    supplyBuildingRepository
+    supplyBuildingRepositoryImpl
   );
   const listSupplyMapBuildingsQuery = new ListSupplyMapBuildings(
-    supplyBuildingRepository
+    supplyBuildingRepositoryImpl
   );
   const listWindmillSupplyViewsQuery = new ListWindmillSupplyViews(
-    supplyBuildingRepository
+    supplyBuildingRepositoryImpl
   );
   const listSupplyStockSnapshotsQuery = new ListSupplyStockSnapshots(
-    supplyBuildingRepository
+    supplyBuildingRepositoryImpl
   );
 
   return {
-    supplyBuildingRepository,
+    supplyBuildingRepository: supplyBuildingRepositoryImpl,
     marketBuysFromNearbyFarms,
     markMarketBuyingSeason,
     distributeFoodFromMarketToHouses,
@@ -172,7 +178,7 @@ export function createSupplyContext({ housesStore }) {
     produceFactoryGoods,
     processFactoryProductionStep,
     getCityFactoryResourcesQuery,
-    factoryBuildingRepository,
+    factoryBuildingRepository: factoryBuildingRepositoryImpl,
     getBuildingSupplyViewQuery,
     listSupplyMapBuildingsQuery,
     listWindmillSupplyViewsQuery,
@@ -288,13 +294,10 @@ export function createSupplyContext({ housesStore }) {
 
 /** @type {ReturnType<typeof createSupplyContext> | null} */
 let sharedSupply = null;
-/** @type {object | null} */
-let sharedHousesStore = null;
 
-export function getOrCreateSupplyContext(housesStore) {
-  if (!sharedSupply || sharedHousesStore !== housesStore) {
-    sharedSupply = createSupplyContext({ housesStore });
-    sharedHousesStore = housesStore;
+export function getOrCreateSupplyContext() {
+  if (!sharedSupply) {
+    sharedSupply = createSupplyContext();
   }
   return sharedSupply;
 }
@@ -302,5 +305,4 @@ export function getOrCreateSupplyContext(housesStore) {
 /** @internal Tests only */
 export function resetSupplyContextForTests() {
   sharedSupply = null;
-  sharedHousesStore = null;
 }

@@ -16,7 +16,6 @@ export {
   parseBuildingId,
   tryParseBuildingId,
   isPublishedBuildingIdString,
-  resolvePublishedBuildingIdFromRef,
   createBuildingInstanceId,
   isBuildingInstanceId,
   assertBuildingInstanceId,

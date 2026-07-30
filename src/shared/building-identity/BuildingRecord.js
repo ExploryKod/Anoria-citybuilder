@@ -136,7 +136,7 @@ export function tryResolveBuildingInstanceIdFromRef(ref) {
 export function resolveInstanceIdFromNeighborRef(ref) {
   if (!ref || typeof ref !== 'object') return null;
 
-  const candidates = [ref.instanceId, ref.id, ref.buildingId];
+  const candidates = [ref.instanceId, ref.id];
   for (const candidate of candidates) {
     if (typeof candidate === 'string' && isBuildingInstanceId(candidate)) {
       return candidate;

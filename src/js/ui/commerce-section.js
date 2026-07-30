@@ -602,7 +602,7 @@ class CommerceSectionManager {
         if (!housesStore) return 0;
 
         try {
-            return await getCityTotalPopulation(housesStore);
+            return await getCityTotalPopulation();
         } catch (error) {
             console.error('[CommerceSectionManager] Error getting population:', error);
         }
@@ -618,7 +618,7 @@ class CommerceSectionManager {
         if (!housesStore) return 0;
 
         try {
-            const summary = await getCityEmploymentSummary(housesStore);
+            const summary = await getCityEmploymentSummary();
             return summary.unemploymentPercentage;
         } catch (error) {
             console.error('[CommerceSectionManager] Error calculating unemployment:', error);
@@ -1385,7 +1385,7 @@ class CommerceSectionManager {
 
             // Si pas de données de traçabilité, estimer depuis la population
             if (annualConsumption === 0 && housesStore) {
-                const totalPopulation = await getCityTotalPopulation(housesStore);
+                const totalPopulation = await getCityTotalPopulation();
                 // Estimation : chaque citoyen consomme 1 panier/mois = 12 paniers/an
                 // Répartition approximative : 40% wheat, 30% carrot, 30% cabbage
                 const consumptionRatios = {
