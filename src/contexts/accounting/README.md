@@ -4,7 +4,7 @@ Phase 0 — spécification et cartographie. **Aucun refactor métier ici** : doc
 
 ## Décisions validées
 
-1. **Journal = source de vérité** des mouvements comptables (append-only, indexé par `turn`).
+1. **Journal = source de vérité** des mouvements comptables (append-only, indexé par `turn`) — **à condition d’écritures fiables** (Phase 3½ ; voir D9).
 2. **Trésorerie co-maintenue** : cache `budget_current` mis à jour en parallèle du journal pour la perf temps réel ; réconciliable avec le journal.
 3. **Trois surfaces comptables distinctes** (ne pas mélanger) :
    - **Journal** (grand livre) — écritures chronologiques, agrégats par mois/année, export ; **source de vérité affichée**.
@@ -265,10 +265,10 @@ Produits dynamiques connus : `wheat`, `carrot`, `cabbage`, `wood` → préfixes 
 
 | Surface UI | Panneau HTML | Fichier UI | Query cible (BC) | Source actuelle | Écart |
 |---|---|---|---|---|---|
-| **Livret ville** (admin César 3) | `#admin-section-finances` | `ui/finances-section.js` | `GetCityLedgerYearComparison` | `JournalManager.getYearlyFinancialSummary()` + **`budget_current.funds`** pour solde N | Trésorerie ≠ journal pour balance N ; logique mapping dans UI |
+| **Livret ville** (admin César 3) | `#admin-section-finances` | `ui/finances-section.js` | `GetCityLedgerYearComparison` | `DexieJournalRepository` + `DexieTreasuryRepository` | Trésorerie ≠ journal pour balance N |
 | **Bilan** (compta classique) | `#budget-panel` | `ui/buttons.js` → `updateBudgetDisplay()` | `GetBalanceSheet(asOfTurn)` | `budget_current` + **City Assets** + prêts actifs + ajustement manuel actif=passif | Pas dérivé du journal ; mélange avec refresh temps réel |
 | **Compte de résultat** | `#budget-states-panel` | `ui/budget/BudgetStatesManager.js` | `GetIncomeStatement(period)` | **`getBudgetStates()`** → snapshots `budget_turn_*` | 2ᵉ source ; pas le journal |
-| **Journal** (grand livre) | `#journal-panel` | `ui/journal/JournalManager.js` | `GetGeneralLedger(filters)` | `stores/JournalManager.js` → `db.journal` | ✅ Aligné |
+| **Journal** (grand livre) | `#journal-panel` | `ui/journal/JournalManager.js` | `GetGeneralLedger(filters)` | `DexieJournalRepository` | Export JSON/PDF encore legacy |
 | **Budget temps réel** | `#realtime-budget-panel` | `ui/budget/RealtimeBudgetManager.js` | `GetPeriodCashFlow(currentTurn)` | `budget_current` + `getFinancialHealth()` (**daily** netFlow) | Flux tour ≠ flux exercice |
 | **Info-box fonds** | `#display-funds` | (HUD) | `GetTreasuryBalance()` | `budget_current.funds` | ✅ Cohérent avec tréso co-maintenue |
 | **Conseil urbain** | — | `ui/urban-advice/UrbanAdviceManager.js` | `GetFinancialHealth()` | `BudgetManager.getFinancialHealth()` | daily netFlow |
@@ -288,7 +288,7 @@ Produits dynamiques connus : `wheat`, `carrot`, `cabbage`, `wood` → préfixes 
 | `ui/buttons.js` (`updateBudgetDisplay`) | Bilan compta FR (~260 L) | Pas de module dédié ; appelle aussi temps réel |
 | `ui/budget/BudgetStatesManager.js` | CR historique | Lit snapshots, pas journal |
 | `ui/budget/RealtimeBudgetManager.js` | Flux tour courant | Lit `budget_current` uniquement |
-| `ui/journal/JournalManager.js` | Présentation journal | ✅ Séparé store / UI |
+| `ui/journal/JournalManager.js` | Présentation journal | ✅ ACL + query BC (Phase 2b) ; export legacy |
 | `game/managers/BudgetProcessor.js` | Tick : taxes, salaires, maintenance, **saveBudgetState** /3 tours | Orchestration legacy |
 | `acl/budget.js` | Façade valuation + construction expense | Point d’entrée partiel vers futur BC |
 
@@ -319,6 +319,7 @@ Toute dépense/revenu significatif passe par `BudgetManager` → `addJournalEntr
 | D6 | `addIncome()` | Écrit toujours `citizen_tax` même pour remboursements construction |
 | D7 | Bilan incomplet | Amortissements, stocks, créances = 0 ; nombreuses lignes PCG vides |
 | D8 | Couplage UI | `updateBudgetDisplay()` déclenche `updateRealtimeBudget()` |
+| D9 | Doublons journal salaires / impôts | Écritures multiples même `turn`, libellés mois croisés (vitesse jeu) — **bloque Phase 3** (journal SoT unique) ; voir [`docs/refactor.md`](docs/refactor.md) |
 
 ---
 
@@ -362,24 +363,46 @@ C’est le **livret ville César 3** — seul panneau migré en Phase 1. Vérifi
 | Budget temps réel | `#realtime-budget-panel` | Pas encore branché sur `acl/accounting` |
 | Journal | `#journal-panel` | Déjà isolé ; sert de **référence croisée**, pas de migration |
 
-### Phase 2 — Domain policies + migration adapters
+### Phase 2a — Persistence Dexie (BC-owned read path) ✅
 
-- Extraire policies dans `domain/policies/`
-- `adapters/persistence/dexie/DexieJournalRepository.js` ← `JournalManager`
-- `adapters/persistence/dexie/DexieTreasuryRepository.js` ← trésorerie `BudgetManager`
-- Logique hors presenters (`finances-section.js` → query + domain only)
+- `adapters/persistence/dexie/DexieJournalRepository.js` — lecture `db.journal` via ports
+- `adapters/persistence/dexie/DexieTreasuryRepository.js` — lecture `budget_current.funds`
+- `journalAggregations.js` — agrégats partagés (JournalManager + Dexie repo, zéro duplication)
+- `createAccountingContext` bascule sur Dexie par défaut ; `createLegacyAccountingContext()` pour tests legacy
+- Écritures : toujours `BudgetManager` / `JournalManager` (Phase 4 commands)
+
+### Phase 2b — Journal UI + presenters ✅
+
+- `application/queries/journal/GetGeneralLedger.js` + `assembleGeneralLedgerView.js`
+- `domain/read-models/GeneralLedgerView.js`
+- `domain/policies/GeneralLedgerPresentationPolicy.js` (filtres type)
+- `acl/accounting.js` → `getGeneralLedger(filters)`
+- `ui/journal/JournalManager.js` — presenter DOM ; plus d'accès store pour la lecture
+- Export JSON/PDF : legacy store (Phase 3+)
+- Voir [`docs/refactor.md`](docs/refactor.md) — J1/J2 corrigés sur le nouveau chemin
+
+### Phase 2c — Calculs nets livret
+
+- Extraire calculs nets restants hors `finances-section.js`
 - Presenters branchés sur `acl/accounting` uniquement
 
-### Phase 3 — Unifier les lectures sur le journal
+### Phase 3½ — Write path fiable (**bloquant avant Phase 3**)
+
+Journal non fiable comme SoT unique tant que D9 (doublons write legacy). Voir gate dans [`docs/refactor.md`](docs/refactor.md).
+
+- `commands/journal/RecordLedgerEntry` + `commands/treasury/ApplyTreasuryMovement`
+- Idempotence salaires / impôts / maintenance
+- Tests réconciliation trésorerie ↔ journal
+
+### Phase 3 — Unifier les lectures sur le journal (**après 3½**)
 
 - `queries/financial-statements/GetIncomeStatement` via `JournalRepository`
 - `GetBalanceSheet` : ports journal + trésorerie + City Assets
 - Snapshots `budget_turn_*` : cache dérivé ou suppression
 
-### Phase 4 — Write path unifié
+### Phase 4 — Extinction write legacy
 
-- `commands/journal/RecordLedgerEntry` + `commands/treasury/ApplyTreasuryMovement`
-- Réduction progressive de `BudgetManager`
+- Réduction progressive de `BudgetManager` (plus d’écriture directe journal)
 
 ---
 
@@ -422,7 +445,8 @@ Règle : `src/js/**` n'importe **pas** `contexts/accounting/**/domain/**` direct
 
 Tests cibles Phase 1+ :
 
-- `cityLedger.behavior.test.js` — mapping types → lignes livret
+- `getCityLedgerYearComparison.behavior.test.js` — mapping types → lignes livret
+- `getGeneralLedger.behavior.test.js` — filtres type/période, totaux cohérents
 - `incomeStatementFromJournal.behavior.test.js` — CR depuis journal
 - `treasuryReconciliation.behavior.test.js` — funds vs balance journal
 

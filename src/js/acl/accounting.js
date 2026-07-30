@@ -25,3 +25,11 @@ export async function getTreasuryBalance() {
 export async function getCityLedgerYearComparison() {
   return getOrCreateAccountingContext().getCityLedgerYearComparison();
 }
+
+/**
+ * @param {{ periodDays?: number|null, types?: string[]|null }} [filters]
+ * @returns {Promise<object>} Journal UI — grouped general ledger
+ */
+export async function getGeneralLedger(filters) {
+  return getOrCreateAccountingContext().getGeneralLedger(filters);
+}

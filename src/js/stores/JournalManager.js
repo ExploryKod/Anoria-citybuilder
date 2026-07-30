@@ -1,4 +1,10 @@
 import db from '../../core/persistence/dexie/db.js';
+import {
+  buildMonthlyFinancialSummary,
+  buildYearlyFinancialSummary,
+  computeJournalCurrentBalance,
+  filterAndSortJournalEntries,
+} from '../../contexts/accounting/infrastructure/adapters/persistence/dexie/journalAggregations.js';
 
 /**
  * JournalManager - Manages journal entries (accounting entries)
@@ -8,6 +14,16 @@ class JournalManager {
     constructor() {
         this.db = db;
         this.LOCALSTORAGE_KEY = 'journal_year_end_balances';
+    }
+
+    /** @returns {(turn: number) => object|null} */
+    _getTimeInfoResolver() {
+        const timeManager =
+            (typeof window !== 'undefined' ? window : global)?.TimeManager;
+        if (!timeManager) {
+            return () => null;
+        }
+        return (turn) => timeManager.getTimeInfo(turn);
     }
 
     /**
@@ -162,22 +178,8 @@ class JournalManager {
      * @returns {Promise<Array>} Journal entries
      */
     async getJournalEntries(maxAge = null) {
-        let entries = await this.db.journal.toArray();
-        
-        if (maxAge) {
-            const cutoffDate = new Date();
-            cutoffDate.setDate(cutoffDate.getDate() - maxAge);
-            
-            entries = entries.filter(entry => new Date(entry.date) >= cutoffDate);
-        }
-        
-        // Sort by turn descending, then by date descending
-        return entries.sort((a, b) => {
-            if (a.turn !== b.turn) {
-                return b.turn - a.turn;
-            }
-            return new Date(b.date) - new Date(a.date);
-        });
+        const entries = await this.db.journal.toArray();
+        return filterAndSortJournalEntries(entries, maxAge);
     }
 
     /**
@@ -272,156 +274,11 @@ class JournalManager {
      */
     async getMonthlyFinancialSummary() {
         const entries = await this.getJournalEntries();
-        
-        // Grouper par (year, month)
-        const grouped = {};
-        
-        entries.forEach(entry => {
-            // Convertir turn → timeInfo
-            if (!window.TimeManager) {
-                console.warn('[JournalManager] TimeManager not available');
-                return;
-            }
-            
-            const timeInfo = window.TimeManager.getTimeInfo(entry.turn);
-            const key = `${timeInfo.year}-${timeInfo.monthIndex}`;
-            
-            if (!grouped[key]) {
-                grouped[key] = {
-                    year: timeInfo.year,
-                    month: timeInfo.monthIndex,
-                    monthName: timeInfo.month,
-                    income: { total: 0, entries: [] },
-                    expenses: { total: 0, entries: [] },
-                    entryCount: 0
-                };
-            }
-            
-            // Exclure les cumuls et les balances du calcul mensuel (ils sont informatifs seulement)
-            if (entry.type === 'cumul_maintenance' || 
-                entry.type === 'cumul_construction' || 
-                entry.type === 'cumul_salary' ||
-                entry.type === 'cumul_exceptional_expenses' ||
-                entry.type === 'cumul_loan_interest' ||
-                entry.type === 'cumul_loan_repayment' ||
-                entry.type === 'balance') {
-                return; // Passer à l'entrée suivante
-            }
-            
-            // Classer comme revenu ou dépense
-            // Revenus: 'citizen_tax', 'payroll_tax', 'capital_funds', 'loan_capital', 'export_*', 'carry_forward' (si netFlow précédent positif)
-            // Dépenses: 'construction', 'maintenance', 'salary', 'loan_interest', 'loan_repayment', 'exceptional_expenses', 'import_*', 'carry_forward' (si netFlow précédent négatif)
-            let isIncome = entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds' || entry.type === 'loan_capital';
-            
-            // Les imports sont des dépenses
-            if (entry.type.startsWith('import_')) {
-                isIncome = false;
-            }
-            
-            // Les exports sont des revenus
-            if (entry.type.startsWith('export_')) {
-                isIncome = true;
-            }
-            
-            // Les intérêts et remboursements de prêt sont des dépenses
-            if (entry.type === 'loan_interest' || entry.type === 'loan_repayment') {
-                isIncome = false;
-            }
-            
-            // Les autres dépenses explicites
-            if (entry.type === 'construction' || entry.type === 'maintenance' || entry.type === 'salary' || 
-                entry.type === 'exceptional_expenses' || entry.type === 'commercial_route') {
-                isIncome = false;
-            }
-            
-            if (entry.type === 'carry_forward') {
-                // Pour le report à nouveau, déterminer si c'est un revenu ou une dépense
-                // en fonction du signe stocké dans la description
-                // Format: "Report à nouveau de l'année X (signe)"
-                const signMatch = entry.description?.match(/\(([+-])\)/);
-                if (signMatch) {
-                    isIncome = signMatch[1] === '+';
-                } else {
-                    // Fallback: calculer depuis le netFlow de l'année précédente
-                    const previousYear = timeInfo.year - 1;
-                    if (previousYear >= 0) {
-                        // Calculer le netFlow de l'année précédente en EXCLUANT le report à nouveau
-                        let prevYearIncome = 0;
-                        let prevYearExpenses = 0;
-                        
-                        entries.forEach(e => {
-                            if (e.type === 'carry_forward') return; // Exclure tous les reports à nouveau
-                            
-                            if (!window.TimeManager) return;
-                            const eTimeInfo = window.TimeManager.getTimeInfo(e.turn);
-                            
-                            if (eTimeInfo.year === previousYear) {
-                                let isEIncome = e.type === 'citizen_tax' || e.type === 'payroll_tax' || e.type === 'capital_funds' || e.type === 'loan_capital';
-                                if (e.type.startsWith('import_')) {
-                                    isEIncome = false;
-                                }
-                                if (e.type.startsWith('export_')) {
-                                    isEIncome = true;
-                                }
-                                if (e.type === 'loan_interest' || e.type === 'loan_repayment') {
-                                    isEIncome = false;
-                                }
-                                if (e.type === 'construction' || e.type === 'maintenance' || e.type === 'salary' || 
-                                    e.type === 'exceptional_expenses' || e.type === 'commercial_route') {
-                                    isEIncome = false;
-                                }
-                                if (isEIncome) {
-                                    prevYearIncome += e.amount;
-                                } else {
-                                    prevYearExpenses += e.amount;
-                                }
-                            }
-                        });
-                        
-                        const prevYearNetFlow = prevYearIncome - prevYearExpenses;
-                        isIncome = prevYearNetFlow >= 0;
-                    } else {
-                        // Année 0, pas de report à nouveau (ne devrait pas arriver)
-                        isIncome = true;
-                    }
-                }
-            }
-            
-            if (isIncome) {
-                grouped[key].income.total += entry.amount;
-                grouped[key].income.entries.push({
-                    type: entry.type,
-                    amount: entry.amount,
-                    description: entry.description,
-                    date: entry.date,
-                    turn: entry.turn,
-                    isCarryForwardIncome: entry.type === 'carry_forward' ? true : undefined
-                });
-            } else {
-                grouped[key].expenses.total += entry.amount;
-                grouped[key].expenses.entries.push({
-                    type: entry.type,
-                    amount: entry.amount,
-                    description: entry.description,
-                    date: entry.date,
-                    turn: entry.turn,
-                    isCarryForwardIncome: entry.type === 'carry_forward' ? false : undefined
-                });
-            }
-            
-            grouped[key].entryCount++;
-        });
-        
-        // Calculer netFlow pour chaque mois
-        Object.values(grouped).forEach(month => {
-            month.netFlow = month.income.total - month.expenses.total;
-        });
-        
-        // Trier par année puis mois (décroissant)
-        return Object.values(grouped).sort((a, b) => {
-            if (a.year !== b.year) return b.year - a.year;
-            return b.month - a.month;
-        });
+        const getTimeInfo = this._getTimeInfoResolver();
+        if (!getTimeInfo(0) && entries.length > 0) {
+            console.warn('[JournalManager] TimeManager not available');
+        }
+        return buildMonthlyFinancialSummary(entries, getTimeInfo);
     }
 
     /**
@@ -599,96 +456,7 @@ class JournalManager {
      */
     async getCurrentBalance() {
         const entries = await this.getJournalEntries();
-        let balance = 0;
-        
-        entries.forEach(entry => {
-            // Exclure les cumuls et les balances du calcul de balance (ils sont informatifs seulement)
-            if (entry.type === 'cumul_maintenance' || 
-                entry.type === 'cumul_construction' || 
-                entry.type === 'cumul_salary' ||
-                entry.type === 'cumul_exceptional_expenses' ||
-                entry.type === 'cumul_loan_interest' ||
-                entry.type === 'cumul_loan_repayment' ||
-                entry.type === 'balance') {
-                return; // Passer à l'entrée suivante
-            }
-            
-            // Utiliser la même logique que getMonthlyFinancialSummary() pour classer les entrées
-            let isIncome = entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds';
-            
-            // Les imports sont des dépenses
-            if (entry.type.startsWith('import_')) {
-                isIncome = false;
-            }
-            
-            // Les exports sont des revenus
-            if (entry.type.startsWith('export_')) {
-                isIncome = true;
-            }
-            
-            // Traiter les reports à nouveau de la même manière que dans getMonthlyFinancialSummary
-            if (entry.type === 'carry_forward') {
-                // Pour le report à nouveau, déterminer si c'est un revenu ou une dépense
-                // en fonction du signe stocké dans la description
-                // Format: "Report à nouveau de l'année X (signe)"
-                const signMatch = entry.description?.match(/\(([+-])\)/);
-                if (signMatch) {
-                    isIncome = signMatch[1] === '+';
-                } else {
-                    // Fallback: si pas de signe dans la description, calculer depuis le netFlow de l'année précédente
-                    if (!window.TimeManager) {
-                        // Si TimeManager n'est pas disponible, traiter comme revenu par défaut
-                        isIncome = true;
-                    } else {
-                        const timeInfo = window.TimeManager.getTimeInfo(entry.turn);
-                        const previousYear = timeInfo.year - 1;
-                        if (previousYear >= 0) {
-                            // Calculer le netFlow de l'année précédente en EXCLUANT le report à nouveau
-                            let prevYearIncome = 0;
-                            let prevYearExpenses = 0;
-                            
-                            entries.forEach(e => {
-                                if (e.type === 'carry_forward') return; // Exclure tous les reports à nouveau
-                                
-                                if (!window.TimeManager) return;
-                                const eTimeInfo = window.TimeManager.getTimeInfo(e.turn);
-                                
-                                if (eTimeInfo.year === previousYear) {
-                                    let isEIncome = e.type === 'citizen_tax' || e.type === 'payroll_tax' || e.type === 'capital_funds' || e.type === 'loan_capital';
-                                    if (e.type.startsWith('import_')) {
-                                        isEIncome = false;
-                                    }
-                                    if (e.type.startsWith('export_')) {
-                                        isEIncome = true;
-                                    }
-                                    if (isEIncome) {
-                                        prevYearIncome += e.amount;
-                                    } else {
-                                        prevYearExpenses += e.amount;
-                                    }
-                                }
-                            });
-                            
-                            const prevYearNetFlow = prevYearIncome - prevYearExpenses;
-                            isIncome = prevYearNetFlow >= 0;
-                        } else {
-                            // Année 0, pas de report à nouveau (ne devrait pas arriver)
-                            isIncome = true;
-                        }
-                    }
-                }
-            }
-            
-            // Tous les autres types sont des dépenses (construction, maintenance, exceptional_expenses, loan_interest, loan_repayment, etc.)
-            
-            if (isIncome) {
-                balance += entry.amount;
-            } else {
-                balance -= entry.amount;
-            }
-        });
-        
-        return balance;
+        return computeJournalCurrentBalance(entries, this._getTimeInfoResolver());
     }
 
     /**
@@ -697,38 +465,7 @@ class JournalManager {
      */
     async getYearlyFinancialSummary() {
         const monthlyData = await this.getMonthlyFinancialSummary();
-        
-        // Grouper par année
-        const grouped = {};
-        
-        monthlyData.forEach(month => {
-            const year = month.year;
-            
-            if (!grouped[year]) {
-                grouped[year] = {
-                    year: year,
-                    income: { total: 0, entries: [] },
-                    expenses: { total: 0, entries: [] },
-                    monthCount: 0,
-                    months: []  // Détail des mois pour cette année
-                };
-            }
-            
-            grouped[year].income.total += month.income.total;
-            grouped[year].expenses.total += month.expenses.total;
-            grouped[year].income.entries.push(...month.income.entries);
-            grouped[year].expenses.entries.push(...month.expenses.entries);
-            grouped[year].monthCount++;
-            grouped[year].months.push(month);
-        });
-        
-        // Calculer netFlow pour chaque année (le solde de l'année = netFlow de l'année)
-        Object.values(grouped).forEach(year => {
-            year.netFlow = year.income.total - year.expenses.total;
-        });
-        
-        // Trier par année décroissante pour l'affichage
-        return Object.values(grouped).sort((a, b) => b.year - a.year);
+        return buildYearlyFinancialSummary(monthlyData);
     }
 
     /**
