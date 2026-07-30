@@ -2,11 +2,15 @@
  * Tests pour CommerceService avec les partenaires commerciaux
  */
 
+import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
 import { CommerceService } from '../src/js/game/services/CommerceService.js';
 import { BudgetManager } from '../src/js/stores/BudgetManager.js';
 import { JournalManager } from '../src/js/stores/JournalManager.js';
 import commerceStore from '../src/js/stores/CommerceStore.js';
+import db from '../src/core/persistence/dexie/db.js';
+import { resetSupplyContextForTests } from '../src/composition/createSupplyContext.js';
+import { makeHouseRecord, createBuildingInstanceId } from './fixtures/buildingRecord.js';
 
 // ============================================================================
 // Setup : Créer une base de données de test isolée
@@ -29,7 +33,6 @@ describe('CommerceService - Partenaires', () => {
     let commerceService;
     let testDb;
     let budgetManager;
-    let mockHousesStore;
 
     beforeEach(async () => {
         // Créer une nouvelle base de données pour chaque test
@@ -69,39 +72,18 @@ describe('CommerceService - Partenaires', () => {
         // Créer CommerceService
         commerceService = new CommerceService();
 
-        // Mock HousesStore avec des fonctions simples
-        mockHousesStore = {
-            listAllHouses: async () => [
-                {
-                    id: 'windmill-1',
-                    name: 'Windmill 1',
-                    type: 'Windmill',
-                    stocks: { wheat: 10, carrot: 5, cabbage: 3, dattes: 0, food: 18 }
-                }
-            ],
-            getHouse: async (id) => {
-                if (id === 'windmill-1') {
-                    return {
-                        id: 'windmill-1',
-                        name: 'Windmill 1',
-                        type: 'Windmill',
-                        stocks: { wheat: 10, carrot: 5, cabbage: 3, dattes: 0, food: 18 },
-                        lastImport: { wheat: 0, carrot: 0, cabbage: 0, dattes: 0, total: 0 }
-                    };
-                }
-                return null;
-            },
-            updateHouseFields: async () => true
-        };
-
         // Initialiser le budget
         await budgetManager.initialize(1000);
     });
 
     afterEach(async () => {
+        resetSupplyContextForTests();
         if (testDb && testDb.isOpen()) {
             await testDb.delete();
             testDb = null;
+        }
+        if (db.isOpen()) {
+            await db.houses.clear();
         }
         global.localStorage.clear();
     });
@@ -294,12 +276,29 @@ describe('CommerceService - Partenaires', () => {
         ];
         global.localStorage.setItem('commerce_config', JSON.stringify(mockConfig));
 
+        await db.open();
+        await db.houses.clear();
+        const windmillId = createBuildingInstanceId();
+        await db.houses.add(
+            makeHouseRecord({
+                type: 'Windmill-001',
+                x: 1,
+                y: 1,
+                instanceId: windmillId,
+                extra: {
+                    isActive: true,
+                    commercializeEnabled: true,
+                    stocks: { wheat: 0, carrot: 0, cabbage: 0, dattes: 0, food: 0 },
+                    lastImport: { wheat: 0, carrot: 0, cabbage: 0, dattes: 0, total: 0 },
+                },
+            })
+        );
+
         const result = await commerceService.processProductImport({
             productId: 'dattes',
-            housesStore: mockHousesStore,
-            time: 0,  // Mois 0 (Janvier)
+            time: 0,
             quantity: 1,
-            partnerId: 'deserta'
+            partnerId: 'deserta',
         });
 
         expect(result).toBeDefined();

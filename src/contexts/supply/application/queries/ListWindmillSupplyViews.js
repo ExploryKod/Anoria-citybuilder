@@ -33,6 +33,8 @@ export class ListWindmillSupplyViews {
         lastImportDetails: view.lastImportDetails
           ? { ...view.lastImportDetails }
           : null,
+        isActive: view.isActive,
+        commercializeEnabled: view.commercializeEnabled,
       }));
   }
 }

@@ -1,5 +1,4 @@
 import db from '../../core/persistence/dexie/db.js';
-import budgetManager from './BudgetManager.js';
 import {
     canonicalizeHouseRecord,
     createBuildingInstanceId,
@@ -138,23 +137,20 @@ class HouseStore {
         };
     }
 
+    /**
+     * @deprecated Use `acl/budget.getCityBuildingValuation()`.
+     */
     async getGlobalBuildingPrices() {
-        const houses = await this.listAllHouses();
-        return houses.reduce((total, house) => total + (house.price || 0), 0);
+        const { getCityTotalBuildingValue } = await import('../acl/budget.js');
+        return getCityTotalBuildingValue();
     }
 
+    /**
+     * @deprecated Use `acl/budget.getCityBuildingValuation()`.
+     */
     async getBuildingPricesByType() {
-        const houses = await this.listAllHouses();
-        const pricesByType = {};
-
-        houses.forEach((house) => {
-            const houseType = house.type || 'unknown';
-            if (!pricesByType[houseType]) {
-                pricesByType[houseType] = house.price || 0;
-            }
-        });
-
-        return pricesByType;
+        const { getCityBuildingPricesByType } = await import('../acl/budget.js');
+        return getCityBuildingPricesByType();
     }
 
     async addHouse(data) {
@@ -196,57 +192,12 @@ class HouseStore {
         }
     }
 
+    /**
+     * @deprecated Use `acl/construction.placeBuildingWithPayment()`.
+     */
     async addHouseAndPay(data) {
-        const instanceId = data.instanceId ?? data.id ?? createBuildingInstanceId();
-
-        if (this.pendingAdditions.has(instanceId)) {
-            console.warn(`[HousesStore] House ${instanceId} is already being added, skipping duplicate request`);
-            return {
-                success: false,
-                reason: 'duplicate',
-                error: 'Building is already being added',
-                message: 'Building is already being added. Please wait.',
-            };
-        }
-
-        const existingHouse = await this.getHouse(instanceId);
-        if (existingHouse) {
-            console.warn(`[HousesStore] Cannot add house ${instanceId}: already exists`);
-            return {
-                success: false,
-                reason: 'duplicate',
-                error: 'Building already exists at this location',
-                message: 'Building already exists at this location',
-            };
-        }
-
-        const expenseResult = await budgetManager.addConstructionExpense(data.price, `Building: ${data.type}`);
-
-        if (!expenseResult.success) {
-            console.warn(`Cannot build ${data.type}: ${expenseResult.message}`);
-            return expenseResult;
-        }
-
-        const addHouseResult = await this.addHouse({ ...data, instanceId });
-
-        if (!addHouseResult.success) {
-            console.error('[HousesStore] Error adding house after payment:', addHouseResult.error);
-
-            if (addHouseResult.reason === 'duplicate') {
-                await budgetManager.addIncome(data.price, `Refund for duplicate ${data.type}`);
-                return {
-                    success: false,
-                    reason: 'duplicate',
-                    error: 'Building already exists at this location',
-                    message: 'Building already exists at this location',
-                };
-            }
-
-            await budgetManager.addIncome(data.price, `Refund for failed ${data.type}`);
-            return { success: false, reason: 'database_error', error: addHouseResult.error };
-        }
-
-        return { success: true, budget: expenseResult.budget, instanceId: addHouseResult.instanceId };
+        const { placeBuildingWithPayment } = await import('../acl/construction.js');
+        return placeBuildingWithPayment(data);
     }
 
     /** @param {string} instanceId */

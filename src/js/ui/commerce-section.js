@@ -1,6 +1,11 @@
 import commerceStore from '../stores/CommerceStore.js';
 import { getCityEmploymentSummary } from '../acl/employment.js';
 import { getCityTotalPopulation } from '../acl/housing.js';
+import {
+    listCommercializableWindmills,
+    listSupplyMapBuildings,
+    listWindmillSupplyViews,
+} from '../acl/supply.js';
 
 class CommerceSectionManager {
     constructor() {
@@ -427,21 +432,6 @@ class CommerceSectionManager {
     }
 
     /**
-     * Get housesStore instance
-     * @returns {HousesStore|null} HousesStore instance or null
-     */
-    getHousesStore() {
-        if (window.app && window.app.housesStore) {
-            return window.app.housesStore;
-        } else if (window.housesStore) {
-            return window.housesStore;
-        } else if (window.game && window.game.housesStore) {
-            return window.game.housesStore;
-        }
-        return null;
-    }
-
-    /**
      * Check if partner has active contract (not all occurrences used)
      * @param {Object} partner - Partner object
      * @returns {boolean} True if contract is still active
@@ -499,29 +489,13 @@ class CommerceSectionManager {
      * @returns {Promise<Object>} { hasStocks: boolean, missingProducts: Array<string> }
      */
     async checkWindmillStocks(partner) {
-        const housesStore = this.getHousesStore();
-        if (!housesStore) {
-            return { hasStocks: false, missingProducts: ['HousesStore non disponible'], noCommercializableWindmills: false };
-        }
-
         try {
-            // Get commercializable windmills (active and commercializeEnabled)
-            const allHouses = await housesStore.listAllHouses();
-            const allWindmills = allHouses.filter(house => {
-                const type = house.type || '';
-                return type.includes('Windmill') || type.includes('windmill');
-            });
+            const allWindmills = await listWindmillSupplyViews();
+            const commercializableWindmills = await listCommercializableWindmills();
 
             if (allWindmills.length === 0) {
                 return { hasStocks: false, missingProducts: ['Aucun moulin construit'], noCommercializableWindmills: false };
             }
-
-            // Filter commercializable windmills
-            const commercializableWindmills = allWindmills.filter(windmill => {
-                const isActive = windmill.isActive !== false; // Default to true
-                const commercializeEnabled = windmill.commercializeEnabled !== false; // Default to true
-                return isActive && commercializeEnabled;
-            });
 
             if (commercializableWindmills.length === 0) {
                 return { hasStocks: false, missingProducts: ['Commerce impossible : aucun moulin'], noCommercializableWindmills: true };
@@ -598,9 +572,6 @@ class CommerceSectionManager {
      * @returns {Promise<number>} Current population
      */
     async getCurrentPopulation() {
-        const housesStore = this.getHousesStore();
-        if (!housesStore) return 0;
-
         try {
             return await getCityTotalPopulation();
         } catch (error) {
@@ -614,9 +585,6 @@ class CommerceSectionManager {
      * @returns {Promise<number>} Unemployment percentage (0-100)
      */
     async getUnemploymentPercentage() {
-        const housesStore = this.getHousesStore();
-        if (!housesStore) return 0;
-
         try {
             const summary = await getCityEmploymentSummary();
             return summary.unemploymentPercentage;
@@ -922,24 +890,12 @@ class CommerceSectionManager {
         const yearlyImports = stats?.yearlyImports || {};
 
         // Check if there are any commercializable windmills
-        const housesStore = this.getHousesStore();
         let hasCommercializableWindmills = false;
-        if (housesStore) {
-            try {
-                const allHouses = await housesStore.listAllHouses();
-                const allWindmills = allHouses.filter(house => {
-                    const type = house.type || '';
-                    return type.includes('Windmill') || type.includes('windmill');
-                });
-                const commercializableWindmills = allWindmills.filter(windmill => {
-                    const isActive = windmill.isActive !== false;
-                    const commercializeEnabled = windmill.commercializeEnabled !== false;
-                    return isActive && commercializeEnabled;
-                });
-                hasCommercializableWindmills = commercializableWindmills.length > 0;
-            } catch (error) {
-                console.warn('[CommerceSection] Error checking commercializable windmills:', error);
-            }
+        try {
+            const commercializableWindmills = await listCommercializableWindmills();
+            hasCommercializableWindmills = commercializableWindmills.length > 0;
+        } catch (error) {
+            console.warn('[CommerceSection] Error checking commercializable windmills:', error);
         }
 
         // Render partners HTML first
@@ -1292,22 +1248,12 @@ class CommerceSectionManager {
     async updateConsumptionStatuses() {
         if (!this.goodsData) return;
 
-        // Récupérer housesStore et foodTraceabilityService
-        let housesStore = null;
-        if (window.app && window.app.housesStore) {
-            housesStore = window.app.housesStore;
-        } else if (window.housesStore) {
-            housesStore = window.housesStore;
-        } else if (window.game && window.game.housesStore) {
-            housesStore = window.game.housesStore;
-        }
-
         const foodTraceabilityService = window.foodTraceabilityService || null;
 
         // Mettre à jour chaque produit alimentaire
         for (const good of this.goodsData) {
             if (['wheat', 'carrot', 'cabbage'].includes(good.id)) {
-                const status = await this.calculateConsumptionStatus(good.id, housesStore, foodTraceabilityService);
+                const status = await this.calculateConsumptionStatus(good.id, foodTraceabilityService);
                 good.consumptionShare = status.consumptionShare;
                 good.consumptionStatus = status.consumptionStatus;
             }
@@ -1338,11 +1284,10 @@ class CommerceSectionManager {
     /**
      * Calcule la consommation et le statut d'export pour un produit alimentaire
      * @param {string} productId - ID du produit (wheat, carrot, cabbage)
-     * @param {HousesStore} housesStore - Store des maisons
      * @param {FoodTraceabilityService} foodTraceabilityService - Service de traçabilité
      * @returns {Promise<Object>} { consumptionShare, consumptionStatus, annualConsumption, annualProduction, netAvailable }
      */
-    async calculateConsumptionStatus(productId, housesStore, foodTraceabilityService) {
+    async calculateConsumptionStatus(productId, foodTraceabilityService) {
         // Seulement pour les produits alimentaires
         const foodProducts = ['wheat', 'carrot', 'cabbage'];
         if (!foodProducts.includes(productId)) {
@@ -1384,7 +1329,7 @@ class CommerceSectionManager {
             }
 
             // Si pas de données de traçabilité, estimer depuis la population
-            if (annualConsumption === 0 && housesStore) {
+            if (annualConsumption === 0) {
                 const totalPopulation = await getCityTotalPopulation();
                 // Estimation : chaque citoyen consomme 1 panier/mois = 12 paniers/an
                 // Répartition approximative : 40% wheat, 30% carrot, 30% cabbage
@@ -1398,25 +1343,25 @@ class CommerceSectionManager {
 
             // 2. Calculer la production annuelle locale
             let annualProduction = 0;
-            if (housesStore) {
-                const allBuildings = await housesStore.listAllHouses();
-                const farmTypeMap = {
-                    'wheat': ['Farm-Wheat', 'Farms-Wheat'],
-                    'carrot': ['Farm-Carrot', 'Farms-Carrot'],
-                    'cabbage': ['Farm-Cabbage', 'Farms-Cabbage']
-                };
-                const farmTypes = farmTypeMap[productId] || [];
-                
-                // Compter les fermes de ce type
-                const farms = allBuildings.filter(b => {
-                    if (!b.type) return false;
-                    return farmTypes.some(type => b.type === type) ||
-                           (b.type.includes('Farm') && b.type.toLowerCase().includes(productId));
-                });
-                
-                // Chaque ferme produit 78 paniers/an
-                annualProduction = farms.length * 78;
-            }
+            const allBuildings = await listSupplyMapBuildings();
+            const farmTypeMap = {
+                wheat: ['Farm-Wheat', 'Farms-Wheat'],
+                carrot: ['Farm-Carrot', 'Farms-Carrot'],
+                cabbage: ['Farm-Cabbage', 'Farms-Cabbage'],
+            };
+            const farmTypes = farmTypeMap[productId] || [];
+
+            const farms = allBuildings.filter((building) => {
+                if (building.kind !== 'farm' || !building.type) return false;
+                return (
+                    farmTypes.some((type) => building.type === type) ||
+                    (building.type.includes('Farm') &&
+                        building.type.toLowerCase().includes(productId))
+                );
+            });
+
+            // Chaque ferme produit 78 paniers/an
+            annualProduction = farms.length * 78;
 
             // 3. Récupérer les imports/exports actuels
             const stats = commerceStore.loadStats();

@@ -1,6 +1,12 @@
 import { SimService } from './SimService.js';
 import commerceStore from '../../stores/CommerceStore.js';
 import { instanceIdFromHouseRow } from '../../acl/building-identity.js';
+import {
+    listCommercializableWindmills,
+    getSupplyBuildingRow,
+    updateSupplyBuildingFields,
+    listWindmillSupplyViews,
+} from '../../acl/supply.js';
 
 const STOCKABLE_PRODUCTS = ['wheat', 'carrot', 'cabbage', 'wood', 'dattes'];
 const ALL_PRODUCTS = ['wheat', 'carrot', 'cabbage', 'wood', 'dattes'];
@@ -330,16 +336,14 @@ export class CommerceService extends SimService {
         return true;
     }
 
-    async getTotalWindmillStock(housesStore, productId) {
-        if (!housesStore || !this.isStockable(productId)) return 0;
-        
+    async getTotalWindmillStock(productId) {
+        if (!this.isStockable(productId)) return 0;
+
         try {
-            // Only count stock from commercializable windmills
-            const windmills = await this.getCommercializableWindmills(housesStore);
-            
+            const windmills = await this.getCommercializableWindmills();
             const stockKey = this.getStockKey(productId);
             if (!stockKey) return 0;
-            
+
             let totalStock = 0;
             for (const windmill of windmills) {
                 const stocks = windmill.stocks || {};
@@ -347,7 +351,7 @@ export class CommerceService extends SimService {
                     totalStock += stocks[stockKey] || 0;
                 }
             }
-            
+
             return totalStock;
         } catch (error) {
             console.warn(`[CommerceService] Error getting windmill stock for ${productId}:`, error);
@@ -355,39 +359,21 @@ export class CommerceService extends SimService {
         }
     }
 
-    /**
-     * Get all commercializable windmills (active and commercializeEnabled)
-     * @param {HousesStore} housesStore - Database store
-     * @returns {Promise<Array>} Array of commercializable windmills
-     */
-    async getCommercializableWindmills(housesStore) {
-        if (!housesStore) return [];
-
+    /** @returns {Promise<Array>} Commercializable windmill supply views. */
+    async getCommercializableWindmills() {
         try {
-            const allHouses = await housesStore.listAllHouses();
-            const windmills = allHouses.filter(house => {
-                const type = house.type || '';
-                return type.includes('Windmill') || type.includes('windmill');
-            });
-
-            // Filter only active and commercialized windmills
-            return windmills.filter(windmill => {
-                const isActive = windmill.isActive !== false; // Default to true
-                const commercializeEnabled = windmill.commercializeEnabled !== false; // Default to true
-                return isActive && commercializeEnabled;
-            });
+            return listCommercializableWindmills();
         } catch (error) {
             console.warn('[CommerceService] Error getting commercializable windmills:', error);
             return [];
         }
     }
 
-    async addToWindmillStock(housesStore, productId, quantity, partnerId = null) {
-        if (!housesStore || quantity <= 0 || !this.isStockable(productId)) return null;
+    async addToWindmillStock(productId, quantity, partnerId = null) {
+        if (quantity <= 0 || !this.isStockable(productId)) return null;
 
         try {
-            // Only use commercializable windmills for imports
-            const windmills = await this.getCommercializableWindmills(housesStore);
+            const windmills = await this.getCommercializableWindmills();
 
             if (windmills.length === 0) {
                 console.warn('[CommerceService] No commercializable windmills available for import');
@@ -399,148 +385,138 @@ export class CommerceService extends SimService {
 
             const firstWindmill = windmills[0];
             const windmillId = instanceIdFromHouseRow(firstWindmill);
-            const windmillData = await housesStore.getHouse(windmillId);
+            const windmillData = await getSupplyBuildingRow(windmillId);
             if (!windmillData) {
                 console.warn(`[CommerceService] Windmill not found: ${windmillId}`);
                 return null;
             }
 
             const stocks = windmillData.stocks || {};
-            // Wood is not food, so don't add it to food total
             const isFood = productId !== 'wood';
             const updatedStocks = {
                 ...stocks,
                 [stockKey]: (stocks[stockKey] || 0) + quantity,
-                food: isFood ? (stocks.food || 0) + quantity : (stocks.food || 0)
+                food: isFood ? (stocks.food || 0) + quantity : (stocks.food || 0),
             };
 
             const existingLastImport = windmillData.lastImport || {};
             const lastImport = {
                 ...existingLastImport,
                 [stockKey]: (existingLastImport[stockKey] || 0) + quantity,
-                total: (existingLastImport.total || 0) + quantity
+                total: (existingLastImport.total || 0) + quantity,
             };
 
-            // Update lastImportDetails with partner information
             const existingLastImportDetails = windmillData.lastImportDetails || {};
             const lastImportDetails = { ...existingLastImportDetails };
 
             if (partnerId) {
-                // Get partner name
                 const partner = this.getPartner(partnerId);
                 const partnerName = partner ? partner.name : partnerId;
 
-                // Initialize product array if it doesn't exist
                 if (!lastImportDetails[stockKey]) {
                     lastImportDetails[stockKey] = [];
                 }
 
-                // Check if partner already exists in the array for this product
-                const existingPartnerIndex = lastImportDetails[stockKey].findIndex(p => p.partnerId === partnerId);
+                const existingPartnerIndex = lastImportDetails[stockKey].findIndex(
+                    (p) => p.partnerId === partnerId
+                );
 
                 if (existingPartnerIndex >= 0) {
-                    // Update existing partner entry
                     lastImportDetails[stockKey][existingPartnerIndex].quantity += quantity;
                 } else {
-                    // Add new partner entry
                     lastImportDetails[stockKey].push({
-                        partnerId: partnerId,
-                        partnerName: partnerName,
-                        quantity: quantity
+                        partnerId,
+                        partnerName,
+                        quantity,
                     });
                 }
             }
 
-            await housesStore.updateHouseFields(windmillId, {
+            await updateSupplyBuildingFields(windmillId, {
                 stocks: updatedStocks,
-                lastImport: lastImport,
-                lastImportDetails: lastImportDetails
+                lastImport,
+                lastImportDetails,
             });
 
-            return {
-                windmillId,
-                addedQuantity: quantity
-            };
+            return { windmillId, addedQuantity: quantity };
         } catch (error) {
             console.warn(`[CommerceService] Error adding to windmill stock for ${productId}:`, error);
             return null;
         }
     }
 
-    async reduceWindmillStock(housesStore, productId, quantity, partnerId = null) {
-        if (!housesStore || quantity <= 0 || !this.isStockable(productId)) return false;
-        
+    async reduceWindmillStock(productId, quantity, partnerId = null) {
+        if (quantity <= 0 || !this.isStockable(productId)) return false;
+
         try {
-            // Only use commercializable windmills
-            const windmills = await this.getCommercializableWindmills(housesStore);
-            
+            const windmills = await this.getCommercializableWindmills();
+
             if (windmills.length === 0) {
                 console.warn('[CommerceService] No commercializable windmills available for export');
                 return false;
             }
-            
+
             const stockKey = this.getStockKey(productId);
             if (!stockKey) return false;
-            
+
             let remaining = quantity;
-            const exportDetailsByWindmill = {};
-            
+
             for (const windmill of windmills) {
                 if (remaining <= 0) break;
-                
+
                 const windmillId = instanceIdFromHouseRow(windmill);
-                const stocks = windmill.stocks || {};
+                const row = await getSupplyBuildingRow(windmillId);
+                const stocks = row?.stocks || windmill.stocks || {};
                 const currentStock = stocks[stockKey] || 0;
-                
+
                 if (currentStock > 0) {
                     const toReduce = Math.min(remaining, currentStock);
                     const newStock = currentStock - toReduce;
                     remaining -= toReduce;
-                    
-                    // Wood is not food, so don't subtract it from food total
+
                     const isFood = productId !== 'wood';
                     const updatedStocks = {
                         ...stocks,
                         [stockKey]: newStock,
-                        food: isFood ? Math.max(0, (stocks.food || 0) - toReduce) : (stocks.food || 0)
+                        food: isFood
+                            ? Math.max(0, (stocks.food || 0) - toReduce)
+                            : stocks.food || 0,
                     };
-                    
-                    // Track export details by partner
+
                     if (partnerId) {
-                        const existingLastExportDetails = windmill.lastExportDetails || {};
+                        const existingLastExportDetails = row?.lastExportDetails || {};
                         const lastExportDetails = { ...existingLastExportDetails };
-                        
+
                         if (!lastExportDetails[stockKey]) {
                             lastExportDetails[stockKey] = [];
                         }
-                        
+
                         const partner = this.getPartner(partnerId);
                         const partnerName = partner ? partner.name : partnerId;
-                        
-                        const existingPartnerIndex = lastExportDetails[stockKey].findIndex(p => p.partnerId === partnerId);
-                        
+                        const existingPartnerIndex = lastExportDetails[stockKey].findIndex(
+                            (p) => p.partnerId === partnerId
+                        );
+
                         if (existingPartnerIndex >= 0) {
                             lastExportDetails[stockKey][existingPartnerIndex].quantity += toReduce;
                         } else {
                             lastExportDetails[stockKey].push({
-                                partnerId: partnerId,
-                                partnerName: partnerName,
-                                quantity: toReduce
+                                partnerId,
+                                partnerName,
+                                quantity: toReduce,
                             });
                         }
-                        
-                        await housesStore.updateHouseFields(windmillId, {
+
+                        await updateSupplyBuildingFields(windmillId, {
                             stocks: updatedStocks,
-                            lastExportDetails: lastExportDetails
+                            lastExportDetails,
                         });
                     } else {
-                        await housesStore.updateHouseFields(windmillId, {
-                            stocks: updatedStocks
-                        });
+                        await updateSupplyBuildingFields(windmillId, { stocks: updatedStocks });
                     }
                 }
             }
-            
+
             return remaining === 0;
         } catch (error) {
             console.warn(`[CommerceService] Error reducing windmill stock for ${productId}:`, error);
@@ -548,7 +524,7 @@ export class CommerceService extends SimService {
         }
     }
 
-    async processProductImport({ productId, housesStore, time, quantity = 1, conditions = null, partnerId = null }) {
+    async processProductImport({ productId, time, quantity = 1, conditions = null, partnerId = null }) {
         const config = this.getProductConfig(productId);
         if (!config) {
             console.warn(`[CommerceService] No config found for product: ${productId}`);
@@ -599,8 +575,8 @@ export class CommerceService extends SimService {
         }
 
         let stockAdded = false;
-        if (housesStore && this.isStockable(productId)) {
-            const stockResult = await this.addToWindmillStock(housesStore, productId, quantity, partnerId);
+        if (this.isStockable(productId)) {
+            const stockResult = await this.addToWindmillStock(productId, quantity, partnerId);
             stockAdded = stockResult !== null;
         }
 
@@ -620,7 +596,7 @@ export class CommerceService extends SimService {
         };
     }
 
-    async processProductExport({ productId, housesStore, time, quantity = 1, conditions = null, partnerId = null }) {
+    async processProductExport({ productId, time, quantity = 1, conditions = null, partnerId = null }) {
         const config = this.getProductConfig(productId);
         if (!config) {
             console.warn(`[CommerceService] No config found for product: ${productId}`);
@@ -637,7 +613,7 @@ export class CommerceService extends SimService {
             }
         }
 
-        const availableStock = await this.getTotalWindmillStock(housesStore, productId);
+        const availableStock = await this.getTotalWindmillStock(productId);
         
         if (!this.canExportProduct(productId, quantity, availableStock, conditions)) {
             return null;
@@ -650,7 +626,7 @@ export class CommerceService extends SimService {
         if (!globalObj.budgetManager) return null;
 
         if (this.isStockable(productId)) {
-            const stockReduced = await this.reduceWindmillStock(housesStore, productId, quantity, partnerId);
+            const stockReduced = await this.reduceWindmillStock(productId, quantity, partnerId);
             if (!stockReduced) {
                 console.warn(`[CommerceService] Failed to reduce windmill stock for ${productId}`);
                 return null;
@@ -700,27 +676,22 @@ export class CommerceService extends SimService {
         };
     }
 
-    async resetWindmillImportsDisplay(housesStore) {
-        if (!housesStore) return;
-        
+    async resetWindmillImportsDisplay() {
         try {
-            const allHouses = await housesStore.listAllHouses();
-            const windmills = allHouses.filter(house => {
-                const type = house.type || '';
-                return type.includes('Windmill') || type.includes('windmill');
-            });
-            
+            const windmills = await listWindmillSupplyViews();
+
             for (const windmill of windmills) {
                 const windmillId = instanceIdFromHouseRow(windmill);
                 try {
-                    const windmillData = await housesStore.getHouse(windmillId);
+                    const windmillData = await getSupplyBuildingRow(windmillId);
                     if (windmillData && windmillData.lastImport !== undefined) {
-                        await housesStore.updateHouseFields(windmillId, {
+                        await updateSupplyBuildingFields(windmillId, {
                             lastImport: { wheat: 0, carrot: 0, cabbage: 0, wood: 0, dattes: 0, total: 0 },
-                            lastImportDetails: {}
+                            lastImportDetails: {},
                         });
                     }
-                } catch (error) {
+                } catch (_error) {
+                    // preserve silent failure per windmill
                 }
             }
         } catch (error) {
@@ -728,7 +699,7 @@ export class CommerceService extends SimService {
         }
     }
 
-    async simulate(city, housesStore, time = 0) {
+    async simulate(city, _housesStore, time = 0) {
         if (typeof window === 'undefined' || !window.TimeManager) {
             return { imports: [], exports: [] };
         }
@@ -792,10 +763,9 @@ export class CommerceService extends SimService {
                         
                         const importResult = await this.processProductImport({
                             productId: importTrade.productId,
-                            housesStore,
                             time,
                             quantity,
-                            partnerId: partner.id
+                            partnerId: partner.id,
                         });
                         if (importResult) {
                             imports.push(importResult);
@@ -811,10 +781,9 @@ export class CommerceService extends SimService {
                         
                         const exportResult = await this.processProductExport({
                             productId: exportTrade.productId,
-                            housesStore,
                             time,
                             quantity,
-                            partnerId: partner.id
+                            partnerId: partner.id,
                         });
                         if (exportResult) {
                             exports.push(exportResult);
@@ -831,7 +800,7 @@ export class CommerceService extends SimService {
         // Reset windmill imports display only at the start of a new month (first day)
         // This allows imports to be visible in the info panel during the month
         if (timeInfo.dayInMonth === 1 && timeInfo.monthIndex !== this.lastResetMonth) {
-            await this.resetWindmillImportsDisplay(housesStore);
+            await this.resetWindmillImportsDisplay();
             this.lastResetMonth = timeInfo.monthIndex;
         }
 

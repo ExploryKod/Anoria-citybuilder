@@ -56,6 +56,8 @@ export class DexieSupplyBuildingRepository {
       lastImportDetails: house.lastImportDetails ?? null,
       salesToMarket: house.salesToMarket || [],
       salesToWindmill: house.salesToWindmill || [],
+      isActive: house.isActive !== false,
+      commercializeEnabled: house.commercializeEnabled !== false,
     });
   }
 
@@ -192,6 +194,15 @@ export class DexieSupplyBuildingRepository {
 
   async saveMarketFlags(buildingId, flags) {
     await this.#putFields(buildingId, flags);
+  }
+
+  async findRowById(buildingId) {
+    if (!buildingId) return null;
+    return db.houses.get(buildingId);
+  }
+
+  async updateBuildingFields(buildingId, fields) {
+    await this.#putFields(buildingId, fields);
   }
 
   async findMarkets() {

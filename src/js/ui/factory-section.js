@@ -4,6 +4,12 @@ import {
     instanceIdFromHouseRow,
     displayLabelFromHouseRow,
 } from '../acl/building-identity.js';
+import {
+    listCityFactories,
+    listNatureResources,
+    getFactoryById,
+    updateFactoryFields,
+} from '../acl/supply.js';
 
 function factoryInstanceId(factory) {
     return instanceIdFromHouseRow(factory);
@@ -23,15 +29,10 @@ class FactorySectionManager {
     constructor() {
         this.factories = [];
         this.naturalResources = [];
-        this.housesStore = null;
         this.naturalResourcesExpanded = true; // Par défaut, le panneau est ouvert
         this.currentTab = 'factories'; // 'factories' ou 'production-journal'
         this.selectedFactoryId = 'all'; // ID de la factory sélectionnée, 'all' pour toutes
         this.selectedJournalFactoryId = 'all'; // ID de la factory sélectionnée dans le journal, 'all' pour toutes
-    }
-    
-    setHousesStore(housesStore) {
-        this.housesStore = housesStore;
     }
     
     async init() {
@@ -140,24 +141,8 @@ class FactorySectionManager {
     }
     
     async loadFactories() {
-        if (!this.housesStore) {
-            if (window.app && window.app.housesStore) {
-                this.housesStore = window.app.housesStore;
-            } else if (window.housesStore) {
-                this.housesStore = window.housesStore;
-            } else if (window.game && window.game.housesStore) {
-                this.housesStore = window.game.housesStore;
-            } else {
-                return;
-            }
-        }
-        
         try {
-            const allHouses = await this.housesStore.listAllHouses();
-            const filteredFactories = allHouses.filter(house => {
-                const type = house.type || '';
-                return type.includes('Winery-001');
-            });
+            const filteredFactories = await listCityFactories();
             
             // Éviter les doublons basés sur le nom de la factory
             const uniqueFactories = [];
@@ -171,13 +156,9 @@ class FactorySectionManager {
             });
             
             this.factories = uniqueFactories;
-            
-            // Charger les ressources naturelles (trees et boulders)
-            this.naturalResources = allHouses.filter(house => {
-                const category = house.category || '';
-                return category === 'nature';
-            });
-            
+
+            this.naturalResources = await listNatureResources();
+
             this.render();
         } catch (error) {
         }
@@ -279,15 +260,10 @@ class FactorySectionManager {
         }
         
         // Recharger les ressources naturelles depuis IndexedDB pour avoir les données à jour
-        if (this.housesStore) {
-            try {
-                const allHouses = await this.housesStore.listAllHouses();
-                this.naturalResources = allHouses.filter(house => {
-                    const category = house.category || '';
-                    return category === 'nature';
-                });
-            } catch (error) {
-            }
+        try {
+            this.naturalResources = await listNatureResources();
+        } catch (_error) {
+            // preserve silent failure
         }
         
         // Calculer les totaux par ressource
@@ -369,15 +345,13 @@ class FactorySectionManager {
         
         // Recharger les données depuis IndexedDB pour avoir les données à jour (notamment employees et productWorkerDistribution)
         let factoryData = factory;
-        if (this.housesStore) {
-            try {
-                const freshData = await this.housesStore.getHouse(factoryInstanceId(factory));
-                if (freshData) {
-                    factoryData = freshData;
-                }
-            } catch (error) {
-                console.warn('[FactorySectionManager] Failed to reload factory data:', error);
+        try {
+            const freshData = await getFactoryById(factoryInstanceId(factory));
+            if (freshData) {
+                factoryData = freshData;
             }
+        } catch (error) {
+            console.warn('[FactorySectionManager] Failed to reload factory data:', error);
         }
         
         const rawMaterials = factoryData.rawMaterials || {};
@@ -834,13 +808,9 @@ class FactorySectionManager {
     }
     
     async updateFactorySetting(factoryId, setting, value) {
-        if (!this.housesStore) {
-            return;
-        }
-        
         try {
-            await this.housesStore.updateHouseFields(factoryId, {
-                [setting]: value
+            await updateFactoryFields(factoryId, {
+                [setting]: value,
             });
             
             const factory = this.factories.find((f) => factoryInstanceId(f) === factoryId);
@@ -857,13 +827,8 @@ class FactorySectionManager {
      * @param {string} productKey - Clé du produit (ex: 'wood', 'furniture')
      */
     async recruitWorkerForProduct(factoryId, productKey) {
-        if (!this.housesStore) {
-            return;
-        }
-
         try {
-            // Récupérer les données actuelles de la factory depuis IndexedDB
-            const factoryData = await this.housesStore.getHouse(factoryId);
+            const factoryData = await getFactoryById(factoryId);
             if (!factoryData) {
                 return;
             }
@@ -904,9 +869,9 @@ class FactorySectionManager {
             };
 
             // Sauvegarder dans IndexedDB : workers alloués + pourcentages de production
-            await this.housesStore.updateHouseFields(factoryId, {
+            await updateFactoryFields(factoryId, {
                 productWorkerDistribution: newDistribution,
-                productProductionPercentages: newProductionPercentages
+                productProductionPercentages: newProductionPercentages,
             });
 
             // Mettre à jour les données locales
@@ -1268,15 +1233,7 @@ function initFactorySection() {
     if (!factorySection) return;
     
     const manager = new FactorySectionManager();
-    
-    if (window.app && window.app.housesStore) {
-        manager.setHousesStore(window.app.housesStore);
-    } else if (window.housesStore) {
-        manager.setHousesStore(window.housesStore);
-    } else if (window.game && window.game.housesStore) {
-        manager.setHousesStore(window.game.housesStore);
-    }
-    
+
     const observer = new MutationObserver(() => {
         if (factorySection.classList.contains('active')) {
             // Réinitialiser les event listeners quand la section devient active
@@ -1292,21 +1249,6 @@ function initFactorySection() {
     }
     
     window.factorySectionManager = manager;
-    
-    const checkHousesStore = setInterval(() => {
-        if (window.app && window.app.housesStore) {
-            manager.setHousesStore(window.app.housesStore);
-            clearInterval(checkHousesStore);
-        } else if (window.housesStore) {
-            manager.setHousesStore(window.housesStore);
-            clearInterval(checkHousesStore);
-        } else if (window.game && window.game.housesStore) {
-            manager.setHousesStore(window.game.housesStore);
-            clearInterval(checkHousesStore);
-        }
-    }, 100);
-    
-    setTimeout(() => clearInterval(checkHousesStore), 5000);
 }
 
 if (document.readyState === 'loading') {

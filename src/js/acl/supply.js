@@ -4,10 +4,12 @@
  * Do not import `contexts/supply/domain/**` from UI or SimServices.
  */
 
-export {
+import {
   createSupplyContext,
   getOrCreateSupplyContext,
 } from '../../composition/createSupplyContext.js';
+
+export { createSupplyContext, getOrCreateSupplyContext };
 
 export { isWithinMarketRange, manhattanDistance, findHousesInMarketRange } from '../../contexts/supply/domain/policies/MarketRangePolicy.js';
 
@@ -51,4 +53,52 @@ export function toSupplySeason(legacySeason) {
 export function toSupplyMonth(legacyMonth) {
   if (!legacyMonth || typeof legacyMonth !== 'string') return null;
   return LEGACY_MONTH_TO_SUPPLY[legacyMonth] ?? null;
+}
+
+/** Windmill DTOs for storage / commerce UI (stocks + export flags). */
+export async function listWindmillSupplyViews() {
+  return getOrCreateSupplyContext().listWindmillSupplyViews();
+}
+
+/** City map cells with Supply fields (farms, markets, houses, …). */
+export async function listSupplyMapBuildings() {
+  return getOrCreateSupplyContext().listSupplyMapBuildings();
+}
+
+/** Factory rows (Winery-001) for factory-section UI. */
+export async function listCityFactories() {
+  return getOrCreateSupplyContext().listCityFactories();
+}
+
+/** Nature spawns (trees, boulders) for factory-section UI. */
+export async function listNatureResources() {
+  return getOrCreateSupplyContext().listNatureResources();
+}
+
+/** Full factory row for admin UI edits. */
+export async function getFactoryById(factoryId) {
+  return getOrCreateSupplyContext().getFactoryById(factoryId);
+}
+
+/** Patch factory row fields (settings, worker distribution). */
+export async function updateFactoryFields(factoryId, fields) {
+  return getOrCreateSupplyContext().updateFactoryFields(factoryId, fields);
+}
+
+/** Windmills eligible for partner export (active + commercialize enabled). */
+export async function listCommercializableWindmills() {
+  const windmills = await listWindmillSupplyViews();
+  return windmills.filter(
+    (windmill) => windmill.isActive && windmill.commercializeEnabled
+  );
+}
+
+/** Raw Dexie row for commerce windmill import/export metadata. */
+export async function getSupplyBuildingRow(buildingId) {
+  return getOrCreateSupplyContext().getSupplyBuildingRow(buildingId);
+}
+
+/** Patch supply-related row fields (stocks, lastImport, market flags, …). */
+export async function updateSupplyBuildingFields(buildingId, fields) {
+  return getOrCreateSupplyContext().updateSupplyBuildingFields(buildingId, fields);
 }

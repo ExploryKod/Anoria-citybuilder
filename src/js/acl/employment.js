@@ -11,6 +11,10 @@ import {
 import { getAllSectorPriorities, getDefaultEmployees } from '../game/modules/EmployeeHelper.js';
 import { synchronizeFactoryWorkerDistribution } from '../../contexts/employment/infrastructure/runtime/synchronizeFactoryWorkerDistribution.js';
 import {
+  getBuildingById,
+  updateBuildingFields,
+} from './construction.js';
+import {
   isHouseType,
   isRoadType,
 } from '../../contexts/employment/domain/policies/BuildingRolePolicy.js';
@@ -59,4 +63,46 @@ export async function syncEmploymentAfterBuildingChange(scene, city, buildingTyp
     await redistributeCityEmployment();
   }
   await scene.refreshEmploymentPresentation(city);
+}
+
+/**
+ * Idempotent legacy schema migration for `employees` on existing rows.
+ * @param {string} instanceId
+ * @param {string} buildingType
+ */
+export async function ensureBuildingEmployeesSchema(instanceId, buildingType) {
+  const buildingData = await getBuildingById(instanceId);
+  if (!buildingData) return;
+
+  if (!buildingData.employees) {
+    await updateBuildingFields(instanceId, {
+      employees: getDefaultEmployees(buildingType),
+    });
+    return;
+  }
+
+  const employees = buildingData.employees;
+  const needsUpdate =
+    employees.category !== undefined ||
+    employees.worker_need === undefined ||
+    employees.elite_need === undefined;
+
+  if (!needsUpdate) return;
+
+  const defaultEmployees = getDefaultEmployees(buildingType);
+  await updateBuildingFields(instanceId, {
+    employees: {
+      priority:
+        employees.priority !== undefined ? employees.priority : defaultEmployees.priority,
+      worker_need: defaultEmployees.worker_need,
+      elite_need: defaultEmployees.elite_need,
+      worker: employees.worker || 0,
+      elite: employees.elite || 0,
+      sector:
+        employees.category !== undefined
+          ? employees.category
+          : employees.sector || defaultEmployees.sector,
+      salary: employees.salary || 0,
+    },
+  });
 }

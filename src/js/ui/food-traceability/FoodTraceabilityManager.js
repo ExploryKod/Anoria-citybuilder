@@ -1,7 +1,6 @@
 /**
  * FoodTraceabilityManager - Gère l'affichage de la traçabilité alimentaire
  */
-import housesStore from "../../stores/HousesStore.js";
 import { getOrCreateSupplyContext } from "../../acl/supply.js";
 import { tryResolveBuildingInstanceIdFromRef } from "../../acl/building-identity.js";
 
