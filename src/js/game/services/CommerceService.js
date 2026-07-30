@@ -699,7 +699,7 @@ export class CommerceService extends SimService {
         }
     }
 
-    async simulate(city, _housesStore, time = 0) {
+    async simulate(city, time = 0) {
         if (typeof window === 'undefined' || !window.TimeManager) {
             return { imports: [], exports: [] };
         }

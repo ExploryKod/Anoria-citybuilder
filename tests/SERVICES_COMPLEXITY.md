@@ -9,7 +9,7 @@
 #### Points de complexité :
 
 1. **Dépendances multiples** ⚠️
-   - `HousesStore` (IndexedDB) - Déjà maîtrisé ✅
+   - Dexie `houses` table (IndexedDB) - Accès via ACL Construction / BC repos ✅
    - `TimeManager` - Calculs de temps/saisons
    - `FoodTraceabilityService` - Traçabilité (peut être mocké)
    - `checkRoadAccess` (ModuleHelper) - Déjà testé ✅
@@ -58,7 +58,7 @@
 #### Points de complexité :
 
 1. **Dépendances** ⚠️
-   - `HousesStore` (IndexedDB) - Déjà maîtrisé ✅
+   - Dexie `houses` table (IndexedDB) - Accès via ACL Construction / BC repos ✅
    - `TimeManager` - Calculs de temps (moins critique)
    - `getSectorPriority`, `getAllSectorPriorities` (EmployeeHelper) - localStorage
    - `checkRoadAccess` (ModuleHelper) - Déjà testé ✅

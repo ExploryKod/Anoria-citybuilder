@@ -59,7 +59,7 @@ Tick simulation : `createGameRuntime` → system `parcels.roadAccess` (filet `Re
 - Paiement / budget (reste `addHouseAndPay` dans game.js)
 - Meshes Three.js / `city.tiles` (scene.js)
 - Évolution des maisons, food, emploi
-- Liste `markets` en zone (hors Parcels, encore HousesStore)
+- Liste `markets` en zone via Supply BC (`listSupplyMapBuildings`)
 
 ## Infrastructure (adapters)
 

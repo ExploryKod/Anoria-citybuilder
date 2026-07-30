@@ -76,3 +76,13 @@ export async function getBuildingField(instanceId, key) {
 export async function incrementBuildingField(params) {
   return getOrCreateConstructionContext().incrementBuildingField(params);
 }
+
+/** All building rows (orphan detection, events). */
+export async function listAllBuildingRows() {
+  return getOrCreateConstructionContext().listAllBuildingRows();
+}
+
+/** Hard delete — use `syncRemovedBuilding` from Parcels when neighbor refresh is needed. */
+export async function removeBuildingRecord(instanceId) {
+  return getOrCreateConstructionContext().removeBuildingRecord(instanceId);
+}

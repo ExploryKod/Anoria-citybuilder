@@ -106,7 +106,6 @@ describe('createGameRuntime', () => {
     await runtime.runSimulation({
       time: 3,
       city: { size: 1, tiles: [[]] },
-      housesStore: { listAllHouses: async () => [] },
     });
 
     expect(parcels.calls()).toBe(1);

@@ -20,8 +20,7 @@ Non-residential buildings (farms, markets, …) are **excluded** even if they ca
 | Caller | Entry |
 |---|---|
 | `scene.js` | `housing.getCityPopulationSummary()` (injected context) |
-| UI modules (work, commerce, budget) | `getCityTotalPopulation(housesStore)` in `src/js/acl/housing.js` |
-| `HousesStore.getGlobalPopulation()` | `@deprecated` — delegates to Housing query |
+| UI modules (work, commerce, budget) | `getCityTotalPopulation()` in `src/js/acl/housing.js` |
 
 ## vs Employment
 

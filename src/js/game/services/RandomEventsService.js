@@ -4,6 +4,8 @@
  */
 import { isEventsEnabled, getEventProbability, getDaysPerMonth } from '../../../config/events.js';
 import { SimService } from './SimService.js';
+import { listAllBuildingRows } from '../../acl/construction.js';
+import { syncRemovedBuilding } from '../../acl/parcels.js';
 import { instanceIdFromHouseRow } from '../../acl/building-identity.js';
 import { TimeManager } from '../utils/TimeManager.js';
 
@@ -68,9 +70,9 @@ export class RandomEventsService extends SimService {
     /**
      * Trouve une maison aléatoire à détruire
      */
-    async findRandomHouse(housesStore) {
+    async findRandomHouse() {
         try {
-            const allHouses = await housesStore.listAllHouses();
+            const allHouses = await listAllBuildingRows();
             
             // Filtrer pour ne garder que les maisons (House-Blue, House-Red, House-Purple, House-2Story)
             const houses = allHouses.filter(house => {
@@ -126,10 +128,10 @@ export class RandomEventsService extends SimService {
     /**
      * Déclenche un événement
      */
-    async triggerEvent(event, housesStore, city, time) {
+    async triggerEvent(event, city, time) {
         try {
             // Trouver une maison à détruire
-            const houseToDestroy = await this.findRandomHouse(housesStore);
+            const houseToDestroy = await this.findRandomHouse();
             
             if (!houseToDestroy) {
                 return;
@@ -159,7 +161,7 @@ export class RandomEventsService extends SimService {
             // Supprimer la maison de la base de données EN PREMIER
             const houseId = instanceIdFromHouseRow(houseToDestroy);
             if (houseId) {
-                await housesStore.deleteOneHouse(houseId);
+                await syncRemovedBuilding({ instanceId: houseId });
             }
 
             // Supprimer la maison de la scène (retirer le buildingId du tile)
@@ -266,7 +268,7 @@ export class RandomEventsService extends SimService {
     /**
      * Méthode principale appelée à chaque tour
      */
-    async simulate(city, housesStore, time = 0) {
+    async simulate(city, time = 0) {
         try {
             // Vérifier si les événements sont activés
             if (!isEventsEnabled()) {
@@ -299,7 +301,7 @@ export class RandomEventsService extends SimService {
             }
 
             // Vérifier s'il y a des maisons dans la ville
-            const allHouses = await housesStore.listAllHouses();
+            const allHouses = await listAllBuildingRows();
             const houses = allHouses.filter(house => {
                 const type = house.type || '';
                 return type.includes('House');
@@ -316,7 +318,7 @@ export class RandomEventsService extends SimService {
                 const event = this.selectRandomEvent();
                 
                 // Déclencher l'événement
-                await this.triggerEvent(event, housesStore, city, time);
+                await this.triggerEvent(event, city, time);
                 
                 // Mettre à jour le dernier tour d'événement
                 this.lastEventTurn = time;

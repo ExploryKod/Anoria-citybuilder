@@ -1,5 +1,5 @@
-import config from '../game/config.js';
-import { getOrCreateSupplyContext } from '../acl/supply.js';
+import { listWindmillSupplyViews, updateSupplyBuildingFields } from '../acl/supply.js';
+import { getBuildingById } from '../acl/construction.js';
 import {
     instanceIdFromHouseRow,
     displayLabelFromHouseRow,
@@ -16,15 +16,6 @@ function windmillInstanceId(windmill) {
 class StorageSectionManager {
     constructor() {
         this.windmills = [];
-        this.housesStore = null;
-    }
-    
-    /**
-     * Set the housesStore reference
-     * @param {HousesStore} housesStore - Database store
-     */
-    setHousesStore(housesStore) {
-        this.housesStore = housesStore;
     }
     
     /**
@@ -41,32 +32,17 @@ class StorageSectionManager {
     setupEventListeners() {
         // Event listeners will be added dynamically when windmills are rendered
     }
-
-    #resolveHousesStore() {
-        if (this.housesStore) return this.housesStore;
-        if (window.app && window.app.housesStore) return window.app.housesStore;
-        if (window.housesStore) return window.housesStore;
-        if (window.game && window.game.housesStore) return window.game.housesStore;
-        return null;
-    }
     
     /**
-     * Load all windmills — Supply stocks via BC; settings/employees via Dexie (commerce/UI).
+     * Load all windmills — Supply stocks via BC; settings/employees via Construction ACL.
      */
     async loadWindmills() {
-        this.housesStore = this.#resolveHousesStore();
-        if (!this.housesStore) {
-            console.warn('[StorageSection] housesStore not available');
-            return;
-        }
-        
         try {
-            const supply = getOrCreateSupplyContext();
-            const supplyViews = await supply.listWindmillSupplyViews();
+            const supplyViews = await listWindmillSupplyViews();
 
             this.windmills = [];
             for (const view of supplyViews) {
-                const raw = await this.housesStore.getHouse(view.buildingId);
+                const raw = await getBuildingById(view.buildingId);
                 this.windmills.push({
                     ...(raw || {}),
                     instanceId: view.buildingId,
@@ -79,9 +55,9 @@ class StorageSectionManager {
                     lastImportDetails: view.lastImportDetails || raw?.lastImportDetails || {},
                     lastExportDetails: raw?.lastExportDetails || {},
                     employees: raw?.employees,
-                    isActive: raw?.isActive,
+                    isActive: view.isActive ?? raw?.isActive,
                     distributionEnabled: raw?.distributionEnabled,
-                    commercializeEnabled: raw?.commercializeEnabled,
+                    commercializeEnabled: view.commercializeEnabled ?? raw?.commercializeEnabled,
                     distributionMonth: raw?.distributionMonth,
                 });
             }
@@ -342,13 +318,8 @@ class StorageSectionManager {
      * @param {*} value - Setting value
      */
     async updateWindmillSetting(windmillId, setting, value) {
-        if (!this.housesStore) {
-            console.warn('[StorageSection] Cannot update: housesStore not available');
-            return;
-        }
-        
         try {
-            await this.housesStore.updateHouseFields(windmillId, {
+            await updateSupplyBuildingFields(windmillId, {
                 [setting]: value
             });
             
@@ -383,15 +354,6 @@ function initStorageSection() {
     
     const manager = new StorageSectionManager();
     
-    // Try to get housesStore
-    if (window.app && window.app.housesStore) {
-        manager.setHousesStore(window.app.housesStore);
-    } else if (window.housesStore) {
-        manager.setHousesStore(window.housesStore);
-    } else if (window.game && window.game.housesStore) {
-        manager.setHousesStore(window.game.housesStore);
-    }
-    
     // Initialize when section becomes active
     const observer = new MutationObserver(() => {
         if (storageSection.classList.contains('active')) {
@@ -409,23 +371,6 @@ function initStorageSection() {
     
     // Make manager available globally
     window.storageSectionManager = manager;
-    
-    // Try to set housesStore from game if available
-    const checkHousesStore = setInterval(() => {
-        if (window.app && window.app.housesStore) {
-            manager.setHousesStore(window.app.housesStore);
-            clearInterval(checkHousesStore);
-        } else if (window.housesStore) {
-            manager.setHousesStore(window.housesStore);
-            clearInterval(checkHousesStore);
-        } else if (window.game && window.game.housesStore) {
-            manager.setHousesStore(window.game.housesStore);
-            clearInterval(checkHousesStore);
-        }
-    }, 100);
-    
-    // Stop checking after 5 seconds
-    setTimeout(() => clearInterval(checkHousesStore), 5000);
 }
 
 // Initialize when DOM is ready
@@ -434,4 +379,3 @@ if (document.readyState === 'loading') {
 } else {
     initStorageSection();
 }
-

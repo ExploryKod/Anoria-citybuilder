@@ -36,11 +36,15 @@ describe('ACL Budget — city building valuation (1b)', () => {
   });
 
   test('sums prices and keeps first price per type (legacy semantics)', async () => {
-    await db.houses.bulkAdd([
-      makeHouseRecord({ type: 'House-Blue', x: 1, y: 1, extra: { price: 10 } }),
-      makeHouseRecord({ type: 'House-Blue', x: 2, y: 2, extra: { price: 15 } }),
-      makeHouseRecord({ type: 'Farm-Wheat', x: 3, y: 3, extra: { price: 20 } }),
-    ]);
+    await db.houses.add(
+      makeHouseRecord({ type: 'House-Blue', x: 1, y: 1, extra: { price: 10 } })
+    );
+    await db.houses.add(
+      makeHouseRecord({ type: 'House-Blue', x: 2, y: 2, extra: { price: 15 } })
+    );
+    await db.houses.add(
+      makeHouseRecord({ type: 'Farm-Wheat', x: 3, y: 3, extra: { price: 20 } })
+    );
 
     expect(await getCityTotalBuildingValue()).toBe(45);
 

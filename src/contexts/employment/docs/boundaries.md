@@ -4,7 +4,7 @@ Employment is **downstream** of Housing for residential facts and **read-only** 
 
 ## Published facts consumed (not owned)
 
-From persisted house rows (today: `DexieEmploymentBuildingRepository` → HousesStore):
+From persisted house rows (today: `DexieEmploymentBuildingRepository` → Dexie `houses` table):
 
 | Field | Owner | Employment use |
 |---|---|---|

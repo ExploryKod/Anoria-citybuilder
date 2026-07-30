@@ -6,10 +6,9 @@
 import { WebSocketClient } from './WebSocketClient.js';
 
 export class MultiplayerManager {
-    constructor(game, scene, housesStore) {
+    constructor(game, scene) {
         this.game = game;
         this.scene = scene;
-        this.housesStore = housesStore;
         this.wsClient = null;
         this.isMultiplayer = false;
         this.remoteBuildings = new Map(); // Bâtiments placés par d'autres joueurs
@@ -904,9 +903,9 @@ export class MultiplayerManager {
 // Export singleton
 let multiplayerManager = null;
 
-export function getMultiplayerManager(game, scene, housesStore) {
+export function getMultiplayerManager(game, scene) {
     if (!multiplayerManager) {
-        multiplayerManager = new MultiplayerManager(game, scene, housesStore);
+        multiplayerManager = new MultiplayerManager(game, scene);
     }
     return multiplayerManager;
 }

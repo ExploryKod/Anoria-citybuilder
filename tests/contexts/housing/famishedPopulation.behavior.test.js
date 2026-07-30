@@ -78,7 +78,7 @@ describe('Housing — famished population', () => {
       });
     });
 
-    test('matches legacy HousesStore scenario (6 pop, 3 food)', async () => {
+    test('matches legacy scenario (6 pop, 3 food)', async () => {
       repo = new InMemoryFamishedRepository([
         residential('House-Blue-1-1', 'House-Blue', {
           pop: 6,

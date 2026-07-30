@@ -1,5 +1,5 @@
 /**
- * Behavior tests — canonical HousesStore records (BC Parcels)
+ * Behavior tests — canonical Dexie building records (BC Parcels)
  */
 
 import { describe, test, expect } from '@jest/globals';

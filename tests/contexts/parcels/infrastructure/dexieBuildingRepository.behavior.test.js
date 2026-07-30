@@ -7,8 +7,7 @@
 
 import 'fake-indexeddb/auto';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
-import db from '../../../../src/core/persistence/dexie/db.js';
-import { HouseStore } from '../../../../src/js/stores/HousesStore.js';
+import { clearBuildingsTable, seedBuilding, getBuildingRow } from '../../../helpers/buildingDb.js';
 import { DexieBuildingRepository } from '../../../../src/contexts/parcels/infrastructure/dexie/DexieBuildingRepository.js';
 import { UpdateNeighborsForBuilding } from '../../../../src/contexts/parcels/application/commands/UpdateNeighborsForBuilding.js';
 import { GetBuildingNeighbors } from '../../../../src/contexts/parcels/application/queries/GetBuildingNeighbors.js';
@@ -19,18 +18,15 @@ import { createBuildingInstanceId } from '../../../../src/shared/building-identi
 import { makeHouseRecord } from '../../../fixtures/buildingRecord.js';
 
 async function clearHousesTable() {
-  await db.open();
-  await db.houses.clear();
+  await clearBuildingsTable();
 }
 
 describe('DexieBuildingRepository — boundary UUID ↔ Dexie', () => {
-  let housesStore;
   /** @type {DexieBuildingRepository} */
   let repository;
 
   beforeEach(async () => {
-    await clearHousesTable();
-    housesStore = new HouseStore();
+    await clearBuildingsTable();
     repository = new DexieBuildingRepository();
   });
 
@@ -40,7 +36,7 @@ describe('DexieBuildingRepository — boundary UUID ↔ Dexie', () => {
 
   test('findById conserve instanceId UUID dans snapshot.id (avec x/y)', async () => {
     const record = makeHouseRecord({ type: 'House-Blue', x: 8, y: 10 });
-    await housesStore.addHouse(record);
+    await seedBuilding(record);
 
     const snapshot = await repository.findById(record.instanceId);
 
@@ -54,7 +50,7 @@ describe('DexieBuildingRepository — boundary UUID ↔ Dexie', () => {
 
   test('saveNeighbors persiste sous la clé UUID Dexie, pas sous type-x-y', async () => {
     const record = makeHouseRecord({ type: 'House-Blue', x: 8, y: 10 });
-    await housesStore.addHouse(record);
+    await seedBuilding(record);
 
     const roadNeighborId = createBuildingInstanceId();
     const neighbors = [
@@ -72,11 +68,11 @@ describe('DexieBuildingRepository — boundary UUID ↔ Dexie', () => {
     const snapshot = await repository.findById(record.instanceId);
     await repository.saveNeighbors(snapshot.id, neighbors);
 
-    const row = await housesStore.getHouse(record.instanceId);
+    const row = await getBuildingRow(record.instanceId);
     expect(row.neighbors).toHaveLength(1);
     expect(row.neighbors[0].isRoad).toBe(true);
 
-    const legacyRow = await housesStore.getHouse('House-Blue-8-10');
+    const legacyRow = await getBuildingRow('House-Blue-8-10');
     expect(legacyRow).toBeUndefined();
   });
 
@@ -99,31 +95,29 @@ describe('DexieBuildingRepository — boundary UUID ↔ Dexie', () => {
         ],
       },
     });
-    await housesStore.addHouse(record);
+    await seedBuilding(record);
 
     const snapshot = await repository.findById(record.instanceId);
     await repository.saveRoadAccess(snapshot.id, 1);
 
-    const row = await housesStore.getHouse(record.instanceId);
+    const row = await getBuildingRow(record.instanceId);
     expect(row.roads).toBe(1);
   });
 });
 
 describe('DexieBuildingRepository — use cases bout-en-bout (UUID)', () => {
-  let housesStore;
   let repository;
   let events;
   let houseInstanceId;
 
   beforeEach(async () => {
-    await clearHousesTable();
-    housesStore = new HouseStore();
+    await clearBuildingsTable();
     repository = new DexieBuildingRepository();
     events = new InMemoryDomainEventPublisher();
 
     const record = makeHouseRecord({ type: 'House-Blue', x: 8, y: 10 });
     houseInstanceId = record.instanceId;
-    await housesStore.addHouse(record);
+    await seedBuilding(record);
   });
 
   afterEach(async () => {
@@ -177,7 +171,7 @@ describe('DexieBuildingRepository — use cases bout-en-bout (UUID)', () => {
     expect(access.roadAccess.hasAccess).toBe(true);
     expect(access.roadAccess.roadCount).toBe(1);
 
-    const row = await housesStore.getHouse(houseInstanceId);
+    const row = await getBuildingRow(houseInstanceId);
     expect(row.roads).toBe(1);
   });
 });

@@ -36,3 +36,10 @@ export {
   setupRoadAccessIcons,
   clearRoadAccessIconViews,
 } from '../../contexts/parcels/infrastructure/presentation/roadAccessIcons.js';
+
+import { getOrCreateParcelsContext } from '../../composition/createParcelsContext.js';
+
+/** Delete building row + refresh neighbors / road access (Parcels BC). */
+export async function syncRemovedBuilding(params) {
+  return getOrCreateParcelsContext().syncRemovedBuilding(params);
+}

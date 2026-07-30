@@ -21,6 +21,7 @@ import {
     updateBuildingFields,
     getBuildingField,
     incrementBuildingField,
+    listAllBuildingRows,
 } from '../acl/construction.js';
 import { updateSupplyBuildingFields } from '../acl/supply.js';
 import {
@@ -51,7 +52,7 @@ import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
 
 const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
 
-export function createScene(housesStore, gameStore, assetManager, parcelsOption, supplyOption, housingOption) {
+export function createScene(gameStore, assetManager, parcelsOption, supplyOption, housingOption) {
     // BudgetManager will be set by the game initialization
 
     const scene = new THREE.Scene();
@@ -963,7 +964,6 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                                 await parcels.syncRemovedBuilding({ instanceId: currentInstanceId });
                             } catch (err) {
                                 console.warn('[Scene] Failed parcels remove for road', currentInstanceId, err);
-                                await housesStore.deleteOneHouse(currentInstanceId);
                             }
                             // Restore terrain mesh to grass
                             if (terrain[x] && terrain[x][y]) {
@@ -993,7 +993,6 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                                 await parcels.syncRemovedBuilding({ instanceId: currentInstanceId });
                             } catch (err) {
                                 console.warn('[Scene] Failed parcels remove for', currentInstanceId, err);
-                                await housesStore.deleteOneHouse(currentInstanceId);
                             }
                             removeInteractiveObject(buildings[x][y]);
                             buildings[x][y] = undefined;
@@ -1114,7 +1113,6 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                     /**
                      * Update market stocks of food in userData and in DB
                      * @param buildings
-                     * @param housesStore
                      * @param datas
                      * @returns {Promise<void>}
                      */
@@ -1471,7 +1469,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
         // Cleanup: Remove orphaned house records from IndexedDB (houses that don't exist in scene)
         // This ensures population is accurate and prevents ghost population from deleted houses
         try {
-            const allHousesInDb = await housesStore.listAllHouses();
+            const allHousesInDb = await listAllBuildingRows();
             const orphanedHouses = [];
             
             for (const house of allHousesInDb) {
@@ -1513,7 +1511,7 @@ export function createScene(housesStore, gameStore, assetManager, parcelsOption,
                     // Double-check that houseId is valid before deletion
                     if (houseId && typeof houseId === 'string') {
                         try {
-                            await housesStore.deleteOneHouse(houseId);
+                            await parcels.syncRemovedBuilding({ instanceId: houseId });
                         } catch (error) {
                             console.warn(`[Scene] Failed to delete orphaned house ${houseId}:`, error);
                         }

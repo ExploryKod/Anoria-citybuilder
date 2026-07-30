@@ -51,7 +51,7 @@ Le snapshot **remplaçait** l’id persisté par le label dérivé :
 
 1. `UpdateNeighborsForBuilding.execute(UUID)` → `findById(UUID)` → **OK** (lecture Dexie).
 2. `saveNeighbors(building.id, neighbors)` → écrit sous `"House-Blue-8-10"`.
-3. `HousesStore.updateHouseFields("House-Blue-8-10", …)` → `db.houses.get("House-Blue-8-10")` → **undefined**.
+3. `updateBuildingFields(instanceId, …)` via Construction ACL → `db.houses.get(instanceId)` — **ne plus** utiliser l’ancien id composite `House-Blue-8-10` comme clé PK.
 4. `updateHouseFields` retourne sans erreur (`if (!house) return;`).
 5. `neighbors` et `roads` **jamais mis à jour** en base.
 

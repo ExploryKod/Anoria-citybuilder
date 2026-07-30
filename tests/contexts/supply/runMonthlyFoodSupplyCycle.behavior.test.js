@@ -4,35 +4,28 @@
 
 import 'fake-indexeddb/auto';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
-import db from '../../../src/core/persistence/dexie/db.js';
 import { createSupplyContext, resetSupplyContextForTests } from '../../../src/composition/createSupplyContext.js';
 import { TimeManager } from '../../../src/js/game/utils/TimeManager.js';
 import { toSupplySeason, toSupplyMonth } from '../../../src/js/acl/supply.js';
-import { HouseStore } from '../../../src/js/stores/HousesStore.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 import { makeHouseRecord } from '../../fixtures/buildingRecord.js';
-
-async function clearHousesTable() {
-  await db.open();
-  await db.houses.clear();
-}
+import { clearBuildingsTable, seedBuilding, getBuildingRow } from '../../helpers/buildingDb.js';
+import { updateBuildingFields } from '../../../src/js/acl/construction.js';
 
 describe('Supply — RunMonthlyFoodSupplyCycle', () => {
-  let housesStore;
   let supply;
   let marketId;
 
   beforeEach(async () => {
     resetSupplyContextForTests();
-    await clearHousesTable();
-    housesStore = new HouseStore();
+    await clearBuildingsTable();
     supply = createSupplyContext();
     marketId = createBuildingInstanceId();
   });
 
   afterEach(async () => {
     resetSupplyContextForTests();
-    await clearHousesTable();
+    await clearBuildingsTable();
   });
 
   async function runAtTime(time) {
@@ -46,7 +39,7 @@ describe('Supply — RunMonthlyFoodSupplyCycle', () => {
   }
 
   test('sets isBuying true in autumn', async () => {
-    await housesStore.addHouse(
+    await seedBuilding(
       makeHouseRecord({
         instanceId: marketId,
         type: 'Market-Stall',
@@ -62,12 +55,12 @@ describe('Supply — RunMonthlyFoodSupplyCycle', () => {
 
     await runAtTime(8);
 
-    const marketData = await housesStore.getHouse(marketId);
+    const marketData = await getBuildingRow(marketId);
     expect(marketData.isBuying).toBe(true);
   });
 
   test('sets isBuying false outside autumn', async () => {
-    await housesStore.addHouse(
+    await seedBuilding(
       makeHouseRecord({
         instanceId: marketId,
         type: 'Market-Stall',
@@ -84,12 +77,12 @@ describe('Supply — RunMonthlyFoodSupplyCycle', () => {
 
     await runAtTime(6);
 
-    const marketData = await housesStore.getHouse(marketId);
+    const marketData = await getBuildingRow(marketId);
     expect(marketData.isBuying).toBe(false);
   });
 
   test('updates noFarmsNearby on markets', async () => {
-    await housesStore.addHouse(
+    await seedBuilding(
       makeHouseRecord({
         instanceId: marketId,
         type: 'Market-Stall',
@@ -105,10 +98,10 @@ describe('Supply — RunMonthlyFoodSupplyCycle', () => {
 
     await runAtTime(6);
 
-    expect((await housesStore.getHouse(marketId)).noFarmsNearby).toBe(true);
+    expect((await getBuildingRow(marketId)).noFarmsNearby).toBe(true);
 
     const farmNeighborId = createBuildingInstanceId();
-    await housesStore.updateHouseFields(marketId, {
+    await updateBuildingFields(marketId, {
       neighbors: [
         { name: 'roads', isRoad: true },
         {
@@ -124,6 +117,6 @@ describe('Supply — RunMonthlyFoodSupplyCycle', () => {
 
     await runAtTime(7);
 
-    expect((await housesStore.getHouse(marketId)).noFarmsNearby).toBe(false);
+    expect((await getBuildingRow(marketId)).noFarmsNearby).toBe(false);
   });
 });

@@ -15,11 +15,17 @@ export class GetCityBuildingValuation {
    */
   async execute() {
     const rows = await this.buildingInventory.listBuildingRows();
+    const sortedRows = [...rows].sort((a, b) => {
+      const ax = a.x ?? 0;
+      const bx = b.x ?? 0;
+      if (ax !== bx) return ax - bx;
+      return (a.y ?? 0) - (b.y ?? 0);
+    });
     let totalValue = 0;
     /** @type {Record<string, number>} */
     const pricesByType = {};
 
-    for (const row of rows) {
+    for (const row of sortedRows) {
       const price = row.price || 0;
       totalValue += price;
 

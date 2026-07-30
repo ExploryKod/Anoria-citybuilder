@@ -817,7 +817,7 @@ class BudgetManager {
      * Add salaries expense (salaire brut mensuel × population totale)
      * Called once per month on the first turn of each month
      * @param {number} salaryPerMonth - Salary per citizen per month (from workSectionManager)
-     * @param {number} population - Total population (from housesStore)
+ * @param {number} population - Total population (from Housing ACL)
      * @param {string} description - Optional custom description
      * @returns {Promise<Object>} Updated budget
      */

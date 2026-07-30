@@ -11,7 +11,6 @@ class AppRegistry {
         // Core game systems
         this.game = null;
         this.gameStore = null;
-        this.housesStore = null;
         
         // UI systems
         this.gameUI = null;
@@ -88,7 +87,6 @@ class AppRegistry {
         return {
             game: this.game,
             gameStore: this.gameStore,
-            housesStore: this.housesStore,
             gameUI: this.gameUI,
             popupManager: this.popupManager,
             objectivesTracker: this.objectivesTracker,

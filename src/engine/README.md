@@ -38,7 +38,7 @@ contexts/parcels/infrastructure/runtime/parcelsRoadAccessSystem.js
   → délègue à parcels.recalculateAllRoadAccess
 
 game.js → update()
-  → await runtime.runSimulation({ city, housesStore, time })
+  → await runtime.runSimulation({ city, time })
   → puis SimServices legacy (commerce, random events, …)
   → puis scene.update
 ```

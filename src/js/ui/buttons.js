@@ -38,9 +38,9 @@ function appRegister(name, instance) {
     }
 }
 import gameStore from "../stores/GameStore.js";
-import housesStore from "../stores/HousesStore.js";
 import { hasRoadAccessFromCount } from '../acl/parcels.js';
-import { getOrCreateSupplyContext } from '../acl/supply.js';
+import { listSupplyMapBuildings } from '../acl/supply.js';
+import { listAllBuildingRows } from '../acl/construction.js';
 import budgetManager from "../stores/BudgetManager.js";
 import { getCityBuildingValuation } from '../acl/budget.js';
 import AssetManager from "../meshs/AssetManager.js";
@@ -86,7 +86,7 @@ async function updateBudgetDisplay() {
         // Get building valuation (patrimoine bâti)
         const { totalValue: totalBuildingValue, pricesByType: buildingPrices } =
             await getCityBuildingValuation();
-        const houses = await housesStore.listAllHouses();
+        const houses = await listAllBuildingRows();
         
         // Analyze buildings by type and color
         const buildingAnalysis = {
@@ -112,7 +112,7 @@ async function updateBudgetDisplay() {
             else if (type.includes('roads')) buildingAnalysis.roads++;
         });
         
-        // Use actual building prices from housesStore
+        // Use actual building prices from city-assets valuation
         const housePrices = {
             red: buildingPrices['House-Red'] || 'N/A',
             blue: buildingPrices['House-Blue'] || 'N/A',
@@ -2284,7 +2284,6 @@ window.onload = async () => {
     
     // Register with AppRegistry (window.app) if available, else use direct window.* (backwards compatible)
     appRegister('gameStore', gameStore);
-    appRegister('housesStore', housesStore);
     
     // Show city size selection modal before creating game
     const selectionResult = await showCitySizeSelection();
@@ -2292,14 +2291,14 @@ window.onload = async () => {
     const multiplayerEnabled = selectionResult.multiplayer || false;
     const playerPseudo = selectionResult.pseudo || null;
     
-    const game = createGame(housesStore, gameStore, assetManager, selectedCitySize);
+    const game = createGame(gameStore, assetManager, selectedCitySize);
     appRegister('game', game);
     
     // Activer le multijoueur uniquement si l'utilisateur a explicitement créé/rejoint un salon
     if (multiplayerEnabled && playerPseudo && (selectionResult.action === 'create' || selectionResult.action === 'join')) {
         try {
             const { getMultiplayerManager } = await import('../multiplayer/MultiplayerManager.js');
-            const multiplayerManager = getMultiplayerManager(game, game.scene, housesStore);
+            const multiplayerManager = getMultiplayerManager(game, game.scene);
             
             // Déterminer l'action et les paramètres
             const action = selectionResult.action;
@@ -2586,14 +2585,7 @@ async function generateCityMap() {
         // Get all buildings via Supply BC (hasFood / marketTooFar + layout fields)
         let buildings = [];
         try {
-            const store = (housesStore && typeof housesStore.listAllHouses === 'function')
-                ? housesStore
-                : (window.housesStore || null);
-            if (!store) {
-                throw new Error('housesStore not available');
-            }
-            const supply = getOrCreateSupplyContext();
-            buildings = await supply.listSupplyMapBuildings();
+            buildings = await listSupplyMapBuildings();
         } catch (error) {
             console.warn('Could not load Supply map buildings:', error);
             buildings = [];

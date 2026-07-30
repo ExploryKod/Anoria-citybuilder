@@ -1,5 +1,5 @@
 import { TimeManager } from '../utils/TimeManager.js';
-import { getCityTotalPopulation } from '../../acl/housing.js';
+import { getCityTotalPopulation, clearPopulationWithoutRoadAccess } from '../../acl/housing.js';
 
 /**
  * Processes budget-related operations
@@ -111,10 +111,7 @@ export class BudgetProcessor {
                     salaryPerMonth = window.workSectionManager.salary;
                 }
                 
-                let totalPopulation = 0;
-                if (window.housesStore) {
-                    totalPopulation = await getCityTotalPopulation();
-                }
+                const totalPopulation = await getCityTotalPopulation();
                 
                 if (totalPopulation > 0 && salaryPerMonth > 0) {
                     const yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
@@ -190,11 +187,9 @@ export class BudgetProcessor {
             }
             
             // Process population/food logic
-            if (window.housesStore) {
-                const populationResult = await window.housesStore.processPopulationFoodLogic();
-                if (populationResult.totalPopulationLost > 0) {
-                    console.warn(`⚠️ ${populationResult.message}`);
-                }
+            const populationResult = await clearPopulationWithoutRoadAccess();
+            if (populationResult.totalPopulationLost > 0) {
+                console.warn(`⚠️ ${populationResult.message}`);
             }
             
             // Process loan payments

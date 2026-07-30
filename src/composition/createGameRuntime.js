@@ -85,7 +85,7 @@ export function createGameRuntime({
 
     /**
      * Un tick de simulation ECS (groupe `simulation`).
-     * @param {{ city?: object, housesStore?: object, time?: number }} [context]
+     * @param {{ city?: object, time?: number }} [context]
      */
     async runSimulation(context = {}) {
       await pipeline.runGroup('simulation', world, context);

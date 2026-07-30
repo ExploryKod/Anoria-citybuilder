@@ -90,4 +90,14 @@ export class DexieConstructionBuildingRepository {
       await db.houses.put(canonicalizeHouseRecord(row));
     }
   }
+
+  async listAllRows() {
+    return db.houses.toArray();
+  }
+
+  /** @param {string} instanceId */
+  async deleteById(instanceId) {
+    if (!instanceId) return;
+    await db.houses.delete(instanceId);
+  }
 }

@@ -71,6 +71,15 @@ export function createConstructionContext({
     async incrementBuildingField({ instanceId, field, increment, condition = false }) {
       return repository.incrementField(instanceId, field, increment, condition);
     },
+
+    async listAllBuildingRows() {
+      return repository.listAllRows();
+    },
+
+    /** Hard delete row only — prefer Parcels `syncRemovedBuilding` when adjacency matters. */
+    async removeBuildingRecord(instanceId) {
+      return repository.deleteById(instanceId);
+    },
   };
 }
 

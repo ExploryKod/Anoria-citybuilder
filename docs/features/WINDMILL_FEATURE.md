@@ -46,7 +46,7 @@ The windmill is an industry building that collects leftover food from all farms 
 The WindmillService follows the same pattern as FoodDistributionService:
 
 ```javascript
-WindmillService.simulate(city, housesStore, time)
+WindmillService.simulate(city, time)
   ↓
   Check if December
   ↓

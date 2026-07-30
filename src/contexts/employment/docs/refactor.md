@@ -18,7 +18,7 @@ Historique des slices DDD. **Comportement actuel** : [`presentation.md`](present
 
 ## Slice E (présentation consolidée)
 
-**Problème** : `scene.update` dupliquait la règle `no-work` (lecture directe `housesStore.getHouse`) en parallèle de `GetCityEmploymentSummary`, avec des timings différents (1re passe avant ECS) et des effets de bord (ferme : `continue` skip sprites saison).
+**Résolu** : `scene.update` utilisait autrefois `housesStore.getHouse` en parallèle de `GetCityEmploymentSummary`. Désormais : Employment BC read model + ACL Construction.
 
 **Changement** :
 
