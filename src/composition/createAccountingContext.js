@@ -1,7 +1,16 @@
 import { TimeManager } from '../js/game/utils/TimeManager.js';
 import { GetTreasuryBalance } from '../contexts/accounting/application/queries/treasury/GetTreasuryBalance.js';
+import { GetTreasurySnapshot } from '../contexts/accounting/application/queries/treasury/GetTreasurySnapshot.js';
+import { GetFinancialHealth } from '../contexts/accounting/application/queries/treasury/GetFinancialHealth.js';
+import { InitializeTreasury } from '../contexts/accounting/application/commands/treasury/InitializeTreasury.js';
+import { ForceReinitializeTreasury } from '../contexts/accounting/application/commands/treasury/ForceReinitializeTreasury.js';
+import { UpdateTreasuryTurn } from '../contexts/accounting/application/commands/treasury/UpdateTreasuryTurn.js';
+import { TreasuryLoanPortfolio } from '../contexts/accounting/application/services/TreasuryLoanPortfolio.js';
 import { GetCityLedgerYearComparison } from '../contexts/accounting/application/queries/city-ledger/GetCityLedgerYearComparison.js';
 import { GetGeneralLedger } from '../contexts/accounting/application/queries/journal/GetGeneralLedger.js';
+import { GetIncomeStatement } from '../contexts/accounting/application/queries/financial-statements/GetIncomeStatement.js';
+import { GetBalanceSheet } from '../contexts/accounting/application/queries/financial-statements/GetBalanceSheet.js';
+import { CityAssetsValuationAdapter } from '../contexts/accounting/infrastructure/adapters/shared/CityAssetsValuationAdapter.js';
 import { RecordLedgerEntry } from '../contexts/accounting/application/commands/journal/RecordLedgerEntry.js';
 import { ApplyTreasuryMovement } from '../contexts/accounting/application/commands/treasury/ApplyTreasuryMovement.js';
 import { RecordMaintenanceExpense } from '../contexts/accounting/application/services/RecordMaintenanceExpense.js';
@@ -28,6 +37,7 @@ import { LegacyYearEndBalanceAdapter } from '../contexts/accounting/infrastructu
 import { SessionJournalRepository } from '../contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalRepository.js';
 import { SessionJournalWriteAdapter } from '../contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalWriteAdapter.js';
 import { DexieTreasuryRepository } from '../contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryRepository.js';
+import { DexieTreasuryWriteAdapter } from '../contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryWriteAdapter.js';
 import { LegacyJournalRepository } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyJournalRepository.js';
 import { LegacyTreasuryRepository } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyTreasuryRepository.js';
 import { LegacyTreasuryWriteAdapter } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyTreasuryWriteAdapter.js';
@@ -38,8 +48,8 @@ import budgetManager from '../js/stores/BudgetManager.js';
 /**
  * Composition root — Accounting bounded context.
  *
- * Default: session journal buffer + Dexie treasury (Phase 3½ slice 1).
- * Inject legacy adapters via deps for regression tests against stores.
+ * Default: session journal buffer + Dexie treasury read/write (Phase 4).
+ * Inject legacy adapters via deps or createLegacyAccountingContext() for regression tests.
  *
  * @param {object} [deps]
  * @param {import('../contexts/accounting/application/ports/JournalRepository.js').JournalRepository} [deps.journalRepository]
@@ -48,12 +58,11 @@ import budgetManager from '../js/stores/BudgetManager.js';
  * @param {import('../contexts/accounting/application/ports/TreasuryWritePort.js').TreasuryWritePort} [deps.treasuryWritePort]
  * @param {import('../contexts/accounting/application/ports/GameTimePort.js').GameTimePort} [deps.gameTimePort]
  * @param {import('../js/stores/JournalManager.js').JournalManager} [deps.journalManager]
- * @param {import('../js/stores/BudgetManager.js').BudgetManager} [deps.budgetManager]
  * @param {import('dexie').Dexie} [deps.db]
  */
 export function createAccountingContext(deps = {}) {
   const journalManagerInstance = deps.journalManager ?? journalManager;
-  const budgetManagerInstance = deps.budgetManager ?? budgetManager;
+  const dexieDb = deps.db ?? journalManagerInstance.db;
 
   const gameTimePort =
     deps.gameTimePort ??
@@ -66,9 +75,14 @@ export function createAccountingContext(deps = {}) {
   const journalWritePort =
     deps.journalWritePort ??
     new SessionJournalWriteAdapter(journalManagerInstance);
+
+  const treasuryRepository =
+    deps.treasuryRepository ??
+    new DexieTreasuryRepository({ db: dexieDb });
+
   const treasuryWritePort =
     deps.treasuryWritePort ??
-    new LegacyTreasuryWriteAdapter(budgetManagerInstance);
+    new DexieTreasuryWriteAdapter(treasuryRepository);
 
   const recordLedgerEntryCommand = new RecordLedgerEntry(
     journalWritePort,
@@ -143,9 +157,6 @@ export function createAccountingContext(deps = {}) {
       journalManager: journalManagerInstance,
       gameTimePort,
     });
-  const treasuryRepository =
-    deps.treasuryRepository ??
-    new DexieTreasuryRepository({ db: deps.db });
 
   const yearEndBalancePort = deps.yearEndBalancePort ?? new LegacyYearEndBalanceAdapter();
   const recordCarryForwardEntry = new RecordCarryForwardEntry(
@@ -165,6 +176,37 @@ export function createAccountingContext(deps = {}) {
     recordCarryForwardEntry,
     gameTimePort
   );
+
+  const initializeTreasury = new InitializeTreasury(
+    treasuryRepository,
+    journalRepository,
+    recordCapitalFundsIncome
+  );
+  const getTreasurySnapshotQuery = new GetTreasurySnapshot(
+    treasuryRepository,
+    initializeTreasury
+  );
+  const forceReinitializeTreasury = new ForceReinitializeTreasury(
+    treasuryRepository,
+    journalRepository,
+    initializeTreasury,
+    {
+      clear: async () => {
+        await dexieDb.journal.clear();
+      },
+    }
+  );
+  const updateTreasuryTurn = new UpdateTreasuryTurn(
+    treasuryRepository,
+    getTreasurySnapshotQuery,
+    syncTurnInformativeEntries
+  );
+  const treasuryLoanPortfolio = new TreasuryLoanPortfolio(
+    treasuryRepository,
+    getTreasurySnapshotQuery
+  );
+  const getFinancialHealthQuery = new GetFinancialHealth(getTreasurySnapshotQuery);
+
   const getTreasuryJournalReconciliationQuery = new GetTreasuryJournalReconciliation(
     treasuryRepository,
     journalRepository
@@ -180,6 +222,17 @@ export function createAccountingContext(deps = {}) {
     journalRepository,
     treasuryRepository,
     gameTimePort
+  );
+  const cityAssetsValuationPort =
+    deps.cityAssetsValuationPort ?? new CityAssetsValuationAdapter();
+  const getIncomeStatementQuery = new GetIncomeStatement(
+    journalRepository,
+    gameTimePort
+  );
+  const getBalanceSheetQuery = new GetBalanceSheet(
+    getTreasurySnapshotQuery,
+    cityAssetsValuationPort,
+    treasuryLoanPortfolio
   );
 
   return {
@@ -210,12 +263,67 @@ export function createAccountingContext(deps = {}) {
     recordYearCumulEntries,
     syncTurnInformativeEntries,
     getTreasuryBalanceQuery,
+    getTreasurySnapshotQuery,
+    getFinancialHealthQuery,
+    initializeTreasury,
+    forceReinitializeTreasury,
+    updateTreasuryTurn,
+    treasuryLoanPortfolio,
     getTreasuryJournalReconciliationQuery,
     getCityLedgerYearComparisonQuery,
     getGeneralLedgerQuery,
+    getIncomeStatementQuery,
+    getBalanceSheetQuery,
+    cityAssetsValuationPort,
 
     async getTreasuryBalance() {
       return getTreasuryBalanceQuery.execute();
+    },
+
+    async getTreasurySnapshot() {
+      return getTreasurySnapshotQuery.execute();
+    },
+
+    async getFinancialHealth() {
+      return getFinancialHealthQuery.execute();
+    },
+
+    /** @param {number|null} [startingFunds] */
+    async initializeTreasury(startingFunds = null) {
+      return initializeTreasury.execute(startingFunds);
+    },
+
+    /** @param {number|null} [startingFunds] */
+    async forceReinitializeTreasury(startingFunds = null) {
+      return forceReinitializeTreasury.execute(startingFunds);
+    },
+
+    /** @param {number} turn */
+    async updateTreasuryTurn(turn) {
+      return updateTreasuryTurn.execute(turn);
+    },
+
+    async getActiveLoans() {
+      return treasuryLoanPortfolio.getActiveLoans();
+    },
+
+    /** @param {object} loanData */
+    async addLoanToPortfolio(loanData) {
+      return treasuryLoanPortfolio.addLoanToPortfolio(loanData);
+    },
+
+    /** @param {string} loanId @param {number} repaymentAmount */
+    async applyRepaymentToPortfolio(loanId, repaymentAmount) {
+      return treasuryLoanPortfolio.applyRepaymentToPortfolio(loanId, repaymentAmount);
+    },
+
+    /** @param {string} loanId */
+    async advanceLoanInstallmentWithoutPayment(loanId) {
+      return treasuryLoanPortfolio.advanceInstallmentWithoutPayment(loanId);
+    },
+
+    async recalculateLoanTotals() {
+      return treasuryLoanPortfolio.recalculateLoanTotals();
     },
 
     async getCityLedgerYearComparison() {
@@ -224,6 +332,23 @@ export function createAccountingContext(deps = {}) {
 
     async getGeneralLedger(filters) {
       return getGeneralLedgerQuery.execute(filters);
+    },
+
+    /** @param {{ fiscalYear?: number|null }} [options] */
+    async getIncomeStatement(options) {
+      return getIncomeStatementQuery.execute(options);
+    },
+
+    async getBalanceSheet() {
+      return getBalanceSheetQuery.execute();
+    },
+
+    async exportJournalJson() {
+      return journalManagerInstance.exportToJSON();
+    },
+
+    async exportJournalPdf() {
+      return journalManagerInstance.exportToPDF();
     },
 
     async getTreasuryJournalReconciliation(options) {
@@ -344,11 +469,15 @@ export function resetAccountingContextForTests() {
 
 /** @internal Tests — legacy store adapters */
 export function createLegacyAccountingContext(deps = {}) {
+  const budgetManagerInstance = deps.budgetManager ?? budgetManager;
   return createAccountingContext({
     ...deps,
     journalRepository:
       deps.journalRepository ?? new LegacyJournalRepository(journalManager),
     treasuryRepository:
-      deps.treasuryRepository ?? new LegacyTreasuryRepository(budgetManager),
+      deps.treasuryRepository ?? new LegacyTreasuryRepository(budgetManagerInstance),
+    treasuryWritePort:
+      deps.treasuryWritePort ??
+      new LegacyTreasuryWriteAdapter(budgetManagerInstance),
   });
 }

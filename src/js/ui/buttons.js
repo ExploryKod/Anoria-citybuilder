@@ -43,6 +43,7 @@ import { listSupplyMapBuildings } from '../acl/supply.js';
 import { listAllBuildingRows } from '../acl/construction.js';
 import budgetManager from "../stores/BudgetManager.js";
 import { getCityBuildingValuation } from '../acl/budget.js';
+import { getBalanceSheet } from '../acl/accounting.js';
 import AssetManager from "../meshs/AssetManager.js";
 import { initRealtimeBudgetPopup, updateRealtimeBudget } from "./budget/RealtimeBudgetManager.js";
 import { initBudgetStatesPopup, refreshBudgetStatesModal } from "./budget/BudgetStatesManager.js";
@@ -78,10 +79,12 @@ function createBudgetElements() {
 
 async function updateBudgetDisplay() {
     try {
-        // Get budget data from BudgetManager
-        const budgetSummary = await budgetManager.getBudgetSummary();
-        const financialHealth = await budgetManager.getFinancialHealth();
-        const currentBudget = await budgetManager.getCurrentBudget();
+        const [budgetSummary, financialHealth, currentBudget, balanceSheet] = await Promise.all([
+            budgetManager.getBudgetSummary(),
+            budgetManager.getFinancialHealth(),
+            budgetManager.getCurrentBudget(),
+            getBalanceSheet(),
+        ]);
         
         // Get building valuation (patrimoine bâti)
         const { totalValue: totalBuildingValue, pricesByType: buildingPrices } =
@@ -231,11 +234,10 @@ async function updateBudgetDisplay() {
         
         // Update treasury and cash
         updateBalanceSheetElement('treasury-instruments', '0€');
-        updateBalanceSheetElement('cash-value', `${currentBudget.funds.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('cash-value', `${balanceSheet.assets.cash.toLocaleString('fr-FR')}€`);
         updateBalanceSheetElement('prepaid-expenses', '0€');
         
-        // Calculate total current assets
-        const totalCurrentAssets = receivables + currentBudget.funds;
+        const totalCurrentAssets = balanceSheet.assets.receivables + balanceSheet.assets.cash;
         updateBalanceSheetElement('total-current-assets', `${totalCurrentAssets.toLocaleString('fr-FR')}€`);
         
         // Update additional sections (all 0€ for now)
@@ -243,67 +245,38 @@ async function updateBudgetDisplay() {
         updateBalanceSheetElement('loan-redemption-premiums', '0€');
         updateBalanceSheetElement('conversion-differences', '0€');
         
-        // Calculate total assets (net values) - updated structure
-        const totalAssets = intangibleAssets + totalBuildingsNet + financialAssets + totalCurrentAssets + 0; // +0 for deferred charges, premiums, conversion differences
+        const totalAssets = balanceSheet.assets.total;
         updateBalanceSheetElement('total-assets', `${totalAssets.toLocaleString('fr-FR')}€`);
         
-        // Calculate loan debts from budget
-        const activeLoans = await budgetManager.getActiveLoans();
-        let bankLoansDebt = 0;
-        let commercialLoansDebt = 0;
+        updateBalanceSheetElement('share-capital', `${balanceSheet.liabilities.shareCapital.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('legal-reserves', '0€');
+        updateBalanceSheetElement('carried-forward', '0€');
+        updateBalanceSheetElement('net-result', `${balanceSheet.liabilities.netResult.toLocaleString('fr-FR')}€`);
         
-        activeLoans.forEach(loan => {
-            if (loan.type === 'bank') {
-                bankLoansDebt += loan.amount;
-            } else if (loan.type === 'commercial') {
-                commercialLoansDebt += loan.amount;
-            }
-        });
-        
-        // Update Balance Sheet - PASSIF
-        // Capital social: Only arbitrary value allowed - initial mayor's funds from budget store
-        const shareCapital = currentBudget.initialFunds || currentBudget.funds; // Use initial funds from budget store
-        updateBalanceSheetElement('share-capital', `${shareCapital.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('legal-reserves', '0€'); // No legal reserves system implemented yet
-        updateBalanceSheetElement('carried-forward', '0€'); // No carried forward system implemented yet
-        updateBalanceSheetElement('net-result', `${currentBudget.netFlow.toLocaleString('fr-FR')}€`);
-        
-        // Update provisions
         updateBalanceSheetElement('risk-provisions', `${riskProvisions.toLocaleString('fr-FR')}€`);
         updateBalanceSheetElement('charge-provisions', `${chargeProvisions.toLocaleString('fr-FR')}€`);
         
-        // Update debts
-        updateBalanceSheetElement('bank-loans-debt', `${bankLoansDebt.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('commercial-loans-debt', `${commercialLoansDebt.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('supplier-debts', '0€'); // Pas de dettes fournisseurs pour l'instant
-        updateBalanceSheetElement('social-fiscal-debts', '0€'); // Pas de dettes sociales/fiscales pour l'instant
+        updateBalanceSheetElement('bank-loans-debt', `${balanceSheet.liabilities.bankLoans.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('commercial-loans-debt', `${balanceSheet.liabilities.commercialLoans.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('supplier-debts', '0€');
+        updateBalanceSheetElement('social-fiscal-debts', '0€');
         
-        // Calculate accrued expenses (charges à payer) - includes loan interest and building maintenance
-        const accruedExpenses = (currentBudget.totalLoanInterestExpenses || 0) + (currentBudget.totalBuildingMaintenance || 0);
-        updateBalanceSheetElement('accrued-expenses', `${accruedExpenses.toLocaleString('fr-FR')}€`);
+        updateBalanceSheetElement('accrued-expenses', `${balanceSheet.liabilities.accruedExpenses.toLocaleString('fr-FR')}€`);
         updateBalanceSheetElement('loan-interest-expenses', `${(currentBudget.totalLoanInterestExpenses || 0).toLocaleString('fr-FR')}€`);
         updateBalanceSheetElement('building-maintenance-expenses', `${(currentBudget.totalBuildingMaintenance || 0).toLocaleString('fr-FR')}€`);
         
-        // Calculate debt totals
-        const financialDebtsTotal = bankLoansDebt + commercialLoansDebt;
-        const operatingDebtsTotal = accruedExpenses; // Include both loan interest and building maintenance
+        const financialDebtsTotal = balanceSheet.liabilities.bankLoans + balanceSheet.liabilities.commercialLoans;
+        const operatingDebtsTotal = balanceSheet.liabilities.accruedExpenses;
         updateBalanceSheetElement('financial-debts-total', `${financialDebtsTotal.toLocaleString('fr-FR')}€`);
         updateBalanceSheetElement('operating-debts-total', `${operatingDebtsTotal.toLocaleString('fr-FR')}€`);
         
-        // Calculate total liabilities
-        const totalLiabilities = shareCapital + currentBudget.netFlow + riskProvisions + chargeProvisions + bankLoansDebt + commercialLoansDebt + accruedExpenses;
+        const totalLiabilities = balanceSheet.liabilities.total;
         updateBalanceSheetElement('total-liabilities', `${totalLiabilities.toLocaleString('fr-FR')}€`);
         
-        // Verify balance sheet equation: ACTIF = PASSIF
-        const balanceDifference = Math.abs(totalAssets - totalLiabilities);
-        if (balanceDifference > 1) { // Allow 1€ difference for rounding
-            console.warn(`⚠️ Bilan déséquilibré: ACTIF (${totalAssets}€) ≠ PASSIF (${totalLiabilities}€). Différence: ${balanceDifference}€`);
-            // Adjust net result to balance the sheet
-            const adjustedNetResult = currentBudget.netFlow + (totalAssets - totalLiabilities);
-            updateBalanceSheetElement('net-result', `${adjustedNetResult.toLocaleString('fr-FR')}€`);
-            updateBalanceSheetElement('total-liabilities', `${totalAssets.toLocaleString('fr-FR')}€`);
-        } else {
+        if (balanceSheet.balanced) {
             console.info(`✅ Bilan équilibré: ACTIF = PASSIF = ${totalAssets}€`);
+        } else {
+            console.warn(`⚠️ Bilan déséquilibré: ACTIF (${totalAssets}€) ≠ PASSIF (${totalLiabilities}€).`);
         }
         
         // Update financial health indicator in header

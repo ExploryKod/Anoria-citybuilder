@@ -225,7 +225,7 @@ class JournalManager {
                 (timeInfo ? buildLedgerBusinessKey(type, timeInfo) : null);
 
             if (businessKey && sessionLedgerBuffer.hasBusinessKey(businessKey)) {
-                return;
+                return { recorded: false, skipped: true, reason: 'duplicate_business_key' };
             }
 
             const entry = {
@@ -253,7 +253,19 @@ class JournalManager {
             const persist =
                 options.persist ?? type !== 'balance';
 
-            sessionLedgerBuffer.append(entry, { persist });
+            const appendResult = businessKey
+                ? sessionLedgerBuffer.appendIfAbsent(entry, { persist })
+                : { appended: true, record: sessionLedgerBuffer.append(entry, { persist }) };
+
+            if (!appendResult.appended) {
+                return {
+                    recorded: false,
+                    skipped: true,
+                    reason: appendResult.reason ?? 'duplicate_business_key',
+                };
+            }
+
+            return { recorded: true, skipped: false, businessKey };
         } catch (error) {
             console.error('Error adding journal entry:', error);
         }

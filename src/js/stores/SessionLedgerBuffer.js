@@ -64,6 +64,22 @@ export class SessionLedgerBuffer {
   }
 
   /**
+   * Atomically append if businessKey is not already present.
+   * @param {object} entry
+   * @param {{ persist?: boolean }} [options]
+   * @returns {{ appended: boolean, reason?: string, record?: SessionLedgerRecord & object }}
+   */
+  appendIfAbsent(entry, { persist = true } = {}) {
+    const businessKey = entry.businessKey;
+    if (businessKey && this.hasBusinessKey(businessKey)) {
+      return { appended: false, reason: 'duplicate_business_key' };
+    }
+
+    const record = this.append(entry, { persist });
+    return { appended: true, record };
+  }
+
+  /**
    * @param {object} entry
    * @param {{ persist?: boolean }} [options]
    * @returns {SessionLedgerRecord & object}

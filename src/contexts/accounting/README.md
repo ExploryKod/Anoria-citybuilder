@@ -96,6 +96,7 @@ contexts/accounting/
         dexie/
           DexieJournalRepository.js
           DexieTreasuryRepository.js
+          DexieTreasuryWriteAdapter.js   # écriture trésorerie directe Dexie (Phase 4)
         session/
           SessionJournalRepository.js   # lecture buffer
           SessionJournalWriteAdapter.js # écriture buffer
@@ -104,7 +105,7 @@ contexts/accounting/
       legacy/                      # temporaire Phase 1–2 — wraps stores actuels
         LegacyJournalRepository.js      # → stores/JournalManager
         LegacyTreasuryRepository.js     # → BudgetManager.getCurrentBudget
-        LegacyTreasuryWriteAdapter.js   # → BudgetManager.db.budget (Phase 3½)
+        LegacyTreasuryWriteAdapter.js   # régression tests uniquement (Phase 4)
       fakes/                       # tests — doubles in-memory (Quizzam)
         InMemoryJournalRepository.js
 ```
@@ -180,7 +181,7 @@ Use cases **city-ledger** et **financial-statements** consomment journal/trésor
         ↓                                    ↓
    JournalWritePort                    TreasuryWritePort
         ↓                                    ↓
-   SessionJournalWriteAdapter         LegacyTreasuryWriteAdapter
+   SessionJournalWriteAdapter         DexieTreasuryWriteAdapter
         ↓                                    ↓
    SessionLedgerBuffer (RAM)           budget_current (Dexie)
 
@@ -549,15 +550,26 @@ Journal non fiable comme SoT unique tant que tous les types opérationnels ne pa
 - `GetIncomeStatement` / `GetBalanceSheet` depuis journal + trésorerie + City Assets
 - Lien livret ↔ CR ↔ bilan (réconciliation multi-surfaces)
 
+### Phase 3 — Bilan + compte de résultat ✅ (2026-07-31)
+
+- `GetIncomeStatement` / `GetBalanceSheet` depuis journal + trésorerie + City Assets
+- Presenters `#budget-panel` et résumé `#budget-states-panel` via ACL
+- Snapshots `budget_turn_*` conservés pour historique par tour (CR détaillé)
+
 ### Phase 3 — Unifier les lectures sur le journal (**après 3½**)
 
 - `queries/financial-statements/GetIncomeStatement` via `JournalRepository`
 - `GetBalanceSheet` : ports journal + trésorerie + City Assets
 - Snapshots `budget_turn_*` : cache dérivé ou suppression
 
-### Phase 4 — Extinction write legacy
+### Phase 4 — Extinction write legacy ✅ (2026-07-31)
 
-- Réduction progressive de `BudgetManager` (plus d’écriture directe journal)
+- **`DexieTreasuryWriteAdapter`** : écritures trésorerie sans `BudgetManager`
+- **Lifecycle BC** : `InitializeTreasury`, `UpdateTreasuryTurn`, `GetTreasurySnapshot`, `GetFinancialHealth`, `TreasuryLoanPortfolio`
+- **`acl/accounting.js`** : seule façade game code pour trésorerie + écritures
+- **`BudgetManager`** : façade mince UI (délègue au BC)
+- **`acl/budget.js`** / **`createConstructionContext`** : construction via BC direct
+- **`createLegacyAccountingContext()`** : adapters legacy pour tests de régression
 
 ---
 
@@ -581,10 +593,9 @@ Journal non fiable comme SoT unique tant que tous les types opérationnels ne pa
 | **Commerce** | Customer | import/export → journal |
 | **Employment** | Customer | salaires / impôt payroll |
 | **Housing** | Customer | population pour taxes / salaires |
-| **Legacy game** | ACL | `BudgetProcessor`, `BudgetManager` global |
+| **Legacy game** | ACL | `BudgetProcessor` → `acl/accounting.js` ; UI → `window.budgetManager` (façade) |
 
-Façade actuelle : `src/js/acl/budget.js` (valuation + construction)  
-Façade cible : `src/js/acl/accounting.js`  
+Façade actuelle : `src/js/acl/accounting.js` (+ `acl/budget.js` pour construction/valuation)  
 Composition : `createAccountingContext.js` (DI — adapters → use cases, pattern Quizzam/Employment)
 
 Règle : `src/js/**` n'importe **pas** `contexts/accounting/**/domain/**` directement (identique Employment).

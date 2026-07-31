@@ -160,7 +160,7 @@ export class RandomEventsService extends SimService {
                 try {
                     const currentTime = window.game.time || 0;
                     // Forcer une mise à jour immédiate pour que la suppression soit visible tout de suite
-                    await window.game.scene.update(window.game.city, currentTime);
+                    await window.game.scene.update(window.game.city, currentTime, { skipBudget: true });
                 } catch (err) {
                     console.warn('[RandomEventsService] Could not force scene update:', err);
                 }

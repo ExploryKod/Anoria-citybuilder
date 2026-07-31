@@ -6,16 +6,24 @@ import { getCityTotalPopulation, clearPopulationWithoutRoadAccess } from '../../
  */
 export class BudgetProcessor {
     constructor() {
-        this.lastMaintenanceMonth = -1;
-        this.lastSalaryMonth = -1;
+        this.lastMaintenanceCivilKey = null;
+        this.lastSalaryCivilKey = null;
     }
+
+    #processBudgetInFlight = false;
 
     /**
      * Reset maintenance and salary tracking
      */
     reset() {
-        this.lastMaintenanceMonth = -1;
-        this.lastSalaryMonth = -1;
+        this.lastMaintenanceCivilKey = null;
+        this.lastSalaryCivilKey = null;
+        this.#processBudgetInFlight = false;
+    }
+
+    /** @param {{ year: number, monthIndex: number }} timeInfo */
+    #civilMonthKey(timeInfo) {
+        return `${timeInfo.year}:${timeInfo.monthIndex}`;
     }
 
     /**
@@ -88,6 +96,12 @@ export class BudgetProcessor {
      * Process budget operations (taxes, salaries, maintenance)
      */
     async processBudget(time, totalPop, buildingCounts, maintenanceBreakdown) {
+        if (this.#processBudgetInFlight) {
+            return;
+        }
+
+        this.#processBudgetInFlight = true;
+
         try {
             if (!window.budgetManager) {
                 return;
@@ -96,14 +110,11 @@ export class BudgetProcessor {
             await window.budgetManager.addTaxes(time);
             
             const timeInfo = TimeManager.getTimeInfo(time);
-            const currentMonth = timeInfo.monthNumber;
+            const civilMonthKey = this.#civilMonthKey(timeInfo);
             const isFirstTurnOfMonth = timeInfo.dayInMonth === 1;
             
-            // Process salaries (only once per month, on the first day)
-            // Update lastSalaryMonth BEFORE processing to prevent multiple calls in the same turn
-            if (isFirstTurnOfMonth && currentMonth !== this.lastSalaryMonth) {
-                // Mark as processed immediately to prevent duplicate processing
-                this.lastSalaryMonth = currentMonth;
+            if (isFirstTurnOfMonth && civilMonthKey !== this.lastSalaryCivilKey) {
+                this.lastSalaryCivilKey = civilMonthKey;
                 
                 let salaryPerMonth = 100;
                 if (window.workSectionManager && typeof window.workSectionManager.salary === 'number') {
@@ -118,7 +129,12 @@ export class BudgetProcessor {
                     const salaryDescription = `Salaires fonctionnaires - ${monthName} ${yearDisplay} (${totalPopulation} hab. × ${salaryPerMonth}€)`;
                     
                     const totalSalaryAmount = totalPopulation * salaryPerMonth;
-                    await window.budgetManager.addSalaries(salaryPerMonth, totalPopulation, salaryDescription);
+                    await window.budgetManager.addSalaries(
+                        salaryPerMonth,
+                        totalPopulation,
+                        salaryDescription,
+                        time
+                    );
                     
                     let salaryTaxRate = 0.2;
                     if (window.workSectionManager && typeof window.workSectionManager.salaryTaxRate === 'number') {
@@ -127,13 +143,17 @@ export class BudgetProcessor {
                     
                     if (salaryTaxRate > 0) {
                         const taxDescription = `Impôt sur les salaires - ${monthName} ${yearDisplay} (${Math.round(salaryTaxRate * 100)}%)`;
-                        await window.budgetManager.addSalaryTax(totalSalaryAmount, salaryTaxRate, taxDescription);
+                        await window.budgetManager.addSalaryTax(
+                            totalSalaryAmount,
+                            salaryTaxRate,
+                            taxDescription,
+                            time
+                        );
                     }
                 }
             }
             
-            // Process maintenance
-            if (currentMonth !== this.lastMaintenanceMonth) {
+            if (civilMonthKey !== this.lastMaintenanceCivilKey) {
                 const buildingAmount = maintenanceBreakdown.roads.cost + 
                                      maintenanceBreakdown.houses.cost + 
                                      maintenanceBreakdown.farms.cost + 
@@ -180,8 +200,12 @@ export class BudgetProcessor {
                     const breakdownData = JSON.stringify(breakdownItems);
                     const maintenanceDescription = `Maintenance mensuelle - ${monthName} ${year} |BREAKDOWN|${breakdownData}|BREAKDOWN|`;
                     
-                    await window.budgetManager.addBuildingMaintenance(buildingAmount, maintenanceDescription);
-                    this.lastMaintenanceMonth = currentMonth;
+                    await window.budgetManager.addBuildingMaintenance(
+                        buildingAmount,
+                        maintenanceDescription,
+                        time
+                    );
+                    this.lastMaintenanceCivilKey = civilMonthKey;
                 }
             }
             
@@ -229,6 +253,8 @@ export class BudgetProcessor {
             }
         } catch (error) {
             console.warn('Budget operations failed:', error);
+        } finally {
+            this.#processBudgetInFlight = false;
         }
     }
 
