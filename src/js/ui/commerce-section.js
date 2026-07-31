@@ -7,6 +7,7 @@ import {
     listSupplyMapBuildings,
     listWindmillSupplyViews,
 } from '../acl/supply.js';
+import { getTreasuryBalance, getTreasurySnapshot, recordCommercialRouteFee } from '../acl/accountingGame.js';
 
 class CommerceSectionManager {
     constructor() {
@@ -600,15 +601,12 @@ class CommerceSectionManager {
      * @returns {Promise<number>} Current funds (can be negative)
      */
     async getCurrentFunds() {
-        if (window.budgetManager) {
-            try {
-                const budget = await window.budgetManager.getCurrentBudget();
-                return budget.funds || 0;
-            } catch (error) {
-                console.error('[CommerceSectionManager] Error getting funds:', error);
-            }
+        try {
+            return await getTreasuryBalance();
+        } catch (error) {
+            console.error('[CommerceSectionManager] Error getting funds:', error);
+            return 0;
         }
-        return 0;
     }
 
     /**
@@ -734,29 +732,27 @@ class CommerceSectionManager {
         // Pay commercial route fee (one-time payment to open commercial road)
         const commercialRouteFee = config?.budget?.commercialRouteFee ?? 500;
         const globalObj = typeof window !== 'undefined' ? window : global;
-        
-        if (globalObj.budgetManager) {
-            try {
-                const currentBudget = await globalObj.budgetManager.getCurrentBudget();
-                const timeInfo = globalObj.TimeManager ? globalObj.TimeManager.getTimeInfo(currentBudget.turn) : null;
-                const yearDisplay = timeInfo && timeInfo.year === 0 ? '0 JC' : timeInfo ? `${timeInfo.year} ap JC` : '';
-                const monthName = timeInfo ? timeInfo.month || 'Mois' : 'Mois';
-                const dateDisplay = `${monthName} ${yearDisplay}`;
-                
-                // Create description with breakdown to clearly show the partner
-                const breakdown = [{
-                    label: partner.name,
-                    quantity: 1,
-                    unitCost: commercialRouteFee,
-                    total: commercialRouteFee
-                }];
-                const description = `Route commerciale - ${dateDisplay} |BREAKDOWN|${JSON.stringify(breakdown)}|BREAKDOWN|`;
 
-                const feeResult = await globalObj.budgetManager.addCommercialRouteFee(
-                    commercialRouteFee,
-                    description,
-                    partnerId
-                );
+        try {
+            const currentBudget = await getTreasurySnapshot();
+            const timeInfo = globalObj.TimeManager ? globalObj.TimeManager.getTimeInfo(currentBudget.turn) : null;
+            const yearDisplay = timeInfo && timeInfo.year === 0 ? '0 JC' : timeInfo ? `${timeInfo.year} ap JC` : '';
+            const monthName = timeInfo ? timeInfo.month || 'Mois' : 'Mois';
+            const dateDisplay = `${monthName} ${yearDisplay}`;
+
+            const breakdown = [{
+                label: partner.name,
+                quantity: 1,
+                unitCost: commercialRouteFee,
+                total: commercialRouteFee
+            }];
+            const description = `Route commerciale - ${dateDisplay} |BREAKDOWN|${JSON.stringify(breakdown)}|BREAKDOWN|`;
+
+            const feeResult = await recordCommercialRouteFee(
+                commercialRouteFee,
+                description,
+                partnerId
+            );
 
                 if (feeResult.skipped && feeResult.reason === 'duplicate_business_key') {
                     return {
@@ -784,8 +780,7 @@ class CommerceSectionManager {
                     message: 'Erreur lors du paiement de la commission négociants',
                 };
             }
-        }
-        
+
         partner.isActive = true;
         this.savePartnersData();
         return { 

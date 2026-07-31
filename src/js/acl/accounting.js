@@ -92,6 +92,16 @@ export async function getBalanceSheet() {
   return getOrCreateAccountingContext().getBalanceSheet();
 }
 
+/** @param {number} atTurn */
+export async function getFinancialStatementsAtTurn(atTurn) {
+  return getOrCreateAccountingContext().getFinancialStatementsAtTurn(atTurn);
+}
+
+/** @param {{ everyNTurns?: number, turns?: number[]|null, filterTurn?: number|null }} [options] */
+export async function getFinancialStatementsHistory(options) {
+  return getOrCreateAccountingContext().getFinancialStatementsHistory(options);
+}
+
 export async function exportJournalJson() {
   return getOrCreateAccountingContext().exportJournalJson();
 }

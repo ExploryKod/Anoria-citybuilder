@@ -1,9 +1,9 @@
 /**
  * ObjectivesTracker - Gestion des objectifs financiers
- * Utilise le BudgetManager comme single source of truth
+ * Treasury via Accounting BC (acl/accountingGame.js)
  */
 
-import budgetManager from '../stores/BudgetManager.js';
+import { getTreasurySnapshot } from '../acl/accountingGame.js';
 
 class ObjectivesTracker {
     constructor() {
@@ -78,25 +78,17 @@ class ObjectivesTracker {
             return;
         }
         
-        if (!window.budgetManager) {
-            console.warn('BudgetManager not available for objectives check');
-            return;
-        }
-
         try {
             // Activer l'objectif au tour 0 (initialisation d'un nouveau jeu)
             const objective = this.objectives.find(obj => obj.id === 'budget_challenge_5000');
             if (currentDay === 0 && objective) {
-                // Toujours réactiver au tour 0 pour un nouveau jeu
                 objective.active = true;
                 objective.completed = false;
             }
 
-            // Mettre à jour les données de tracking
             this.trackingData.currentDay = currentDay;
-            
-            // Récupérer les fonds actuels depuis BudgetManager
-            const budget = await window.budgetManager.getCurrentBudget();
+
+            const budget = await getTreasurySnapshot();
             this.trackingData.currentFunds = budget.funds || 0;
 
             // Vérifier si l'objectif est complété (fond >= 5000)

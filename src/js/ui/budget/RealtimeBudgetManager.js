@@ -1,7 +1,13 @@
 /**
  * RealtimeBudgetManager - Gère l'affichage et la mise à jour du budget en temps réel
  */
-import budgetManager from "../../stores/BudgetManager.js";
+import {
+  getTreasurySnapshot,
+  getFinancialHealth,
+  getIncomeBreakdown,
+  getExpenseBreakdown,
+  getActiveLoans,
+} from "../../acl/accountingGame.js";
 import gameStore from "../../stores/GameStore.js";
 import { getCityTotalPopulation } from "../../acl/housing.js";
 
@@ -101,11 +107,10 @@ export async function updateRealtimeBudget() {
 
     try {
         
-        if (window.budgetManager) {
-            const budgetData = await window.budgetManager.getCurrentBudget();
-            const financialHealth = await window.budgetManager.getFinancialHealth();
-            const incomeBreakdown = await window.budgetManager.getIncomeBreakdown();
-            const expenseBreakdown = await window.budgetManager.getExpenseBreakdown();
+        const budgetData = await getTreasurySnapshot();
+        const financialHealth = await getFinancialHealth();
+        const incomeBreakdown = await getIncomeBreakdown();
+        const expenseBreakdown = await getExpenseBreakdown();
             
             // Primary source: Housing BC (residential pop sum)
             // Fallback: gameStore (game table) for backwards compatibility
@@ -227,66 +232,6 @@ export async function updateRealtimeBudget() {
             updateLoanInterestDetail(budgetData);
             
             // Starvation alerts removed
-        } else {
-            // Valeurs par défaut si le budget manager n'est pas disponible
-            realtimeFundsEl.textContent = 'Non disponible';
-            realtimeFundsEl.style.color = '#ff6b6b';
-            realtimeFundsEl.title = 'Budget manager non initialisé';
-            
-            if (realtimeIncomeEl) {
-                realtimeIncomeEl.textContent = 'N/A';
-                realtimeIncomeEl.style.color = '#ffa726';
-            }
-            if (realtimeExpensesEl) {
-                realtimeExpensesEl.textContent = 'N/A';
-                realtimeExpensesEl.style.color = '#ffa726';
-            }
-            if (realtimeNetflowEl) {
-                realtimeNetflowEl.textContent = 'N/A';
-                realtimeNetflowEl.style.color = '#ffa726';
-            }
-            if (realtimeTurnEl) {
-                const turnSpan = realtimeTurnEl.querySelector('span');
-                if (turnSpan) {
-                    turnSpan.textContent = 'N/A';
-                    turnSpan.style.color = '#ffa726';
-                } else {
-                    realtimeTurnEl.textContent = 'N/A';
-                }
-            }
-            if (realtimePopulationEl) {
-                const populationSpan = realtimePopulationEl.querySelector('span');
-                if (populationSpan) {
-                    populationSpan.textContent = 'N/A';
-                    populationSpan.style.color = '#ffa726';
-                    realtimePopulationEl.title = 'Budget manager non initialisé';
-                } else {
-                    realtimePopulationEl.textContent = 'N/A';
-                }
-            }
-            if (realtimeHealthStatusEl) realtimeHealthStatusEl.textContent = 'Non disponible';
-            if (realtimeHealthMessageEl) realtimeHealthMessageEl.textContent = 'Budget manager non initialisé';
-            if (realtimeTaxesEl) {
-                realtimeTaxesEl.textContent = 'N/A';
-                realtimeTaxesEl.style.color = '#ffa726';
-            }
-            if (realtimeOtherIncomeEl) {
-                realtimeOtherIncomeEl.textContent = 'N/A';
-                realtimeOtherIncomeEl.style.color = '#ffa726';
-            }
-            if (realtimeBuildingMaintenanceEl) {
-                realtimeBuildingMaintenanceEl.textContent = 'N/A';
-                realtimeBuildingMaintenanceEl.style.color = '#ffa726';
-            }
-            if (realtimeLoanInterestEl) {
-                realtimeLoanInterestEl.textContent = 'N/A';
-                realtimeLoanInterestEl.style.color = '#ffa726';
-            }
-            if (realtimeInvestmentsEl) {
-                realtimeInvestmentsEl.textContent = 'N/A';
-                realtimeInvestmentsEl.style.color = '#ffa726';
-            }
-        }
     } catch (error) {
         console.error('Error updating real-time budget:', error);
         realtimeFundsEl.textContent = 'Erreur';
@@ -328,7 +273,7 @@ async function updateLoanInterestDetail(budgetData) {
     if (!detailContainer) return;
     
     try {
-        const activeLoans = await budgetManager.getActiveLoans();
+        const activeLoans = await getActiveLoans();
         
         if (activeLoans.length === 0) {
             detailContainer.innerHTML = `

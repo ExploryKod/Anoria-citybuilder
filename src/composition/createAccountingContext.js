@@ -10,6 +10,12 @@ import { GetCityLedgerYearComparison } from '../contexts/accounting/application/
 import { GetGeneralLedger } from '../contexts/accounting/application/queries/journal/GetGeneralLedger.js';
 import { GetIncomeStatement } from '../contexts/accounting/application/queries/financial-statements/GetIncomeStatement.js';
 import { GetBalanceSheet } from '../contexts/accounting/application/queries/financial-statements/GetBalanceSheet.js';
+import {
+  GetFinancialStatementsAtTurn,
+  GetFinancialStatementsHistory,
+  GetIncomeStatementForFiscalYear,
+} from '../contexts/accounting/application/queries/financial-statements/GetFinancialStatementsAtTurn.js';
+import { BudgetTurnEnrichmentRepository } from '../contexts/accounting/infrastructure/adapters/persistence/dexie/BudgetTurnEnrichmentRepository.js';
 import { CityAssetsValuationAdapter } from '../contexts/accounting/infrastructure/adapters/shared/CityAssetsValuationAdapter.js';
 import { RecordLedgerEntry } from '../contexts/accounting/application/commands/journal/RecordLedgerEntry.js';
 import { ApplyTreasuryMovement } from '../contexts/accounting/application/commands/treasury/ApplyTreasuryMovement.js';
@@ -225,14 +231,32 @@ export function createAccountingContext(deps = {}) {
   );
   const cityAssetsValuationPort =
     deps.cityAssetsValuationPort ?? new CityAssetsValuationAdapter();
-  const getIncomeStatementQuery = new GetIncomeStatement(
+  const budgetTurnEnrichmentRepository =
+    deps.budgetTurnEnrichmentRepository ??
+    new BudgetTurnEnrichmentRepository(dexieDb);
+
+  const getIncomeStatementForFiscalYear = new GetIncomeStatementForFiscalYear(
+    journalRepository
+  );
+  const getFinancialStatementsAtTurn = new GetFinancialStatementsAtTurn(
     journalRepository,
-    gameTimePort
+    gameTimePort,
+    cityAssetsValuationPort,
+    budgetTurnEnrichmentRepository,
+    treasuryLoanPortfolio,
+    getTreasurySnapshotQuery
+  );
+  const getFinancialStatementsHistory = new GetFinancialStatementsHistory(
+    getFinancialStatementsAtTurn,
+    journalRepository,
+    getTreasurySnapshotQuery
+  );
+  const getIncomeStatementQuery = new GetIncomeStatement(
+    getIncomeStatementForFiscalYear
   );
   const getBalanceSheetQuery = new GetBalanceSheet(
-    getTreasurySnapshotQuery,
-    cityAssetsValuationPort,
-    treasuryLoanPortfolio
+    getFinancialStatementsAtTurn,
+    getTreasurySnapshotQuery
   );
 
   return {
@@ -274,6 +298,9 @@ export function createAccountingContext(deps = {}) {
     getGeneralLedgerQuery,
     getIncomeStatementQuery,
     getBalanceSheetQuery,
+    getFinancialStatementsAtTurn,
+    getFinancialStatementsHistory,
+    budgetTurnEnrichmentRepository,
     cityAssetsValuationPort,
 
     async getTreasuryBalance() {
@@ -341,6 +368,16 @@ export function createAccountingContext(deps = {}) {
 
     async getBalanceSheet() {
       return getBalanceSheetQuery.execute();
+    },
+
+    /** @param {number} atTurn */
+    async getFinancialStatementsAtTurn(atTurn) {
+      return getFinancialStatementsAtTurn.execute(atTurn);
+    },
+
+    /** @param {{ everyNTurns?: number, turns?: number[]|null, filterTurn?: number|null }} [options] */
+    async getFinancialStatementsHistory(options) {
+      return getFinancialStatementsHistory.execute(options);
     },
 
     async exportJournalJson() {

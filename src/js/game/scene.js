@@ -15,6 +15,7 @@ import { getOrCreateSupplyContext } from '../acl/supply.js';
 import { getOrCreateHousingContext } from '../acl/housing.js';
 import { getCityEmploymentSummary, ensureBuildingEmployeesSchema } from '../acl/employment.js';
 import { getCityTotalBuildingValue } from '../acl/budget.js';
+import { getTreasurySnapshot } from '../acl/accountingGame.js';
 import {
     findBuildingAtTile,
     getBuildingById,
@@ -640,9 +641,7 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
         
         // Get budget data from BudgetManager (single source of truth)
         let budgetData = null;
-        if (window.budgetManager) {
-            budgetData = await window.budgetManager.getCurrentBudget();
-        }
+        budgetData = await getTreasurySnapshot();
         
         totalImmoExpenses = (await getCityTotalBuildingValue()) || 0
 
@@ -1565,10 +1564,8 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
         
         // Get budget data from BudgetManager
         let funds = 0;
-        if (window.budgetManager) {
-            const budgetData = await window.budgetManager.getCurrentBudget();
-            funds = budgetData.funds;
-        }
+        const budgetData = await getTreasurySnapshot();
+        funds = budgetData.funds;
 
         // Update famished population and funds (citizen/elite counts via refreshEmploymentPresentation)
         if (window.gameUI) {

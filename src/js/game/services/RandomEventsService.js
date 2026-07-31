@@ -7,7 +7,7 @@ import { SimService } from './SimService.js';
 import { listAllBuildingRows } from '../../acl/construction.js';
 import { syncRemovedBuilding } from '../../acl/parcels.js';
 import { instanceIdFromHouseRow } from '../../acl/building-identity.js';
-import { TimeManager } from '../utils/TimeManager.js';
+import { recordExceptionalRepairExpense } from '../../acl/accountingGame.js';
 
 export class RandomEventsService extends SimService {
     
@@ -138,12 +138,10 @@ export class RandomEventsService extends SimService {
             }
 
             // Déduire le coût de réparation (dépense exceptionnelle, pas une construction)
-            if (window.budgetManager) {
-                await window.budgetManager.addExceptionalExpense(
-                    event.cost,
-                    `${event.name}: ${event.description} - Maison détruite et réparations`
-                );
-            }
+            await recordExceptionalRepairExpense(
+                event.cost,
+                `${event.name}: ${event.description} - Maison détruite et réparations`
+            );
 
             // Supprimer la maison de la base de données EN PREMIER
             const houseId = instanceIdFromHouseRow(houseToDestroy);

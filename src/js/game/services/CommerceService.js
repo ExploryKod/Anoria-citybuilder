@@ -1,6 +1,7 @@
 import { SimService } from './SimService.js';
 import commerceStore from '../../stores/CommerceStore.js';
 import { instanceIdFromHouseRow } from '../../acl/building-identity.js';
+import { recordImportExpense, recordExportIncome } from '../../acl/accountingGame.js';
 import {
     listCommercializableWindmills,
     getSupplyBuildingRow,
@@ -548,9 +549,6 @@ export class CommerceService extends SimService {
         const pricePerUnit = config.buyingPrice || 5;
         const totalCost = quantity * pricePerUnit;
 
-        const globalObj = typeof window !== 'undefined' ? window : global;
-        if (!globalObj.budgetManager) return null;
-
         const partner = partnerId ? this.getPartner(partnerId) : null;
         const partnerName = partner ? partner.name : null;
 
@@ -568,7 +566,7 @@ export class CommerceService extends SimService {
             description += ` (${quantity} panier × ${pricePerUnit}€)`;
         }
 
-        await globalObj.budgetManager.addImportExpense(totalCost, description, productId, partnerId);
+        await recordImportExpense(totalCost, description, productId, partnerId);
 
         if (partnerId) {
             this.updatePartnerTrade(partnerId, productId, 'import');
@@ -622,9 +620,6 @@ export class CommerceService extends SimService {
         const pricePerUnit = config.sellingPrice || 15;
         const totalRevenue = quantity * pricePerUnit;
 
-        const globalObj = typeof window !== 'undefined' ? window : global;
-        if (!globalObj.budgetManager) return null;
-
         if (this.isStockable(productId)) {
             const stockReduced = await this.reduceWindmillStock(productId, quantity, partnerId);
             if (!stockReduced) {
@@ -654,7 +649,7 @@ export class CommerceService extends SimService {
             description += ` (${quantity} panier × ${pricePerUnit}€)${remainingStock > 0 ? ` - Stock restant: ${remainingStock}` : ''}`;
         }
 
-        await globalObj.budgetManager.addExportIncome(totalRevenue, description, productId, partnerId);
+        await recordExportIncome(totalRevenue, description, productId, partnerId);
 
         if (partnerId) {
             this.updatePartnerTrade(partnerId, productId, 'export');

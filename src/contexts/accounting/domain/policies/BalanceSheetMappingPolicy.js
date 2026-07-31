@@ -84,3 +84,62 @@ export function balanceSheetFromTreasuryAndAssets({
 
   return sheet;
 }
+
+/**
+ * Bilan linked to CR — netResult on passif equals incomeStatement.netResult.
+ *
+ * @param {object} params
+ * @param {number} params.atTurn
+ * @param {import('../read-models/IncomeStatement.js').IncomeStatement} params.incomeStatement
+ * @param {number} params.cash
+ * @param {number} params.shareCapital
+ * @param {{ totalValue: number }} params.buildingValuation
+ * @param {number} [params.bankLoans]
+ * @param {number} [params.commercialLoans]
+ * @param {number} [params.accruedExpenses]
+ */
+export function balanceSheetLinkedToIncomeStatement({
+  atTurn,
+  incomeStatement,
+  cash,
+  shareCapital,
+  buildingValuation,
+  bankLoans = 0,
+  commercialLoans = 0,
+}) {
+  const tangibleGross = Math.round(buildingValuation.totalValue ?? 0);
+  const tangibleNet = tangibleGross;
+  const receivables = 0;
+  const roundedCash = Math.round(cash);
+  const totalAssets = tangibleNet + roundedCash + receivables;
+
+  const netResult = Math.round(incomeStatement.netResult);
+  const roundedShareCapital = Math.round(shareCapital);
+  const roundedBankLoans = Math.round(bankLoans);
+  const roundedCommercialLoans = Math.round(commercialLoans);
+
+  const baseLiabilities =
+    roundedShareCapital + netResult + roundedBankLoans + roundedCommercialLoans;
+  const equityReconciliation = Math.round(totalAssets - baseLiabilities);
+
+  return createBalanceSheet({
+    asOfTurn: atTurn,
+    assets: {
+      tangibleGross,
+      depreciation: 0,
+      tangibleNet,
+      cash: roundedCash,
+      receivables,
+      total: totalAssets,
+    },
+    liabilities: {
+      shareCapital: roundedShareCapital,
+      netResult,
+      bankLoans: roundedBankLoans,
+      commercialLoans: roundedCommercialLoans,
+      accruedExpenses: 0,
+      equityReconciliation,
+      total: totalAssets,
+    },
+  });
+}

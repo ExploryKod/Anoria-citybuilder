@@ -17,8 +17,109 @@ Voir aussi [`../README.md`](../README.md) (spec Phase 0, cartographie, phases).
 | 2b | Journal UI → `GetGeneralLedger` + presenter pur | ✅ |
 | 2c | Calculs nets livret hors presenter | 🔲 |
 | **3½** | **Write path fiable + idempotence + réconciliation** | 🟡 slice 1 (buffer session) |
-| 3 | Bilan + CR depuis journal (ports) | 🔲 **gated** |
+| 3 | Bilan + CR depuis journal (ports) | ✅ journal-primary + bundle lié |
 | 4 | Réduction `BudgetManager` (legacy write éteint) | 🔲 |
+| **5** | **Chaîne PCG stricte** (plan de comptes, grand livre, balance) | 🔲 **non prioritaire — noté, pas en cours** |
+| **6** | **Branchement UI/game → BC** (sans nouvelle feature) | 🟡 step 1 ✅ |
+
+---
+
+## Phase 6 — Branchement UI/game → Accounting BC (sans nouvelle feature)
+
+Objectif : les callers game/UI passent par l’ACL, pas `window.budgetManager` directement.  
+`BudgetManager` reste enregistré pour compat/debug/tests ; la logique métier game vit dans `acl/accountingGame.js`.
+
+| Step | Description | Statut |
+|---|---|---|
+| **6.1** | UI/game → `acl/accountingGame.js` + `acl/accounting.js` | ✅ |
+| **6.2** | Presenters → read models BC (bilan complet, livret 2c, budget temps réel) | 🔲 |
+| **6.3** | `saveBudgetTurnEnrichment` → command BC + repo write | 🔲 |
+| **6.4** | Export / flush journal → ports BC (plus d’appel direct `JournalManager`) | 🔲 |
+| **6.5** | Nettoyage façade `BudgetManager` (méthodes mortes, retrait `window`) | 🔲 |
+
+### Step 6.1 livré (2026-07-31)
+
+**Nouveau fichier** : `src/js/acl/accountingGame.js` — orchestration game (taxes, salaires, maintenance, prêts, commerce, enrichissement `budget_turn_*`).
+
+**Migrés vers ACL** :
+- `BudgetProcessor.js`
+- `ui/buttons.js`, `ui/budget/RealtimeBudgetManager.js`
+- `ui/loans/LoansManager.js`, `ui/commerce-section.js`
+- `game/services/CommerceService.js`, `RandomEventsService.js`
+- `game/game.js`, `game/scene.js`
+- `ui/urban-advice/UrbanAdviceManager.js`, `ui/ObjectivesTracker.js`
+
+**Encore sur `BudgetManager`** : enregistrement global, `budgetReadyPromise`, tests legacy, adapters régression.
+
+---
+
+## Phase 5 — Chaîne PCG stricte (NON PRIORITAIRE)
+
+**Décision (2026-07-31)** : on **n’enchaîne pas** sur le grand livre / balance / numéros de comptes PCG pour l’instant.  
+Documenter la cible ici pour ne pas confondre avec ce qui est déjà livré (Phase 3).
+
+### Référence workflow comptable classique
+
+[Journal → Grand livre → Balance → CR + Bilan](https://finref.fr/comptabilite/generale/journal-grand-livre-balance/)
+
+```
+Journal (chrono)  →  Grand livre (par compte PCG)  →  Balance (soldes, débit=crédit)
+                                                          ↓
+                                              Compte de résultat + Bilan (annuels)
+```
+
+### État Anoria vs PCG
+
+| Document PCG | Rôle | Anoria aujourd’hui | Statut |
+|---|---|---|---|
+| **Journal** | Tous les mouvements, ordre chronologique | `db.journal`, export `docs/ledgers/`, UI `#journal-panel` | ✅ |
+| **Grand livre** | Écritures **classées par compte** (512, 641, 701…) | ❌ absent | Phase 5 |
+| **Balance** | Synthèse soldes par compte ; contrôle partie double | ❌ absent | Phase 5 |
+| **Compte de résultat** | Activité **annuelle** (produits − charges) | `IncomeStatement` — agrégats par `type` métier, pas comptes PCG | 🟡 raccourci Phase 3 |
+| **Bilan** | Patrimoine **annuel** ; RN du CR au passif | `BalanceSheet` — lié CR via `netResult` | 🟡 raccourci Phase 3 |
+| **Livret ville** | Vue **simplifiée** César 3 pour non-comptables | `GetCityLedgerYearComparison` | ✅ hors PCG strict |
+
+### Dette de nommage (à corriger en Phase 5 ou avant)
+
+- `GetGeneralLedger` / `GeneralLedgerView` = **journal** chronologique, **pas** le grand livre PCG.
+- Cible rename : `GetJournal` / `JournalView` ; réserver « GeneralLedger » au classement par compte.
+
+### Raccourci actuel Phase 3 (explicitement hors PCG strict)
+
+`FinancialStatementsBundle` et `JournalFinancialStatementsPolicy` **sautent** grand livre et balance :
+
+```
+journal (types métier)  →  partition produits/charges  →  CR
+                        →  trésorerie + immobilisé     →  Bilan (netResult = CR)
+```
+
+Utile en jeu ; **ne remplace pas** une clôture PCG avec plan de comptes et écritures débit/crédit.
+
+### Scope Phase 5 (quand / si repris — pas maintenant)
+
+1. **Plan de comptes PCG** — mapping `type` journal → comptes (512 Banque, 641 Rémunérations, 741 Impôts locaux…).
+2. **`RecordLedgerEntry` enrichi** — imputation débit/crédit par ligne (partie double).
+3. **Grand livre** — read model par compte (`GetLedgerByAccount` ou équivalent).
+4. **Balance** — read model `GetTrialBalance` ; invariant total débits = total crédits.
+5. **CR + Bilan annuels** — dérivés de la balance de clôture, pas d’agrégation directe par `type`.
+6. **Renommage** journal UI vs grand livre PCG.
+
+### Hors scope Phase 5
+
+- Livret ville (reste une couche présentation joueur).
+- Checkpoints par tour en jeu (`FinancialStatementsHistory`) — raccourci UX, pas clôture comptable.
+
+### Priorités actuelles (inchangées)
+
+```
+2c  livret presenter
+      ↓
+4   extinction BudgetManager write (si pas déjà fait)
+      ↓
+(autre dette produit / bugs)
+      ↓
+5   PCG strict  ← plus tard, sur décision explicite
+```
 
 ---
 
@@ -40,7 +141,7 @@ Ce n’est pas théorique : le **livret lit déjà les agrégats journal** pour 
 
 | Rôle | Source | Usage |
 |---|---|---|
-| **Mouvements** (grand livre, CR, lignes livret) | Journal **propre** | Agrégats par type/période |
+| **Mouvements** (CR, lignes livret ; grand livre PCG = Phase 5) | Journal **propre** | Agrégats par type/période |
 | **Solde courant** (HUD, balance N livret) | Trésorerie co-maintenue | Perf temps réel |
 
 Les deux doivent rester **réconciliables** (invariant 5 README). La trésorerie ne remplace pas un journal corrompu pour les **totaux historiques**.
@@ -295,7 +396,7 @@ Inventaire après migration Phase 3½ (write path opérationnel). **Ne pas patch
 
 ## Phase 2b — livré ✅ (2026-07-31)
 
-- `GetGeneralLedger` + `GeneralLedgerView` + filtres cohérents (J1, J2)
+- `GetGeneralLedger` + `GeneralLedgerView` + filtres cohérents (J1, J2) — ⚠️ nom legacy = **journal** UI, pas grand livre PCG
 - `getGeneralLedger()` dans `acl/accounting.js` (J5)
 - Presenter journal DOM-only ; plus d'écriture localStorage (J4)
 - Export JSON/PDF via `acl/accounting.js` → composition root (plus de `window.journalManager` direct)
@@ -309,11 +410,16 @@ Inventaire après migration Phase 3½ (write path opérationnel). **Ne pas patch
 |---|---|
 | `GetIncomeStatement` | `application/queries/financial-statements/GetIncomeStatement.js` |
 | `GetBalanceSheet` | `application/queries/financial-statements/GetBalanceSheet.js` |
+| `GetFinancialStatementsAtTurn` / `GetFinancialStatementsHistory` | `application/queries/financial-statements/GetFinancialStatementsAtTurn.js` |
+| `FinancialStatementsBundle` | `domain/read-models/FinancialStatementsBundle.js` |
 | `CityAssetsValuationPort` | `infrastructure/adapters/shared/CityAssetsValuationAdapter.js` |
+| Enrichissement UI (population, breakdowns) | `BudgetTurnEnrichmentRepository` → `budget_turn_*` (**pas** source CR) |
 
-- ACL : `getIncomeStatement()`, `getBalanceSheet()`
-- `#budget-panel` → `getBalanceSheet()` (`buttons.js`)
-- `#budget-states-panel` résumé → `getIncomeStatement()` + snapshots `budget_turn_*` (historique tours)
+- ACL : `getIncomeStatement()`, `getBalanceSheet()`, `getFinancialStatementsAtTurn()`, `getFinancialStatementsHistory()`
+- `#budget-panel` → `getBalanceSheet()` (bundle lié CR)
+- `#budget-states-panel` → `getFinancialStatementsHistory()` (journal-primary ; cache enrichissement only)
+
+**Limite** : raccourci journal → CR/bilan, **sans** grand livre ni balance PCG — voir Phase 5 (non prioritaire).
 
 ---
 
