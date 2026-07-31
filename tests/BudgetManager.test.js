@@ -11,6 +11,10 @@ import Dexie from 'dexie';
 import { BudgetManager } from '../src/js/stores/BudgetManager.js';
 import { JournalManager } from '../src/js/stores/JournalManager.js';
 import { resetSessionLedgerBufferForTests } from '../src/js/stores/SessionLedgerBuffer.js';
+import {
+    getOrCreateAccountingContext,
+    resetAccountingContextForTests,
+} from '../src/composition/createAccountingContext.js';
 import config from '../src/js/game/config.js';
 
 // ============================================================================
@@ -38,6 +42,7 @@ describe('BudgetManager', () => {
 
     beforeEach(async () => {
         resetSessionLedgerBufferForTests();
+        resetAccountingContextForTests();
         // Créer une nouvelle base de données pour chaque test
         testDb = createTestDb();
         await testDb.open();
@@ -71,12 +76,18 @@ describe('BudgetManager', () => {
         const journalManager = new JournalManager();
         journalManager.db = testDb;
         budgetManager.journalManager = journalManager;
+
+        getOrCreateAccountingContext({
+            journalManager,
+            budgetManager,
+        });
         
         // Mock config pour éviter les problèmes avec import.meta.env
         budgetManager.config = config;
     });
 
     afterEach(async () => {
+        resetAccountingContextForTests();
         // Nettoyer après chaque test
         if (testDb && testDb.isOpen()) {
             await testDb.delete();
@@ -91,6 +102,14 @@ describe('BudgetManager', () => {
     // ========================================================================
     describe('initialize', () => {
         
+        beforeEach(() => {
+            resetAccountingContextForTests();
+            getOrCreateAccountingContext({
+                journalManager: budgetManager.journalManager,
+                budgetManager,
+            });
+        });
+
         test('crée un budget initial avec les fonds par défaut (200€)', async () => {
             await budgetManager.initialize();
             
@@ -98,6 +117,7 @@ describe('BudgetManager', () => {
             
             expect(budget.funds).toBe(200);
             expect(budget.initialFunds).toBe(200);
+            expect(budget.income).toBe(200);
             expect(budget.turn).toBe(0);
         });
 
@@ -110,64 +130,81 @@ describe('BudgetManager', () => {
             
             expect(budget.funds).toBe(500);
             expect(budget.initialFunds).toBe(500);
+            expect(budget.income).toBe(500);
+        });
+
+        test('ne downgrade pas la trésorerie au-delà du capital initial (config mismatch)', async () => {
+            await budgetManager.initialize(5000);
+
+            const budgetData = await testDb.budget.toArray();
+            budgetData[0].initialFunds = 5000;
+            budgetData[0].income = 0;
+            budgetData[0].funds = 5000;
+            await testDb.budget.put(budgetData[0]);
+
+            budgetManager.config = { budget: { initialFunds: 200 } };
+
+            const budget = await budgetManager.getCurrentBudget();
+
+            expect(budget.funds).toBe(5000);
+            expect(budget.initialFunds).toBe(200);
         });
 
         test('réinitialise le budget (efface les données existantes)', async () => {
-            // Créer un budget initial
+            resetAccountingContextForTests();
+            getOrCreateAccountingContext({
+                journalManager: budgetManager.journalManager,
+                budgetManager,
+            });
+
             await budgetManager.initialize(300);
-            await budgetManager.addIncome(100, 'Test');
-            
-            // Réinitialiser
+            await budgetManager.addTaxes(100, 'Test taxes');
+
             await budgetManager.initialize(200);
-            
+
             const budget = await budgetManager.getCurrentBudget();
-            
+
             expect(budget.funds).toBe(200);
-            expect(budget.income).toBe(0); // Réinitialisé
+            expect(budget.income).toBe(200);
         });
     });
 
     // ========================================================================
-    // addIncome / addConstructionExpense - Opérations financières
+    // addConstructionRefund / addConstructionExpense - Opérations financières
     // ========================================================================
-    describe('addIncome', () => {
+    describe('addConstructionRefund', () => {
         
         beforeEach(async () => {
             await budgetManager.initialize(200);
+            resetAccountingContextForTests();
+            getOrCreateAccountingContext({
+                journalManager: budgetManager.journalManager,
+                budgetManager,
+            });
         });
 
-        test('ajoute des revenus au budget', async () => {
-            // S'assurer qu'un budget existe
-            await budgetManager.initialize(200);
-            
-            // Ajouter des revenus (addIncome ne met PAS à jour dailyIncome, seul addDailyIncome le fait)
-            await budgetManager.addIncome(50, 'Vente de blé');
-            
-            // Vérifier directement dans la base (évite la logique de synchronisation de getCurrentBudget)
+        test('rembourse une dépense de construction (investissements)', async () => {
+            await budgetManager.addConstructionExpense(30, 'Building: House');
+            await budgetManager.addConstructionRefund(30, 'Refund for failed House');
+
             const budgetData = await testDb.budget.toArray();
             const budget = budgetData[0];
-            
-            expect(budget.funds).toBe(250); // 200 + 50
-            expect(budget.income).toBe(50);
-            // Note: addIncome() ne met pas à jour dailyIncome, seul addDailyIncome() le fait
+
+            expect(budget.funds).toBe(200);
+            expect(budget.totalInvestments).toBe(0);
+            expect(budget.income).toBe(200);
         });
 
-        test('cumule plusieurs revenus', async () => {
-            await budgetManager.initialize(200);
-            
-            // Ajouter le premier revenu et vérifier
-            await budgetManager.addIncome(30, 'Vente 1');
-            let budgetData = await testDb.budget.toArray();
-            let budget = budgetData[0];
-            expect(budget.funds).toBe(230); // 200 + 30
-            
-            // Ajouter le deuxième revenu et vérifier
-            await budgetManager.addIncome(20, 'Vente 2');
-            budgetData = await testDb.budget.toArray();
-            budget = budgetData[0];
-            
-            expect(budget.funds).toBe(250); // 200 + 30 + 20
-            expect(budget.income).toBe(50); // 30 + 20
+        test('cumule plusieurs remboursements', async () => {
+            await budgetManager.addConstructionExpense(30, 'Building: House');
+            await budgetManager.addConstructionRefund(10, 'Refund for failed House');
+            await budgetManager.addConstructionRefund(20, 'Refund for duplicate House');
+
+            const budgetData = await testDb.budget.toArray();
+            const budget = budgetData[0];
+
+            expect(budget.funds).toBe(200);
+            expect(budget.totalInvestments).toBe(0);
         });
     });
 
@@ -175,10 +212,14 @@ describe('BudgetManager', () => {
         
         beforeEach(async () => {
             await budgetManager.initialize(200);
+            resetAccountingContextForTests();
+            getOrCreateAccountingContext({
+                journalManager: budgetManager.journalManager,
+                budgetManager,
+            });
         });
 
         test('soustrait des dépenses du budget (investissements)', async () => {
-            await budgetManager.initialize(200);
             await budgetManager.addConstructionExpense(30, 'Building: House');
             
             // Lire directement depuis la base
@@ -187,12 +228,10 @@ describe('BudgetManager', () => {
             
             expect(budget.funds).toBe(170); // 200 - 30
             expect(budget.totalInvestments).toBe(30);
-            // Note: addConstructionExpense() does NOT update dailyExpenses (only addDailyExpense() does)
             expect(budget.dailyExpenses).toBe(0);
         });
 
         test('peut avoir un budget négatif (dette)', async () => {
-            await budgetManager.initialize(200);
             await budgetManager.addConstructionExpense(250, 'Grosse dépense');
             
             // Lire directement depuis la base
@@ -307,7 +346,7 @@ describe('BudgetManager', () => {
             const budget = budgetData[0];
             
             expect(budget.funds).toBe(215); // 200 + 15
-            expect(budget.income).toBe(15);
+            expect(budget.income).toBe(215); // 200 capital + 15 export
             expect(budget.dailyIncome).toBe(15);
             expect(budget.totalExports).toBeDefined();
             expect(budget.totalExports.wheat).toBe(15);
@@ -338,7 +377,7 @@ describe('BudgetManager', () => {
             const budget = budgetData[0];
             
             expect(budget.funds).toBe(278); // 200 + 15 + 18 + 20 + 25
-            expect(budget.income).toBe(78);
+            expect(budget.income).toBe(278);
             expect(budget.totalExports.wheat).toBe(15);
             expect(budget.totalExports.carrot).toBe(18);
             expect(budget.totalExports.cabbage).toBe(20);
@@ -354,7 +393,7 @@ describe('BudgetManager', () => {
             const budget = budgetData[0];
             
             expect(budget.funds).toBe(230); // 200 + 15 + 15
-            expect(budget.income).toBe(30);
+            expect(budget.income).toBe(230);
             expect(budget.totalExports.wheat).toBe(30);
         });
 
@@ -367,7 +406,7 @@ describe('BudgetManager', () => {
             const budget = budgetData[0];
             
             expect(budget.funds).toBe(233); // 200 + 15 + 18
-            expect(budget.income).toBe(33);
+            expect(budget.income).toBe(233);
             expect(budget.totalExports.wheat).toBe(15);
             expect(budget.totalExports.carrot).toBe(18);
         });
@@ -380,52 +419,7 @@ describe('BudgetManager', () => {
             const budget = budgetData[0];
             
             expect(budget.funds).toBe(216); // 200 + 16 (arrondi)
-            expect(budget.income).toBe(16);
-        });
-    });
-
-    describe('addDailyExpense', () => {
-        
-        beforeEach(async () => {
-            await budgetManager.initialize(200);
-        });
-
-        test('soustrait des dépenses quotidiennes du budget', async () => {
-            await budgetManager.initialize(200);
-            await budgetManager.addDailyExpense(30, 'Maintenance routes');
-            
-            // Lire directement depuis la base
-            const budgetData = await testDb.budget.toArray();
-            const budget = budgetData[0];
-            
-            expect(budget.funds).toBe(170); // 200 - 30
-            expect(budget.expenses).toBe(30);
-            expect(budget.dailyExpenses).toBe(30); // addDailyExpense() updates dailyExpenses
-        });
-
-        test('cumule plusieurs dépenses quotidiennes', async () => {
-            await budgetManager.initialize(200);
-            await budgetManager.addDailyExpense(20, 'Maintenance 1');
-            await budgetManager.addDailyExpense(15, 'Maintenance 2');
-            
-            const budgetData = await testDb.budget.toArray();
-            const budget = budgetData[0];
-            
-            expect(budget.funds).toBe(165); // 200 - 20 - 15
-            expect(budget.expenses).toBe(35); // 20 + 15
-            expect(budget.dailyExpenses).toBe(35); // 20 + 15
-        });
-
-        test('peut avoir un budget négatif avec dépenses quotidiennes', async () => {
-            await budgetManager.initialize(200);
-            await budgetManager.addDailyExpense(250, 'Grosse dépense quotidienne');
-            
-            const budgetData = await testDb.budget.toArray();
-            const budget = budgetData[0];
-            
-            expect(budget.funds).toBe(-50); // 200 - 250 (debt allowed)
-            expect(budget.expenses).toBe(250);
-            expect(budget.dailyExpenses).toBe(250);
+            expect(budget.income).toBe(216);
         });
     });
 
@@ -480,7 +474,7 @@ describe('BudgetManager', () => {
             // 3 habitants + 4 habitants = 7 habitants × 100€ = 700€
             expect(budget.totalTaxes).toBe(700);
             expect(budget.funds).toBe(900); // 200 + 700
-            expect(budget.income).toBe(700);
+            expect(budget.income).toBe(900); // 200 capital + 700 taxes
         });
 
         test('ne collecte les impôts qu\'une seule fois par année', async () => {

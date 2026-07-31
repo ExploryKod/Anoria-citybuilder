@@ -8,6 +8,11 @@ import { getGeneralLedger } from '../../acl/accounting.js';
 import {
   formatJournalEntryDetails,
 } from './formatJournalEntryDescription.js';
+import {
+  INFO_JOURNAL_TYPE_LABELS,
+  isInfoPseudoMovementType,
+  labelForInfoJournalType,
+} from '../../../contexts/accounting/domain/policies/LedgerInformativeTypePolicy.js';
 
 /**
  * Initialise le popup du journal
@@ -324,7 +329,10 @@ function createJournalEntryHTML(entry) {
         entry.type === 'cumul_salary' ||
         entry.type === 'cumul_exceptional_expenses' ||
         entry.type === 'cumul_loan_interest' ||
-        entry.type === 'cumul_loan_repayment') {
+        entry.type === 'cumul_loan_repayment' ||
+        isInfoPseudoMovementType(entry.type) ||
+        entry.type === 'loan_default_interest' ||
+        entry.type === 'loan_default_repayment') {
         isIncome = false;
     } else if (entry.type === 'balance') {
         isIncome = entry.amount >= 0;
@@ -334,7 +342,7 @@ function createJournalEntryHTML(entry) {
         isIncome = true;
     } else if (entry.type.startsWith('import_')) {
         isIncome = false;
-    } else if (entry.type === 'salary' || entry.type === 'maintenance' || entry.type === 'construction' || entry.type === 'exceptional_expenses' || entry.type === 'commercial_route') {
+    } else if (entry.type === 'salary' || entry.type === 'maintenance' || entry.type === 'construction' || entry.type === 'construction_refund' || entry.type === 'exceptional_expenses' || entry.type === 'commercial_route') {
         isIncome = false;
     } else if (entry.type === 'carry_forward') {
         isIncome = entry.isCarryForwardIncome !== undefined ? entry.isCarryForwardIncome : true;
@@ -348,6 +356,7 @@ function createJournalEntryHTML(entry) {
         'capital_funds': 'Capital de départ',
         'carry_forward': 'Report à nouveau',
         'construction': 'Construction',
+        'construction_refund': 'Remboursement construction',
         'exceptional_expenses': 'Réparation',
         'maintenance': 'Maintenance mensuelle',
         'salary': 'Salaires',
@@ -365,6 +374,9 @@ function createJournalEntryHTML(entry) {
         'loan_capital': 'Capital Prêt',
         'loan_interest': 'Intérêts prêt',
         'loan_repayment': 'Remboursement prêt',
+        ...INFO_JOURNAL_TYPE_LABELS,
+        'loan_default_interest': labelForInfoJournalType('info_loan_interest'),
+        'loan_default_repayment': labelForInfoJournalType('info_loan_repayment'),
         'cumul_maintenance': 'Cumul Maintenance',
         'cumul_construction': 'Cumul Construction',
         'cumul_salary': 'Cumul Salaires',
@@ -444,6 +456,7 @@ function createJournalEntryHTML(entry) {
                 ` : ''}
                 <div class="journal-entry-meta">
                     ${entry.id != null ? `<span class="journal-entry-id">N° ${entry.id}</span>` : ''}
+                    ${entry.buildingInstanceId ? `<span class="journal-entry-asset-id" title="${entry.buildingInstanceId}">Id bâtiment: ${entry.buildingInstanceId}</span>` : ''}
                     ${yearDisplay ? `<span class="journal-entry-year">Année: ${yearDisplay}</span>` : ''}
                     ${entry.turn !== undefined ? `<span class="journal-entry-turn-number">Tour: ${entry.turn}</span>` : ''}
                     <span class="journal-entry-date">${formattedDate}</span>

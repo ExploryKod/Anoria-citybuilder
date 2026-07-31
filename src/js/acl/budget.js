@@ -36,15 +36,16 @@ export async function getCityBuildingPricesByType() {
 /**
  * @param {number} amount
  * @param {string} reason
+ * @param {{ buildingInstanceId?: string }} [options]
  */
-export async function recordConstructionExpense(amount, reason) {
-  return budgetManager.addConstructionExpense(amount, reason);
+export async function recordConstructionExpense(amount, reason, options = {}) {
+  return budgetManager.addConstructionExpense(amount, reason, options);
 }
 
 /**
  * @param {number} amount
  * @param {string} reason
  */
-export async function recordConstructionRefund(amount, reason) {
-  return budgetManager.addIncome(amount, reason);
+export async function recordConstructionRefund(amount, reason, options = {}) {
+  return budgetManager.addConstructionRefund(amount, reason, options);
 }

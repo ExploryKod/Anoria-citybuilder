@@ -76,6 +76,16 @@ describe('formatJournalEntryDescription', () => {
     ).toEqual([{ label: 'Bâtiment', value: 'Farm-Cabbage' }]);
   });
 
+  test('construction shows labeled building name only (building id is in meta line)', () => {
+    expect(
+      formatJournalEntryDetails({
+        type: 'construction',
+        description: 'Building: Farm-Cabbage',
+        buildingInstanceId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      })
+    ).toEqual([{ label: 'Bâtiment', value: 'Farm-Cabbage' }]);
+  });
+
   test('formatJournalEntryDescription joins labeled facts', () => {
     expect(
       formatJournalEntryDescription({

@@ -3,8 +3,20 @@
  * Rules unchanged from stores/JournalManager.js (Phase 2a extraction).
  */
 
+import { isInfoPseudoMovementType } from '../../../../domain/policies/LedgerInformativeTypePolicy.js';
+
+/** Legacy info types (renamed to `info_*`). */
+const LEGACY_INFO_PSEUDO_MOVEMENT_TYPES = new Set([
+  'loan_default_interest',
+  'loan_default_repayment',
+]);
+
 /** @param {string} type */
 export function isInformativeJournalType(type) {
+  if (isInfoPseudoMovementType(type) || LEGACY_INFO_PSEUDO_MOVEMENT_TYPES.has(type)) {
+    return true;
+  }
+
   return (
     type === 'cumul_maintenance' ||
     type === 'cumul_construction' ||
@@ -12,6 +24,7 @@ export function isInformativeJournalType(type) {
     type === 'cumul_exceptional_expenses' ||
     type === 'cumul_loan_interest' ||
     type === 'cumul_loan_repayment' ||
+    type === 'carry_forward' ||
     type === 'balance'
   );
 }
@@ -67,6 +80,7 @@ export function isJournalEntryIncomeForMonthlySummary(entry, allEntries, getTime
 
   if (
     entry.type === 'construction' ||
+    entry.type === 'construction_refund' ||
     entry.type === 'maintenance' ||
     entry.type === 'salary' ||
     entry.type === 'exceptional_expenses' ||
@@ -152,6 +166,10 @@ export function isJournalEntryIncomeForBalance(entry, allEntries, getTimeInfo) {
   }
 
   if (entry.type.startsWith('export_')) {
+    isIncome = true;
+  }
+
+  if (entry.type === 'loan_capital' || entry.type === 'construction_refund') {
     isIncome = true;
   }
 
@@ -249,6 +267,7 @@ export function buildMonthlyFinancialSummary(entries, getTimeInfo) {
         id: entry.id,
         businessKey: entry.businessKey,
         partnerId: entry.partnerId,
+        buildingInstanceId: entry.buildingInstanceId,
         type: entry.type,
         amount: entry.amount,
         description: entry.description,
@@ -262,6 +281,7 @@ export function buildMonthlyFinancialSummary(entries, getTimeInfo) {
         id: entry.id,
         businessKey: entry.businessKey,
         partnerId: entry.partnerId,
+        buildingInstanceId: entry.buildingInstanceId,
         type: entry.type,
         amount: entry.amount,
         description: entry.description,

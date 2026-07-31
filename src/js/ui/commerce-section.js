@@ -1,4 +1,5 @@
 import commerceStore from '../stores/CommerceStore.js';
+import config from '../game/config.js';
 import { getCityEmploymentSummary } from '../acl/employment.js';
 import { getCityTotalPopulation } from '../acl/housing.js';
 import {
@@ -731,13 +732,13 @@ class CommerceSectionManager {
         // Note: La désactivation se fera automatiquement quand le contrat sera terminé
         
         // Pay commercial route fee (one-time payment to open commercial road)
-        const commercialRouteFee = 500; // Cost to open commercial route (negotiators)
+        const commercialRouteFee = config?.budget?.commercialRouteFee ?? 500;
         const globalObj = typeof window !== 'undefined' ? window : global;
         
         if (globalObj.budgetManager) {
             try {
-                const budget = await globalObj.budgetManager.getCurrentBudget();
-                const timeInfo = globalObj.TimeManager ? globalObj.TimeManager.getTimeInfo(budget.turn) : null;
+                const currentBudget = await globalObj.budgetManager.getCurrentBudget();
+                const timeInfo = globalObj.TimeManager ? globalObj.TimeManager.getTimeInfo(currentBudget.turn) : null;
                 const yearDisplay = timeInfo && timeInfo.year === 0 ? '0 JC' : timeInfo ? `${timeInfo.year} ap JC` : '';
                 const monthName = timeInfo ? timeInfo.month || 'Mois' : 'Mois';
                 const dateDisplay = `${monthName} ${yearDisplay}`;
@@ -750,38 +751,38 @@ class CommerceSectionManager {
                     total: commercialRouteFee
                 }];
                 const description = `Route commerciale - ${dateDisplay} |BREAKDOWN|${JSON.stringify(breakdown)}|BREAKDOWN|`;
-                
-                // Deduct funds and update budget
-                const roundedAmount = Math.round(commercialRouteFee);
-                budget.funds = Math.round(budget.funds - roundedAmount);
-                budget.expenses = Math.round(budget.expenses + roundedAmount);
-                budget.netFlow = Math.round(budget.income - budget.expenses);
-                
-                // Add journal entry
-                await globalObj.budgetManager.addJournalEntry(
-                    budget.turn,
-                    'commercial_route',
-                    roundedAmount,
+
+                const feeResult = await globalObj.budgetManager.addCommercialRouteFee(
+                    commercialRouteFee,
                     description,
                     partnerId
                 );
-                
-                // Save budget
-                await globalObj.budgetManager.db.budget.put(budget);
+
+                if (feeResult.skipped && feeResult.reason === 'duplicate_business_key') {
+                    return {
+                        success: false,
+                        newStatus: partner.isActive,
+                        message: 'La route commerciale pour ce partenaire est déjà ouverte',
+                    };
+                }
                 
                 // Update funds display if available
                 if (window.gameUI) {
-                    window.gameUI.updateFunds(budget.funds);
+                    window.gameUI.updateFunds(feeResult.budget.funds);
                 } else {
                     const displayFunds = document.querySelector('.display-funds');
                     if (displayFunds) {
-                        displayFunds.textContent = budget.funds.toString();
+                        displayFunds.textContent = feeResult.budget.funds.toString();
                     }
                 }
                 
             } catch (error) {
                 console.error('[CommerceSectionManager] Error paying commercial route fee:', error);
-                // Continue with activation even if payment fails (for now)
+                return {
+                    success: false,
+                    newStatus: false,
+                    message: 'Erreur lors du paiement de la commission négociants',
+                };
             }
         }
         

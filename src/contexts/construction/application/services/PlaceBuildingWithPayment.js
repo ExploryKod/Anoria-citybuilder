@@ -81,7 +81,8 @@ export class PlaceBuildingWithPayment {
 
     const expenseResult = await this.recordExpense(
       data.price,
-      `Building: ${data.type}`
+      `Building: ${data.type}`,
+      { buildingInstanceId: instanceId }
     );
 
     if (!expenseResult.success) {
