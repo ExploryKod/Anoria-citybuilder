@@ -7,6 +7,7 @@
 /**
  * @typedef {object} IncomeStatement
  * @property {number} fiscalYear
+ * @property {number|null} [cumulativeAtTurn]
  * @property {number} totalProducts
  * @property {number} totalCharges
  * @property {number} netResult
@@ -25,6 +26,7 @@ export function createIncomeStatement(data) {
 
   return {
     fiscalYear: data.fiscalYear,
+    cumulativeAtTurn: data.cumulativeAtTurn ?? null,
     products,
     charges,
     totalProducts,

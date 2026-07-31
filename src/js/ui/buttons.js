@@ -41,9 +41,13 @@ import gameStore from "../stores/GameStore.js";
 import { hasRoadAccessFromCount } from '../acl/parcels.js';
 import { listSupplyMapBuildings } from '../acl/supply.js';
 import { listAllBuildingRows } from '../acl/construction.js';
-import budgetManager from "../stores/BudgetManager.js";
 import { getCityBuildingValuation } from '../acl/budget.js';
 import { getBalanceSheet } from '../acl/accounting.js';
+import {
+  getBudgetSummary,
+  getFinancialHealth,
+  getTreasurySnapshot,
+} from '../acl/accountingGame.js';
 import AssetManager from "../meshs/AssetManager.js";
 import { initRealtimeBudgetPopup, updateRealtimeBudget } from "./budget/RealtimeBudgetManager.js";
 import { initBudgetStatesPopup, refreshBudgetStatesModal } from "./budget/BudgetStatesManager.js";
@@ -80,9 +84,9 @@ function createBudgetElements() {
 async function updateBudgetDisplay() {
     try {
         const [budgetSummary, financialHealth, currentBudget, balanceSheet] = await Promise.all([
-            budgetManager.getBudgetSummary(),
-            budgetManager.getFinancialHealth(),
-            budgetManager.getCurrentBudget(),
+            getBudgetSummary(),
+            getFinancialHealth(),
+            getTreasurySnapshot(),
             getBalanceSheet(),
         ]);
         

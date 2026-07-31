@@ -1,33 +1,23 @@
-import { balanceSheetFromTreasuryAndAssets } from '../../../domain/policies/BalanceSheetMappingPolicy.js';
+import { GetFinancialStatementsAtTurn } from './GetFinancialStatementsAtTurn.js';
 import { GetTreasurySnapshot } from '../treasury/GetTreasurySnapshot.js';
 
 /**
- * Query: bilan (actif / passif) from treasury + city assets + loans.
+ * Query: bilan (actif / passif) linked to CR at current turn.
  */
 export class GetBalanceSheet {
   /**
+   * @param {GetFinancialStatementsAtTurn} getFinancialStatementsAtTurn
    * @param {GetTreasurySnapshot} getTreasurySnapshot
-   * @param {import('../../ports/CityAssetsValuationPort.js').CityAssetsValuationPort} cityAssetsValuationPort
-   * @param {{ getActiveLoans: () => Promise<Array> }} treasuryLoanPortfolio
    */
-  constructor(getTreasurySnapshot, cityAssetsValuationPort, treasuryLoanPortfolio) {
+  constructor(getFinancialStatementsAtTurn, getTreasurySnapshot) {
+    this.getFinancialStatementsAtTurn = getFinancialStatementsAtTurn;
     this.getTreasurySnapshot = getTreasurySnapshot;
-    this.cityAssetsValuationPort = cityAssetsValuationPort;
-    this.treasuryLoanPortfolio = treasuryLoanPortfolio;
   }
 
   /** @returns {Promise<import('../../../domain/read-models/BalanceSheet.js').BalanceSheet>} */
   async execute() {
-    const [treasurySnapshot, buildingValuation, activeLoans] = await Promise.all([
-      this.getTreasurySnapshot.execute(),
-      this.cityAssetsValuationPort.getCityBuildingValuation(),
-      this.treasuryLoanPortfolio.getActiveLoans(),
-    ]);
-
-    return balanceSheetFromTreasuryAndAssets({
-      treasurySnapshot,
-      buildingValuation,
-      activeLoans,
-    });
+    const snapshot = await this.getTreasurySnapshot.execute();
+    const bundle = await this.getFinancialStatementsAtTurn.execute(snapshot.turn ?? 0);
+    return bundle.balanceSheet;
   }
 }

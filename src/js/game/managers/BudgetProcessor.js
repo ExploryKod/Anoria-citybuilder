@@ -1,5 +1,17 @@
 import { TimeManager } from '../utils/TimeManager.js';
 import { getCityTotalPopulation, clearPopulationWithoutRoadAccess } from '../../acl/housing.js';
+import {
+  collectCitizenTaxes,
+  recordSalaries,
+  recordPayrollTax,
+  recordBuildingMaintenance,
+  getTreasurySnapshot,
+  recalculateLoanTotals,
+  saveBudgetTurnEnrichment,
+  cleanupOldBudgetTurnSnapshotsByAge,
+  cleanupOldJournalEntries,
+  flushJournalSessionToDexie,
+} from '../../acl/accountingGame.js';
 
 /**
  * Processes budget-related operations
@@ -103,11 +115,7 @@ export class BudgetProcessor {
         this.#processBudgetInFlight = true;
 
         try {
-            if (!window.budgetManager) {
-                return;
-            }
-
-            await window.budgetManager.addTaxes(time);
+            await collectCitizenTaxes(time);
             
             const timeInfo = TimeManager.getTimeInfo(time);
             const civilMonthKey = this.#civilMonthKey(timeInfo);
@@ -129,7 +137,7 @@ export class BudgetProcessor {
                     const salaryDescription = `Salaires fonctionnaires - ${monthName} ${yearDisplay} (${totalPopulation} hab. × ${salaryPerMonth}€)`;
                     
                     const totalSalaryAmount = totalPopulation * salaryPerMonth;
-                    await window.budgetManager.addSalaries(
+                    await recordSalaries(
                         salaryPerMonth,
                         totalPopulation,
                         salaryDescription,
@@ -143,7 +151,7 @@ export class BudgetProcessor {
                     
                     if (salaryTaxRate > 0) {
                         const taxDescription = `Impôt sur les salaires - ${monthName} ${yearDisplay} (${Math.round(salaryTaxRate * 100)}%)`;
-                        await window.budgetManager.addSalaryTax(
+                        await recordPayrollTax(
                             totalSalaryAmount,
                             salaryTaxRate,
                             taxDescription,
@@ -200,7 +208,7 @@ export class BudgetProcessor {
                     const breakdownData = JSON.stringify(breakdownItems);
                     const maintenanceDescription = `Maintenance mensuelle - ${monthName} ${year} |BREAKDOWN|${breakdownData}|BREAKDOWN|`;
                     
-                    await window.budgetManager.addBuildingMaintenance(
+                    await recordBuildingMaintenance(
                         buildingAmount,
                         maintenanceDescription,
                         time
@@ -218,8 +226,7 @@ export class BudgetProcessor {
             // Process loan payments
             if (window.processLoanPayments) {
                 await window.processLoanPayments();
-                const budget = await window.budgetManager.getCurrentBudget();
-                await window.budgetManager.calculateLoanTotals(budget);
+                await recalculateLoanTotals();
             }
             
             // Save budget state every 3 turns
@@ -230,27 +237,20 @@ export class BudgetProcessor {
                         buildingCounts: buildingCounts
                     };
                     
-                    await window.budgetManager.saveBudgetState(time, additionalData);
+                    await saveBudgetTurnEnrichment(time, additionalData);
                     
-                    const cleanupResult = await window.budgetManager.cleanupOldBudgetStatesByAge();
+                    const cleanupResult = await cleanupOldBudgetTurnSnapshotsByAge();
                     if (cleanupResult.deleted > 0) {
                         this.showCleanupNotificationOnce(cleanupResult);
                     }
                     
-                    if (window.budgetManager.cleanupOldJournalEntries) {
-                        await window.budgetManager.cleanupOldJournalEntries(60);
-                    }
+                    await cleanupOldJournalEntries(60);
                 } catch (error) {
                     console.warn('Failed to save budget state:', error);
                 }
             }
 
-            const journalManager =
-                window.journalManager ||
-                window.budgetManager?.journalManager;
-            if (journalManager?.flushSessionToDexie) {
-                await journalManager.flushSessionToDexie();
-            }
+                await flushJournalSessionToDexie();
         } catch (error) {
             console.warn('Budget operations failed:', error);
         } finally {

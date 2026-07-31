@@ -1,149 +1,103 @@
-# Source de Vérité - Données Financières
+# Source de vérité — Données financières (2026-07)
 
-## ✅ Vérification de la cohérence Budget ↔ Journal
+## Chaîne comptable PCG (vision cible)
 
-### Source de vérité unique : IndexedDB via BudgetManager
+Référence : [Journal → Grand livre → Balance → CR + Bilan](https://finref.fr/comptabilite/generale/journal-grand-livre-balance/)
 
-**Toutes les données financières proviennent d'IndexedDB via `BudgetManager` :**
-- Budget actuel : `budgetManager.getCurrentBudget()` → `db.budget`
-- États de budget : `budgetManager.getBudgetStates()` → `db.budget` (filtre `budget_turn_X`)
-- Entrées de journal : `budgetManager.getJournalEntries()` → `db.journal`
+| Document | Anoria | Rôle |
+|---|---|---|
+| **Journal** | ✅ `db.journal` / exports `docs/ledgers/` | Mouvements chronologiques (logique journal comptable, regroupés mois/année en UI) |
+| **Grand livre** | ❌ absent | Écritures par **compte PCG** (512, 641, 701…) |
+| **Balance** | ❌ absent | Soldes par compte, contrôle débit = crédit |
+| **Compte de résultat** | 🟡 `IncomeStatement` | Activité **annuelle** (produits − charges) |
+| **Bilan** | 🟡 `BalanceSheet` | Patrimoine **annuel** ; résultat net CR au passif |
+| **Livret ville** | ✅ `GetCityLedgerYearComparison` | Vue **simplifiée** César 3 pour non-comptables |
 
----
-
-## 📊 Budget (Panneau Finances)
-
-### Source des données
-- **Service** : `FinancesSectionManager`
-- **Source** : `JournalManager` → IndexedDB (`db.journal`)
-- **Méthodes utilisées** :
-  - `getYearlyFinancialSummary()` - Agrégation annuelle depuis le journal
-  - `getCurrentBudget()` - Budget actuel (pour le solde uniquement)
-
-### Données affichées
-- **Cette année** : Agrégation des entrées du journal de l'année en cours
-- **Année dernière** : Agrégation des entrées du journal de l'année précédente
-- **Toutes les valeurs** : Depuis IndexedDB via le journal (pas de données hardcodées)
+Le code `GetGeneralLedger` affiche le **journal**, pas le grand livre — dette de nommage à corriger.
 
 ---
 
-## 📔 Journal des Écritures
+## Architecture journal-primary (CR + bilan — raccourci actuel)
 
-### Source des données
-- **Fonction** : `loadJournalEntries()` dans `buttons.js`
-- **Source** : `budgetManager.getJournalEntries()` → IndexedDB (`db.journal`)
-- **Pas de données hardcodées** : Toutes les entrées viennent d'IndexedDB
-
-### Création des entrées
-Toutes les transactions financières créent automatiquement une entrée de journal :
-
-1. **Revenus** :
-   - `addIncome()` → `addJournalEntry('income', amount, source)`
-   - `addTaxes()` → `addJournalEntry('income', total, description)`
-
-2. **Dépenses** :
-   - `addExpense()` → `addJournalEntry('expense', amount, reason)`
-   - `addBuildingMaintenance()` → `addJournalEntry('maintenance', amount, description)`
-   - `addLoanInterest()` → `addJournalEntry('loan_interest', amount, description)`
-   - `addLoanRepayment()` → `addJournalEntry('loan_repayment', amount, description)`
-
-### Synchronisation du Turn
-- **Budget** : `budget.turn` mis à jour via `budgetManager.updateTurn(time)` dans `scene.js`
-- **Journal** : Chaque entrée utilise `budget.turn` au moment de la création
-- **Cohérence** : ✅ Même `turn` pour budget et journal
-
----
-
-## 🔄 Flux de données
+Le bounded context **Accounting** expose des états financiers **liés** via `FinancialStatementsBundle` :
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    IndexedDB (Source de vérité)         │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │ db.budget    │  │ db.journal   │  │ db.houses    │  │
-│  │ (budget_*)   │  │ (entries)    │  │ (buildings)  │  │
-│  └──────────────┘  └──────────────┘  └──────────────┘  │
-└─────────────────────────────────────────────────────────┘
-         │                    │                    │
-         │                    │                    │
-         ▼                    ▼                    ▼
-┌─────────────────────────────────────────────────────────┐
-│              BudgetManager (API unique)                 │
-│  • getCurrentBudget()                                   │
-│  • getBudgetStates()                                     │
-│  • getJournalEntries()                                   │
-│  • addIncome() → addJournalEntry()                      │
-│  • addExpense() → addJournalEntry()                     │
-│  • addTaxes() → addJournalEntry()                      │
-│  • addBuildingMaintenance() → addJournalEntry()         │
-└─────────────────────────────────────────────────────────┘
-         │                    │
-         │                    │
-         ▼                    ▼
-┌─────────────────────────────────────────────────────────┐
-│              Services & UI                               │
-│  ┌──────────────────────┐  ┌──────────────────────┐     │
-│  │ FinancesSectionMgr   │  │ loadJournalEntries()│     │
-│  │ (Panneau Finances)   │  │ (Journal UI)        │     │
-│  │ via JournalManager   │  │ via JournalManager  │     │
-│  └──────────────────────┘  └──────────────────────┘     │
-└─────────────────────────────────────────────────────────┘
+acl/accounting.js
+  getFinancialStatementsAtTurn(turn)   → { incomeStatement, balanceSheet, enrichment }
+  getFinancialStatementsHistory({ everyNTurns: 3 })
+  getIncomeStatement({ fiscalYear })     → CR annuel civil
+  getBalanceSheet()                      → bilan au tour courant (netResult = CR)
+```
+
+**Invariant comptable** : `balanceSheet.liabilities.netResult === incomeStatement.netResult`
+
+L'écart actif immobilisé (valorisation City Assets) vs passif hors CR est porté par `liabilities.equityReconciliation` — le résultat net n'est **jamais** forcé pour équilibrer.
+
+---
+
+## Sources par donnée
+
+| Donnée | Source primaire | Cache `db.budget` |
+|---|---|---|
+| Produits / charges CR (cumul) | Journal opérationnel `turn <= T` | ❌ jamais pour totaux CR |
+| Trésorerie au tour T | Entrée journal `balance`, sinon `enrichment.funds` | `budget_turn_*`.funds (fallback) |
+| Résultat net bilan | = CR.netResult | ❌ |
+| Capital social | Journal `capital_funds` turn 0 | — |
+| Actif immobilisé bâti | City Assets (valorisation **courante**) | — |
+| Dette prêts au tour T | Prêts actifs (tour courant) ou `enrichment.loanDebt` / estimation journal | `budget_turn_*`.loanDebt |
+| Population, taxBreakdown, maintenanceBreakdown | ❌ absent journal | ✅ `budget_turn_*` |
+| Trésorerie live (HUD, write path) | Co-maintenue journal + trésorerie | ✅ `budget_current` (**ne pas supprimer**) |
+
+---
+
+## `db.budget` — rôles conservés
+
+```
+db.budget
+  ├── budget_current   ← trésorerie live + agrégats courants (write path BC)
+  └── budget_turn_N    ← cache enrichissement UI (population, breakdowns, loanDebt snapshot)
+                         ← écrit par BudgetProcessor.saveBudgetState() tous les 3 tours
+                         ← lu par BudgetTurnEnrichmentRepository (read-only, pas source CR)
+```
+
+**Ne pas supprimer** `db.budget` sans audit complet des dépendances :
+- `DexieTreasuryRepository` / `budget_current`
+- `BudgetProcessor.saveBudgetState` (snapshots enrichissement)
+- `BudgetManager.getBudgetStates()` (legacy, autres consommateurs possibles)
+- Réconciliation trésorerie ↔ journal
+
+---
+
+## UI migrée
+
+| Surface | Fichier | Query BC |
+|---|---|---|
+| CR historique par tour | `ui/budget/BudgetStatesManager.js` | `getFinancialStatementsHistory()` |
+| Bilan panneau budget | `ui/buttons.js` | `getBalanceSheet()` → bundle lié |
+| Journal (UI chronologique) | `ui/journal/JournalManager.js` | `getGeneralLedger()` ⚠️ = journal, pas grand livre PCG |
+| Livret César 3 | `ui/finances-section.js` | `getCityLedgerYearComparison()` |
+
+---
+
+## Flux de données
+
+```
+db.journal (mouvements) ──► JournalFinancialStatementsPolicy
+                                │
+                                ├─► IncomeStatement (CR cumul)
+                                └─► BalanceSheet (lié CR + equityReconciliation)
+
+db.budget budget_turn_* ──► BudgetTurnEnrichmentRepository (enrichissement UI only)
+
+db.budget budget_current ──► DexieTreasuryRepository (trésorerie live, write path)
 ```
 
 ---
 
-## ✅ Vérifications effectuées
+## Implications « journal seulement » pour le CR
 
-### 1. Source de vérité unique
-- ✅ Budget : IndexedDB via `BudgetManager`
-- ✅ Journal : IndexedDB via `BudgetManager`
-- ✅ Pas de duplication dans localStorage (sauf snapshot temporaire)
-
-### 2. Synchronisation des transactions
-- ✅ Chaque transaction met à jour le budget ET crée une entrée de journal
-- ✅ Même `turn` utilisé pour budget et journal
-- ✅ Mêmes montants dans budget et journal
-
-### 3. Pas de données hardcodées
-- ✅ Budget : Toutes les valeurs depuis IndexedDB
-- ✅ Journal : Toutes les entrées depuis IndexedDB
-- ✅ Pas de valeurs statiques ou fake
-
-### 4. Cohérence des montants
-- ✅ `addIncome(amount)` → budget.income += amount ET journal entry avec amount
-- ✅ `addExpense(amount)` → budget.expenses += amount ET journal entry avec amount
-- ✅ `addTaxes()` → budget.totalTaxes += total ET journal entry avec total
-- ✅ `addBuildingMaintenance(amount)` → budget.totalBuildingMaintenance += amount ET journal entry avec amount
-
----
-
-## 📝 Notes importantes
-
-### Turn (Tour)
-- Le `turn` est mis à jour dans `scene.js` via `budgetManager.updateTurn(time)`
-- Toutes les entrées de journal utilisent `budget.turn` au moment de leur création
-- Le journal groupe les entrées par `turn` pour l'affichage
-
-### Snapshot de l'année dernière
-- Créé dans `localStorage` (cache temporaire) au moment de l'ouverture du panneau finances
-- Source de vérité reste IndexedDB
-- Le snapshot est recalculé si nécessaire depuis IndexedDB
-
-### Maintenance mensuelle
-- Calculée depuis les bâtiments dans `db.houses` (IndexedDB)
-- Créée via `addBuildingMaintenance()` qui met à jour le budget ET crée une entrée de journal
-- Breakdown détaillé inclus dans la description de l'entrée de journal
-
----
-
-## 🎯 Conclusion
-
-**Le journal et le budget utilisent la même source de vérité (IndexedDB via BudgetManager).**
-
-Toutes les transactions financières :
-1. Mettent à jour le budget dans IndexedDB
-2. Créent une entrée de journal dans IndexedDB
-3. Utilisent le même `turn` et les mêmes montants
-
-**Aucune incohérence possible** : Les deux systèmes lisent et écrivent dans la même base de données via la même API (`BudgetManager`).
-
+1. **Totaux CR** = somme des écritures opérationnelles (hors `balance`, `cumul_*`, `info_*`, etc.)
+2. **Pas de double comptage** : charges déjà dans le CR ne sont pas re-ajoutées au passif (`accruedExpenses = 0`)
+3. **Historique immobilisé** : valorisation bâti = état **actuel** du parc (limitation connue pour tours passés)
+4. **Enrichissement UI** : population / breakdowns restent sur cache `budget_turn_*` tant qu'ils ne sont pas journalisés
+5. **Stabilité cumul trésorerie** : le write path continue de maintenir `budget_current` en parallèle du journal

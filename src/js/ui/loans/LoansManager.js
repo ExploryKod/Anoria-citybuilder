@@ -2,6 +2,17 @@
  * LoansManager - Gère le système de prêts (bancaires et commerciaux)
  */
 
+import {
+  getTreasurySnapshot,
+  getFinancialHealth,
+  getActiveLoans,
+  recordLoanCapital,
+  recordLoanInterest,
+  recordLoanRepayment,
+  recordInfoLoanInstallment,
+  advanceLoanInstallmentWithoutPayment,
+} from '../../acl/accountingGame.js';
+
 /**
  * Initialise le popup des prêts
  */
@@ -90,8 +101,8 @@ export function initLoansPopup() {
 export async function updateLoansDisplay() {
     try {
         // Get budget data
-        const currentBudget = await window.budgetManager.getCurrentBudget();
-        const financialHealth = await window.budgetManager.getFinancialHealth();
+        const currentBudget = await getTreasurySnapshot();
+        const financialHealth = await getFinancialHealth();
         
         // Update date
         updateLoansElement('loans-date', `Tour ${currentBudget.turn || 0}`);
@@ -263,23 +274,21 @@ function updateLoanSummary() {
     let interestRate = loanType === 'bank' ? 5 : 7;
     
     // Apply financial health penalties
-    if (window.budgetManager) {
-        window.budgetManager.getFinancialHealth().then(health => {
-            if (health.status === 'critical') {
-                interestRate += loanType === 'bank' ? 5 : 7;
-            } else if (health.status === 'warning' || health.status === 'deficit') {
-                interestRate += loanType === 'bank' ? 2 : 3;
-            }
-            
-            const interest = Math.round(amount * (interestRate / 100));
-            const total = amount + interest;
-            
-            updateLoansElement('loan-principal-display', `${amount}€`);
-            updateLoansElement('loan-rate-display', `${interestRate}%`);
-            updateLoansElement('loan-interest-display', `${interest}€`);
-            updateLoansElement('loan-total-display', `${total}€`);
-        });
-    }
+    getFinancialHealth().then((health) => {
+        if (health.status === 'critical') {
+            interestRate += loanType === 'bank' ? 5 : 7;
+        } else if (health.status === 'warning' || health.status === 'deficit') {
+            interestRate += loanType === 'bank' ? 2 : 3;
+        }
+
+        const interest = Math.round(amount * (interestRate / 100));
+        const total = amount + interest;
+
+        updateLoansElement('loan-principal-display', `${amount}€`);
+        updateLoansElement('loan-rate-display', `${interestRate}%`);
+        updateLoansElement('loan-interest-display', `${interest}€`);
+        updateLoansElement('loan-total-display', `${total}€`);
+    });
 }
 
 /**
@@ -303,7 +312,7 @@ export async function contractLoan() {
     
     try {
         // Calculate final interest rate
-        const financialHealth = await window.budgetManager.getFinancialHealth();
+        const financialHealth = await getFinancialHealth();
         let interestRate = loanType === 'bank' ? 5 : 7;
         
         if (financialHealth.status === 'critical') {
@@ -329,7 +338,7 @@ export async function contractLoan() {
         };
         
         // Add loan to budget using proper accounting method
-        await window.budgetManager.addLoan(amount, `Prêt ${loanType} contracté (${duration} tours)`, loan);
+        await recordLoanCapital(amount, `Prêt ${loanType} contracté (${duration} tours)`, loan);
         
         // Update budget display to show the new loan interest
         if (window.updateBudgetDisplay) {
@@ -356,7 +365,7 @@ export async function loadActiveLoans() {
     if (!activeLoansList) return;
     
     try {
-        const activeLoans = await window.budgetManager.getActiveLoans();
+        const activeLoans = await getActiveLoans();
         
         if (activeLoans.length === 0) {
             activeLoansList.innerHTML = `
@@ -480,7 +489,7 @@ function generateAmortizationSchedule(loan) {
  */
 export async function processLoanPayments() {
     try {
-        const activeLoans = await window.budgetManager.getActiveLoans();
+        const activeLoans = await getActiveLoans();
         if (activeLoans.length === 0) return;
 
         for (const loan of activeLoans) {
@@ -490,16 +499,16 @@ export async function processLoanPayments() {
             );
             const principalPayment = Math.max(0, monthlyPayment - interestPayment);
 
-            let budget = await window.budgetManager.getCurrentBudget();
+            let budget = await getTreasurySnapshot();
 
             if (budget.funds >= monthlyPayment) {
-                await window.budgetManager.addLoanInterest(
+                await recordLoanInterest(
                     interestPayment,
                     `Intérêts prêt ${loan.type} (${loan.id})`,
                     loan.id
                 );
 
-                await window.budgetManager.repayLoan(
+                await recordLoanRepayment(
                     principalPayment,
                     `Remboursement prêt ${loan.type} (${loan.id})`,
                     loan.id
@@ -508,14 +517,14 @@ export async function processLoanPayments() {
             }
 
             if (budget.funds >= interestPayment && interestPayment > 0) {
-                await window.budgetManager.addLoanInterest(
+                await recordLoanInterest(
                     interestPayment,
                     `Intérêts prêt ${loan.type} (${loan.id})`,
                     loan.id
                 );
 
                 if (principalPayment > 0) {
-                    await window.budgetManager.recordInfoLoanInstallment({
+                    await recordInfoLoanInstallment({
                         interestAmount: 0,
                         principalAmount: principalPayment,
                         loanId: loan.id,
@@ -523,21 +532,21 @@ export async function processLoanPayments() {
                     });
                 }
 
-                await window.budgetManager.advanceLoanInstallmentWithoutPayment(loan.id);
+                await advanceLoanInstallmentWithoutPayment(loan.id);
                 console.warn(
                     `[Loans] Échéance partielle — intérêts payés, capital impayé (${principalPayment}€) pour ${loan.id}`
                 );
                 continue;
             }
 
-            await window.budgetManager.recordInfoLoanInstallment({
+            await recordInfoLoanInstallment({
                 interestAmount: interestPayment,
                 principalAmount: principalPayment,
                 loanId: loan.id,
                 loanType: loan.type,
             });
 
-            await window.budgetManager.advanceLoanInstallmentWithoutPayment(loan.id);
+            await advanceLoanInstallmentWithoutPayment(loan.id);
             console.warn(
                 `[Loans] Défaut de paiement — échéance journalisée (info) pour ${loan.id}`
             );

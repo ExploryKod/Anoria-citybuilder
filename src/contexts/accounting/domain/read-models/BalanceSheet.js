@@ -14,6 +14,7 @@
  * @property {number} liabilities.bankLoans
  * @property {number} liabilities.commercialLoans
  * @property {number} liabilities.accruedExpenses
+ * @property {number} [liabilities.equityReconciliation] — écart actif immobilisé / passif hors CR
  * @property {number} liabilities.total
  * @property {boolean} balanced
  * @property {number} [balanceAdjustment]
@@ -36,6 +37,7 @@ export function createBalanceSheet(data) {
     bankLoans: data.liabilities?.bankLoans ?? 0,
     commercialLoans: data.liabilities?.commercialLoans ?? 0,
     accruedExpenses: data.liabilities?.accruedExpenses ?? 0,
+    equityReconciliation: data.liabilities?.equityReconciliation ?? 0,
     total: data.liabilities?.total ?? 0,
   };
 

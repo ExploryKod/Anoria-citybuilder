@@ -6,11 +6,48 @@ Phase 0 — spécification et cartographie. **Aucun refactor métier ici** : doc
 
 1. **Journal = source de vérité** des mouvements comptables (append-only, indexé par `turn`) — **à condition d’écritures fiables** (Phase 3½ ; voir D9).
 2. **Trésorerie co-maintenue** : cache `budget_current` mis à jour en parallèle du journal pour la perf temps réel ; réconciliable avec le journal.
-3. **Trois surfaces comptables distinctes** (ne pas mélanger) :
-   - **Journal** (grand livre) — écritures chronologiques, agrégats par mois/année, export ; **source de vérité affichée**.
-   - **Livret ville** (style César 3) — revenus / dépenses simples, N vs N-1.
-   - **États financiers** (compta classique) — bilan, compte de résultat, règles comptables.
+3. **Quatre niveaux comptables distincts** (chaîne PCG — voir section dédiée) :
+   - **Journal** — enregistrement chronologique des mouvements (`db.journal`, export JSON).
+   - **Grand livre + Balance** — **absents** aujourd’hui ; cible PCG avec n° de comptes.
+   - **États annuels PCG** — compte de résultat (activité) + bilan (patrimoine), liés via le résultat net.
+   - **Livret ville** (style César 3) — vue simplifiée pour non-comptables ; **hors chaîne PCG stricte**.
 4. Les bugs comptables métier seront traités **après** l’organisation du code (plus facile si les frontières sont claires).
+
+---
+
+## Chaîne comptable PCG (référence)
+
+Workflow classique ([finref.fr — Journal, Grand Livre et Balance](https://finref.fr/comptabilite/generale/journal-grand-livre-balance/)) :
+
+```
+Journal  →  Grand livre  →  Balance  →  Compte de résultat + Bilan
+(chrono)    (par compte)     (soldes)     (états annuels PCG)
+```
+
+| Étape PCG | Rôle | Anoria aujourd’hui | Code / données |
+|---|---|---|---|
+| **Journal** | Enregistre **tous** les mouvements dans l’ordre chronologique (date, libellé, montant, type) | ✅ | `db.journal`, export `docs/ledgers/journal-*.json`, UI `#journal-panel` |
+| **Grand livre** | Reprend les écritures du journal **classées par compte PCG** (601, 512, 701…) avec débit/crédit et solde par compte | ❌ **absent** | Pas de table/compte PCG ; agrégats par `type` métier (`citizen_tax`, `salary`…) |
+| **Balance** | Synthèse : total débits / crédits / solde **par compte** ; contrôle partie double | ❌ **absent** | Pas de contrôle débit=crédit par compte |
+| **Compte de résultat** | **Activité** de l’exercice : produits − charges = résultat net (**annuel**) | 🟡 partiel | `IncomeStatement` / `GetIncomeStatement({ fiscalYear })` — dérivé du journal, pas encore lignes PCG strictes |
+| **Bilan** | **Patrimoine** à la clôture : actif = passif (**annuel**) ; le résultat net du CR apparaît au passif | 🟡 partiel | `BalanceSheet` / `GetBalanceSheet()` — lié au CR via `liabilities.netResult` |
+| **Livret ville** | Vue **joueur / admin** simplifiée (César 3), N vs N−1 | ✅ | `GetCityLedgerYearComparison` — **ne remplace pas** journal ni états PCG |
+
+### Dette de nommage code (à ne pas confondre)
+
+| Terme PCG (FR) | Terme anglais compta | Nom actuel dans le code | Commentaire |
+|---|---|---|---|
+| Journal | Journal / Book of original entry | `GetGeneralLedger`, `GeneralLedgerView` | **Mal nommé** : c’est le **journal** chronologique, pas le grand livre |
+| Grand livre | General Ledger (by account) | — | À créer (`GetLedgerByAccount` ?) avec plan de comptes PCG |
+| Balance | Trial balance | — | À créer (`GetTrialBalance` ?) |
+| Compte de résultat | **Income statement** (P&L) | `IncomeStatement` | ✅ nom code correct |
+| Bilan | **Balance sheet** | `BalanceSheet` | ✅ nom code correct — **≠** compte de résultat |
+
+### Raccourci actuel (hors PCG strict)
+
+Le CR/bilan récent (`FinancialStatementsBundle`) **saute** grand livre et balance : agrégation directe journal → produits/charges par `type` → CR, puis bilan lié. C’est un **prototype** utile en jeu, pas encore une clôture PCG avec numéros de comptes.
+
+**Cible PCG** : chaque écriture journal → imputation débit/crédit sur comptes (512, 641, 741…) → grand livre → balance équilibrée → CR + bilan annuels.
 
 ---
 
@@ -18,13 +55,15 @@ Phase 0 — spécification et cartographie. **Aucun refactor métier ici** : doc
 
 | Terme FR | Terme code (cible) | Définition |
 |---|---|---|
-| **Journal** | `GeneralLedger` | Grand livre : toutes les écritures (`db.journal`). Source de vérité. |
+| **Journal** | `Journal` (cible) — aujourd’hui `GeneralLedger*` | Enregistrement **chronologique** de toutes les écritures (`db.journal`). Source de vérité des mouvements. |
+| **Grand livre** | `LedgerByAccount` (à venir) | Écritures **classées par compte PCG**, avec soldes — **distinct du journal**. |
+| **Balance** | `TrialBalance` (à venir) | Tableau des soldes par compte ; contrôle débit = crédit. |
 | **Écriture** | `LedgerEntry` | Mouvement `{ turn, type, amount, description, year?, month?, partnerId?, businessKey? }`. |
 | **Clé métier** | `businessKey` | Identifiant logique d’une opération récurrente (ex. `maintenance:0:5`) — garantit **au plus une** écriture par période pour certains types. |
 | **Trésorerie** | `Treasury` | Solde courant (`budget_current.funds`). Cache co-maintenu, pas dérivé à la lecture temps réel. |
-| **Livret ville** | `CityLedger` | Présentation admin César 3 : dépenses/revenus par type, comparaison annuelle. |
-| **Compte de résultat** | `IncomeStatement` | Produits / charges / résultat net sur une période (règles comptables). |
-| **Bilan** | `BalanceSheet` | Actif / passif à une date (règles comptables + actif immobilisé bâti). |
+| **Livret ville** | `CityLedger` | Présentation **simplifiée** admin César 3 : dépenses/revenus par type, N vs N−1 — pour non-comptables. |
+| **Compte de résultat** | `IncomeStatement` | Produits / charges / **résultat net** sur un **exercice** (activité). Lien bilan : poste « résultat de l’exercice ». |
+| **Bilan** | `BalanceSheet` | **Actif / passif** à la clôture (patrimoine). `netResult` passif = résultat net du CR. |
 | **Flux net (exercice)** | `PeriodNetFlow` | Revenus − dépenses sur une période (journal ou agrégat exercice). |
 | **Flux net (tour)** | `DailyNetFlow` | `dailyIncome − dailyExpenses` du tour en cours (`budget_current`). |
 | **Report à nouveau** | `carry_forward` | Solde N−1 reporté en début d’année N (écriture journal). |
@@ -50,9 +89,9 @@ Presenters dans `src/js/ui/`. Chaque surface appelle l'ACL → **use case** (pas
 
 | Surface | Panneau | Presenter (UI) | Use case | Rôle |
 |---|---|---|---|---|
-| **Journal** | `#journal-panel` | `ui/journal/JournalManager.js` | `queries/journal/*` | Grand livre : écritures, mois/années, export |
-| **Livret ville** | `#admin-section-finances` | `ui/finances-section.js` | `queries/city-ledger/*` | Tableau César 3 N vs N−1 |
-| **Bilan + CR** | `#budget-panel`, `#budget-states-panel` | `buttons.js`, `BudgetStatesManager.js` | `queries/financial-statements/*` | Compta classique (PCG) |
+| **Journal** | `#journal-panel` | `ui/journal/JournalManager.js` | `queries/journal/GetGeneralLedger` ⚠️ | Journal chronologique (mois/années, export) — **pas** le grand livre PCG |
+| **Livret ville** | `#admin-section-finances` | `ui/finances-section.js` | `queries/city-ledger/*` | Tableau César 3 N vs N−1 — vue joueur simplifiée |
+| **CR + Bilan** | `#budget-panel`, `#budget-states-panel` | `buttons.js`, `BudgetStatesManager.js` | `queries/financial-statements/*` | États PCG (exercice / patrimoine) — cible **annuelle** |
 | **Trésorerie live** | `.display-funds`, `#realtime-budget-panel` | HUD, `RealtimeBudgetManager.js` | `queries/treasury/*` | Solde courant + flux du tour |
 
 ### Niveau 1 — couches (un BC, domain unifié)
@@ -369,9 +408,9 @@ Types legacy `loan_default_*` restent lisibles à l’export (alias UI).
 | Surface UI | Panneau HTML | Fichier UI | Query cible (BC) | Source actuelle | Écart |
 |---|---|---|---|---|---|
 | **Livret ville** (admin César 3) | `#admin-section-finances` | `ui/finances-section.js` | `GetCityLedgerYearComparison` | `DexieJournalRepository` + `DexieTreasuryRepository` | Trésorerie ≠ journal pour balance N |
-| **Bilan** (compta classique) | `#budget-panel` | `ui/buttons.js` → `updateBudgetDisplay()` | `GetBalanceSheet(asOfTurn)` | `budget_current` + **City Assets** + prêts actifs + ajustement manuel actif=passif | Pas dérivé du journal ; mélange avec refresh temps réel |
-| **Compte de résultat** | `#budget-states-panel` | `ui/budget/BudgetStatesManager.js` | `GetIncomeStatement(period)` | **`getBudgetStates()`** → snapshots `budget_turn_*` | 2ᵉ source ; pas le journal |
-| **Journal** (grand livre) | `#journal-panel` | `ui/journal/JournalManager.js` | `GetGeneralLedger(filters)` | `DexieJournalRepository` | Export JSON/PDF encore legacy |
+| **Compte de résultat** | `#budget-states-panel` | `ui/budget/BudgetStatesManager.js` | `GetFinancialStatementsHistory()` | Journal + enrichissement `budget_turn_*` | ✅ journal-primary |
+| **Bilan** (compta classique) | `#budget-panel` | `ui/buttons.js` → `updateBudgetDisplay()` | `GetBalanceSheet()` → bundle lié CR | Journal + City Assets + cache prêts | ✅ lié CR |
+| **Journal** (grand livre) | `#journal-panel` | `ui/journal/JournalManager.js` | `GetGeneralLedger(filters)` ⚠️ nom legacy | Journal chronologique — **≠ grand livre PCG** |
 | **Budget temps réel** | `#realtime-budget-panel` | `ui/budget/RealtimeBudgetManager.js` | `GetPeriodCashFlow(currentTurn)` | `budget_current` + `getFinancialHealth()` (**daily** netFlow) | Flux tour ≠ flux exercice |
 | **Info-box fonds** | `#display-funds` | (HUD) | `GetTreasuryBalance()` | `budget_current.funds` | ✅ Cohérent avec tréso co-maintenue |
 | **Conseil urbain** | — | `ui/urban-advice/UrbanAdviceManager.js` | `GetFinancialHealth()` | `BudgetManager.getFinancialHealth()` | daily netFlow |
@@ -389,7 +428,7 @@ Types legacy `loan_default_*` restent lisibles à l’export (alias UI).
 | `stores/JournalManager.js` | Persistance `db.journal`, agrégats, export | ✅ → `ports/JournalRepository` + `adapters/legacy/` puis `persistence/dexie/` |
 | `ui/finances-section.js` | Livret César 3 | Logique métier dans UI ; mix journal + tréso |
 | `ui/buttons.js` (`updateBudgetDisplay`) | Bilan compta FR (~260 L) | Pas de module dédié ; appelle aussi temps réel |
-| `ui/budget/BudgetStatesManager.js` | CR historique | Lit snapshots, pas journal |
+| `ui/budget/BudgetStatesManager.js` | CR + mini-bilan par tour | `getFinancialStatementsHistory()` (journal + cache enrichissement) |
 | `ui/budget/RealtimeBudgetManager.js` | Flux tour courant | Lit `budget_current` uniquement |
 | `ui/journal/JournalManager.js` | Présentation journal | ✅ ACL + query BC (Phase 2b) ; export legacy |
 | `game/managers/BudgetProcessor.js` | Tick : taxes, salaires, maintenance, **saveBudgetState** /3 tours | Orchestration legacy |
@@ -430,8 +469,8 @@ PlaceBuildingWithPayment.execute()
 
 | # | Sujet | Détail |
 |---|---|---|
-| D1 | CR sur snapshots | `BudgetStatesManager` lit `budget_turn_*` au lieu du journal |
-| D2 | Bilan non journal-based | Actif immobilisé via City Assets OK ; passif / résultat via `budget_current` |
+| D1 | ~~CR sur snapshots~~ | ✅ `BudgetStatesManager` → journal via `GetFinancialStatementsHistory` ; `budget_turn_*` = enrichissement UI only |
+| D2 | Bilan journal-based | ✅ `GetBalanceSheet` → bundle lié ; `equityReconciliation` pour écart immobilisé |
 | D3 | Ajustement bilan | Si actif ≠ passif, le résultat net est **forcé** (`buttons.js` L297–307) |
 | D4 | `netFlow` polymorphe | Même nom, 3 sens (voir tableau ci-dessus) |
 | D5 | `localStorage` report à nouveau | Cache intermédiaire pour `carry_forward` |

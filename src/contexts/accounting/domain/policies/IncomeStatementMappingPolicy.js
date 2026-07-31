@@ -10,12 +10,13 @@ function addToBucket(amount, bucket, key) {
 }
 
 /**
- * Build income statement lines from journal yearly summary entries.
+ * Build income statement lines from journal partition (yearly or cumulative).
  *
- * @param {number} fiscalYear
- * @param {{ income: { entries: Array<{type: string, amount: number}> }, expenses: { entries: Array<{type: string, amount: number}> } }} yearSummary
+ * @param {number} labelYearOrTurn — fiscal year label, or turn when cumulative
+ * @param {{ income: { entries: Array<{type: string, amount: number}> }, expenses: { entries: Array<{type: string, amount: number}> } }} partition
+ * @param {{ cumulativeAtTurn?: number|null }} [options]
  */
-export function incomeStatementFromYearSummary(fiscalYear, yearSummary) {
+export function incomeStatementFromJournalPartition(labelYearOrTurn, partition, options = {}) {
   const productBuckets = {
     citizenTax: 0,
     payrollTax: 0,
@@ -37,7 +38,7 @@ export function incomeStatementFromYearSummary(fiscalYear, yearSummary) {
     other: 0,
   };
 
-  for (const entry of yearSummary.income?.entries ?? []) {
+  for (const entry of partition.income?.entries ?? []) {
     const amount = Math.round(entry.amount ?? 0);
     if (entry.type === 'citizen_tax') addToBucket(amount, productBuckets, 'citizenTax');
     else if (entry.type === 'payroll_tax') addToBucket(amount, productBuckets, 'payrollTax');
@@ -50,7 +51,7 @@ export function incomeStatementFromYearSummary(fiscalYear, yearSummary) {
     } else addToBucket(amount, productBuckets, 'other');
   }
 
-  for (const entry of yearSummary.expenses?.entries ?? []) {
+  for (const entry of partition.expenses?.entries ?? []) {
     const amount = Math.round(entry.amount ?? 0);
     if (entry.type === 'salary') addToBucket(amount, chargeBuckets, 'salaries');
     else if (entry.type === 'maintenance') addToBucket(amount, chargeBuckets, 'maintenance');
@@ -86,5 +87,15 @@ export function incomeStatementFromYearSummary(fiscalYear, yearSummary) {
     { label: 'Autres charges', amount: chargeBuckets.other },
   ].filter((line) => line.amount > 0);
 
-  return createIncomeStatement({ fiscalYear, products, charges });
+  return createIncomeStatement({
+    fiscalYear: labelYearOrTurn,
+    products,
+    charges,
+    cumulativeAtTurn: options.cumulativeAtTurn ?? null,
+  });
+}
+
+/** @deprecated Use incomeStatementFromJournalPartition */
+export function incomeStatementFromYearSummary(fiscalYear, yearSummary) {
+  return incomeStatementFromJournalPartition(fiscalYear, yearSummary);
 }

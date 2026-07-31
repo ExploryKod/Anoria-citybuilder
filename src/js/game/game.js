@@ -26,6 +26,11 @@ import {
     displaySpeed
 } from '../ui/nodes.js';
 import budgetManager from '../stores/BudgetManager.js';
+import {
+  forceReinitializeTreasury,
+  getTreasurySnapshot,
+  updateTreasuryTurn,
+} from '../acl/accountingGame.js';
 import journalManager from '../stores/JournalManager.js';
 import FoodTraceabilityService from '../stores/FoodTraceabilityService.js';
 import loaderManager from '../utils/LoaderManager.js';
@@ -475,10 +480,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
         configObject: config
     });
     
-    budgetManager.budgetReadyPromise = budgetManager
-        .forceReinitialize(initialFunds)
+    budgetManager.budgetReadyPromise = forceReinitializeTreasury(initialFunds)
         .then(async () => {
-            const initialBudget = await budgetManager.getCurrentBudget();
+            const initialBudget = await getTreasurySnapshot();
 
             console.log('[game.js] Budget initialized, current budget:', initialBudget);
 
@@ -962,12 +966,10 @@ export function createGame(gameStore, assetManager, citySize = null) {
                     const salesToWindmill = supplyView.salesToWindmill || [];
                     
                     let currentYear = 0;
-                    if (window.budgetManager) {
-                        const budget = await window.budgetManager.getCurrentBudget();
-                        if (budget && budget.turn !== undefined && window.TimeManager) {
-                            const timeInfo = window.TimeManager.getTimeInfo(budget.turn);
-                            currentYear = timeInfo ? timeInfo.year : 0;
-                        }
+                    const budget = await getTreasurySnapshot();
+                    if (budget && budget.turn !== undefined && window.TimeManager) {
+                        const timeInfo = window.TimeManager.getTimeInfo(budget.turn);
+                        currentYear = timeInfo ? timeInfo.year : 0;
                     }
                     
                     const currentYearMarketSales = salesToMarket.filter(sale => sale.year === currentYear);
@@ -1183,7 +1185,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 
                 const [houseStocks, budgetData] = await Promise.all([
                     Promise.resolve({ food: 0, cabbage: 0, wheat: 0, carrot: 0 }),
-                    window.budgetManager ? window.budgetManager.getCurrentBudget() : Promise.resolve({ funds: 0 })
+                    getTreasurySnapshot().catch(() => ({ funds: 0 }))
                 ]);
 
                 const funds = budgetData.funds || 0;
@@ -1340,9 +1342,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
             city.update();
 
             // Turn boundary first (balance, carry-forward, cumuls) — survives pause mid-tick
-            if (window.budgetManager) {
-                await window.budgetManager.updateTurn(time);
-            }
+            await updateTreasuryTurn(time);
             if (isPause || isOver) {
                 return;
             }
