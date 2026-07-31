@@ -22,9 +22,10 @@ export class SessionJournalWriteAdapter extends JournalWritePort {
   /**
    * @param {object} entry
    * @param {{ persist?: boolean }} [options]
+   * @returns {Promise<{ recorded: boolean, skipped?: boolean, reason?: string }>}
    */
   async appendEntry(entry, options = {}) {
-    await this.journalManager.addJournalEntry(
+    const result = await this.journalManager.addJournalEntry(
       entry.turn,
       entry.type,
       entry.amount,
@@ -36,6 +37,12 @@ export class SessionJournalWriteAdapter extends JournalWritePort {
         persist: options.persist,
       }
     );
+
+    if (result?.skipped) {
+      return { recorded: false, skipped: true, reason: result.reason };
+    }
+
+    return { recorded: true, skipped: false };
   }
 
   /** @inheritdoc */

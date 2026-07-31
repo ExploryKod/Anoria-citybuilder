@@ -1,10 +1,14 @@
 /**
- * ACL Budget — façade legacy → future Accounting BC.
+ * ACL Budget — façade legacy → Accounting BC.
  *
- * Writes still delegate to BudgetManager; building valuation reads city inventory.
+ * Construction payments use acl/accounting.js directly.
  */
 
-import budgetManager from '../stores/BudgetManager.js';
+import {
+  recordConstructionExpense as recordConstructionExpenseAcl,
+  recordConstructionRefundIncome,
+  getTreasurySnapshot,
+} from './accounting.js';
 import {
   createCityAssetsContext,
   getOrCreateCityAssetsContext,
@@ -39,13 +43,67 @@ export async function getCityBuildingPricesByType() {
  * @param {{ buildingInstanceId?: string }} [options]
  */
 export async function recordConstructionExpense(amount, reason, options = {}) {
-  return budgetManager.addConstructionExpense(amount, reason, options);
+  if (typeof amount !== 'number' || Number.isNaN(amount) || !Number.isFinite(amount)) {
+    return {
+      success: false,
+      reason: 'invalid_amount',
+      message: `Invalid expense amount: ${amount}`,
+    };
+  }
+
+  try {
+    const budget = await getTreasurySnapshot();
+    const result = await recordConstructionExpenseAcl({
+      turn: budget.turn,
+      amount,
+      description: reason,
+      buildingInstanceId: options.buildingInstanceId ?? null,
+    });
+
+    if (!result.recorded) {
+      return {
+        success: false,
+        reason: result.reason ?? 'not_recorded',
+        message: `Construction expense not recorded: ${result.reason ?? 'unknown'}`,
+      };
+    }
+
+    const updatedBudget = await getTreasurySnapshot();
+
+    return {
+      success: true,
+      budget: updatedBudget,
+      message: `Expense of ${amount}€ processed for ${reason}`,
+    };
+  } catch (error) {
+    console.error('Error processing expense:', error);
+    return {
+      success: false,
+      reason: 'error',
+      message: error.message ?? 'Unknown error',
+    };
+  }
 }
 
 /**
  * @param {number} amount
  * @param {string} reason
+ * @param {{ buildingInstanceId?: string }} [options]
  */
 export async function recordConstructionRefund(amount, reason, options = {}) {
-  return budgetManager.addConstructionRefund(amount, reason, options);
+  const budget = await getTreasurySnapshot();
+  const roundedAmount = Math.round(amount);
+
+  if (roundedAmount <= 0) {
+    return budget;
+  }
+
+  await recordConstructionRefundIncome({
+    turn: budget.turn,
+    amount: roundedAmount,
+    description: reason,
+    buildingInstanceId: options.buildingInstanceId ?? null,
+  });
+
+  return getTreasurySnapshot();
 }

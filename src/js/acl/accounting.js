@@ -21,6 +21,55 @@ export async function getTreasuryBalance() {
   return getOrCreateAccountingContext().getTreasuryBalance();
 }
 
+/** @returns {Promise<object>} Full treasury row (budget_current) */
+export async function getTreasurySnapshot() {
+  return getOrCreateAccountingContext().getTreasurySnapshot();
+}
+
+/** @returns {Promise<{ status: string, message: string, budget: object, netFlow: number }>} */
+export async function getFinancialHealth() {
+  return getOrCreateAccountingContext().getFinancialHealth();
+}
+
+/** @param {number|null} [startingFunds] */
+export async function initializeTreasury(startingFunds = null) {
+  return getOrCreateAccountingContext().initializeTreasury(startingFunds);
+}
+
+/** @param {number|null} [startingFunds] */
+export async function forceReinitializeTreasury(startingFunds = null) {
+  return getOrCreateAccountingContext().forceReinitializeTreasury(startingFunds);
+}
+
+/** @param {number} turn */
+export async function updateTreasuryTurn(turn) {
+  return getOrCreateAccountingContext().updateTreasuryTurn(turn);
+}
+
+/** @returns {Promise<Array>} */
+export async function getActiveLoans() {
+  return getOrCreateAccountingContext().getActiveLoans();
+}
+
+/** @param {object} loanData */
+export async function addLoanToPortfolio(loanData) {
+  return getOrCreateAccountingContext().addLoanToPortfolio(loanData);
+}
+
+/** @param {string} loanId @param {number} repaymentAmount */
+export async function applyRepaymentToPortfolio(loanId, repaymentAmount) {
+  return getOrCreateAccountingContext().applyRepaymentToPortfolio(loanId, repaymentAmount);
+}
+
+/** @param {string} loanId */
+export async function advanceLoanInstallmentWithoutPayment(loanId) {
+  return getOrCreateAccountingContext().advanceLoanInstallmentWithoutPayment(loanId);
+}
+
+export async function recalculateLoanTotals() {
+  return getOrCreateAccountingContext().recalculateLoanTotals();
+}
+
 /** @returns {Promise<object>} Admin César 3 livret — N vs N-1 comparison */
 export async function getCityLedgerYearComparison() {
   return getOrCreateAccountingContext().getCityLedgerYearComparison();
@@ -32,6 +81,23 @@ export async function getCityLedgerYearComparison() {
  */
 export async function getGeneralLedger(filters) {
   return getOrCreateAccountingContext().getGeneralLedger(filters);
+}
+
+/** @param {{ fiscalYear?: number|null }} [options] */
+export async function getIncomeStatement(options) {
+  return getOrCreateAccountingContext().getIncomeStatement(options);
+}
+
+export async function getBalanceSheet() {
+  return getOrCreateAccountingContext().getBalanceSheet();
+}
+
+export async function exportJournalJson() {
+  return getOrCreateAccountingContext().exportJournalJson();
+}
+
+export async function exportJournalPdf() {
+  return getOrCreateAccountingContext().exportJournalPdf();
 }
 
 /** @returns {Promise<{ treasuryFunds: number, journalBalance: number, delta: number, aligned: boolean }>} */

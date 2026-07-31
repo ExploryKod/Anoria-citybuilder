@@ -1,10 +1,13 @@
 /**
  * Journal UI presenter — DOM + events only (Phase 2b).
  * Data: acl/accounting.js → GetGeneralLedger
- * Export JSON/PDF: legacy store until Phase 3+
  */
 
-import { getGeneralLedger } from '../../acl/accounting.js';
+import {
+  getGeneralLedger,
+  exportJournalJson,
+  exportJournalPdf,
+} from '../../acl/accounting.js';
 import {
   formatJournalEntryDetails,
 } from './formatJournalEntryDescription.js';
@@ -158,7 +161,11 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
 
 /** @param {import('../../../contexts/accounting/domain/read-models/GeneralLedgerView.js').GeneralLedgerView} ledger */
 function renderGeneralLedger(ledger) {
-    return ledger.years.map(yearData => {
+    const sortHint = `
+        <p class="journal-sort-hint">Plus récent en haut — années et mois triés du plus récent au plus ancien.</p>
+    `;
+
+    return sortHint + ledger.years.map(yearData => {
         const yearDisplay = yearData.year === 0 ? '0 JC' : `${yearData.year} ap JC`;
         const displayBalance = yearData.displayBalance;
         const balanceClass = displayBalance >= 0 ? 'positive' : 'negative';
@@ -222,12 +229,7 @@ function renderGeneralLedger(ledger) {
  */
 export async function exportJournalToJSON() {
     try {
-        const manager = window.journalManager || window.app?.journalManager || window.budgetManager;
-        if (!manager) {
-            throw new Error('JournalManager not available');
-        }
-
-        const jsonString = await manager.exportToJSON();
+        const jsonString = await exportJournalJson();
         const blob = new Blob([jsonString], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -248,18 +250,13 @@ export async function exportJournalToJSON() {
  */
 export async function exportJournalToPDF() {
     try {
-        const manager = window.journalManager || window.app?.journalManager || window.budgetManager;
-        if (!manager) {
-            throw new Error('JournalManager not available');
-        }
-
         const exportPdfBtn = document.getElementById('journal-export-pdf-btn');
         if (exportPdfBtn) {
             exportPdfBtn.disabled = true;
             exportPdfBtn.innerHTML = '<span>Génération...</span>';
         }
 
-        const pdfBlob = await manager.exportToPDF();
+        const pdfBlob = await exportJournalPdf();
         const url = URL.createObjectURL(pdfBlob);
         const a = document.createElement('a');
         a.href = url;

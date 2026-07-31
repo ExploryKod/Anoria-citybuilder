@@ -293,15 +293,46 @@ Inventaire après migration Phase 3½ (write path opérationnel). **Ne pas patch
 
 ---
 
-## Phase 2b — livré
+## Phase 2b — livré ✅ (2026-07-31)
 
-- `GetGeneralLedger` + `GeneralLedgerView` + filtres cohérents
-- `getGeneralLedger()` dans `acl/accounting.js`
-- Presenter journal DOM-only ; export JSON/PDF encore via store legacy
+- `GetGeneralLedger` + `GeneralLedgerView` + filtres cohérents (J1, J2)
+- `getGeneralLedger()` dans `acl/accounting.js` (J5)
+- Presenter journal DOM-only ; plus d'écriture localStorage (J4)
+- Export JSON/PDF via `acl/accounting.js` → composition root (plus de `window.journalManager` direct)
+- Indication tri « plus récent en haut » (J3)
 
 ---
 
-## Plan Phase 2b (journal) — archive
+## Phase 3 — livré ✅ (2026-07-31)
+
+| Query | Chemin |
+|---|---|
+| `GetIncomeStatement` | `application/queries/financial-statements/GetIncomeStatement.js` |
+| `GetBalanceSheet` | `application/queries/financial-statements/GetBalanceSheet.js` |
+| `CityAssetsValuationPort` | `infrastructure/adapters/shared/CityAssetsValuationAdapter.js` |
+
+- ACL : `getIncomeStatement()`, `getBalanceSheet()`
+- `#budget-panel` → `getBalanceSheet()` (`buttons.js`)
+- `#budget-states-panel` résumé → `getIncomeStatement()` + snapshots `budget_turn_*` (historique tours)
+
+---
+
+## J6/J7 — idempotence salaires ✅ (2026-07-31)
+
+| Fix | Fichier |
+|---|---|
+| `appendIfAbsent` atomique sur buffer | `SessionLedgerBuffer.js` |
+| `RecordLedgerEntry` sans TOCTOU | `RecordLedgerEntry.js` |
+| Mutex `processBudget` | `BudgetProcessor.js` |
+| Clé civile `year:monthIndex` (alignée businessKey) | `BudgetProcessor.js` |
+| Passage explicite `turn` aux écritures | `BudgetProcessor.js`, `BudgetManager.js` |
+| `skipBudget: true` sur scene.update RandomEvents | `RandomEventsService.js` |
+
+Tests : `salaryIdempotence.behavior.test.js`
+
+---
+
+## Phase 2b — archive
 
 1. **`application/queries/journal/GetGeneralLedger.js`**
    - Paramètres : `period`, `types[]`, pagination optionnelle.
@@ -384,6 +415,38 @@ Réduire les écritures IndexedDB **sans perdre de données** : le buffer RAM es
 | Tick async sérialisé (`tickInFlight`) | `engine/loop/GameLoop.js` |
 | Pause : sortie anticipée + citoyens gelés | `game.js`, `scene.js` `draw()` |
 | `processBudget` une fois / tour | `scene.update(_, _, { skipBudget })` + 2e passe seulement dans `game.update` |
+
+---
+
+## Phase 4 slice 7 — trésorerie BC seule (2026-07-31)
+
+### Objectif
+
+Finir le cycle refactor budget : **plus de dépendance legacy** sur le write path trésorerie (sauf UI inchangée via `window.budgetManager`).
+
+### Livré
+
+| Élément | Chemin |
+|---|---|
+| Mutations trésorerie pures | `infrastructure/adapters/persistence/dexie/treasuryBudgetRowMutations.js` |
+| Normalisation row | `normalizeTreasuryBudgetRow.js` |
+| Write adapter Dexie | `DexieTreasuryWriteAdapter.js` |
+| Read/write row | `DexieTreasuryRepository.js` (étendu) |
+| Lifecycle | `InitializeTreasury`, `ForceReinitializeTreasury`, `UpdateTreasuryTurn` |
+| Queries | `GetTreasurySnapshot`, `GetFinancialHealth` |
+| Portefeuille prêts | `TreasuryLoanPortfolio.js` |
+| Composition root default | `DexieTreasuryWriteAdapter` (plus `LegacyTreasuryWriteAdapter`) |
+| ACL | `getTreasurySnapshot`, `initializeTreasury`, `updateTreasuryTurn`, … |
+| Façade UI | `BudgetManager` délègue au BC |
+| Construction | `acl/budget.js` → BC direct |
+
+### Régression legacy
+
+`createLegacyAccountingContext({ budgetManager })` injecte `LegacyTreasuryRepository` + `LegacyTreasuryWriteAdapter`.
+
+### Tests
+
+`tests/contexts/accounting/dexieTreasuryWrite.parity.test.js` — 601+ tests verts.
 
 ---
 

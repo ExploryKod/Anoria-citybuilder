@@ -3,10 +3,8 @@ import config from '../game/config.js';
 import journalManager from './JournalManager.js';
 
 /**
- * BudgetManager - Handles all budget operations with proper financial terminology
- * Funds: Available money
- * Expenses: Money spent (previously called "debt")
- * Net Flow: Income - Expenses (positive = profit, negative = loss)
+ * BudgetManager — thin façade for UI and legacy callers.
+ * Treasury lifecycle and writes delegate to Accounting BC via acl/accounting.js.
  */
 class BudgetManager {
     constructor() {
@@ -19,94 +17,17 @@ class BudgetManager {
      * @param {number} startingFunds - Initial funds (default: from config)
      */
     async initialize(startingFunds = null) {
-        // Use config value as default if not provided
-        if (startingFunds === null) {
-            startingFunds = config?.budget?.initialFunds || 200;
-        }
-        
-        // Safe access to import.meta.env (doesn't exist in Node.js/Jest)
-        const envValue = typeof import.meta !== 'undefined' && import.meta.env 
-            ? import.meta.env.VITE_INITIAL_FUNDS 
-            : undefined;
-        
-        // Clear any existing budget data to ensure fresh start
-        await this.db.budget.clear();
-        
-        // Create fresh budget
-        const initialBudget = {
-            name: 'budget_current',
-            funds: startingFunds,
-            initialFunds: startingFunds, // Store initial funds separately for capital social
-            income: startingFunds, // Aligné avec la ligne journal capital_funds (D8)
-            expenses: 0,
-            netFlow: startingFunds,
-            turn: 0,
-            dailyIncome: 0,
-            dailyExpenses: 0,
-            totalTaxes: 0,
-            totalMaintenance: 0,
-            totalSalaries: 0,
-            totalBuildingMaintenance: 0,
-            totalInvestments: 0,
-            totalLoanInterestExpenses: 0, // Interest expenses as separate category
-            // Loan-related fields
-            loans: [], // Array of active loans
-            loanDebt: 0,
-            totalLoanInterest: 0,
-            totalLoanRepayments: 0
-        };
-        
-        await this.db.budget.add(initialBudget);
-
-        const existingEntries = await this.getJournalEntries();
-        const hasCapitalFunds = existingEntries.some(
-            (entry) => entry.type === 'capital_funds' && entry.turn === 0
-        );
-
-        if (!hasCapitalFunds) {
-            const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
-            await getOrCreateAccountingContext().recordCapitalFundsIncome({
-                turn: 0,
-                amount: startingFunds,
-                description: `Capital de départ: ${startingFunds}€`,
-            });
-        }
-
-        return initialBudget;
+        const { initializeTreasury } = await import('../acl/accounting.js');
+        return initializeTreasury(startingFunds);
     }
 
     /**
      * Calculate loan totals from budget loans array
-     * Only recalculates current loan debt, NOT the already-paid interest/repayment totals
-     * @param {Object} budget - Budget object
+     * @param {Object} [_budget] - Ignored; kept for API compatibility
      */
-    async calculateLoanTotals(budget) {
-        if (!budget.loans || !Array.isArray(budget.loans)) {
-            budget.loans = [];
-            budget.loanDebt = 0;
-            // Don't reset totalLoanInterest, totalLoanRepayments, totalLoanInterestExpenses
-            // These are cumulative values that should persist
-            if (budget.totalLoanInterest === undefined) budget.totalLoanInterest = 0;
-            if (budget.totalLoanRepayments === undefined) budget.totalLoanRepayments = 0;
-            if (budget.totalLoanInterestExpenses === undefined) budget.totalLoanInterestExpenses = 0;
-            return;
-        }
-        
-        let totalLoanDebt = 0;
-        
-        budget.loans.forEach(loan => {
-            totalLoanDebt += loan.amount || 0;
-        });
-        
-        budget.loanDebt = totalLoanDebt;
-        
-        // Ensure cumulative values are initialized if not exists
-        if (budget.totalLoanInterest === undefined) budget.totalLoanInterest = 0;
-        if (budget.totalLoanRepayments === undefined) budget.totalLoanRepayments = 0;
-        if (budget.totalLoanInterestExpenses === undefined) budget.totalLoanInterestExpenses = 0;
-               
-        // Save the updated budget
-        await this.db.budget.put(budget);
+    async calculateLoanTotals(_budget) {
+        const { recalculateLoanTotals } = await import('../acl/accounting.js');
+        return recalculateLoanTotals();
     }
 
     /**
@@ -114,123 +35,8 @@ class BudgetManager {
      * @returns {Promise<Object>} Current budget data
      */
     async getCurrentBudget() {
-        const budgetData = await this.db.budget.toArray();
-        const budget = budgetData[0];
-        
-        // Get expected initial funds from config (source of truth)
-        const expectedInitialFunds = config?.budget?.initialFunds || 200;
-        
-        // Safe access to import.meta.env
-        const envValue = typeof import.meta !== 'undefined' && import.meta.env 
-            ? import.meta.env.VITE_INITIAL_FUNDS 
-            : undefined;
-     
-        if (!budget) {
-            // No budget exists - initialize with config value
-            return await this.initialize(expectedInitialFunds);
-        }
-        
-        // Round all financial values to ensure consistency
-        if (typeof budget.funds === 'number') budget.funds = Math.round(budget.funds);
-        if (typeof budget.income === 'number') budget.income = Math.round(budget.income);
-        if (typeof budget.expenses === 'number') budget.expenses = Math.round(budget.expenses);
-        if (typeof budget.netFlow === 'number') budget.netFlow = Math.round(budget.netFlow);
-        if (typeof budget.dailyIncome === 'number') budget.dailyIncome = Math.round(budget.dailyIncome);
-        if (typeof budget.dailyExpenses === 'number') budget.dailyExpenses = Math.round(budget.dailyExpenses);
-        if (typeof budget.totalTaxes === 'number') budget.totalTaxes = Math.round(budget.totalTaxes);
-        if (typeof budget.totalBuildingMaintenance === 'number') budget.totalBuildingMaintenance = Math.round(budget.totalBuildingMaintenance);
-        if (typeof budget.totalInvestments === 'number') budget.totalInvestments = Math.round(budget.totalInvestments);
-        if (typeof budget.totalSalaries === 'number') budget.totalSalaries = Math.round(budget.totalSalaries);
-        if (typeof budget.totalLoanInterest === 'number') budget.totalLoanInterest = Math.round(budget.totalLoanInterest);
-        if (typeof budget.totalLoanInterestExpenses === 'number') budget.totalLoanInterestExpenses = Math.round(budget.totalLoanInterestExpenses);
-        if (typeof budget.totalLoanRepayments === 'number') budget.totalLoanRepayments = Math.round(budget.totalLoanRepayments);
-             
-        // Check if initialFunds needs to be updated to match config
-        // This ensures the budget always reflects the current config value
-        let needsUpdate = false;
-        if (budget.initialFunds !== expectedInitialFunds) {
-            // Store old initialFunds before updating
-            const oldInitialFunds = budget.initialFunds || 200;
-            
-            // Update initialFunds to match config
-            budget.initialFunds = expectedInitialFunds;
-            needsUpdate = true;
-            
-            // If this is a brand new budget (turn 0), update funds to match config
-            // This handles the case where IndexedDB has old data but config changed
-            // BUT only if no transactions have been made (income = 0 and expenses = 0)
-            if (budget.turn === 0) {
-                // Check if funds still match the old initialFunds (meaning it's a fresh start)
-                // Use a small tolerance for floating point comparison
-                const fundsMatchOldInitial = Math.abs(budget.funds - oldInitialFunds) < 1;
-                // Only reset if no transactions have been made (truly fresh start)
-                const noTransactions = (budget.income === 0 || budget.income === undefined) && 
-                                      (budget.expenses === 0 || budget.expenses === undefined);
-                
-                if (fundsMatchOldInitial && noTransactions) {
-                    // Only raise funds to match config — never downgrade (avoids 5000→200 desync)
-                    if (expectedInitialFunds > budget.funds) {
-                        budget.funds = expectedInitialFunds;
-                        needsUpdate = true;
-                    }
-                } else {
-                    console.info('[BudgetManager] Funds do not match old initialFunds or transactions exist, keeping current funds:', budget.funds);
-                }
-            } else {
-                console.info('[BudgetManager] Budget has turn > 0, not updating funds (game in progress)');
-            }
-        } else if (budget.turn === 0 && Math.abs(budget.funds - expectedInitialFunds) > 1) {
-            // Even if initialFunds matches, if turn is 0 and funds don't match, update funds
-            // BUT only if no transactions have been made
-            const noTransactions = (budget.income === 0 || budget.income === undefined) && 
-                                  (budget.expenses === 0 || budget.expenses === undefined);
-            
-            if (noTransactions && expectedInitialFunds > budget.funds) {
-                budget.funds = expectedInitialFunds;
-                needsUpdate = true;
-            } else if (!noTransactions) {
-                console.info('[BudgetManager] Turn is 0 but transactions exist, keeping current funds:', budget.funds);
-            }
-        }
-        
-        // Calculate loan totals from budget loans array
-        await this.calculateLoanTotals(budget);
-        
-        // Migration: Add new fields if they don't exist
-        if (budget.totalTaxes === undefined) {
-            budget.totalTaxes = 0;
-            needsUpdate = true;
-        }
-        if (budget.totalMaintenance === undefined) {
-            budget.totalMaintenance = 0;
-            needsUpdate = true;
-        }
-        if (budget.totalSalaries === undefined) {
-            budget.totalSalaries = 0;
-            needsUpdate = true;
-        }
-        if (budget.totalBuildingMaintenance === undefined) {
-            budget.totalBuildingMaintenance = 0;
-            needsUpdate = true;
-        }
-        if (budget.totalInvestments === undefined) {
-            budget.totalInvestments = 0;
-            needsUpdate = true;
-        }
-        if (budget.totalLoanInterestExpenses === undefined) {
-            budget.totalLoanInterestExpenses = 0;
-            needsUpdate = true;
-        }
-        if (budget.initialFunds === undefined) {
-            budget.initialFunds = expectedInitialFunds;
-            needsUpdate = true;
-        }
-        
-        if (needsUpdate) {
-            await this.db.budget.put(budget);
-        }
-        
-        return budget;
+        const { getTreasurySnapshot } = await import('../acl/accounting.js');
+        return getTreasurySnapshot();
     }
 
     /**
@@ -293,19 +99,12 @@ class BudgetManager {
             return await this.getCurrentBudget();
         }
 
-        const updatedBudget = await this.getCurrentBudget();
-
-        if (!updatedBudget.loans) {
-            updatedBudget.loans = [];
-        }
-
         if (loanData) {
-            updatedBudget.loans.push(loanData);
+            const { addLoanToPortfolio } = await import('../acl/accounting.js');
+            return addLoanToPortfolio(loanData);
         }
 
-        await this.calculateLoanTotals(updatedBudget);
-
-        return updatedBudget;
+        return await this.getCurrentBudget();
     }
 
     /**
@@ -358,25 +157,12 @@ class BudgetManager {
             return await this.getCurrentBudget();
         }
 
-        const updatedBudget = await this.getCurrentBudget();
-
-        if (loanId && updatedBudget.loans) {
-            const loan = updatedBudget.loans.find((l) => l.id === loanId);
-            if (loan) {
-                loan.amount = Math.max(0, loan.amount - amount);
-                loan.remainingTurns--;
-
-                if (loan.remainingTurns <= 0 || loan.amount <= 0) {
-                    updatedBudget.loans = updatedBudget.loans.filter(
-                        (l) => l.id !== loanId
-                    );
-                }
-            }
+        if (loanId) {
+            const { applyRepaymentToPortfolio } = await import('../acl/accounting.js');
+            return applyRepaymentToPortfolio(loanId, amount);
         }
 
-        await this.calculateLoanTotals(updatedBudget);
-
-        return updatedBudget;
+        return await this.getCurrentBudget();
     }
 
     /**
@@ -418,27 +204,8 @@ class BudgetManager {
      * @param {string} loanId
      */
     async advanceLoanInstallmentWithoutPayment(loanId) {
-        const budget = await this.getCurrentBudget();
-
-        if (!loanId || !budget.loans?.length) {
-            return budget;
-        }
-
-        const loan = budget.loans.find((l) => l.id === loanId);
-        if (!loan) {
-            return budget;
-        }
-
-        loan.remainingTurns = Math.max(0, (loan.remainingTurns ?? 1) - 1);
-
-        if (loan.remainingTurns <= 0) {
-            budget.loans = budget.loans.filter((l) => l.id !== loanId);
-        }
-
-        await this.calculateLoanTotals(budget);
-        await this.db.budget.put(budget);
-
-        return budget;
+        const { advanceLoanInstallmentWithoutPayment } = await import('../acl/accounting.js');
+        return advanceLoanInstallmentWithoutPayment(loanId);
     }
 
     /**
@@ -446,8 +213,8 @@ class BudgetManager {
      * @returns {Promise<Array>} Array of active loans
      */
     async getActiveLoans() {
-        const budget = await this.getCurrentBudget();
-        return budget.loans || [];
+        const { getActiveLoans } = await import('../acl/accounting.js');
+        return getActiveLoans();
     }
 
     /**
@@ -487,7 +254,7 @@ class BudgetManager {
                 };
             }
 
-            const updatedBudget = await this.db.budget.get('budget_current');
+            const updatedBudget = await this.getCurrentBudget();
 
             return {
                 success: true,
@@ -601,28 +368,8 @@ class BudgetManager {
      * @param {number} turn - Current turn number
      */
     async updateTurn(turn) {
-        const budget = await this.getCurrentBudget();
-        const previousTurn = budget.turn || 0;
-        budget.turn = turn;
-        
-        // Reset daily income/expenses but keep running totals
-        budget.dailyIncome = 0;
-        budget.dailyExpenses = 0;
-        
-        await this.db.budget.put(budget);
-
-        try {
-            const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
-            await getOrCreateAccountingContext().syncTurnInformativeEntries({
-                turn,
-                previousTurn,
-                treasuryFunds: budget.funds,
-            });
-        } catch (error) {
-            console.error('[BudgetManager] Error syncing informative journal entries:', error);
-        }
-        
-        return budget;
+        const { updateTreasuryTurn } = await import('../acl/accounting.js');
+        return updateTreasuryTurn(turn);
     }
 
     /**
@@ -787,8 +534,9 @@ class BudgetManager {
      * @param {number} amount - Building maintenance cost
      * @param {string} description - Optional custom description (default: 'Maintenance bâtiments')
      */
-    async addBuildingMaintenance(amount, description = 'Maintenance bâtiments') {
+    async addBuildingMaintenance(amount, description = 'Maintenance bâtiments', turn = null) {
         const budget = await this.getCurrentBudget();
+        const effectiveTurn = turn ?? budget.turn;
         
         // Validate input amount
         if (typeof amount !== 'number' || isNaN(amount) || !isFinite(amount)) {
@@ -849,7 +597,7 @@ class BudgetManager {
 
             const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
             await getOrCreateAccountingContext().recordMaintenanceExpense({
-                turn: budget.turn,
+                turn: effectiveTurn,
                 amount,
                 description,
                 maintenanceBreakdown,
@@ -869,8 +617,9 @@ class BudgetManager {
      * @param {string} description - Optional custom description
      * @returns {Promise<Object>} Updated budget
      */
-    async addSalaries(salaryPerMonth, population, description = null) {
+    async addSalaries(salaryPerMonth, population, description = null, turn = null) {
         const budget = await this.getCurrentBudget();
+        const effectiveTurn = turn ?? budget.turn;
         
         // Validate inputs
         if (typeof salaryPerMonth !== 'number' || isNaN(salaryPerMonth) || !isFinite(salaryPerMonth) || salaryPerMonth < 0) {
@@ -891,7 +640,7 @@ class BudgetManager {
 
             const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
             await getOrCreateAccountingContext().recordSalaryExpense({
-                turn: budget.turn,
+                turn: effectiveTurn,
                 amount: totalSalary,
                 description: salaryDescription,
             });
@@ -902,8 +651,9 @@ class BudgetManager {
         return budget;
     }
 
-    async addSalaryTax(salaryAmount, taxRate, description = null) {
+    async addSalaryTax(salaryAmount, taxRate, description = null, turn = null) {
         const budget = await this.getCurrentBudget();
+        const effectiveTurn = turn ?? budget.turn;
         
         if (typeof salaryAmount !== 'number' || isNaN(salaryAmount) || !isFinite(salaryAmount) || salaryAmount < 0) {
             return budget;
@@ -920,7 +670,7 @@ class BudgetManager {
 
             const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
             await getOrCreateAccountingContext().recordPayrollTaxIncome({
-                turn: budget.turn,
+                turn: effectiveTurn,
                 amount: taxAmount,
                 description: taxDescription,
             });
@@ -1056,23 +806,13 @@ class BudgetManager {
      * @param {number} startingFunds - Starting funds amount (default: from config)
      */
     async forceReinitialize(startingFunds = null) {
-        // Use config value as default if not provided
-        if (startingFunds === null) {
-            startingFunds = config?.budget?.initialFunds || 200;
-        }
-
-        const { resetAccountingContextForTests } = await import('../acl/accounting.js');
+        const { resetAccountingContextForTests, forceReinitializeTreasury } = await import('../acl/accounting.js');
         const { resetSessionLedgerBufferForTests } = await import('./SessionLedgerBuffer.js');
 
         resetSessionLedgerBufferForTests();
         resetAccountingContextForTests();
 
-        await this.db.journal.clear();
-        await this.db.budget.clear();
-
-        const result = await this.initialize(startingFunds);
-
-        return result;
+        return forceReinitializeTreasury(startingFunds);
     }
 
     /**
@@ -1080,87 +820,8 @@ class BudgetManager {
      * @returns {Promise<Object>} Financial health analysis
      */
     async getFinancialHealth() {
-        const budget = await this.getCurrentBudget();
-        
-        // Calculate net flow (daily income - daily expenses)
-        const netFlow = budget.dailyIncome - budget.dailyExpenses;
-        
-        let status = "healthy";
-        let message = "Finances saines";
-        
-        // CRITICAL SITUATIONS (highest priority)
-        if (budget.funds < 0) {
-            status = "critical";
-            message = "Faillite !";
-        }
-        // High deficit with low funds
-        else if (netFlow < -30 && budget.funds < 100) {
-            status = "critical";
-            message = "Danger : dépenses excessives";
-        }
-        // Very high deficit regardless of funds
-        else if (netFlow < -50) {
-            status = "critical";
-            message = "Déficit critique";
-        }
-        
-        // WARNING SITUATIONS
-        // Moderate deficit with low funds
-        else if (netFlow < -20 && budget.funds < 100) {
-            status = "warning";
-            message = "Attention : déficit + fonds faibles";
-        }
-        // High deficit with sufficient funds
-        else if (netFlow < -30 && budget.funds >= 100) {
-            status = "warning";
-            message = "Surveillez vos dépenses";
-        }
-        // Low funds with positive flow
-        else if (budget.funds < 50 && netFlow >= 0) {
-            status = "warning";
-            message = "Fonds insuffisants";
-        }
-        
-        // DEFICIT SITUATIONS
-        // Small deficit with low funds
-        else if (netFlow < 0 && budget.funds < 100) {
-            status = "deficit";
-            message = "Déficit + fonds limités";
-        }
-        // Small deficit with sufficient funds
-        else if (netFlow < 0 && budget.funds >= 100) {
-            status = "deficit";
-            message = "Déficitaire";
-        }
-        // Low funds with small positive flow
-        else if (budget.funds < 100 && netFlow >= 0 && netFlow < 20) {
-            status = "deficit";
-            message = "Fonds limités";
-        }
-        
-        // EXCELLENT SITUATIONS
-        // High positive flow
-        else if (netFlow > 100) {
-            status = "excellent";
-            message = "Excellent flux";
-        }
-        // High funds with good flow
-        else if (budget.funds > 500 && netFlow > 50) {
-            status = "excellent";
-            message = "Très solide";
-        }
-        // Very high funds
-        else if (budget.funds > 1000) {
-            status = "excellent";
-            message = "Très prospère";
-        }
-        
-        return {
-            status,
-            message,
-            budget,
-            netFlow
-        };
+        const { getFinancialHealth } = await import('../acl/accounting.js');
+        return getFinancialHealth();
     }
 
     /**

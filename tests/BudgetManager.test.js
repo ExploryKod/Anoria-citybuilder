@@ -79,7 +79,7 @@ describe('BudgetManager', () => {
 
         getOrCreateAccountingContext({
             journalManager,
-            budgetManager,
+            db: testDb,
         });
         
         // Mock config pour éviter les problèmes avec import.meta.env

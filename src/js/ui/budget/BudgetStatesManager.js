@@ -2,6 +2,7 @@
  * BudgetStatesManager - Gère l'affichage et la gestion des états budgétaires
  */
 import { getHealthStatusText } from './RealtimeBudgetManager.js';
+import { getIncomeStatement } from '../../acl/accounting.js';
 
 /**
  * Initialise le popup des états budgétaires
@@ -215,8 +216,8 @@ export async function loadBudgetStates(period = '3', showLoading = true) {
         // Display budget states
         displayBudgetStates(validStates, budgetStatesList);
         
-        // Display summary
-        displayBudgetSummary(validStates, summaryContent);
+        const journalIncomeStatement = await getIncomeStatement();
+        displayBudgetSummary(validStates, summaryContent, journalIncomeStatement);
 
     } catch (error) {
         console.error('Error loading budget states:', error);
@@ -392,9 +393,48 @@ function displayBudgetStates(states, container) {
 /**
  * Affiche le résumé des états budgétaires
  */
-function displayBudgetSummary(states, container) {
-    if (states.length === 0) {
+function displayBudgetSummary(states, container, journalIncomeStatement = null) {
+    if (states.length === 0 && !journalIncomeStatement) {
         container.innerHTML = '<p>Aucune donnée disponible</p>';
+        return;
+    }
+
+    const journalSection = journalIncomeStatement
+        ? `
+            <div class="statement-section">
+                <h4 class="statement-title">COMPTE DE RÉSULTAT (journal — année ${journalIncomeStatement.fiscalYear} ap JC)</h4>
+                ${journalIncomeStatement.products.map((line) => `
+                    <div class="statement-line">
+                        <span class="statement-label">${line.label}</span>
+                        <span class="statement-value positive">${line.amount.toLocaleString('fr-FR')}€</span>
+                    </div>
+                `).join('')}
+                <div class="statement-line total-line">
+                    <span class="statement-label">Total produits</span>
+                    <span class="statement-value total positive">${journalIncomeStatement.totalProducts.toLocaleString('fr-FR')}€</span>
+                </div>
+                ${journalIncomeStatement.charges.map((line) => `
+                    <div class="statement-line">
+                        <span class="statement-label">${line.label}</span>
+                        <span class="statement-value negative">-${line.amount.toLocaleString('fr-FR')}€</span>
+                    </div>
+                `).join('')}
+                <div class="statement-line total-line">
+                    <span class="statement-label">Total charges</span>
+                    <span class="statement-value total negative">-${journalIncomeStatement.totalCharges.toLocaleString('fr-FR')}€</span>
+                </div>
+                <div class="statement-line result-line">
+                    <span class="statement-label">Résultat net (journal)</span>
+                    <span class="statement-value result ${journalIncomeStatement.netResult >= 0 ? 'positive' : 'negative'}">
+                        ${journalIncomeStatement.netResult >= 0 ? '+' : ''}${journalIncomeStatement.netResult.toLocaleString('fr-FR')}€
+                    </span>
+                </div>
+            </div>
+        `
+        : '';
+
+    if (states.length === 0) {
+        container.innerHTML = journalSection;
         return;
     }
 
@@ -416,6 +456,7 @@ function displayBudgetSummary(states, container) {
 
     container.innerHTML = `
         <div class="budget-income-statement">
+            ${journalSection}
             <div class="statement-section">
                 <h4 class="statement-title">RÉSUMÉ PÉRIODE (Tours ${firstState.turn || 'N/A'} - ${lastState.turn || 'N/A'})</h4>
                 <div class="statement-line">

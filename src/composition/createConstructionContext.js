@@ -1,7 +1,10 @@
 import { DexieConstructionBuildingRepository } from '../contexts/construction/infrastructure/dexie/DexieConstructionBuildingRepository.js';
 import { GetBuildingAtTile } from '../contexts/construction/application/queries/GetBuildingAtTile.js';
 import { PlaceBuildingWithPayment } from '../contexts/construction/application/services/PlaceBuildingWithPayment.js';
-import budgetManager from '../js/stores/BudgetManager.js';
+import {
+  recordConstructionExpense,
+  recordConstructionRefund,
+} from '../js/acl/budget.js';
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
 
 /**
@@ -21,14 +24,8 @@ export function createConstructionContext({
   const getBuildingAtTile = new GetBuildingAtTile(repository);
   const placeBuildingWithPayment = new PlaceBuildingWithPayment({
     repository,
-    recordExpense:
-      recordExpense ??
-      ((amount, reason, options) =>
-        budgetManager.addConstructionExpense(amount, reason, options)),
-    recordRefund:
-      recordRefund ??
-      ((amount, reason, options) =>
-        budgetManager.addConstructionRefund(amount, reason, options)),
+    recordExpense: recordExpense ?? recordConstructionExpense,
+    recordRefund: recordRefund ?? recordConstructionRefund,
   });
 
   return {

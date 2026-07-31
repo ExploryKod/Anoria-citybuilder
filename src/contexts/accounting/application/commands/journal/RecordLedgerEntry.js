@@ -57,18 +57,9 @@ export class RecordLedgerEntry {
     const resolvedBusinessKey =
       businessKey ?? buildLedgerBusinessKey(type, timeInfo);
 
-    if (resolvedBusinessKey && (await this.journalWritePort.hasBusinessKey(resolvedBusinessKey))) {
-      return {
-        recorded: false,
-        skipped: true,
-        reason: 'duplicate_business_key',
-        businessKey: resolvedBusinessKey,
-      };
-    }
-
     const shouldPersist = persist ?? type !== 'balance';
 
-    await this.journalWritePort.appendEntry(
+    const appendResult = await this.journalWritePort.appendEntry(
       {
         turn,
         type,
@@ -83,6 +74,15 @@ export class RecordLedgerEntry {
       },
       { persist: shouldPersist }
     );
+
+    if (appendResult.skipped) {
+      return {
+        recorded: false,
+        skipped: true,
+        reason: appendResult.reason ?? 'duplicate_business_key',
+        businessKey: resolvedBusinessKey ?? undefined,
+      };
+    }
 
     return {
       recorded: true,
