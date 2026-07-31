@@ -475,22 +475,24 @@ export function createGame(gameStore, assetManager, citySize = null) {
         configObject: config
     });
     
-    budgetManager.forceReinitialize(initialFunds).then(async () => {
-        // BudgetManager registered above - available via window.app.budgetManager or window.budgetManager
-        // Update funds display in navigation bar immediately after initialization
-        const initialBudget = await budgetManager.getCurrentBudget();
-        
-        console.log('[game.js] Budget initialized, current budget:', initialBudget);
-        
-        if (window.gameUI) {
-            window.gameUI.updateFunds(initialBudget.funds || initialFunds);
-        } else {
-            const displayFunds = document.querySelector('.display-funds');
-            if (displayFunds) {
-                displayFunds.textContent = (initialBudget.funds || initialFunds).toString();
+    budgetManager.budgetReadyPromise = budgetManager
+        .forceReinitialize(initialFunds)
+        .then(async () => {
+            const initialBudget = await budgetManager.getCurrentBudget();
+
+            console.log('[game.js] Budget initialized, current budget:', initialBudget);
+
+            if (window.gameUI) {
+                window.gameUI.updateFunds(initialBudget.funds ?? initialFunds);
+            } else {
+                const displayFunds = document.querySelector('.display-funds');
+                if (displayFunds) {
+                    displayFunds.textContent = String(initialBudget.funds ?? initialFunds);
+                }
             }
-        }
-    });
+
+            return initialBudget;
+        });
 
 
     /* Scene + ECS runtime */
@@ -1166,6 +1168,10 @@ export function createGame(gameStore, assetManager, citySize = null) {
             }, 10000);
             
             try {
+                if (window.budgetManager?.budgetReadyPromise) {
+                    await window.budgetManager.budgetReadyPromise;
+                }
+
                 const existingHouse = await findBuildingAtTile({ x, y });
                 if (existingHouse) {
                     console.warn('[game.js] Building already exists at this location:', placementKey);

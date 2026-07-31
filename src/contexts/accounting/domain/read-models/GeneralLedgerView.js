@@ -11,6 +11,7 @@
  * @property {number} turn
  * @property {boolean} [isCarryForwardIncome]
  * @property {string} [partnerId]
+ * @property {string} [buildingInstanceId] UUID v4 de l'asset construit (construction)
  *
  * @typedef {object} GeneralLedgerMonth
  * @property {number} year

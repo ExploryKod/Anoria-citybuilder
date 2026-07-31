@@ -1,7 +1,7 @@
 /**
  * UrbanAdviceManager - Gère le centre de conseils urbains
  */
-import { initLoanSystem, loadActiveLoans } from '../loans/LoansManager.js';
+import { loadActiveLoans } from '../loans/LoansManager.js';
 import { hasRoadAccessFromCount } from '../../acl/parcels.js';
 import { listAllBuildingRows } from '../../acl/construction.js';
 import { getCityTotalPopulation } from '../../acl/housing.js';
@@ -73,9 +73,6 @@ export function initUrbanAdviceCenter() {
             }
         });
     });
-
-    // Initialize loan system
-    initLoanSystem();
 }
 
 /**

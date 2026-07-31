@@ -46,7 +46,7 @@ import { getCityBuildingValuation } from '../acl/budget.js';
 import AssetManager from "../meshs/AssetManager.js";
 import { initRealtimeBudgetPopup, updateRealtimeBudget } from "./budget/RealtimeBudgetManager.js";
 import { initBudgetStatesPopup, refreshBudgetStatesModal } from "./budget/BudgetStatesManager.js";
-import { initLoanSystem, initLoansPopup, updateLoansDisplay, contractLoan, loadActiveLoans, processLoanPayments, initLoanPaymentSystem } from "./loans/LoansManager.js";
+import { initLoansPopup, updateLoansDisplay, contractLoan, loadActiveLoans, processLoanPayments, initLoanPaymentSystem } from "./loans/LoansManager.js";
 import { initJournalPopup, loadJournalEntries, exportJournalToJSON, exportJournalToPDF } from "./journal/JournalManager.js";
 import { initFoodTraceabilityPopup, initializeFoodTraceabilityTabs, loadFoodTraceabilityEntries, loadFoodCharts } from "./food-traceability/FoodTraceabilityManager.js";
 import { initUrbanAdviceCenter } from "./urban-advice/UrbanAdviceManager.js";

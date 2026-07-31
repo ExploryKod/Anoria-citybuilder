@@ -25,6 +25,8 @@ const config = {
             const result = parsed && !isNaN(parsed) ? parsed : 200;
             return result;
         })(),
+        /** One-time fee to open a commercial route when activating a trade partner */
+        commercialRouteFee: 500,
     },
 
     building: {

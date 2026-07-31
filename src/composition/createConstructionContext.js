@@ -9,8 +9,8 @@ import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
  *
  * @param {object} [deps]
  * @param {import('../contexts/construction/application/ports/ConstructionBuildingRepository.js').ConstructionBuildingRepository} [deps.buildingRepository]
- * @param {(amount: number, reason: string) => Promise<object>} [deps.recordExpense]
- * @param {(amount: number, reason: string) => Promise<object>} [deps.recordRefund]
+   * @param {(amount: number, reason: string, options?: { buildingInstanceId?: string }) => Promise<object>} [deps.recordExpense]
+   * @param {(amount: number, reason: string) => Promise<object>} [deps.recordRefund]
  */
 export function createConstructionContext({
   buildingRepository,
@@ -23,9 +23,12 @@ export function createConstructionContext({
     repository,
     recordExpense:
       recordExpense ??
-      ((amount, reason) => budgetManager.addConstructionExpense(amount, reason)),
+      ((amount, reason, options) =>
+        budgetManager.addConstructionExpense(amount, reason, options)),
     recordRefund:
-      recordRefund ?? ((amount, reason) => budgetManager.addIncome(amount, reason)),
+      recordRefund ??
+      ((amount, reason, options) =>
+        budgetManager.addConstructionRefund(amount, reason, options)),
   });
 
   return {

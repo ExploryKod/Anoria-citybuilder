@@ -37,9 +37,9 @@ class BudgetManager {
             name: 'budget_current',
             funds: startingFunds,
             initialFunds: startingFunds, // Store initial funds separately for capital social
+            income: startingFunds, // Aligné avec la ligne journal capital_funds (D8)
             expenses: 0,
-            income: 0,
-            netFlow: 0,
+            netFlow: startingFunds,
             turn: 0,
             dailyIncome: 0,
             dailyExpenses: 0,
@@ -57,16 +57,21 @@ class BudgetManager {
         };
         
         await this.db.budget.add(initialBudget);
-        
-        // Add capital funds entry to journal (turn 0) only if journal is empty
-        // This ensures we don't create duplicate entries on reinitialization
+
         const existingEntries = await this.getJournalEntries();
-        const hasCapitalFunds = existingEntries.some(entry => entry.type === 'capital_funds' && entry.turn === 0);
-        
+        const hasCapitalFunds = existingEntries.some(
+            (entry) => entry.type === 'capital_funds' && entry.turn === 0
+        );
+
         if (!hasCapitalFunds) {
-            await this.addJournalEntry(0, 'capital_funds', startingFunds, `Capital de départ: ${startingFunds}€`);
+            const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
+            await getOrCreateAccountingContext().recordCapitalFundsIncome({
+                turn: 0,
+                amount: startingFunds,
+                description: `Capital de départ: ${startingFunds}€`,
+            });
         }
-            
+
         return initialBudget;
     }
 
@@ -163,9 +168,11 @@ class BudgetManager {
                                       (budget.expenses === 0 || budget.expenses === undefined);
                 
                 if (fundsMatchOldInitial && noTransactions) {
-                    // Funds haven't changed from initial AND no transactions - update to new initial funds
-                    budget.funds = expectedInitialFunds;
-                    needsUpdate = true;
+                    // Only raise funds to match config — never downgrade (avoids 5000→200 desync)
+                    if (expectedInitialFunds > budget.funds) {
+                        budget.funds = expectedInitialFunds;
+                        needsUpdate = true;
+                    }
                 } else {
                     console.info('[BudgetManager] Funds do not match old initialFunds or transactions exist, keeping current funds:', budget.funds);
                 }
@@ -178,10 +185,10 @@ class BudgetManager {
             const noTransactions = (budget.income === 0 || budget.income === undefined) && 
                                   (budget.expenses === 0 || budget.expenses === undefined);
             
-            if (noTransactions) {
+            if (noTransactions && expectedInitialFunds > budget.funds) {
                 budget.funds = expectedInitialFunds;
                 needsUpdate = true;
-            } else {
+            } else if (!noTransactions) {
                 console.info('[BudgetManager] Turn is 0 but transactions exist, keeping current funds:', budget.funds);
             }
         }
@@ -227,24 +234,38 @@ class BudgetManager {
     }
 
     /**
-     * Add income to funds
-     * @param {number} amount - Income amount
-     * @param {string} source - Source of income (e.g., "taxes", "sales")
+     * Construction placement refund (journal + treasury).
+     * @param {number} amount
+     * @param {string} description
+     * @param {{ buildingInstanceId?: string }} [options]
      */
-    async addIncome(amount, source = "unknown") {
+    async addConstructionRefund(amount, description, options = {}) {
         const budget = await this.getCurrentBudget();
-        
-        // Add journal entry
-        await this.addJournalEntry(budget.turn, 'citizen_tax', Math.round(amount), source);
-        
         const roundedAmount = Math.round(amount);
-        budget.funds = Math.round(budget.funds + roundedAmount);
-        budget.income = Math.round(budget.income + roundedAmount);
-        budget.netFlow = Math.round(budget.income - budget.expenses);
-        
-        await this.db.budget.put(budget);
 
-        return budget;
+        if (roundedAmount <= 0) {
+            return budget;
+        }
+
+        const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
+        await getOrCreateAccountingContext().recordConstructionRefundIncome({
+            turn: budget.turn,
+            amount: roundedAmount,
+            description,
+            buildingInstanceId: options.buildingInstanceId ?? null,
+        });
+
+        return await this.getCurrentBudget();
+    }
+
+    /**
+     * @deprecated Removed — use typed BC services (e.g. addConstructionRefund, addTaxes).
+     */
+    async addIncome(amount, source = 'unknown') {
+        console.warn(
+            `[BudgetManager] addIncome() is deprecated (source: ${source}). Use a typed accounting method.`
+        );
+        throw new Error('BudgetManager.addIncome is deprecated — use a typed Record* service');
     }
 
     /**
@@ -255,59 +276,61 @@ class BudgetManager {
     async addLoan(amount, description = 'Loan', loanData = null) {
         const budget = await this.getCurrentBudget();
         const roundedAmount = Math.round(amount);
-        budget.funds = Math.round(budget.funds + roundedAmount);
-        
-        // Add journal entry for loan capital (income)
-        await this.addJournalEntry(budget.turn, 'loan_capital', roundedAmount, description);
-        
-        // Update income to reflect the loan capital received
-        budget.income = Math.round(budget.income + roundedAmount);
-        budget.netFlow = Math.round(budget.income - budget.expenses);
-        
-        // Initialize loans array if not exists
-        if (!budget.loans) budget.loans = [];
-        
-        // Add loan to budget if loanData provided
-        if (loanData) {
-            budget.loans.push(loanData);
-        }
-        
-        // Recalculate loan totals
-        await this.calculateLoanTotals(budget);
-        
-        // Save budget
-        await this.db.budget.put(budget);
 
-        return budget;
+        if (roundedAmount <= 0) {
+            return budget;
+        }
+
+        const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
+        const result = await getOrCreateAccountingContext().recordLoanCapitalIncome({
+            turn: budget.turn,
+            amount: roundedAmount,
+            description,
+            loanId: loanData?.id ?? null,
+        });
+
+        if (!result.recorded) {
+            return await this.getCurrentBudget();
+        }
+
+        const updatedBudget = await this.getCurrentBudget();
+
+        if (!updatedBudget.loans) {
+            updatedBudget.loans = [];
+        }
+
+        if (loanData) {
+            updatedBudget.loans.push(loanData);
+        }
+
+        await this.calculateLoanTotals(updatedBudget);
+
+        return updatedBudget;
     }
 
     /**
      * Add loan interest expense to budget
      * @param {number} amount - Interest amount
      * @param {string} description - Description of interest
+     * @param {string|null} [loanId]
      */
-    async addLoanInterest(amount, description = 'Loan Interest') {
+    async addLoanInterest(amount, description = 'Loan Interest', loanId = null) {
         const budget = await this.getCurrentBudget();
-        
-        // Add journal entry
         const roundedAmount = Math.round(amount);
-        await this.addJournalEntry(budget.turn, 'loan_interest', roundedAmount, description);
-        
-        budget.expenses = Math.round(budget.expenses + roundedAmount);
-        budget.funds = Math.round(budget.funds - roundedAmount);
-        budget.netFlow = Math.round(budget.income - budget.expenses);
-        
-        // Initialize loan interest if not exists
-        if (!budget.totalLoanInterest) budget.totalLoanInterest = 0;
-        budget.totalLoanInterest = Math.round(budget.totalLoanInterest + roundedAmount);
-        
-        // Initialize loan interest expenses if not exists
-        if (!budget.totalLoanInterestExpenses) budget.totalLoanInterestExpenses = 0;
-        budget.totalLoanInterestExpenses = Math.round(budget.totalLoanInterestExpenses + roundedAmount);
-        
-        await this.db.budget.put(budget);
 
-        return budget;
+        if (roundedAmount <= 0) {
+            return budget;
+        }
+
+        const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
+        await getOrCreateAccountingContext().recordLoanInterestExpense({
+            turn: budget.turn,
+            amount: roundedAmount,
+            description,
+            loanId,
+        });
+
+        return await this.getCurrentBudget();
     }
 
     /**
@@ -317,36 +340,102 @@ class BudgetManager {
      */
     async repayLoan(amount, description = 'Loan Repayment', loanId = null) {
         const budget = await this.getCurrentBudget();
-        
-        // Add journal entry
         const roundedAmount = Math.round(amount);
-        await this.addJournalEntry(budget.turn, 'loan_repayment', roundedAmount, description);
-        
-        budget.funds = Math.round(budget.funds - roundedAmount);
-        budget.expenses = Math.round(budget.expenses + roundedAmount);
-        budget.netFlow = Math.round(budget.income - budget.expenses);
-        
-        // Track total loan repayments
-        if (!budget.totalLoanRepayments) budget.totalLoanRepayments = 0;
-        budget.totalLoanRepayments = Math.round(budget.totalLoanRepayments + roundedAmount);
-        
-        // Update specific loan if loanId provided
-        if (loanId && budget.loans) {
-            const loan = budget.loans.find(l => l.id === loanId);
+
+        if (roundedAmount <= 0) {
+            return budget;
+        }
+
+        const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
+        const result = await getOrCreateAccountingContext().recordLoanRepaymentExpense({
+            turn: budget.turn,
+            amount: roundedAmount,
+            description,
+            loanId,
+        });
+
+        if (!result.recorded) {
+            return await this.getCurrentBudget();
+        }
+
+        const updatedBudget = await this.getCurrentBudget();
+
+        if (loanId && updatedBudget.loans) {
+            const loan = updatedBudget.loans.find((l) => l.id === loanId);
             if (loan) {
                 loan.amount = Math.max(0, loan.amount - amount);
                 loan.remainingTurns--;
-                
-                // Remove loan if fully paid
+
                 if (loan.remainingTurns <= 0 || loan.amount <= 0) {
-                    budget.loans = budget.loans.filter(l => l.id !== loanId);
+                    updatedBudget.loans = updatedBudget.loans.filter(
+                        (l) => l.id !== loanId
+                    );
                 }
             }
         }
-        
-        // Recalculate loan totals
+
+        await this.calculateLoanTotals(updatedBudget);
+
+        return updatedBudget;
+    }
+
+    /**
+     * Journal-only: unpaid loan installment (informative — no treasury debit).
+     * Types: `info_loan_interest`, `info_loan_repayment`.
+     * @param {{ interestAmount?: number, principalAmount?: number, loanId: string, loanType?: string }} params
+     */
+    async recordInfoLoanInstallment({
+        interestAmount = 0,
+        principalAmount = 0,
+        loanId,
+        loanType = 'bank',
+    }) {
+        const budget = await this.getCurrentBudget();
+
+        if (!loanId) {
+            return budget;
+        }
+
+        const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
+        await getOrCreateAccountingContext().recordInfoLoanInstallment({
+            turn: budget.turn,
+            interestAmount,
+            principalAmount,
+            loanId,
+            loanType,
+        });
+
+        return budget;
+    }
+
+    /** @deprecated Use recordInfoLoanInstallment */
+    async recordLoanDefaultInstallment(params) {
+        return this.recordInfoLoanInstallment(params);
+    }
+
+    /**
+     * Advance loan schedule when an installment could not be paid (no capital reduction).
+     * @param {string} loanId
+     */
+    async advanceLoanInstallmentWithoutPayment(loanId) {
+        const budget = await this.getCurrentBudget();
+
+        if (!loanId || !budget.loans?.length) {
+            return budget;
+        }
+
+        const loan = budget.loans.find((l) => l.id === loanId);
+        if (!loan) {
+            return budget;
+        }
+
+        loan.remainingTurns = Math.max(0, (loan.remainingTurns ?? 1) - 1);
+
+        if (loan.remainingTurns <= 0) {
+            budget.loans = budget.loans.filter((l) => l.id !== loanId);
+        }
+
         await this.calculateLoanTotals(budget);
-        
         await this.db.budget.put(budget);
 
         return budget;
@@ -365,9 +454,10 @@ class BudgetManager {
      * Add construction expense to budget (building purchases)
      * @param {number} amount - Construction expense amount
      * @param {string} reason - Reason for expense (e.g., "Building: House")
+     * @param {{ buildingInstanceId?: string }} [options]
      * @returns {Promise<Object>} Result object with success status
      */
-    async addConstructionExpense(amount, reason = "unknown") {
+    async addConstructionExpense(amount, reason = "unknown", options = {}) {
         const budget = await this.getCurrentBudget();
         
         // Validate input amount
@@ -379,40 +469,29 @@ class BudgetManager {
                 message: `Invalid expense amount: ${amount}`
             };
         }
-        
-        // Use budget values directly (they should be valid now)
-        const currentFunds = budget.funds;
-        const currentExpenses = budget.expenses;
-        const currentIncome = budget.income;
-        
-        // Allow negative funds (debt) - removed the insufficient funds check
-        // The game can go into debt, which is a valid game state
 
         try {
-            const roundedAmount = Math.round(amount);
-            budget.funds = Math.round(currentFunds - roundedAmount);
-            
-            // Add journal entry (constructions are tracked as 'construction' type)
-            await this.addJournalEntry(budget.turn, 'construction', roundedAmount, reason);
-            
-            // Distinguish between investments and regular expenses
-            if (reason.includes('Building:') || reason.includes('building')) {
-                // This is an investment (building purchase)
-                if (!budget.totalInvestments) budget.totalInvestments = 0;
-                budget.totalInvestments = Math.round(budget.totalInvestments + roundedAmount);
-                // Don't add to regular expenses for investments
-            } else {
-                // This is a regular expense
-                budget.expenses = Math.round(currentExpenses + roundedAmount);
+            const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
+            const result = await getOrCreateAccountingContext().recordConstructionExpense({
+                turn: budget.turn,
+                amount,
+                description: reason,
+                buildingInstanceId: options.buildingInstanceId ?? null,
+            });
+
+            if (!result.recorded) {
+                return {
+                    success: false,
+                    reason: result.reason ?? 'not_recorded',
+                    message: `Construction expense not recorded: ${result.reason ?? 'unknown'}`,
+                };
             }
-            
-            budget.netFlow = Math.round(currentIncome - budget.expenses);
-            
-            await this.db.budget.put(budget);
+
+            const updatedBudget = await this.db.budget.get('budget_current');
 
             return {
                 success: true,
-                budget: budget,
+                budget: updatedBudget,
                 message: `Expense of ${amount}€ processed for ${reason}`
             };
         } catch (error) {
@@ -531,51 +610,16 @@ class BudgetManager {
         budget.dailyExpenses = 0;
         
         await this.db.budget.put(budget);
-        
-        // Ajouter l'entrée de balance à chaque tour (même source que display-funds)
-        // Vérifier que journalManager et la méthode existent avant d'appeler
-        if (this.journalManager && typeof this.journalManager.addBalanceEntry === 'function') {
-            try {
-                await this.journalManager.addBalanceEntry(turn, budget.funds);
-            } catch (error) {
-                console.error('[BudgetManager] Error adding balance entry:', error);
-                // Ne pas bloquer l'exécution si l'ajout de balance échoue
-            }
-        } else {
-            console.warn('[BudgetManager] journalManager.addBalanceEntry not available');
-        }
-        
-        // Détecter la fin d'année et le début d'une nouvelle année
-        if (window.TimeManager) {
-            const currentTimeInfo = window.TimeManager.getTimeInfo(turn);
-            const previousTimeInfo = window.TimeManager.getTimeInfo(previousTurn);
-            
-            // DÉTECTION 1: Fin d'année (dernier tour de décembre)
-            // Créer les entrées de cumul pour l'année qui se termine
-            if (previousTimeInfo.year >= 0 && 
-                previousTimeInfo.monthIndex === 11 && // Décembre (0-indexed: 0=janvier, 11=décembre)
-                currentTimeInfo.year > previousTimeInfo.year) {
-                
-                // On vient de passer au premier tour de la nouvelle année
-                // Le dernier tour de l'année précédente était previousTurn (décembre)
-                const endingYear = previousTimeInfo.year;
-                
-                // Créer les entrées de cumul pour l'année qui se termine
-                // Utiliser previousTurn (dernier turn de l'année) pour les cumuls
-                await this.journalManager.createCumulEntries(endingYear, previousTurn);
-            }
-            
-            // DÉTECTION 2: Début d'une nouvelle année (janvier)
-            // Créer le report à nouveau pour la nouvelle année
-            if (currentTimeInfo.year > 0 && 
-                currentTimeInfo.monthIndex === 0 && // Janvier
-                previousTimeInfo.year < currentTimeInfo.year) {
-                
-                // Créer le report à nouveau pour la nouvelle année
-                // Le JournalManager utilisera le solde sauvegardé dans localStorage
-                // (la sauvegarde se fait maintenant dans loadJournalEntries() au moment de l'affichage)
-                await this.journalManager.createCarryForwardEntry(turn);
-            }
+
+        try {
+            const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
+            await getOrCreateAccountingContext().syncTurnInformativeEntries({
+                turn,
+                previousTurn,
+                treasuryFunds: budget.funds,
+            });
+        } catch (error) {
+            console.error('[BudgetManager] Error syncing informative journal entries:', error);
         }
         
         return budget;
@@ -590,35 +634,27 @@ class BudgetManager {
      */
     async addImportExpense(amount, description, productId = 'unknown', partnerId = null) {
         const budget = await this.getCurrentBudget();
-        
-        // Validate input amount
+
         if (typeof amount !== 'number' || isNaN(amount) || !isFinite(amount)) {
             console.error(`Invalid import expense amount: ${amount}`);
             return budget;
         }
-        
+
         const roundedAmount = Math.round(amount);
-        
-        // Créer le type d'entrée journal : 'import_wheat', 'import_carrot', etc.
-        const journalType = `import_${productId}`;
-        
-        // Add journal entry with partner info
-        await this.addJournalEntry(budget.turn, journalType, roundedAmount, description, partnerId);
-        
-        // Update budget (import = dépense)
-        budget.funds = Math.round(budget.funds - roundedAmount);
-        budget.expenses = Math.round(budget.expenses + roundedAmount);
-        budget.dailyExpenses = Math.round(budget.dailyExpenses + roundedAmount);
-        budget.netFlow = Math.round(budget.income - budget.expenses);
-        
-        // Track total imports if needed
-        if (!budget.totalImports) budget.totalImports = {};
-        if (!budget.totalImports[productId]) budget.totalImports[productId] = 0;
-        budget.totalImports[productId] = Math.round(budget.totalImports[productId] + roundedAmount);
-        
-        await this.db.budget.put(budget);
-        
-        return budget;
+        if (roundedAmount <= 0) {
+            return budget;
+        }
+
+        const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
+        await getOrCreateAccountingContext().recordCommerceImportExpense({
+            turn: budget.turn,
+            amount: roundedAmount,
+            description,
+            productId,
+            partnerId,
+        });
+
+        return await this.getCurrentBudget();
     }
 
     /**
@@ -630,35 +666,88 @@ class BudgetManager {
      */
     async addExportIncome(amount, description, productId = 'unknown', partnerId = null) {
         const budget = await this.getCurrentBudget();
-        
-        // Validate input amount
+
         if (typeof amount !== 'number' || isNaN(amount) || !isFinite(amount)) {
             console.error(`Invalid export income amount: ${amount}`);
             return budget;
         }
-        
+
         const roundedAmount = Math.round(amount);
-        
-        // Créer le type d'entrée journal : 'export_wheat', 'export_carrot', etc.
-        const journalType = `export_${productId}`;
-        
-        // Add journal entry with partner info
-        await this.addJournalEntry(budget.turn, journalType, roundedAmount, description, partnerId);
-        
-        // Update budget (export = revenu)
-        budget.funds = Math.round(budget.funds + roundedAmount);
-        budget.income = Math.round(budget.income + roundedAmount);
-        budget.dailyIncome = Math.round(budget.dailyIncome + roundedAmount);
-        budget.netFlow = Math.round(budget.income - budget.expenses);
-        
-        // Track total exports if needed
-        if (!budget.totalExports) budget.totalExports = {};
-        if (!budget.totalExports[productId]) budget.totalExports[productId] = 0;
-        budget.totalExports[productId] = Math.round(budget.totalExports[productId] + roundedAmount);
-        
-        await this.db.budget.put(budget);
-        
-        return budget;
+        if (roundedAmount <= 0) {
+            return budget;
+        }
+
+        const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
+        await getOrCreateAccountingContext().recordCommerceExportIncome({
+            turn: budget.turn,
+            amount: roundedAmount,
+            description,
+            productId,
+            partnerId,
+        });
+
+        return await this.getCurrentBudget();
+    }
+
+    /**
+     * Random event repair expense (journal + treasury).
+     * @param {number} amount
+     * @param {string} description
+     */
+    async addExceptionalExpense(amount, description) {
+        const budget = await this.getCurrentBudget();
+        const roundedAmount = Math.round(amount);
+
+        if (roundedAmount <= 0) {
+            return budget;
+        }
+
+        const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
+        await getOrCreateAccountingContext().recordExceptionalExpense({
+            turn: budget.turn,
+            amount: roundedAmount,
+            description,
+        });
+
+        return await this.getCurrentBudget();
+    }
+
+    /**
+     * Commercial route opening fee (journal + treasury).
+     * @param {number} amount
+     * @param {string} description
+     * @param {string} partnerId
+     * @returns {Promise<{ budget: object, recorded: boolean, skipped: boolean, treasuryApplied: boolean, reason?: string }>}
+     */
+    async addCommercialRouteFee(amount, description, partnerId) {
+        const budget = await this.getCurrentBudget();
+        const roundedAmount = Math.round(amount);
+
+        if (roundedAmount <= 0) {
+            return {
+                budget,
+                recorded: false,
+                skipped: true,
+                treasuryApplied: false,
+                reason: 'zero_amount',
+            };
+        }
+
+        const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
+        const result = await getOrCreateAccountingContext().recordCommercialRouteExpense({
+            turn: budget.turn,
+            amount: roundedAmount,
+            description,
+            partnerId,
+        });
+
+        return {
+            budget: result.recorded ? await this.getCurrentBudget() : budget,
+            recorded: result.recorded,
+            skipped: result.skipped,
+            treasuryApplied: result.treasuryApplied,
+            reason: result.reason,
+        };
     }
 
     /**
@@ -692,36 +781,6 @@ class BudgetManager {
         return budget;
     }
 
-    /**
-     * Add daily expenses (maintenance, salaries, etc.)
-     * @param {number} amount - Daily expense amount
-     * @param {string} reason - Reason for expense
-     */
-    async addDailyExpense(amount, reason = "daily_expense") {
-        const budget = await this.getCurrentBudget();
-        
-        // Validate input amount
-        if (typeof amount !== 'number' || isNaN(amount) || !isFinite(amount)) {
-            console.error(`Invalid daily expense amount: ${amount} (type: ${typeof amount})`);
-            return budget; // Return current budget without changes
-        }
-        
-        // Use budget values directly (they should be valid now)
-        const currentFunds = budget.funds;
-        const currentExpenses = budget.expenses;
-        const currentIncome = budget.income;
-        const currentDailyExpenses = budget.dailyExpenses;
-        
-        const roundedAmount = Math.round(amount);
-        budget.funds = Math.round(currentFunds - roundedAmount);
-        budget.expenses = Math.round(currentExpenses + roundedAmount);
-        budget.dailyExpenses = Math.round(currentDailyExpenses + roundedAmount);
-        budget.netFlow = Math.round(currentIncome - budget.expenses);
-        
-        await this.db.budget.put(budget);
-        return budget;
-    }
-
 
     /**
      * Add building maintenance expenses only
@@ -738,7 +797,6 @@ class BudgetManager {
         }
         
         if (amount > 0) {
-            // Get building counts from houses in the database for detailed breakdown
             const houses = await this.db.houses.toArray();
             const maintenanceBreakdown = {
                 'houses': 0,
@@ -750,7 +808,6 @@ class BudgetManager {
                 total: 0
             };
             
-            // Maintenance costs per building type (per month)
             const maintenanceCosts = {
                 'roads': 2,
                 'House-Blue': 3,
@@ -765,13 +822,13 @@ class BudgetManager {
                 if (!house.type) return;
                 
                 const type = house.type;
-                let cost = 2; // Default cost
+                let cost = 2;
                 
                 if (type.includes('roads')) {
                     cost = maintenanceCosts['roads'];
                     maintenanceBreakdown.roads += cost;
                 } else if (type === 'House-Blue' || type === 'House-Red' || type === 'House-Purple' || type === 'House-2Story' || type.includes('House')) {
-                    cost = maintenanceCosts['House-Blue']; // All houses cost 3€
+                    cost = maintenanceCosts['House-Blue'];
                     maintenanceBreakdown.houses += cost;
                 } else if (type.includes('Farm')) {
                     cost = maintenanceCosts['Farm'];
@@ -780,34 +837,25 @@ class BudgetManager {
                     cost = maintenanceCosts['Market'];
                     maintenanceBreakdown.markets += cost;
                 } else if (type.includes('Well') || type.includes('Fountain') || type.includes('Streetlight')) {
-                    cost = 2; // Infrastructure default
+                    cost = 2;
                     maintenanceBreakdown.infrastructure += cost;
                 } else if (type.includes('Windmill') || type.includes('Barn')) {
-                    cost = 2; // Industry default
+                    cost = 2;
                     maintenanceBreakdown.industry += cost;
                 }
                 
                 maintenanceBreakdown.total += cost;
             });
-            
-            // Add journal entry with custom description
-            const roundedAmount = Math.round(amount);
-            await this.addJournalEntry(budget.turn, 'maintenance', roundedAmount, description);
-            
-            // Update budget
-            budget.funds = Math.round(budget.funds - roundedAmount);
-            budget.expenses = Math.round(budget.expenses + roundedAmount);
-            budget.dailyExpenses = Math.round(budget.dailyExpenses + roundedAmount);
-            
-            // Update detailed tracking
-            if (!budget.totalBuildingMaintenance) budget.totalBuildingMaintenance = 0;
-            budget.totalBuildingMaintenance = Math.round(budget.totalBuildingMaintenance + roundedAmount);
-            budget.netFlow = Math.round(budget.income - budget.expenses);
-            
-            // Store maintenance breakdown for detailed display
-            budget.maintenanceBreakdown = maintenanceBreakdown;
-            
-            await this.db.budget.put(budget);
+
+            const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
+            await getOrCreateAccountingContext().recordMaintenanceExpense({
+                turn: budget.turn,
+                amount,
+                description,
+                maintenanceBreakdown,
+            });
+
+            return await this.getCurrentBudget();
         }
         
         return budget;
@@ -839,25 +887,16 @@ class BudgetManager {
         const totalSalary = Math.round(salaryPerMonth * population);
         
         if (totalSalary > 0) {
-            // Use provided description or create default
             const salaryDescription = description || `Salaires fonctionnaires (${population} hab. × ${salaryPerMonth}€)`;
-            
-            // Add journal entry
-            await this.addJournalEntry(budget.turn, 'salary', totalSalary, salaryDescription);
-            
-            // Update budget
-            budget.funds = Math.round(budget.funds - totalSalary);
-            budget.expenses = Math.round(budget.expenses + totalSalary);
-            budget.dailyExpenses = Math.round(budget.dailyExpenses + totalSalary);
-            
-            // Track total salaries paid
-            if (!budget.totalSalaries) {
-                budget.totalSalaries = 0;
-            }
-            budget.totalSalaries = Math.round(budget.totalSalaries + totalSalary);
-            budget.netFlow = Math.round(budget.income - budget.expenses);
-            
-            await this.db.budget.put(budget);
+
+            const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
+            await getOrCreateAccountingContext().recordSalaryExpense({
+                turn: budget.turn,
+                amount: totalSalary,
+                description: salaryDescription,
+            });
+
+            return await this.getCurrentBudget();
         }
         
         return budget;
@@ -878,14 +917,15 @@ class BudgetManager {
         
         if (taxAmount > 0) {
             const taxDescription = description || `Impôt sur les salaires (${Math.round(taxRate * 100)}%)`;
-            
-            await this.addJournalEntry(budget.turn, 'payroll_tax', taxAmount, taxDescription);
-            
-            budget.funds = Math.round(budget.funds + taxAmount);
-            budget.income = Math.round(budget.income + taxAmount);
-            budget.netFlow = Math.round(budget.income - budget.expenses);
-            
-            await this.db.budget.put(budget);
+
+            const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
+            await getOrCreateAccountingContext().recordPayrollTaxIncome({
+                turn: budget.turn,
+                amount: taxAmount,
+                description: taxDescription,
+            });
+
+            return await this.getCurrentBudget();
         }
         
         return budget;
@@ -963,27 +1003,19 @@ class BudgetManager {
         
         // Only add taxes if there is population
         if (taxBreakdown.total > 0 && taxBreakdown.population > 0) {
-            // Add journal entry
             const roundedTotal = Math.round(taxBreakdown.total);
-            await this.addJournalEntry(budget.turn, 'citizen_tax', roundedTotal, `Impôt Citoyen (${taxBreakdown.population} hab.) - Novembre`);
-            
-            // Add to daily income
-            budget.funds = Math.round(budget.funds + roundedTotal);
-            budget.income = Math.round(budget.income + roundedTotal);
-            budget.dailyIncome = Math.round(budget.dailyIncome + roundedTotal);
-            if (!budget.totalTaxes) budget.totalTaxes = 0;
-            budget.totalTaxes = Math.round(budget.totalTaxes + roundedTotal);
-            
-            // Store tax breakdown for detailed display
-            budget.taxBreakdown = taxBreakdown;
-            
-            // Mark this year as having collected taxes
-            budget.lastTaxYear = timeInfo.year;
-            
-            budget.netFlow = Math.round(budget.income - budget.expenses);
-            
-            await this.db.budget.put(budget);
-            return budget;
+            const description = `Impôt Citoyen (${taxBreakdown.population} hab.) - Novembre`;
+
+            const { getOrCreateAccountingContext } = await import('../acl/accounting.js');
+            await getOrCreateAccountingContext().recordCitizenTaxIncome({
+                turn: budget.turn,
+                amount: roundedTotal,
+                description,
+                taxYear: timeInfo.year,
+                taxBreakdown,
+            });
+
+            return await this.getCurrentBudget();
         }
         
         return budget;
@@ -1028,11 +1060,18 @@ class BudgetManager {
         if (startingFunds === null) {
             startingFunds = config?.budget?.initialFunds || 200;
         }
-        
+
+        const { resetAccountingContextForTests } = await import('../acl/accounting.js');
+        const { resetSessionLedgerBufferForTests } = await import('./SessionLedgerBuffer.js');
+
+        resetSessionLedgerBufferForTests();
+        resetAccountingContextForTests();
+
+        await this.db.journal.clear();
         await this.db.budget.clear();
-        
+
         const result = await this.initialize(startingFunds);
-        
+
         return result;
     }
 

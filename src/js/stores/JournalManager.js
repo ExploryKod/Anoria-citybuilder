@@ -246,6 +246,10 @@ class JournalManager {
                 entry.businessKey = businessKey;
             }
 
+            if (options.buildingInstanceId) {
+                entry.buildingInstanceId = options.buildingInstanceId;
+            }
+
             const persist =
                 options.persist ?? type !== 'balance';
 

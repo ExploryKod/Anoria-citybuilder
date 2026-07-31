@@ -215,7 +215,81 @@ Phase 2b **explique** le symptôme UI (regroupement par `turn` + libellé descri
 | J4 | Écriture localStorage à l’affichage | ✅ supprimé du presenter |
 | J5 | Pas d’ACL / pas de query BC | ✅ |
 | J6 | Description vs `turn` / formats année | 🔲 legacy write — **confirmé JSON** |
-| J7 | Doublons salaire / `payroll_tax` (vitesse jeu) | 🔲 Phase 4 idempotence |
+| J7 | Doublons salaire / `payroll_tax` (vitesse jeu) | ✅ idempotence BC |
+| J8 | Prêts indexés sur **tour** vs finances sur **temps civil** | 🔲 dette produit — voir ci-dessous |
+
+---
+
+## Dette produit — prêts en « tours » vs calendrier civil (J8)
+
+### Constat
+
+La plupart des postes financiers visibles par le joueur sont ancrés sur le **temps civil** (`TimeManager`) :
+
+- salaires / impôt paie → **1× par mois civil** (`businessKey` `{year}:{monthIndex}`)
+- maintenance → idem
+- impôt citoyen → **1× par année civile** (novembre)
+
+Les **prêts** suivent un modèle différent hérité du legacy :
+
+- durée et échéances en **nombre de tours** (`loan.duration`, `remainingTurns`)
+- `processLoanPayments()` appelé **à chaque tour** (et parfois deux fois : `BudgetProcessor` + `game.onTurnEnd`)
+- idempotence BC actuelle : `loan_interest:{loanId}:{turn}` et `loan_repayment:{loanId}:{turn}` — donc **par tour de simulation**, pas par mois affiché dans le journal
+
+### Pourquoi c’est questionnable
+
+1. **Cohérence UX** : le joueur lit « Juin 3 ap JC » dans le journal ; les prêts ne s’alignent pas sur ce rythme.
+2. **Vitesse de jeu** : à 2× ou si `days_per_month` change, le rapport « une mensualité = un mois ressenti » ne tient plus.
+3. **Double hook** : deux appels `processLoanPayments` sur le même tour étaient un risque de doublon — l’idempotence `{loanId}:{turn}` le neutralise, mais masque le problème d’orchestration.
+
+### Idempotence livrée (Phase 3½)
+
+| Type | `businessKey` | Règle |
+|---|---|---|
+| `loan_capital` | `loan_capital:{loanId}` | 1 tirage par contrat |
+| `loan_interest` | `loan_interest:{loanId}:{turn}` | 1 intérêt max / prêt / tour |
+| `loan_repayment` | `loan_repayment:{loanId}:{turn}` | 1 remboursement capital max / prêt / tour |
+
+Sans `loanId`, pas de clé (compat legacy) — comportement non idempotent.
+
+### Piste refactor (hors scope immédiat)
+
+- Aligner les échéances sur **mois civil** (ou `dayInMonth === 1`) comme salaires
+- Ou afficher explicitement « échéance 3/10 » plutôt qu’un mois calendaire
+- Fusionner les hooks de paiement en un seul orchestrateur par tour
+- Éventuelle clé future : `loan_interest:{loanId}:{year}:{monthIndex}` si le produit bascule sur mensualités civiles
+
+---
+
+## Dette legacy restante — écritures et incohérences (Phase 4+)
+
+Inventaire après migration Phase 3½ (write path opérationnel). **Ne pas patcher ad hoc** : traiter en slice dédiée ou produit.
+
+| ID | Sujet | Constat legacy | Action future |
+|---|---|---|---|
+| D6 | `addIncome()` | **Corrigé Phase 4** — remplacé par `RecordConstructionRefundIncome` (`construction_refund`) ; `addIncome()` déprécié (throw) | — |
+| D7 | `RandomEventsService` (réparations) | **Corrigé Phase 3½** — avant : `db.budget.put` + `addJournalEntry` séparés (split-brain) | — |
+| D8 | `capital_funds` vs trésorerie | **Corrigé Phase 4** — `initialize()` amorce `funds` **et** `income` ; journal via `RecordCapitalFundsIncome` | — |
+| D9 | `addDailyExpense()` | **Corrigé Phase 4** — méthode supprimée (dead code, tests seulement) | — |
+| D10 | Commission route commerciale | **Corrigé Phase 4** — `config.budget.commercialRouteFee` | — |
+| D11 | Double activation partenaire | **Corrigé Phase 4** — `addCommercialRouteFee` retourne `{ skipped, reason }` ; UI bloque si duplicate | — |
+| D12 | Ancien flux prêt | **Corrigé Phase 4** — `initLoanSystem()` supprimé (localStorage + `addIncome`) | — |
+| D13 | `processLoanPayments` ×2 | **Corrigé Phase 4** — seul `BudgetProcessor` ; hook `onTurnEnd` retiré | — |
+| D14 | Écritures informatives | **Corrigé Phase 4 slice 6** — `SyncTurnInformativeEntries` + `RecordBalanceSnapshot` / `RecordYearCumulEntries` / `RecordCarryForwardEntry` via BC | — |
+| D15 | `addIncome()` / impôt citoyen | Confusion sémantique : tout crédit misc = impôt citoyen dans le journal | Slice typage revenus misc |
+
+### Checklist write path
+
+| Type opérationnel | BC Phase 3½ |
+|---|---|
+| maintenance, construction, salaires, impôt paie, impôt citoyen | ✅ |
+| prêts (capital / intérêts / remboursement) | ✅ |
+| commerce import / export | ✅ |
+| `capital_funds`, `exceptional_expenses`, `commercial_route` | ✅ |
+| `addIncome()` générique | ✅ Supprimé (throw) — D6/D15 |
+| `addDailyExpense()` | ✅ Supprimé — D9 |
+| `construction_refund` | ✅ `RecordConstructionRefundIncome` |
+| `carry_forward`, `balance`, `cumul_*` | ✅ D14 — BC informative services |
 
 ---
 
@@ -298,7 +372,7 @@ Réduire les écritures IndexedDB **sans perdre de données** : le buffer RAM es
 | Fix | Fichier |
 |---|---|
 | `updateTurn` en tête de `game.update` (balance/carry-forward même si pause mid-tick) | `game.js` |
-| Idempotence `businessKey` (salary, payroll_tax, maintenance, citizen_tax) | `ledgerBusinessKeys.js`, `JournalManager.js`, `SessionLedgerBuffer.js` |
+| Idempotence `businessKey` (salary, payroll_tax, maintenance, citizen_tax, prêts) | `ledgerBusinessKeys.js`, `JournalManager.js`, `SessionLedgerBuffer.js` |
 
 ---
 
