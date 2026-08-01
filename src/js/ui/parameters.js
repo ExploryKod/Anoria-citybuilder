@@ -1,3 +1,6 @@
+import { pauseGame, playGame, registerAppService, getTimeManager } from '../acl/appRuntime.js';
+import EventBlocker from '../utils/EventBlocker.js';
+
 class ParametersPanelManager {
     constructor() {
         this.panel = null;
@@ -6,7 +9,7 @@ class ParametersPanelManager {
         this.prevButton = null;
         this.nextButton = null;
         this.isVisible = false;
-        this.eventBlocker = typeof EventBlocker !== 'undefined' ? new EventBlocker() : null;
+        this.eventBlocker = new EventBlocker();
         this.lastFocusedElement = null;
         
         // Contrôles
@@ -182,17 +185,9 @@ class ParametersPanelManager {
             const eventsConfig = await import('../../config/events.js');
             eventsConfig.setDaysPerMonth(days);
             
-            // Mettre à jour le cache de TimeManager
-            if (window.TimeManager && typeof window.TimeManager.refreshCache === 'function') {
-                await window.TimeManager.refreshCache();
-            } else {
-                // Essayer d'importer TimeManager
-                try {
-                    const { TimeManager } = await import('../game/utils/TimeManager.js');
-                    await TimeManager.refreshCache();
-                } catch (err) {
-                    console.warn('[ParametersPanel] Could not refresh TimeManager cache:', err);
-                }
+            const timeManager = getTimeManager();
+            if (timeManager && typeof timeManager.refreshCache === 'function') {
+                await timeManager.refreshCache();
             }
         } catch (error) {
             console.error('[ParametersPanel] Error setting days per month:', error);
@@ -275,9 +270,7 @@ class ParametersPanelManager {
 
         this.blockGameEvents();
 
-        if (window.game && typeof window.game.pause === 'function') {
-            window.game.pause();
-        }
+        pauseGame();
     }
 
     hide() {
@@ -292,9 +285,7 @@ class ParametersPanelManager {
 
         this.unblockGameEvents();
 
-        if (window.game && typeof window.game.play === 'function') {
-            window.game.play();
-        }
+        playGame();
 
         if (this.lastFocusedElement && typeof this.lastFocusedElement.focus === 'function') {
             this.lastFocusedElement.focus();
@@ -303,5 +294,5 @@ class ParametersPanelManager {
 }
 
 const parametersPanelManager = new ParametersPanelManager();
-window.parametersPanelManager = parametersPanelManager;
+registerAppService('parametersPanelManager', parametersPanelManager);
 

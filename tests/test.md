@@ -3,9 +3,8 @@
 ## 📊 État actuel
 
 **Statistiques globales :**
-- ✅ **359 tests passent** sur 362
-- ⚠️ **3 tests échouent** (BudgetManager - problème de logique métier)
-- ✅ **177 nouveaux tests** créés (92 modules + 46 HousesStore + 20 utils + 18 FoodDistributionService)
+- ✅ **506 tests passent** (suite actuelle post-refactor DDD)
+- ✅ **ACL Construction + Housing** — remplace l’ancien `HousesStore` (`tests/acl/constructionBuildingAccess.test.js`, `tests/helpers/buildingDb.js`)
 
 **Tests implémentés :**
 - ✅ TimeManager (33 tests)
@@ -14,10 +13,10 @@
 - ✅ utils (30 tests)
 - ✅ config (29 tests)
 - ✅ **FoodModule (32 tests)** 🆕
-- ✅ **RoadAccessModule (30 tests)** 🆕
+- ✅ **Parcels road access** (behavior tests, `RoadAccessModule` supprimé)
 - ✅ **EmploymentModule (30 tests)** 🆕
 - ✅ EmployeeHelper.localStorage (8 tests)
-- ✅ **HousesStore (46 tests)** 🆕
+- ✅ **ACL Construction / Housing** (`constructionBuildingAccess.test.js`) 🆕
 - ✅ **FoodDistributionService (18 tests)** 🆕
 - ✅ BudgetManager (13 tests passent, 3 échouent)
 
@@ -48,8 +47,7 @@
   - Calcul des besoins en employés
   - Attribution des travailleurs disponibles
 - **Difficulté** : ⚠️ Moyenne
-  - Nécessite de mocker `HousesStore`
-  - Nécessite de mocker `localStorage` pour les priorités
+  - Nécessite de mocker Dexie (`tests/helpers/buildingDb.js`) et `localStorage` pour les priorités
   - Logique de tri et d'allocation complexe
 
 #### EmploymentPriorityService
@@ -59,7 +57,7 @@
   - Système de swap des priorités (Caesar 3 style)
   - Synchronisation localStorage ↔ IndexedDB
 - **Difficulté** : ⚠️ Moyenne
-  - Nécessite de mocker `localStorage` et `HousesStore`
+  - Nécessite de mocker `localStorage` uniquement (priorités en localStorage)
   - Logique de swap complexe
 
 #### WindmillService
@@ -70,8 +68,7 @@
   - Vérification des employés
   - Gestion de `isCollecting`
 - **Difficulté** : ⚠️ Moyenne
-  - Nécessite de mocker `HousesStore`
-  - Logique de collecte et de stockage
+  - Nécessite de mocker Dexie via `seedBuilding()` / ACL Supply
 
 #### RoadConnectivityService
 - **Fichier** : `src/js/game/services/RoadConnectivityService.js`
@@ -80,8 +77,7 @@
   - Détection des bâtiments isolés
   - Calcul des chemins routiers
 - **Difficulté** : ⚠️ Moyenne à Élevée
-  - Nécessite de mocker `HousesStore` et structures de ville
-  - Logique de graphe/parcours complexe
+  - Couvert par BC Parcels + tests `contexts/parcels` (ex-`RoadConnectivityService`, supprimé)
 
 #### RandomEventsService
 - **Fichier** : `src/js/game/services/RandomEventsService.js`
@@ -109,17 +105,12 @@
 - **Statut** : ✅ 32 tests passent
 - **Notes** : Fonctions pures, pas de dépendances externes. Tests complets avec cas limites.
 
-#### RoadAccessModule ✅ **IMPLÉMENTÉ**
-- **Fichier** : `src/js/game/modules/RoadAccessModule.js`
-- **Tests** : `tests/RoadAccessModule.test.js` (30 tests)
-- **Fonctionnalités testées** :
-  - ✅ `checkRoadAccess()` - Détection par `isRoad`, `userData.isRoad`, `name`, `buildingId`
-  - ✅ `updateFromNeighbors()` - Mise à jour depuis la base
-  - ✅ `getRoadCount()` - Comptage des routes
-  - ✅ `toHTML()` - Génération HTML
-  - ✅ `dispose()` - Nettoyage des ressources
-- **Statut** : ✅ 30 tests passent
-- **Notes** : Logique simple, données mockées. Tests de tous les cas de détection.
+#### RoadAccess (BC Parcels) ✅ **MIGRÉ**
+- **Ancien** : `RoadAccessModule.js` — **supprimé**
+- **Nouveau** : `contexts/parcels` (`RecalculateRoadAccess*`, `GetBuildingRoadAccess`, `PlaceBuilding` / `RemoveBuilding`)
+- **Tests** : `tests/contexts/parcels/roadAccess.behavior.test.js`, `placeRemove.behavior.test.js`
+- **ACL** : `hasRoadAccessFromCount`, `parcels.getRoadAccess(id)`
+- **Notes** : plus de module Three.js ; filet tick = `RecalculateAllRoadAccess`
 
 #### EmploymentModule ✅ **IMPLÉMENTÉ**
 - **Fichier** : `src/js/game/modules/EmploymentModule.js`
@@ -138,17 +129,15 @@
 
 ### Stores (nécessitent mocking IndexedDB)
 
-#### HousesStore ✅ **IMPLÉMENTÉ**
-- **Fichier** : `src/js/stores/HousesStore.js`
-- **Tests** : `tests/HousesStore.test.js` (46 tests)
+#### ACL Construction + Housing ✅ **IMPLÉMENTÉ** (remplace HousesStore)
+- **Fichiers** : `src/js/acl/construction.js`, `src/js/acl/housing.js`, `src/js/acl/budget.js`
+- **Tests** : `tests/acl/constructionBuildingAccess.test.js`
+- **Helper test** : `tests/helpers/buildingDb.js` (`seedBuilding`, `getBuildingRow`, `clearBuildingsTable`)
 - **Fonctionnalités testées** :
-  - ✅ **CRUD Operations** : `addHouse()`, `getHouse()`, `getHouseItem()`, `updateHouseFields()`, `deleteOneHouse()`, `clearHouses()`
-  - ✅ **Calculs agrégés** : `getGlobalPopulation()`, `getFamishedPopulation()`, `getGlobalBuildingPrices()`
-  - ✅ **Groupements** : `getBuildingPricesByType()`, `getTotalBuildingExpensesByType()`, `getEachBuildingsExpenses()`
-  - ✅ **Méthodes spécialisées** : `updateHouseName()`, `incrementHouseField()`, `processPopulationFoodLogic()`
-  - ✅ **Tri** : `getAllHousesSortedByNameAndPrice()`
-- **Statut** : ✅ 46 tests passent
-- **Notes** : Base de données isolée par test avec `fake-indexeddb`. Tests complets couvrant tous les cas d'usage et cas limites. Export de la classe `HouseStore` ajouté pour permettre l'injection de base de test.
+  - ✅ CRUD via Construction ACL : `placeBuildingRecord`, `getBuildingById`, `getBuildingField`, `updateBuildingFields`, `findBuildingAtTile`, `listAllBuildingRows`, `removeBuildingRecord`, `incrementBuildingField`
+  - ✅ Facades Housing/Budget : `getCityTotalPopulation`, `getFamishedPopulation`, `getCityTotalBuildingValue`, `clearPopulationWithoutRoadAccess`
+- **Statut** : ✅ tests passent
+- **Notes** : `HousesStore.js` supprimé — ne plus l’importer ; utiliser les ACL ou `seedBuilding()` en test.
 
 #### FoodTraceabilityService
 - **Fichier** : `src/js/stores/FoodTraceabilityService.js`
@@ -230,9 +219,9 @@
 
 ### ✅ Terminé (177 tests)
 - **FoodModule** - 32 tests ✅
-- **RoadAccessModule** - 30 tests ✅
+- **Parcels road access** - behavior tests (`contexts/parcels`) ✅
 - **EmploymentModule** - 30 tests ✅
-- **HousesStore** - 46 tests ✅
+- **ACL Construction / Housing** - `constructionBuildingAccess.test.js` ✅
 - **Utils supplémentaires** - 20 tests ✅
 - **FoodDistributionService** - 18 tests ✅ (partiel)
 
@@ -252,8 +241,8 @@
 
 ## 🎯 Recommandations
 
-1. ✅ **Modules terminés** - FoodModule, RoadAccessModule, EmploymentModule (92 tests)
-2. ✅ **Stores terminés** - HousesStore pour les opérations CRUD de base (46 tests)
+1. ✅ **Modules** - FoodModule, EmploymentModule ; road access → BC Parcels
+2. ✅ **Persistance bâtiments** — ACL Construction + helper `buildingDb` (remplace HousesStore)
 3. **Services simples** - EmploymentDistributionService avec mocking minimal
 4. **Services complexes** - FoodDistributionService avec structures complètes
 5. **Tests d'intégration** - Tester les interactions entre services (optionnel)
@@ -279,9 +268,9 @@
 | Module | Fichier de test | Tests | Statut |
 |--------|----------------|-------|--------|
 | FoodModule | `FoodModule.test.js` | 32 | ✅ |
-| RoadAccessModule | `RoadAccessModule.test.js` | 30 | ✅ |
+| Parcels road access | `tests/contexts/parcels/*.behavior.test.js` | — | ✅ |
 | EmploymentModule | `EmploymentModule.test.js` | 30 | ✅ |
-| HousesStore | `HousesStore.test.js` | 46 | ✅ |
+| ACL Construction | `acl/constructionBuildingAccess.test.js` | — | ✅ |
 | Utils supplémentaires | `utils.test.js` (extensions) | 20 | ✅ |
 | FoodDistributionService | `FoodDistributionService.test.js` | 18 | ✅ |
 | EmployeeHelper.localStorage | `EmployeeHelper.localStorage.test.js` | 8 | ✅ |
@@ -289,35 +278,25 @@
 
 **Total : 362 tests (359 passent, 3 échouent)**
 
-### Détails des tests HousesStore
+### Détails des tests ACL Construction (ex-HousesStore)
 
-**CRUD Operations (12 tests)**
-- `addHouse()` - Ajout avec gestion des doublons et pendingAdditions
-- `getHouse()` - Récupération simple
-- `getHouseItem()` - Récupération de champs avec valeurs par défaut
-- `updateHouseFields()` - Mise à jour et création automatique
-- `deleteOneHouse()` - Suppression
-- `clearHouses()` - Suppression de tous les bâtiments
+**Construction ACL**
+- `placeBuildingRecord()` — persistance + rejet doublon
+- `getBuildingById()` / `getBuildingField()` — lecture avec defaults
+- `updateBuildingFields()`, `incrementBuildingField()`, `removeBuildingRecord()`
+- `findBuildingAtTile()`, `listAllBuildingRows()`
 
-**Calculs agrégés (6 tests)**
-- `getGlobalPopulation()` - Somme de toutes les populations
-- `getFamishedPopulation()` - Calcul de la population affamée (maisons uniquement)
-- `getGlobalBuildingPrices()` - Somme de tous les prix
+**Cross-context (Housing / Budget)**
+- `getCityTotalPopulation()`, `getFamishedPopulation()`
+- `getCityTotalBuildingValue()`, `getCityBuildingPricesByType()`
+- `clearPopulationWithoutRoadAccess()`
 
-**Groupements et tri (4 tests)**
-- `getBuildingPricesByType()` - Prix groupés par type
-- `getTotalBuildingExpensesByType()` - Dépenses par type
-- `getEachBuildingsExpenses()` - Dépenses détaillées avec nombre
-- `getAllHousesSortedByNameAndPrice()` - Tri
-
-**Méthodes spécialisées (24 tests)**
-- `updateHouseName()` - Renommage avec préservation des données
-- `incrementHouseField()` - Incrémentation avec conditions
-- `processPopulationFoodLogic()` - Logique de population basée sur routes
+**Helper test**
+- `tests/helpers/buildingDb.js` — `seedBuilding()`, `getBuildingRow()`, `clearBuildingsTable()`
 
 **Bonnes pratiques appliquées :**
-- Base de données isolée par test (`beforeEach`/`afterEach`)
-- Injection de base de test via `housesStore.db = testDb`
-- Export de la classe `HouseStore` pour permettre l'instanciation en test
+- Base de données isolée par test (`beforeEach`/`afterEach` + `clearBuildingsTable()`)
+- Seed via `seedBuilding()` ou `db.houses.add()` directement
+- Contextes BC réinitialisés via `reset*ContextForTests()` quand nécessaire
 - Tests couvrant cas d'usage réels et cas limites
 

@@ -1,4 +1,5 @@
-import db from './db.js';
+import db from '../../core/persistence/dexie/db.js';
+import { getTimeManager } from '../acl/appRuntime.js';
 
 /**
  * ProductionJournalManager - Manages production journal entries for factories
@@ -68,7 +69,7 @@ class ProductionJournalManager {
             let month = null;
             let year = null;
             
-            const timeManager = (typeof window !== 'undefined' ? window : global)?.TimeManager;
+            const timeManager = getTimeManager();
             if (timeManager) {
                 const timeInfo = timeManager.getTimeInfo(turn);
                 month = timeInfo.monthIndex + 1; // monthIndex est 0-indexed (0=janvier), on veut 1-12

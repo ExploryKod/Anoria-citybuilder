@@ -24,7 +24,7 @@ export class FoodModule extends SimModule {
 
     /**
      * Updates module state from IndexedDB stocks data
-     * @param {Object} stocks - Stocks object from housesStore (food, wheat, carrot, cabbage)
+     * @param {Object} stocks - Stocks object from building row (food, wheat, carrot, cabbage)
      * @param {number} population - Current population
      */
     updateFromStocks(stocks, population = 0) {

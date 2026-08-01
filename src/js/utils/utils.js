@@ -3,7 +3,7 @@ import * as THREE from "three";
 function getBuildingZonesNeighbors(data, area=1) {
 
     const { city, buildings, x, y, currentBuildingId, terrain } = data;
- 
+
     // Helper: prefer building over terrain if building exists and is not grass
     // This ensures StonePath (roads) in buildings array are detected as neighbors
     const getNeighborMesh = (nx, ny) => {
@@ -118,43 +118,30 @@ export function updateBuildingNeighbors(buildingData, area=1, time=0) {
         buildings[x][y].userData.neighborZones = {};
     }
 
-    Object.assign(buildings[x][y].userData, { neighborS: neighbors.neighborSouth?.buildingId });
-    Object.assign(buildings[x][y].userData, { neighborE: neighbors.neighborEast?.buildingId });
-    Object.assign(buildings[x][y].userData, { neighborNE: neighbors.neighborNorthEast?.buildingId });
-    Object.assign(buildings[x][y].userData, { neighborSE: neighbors.neighborSouthEast?.buildingId });
-    Object.assign(buildings[x][y].userData, { neighborN: neighbors.neighborNorth?.buildingId });
-    Object.assign(buildings[x][y].userData, { neighborSW: neighbors.neighborSouthWest?.buildingId });
-    Object.assign(buildings[x][y].userData, { neighborW: neighbors.neighborWest?.buildingId });
-    Object.assign(buildings[x][y].userData, { neighborNW: neighbors.neighborNorthWest?.buildingId });
+    const instanceIdFromMesh = (mesh) =>
+        typeof mesh?.userData?.instanceId === 'string' ? mesh.userData.instanceId : undefined;
 
- 
+    Object.assign(buildings[x][y].userData, { neighborS: instanceIdFromMesh(neighbors.terrainS) });
+    Object.assign(buildings[x][y].userData, { neighborE: instanceIdFromMesh(neighbors.terrainE) });
+    Object.assign(buildings[x][y].userData, { neighborNE: instanceIdFromMesh(neighbors.terrainNE) });
+    Object.assign(buildings[x][y].userData, { neighborSE: instanceIdFromMesh(neighbors.terrainSE) });
+    Object.assign(buildings[x][y].userData, { neighborN: instanceIdFromMesh(neighbors.terrainN) });
+    Object.assign(buildings[x][y].userData, { neighborSW: instanceIdFromMesh(neighbors.terrainSW) });
+    Object.assign(buildings[x][y].userData, { neighborW: instanceIdFromMesh(neighbors.terrainW) });
+    Object.assign(buildings[x][y].userData, { neighborNW: instanceIdFromMesh(neighbors.terrainNW) });
 
-  
-    // Add all neighbors to a single array for convenience
-    Object.assign(buildings[x][y].userData, {
-        neighbors: [
-            neighbors.neighborNorth,
-            neighbors.neighborNorthWest,
-            neighbors.neighborNorthEast,
-            neighbors.neighborEast,
-            neighbors.neighborSouthEast,
-            neighbors.neighborSouthWest,
-            neighbors.neighborSouth,
-            neighbors.neighborWest,
-        ],
-    });
+    // Voisins métier : BC Parcels (IndexedDB / getNeighbors). Ici : meshes pour hover UI.
 
-      // Add all neighbors to a single array for convenience
       Object.assign(buildings[x][y].userData, {
-        neighborsNames: [
-            neighbors.neighborNorth?.buildingId,
-            neighbors.neighborNorthWest?.buildingId,
-            neighbors.neighborNorthEast?.buildingId,
-            neighbors.neighborEast?.buildingId,
-            neighbors.neighborSouthEast?.buildingId,
-            neighbors.neighborSouthWest?.buildingId,
-            neighbors.neighborSouth?.buildingId,
-            neighbors.neighborWest?.buildingId,
+        neighborInstanceIds: [
+            instanceIdFromMesh(neighbors.terrainN),
+            instanceIdFromMesh(neighbors.terrainNW),
+            instanceIdFromMesh(neighbors.terrainNE),
+            instanceIdFromMesh(neighbors.terrainE),
+            instanceIdFromMesh(neighbors.terrainSE),
+            instanceIdFromMesh(neighbors.terrainSW),
+            instanceIdFromMesh(neighbors.terrainS),
+            instanceIdFromMesh(neighbors.terrainW),
         ],
     });
 
@@ -243,7 +230,7 @@ export const IsInZoneLimits = (zoneLimit, city) => {
 
 export const zoneBordersBuildings = (buildingData, time=0) => {
 
-    const { buildings, x, y, currentBuildingId } = buildingData;
+    const { buildings, x, y, currentBuildingId, city } = buildingData;
     const theCurrentBuilding = currentBuildingId
 
     if (x == null || y == null) {
@@ -276,24 +263,40 @@ export const zoneBordersBuildings = (buildingData, time=0) => {
                     const deltaZ = Math.abs(mesh.position.z - y); // Note: y represents mesh.position.z
                     // Calculate the zone based on the maximum delta of x or z
                     const zone = Math.max(deltaX, deltaZ);
+                    const meshType = mesh.userData?.type || mesh.name;
+                    const tileX = mesh.userData?.x ?? mesh.position.x;
+                    const tileY = mesh.userData?.y ?? mesh.position.z;
+                    const meshInstanceId =
+                        mesh.userData?.instanceId
+                        ?? city?.tiles?.[tileX]?.[tileY]?.instanceId
+                        ?? null;
+
+                    if (!meshInstanceId) {
+                        return;
+                    }
+
+                    const isRoadNeighbor = Boolean(
+                        mesh.userData?.isRoad ||
+                        meshType === 'roads' ||
+                        meshType === 'Road' ||
+                        (meshType && meshType.startsWith('StonePath-'))
+                    );
                     let neighborData = {
                         time: time,
-                        name: mesh.name,
-                        id : mesh.name + '-' + mesh.position.x + '-' + mesh.position.z,
-                        x: mesh.position.x,
-                        y: mesh.position.z,
+                        type: meshType,
+                        instanceId: meshInstanceId,
+                        id: meshInstanceId,
+                        x: tileX,
+                        y: tileY,
                         deltaX: deltaX,
                         deltaZ: deltaZ,
-                        zone: zone
+                        zone: zone,
+                        isRoad: isRoadNeighbor,
                     };
 
                     if(Object.hasOwn(mesh, 'userData')) {
                         if(Object.hasOwn(mesh.userData, 'stocks')) {
                            neighborData = { ...neighborData, stocks: mesh.userData.stocks };
-                        }
-                        // Include isRoad property for road detection
-                        if(Object.hasOwn(mesh.userData, 'isRoad')) {
-                           neighborData = { ...neighborData, isRoad: mesh.userData.isRoad };
                         }
                     }
 
@@ -327,12 +330,14 @@ export function getBuildingsNamesInZone(buildingData, time=0, targets = {buildin
 
     if(targets.buildingTarget !== "" && targets.zones.length > 0) {
         // house is filtered also to match a specific building
-        return zoneBuildings.filter(buildingId => (buildingId.name === targets.buildingTarget) && targets.zones.includes(buildingId.zone));
+        return zoneBuildings.filter(
+            (entry) => entry.type === targets.buildingTarget && targets.zones.includes(entry.zone)
+        );
     }
 
     if(targets.buildingTarget !== "") {
         // house is filtered also to match a specific building
-        return zoneBuildings.filter(buildingId => (buildingId.name === targets.buildingTarget));
+        return zoneBuildings.filter((entry) => entry.type === targets.buildingTarget);
     }
 
     if(targets.zones.length > 0) {
@@ -344,44 +349,16 @@ export function getBuildingsNamesInZone(buildingData, time=0, targets = {buildin
 
 
 /**
- * Get a neighbor buildingId by its geographical position
+ * Get a neighbor instanceId by matching against known neighbor UUIDs on the mesh.
  * @param {Object} building - The building object building[x][y]
- * @param {Array} neighbors
+ * @param {Array<string>} instanceIds
  */
-export function getBuildingNeighbors(building, neighbors=[]) {
-    if(!building.userData || !building.userData.neighborsNames || neighbors.length <= 0) {
+export function getBuildingNeighbors(building, instanceIds = []) {
+    if(!building.userData || !building.userData.neighborInstanceIds || instanceIds.length <= 0) {
         return false
     }
-    const neighborNameFound = building.userData.neighborsNames.find((neighborName) => neighbors.includes(neighborName));
-    return neighborNameFound ? neighborNameFound : false;
-}
-
-/**
- * create a suitable object to store as the database primary key or IndexDB unique keypath
- * @param {String} currentBuildingId - The game name of building id
- * @param {number} x - The x-coordinate of the current building in the grid.
- * @param {number} y - The y-coordinate of the current building in the grid.
- * @return {String} - The formatted unique key for indexDB or another database as buildingId-x-y
- */
-export function makeDbItemId(currentBuildingId, x, y) {
-
-    if(!currentBuildingId || typeof currentBuildingId !== 'string') {
-        console.warn('there is no current building suitable id', currentBuildingId);
-        return false;
-    }
-
-    // Check if x and y are valid numbers
-    if((x === undefined || x === null || isNaN(x)) || (y === undefined || y === null || isNaN(y))) {
-        console.warn('there is no current building suitable id or x/y suitable coordinates', {x, y, currentBuildingId});
-        return false;
-    }
-
-    if(currentBuildingId.length > 0) {
-        return currentBuildingId + '-' + x + '-' + y;
-    } else {
-        console.warn('there is no current building suitable id or x/y suitable coordinates')
-        return false
-    }
+    const neighborIdFound = building.userData.neighborInstanceIds.find((neighborId) => instanceIds.includes(neighborId));
+    return neighborIdFound ? neighborIdFound : false;
 }
 
 /*

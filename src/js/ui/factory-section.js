@@ -1,19 +1,39 @@
 import config from '../game/config.js';
 import productionJournalManager from '../stores/ProductionJournalManager.js';
+import { registerAppService, getTimeInfo } from '../acl/appRuntime.js';
+import {
+    instanceIdFromHouseRow,
+    displayLabelFromHouseRow,
+} from '../acl/building-identity.js';
+import {
+    listCityFactories,
+    listNatureResources,
+    getFactoryById,
+    updateFactoryFields,
+} from '../acl/supply.js';
+
+function factoryInstanceId(factory) {
+    return instanceIdFromHouseRow(factory);
+}
+
+function factoryDisplayLabel(factory) {
+    return displayLabelFromHouseRow(factory);
+}
+
+async function loadFactoryJournalEntries(factoryData) {
+    return productionJournalManager.getFactoryProductionEntries(
+        factoryInstanceId(factoryData)
+    );
+}
 
 class FactorySectionManager {
     constructor() {
         this.factories = [];
         this.naturalResources = [];
-        this.housesStore = null;
         this.naturalResourcesExpanded = true; // Par défaut, le panneau est ouvert
         this.currentTab = 'factories'; // 'factories' ou 'production-journal'
         this.selectedFactoryId = 'all'; // ID de la factory sélectionnée, 'all' pour toutes
         this.selectedJournalFactoryId = 'all'; // ID de la factory sélectionnée dans le journal, 'all' pour toutes
-    }
-    
-    setHousesStore(housesStore) {
-        this.housesStore = housesStore;
     }
     
     async init() {
@@ -122,30 +142,14 @@ class FactorySectionManager {
     }
     
     async loadFactories() {
-        if (!this.housesStore) {
-            if (window.app && window.app.housesStore) {
-                this.housesStore = window.app.housesStore;
-            } else if (window.housesStore) {
-                this.housesStore = window.housesStore;
-            } else if (window.game && window.game.housesStore) {
-                this.housesStore = window.game.housesStore;
-            } else {
-                return;
-            }
-        }
-        
         try {
-            const allHouses = await this.housesStore.listAllHouses();
-            const filteredFactories = allHouses.filter(house => {
-                const type = house.type || '';
-                return type.includes('Winery-001');
-            });
+            const filteredFactories = await listCityFactories();
             
             // Éviter les doublons basés sur le nom de la factory
             const uniqueFactories = [];
             const seenFactories = new Set();
             filteredFactories.forEach(factory => {
-                const factoryKey = factory.name;
+                const factoryKey = factoryInstanceId(factory);
                 if (!seenFactories.has(factoryKey)) {
                     seenFactories.add(factoryKey);
                     uniqueFactories.push(factory);
@@ -153,13 +157,9 @@ class FactorySectionManager {
             });
             
             this.factories = uniqueFactories;
-            
-            // Charger les ressources naturelles (trees et boulders)
-            this.naturalResources = allHouses.filter(house => {
-                const category = house.category || '';
-                return category === 'nature';
-            });
-            
+
+            this.naturalResources = await listNatureResources();
+
             this.render();
         } catch (error) {
         }
@@ -187,7 +187,9 @@ class FactorySectionManager {
         // Filtrer les factories selon la sélection
         let factoriesToDisplay = this.factories;
         if (this.selectedFactoryId !== 'all') {
-            factoriesToDisplay = this.factories.filter(f => f.name === this.selectedFactoryId);
+            factoriesToDisplay = this.factories.filter(
+                (f) => factoryInstanceId(f) === this.selectedFactoryId
+            );
         }
         
         if (factoriesToDisplay.length === 0) {
@@ -201,7 +203,7 @@ class FactorySectionManager {
         // S'assurer qu'il n'y a pas de doublons dans factoriesToDisplay
         const displayedFactories = new Set();
         for (const factory of factoriesToDisplay) {
-            const factoryKey = factory.name;
+            const factoryKey = factoryInstanceId(factory);
             if (!displayedFactories.has(factoryKey)) {
                 displayedFactories.add(factoryKey);
                 const factoryCard = await this.createFactoryCard(factory);
@@ -228,12 +230,12 @@ class FactorySectionManager {
         const addedFactories = new Set();
         this.factories.forEach(factory => {
             // Éviter les doublons basés sur le nom
-            if (!addedFactories.has(factory.name)) {
+            if (!addedFactories.has(factoryInstanceId(factory))) {
                 const option = document.createElement('option');
-                option.value = factory.name;
-                option.textContent = `${factory.name} (x: ${factory.x || 0}, y: ${factory.y || 0})`;
+                option.value = factoryInstanceId(factory);
+                option.textContent = `${factoryDisplayLabel(factory)} (x: ${factory.x || 0}, y: ${factory.y || 0})`;
                 factorySelect.appendChild(option);
-                addedFactories.add(factory.name);
+                addedFactories.add(factoryInstanceId(factory));
             }
         });
         
@@ -259,15 +261,10 @@ class FactorySectionManager {
         }
         
         // Recharger les ressources naturelles depuis IndexedDB pour avoir les données à jour
-        if (this.housesStore) {
-            try {
-                const allHouses = await this.housesStore.listAllHouses();
-                this.naturalResources = allHouses.filter(house => {
-                    const category = house.category || '';
-                    return category === 'nature';
-                });
-            } catch (error) {
-            }
+        try {
+            this.naturalResources = await listNatureResources();
+        } catch (_error) {
+            // preserve silent failure
         }
         
         // Calculer les totaux par ressource
@@ -345,19 +342,17 @@ class FactorySectionManager {
     async createFactoryCard(factory) {
         const card = document.createElement('div');
         card.className = 'factory-card';
-        card.dataset.factoryId = factory.name;
+        card.dataset.factoryId = factoryInstanceId(factory);
         
         // Recharger les données depuis IndexedDB pour avoir les données à jour (notamment employees et productWorkerDistribution)
         let factoryData = factory;
-        if (this.housesStore) {
-            try {
-                const freshData = await this.housesStore.getHouse(factory.name);
-                if (freshData) {
-                    factoryData = freshData;
-                }
-            } catch (error) {
-                console.warn('[FactorySectionManager] Failed to reload factory data:', error);
+        try {
+            const freshData = await getFactoryById(factoryInstanceId(factory));
+            if (freshData) {
+                factoryData = freshData;
             }
+        } catch (error) {
+            console.warn('[FactorySectionManager] Failed to reload factory data:', error);
         }
         
         const rawMaterials = factoryData.rawMaterials || {};
@@ -382,8 +377,7 @@ class FactorySectionManager {
         const lastProcessTurn = factoryData.lastProcessTurn || 0;
         
         // Récupérer les entrées du journal de production pour cette factory
-        const factoryId = `${factoryData.name}-${factoryData.x || 0}-${factoryData.y || 0}`;
-        const journalEntries = await productionJournalManager.getFactoryProductionEntries(factoryId);
+        const journalEntries = await loadFactoryJournalEntries(factoryData);
         
         // Trouver les dernières transformations
         const lastWoodTransformEntry = journalEntries
@@ -578,7 +572,7 @@ class FactorySectionManager {
         card.innerHTML = `
             <div class="factory-header">
                 <div class="factory-id">
-                    <strong>Usine ID:</strong> ${factoryData.name}
+                    <strong>Usine:</strong> ${factoryDisplayLabel(factoryData)}
                 </div>
                 <div class="factory-location">
                     Position: x: ${factoryData.x || 0} | y: ${factoryData.y || 0}
@@ -618,7 +612,7 @@ class FactorySectionManager {
                             <span class="factory-product-workers">Workers: ${productWorkers} / 2</span>
                             <button 
                                 class="factory-recruit-btn" 
-                                data-factory="${factoryData.name}" 
+                                data-factory="${factoryInstanceId(factoryData)}" 
                                 data-product="${key}"
                                 data-product-type="rawMaterial"
                                 ${isDisabled ? 'disabled' : ''}
@@ -737,7 +731,7 @@ class FactorySectionManager {
                             <span class="factory-product-workers">Workers: ${productWorkers} / 2</span>
                             <button 
                                 class="factory-recruit-btn" 
-                                data-factory="${factoryData.name}" 
+                                data-factory="${factoryInstanceId(factoryData)}" 
                                 data-product="${key}"
                                 data-product-type="product"
                                 ${isDisabled ? 'disabled' : ''}
@@ -754,13 +748,13 @@ class FactorySectionManager {
             <div class="factory-controls">
                 <div class="factory-control-item">
                     <label class="factory-toggle-label">
-                        <input type="checkbox" class="factory-toggle" data-factory="${factoryData.name}" data-setting="keepInStock" ${keepInStock ? 'checked' : ''}>
+                        <input type="checkbox" class="factory-toggle" data-factory="${factoryInstanceId(factoryData)}" data-setting="keepInStock" ${keepInStock ? 'checked' : ''}>
                         <span>Conserver en stock (ne pas exporter)</span>
                     </label>
                 </div>
                 <div class="factory-control-item">
                     <label class="factory-toggle-label">
-                        <input type="checkbox" class="factory-toggle" data-factory="${factoryData.name}" data-setting="isActive" ${factoryData.isActive !== false ? 'checked' : ''}>
+                        <input type="checkbox" class="factory-toggle" data-factory="${factoryInstanceId(factoryData)}" data-setting="isActive" ${factoryData.isActive !== false ? 'checked' : ''}>
                         <span>Usine active</span>
                     </label>
                 </div>
@@ -793,7 +787,7 @@ class FactorySectionManager {
     }
     
     attachEventListeners(card, factory) {
-        const factoryId = factory.name;
+        const factoryId = factoryInstanceId(factory);
         
         const toggles = card.querySelectorAll('.factory-toggle');
         toggles.forEach(toggle => {
@@ -815,16 +809,12 @@ class FactorySectionManager {
     }
     
     async updateFactorySetting(factoryId, setting, value) {
-        if (!this.housesStore) {
-            return;
-        }
-        
         try {
-            await this.housesStore.updateHouseFields(factoryId, {
-                [setting]: value
+            await updateFactoryFields(factoryId, {
+                [setting]: value,
             });
             
-            const factory = this.factories.find(f => f.name === factoryId);
+            const factory = this.factories.find((f) => factoryInstanceId(f) === factoryId);
             if (factory) {
                 factory[setting] = value;
             }
@@ -838,13 +828,8 @@ class FactorySectionManager {
      * @param {string} productKey - Clé du produit (ex: 'wood', 'furniture')
      */
     async recruitWorkerForProduct(factoryId, productKey) {
-        if (!this.housesStore) {
-            return;
-        }
-
         try {
-            // Récupérer les données actuelles de la factory depuis IndexedDB
-            const factoryData = await this.housesStore.getHouse(factoryId);
+            const factoryData = await getFactoryById(factoryId);
             if (!factoryData) {
                 return;
             }
@@ -885,13 +870,13 @@ class FactorySectionManager {
             };
 
             // Sauvegarder dans IndexedDB : workers alloués + pourcentages de production
-            await this.housesStore.updateHouseFields(factoryId, {
+            await updateFactoryFields(factoryId, {
                 productWorkerDistribution: newDistribution,
-                productProductionPercentages: newProductionPercentages
+                productProductionPercentages: newProductionPercentages,
             });
 
             // Mettre à jour les données locales
-            const factory = this.factories.find(f => f.name === factoryId);
+            const factory = this.factories.find((f) => factoryInstanceId(f) === factoryId);
             if (factory) {
                 factory.productWorkerDistribution = newDistribution;
                 factory.productProductionPercentages = newProductionPercentages;
@@ -1040,8 +1025,8 @@ class FactorySectionManager {
         // Obtenir le mois et l'année depuis TimeManager
         let monthDisplay = '';
         let yearDisplay = '';
-        if (window.TimeManager && entry.turn !== undefined) {
-            const timeInfo = window.TimeManager.getTimeInfo(entry.turn);
+        if (entry.turn !== undefined) {
+            const timeInfo = getTimeInfo(entry.turn);
             monthDisplay = timeInfo.month;
             yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
         }
@@ -1249,15 +1234,7 @@ function initFactorySection() {
     if (!factorySection) return;
     
     const manager = new FactorySectionManager();
-    
-    if (window.app && window.app.housesStore) {
-        manager.setHousesStore(window.app.housesStore);
-    } else if (window.housesStore) {
-        manager.setHousesStore(window.housesStore);
-    } else if (window.game && window.game.housesStore) {
-        manager.setHousesStore(window.game.housesStore);
-    }
-    
+
     const observer = new MutationObserver(() => {
         if (factorySection.classList.contains('active')) {
             // Réinitialiser les event listeners quand la section devient active
@@ -1272,22 +1249,7 @@ function initFactorySection() {
         manager.init();
     }
     
-    window.factorySectionManager = manager;
-    
-    const checkHousesStore = setInterval(() => {
-        if (window.app && window.app.housesStore) {
-            manager.setHousesStore(window.app.housesStore);
-            clearInterval(checkHousesStore);
-        } else if (window.housesStore) {
-            manager.setHousesStore(window.housesStore);
-            clearInterval(checkHousesStore);
-        } else if (window.game && window.game.housesStore) {
-            manager.setHousesStore(window.game.housesStore);
-            clearInterval(checkHousesStore);
-        }
-    }, 100);
-    
-    setTimeout(() => clearInterval(checkHousesStore), 5000);
+    registerAppService('factorySectionManager', manager);
 }
 
 if (document.readyState === 'loading') {

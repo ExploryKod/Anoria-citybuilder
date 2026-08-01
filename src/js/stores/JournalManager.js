@@ -1,4 +1,21 @@
-import db from './db.js';
+import db from '../../core/persistence/dexie/db.js';
+import { getTimeManager, getTimeInfo } from '../acl/appRuntime.js';
+import {
+  buildMonthlyFinancialSummary,
+  buildYearlyFinancialSummary,
+  computeJournalCurrentBalance,
+  filterAndSortJournalEntries,
+  buildJournalExportPayload,
+  serializeJournalExportPayload,
+  BrowserJournalPdfExporter,
+  DexieJournalSessionPersistenceAdapter,
+} from '../acl/accountingJournalStore.js';
+import {
+  sessionLedgerBuffer,
+} from './SessionLedgerBuffer.js';
+import {
+  buildLedgerBusinessKey,
+} from './ledgerBusinessKeys.js';
 
 /**
  * JournalManager - Manages journal entries (accounting entries)
@@ -8,6 +25,55 @@ class JournalManager {
     constructor() {
         this.db = db;
         this.LOCALSTORAGE_KEY = 'journal_year_end_balances';
+        this._sessionPersistence = null;
+        this._pdfExporter = new BrowserJournalPdfExporter();
+        this._registerFlushHooks();
+    }
+
+    _registerFlushHooks() {
+        if (typeof document === 'undefined') {
+            return;
+        }
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                this.flushSessionToDexie().catch((error) => {
+                    console.error('[JournalManager] visibility flush failed:', error);
+                });
+            }
+        });
+    }
+
+    _getSessionPersistence() {
+        if (!this._sessionPersistence || this._sessionPersistence.db !== this.db) {
+            this._sessionPersistence = new DexieJournalSessionPersistenceAdapter(this.db);
+        }
+        return this._sessionPersistence;
+    }
+
+    /**
+     * Load persisted journal rows into the session buffer once per session.
+     * @returns {Promise<void>}
+     */
+    async ensureHydrated() {
+        return this._getSessionPersistence().ensureHydrated();
+    }
+
+    /**
+     * Batch-write pending session entries to IndexedDB (end of turn / tab hidden).
+     * Balance snapshots are session-only and are never flushed.
+     * @returns {Promise<{ flushed: number, failed: boolean, pending?: number }>}
+     */
+    async flushSessionToDexie() {
+        return this._getSessionPersistence().flushPendingEntries();
+    }
+
+    /** @returns {(turn: number) => object|null} */
+    _getTimeInfoResolver() {
+        const timeManager = getTimeManager();
+        if (!timeManager || typeof timeManager.getTimeInfo !== 'function') {
+            return () => null;
+        }
+        return (turn) => timeManager.getTimeInfo(turn);
     }
 
     /**
@@ -122,20 +188,29 @@ class JournalManager {
      * @param {number} amount - Amount
      * @param {string} description - Description
      */
-    async addJournalEntry(turn, type, amount, description, partnerId = null) {
+    async addJournalEntry(turn, type, amount, description, partnerId = null, options = {}) {
         try {
-            // Obtenir le mois et l'année depuis TimeManager
+            await this.ensureHydrated();
+
             let month = null;
             let year = null;
-            
-            // Support both window (browser) and global (Node/Jest)
-            const timeManager = (typeof window !== 'undefined' ? window : global)?.TimeManager;
+
+            const timeManager = getTimeManager();
+            let timeInfo = null;
             if (timeManager) {
-                const timeInfo = timeManager.getTimeInfo(turn);
-                month = timeInfo.monthIndex + 1; // monthIndex est 0-indexed (0=janvier), on veut 1-12
+                timeInfo = timeManager.getTimeInfo(turn);
+                month = timeInfo.monthIndex + 1;
                 year = timeInfo.year;
             }
-            
+
+            const businessKey =
+                options.businessKey ??
+                (timeInfo ? buildLedgerBusinessKey(type, timeInfo) : null);
+
+            if (businessKey && sessionLedgerBuffer.hasBusinessKey(businessKey)) {
+                return { recorded: false, skipped: true, reason: 'duplicate_business_key' };
+            }
+
             const entry = {
                 turn: turn,
                 date: new Date().toISOString(),
@@ -145,12 +220,35 @@ class JournalManager {
                 month: month,
                 year: year
             };
-            
+
             if (partnerId) {
                 entry.partnerId = partnerId;
             }
-            
-            await this.db.journal.add(entry);
+
+            if (businessKey) {
+                entry.businessKey = businessKey;
+            }
+
+            if (options.buildingInstanceId) {
+                entry.buildingInstanceId = options.buildingInstanceId;
+            }
+
+            const persist =
+                options.persist ?? type !== 'balance';
+
+            const appendResult = businessKey
+                ? sessionLedgerBuffer.appendIfAbsent(entry, { persist })
+                : { appended: true, record: sessionLedgerBuffer.append(entry, { persist }) };
+
+            if (!appendResult.appended) {
+                return {
+                    recorded: false,
+                    skipped: true,
+                    reason: appendResult.reason ?? 'duplicate_business_key',
+                };
+            }
+
+            return { recorded: true, skipped: false, businessKey };
         } catch (error) {
             console.error('Error adding journal entry:', error);
         }
@@ -162,22 +260,9 @@ class JournalManager {
      * @returns {Promise<Array>} Journal entries
      */
     async getJournalEntries(maxAge = null) {
-        let entries = await this.db.journal.toArray();
-        
-        if (maxAge) {
-            const cutoffDate = new Date();
-            cutoffDate.setDate(cutoffDate.getDate() - maxAge);
-            
-            entries = entries.filter(entry => new Date(entry.date) >= cutoffDate);
-        }
-        
-        // Sort by turn descending, then by date descending
-        return entries.sort((a, b) => {
-            if (a.turn !== b.turn) {
-                return b.turn - a.turn;
-            }
-            return new Date(b.date) - new Date(a.date);
-        });
+        await this.ensureHydrated();
+        const entries = sessionLedgerBuffer.getAllPublic();
+        return filterAndSortJournalEntries(entries, maxAge);
     }
 
     /**
@@ -186,7 +271,8 @@ class JournalManager {
      * @returns {Promise<Array>} Journal entries
      */
     async getJournalEntriesForTurn(turn) {
-        return await this.db.journal.where('turn').equals(turn).sortBy('date');
+        await this.ensureHydrated();
+        return sessionLedgerBuffer.getForTurn(turn);
     }
 
     /**
@@ -194,17 +280,21 @@ class JournalManager {
      * @param {number} maxAge - Maximum age in days
      */
     async cleanupOldJournalEntries(maxAge = 60) {
+        await this.ensureHydrated();
+
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - maxAge);
         const cutoffISO = cutoffDate.toISOString();
-        
+
+        sessionLedgerBuffer.removeEntriesBeforeDate(cutoffISO);
+
         const oldEntries = await this.db.journal.where('date').below(cutoffISO).toArray();
-        
+
         if (oldEntries.length > 0) {
             const ids = oldEntries.map(entry => entry.id);
             await this.db.journal.bulkDelete(ids);
         }
-        
+
         return { deleted: oldEntries.length };
     }
 
@@ -213,9 +303,11 @@ class JournalManager {
      * @returns {Promise<number>} Number of entries deleted
      */
     async clearAllEntries() {
-        const count = await this.db.journal.count();
+        await this.ensureHydrated();
+        const bufferCount = sessionLedgerBuffer.clear();
+        const idbCount = await this.db.journal.count();
         await this.db.journal.clear();
-        return count;
+        return Math.max(bufferCount, idbCount);
     }
 
     /**
@@ -223,7 +315,8 @@ class JournalManager {
      * @returns {Promise<Object>} Statistics about journal entries
      */
     async getStatistics() {
-        const entries = await this.db.journal.toArray();
+        await this.ensureHydrated();
+        const entries = sessionLedgerBuffer.getAllPublic();
         
         const stats = {
             totalEntries: entries.length,
@@ -272,156 +365,11 @@ class JournalManager {
      */
     async getMonthlyFinancialSummary() {
         const entries = await this.getJournalEntries();
-        
-        // Grouper par (year, month)
-        const grouped = {};
-        
-        entries.forEach(entry => {
-            // Convertir turn → timeInfo
-            if (!window.TimeManager) {
-                console.warn('[JournalManager] TimeManager not available');
-                return;
-            }
-            
-            const timeInfo = window.TimeManager.getTimeInfo(entry.turn);
-            const key = `${timeInfo.year}-${timeInfo.monthIndex}`;
-            
-            if (!grouped[key]) {
-                grouped[key] = {
-                    year: timeInfo.year,
-                    month: timeInfo.monthIndex,
-                    monthName: timeInfo.month,
-                    income: { total: 0, entries: [] },
-                    expenses: { total: 0, entries: [] },
-                    entryCount: 0
-                };
-            }
-            
-            // Exclure les cumuls et les balances du calcul mensuel (ils sont informatifs seulement)
-            if (entry.type === 'cumul_maintenance' || 
-                entry.type === 'cumul_construction' || 
-                entry.type === 'cumul_salary' ||
-                entry.type === 'cumul_exceptional_expenses' ||
-                entry.type === 'cumul_loan_interest' ||
-                entry.type === 'cumul_loan_repayment' ||
-                entry.type === 'balance') {
-                return; // Passer à l'entrée suivante
-            }
-            
-            // Classer comme revenu ou dépense
-            // Revenus: 'citizen_tax', 'payroll_tax', 'capital_funds', 'loan_capital', 'export_*', 'carry_forward' (si netFlow précédent positif)
-            // Dépenses: 'construction', 'maintenance', 'salary', 'loan_interest', 'loan_repayment', 'exceptional_expenses', 'import_*', 'carry_forward' (si netFlow précédent négatif)
-            let isIncome = entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds' || entry.type === 'loan_capital';
-            
-            // Les imports sont des dépenses
-            if (entry.type.startsWith('import_')) {
-                isIncome = false;
-            }
-            
-            // Les exports sont des revenus
-            if (entry.type.startsWith('export_')) {
-                isIncome = true;
-            }
-            
-            // Les intérêts et remboursements de prêt sont des dépenses
-            if (entry.type === 'loan_interest' || entry.type === 'loan_repayment') {
-                isIncome = false;
-            }
-            
-            // Les autres dépenses explicites
-            if (entry.type === 'construction' || entry.type === 'maintenance' || entry.type === 'salary' || 
-                entry.type === 'exceptional_expenses' || entry.type === 'commercial_route') {
-                isIncome = false;
-            }
-            
-            if (entry.type === 'carry_forward') {
-                // Pour le report à nouveau, déterminer si c'est un revenu ou une dépense
-                // en fonction du signe stocké dans la description
-                // Format: "Report à nouveau de l'année X (signe)"
-                const signMatch = entry.description?.match(/\(([+-])\)/);
-                if (signMatch) {
-                    isIncome = signMatch[1] === '+';
-                } else {
-                    // Fallback: calculer depuis le netFlow de l'année précédente
-                    const previousYear = timeInfo.year - 1;
-                    if (previousYear >= 0) {
-                        // Calculer le netFlow de l'année précédente en EXCLUANT le report à nouveau
-                        let prevYearIncome = 0;
-                        let prevYearExpenses = 0;
-                        
-                        entries.forEach(e => {
-                            if (e.type === 'carry_forward') return; // Exclure tous les reports à nouveau
-                            
-                            if (!window.TimeManager) return;
-                            const eTimeInfo = window.TimeManager.getTimeInfo(e.turn);
-                            
-                            if (eTimeInfo.year === previousYear) {
-                                let isEIncome = e.type === 'citizen_tax' || e.type === 'payroll_tax' || e.type === 'capital_funds' || e.type === 'loan_capital';
-                                if (e.type.startsWith('import_')) {
-                                    isEIncome = false;
-                                }
-                                if (e.type.startsWith('export_')) {
-                                    isEIncome = true;
-                                }
-                                if (e.type === 'loan_interest' || e.type === 'loan_repayment') {
-                                    isEIncome = false;
-                                }
-                                if (e.type === 'construction' || e.type === 'maintenance' || e.type === 'salary' || 
-                                    e.type === 'exceptional_expenses' || e.type === 'commercial_route') {
-                                    isEIncome = false;
-                                }
-                                if (isEIncome) {
-                                    prevYearIncome += e.amount;
-                                } else {
-                                    prevYearExpenses += e.amount;
-                                }
-                            }
-                        });
-                        
-                        const prevYearNetFlow = prevYearIncome - prevYearExpenses;
-                        isIncome = prevYearNetFlow >= 0;
-                    } else {
-                        // Année 0, pas de report à nouveau (ne devrait pas arriver)
-                        isIncome = true;
-                    }
-                }
-            }
-            
-            if (isIncome) {
-                grouped[key].income.total += entry.amount;
-                grouped[key].income.entries.push({
-                    type: entry.type,
-                    amount: entry.amount,
-                    description: entry.description,
-                    date: entry.date,
-                    turn: entry.turn,
-                    isCarryForwardIncome: entry.type === 'carry_forward' ? true : undefined
-                });
-            } else {
-                grouped[key].expenses.total += entry.amount;
-                grouped[key].expenses.entries.push({
-                    type: entry.type,
-                    amount: entry.amount,
-                    description: entry.description,
-                    date: entry.date,
-                    turn: entry.turn,
-                    isCarryForwardIncome: entry.type === 'carry_forward' ? false : undefined
-                });
-            }
-            
-            grouped[key].entryCount++;
-        });
-        
-        // Calculer netFlow pour chaque mois
-        Object.values(grouped).forEach(month => {
-            month.netFlow = month.income.total - month.expenses.total;
-        });
-        
-        // Trier par année puis mois (décroissant)
-        return Object.values(grouped).sort((a, b) => {
-            if (a.year !== b.year) return b.year - a.year;
-            return b.month - a.month;
-        });
+        const getTimeInfo = this._getTimeInfoResolver();
+        if (!getTimeInfo(0) && entries.length > 0) {
+            console.warn('[JournalManager] TimeManager not available');
+        }
+        return buildMonthlyFinancialSummary(entries, getTimeInfo);
     }
 
     /**
@@ -440,12 +388,13 @@ class JournalManager {
             return;
         }
         
-        if (!window.TimeManager) {
+        const timeManager = getTimeManager();
+        if (!timeManager) {
             console.warn('[JournalManager] TimeManager not available, cannot create carry forward entry');
             return;
         }
-        
-        const currentTimeInfo = window.TimeManager.getTimeInfo(turn);
+
+        const currentTimeInfo = getTimeInfo(turn);
         const previousYear = currentTimeInfo.year - 1;
         
         // Si on est en année 0, pas de report à nouveau
@@ -494,7 +443,8 @@ class JournalManager {
      * @returns {Promise<void>}
      */
     async createCumulEntries(year, turn) {
-        if (!window.TimeManager) {
+        const timeManager = getTimeManager();
+        if (!timeManager) {
             console.warn('[JournalManager] TimeManager not available, cannot create cumul entries');
             return;
         }
@@ -502,7 +452,7 @@ class JournalManager {
         // Récupérer toutes les entrées du journal pour cette année
         const allEntries = await this.getJournalEntries();
         const yearEntries = allEntries.filter(entry => {
-            const timeInfo = window.TimeManager.getTimeInfo(entry.turn);
+            const timeInfo = getTimeInfo(entry.turn);
             return timeInfo.year === year;
         });
 
@@ -576,20 +526,20 @@ class JournalManager {
      * @returns {Promise<void>}
      */
     async addBalanceEntry(turn, balance) {
-        // Vérifier si une entrée de balance existe déjà pour ce turn
-        const existingEntries = await this.getJournalEntriesForTurn(turn);
-        const hasBalance = existingEntries.some(e => e.type === 'balance');
-        
-        if (!hasBalance) {
-            await this.addJournalEntry(turn, 'balance', balance, 'Solde');
-        } else {
-            // Mettre à jour l'entrée existante si le solde a changé
-            const existingBalance = existingEntries.find(e => e.type === 'balance');
-            if (existingBalance && existingBalance.amount !== balance) {
-                // Mettre à jour l'entrée existante
-                await this.db.journal.update(existingBalance.id, { amount: balance });
-                console.info(`[JournalManager] Updated balance entry for turn ${turn}: ${balance}€`);
-            }
+        await this.ensureHydrated();
+
+        const existingBalance = sessionLedgerBuffer.findBalanceForTurn(turn);
+
+        if (!existingBalance) {
+            await this.addJournalEntry(turn, 'balance', balance, 'Solde', null, {
+                persist: false,
+            });
+            return;
+        }
+
+        if (existingBalance.amount !== balance) {
+            sessionLedgerBuffer.updateBalanceForTurn(turn, balance);
+            console.info(`[JournalManager] Updated balance entry for turn ${turn}: ${balance}€`);
         }
     }
 
@@ -599,96 +549,7 @@ class JournalManager {
      */
     async getCurrentBalance() {
         const entries = await this.getJournalEntries();
-        let balance = 0;
-        
-        entries.forEach(entry => {
-            // Exclure les cumuls et les balances du calcul de balance (ils sont informatifs seulement)
-            if (entry.type === 'cumul_maintenance' || 
-                entry.type === 'cumul_construction' || 
-                entry.type === 'cumul_salary' ||
-                entry.type === 'cumul_exceptional_expenses' ||
-                entry.type === 'cumul_loan_interest' ||
-                entry.type === 'cumul_loan_repayment' ||
-                entry.type === 'balance') {
-                return; // Passer à l'entrée suivante
-            }
-            
-            // Utiliser la même logique que getMonthlyFinancialSummary() pour classer les entrées
-            let isIncome = entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds';
-            
-            // Les imports sont des dépenses
-            if (entry.type.startsWith('import_')) {
-                isIncome = false;
-            }
-            
-            // Les exports sont des revenus
-            if (entry.type.startsWith('export_')) {
-                isIncome = true;
-            }
-            
-            // Traiter les reports à nouveau de la même manière que dans getMonthlyFinancialSummary
-            if (entry.type === 'carry_forward') {
-                // Pour le report à nouveau, déterminer si c'est un revenu ou une dépense
-                // en fonction du signe stocké dans la description
-                // Format: "Report à nouveau de l'année X (signe)"
-                const signMatch = entry.description?.match(/\(([+-])\)/);
-                if (signMatch) {
-                    isIncome = signMatch[1] === '+';
-                } else {
-                    // Fallback: si pas de signe dans la description, calculer depuis le netFlow de l'année précédente
-                    if (!window.TimeManager) {
-                        // Si TimeManager n'est pas disponible, traiter comme revenu par défaut
-                        isIncome = true;
-                    } else {
-                        const timeInfo = window.TimeManager.getTimeInfo(entry.turn);
-                        const previousYear = timeInfo.year - 1;
-                        if (previousYear >= 0) {
-                            // Calculer le netFlow de l'année précédente en EXCLUANT le report à nouveau
-                            let prevYearIncome = 0;
-                            let prevYearExpenses = 0;
-                            
-                            entries.forEach(e => {
-                                if (e.type === 'carry_forward') return; // Exclure tous les reports à nouveau
-                                
-                                if (!window.TimeManager) return;
-                                const eTimeInfo = window.TimeManager.getTimeInfo(e.turn);
-                                
-                                if (eTimeInfo.year === previousYear) {
-                                    let isEIncome = e.type === 'citizen_tax' || e.type === 'payroll_tax' || e.type === 'capital_funds' || e.type === 'loan_capital';
-                                    if (e.type.startsWith('import_')) {
-                                        isEIncome = false;
-                                    }
-                                    if (e.type.startsWith('export_')) {
-                                        isEIncome = true;
-                                    }
-                                    if (isEIncome) {
-                                        prevYearIncome += e.amount;
-                                    } else {
-                                        prevYearExpenses += e.amount;
-                                    }
-                                }
-                            });
-                            
-                            const prevYearNetFlow = prevYearIncome - prevYearExpenses;
-                            isIncome = prevYearNetFlow >= 0;
-                        } else {
-                            // Année 0, pas de report à nouveau (ne devrait pas arriver)
-                            isIncome = true;
-                        }
-                    }
-                }
-            }
-            
-            // Tous les autres types sont des dépenses (construction, maintenance, exceptional_expenses, loan_interest, loan_repayment, etc.)
-            
-            if (isIncome) {
-                balance += entry.amount;
-            } else {
-                balance -= entry.amount;
-            }
-        });
-        
-        return balance;
+        return computeJournalCurrentBalance(entries, this._getTimeInfoResolver());
     }
 
     /**
@@ -697,38 +558,7 @@ class JournalManager {
      */
     async getYearlyFinancialSummary() {
         const monthlyData = await this.getMonthlyFinancialSummary();
-        
-        // Grouper par année
-        const grouped = {};
-        
-        monthlyData.forEach(month => {
-            const year = month.year;
-            
-            if (!grouped[year]) {
-                grouped[year] = {
-                    year: year,
-                    income: { total: 0, entries: [] },
-                    expenses: { total: 0, entries: [] },
-                    monthCount: 0,
-                    months: []  // Détail des mois pour cette année
-                };
-            }
-            
-            grouped[year].income.total += month.income.total;
-            grouped[year].expenses.total += month.expenses.total;
-            grouped[year].income.entries.push(...month.income.entries);
-            grouped[year].expenses.entries.push(...month.expenses.entries);
-            grouped[year].monthCount++;
-            grouped[year].months.push(month);
-        });
-        
-        // Calculer netFlow pour chaque année (le solde de l'année = netFlow de l'année)
-        Object.values(grouped).forEach(year => {
-            year.netFlow = year.income.total - year.expenses.total;
-        });
-        
-        // Trier par année décroissante pour l'affichage
-        return Object.values(grouped).sort((a, b) => b.year - a.year);
+        return buildYearlyFinancialSummary(monthlyData);
     }
 
     /**
@@ -740,28 +570,14 @@ class JournalManager {
             const entries = await this.getJournalEntries();
             const yearlyData = await this.getYearlyFinancialSummary();
             const yearEndBalances = this.getAllYearEndBalances();
-            
-            const exportData = {
-                exportDate: new Date().toISOString(),
-                entries: entries.map(entry => ({
-                    id: entry.id,
-                    turn: entry.turn,
-                    date: entry.date,
-                    type: entry.type,
-                    amount: entry.amount,
-                    description: entry.description
-                })),
-                yearlySummary: yearlyData.map(year => ({
-                    year: year.year,
-                    income: year.income.total,
-                    expenses: year.expenses.total,
-                    netFlow: year.netFlow,
-                    monthCount: year.monthCount
-                })),
-                yearEndBalances: yearEndBalances
-            };
-            
-            return JSON.stringify(exportData, null, 2);
+
+            return serializeJournalExportPayload(
+                buildJournalExportPayload({
+                    entries,
+                    yearlySummary: yearlyData,
+                    yearEndBalances,
+                })
+            );
         } catch (error) {
             console.error('[JournalManager] Error exporting to JSON:', error);
             throw error;
@@ -775,167 +591,13 @@ class JournalManager {
      */
     async exportToPDF() {
         try {
-            // Check if jsPDF is available
-            if (typeof window.jsPDF === 'undefined' && !(window.jspdf && window.jspdf.jsPDF)) {
-                // Load jsPDF from CDN
-                await this.loadJSPDF();
-            }
-            
-            // Get jsPDF constructor (can be window.jsPDF or window.jspdf.jsPDF)
-            const jsPDF = window.jsPDF || (window.jspdf && window.jspdf.jsPDF);
-            if (!jsPDF) {
-                throw new Error('jsPDF not available after loading');
-            }
-            
-            const doc = new jsPDF();
-            
             const yearlyData = await this.getYearlyFinancialSummary();
             const entries = await this.getJournalEntries();
-            
-            // Title
-            doc.setFontSize(18);
-            doc.text('Journal des Écritures Comptables', 14, 20);
-            
-            // Export date
-            doc.setFontSize(10);
-            doc.text(`Exporté le: ${new Date().toLocaleString('fr-FR')}`, 14, 30);
-            
-            let yPosition = 40;
-            const pageHeight = doc.internal.pageSize.height;
-            const margin = 14;
-            const lineHeight = 7;
-            
-            // Yearly summaries
-            doc.setFontSize(14);
-            doc.text('Résumé par Année', margin, yPosition);
-            yPosition += 10;
-            
-            doc.setFontSize(10);
-            yearlyData.forEach(yearData => {
-                // Check if we need a new page
-                if (yPosition > pageHeight - 30) {
-                    doc.addPage();
-                    yPosition = margin;
-                }
-                
-                const yearDisplay = yearData.year === 0 ? '0 JC' : `${yearData.year} ap JC`;
-                doc.setFont(undefined, 'bold');
-                doc.text(`Année ${yearDisplay}`, margin, yPosition);
-                yPosition += lineHeight;
-                
-                doc.setFont(undefined, 'normal');
-                doc.text(`Revenus: ${yearData.income.total}€`, margin + 5, yPosition);
-                yPosition += lineHeight;
-                doc.text(`Dépenses: ${yearData.expenses.total}€`, margin + 5, yPosition);
-                yPosition += lineHeight;
-                
-                const netFlowColor = yearData.netFlow >= 0 ? [0, 128, 0] : [255, 0, 0];
-                doc.setTextColor(...netFlowColor);
-                doc.text(`Solde: ${yearData.netFlow >= 0 ? '+' : ''}${yearData.netFlow}€`, margin + 5, yPosition);
-                doc.setTextColor(0, 0, 0);
-                yPosition += lineHeight + 3;
-            });
-            
-            // Detailed entries (first 100 entries to avoid PDF size issues)
-            // EXCLURE les cumuls et les balances (informatifs seulement)
-            yPosition += 5;
-            doc.setFontSize(14);
-            doc.text('Détail des Écritures', margin, yPosition);
-            yPosition += 10;
-            
-            doc.setFontSize(8);
-            const entriesToExport = entries.filter(e => 
-                e.type !== 'cumul_maintenance' && 
-                e.type !== 'cumul_construction' && 
-                e.type !== 'cumul_salary' &&
-                e.type !== 'cumul_exceptional_expenses' &&
-                e.type !== 'cumul_loan_interest' &&
-                e.type !== 'cumul_loan_repayment' &&
-                e.type !== 'balance'
-            );
-            const maxEntries = Math.min(entriesToExport.length, 100);
-            for (let i = 0; i < maxEntries; i++) {
-                const entry = entriesToExport[i];
-                
-                // Check if we need a new page
-                if (yPosition > pageHeight - 20) {
-                    doc.addPage();
-                    yPosition = margin;
-                }
-                
-                const date = new Date(entry.date).toLocaleDateString('fr-FR');
-                const typeLabels = {
-                    'citizen_tax': 'Impôt Citoyen',
-                    'payroll_tax': 'Impôt sur les salaires',
-                    'capital_funds': 'Capital',
-                    'loan_capital': 'Capital Prêt',
-                    'construction': 'Construction',
-                    'maintenance': 'Maintenance',
-                    'salary': 'Salaires',
-                    'exceptional_expenses': 'Réparation',
-                    'import_wheat': 'Import Blé',
-                    'import_carrot': 'Import Carotte',
-                    'import_cabbage': 'Import Chou',
-                    'import_wood': 'Import Bois',
-                    'export_wheat': 'Export Blé',
-                    'export_carrot': 'Export Carotte',
-                    'export_cabbage': 'Export Chou',
-                    'export_wood': 'Export Bois',
-                    'loan_interest': 'Intérêts',
-                    'loan_repayment': 'Remboursement',
-                    'carry_forward': 'Report'
-                };
-                
-                const typeLabel = typeLabels[entry.type] || entry.type;
-                const isIncomeType = entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds' || entry.type === 'loan_capital' || 
-                                   entry.type.startsWith('export_') ||
-                                   (entry.type === 'carry_forward' && entry.description?.includes('(+)'));
-                const amountText = isIncomeType ? `+${entry.amount}€` : `-${entry.amount}€`;
-                
-                doc.text(`${date} - ${typeLabel}: ${amountText}`, margin, yPosition);
-                yPosition += lineHeight;
-                doc.text(`  ${entry.description}`, margin + 5, yPosition);
-                yPosition += lineHeight + 2;
-            }
-            
-            if (entries.length > maxEntries) {
-                doc.text(`... et ${entries.length - maxEntries} autres entrées`, margin, yPosition);
-            }
-            
-            // Generate blob
-            const pdfBlob = doc.output('blob');
-            return pdfBlob;
+            return this._pdfExporter.export({ entries, yearlySummary: yearlyData });
         } catch (error) {
             console.error('[JournalManager] Error exporting to PDF:', error);
             throw error;
         }
-    }
-
-    /**
-     * Load jsPDF library from CDN
-     * @returns {Promise<void>}
-     */
-    async loadJSPDF() {
-        return new Promise((resolve, reject) => {
-            // Check if jsPDF is already loaded (different possible global names)
-            if (typeof window.jsPDF !== 'undefined' || (window.jspdf && window.jspdf.jsPDF)) {
-                resolve();
-                return;
-            }
-            
-            const script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-            script.onload = () => {
-                // jsPDF can be available as window.jsPDF or window.jspdf.jsPDF
-                if (typeof window.jsPDF !== 'undefined' || (window.jspdf && window.jspdf.jsPDF)) {
-                    resolve();
-                } else {
-                    reject(new Error('jsPDF failed to load'));
-                }
-            };
-            script.onerror = () => reject(new Error('Failed to load jsPDF from CDN'));
-            document.head.appendChild(script);
-        });
     }
 }
 

@@ -3,6 +3,8 @@
  * Gère l'ouverture, la fermeture et la navigation entre les sections du panneau administrateur
  */
 
+import { getPopupManager, registerAppFunction } from '../acl/appRuntime.js';
+
 function initAdministratorPanel() {
     const administratorPanel = document.getElementById('administrator-panel');
     const administratorCloseBtn = document.getElementById('administrator-panel-close-btn');
@@ -19,8 +21,8 @@ function initAdministratorPanel() {
         administratorPanel.classList.add('active');
         
         // Utiliser PopupManager pour gérer les événements
-        if (window.popupManager) {
-            window.popupManager.forceOpenPopup('administrator-panel');
+        if (getPopupManager()) {
+            getPopupManager().forceOpenPopup('administrator-panel');
         }
         
         // Show first section by default
@@ -34,8 +36,8 @@ function initAdministratorPanel() {
         administratorPanel.classList.remove('active');
         
         // Utiliser PopupManager pour gérer les événements
-        if (window.popupManager) {
-            window.popupManager.forceClosePopup('administrator-panel');
+        if (getPopupManager()) {
+            getPopupManager().forceClosePopup('administrator-panel');
         }
     }
 
@@ -99,10 +101,9 @@ function initAdministratorPanel() {
         }
     });
 
-    // Expose openPanel function globally for use by other components
-    window.openAdministratorPanel = openPanel;
-    window.closeAdministratorPanel = closePanel;
-    window.showAdministratorSection = showSection;
+    registerAppFunction('openAdministratorPanel', openPanel);
+    registerAppFunction('closeAdministratorPanel', closePanel);
+    registerAppFunction('showAdministratorSection', showSection);
 
     // Add event listener for the administrator button in info-box-stats
     const administratorBtn = document.getElementById('administrator-btn');

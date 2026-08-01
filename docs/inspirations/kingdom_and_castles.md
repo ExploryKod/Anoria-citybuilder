@@ -1,0 +1,1 @@
+# Mécanismes de jeu de Kingdom and Castles (inspiration)

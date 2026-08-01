@@ -1,7 +1,13 @@
 /**
  * FoodTraceabilityManager - Gère l'affichage de la traçabilité alimentaire
  */
-import housesStore from "../../stores/HousesStore.js";
+import { getOrCreateSupplyContext } from "../../acl/supply.js";
+import { getFoodTraceabilityService } from "../../acl/appRuntime.js";
+import { tryResolveBuildingInstanceIdFromRef } from "../../acl/building-identity.js";
+
+function buildingStockKey(building) {
+    return tryResolveBuildingInstanceIdFromRef(building) ?? building?.id ?? null;
+}
 
 // Initialize food traceability tabs (separate function so it can be called when modal opens)
 let tabsInitialized = false;
@@ -116,11 +122,12 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
     `;
     
     try {
-        if (!window.foodTraceabilityService) {
+        const foodTraceabilityService = getFoodTraceabilityService();
+        if (!foodTraceabilityService) {
             throw new Error('FoodTraceabilityService not available');
         }
         
-        let transactions = await window.foodTraceabilityService.getAllTransactions();
+        let transactions = await foodTraceabilityService.getAllTransactions();
         
         // Filter by period
         if (period !== 'all') {
@@ -168,19 +175,20 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             return monthA - monthB;
         });
         
-        // Get current stocks from IndexedDB for all buildings
+        // Current stocks via Supply BC (not raw Dexie)
         let currentStocks = {};
         let allBuildingsData = [];
         try {
-            allBuildingsData = await housesStore.listAllHouses();
+            const supply = getOrCreateSupplyContext();
+            allBuildingsData = await supply.listSupplyStockSnapshots();
             allBuildingsData.forEach(building => {
-                const buildingKey = building.id || building.name;
+                const buildingKey = buildingStockKey(building);
                 if (buildingKey && building.stocks) {
                     currentStocks[buildingKey] = building.stocks;
                 }
             });
         } catch (err) {
-            console.warn('Could not fetch current stocks from IndexedDB:', err);
+            console.warn('Could not fetch current stocks from Supply:', err);
         }
         
         // Calculate stocks for each month by going backwards from current stocks
@@ -195,7 +203,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
         });
         // Also add buildings from IndexedDB
         allBuildingsData.forEach(building => {
-            const buildingKey = building.id || building.name;
+            const buildingKey = buildingStockKey(building);
             if (buildingKey) allBuildingKeys.add(buildingKey);
         });
         
@@ -462,8 +470,8 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             
             // Show stocks for all farms this month
             allBuildingsData.forEach(building => {
-                if (building.type && (building.type.includes('Farm') || building.type.includes('Farms'))) {
-                    const farmKey = building.id || building.name;
+                if (building.kind === 'farm' || (building.type && (building.type.includes('Farm') || building.type.includes('Farms')))) {
+                    const farmKey = buildingStockKey(building);
                     const farmStocks = stocksByMonth[farmKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                     const farmStocksAfter = stocksByMonth[farmKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                     
@@ -492,8 +500,8 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             
             // Show stocks for all markets this month
             allBuildingsData.forEach(building => {
-                if (building.type && (building.type.includes('Market') || building.type.includes('Commerce'))) {
-                    const marketKey = building.id || building.name;
+                if (building.kind === 'market' || (building.type && (building.type.includes('Market') || building.type.includes('Commerce')))) {
+                    const marketKey = buildingStockKey(building);
                     const marketStocks = stocksByMonth[marketKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                     const marketStocksAfter = { ...marketStocks };
                     
@@ -526,8 +534,8 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             
             // Show stocks for all houses this month
             allBuildingsData.forEach(building => {
-                if (building.type && (building.type.includes('House') || building.type.includes('Maison'))) {
-                    const houseKey = building.id || building.name;
+                if (building.kind === 'house' || (building.type && (building.type.includes('House') || building.type.includes('Maison')))) {
+                    const houseKey = buildingStockKey(building);
                     const houseStocks = stocksByMonth[houseKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                     const houseStocksAfter = { ...houseStocks };
                     
@@ -952,18 +960,18 @@ export async function loadFoodCharts() {
     `;
     
     try {
-        if (!window.foodTraceabilityService) {
+        const foodTraceabilityService = getFoodTraceabilityService();
+        if (!foodTraceabilityService) {
             throw new Error('FoodTraceabilityService not available');
         }
         
-        if (!housesStore) {
-            throw new Error('HousesStore not available');
-        }
+        const transactions = await foodTraceabilityService.getAllTransactions();
         
-        const transactions = await window.foodTraceabilityService.getAllTransactions();
-        
-        // Get current houses data from IndexedDB to calculate current population
-        const allHouses = await housesStore.listAllHouses();
+        // House pop via Supply BC (not raw Dexie)
+        const supply = getOrCreateSupplyContext();
+        const allHouses = (await supply.listSupplyStockSnapshots()).filter(
+            (b) => b.kind === 'house' || (b.type && (b.type.includes('House') || b.type.includes('Maison')))
+        );
         
         // Group consumption transactions by year and month to get fed population
         const dataByYearMonth = {};
@@ -1018,7 +1026,7 @@ export async function loadFoodCharts() {
                 
                 allHouses.forEach(house => {
                     if (house.type && (house.type.includes('House') || house.type.includes('Maison'))) {
-                        const houseKey = house.id || house.name;
+                        const houseKey = buildingStockKey(house);
                         const houseCoords = house.x !== undefined && house.y !== undefined ? `${house.x},${house.y}` : null;
                         const housePop = house.pop || 0;
                         

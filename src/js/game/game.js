@@ -1,12 +1,18 @@
 import * as THREE from 'three';
 import {  assetsPrices } from '../meshs/data.js';
-import { checkRoadAccess, canHouseEvolveToPurple, canHouseEvolveToPalace, checkFoodAvailability } from './modules/ModuleHelper.js';
-import { getDefaultEmployees, getSectorPriority, getSectorName } from './modules/EmployeeHelper.js';
-import { firstHouses } from '../ui/nodes.js';
+import { getDefaultEmployees, getSectorPriority, getSectorName, getAllSectorPriorities } from './modules/EmployeeHelper.js';
 import { TimeManager } from './utils/TimeManager.js';
+import { getTimeInfo } from '../acl/appRuntime.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
-import {getAssetPrice, makeDbItemId, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, isAreaAvailableForBuilding} from '../utils/utils.js';
+import {getAssetPrice, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, isAreaAvailableForBuilding} from '../utils/utils.js';
+import { toBuildingIdString, createBuildingInstanceId, getOrCreateParcelsContext } from '../acl/parcels.js';
+import { getOrCreateSupplyContext, toSupplySeason, toSupplyMonth } from '../acl/supply.js';
+import { getOrCreateHousingContext } from '../acl/housing.js';
+import { syncEmploymentAfterBuildingChange, getOrCreateEmploymentContext } from '../acl/employment.js';
+import { findBuildingAtTile, placeBuildingWithPayment, getBuildingById, getBuildingField } from '../acl/construction.js';
+import { createGameRuntime } from '../../composition/createGameRuntime.js';
+import { GameLoop } from '../../engine/loop/GameLoop.js';
 import config from './config.js';
 import {
     displayTime,
@@ -21,13 +27,63 @@ import {
     displaySpeed
 } from '../ui/nodes.js';
 import budgetManager from '../stores/BudgetManager.js';
+import {
+  forceReinitializeTreasury,
+  getTreasurySnapshot,
+  updateTreasuryTurn,
+  setBudgetReadyPromise,
+  awaitBudgetReady,
+} from '../acl/accountingGame.js';
 import journalManager from '../stores/JournalManager.js';
 import FoodTraceabilityService from '../stores/FoodTraceabilityService.js';
 import loaderManager from '../utils/LoaderManager.js';
 import objectivesTracker from '../ui/ObjectivesTracker.js';
+
+/**
+ * Info panel: workplace staffing section (workers in aggregates; elites display-only).
+ */
+function renderWorkplaceEmployeesInfo(buildingData, messages) {
+    if (!buildingData?.employees) return;
+
+    const roadCount = buildingData.roads ?? 0;
+    const buildingType = buildingData.type || '';
+    const farmExemptFromRoad = buildingType.includes('Farm') || buildingType.includes('farm');
+    const employees = buildingData.employees;
+    const workerNeed = employees.worker_need || 0;
+    const eliteNeed = employees.elite_need || 0;
+    const workers = employees.worker || 0;
+    const elites = employees.elite || 0;
+    const sector = employees.sector || 0;
+    const priority = getSectorPriority(sector);
+
+    makeInfoSection('Employés');
+
+    if (roadCount <= 0 && !farmExemptFromRoad) {
+        makeInfoBuildingText('🚧 Route nécessaire pour embaucher', false, 'warning-message');
+        return;
+    }
+
+    const hasEnoughWorkers = workers >= workerNeed;
+    const hasNoWorkers = workers === 0 && workerNeed > 0;
+    const hasPartialWorkers = workers > 0 && workers < workerNeed;
+
+    makeInfoKeyValue('Secteur', `${sector} : ${getSectorName(sector)}`);
+    makeInfoKeyValue('Priorité', `${priority}`);
+    makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
+    makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
+
+    if (hasEnoughWorkers) {
+        makeInfoBuildingText(messages.fullyStaffed, false, 'success-message');
+    } else if (hasNoWorkers) {
+        makeInfoBuildingText(messages.noWorkers, false, 'error-message');
+    } else if (hasPartialWorkers) {
+        makeInfoBuildingText(messages.partialWorkers, false, 'warning-message');
+    }
+}
 import InputManager from './InputManager.js';
 import gameUI from './GameUI.js';
 import appRegistry from './AppRegistry.js';
+import { attachEmploymentPriorityToWorkSection, getMultiplayerManager, invokeStartTutorial } from '../acl/appRuntime.js';
 import webglDetector from '../utils/WebGLResourceDetector.js';
 import commerceStore from '../stores/CommerceStore.js';
 
@@ -41,51 +97,25 @@ let services = [];
 // Load services asynchronously (non-blocking)
 (async () => {
     try {
-        // Load all available services
-        const { RoadConnectivityService } = await import('./services/RoadConnectivityService.js');
-        const { FoodDistributionService } = await import('./services/FoodDistributionService.js');
-        const { WindmillService } = await import('./services/WindmillService.js');
+        // Load city-wide simulation services (food chain → ECS supply.monthlyFood)
         const { RandomEventsService } = await import('./services/RandomEventsService.js');
         const { EmploymentPriorityService } = await import('./services/EmploymentPriorityService.js');
-        const { EmploymentDistributionService } = await import('./services/EmploymentDistributionService.js');
         const { CommerceService } = await import('./services/CommerceService.js');
-        const { FactoryService } = await import('./services/FactoryService.js');
         
-        services.push(new RoadConnectivityService());
-        services.push(new FoodDistributionService()); // Farm > Market > House logic using IndexedDB
-        services.push(new WindmillService()); // Windmill collects from all farms in December (after markets collect in autumn)
         services.push(new RandomEventsService()); // Événements aléatoires (ouragan, inondation)
         services.push(new CommerceService()); // Gestion des imports/exports
-        services.push(new FactoryService()); // Factory production system
         
         // Employment Priority Service - manages sector priorities in localStorage
         // Priority is stored in localStorage (not IndexedDB) for instant updates
         const employmentPriorityService = new EmploymentPriorityService();
         services.push(employmentPriorityService);
         
-        // Employment Distribution Service - distributes workers from houses to buildings
-        // Reads sector from IndexedDB, looks up priority from localStorage at runtime
-        // Lower priority number = higher importance (1 = first to get workers)
-        services.push(new EmploymentDistributionService());
         console.log('[game.js] Employment services registered (priority from localStorage, sector from IndexedDB)');
         
         // Note: Initial simulation will run on first game.update() call
         // The service is now synchronized with the game loop
         
-        // Make service available to work section manager
-        if (window.workSectionManager) {
-            window.workSectionManager.setPriorityService(employmentPriorityService);
-        } else {
-            // If work section manager isn't initialized yet, set it when it becomes available
-            const checkWorkSection = setInterval(() => {
-                if (window.workSectionManager) {
-                    window.workSectionManager.setPriorityService(employmentPriorityService);
-                    clearInterval(checkWorkSection);
-                }
-            }, 100);
-            // Stop checking after 5 seconds
-            setTimeout(() => clearInterval(checkWorkSection), 5000);
-        }
+        attachEmploymentPriorityToWorkSection(employmentPriorityService);
         
         console.log('[game.js] Services loaded successfully:', services.length, services.map(s => s.constructor.name));
     } catch (err) {
@@ -402,13 +432,20 @@ function showWebGLResourceWarning(capabilities, requestedSize, maxSafeSize) {
     }, 6000);
 }
 
-export function createGame(housesStore, gameStore, assetManager, citySize = null) {
+export function createGame(gameStore, assetManager, citySize = null) {
     let activeToolId = '';
     let time = 0;
     let isPause;
     let isOver;
     let infos = {};
-    let intervalId = null;
+    /** @type {GameLoop | null} */
+    let gameLoop = null;
+    /** @type {ReturnType<typeof createGame> extends infer T ? T : never} */
+    let game;
+
+    function getTickIntervalMs() {
+        return Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed'), 10) || 4000));
+    }
     // Track pending building placements to prevent race conditions from rapid clicks
     const pendingPlacements = new Set();
     // Set initial speed within limits (500ms - 20,000ms)
@@ -416,13 +453,12 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
     
     // Register with AppRegistry (centralized namespace)
     appRegistry.register('gameUI', gameUI);
-    appRegistry.register('budgetManager', budgetManager);
+    appRegistry.register('budgetManager', budgetManager, false);
     appRegistry.register('journalManager', journalManager);
     
     // Initialize FoodTraceabilityService
     const foodTraceabilityService = new FoodTraceabilityService();
     appRegistry.register('foodTraceabilityService', foodTraceabilityService);
-    window.foodTraceabilityService = foodTraceabilityService; // Make globally available
     
     gameUI.updateTimeDisplay(time);
     
@@ -436,26 +472,36 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
         configObject: config
     });
     
-    budgetManager.forceReinitialize(initialFunds).then(async () => {
-        // BudgetManager registered above - available via window.app.budgetManager or window.budgetManager
-        // Update funds display in navigation bar immediately after initialization
-        const initialBudget = await budgetManager.getCurrentBudget();
-        
-        console.log('[game.js] Budget initialized, current budget:', initialBudget);
-        
-        if (window.gameUI) {
-            window.gameUI.updateFunds(initialBudget.funds || initialFunds);
-        } else {
-            const displayFunds = document.querySelector('.display-funds');
-            if (displayFunds) {
-                displayFunds.textContent = (initialBudget.funds || initialFunds).toString();
-            }
-        }
+    setBudgetReadyPromise(
+        forceReinitializeTreasury(initialFunds).then(async () => {
+            const initialBudget = await getTreasurySnapshot();
+
+            console.log('[game.js] Budget initialized, current budget:', initialBudget);
+
+            gameUI.updateFunds(initialBudget.funds ?? initialFunds);
+
+            return initialBudget;
+        })
+    );
+
+
+    /* Scene + ECS runtime */
+    const parcels = getOrCreateParcelsContext();
+    const supply = getOrCreateSupplyContext();
+    const housing = getOrCreateHousingContext();
+    const employment = getOrCreateEmploymentContext();
+    const runtime = createGameRuntime({
+        parcels,
+        supply,
+        housing,
+        employment,
+        timeManager: TimeManager,
+        toSupplySeason,
+        toSupplyMonth,
+        getSectorPriorities: getAllSectorPriorities,
+        foodDistributionDistance: config?.simulation?.foodDistributionDistance || 5,
     });
-
-
-    /* Scene initialization */
-    const scene = createScene(housesStore, gameStore, assetManager);
+    const scene = createScene(gameStore, assetManager, parcels, supply, housing);
 
     /* City initialization */
     // Detect WebGL capabilities first
@@ -488,13 +534,59 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
         // Ouvrir automatiquement le tutoriel au démarrage du jeu (premier mois)
         // Petit délai pour s'assurer que tout est bien initialisé après le chargement
         setTimeout(() => {
-            if (window.startTutorial && typeof window.startTutorial === 'function') {
-                window.startTutorial();
-            } else if (window.tutorialManager && typeof window.tutorialManager.showTutorial === 'function') {
-                window.tutorialManager.showTutorial();
-            }
+            invokeStartTutorial();
         }, 800); // Délai après le masquage du loader pour une meilleure UX
     });
+
+    /** Employment bar + no-work icons — sole presentation entry (Employment BC read model). */
+    async function refreshEmploymentPresentationForCity() {
+        await scene.refreshEmploymentPresentation(city);
+    }
+
+    /** ECS + services + second scene.update (budget once per tick when not skipped). */
+    async function runSimulationPass(time, options = {}) {
+        if (isPause || isOver) {
+            return;
+        }
+
+        try {
+            await runtime.runSimulation({ city, time });
+        } catch (err) {
+            console.error('[game.js] ECS simulation error:', {
+                error: err?.message || err,
+                time,
+            });
+        }
+
+        if (isPause || isOver) {
+            return;
+        }
+
+        if (services.length > 0) {
+            try {
+                await Promise.allSettled(
+                    services.map((service) => service.simulate(city, time))
+                );
+            } catch (err) {
+                console.error('[game.js] Service simulation error:', {
+                    error: err?.message || err,
+                    time,
+                });
+            }
+        }
+
+        if (isPause || isOver) {
+            return;
+        }
+
+        await scene.update(city, time, options);
+    }
+
+    /** scene.update + employment refresh — player interactions without full simulation tick. */
+    async function runScenePresentationPass(time) {
+        await scene.update(city, time, { skipBudget: true });
+        await refreshEmploymentPresentationForCity();
+    }
 
     // handler function to extract coordinate of an object I click on (data from asset js and using scene js methods)
     scene.onObjectSelected = async (selectedObject) => {
@@ -554,11 +646,13 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     if (tileX >= 0 && tileX < city.size && tileY >= 0 && tileY < city.size) {
                         if (city.tiles[tileX] && city.tiles[tileX][tileY]) {
                             city.tiles[tileX][tileY].buildingId = undefined;
+                            city.tiles[tileX][tileY].instanceId = undefined;
                         }
                     }
                 }
             }
-            await scene.update(city, time);
+            await scene.update(city, time, { skipBudget: true });
+            await syncEmploymentAfterBuildingChange(scene, city, buildingId);
         } else if(activeToolId === "select-object") {
             // Object selection - ONLY open info modal when using select tool
             // Only open the info modal if we actually have info to show (i.e., on building objects)
@@ -598,48 +692,43 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
 
 
             if(buildingsObjects.includes(selectedObject.userData.id)) {
-                // Building selection
-                const uniqueId = makeDbItemId(selectedObject.userData.id, selectedObject.userData.x, selectedObject.userData.y)
+                const { x: selX, y: selY } = selectedObject.userData;
+                const uniqueId =
+                    selectedObject.userData.instanceId
+                    ?? city.tiles?.[selX]?.[selY]?.instanceId
+                    ?? (await findBuildingAtTile({ x: selX, y: selY }))?.instanceId
+                    ?? null;
                 
-                // Debug: Log the ID construction and retrieved data
-                console.log('[game.js] Building info popup:', {
-                    userDataId: selectedObject.userData.id,
-                    x: selectedObject.userData.x,
-                    y: selectedObject.userData.y,
-                    constructedId: uniqueId
-                });
-                
-                const buildingPop = await housesStore.getHouseItem(uniqueId, 'pop')
-                const houseRoads = await housesStore.getHouseItem(uniqueId, 'roads');
-                let houseStocks = await housesStore.getHouseItem(uniqueId, 'stocks');
+                const buildingRow = uniqueId ? await getBuildingById(uniqueId) : null;
+                const buildingPop = buildingRow?.pop ?? 0;
+                const roadAccess = await parcels.getRoadAccess(uniqueId);
+                const neighbors = uniqueId ? await parcels.getNeighbors(uniqueId) : [];
+                const supplyView = uniqueId
+                    ? await supply.getBuildingSupplyView(uniqueId)
+                    : null;
+                // Food stocks for Supply buildings come from the BC query (not raw Dexie)
+                let houseStocks = supplyView?.stocks ?? null;
                 
                 // Debug: Log retrieved data
                 console.log('[game.js] Retrieved data from DB:', {
                     uniqueId,
                     pop: buildingPop,
-                    roads: houseRoads,
-                    hasStocks: !!houseStocks
+                    roads: roadAccess.roadCount,
+                    neighborsCount: neighbors.length,
+                    hasStocks: !!houseStocks,
+                    supplyKind: supplyView?.kind ?? null,
                 });
                 
-                // Also try to get the full house record to see what's actually stored
-                const fullHouse = await housesStore.getHouse(uniqueId);
                 console.log('[game.js] Full house record:', {
                     uniqueId,
-                    type: fullHouse?.type,
-                    roads: fullHouse?.roads,
-                    neighborsCount: fullHouse?.neighbors?.length || 0,
-                    hasNeighbors: !!fullHouse?.neighbors
+                    type: buildingRow?.type,
+                    roads: buildingRow?.roads,
+                    neighborsCount: buildingRow?.neighbors?.length || 0,
+                    hasNeighbors: !!buildingRow?.neighbors
                 });
 
-                /* Check if neighbor */
-                let neighbors = [];
-                if(selectedObject.userData.neighbors) {
-                    neighbors = selectedObject.userData.neighbors
-                        .filter(neighbor => neighbor && neighbor.buildingId && neighbor.buildingId !== "");
-                }
-
                 // Vérifier si c'est un item nature (tree ou boulder)
-                const isNatureItem = fullHouse?.category === 'nature';
+                const isNatureItem = buildingRow?.category === 'nature';
                 
                 if (isNatureItem) {
                     // Affichage pour les items nature
@@ -647,8 +736,9 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     makeInfoKeyValue('Type', `${selectedObject.userData.id}`);
                     makeInfoKeyValue('Adresse', `x: ${selectedObject.userData.x} | y: ${selectedObject.userData.y}`);
                     
-                    // Afficher les stocks avec maxStocks
-                    const maxStocks = fullHouse?.maxStocks || {};
+                    // Nature stocks are not Supply — read building row for wood/rock/etc.
+                    houseStocks = buildingRow?.stocks ?? (await getBuildingField(uniqueId, 'stocks'));
+                    const maxStocks = buildingRow?.maxStocks || {};
                     if (houseStocks && Object.keys(houseStocks).length > 0) {
                         makeInfoSection('Stocks disponibles');
                         
@@ -686,19 +776,22 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     makeInfoKeyValue('Type', `${selectedObject.userData.id}`);
                     makeInfoKeyValue('Adresse', `x: ${selectedObject.userData.x} | y: ${selectedObject.userData.y}`);
                     makeInfoKeyValue(`Habitants`, buildingPop);
-                    makeInfoKeyValue('Routes desservies', houseRoads ? houseRoads : 0);
+                    makeInfoKeyValue('Routes desservies', roadAccess.roadCount);
                 }
 
                 if(neighbors.length > 0) {
                     makeInfoSection('Voisins immédiats');
-                    neighbors.filter(neigh => neigh.x && neigh.y).forEach(neighbor => {
-                        makeInfoKeyValue(neighbor.buildingId, `x: ${neighbor.x} | y: ${neighbor.y}`);
-                    })
+                    neighbors
+                        .filter((neigh) => neigh.x != null && neigh.y != null)
+                        .forEach((neighbor) => {
+                            const label = neighbor.type || neighbor.instanceId;
+                            makeInfoKeyValue(label, `x: ${neighbor.x} | y: ${neighbor.y}`);
+                        });
                 } else {
                     makeInfoKeyValue('Voisinage', 'Maison isolée');
                 }
 
-                if(selectedObject.userData.id.includes('House') && Object.hasOwn(houseStocks, 'food')) {
+                if(supplyView?.kind === 'house' && Object.hasOwn(houseStocks || {}, 'food')) {
                     makeInfoSection('Stocks nourriture');
                     makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`);
                     makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`);
@@ -707,8 +800,17 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     
                     // Evolution section - show conditions for next evolution step
                     const buildingType = selectedObject.userData.id;
-                    const { hasAccess: hasRoadAccess } = checkRoadAccess(neighbors || []);
-                    const { totalFood } = checkFoodAvailability(houseStocks || {}, buildingPop || 0);
+                    const hasRoadAccess = roadAccess.hasAccess;
+                    const { totalFood, meetsFoodGoal } = housing.evaluateHouseFoodAffluence({
+                        stocks: houseStocks || {},
+                        population: buildingPop || 0,
+                    });
+                    const evolutionPreview = housing.previewHouseEvolution({
+                        stocks: houseStocks || {},
+                        population: buildingPop || 0,
+                        buildingType,
+                        hasRoadAccess,
+                    });
                     
                     makeInfoSection('Évolution');
                     
@@ -726,13 +828,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     // House-Red: Show conditions to become House-Purple (only Purple-specific conditions)
                     else if (buildingType === 'House-Red') {
                         makeInfoKeyValue('→ Maison Violette', '');
-                        const purpleCheck = canHouseEvolveToPurple({
-                            stocks: houseStocks || {},
-                            population: buildingPop || 0,
-                            buildingType: buildingType,
-                            hasRoadAccess: hasRoadAccess
-                        });
-                        
+                        const purpleCheck = evolutionPreview.toPurple;
                         // Show Purple-specific conditions
                         makeInfoKeyValue('  • Population > 5', `${(buildingPop || 0) > 5 ? '✅' : '❌'} ${buildingPop || 0}`);
                         const foodStatus = totalFood >= (buildingPop || 0) ? '✅' : '❌';
@@ -752,15 +848,9 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     // House-Purple: Show conditions to become Palace (only Palace-specific conditions)
                     else if (buildingType === 'House-Purple') {
                         makeInfoKeyValue('→ Palais', '');
-                        const palaceCheck = canHouseEvolveToPalace({
-                            stocks: houseStocks || {},
-                            population: buildingPop || 0,
-                            buildingType: buildingType,
-                            firstHouses: firstHouses
-                        });
+                        const palaceCheck = evolutionPreview.toPalace;
                         
                         // Palace-specific conditions (food goal, not basic conditions)
-                        const { meetsFoodGoal } = checkFoodAvailability(houseStocks || {}, buildingPop || 0);
                         const foodGoalStatus = meetsFoodGoal ? '✅' : '❌';
                         const foodGoalText = meetsFoodGoal 
                             ? `Oui (${totalFood} > ${(buildingPop || 0) * 2})`
@@ -770,9 +860,9 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         const foodTypes = {
                             wheat: (houseStocks?.wheat || 0) > 0,
                             carrot: (houseStocks?.carrot || 0) > 0,
-                            cabbage: (houseStocks?.cabbage || 0) > 0
+                            cabbage: (houseStocks?.cabbage || 0) > 0,
                         };
-                        const availableFoodTypesCount = Object.values(foodTypes).filter(Boolean).length;
+                        const availableFoodTypesCount = evolutionPreview.availableCropTypesCount;
                         const foodVarietyStatus = availableFoodTypesCount >= 2 ? '✅' : '❌';
                         const foodVarietyText = availableFoodTypesCount >= 2 
                             ? `Oui (${availableFoodTypesCount} types: ${Object.entries(foodTypes).filter(([_, available]) => available).map(([type]) => type).join(', ')})`
@@ -790,10 +880,8 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 }
 
                 // Display market food stocks (similar to houses)
-                if((selectedObject.userData.id.includes('Market') || selectedObject.userData.id.includes('market')) && Object.hasOwn(houseStocks, 'food')) {
-                    // Get market data to access maxStock
-                    const marketData = await housesStore.getHouse(uniqueId);
-                    const maxStock = marketData?.maxStock || 500; // Default max stock for markets
+                if(supplyView?.kind === 'market' && Object.hasOwn(houseStocks || {}, 'food')) {
+                    const maxStock = supplyView.maxStock || 500;
                     
                     makeInfoSection('Stock marché');
                     makeInfoKeyValue('Blé', `${houseStocks.wheat || 0}/${maxStock} paniers`);
@@ -801,86 +889,46 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     makeInfoKeyValue('Autres légumes', `${houseStocks.carrot || 0}/${maxStock} paniers`);
                     makeInfoKeyValue('Total', `${houseStocks.food || 0}/${maxStock} paniers disponibles`);
                     
-                    // Display employee information for markets
-                    if (marketData) {
-                        // Check supply chain status (farms and houses)
-                        const noFarmsNearby = marketData.noFarmsNearby === true;
-                        
-                        // Check if there are houses within distribution range
-                        // Houses in range are determined by FoodDistributionService.findHousesInRange()
-                        // For now, we check neighbors for houses
-                        const marketNeighbors = marketData.neighbors || [];
-                        const housesNearby = marketNeighbors.filter(neighbor => {
-                            if (!neighbor) return false;
-                            const name = neighbor.name || neighbor.buildingId || neighbor.type || '';
-                            return name.includes('House') || name.includes('house');
-                        });
-                        const noHousesNearby = housesNearby.length === 0;
-                        
-                        // Check buying status and show market state
-                        const isBuying = marketData.isBuying === true;
-                        const hasNoWorkersForState = (marketData.employees?.worker || 0) === 0 && (marketData.employees?.worker_need || 0) > 0;
-                        
-                        // Buying period configuration (easy to change)
-                        const buyingPeriodName = 'Automne'; // Season when markets buy from farms
-                        
-                        makeInfoSection('État du marché');
-                        if (hasNoWorkersForState) {
-                            makeInfoKeyValue('État', '🔴 Inactif : pas d\'employés');
-                        } else if (isBuying) {
-                            makeInfoKeyValue('État', '🟢 Achats en cours : c\'est le mois des affaires !');
-                        } else {
-                            makeInfoKeyValue('État', `⏸️ En attente : le marché n'achète qu'en ${buyingPeriodName}`);
-                        }
-                        
-                        makeInfoSection('Approvisionnement');
-                        if (noFarmsNearby) {
-                            makeInfoKeyValue('Fermes', '❌ Aucune ferme à proximité');
-                        } else {
-                            makeInfoKeyValue('Fermes', '✅ Fermes accessibles');
-                        }
-                        if (noHousesNearby) {
-                            makeInfoKeyValue('Distribution', '❌ Aucune maison à portée');
-                        } else {
-                            makeInfoKeyValue('Distribution', '✅ Maisons à portée');
-                        }
-                        
-                        if (marketData.employees) {
-                            const employees = marketData.employees;
-                            const workerNeed = employees.worker_need || 0;
-                            const eliteNeed = employees.elite_need || 0;
-                            const workers = employees.worker || 0;
-                            const elites = employees.elite || 0;
-                            // Get priority from localStorage based on sector (not from IndexedDB)
-                            const sector = employees.sector || 0;
-                            const priority = getSectorPriority(sector);
-                            
-                            const hasEnoughWorkers = workers >= workerNeed;
-                            const hasEnoughElites = elites >= eliteNeed;
-                            const hasNoWorkers = workers === 0 && workerNeed > 0;
-                            const hasPartialWorkers = workers > 0 && workers < workerNeed;
-                            const isFullyStaffed = hasEnoughWorkers && hasEnoughElites;
-                            
-                            makeInfoSection('Employés');
-                            makeInfoKeyValue('Secteur', `${sector} : ${getSectorName(sector)}`);
-                            makeInfoKeyValue('Priorité', `${priority}`);
-                            makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
-                            makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
-                            
-                            // Show status message based on employee status
-                            if (isFullyStaffed) {
-                                makeInfoBuildingText('✅ Le marché marche à plein régime', false, 'success-message');
-                            } else if (hasNoWorkers) {
-                                makeInfoBuildingText('❌ Le marché manque de bras, il ne peut fonctionner', false, 'error-message');
-                            } else if (hasPartialWorkers) {
-                                makeInfoBuildingText('⚠️ Le marché tente de vendre avec peine car trop peu d\'employés', false, 'warning-message');
-                            }
-                        }
+                    const noFarmsNearby = supplyView.noFarmsNearby === true;
+                    const noHousesNearby = !supplyView.hasHousesNearby;
+                    const isBuying = supplyView.isBuying === true;
+
+                    const marketData = buildingRow;
+                    const hasNoWorkersForState = (marketData?.roads ?? 0) > 0
+                        && (marketData?.employees?.worker || 0) === 0
+                        && (marketData?.employees?.worker_need || 0) > 0;
+                    
+                    const buyingPeriodName = 'Automne';
+                    
+                    makeInfoSection('État du marché');
+                    if (hasNoWorkersForState) {
+                        makeInfoKeyValue('État', '🔴 Inactif : pas d\'employés');
+                    } else if (isBuying) {
+                        makeInfoKeyValue('État', '🟢 Achats en cours : c\'est le mois des affaires !');
+                    } else {
+                        makeInfoKeyValue('État', `⏸️ En attente : le marché n'achète qu'en ${buyingPeriodName}`);
                     }
+                    
+                    makeInfoSection('Approvisionnement');
+                    if (noFarmsNearby) {
+                        makeInfoKeyValue('Fermes', '❌ Aucune ferme à proximité');
+                    } else {
+                        makeInfoKeyValue('Fermes', '✅ Fermes accessibles');
+                    }
+                    if (noHousesNearby) {
+                        makeInfoKeyValue('Distribution', '❌ Aucune maison à portée');
+                    } else {
+                        makeInfoKeyValue('Distribution', '✅ Maisons à portée');
+                    }
+                    
+                    renderWorkplaceEmployeesInfo(marketData, {
+                        fullyStaffed: '✅ Le marché marche à plein régime',
+                        noWorkers: '❌ Le marché manque de bras, il ne peut fonctionner',
+                        partialWorkers: '⚠️ Le marché tente de vendre avec peine car trop peu d\'employés',
+                    });
                 }
 
-                if(selectedObject.userData.id.includes('Farm')) {
-                    // Initialize stocks if not present
+                if(supplyView?.kind === 'farm') {
                     if (!houseStocks) {
                         houseStocks = { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                     }
@@ -896,136 +944,63 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     }
                     makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers`);
                     
-                    // Display sales history for farms
-                    const farmData = await housesStore.getHouse(uniqueId);
-                    if (farmData) {
-                        const salesToMarket = farmData.salesToMarket || [];
-                        const salesToWindmill = farmData.salesToWindmill || [];
+                    const salesToMarket = supplyView.salesToMarket || [];
+                    const salesToWindmill = supplyView.salesToWindmill || [];
+                    
+                    let currentYear = 0;
+                    const budget = await getTreasurySnapshot();
+                    if (budget && budget.turn !== undefined) {
+                        const timeInfo = getTimeInfo(budget.turn);
+                        currentYear = timeInfo ? timeInfo.year : 0;
+                    }
+                    
+                    const currentYearMarketSales = salesToMarket.filter(sale => sale.year === currentYear);
+                    const currentYearWindmillSales = salesToWindmill.filter(sale => sale.year === currentYear);
+                    
+                    if (currentYearMarketSales.length > 0 || currentYearWindmillSales.length > 0) {
+                        makeInfoSection('Ventes de l\'année');
                         
-                        // Get current time from budget
-                        let currentYear = 0;
-                        if (window.budgetManager) {
-                            const budget = await window.budgetManager.getCurrentBudget();
-                            if (budget && budget.turn !== undefined && window.TimeManager) {
-                                const timeInfo = window.TimeManager.getTimeInfo(budget.turn);
-                                currentYear = timeInfo ? timeInfo.year : 0;
-                            }
+                        if (currentYearMarketSales.length > 0) {
+                            makeInfoKeyValue('Ventes au marché', `${currentYearMarketSales.length} vente(s)`);
+                            currentYearMarketSales.forEach(sale => {
+                                const productName = sale.productType === 'wheat' ? 'Blé' : 
+                                                   sale.productType === 'carrot' ? 'Carotte' : 
+                                                   sale.productType === 'cabbage' ? 'Chou' : sale.productType;
+                                const subtext = `${sale.monthName || `Mois ${sale.month + 1}`} - Tour ${sale.turn}: ${sale.quantity} paniers`;
+                                makeInfoKeyValue(`  → ${productName}`, `${sale.quantity} paniers`, subtext);
+                            });
                         }
                         
-                        // Filter sales for current year
-                        const currentYearMarketSales = salesToMarket.filter(sale => sale.year === currentYear);
-                        const currentYearWindmillSales = salesToWindmill.filter(sale => sale.year === currentYear);
-                        
-                        if (currentYearMarketSales.length > 0 || currentYearWindmillSales.length > 0) {
-                            makeInfoSection('Ventes de l\'année');
-                            
-                            // Display market sales (with month and turn)
-                            if (currentYearMarketSales.length > 0) {
-                                makeInfoKeyValue('Ventes au marché', `${currentYearMarketSales.length} vente(s)`);
-                                currentYearMarketSales.forEach(sale => {
-                                    const productName = sale.productType === 'wheat' ? 'Blé' : 
-                                                       sale.productType === 'carrot' ? 'Carotte' : 
-                                                       sale.productType === 'cabbage' ? 'Chou' : sale.productType;
-                                    const subtext = `${sale.monthName || `Mois ${sale.month + 1}`} - Tour ${sale.turn}: ${sale.quantity} paniers`;
-                                    makeInfoKeyValue(`  → ${productName}`, `${sale.quantity} paniers`, subtext);
-                                });
-                            }
-                            
-                            // Display windmill sales (aggregated by product type)
-                            if (currentYearWindmillSales.length > 0) {
-                                makeInfoKeyValue('Ventes au moulin', `${currentYearWindmillSales.length} type(s) de produit`);
-                                currentYearWindmillSales.forEach(sale => {
-                                    const productName = sale.productType === 'wheat' ? 'Blé' : 
-                                                       sale.productType === 'carrot' ? 'Carotte' : 
-                                                       sale.productType === 'cabbage' ? 'Chou' : sale.productType;
-                                    const subtext = `${sale.count || 1} collecte(s) cette année`;
-                                    makeInfoKeyValue(`  → ${productName}`, `${sale.quantity} paniers`, subtext);
-                                });
-                            }
+                        if (currentYearWindmillSales.length > 0) {
+                            makeInfoKeyValue('Ventes au moulin', `${currentYearWindmillSales.length} type(s) de produit`);
+                            currentYearWindmillSales.forEach(sale => {
+                                const productName = sale.productType === 'wheat' ? 'Blé' : 
+                                                   sale.productType === 'carrot' ? 'Carotte' : 
+                                                   sale.productType === 'cabbage' ? 'Chou' : sale.productType;
+                                const subtext = `${sale.count || 1} collecte(s) cette année`;
+                                makeInfoKeyValue(`  → ${productName}`, `${sale.quantity} paniers`, subtext);
+                            });
                         }
                     }
                     
-                    // Display employee information for farms
-                    if (farmData && farmData.employees) {
-                        const employees = farmData.employees;
-                        const workerNeed = employees.worker_need || 0;
-                        const eliteNeed = employees.elite_need || 0;
-                        const workers = employees.worker || 0;
-                        const elites = employees.elite || 0;
-                        // Get priority from localStorage based on sector (not from IndexedDB)
-                        const sector = employees.sector || 0;
-                        const priority = getSectorPriority(sector);
-                        
-                        const hasEnoughWorkers = workers >= workerNeed;
-                        const hasEnoughElites = elites >= eliteNeed;
-                        const hasNoWorkers = workers === 0 && workerNeed > 0;
-                        const hasPartialWorkers = workers > 0 && workers < workerNeed;
-                        const isFullyStaffed = hasEnoughWorkers && hasEnoughElites;
-                        
-                        makeInfoSection('Employés');
-                        makeInfoKeyValue('Secteur', `${sector} : ${getSectorName(sector)}`);
-                        makeInfoKeyValue('Priorité', `${priority}`);
-                        makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
-                        makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
-                        
-                        // Show status message based on employee status
-                        if (isFullyStaffed) {
-                            makeInfoBuildingText('✅ La ferme a tout ce qu\'il faut pour fonctionner', false, 'success-message');
-                        } else if (hasNoWorkers) {
-                            makeInfoBuildingText('❌ La ferme n\'a aucun employé et ne peut pas fonctionner', false, 'error-message');
-                        } else if (hasPartialWorkers) {
-                            makeInfoBuildingText('⚠️ La ferme ne peut fonctionner à sa pleine capacité', false, 'warning-message');
-                        }
-                    }
+                    renderWorkplaceEmployeesInfo(buildingRow, {
+                        fullyStaffed: '✅ La ferme a tout ce qu\'il faut pour fonctionner',
+                        noWorkers: '❌ La ferme n\'a aucun employé et ne peut pas fonctionner',
+                        partialWorkers: '⚠️ La ferme ne peut fonctionner à sa pleine capacité',
+                    });
                 }
 
                 // Display windmill food stocks (collected from all farms in December)
-                if((selectedObject.userData.id.includes('Windmill') || selectedObject.userData.id.includes('windmill')) && Object.hasOwn(houseStocks, 'food')) {
-                    // Get windmill data for status checks
-                    const windmillData = await housesStore.getHouse(uniqueId);
-                    
-                    // Check if windmill has road access
-                    const windmillRoads = houseRoads || 0;
-                    const hasRoadAccess = windmillRoads > 0;
-                    
-                    // Check if windmill is currently collecting (set by WindmillService in October)
-                    const isCollecting = windmillData?.isCollecting === true;
-                    
-                    // Get last collection data (peut ne pas exister)
-                    let lastCollection = null;
-                    try {
-                        lastCollection = await housesStore.getHouseItem(uniqueId, 'lastCollection');
-                    } catch (e) {
-                        // lastCollection n'existe pas encore, c'est normal
-                        lastCollection = null;
-                    }
-                    
-                    // Get last import data (peut ne pas exister)
-                    let lastImport = null;
-                    try {
-                        lastImport = await housesStore.getHouseItem(uniqueId, 'lastImport');
-                    } catch (e) {
-                        // lastImport n'existe pas encore, c'est normal
-                        lastImport = null;
-                    }
-
-                    // Get last import details by partner (peut ne pas exister)
-                    let lastImportDetails = null;
-                    try {
-                        lastImportDetails = await housesStore.getHouseItem(uniqueId, 'lastImportDetails');
-                    } catch (e) {
-                        // lastImportDetails n'existe pas encore, c'est normal
-                        lastImportDetails = null;
-                    }
-
-                    // Get maxStock for windmill
-                    const maxStock = windmillData?.maxStock || 1000; // Default max stock for windmill
+                if(supplyView?.kind === 'windmill' && Object.hasOwn(houseStocks || {}, 'food')) {
+                    const hasRoadAccess = roadAccess.hasAccess;
+                    const isCollecting = supplyView.isCollecting === true;
+                    const lastCollection = supplyView.lastCollection;
+                    const lastImport = supplyView.lastImport;
+                    const lastImportDetails = supplyView.lastImportDetails;
+                    const maxStock = supplyView.maxStock || 1000;
                     
                     makeInfoSection('Stock moulin');
                     
-                    // Show stocks with last collection and import amounts
-                    // Format: "+X dernière collecte, +Y paniers importés" (toujours afficher les deux, même si 0)
-                    // Toujours afficher "+0 dernière collecte" et "+0 paniers importés" pour que le joueur voie les deux sources
                     const wheatCollectionAmount = lastCollection?.wheat || 0;
                     const wheatCollectionText = `+${wheatCollectionAmount} dernière collecte`;
                     const wheatImportAmount = lastImport?.wheat !== undefined ? lastImport.wheat : 0;
@@ -1063,7 +1038,6 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     makeInfoKeyValue('Bois', `${houseStocks.wood || 0}/${maxStock} paniers`);
                     makeInfoKeyValue('Total', `${houseStocks.food || 0}/${maxStock} paniers collectés`, totalSubtext);
 
-                    // Display imports by partner if any
                     if (lastImportDetails && Object.keys(lastImportDetails).length > 0) {
                         makeInfoSection('Imports par partenaire');
 
@@ -1096,43 +1070,15 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                         makeInfoKeyValue('État', '⏸️ En attente (collecte en décembre)');
                     }
                     
-                    // Show warning if no road access
                     if (!hasRoadAccess) {
                         makeInfoBuildingText('⚠️ Sans route le moulin ne peut stocker', false, 'warning-message');
                     }
                     
-                    // Display employee information
-                    if (windmillData && windmillData.employees) {
-                        const employees = windmillData.employees;
-                        const workerNeed = employees.worker_need || 0;
-                        const eliteNeed = employees.elite_need || 0;
-                        const workers = employees.worker || 0;
-                        const elites = employees.elite || 0;
-                        // Get priority from localStorage based on sector (not from IndexedDB)
-                        const sector = employees.sector || 0;
-                        const priority = getSectorPriority(sector);
-                        
-                        const hasEnoughWorkers = workers >= workerNeed;
-                        const hasEnoughElites = elites >= eliteNeed;
-                        const hasNoWorkers = workers === 0 && workerNeed > 0;
-                        const hasPartialWorkers = workers > 0 && workers < workerNeed;
-                        const isFullyStaffed = hasEnoughWorkers && hasEnoughElites;
-                        
-                        makeInfoSection('Employés');
-                        makeInfoKeyValue('Secteur', `${sector} : ${getSectorName(sector)}`);
-                        makeInfoKeyValue('Priorité', `${priority}`);
-                        makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
-                        makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
-                        
-                        // Show status message based on employee status
-                        if (isFullyStaffed) {
-                            makeInfoBuildingText('✅ Le moulin tourne à plein régime', false, 'success-message');
-                        } else if (hasNoWorkers) {
-                            makeInfoBuildingText('❌ Le moulin manque de bras, il ne peut fonctionner', false, 'error-message');
-                        } else if (hasPartialWorkers) {
-                            makeInfoBuildingText('⚠️ Le moulin tourne avec peine car trop peu d\'employés', false, 'warning-message');
-                        }
-                    }
+                    renderWorkplaceEmployeesInfo(buildingRow, {
+                        fullyStaffed: '✅ Le moulin tourne à plein régime',
+                        noWorkers: '❌ Le moulin manque de bras, il ne peut fonctionner',
+                        partialWorkers: '⚠️ Le moulin tourne avec peine car trop peu d\'employés',
+                    });
                 }
             }
            
@@ -1144,16 +1090,16 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 if (canvas) {
                     canvas.classList.add('pointer-events-disabled');
                 }
-                window.game.pause()
+                game.pause()
             } else {
                 // Re-enable pointer events on 3D scene when info overlay is not active
                 const canvas = document.querySelector('canvas');
                 if (canvas) {
                     canvas.classList.remove('pointer-events-disabled');
                 }
-                window.game.play()
+                game.play()
             }
-            await scene.update(city, time)
+            await runScenePresentationPass(time);
         } else if(!tile.buildingId || (activeToolId && (activeToolId === 'roads' || activeToolId === 'Road' || activeToolId.startsWith('StonePath-')) && (tile.buildingId === 'roads' || tile.buildingId === 'Road' || (tile.buildingId && tile.buildingId.startsWith('StonePath-'))))) {
             // PLACING A BUILDING - Ensure game is NOT paused
             // Allow placement if tile is empty OR if placing a road on an existing road (replacement)
@@ -1165,8 +1111,8 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     canvas.classList.remove('pointer-events-disabled');
                 }
                 // Ensure game is playing (not paused)
-                if (window.game && typeof window.game.play === 'function') {
-                    window.game.play();
+                if (game && typeof game.play === 'function') {
+                    game.play();
                 }
             }
             
@@ -1188,48 +1134,44 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
             
             // Prepare building data for payment validation
             let price = 0
-            const houseID = activeToolId + '-' + selectedObject.userData.x + '-' + selectedObject.userData.y
+            const placementKey = `${x}-${y}`;
+            const instanceId = createBuildingInstanceId();
             
-            // Check if this building is already being placed (prevent rapid duplicate clicks)
-            if (pendingPlacements.has(houseID)) {
-                console.warn('[game.js] Building placement already in progress:', houseID);
+            if (pendingPlacements.has(placementKey)) {
+                console.warn('[game.js] Building placement already in progress:', placementKey);
                 return;
             }
             
-            // Mark as pending
-            pendingPlacements.add(houseID);
+            pendingPlacements.add(placementKey);
             
-            // Set timeout to clear pending (safety mechanism - 10 seconds)
             setTimeout(() => {
-                if (pendingPlacements.has(houseID)) {
-                    console.warn('[game.js] Clearing stuck pending placement for:', houseID);
-                    pendingPlacements.delete(houseID);
+                if (pendingPlacements.has(placementKey)) {
+                    console.warn('[game.js] Clearing stuck pending placement for:', placementKey);
+                    pendingPlacements.delete(placementKey);
                 }
             }, 10000);
             
             try {
-                // Check if building already exists in database
-                const existingHouse = await housesStore.getHouse(houseID);
+                await awaitBudgetReady();
+
+                const existingHouse = await findBuildingAtTile({ x, y });
                 if (existingHouse) {
-                    console.warn('[game.js] Building already exists at this location:', houseID);
+                    console.warn('[game.js] Building already exists at this location:', placementKey);
                     showGenericErrorNotification(activeToolId, 'building_already_exists');
                     return;
                 }
             
                 price = getAssetPrice(activeToolId, assetsPrices) || 0
                 
-                const [houseStocks, houseNeighbors, budgetData] = await Promise.all([
-                    housesStore.getHouseItem(houseID, 'stocks'),
-                    housesStore.getHouseItem(houseID, 'neighbors'),
-                    window.budgetManager ? window.budgetManager.getCurrentBudget() : Promise.resolve({ funds: 0 })
+                const [houseStocks, budgetData] = await Promise.all([
+                    Promise.resolve({ food: 0, cabbage: 0, wheat: 0, carrot: 0 }),
+                    getTreasurySnapshot().catch(() => ({ funds: 0 }))
                 ]);
-                
-                const { roadCount } = checkRoadAccess(houseNeighbors || []);
-                const HouseRoads  = { roads: roadCount };
+
                 const funds = budgetData.funds || 0;
                 
                 const dbHouseData = {
-                    name: houseID,
+                    instanceId,
                     type: activeToolId,
                     category: 'construction',
                     neighbors: [],
@@ -1238,7 +1180,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     gameTurn: time,
                     time: 0,
                     isBuilding: true,
-                    roads:  HouseRoads.roads ?? 0,
+                    roads: 0,
                     stage : 0,
                     stageName: "",
                     price : price ? price : 0,
@@ -1250,45 +1192,41 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                     employees: getDefaultEmployees(activeToolId)
                 }
 
-                // Validate payment BEFORE placing building
-                // Debug: log road placement
                 if (activeToolId && (activeToolId.startsWith('StonePath-') || activeToolId === 'roads' || activeToolId === 'Road')) {
-                    console.log('[game.js] Placing road:', { activeToolId, houseID, dbHouseData });
+                    console.log('[game.js] Placing road:', { activeToolId, instanceId, dbHouseData });
                 }
-                const paymentResult = await housesStore.addHouseAndPay(dbHouseData);
+                const paymentResult = await placeBuildingWithPayment(dbHouseData);
                 
-                // Debug: log payment result for roads
                 if (activeToolId && (activeToolId.startsWith('StonePath-') || activeToolId === 'roads' || activeToolId === 'Road')) {
                     console.log('[game.js] Road payment result:', paymentResult);
                 }
                 
-                // Handle duplicate building error gracefully
                 if (!paymentResult.success && paymentResult.reason === 'duplicate') {
-                    console.warn('[game.js] Building already exists, skipping placement:', houseID);
+                    console.warn('[game.js] Building already exists, skipping placement:', placementKey);
                     showGenericErrorNotification(activeToolId, 'building_already_exists');
                     return;
                 }
                 
                 if (paymentResult.success) {
-                // Payment successful - place building visually
-                // Mark all tiles as occupied by this building
                 for (let dx = 0; dx < gridSize; dx++) {
                     for (let dy = 0; dy < gridSize; dy++) {
                         const tileX = x + dx;
                         const tileY = y + dy;
                         if (city.tiles[tileX] && city.tiles[tileX][tileY]) {
                             city.tiles[tileX][tileY].buildingId = activeToolId;
+                            city.tiles[tileX][tileY].instanceId = instanceId;
                         }
                     }
                 }
                 
-                // Update scene to place the building (roads are now 3D meshes like other buildings)
-                await scene.update(city, time);
-                
-                // Envoyer au serveur multijoueur si activé
-                if (window.multiplayerManager && window.multiplayerManager.isMultiplayer) {
+                // Meshes + neighbors, then ECS evolution, then employment refresh
+                await scene.update(city, time, { skipBudget: true });
+                await runSimulationPass(time, { skipBudget: true });
+                await syncEmploymentAfterBuildingChange(scene, city, activeToolId);
+                const multiplayerManager = getMultiplayerManager();
+                if (multiplayerManager?.isMultiplayer) {
                     try {
-                        await window.multiplayerManager.placeBuilding(activeToolId, x, y);
+                        await multiplayerManager.placeBuilding(activeToolId, x, y);
                     } catch (error) {
                         console.warn('[Multiplayer] Erreur envoi bâtiment:', error);
                         // On continue même si l'envoi échoue (placement local réussi)
@@ -1296,8 +1234,8 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 }
                 
                 // Resume the game after successful building placement
-                if (window.game) {
-                    window.game.play();
+                if (game) {
+                    game.play();
                 }
                 } else {
                     // Payment failed - show error message
@@ -1312,7 +1250,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 }
             } finally {
                 // Always clear pending placement, even if there was an error
-                pendingPlacements.delete(houseID);
+                pendingPlacements.delete(placementKey);
             }
         }
     }
@@ -1366,40 +1304,50 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 scene.suppressInput(200);
             }
             
-            window.game.play()
+            game.play()
         }
     })
 
     // Expose scene and city on game object so it can be accessed from other modules
-    const game = {
+    game = {
         scene: scene,
         city: city,
+        runtime,
 
         async update(time) {
+            if (isPause || isOver) {
+                return;
+            }
+
             gameUI.updateTimeDisplay(time);
             city.update();
-            
-            // Run city-wide services before individual building simulation (services read/write to IndexedDB)
-            if (services.length > 0) {
-                try {
-                    await Promise.allSettled(
-                        services.map(service => service.simulate(city, housesStore, time))
-                    );
-                } catch (err) {
-                    console.error('[game.js > update] Service simulation error:', {
-                        error: err?.message || err,
-                        time
-                    });
-                }
+
+            // Turn boundary first (balance, carry-forward, cumuls) — survives pause mid-tick
+            await updateTreasuryTurn(time);
+            if (isPause || isOver) {
+                return;
             }
-            
-            await scene.update(city, time);
-            
-            // Vérifier les objectifs à chaque tour (seulement si activés)
-            if (window.objectivesTracker && objectivesTracker.enabled) {
+
+            await scene.update(city, time, { skipBudget: true });
+            if (isPause || isOver) {
+                return;
+            }
+
+            await runSimulationPass(time);
+            if (isPause || isOver) {
+                return;
+            }
+
+            await refreshEmploymentPresentationForCity();
+
+            if (objectivesTracker.enabled) {
                 await objectivesTracker.checkObjectives(time);
             }
         },
+
+        refreshEmployment: refreshEmploymentPresentationForCity,
+        runSimulationPass,
+        runScenePresentationPass,
 
         pause() {
             isPause = true;
@@ -1419,7 +1367,7 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
                 scene.resumeCitizen();
             }
             // Appeler update(0) pour activer l'objectif au tour 0 au démarrage (seulement si activés)
-            if (window.objectivesTracker && objectivesTracker.enabled) {
+            if (objectivesTracker.enabled) {
                 await objectivesTracker.checkObjectives(0);
             }
         },
@@ -1472,27 +1420,31 @@ export function createGame(housesStore, gameStore, assetManager, citySize = null
         },
 
         startInterval() {
-            const speed = Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed')) || 4000));
-            if (intervalId) clearInterval(intervalId);
-            intervalId = setInterval(() => {
-                if (!isPause && !isOver) {
-                    time += 1;
-                    game.update(time);
-                }
-            }, speed);
-        }
-    }; 
-
-    setInterval(() => {
-        if(!isPause) {
-            if(!isOver) {
-                time += 1;
-                game.update(time);
+            if (!gameLoop) {
+                return;
             }
-        }
-    }, Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed')) || 4000)));
+            gameLoop.setIntervalMs(getTickIntervalMs());
+        },
+
+        get time() {
+            return time;
+        },
+    };
+
+    gameLoop = new GameLoop({
+        intervalMs: getTickIntervalMs(),
+        onTick: async () => {
+            if (isPause || isOver) {
+                return;
+            }
+            time += 1;
+            await game.update(time);
+        },
+    });
+    gameLoop.start();
 
     scene.start();
+    void refreshEmploymentPresentationForCity();
 
     // Initialize and attach InputManager non-invasively
     try {

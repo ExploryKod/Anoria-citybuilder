@@ -27,11 +27,10 @@ export class EmploymentPriorityService extends SimService {
      * Called each game tick to ensure defaults are set
      * 
      * @param {City} city - City object
-     * @param {HousesStore} housesStore - Database store (not used for priority anymore)
      * @param {number} time - Current simulation time
      * @returns {Promise<void>}
      */
-    async simulate(city, housesStore, time = 0) {
+    async simulate(city, time = 0) {
         try {
             // Ensure localStorage has priorities initialized
             const userPriorities = this.getUserPriorities();
@@ -43,7 +42,7 @@ export class EmploymentPriorityService extends SimService {
             }
             
             // No IndexedDB updates needed anymore!
-            // Priority is looked up at runtime by EmploymentDistributionService
+            // Priority is looked up at runtime by employment.redistribute (ECS pipeline)
             
         } catch (error) {
             console.error('[EmploymentPriorityService] Error:', {

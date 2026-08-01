@@ -1,3 +1,5 @@
+import { registerAppService } from '../acl/appRuntime.js';
+
 class HealthSectionManager {
     constructor() {
         this.healthData = null;
@@ -179,7 +181,7 @@ function initHealthSection() {
         observer.disconnect();
     }
 
-    window.healthSectionManager = manager;
+    registerAppService('healthSectionManager', manager);
 }
 
 if (document.readyState === 'loading') {
