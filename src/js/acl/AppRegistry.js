@@ -1,6 +1,13 @@
 /**
  * AppRegistry — service locator exposed as window.app.
  * Application code should prefer js/acl/appRuntime.js getters.
+ *
+ * Clés UI / runtime enregistrées (non exhaustif runtime Three) :
+ * - shell: popupManager, buttonStateManager, EventBlocker, parametersPanel
+ * - onboarding: tutorialManager, objectivesManager, objectivesTracker, objectivesHistory
+ * - admin sections: financesSectionPresenter, workSectionPresenter, healthSectionPresenter,
+ *   storageSectionPresenter, factorySectionPresenter, commerceSectionPresenter, reportSectionPresenter
+ * - scene: game, gameUI, inputManager, multiplayerManager, timeManager
  */
 
 const _store = new Map();
@@ -37,6 +44,7 @@ const registryApi = {
       'objectivesTracker',
       'objectivesHistory',
       'tutorialManager',
+      'objectivesManager',
       'inputManager',
       'buttonStateManager',
       'EventBlocker',

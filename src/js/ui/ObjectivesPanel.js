@@ -1,13 +1,12 @@
 /**
- * Système de Tutoriel - Anoria City Builder
- * Gère l'affichage et la logique de la popup de tutoriel
+ * ObjectivesPanel — popup objectifs (DOM + événements).
  */
 import {
     pauseGame,
     playGame,
     registerAppService,
     registerAppFunction,
-    getTutorialManager,
+    getObjectivesManager,
     getObjectivesTracker,
     getObjectivesHistory,
     invokeStartObjectives,
@@ -15,7 +14,7 @@ import {
 import { getObjectivesStore } from '../acl/objectives.js';
 import EventBlocker from '../utils/EventBlocker.js';
 
-class ObjectivesManager {
+class ObjectivesPanel {
     constructor() {
         this.panel = null;
         this.currentStep = 0;
@@ -442,48 +441,42 @@ class ObjectivesManager {
     }
 }
 
-// Créer une instance globale
-const tutorialManager = new ObjectivesManager();
+const objectivesPanel = new ObjectivesPanel();
 
-registerAppService('tutorialManager', tutorialManager);
+registerAppService('objectivesManager', objectivesPanel);
 
 registerAppFunction('startObjectives', async () => {
-    await tutorialManager.showObjectives();
+    await objectivesPanel.showObjectives();
 });
 
 registerAppFunction('closeObjectives', () => {
-    tutorialManager.closeObjectives();
+    objectivesPanel.closeObjectives();
 });
 
-// Vérifier que le bouton objectives existe et ajouter un event listener direct
 document.addEventListener('DOMContentLoaded', () => {
     const objectivesBtn = document.getElementById('objectives-btn');
     if (objectivesBtn) {
-        // Supprimer tous les event listeners existants
         const newBtn = objectivesBtn.cloneNode(true);
         objectivesBtn.parentNode.replaceChild(newBtn, objectivesBtn);
-        
-        // Ajouter notre gestionnaire avec capture pour intercepter avant les autres
+
         newBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
-            
+
             await invokeStartObjectives();
-        }, true); // true = capture phase
+        }, true);
     }
 });
 
-// Gestion d'erreur globale pour s'assurer que les événements Three.js sont réactivés
-window.addEventListener('error', (e) => {
-    const tutorialManagerRef = getTutorialManager();
-    if (tutorialManagerRef && tutorialManagerRef.eventBlocker.isEventsBlocked()) {
-        tutorialManagerRef.cleanup();
+window.addEventListener('error', () => {
+    const objectivesManagerRef = getObjectivesManager();
+    if (objectivesManagerRef && objectivesManagerRef.eventBlocker.isEventsBlocked()) {
+        objectivesManagerRef.cleanup();
     }
 });
 
-// Nettoyage lors de la fermeture de la page
 window.addEventListener('beforeunload', () => {
-    getTutorialManager()?.cleanup();
+    getObjectivesManager()?.cleanup();
 });
 

@@ -3,7 +3,7 @@ import {
   getFactoryWorkerNeed,
   getFactoryEmployeeRoleType,
 } from '../../../acl/supply.js';
-import { registerAppService, getTimeInfo } from '../../../acl/appRuntime.js';
+import { getTimeInfo } from '../../../acl/appRuntime.js';
 import {
     instanceIdFromHouseRow,
     displayLabelFromHouseRow,
@@ -29,7 +29,7 @@ async function loadFactoryJournalEntries(factoryData) {
     return getFactoryProductionJournalEntries(factoryInstanceId(factoryData));
 }
 
-class FactorySectionPresenter {
+export class FactorySectionPresenter {
     constructor() {
         this.factories = [];
         this.naturalResources = [];
@@ -1224,34 +1224,5 @@ class FactorySectionPresenter {
             </div>
         `;
     }
-}
-
-function initFactorySection() {
-    const factorySection = document.getElementById('admin-section-factory');
-    if (!factorySection) return;
-    
-    const presenter = new FactorySectionPresenter();
-
-    const observer = new MutationObserver(() => {
-        if (factorySection.classList.contains('active')) {
-            // Réinitialiser les event listeners quand la section devient active
-            presenter.setupEventListeners();
-            presenter.refresh();
-        }
-    });
-    
-    observer.observe(factorySection, { attributes: true, attributeFilter: ['class'] });
-    
-    if (factorySection.classList.contains('active')) {
-        presenter.init();
-    }
-    
-    registerAppService('factorySectionPresenter', presenter);
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initFactorySection);
-} else {
-    initFactorySection();
 }
 

@@ -1,4 +1,4 @@
-import { getTutorialManager, registerAppService } from '../acl/appRuntime.js';
+import { getObjectivesManager, registerAppService } from '../acl/appRuntime.js';
 import { getObjectivesStore } from '../acl/objectives.js';
 
 /**
@@ -113,8 +113,8 @@ class ObjectivesHistory {
             this.isOpen = true;
 
             // Désactiver les événements Three.js
-            if (getTutorialManager() && getTutorialManager().disableThreeJSEvents) {
-                getTutorialManager().disableThreeJSEvents();
+            if (getObjectivesManager() && getObjectivesManager().disableThreeJSEvents) {
+                getObjectivesManager().disableThreeJSEvents();
             }
         } catch (error) {
             console.error('Error showing objectives history:', error);
@@ -195,8 +195,8 @@ class ObjectivesHistory {
         this.isOpen = false;
 
         // Réactiver les événements Three.js
-        if (getTutorialManager() && getTutorialManager().enableThreeJSEvents) {
-            getTutorialManager().enableThreeJSEvents();
+        if (getObjectivesManager() && getObjectivesManager().enableThreeJSEvents) {
+            getObjectivesManager().enableThreeJSEvents();
         }
     }
 }
