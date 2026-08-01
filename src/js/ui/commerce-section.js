@@ -1,4 +1,4 @@
-import { updateDisplayedFunds, getGameTime, getFoodTraceabilityService } from '../acl/appRuntime.js';
+import { updateDisplayedFunds, getGameTime, getFoodTraceabilityService, getTimeInfo } from '../acl/appRuntime.js';
 import commerceStore from '../stores/CommerceStore.js';
 import config from '../game/config.js';
 import { getCityEmploymentSummary } from '../acl/employment.js';
@@ -244,11 +244,9 @@ class CommerceSectionManager {
         
         // Pay commercial route fee (one-time payment to open commercial road)
         const commercialRouteFee = config?.budget?.commercialRouteFee ?? 500;
-        const globalObj = typeof window !== 'undefined' ? window : global;
-
         try {
             const currentBudget = await getTreasurySnapshot();
-            const timeInfo = globalObj.TimeManager ? globalObj.TimeManager.getTimeInfo(currentBudget.turn) : null;
+            const timeInfo = currentBudget?.turn !== undefined ? getTimeInfo(currentBudget.turn) : null;
             const yearDisplay = timeInfo && timeInfo.year === 0 ? '0 JC' : timeInfo ? `${timeInfo.year} ap JC` : '';
             const monthName = timeInfo ? timeInfo.month || 'Mois' : 'Mois';
             const dateDisplay = `${monthName} ${yearDisplay}`;
@@ -802,10 +800,9 @@ class CommerceSectionManager {
                 const allTransactions = await foodTraceabilityService.getAllTransactions();
                 // Obtenir l'année actuelle depuis TimeManager ou utiliser la dernière année dans les transactions
                 let currentYear = 0;
-                if (window.TimeManager && typeof window.TimeManager.getTimeInfo === 'function') {
-                    // Essayer d'obtenir le temps depuis le jeu si disponible
-                    const gameTime = getGameTime();
-                    const timeInfo = window.TimeManager.getTimeInfo(gameTime);
+                const gameTime = getGameTime();
+                const timeInfo = getTimeInfo(gameTime);
+                if (timeInfo && timeInfo.year !== undefined) {
                     currentYear = timeInfo.year;
                 } else if (allTransactions.length > 0) {
                     // Utiliser la dernière année dans les transactions

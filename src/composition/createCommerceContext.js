@@ -1,4 +1,4 @@
-import { TimeManager } from '../js/game/utils/TimeManager.js';
+import { getTimeManager } from '../js/acl/appRuntime.js';
 import { recordImportExpense, recordExportIncome } from '../js/acl/accountingGame.js';
 import { instanceIdFromHouseRow } from '../js/acl/building-identity.js';
 import {
@@ -24,11 +24,7 @@ let partnerContractFinishedHandler = null;
 export function createCommerceContext(deps = {}) {
   const commerceRepository = deps.commerceRepository ?? new LocalStorageCommerceRepository();
 
-  const getTimeInfo = (time) => {
-    const globalObj = typeof window !== 'undefined' ? window : global;
-    const timeManager = globalObj.TimeManager ?? TimeManager;
-    return timeManager.getTimeInfo(time);
-  };
+  const getTimeInfo = (time) => getTimeManager().getTimeInfo(time);
 
   const simulationDeps = {
     commerceRepository,

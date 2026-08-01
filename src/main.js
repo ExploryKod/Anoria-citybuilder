@@ -1,3 +1,4 @@
+import { registerAppFunction } from './js/acl/appRuntime.js'
 import { initPWA } from './pwa.js'
 import { gsap } from 'gsap'
 import infoPanelAnimations from './js/ui/InfoPanelAnimations.js'
@@ -258,8 +259,8 @@ function initializeLegendButtons() {
   setTimeout(positionLegendButtons, 100);
   
   // Expose animation testing to console for easy experimentation
-  // Usage: window.testAnimation('elastic') or window.testAnimation('wave')
-  window.testAnimation = (animationType) => {
+  // Usage: app.testAnimation('elastic') or app.testAnimation('wave')
+  registerAppFunction('testAnimation', (animationType) => {
     const legendContainer = document.querySelector('.legend-btns-container');
     if (legendContainer) {
       legendContainer.style.display = 'none';
@@ -275,7 +276,7 @@ function initializeLegendButtons() {
         showLegendButtons(animationType);
       }, 100);
     }
-  };
+  });
 }
 
 // Initialize on DOM ready

@@ -47,6 +47,12 @@ const FORBIDDEN_ASSIGNMENT_RES = [
   /window\.openAdministratorPanel\s*=/,
   /window\.closeAdministratorPanel\s*=/,
   /window\.showAdministratorSection\s*=/,
+  // Lot 8 phase 3
+  /window\.TimeManager\s*=/,
+  /window\.togglePerformanceStats\s*=/,
+  /window\.toggleStatsJs\s*=/,
+  /window\.webglTestMode\s*=/,
+  /window\.testAnimation\s*=/,
 ];
 
 /** `${fileRel}::${lineNumber}` */

@@ -1,7 +1,10 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import appRegistry from '../../../src/js/game/AppRegistry.js';
+import { TimeManager } from '../../../src/js/game/utils/TimeManager.js';
 import {
   getGame,
+  getTimeManager,
+  getTimeInfo,
   registerAppService,
   pauseGame,
   playGame,
@@ -28,5 +31,13 @@ describe('appRuntime ACL', () => {
     pauseGame();
     playGame();
     expect(calls).toEqual(['pause', 'play']);
+  });
+
+  test('getTimeManager returns registered time manager', () => {
+    const mock = { getTimeInfo: () => ({ year: 1, month: 'Janvier' }) };
+    appRegistry.register('timeManager', mock);
+    expect(getTimeManager()).toBe(mock);
+    expect(getTimeInfo(0).year).toBe(1);
+    appRegistry.register('timeManager', TimeManager);
   });
 });

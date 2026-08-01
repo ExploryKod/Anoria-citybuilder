@@ -7,6 +7,8 @@
 import Dexie from 'dexie';
 import { JournalManager } from '../src/js/stores/JournalManager.js';
 import { resetSessionLedgerBufferForTests } from '../src/js/stores/SessionLedgerBuffer.js';
+import appRegistry from '../src/js/game/AppRegistry.js';
+import { TimeManager } from '../src/js/game/utils/TimeManager.js';
 
 // ============================================================================
 // Setup : Créer une base de données de test isolée
@@ -33,6 +35,13 @@ describe('JournalManager', () => {
 
     beforeEach(async () => {
         resetSessionLedgerBufferForTests();
+        appRegistry.register('timeManager', {
+            getTimeInfo: (turn) => ({
+                year: Math.floor(turn / 12),
+                monthIndex: turn % 12,
+                month: 'TestMonth',
+            }),
+        });
         // Créer une nouvelle base de données pour chaque test
         testDb = createTestDb();
         await testDb.open();
@@ -46,6 +55,7 @@ describe('JournalManager', () => {
     });
 
     afterEach(async () => {
+        appRegistry.register('timeManager', TimeManager);
         // Nettoyer après chaque test
         if (testDb) {
             await testDb.delete();
@@ -127,7 +137,7 @@ describe('JournalManager', () => {
             await new Promise(resolve => setTimeout(resolve, 10));
             await journalManager.addJournalEntry(2, 'maintenance', 500, 'Maintenance Turn 2');
             await new Promise(resolve => setTimeout(resolve, 10));
-            await journalManager.addJournalEntry(3, 'citizen_tax', 1500, 'Taxes Turn 3');
+            await journalManager.addJournalEntry(13, 'citizen_tax', 1500, 'Taxes Turn 13');
         });
 
         test('should get all journal entries sorted by turn descending', async () => {
@@ -201,7 +211,7 @@ describe('JournalManager', () => {
         test('should calculate statistics correctly', async () => {
             await journalManager.addJournalEntry(1, 'citizen_tax', 1000, 'Taxes 1');
             await new Promise(resolve => setTimeout(resolve, 10));
-            await journalManager.addJournalEntry(2, 'citizen_tax', 500, 'Taxes 2');
+            await journalManager.addJournalEntry(13, 'citizen_tax', 500, 'Taxes 2');
             await new Promise(resolve => setTimeout(resolve, 10));
             await journalManager.addJournalEntry(3, 'construction', 300, 'Construction 1');
             await new Promise(resolve => setTimeout(resolve, 10));
@@ -302,25 +312,27 @@ describe('JournalManager', () => {
 
     describe('businessKey idempotence', () => {
         beforeEach(() => {
-            const globalObj = typeof window !== 'undefined' ? window : global;
-            globalObj.TimeManager = {
+            appRegistry.register('timeManager', {
                 getTimeInfo: (turn) => ({
                     year: Math.floor(turn / 12),
                     monthIndex: turn % 12,
                     month: 'TestMonth',
                 }),
-            };
+            });
+        });
+
+        afterEach(() => {
+            appRegistry.register('timeManager', TimeManager);
         });
 
         test('skips duplicate salary for same civil month', async () => {
-            const globalObj = typeof window !== 'undefined' ? window : global;
-            globalObj.TimeManager = {
+            appRegistry.register('timeManager', {
                 getTimeInfo: () => ({
                     year: 0,
                     monthIndex: 5,
                     month: 'Juin',
                 }),
-            };
+            });
 
             await journalManager.addJournalEntry(10, 'salary', 1000, 'Salary A');
             await journalManager.addJournalEntry(11, 'salary', 2000, 'Salary B duplicate');
