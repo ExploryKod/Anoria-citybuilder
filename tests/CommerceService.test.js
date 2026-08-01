@@ -17,8 +17,8 @@ import { resetCommerceContextForTests } from '../src/composition/createCommerceC
 import { resetAccountingContextForTests } from '../src/js/acl/accounting.js';
 import { resetSessionLedgerBufferForTests } from '../src/js/acl/accountingSessionJournal.js';
 import { makeHouseRecord, createBuildingInstanceId } from './fixtures/buildingRecord.js';
-import appRegistry from '../src/js/game/AppRegistry.js';
-import { TimeManager } from '../src/js/game/utils/TimeManager.js';
+import appRegistry from '../src/js/acl/AppRegistry.js';
+import { TimeManager } from '../src/shared/time/TimeManager.js';
 
 // ============================================================================
 // Setup : Créer une base de données de test isolée

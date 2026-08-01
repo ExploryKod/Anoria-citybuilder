@@ -4,7 +4,7 @@
 
 import { describe, test, expect } from '@jest/globals';
 import { createGameRuntime } from '../../src/composition/createGameRuntime.js';
-import { TimeManager } from '../../src/js/game/utils/TimeManager.js';
+import { TimeManager } from '../../src/shared/time/TimeManager.js';
 
 function fakeParcels() {
   let calls = 0;

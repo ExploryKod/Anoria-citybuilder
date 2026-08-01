@@ -45,8 +45,7 @@ import {
 import {assetsPrices} from "./meshs/data.js";
 import { setupRoadAccessIcons } from '../../js/acl/parcels.js';
 import { getDefaultEmployees } from '../../js/acl/employment.js';
-import { TimeManager } from '../../js/game/utils/TimeManager.js';
-import config from '../../js/game/config.js';
+import { getBuildingAge, getTimeInfo } from '../../js/acl/appRuntime.js';
 import { LightingManager } from './managers/LightingManager.js';
 import { BackdropManager } from './managers/BackdropManager.js';
 import { DecorativeVillageManager } from './managers/DecorativeVillageManager.js';
@@ -1256,7 +1255,7 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
                         assetManager.removeStatusSprite(buildings[x][y], spriteName);
                     });
 
-                    const timeInfo = TimeManager.getTimeInfo(time);
+                    const timeInfo = getTimeInfo(time);
                     const season = timeInfo.season;
 
                     // Season sprites from Supply/time — employment icons via refreshEmploymentPresentation
@@ -1397,7 +1396,7 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
                     const { hasFood, isInsufficient } = foodAffluence;
                     // Road icon refreshed after neighbor pass (see refresh loop below)
                     // Use unified time system for decay check (worldTime is source of truth)
-                    const buildingAge = TimeManager.getBuildingAge(time, worldTime);
+                    const buildingAge = getBuildingAge(time, worldTime);
                     const decay = buildingAge > 3 && isInsufficient;
 
                     // Set food status sprite based on module result

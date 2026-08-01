@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
-import appRegistry from '../../../src/js/game/AppRegistry.js';
-import { TimeManager } from '../../../src/js/game/utils/TimeManager.js';
+import appRegistry from '../../../src/js/acl/AppRegistry.js';
+import { TimeManager } from '../../../src/shared/time/TimeManager.js';
 import {
   getGame,
   getTimeManager,

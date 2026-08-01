@@ -15,9 +15,11 @@ import {
     getOrCreateAccountingContext,
     resetAccountingContextForTests,
 } from '../src/composition/createAccountingContext.js';
-import config from '../src/js/game/config.js';
-import appRegistry from '../src/js/game/AppRegistry.js';
-import { TimeManager } from '../src/js/game/utils/TimeManager.js';
+import { composeLegacyConfigMirror } from '../src/js/acl/gameConfig.js';
+import appRegistry from '../src/js/acl/AppRegistry.js';
+import { TimeManager } from '../src/shared/time/TimeManager.js';
+
+const config = composeLegacyConfigMirror();
 
 // ============================================================================
 // Setup : Créer une base de données de test isolée

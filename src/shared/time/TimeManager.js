@@ -4,7 +4,7 @@
  * Policies pures : shared/time/TimeCalendar.js
  * Injection composition : composition/gameTimeBridge.js
  */
-import * as TimeCalendar from '../../../shared/time/TimeCalendar.js';
+import * as TimeCalendar from './TimeCalendar.js';
 
 export class TimeManager {
   static _eventsConfigCache = null;
@@ -15,7 +15,7 @@ export class TimeManager {
     if (this._cacheInitialized) return;
 
     try {
-      const eventsConfig = await import('../../../config/events.js');
+      const eventsConfig = await import('../../config/events.js');
       this._eventsConfigCache = eventsConfig;
       if (typeof eventsConfig.getDaysPerMonth === 'function') {
         this._daysPerMonthCache = eventsConfig.getDaysPerMonth();
@@ -34,7 +34,7 @@ export class TimeManager {
   static async refreshCache() {
     try {
       if (!this._eventsConfigCache) {
-        this._eventsConfigCache = await import('../../../config/events.js');
+        this._eventsConfigCache = await import('../../config/events.js');
       }
       if (
         this._eventsConfigCache &&

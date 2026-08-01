@@ -70,7 +70,7 @@ const FORBIDDEN_READ_RES = [
 
 /** Files allowed to reference window.app (composition root namespace). */
 const READ_GUARD_SKIP_FILES = new Set([
-  'js/game/AppRegistry.js',
+  'js/acl/AppRegistry.js',
 ]);
 
 /** `${fileRel}::${lineNumber}` */

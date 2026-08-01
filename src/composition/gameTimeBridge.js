@@ -3,7 +3,7 @@
  * Registered at game bootstrap; composition roots resolve at call time.
  */
 
-import { TimeManager } from '../js/game/utils/TimeManager.js';
+import { TimeManager } from '../shared/time/TimeManager.js';
 
 /** @type {((turn: number) => object) | null} */
 let getTimeInfoFn = null;

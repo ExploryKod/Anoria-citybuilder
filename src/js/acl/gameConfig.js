@@ -1,6 +1,6 @@
 /**
  * Legacy gameplay config sections — sourced from BC catalogs via ACL.
- * Used by config.js mirror only; new code should use domain-specific ACL getters.
+ * New code should use domain-specific ACL getters or shared defaults.
  */
 import {
   readInitialFundsFromImportMeta,
@@ -23,8 +23,10 @@ import {
   RETIREMENT_AGE,
   DEFAULT_HOUSEHOLD_SIZE,
 } from '../../contexts/housing/domain/catalogs/CitizenDemographicsCatalog.js';
+import { getSimulationDefaults } from '../../shared/gameplay/SimulationDefaults.js';
+import { BUILDING_PLACEMENT_DEFAULTS } from '../../shared/gameplay/BuildingPlacementDefaults.js';
+import { UI_DEFAULTS } from '../../shared/ui/UiDefaults.js';
 
-/** @returns {import('../game/config.js').default['budget']} */
 export function getLegacyBudgetConfigSection() {
   return {
     initialFunds: readInitialFundsFromImportMeta(),
@@ -32,7 +34,6 @@ export function getLegacyBudgetConfigSection() {
   };
 }
 
-/** @returns {import('../game/config.js').default['employment']} */
 export function getLegacyEmploymentConfigSection() {
   return {
     maxSectors: EMPLOYMENT_MAX_SECTORS,
@@ -45,7 +46,6 @@ export function getLegacyEmploymentConfigSection() {
   };
 }
 
-/** @returns {import('../game/config.js').default['citizens']} */
 export function getLegacyCitizensConfigSection() {
   return {
     minWorkingAge: MIN_WORKING_AGE,
@@ -58,5 +58,18 @@ export function getLegacyCitizensConfigSection() {
 export function getLegacySimulationGameplaySection(foodDistributionDistance = DEFAULT_FOOD_DISTRIBUTION_DISTANCE) {
   return {
     foodDistributionDistance,
+  };
+}
+
+/** Composed mirror for legacy tests documenting BC-backed config sections. */
+export function composeLegacyConfigMirror() {
+  return {
+    simulation: getSimulationDefaults(),
+    budget: getLegacyBudgetConfigSection(),
+    building: BUILDING_PLACEMENT_DEFAULTS,
+    citizens: getLegacyCitizensConfigSection(),
+    objectives: { initialCheckOnPlay: true },
+    employment: getLegacyEmploymentConfigSection(),
+    ui: UI_DEFAULTS,
   };
 }

@@ -10,7 +10,7 @@ import { DexieJournalSessionPersistenceAdapter } from '../../../src/contexts/acc
 import { SessionJournalRepository } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalRepository.js';
 import { LegacyYearEndBalanceAdapter } from '../../../src/contexts/accounting/infrastructure/adapters/legacy/LegacyYearEndBalanceAdapter.js';
 import { LegacyGameTimePort } from '../../../src/contexts/accounting/infrastructure/adapters/legacy/LegacyGameTimePort.js';
-import { TimeManager } from '../../../src/js/game/utils/TimeManager.js';
+import { TimeManager } from '../../../src/shared/time/TimeManager.js';
 import { JournalManager } from '../../../src/js/acl/accountingSessionJournal.js';
 import {
   buildJournalExportPayload,
