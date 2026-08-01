@@ -1,0 +1,2763 @@
+{
+  "exportDate": "2026-08-01T18:32:32.841Z",
+  "entries": [
+    {
+      "id": 270,
+      "turn": 81,
+      "date": "2026-08-01T18:31:16.874Z",
+      "type": "info_loan_interest",
+      "amount": 1,
+      "description": "[Informatif] Intérêts prêt — impayés, prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 271,
+      "turn": 81,
+      "date": "2026-08-01T18:31:16.874Z",
+      "type": "info_loan_repayment",
+      "amount": 135,
+      "description": "[Informatif] Capital prêt — impayé, prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 266,
+      "turn": 81,
+      "date": "2026-08-01T18:31:16.873Z",
+      "type": "info_loan_interest",
+      "amount": 1,
+      "description": "[Informatif] Intérêts prêt — impayés, prêt commercial (loan_1785608999840)"
+    },
+    {
+      "id": 267,
+      "turn": 81,
+      "date": "2026-08-01T18:31:16.873Z",
+      "type": "info_loan_repayment",
+      "amount": 75,
+      "description": "[Informatif] Capital prêt — impayé, prêt commercial (loan_1785608999840)"
+    },
+    {
+      "id": 268,
+      "turn": 81,
+      "date": "2026-08-01T18:31:16.873Z",
+      "type": "info_loan_interest",
+      "amount": 216,
+      "description": "[Informatif] Intérêts prêt — impayés, prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 269,
+      "turn": 81,
+      "date": "2026-08-01T18:31:16.873Z",
+      "type": "info_loan_repayment",
+      "amount": 7384,
+      "description": "[Informatif] Capital prêt — impayé, prêt commercial (loan_1785609018801)"
+    },
+    {
+      "turn": 81,
+      "date": "2026-08-01T18:31:16.459Z",
+      "type": "balance",
+      "amount": -2961,
+      "description": "Solde"
+    },
+    {
+      "id": 262,
+      "turn": 80,
+      "date": "2026-08-01T18:31:15.840Z",
+      "type": "info_loan_interest",
+      "amount": 216,
+      "description": "[Informatif] Intérêts prêt — impayés, prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 263,
+      "turn": 80,
+      "date": "2026-08-01T18:31:15.840Z",
+      "type": "info_loan_repayment",
+      "amount": 7384,
+      "description": "[Informatif] Capital prêt — impayé, prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 264,
+      "turn": 80,
+      "date": "2026-08-01T18:31:15.840Z",
+      "type": "info_loan_interest",
+      "amount": 1,
+      "description": "[Informatif] Intérêts prêt — impayés, prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 265,
+      "turn": 80,
+      "date": "2026-08-01T18:31:15.840Z",
+      "type": "info_loan_repayment",
+      "amount": 135,
+      "description": "[Informatif] Capital prêt — impayé, prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 260,
+      "turn": 80,
+      "date": "2026-08-01T18:31:15.839Z",
+      "type": "info_loan_interest",
+      "amount": 1,
+      "description": "[Informatif] Intérêts prêt — impayés, prêt commercial (loan_1785608999840)"
+    },
+    {
+      "id": 261,
+      "turn": 80,
+      "date": "2026-08-01T18:31:15.839Z",
+      "type": "info_loan_repayment",
+      "amount": 75,
+      "description": "[Informatif] Capital prêt — impayé, prêt commercial (loan_1785608999840)"
+    },
+    {
+      "id": 259,
+      "turn": 80,
+      "date": "2026-08-01T18:31:15.838Z",
+      "type": "maintenance",
+      "amount": 32,
+      "description": "Maintenance mensuelle - Mai 2 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":8,\"unitCost\":3,\"total\":24},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 257,
+      "turn": 80,
+      "date": "2026-08-01T18:31:15.836Z",
+      "type": "salary",
+      "amount": 5300,
+      "description": "Salaires fonctionnaires - Mai 1 ap JC (53 hab. × 100€)"
+    },
+    {
+      "id": 258,
+      "turn": 80,
+      "date": "2026-08-01T18:31:15.836Z",
+      "type": "payroll_tax",
+      "amount": 1060,
+      "description": "Impôt sur les salaires - Mai 1 ap JC (20%)"
+    },
+    {
+      "turn": 80,
+      "date": "2026-08-01T18:31:15.459Z",
+      "type": "balance",
+      "amount": 1311,
+      "description": "Solde"
+    },
+    {
+      "id": 256,
+      "turn": 79,
+      "date": "2026-08-01T18:31:14.854Z",
+      "type": "loan_repayment",
+      "amount": 134,
+      "description": "Remboursement prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 254,
+      "turn": 79,
+      "date": "2026-08-01T18:31:14.853Z",
+      "type": "info_loan_repayment",
+      "amount": 7384,
+      "description": "[Informatif] Capital prêt — impayé, prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 255,
+      "turn": 79,
+      "date": "2026-08-01T18:31:14.853Z",
+      "type": "loan_interest",
+      "amount": 2,
+      "description": "Intérêts prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 253,
+      "turn": 79,
+      "date": "2026-08-01T18:31:14.852Z",
+      "type": "loan_interest",
+      "amount": 216,
+      "description": "Intérêts prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 252,
+      "turn": 79,
+      "date": "2026-08-01T18:31:14.851Z",
+      "type": "loan_repayment",
+      "amount": 75,
+      "description": "Remboursement prêt commercial (loan_1785608999840)"
+    },
+    {
+      "id": 251,
+      "turn": 79,
+      "date": "2026-08-01T18:31:14.850Z",
+      "type": "loan_interest",
+      "amount": 1,
+      "description": "Intérêts prêt commercial (loan_1785608999840)"
+    },
+    {
+      "turn": 79,
+      "date": "2026-08-01T18:31:14.458Z",
+      "type": "balance",
+      "amount": 1739,
+      "description": "Solde"
+    },
+    {
+      "id": 250,
+      "turn": 78,
+      "date": "2026-08-01T18:31:13.924Z",
+      "type": "loan_repayment",
+      "amount": 134,
+      "description": "Remboursement prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 247,
+      "turn": 78,
+      "date": "2026-08-01T18:31:13.923Z",
+      "type": "loan_interest",
+      "amount": 216,
+      "description": "Intérêts prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 248,
+      "turn": 78,
+      "date": "2026-08-01T18:31:13.923Z",
+      "type": "info_loan_repayment",
+      "amount": 7384,
+      "description": "[Informatif] Capital prêt — impayé, prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 249,
+      "turn": 78,
+      "date": "2026-08-01T18:31:13.923Z",
+      "type": "loan_interest",
+      "amount": 2,
+      "description": "Intérêts prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 245,
+      "turn": 78,
+      "date": "2026-08-01T18:31:13.922Z",
+      "type": "loan_interest",
+      "amount": 2,
+      "description": "Intérêts prêt commercial (loan_1785608999840)"
+    },
+    {
+      "id": 246,
+      "turn": 78,
+      "date": "2026-08-01T18:31:13.922Z",
+      "type": "loan_repayment",
+      "amount": 74,
+      "description": "Remboursement prêt commercial (loan_1785608999840)"
+    },
+    {
+      "turn": 78,
+      "date": "2026-08-01T18:31:13.459Z",
+      "type": "balance",
+      "amount": 2167,
+      "description": "Solde"
+    },
+    {
+      "id": 243,
+      "turn": 77,
+      "date": "2026-08-01T18:31:12.857Z",
+      "type": "loan_interest",
+      "amount": 3,
+      "description": "Intérêts prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 244,
+      "turn": 77,
+      "date": "2026-08-01T18:31:12.857Z",
+      "type": "loan_repayment",
+      "amount": 133,
+      "description": "Remboursement prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 241,
+      "turn": 77,
+      "date": "2026-08-01T18:31:12.856Z",
+      "type": "loan_interest",
+      "amount": 284,
+      "description": "Intérêts prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 242,
+      "turn": 77,
+      "date": "2026-08-01T18:31:12.856Z",
+      "type": "loan_repayment",
+      "amount": 7316,
+      "description": "Remboursement prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 240,
+      "turn": 77,
+      "date": "2026-08-01T18:31:12.855Z",
+      "type": "loan_repayment",
+      "amount": 73,
+      "description": "Remboursement prêt commercial (loan_1785608999840)"
+    },
+    {
+      "id": 239,
+      "turn": 77,
+      "date": "2026-08-01T18:31:12.854Z",
+      "type": "loan_interest",
+      "amount": 3,
+      "description": "Intérêts prêt commercial (loan_1785608999840)"
+    },
+    {
+      "turn": 77,
+      "date": "2026-08-01T18:31:12.459Z",
+      "type": "balance",
+      "amount": 9979,
+      "description": "Solde"
+    },
+    {
+      "id": 237,
+      "turn": 76,
+      "date": "2026-08-01T18:31:11.843Z",
+      "type": "loan_interest",
+      "amount": 204,
+      "description": "Intérêts prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 238,
+      "turn": 76,
+      "date": "2026-08-01T18:31:11.843Z",
+      "type": "info_loan_repayment",
+      "amount": 52296,
+      "description": "[Informatif] Capital prêt — impayé, prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 235,
+      "turn": 76,
+      "date": "2026-08-01T18:31:11.842Z",
+      "type": "loan_interest",
+      "amount": 3,
+      "description": "Intérêts prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 236,
+      "turn": 76,
+      "date": "2026-08-01T18:31:11.842Z",
+      "type": "loan_repayment",
+      "amount": 133,
+      "description": "Remboursement prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 233,
+      "turn": 76,
+      "date": "2026-08-01T18:31:11.841Z",
+      "type": "loan_interest",
+      "amount": 352,
+      "description": "Intérêts prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 234,
+      "turn": 76,
+      "date": "2026-08-01T18:31:11.841Z",
+      "type": "loan_repayment",
+      "amount": 7248,
+      "description": "Remboursement prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 231,
+      "turn": 76,
+      "date": "2026-08-01T18:31:11.840Z",
+      "type": "loan_repayment",
+      "amount": 72,
+      "description": "Remboursement prêt commercial (loan_1785608999840)"
+    },
+    {
+      "id": 232,
+      "turn": 76,
+      "date": "2026-08-01T18:31:11.840Z",
+      "type": "loan_repayment",
+      "amount": 55,
+      "description": "Remboursement prêt bank (loan_1785609007439)"
+    },
+    {
+      "id": 230,
+      "turn": 76,
+      "date": "2026-08-01T18:31:11.839Z",
+      "type": "loan_interest",
+      "amount": 4,
+      "description": "Intérêts prêt commercial (loan_1785608999840)"
+    },
+    {
+      "turn": 76,
+      "date": "2026-08-01T18:31:11.459Z",
+      "type": "balance",
+      "amount": 18050,
+      "description": "Solde"
+    },
+    {
+      "id": 229,
+      "turn": 75,
+      "date": "2026-08-01T18:31:11.053Z",
+      "type": "loan_repayment",
+      "amount": 52035,
+      "description": "Remboursement prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 227,
+      "turn": 75,
+      "date": "2026-08-01T18:31:11.052Z",
+      "type": "loan_repayment",
+      "amount": 132,
+      "description": "Remboursement prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 228,
+      "turn": 75,
+      "date": "2026-08-01T18:31:11.052Z",
+      "type": "loan_interest",
+      "amount": 465,
+      "description": "Intérêts prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 226,
+      "turn": 75,
+      "date": "2026-08-01T18:31:11.051Z",
+      "type": "loan_interest",
+      "amount": 4,
+      "description": "Intérêts prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 225,
+      "turn": 75,
+      "date": "2026-08-01T18:31:11.050Z",
+      "type": "loan_repayment",
+      "amount": 7181,
+      "description": "Remboursement prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 224,
+      "turn": 75,
+      "date": "2026-08-01T18:31:11.049Z",
+      "type": "loan_interest",
+      "amount": 419,
+      "description": "Intérêts prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 223,
+      "turn": 75,
+      "date": "2026-08-01T18:31:11.044Z",
+      "type": "loan_repayment",
+      "amount": 54,
+      "description": "Remboursement prêt bank (loan_1785609007439)"
+    },
+    {
+      "id": 222,
+      "turn": 75,
+      "date": "2026-08-01T18:31:11.043Z",
+      "type": "loan_interest",
+      "amount": 1,
+      "description": "Intérêts prêt bank (loan_1785609007439)"
+    },
+    {
+      "id": 220,
+      "turn": 75,
+      "date": "2026-08-01T18:31:11.042Z",
+      "type": "loan_interest",
+      "amount": 4,
+      "description": "Intérêts prêt commercial (loan_1785608999840)"
+    },
+    {
+      "id": 221,
+      "turn": 75,
+      "date": "2026-08-01T18:31:11.042Z",
+      "type": "loan_repayment",
+      "amount": 72,
+      "description": "Remboursement prêt commercial (loan_1785608999840)"
+    },
+    {
+      "id": 219,
+      "turn": 75,
+      "date": "2026-08-01T18:31:11.040Z",
+      "type": "maintenance",
+      "amount": 32,
+      "description": "Maintenance mensuelle - Avril 2 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":8,\"unitCost\":3,\"total\":24},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 218,
+      "turn": 75,
+      "date": "2026-08-01T18:31:11.038Z",
+      "type": "payroll_tax",
+      "amount": 1060,
+      "description": "Impôt sur les salaires - Avril 1 ap JC (20%)"
+    },
+    {
+      "id": 217,
+      "turn": 75,
+      "date": "2026-08-01T18:31:11.037Z",
+      "type": "salary",
+      "amount": 5300,
+      "description": "Salaires fonctionnaires - Avril 1 ap JC (53 hab. × 100€)"
+    },
+    {
+      "turn": 75,
+      "date": "2026-08-01T18:31:10.459Z",
+      "type": "balance",
+      "amount": 82689,
+      "description": "Solde"
+    },
+    {
+      "id": 214,
+      "turn": 74,
+      "date": "2026-08-01T18:31:09.876Z",
+      "type": "loan_repayment",
+      "amount": 131,
+      "description": "Remboursement prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 215,
+      "turn": 74,
+      "date": "2026-08-01T18:31:09.876Z",
+      "type": "loan_interest",
+      "amount": 724,
+      "description": "Intérêts prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 216,
+      "turn": 74,
+      "date": "2026-08-01T18:31:09.876Z",
+      "type": "loan_repayment",
+      "amount": 51776,
+      "description": "Remboursement prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 213,
+      "turn": 74,
+      "date": "2026-08-01T18:31:09.875Z",
+      "type": "loan_interest",
+      "amount": 5,
+      "description": "Intérêts prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 211,
+      "turn": 74,
+      "date": "2026-08-01T18:31:09.874Z",
+      "type": "loan_interest",
+      "amount": 485,
+      "description": "Intérêts prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 212,
+      "turn": 74,
+      "date": "2026-08-01T18:31:09.874Z",
+      "type": "loan_repayment",
+      "amount": 7115,
+      "description": "Remboursement prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 210,
+      "turn": 74,
+      "date": "2026-08-01T18:31:09.873Z",
+      "type": "loan_repayment",
+      "amount": 54,
+      "description": "Remboursement prêt bank (loan_1785609007439)"
+    },
+    {
+      "id": 209,
+      "turn": 74,
+      "date": "2026-08-01T18:31:09.872Z",
+      "type": "loan_interest",
+      "amount": 1,
+      "description": "Intérêts prêt bank (loan_1785609007439)"
+    },
+    {
+      "id": 208,
+      "turn": 74,
+      "date": "2026-08-01T18:31:09.861Z",
+      "type": "loan_repayment",
+      "amount": 71,
+      "description": "Remboursement prêt commercial (loan_1785608999840)"
+    },
+    {
+      "id": 207,
+      "turn": 74,
+      "date": "2026-08-01T18:31:09.860Z",
+      "type": "loan_interest",
+      "amount": 5,
+      "description": "Intérêts prêt commercial (loan_1785608999840)"
+    },
+    {
+      "turn": 74,
+      "date": "2026-08-01T18:31:09.458Z",
+      "type": "balance",
+      "amount": 143056,
+      "description": "Solde"
+    },
+    {
+      "id": 205,
+      "turn": 73,
+      "date": "2026-08-01T18:31:08.859Z",
+      "type": "loan_interest",
+      "amount": 981,
+      "description": "Intérêts prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 206,
+      "turn": 73,
+      "date": "2026-08-01T18:31:08.859Z",
+      "type": "loan_repayment",
+      "amount": 51519,
+      "description": "Remboursement prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 203,
+      "turn": 73,
+      "date": "2026-08-01T18:31:08.858Z",
+      "type": "loan_interest",
+      "amount": 5,
+      "description": "Intérêts prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 204,
+      "turn": 73,
+      "date": "2026-08-01T18:31:08.858Z",
+      "type": "loan_repayment",
+      "amount": 131,
+      "description": "Remboursement prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 201,
+      "turn": 73,
+      "date": "2026-08-01T18:31:08.857Z",
+      "type": "loan_interest",
+      "amount": 551,
+      "description": "Intérêts prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 202,
+      "turn": 73,
+      "date": "2026-08-01T18:31:08.857Z",
+      "type": "loan_repayment",
+      "amount": 7049,
+      "description": "Remboursement prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 199,
+      "turn": 73,
+      "date": "2026-08-01T18:31:08.856Z",
+      "type": "loan_interest",
+      "amount": 2,
+      "description": "Intérêts prêt bank (loan_1785609007439)"
+    },
+    {
+      "id": 200,
+      "turn": 73,
+      "date": "2026-08-01T18:31:08.856Z",
+      "type": "loan_repayment",
+      "amount": 53,
+      "description": "Remboursement prêt bank (loan_1785609007439)"
+    },
+    {
+      "id": 197,
+      "turn": 73,
+      "date": "2026-08-01T18:31:08.855Z",
+      "type": "loan_interest",
+      "amount": 6,
+      "description": "Intérêts prêt commercial (loan_1785608999840)"
+    },
+    {
+      "id": 198,
+      "turn": 73,
+      "date": "2026-08-01T18:31:08.855Z",
+      "type": "loan_repayment",
+      "amount": 70,
+      "description": "Remboursement prêt commercial (loan_1785608999840)"
+    },
+    {
+      "turn": 73,
+      "date": "2026-08-01T18:31:08.459Z",
+      "type": "balance",
+      "amount": 203423,
+      "description": "Solde"
+    },
+    {
+      "id": 195,
+      "turn": 72,
+      "date": "2026-08-01T18:31:07.875Z",
+      "type": "loan_interest",
+      "amount": 1237,
+      "description": "Intérêts prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 196,
+      "turn": 72,
+      "date": "2026-08-01T18:31:07.875Z",
+      "type": "loan_repayment",
+      "amount": 51263,
+      "description": "Remboursement prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 193,
+      "turn": 72,
+      "date": "2026-08-01T18:31:07.874Z",
+      "type": "loan_interest",
+      "amount": 6,
+      "description": "Intérêts prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 194,
+      "turn": 72,
+      "date": "2026-08-01T18:31:07.874Z",
+      "type": "loan_repayment",
+      "amount": 130,
+      "description": "Remboursement prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 191,
+      "turn": 72,
+      "date": "2026-08-01T18:31:07.873Z",
+      "type": "loan_interest",
+      "amount": 616,
+      "description": "Intérêts prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 192,
+      "turn": 72,
+      "date": "2026-08-01T18:31:07.873Z",
+      "type": "loan_repayment",
+      "amount": 6984,
+      "description": "Remboursement prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 189,
+      "turn": 72,
+      "date": "2026-08-01T18:31:07.872Z",
+      "type": "loan_interest",
+      "amount": 2,
+      "description": "Intérêts prêt bank (loan_1785609007439)"
+    },
+    {
+      "id": 190,
+      "turn": 72,
+      "date": "2026-08-01T18:31:07.872Z",
+      "type": "loan_repayment",
+      "amount": 53,
+      "description": "Remboursement prêt bank (loan_1785609007439)"
+    },
+    {
+      "id": 188,
+      "turn": 72,
+      "date": "2026-08-01T18:31:07.870Z",
+      "type": "loan_repayment",
+      "amount": 70,
+      "description": "Remboursement prêt commercial (loan_1785608999840)"
+    },
+    {
+      "id": 187,
+      "turn": 72,
+      "date": "2026-08-01T18:31:07.862Z",
+      "type": "loan_interest",
+      "amount": 6,
+      "description": "Intérêts prêt commercial (loan_1785608999840)"
+    },
+    {
+      "turn": 72,
+      "date": "2026-08-01T18:31:07.459Z",
+      "type": "balance",
+      "amount": 263790,
+      "description": "Solde"
+    },
+    {
+      "id": 186,
+      "turn": 71,
+      "date": "2026-08-01T18:31:06.885Z",
+      "type": "loan_repayment",
+      "amount": 51008,
+      "description": "Remboursement prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 185,
+      "turn": 71,
+      "date": "2026-08-01T18:31:06.879Z",
+      "type": "loan_interest",
+      "amount": 1492,
+      "description": "Intérêts prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 183,
+      "turn": 71,
+      "date": "2026-08-01T18:31:06.878Z",
+      "type": "loan_interest",
+      "amount": 6,
+      "description": "Intérêts prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 184,
+      "turn": 71,
+      "date": "2026-08-01T18:31:06.878Z",
+      "type": "loan_repayment",
+      "amount": 130,
+      "description": "Remboursement prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 182,
+      "turn": 71,
+      "date": "2026-08-01T18:31:06.877Z",
+      "type": "loan_repayment",
+      "amount": 6919,
+      "description": "Remboursement prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 181,
+      "turn": 71,
+      "date": "2026-08-01T18:31:06.876Z",
+      "type": "loan_interest",
+      "amount": 681,
+      "description": "Intérêts prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 179,
+      "turn": 71,
+      "date": "2026-08-01T18:31:06.875Z",
+      "type": "loan_interest",
+      "amount": 3,
+      "description": "Intérêts prêt bank (loan_1785609007439)"
+    },
+    {
+      "id": 180,
+      "turn": 71,
+      "date": "2026-08-01T18:31:06.875Z",
+      "type": "loan_repayment",
+      "amount": 52,
+      "description": "Remboursement prêt bank (loan_1785609007439)"
+    },
+    {
+      "id": 178,
+      "turn": 71,
+      "date": "2026-08-01T18:31:06.874Z",
+      "type": "loan_repayment",
+      "amount": 69,
+      "description": "Remboursement prêt commercial (loan_1785608999840)"
+    },
+    {
+      "id": 177,
+      "turn": 71,
+      "date": "2026-08-01T18:31:06.872Z",
+      "type": "loan_interest",
+      "amount": 7,
+      "description": "Intérêts prêt commercial (loan_1785608999840)"
+    },
+    {
+      "turn": 71,
+      "date": "2026-08-01T18:31:06.459Z",
+      "type": "balance",
+      "amount": 324157,
+      "description": "Solde"
+    },
+    {
+      "id": 176,
+      "turn": 70,
+      "date": "2026-08-01T18:31:05.844Z",
+      "type": "loan_repayment",
+      "amount": 50754,
+      "description": "Remboursement prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 174,
+      "turn": 70,
+      "date": "2026-08-01T18:31:05.843Z",
+      "type": "loan_repayment",
+      "amount": 129,
+      "description": "Remboursement prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 175,
+      "turn": 70,
+      "date": "2026-08-01T18:31:05.843Z",
+      "type": "loan_interest",
+      "amount": 1746,
+      "description": "Intérêts prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 173,
+      "turn": 70,
+      "date": "2026-08-01T18:31:05.842Z",
+      "type": "loan_interest",
+      "amount": 7,
+      "description": "Intérêts prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 171,
+      "turn": 70,
+      "date": "2026-08-01T18:31:05.841Z",
+      "type": "loan_interest",
+      "amount": 745,
+      "description": "Intérêts prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 172,
+      "turn": 70,
+      "date": "2026-08-01T18:31:05.841Z",
+      "type": "loan_repayment",
+      "amount": 6855,
+      "description": "Remboursement prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 169,
+      "turn": 70,
+      "date": "2026-08-01T18:31:05.840Z",
+      "type": "loan_interest",
+      "amount": 3,
+      "description": "Intérêts prêt bank (loan_1785609007439)"
+    },
+    {
+      "id": 170,
+      "turn": 70,
+      "date": "2026-08-01T18:31:05.840Z",
+      "type": "loan_repayment",
+      "amount": 52,
+      "description": "Remboursement prêt bank (loan_1785609007439)"
+    },
+    {
+      "id": 167,
+      "turn": 70,
+      "date": "2026-08-01T18:31:05.839Z",
+      "type": "loan_interest",
+      "amount": 7,
+      "description": "Intérêts prêt commercial (loan_1785608999840)"
+    },
+    {
+      "id": 168,
+      "turn": 70,
+      "date": "2026-08-01T18:31:05.839Z",
+      "type": "loan_repayment",
+      "amount": 69,
+      "description": "Remboursement prêt commercial (loan_1785608999840)"
+    },
+    {
+      "id": 166,
+      "turn": 70,
+      "date": "2026-08-01T18:31:05.829Z",
+      "type": "maintenance",
+      "amount": 32,
+      "description": "Maintenance mensuelle - Mars 2 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":8,\"unitCost\":3,\"total\":24},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 165,
+      "turn": 70,
+      "date": "2026-08-01T18:31:05.828Z",
+      "type": "payroll_tax",
+      "amount": 1060,
+      "description": "Impôt sur les salaires - Mars 1 ap JC (20%)"
+    },
+    {
+      "id": 164,
+      "turn": 70,
+      "date": "2026-08-01T18:31:05.827Z",
+      "type": "salary",
+      "amount": 5300,
+      "description": "Salaires fonctionnaires - Mars 1 ap JC (53 hab. × 100€)"
+    },
+    {
+      "id": 163,
+      "turn": 70,
+      "date": "2026-08-01T18:31:05.675Z",
+      "type": "export_wood",
+      "amount": 25,
+      "description": "Export wood |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":25,\"total\":25}]|BREAKDOWN|"
+    },
+    {
+      "turn": 70,
+      "date": "2026-08-01T18:31:05.459Z",
+      "type": "balance",
+      "amount": 388771,
+      "description": "Solde"
+    },
+    {
+      "id": 162,
+      "turn": 69,
+      "date": "2026-08-01T18:31:04.845Z",
+      "type": "loan_repayment",
+      "amount": 50501,
+      "description": "Remboursement prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 160,
+      "turn": 69,
+      "date": "2026-08-01T18:31:04.844Z",
+      "type": "loan_repayment",
+      "amount": 128,
+      "description": "Remboursement prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 161,
+      "turn": 69,
+      "date": "2026-08-01T18:31:04.844Z",
+      "type": "loan_interest",
+      "amount": 1999,
+      "description": "Intérêts prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 157,
+      "turn": 69,
+      "date": "2026-08-01T18:31:04.843Z",
+      "type": "loan_interest",
+      "amount": 808,
+      "description": "Intérêts prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 158,
+      "turn": 69,
+      "date": "2026-08-01T18:31:04.843Z",
+      "type": "loan_repayment",
+      "amount": 6792,
+      "description": "Remboursement prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 159,
+      "turn": 69,
+      "date": "2026-08-01T18:31:04.843Z",
+      "type": "loan_interest",
+      "amount": 8,
+      "description": "Intérêts prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 155,
+      "turn": 69,
+      "date": "2026-08-01T18:31:04.842Z",
+      "type": "loan_interest",
+      "amount": 4,
+      "description": "Intérêts prêt bank (loan_1785609007439)"
+    },
+    {
+      "id": 156,
+      "turn": 69,
+      "date": "2026-08-01T18:31:04.842Z",
+      "type": "loan_repayment",
+      "amount": 51,
+      "description": "Remboursement prêt bank (loan_1785609007439)"
+    },
+    {
+      "id": 153,
+      "turn": 69,
+      "date": "2026-08-01T18:31:04.841Z",
+      "type": "loan_interest",
+      "amount": 8,
+      "description": "Intérêts prêt commercial (loan_1785608999840)"
+    },
+    {
+      "id": 154,
+      "turn": 69,
+      "date": "2026-08-01T18:31:04.841Z",
+      "type": "loan_repayment",
+      "amount": 68,
+      "description": "Remboursement prêt commercial (loan_1785608999840)"
+    },
+    {
+      "turn": 69,
+      "date": "2026-08-01T18:31:04.459Z",
+      "type": "balance",
+      "amount": 449138,
+      "description": "Solde"
+    },
+    {
+      "id": 151,
+      "turn": 68,
+      "date": "2026-08-01T18:31:03.790Z",
+      "type": "loan_interest",
+      "amount": 2250,
+      "description": "Intérêts prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 152,
+      "turn": 68,
+      "date": "2026-08-01T18:31:03.790Z",
+      "type": "loan_repayment",
+      "amount": 50250,
+      "description": "Remboursement prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 150,
+      "turn": 68,
+      "date": "2026-08-01T18:31:03.788Z",
+      "type": "loan_repayment",
+      "amount": 128,
+      "description": "Remboursement prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 149,
+      "turn": 68,
+      "date": "2026-08-01T18:31:03.780Z",
+      "type": "loan_interest",
+      "amount": 8,
+      "description": "Intérêts prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 147,
+      "turn": 68,
+      "date": "2026-08-01T18:31:03.779Z",
+      "type": "loan_interest",
+      "amount": 871,
+      "description": "Intérêts prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 148,
+      "turn": 68,
+      "date": "2026-08-01T18:31:03.779Z",
+      "type": "loan_repayment",
+      "amount": 6729,
+      "description": "Remboursement prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 146,
+      "turn": 68,
+      "date": "2026-08-01T18:31:03.778Z",
+      "type": "loan_repayment",
+      "amount": 50,
+      "description": "Remboursement prêt bank (loan_1785609007439)"
+    },
+    {
+      "id": 144,
+      "turn": 68,
+      "date": "2026-08-01T18:31:03.777Z",
+      "type": "loan_repayment",
+      "amount": 67,
+      "description": "Remboursement prêt commercial (loan_1785608999840)"
+    },
+    {
+      "id": 145,
+      "turn": 68,
+      "date": "2026-08-01T18:31:03.777Z",
+      "type": "loan_interest",
+      "amount": 5,
+      "description": "Intérêts prêt bank (loan_1785609007439)"
+    },
+    {
+      "id": 143,
+      "turn": 68,
+      "date": "2026-08-01T18:31:03.776Z",
+      "type": "loan_interest",
+      "amount": 9,
+      "description": "Intérêts prêt commercial (loan_1785608999840)"
+    },
+    {
+      "turn": 68,
+      "date": "2026-08-01T18:31:03.458Z",
+      "type": "balance",
+      "amount": 509505,
+      "description": "Solde"
+    },
+    {
+      "id": 142,
+      "turn": 67,
+      "date": "2026-08-01T18:31:02.858Z",
+      "type": "loan_repayment",
+      "amount": 50000,
+      "description": "Remboursement prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 140,
+      "turn": 67,
+      "date": "2026-08-01T18:31:02.857Z",
+      "type": "loan_repayment",
+      "amount": 127,
+      "description": "Remboursement prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 141,
+      "turn": 67,
+      "date": "2026-08-01T18:31:02.857Z",
+      "type": "loan_interest",
+      "amount": 2500,
+      "description": "Intérêts prêt bank (loan_1785609055120)"
+    },
+    {
+      "id": 139,
+      "turn": 67,
+      "date": "2026-08-01T18:31:02.856Z",
+      "type": "loan_interest",
+      "amount": 9,
+      "description": "Intérêts prêt commercial (loan_1785609034046)"
+    },
+    {
+      "id": 138,
+      "turn": 67,
+      "date": "2026-08-01T18:31:02.855Z",
+      "type": "loan_repayment",
+      "amount": 6667,
+      "description": "Remboursement prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 137,
+      "turn": 67,
+      "date": "2026-08-01T18:31:02.854Z",
+      "type": "loan_interest",
+      "amount": 933,
+      "description": "Intérêts prêt commercial (loan_1785609018801)"
+    },
+    {
+      "id": 136,
+      "turn": 67,
+      "date": "2026-08-01T18:31:02.853Z",
+      "type": "loan_repayment",
+      "amount": 50,
+      "description": "Remboursement prêt bank (loan_1785609007439)"
+    },
+    {
+      "id": 135,
+      "turn": 67,
+      "date": "2026-08-01T18:31:02.852Z",
+      "type": "loan_interest",
+      "amount": 5,
+      "description": "Intérêts prêt bank (loan_1785609007439)"
+    },
+    {
+      "id": 134,
+      "turn": 67,
+      "date": "2026-08-01T18:31:02.847Z",
+      "type": "loan_repayment",
+      "amount": 67,
+      "description": "Remboursement prêt commercial (loan_1785608999840)"
+    },
+    {
+      "id": 133,
+      "turn": 67,
+      "date": "2026-08-01T18:31:02.845Z",
+      "type": "loan_interest",
+      "amount": 9,
+      "description": "Intérêts prêt commercial (loan_1785608999840)"
+    },
+    {
+      "turn": 67,
+      "date": "2026-08-01T18:31:02.458Z",
+      "type": "balance",
+      "amount": 569872,
+      "description": "Solde"
+    },
+    {
+      "id": 132,
+      "turn": 66,
+      "date": "2026-08-01T18:30:55.121Z",
+      "type": "loan_capital",
+      "amount": 500000,
+      "description": "Prêt bank contracté (10 tours)"
+    },
+    {
+      "id": 131,
+      "turn": 66,
+      "date": "2026-08-01T18:30:34.047Z",
+      "type": "loan_capital",
+      "amount": 1900,
+      "description": "Prêt commercial contracté (15 tours)"
+    },
+    {
+      "id": 130,
+      "turn": 66,
+      "date": "2026-08-01T18:30:18.802Z",
+      "type": "loan_capital",
+      "amount": 100000,
+      "description": "Prêt commercial contracté (15 tours)"
+    },
+    {
+      "id": 129,
+      "turn": 66,
+      "date": "2026-08-01T18:30:07.443Z",
+      "type": "loan_capital",
+      "amount": 500,
+      "description": "Prêt bank contracté (10 tours)"
+    },
+    {
+      "id": 128,
+      "turn": 66,
+      "date": "2026-08-01T18:29:59.841Z",
+      "type": "loan_capital",
+      "amount": 1000,
+      "description": "Prêt commercial contracté (15 tours)"
+    },
+    {
+      "turn": 66,
+      "date": "2026-08-01T18:29:51.461Z",
+      "type": "balance",
+      "amount": -33528,
+      "description": "Solde"
+    },
+    {
+      "id": 127,
+      "turn": 65,
+      "date": "2026-08-01T18:29:51.179Z",
+      "type": "maintenance",
+      "amount": 32,
+      "description": "Maintenance mensuelle - Février 2 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":8,\"unitCost\":3,\"total\":24},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 126,
+      "turn": 65,
+      "date": "2026-08-01T18:29:51.177Z",
+      "type": "payroll_tax",
+      "amount": 1060,
+      "description": "Impôt sur les salaires - Février 1 ap JC (20%)"
+    },
+    {
+      "id": 125,
+      "turn": 65,
+      "date": "2026-08-01T18:29:51.176Z",
+      "type": "salary",
+      "amount": 5300,
+      "description": "Salaires fonctionnaires - Février 1 ap JC (53 hab. × 100€)"
+    },
+    {
+      "turn": 65,
+      "date": "2026-08-01T18:29:50.461Z",
+      "type": "balance",
+      "amount": -29256,
+      "description": "Solde"
+    },
+    {
+      "turn": 64,
+      "date": "2026-08-01T18:29:49.461Z",
+      "type": "balance",
+      "amount": -29256,
+      "description": "Solde"
+    },
+    {
+      "turn": 63,
+      "date": "2026-08-01T18:29:48.478Z",
+      "type": "balance",
+      "amount": -29256,
+      "description": "Solde"
+    },
+    {
+      "turn": 62,
+      "date": "2026-08-01T18:29:47.462Z",
+      "type": "balance",
+      "amount": -29256,
+      "description": "Solde"
+    },
+    {
+      "turn": 61,
+      "date": "2026-08-01T18:29:46.459Z",
+      "type": "balance",
+      "amount": -29256,
+      "description": "Solde"
+    },
+    {
+      "id": 124,
+      "turn": 60,
+      "date": "2026-08-01T18:29:45.771Z",
+      "type": "maintenance",
+      "amount": 32,
+      "description": "Maintenance mensuelle - Janvier 2 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":8,\"unitCost\":3,\"total\":24},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 123,
+      "turn": 60,
+      "date": "2026-08-01T18:29:45.770Z",
+      "type": "payroll_tax",
+      "amount": 1060,
+      "description": "Impôt sur les salaires - Janvier 1 ap JC (20%)"
+    },
+    {
+      "id": 122,
+      "turn": 60,
+      "date": "2026-08-01T18:29:45.769Z",
+      "type": "salary",
+      "amount": 5300,
+      "description": "Salaires fonctionnaires - Janvier 1 ap JC (53 hab. × 100€)"
+    },
+    {
+      "id": 121,
+      "turn": 60,
+      "date": "2026-08-01T18:29:45.462Z",
+      "type": "carry_forward",
+      "amount": 24984,
+      "description": "Report à nouveau de l'année 0 JC (-)"
+    },
+    {
+      "turn": 60,
+      "date": "2026-08-01T18:29:45.460Z",
+      "type": "balance",
+      "amount": -24984,
+      "description": "Solde"
+    },
+    {
+      "id": 118,
+      "turn": 59,
+      "date": "2026-08-01T18:29:45.461Z",
+      "type": "cumul_maintenance",
+      "amount": 314,
+      "description": "Cumul Maintenance - Année 0 JC"
+    },
+    {
+      "id": 119,
+      "turn": 59,
+      "date": "2026-08-01T18:29:45.461Z",
+      "type": "cumul_construction",
+      "amount": 435,
+      "description": "Cumul Construction - Année 0 JC"
+    },
+    {
+      "id": 120,
+      "turn": 59,
+      "date": "2026-08-01T18:29:45.461Z",
+      "type": "cumul_salary",
+      "amount": 40500,
+      "description": "Cumul Salaires - Année 0 JC"
+    },
+    {
+      "turn": 59,
+      "date": "2026-08-01T18:29:44.464Z",
+      "type": "balance",
+      "amount": -24984,
+      "description": "Solde"
+    },
+    {
+      "turn": 58,
+      "date": "2026-08-01T18:29:43.462Z",
+      "type": "balance",
+      "amount": -24984,
+      "description": "Solde"
+    },
+    {
+      "turn": 57,
+      "date": "2026-08-01T18:29:42.463Z",
+      "type": "balance",
+      "amount": -24984,
+      "description": "Solde"
+    },
+    {
+      "turn": 56,
+      "date": "2026-08-01T18:29:41.467Z",
+      "type": "balance",
+      "amount": -24984,
+      "description": "Solde"
+    },
+    {
+      "id": 117,
+      "turn": 55,
+      "date": "2026-08-01T18:29:40.455Z",
+      "type": "maintenance",
+      "amount": 32,
+      "description": "Maintenance mensuelle - Décembre 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":8,\"unitCost\":3,\"total\":24},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 116,
+      "turn": 55,
+      "date": "2026-08-01T18:29:40.453Z",
+      "type": "payroll_tax",
+      "amount": 1060,
+      "description": "Impôt sur les salaires - Décembre 0 JC (20%)"
+    },
+    {
+      "id": 115,
+      "turn": 55,
+      "date": "2026-08-01T18:29:40.452Z",
+      "type": "salary",
+      "amount": 5300,
+      "description": "Salaires fonctionnaires - Décembre 0 JC (53 hab. × 100€)"
+    },
+    {
+      "id": 114,
+      "turn": 55,
+      "date": "2026-08-01T18:29:40.186Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Arctica\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 55,
+      "date": "2026-08-01T18:29:39.459Z",
+      "type": "balance",
+      "amount": -20692,
+      "description": "Solde"
+    },
+    {
+      "id": 113,
+      "turn": 54,
+      "date": "2026-08-01T18:29:38.656Z",
+      "type": "export_cabbage",
+      "amount": 20,
+      "description": "Export cabbage |BREAKDOWN|[{\"label\":\"Tropicala\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN| - Stock restant: 9"
+    },
+    {
+      "turn": 54,
+      "date": "2026-08-01T18:29:38.459Z",
+      "type": "balance",
+      "amount": -20712,
+      "description": "Solde"
+    },
+    {
+      "id": 112,
+      "turn": 53,
+      "date": "2026-08-01T18:29:37.691Z",
+      "type": "export_cabbage",
+      "amount": 20,
+      "description": "Export cabbage |BREAKDOWN|[{\"label\":\"Tropicala\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN| - Stock restant: 10"
+    },
+    {
+      "turn": 53,
+      "date": "2026-08-01T18:29:37.459Z",
+      "type": "balance",
+      "amount": -20732,
+      "description": "Solde"
+    },
+    {
+      "id": 111,
+      "turn": 52,
+      "date": "2026-08-01T18:29:36.688Z",
+      "type": "export_cabbage",
+      "amount": 20,
+      "description": "Export cabbage |BREAKDOWN|[{\"label\":\"Tropicala\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN| - Stock restant: 11"
+    },
+    {
+      "turn": 52,
+      "date": "2026-08-01T18:29:36.459Z",
+      "type": "balance",
+      "amount": -20752,
+      "description": "Solde"
+    },
+    {
+      "id": 110,
+      "turn": 51,
+      "date": "2026-08-01T18:29:35.654Z",
+      "type": "export_cabbage",
+      "amount": 20,
+      "description": "Export cabbage |BREAKDOWN|[{\"label\":\"Tropicala\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN| - Stock restant: 12"
+    },
+    {
+      "turn": 51,
+      "date": "2026-08-01T18:29:35.459Z",
+      "type": "balance",
+      "amount": -20772,
+      "description": "Solde"
+    },
+    {
+      "id": 109,
+      "turn": 50,
+      "date": "2026-08-01T18:29:34.861Z",
+      "type": "maintenance",
+      "amount": 32,
+      "description": "Maintenance mensuelle - Novembre 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":8,\"unitCost\":3,\"total\":24},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 108,
+      "turn": 50,
+      "date": "2026-08-01T18:29:34.859Z",
+      "type": "payroll_tax",
+      "amount": 960,
+      "description": "Impôt sur les salaires - Novembre 0 JC (20%)"
+    },
+    {
+      "id": 107,
+      "turn": 50,
+      "date": "2026-08-01T18:29:34.858Z",
+      "type": "salary",
+      "amount": 4800,
+      "description": "Salaires fonctionnaires - Novembre 0 JC (48 hab. × 100€)"
+    },
+    {
+      "id": 106,
+      "turn": 50,
+      "date": "2026-08-01T18:29:34.856Z",
+      "type": "citizen_tax",
+      "amount": 4800,
+      "description": "Impôt Citoyen (48 hab.) - Novembre"
+    },
+    {
+      "id": 105,
+      "turn": 50,
+      "date": "2026-08-01T18:29:34.700Z",
+      "type": "export_cabbage",
+      "amount": 20,
+      "description": "Export cabbage |BREAKDOWN|[{\"label\":\"Tropicala\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN| - Stock restant: 13"
+    },
+    {
+      "turn": 50,
+      "date": "2026-08-01T18:29:34.459Z",
+      "type": "balance",
+      "amount": -21720,
+      "description": "Solde"
+    },
+    {
+      "id": 104,
+      "turn": 49,
+      "date": "2026-08-01T18:29:33.676Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Arctica\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 49,
+      "date": "2026-08-01T18:29:33.472Z",
+      "type": "balance",
+      "amount": -21700,
+      "description": "Solde"
+    },
+    {
+      "id": 103,
+      "turn": 48,
+      "date": "2026-08-01T18:29:32.692Z",
+      "type": "export_wood",
+      "amount": 25,
+      "description": "Export wood |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":25,\"total\":25}]|BREAKDOWN|"
+    },
+    {
+      "id": 102,
+      "turn": 48,
+      "date": "2026-08-01T18:29:32.687Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Arctica\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 48,
+      "date": "2026-08-01T18:29:32.459Z",
+      "type": "balance",
+      "amount": -21705,
+      "description": "Solde"
+    },
+    {
+      "id": 101,
+      "turn": 47,
+      "date": "2026-08-01T18:29:31.637Z",
+      "type": "export_wood",
+      "amount": 25,
+      "description": "Export wood |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":25,\"total\":25}]|BREAKDOWN|"
+    },
+    {
+      "id": 100,
+      "turn": 47,
+      "date": "2026-08-01T18:29:31.628Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 99,
+      "turn": 47,
+      "date": "2026-08-01T18:29:31.626Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Arctica\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 47,
+      "date": "2026-08-01T18:29:31.459Z",
+      "type": "balance",
+      "amount": -21693,
+      "description": "Solde"
+    },
+    {
+      "id": 98,
+      "turn": 46,
+      "date": "2026-08-01T18:29:30.661Z",
+      "type": "export_wood",
+      "amount": 25,
+      "description": "Export wood |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":25,\"total\":25}]|BREAKDOWN|"
+    },
+    {
+      "id": 97,
+      "turn": 46,
+      "date": "2026-08-01T18:29:30.657Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 96,
+      "turn": 46,
+      "date": "2026-08-01T18:29:30.655Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Arctica\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 46,
+      "date": "2026-08-01T18:29:30.459Z",
+      "type": "balance",
+      "amount": -21681,
+      "description": "Solde"
+    },
+    {
+      "id": 95,
+      "turn": 45,
+      "date": "2026-08-01T18:29:29.845Z",
+      "type": "maintenance",
+      "amount": 32,
+      "description": "Maintenance mensuelle - Octobre 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":8,\"unitCost\":3,\"total\":24},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 94,
+      "turn": 45,
+      "date": "2026-08-01T18:29:29.844Z",
+      "type": "payroll_tax",
+      "amount": 960,
+      "description": "Impôt sur les salaires - Octobre 0 JC (20%)"
+    },
+    {
+      "id": 93,
+      "turn": 45,
+      "date": "2026-08-01T18:29:29.843Z",
+      "type": "salary",
+      "amount": 4800,
+      "description": "Salaires fonctionnaires - Octobre 0 JC (48 hab. × 100€)"
+    },
+    {
+      "id": 92,
+      "turn": 45,
+      "date": "2026-08-01T18:29:29.717Z",
+      "type": "export_wood",
+      "amount": 25,
+      "description": "Export wood |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":25,\"total\":25}]|BREAKDOWN|"
+    },
+    {
+      "id": 91,
+      "turn": 45,
+      "date": "2026-08-01T18:29:29.707Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 90,
+      "turn": 45,
+      "date": "2026-08-01T18:29:29.696Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Arctica\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 45,
+      "date": "2026-08-01T18:29:29.459Z",
+      "type": "balance",
+      "amount": -17797,
+      "description": "Solde"
+    },
+    {
+      "id": 89,
+      "turn": 44,
+      "date": "2026-08-01T18:29:28.644Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "turn": 44,
+      "date": "2026-08-01T18:29:28.459Z",
+      "type": "balance",
+      "amount": -17780,
+      "description": "Solde"
+    },
+    {
+      "id": 88,
+      "turn": 43,
+      "date": "2026-08-01T18:29:27.746Z",
+      "type": "export_wood",
+      "amount": 25,
+      "description": "Export wood |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":25,\"total\":25}]|BREAKDOWN|"
+    },
+    {
+      "id": 87,
+      "turn": 43,
+      "date": "2026-08-01T18:29:27.741Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 86,
+      "turn": 43,
+      "date": "2026-08-01T18:29:27.739Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Tropicala\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 43,
+      "date": "2026-08-01T18:29:27.459Z",
+      "type": "balance",
+      "amount": -17768,
+      "description": "Solde"
+    },
+    {
+      "id": 85,
+      "turn": 42,
+      "date": "2026-08-01T18:29:26.686Z",
+      "type": "export_wood",
+      "amount": 25,
+      "description": "Export wood |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":25,\"total\":25}]|BREAKDOWN|"
+    },
+    {
+      "id": 84,
+      "turn": 42,
+      "date": "2026-08-01T18:29:26.676Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 83,
+      "turn": 42,
+      "date": "2026-08-01T18:29:26.673Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Tropicala\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 42,
+      "date": "2026-08-01T18:29:26.459Z",
+      "type": "balance",
+      "amount": -17756,
+      "description": "Solde"
+    },
+    {
+      "id": 82,
+      "turn": 41,
+      "date": "2026-08-01T18:29:25.686Z",
+      "type": "export_wood",
+      "amount": 25,
+      "description": "Export wood |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":25,\"total\":25}]|BREAKDOWN|"
+    },
+    {
+      "id": 81,
+      "turn": 41,
+      "date": "2026-08-01T18:29:25.677Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 80,
+      "turn": 41,
+      "date": "2026-08-01T18:29:25.675Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Tropicala\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 41,
+      "date": "2026-08-01T18:29:25.459Z",
+      "type": "balance",
+      "amount": -17744,
+      "description": "Solde"
+    },
+    {
+      "id": 79,
+      "turn": 40,
+      "date": "2026-08-01T18:29:24.939Z",
+      "type": "maintenance",
+      "amount": 32,
+      "description": "Maintenance mensuelle - Septembre 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":8,\"unitCost\":3,\"total\":24},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 78,
+      "turn": 40,
+      "date": "2026-08-01T18:29:24.930Z",
+      "type": "payroll_tax",
+      "amount": 960,
+      "description": "Impôt sur les salaires - Septembre 0 JC (20%)"
+    },
+    {
+      "id": 77,
+      "turn": 40,
+      "date": "2026-08-01T18:29:24.929Z",
+      "type": "salary",
+      "amount": 4800,
+      "description": "Salaires fonctionnaires - Septembre 0 JC (48 hab. × 100€)"
+    },
+    {
+      "id": 76,
+      "turn": 40,
+      "date": "2026-08-01T18:29:24.760Z",
+      "type": "export_wood",
+      "amount": 25,
+      "description": "Export wood |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":25,\"total\":25}]|BREAKDOWN|"
+    },
+    {
+      "id": 75,
+      "turn": 40,
+      "date": "2026-08-01T18:29:24.755Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 74,
+      "turn": 40,
+      "date": "2026-08-01T18:29:24.746Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Tropicala\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 40,
+      "date": "2026-08-01T18:29:24.459Z",
+      "type": "balance",
+      "amount": -13860,
+      "description": "Solde"
+    },
+    {
+      "id": 73,
+      "turn": 39,
+      "date": "2026-08-01T18:29:23.711Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "turn": 39,
+      "date": "2026-08-01T18:29:23.459Z",
+      "type": "balance",
+      "amount": -13843,
+      "description": "Solde"
+    },
+    {
+      "id": 72,
+      "turn": 38,
+      "date": "2026-08-01T18:29:22.673Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "turn": 38,
+      "date": "2026-08-01T18:29:22.459Z",
+      "type": "balance",
+      "amount": -13826,
+      "description": "Solde"
+    },
+    {
+      "id": 71,
+      "turn": 37,
+      "date": "2026-08-01T18:29:15.680Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "turn": 37,
+      "date": "2026-08-01T18:29:15.443Z",
+      "type": "balance",
+      "amount": -13809,
+      "description": "Solde"
+    },
+    {
+      "id": 70,
+      "turn": 36,
+      "date": "2026-08-01T18:29:11.659Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "turn": 36,
+      "date": "2026-08-01T18:29:11.444Z",
+      "type": "balance",
+      "amount": -13792,
+      "description": "Solde"
+    },
+    {
+      "id": 69,
+      "turn": 35,
+      "date": "2026-08-01T18:29:07.868Z",
+      "type": "maintenance",
+      "amount": 32,
+      "description": "Maintenance mensuelle - Août 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":8,\"unitCost\":3,\"total\":24},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 68,
+      "turn": 35,
+      "date": "2026-08-01T18:29:07.867Z",
+      "type": "payroll_tax",
+      "amount": 920,
+      "description": "Impôt sur les salaires - Août 0 JC (20%)"
+    },
+    {
+      "id": 67,
+      "turn": 35,
+      "date": "2026-08-01T18:29:07.866Z",
+      "type": "salary",
+      "amount": 4600,
+      "description": "Salaires fonctionnaires - Août 0 JC (46 hab. × 100€)"
+    },
+    {
+      "id": 66,
+      "turn": 35,
+      "date": "2026-08-01T18:29:07.698Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "turn": 35,
+      "date": "2026-08-01T18:29:07.445Z",
+      "type": "balance",
+      "amount": -10063,
+      "description": "Solde"
+    },
+    {
+      "id": 65,
+      "turn": 34,
+      "date": "2026-08-01T18:29:03.703Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 64,
+      "turn": 34,
+      "date": "2026-08-01T18:29:03.701Z",
+      "type": "export_cabbage",
+      "amount": 20,
+      "description": "Export cabbage |BREAKDOWN|[{\"label\":\"Tropicala\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 34,
+      "date": "2026-08-01T18:29:03.445Z",
+      "type": "balance",
+      "amount": -10066,
+      "description": "Solde"
+    },
+    {
+      "id": 63,
+      "turn": 33,
+      "date": "2026-08-01T18:28:27.642Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "turn": 33,
+      "date": "2026-08-01T18:28:27.442Z",
+      "type": "balance",
+      "amount": -10049,
+      "description": "Solde"
+    },
+    {
+      "id": 62,
+      "turn": 32,
+      "date": "2026-08-01T18:28:06.998Z",
+      "type": "commercial_route",
+      "amount": 500,
+      "description": "Route commerciale - Juillet 0 JC |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":500,\"total\":500}]|BREAKDOWN|"
+    },
+    {
+      "id": 61,
+      "turn": 32,
+      "date": "2026-08-01T18:28:05.769Z",
+      "type": "commercial_route",
+      "amount": 500,
+      "description": "Route commerciale - Juillet 0 JC |BREAKDOWN|[{\"label\":\"Arctica\",\"quantity\":1,\"unitCost\":500,\"total\":500}]|BREAKDOWN|"
+    },
+    {
+      "id": 60,
+      "turn": 32,
+      "date": "2026-08-01T18:28:04.035Z",
+      "type": "commercial_route",
+      "amount": 500,
+      "description": "Route commerciale - Juillet 0 JC |BREAKDOWN|[{\"label\":\"Tropicala\",\"quantity\":1,\"unitCost\":500,\"total\":500}]|BREAKDOWN|"
+    },
+    {
+      "turn": 32,
+      "date": "2026-08-01T18:27:23.446Z",
+      "type": "balance",
+      "amount": -8549,
+      "description": "Solde"
+    },
+    {
+      "id": 59,
+      "turn": 31,
+      "date": "2026-08-01T18:27:22.618Z",
+      "type": "construction",
+      "amount": 50,
+      "description": "Building: Winery-001"
+    },
+    {
+      "turn": 31,
+      "date": "2026-08-01T18:27:19.451Z",
+      "type": "balance",
+      "amount": -8499,
+      "description": "Solde"
+    },
+    {
+      "id": 58,
+      "turn": 30,
+      "date": "2026-08-01T18:27:15.755Z",
+      "type": "maintenance",
+      "amount": 32,
+      "description": "Maintenance mensuelle - Juillet 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":8,\"unitCost\":3,\"total\":24},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 57,
+      "turn": 30,
+      "date": "2026-08-01T18:27:15.754Z",
+      "type": "payroll_tax",
+      "amount": 880,
+      "description": "Impôt sur les salaires - Juillet 0 JC (20%)"
+    },
+    {
+      "id": 56,
+      "turn": 30,
+      "date": "2026-08-01T18:27:15.753Z",
+      "type": "salary",
+      "amount": 4400,
+      "description": "Salaires fonctionnaires - Juillet 0 JC (44 hab. × 100€)"
+    },
+    {
+      "turn": 30,
+      "date": "2026-08-01T18:27:15.446Z",
+      "type": "balance",
+      "amount": -4947,
+      "description": "Solde"
+    },
+    {
+      "turn": 29,
+      "date": "2026-08-01T18:27:11.452Z",
+      "type": "balance",
+      "amount": -4947,
+      "description": "Solde"
+    },
+    {
+      "id": 55,
+      "turn": 28,
+      "date": "2026-08-01T18:27:09.326Z",
+      "type": "construction",
+      "amount": 50,
+      "description": "Building: Windmill-001"
+    },
+    {
+      "turn": 28,
+      "date": "2026-08-01T18:27:03.442Z",
+      "type": "balance",
+      "amount": -4897,
+      "description": "Solde"
+    },
+    {
+      "turn": 27,
+      "date": "2026-08-01T18:26:59.444Z",
+      "type": "balance",
+      "amount": -4897,
+      "description": "Solde"
+    },
+    {
+      "turn": 26,
+      "date": "2026-08-01T18:26:55.443Z",
+      "type": "balance",
+      "amount": -4897,
+      "description": "Solde"
+    },
+    {
+      "id": 54,
+      "turn": 25,
+      "date": "2026-08-01T18:26:51.758Z",
+      "type": "maintenance",
+      "amount": 32,
+      "description": "Maintenance mensuelle - Juin 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":8,\"unitCost\":3,\"total\":24},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 53,
+      "turn": 25,
+      "date": "2026-08-01T18:26:51.756Z",
+      "type": "payroll_tax",
+      "amount": 800,
+      "description": "Impôt sur les salaires - Juin 0 JC (20%)"
+    },
+    {
+      "id": 52,
+      "turn": 25,
+      "date": "2026-08-01T18:26:51.755Z",
+      "type": "salary",
+      "amount": 4000,
+      "description": "Salaires fonctionnaires - Juin 0 JC (40 hab. × 100€)"
+    },
+    {
+      "turn": 25,
+      "date": "2026-08-01T18:26:51.442Z",
+      "type": "balance",
+      "amount": -1665,
+      "description": "Solde"
+    },
+    {
+      "turn": 24,
+      "date": "2026-08-01T18:26:47.443Z",
+      "type": "balance",
+      "amount": -1665,
+      "description": "Solde"
+    },
+    {
+      "turn": 23,
+      "date": "2026-08-01T18:26:43.446Z",
+      "type": "balance",
+      "amount": -1665,
+      "description": "Solde"
+    },
+    {
+      "turn": 22,
+      "date": "2026-08-01T18:26:39.447Z",
+      "type": "balance",
+      "amount": -1665,
+      "description": "Solde"
+    },
+    {
+      "turn": 21,
+      "date": "2026-08-01T18:26:35.447Z",
+      "type": "balance",
+      "amount": -1665,
+      "description": "Solde"
+    },
+    {
+      "id": 51,
+      "turn": 20,
+      "date": "2026-08-01T18:25:47.750Z",
+      "type": "maintenance",
+      "amount": 32,
+      "description": "Maintenance mensuelle - Mai 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":8,\"unitCost\":3,\"total\":24},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 50,
+      "turn": 20,
+      "date": "2026-08-01T18:25:47.748Z",
+      "type": "payroll_tax",
+      "amount": 640,
+      "description": "Impôt sur les salaires - Mai 0 JC (20%)"
+    },
+    {
+      "id": 49,
+      "turn": 20,
+      "date": "2026-08-01T18:25:47.747Z",
+      "type": "salary",
+      "amount": 3200,
+      "description": "Salaires fonctionnaires - Mai 0 JC (32 hab. × 100€)"
+    },
+    {
+      "turn": 20,
+      "date": "2026-08-01T18:25:47.448Z",
+      "type": "balance",
+      "amount": 927,
+      "description": "Solde"
+    },
+    {
+      "id": 48,
+      "turn": 19,
+      "date": "2026-08-01T18:25:46.112Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "id": 47,
+      "turn": 19,
+      "date": "2026-08-01T18:25:45.650Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "turn": 19,
+      "date": "2026-08-01T18:25:43.447Z",
+      "type": "balance",
+      "amount": 947,
+      "description": "Solde"
+    },
+    {
+      "turn": 18,
+      "date": "2026-08-01T18:25:39.448Z",
+      "type": "balance",
+      "amount": 947,
+      "description": "Solde"
+    },
+    {
+      "id": 46,
+      "turn": 17,
+      "date": "2026-08-01T18:25:39.102Z",
+      "type": "construction",
+      "amount": 20,
+      "description": "Building: Farm-Carrot"
+    },
+    {
+      "id": 45,
+      "turn": 17,
+      "date": "2026-08-01T18:25:37.885Z",
+      "type": "construction",
+      "amount": 20,
+      "description": "Building: Farm-Carrot"
+    },
+    {
+      "id": 44,
+      "turn": 17,
+      "date": "2026-08-01T18:25:36.751Z",
+      "type": "construction",
+      "amount": 20,
+      "description": "Building: Farm-Carrot"
+    },
+    {
+      "id": 43,
+      "turn": 17,
+      "date": "2026-08-01T18:25:32.887Z",
+      "type": "construction",
+      "amount": 30,
+      "description": "Building: Farm-Cabbage"
+    },
+    {
+      "id": 42,
+      "turn": 17,
+      "date": "2026-08-01T18:25:32.373Z",
+      "type": "construction",
+      "amount": 30,
+      "description": "Building: Farm-Cabbage"
+    },
+    {
+      "id": 41,
+      "turn": 17,
+      "date": "2026-08-01T18:25:28.859Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: Farm-Wheat"
+    },
+    {
+      "id": 40,
+      "turn": 17,
+      "date": "2026-08-01T18:25:27.467Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: Farm-Wheat"
+    },
+    {
+      "turn": 17,
+      "date": "2026-08-01T18:25:27.443Z",
+      "type": "balance",
+      "amount": 1087,
+      "description": "Solde"
+    },
+    {
+      "turn": 16,
+      "date": "2026-08-01T18:25:23.443Z",
+      "type": "balance",
+      "amount": 1087,
+      "description": "Solde"
+    },
+    {
+      "id": 39,
+      "turn": 15,
+      "date": "2026-08-01T18:25:19.680Z",
+      "type": "maintenance",
+      "amount": 19,
+      "description": "Maintenance mensuelle - Avril 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 37,
+      "turn": 15,
+      "date": "2026-08-01T18:25:19.678Z",
+      "type": "salary",
+      "amount": 2200,
+      "description": "Salaires fonctionnaires - Avril 0 JC (22 hab. × 100€)"
+    },
+    {
+      "id": 38,
+      "turn": 15,
+      "date": "2026-08-01T18:25:19.678Z",
+      "type": "payroll_tax",
+      "amount": 440,
+      "description": "Impôt sur les salaires - Avril 0 JC (20%)"
+    },
+    {
+      "turn": 15,
+      "date": "2026-08-01T18:25:19.442Z",
+      "type": "balance",
+      "amount": 2866,
+      "description": "Solde"
+    },
+    {
+      "turn": 14,
+      "date": "2026-08-01T18:25:15.442Z",
+      "type": "balance",
+      "amount": 2866,
+      "description": "Solde"
+    },
+    {
+      "turn": 13,
+      "date": "2026-08-01T18:25:11.444Z",
+      "type": "balance",
+      "amount": 2866,
+      "description": "Solde"
+    },
+    {
+      "id": 36,
+      "turn": 12,
+      "date": "2026-08-01T18:25:10.259Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: Market-Stall"
+    },
+    {
+      "turn": 12,
+      "date": "2026-08-01T18:25:07.446Z",
+      "type": "balance",
+      "amount": 2876,
+      "description": "Solde"
+    },
+    {
+      "id": 35,
+      "turn": 11,
+      "date": "2026-08-01T18:25:04.569Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "id": 34,
+      "turn": 11,
+      "date": "2026-08-01T18:25:03.475Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "turn": 11,
+      "date": "2026-08-01T18:25:03.447Z",
+      "type": "balance",
+      "amount": 2886,
+      "description": "Solde"
+    },
+    {
+      "id": 33,
+      "turn": 10,
+      "date": "2026-08-01T18:25:02.915Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "id": 32,
+      "turn": 10,
+      "date": "2026-08-01T18:25:02.367Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "id": 31,
+      "turn": 10,
+      "date": "2026-08-01T18:25:01.684Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "id": 30,
+      "turn": 10,
+      "date": "2026-08-01T18:24:59.630Z",
+      "type": "maintenance",
+      "amount": 18,
+      "description": "Maintenance mensuelle - Mars 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18}]|BREAKDOWN|"
+    },
+    {
+      "id": 28,
+      "turn": 10,
+      "date": "2026-08-01T18:24:59.629Z",
+      "type": "salary",
+      "amount": 1600,
+      "description": "Salaires fonctionnaires - Mars 0 JC (16 hab. × 100€)"
+    },
+    {
+      "id": 29,
+      "turn": 10,
+      "date": "2026-08-01T18:24:59.629Z",
+      "type": "payroll_tax",
+      "amount": 320,
+      "description": "Impôt sur les salaires - Mars 0 JC (20%)"
+    },
+    {
+      "turn": 10,
+      "date": "2026-08-01T18:24:59.447Z",
+      "type": "balance",
+      "amount": 4199,
+      "description": "Solde"
+    },
+    {
+      "id": 27,
+      "turn": 9,
+      "date": "2026-08-01T18:24:59.097Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "turn": 9,
+      "date": "2026-08-01T18:24:55.448Z",
+      "type": "balance",
+      "amount": 4204,
+      "description": "Solde"
+    },
+    {
+      "id": 26,
+      "turn": 8,
+      "date": "2026-08-01T18:24:54.531Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "id": 25,
+      "turn": 8,
+      "date": "2026-08-01T18:24:53.021Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "id": 24,
+      "turn": 8,
+      "date": "2026-08-01T18:24:52.348Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "id": 23,
+      "turn": 8,
+      "date": "2026-08-01T18:24:51.612Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "turn": 8,
+      "date": "2026-08-01T18:24:51.446Z",
+      "type": "balance",
+      "amount": 4224,
+      "description": "Solde"
+    },
+    {
+      "id": 22,
+      "turn": 7,
+      "date": "2026-08-01T18:24:51.003Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "id": 21,
+      "turn": 7,
+      "date": "2026-08-01T18:24:49.967Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "id": 20,
+      "turn": 7,
+      "date": "2026-08-01T18:24:49.254Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "id": 19,
+      "turn": 7,
+      "date": "2026-08-01T18:24:48.549Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "id": 18,
+      "turn": 7,
+      "date": "2026-08-01T18:24:47.880Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "turn": 7,
+      "date": "2026-08-01T18:24:47.447Z",
+      "type": "balance",
+      "amount": 4249,
+      "description": "Solde"
+    },
+    {
+      "id": 17,
+      "turn": 6,
+      "date": "2026-08-01T18:24:44.008Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Cross-001"
+    },
+    {
+      "turn": 6,
+      "date": "2026-08-01T18:24:43.443Z",
+      "type": "balance",
+      "amount": 4254,
+      "description": "Solde"
+    },
+    {
+      "id": 16,
+      "turn": 5,
+      "date": "2026-08-01T18:24:39.626Z",
+      "type": "maintenance",
+      "amount": 18,
+      "description": "Maintenance mensuelle - Février 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18}]|BREAKDOWN|"
+    },
+    {
+      "id": 15,
+      "turn": 5,
+      "date": "2026-08-01T18:24:39.624Z",
+      "type": "payroll_tax",
+      "amount": 160,
+      "description": "Impôt sur les salaires - Février 0 JC (20%)"
+    },
+    {
+      "id": 14,
+      "turn": 5,
+      "date": "2026-08-01T18:24:39.623Z",
+      "type": "salary",
+      "amount": 800,
+      "description": "Salaires fonctionnaires - Février 0 JC (8 hab. × 100€)"
+    },
+    {
+      "id": 13,
+      "turn": 5,
+      "date": "2026-08-01T18:24:39.550Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "turn": 5,
+      "date": "2026-08-01T18:24:39.444Z",
+      "type": "balance",
+      "amount": 4917,
+      "description": "Solde"
+    },
+    {
+      "id": 12,
+      "turn": 4,
+      "date": "2026-08-01T18:24:38.899Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "id": 11,
+      "turn": 4,
+      "date": "2026-08-01T18:24:38.271Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "id": 10,
+      "turn": 4,
+      "date": "2026-08-01T18:24:37.557Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "id": 9,
+      "turn": 4,
+      "date": "2026-08-01T18:24:36.638Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "id": 8,
+      "turn": 4,
+      "date": "2026-08-01T18:24:31.957Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "turn": 4,
+      "date": "2026-08-01T18:24:31.443Z",
+      "type": "balance",
+      "amount": 4947,
+      "description": "Solde"
+    },
+    {
+      "id": 7,
+      "turn": 3,
+      "date": "2026-08-01T18:24:30.742Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "id": 6,
+      "turn": 3,
+      "date": "2026-08-01T18:24:29.879Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "id": 5,
+      "turn": 3,
+      "date": "2026-08-01T18:24:28.791Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "id": 4,
+      "turn": 3,
+      "date": "2026-08-01T18:24:27.860Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "id": 3,
+      "turn": 3,
+      "date": "2026-08-01T18:24:27.491Z",
+      "type": "maintenance",
+      "amount": 3,
+      "description": "Maintenance mensuelle - Janvier 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":1,\"unitCost\":3,\"total\":3}]|BREAKDOWN|"
+    },
+    {
+      "turn": 3,
+      "date": "2026-08-01T18:24:27.443Z",
+      "type": "balance",
+      "amount": 4990,
+      "description": "Solde"
+    },
+    {
+      "id": 2,
+      "turn": 2,
+      "date": "2026-08-01T18:24:26.315Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "turn": 2,
+      "date": "2026-08-01T18:24:23.444Z",
+      "type": "balance",
+      "amount": 5000,
+      "description": "Solde"
+    },
+    {
+      "turn": 1,
+      "date": "2026-08-01T18:24:19.446Z",
+      "type": "balance",
+      "amount": 5000,
+      "description": "Solde"
+    },
+    {
+      "id": 1,
+      "turn": 0,
+      "date": "2026-08-01T18:24:16.069Z",
+      "type": "capital_funds",
+      "amount": 5000,
+      "description": "Capital de départ: 5000€"
+    }
+  ],
+  "yearlySummary": [
+    {
+      "year": 1,
+      "income": 608725,
+      "expenses": 586702,
+      "netFlow": 22023,
+      "monthCount": 5
+    },
+    {
+      "year": 0,
+      "income": 18220,
+      "expenses": 43204,
+      "netFlow": -24984,
+      "monthCount": 12
+    }
+  ],
+  "yearEndBalances": [
+    {
+      "an": 0,
+      "nature": "deficit",
+      "amount": 24984
+    }
+  ]
+}
