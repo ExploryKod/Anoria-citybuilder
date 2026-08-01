@@ -1,6 +1,7 @@
 {
   "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
+  "installCommand": "corepack enable && pnpm install",
   "headers": [
     {
       "source": "/(.*)",
