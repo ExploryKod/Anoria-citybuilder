@@ -2,8 +2,9 @@
  * FoodTraceabilityPanel — traçabilité alimentaire admin (DOM + événements).
  * Rendu HTML : FoodTraceabilityPresenter.js
  */
-import { getOrCreateSupplyContext, getAllFoodTraceabilityTransactions } from '../../../../composition/facades/supply.js';
 import {
+import { requireSessionSupplyApi } from '../../../../composition/sessionRuntime.js';
+
     buildingStockKey,
     createFarmMarketSectionHTML,
     createMarketHouseSectionHTML,
@@ -124,7 +125,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
     `;
     
     try {
-        let transactions = await getAllFoodTraceabilityTransactions();
+        let transactions = await requireSessionSupplyApi().getAllFoodTraceabilityTransactions();
         
         // Filter by period
         if (period !== 'all') {
@@ -176,8 +177,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
         let currentStocks = {};
         let allBuildingsData = [];
         try {
-            const supply = getOrCreateSupplyContext();
-            allBuildingsData = await supply.listSupplyStockSnapshots();
+            allBuildingsData = await requireSessionSupplyApi().listSupplyStockSnapshots();
             allBuildingsData.forEach(building => {
                 const buildingKey = buildingStockKey(building);
                 if (buildingKey && building.stocks) {
@@ -605,11 +605,10 @@ export async function loadFoodCharts() {
     `;
     
     try {
-        const transactions = await getAllFoodTraceabilityTransactions();
+        const transactions = await requireSessionSupplyApi().getAllFoodTraceabilityTransactions();
         
         // House pop via Supply BC (not raw Dexie)
-        const supply = getOrCreateSupplyContext();
-        const allHouses = (await supply.listSupplyStockSnapshots()).filter(
+        const allHouses = (await requireSessionSupplyApi().listSupplyStockSnapshots()).filter(
             (b) => b.kind === 'house' || (b.type && (b.type.includes('House') || b.type.includes('Maison')))
         );
         

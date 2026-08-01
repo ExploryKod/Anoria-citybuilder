@@ -1,9 +1,8 @@
-import { listWindmillSupplyViews, updateSupplyBuildingFields } from '../../../../composition/facades/supply.js';
-import { getBuildingById } from '../../../../composition/facades/construction.js';
+import { requireSessionConstructionApi, requireSessionSupplyApi } from '../../../../composition/sessionRuntime.js';
 import {
     instanceIdFromHouseRow,
     displayLabelFromHouseRow,
-} from '../../../../composition/facades/building-identity.js';
+} from '../../../../shared/building-identity/index.js';
 
 function windmillInstanceId(windmill) {
     return instanceIdFromHouseRow(windmill);
@@ -38,11 +37,11 @@ export class StorageSectionPresenter {
      */
     async loadWindmills() {
         try {
-            const supplyViews = await listWindmillSupplyViews();
+            const supplyViews = await requireSessionSupplyApi().listWindmillSupplyViews();
 
             this.windmills = [];
             for (const view of supplyViews) {
-                const raw = await getBuildingById(view.buildingId);
+                const raw = await requireSessionConstructionApi().getBuildingById(view.buildingId);
                 this.windmills.push({
                     ...(raw || {}),
                     instanceId: view.buildingId,
@@ -319,7 +318,7 @@ export class StorageSectionPresenter {
      */
     async updateWindmillSetting(windmillId, setting, value) {
         try {
-            await updateSupplyBuildingFields(windmillId, {
+            await requireSessionSupplyApi().updateSupplyBuildingFields(windmillId, {
                 [setting]: value
             });
             

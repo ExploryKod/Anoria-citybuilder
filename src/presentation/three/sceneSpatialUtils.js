@@ -228,7 +228,7 @@ export const IsInZoneLimits = (zoneLimit, city) => {
     return x+1 < zoneLimit && y+1 < zoneLimit && x-1 > 0 && y-1 > 0
 }
 
-export { getBuildingsNamesInZone, zoneBordersBuildings } from '../../composition/facades/parcels.js';
+export { getBuildingsNamesInZone, zoneBordersBuildings } from '../../contexts/parcels/infrastructure/spatial/sceneNeighborhoodScan.js';
 
 /**
  * Get a neighbor instanceId by matching against known neighbor UUIDs on the mesh.

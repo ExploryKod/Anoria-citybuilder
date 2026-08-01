@@ -2,7 +2,7 @@
  * PopupManager - Gestionnaire unifié pour toutes les popups
  * Utilise pointer-events CSS pour désactiver les interactions avec le canvas 3D
  */
-import { pauseGame, playGame, registerAppService } from '../../../composition/facades/appRuntime.js';
+import { pauseGame, playGame, registerAppService } from '../../../composition/sessionShell.js';
 
 class PopupManager {
     constructor() {

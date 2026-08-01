@@ -1,6 +1,4 @@
-import { getObjectivesManager, registerAppService } from '../../../composition/facades/appRuntime.js';
-import { getObjectivesStore } from '../../../composition/facades/objectives.js';
-
+import { requireSessionAccountingApi } from '../../../composition/sessionRuntime.js';
 /**
  * Gestion de l'historique des objectifs (succès et échecs)
  */
@@ -22,7 +20,7 @@ class ObjectivesHistory {
 
         try {
             // Récupérer toutes les données du store
-            const allRecords = await getObjectivesStore().getAllFailures();
+            const allRecords = await requireSessionAccountingApi().getObjectivesStore().getAllFailures();
             
             const failures = allRecords.filter(r => r.name?.startsWith('failure_'));
             const successes = allRecords.filter(r => r.name?.startsWith('success_'));
@@ -113,8 +111,8 @@ class ObjectivesHistory {
             this.isOpen = true;
 
             // Désactiver les événements Three.js
-            if (getObjectivesManager() && getObjectivesManager().disableThreeJSEvents) {
-                getObjectivesManager().disableThreeJSEvents();
+            if (requireSessionAccountingApi().getObjectivesManager() && requireSessionAccountingApi().getObjectivesManager().disableThreeJSEvents) {
+                requireSessionAccountingApi().getObjectivesManager().disableThreeJSEvents();
             }
         } catch (error) {
             console.error('Error showing objectives history:', error);
@@ -195,8 +193,8 @@ class ObjectivesHistory {
         this.isOpen = false;
 
         // Réactiver les événements Three.js
-        if (getObjectivesManager() && getObjectivesManager().enableThreeJSEvents) {
-            getObjectivesManager().enableThreeJSEvents();
+        if (requireSessionAccountingApi().getObjectivesManager() && requireSessionAccountingApi().getObjectivesManager().enableThreeJSEvents) {
+            requireSessionAccountingApi().getObjectivesManager().enableThreeJSEvents();
         }
     }
 }

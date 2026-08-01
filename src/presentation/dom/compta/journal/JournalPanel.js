@@ -4,12 +4,9 @@
  * Données : acl/accounting.js → GetGeneralLedger
  */
 
-import { getPopupManager } from '../../../../composition/facades/appRuntime.js';
-import {
-  getGeneralLedger,
-  exportJournalJson,
-  exportJournalPdf,
-} from '../../../../composition/facades/accounting.js';
+import { getPopupManager } from '../../../../composition/sessionShell.js';
+import { requireSessionAccountingApi } from '../../../../composition/sessionRuntime.js';
+
 import { renderJournalList } from './JournalPresenter.js';
 
 /**
@@ -128,7 +125,7 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
     `;
 
   try {
-    const ledger = await getGeneralLedger({
+    const ledger = await requireSessionAccountingApi().getGeneralLedger({
       periodDays: parsePeriodDays(period),
       types: typeFilter,
     });
@@ -159,7 +156,7 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
  */
 export async function exportJournalToJSON() {
   try {
-    const jsonString = await exportJournalJson();
+    const jsonString = await requireSessionAccountingApi().exportJournalJson();
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -186,7 +183,7 @@ export async function exportJournalToPDF() {
       exportPdfBtn.innerHTML = '<span>Génération...</span>';
     }
 
-    const pdfBlob = await exportJournalPdf();
+    const pdfBlob = await requireSessionAccountingApi().exportJournalPdf();
     const url = URL.createObjectURL(pdfBlob);
     const a = document.createElement('a');
     a.href = url;

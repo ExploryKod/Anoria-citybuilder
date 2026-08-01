@@ -4,9 +4,9 @@
 export {
   SessionJournalStore,
   resetSessionJournalStoreForTests,
-} from '../../contexts/accounting/infrastructure/session/SessionJournalStore.js';
+} from '../contexts/accounting/infrastructure/session/SessionJournalStore.js';
 
-export { default as sessionJournalStore } from '../../contexts/accounting/infrastructure/session/SessionJournalStore.js';
+export { default as sessionJournalStore } from '../contexts/accounting/infrastructure/session/SessionJournalStore.js';
 
 export {
   SessionLedgerBuffer,
@@ -14,11 +14,11 @@ export {
   toPublicEntry,
   toDexieRow,
   resetSessionLedgerBufferForTests,
-} from '../../contexts/accounting/infrastructure/session/SessionLedgerBuffer.js';
+} from '../contexts/accounting/infrastructure/session/SessionLedgerBuffer.js';
 
-import { SessionJournalStore } from '../../contexts/accounting/infrastructure/session/SessionJournalStore.js';
-import sessionJournalStore from '../../contexts/accounting/infrastructure/session/SessionJournalStore.js';
-import { getTimeManager } from './appRuntime.js';
+import { SessionJournalStore } from '../contexts/accounting/infrastructure/session/SessionJournalStore.js';
+import sessionJournalStore from '../contexts/accounting/infrastructure/session/SessionJournalStore.js';
+import { getTimeManager } from './sessionShell.js';
 
 function createFallbackGameTimePort() {
   return {

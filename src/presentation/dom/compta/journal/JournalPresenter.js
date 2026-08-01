@@ -2,19 +2,20 @@
  * JournalPresenter — rendu HTML du grand livre (données déjà chargées).
  */
 
-import { getTimeInfo } from '../../../../composition/facades/appRuntime.js';
+import { getTimeInfo } from '../../../../composition/sessionShell.js';
 import { formatJournalEntryDetails } from './formatJournalEntryDescription.js';
-import {
-  INFO_JOURNAL_TYPE_LABELS,
-  isInfoPseudoMovementType,
-  labelForInfoJournalType,
-} from '../../../../composition/facades/accountingJournalUi.js';
+import { requireSessionAccountingApi } from '../../../../composition/sessionRuntime.js';
 
 /**
  * @param {import('../../../../contexts/accounting/domain/read-models/GeneralLedgerView.js').GeneralLedgerView} ledger
  * @returns {string}
  */
 export function renderJournalList(ledger) {
+  const {
+    INFO_JOURNAL_TYPE_LABELS,
+    isInfoPseudoMovementType,
+    labelForInfoJournalType,
+  } = requireSessionAccountingApi();
   const sortHint = `
         <p class="journal-sort-hint">Plus récent en haut — années et mois triés du plus récent au plus ancien.</p>
     `;
@@ -91,6 +92,11 @@ export function renderJournalList(ledger) {
  * @returns {string}
  */
 function createJournalEntryHTML(entry) {
+  const {
+    INFO_JOURNAL_TYPE_LABELS,
+    isInfoPseudoMovementType,
+    labelForInfoJournalType,
+  } = requireSessionAccountingApi();
   const date = new Date(entry.date);
   const formattedDate = date.toLocaleString('fr-FR', {
     day: '2-digit',

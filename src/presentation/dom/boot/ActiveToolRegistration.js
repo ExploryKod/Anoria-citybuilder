@@ -1,4 +1,4 @@
-import { registerAppFunction, getPopupManager } from '../../../composition/facades/appRuntime.js';
+import { registerAppFunction, getPopupManager } from '../../../composition/sessionShell.js';
 import { getSessionGame } from '../../../composition/sessionRuntime.js';
 import {
   getButtonsDisabled,

@@ -4,9 +4,9 @@
 
 import Dexie from 'dexie';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
-import { JournalManager } from '../../../src/composition/facades/accountingSessionJournal.js';
+import { JournalManager } from '../../../src/composition/accountingSessionJournal.js';
 import { BudgetManager } from '../../../tests/helpers/testBudgetFacade.js';
-import { resetSessionLedgerBufferForTests } from '../../../src/composition/facades/accountingSessionJournal.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/composition/accountingSessionJournal.js';
 import {
   getOrCreateAccountingContext,
   resetAccountingContextForTests,
@@ -14,6 +14,16 @@ import {
 import { processLoanPayments } from '../../../src/presentation/dom/compta/prets/PretsPanel.js';
 import { isInformativeJournalType } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/dexie/journalAggregations.js';
 import { buildInfoMovementBusinessKey } from '../../../src/contexts/accounting/domain/policies/LedgerInformativeTypePolicy.js';
+import { assembleSessionApi } from '../../../src/composition/sessionApi.js';
+import {
+  bindSessionRuntime,
+  resetSessionRuntimeForTests,
+} from '../../../src/composition/sessionRuntime.js';
+import {
+  getOrCreateConstructionContext,
+  resetConstructionContextForTests,
+} from '../../../src/composition/createConstructionContext.js';
+import { getOrCreateCityAssetsContext } from '../../../src/composition/createCityAssetsContext.js';
 
 function createTestDb() {
   const testDb = new Dexie('testInfoLoanInstallmentDb');
@@ -34,6 +44,8 @@ describe('Accounting — info loan installment (informative journal)', () => {
   beforeEach(async () => {
     resetSessionLedgerBufferForTests();
     resetAccountingContextForTests();
+    resetConstructionContextForTests();
+    resetSessionRuntimeForTests();
 
     testDb = createTestDb();
     await testDb.open();
@@ -73,10 +85,18 @@ describe('Accounting — info loan installment (informative journal)', () => {
       journalManager,
       budgetManager,
     });
+
+    const construction = getOrCreateConstructionContext();
+    const cityAssets = getOrCreateCityAssetsContext();
+    bindSessionRuntime({
+      sessionApi: assembleSessionApi({ construction, accounting, cityAssets }),
+    });
   });
 
   afterEach(async () => {
     resetAccountingContextForTests();
+    resetConstructionContextForTests();
+    resetSessionRuntimeForTests();
     resetSessionLedgerBufferForTests();
     if (testDb) {
       await testDb.delete();

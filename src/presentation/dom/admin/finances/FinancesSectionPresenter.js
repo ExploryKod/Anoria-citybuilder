@@ -1,9 +1,10 @@
-import { getCityLedgerYearComparison, createEmptyCityLedgerYearLines, getCitizenTaxPerCapita, setCitizenTaxPerCapita } from '../../../../composition/facades/accounting.js';
 import { renderCityLedger } from '../../compta/livret/CityLedgerPresenter.js';
+import { getSessionAccountingApi, requireSessionAccountingApi } from '../../../../composition/sessionRuntime.js';
+
 
 export class FinancesSectionPresenter {
     constructor() {
-        this.citizenTaxAmount = getCitizenTaxPerCapita();
+        this.citizenTaxAmount = getSessionAccountingApi()?.getCitizenTaxPerCapita() ?? 0;
         this.financialData = null;
     }
 
@@ -47,7 +48,7 @@ export class FinancesSectionPresenter {
         this.setupEventListeners();
 
         try {
-            this.financialData = await getCityLedgerYearComparison();
+            this.financialData = await requireSessionAccountingApi().getCityLedgerYearComparison();
             this.render();
         } catch (error) {
             console.error('[FinancesSection] Error loading financial data:', error);
@@ -56,14 +57,14 @@ export class FinancesSectionPresenter {
     }
 
     getEmptyYearData(year) {
-        return createEmptyCityLedgerYearLines(year);
+        return requireSessionAccountingApi().createEmptyCityLedgerYearLines(year);
     }
 
     adjustCitizenTaxAmount(delta) {
         const newAmount = Math.max(0, Math.min(1000, this.citizenTaxAmount + delta));
 
         if (newAmount !== this.citizenTaxAmount) {
-            this.citizenTaxAmount = setCitizenTaxPerCapita(newAmount);
+            this.citizenTaxAmount = requireSessionAccountingApi().setCitizenTaxPerCapita(newAmount);
             this.updateTaxDisplay();
         }
     }

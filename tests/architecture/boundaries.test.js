@@ -101,7 +101,7 @@ function checkViolation(fileRel, importSpec) {
   }
 
   if (fileRel.startsWith('presentation/') && isContextsDomainImport(importSpec)) {
-    return 'presentation must not import contexts/*/domain (use composition/facades or application)';
+    return 'presentation must not import contexts/*/domain (use sessionApi / composition ops or application)';
   }
 
   if (fileRel.startsWith('engine/') && (isContextsImport || isLegacyJsImport(importSpec))) {
@@ -120,6 +120,37 @@ describe('architecture boundaries', () => {
   test('src/ui/ package is gone (migrated to presentation/dom)', () => {
     const uiRoot = path.join(SRC_ROOT, 'ui');
     expect(fs.existsSync(uiRoot)).toBe(false);
+  });
+
+  test('composition/facades/ package is gone (sessionApi + *Ops)', () => {
+    const facadesRoot = path.join(SRC_ROOT, 'composition', 'facades');
+    expect(fs.existsSync(facadesRoot)).toBe(false);
+  });
+
+  test('presentation must not import *Ops or getOrCreate*Context (except game session)', () => {
+    const presentationRoot = path.join(SRC_ROOT, 'presentation');
+    const files = listJsFiles(presentationRoot);
+    const violations = [];
+    for (const absolutePath of files) {
+      const fileRel = toSrcRelative(absolutePath);
+      const content = stripComments(fs.readFileSync(absolutePath, 'utf8'));
+      for (const re of [IMPORT_FROM_RE, DYNAMIC_IMPORT_RE]) {
+        re.lastIndex = 0;
+        for (const match of content.matchAll(re)) {
+          const importSpec = match[1];
+          if (/composition\/facades\//.test(importSpec) || /\/facades\//.test(importSpec)) {
+            violations.push(`${fileRel} imports "${importSpec}" — presentation must not import facades`);
+          }
+          if (importSpec.includes('Ops.js')) {
+            violations.push(`${fileRel} imports "${importSpec}" — presentation must use sessionApi, not *Ops`);
+          }
+        }
+      }
+      if (/getOrCreate(?!GameSession)\w*Context/.test(content)) {
+        violations.push(`${fileRel} calls getOrCreate*Context — use sessionApi / injected deps`);
+      }
+    }
+    expect(violations).toEqual([]);
   });
 
   test('import graph respects layer rules', () => {

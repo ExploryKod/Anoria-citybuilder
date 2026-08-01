@@ -3,16 +3,20 @@
  * Not the source of balance sheet totals (those come from BalanceSheet read model).
  */
 
-import { listAllBuildingRows } from '../../../../composition/facades/construction.js';
-import { getCityBuildingValuation } from '../../../../composition/facades/budget.js';
-import { formatEuroOrNa } from '../../../../composition/facades/accountingPresentation.js';
+import { requireSessionConstructionApi, requireSessionAccountingApi } from '../../../../composition/sessionRuntime.js';
+import { formatEuroOrNa } from '../../../../contexts/accounting/presentation/index.js';
 
 /**
  * @returns {Promise<Record<string, string>>}
  */
 export async function fetchBuildingBreakdownElementValues() {
+  const construction = requireSessionConstructionApi();
+  const accounting = requireSessionAccountingApi();
   const [{ totalValue: _totalBuildingValue, pricesByType: buildingPrices }, houses] =
-    await Promise.all([getCityBuildingValuation(), listAllBuildingRows()]);
+    await Promise.all([
+      accounting.getCityBuildingValuation(),
+      construction.listAllBuildingRows(),
+    ]);
 
   const buildingAnalysis = {
     redHouses: 0,

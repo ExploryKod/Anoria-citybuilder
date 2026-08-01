@@ -5,7 +5,7 @@
 import {
   isEmploymentWorkplaceType,
   redistributeCityEmployment,
-} from './facades/employment.js';
+} from './employmentOps.js';
 
 /**
  * @param {{ refreshEmploymentPresentation: (city: object) => Promise<void> }} scene

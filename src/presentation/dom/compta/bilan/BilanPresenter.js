@@ -2,7 +2,7 @@
  * BilanPresenter — rendu du read model bilan dans le DOM.
  */
 
-import { buildBalanceSheetViewModel } from '../../../../composition/facades/accountingPresentation.js';
+import { buildBalanceSheetViewModel } from '../../../../contexts/accounting/presentation/index.js';
 import { fetchBuildingBreakdownElementValues } from './BuildingBreakdownEnrichment.js';
 
 /**

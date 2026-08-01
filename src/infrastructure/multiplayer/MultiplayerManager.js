@@ -4,7 +4,7 @@
  */
 
 import { WebSocketClient } from './WebSocketClient.js';
-import { getGame, getGameCity, getPopupManager } from '../../composition/facades/appRuntime.js';
+import { getGame, getGameCity, getPopupManager } from '../../composition/sessionShell.js';
 
 export class MultiplayerManager {
     constructor(game, scene) {

@@ -1,4 +1,4 @@
-import { getButtonStateManager } from '../../../composition/facades/appRuntime.js';
+import { getButtonStateManager } from '../../../composition/sessionShell.js';
 import { setToolPanelAssets } from '../tools/ToolPanel.js';
 import { updateSpeedDisplay } from './SpeedControls.js';
 

@@ -1,18 +1,9 @@
 /**
  * ObjectivesPanel — popup objectifs (DOM + événements).
  */
-import {
-    pauseGame,
-    playGame,
-    registerAppService,
-    registerAppFunction,
-    getObjectivesManager,
-    getObjectivesTracker,
-    getObjectivesHistory,
-    invokeStartObjectives,
-} from '../../../composition/facades/appRuntime.js';
-import { getObjectivesStore } from '../../../composition/facades/objectives.js';
 import EventBlocker from '../shell/EventBlocker.js';
+import { requireSessionAccountingApi } from '../../../composition/sessionRuntime.js';
+
 
 class ObjectivesPanel {
     constructor() {
@@ -89,7 +80,7 @@ class ObjectivesPanel {
      */
     async setupDefaultSteps() {
         // Charger les objectifs depuis le tracker
-        const objectivesTracker = getObjectivesTracker();
+        const objectivesTracker = requireSessionAccountingApi().getObjectivesTracker();
         if (objectivesTracker) {
             const objectives = objectivesTracker.objectives;
             const activeObjectives = objectives.filter(obj => obj.active && !obj.completed);
@@ -157,7 +148,7 @@ class ObjectivesPanel {
         }
 
         // Afficher l'état actuel de manière simplifiée
-        const objectivesTracker = getObjectivesTracker();
+        const objectivesTracker = requireSessionAccountingApi().getObjectivesTracker();
         if (objectivesTracker) {
             const trackingData = objectivesTracker.getTrackingData();
             
@@ -231,7 +222,7 @@ class ObjectivesPanel {
         this.disableThreeJSEvents();
         
         // Mettre le jeu en pause
-        pauseGame();
+        requireSessionAccountingApi().pauseGame();
     }
 
     /**
@@ -245,7 +236,7 @@ class ObjectivesPanel {
         this.enableThreeJSEvents();
         
         // Reprendre le jeu
-        playGame();
+        requireSessionAccountingApi().playGame();
     }
 
     /**
@@ -295,7 +286,7 @@ class ObjectivesPanel {
             if (historyBtn) {
                 historyBtn.addEventListener('click', (e) => {
                     e.preventDefault();
-                    const objectivesHistory = getObjectivesHistory();
+                    const objectivesHistory = requireSessionAccountingApi().getObjectivesHistory();
                     if (objectivesHistory?.showHistory) {
                         objectivesHistory.showHistory();
                     } else {
@@ -317,7 +308,7 @@ class ObjectivesPanel {
         if (!historyContent) return;
         
         try {
-            const allRecords = await getObjectivesStore().getAllFailures();
+            const allRecords = await requireSessionAccountingApi().getObjectivesStore().getAllFailures();
             const failures = allRecords.filter(r => r.name?.startsWith('failure_'));
             const successes = allRecords.filter(r => r.name?.startsWith('success_'));
             
@@ -364,7 +355,7 @@ class ObjectivesPanel {
                 const fullHistoryBtn = historyContent.querySelector('#open-full-history-btn');
                 if (fullHistoryBtn) {
                     fullHistoryBtn.addEventListener('click', () => {
-                        const objectivesHistory = getObjectivesHistory();
+                        const objectivesHistory = requireSessionAccountingApi().getObjectivesHistory();
                         if (objectivesHistory) {
                             objectivesHistory.showHistory();
                         }
@@ -443,13 +434,13 @@ class ObjectivesPanel {
 
 const objectivesPanel = new ObjectivesPanel();
 
-registerAppService('objectivesManager', objectivesPanel);
+requireSessionAccountingApi().registerAppService('objectivesManager', objectivesPanel);
 
-registerAppFunction('startObjectives', async () => {
+requireSessionAccountingApi().registerAppFunction('startObjectives', async () => {
     await objectivesPanel.showObjectives();
 });
 
-registerAppFunction('closeObjectives', () => {
+requireSessionAccountingApi().registerAppFunction('closeObjectives', () => {
     objectivesPanel.closeObjectives();
 });
 
@@ -464,19 +455,19 @@ document.addEventListener('DOMContentLoaded', () => {
             e.stopPropagation();
             e.stopImmediatePropagation();
 
-            await invokeStartObjectives();
+            await requireSessionAccountingApi().invokeStartObjectives();
         }, true);
     }
 });
 
 window.addEventListener('error', () => {
-    const objectivesManagerRef = getObjectivesManager();
+    const objectivesManagerRef = requireSessionAccountingApi().getObjectivesManager();
     if (objectivesManagerRef && objectivesManagerRef.eventBlocker.isEventsBlocked()) {
         objectivesManagerRef.cleanup();
     }
 });
 
 window.addEventListener('beforeunload', () => {
-    getObjectivesManager()?.cleanup();
+    requireSessionAccountingApi().getObjectivesManager()?.cleanup();
 });
 

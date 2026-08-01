@@ -7,7 +7,7 @@ import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domai
 import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
 import { canWindmillCollectFromFarms } from '../../../src/contexts/supply/domain/policies/CollectingMonthPolicy.js';
 import { WindmillCollectsFromAllFarms } from '../../../src/contexts/supply/application/commands/surplus/WindmillCollectsFromAllFarms.js';
-import { toSupplyMonth } from '../../../src/composition/facades/supply.js';
+import { toSupplyMonth } from '../../../src/composition/supplyOps.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 
 class InMemorySupplyBuildingRepository {

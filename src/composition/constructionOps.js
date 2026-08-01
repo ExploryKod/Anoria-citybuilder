@@ -1,14 +1,12 @@
 /**
- * ACL Construction — placement orchestration from legacy `src/js/`.
- *
- * Spatial neighbors / road access: Parcels BC after mesh sync.
- * Payment: acl/budget.js → Accounting BC.
+ * Composition ops — migrated from facades/construction.js (plan_use_case_wiring Barre 5).
+ * Prefer sessionApi / create*Context for new call sites.
  */
 
 import {
   createConstructionContext,
   getOrCreateConstructionContext,
-} from '../createConstructionContext.js';
+} from './createConstructionContext.js';
 
 export { createConstructionContext, getOrCreateConstructionContext };
 

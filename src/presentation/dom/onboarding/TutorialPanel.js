@@ -8,7 +8,7 @@ import {
     registerAppFunction,
     getTutorialManager,
     invokeStartTutorial,
-} from '../../../composition/facades/appRuntime.js';
+} from '../../../composition/sessionShell.js';
 import EventBlocker from '../shell/EventBlocker.js';
 
 class TutorialPanel {

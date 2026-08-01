@@ -224,6 +224,6 @@ find src/js -name '*.js' | xargs wc -l
 
 ## 8. Prochaine action
 
-**Cap A→F atteint.** Suite optionnelle hors plan : amincir `composition/facades/` (appeler les contextes directement depuis l’UI injectée), rafraîchir `src/archi.md` pour coller au code.
+**Cap A→F atteint.** Suite opérationnelle : câblage par use case / injection (remplacer `composition/facades/`) — voir [`plan_use_case_wiring.md`](../plan_use_case_wiring.md) à la racine du repo.
 
 ~~A + B + C + D + E + F done.~~

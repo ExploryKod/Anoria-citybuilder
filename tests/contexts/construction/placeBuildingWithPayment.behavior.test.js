@@ -11,9 +11,9 @@ import {
   findBuildingAtTile,
   placeBuildingWithPayment,
   reclaimStaleBuildingRecordsForPlacement,
-} from '../../../src/composition/facades/construction.js';
-import { initializeTreasury, resetAccountingContextForTests } from '../../../src/composition/facades/accounting.js';
-import { resetSessionLedgerBufferForTests } from '../../../src/composition/facades/accountingSessionJournal.js';
+} from '../../../src/composition/constructionOps.js';
+import { initializeTreasury, resetAccountingContextForTests } from '../../../src/composition/accountingOps.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/composition/accountingSessionJournal.js';
 import { makeHouseRecord } from '../../fixtures/buildingRecord.js';
 
 async function clearTables() {

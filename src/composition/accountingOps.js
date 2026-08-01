@@ -1,19 +1,18 @@
 /**
- * ACL Accounting — façade legacy → Accounting BC (Phase 1).
- *
- * Presenters and game code must use these entry points, not contexts/accounting/domain.
+ * Composition ops — migrated from facades/accounting.js (plan_use_case_wiring Barre 5).
+ * Prefer sessionApi / create*Context for new call sites.
  */
 
 import {
   createAccountingContext,
   getOrCreateAccountingContext,
   resetAccountingContextForTests,
-} from '../createAccountingContext.js';
+} from './createAccountingContext.js';
 import {
   readInitialFundsFromImportMeta,
   COMMERCIAL_ROUTE_FEE,
   DEFAULT_INITIAL_FUNDS,
-} from '../../contexts/accounting/domain/catalogs/TreasuryCatalog.js';
+} from '../contexts/accounting/domain/catalogs/TreasuryCatalog.js';
 
 export {
   createAccountingContext,
@@ -25,7 +24,7 @@ export {
   LocalStorageFiscalSettingsRepository,
   DEFAULT_FISCAL_SETTINGS,
   FISCAL_STORAGE_KEYS,
-} from '../../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
+} from '../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
 
 export {
   readInitialFundsFromImportMeta,
@@ -125,7 +124,7 @@ export async function getCityLedgerYearComparison() {
   return getOrCreateAccountingContext().getCityLedgerYearComparison();
 }
 
-export { createEmptyCityLedgerYearLines } from '../../contexts/accounting/domain/value-objects/CityLedgerYearLines.js';
+export { createEmptyCityLedgerYearLines } from '../contexts/accounting/domain/value-objects/CityLedgerYearLines.js';
 
 /**
  * @param {{ periodDays?: number|null, types?: string[]|null }} [filters]

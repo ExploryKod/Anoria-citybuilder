@@ -1,18 +1,19 @@
 /**
- * ACL Budget — façade legacy → Accounting BC / city assets.
+ * Composition ops — migrated from facades/budget.js (plan_use_case_wiring Barre 5).
+ * Prefer sessionApi / create*Context for new call sites.
  */
 
 import {
   createCityAssetsContext,
   getOrCreateCityAssetsContext,
-} from '../createCityAssetsContext.js';
+} from './createCityAssetsContext.js';
 
 export { createCityAssetsContext, getOrCreateCityAssetsContext };
 
 export {
   recordConstructionExpense,
   recordConstructionRefund,
-} from '../constructionTreasuryBridge.js';
+} from './constructionTreasuryBridge.js';
 
 /**
  * Built asset valuation (sum of `houses.price` + first price per type).

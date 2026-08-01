@@ -1,5 +1,5 @@
-import { registerAppService } from '../../../composition/facades/appRuntime.js';
-import { getOrCreateGameSessionContext } from '../../../composition/facades/gameSession.js';
+import { registerAppService } from '../../../composition/sessionShell.js';
+import { getOrCreateGameSessionContext } from '../../../composition/createGameSessionContext.js';
 import { bindSessionRuntime } from '../../../composition/sessionRuntime.js';
 import { waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
 import { createGame } from '../../three/game.js';

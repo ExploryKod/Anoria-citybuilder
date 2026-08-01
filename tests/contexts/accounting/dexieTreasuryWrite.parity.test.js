@@ -7,8 +7,8 @@ import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { DexieTreasuryRepository } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryRepository.js';
 import { DexieTreasuryWriteAdapter } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryWriteAdapter.js';
 import { resetAccountingContextForTests } from '../../../src/composition/createAccountingContext.js';
-import { JournalManager } from '../../../src/composition/facades/accountingSessionJournal.js';
-import { resetSessionLedgerBufferForTests } from '../../../src/composition/facades/accountingSessionJournal.js';
+import { JournalManager } from '../../../src/composition/accountingSessionJournal.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/composition/accountingSessionJournal.js';
 
 function createTestDb() {
   const testDb = new Dexie('testDexieTreasuryWrite');

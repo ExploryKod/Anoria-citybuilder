@@ -1,19 +1,18 @@
 /**
- * ACL Supply — only entry from legacy `src/js/` into the Supply BC.
- *
- * Do not import `contexts/supply/domain/**` from UI or SimServices.
+ * Composition ops — migrated from facades/supply.js (plan_use_case_wiring Barre 5).
+ * Prefer sessionApi / create*Context for new call sites.
  */
 
 import {
   createSupplyContext,
   getOrCreateSupplyContext,
-} from '../createSupplyContext.js';
+} from './createSupplyContext.js';
 
-import { DEFAULT_FOOD_DISTRIBUTION_DISTANCE } from '../../contexts/supply/domain/catalogs/SupplySimulationCatalog.js';
+import { DEFAULT_FOOD_DISTRIBUTION_DISTANCE } from '../contexts/supply/domain/catalogs/SupplySimulationCatalog.js';
 
 export { createSupplyContext, getOrCreateSupplyContext };
 
-export { isWithinMarketRange, manhattanDistance, findHousesInMarketRange } from '../../contexts/supply/domain/policies/MarketRangePolicy.js';
+export { isWithinMarketRange, manhattanDistance, findHousesInMarketRange } from '../contexts/supply/domain/policies/MarketRangePolicy.js';
 
 export {
   getFactoryMaxStorage,
@@ -21,11 +20,11 @@ export {
   getFactoryEmployeeRoleType,
   FACTORY_MAX_STORAGE,
   FACTORY_EMPLOYEE_NEEDS,
-} from '../../contexts/supply/domain/manufacturing/ProductRecipeCatalog.js';
+} from '../contexts/supply/domain/manufacturing/ProductRecipeCatalog.js';
 
 export { DEFAULT_FOOD_DISTRIBUTION_DISTANCE };
 
-export { toSupplySeason, toSupplyMonth } from '../supplyTimeLabels.js';
+export { toSupplySeason, toSupplyMonth } from './supplyTimeLabels.js';
 
 /** @returns {number} */
 export function getDefaultFoodDistributionDistance() {

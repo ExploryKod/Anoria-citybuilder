@@ -6,7 +6,7 @@ import 'fake-indexeddb/auto';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { resetHousingContextForTests } from '../../src/composition/createHousingContext.js';
 import { clearBuildingsTable, seedBuilding } from '../helpers/buildingDb.js';
-import { getCityTotalPopulation } from '../../src/composition/facades/housing.js';
+import { getCityTotalPopulation } from '../../src/composition/housingOps.js';
 import { makeHouseRecord } from '../fixtures/buildingRecord.js';
 
 describe('getCityTotalPopulation (H6)', () => {

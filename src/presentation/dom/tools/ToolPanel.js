@@ -9,7 +9,7 @@ import {
   getButtonStateManager,
   invokeSetActiveTool,
   playGame,
-} from '../../../composition/facades/appRuntime.js';
+} from '../../../composition/sessionShell.js';
 
 let buttonData;
 let toolIds;
