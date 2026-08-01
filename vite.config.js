@@ -9,6 +9,7 @@ export default defineConfig({
     outDir: 'dist', // Default output directory
     emptyOutDir: true,
     assetsDir: 'assets', // Directory for built assets
+    chunkSizeWarningLimit: 1600, // Three.js game main bundle is intentionally large
   },
 
   plugins: [VitePWA({

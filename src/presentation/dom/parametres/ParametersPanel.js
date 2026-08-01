@@ -1,4 +1,5 @@
 import EventBlocker from '../shell/EventBlocker.js';
+import * as eventsConfig from '../../../config/events.js';
 
 /** @type {{
  *   pauseGame?: () => void,
@@ -132,8 +133,6 @@ class ParametersPanel {
 
     async loadValues() {
         try {
-            const eventsConfig = await import('../../../config/events.js');
-
             if (this.eventsEnabledToggle) {
                 this.eventsEnabledToggle.checked = eventsConfig.isEventsEnabled();
             }
@@ -152,7 +151,6 @@ class ParametersPanel {
 
     async handleEventsEnabledChange(enabled) {
         try {
-            const eventsConfig = await import('../../../config/events.js');
             eventsConfig.setEventsEnabled(enabled);
         } catch (error) {
             console.error('[ParametersPanel] Error setting events enabled:', error);
@@ -161,7 +159,6 @@ class ParametersPanel {
 
     async handleEventProbabilityChange(probability) {
         try {
-            const eventsConfig = await import('../../../config/events.js');
             eventsConfig.setEventProbability(probability);
         } catch (error) {
             console.error('[ParametersPanel] Error setting event probability:', error);
@@ -170,7 +167,6 @@ class ParametersPanel {
 
     async handleDaysPerMonthChange(days) {
         try {
-            const eventsConfig = await import('../../../config/events.js');
             eventsConfig.setDaysPerMonth(days);
 
             const timeManager = deps?.getTimeManager?.();
