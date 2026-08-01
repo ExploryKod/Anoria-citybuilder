@@ -40,8 +40,8 @@ export function bootGameContexts() {
   const commerce = getOrCreateCommerceContext();
   const gameplay = getOrCreateGameplayContext();
   const construction = getOrCreateConstructionContext();
-  const accounting = getOrCreateAccountingContext();
   const cityAssets = getOrCreateCityAssetsContext();
+  const accounting = getOrCreateAccountingContext({ cityAssets });
   const sessionApi = assembleSessionApi({
     construction,
     accounting,

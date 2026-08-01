@@ -14,6 +14,7 @@ import { resolveSelectedCitySize } from '../../composition/resolveCitySize.js';
 import { runGameTick } from '../../composition/runGameTick.js';
 import { bindSessionRuntime, requireSessionCommerceApi } from '../../composition/sessionRuntime.js';
 import { syncSessionHud } from '../../composition/syncSessionHud.js';
+import { notifyBudgetCleanupIfNeeded } from '../dom/compta/tresorerie/CleanupNotificationPresenter.js';
 import { DEFAULT_TICK_MS } from '../../shared/gameplay/SimulationDefaults.js';
 import { GameLoop } from '../../engine/loop/GameLoop.js';
 import {
@@ -295,6 +296,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
         gameUI,
         refreshEmploymentPresentation: refreshEmploymentPresentationForCity,
         objectivesTracker,
+        notifyBudgetCleanup: notifyBudgetCleanupIfNeeded,
       });
     },
 

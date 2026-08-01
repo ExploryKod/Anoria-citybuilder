@@ -96,6 +96,18 @@ function checkViolation(fileRel, importSpec) {
     return 'composition/ must not import legacy js/';
   }
 
+  // src/presentation/{dom,three} — not contexts/*/infrastructure/presentation
+  if (
+    fileRel.startsWith('composition/')
+    && /(^|\/)presentation\/(dom|three)\//.test(importSpec)
+  ) {
+    return 'composition must not import presentation (inject callbacks / ports at the edge)';
+  }
+
+  if (fileRel.startsWith('contexts/') && /(^|\/)composition\//.test(importSpec)) {
+    return 'contexts must not import composition (inject collaborators from the root)';
+  }
+
   if (fileRel.startsWith('presentation/') && isLegacyJsImport(importSpec)) {
     return 'presentation must not import legacy js/';
   }
