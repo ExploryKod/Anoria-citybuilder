@@ -153,6 +153,8 @@
         font-size: 0.9rem;
     }
 }
+
+.realtime-funds-display {
     padding: 30px;
     background: rgba(251, 129, 34, 0.1);
     border-radius: var(--border-radius);
