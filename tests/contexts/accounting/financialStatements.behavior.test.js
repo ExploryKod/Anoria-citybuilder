@@ -21,8 +21,8 @@ import { LegacyGameTimePort } from '../../../src/contexts/accounting/infrastruct
 import { RecordCapitalFundsIncome } from '../../../src/contexts/accounting/application/services/RecordCapitalFundsIncome.js';
 import { SessionJournalWriteAdapter } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalWriteAdapter.js';
 import { RecordLedgerEntry } from '../../../src/contexts/accounting/application/commands/journal/RecordLedgerEntry.js';
-import { JournalManager } from '../../../src/js/stores/JournalManager.js';
-import { resetSessionLedgerBufferForTests } from '../../../src/js/stores/SessionLedgerBuffer.js';
+import { JournalManager } from '../../../src/composition/accountingSessionJournal.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/composition/accountingSessionJournal.js';
 
 function createTestDb() {
   const testDb = new Dexie('testFinancialStatementsDb');

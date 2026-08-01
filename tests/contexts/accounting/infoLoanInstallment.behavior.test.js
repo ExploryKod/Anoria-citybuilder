@@ -4,16 +4,26 @@
 
 import Dexie from 'dexie';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
-import { JournalManager } from '../../../src/js/stores/JournalManager.js';
-import { BudgetManager } from '../../../src/js/stores/BudgetManager.js';
-import { resetSessionLedgerBufferForTests } from '../../../src/js/stores/SessionLedgerBuffer.js';
+import { JournalManager } from '../../../src/composition/accountingSessionJournal.js';
+import { BudgetManager } from '../../../tests/helpers/testBudgetFacade.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/composition/accountingSessionJournal.js';
 import {
   getOrCreateAccountingContext,
   resetAccountingContextForTests,
 } from '../../../src/composition/createAccountingContext.js';
-import { processLoanPayments } from '../../../src/js/ui/loans/LoansManager.js';
+import { processLoanPayments, initLoansPopup } from '../../../src/presentation/dom/compta/prets/PretsPanel.js';
 import { isInformativeJournalType } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/dexie/journalAggregations.js';
 import { buildInfoMovementBusinessKey } from '../../../src/contexts/accounting/domain/policies/LedgerInformativeTypePolicy.js';
+import { assembleSessionApi } from '../../../src/composition/sessionApi.js';
+import {
+  bindSessionRuntime,
+  resetSessionRuntimeForTests,
+} from '../../../src/composition/sessionRuntime.js';
+import {
+  getOrCreateConstructionContext,
+  resetConstructionContextForTests,
+} from '../../../src/composition/createConstructionContext.js';
+import { getOrCreateCityAssetsContext } from '../../../src/composition/createCityAssetsContext.js';
 
 function createTestDb() {
   const testDb = new Dexie('testInfoLoanInstallmentDb');
@@ -34,6 +44,8 @@ describe('Accounting — info loan installment (informative journal)', () => {
   beforeEach(async () => {
     resetSessionLedgerBufferForTests();
     resetAccountingContextForTests();
+    resetConstructionContextForTests();
+    resetSessionRuntimeForTests();
 
     testDb = createTestDb();
     await testDb.open();
@@ -73,10 +85,21 @@ describe('Accounting — info loan installment (informative journal)', () => {
       journalManager,
       budgetManager,
     });
+
+    const construction = getOrCreateConstructionContext();
+    const cityAssets = getOrCreateCityAssetsContext();
+    const sessionApi = assembleSessionApi({ construction, accounting, cityAssets });
+    bindSessionRuntime({ sessionApi });
+    initLoansPopup({
+      accounting: sessionApi.accounting,
+      updateBudgetDisplay: async () => {},
+    });
   });
 
   afterEach(async () => {
     resetAccountingContextForTests();
+    resetConstructionContextForTests();
+    resetSessionRuntimeForTests();
     resetSessionLedgerBufferForTests();
     if (testDb) {
       await testDb.delete();
@@ -149,8 +172,6 @@ describe('Accounting — info loan installment (informative journal)', () => {
 
   test('processLoanPayments journals partial info when only interest is affordable', async () => {
     globalThis.window = globalThis.window ?? {};
-    globalThis.window.budgetManager = budgetManager;
-
     await processLoanPayments();
 
     const entries = await journalManager.getJournalEntries();
@@ -188,8 +209,6 @@ describe('Accounting — info loan installment (informative journal)', () => {
     });
 
     globalThis.window = globalThis.window ?? {};
-    globalThis.window.budgetManager = budgetManager;
-
     await processLoanPayments();
 
     const entries = await journalManager.getJournalEntries();

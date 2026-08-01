@@ -8,16 +8,18 @@
  */
 
 import Dexie from 'dexie';
-import { BudgetManager } from '../src/js/stores/BudgetManager.js';
-import { JournalManager } from '../src/js/stores/JournalManager.js';
-import { resetSessionLedgerBufferForTests } from '../src/js/stores/SessionLedgerBuffer.js';
+import { BudgetManager } from './helpers/testBudgetFacade.js';
+import { JournalManager } from '../src/composition/accountingSessionJournal.js';
+import { resetSessionLedgerBufferForTests } from '../src/composition/accountingSessionJournal.js';
 import {
     getOrCreateAccountingContext,
     resetAccountingContextForTests,
 } from '../src/composition/createAccountingContext.js';
-import config from '../src/js/game/config.js';
-import appRegistry from '../src/js/game/AppRegistry.js';
-import { TimeManager } from '../src/js/game/utils/TimeManager.js';
+import { composeLegacyConfigMirror } from '../src/composition/gameConfig.js';
+import appRegistry from '../src/composition/AppRegistry.js';
+import { TimeManager } from '../src/shared/time/TimeManager.js';
+
+const config = composeLegacyConfigMirror();
 
 // ============================================================================
 // Setup : Créer une base de données de test isolée

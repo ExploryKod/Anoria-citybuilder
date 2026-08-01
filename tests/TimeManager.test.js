@@ -7,7 +7,7 @@
  * - Calcul des saisons (pour la production des fermes)
  */
 
-import { TimeManager } from '../src/js/game/utils/TimeManager.js';
+import { TimeManager } from '../src/shared/time/TimeManager.js';
 
 describe('TimeManager', () => {
     

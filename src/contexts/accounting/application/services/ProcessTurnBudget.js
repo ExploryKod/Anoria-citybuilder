@@ -1,3 +1,5 @@
+import { buildTurnBudgetMaintenanceSnapshot } from '../../domain/policies/BuildingMaintenanceBreakdownPolicy.js';
+
 /**
  * Per-turn budget orchestration (taxes, salaries, maintenance, enrichments).
  */
@@ -18,6 +20,7 @@ export class ProcessTurnBudget {
    * @param {() => Promise<object>} deps.cleanupOldBudgetTurnSnapshotsByAge
    * @param {(maxAge?: number) => Promise<unknown>} deps.cleanupOldJournalEntries
    * @param {() => Promise<unknown>} deps.flushJournalSessionToDexie
+   * @param {() => string[]} [deps.listBuildingTypesForMaintenance]
    */
   constructor(deps) {
     this.deps = deps;
@@ -39,17 +42,52 @@ export class ProcessTurnBudget {
   }
 
   /**
+   * @param {object | undefined} buildingCounts
+   * @param {object | undefined} maintenanceBreakdown
+   */
+  #resolveMaintenanceInput(buildingCounts, maintenanceBreakdown) {
+    if (buildingCounts != null && maintenanceBreakdown != null) {
+      return { buildingCounts, maintenanceBreakdown };
+    }
+
+    if (typeof this.deps.listBuildingTypesForMaintenance === 'function') {
+      return buildTurnBudgetMaintenanceSnapshot(this.deps.listBuildingTypesForMaintenance());
+    }
+
+    return {
+      buildingCounts: buildingCounts ?? {
+        houses: 0,
+        farms: 0,
+        markets: 0,
+        roads: 0,
+        total: 0,
+      },
+      maintenanceBreakdown: maintenanceBreakdown ?? {
+        roads: { count: 0, cost: 0 },
+        houses: { count: 0, cost: 0 },
+        farms: { count: 0, cost: 0 },
+        markets: { count: 0, cost: 0 },
+      },
+    };
+  }
+
+  /**
    * @param {object} params
    * @param {number} params.time
    * @param {number} params.totalPop
-   * @param {object} params.buildingCounts
-   * @param {object} params.maintenanceBreakdown
+   * @param {object} [params.buildingCounts]
+   * @param {object} [params.maintenanceBreakdown]
    * @returns {Promise<{ cleanupResult?: object }>}
    */
   async execute({ time, totalPop, buildingCounts, maintenanceBreakdown }) {
     if (this.#processBudgetInFlight) {
       return {};
     }
+
+    ({ buildingCounts, maintenanceBreakdown } = this.#resolveMaintenanceInput(
+      buildingCounts,
+      maintenanceBreakdown
+    ));
 
     this.#processBudgetInFlight = true;
     /** @type {{ cleanupResult?: object }} */

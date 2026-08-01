@@ -4,16 +4,21 @@
 
 import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
-import { CommerceService } from '../src/js/game/services/CommerceService.js';
-import { BudgetManager } from '../src/js/stores/BudgetManager.js';
-import { JournalManager } from '../src/js/stores/JournalManager.js';
-import commerceStore from '../src/js/stores/CommerceStore.js';
+import { createCommerceContext } from '../src/composition/createCommerceContext.js';
+import { BudgetManager } from './helpers/testBudgetFacade.js';
+import { JournalManager } from '../src/composition/accountingSessionJournal.js';
+import {
+  loadOrSeedCommerceConfig,
+  loadOrSeedCommercePartners,
+} from '../src/composition/commerceOps.js';
 import db from '../src/core/persistence/dexie/db.js';
 import { resetSupplyContextForTests } from '../src/composition/createSupplyContext.js';
 import { resetCommerceContextForTests } from '../src/composition/createCommerceContext.js';
+import { resetAccountingContextForTests } from '../src/composition/accountingOps.js';
+import { resetSessionLedgerBufferForTests } from '../src/composition/accountingSessionJournal.js';
 import { makeHouseRecord, createBuildingInstanceId } from './fixtures/buildingRecord.js';
-import appRegistry from '../src/js/game/AppRegistry.js';
-import { TimeManager } from '../src/js/game/utils/TimeManager.js';
+import appRegistry from '../src/composition/AppRegistry.js';
+import { TimeManager } from '../src/shared/time/TimeManager.js';
 
 // ============================================================================
 // Setup : Créer une base de données de test isolée
@@ -38,6 +43,8 @@ describe('CommerceService - Partenaires', () => {
     let budgetManager;
 
     beforeEach(async () => {
+        resetSessionLedgerBufferForTests();
+        resetAccountingContextForTests();
         resetCommerceContextForTests();
         // Créer une nouvelle base de données pour chaque test
         testDb = createTestDb();
@@ -69,12 +76,10 @@ describe('CommerceService - Partenaires', () => {
         const journalManager = new JournalManager();
         journalManager.db = testDb;
         budgetManager.journalManager = journalManager;
+        budgetManager.wireAccountingContext();
 
-        const globalObj = typeof window !== 'undefined' ? window : global;
-        globalObj.budgetManager = budgetManager;
-
-        // Créer CommerceService
-        commerceService = new CommerceService();
+        // Commerce simulation (BC)
+        commerceService = createCommerceContext().simulation;
 
         // Initialiser le budget
         await budgetManager.initialize(1000);

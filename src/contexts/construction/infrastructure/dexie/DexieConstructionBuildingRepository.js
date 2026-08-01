@@ -6,11 +6,38 @@ import {
   footprintOccupiesTile,
 } from '../../../../shared/building-identity/index.js';
 
+/** @type {Set<string>} */
+const anchorsBeingWritten = new Set();
+
+function anchorLockKey(anchorX, anchorY) {
+  return `${Math.floor(anchorX)},${Math.floor(anchorY)}`;
+}
+
+function isConstraintError(err) {
+  return (
+    err?.name === 'ConstraintError' ||
+    err?.inner?.name === 'ConstraintError' ||
+    (typeof err?.message === 'string' && err.message.includes('Key already exists'))
+  );
+}
+
 /** Construction adapter — direct Dexie (table `houses`). */
 export class DexieConstructionBuildingRepository {
+  async findByAnchor(x, y) {
+    const tileX = Math.floor(x);
+    const tileY = Math.floor(y);
+    return db.houses.where('[anchorX+anchorY]').equals([tileX, tileY]).first();
+  }
+
   async findAtTile(x, y) {
     const tileX = Math.floor(x);
     const tileY = Math.floor(y);
+
+    const atAnchor = await this.findByAnchor(tileX, tileY);
+    if (atAnchor) {
+      return atAnchor;
+    }
+
     const rows = await db.houses.toArray();
     return (
       rows.find((row) => {
@@ -25,6 +52,21 @@ export class DexieConstructionBuildingRepository {
     return db.houses.get(instanceId);
   }
 
+  async #clearAnchorOccupant(anchorX, anchorY, keepInstanceId) {
+    if (typeof anchorX !== 'number' || typeof anchorY !== 'number') {
+      return;
+    }
+
+    const atAnchor = await db.houses
+      .where('[anchorX+anchorY]')
+      .equals([anchorX, anchorY])
+      .first();
+
+    if (atAnchor && atAnchor.instanceId !== keepInstanceId) {
+      await db.houses.delete(atAnchor.instanceId);
+    }
+  }
+
   /**
    * @param {object} data
    * @returns {Promise<{ success: boolean, instanceId?: string, error?: string, reason?: string }>}
@@ -32,21 +74,30 @@ export class DexieConstructionBuildingRepository {
   async addRecord(data) {
     const instanceId = data.instanceId ?? data.id ?? createBuildingInstanceId();
 
+    let record;
     try {
-      const existing = await db.houses.get(instanceId);
-      if (existing) {
-        return {
-          success: false,
-          error: 'Key already exists in the object store.',
-          reason: 'duplicate',
-        };
-      }
+      record = canonicalizeHouseRecord({ ...data, instanceId });
+    } catch (err) {
+      return { success: false, error: err.message, reason: 'database_error' };
+    }
 
-      const record = canonicalizeHouseRecord({ ...data, instanceId });
-      await db.houses.add(record);
+    const lockKey = anchorLockKey(record.anchorX, record.anchorY);
+    if (anchorsBeingWritten.has(lockKey)) {
+      return {
+        success: false,
+        error: 'Building is already being added at this anchor',
+        reason: 'duplicate',
+      };
+    }
+
+    anchorsBeingWritten.add(lockKey);
+
+    try {
+      await this.#clearAnchorOccupant(record.anchorX, record.anchorY, instanceId);
+      await db.houses.put(record);
       return { success: true, instanceId };
     } catch (err) {
-      if (err.name === 'ConstraintError' || err.message?.includes('Key already exists')) {
+      if (isConstraintError(err)) {
         return {
           success: false,
           error: 'Key already exists in the object store.',
@@ -54,6 +105,8 @@ export class DexieConstructionBuildingRepository {
         };
       }
       return { success: false, error: err.message, reason: 'database_error' };
+    } finally {
+      anchorsBeingWritten.delete(lockKey);
     }
   }
 
@@ -72,7 +125,18 @@ export class DexieConstructionBuildingRepository {
       }
     }
 
-    await db.houses.put(canonicalizeHouseRecord(next));
+    try {
+      await db.houses.put(canonicalizeHouseRecord(next));
+    } catch (err) {
+      if (isConstraintError(err)) {
+        console.warn(
+          `[Construction] Skipped update for ${instanceId}: constraint conflict`,
+          err
+        );
+        return;
+      }
+      throw err;
+    }
   }
 
   /**
@@ -87,7 +151,18 @@ export class DexieConstructionBuildingRepository {
 
     if (!condition || row[field] < condition.limit) {
       row[field] += increment;
-      await db.houses.put(canonicalizeHouseRecord(row));
+      try {
+        await db.houses.put(canonicalizeHouseRecord(row));
+      } catch (err) {
+        if (isConstraintError(err)) {
+          console.warn(
+            `[Construction] Skipped increment for ${instanceId}.${field}: constraint conflict`,
+            err
+          );
+          return;
+        }
+        throw err;
+      }
     }
   }
 
@@ -100,4 +175,9 @@ export class DexieConstructionBuildingRepository {
     if (!instanceId) return;
     await db.houses.delete(instanceId);
   }
+}
+
+/** @internal Tests only */
+export function resetConstructionAnchorLocksForTests() {
+  anchorsBeingWritten.clear();
 }

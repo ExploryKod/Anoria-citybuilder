@@ -19,9 +19,9 @@ import {
   listAllBuildingRows,
   removeBuildingRecord,
   incrementBuildingField,
-} from '../../src/js/acl/construction.js';
-import { getCityTotalBuildingValue, getCityBuildingPricesByType } from '../../src/js/acl/budget.js';
-import { getCityTotalPopulation, getFamishedPopulation, clearPopulationWithoutRoadAccess } from '../../src/js/acl/housing.js';
+} from '../../src/composition/constructionOps.js';
+import { getCityTotalBuildingValue, getCityBuildingPricesByType } from '../../src/composition/budgetOps.js';
+import { getCityTotalPopulation, getFamishedPopulation, clearPopulationWithoutRoadAccess } from '../../src/composition/housingOps.js';
 
 describe('ACL Construction — building access', () => {
   beforeEach(async () => {
@@ -48,13 +48,16 @@ describe('ACL Construction — building access', () => {
       expect(row?.type).toBe('House-Blue');
     });
 
-    test('rejects duplicate instanceId', async () => {
+    test('put is idempotent for the same instanceId', async () => {
       const record = makeHouseRecord({ type: 'Farm-Wheat', x: 2, y: 2 });
       await seedBuilding(record);
 
-      const result = await placeBuildingRecord(record);
-      expect(result.success).toBe(false);
-      expect(result.reason).toBe('duplicate');
+      const result = await placeBuildingRecord({ ...record, type: 'Farm-Wheat' });
+      expect(result.success).toBe(true);
+      expect(result.instanceId).toBe(record.instanceId);
+
+      const rows = await listAllBuildingRows();
+      expect(rows.filter((r) => r.instanceId === record.instanceId)).toHaveLength(1);
     });
   });
 

@@ -24,9 +24,10 @@ import { ProcessFactoryProductionStep } from '../contexts/supply/application/com
 import { RunCityFactoryProductionCycle } from '../contexts/supply/application/commands/manufacturing/RunCityFactoryProductionCycle.js';
 import { GetCityFactoryResources } from '../contexts/supply/application/queries/GetCityFactoryResources.js';
 import { DexieFactoryBuildingRepository } from '../contexts/supply/infrastructure/dexie/DexieFactoryBuildingRepository.js';
+import { DexieFoodTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieFoodTraceabilityRepository.js';
 import { SupplyProductionJournal } from '../contexts/supply/infrastructure/presentation/SupplyProductionJournal.js';
+import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { SupplyFoodTraceability } from '../contexts/supply/infrastructure/presentation/SupplyFoodTraceability.js';
-import appRegistry from '../js/game/AppRegistry.js';
 import { GetBuildingSupplyView } from '../contexts/supply/application/queries/GetBuildingSupplyView.js';
 import { ListSupplyMapBuildings } from '../contexts/supply/application/queries/ListSupplyMapBuildings.js';
 import { ListWindmillSupplyViews } from '../contexts/supply/application/queries/ListWindmillSupplyViews.js';
@@ -38,16 +39,25 @@ import { ListSupplyStockSnapshots } from '../contexts/supply/application/queries
  * @param {object} [deps]
  * @param {import('../contexts/supply/application/ports/SupplyBuildingRepository.js').SupplyBuildingRepository} [deps.supplyBuildingRepository]
  * @param {import('../contexts/supply/application/ports/FactoryBuildingRepository.js').FactoryBuildingRepository} [deps.factoryBuildingRepository]
+ * @param {import('../contexts/supply/infrastructure/dexie/DexieFoodTraceabilityRepository.js').DexieFoodTraceabilityRepository} [deps.foodTraceabilityRepository]
+ * @param {(turn: number) => object} [deps.getTimeInfo]
  */
 export function createSupplyContext({
   supplyBuildingRepository,
   factoryBuildingRepository,
+  foodTraceabilityRepository,
+  getTimeInfo: getTimeInfoDep,
 } = {}) {
+  const getTimeInfo = getTimeInfoDep ?? resolveGetTimeInfo();
   const supplyBuildingRepositoryImpl =
     supplyBuildingRepository ?? new DexieSupplyBuildingRepository();
   const factoryBuildingRepositoryImpl =
     factoryBuildingRepository ?? new DexieFactoryBuildingRepository();
-  const productionJournal = new SupplyProductionJournal();
+  const foodTraceabilityRepositoryImpl =
+    foodTraceabilityRepository ?? new DexieFoodTraceabilityRepository();
+  const productionJournal = new SupplyProductionJournal({
+    resolveTimeInfo: (turn) => getTimeInfo(turn) ?? null,
+  });
   const marketBuysFromNearbyFarms = new MarketBuysFromNearbyFarms(
     supplyBuildingRepositoryImpl
   );
@@ -99,7 +109,8 @@ export function createSupplyContext({
     processWindmillCollection
   );
   const traceability = new SupplyFoodTraceability({
-    resolveFoodTraceabilityService: () => appRegistry.get('foodTraceabilityService'),
+    foodTraceabilityRepository: foodTraceabilityRepositoryImpl,
+    supplyBuildingRepository: supplyBuildingRepositoryImpl,
   });
   const runCityMarketFoodCycle = new RunCityMarketFoodCycle(
     supplyBuildingRepositoryImpl,
@@ -315,6 +326,30 @@ export function createSupplyContext({
 
     async updateSupplyBuildingFields(buildingId, fields) {
       return supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, fields);
+    },
+
+    async listProductionJournalEntries(factoryId = null, turn = null) {
+      return productionJournal.getProductionEntries(factoryId, turn);
+    },
+
+    async getFactoryProductionJournalEntries(factoryId) {
+      return productionJournal.getFactoryProductionEntries(factoryId);
+    },
+
+    async getAllFoodTraceabilityTransactions(maxAge = null) {
+      return foodTraceabilityRepositoryImpl.getAllTransactions(maxAge);
+    },
+
+    async getFoodTraceabilityTransactionsForMonth(turn, month = null) {
+      return foodTraceabilityRepositoryImpl.getTransactionsForMonth(turn, month);
+    },
+
+    async getFoodTraceabilityTransactionsByMonth(turn) {
+      return foodTraceabilityRepositoryImpl.getTransactionsByMonth(turn);
+    },
+
+    async cleanupOldFoodTraceabilityTransactions(maxAge = 60) {
+      return foodTraceabilityRepositoryImpl.cleanupOldTransactions(maxAge);
     },
   };
 }

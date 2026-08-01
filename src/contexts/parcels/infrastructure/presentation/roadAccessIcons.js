@@ -1,4 +1,4 @@
-import { setRoadAccessIcon } from '../../../../js/game/modules/StatusIconHelper.js';
+import { setRoadAccessIcon } from './roadAccessSprite.js';
 
 /** instanceId → { mesh, position, scale } — pour mettre à jour l'icône quand le bus publie un changement */
 const views = new Map();

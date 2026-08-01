@@ -1,4 +1,4 @@
-import journalManager from '../../../../../../js/stores/JournalManager.js';
+import sessionJournalStore from '../../../session/SessionJournalStore.js';
 import { JournalRepository } from '../../../../application/ports/JournalRepository.js';
 import {
   buildMonthlyFinancialSummary,
@@ -7,18 +7,17 @@ import {
 } from '../dexie/journalAggregations.js';
 
 /**
- * Accounting BC — reads journal via session buffer (JournalManager).
- * Keeps BC reads aligned with the in-memory authoritative ledger during play.
+ * Accounting BC — reads journal via session buffer (SessionJournalStore).
  */
 export class SessionJournalRepository extends JournalRepository {
   /**
    * @param {object} [deps]
-   * @param {import('../../../../../../js/stores/JournalManager.js').JournalManager} [deps.journalManager]
+   * @param {import('../../../session/SessionJournalStore.js').SessionJournalStore} [deps.sessionJournalStore]
    * @param {import('../../../../application/ports/GameTimePort.js').GameTimePort} deps.gameTimePort
    */
   constructor(deps = {}) {
     super();
-    this.journalManager = deps.journalManager ?? journalManager;
+    this.sessionJournalStore = deps.sessionJournalStore ?? sessionJournalStore;
     this.gameTimePort = deps.gameTimePort;
     if (!this.gameTimePort) {
       throw new Error('SessionJournalRepository: gameTimePort is required');
@@ -27,7 +26,7 @@ export class SessionJournalRepository extends JournalRepository {
 
   /** @returns {Promise<Array<object>>} */
   async getJournalEntries(maxAge = null) {
-    return this.journalManager.getJournalEntries(maxAge);
+    return this.sessionJournalStore.getJournalEntries(maxAge);
   }
 
   /** @returns {Promise<Array<object>>} */

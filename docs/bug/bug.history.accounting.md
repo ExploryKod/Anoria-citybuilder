@@ -2,6 +2,9 @@
 
 ## Bug ouvert — premier placement maison échoue (juillet 2026)
 
+> **Mise à jour 01/08/2026** — lot corrigé dans [`placement-constraint-bulldoze-flash.md`](./placement-constraint-bulldoze-flash.md) (commit `6e884a4`) : races `budget.add` / fantômes d’ancre / message UI trompeur.  
+> Garder cette section pour l’historique ; valider encore en jeu le parcours « nouvelle partie → 1re maison ».
+
 ### Symptôme
 
 - Nouvelle partie avec `VITE_INITIAL_FUNDS=5000`

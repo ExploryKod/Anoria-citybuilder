@@ -8,6 +8,74 @@ const DEFAULT_MAINTENANCE_COSTS = Object.freeze({
   Market: 1,
 });
 
+export { DEFAULT_MAINTENANCE_COSTS };
+
+/**
+ * @param {string} type
+ * @param {typeof DEFAULT_MAINTENANCE_COSTS} maintenanceCosts
+ * @returns {{ category: 'roads'|'houses'|'farms'|'markets'|null, cost: number }}
+ */
+function classifyMaintenanceBuilding(type, maintenanceCosts) {
+  if (type.includes('roads')) {
+    return { category: 'roads', cost: maintenanceCosts.roads };
+  }
+  if (
+    type === 'House-Blue' ||
+    type === 'House-Red' ||
+    type === 'House-Purple' ||
+    type === 'House-2Story'
+  ) {
+    return { category: 'houses', cost: maintenanceCosts['House-Blue'] };
+  }
+  if (type.includes('Farm')) {
+    return { category: 'farms', cost: maintenanceCosts.Farm };
+  }
+  if (type.includes('Market')) {
+    return { category: 'markets', cost: maintenanceCosts.Market };
+  }
+  return { category: null, cost: 0 };
+}
+
+/**
+ * Snapshot for ProcessTurnBudget — counts + per-category cost breakdown.
+ *
+ * @param {string[]} buildingTypes
+ * @param {typeof DEFAULT_MAINTENANCE_COSTS} [maintenanceCosts]
+ */
+export function buildTurnBudgetMaintenanceSnapshot(
+  buildingTypes,
+  maintenanceCosts = DEFAULT_MAINTENANCE_COSTS
+) {
+  const buildingCounts = {
+    houses: 0,
+    farms: 0,
+    markets: 0,
+    roads: 0,
+    total: 0,
+  };
+
+  const maintenanceBreakdown = {
+    roads: { count: 0, cost: 0 },
+    houses: { count: 0, cost: 0 },
+    farms: { count: 0, cost: 0 },
+    markets: { count: 0, cost: 0 },
+  };
+
+  for (const type of buildingTypes) {
+    if (!type) continue;
+
+    const { category, cost } = classifyMaintenanceBuilding(type, maintenanceCosts);
+    if (!category) continue;
+
+    buildingCounts[category]++;
+    buildingCounts.total++;
+    maintenanceBreakdown[category].count++;
+    maintenanceBreakdown[category].cost += cost;
+  }
+
+  return { buildingCounts, maintenanceBreakdown };
+}
+
 /**
  * @param {Array<{ type?: string }>} houses
  * @param {typeof DEFAULT_MAINTENANCE_COSTS} [maintenanceCosts]

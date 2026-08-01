@@ -1,4 +1,7 @@
-import { getGameStore, getWorkSectionManager, getAppService, getTimeManager, getTimeInfo } from '../js/acl/appRuntime.js';
+import { getOrCreateGameSessionContext } from './createGameSessionContext.js';
+import { getOrCreateHousingContext } from './createHousingContext.js';
+import { getSessionProcessLoanPayments } from './sessionRuntime.js';
+import { LocalStorageFiscalSettingsRepository } from '../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
 import { GetTreasuryBalance } from '../contexts/accounting/application/queries/treasury/GetTreasuryBalance.js';
 import { GetTreasurySnapshot } from '../contexts/accounting/application/queries/treasury/GetTreasurySnapshot.js';
 import { GetFinancialHealth } from '../contexts/accounting/application/queries/treasury/GetFinancialHealth.js';
@@ -22,6 +25,7 @@ import { ExportJournalJson } from '../contexts/accounting/application/queries/jo
 import { ExportJournalPdf } from '../contexts/accounting/application/queries/journal/ExportJournalPdf.js';
 import { DexieJournalSessionPersistenceAdapter } from '../contexts/accounting/infrastructure/adapters/persistence/dexie/DexieJournalSessionPersistenceAdapter.js';
 import { CityAssetsValuationAdapter } from '../contexts/accounting/infrastructure/adapters/shared/CityAssetsValuationAdapter.js';
+import { getOrCreateCityAssetsContext } from './createCityAssetsContext.js';
 import { RecordLedgerEntry } from '../contexts/accounting/application/commands/journal/RecordLedgerEntry.js';
 import { ApplyTreasuryMovement } from '../contexts/accounting/application/commands/treasury/ApplyTreasuryMovement.js';
 import { RecordMaintenanceExpense } from '../contexts/accounting/application/services/RecordMaintenanceExpense.js';
@@ -49,13 +53,12 @@ import { SessionJournalRepository } from '../contexts/accounting/infrastructure/
 import { SessionJournalWriteAdapter } from '../contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalWriteAdapter.js';
 import { DexieTreasuryRepository } from '../contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryRepository.js';
 import { DexieTreasuryWriteAdapter } from '../contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryWriteAdapter.js';
-import { LegacyJournalRepository } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyJournalRepository.js';
-import { LegacyTreasuryRepository } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyTreasuryRepository.js';
-import { LegacyTreasuryWriteAdapter } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyTreasuryWriteAdapter.js';
+import { DexieObjectiveHistoryRepository } from '../contexts/accounting/infrastructure/dexie/DexieObjectiveHistoryRepository.js';
 import { LegacyGameTimePort } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyGameTimePort.js';
-import journalManager from '../js/stores/JournalManager.js';
-import budgetManager from '../js/stores/BudgetManager.js';
-import config from '../js/game/config.js';
+import sessionJournalStore from '../contexts/accounting/infrastructure/session/SessionJournalStore.js';
+import {
+  readInitialFundsFromImportMeta,
+} from '../contexts/accounting/domain/catalogs/TreasuryCatalog.js';
 import { CollectCitizenTaxes } from '../contexts/accounting/application/services/game/CollectCitizenTaxes.js';
 import { RecordBuildingMaintenanceForCity } from '../contexts/accounting/application/services/game/RecordBuildingMaintenanceForCity.js';
 import { GameTreasuryRecording } from '../contexts/accounting/application/services/game/GameTreasuryRecording.js';
@@ -67,16 +70,23 @@ import {
   buildExpenseBreakdown,
   canAffordFromBudget,
 } from '../contexts/accounting/application/queries/treasury/GameTreasuryProjections.js';
-import {
-  getCityTotalPopulation,
-  clearPopulationWithoutRoadAccess,
-} from '../js/acl/housing.js';
+import { listSceneBuildingTypesForMaintenance } from './sceneBuildingInventoryBridge.js';
+import { resolveGetTimeInfo } from './gameTimeBridge.js';
+
+async function getCityTotalPopulation() {
+  const { totalPop } = await getOrCreateHousingContext().getCityPopulationSummary();
+  return totalPop;
+}
+
+async function clearPopulationWithoutRoadAccess() {
+  return getOrCreateHousingContext().clearPopulationWithoutRoadAccess();
+}
 
 /**
  * Composition root — Accounting bounded context.
  *
  * Default: session journal buffer + Dexie treasury read/write (Phase 4).
- * Inject legacy adapters via deps or createLegacyAccountingContext() for regression tests.
+ * Inject legacy adapters via deps for regression tests.
  *
  * @param {object} [deps]
  * @param {import('../contexts/accounting/application/ports/JournalRepository.js').JournalRepository} [deps.journalRepository]
@@ -84,21 +94,39 @@ import {
  * @param {import('../contexts/accounting/application/ports/JournalWritePort.js').JournalWritePort} [deps.journalWritePort]
  * @param {import('../contexts/accounting/application/ports/TreasuryWritePort.js').TreasuryWritePort} [deps.treasuryWritePort]
  * @param {import('../contexts/accounting/application/ports/GameTimePort.js').GameTimePort} [deps.gameTimePort]
- * @param {import('../js/stores/JournalManager.js').JournalManager} [deps.journalManager]
+ * @param {import('../contexts/accounting/infrastructure/session/SessionJournalStore.js').SessionJournalStore} [deps.sessionJournalStore]
+ * @param {import('../contexts/accounting/infrastructure/session/SessionJournalStore.js').SessionJournalStore} [deps.journalManager]
  * @param {import('dexie').Dexie} [deps.db]
+ * @param {import('../contexts/accounting/infrastructure/dexie/DexieObjectiveHistoryRepository.js').DexieObjectiveHistoryRepository} [deps.objectiveHistoryRepository]
+ * @param {() => string[]} [deps.listBuildingTypesForMaintenance]
+ * @param {(turn: number) => object} [deps.getTimeInfo]
+ * @param {import('../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js').LocalStorageFiscalSettingsRepository} [deps.fiscalSettingsRepository]
+ * @param {() => number} [deps.getCitizenTaxPerCapita]
+ * @param {() => { salaryPerMonth: number, salaryTaxRate: number }} [deps.getSalarySettings]
  */
 export function createAccountingContext(deps = {}) {
-  const journalManagerInstance = deps.journalManager ?? journalManager;
-  const dexieDb = deps.db ?? journalManagerInstance.db;
-  const defaultInitialFunds = deps.defaultInitialFunds ?? config?.budget?.initialFunds ?? 200;
+  const sessionJournalStoreInstance =
+    deps.sessionJournalStore ?? deps.journalManager ?? sessionJournalStore;
+  const dexieDb = deps.db ?? sessionJournalStoreInstance.db;
+  const defaultInitialFunds = deps.defaultInitialFunds ?? readInitialFundsFromImportMeta();
+  const objectiveHistoryRepository =
+    deps.objectiveHistoryRepository ?? new DexieObjectiveHistoryRepository(dexieDb);
+  const fiscalSettingsRepository =
+    deps.fiscalSettingsRepository ?? new LocalStorageFiscalSettingsRepository();
+
+  const getTimeInfo = deps.getTimeInfo ?? resolveGetTimeInfo();
 
   const gameTimePort =
     deps.gameTimePort ??
-    new LegacyGameTimePort(getTimeManager());
+    new LegacyGameTimePort({ getTimeInfo });
+
+  if (!sessionJournalStoreInstance.gameTimePort) {
+    sessionJournalStoreInstance.setGameTimePort(gameTimePort);
+  }
 
   const journalWritePort =
     deps.journalWritePort ??
-    new SessionJournalWriteAdapter(journalManagerInstance);
+    new SessionJournalWriteAdapter(sessionJournalStoreInstance);
 
   const treasuryRepository =
     deps.treasuryRepository ??
@@ -181,7 +209,7 @@ export function createAccountingContext(deps = {}) {
   const journalRepository =
     deps.journalRepository ??
     new SessionJournalRepository({
-      journalManager: journalManagerInstance,
+      sessionJournalStore: sessionJournalStoreInstance,
       gameTimePort,
     });
 
@@ -252,7 +280,10 @@ export function createAccountingContext(deps = {}) {
     gameTimePort
   );
   const cityAssetsValuationPort =
-    deps.cityAssetsValuationPort ?? new CityAssetsValuationAdapter();
+    deps.cityAssetsValuationPort
+    ?? new CityAssetsValuationAdapter(
+      deps.cityAssets ?? getOrCreateCityAssetsContext()
+    );
   const budgetTurnEnrichmentRepository =
     deps.budgetTurnEnrichmentRepository ??
     new BudgetTurnEnrichmentRepository(dexieDb);
@@ -299,16 +330,8 @@ export function createAccountingContext(deps = {}) {
     listHouses: () => dexieDb.houses.toArray(),
   };
 
-  const getCitizenTaxPerCapita = () => {
-    const financesSectionManager = getAppService('financesSectionManager');
-    if (
-      financesSectionManager &&
-      typeof financesSectionManager.citizenTaxAmount === 'number'
-    ) {
-      return financesSectionManager.citizenTaxAmount;
-    }
-    return 100;
-  };
+  const getCitizenTaxPerCapita =
+    deps.getCitizenTaxPerCapita ?? (() => fiscalSettingsRepository.getCitizenTaxPerCapita());
 
   const collectCitizenTaxes = new CollectCitizenTaxes({
     getTreasurySnapshot: getTreasurySnapshotQuery,
@@ -355,12 +378,9 @@ export function createAccountingContext(deps = {}) {
     },
     getCurrentTurn: async () => {
       try {
-        const gameStore = getGameStore();
-        if (gameStore) {
-          const turnData = await gameStore.getLatestGameItemByField('turn');
-          return turnData || 0;
-        }
-        return 0;
+        const gameSession = getOrCreateGameSessionContext();
+        const turnData = await gameSession.getLatestGameItemByField('turn');
+        return turnData || 0;
       } catch (error) {
         console.warn('Could not get current turn:', error);
         return 0;
@@ -368,21 +388,8 @@ export function createAccountingContext(deps = {}) {
     },
   });
 
-  const getSalarySettings = () => {
-    const workSectionManager = getWorkSectionManager();
-    let salaryPerMonth = 100;
-    let salaryTaxRate = 0.2;
-    if (workSectionManager && typeof workSectionManager.salary === 'number') {
-      salaryPerMonth = workSectionManager.salary;
-    }
-    if (
-      workSectionManager &&
-      typeof workSectionManager.salaryTaxRate === 'number'
-    ) {
-      salaryTaxRate = workSectionManager.salaryTaxRate;
-    }
-    return { salaryPerMonth, salaryTaxRate };
-  };
+  const getSalarySettings =
+    deps.getSalarySettings ?? (() => fiscalSettingsRepository.getSalarySettings());
 
   const processTurnBudget = new ProcessTurnBudget({
     collectCitizenTaxes: (time) => collectCitizenTaxes.execute({ time }),
@@ -390,16 +397,16 @@ export function createAccountingContext(deps = {}) {
     recordPayrollTax: (...args) => gameTreasuryRecording.recordPayrollTax(...args),
     recordBuildingMaintenance: (amount, description, turn) =>
       recordBuildingMaintenanceForCity.execute({ amount, description, turn }),
-    getTimeInfo: (time) => getTimeInfo(time),
+    getTimeInfo: (time) => gameTimePort.getTimeInfo(time),
     getCityTotalPopulation:
       deps.getCityTotalPopulation ?? (() => getCityTotalPopulation()),
-    getSalarySettings: deps.getSalarySettings ?? getSalarySettings,
+    getSalarySettings,
     clearPopulationWithoutRoadAccess:
       deps.clearPopulationWithoutRoadAccess ?? (() => clearPopulationWithoutRoadAccess()),
     processLoanPayments:
       deps.processLoanPayments ??
       (async () => {
-        const processLoanPayments = getAppService('processLoanPayments');
+        const processLoanPayments = getSessionProcessLoanPayments();
         if (processLoanPayments) {
           await processLoanPayments();
         }
@@ -408,13 +415,17 @@ export function createAccountingContext(deps = {}) {
     saveBudgetTurnEnrichment: (turn, additionalData) =>
       saveBudgetTurnEnrichment.execute({ turn, additionalData }),
     cleanupOldBudgetTurnSnapshotsByAge: () => cleanupOldBudgetTurnSnapshots.execute(),
-    cleanupOldJournalEntries: (maxAge) => journalManagerInstance.cleanupOldJournalEntries(maxAge),
+    cleanupOldJournalEntries: (maxAge) =>
+      sessionJournalStoreInstance.cleanupOldJournalEntries(maxAge),
     flushJournalSessionToDexie: () => flushJournalSession.execute(),
+    listBuildingTypesForMaintenance:
+      deps.listBuildingTypesForMaintenance ?? listSceneBuildingTypesForMaintenance,
   });
 
   return {
     journalRepository,
     treasuryRepository,
+    fiscalSettingsRepository,
     journalWritePort,
     treasuryWritePort,
     gameTimePort,
@@ -744,7 +755,7 @@ export function createAccountingContext(deps = {}) {
 
     /** @param {number} [maxAge] */
     async cleanupOldJournalEntries(maxAge = 60) {
-      return journalManagerInstance.cleanupOldJournalEntries(maxAge);
+      return sessionJournalStoreInstance.cleanupOldJournalEntries(maxAge);
     },
 
     /** @param {Parameters<ProcessTurnBudget['execute']>[0]} params */
@@ -754,6 +765,22 @@ export function createAccountingContext(deps = {}) {
 
     resetProcessTurnBudget() {
       processTurnBudget.reset();
+    },
+
+    async recordObjectiveFailure(failureData) {
+      return objectiveHistoryRepository.recordObjectiveFailure(failureData);
+    },
+
+    async recordObjectiveSuccess(successData) {
+      return objectiveHistoryRepository.recordObjectiveSuccess(successData);
+    },
+
+    async getAllObjectiveFailures() {
+      return objectiveHistoryRepository.getAllFailures();
+    },
+
+    async getObjectiveFailuresForObjective(objectiveId) {
+      return objectiveHistoryRepository.getFailuresForObjective(objectiveId);
     },
   };
 }
@@ -771,19 +798,4 @@ export function getOrCreateAccountingContext(deps = {}) {
 /** @internal Tests only */
 export function resetAccountingContextForTests() {
   sharedAccounting = null;
-}
-
-/** @internal Tests — legacy store adapters */
-export function createLegacyAccountingContext(deps = {}) {
-  const budgetManagerInstance = deps.budgetManager ?? budgetManager;
-  return createAccountingContext({
-    ...deps,
-    journalRepository:
-      deps.journalRepository ?? new LegacyJournalRepository(journalManager),
-    treasuryRepository:
-      deps.treasuryRepository ?? new LegacyTreasuryRepository(budgetManagerInstance),
-    treasuryWritePort:
-      deps.treasuryWritePort ??
-      new LegacyTreasuryWriteAdapter(budgetManagerInstance),
-  });
 }
