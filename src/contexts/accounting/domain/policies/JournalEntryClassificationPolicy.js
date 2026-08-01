@@ -55,6 +55,7 @@ export function isJournalEntryIncomeForMonthlySummary(entry, allEntries, getTime
     entry.type === 'construction_refund' ||
     entry.type === 'maintenance' ||
     entry.type === 'salary' ||
+    entry.type === 'unemployment_benefit' ||
     entry.type === 'exceptional_expenses' ||
     entry.type === 'commercial_route'
   ) {
@@ -96,6 +97,7 @@ export function isJournalEntryIncomeForMonthlySummary(entry, allEntries, getTime
               e.type === 'construction' ||
               e.type === 'maintenance' ||
               e.type === 'salary' ||
+              e.type === 'unemployment_benefit' ||
               e.type === 'exceptional_expenses' ||
               e.type === 'commercial_route'
             ) {

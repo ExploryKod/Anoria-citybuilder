@@ -28,6 +28,7 @@ export function incomeStatementFromJournalPartition(labelYearOrTurn, partition, 
 
   const chargeBuckets = {
     salaries: 0,
+    unemploymentBenefits: 0,
     maintenance: 0,
     construction: 0,
     loanInterest: 0,
@@ -54,7 +55,9 @@ export function incomeStatementFromJournalPartition(labelYearOrTurn, partition, 
   for (const entry of partition.expenses?.entries ?? []) {
     const amount = Math.round(entry.amount ?? 0);
     if (entry.type === 'salary') addToBucket(amount, chargeBuckets, 'salaries');
-    else if (entry.type === 'maintenance') addToBucket(amount, chargeBuckets, 'maintenance');
+    else if (entry.type === 'unemployment_benefit') {
+      addToBucket(amount, chargeBuckets, 'unemploymentBenefits');
+    } else if (entry.type === 'maintenance') addToBucket(amount, chargeBuckets, 'maintenance');
     else if (entry.type === 'construction') addToBucket(amount, chargeBuckets, 'construction');
     else if (entry.type === 'loan_interest') addToBucket(amount, chargeBuckets, 'loanInterest');
     else if (entry.type === 'loan_repayment') addToBucket(amount, chargeBuckets, 'loanRepayment');
@@ -76,7 +79,8 @@ export function incomeStatementFromJournalPartition(labelYearOrTurn, partition, 
   ].filter((line) => line.amount > 0);
 
   const charges = [
-    { label: 'Salaires', amount: chargeBuckets.salaries },
+    { label: 'Salaires fonctionnaires', amount: chargeBuckets.salaries },
+    { label: 'Salaires chômeurs', amount: chargeBuckets.unemploymentBenefits },
     { label: 'Maintenance', amount: chargeBuckets.maintenance },
     { label: 'Construction', amount: chargeBuckets.construction },
     { label: 'Intérêts de prêts', amount: chargeBuckets.loanInterest },

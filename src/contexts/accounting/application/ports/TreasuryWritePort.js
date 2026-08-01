@@ -121,4 +121,12 @@ export class TreasuryWritePort {
   async applyConstructionRefundCredit(_amount, _description) {
     throw new Error('TreasuryWritePort: port not implemented');
   }
+
+  /**
+   * @param {number} _amount
+   * @returns {Promise<object>} Updated budget row
+   */
+  async applyUnemploymentBenefitDebit(_amount) {
+    throw new Error('TreasuryWritePort: port not implemented');
+  }
 }

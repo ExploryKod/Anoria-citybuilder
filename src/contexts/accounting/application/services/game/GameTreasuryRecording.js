@@ -12,31 +12,21 @@ export class GameTreasuryRecording {
     this.commands = commands;
   }
 
-  async recordSalaries(salaryPerMonth, population, description = null, turn = null) {
+  async recordSalaries(amount, description = null, turn = null) {
     const budget = await this.getTreasurySnapshot.execute();
     const effectiveTurn = turn ?? budget.turn;
 
     if (
-      typeof salaryPerMonth !== 'number' ||
-      Number.isNaN(salaryPerMonth) ||
-      !Number.isFinite(salaryPerMonth) ||
-      salaryPerMonth < 0
+      typeof amount !== 'number' ||
+      Number.isNaN(amount) ||
+      !Number.isFinite(amount) ||
+      amount < 0
     ) {
-      console.error(`Invalid salary per month: ${salaryPerMonth}`);
+      console.error(`Invalid civil servant salary amount: ${amount}`);
       return budget;
     }
 
-    if (
-      typeof population !== 'number' ||
-      Number.isNaN(population) ||
-      !Number.isFinite(population) ||
-      population < 0
-    ) {
-      console.error(`Invalid population: ${population}`);
-      return budget;
-    }
-
-    const totalSalary = Math.round(salaryPerMonth * population);
+    const totalSalary = Math.round(amount);
     if (totalSalary <= 0) {
       return budget;
     }
@@ -44,8 +34,35 @@ export class GameTreasuryRecording {
     await this.commands.recordSalaryExpense({
       turn: effectiveTurn,
       amount: totalSalary,
-      description:
-        description || `Salaires fonctionnaires (${population} hab. × ${salaryPerMonth}€)`,
+      description: description || 'Salaires fonctionnaires',
+    });
+
+    return this.getTreasurySnapshot.execute();
+  }
+
+  async recordUnemploymentBenefits(amount, description = null, turn = null) {
+    const budget = await this.getTreasurySnapshot.execute();
+    const effectiveTurn = turn ?? budget.turn;
+
+    if (
+      typeof amount !== 'number' ||
+      Number.isNaN(amount) ||
+      !Number.isFinite(amount) ||
+      amount < 0
+    ) {
+      console.error(`Invalid unemployment benefit amount: ${amount}`);
+      return budget;
+    }
+
+    const totalBenefit = Math.round(amount);
+    if (totalBenefit <= 0) {
+      return budget;
+    }
+
+    await this.commands.recordUnemploymentBenefitExpense({
+      turn: effectiveTurn,
+      amount: totalBenefit,
+      description: description || 'Salaires chômeurs',
     });
 
     return this.getTreasurySnapshot.execute();

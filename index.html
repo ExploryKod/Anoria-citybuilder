@@ -808,29 +808,20 @@
 
                 <div class="info-box-global-numbers">
                     <section class="info-box infos-pop">
-                        <article class="pop-box" title="Population totale (citoyens, élites)">
+                        <article class="pop-box pop-box--total-only" title="Population totale (active + chômeurs)">
                             <span class="info-box pop-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
                                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
                                     <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                                 </svg>
                             </span>
-                            <div class="display-pop">0 (0, 0)</div>
+                            <span class="pop-total">0</span>
                         </article>
                         <article class="pop-box">
                             <span class="info-box pop-icon">
                                 <img src="/resources/textures/status/nofood.png" alt="Famished" class="famished-icon" style="width: 24px; height: 24px; object-fit: contain;">
                             </span>
                             <div class="display-hunger-pop">0</div>
-                        </article>
-                        <article class="pop-box">
-                            <span class="info-box pop-icon">
-                                <img src="/resources/textures/status/no-work_colored.png" alt="Unemployed" class="unemployed-icon" style="width: 24px; height: 24px; object-fit: contain;">
-                            </span>
-                            <div class="display-unemployed-pop">0 (0%)</div>
-                        </article>
-                        <article class="pop-box worker-lack-box" title="Manque global de main-d'œuvre">
-                            <div class="display-worker-lack">0</div>
                         </article>
                     </section>
 
@@ -899,6 +890,41 @@
                                 </svg>
                             </span>
                         </article>
+                    </div>
+                </section>
+            </div>
+
+            <div class="info-panel-pop-detail">
+                <section class="info-box infos-pop-detail" aria-label="Détail population active">
+                    <div class="pop-detail-active" title="Population active (citoyens actifs, élites, fonctionnaires)">
+                        <span class="pop-detail-metric pop-active-head">
+                            <span class="pop-detail-emoji pop-active-emoji" aria-hidden="true">👷</span>
+                            <span class="pop-detail-value pop-active-total">0</span>
+                        </span>
+                        <span class="pop-breakdown" aria-label="Détail population active">
+                            <span class="pop-detail-metric pop-segment pop-segment--citizen" title="Citoyens actifs (ni chômeur, ni élite, ni fonctionnaire)">
+                                <span class="pop-detail-emoji pop-segment-emoji" aria-hidden="true">🔨</span>
+                                <span class="pop-detail-value pop-segment-value">0</span>
+                            </span>
+                            <span class="pop-detail-metric pop-segment pop-segment--elite" title="Élites">
+                                <span class="pop-detail-emoji pop-segment-emoji" aria-hidden="true">👑</span>
+                                <span class="pop-detail-value pop-segment-value">0</span>
+                            </span>
+                            <span class="pop-detail-metric pop-segment pop-segment--servant" title="Fonctionnaires">
+                                <span class="pop-detail-emoji pop-segment-emoji" aria-hidden="true">🏛</span>
+                                <span class="pop-detail-value pop-segment-value">0</span>
+                            </span>
+                        </span>
+                    </div>
+                    <div class="pop-detail-metric pop-detail-unemployed" title="Chômeurs (hors fonctionnaires)">
+                        <span class="pop-detail-icon">
+                            <img src="/resources/textures/status/no-work_colored.png" alt="Chômeurs" class="unemployed-icon">
+                        </span>
+                        <span class="pop-detail-value display-unemployed-pop">0 (0%)</span>
+                    </div>
+                    <div class="pop-detail-metric pop-detail-lack worker-lack-box" title="Manque global de main-d'œuvre">
+                        <span class="pop-detail-emoji pop-lack-emoji" aria-hidden="true">⚠️</span>
+                        <span class="pop-detail-value display-worker-lack">0</span>
                     </div>
                 </section>
             </div>
@@ -1903,7 +1929,7 @@
                                                 <path d="M16 10h1v4"></path>
                                             </svg>
                                         </td>
-                                        <td class="label-col finances-row-label">Impôt sur les salaires</td>
+                                        <td class="label-col finances-row-label">Impôt sur les salaires (assiette citoyens)</td>
                                         <td class="last-year-col finances-value-positive" data-field="payrollTaxLastYear" id="payroll-tax-last-year">0</td>
                                         <td class="this-year-col finances-value-positive" data-field="payrollTaxThisYear" id="payroll-tax-this-year">0</td>
                                     </tr>
@@ -1977,9 +2003,22 @@
                                                 <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                                             </svg>
                                         </td>
-                                        <td class="label-col finances-row-label">Salaires</td>
+                                        <td class="label-col finances-row-label">Salaires fonctionnaires</td>
                                         <td class="last-year-col finances-value-negative" data-field="salaryLastYear" id="salary-last-year">0</td>
                                         <td class="this-year-col finances-value-negative" data-field="salaryThisYear" id="salary-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-x">
+                                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                                <circle cx="9" cy="7" r="4"/>
+                                                <line x1="17" x2="22" y1="8" y2="13"/>
+                                                <line x1="22" x2="17" y1="8" y2="13"/>
+                                            </svg>
+                                        </td>
+                                        <td class="label-col finances-row-label">Salaires chômeurs</td>
+                                        <td class="last-year-col finances-value-negative" data-field="unemploymentBenefitLastYear" id="unemployment-benefit-last-year">0</td>
+                                        <td class="this-year-col finances-value-negative" data-field="unemploymentBenefitThisYear" id="unemployment-benefit-this-year">0</td>
                                     </tr>
                                     <tr>
                                         <td class="indicator-col">
@@ -2294,14 +2333,23 @@
                                             </button>
                                         </div>
                                         <span class="work-control-info">
-                                            Salaire brut mensuel par habitant : <span class="work-control-info-value" id="salary-month-display">100</span> €/mois
+                                            Salaire de référence (base de calcul interne) : <span class="work-control-info-value" id="salary-month-display">100</span> €/mois
                                         </span>
                                     </div>
                                     <div class="work-control-info">
-                                        Salaire brut par habitant : <span class="work-control-info-value" id="salary-year-display">1200</span> €/an
+                                        Salaire de référence annuel : <span class="work-control-info-value" id="salary-year-display">1200</span> €/an
                                     </div>
                                     <div class="work-control-info">
-                                        Facture annuelle totale estimée sur la base de la population actuelle (<span class="work-control-info-value" id="salary-population-display">0</span>) : <span class="work-control-info-value" id="salary-annual-bill">0</span> €
+                                        Fonctionnaires (<span class="work-control-info-value" id="civil-servant-count-display">0</span>, 1 pour 12 habitants) : charge mensuelle incluse ci-dessous
+                                    </div>
+                                    <div class="work-control-info">
+                                        Masse salariale citoyens actifs — hors fonctionnaires et chômeurs (informatif) : <span class="work-control-info-value" id="citizen-payroll-display">0</span> €/mois
+                                    </div>
+                                    <div class="work-control-info">
+                                        Charge mensuelle ville (fonctionnaires + chômeurs, population <span class="work-control-info-value" id="salary-population-display">0</span>) : voir détail ci-dessous
+                                    </div>
+                                    <div class="work-control-info">
+                                        Charge annuelle estimée — salaires ville : <span class="work-control-info-value" id="salary-annual-bill">0</span> €
                                     </div>
                                 </div>
 
@@ -2323,6 +2371,9 @@
                                                     <path d="M12 5v14"></path>
                                                 </svg>
                                             </button>
+                                        </div>
+                                        <div class="work-control-info">
+                                            Assiette mensuelle estimée : <span class="work-control-info-value" id="payroll-tax-base-display">0</span> €
                                         </div>
                                         <div class="work-control-info">
                                             Impôt mensuel estimé : <span class="work-control-info-value" id="salary-tax-amount-display">0</span> €/mois
@@ -2351,8 +2402,11 @@
                                             </button>
                                         </div>
                                         <span class="work-control-info">
-                                            Pourcentage du meilleur salaire
+                                            Pourcentage du salaire de référence versé aux chômeurs
                                         </span>
+                                    </div>
+                                    <div class="work-control-info">
+                                        Charge mensuelle estimée — salaires chômeurs (<span class="work-control-info-value" id="unemployment-count-display">0</span> chômeurs) : <span class="work-control-info-value" id="unemployment-benefit-display">0</span> €
                                     </div>
                                 </div>
                             </div>
@@ -2762,7 +2816,11 @@
                         </button>
                         <button class="journal-filter-pill" data-filter="salary" data-types='["salary"]'>
                             <span class="pill-color" style="background: #ffe0b2; color: #e65100;"></span>
-                            <span class="pill-label">Salaires</span>
+                            <span class="pill-label">Salaires fonctionnaires</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="unemployment_benefit" data-types='["unemployment_benefit"]'>
+                            <span class="pill-color" style="background: #ffe0b2; color: #e65100;"></span>
+                            <span class="pill-label">Salaires chômeurs</span>
                         </button>
                         <button class="journal-filter-pill" data-filter="imports" data-types='["import_"]'>
                             <span class="pill-color" style="background: #fff3cd; color: #856404;"></span>

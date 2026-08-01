@@ -11,8 +11,9 @@ const MONTH_NAMES =
 
 /** Remove type label prefix already shown in the entry badge. */
 const DESCRIPTION_PREFIX_BY_TYPE = {
-  payroll_tax: /^Impôt sur les salaires\s*-\s*/i,
+  payroll_tax: /^Impôt sur les salaires(?:\s*\(assiette citoyens\))?\s*-\s*/i,
   salary: /^Salaires fonctionnaires\s*-\s*/i,
+  unemployment_benefit: /^Salaires chômeurs\s*-\s*/i,
   maintenance: /^Maintenance mensuelle\s*-\s*/i,
   citizen_tax: /^Impôt Citoyen(?:\s*\([^)]*\))?\s*-\s*/i,
   construction: /^Building:\s*/i,
@@ -29,7 +30,7 @@ const DESCRIPTION_PREFIX_BY_TYPE = {
   carry_forward: /^Report à nouveau de l'année\s+/i,
   cumul_maintenance: /^Cumul Maintenance\s*-\s*/i,
   cumul_construction: /^Cumul Construction\s*-\s*/i,
-  cumul_salary: /^Cumul Salaires\s*-\s*/i,
+  cumul_salary: /^Cumul salaires fonctionnaires\s*-\s*/i,
   cumul_exceptional_expenses: /^Cumul Réparations\s*-\s*/i,
   cumul_loan_interest: /^Cumul Intérêts Prêt\s*-\s*/i,
   cumul_loan_repayment: /^Cumul Remboursement Prêt\s*-\s*/i,
@@ -87,13 +88,34 @@ export function formatJournalEntryDetails(entry) {
   }
 
   if (entry.type === 'payroll_tax') {
-    const rate = raw.match(/\((\d+%)\)/);
-    return rate ? [{ label: 'Taux', value: rate[1] }] : [];
+    const rate = raw.match(/\((\d+)%[,)]/);
+    const assietteTotal = raw.match(/assiette\s+(\d+)€/i);
+    const assietteDetail = raw.match(/:\s*(.+)\)$/i);
+    const details = [];
+    if (rate) {
+      details.push({ label: 'Taux', value: `${rate[1]}%` });
+    }
+    if (assietteTotal) {
+      details.push({ label: 'Assiette', value: `${assietteTotal[1]}€` });
+    }
+    if (assietteDetail) {
+      details.push({ label: 'Détail assiette', value: assietteDetail[1] });
+    }
+    return details;
   }
 
   if (entry.type === 'salary') {
-    const calc = raw.match(/\((\d+\s*hab\.\s*×\s*\d+€)\)/i);
-    return calc ? [{ label: 'Calcul', value: calc[1] }] : [];
+    const calc = raw.match(/\((\d+\s*fonct\.\s*×\s*\d+€)\)/i);
+    if (calc) {
+      return [{ label: 'Calcul fonctionnaires', value: calc[1] }];
+    }
+    const legacy = raw.match(/\((\d+\s*hab\.\s*×\s*\d+€(?:\s*÷\s*\d+)?)\)/i);
+    return legacy ? [{ label: 'Calcul fonctionnaires', value: legacy[1] }] : [];
+  }
+
+  if (entry.type === 'unemployment_benefit') {
+    const calc = raw.match(/\((\d+\s*chôm\.\s*×\s*\d+€\s*×\s*\d+%)\)/i);
+    return calc ? [{ label: 'Calcul chômeurs', value: calc[1] }] : [];
   }
 
   if (entry.type === 'citizen_tax') {

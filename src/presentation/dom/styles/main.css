@@ -1083,21 +1083,123 @@ canvas.pointer-events-disabled {
 
 .info-panel .info-box-global-numbers > .info-box.infos-pop {
     background-color: #fff !important;
-    min-width: 230px;
+    min-width: auto;
     display: flex;
     align-items: center;
-    justify-content: space-evenly;
+    justify-content: flex-start;
     gap: 5px;
 }
 
-/* Border around global citizen count (first pop-box) */
-.info-panel .info-box.infos-pop .pop-box:first-child {
+/* Population totale seule (barre principale) */
+.info-panel .pop-box--total-only {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
     border: 2px solid var(--primary);
     border-radius: var(--border-radius-small);
-    padding: 4px 8px;
+    padding: 4px 10px;
+    white-space: nowrap;
 }
 
-/* Unemployed icon styling */
+.info-panel .pop-box--total-only .pop-total {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Barre de détail population (sous la barre principale) */
+.info-panel-pop-detail {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 calc(var(--progress-bar-h) + 4px) 8px;
+    width: 100%;
+}
+
+.info-panel-pop-detail .infos-pop-detail {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    min-height: 34px;
+    padding: 6px 14px;
+    background-color: #fff !important;
+    border: none;
+    border-radius: var(--border-radius-small);
+    flex-wrap: nowrap;
+    box-shadow: 0 1px 3px rgba(29, 34, 40, 0.08);
+    cursor: default;
+    height: auto;
+}
+
+/* Métrique unifiée : icône/emoji + chiffre sur une même ligne */
+.info-panel-pop-detail .pop-detail-metric {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    height: 20px;
+    line-height: 20px;
+}
+
+.info-panel-pop-detail .pop-detail-emoji,
+.info-panel-pop-detail .pop-detail-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.info-panel-pop-detail .pop-detail-emoji {
+    font-size: 16px;
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+}
+
+.info-panel-pop-detail .pop-detail-icon .unemployed-icon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    display: block;
+}
+
+.info-panel-pop-detail .pop-detail-value {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--primary);
+}
+
+.info-panel-pop-detail .pop-detail-active {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+}
+
+.info-panel-pop-detail .pop-breakdown {
+    display: inline-flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: nowrap;
+}
+
+.info-panel-pop-detail .display-unemployed-pop {
+    color: var(--primary);
+    white-space: nowrap;
+}
+
+.info-panel-pop-detail .display-worker-lack {
+    color: #cc0000;
+}
+
+/* Unemployed icon styling (barre principale famished / legacy) */
 .info-panel .pop-icon .unemployed-icon {
     width: 24px;
     height: 24px;
@@ -1113,27 +1215,7 @@ canvas.pointer-events-disabled {
     display: block;
 }
 
-/* Unemployed population display */
-.info-panel .display-unemployed-pop {
-    color: var(--primary);
-    font-size: 16px;
-    font-weight: 700;
-}
-
-/* Global worker shortage — number only (no icon), always red */
-.info-panel .worker-lack-box {
-    min-width: 28px;
-    padding: 4px 6px;
-}
-
-.info-panel .display-worker-lack {
-    color: #cc0000;
-    font-size: 16px;
-    font-weight: 700;
-    line-height: 1;
-}
-
-.display-unemployed-pop, .display-hunger-pop {
+.display-hunger-pop {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1829,10 +1911,11 @@ button#pwa-refresh:hover {
     /* Centrer spécifiquement les éléments de données */
     .info-panel .display-time,
     .info-panel .display-speed,
-    .info-panel .display-pop,
+    .info-panel .pop-box--total-only,
+    .info-panel-pop-detail .pop-detail-metric,
+    .info-panel-pop-detail .pop-detail-active,
+    .info-panel-pop-detail .pop-breakdown,
     .info-panel .display-hunger-pop,
-    .info-panel .display-unemployed-pop,
-    .info-panel .display-worker-lack,
     .info-panel .display-funds {
         display: flex;
         align-items: center;

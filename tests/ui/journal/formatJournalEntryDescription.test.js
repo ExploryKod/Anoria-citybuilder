@@ -25,10 +25,9 @@ describe('formatJournalEntryDescription', () => {
     expect(
       formatJournalEntryDetails({
         type: 'salary',
-        description:
-          'Salaires fonctionnaires - Juin 0 JC (28 hab. × 100€)',
+        description: 'Salaires fonctionnaires - Juin 0 JC (2 fonct. × 100€)',
       })
-    ).toEqual([{ label: 'Calcul', value: '28 hab. × 100€' }]);
+    ).toEqual([{ label: 'Calcul fonctionnaires', value: '2 fonct. × 100€' }]);
   });
 
   test('maintenance hides period-only description when breakdown exists', () => {

@@ -14,6 +14,7 @@ import {
   applyCommercialRouteDebitMutation,
   applyCapitalFundsIncomeCreditMutation,
   applyConstructionRefundCreditMutation,
+  applyUnemploymentBenefitDebitMutation,
 } from './treasuryBudgetRowMutations.js';
 
 /**
@@ -54,6 +55,13 @@ export class DexieTreasuryWriteAdapter extends TreasuryWritePort {
   /** @inheritdoc */
   async applySalaryDebit(amount) {
     return this.#loadAndSave((budget) => applySalaryDebitMutation(budget, amount));
+  }
+
+  /** @inheritdoc */
+  async applyUnemploymentBenefitDebit(amount) {
+    return this.#loadAndSave((budget) =>
+      applyUnemploymentBenefitDebitMutation(budget, amount)
+    );
   }
 
   /** @inheritdoc */

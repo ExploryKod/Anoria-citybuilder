@@ -1,4 +1,10 @@
 import { buildTurnBudgetMaintenanceSnapshot } from '../../domain/policies/BuildingMaintenanceBreakdownPolicy.js';
+import {
+  computeReferenceSalaryPayrollBreakdown,
+  formatCivilServantSalaryJournalDescription,
+  formatPayrollTaxJournalDescription,
+  formatUnemploymentBenefitJournalDescription,
+} from '../../domain/policies/ReferenceSalaryPayrollPolicy.js';
 
 /**
  * Per-turn budget orchestration (taxes, salaries, maintenance, enrichments).
@@ -9,10 +15,12 @@ export class ProcessTurnBudget {
    * @param {(time: number) => Promise<object>} deps.collectCitizenTaxes
    * @param {Function} deps.recordSalaries
    * @param {Function} deps.recordPayrollTax
+   * @param {Function} deps.recordUnemploymentBenefits
    * @param {Function} deps.recordBuildingMaintenance
    * @param {(time: number) => object} deps.getTimeInfo
    * @param {() => Promise<number>} deps.getCityTotalPopulation
-   * @param {() => { salaryPerMonth: number, salaryTaxRate: number }} deps.getSalarySettings
+   * @param {() => Promise<{ unemployed: number }>} deps.getCityEmploymentSummary
+   * @param {() => { salaryPerMonth: number, salaryTaxRate: number, unemploymentBenefitRate: number }} deps.getSalarySettings
    * @param {() => Promise<object>} deps.clearPopulationWithoutRoadAccess
    * @param {() => Promise<void>|void} [deps.processLoanPayments]
    * @param {() => Promise<object>} deps.recalculateLoanTotals
@@ -103,28 +111,62 @@ export class ProcessTurnBudget {
       if (isFirstTurnOfMonth && civilMonthKey !== this.lastSalaryCivilKey) {
         this.lastSalaryCivilKey = civilMonthKey;
 
-        const { salaryPerMonth, salaryTaxRate } = this.deps.getSalarySettings();
+        const { salaryPerMonth, salaryTaxRate, unemploymentBenefitRate } =
+          this.deps.getSalarySettings();
         const totalPopulation = await this.deps.getCityTotalPopulation();
+        const employmentSummary = await this.deps.getCityEmploymentSummary();
+        const unemployed = employmentSummary?.unemployed ?? 0;
+        const eliteCount = employmentSummary?.elitePool ?? 0;
 
         if (totalPopulation > 0 && salaryPerMonth > 0) {
           const yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
           const monthName = timeInfo.month || 'Mois';
-          const salaryDescription = `Salaires fonctionnaires - ${monthName} ${yearDisplay} (${totalPopulation} hab. × ${salaryPerMonth}€)`;
-          const totalSalaryAmount = totalPopulation * salaryPerMonth;
+          const payroll = computeReferenceSalaryPayrollBreakdown({
+            population: totalPopulation,
+            unemployed,
+            eliteCount,
+            referenceSalaryPerMonth: salaryPerMonth,
+            unemploymentBenefitRate,
+            salaryTaxRate,
+          });
 
-          await this.deps.recordSalaries(
-            salaryPerMonth,
-            totalPopulation,
-            salaryDescription,
-            time
-          );
+          if (payroll.civilServantExpense > 0) {
+            await this.deps.recordSalaries(
+              payroll.civilServantExpense,
+              formatCivilServantSalaryJournalDescription({
+                monthName,
+                yearDisplay,
+                civilServantCount: payroll.civilServantCount,
+                referenceSalaryPerMonth: salaryPerMonth,
+              }),
+              time
+            );
+          }
 
-          if (salaryTaxRate > 0) {
-            const taxDescription = `Impôt sur les salaires - ${monthName} ${yearDisplay} (${Math.round(salaryTaxRate * 100)}%)`;
+          if (payroll.unemploymentBenefitExpense > 0) {
+            await this.deps.recordUnemploymentBenefits(
+              payroll.unemploymentBenefitExpense,
+              formatUnemploymentBenefitJournalDescription({
+                monthName,
+                yearDisplay,
+                unemployedCount: payroll.unemployedCount,
+                referenceSalaryPerMonth: salaryPerMonth,
+                unemploymentBenefitRate,
+              }),
+              time
+            );
+          }
+
+          if (salaryTaxRate > 0 && payroll.payrollTaxBase > 0) {
             await this.deps.recordPayrollTax(
-              totalSalaryAmount,
+              payroll.payrollTaxBase,
               salaryTaxRate,
-              taxDescription,
+              formatPayrollTaxJournalDescription({
+                monthName,
+                yearDisplay,
+                salaryTaxRate,
+                breakdown: payroll,
+              }),
               time
             );
           }
