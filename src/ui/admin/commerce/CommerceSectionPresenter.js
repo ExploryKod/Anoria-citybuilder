@@ -757,7 +757,7 @@ export class CommerceSectionPresenter {
     }
 
     /**
-     * Charge les statistiques dynamiques depuis le store (écrites par CommerceService)
+     * Charge les statistiques dynamiques depuis le repository (écrites par la simulation Commerce)
      */
     loadDynamicStats() {
         const stats = loadCommerceStats();

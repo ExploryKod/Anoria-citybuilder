@@ -108,4 +108,42 @@ describe('architecture boundaries', () => {
   test('allowlist is empty (no known boundary debt)', () => {
     expect(ALLOWLIST.size).toBe(0);
   });
+
+  test('commerce BC does not read UI goodsData via presenter/registry', () => {
+    const commerceRoot = path.join(SRC_ROOT, 'contexts', 'commerce');
+    const files = listJsFiles(commerceRoot);
+    const violations = [];
+
+    const forbidden = [
+      /getCommerceSectionPresenter\s*\(/,
+      /commerceSectionPresenter/,
+      /commerceSectionManager/,
+      /from\s+['"][^'"]*\/ui\//,
+      /\.goodsData\b/,
+    ];
+
+    for (const absolutePath of files) {
+      const fileRel = toSrcRelative(absolutePath);
+      const content = fs.readFileSync(absolutePath, 'utf8');
+
+      // Param name goodsData on repository saveConfig is OK — only forbid reading presenter.goodsData
+      if (/\w+\.goodsData\b/.test(content) && !/saveConfig\s*\(\s*goodsData/.test(content)) {
+        // Allow JSDoc `@param {Array} goodsData` and method params without property access
+        const propertyReads = content.match(/\w+\.goodsData\b/g) || [];
+        for (const hit of propertyReads) {
+          if (hit === 'this.goodsData' || hit.includes('Presenter') || hit.includes('Manager')) {
+            violations.push(`${fileRel} accesses "${hit}"`);
+          }
+        }
+      }
+
+      for (const pattern of forbidden.slice(0, 4)) {
+        if (pattern.test(content)) {
+          violations.push(`${fileRel} matches ${pattern}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
 });
