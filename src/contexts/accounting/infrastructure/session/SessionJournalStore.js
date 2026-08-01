@@ -1,33 +1,42 @@
-import db from '../../core/persistence/dexie/db.js';
-import { getTimeManager, getTimeInfo } from '../acl/appRuntime.js';
+import db from '../../../../core/persistence/dexie/db.js';
 import {
   buildMonthlyFinancialSummary,
   buildYearlyFinancialSummary,
   computeJournalCurrentBalance,
   filterAndSortJournalEntries,
+} from '../adapters/persistence/dexie/journalAggregations.js';
+import {
   buildJournalExportPayload,
   serializeJournalExportPayload,
-  BrowserJournalPdfExporter,
-  DexieJournalSessionPersistenceAdapter,
-} from '../acl/accountingJournalStore.js';
-import {
-  sessionLedgerBuffer,
-} from './SessionLedgerBuffer.js';
-import {
-  buildLedgerBusinessKey,
-} from './ledgerBusinessKeys.js';
+} from '../../presentation/JournalExportViewModel.js';
+import { BrowserJournalPdfExporter } from '../adapters/browser/BrowserJournalPdfExporter.js';
+import { DexieJournalSessionPersistenceAdapter } from '../adapters/persistence/dexie/DexieJournalSessionPersistenceAdapter.js';
+import { sessionLedgerBuffer } from './SessionLedgerBuffer.js';
+import { buildLedgerBusinessKey } from '../../domain/policies/LedgerBusinessKeys.js';
 
 /**
- * JournalManager - Manages journal entries (accounting entries)
- * Handles all operations related to the journal (db.journal)
+ * SessionJournalStore — in-memory journal orchestration (Accounting BC infrastructure).
  */
-class JournalManager {
-    constructor() {
-        this.db = db;
+export class SessionJournalStore {
+    /**
+     * @param {object} [deps]
+     * @param {import('dexie').Dexie} [deps.db]
+     * @param {import('../../../application/ports/GameTimePort.js').GameTimePort} [deps.gameTimePort]
+     * @param {import('./SessionLedgerBuffer.js').SessionLedgerBuffer} [deps.sessionLedgerBuffer]
+     */
+    constructor(deps = {}) {
+        this.db = deps.db ?? db;
+        this.gameTimePort = deps.gameTimePort ?? null;
+        this._buffer = deps.sessionLedgerBuffer ?? sessionLedgerBuffer;
         this.LOCALSTORAGE_KEY = 'journal_year_end_balances';
         this._sessionPersistence = null;
         this._pdfExporter = new BrowserJournalPdfExporter();
         this._registerFlushHooks();
+    }
+
+    /** @param {import('../../../application/ports/GameTimePort.js').GameTimePort} gameTimePort */
+    setGameTimePort(gameTimePort) {
+        this.gameTimePort = gameTimePort;
     }
 
     _registerFlushHooks() {
@@ -37,7 +46,7 @@ class JournalManager {
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
                 this.flushSessionToDexie().catch((error) => {
-                    console.error('[JournalManager] visibility flush failed:', error);
+                    console.error('[SessionJournalStore] visibility flush failed:', error);
                 });
             }
         });
@@ -69,11 +78,15 @@ class JournalManager {
 
     /** @returns {(turn: number) => object|null} */
     _getTimeInfoResolver() {
-        const timeManager = getTimeManager();
-        if (!timeManager || typeof timeManager.getTimeInfo !== 'function') {
-            return () => null;
+        if (this.gameTimePort) {
+            return (turn) => this.gameTimePort.getTimeInfo(turn);
         }
-        return (turn) => timeManager.getTimeInfo(turn);
+        return () => null;
+    }
+
+    /** @param {number} turn */
+    _getTimeInfo(turn) {
+        return this._getTimeInfoResolver()(turn);
     }
 
     /**
@@ -93,7 +106,7 @@ class JournalManager {
         const yearData = yearlyData.find(y => y.year === year);
         
         if (!yearData) {
-            console.warn(`[JournalManager] No data found for year ${year} in getYearlyFinancialSummary()`);
+            console.warn(`[SessionJournalStore] No data found for year ${year} in getYearlyFinancialSummary()`);
             return 0;
         }
         
@@ -136,7 +149,7 @@ class JournalManager {
             
             localStorage.setItem(this.LOCALSTORAGE_KEY, JSON.stringify(soldes));
         } catch (error) {
-            console.error('[JournalManager] Error saving year end balance:', error);
+            console.error('[SessionJournalStore] Error saving year end balance:', error);
         }
     }
 
@@ -160,7 +173,7 @@ class JournalManager {
             yearSoldes.sort((a, b) => (b.turn || 0) - (a.turn || 0));
             return yearSoldes[0];
         } catch (error) {
-            console.error('[JournalManager] Error getting year end balance:', error);
+            console.error('[SessionJournalStore] Error getting year end balance:', error);
             return null;
         }
     }
@@ -176,7 +189,7 @@ class JournalManager {
             
             return JSON.parse(stored);
         } catch (error) {
-            console.error('[JournalManager] Error getting all year end balances:', error);
+            console.error('[SessionJournalStore] Error getting all year end balances:', error);
             return [];
         }
     }
@@ -195,19 +208,16 @@ class JournalManager {
             let month = null;
             let year = null;
 
-            const timeManager = getTimeManager();
-            let timeInfo = null;
-            if (timeManager) {
-                timeInfo = timeManager.getTimeInfo(turn);
+            const timeInfo = this._getTimeInfo(turn);
+            if (timeInfo) {
                 month = timeInfo.monthIndex + 1;
                 year = timeInfo.year;
             }
-
             const businessKey =
                 options.businessKey ??
                 (timeInfo ? buildLedgerBusinessKey(type, timeInfo) : null);
 
-            if (businessKey && sessionLedgerBuffer.hasBusinessKey(businessKey)) {
+            if (businessKey && this._buffer.hasBusinessKey(businessKey)) {
                 return { recorded: false, skipped: true, reason: 'duplicate_business_key' };
             }
 
@@ -237,8 +247,8 @@ class JournalManager {
                 options.persist ?? type !== 'balance';
 
             const appendResult = businessKey
-                ? sessionLedgerBuffer.appendIfAbsent(entry, { persist })
-                : { appended: true, record: sessionLedgerBuffer.append(entry, { persist }) };
+                ? this._buffer.appendIfAbsent(entry, { persist })
+                : { appended: true, record: this._buffer.append(entry, { persist }) };
 
             if (!appendResult.appended) {
                 return {
@@ -261,7 +271,7 @@ class JournalManager {
      */
     async getJournalEntries(maxAge = null) {
         await this.ensureHydrated();
-        const entries = sessionLedgerBuffer.getAllPublic();
+        const entries = this._buffer.getAllPublic();
         return filterAndSortJournalEntries(entries, maxAge);
     }
 
@@ -272,7 +282,7 @@ class JournalManager {
      */
     async getJournalEntriesForTurn(turn) {
         await this.ensureHydrated();
-        return sessionLedgerBuffer.getForTurn(turn);
+        return this._buffer.getForTurn(turn);
     }
 
     /**
@@ -286,7 +296,7 @@ class JournalManager {
         cutoffDate.setDate(cutoffDate.getDate() - maxAge);
         const cutoffISO = cutoffDate.toISOString();
 
-        sessionLedgerBuffer.removeEntriesBeforeDate(cutoffISO);
+        this._buffer.removeEntriesBeforeDate(cutoffISO);
 
         const oldEntries = await this.db.journal.where('date').below(cutoffISO).toArray();
 
@@ -304,7 +314,7 @@ class JournalManager {
      */
     async clearAllEntries() {
         await this.ensureHydrated();
-        const bufferCount = sessionLedgerBuffer.clear();
+        const bufferCount = this._buffer.clear();
         const idbCount = await this.db.journal.count();
         await this.db.journal.clear();
         return Math.max(bufferCount, idbCount);
@@ -316,7 +326,7 @@ class JournalManager {
      */
     async getStatistics() {
         await this.ensureHydrated();
-        const entries = sessionLedgerBuffer.getAllPublic();
+        const entries = this._buffer.getAllPublic();
         
         const stats = {
             totalEntries: entries.length,
@@ -367,7 +377,7 @@ class JournalManager {
         const entries = await this.getJournalEntries();
         const getTimeInfo = this._getTimeInfoResolver();
         if (!getTimeInfo(0) && entries.length > 0) {
-            console.warn('[JournalManager] TimeManager not available');
+            console.warn('[SessionJournalStore] GameTimePort not available');
         }
         return buildMonthlyFinancialSummary(entries, getTimeInfo);
     }
@@ -388,13 +398,12 @@ class JournalManager {
             return;
         }
         
-        const timeManager = getTimeManager();
-        if (!timeManager) {
-            console.warn('[JournalManager] TimeManager not available, cannot create carry forward entry');
+        if (!this.gameTimePort) {
+            console.warn('[SessionJournalStore] GameTimePort not available, cannot create carry forward entry');
             return;
         }
 
-        const currentTimeInfo = getTimeInfo(turn);
+        const currentTimeInfo = this._getTimeInfo(turn);
         const previousYear = currentTimeInfo.year - 1;
         
         // Si on est en année 0, pas de report à nouveau
@@ -409,7 +418,7 @@ class JournalManager {
             const previousYearNetFlow = await this.calculateAndSaveYearEndBalance(previousYear);
             
             if (typeof previousYearNetFlow !== 'number' || isNaN(previousYearNetFlow)) {
-                console.warn(`[JournalManager] Could not calculate year end balance for year ${previousYear}`);
+                console.warn(`[SessionJournalStore] Could not calculate year end balance for year ${previousYear}`);
                 return;
             }
             
@@ -443,16 +452,14 @@ class JournalManager {
      * @returns {Promise<void>}
      */
     async createCumulEntries(year, turn) {
-        const timeManager = getTimeManager();
-        if (!timeManager) {
-            console.warn('[JournalManager] TimeManager not available, cannot create cumul entries');
+        if (!this.gameTimePort) {
+            console.warn('[SessionJournalStore] GameTimePort not available, cannot create cumul entries');
             return;
         }
 
-        // Récupérer toutes les entrées du journal pour cette année
         const allEntries = await this.getJournalEntries();
         const yearEntries = allEntries.filter(entry => {
-            const timeInfo = getTimeInfo(entry.turn);
+            const timeInfo = this._getTimeInfo(entry.turn);
             return timeInfo.year === year;
         });
 
@@ -528,7 +535,7 @@ class JournalManager {
     async addBalanceEntry(turn, balance) {
         await this.ensureHydrated();
 
-        const existingBalance = sessionLedgerBuffer.findBalanceForTurn(turn);
+        const existingBalance = this._buffer.findBalanceForTurn(turn);
 
         if (!existingBalance) {
             await this.addJournalEntry(turn, 'balance', balance, 'Solde', null, {
@@ -538,8 +545,8 @@ class JournalManager {
         }
 
         if (existingBalance.amount !== balance) {
-            sessionLedgerBuffer.updateBalanceForTurn(turn, balance);
-            console.info(`[JournalManager] Updated balance entry for turn ${turn}: ${balance}€`);
+            this._buffer.updateBalanceForTurn(turn, balance);
+            console.info(`[SessionJournalStore] Updated balance entry for turn ${turn}: ${balance}€`);
         }
     }
 
@@ -579,7 +586,7 @@ class JournalManager {
                 })
             );
         } catch (error) {
-            console.error('[JournalManager] Error exporting to JSON:', error);
+            console.error('[SessionJournalStore] Error exporting to JSON:', error);
             throw error;
         }
     }
@@ -595,15 +602,20 @@ class JournalManager {
             const entries = await this.getJournalEntries();
             return this._pdfExporter.export({ entries, yearlySummary: yearlyData });
         } catch (error) {
-            console.error('[JournalManager] Error exporting to PDF:', error);
+            console.error('[SessionJournalStore] Error exporting to PDF:', error);
             throw error;
         }
     }
 }
 
-// Create singleton instance
-const journalManager = new JournalManager();
+// Shared singleton for composition root (inject gameTimePort via setGameTimePort).
+const sessionJournalStore = new SessionJournalStore();
 
-export default journalManager;
-export { JournalManager };
+export default sessionJournalStore;
+export { SessionJournalStore as JournalManager };
+
+/** @internal Tests */
+export function resetSessionJournalStoreForTests() {
+  sessionJournalStore._buffer.reset();
+}
 

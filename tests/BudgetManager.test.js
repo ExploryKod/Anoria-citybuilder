@@ -8,9 +8,9 @@
  */
 
 import Dexie from 'dexie';
-import { BudgetManager } from '../src/js/stores/BudgetManager.js';
-import { JournalManager } from '../src/js/stores/JournalManager.js';
-import { resetSessionLedgerBufferForTests } from '../src/js/stores/SessionLedgerBuffer.js';
+import { BudgetManager } from './helpers/testBudgetFacade.js';
+import { JournalManager } from '../src/js/acl/accountingSessionJournal.js';
+import { resetSessionLedgerBufferForTests } from '../src/js/acl/accountingSessionJournal.js';
 import {
     getOrCreateAccountingContext,
     resetAccountingContextForTests,

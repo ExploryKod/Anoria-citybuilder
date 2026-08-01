@@ -49,12 +49,8 @@ import { SessionJournalRepository } from '../contexts/accounting/infrastructure/
 import { SessionJournalWriteAdapter } from '../contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalWriteAdapter.js';
 import { DexieTreasuryRepository } from '../contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryRepository.js';
 import { DexieTreasuryWriteAdapter } from '../contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryWriteAdapter.js';
-import { LegacyJournalRepository } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyJournalRepository.js';
-import { LegacyTreasuryRepository } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyTreasuryRepository.js';
-import { LegacyTreasuryWriteAdapter } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyTreasuryWriteAdapter.js';
 import { LegacyGameTimePort } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyGameTimePort.js';
-import journalManager from '../js/stores/JournalManager.js';
-import budgetManager from '../js/stores/BudgetManager.js';
+import sessionJournalStore from '../contexts/accounting/infrastructure/session/SessionJournalStore.js';
 import config from '../js/game/config.js';
 import { CollectCitizenTaxes } from '../contexts/accounting/application/services/game/CollectCitizenTaxes.js';
 import { RecordBuildingMaintenanceForCity } from '../contexts/accounting/application/services/game/RecordBuildingMaintenanceForCity.js';
@@ -76,7 +72,7 @@ import {
  * Composition root — Accounting bounded context.
  *
  * Default: session journal buffer + Dexie treasury read/write (Phase 4).
- * Inject legacy adapters via deps or createLegacyAccountingContext() for regression tests.
+ * Inject legacy adapters via deps for regression tests.
  *
  * @param {object} [deps]
  * @param {import('../contexts/accounting/application/ports/JournalRepository.js').JournalRepository} [deps.journalRepository]
@@ -84,21 +80,27 @@ import {
  * @param {import('../contexts/accounting/application/ports/JournalWritePort.js').JournalWritePort} [deps.journalWritePort]
  * @param {import('../contexts/accounting/application/ports/TreasuryWritePort.js').TreasuryWritePort} [deps.treasuryWritePort]
  * @param {import('../contexts/accounting/application/ports/GameTimePort.js').GameTimePort} [deps.gameTimePort]
- * @param {import('../js/stores/JournalManager.js').JournalManager} [deps.journalManager]
+ * @param {import('../contexts/accounting/infrastructure/session/SessionJournalStore.js').SessionJournalStore} [deps.sessionJournalStore]
+ * @param {import('../contexts/accounting/infrastructure/session/SessionJournalStore.js').SessionJournalStore} [deps.journalManager]
  * @param {import('dexie').Dexie} [deps.db]
  */
 export function createAccountingContext(deps = {}) {
-  const journalManagerInstance = deps.journalManager ?? journalManager;
-  const dexieDb = deps.db ?? journalManagerInstance.db;
+  const sessionJournalStoreInstance =
+    deps.sessionJournalStore ?? deps.journalManager ?? sessionJournalStore;
+  const dexieDb = deps.db ?? sessionJournalStoreInstance.db;
   const defaultInitialFunds = deps.defaultInitialFunds ?? config?.budget?.initialFunds ?? 200;
 
   const gameTimePort =
     deps.gameTimePort ??
     new LegacyGameTimePort(getTimeManager());
 
+  if (!sessionJournalStoreInstance.gameTimePort) {
+    sessionJournalStoreInstance.setGameTimePort(gameTimePort);
+  }
+
   const journalWritePort =
     deps.journalWritePort ??
-    new SessionJournalWriteAdapter(journalManagerInstance);
+    new SessionJournalWriteAdapter(sessionJournalStoreInstance);
 
   const treasuryRepository =
     deps.treasuryRepository ??
@@ -181,7 +183,7 @@ export function createAccountingContext(deps = {}) {
   const journalRepository =
     deps.journalRepository ??
     new SessionJournalRepository({
-      journalManager: journalManagerInstance,
+      sessionJournalStore: sessionJournalStoreInstance,
       gameTimePort,
     });
 
@@ -408,7 +410,8 @@ export function createAccountingContext(deps = {}) {
     saveBudgetTurnEnrichment: (turn, additionalData) =>
       saveBudgetTurnEnrichment.execute({ turn, additionalData }),
     cleanupOldBudgetTurnSnapshotsByAge: () => cleanupOldBudgetTurnSnapshots.execute(),
-    cleanupOldJournalEntries: (maxAge) => journalManagerInstance.cleanupOldJournalEntries(maxAge),
+    cleanupOldJournalEntries: (maxAge) =>
+      sessionJournalStoreInstance.cleanupOldJournalEntries(maxAge),
     flushJournalSessionToDexie: () => flushJournalSession.execute(),
   });
 
@@ -744,7 +747,7 @@ export function createAccountingContext(deps = {}) {
 
     /** @param {number} [maxAge] */
     async cleanupOldJournalEntries(maxAge = 60) {
-      return journalManagerInstance.cleanupOldJournalEntries(maxAge);
+      return sessionJournalStoreInstance.cleanupOldJournalEntries(maxAge);
     },
 
     /** @param {Parameters<ProcessTurnBudget['execute']>[0]} params */
@@ -771,19 +774,4 @@ export function getOrCreateAccountingContext(deps = {}) {
 /** @internal Tests only */
 export function resetAccountingContextForTests() {
   sharedAccounting = null;
-}
-
-/** @internal Tests — legacy store adapters */
-export function createLegacyAccountingContext(deps = {}) {
-  const budgetManagerInstance = deps.budgetManager ?? budgetManager;
-  return createAccountingContext({
-    ...deps,
-    journalRepository:
-      deps.journalRepository ?? new LegacyJournalRepository(journalManager),
-    treasuryRepository:
-      deps.treasuryRepository ?? new LegacyTreasuryRepository(budgetManagerInstance),
-    treasuryWritePort:
-      deps.treasuryWritePort ??
-      new LegacyTreasuryWriteAdapter(budgetManagerInstance),
-  });
 }

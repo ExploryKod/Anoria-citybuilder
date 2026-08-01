@@ -1,6 +1,14 @@
 import { DexieEmploymentBuildingRepository } from '../contexts/employment/infrastructure/dexie/DexieEmploymentBuildingRepository.js';
 import { DistributeCityWorkers } from '../contexts/employment/application/commands/DistributeCityWorkers.js';
 import { GetCityEmploymentSummary } from '../contexts/employment/application/queries/GetCityEmploymentSummary.js';
+import { LocalStorageSectorPriorityRepository } from '../contexts/employment/infrastructure/browser/LocalStorageSectorPriorityRepository.js';
+import {
+  getStoredOrDefaultPriorities,
+  mergeAllSectorPriorities,
+  resolveSectorPriorityValue,
+  swapSectorPriority,
+} from '../contexts/employment/domain/policies/SectorPriorityPolicy.js';
+import { getEmploymentSectorName } from '../contexts/employment/domain/catalogs/EmploymentSectorCatalog.js';
 
 /**
  * Composition root — Employment bounded context.
@@ -11,6 +19,8 @@ import { GetCityEmploymentSummary } from '../contexts/employment/application/que
 export function createEmploymentContext({ employmentBuildingRepository } = {}) {
   const employmentBuildingRepositoryImpl =
     employmentBuildingRepository ?? new DexieEmploymentBuildingRepository();
+  const sectorPriorityRepository =
+    new LocalStorageSectorPriorityRepository();
   const distributeCityWorkersCommand = new DistributeCityWorkers(
     employmentBuildingRepositoryImpl
   );
@@ -20,8 +30,38 @@ export function createEmploymentContext({ employmentBuildingRepository } = {}) {
 
   return {
     employmentBuildingRepository: employmentBuildingRepositoryImpl,
+    sectorPriorityRepository,
     distributeCityWorkersCommand,
     getCityEmploymentSummaryQuery,
+
+    ensureSectorPrioritiesInitialized() {
+      sectorPriorityRepository.ensureInitialized();
+    },
+
+    getSectorPriority(sector) {
+      const userPriorities = sectorPriorityRepository.loadUserPriorities();
+      return resolveSectorPriorityValue(sector, userPriorities);
+    },
+
+    getAllSectorPriorities() {
+      const userPriorities = sectorPriorityRepository.loadUserPriorities();
+      return getStoredOrDefaultPriorities(userPriorities);
+    },
+
+    getMergedSectorPriorities() {
+      const userPriorities = sectorPriorityRepository.loadUserPriorities();
+      return mergeAllSectorPriorities(userPriorities);
+    },
+
+    updateSectorPrioritySync(sector, newPriority) {
+      const userPriorities = sectorPriorityRepository.loadUserPriorities();
+      const updated = swapSectorPriority(sector, newPriority, userPriorities);
+      sectorPriorityRepository.saveUserPriorities(updated);
+    },
+
+    getSectorName(sector) {
+      return getEmploymentSectorName(sector);
+    },
 
     /**
      * @param {{ sectorPriorities?: Record<number|string, number> }} [params]

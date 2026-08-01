@@ -2,7 +2,7 @@
  * ACL Construction — placement orchestration from legacy `src/js/`.
  *
  * Spatial neighbors / road access: Parcels BC after mesh sync.
- * Payment: BudgetManager via `acl/budget.js`.
+ * Payment: acl/budget.js → Accounting BC.
  */
 
 import {

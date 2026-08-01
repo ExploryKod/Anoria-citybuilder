@@ -11,7 +11,8 @@ import {
   findBuildingAtTile,
   placeBuildingWithPayment,
 } from '../../../src/js/acl/construction.js';
-import { BudgetManager } from '../../../src/js/stores/BudgetManager.js';
+import { initializeTreasury, resetAccountingContextForTests } from '../../../src/js/acl/accounting.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/js/acl/accountingSessionJournal.js';
 import { makeHouseRecord } from '../../fixtures/buildingRecord.js';
 
 async function clearTables() {
@@ -21,9 +22,9 @@ async function clearTables() {
 }
 
 async function seedBudget(funds = null) {
-  const budgetManager = new BudgetManager();
-  budgetManager.db = db;
-  await budgetManager.initialize(funds);
+  resetSessionLedgerBufferForTests();
+  resetAccountingContextForTests();
+  await initializeTreasury(funds);
 }
 
 describe('Construction — placement with payment (step 2)', () => {

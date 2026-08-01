@@ -1,5 +1,4 @@
 import config from '../game/config.js';
-import productionJournalManager from '../stores/ProductionJournalManager.js';
 import { registerAppService, getTimeInfo } from '../acl/appRuntime.js';
 import {
     instanceIdFromHouseRow,
@@ -10,6 +9,8 @@ import {
     listNatureResources,
     getFactoryById,
     updateFactoryFields,
+    listProductionJournalEntries,
+    getFactoryProductionJournalEntries,
 } from '../acl/supply.js';
 
 function factoryInstanceId(factory) {
@@ -21,9 +22,7 @@ function factoryDisplayLabel(factory) {
 }
 
 async function loadFactoryJournalEntries(factoryData) {
-    return productionJournalManager.getFactoryProductionEntries(
-        factoryInstanceId(factoryData)
-    );
+    return getFactoryProductionJournalEntries(factoryInstanceId(factoryData));
 }
 
 class FactorySectionManager {
@@ -910,7 +909,7 @@ class FactorySectionManager {
             journalContent.innerHTML = '<div class="factory-loading">Chargement du journal...</div>';
             
             // Récupérer toutes les entrées du journal depuis IndexedDB
-            const entries = await productionJournalManager.getProductionEntries();
+            const entries = await listProductionJournalEntries();
             
             if (entries.length === 0) {
                 journalContent.innerHTML = '<div class="factory-empty">Aucune entrée dans le journal de production</div>';
@@ -974,7 +973,7 @@ class FactorySectionManager {
         if (!journalFactorySelect) return;
         
         // Récupérer toutes les entrées du journal pour obtenir la liste des factories
-        const entries = await productionJournalManager.getProductionEntries();
+        const entries = await listProductionJournalEntries();
         
         // Extraire les IDs de factories uniques
         const factoryIds = new Set();

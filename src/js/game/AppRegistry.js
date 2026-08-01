@@ -20,7 +20,6 @@ class AppRegistry {
         this.tutorialManager = null;
         
         // Managers
-        this.budgetManager = null;
         this.inputManager = null;
         this.buttonStateManager = null;
         
@@ -113,7 +112,6 @@ class AppRegistry {
             objectivesTracker: this.objectivesTracker,
             objectivesHistory: this.objectivesHistory,
             tutorialManager: this.tutorialManager,
-            budgetManager: this.budgetManager,
             inputManager: this.inputManager,
             buttonStateManager: this.buttonStateManager,
             objectivesStore: this.objectivesStore,

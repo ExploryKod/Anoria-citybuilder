@@ -4,10 +4,10 @@
 
 import Dexie from 'dexie';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
-import { BudgetManager } from '../../../src/js/stores/BudgetManager.js';
-import { JournalManager } from '../../../src/js/stores/JournalManager.js';
+import { BudgetManager } from '../../../tests/helpers/testBudgetFacade.js';
+import { JournalManager } from '../../../src/js/acl/accountingSessionJournal.js';
 import { BudgetProcessor } from '../../../src/js/game/managers/BudgetProcessor.js';
-import { resetSessionLedgerBufferForTests } from '../../../src/js/stores/SessionLedgerBuffer.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/js/acl/accountingSessionJournal.js';
 import {
   getOrCreateAccountingContext,
   resetAccountingContextForTests,
@@ -66,7 +66,6 @@ describe('Accounting — salary idempotence (J6/J7)', () => {
 
     budgetProcessor = new BudgetProcessor();
     global.window = global.window ?? {};
-    global.window.budgetManager = budgetManager;
     appRegistry.register('workSectionManager', { salary: 100, salaryTaxRate: 0.2 });
 
     await budgetManager.initialize(500);
@@ -74,7 +73,6 @@ describe('Accounting — salary idempotence (J6/J7)', () => {
 
   afterEach(async () => {
     appRegistry.register('timeManager', TimeManager);
-    delete global.window.budgetManager;
     appRegistry.register('workSectionManager', null);
     resetAccountingContextForTests();
     if (testDb) {

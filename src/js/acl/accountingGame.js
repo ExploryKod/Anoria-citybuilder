@@ -39,7 +39,7 @@ export {
 
 import { recordInfoLoanInstallmentForGame } from './accounting.js';
 
-/** @deprecated Prefer recordInfoLoanInstallmentForGame — kept for LoansManager / BudgetManager. */
+/** @deprecated Prefer recordInfoLoanInstallmentForGame — kept for LoansManager. */
 export async function recordInfoLoanInstallment(params) {
   return recordInfoLoanInstallmentForGame(params);
 }

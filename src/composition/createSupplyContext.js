@@ -25,8 +25,8 @@ import { RunCityFactoryProductionCycle } from '../contexts/supply/application/co
 import { GetCityFactoryResources } from '../contexts/supply/application/queries/GetCityFactoryResources.js';
 import { DexieFactoryBuildingRepository } from '../contexts/supply/infrastructure/dexie/DexieFactoryBuildingRepository.js';
 import { SupplyProductionJournal } from '../contexts/supply/infrastructure/presentation/SupplyProductionJournal.js';
-import { SupplyFoodTraceability } from '../contexts/supply/infrastructure/presentation/SupplyFoodTraceability.js';
 import appRegistry from '../js/game/AppRegistry.js';
+import { SupplyFoodTraceability } from '../contexts/supply/infrastructure/presentation/SupplyFoodTraceability.js';
 import { GetBuildingSupplyView } from '../contexts/supply/application/queries/GetBuildingSupplyView.js';
 import { ListSupplyMapBuildings } from '../contexts/supply/application/queries/ListSupplyMapBuildings.js';
 import { ListWindmillSupplyViews } from '../contexts/supply/application/queries/ListWindmillSupplyViews.js';
@@ -47,7 +47,12 @@ export function createSupplyContext({
     supplyBuildingRepository ?? new DexieSupplyBuildingRepository();
   const factoryBuildingRepositoryImpl =
     factoryBuildingRepository ?? new DexieFactoryBuildingRepository();
-  const productionJournal = new SupplyProductionJournal();
+  const productionJournal = new SupplyProductionJournal({
+    resolveTimeInfo: (turn) => {
+      const timeManager = appRegistry.get('timeManager');
+      return timeManager?.getTimeInfo?.(turn) ?? null;
+    },
+  });
   const marketBuysFromNearbyFarms = new MarketBuysFromNearbyFarms(
     supplyBuildingRepositoryImpl
   );
@@ -315,6 +320,14 @@ export function createSupplyContext({
 
     async updateSupplyBuildingFields(buildingId, fields) {
       return supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, fields);
+    },
+
+    async listProductionJournalEntries(factoryId = null, turn = null) {
+      return productionJournal.getProductionEntries(factoryId, turn);
+    },
+
+    async getFactoryProductionJournalEntries(factoryId) {
+      return productionJournal.getFactoryProductionEntries(factoryId);
     },
   };
 }

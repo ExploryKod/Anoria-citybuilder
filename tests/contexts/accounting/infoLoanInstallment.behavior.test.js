@@ -4,9 +4,9 @@
 
 import Dexie from 'dexie';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
-import { JournalManager } from '../../../src/js/stores/JournalManager.js';
-import { BudgetManager } from '../../../src/js/stores/BudgetManager.js';
-import { resetSessionLedgerBufferForTests } from '../../../src/js/stores/SessionLedgerBuffer.js';
+import { JournalManager } from '../../../src/js/acl/accountingSessionJournal.js';
+import { BudgetManager } from '../../../tests/helpers/testBudgetFacade.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/js/acl/accountingSessionJournal.js';
 import {
   getOrCreateAccountingContext,
   resetAccountingContextForTests,
@@ -149,8 +149,6 @@ describe('Accounting — info loan installment (informative journal)', () => {
 
   test('processLoanPayments journals partial info when only interest is affordable', async () => {
     globalThis.window = globalThis.window ?? {};
-    globalThis.window.budgetManager = budgetManager;
-
     await processLoanPayments();
 
     const entries = await journalManager.getJournalEntries();
@@ -188,8 +186,6 @@ describe('Accounting — info loan installment (informative journal)', () => {
     });
 
     globalThis.window = globalThis.window ?? {};
-    globalThis.window.budgetManager = budgetManager;
-
     await processLoanPayments();
 
     const entries = await journalManager.getJournalEntries();

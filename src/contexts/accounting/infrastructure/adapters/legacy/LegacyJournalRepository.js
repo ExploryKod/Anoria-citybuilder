@@ -1,10 +1,10 @@
 import { JournalRepository } from '../../../application/ports/JournalRepository.js';
 
 /**
- * Phase 1 adapter — delegates to stores/JournalManager.js
+ * Phase 1 adapter — delegates to SessionJournalStore (legacy journalManager param name).
  */
 export class LegacyJournalRepository extends JournalRepository {
-  /** @param {import('../../../../../js/stores/JournalManager.js').JournalManager|object} journalManager */
+  /** @param {import('../../../session/SessionJournalStore.js').SessionJournalStore|object} journalManager */
   constructor(journalManager) {
     super();
     this.journalManager = journalManager;

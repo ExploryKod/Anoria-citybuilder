@@ -5,12 +5,14 @@
 import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
 import { CommerceService } from '../src/js/game/services/CommerceService.js';
-import { BudgetManager } from '../src/js/stores/BudgetManager.js';
-import { JournalManager } from '../src/js/stores/JournalManager.js';
+import { BudgetManager } from './helpers/testBudgetFacade.js';
+import { JournalManager } from '../src/js/acl/accountingSessionJournal.js';
 import commerceStore from '../src/js/stores/CommerceStore.js';
 import db from '../src/core/persistence/dexie/db.js';
 import { resetSupplyContextForTests } from '../src/composition/createSupplyContext.js';
 import { resetCommerceContextForTests } from '../src/composition/createCommerceContext.js';
+import { resetAccountingContextForTests } from '../src/js/acl/accounting.js';
+import { resetSessionLedgerBufferForTests } from '../src/js/acl/accountingSessionJournal.js';
 import { makeHouseRecord, createBuildingInstanceId } from './fixtures/buildingRecord.js';
 import appRegistry from '../src/js/game/AppRegistry.js';
 import { TimeManager } from '../src/js/game/utils/TimeManager.js';
@@ -38,6 +40,8 @@ describe('CommerceService - Partenaires', () => {
     let budgetManager;
 
     beforeEach(async () => {
+        resetSessionLedgerBufferForTests();
+        resetAccountingContextForTests();
         resetCommerceContextForTests();
         // Créer une nouvelle base de données pour chaque test
         testDb = createTestDb();
@@ -69,9 +73,7 @@ describe('CommerceService - Partenaires', () => {
         const journalManager = new JournalManager();
         journalManager.db = testDb;
         budgetManager.journalManager = journalManager;
-
-        const globalObj = typeof window !== 'undefined' ? window : global;
-        globalObj.budgetManager = budgetManager;
+        budgetManager.wireAccountingContext();
 
         // Créer CommerceService
         commerceService = new CommerceService();

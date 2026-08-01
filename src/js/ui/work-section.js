@@ -1,5 +1,10 @@
 import config from '../game/config.js';
-import { getCityEmploymentSummary } from '../acl/employment.js';
+import {
+  getCityEmploymentSummary,
+  getSectorPriority,
+  getMergedSectorPriorities,
+  updateSectorPrioritySync,
+} from '../acl/employment.js';
 import { getCityTotalPopulation } from '../acl/housing.js';
 import { registerAppService } from '../acl/appRuntime.js';
 
@@ -9,15 +14,6 @@ class WorkSectionManager {
         this.salaryTaxRate = 0.2; // Valeur par défaut : 20% (0.2)
         this.unemploymentRate = 50;
         this.workData = null;
-        this.employmentPriorityService = null;
-    }
-    
-    /**
-     * Set the employment priority service instance
-     * @param {EmploymentPriorityService} service - Service instance
-     */
-    setPriorityService(service) {
-        this.employmentPriorityService = service;
     }
 
     async init() {
@@ -98,17 +94,13 @@ class WorkSectionManager {
     }
 
     async loadWorkData() {
-        // If service is available, load priorities from it
-        if (this.employmentPriorityService) {
-            const allPriorities = this.employmentPriorityService.getAllPriorities();
-            // Update priorities in work data
-            if (this.workData) {
-                this.workData.sectors.forEach(sector => {
-                    if (sector.sectorNumber !== undefined) {
-                        sector.priority = allPriorities[sector.sectorNumber] || sector.priority;
-                    }
-                });
-            }
+        const allPriorities = getMergedSectorPriorities();
+        if (this.workData) {
+            this.workData.sectors.forEach(sector => {
+                if (sector.sectorNumber !== undefined) {
+                    sector.priority = allPriorities[sector.sectorNumber] || sector.priority;
+                }
+            });
         }
         
         // Generate or regenerate work data
@@ -176,9 +168,7 @@ class WorkSectionManager {
             const secNum = parseInt(sectorNum, 10);
             // Get priority from service if available, otherwise use default
             let priority = defaultPriorities[secNum] || 1;
-            if (this.employmentPriorityService) {
-                priority = this.employmentPriorityService.getSectorPriority(secNum);
-            }
+            priority = getSectorPriority(secNum);
             
             return {
                 id: `sector-${secNum}`, // Use sector number as ID
@@ -242,31 +232,23 @@ class WorkSectionManager {
             // Clamp priority to valid range (1 to max sectors)
             const clampedPriority = Math.max(1, Math.min(maxSectors, priority));
             
-            // Update priority in the service (which handles swapping synchronously)
-            if (this.employmentPriorityService) {
-                // Perform swap synchronously (just localStorage, no IndexedDB update needed immediately)
-                this.employmentPriorityService.updateSectorPrioritySync(
-                    sectorData.sectorNumber, 
-                    clampedPriority
-                );
-                
-                const allPriorities = this.employmentPriorityService.getAllPriorities();
-                
-                this.workData.sectors.forEach(sec => {
-                    if (sec.sectorNumber !== undefined) {
-                        const newPriority = allPriorities[sec.sectorNumber];
-                        if (newPriority !== undefined) {
-                            sec.priority = newPriority;
-                        }
+            updateSectorPrioritySync(
+                sectorData.sectorNumber,
+                clampedPriority
+            );
+
+            const allPriorities = getMergedSectorPriorities();
+
+            this.workData.sectors.forEach(sec => {
+                if (sec.sectorNumber !== undefined) {
+                    const newPriority = allPriorities[sec.sectorNumber];
+                    if (newPriority !== undefined) {
+                        sec.priority = newPriority;
                     }
-                });
-                
-                // Re-render immediately to show updated priorities (including swapped values)
-                this.renderWorkTable();
-            } else {
-                // Fallback if service not available
-                sectorData.priority = clampedPriority;
-            }
+                }
+            });
+
+            this.renderWorkTable();
         }
     }
 
@@ -382,8 +364,8 @@ class WorkSectionManager {
             priorityInput.step = '1'; // Only allow integers
             // Ensure priority value is set (use sector.priority or get from service)
             let priorityValue = sector.priority;
-            if (!priorityValue && this.employmentPriorityService) {
-                priorityValue = this.employmentPriorityService.getSectorPriority(sector.sectorNumber);
+            if (!priorityValue && sector.sectorNumber !== undefined) {
+                priorityValue = getSectorPriority(sector.sectorNumber);
             }
             if (!priorityValue) {
                 priorityValue = config.employment?.defaultPriorities?.[sector.sectorNumber] || 1;
