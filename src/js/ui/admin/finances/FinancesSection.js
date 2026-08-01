@@ -2,7 +2,7 @@ import { getCityLedgerYearComparison, createEmptyCityLedgerYearLines } from '../
 import { renderCityLedger } from '../../compta/livret/CityLedgerPresenter.js';
 import { registerAppService } from '../../../acl/appRuntime.js';
 
-class FinancesSectionManager {
+class FinancesSectionPresenter {
     constructor() {
         this.citizenTaxAmount = this.loadCitizenTaxAmount();
         this.financialData = null;
@@ -137,21 +137,21 @@ function initFinancesSection() {
     const financesSection = document.getElementById('admin-section-finances');
     if (!financesSection) return;
 
-    const manager = new FinancesSectionManager();
+    const presenter = new FinancesSectionPresenter();
 
     const observer = new MutationObserver(() => {
         if (financesSection.classList.contains('active')) {
-            manager.loadFinancialData();
+            presenter.loadFinancialData();
         }
     });
 
     observer.observe(financesSection, { attributes: true, attributeFilter: ['class'] });
 
     if (financesSection.classList.contains('active')) {
-        manager.init();
+        presenter.init();
     }
 
-    registerAppService('financesSectionManager', manager);
+    registerAppService('financesSectionPresenter', presenter);
 }
 
 if (document.readyState === 'loading') {

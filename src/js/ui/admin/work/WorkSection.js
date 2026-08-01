@@ -10,7 +10,7 @@ import {
 import { getCityTotalPopulation } from '../../../acl/housing.js';
 import { registerAppService } from '../../../acl/appRuntime.js';
 
-class WorkSectionManager {
+class WorkSectionPresenter {
     constructor() {
         this.salary = 100; // Valeur par défaut : 100€/mois
         this.salaryTaxRate = 0.2; // Valeur par défaut : 20% (0.2)
@@ -674,14 +674,14 @@ function initWorkSection() {
     const workSection = document.getElementById('admin-section-work');
     if (!workSection) return;
 
-    const manager = new WorkSectionManager();
-    registerAppService('workSectionManager', manager);
+    const presenter = new WorkSectionPresenter();
+    registerAppService('workSectionPresenter', presenter);
     
     // Update data every time the section becomes active (like info panel)
     const observer = new MutationObserver(() => {
         if (workSection.classList.contains('active')) {
             // Reload data from IndexedDB when section opens (current state)
-            manager.loadWorkData();
+            presenter.loadWorkData();
         }
     });
 
@@ -689,7 +689,7 @@ function initWorkSection() {
 
     // Initialize if already active
     if (workSection.classList.contains('active')) {
-        manager.init();
+        presenter.init();
     }
 }
 

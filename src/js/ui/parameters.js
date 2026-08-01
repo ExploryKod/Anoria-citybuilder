@@ -1,7 +1,7 @@
 import { pauseGame, playGame, registerAppService, getTimeManager } from '../acl/appRuntime.js';
 import EventBlocker from '../utils/EventBlocker.js';
 
-class ParametersPanelManager {
+class ParametersPanel {
     constructor() {
         this.panel = null;
         this.openButton = null;
@@ -293,6 +293,6 @@ class ParametersPanelManager {
     }
 }
 
-const parametersPanelManager = new ParametersPanelManager();
-registerAppService('parametersPanelManager', parametersPanelManager);
+const parametersPanel = new ParametersPanel();
+registerAppService('parametersPanel', parametersPanel);
 

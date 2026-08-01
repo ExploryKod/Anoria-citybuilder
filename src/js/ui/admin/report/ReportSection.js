@@ -1,6 +1,6 @@
 import { registerAppService } from '../../../acl/appRuntime.js';
 
-class ReportSectionManager {
+class ReportSectionPresenter {
     constructor() {
         this.periodType = 'year';
         this.reportData = null;
@@ -112,11 +112,11 @@ function initReportSection() {
     const reportSection = document.getElementById('admin-section-report');
     if (!reportSection) return;
 
-    const manager = new ReportSectionManager();
+    const presenter = new ReportSectionPresenter();
     
     const observer = new MutationObserver(() => {
         if (reportSection.classList.contains('active')) {
-            manager.init();
+            presenter.init();
             observer.disconnect();
         }
     });
@@ -124,11 +124,11 @@ function initReportSection() {
     observer.observe(reportSection, { attributes: true, attributeFilter: ['class'] });
 
     if (reportSection.classList.contains('active')) {
-        manager.init();
+        presenter.init();
         observer.disconnect();
     }
 
-    registerAppService('reportSectionManager', manager);
+    registerAppService('reportSectionPresenter', presenter);
 }
 
 if (document.readyState === 'loading') {

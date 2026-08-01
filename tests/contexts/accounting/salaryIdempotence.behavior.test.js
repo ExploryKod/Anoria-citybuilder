@@ -64,14 +64,14 @@ describe('Accounting — salary idempotence (J6/J7)', () => {
     getOrCreateAccountingContext({ journalManager, db: testDb });
 
     global.window = global.window ?? {};
-    appRegistry.register('workSectionManager', { salary: 100, salaryTaxRate: 0.2 });
+    appRegistry.register('workSectionPresenter', { salary: 100, salaryTaxRate: 0.2 });
 
     await budgetManager.initialize(500);
   });
 
   afterEach(async () => {
     appRegistry.register('timeManager', TimeManager);
-    appRegistry.register('workSectionManager', null);
+    appRegistry.register('workSectionPresenter', null);
     resetAccountingContextForTests();
     if (testDb) {
       await testDb.delete();

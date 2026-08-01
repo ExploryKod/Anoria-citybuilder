@@ -1,6 +1,6 @@
 import { registerAppService } from '../../../acl/appRuntime.js';
 
-class HealthSectionManager {
+class HealthSectionPresenter {
     constructor() {
         this.healthData = null;
     }
@@ -165,11 +165,11 @@ function initHealthSection() {
     const healthSection = document.getElementById('admin-section-health');
     if (!healthSection) return;
 
-    const manager = new HealthSectionManager();
+    const presenter = new HealthSectionPresenter();
     
     const observer = new MutationObserver(() => {
         if (healthSection.classList.contains('active')) {
-            manager.init();
+            presenter.init();
             observer.disconnect();
         }
     });
@@ -177,11 +177,11 @@ function initHealthSection() {
     observer.observe(healthSection, { attributes: true, attributeFilter: ['class'] });
 
     if (healthSection.classList.contains('active')) {
-        manager.init();
+        presenter.init();
         observer.disconnect();
     }
 
-    registerAppService('healthSectionManager', manager);
+    registerAppService('healthSectionPresenter', presenter);
 }
 
 if (document.readyState === 'loading') {
