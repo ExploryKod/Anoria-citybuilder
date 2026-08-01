@@ -11,7 +11,7 @@ import {
   getOrCreateAccountingContext,
   resetAccountingContextForTests,
 } from '../../../src/composition/createAccountingContext.js';
-import { processLoanPayments } from '../../../src/js/ui/loans/LoansManager.js';
+import { processLoanPayments } from '../../../src/js/ui/compta/prets/LoansManager.js';
 import { isInformativeJournalType } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/dexie/journalAggregations.js';
 import { buildInfoMovementBusinessKey } from '../../../src/contexts/accounting/domain/policies/LedgerInformativeTypePolicy.js';
 

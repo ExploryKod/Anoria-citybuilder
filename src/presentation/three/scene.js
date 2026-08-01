@@ -53,7 +53,7 @@ import { ResourceManager } from './managers/ResourceManager.js';
 import { PerformanceManager } from './managers/PerformanceManager.js';
 import { bindSceneBuildingGrid } from '../../js/acl/construction.js';
 import { processTurnBudget, resetProcessTurnBudget } from '../../js/acl/accounting.js';
-import { notifyBudgetCleanupIfNeeded } from '../../js/ui/budget/CleanupNotificationPresenter.js';
+import { notifyBudgetCleanupIfNeeded } from '../../js/ui/compta/tresorerie/CleanupNotificationPresenter.js';
 import gameUI from './GameUI.js';
 import { CitizenManager } from './managers/CitizenManager.js';
 import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
@@ -2237,7 +2237,7 @@ function onTouchEnd(event) {
         }
     }
 
-    // Note: cleanup toast → ui/budget/CleanupNotificationPresenter.js
+    // Note: cleanup toast → ui/compta/tresorerie/CleanupNotificationPresenter.js
 
     /**
      * Immediately update a road tile visually without waiting for full scene update

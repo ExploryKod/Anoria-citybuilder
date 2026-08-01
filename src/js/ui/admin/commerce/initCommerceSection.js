@@ -1,4 +1,4 @@
-import { setCommercePartnerContractFinishedHandler } from '../../acl/commerce.js';
+import { setCommercePartnerContractFinishedHandler } from '../../../acl/commerce.js';
 import { CommerceSectionManager } from './CommerceSectionManager.js';
 
 export async function initCommerceSection() {

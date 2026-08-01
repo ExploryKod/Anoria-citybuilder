@@ -11,17 +11,17 @@ import {
   recordLoanRepayment,
   recordInfoLoanInstallment,
   advanceLoanInstallmentWithoutPayment,
-} from '../../acl/accountingGame.js';
+} from '../../../acl/accountingGame.js';
 import {
   getPopupManager,
   invokeUpdateBudgetDisplay,
   registerAppFunction,
-} from '../../acl/appRuntime.js';
+} from '../../../acl/appRuntime.js';
 import {
   computeLoanRate,
   computeLoanRatesByType,
   computeLoanInterestAmount,
-} from '../../acl/accountingLoans.js';
+} from '../../../acl/accountingLoans.js';
 
 /**
  * Initialise le popup des prêts

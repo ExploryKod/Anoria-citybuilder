@@ -1,6 +1,6 @@
-import { getCityLedgerYearComparison, createEmptyCityLedgerYearLines } from '../acl/accounting.js';
-import { renderCityLedger } from './budget/CityLedgerPresenter.js';
-import { registerAppService } from '../acl/appRuntime.js';
+import { getCityLedgerYearComparison, createEmptyCityLedgerYearLines } from '../../../acl/accounting.js';
+import { renderCityLedger } from '../../compta/livret/CityLedgerPresenter.js';
+import { registerAppService } from '../../../acl/appRuntime.js';
 
 class FinancesSectionManager {
     constructor() {

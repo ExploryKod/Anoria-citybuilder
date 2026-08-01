@@ -1,10 +1,10 @@
-import { listWindmillSupplyViews, updateSupplyBuildingFields } from '../acl/supply.js';
-import { getBuildingById } from '../acl/construction.js';
-import { registerAppService } from '../acl/appRuntime.js';
+import { listWindmillSupplyViews, updateSupplyBuildingFields } from '../../../acl/supply.js';
+import { getBuildingById } from '../../../acl/construction.js';
+import { registerAppService } from '../../../acl/appRuntime.js';
 import {
     instanceIdFromHouseRow,
     displayLabelFromHouseRow,
-} from '../acl/building-identity.js';
+} from '../../../acl/building-identity.js';
 
 function windmillInstanceId(windmill) {
     return instanceIdFromHouseRow(windmill);

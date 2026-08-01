@@ -2,12 +2,12 @@ import {
   getFactoryMaxStorage,
   getFactoryWorkerNeed,
   getFactoryEmployeeRoleType,
-} from '../acl/supply.js';
-import { registerAppService, getTimeInfo } from '../acl/appRuntime.js';
+} from '../../../acl/supply.js';
+import { registerAppService, getTimeInfo } from '../../../acl/appRuntime.js';
 import {
     instanceIdFromHouseRow,
     displayLabelFromHouseRow,
-} from '../acl/building-identity.js';
+} from '../../../acl/building-identity.js';
 import {
     listCityFactories,
     listNatureResources,
@@ -15,7 +15,7 @@ import {
     updateFactoryFields,
     listProductionJournalEntries,
     getFactoryProductionJournalEntries,
-} from '../acl/supply.js';
+} from '../../../acl/supply.js';
 
 function factoryInstanceId(factory) {
     return instanceIdFromHouseRow(factory);

@@ -1,6 +1,6 @@
-import { getGameCity, getPopupManager, registerAppFunction } from '../../acl/appRuntime.js';
-import { hasRoadAccessFromCount } from '../../acl/parcels.js';
-import { listSupplyMapBuildings } from '../../acl/supply.js';
+import { getGameCity, getPopupManager, registerAppFunction } from '../../../acl/appRuntime.js';
+import { hasRoadAccessFromCount } from '../../../acl/parcels.js';
+import { listSupplyMapBuildings } from '../../../acl/supply.js';
 
 function applyCityMapFilter(filter) {
   const grid = document.getElementById('city-map-grid');

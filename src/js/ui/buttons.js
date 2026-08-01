@@ -1,5 +1,5 @@
 import { registerAppFunction } from '../acl/appRuntime.js';
-import { loadBudgetStates } from './budget/BudgetStatesManager.js';
+import { loadBudgetStates } from './compta/compte-de-resultat/BudgetStatesManager.js';
 import { initAppBoot } from './boot/initAppBoot.js';
 
 window.onload = initAppBoot;

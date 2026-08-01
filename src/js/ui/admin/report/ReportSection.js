@@ -1,4 +1,4 @@
-import { registerAppService } from '../acl/appRuntime.js';
+import { registerAppService } from '../../../acl/appRuntime.js';
 
 class ReportSectionManager {
     constructor() {

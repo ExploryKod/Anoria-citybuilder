@@ -1,4 +1,4 @@
-import { updateDisplayedFunds, getGameTime, getTimeInfo } from '../../acl/appRuntime.js';
+import { updateDisplayedFunds, getGameTime, getTimeInfo } from '../../../acl/appRuntime.js';
 import {
   loadOrSeedCommercePartners,
   saveCommercePartners,
@@ -10,16 +10,16 @@ import {
   getProductStockKey,
   getProductDisplayName,
   evaluatePartnerActivationConditions,
-} from '../../acl/commerce.js';
-import { getCityEmploymentSummary } from '../../acl/employment.js';
-import { getCityTotalPopulation } from '../../acl/housing.js';
+} from '../../../acl/commerce.js';
+import { getCityEmploymentSummary } from '../../../acl/employment.js';
+import { getCityTotalPopulation } from '../../../acl/housing.js';
 import {
   listCommercializableWindmills,
   listSupplyMapBuildings,
   listWindmillSupplyViews,
   getAllFoodTraceabilityTransactions,
-} from '../../acl/supply.js';
-import { getTreasuryBalance, getTreasurySnapshot, recordCommercialRouteFee, getCommercialRouteFee } from '../../acl/accountingGame.js';
+} from '../../../acl/supply.js';
+import { getTreasuryBalance, getTreasurySnapshot, recordCommercialRouteFee, getCommercialRouteFee } from '../../../acl/accountingGame.js';
 
 export class CommerceSectionManager {
     constructor() {

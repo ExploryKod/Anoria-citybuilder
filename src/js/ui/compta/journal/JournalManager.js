@@ -3,12 +3,12 @@
  * Data: acl/accounting.js → GetGeneralLedger
  */
 
-import { getPopupManager, getTimeInfo } from '../../acl/appRuntime.js';
+import { getPopupManager, getTimeInfo } from '../../../acl/appRuntime.js';
 import {
   getGeneralLedger,
   exportJournalJson,
   exportJournalPdf,
-} from '../../acl/accounting.js';
+} from '../../../acl/accounting.js';
 import {
   formatJournalEntryDetails,
 } from './formatJournalEntryDescription.js';
@@ -16,7 +16,7 @@ import {
   INFO_JOURNAL_TYPE_LABELS,
   isInfoPseudoMovementType,
   labelForInfoJournalType,
-} from '../../acl/accountingJournalUi.js';
+} from '../../../acl/accountingJournalUi.js';
 
 /**
  * Initialise le popup du journal
