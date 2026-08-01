@@ -29,6 +29,6 @@ export const renderingConfig = {
     ambient: { color: 0xffffff, intensity: 0.5 },
   },
   grid: {
-    opacity: 0.2,
+    opacity: 0.45,
   },
 };

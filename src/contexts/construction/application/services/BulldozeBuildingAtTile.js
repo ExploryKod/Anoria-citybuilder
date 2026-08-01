@@ -1,5 +1,6 @@
 import {
   clearBuildingFootprint,
+  findFootprintAnchor,
   resolveGridSize,
 } from '../../domain/policies/FootprintAvailabilityPolicy.js';
 
@@ -30,8 +31,9 @@ export class BulldozeBuildingAtTile {
     const buildingId = tile?.buildingId;
     const removedInstanceId = tile?.instanceId ?? meshInstanceId ?? null;
     const gridSize = resolveGridSize(this.assetCatalog, buildingId);
+    const anchor = findFootprintAnchor(city, x, y, removedInstanceId);
 
-    clearBuildingFootprint(city, x, y, gridSize);
+    clearBuildingFootprint(city, anchor.x, anchor.y, gridSize);
 
     if (removedInstanceId) {
       try {
