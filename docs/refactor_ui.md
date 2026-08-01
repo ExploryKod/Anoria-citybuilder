@@ -126,8 +126,8 @@ Ce fichier + chemins majeurs accounting / FINANCIAL_DATA_SOURCE_OF_TRUTH.
 |---|---|
 | Taux prêt via `LoanRatePolicy` | ✅ déjà en place |
 | `BuildingBreakdownEnrichment.js` | enrichissement UI bilan (pas de rename) |
+| Commerce `goodsData` sans lecture UI | ✅ BC via `LocalStorageCommerceRepository` (plus de `commerceSectionManager`) |
 | `#budget-panel` → `#bilan-panel` | **reporté** (breaking DOM/CSS) |
-| Commerce `goodsData` sans global | **reporté** (lot DDD Commerce) |
 
 ---
 
@@ -149,5 +149,6 @@ Ce fichier + chemins majeurs accounting / FINANCIAL_DATA_SOURCE_OF_TRUTH.
 
 ## Suite possible
 
-1. Étape 10 restante — DOM `#budget-panel` → `#bilan-panel` + Commerce goodsData
+1. Étape 10 restante — DOM `#budget-panel` → `#bilan-panel`
 2. Clarifier `presentation/three` vs `infrastructure/` (hors UI)
+3. Salary / taxe citoyenne : ne plus lire depuis les SectionPresenters dans `createAccountingContext`
