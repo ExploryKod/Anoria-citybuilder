@@ -1,5 +1,5 @@
 import { getOrCreateGameSessionContext } from '../composition/createGameSessionContext.js';
-import { getWorkSectionManager, getAppService } from '../js/acl/appRuntime.js';
+import { getWorkSectionPresenter, getAppService } from '../js/acl/appRuntime.js';
 import { GetTreasuryBalance } from '../contexts/accounting/application/queries/treasury/GetTreasuryBalance.js';
 import { GetTreasurySnapshot } from '../contexts/accounting/application/queries/treasury/GetTreasurySnapshot.js';
 import { GetFinancialHealth } from '../contexts/accounting/application/queries/treasury/GetFinancialHealth.js';
@@ -315,12 +315,12 @@ export function createAccountingContext(deps = {}) {
   };
 
   const getCitizenTaxPerCapita = () => {
-    const financesSectionManager = getAppService('financesSectionManager');
+    const financesSectionPresenter = getAppService('financesSectionPresenter');
     if (
-      financesSectionManager &&
-      typeof financesSectionManager.citizenTaxAmount === 'number'
+      financesSectionPresenter &&
+      typeof financesSectionPresenter.citizenTaxAmount === 'number'
     ) {
-      return financesSectionManager.citizenTaxAmount;
+      return financesSectionPresenter.citizenTaxAmount;
     }
     return 100;
   };
@@ -381,17 +381,17 @@ export function createAccountingContext(deps = {}) {
   });
 
   const getSalarySettings = () => {
-    const workSectionManager = getWorkSectionManager();
+    const workSectionPresenter = getWorkSectionPresenter();
     let salaryPerMonth = 100;
     let salaryTaxRate = 0.2;
-    if (workSectionManager && typeof workSectionManager.salary === 'number') {
-      salaryPerMonth = workSectionManager.salary;
+    if (workSectionPresenter && typeof workSectionPresenter.salary === 'number') {
+      salaryPerMonth = workSectionPresenter.salary;
     }
     if (
-      workSectionManager &&
-      typeof workSectionManager.salaryTaxRate === 'number'
+      workSectionPresenter &&
+      typeof workSectionPresenter.salaryTaxRate === 'number'
     ) {
-      salaryTaxRate = workSectionManager.salaryTaxRate;
+      salaryTaxRate = workSectionPresenter.salaryTaxRate;
     }
     return { salaryPerMonth, salaryTaxRate };
   };

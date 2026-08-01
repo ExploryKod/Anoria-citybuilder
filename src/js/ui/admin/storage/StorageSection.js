@@ -11,10 +11,10 @@ function windmillInstanceId(windmill) {
 }
 
 /**
- * StorageSectionManager - Manages the Storage Units (Unités de Stock) section
+ * StorageSectionPresenter - Présente les unités de stock (Unités de Stock) section
  * Displays and manages all windmills with their stocks, settings, and distribution
  */
-class StorageSectionManager {
+class StorageSectionPresenter {
     constructor() {
         this.windmills = [];
     }
@@ -353,13 +353,13 @@ function initStorageSection() {
     const storageSection = document.getElementById('admin-section-storage');
     if (!storageSection) return;
     
-    const manager = new StorageSectionManager();
+    const presenter = new StorageSectionPresenter();
     
     // Initialize when section becomes active
     const observer = new MutationObserver(() => {
         if (storageSection.classList.contains('active')) {
             // Refresh data when section becomes active
-            manager.refresh();
+            presenter.refresh();
         }
     });
     
@@ -367,11 +367,11 @@ function initStorageSection() {
     
     // If already active, initialize immediately
     if (storageSection.classList.contains('active')) {
-        manager.init();
+        presenter.init();
     }
     
-    // Make manager available globally
-    registerAppService('storageSectionManager', manager);
+    // Expose presenter via globally
+    registerAppService('storageSectionPresenter', presenter);
 }
 
 // Initialize when DOM is ready

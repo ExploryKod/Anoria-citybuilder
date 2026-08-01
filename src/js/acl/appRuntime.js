@@ -91,8 +91,8 @@ export function getObjectivesHistory() {
   return appRegistry.get('objectivesHistory');
 }
 
-export function getWorkSectionManager() {
-  return appRegistry.get('workSectionManager');
+export function getWorkSectionPresenter() {
+  return appRegistry.get('workSectionPresenter');
 }
 
 export function getMultiplayerManager() {

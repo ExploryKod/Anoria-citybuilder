@@ -1,4 +1,5 @@
 import { setCommercePartnerContractFinishedHandler } from '../../../acl/commerce.js';
+import { registerAppService } from '../../../acl/appRuntime.js';
 import { CommerceSectionPresenter } from './CommerceSection.js';
 
 export async function initCommerceSection() {
@@ -6,6 +7,7 @@ export async function initCommerceSection() {
   if (!commerceSection) return;
 
   const presenter = new CommerceSectionPresenter();
+  registerAppService('commerceSectionPresenter', presenter);
 
   setCommercePartnerContractFinishedHandler(({ partnerName, finishedProducts }) => {
     const productsText = finishedProducts.length > 0 ? finishedProducts.join(', ') : 'toutes les denrées';

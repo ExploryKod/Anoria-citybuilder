@@ -29,7 +29,7 @@ async function loadFactoryJournalEntries(factoryData) {
     return getFactoryProductionJournalEntries(factoryInstanceId(factoryData));
 }
 
-class FactorySectionManager {
+class FactorySectionPresenter {
     constructor() {
         this.factories = [];
         this.naturalResources = [];
@@ -355,7 +355,7 @@ class FactorySectionManager {
                 factoryData = freshData;
             }
         } catch (error) {
-            console.warn('[FactorySectionManager] Failed to reload factory data:', error);
+            console.warn('[FactorySectionPresenter] Failed to reload factory data:', error);
         }
         
         const rawMaterials = factoryData.rawMaterials || {};
@@ -956,7 +956,7 @@ class FactorySectionManager {
             html += '</div>';
             journalContent.innerHTML = html;
         } catch (error) {
-            console.error('[FactorySectionManager] Error rendering production journal:', error);
+            console.error('[FactorySectionPresenter] Error rendering production journal:', error);
             journalContent.innerHTML = '<div class="factory-empty">Erreur lors du chargement du journal</div>';
         }
     }
@@ -1230,23 +1230,23 @@ function initFactorySection() {
     const factorySection = document.getElementById('admin-section-factory');
     if (!factorySection) return;
     
-    const manager = new FactorySectionManager();
+    const presenter = new FactorySectionPresenter();
 
     const observer = new MutationObserver(() => {
         if (factorySection.classList.contains('active')) {
             // Réinitialiser les event listeners quand la section devient active
-            manager.setupEventListeners();
-            manager.refresh();
+            presenter.setupEventListeners();
+            presenter.refresh();
         }
     });
     
     observer.observe(factorySection, { attributes: true, attributeFilter: ['class'] });
     
     if (factorySection.classList.contains('active')) {
-        manager.init();
+        presenter.init();
     }
     
-    registerAppService('factorySectionManager', manager);
+    registerAppService('factorySectionPresenter', presenter);
 }
 
 if (document.readyState === 'loading') {
