@@ -4,10 +4,13 @@
 
 import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
-import { CommerceService } from '../src/js/game/services/CommerceService.js';
+import { createCommerceContext } from '../src/composition/createCommerceContext.js';
 import { BudgetManager } from './helpers/testBudgetFacade.js';
 import { JournalManager } from '../src/js/acl/accountingSessionJournal.js';
-import commerceStore from '../src/js/stores/CommerceStore.js';
+import {
+  loadOrSeedCommerceConfig,
+  loadOrSeedCommercePartners,
+} from '../src/js/acl/commerce.js';
 import db from '../src/core/persistence/dexie/db.js';
 import { resetSupplyContextForTests } from '../src/composition/createSupplyContext.js';
 import { resetCommerceContextForTests } from '../src/composition/createCommerceContext.js';
@@ -75,8 +78,8 @@ describe('CommerceService - Partenaires', () => {
         budgetManager.journalManager = journalManager;
         budgetManager.wireAccountingContext();
 
-        // Créer CommerceService
-        commerceService = new CommerceService();
+        // Commerce simulation (BC)
+        commerceService = createCommerceContext().simulation;
 
         // Initialiser le budget
         await budgetManager.initialize(1000);

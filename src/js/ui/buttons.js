@@ -41,7 +41,7 @@ import {
 } from '../acl/appRuntime.js';
 import { createGame } from '../game/game.js';
 import webglDetector from '../utils/WebGLResourceDetector.js';
-import gameStore from "../stores/GameStore.js";
+import { getOrCreateGameSessionContext } from "../acl/gameSession.js";
 import { hasRoadAccessFromCount } from '../acl/parcels.js';
 import { listSupplyMapBuildings } from '../acl/supply.js';
 import { getBalanceSheet } from '../acl/accounting.js';
@@ -2069,16 +2069,13 @@ window.onload = async () => {
     // The old budget-panel slide-in functionality is replaced by balance-sheet-panel
     // Note: budget-panel code is kept for backwards compatibility but not used
     
-    // Register with AppRegistry (window.app)
-    registerAppService('gameStore', gameStore);
-    
-    // Show city size selection modal before creating game
     const selectionResult = await showCitySizeSelection();
-    const selectedCitySize = selectionResult.size || selectionResult; // Backward compatibility
+    const selectedCitySize = selectionResult.size || selectionResult;
     const multiplayerEnabled = selectionResult.multiplayer || false;
     const playerPseudo = selectionResult.pseudo || null;
-    
-    const game = createGame(gameStore, assetManager, selectedCitySize);
+
+    const gameSession = getOrCreateGameSessionContext();
+    const game = createGame(gameSession, assetManager, selectedCitySize);
     registerAppService('game', game);
     
     // Activer le multijoueur uniquement si l'utilisateur a explicitement créé/rejoint un salon
@@ -2465,11 +2462,14 @@ async function generateCityMap() {
                         ${error.message || 'Erreur inconnue'}
                     </p>
                 </div>
-                <button onclick="window.app.generateCityMap()" style="margin-top: 20px; padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                <button type="button" class="city-map-retry-btn" style="margin-top: 20px; padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
                     🔄 Réessayer
                 </button>
             </div>
         `;
+        cityMapGrid.querySelector('.city-map-retry-btn')?.addEventListener('click', () => {
+            void generateCityMap();
+        });
     }
 }
 

@@ -4,7 +4,8 @@
  */
 
 import { getTreasurySnapshot } from '../acl/accountingGame.js';
-import { getTutorialManager, getButtonStateManager, getObjectivesStore, registerAppService } from '../acl/appRuntime.js';
+import { getTutorialManager, getButtonStateManager, registerAppService } from '../acl/appRuntime.js';
+import { getObjectivesStore } from '../acl/objectives.js';
 import {
   OBJECTIVE_CATALOG,
   isObjectiveRequirementMet,

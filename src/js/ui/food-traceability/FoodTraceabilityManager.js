@@ -1,8 +1,7 @@
 /**
  * FoodTraceabilityManager - Gère l'affichage de la traçabilité alimentaire
  */
-import { getOrCreateSupplyContext } from "../../acl/supply.js";
-import { getFoodTraceabilityService } from "../../acl/appRuntime.js";
+import { getOrCreateSupplyContext, getAllFoodTraceabilityTransactions } from "../../acl/supply.js";
 import { tryResolveBuildingInstanceIdFromRef } from "../../acl/building-identity.js";
 
 function buildingStockKey(building) {
@@ -122,12 +121,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
     `;
     
     try {
-        const foodTraceabilityService = getFoodTraceabilityService();
-        if (!foodTraceabilityService) {
-            throw new Error('FoodTraceabilityService not available');
-        }
-        
-        let transactions = await foodTraceabilityService.getAllTransactions();
+        let transactions = await getAllFoodTraceabilityTransactions();
         
         // Filter by period
         if (period !== 'all') {
@@ -960,12 +954,7 @@ export async function loadFoodCharts() {
     `;
     
     try {
-        const foodTraceabilityService = getFoodTraceabilityService();
-        if (!foodTraceabilityService) {
-            throw new Error('FoodTraceabilityService not available');
-        }
-        
-        const transactions = await foodTraceabilityService.getAllTransactions();
+        const transactions = await getAllFoodTraceabilityTransactions();
         
         // House pop via Supply BC (not raw Dexie)
         const supply = getOrCreateSupplyContext();

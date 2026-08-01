@@ -1,4 +1,5 @@
-import { getTutorialManager, getObjectivesStore, registerAppService } from '../acl/appRuntime.js';
+import { getTutorialManager, registerAppService } from '../acl/appRuntime.js';
+import { getObjectivesStore } from '../acl/objectives.js';
 
 /**
  * Gestion de l'historique des objectifs (succès et échecs)

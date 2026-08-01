@@ -6,6 +6,7 @@ import appRegistry from '../game/AppRegistry.js';
 import { TimeManager as TimeManagerClass } from '../game/utils/TimeManager.js';
 
 export { default as appRegistry } from '../game/AppRegistry.js';
+export { getGameStore } from './gameSession.js';
 
 /** @param {string} name @param {*} instance @param {boolean} [exposeOnWindow] */
 export function registerAppService(name, instance, exposeOnWindow = false) {
@@ -42,10 +43,6 @@ export function getButtonStateManager() {
   return appRegistry.get('buttonStateManager');
 }
 
-export function getGameStore() {
-  return appRegistry.get('gameStore');
-}
-
 /** @returns {typeof TimeManagerClass} */
 export function getTimeManager() {
   return appRegistry.get('timeManager') ?? TimeManagerClass;
@@ -54,10 +51,6 @@ export function getTimeManager() {
 /** @param {number} turn */
 export function getTimeInfo(turn) {
   return getTimeManager().getTimeInfo(turn);
-}
-
-export function getFoodTraceabilityService() {
-  return appRegistry.get('foodTraceabilityService');
 }
 
 export function getInputManager() {
@@ -86,10 +79,6 @@ export function getObjectivesTracker() {
 
 export function getObjectivesHistory() {
   return appRegistry.get('objectivesHistory');
-}
-
-export function getObjectivesStore() {
-  return appRegistry.get('objectivesStore');
 }
 
 export function getWorkSectionManager() {

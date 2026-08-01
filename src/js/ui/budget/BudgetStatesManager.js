@@ -73,6 +73,11 @@ export function initBudgetStatesPopup() {
         });
     });
 
+    const refreshBtn = document.querySelector('.budget-global-refresh-btn');
+    refreshBtn?.addEventListener('click', () => {
+        void refreshBudgetStatesModal();
+    });
+
     updateFilterButtonLabels();
 }
 

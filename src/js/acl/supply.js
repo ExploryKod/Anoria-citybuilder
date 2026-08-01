@@ -112,3 +112,13 @@ export async function listProductionJournalEntries(factoryId = null, turn = null
 export async function getFactoryProductionJournalEntries(factoryId) {
   return getOrCreateSupplyContext().getFactoryProductionJournalEntries(factoryId);
 }
+
+/** All food traceability audit rows (admin panel, commerce consumption badges). */
+export async function getAllFoodTraceabilityTransactions(maxAge = null) {
+  return getOrCreateSupplyContext().getAllFoodTraceabilityTransactions(maxAge);
+}
+
+/** Food traceability rows for one game turn (optional month filter). */
+export async function getFoodTraceabilityTransactionsForMonth(turn, month = null) {
+  return getOrCreateSupplyContext().getFoodTraceabilityTransactionsForMonth(turn, month);
+}
