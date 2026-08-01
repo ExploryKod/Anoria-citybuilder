@@ -1,5 +1,5 @@
 import { registerAppService } from '../../../js/acl/appRuntime.js';
-import { HealthSectionPresenter } from './HealthSection.js';
+import { HealthSectionPresenter } from './HealthSectionPresenter.js';
 
 export function initHealthSection() {
   const healthSection = document.getElementById('admin-section-health');

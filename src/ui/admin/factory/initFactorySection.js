@@ -1,5 +1,5 @@
 import { registerAppService } from '../../../js/acl/appRuntime.js';
-import { FactorySectionPresenter } from './FactorySection.js';
+import { FactorySectionPresenter } from './FactorySectionPresenter.js';
 
 export function initFactorySection() {
   const factorySection = document.getElementById('admin-section-factory');

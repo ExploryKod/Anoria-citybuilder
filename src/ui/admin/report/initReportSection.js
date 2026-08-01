@@ -1,5 +1,5 @@
 import { registerAppService } from '../../../js/acl/appRuntime.js';
-import { ReportSectionPresenter } from './ReportSection.js';
+import { ReportSectionPresenter } from './ReportSectionPresenter.js';
 
 export function initReportSection() {
   const reportSection = document.getElementById('admin-section-report');

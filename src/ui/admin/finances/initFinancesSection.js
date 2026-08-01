@@ -1,5 +1,5 @@
 import { registerAppService } from '../../../js/acl/appRuntime.js';
-import { FinancesSectionPresenter } from './FinancesSection.js';
+import { FinancesSectionPresenter } from './FinancesSectionPresenter.js';
 
 export function initFinancesSection() {
   const financesSection = document.getElementById('admin-section-finances');
