@@ -1,5 +1,5 @@
 import { getOrCreateGameSessionContext } from '../composition/createGameSessionContext.js';
-import { getWorkSectionManager, getAppService, getTimeManager, getTimeInfo } from '../js/acl/appRuntime.js';
+import { getWorkSectionManager, getAppService } from '../js/acl/appRuntime.js';
 import { GetTreasuryBalance } from '../contexts/accounting/application/queries/treasury/GetTreasuryBalance.js';
 import { GetTreasurySnapshot } from '../contexts/accounting/application/queries/treasury/GetTreasurySnapshot.js';
 import { GetFinancialHealth } from '../contexts/accounting/application/queries/treasury/GetFinancialHealth.js';
@@ -72,6 +72,7 @@ import {
   clearPopulationWithoutRoadAccess,
 } from '../js/acl/housing.js';
 import { listSceneBuildingTypesForMaintenance } from './sceneBuildingInventoryBridge.js';
+import { resolveGetTimeInfo } from './gameTimeBridge.js';
 
 /**
  * Composition root — Accounting bounded context.
@@ -90,6 +91,7 @@ import { listSceneBuildingTypesForMaintenance } from './sceneBuildingInventoryBr
  * @param {import('dexie').Dexie} [deps.db]
  * @param {import('../contexts/accounting/infrastructure/dexie/DexieObjectiveHistoryRepository.js').DexieObjectiveHistoryRepository} [deps.objectiveHistoryRepository]
  * @param {() => string[]} [deps.listBuildingTypesForMaintenance]
+ * @param {(turn: number) => object} [deps.getTimeInfo]
  */
 export function createAccountingContext(deps = {}) {
   const sessionJournalStoreInstance =
@@ -99,9 +101,11 @@ export function createAccountingContext(deps = {}) {
   const objectiveHistoryRepository =
     deps.objectiveHistoryRepository ?? new DexieObjectiveHistoryRepository(dexieDb);
 
+  const getTimeInfo = deps.getTimeInfo ?? resolveGetTimeInfo();
+
   const gameTimePort =
     deps.gameTimePort ??
-    new LegacyGameTimePort(getTimeManager());
+    new LegacyGameTimePort({ getTimeInfo });
 
   if (!sessionJournalStoreInstance.gameTimePort) {
     sessionJournalStoreInstance.setGameTimePort(gameTimePort);
@@ -398,7 +402,7 @@ export function createAccountingContext(deps = {}) {
     recordPayrollTax: (...args) => gameTreasuryRecording.recordPayrollTax(...args),
     recordBuildingMaintenance: (amount, description, turn) =>
       recordBuildingMaintenanceForCity.execute({ amount, description, turn }),
-    getTimeInfo: (time) => getTimeInfo(time),
+    getTimeInfo: (time) => gameTimePort.getTimeInfo(time),
     getCityTotalPopulation:
       deps.getCityTotalPopulation ?? (() => getCityTotalPopulation()),
     getSalarySettings: deps.getSalarySettings ?? getSalarySettings,

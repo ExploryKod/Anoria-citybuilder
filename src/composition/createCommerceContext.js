@@ -1,4 +1,4 @@
-import { getTimeManager } from '../js/acl/appRuntime.js';
+import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { recordImportExpense, recordExportIncome } from '../js/acl/accountingGame.js';
 import { instanceIdFromHouseRow } from '../js/acl/building-identity.js';
 import {
@@ -20,11 +20,12 @@ let partnerContractFinishedHandler = null;
  * @param {object} [deps]
  * @param {LocalStorageCommerceRepository} [deps.commerceRepository]
  * @param {((payload: object) => void)|null} [deps.onPartnerContractFinished]
+ * @param {(turn: number) => object} [deps.getTimeInfo]
  */
 export function createCommerceContext(deps = {}) {
   const commerceRepository = deps.commerceRepository ?? new LocalStorageCommerceRepository();
 
-  const getTimeInfo = (time) => getTimeManager().getTimeInfo(time);
+  const getTimeInfo = deps.getTimeInfo ?? resolveGetTimeInfo();
 
   const simulationDeps = {
     commerceRepository,

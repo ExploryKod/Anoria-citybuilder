@@ -43,7 +43,7 @@ export function getButtonStateManager() {
   return appRegistry.get('buttonStateManager');
 }
 
-/** @returns {typeof TimeManagerClass} */
+/** @returns {typeof TimeManagerClass} — fallback tests / UI legacy ; préférer registerGetTimeInfo en composition */
 export function getTimeManager() {
   return appRegistry.get('timeManager') ?? TimeManagerClass;
 }
