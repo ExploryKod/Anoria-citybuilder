@@ -163,7 +163,7 @@ Règle : Three = WebGL ; `ui/` = DOM ; adapters BC = `contexts/*/infrastructure/
 3. ~~Place / bulldoze → use-cases construction (handler mince)~~ ✅ `PlaceBuildingAtTile` / `BulldozeBuildingAtTile`
 4. ~~Owner unique du tick : budget / `infoGameplay` hors `scene.runUpdate`~~ ✅ `composition/runGameTurnEconomy.js`
 5. ~~Sync neighbors / orphans hors boucle mesh~~ ✅ `presentation/three/sync/` (+ dead `updateMarketStocks` supprimé)
-6. Réduire `createGame` à une façade (`composition/`)
+6. ~~Réduire `createGame` à une façade (`composition/`)~~ ✅ `bootGameContexts` / `runGameTick` / `bootTreasuryHud` / …
 7. Optionnel : `#budget-states-panel` → nom FR compte de résultat
 
 ---
@@ -178,7 +178,7 @@ Scene bootstrap, managers (`Lighting*`, `Backdrop*`, `Citizen*`, `Resource*`, �
 
 | # | Smell | Fichier / symboles | Catégorie | Sévérité |
 |---|---|---|---|---|
-| 1 | `createGame` mega composition root | `game.js` — contexts, runtime, treasury, GameLoop, registry | composition | **high** |
+| 1 | `createGame` mega composition root | ✅ façade + `bootGameContexts` / `runGameTick` / … | composition | **high** |
 | 2 | Place / bulldoze dans `onObjectSelected` | ✅ → `PlaceBuildingAtTile` / `BulldozeBuildingAtTile` | sim_logic | **high** |
 | 3 | Info bâtiment = viewmodel + DOM | ✅ → `ui/info/BuildingInfoPanel.js` | hud_dom | **high** |
 | 4 | Notifications construction inline | ✅ → `ui/shell/BuildingNotifications.js` | hud_dom | med |
@@ -192,4 +192,4 @@ Scene bootstrap, managers (`Lighting*`, `Backdrop*`, `Citizen*`, `Resource*`, �
 | 12 | Catégories bâtiments importées depuis `ui/shell/nodes` | ✅ scene ← catalog ; nodes re-exporte | layering | med |
 | 13 | Input + pause couplés overlay info | listeners / `game.play` | other | low |
 
-Ordre de slices recommandé : ~~9~~ → ~~3+4~~ → ~~2~~ → ~~5+6~~ → ~~7+8~~ → **1**.
+Ordre de slices recommandé : ~~9~~ → ~~3+4~~ → ~~2~~ → ~~5+6~~ → ~~7+8~~ → ~~1~~ (inventaire tranche 2 clos).
