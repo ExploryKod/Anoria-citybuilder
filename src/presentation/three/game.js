@@ -3,7 +3,7 @@
  * Context / treasury / tick wiring live in composition/.
  */
 
-import { registerAppService, getMultiplayerManager, invokeStartTutorial } from '../../composition/sessionShell.js';
+import { registerAppService, getMultiplayerManager, invokeStartTutorial, getObjectivesManager, getButtonStateManager } from '../../composition/sessionShell.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
 import { syncEmploymentAfterBuildingChange } from '../../composition/syncEmploymentAfterBuildingChange.js';
@@ -12,7 +12,7 @@ import { bootGameContexts } from '../../composition/bootGameContexts.js';
 import { bootTreasuryHud } from '../../composition/bootTreasuryHud.js';
 import { resolveSelectedCitySize } from '../../composition/resolveCitySize.js';
 import { runGameTick } from '../../composition/runGameTick.js';
-import { bindSessionRuntime, requireSessionCommerceApi } from '../../composition/sessionRuntime.js';
+import { bindSessionRuntime } from '../../composition/sessionRuntime.js';
 import { syncSessionHud } from '../../composition/syncSessionHud.js';
 import { notifyBudgetCleanupIfNeeded } from '../dom/compta/tresorerie/CleanupNotificationPresenter.js';
 import { DEFAULT_TICK_MS } from '../../shared/gameplay/SimulationDefaults.js';
@@ -23,7 +23,9 @@ import {
   infoObjectCloseBtn,
 } from '../dom/shell/nodes.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
-import objectivesTracker from '../dom/onboarding/ObjectivesTracker.js';
+import objectivesTracker, {
+  bindObjectivesTrackerDeps,
+} from '../dom/onboarding/ObjectivesTracker.js';
 import InputManager from './InputManager.js';
 import gameUI from '../dom/shell/GameUI.js';
 import {
@@ -68,6 +70,13 @@ export function createGame(gameStore, assetManager, citySize = null) {
     runtime,
   } = bootGameContexts();
   const { construction: constructionApi } = sessionApi;
+
+  bindObjectivesTrackerDeps({
+    accounting: sessionApi.accounting,
+    getObjectivesManager,
+    getButtonStateManager,
+    registerAppService,
+  });
 
   const scene = createScene(gameStore, assetManager, {
     parcels,
@@ -175,6 +184,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
         game,
         time,
         runScenePresentationPass,
+        construction: constructionApi,
+        employment: sessionApi.employment,
+        accounting: sessionApi.accounting,
       });
     } else if (
       !tile.buildingId
@@ -328,7 +340,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       overOverlay.classList.remove('active');
 
       try {
-        requireSessionCommerceApi().clearCommercePersistence();
+        sessionApi.commerce.clearCommercePersistence();
         localStorage.removeItem('journal_year_end_balances');
         localStorage.removeItem('citizen_tax_amount');
         localStorage.removeItem('work_salary_per_month');

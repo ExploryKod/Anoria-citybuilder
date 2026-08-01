@@ -1,11 +1,18 @@
-import { registerAppService } from '../../../../composition/sessionShell.js';
 import { FinancesSectionPresenter } from './FinancesSectionPresenter.js';
 
-export function initFinancesSection() {
+/**
+ * @param {{
+ *   accounting: object,
+ *   registerAppService?: (name: string, instance: *) => void,
+ * }} deps
+ */
+export function initFinancesSection(deps) {
+  if (typeof document === 'undefined') return;
+
   const financesSection = document.getElementById('admin-section-finances');
   if (!financesSection) return;
 
-  const presenter = new FinancesSectionPresenter();
+  const presenter = new FinancesSectionPresenter(deps);
 
   const observer = new MutationObserver(() => {
     if (financesSection.classList.contains('active')) {
@@ -19,11 +26,5 @@ export function initFinancesSection() {
     presenter.init();
   }
 
-  registerAppService('financesSectionPresenter', presenter);
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initFinancesSection);
-} else {
-  initFinancesSection();
+  deps.registerAppService?.('financesSectionPresenter', presenter);
 }

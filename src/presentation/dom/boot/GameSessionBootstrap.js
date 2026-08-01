@@ -1,6 +1,16 @@
 import {
   registerAppService,
   registerAppFunction,
+  updateDisplayedFunds,
+  getGameTime,
+  getObjectivesManager,
+  getObjectivesTracker,
+  getObjectivesHistory,
+  getTutorialManager,
+  pauseGame,
+  playGame,
+  invokeStartObjectives,
+  invokeStartTutorial,
 } from '../../../composition/sessionShell.js';
 import { getOrCreateGameSessionContext } from '../../../composition/createGameSessionContext.js';
 import {
@@ -32,6 +42,10 @@ import {
 } from '../compta/prets/PretsPanel.js';
 import { initJournalPopup } from '../compta/journal/JournalPanel.js';
 import { initFoodTraceabilityPopup } from '../admin/food-traceability/FoodTraceabilityPanel.js';
+import { initAdminSections } from '../admin/initAdminSections.js';
+import { bindObjectivesHistoryDeps } from '../onboarding/objectives-history.js';
+import { initObjectivesPanel } from '../onboarding/ObjectivesPanel.js';
+import { initTutorialPanel } from '../onboarding/TutorialPanel.js';
 
 export async function bootstrapGameSession(assetManager) {
   await waitForDatabaseReady();
@@ -108,6 +122,41 @@ export async function bootstrapGameSession(assetManager) {
     registerHandler: registerAppFunction,
   });
   initFoodTraceabilityPopup({ supply: sessionApi.supply });
+
+  await initAdminSections({
+    ...panelDeps,
+    commerce: sessionApi.commerce,
+    employment: sessionApi.employment,
+    registerAppService,
+    registerAppFunction,
+    updateDisplayedFunds,
+    getGameTime,
+  });
+
+  bindObjectivesHistoryDeps({
+    accounting: sessionApi.accounting,
+    getObjectivesManager,
+    registerAppService,
+  });
+  initObjectivesPanel({
+    accounting: sessionApi.accounting,
+    pauseGame,
+    playGame,
+    registerAppService,
+    registerAppFunction,
+    getObjectivesTracker,
+    getObjectivesHistory,
+    getObjectivesManager,
+    invokeStartObjectives,
+  });
+  initTutorialPanel({
+    pauseGame,
+    playGame,
+    registerAppService,
+    registerAppFunction,
+    getTutorialManager,
+    invokeStartTutorial,
+  });
 
   registerAppFunction('updateBudgetDisplay', updateBudgetDisplay);
   registerAppFunction('refreshBudgetStatesModal', refreshBudgetStatesModal);

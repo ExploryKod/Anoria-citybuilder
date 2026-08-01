@@ -2,16 +2,19 @@
  * Building info overlay (select-object tool) — DOM presentation.
  */
 
-import { getTimeInfo } from '../../../composition/sessionShell.js';
-import { requireSessionConstructionApi, requireSessionEmploymentApi } from '../../../composition/sessionRuntime.js';
-
+import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { buildingsObjects } from '../../../shared/building-catalog/index.js';
 import { infoObjectOverlay } from '../shell/nodes.js';
+import {
+  makeInfoBuildingText,
+  makeInfoKeyValue,
+  makeInfoSection,
+} from './buildingInfoDom.js';
 
 /**
  * Info panel: workplace staffing section (workers in aggregates; elites display-only).
  */
-function renderWorkplaceEmployeesInfo(buildingData, messages) {
+function renderWorkplaceEmployeesInfo(buildingData, messages, employment) {
     if (!buildingData?.employees) return;
 
     const roadCount = buildingData.roads ?? 0;
@@ -23,9 +26,9 @@ function renderWorkplaceEmployeesInfo(buildingData, messages) {
     const workers = employees.worker || 0;
     const elites = employees.elite || 0;
     const sector = employees.sector || 0;
-    const priority = requireSessionEmploymentApi().getSectorPriority(sector);
+    const priority = employment.getSectorPriority(sector);
 
-    requireSessionConstructionApi().makeInfoSection('Employés');
+    makeInfoSection('Employés');
 
     if (roadCount <= 0 && !farmExemptFromRoad) {
         makeInfoBuildingText('🚧 Route nécessaire pour embaucher', false, 'warning-message');
@@ -36,10 +39,10 @@ function renderWorkplaceEmployeesInfo(buildingData, messages) {
     const hasNoWorkers = workers === 0 && workerNeed > 0;
     const hasPartialWorkers = workers > 0 && workers < workerNeed;
 
-    requireSessionConstructionApi().makeInfoKeyValue('Secteur', `${sector} : ${requireSessionEmploymentApi().getSectorName(sector)}`);
-    requireSessionConstructionApi().makeInfoKeyValue('Priorité', `${priority}`);
-    requireSessionConstructionApi().makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
-    requireSessionConstructionApi().makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
+    makeInfoKeyValue('Secteur', `${sector} : ${employment.getSectorName(sector)}`);
+    makeInfoKeyValue('Priorité', `${priority}`);
+    makeInfoKeyValue('Ouvriers', `${workers}/${workerNeed}`);
+    makeInfoKeyValue('Élites', `${elites}/${eliteNeed}`);
 
     if (hasEnoughWorkers) {
         makeInfoBuildingText(messages.fullyStaffed, false, 'success-message');
@@ -61,10 +64,16 @@ function renderWorkplaceEmployeesInfo(buildingData, messages) {
  *   game: { pause: Function, play: Function },
  *   time: number,
  *   runScenePresentationPass: (time: number) => Promise<void>,
+ *   construction: object,
+ *   employment: object,
+ *   accounting: object,
  * }} ctx
  */
 export async function presentBuildingInfoSelection(selectedObject, ctx) {
-    const { city, parcels, supply, housing, scene, game, time, runScenePresentationPass } = ctx;
+    const {
+      city, parcels, supply, housing, scene, game, time, runScenePresentationPass,
+      construction, employment, accounting,
+    } = ctx;
             // Object selection - ONLY open info modal when using select tool
             // Only open the info modal if we actually have info to show (i.e., on building objects)
             let shouldOpenInfo = false;
@@ -110,7 +119,7 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                     ?? (await findBuildingAtTile({ x: selX, y: selY }))?.instanceId
                     ?? null;
                 
-                const buildingRow = uniqueId ? await requireSessionConstructionApi().getBuildingById(uniqueId) : null;
+                const buildingRow = uniqueId ? await construction.getBuildingById(uniqueId) : null;
                 const buildingPop = buildingRow?.pop ?? 0;
                 const roadAccess = await parcels.getRoadAccess(uniqueId);
                 const neighbors = uniqueId ? await parcels.getNeighbors(uniqueId) : [];
@@ -143,21 +152,21 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                 
                 if (isNatureItem) {
                     // Affichage pour les items nature
-                    requireSessionConstructionApi().makeInfoSection('Ressource naturelle');
-                    requireSessionConstructionApi().makeInfoKeyValue('Type', `${selectedObject.userData.id}`);
-                    requireSessionConstructionApi().makeInfoKeyValue('Adresse', `x: ${selectedObject.userData.x} | y: ${selectedObject.userData.y}`);
+                    makeInfoSection('Ressource naturelle');
+                    makeInfoKeyValue('Type', `${selectedObject.userData.id}`);
+                    makeInfoKeyValue('Adresse', `x: ${selectedObject.userData.x} | y: ${selectedObject.userData.y}`);
                     
                     // Nature stocks are not Supply — read building row for wood/rock/etc.
-                    houseStocks = buildingRow?.stocks ?? (await requireSessionConstructionApi().getBuildingField(uniqueId, 'stocks'));
+                    houseStocks = buildingRow?.stocks ?? (await construction.getBuildingField(uniqueId, 'stocks'));
                     const maxStocks = buildingRow?.maxStocks || {};
                     if (houseStocks && Object.keys(houseStocks).length > 0) {
-                        requireSessionConstructionApi().makeInfoSection('Stocks disponibles');
+                        makeInfoSection('Stocks disponibles');
                         
                         // Trees: afficher wood
                         if (selectedObject.userData.id.includes('Tree')) {
                             const wood = houseStocks.wood || 0;
                             const maxWood = maxStocks.wood || 0;
-                            requireSessionConstructionApi().makeInfoKeyValue('Bois', `${wood} / ${maxWood}`);
+                            makeInfoKeyValue('Bois', `${wood} / ${maxWood}`);
                         }
                         
                         // Boulders: afficher rock, gold, iron
@@ -165,49 +174,49 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                             const rock = houseStocks.rock || 0;
                             const maxRock = maxStocks.rock || 0;
                             if (maxRock > 0) {
-                                requireSessionConstructionApi().makeInfoKeyValue('Pierre', `${rock} / ${maxRock}`);
+                                makeInfoKeyValue('Pierre', `${rock} / ${maxRock}`);
                             }
                             
                             const gold = houseStocks.gold || 0;
                             const maxGold = maxStocks.gold || 0;
                             if (maxGold > 0) {
-                                requireSessionConstructionApi().makeInfoKeyValue('Or', `${gold} / ${maxGold}`);
+                                makeInfoKeyValue('Or', `${gold} / ${maxGold}`);
                             }
                             
                             const iron = houseStocks.iron || 0;
                             const maxIron = maxStocks.iron || 0;
                             if (maxIron > 0) {
-                                requireSessionConstructionApi().makeInfoKeyValue('Fer', `${iron} / ${maxIron}`);
+                                makeInfoKeyValue('Fer', `${iron} / ${maxIron}`);
                             }
                         }
                     }
                 } else {
                     // Affichage normal pour les autres bâtiments
-                    requireSessionConstructionApi().makeInfoSection('Bâtiment');
-                    requireSessionConstructionApi().makeInfoKeyValue('Type', `${selectedObject.userData.id}`);
-                    requireSessionConstructionApi().makeInfoKeyValue('Adresse', `x: ${selectedObject.userData.x} | y: ${selectedObject.userData.y}`);
-                    requireSessionConstructionApi().makeInfoKeyValue(`Habitants`, buildingPop);
-                    requireSessionConstructionApi().makeInfoKeyValue('Routes desservies', roadAccess.roadCount);
+                    makeInfoSection('Bâtiment');
+                    makeInfoKeyValue('Type', `${selectedObject.userData.id}`);
+                    makeInfoKeyValue('Adresse', `x: ${selectedObject.userData.x} | y: ${selectedObject.userData.y}`);
+                    makeInfoKeyValue(`Habitants`, buildingPop);
+                    makeInfoKeyValue('Routes desservies', roadAccess.roadCount);
                 }
 
                 if(neighbors.length > 0) {
-                    requireSessionConstructionApi().makeInfoSection('Voisins immédiats');
+                    makeInfoSection('Voisins immédiats');
                     neighbors
                         .filter((neigh) => neigh.x != null && neigh.y != null)
                         .forEach((neighbor) => {
                             const label = neighbor.type || neighbor.instanceId;
-                            requireSessionConstructionApi().makeInfoKeyValue(label, `x: ${neighbor.x} | y: ${neighbor.y}`);
+                            makeInfoKeyValue(label, `x: ${neighbor.x} | y: ${neighbor.y}`);
                         });
                 } else {
-                    requireSessionConstructionApi().makeInfoKeyValue('Voisinage', 'Maison isolée');
+                    makeInfoKeyValue('Voisinage', 'Maison isolée');
                 }
 
                 if(supplyView?.kind === 'house' && Object.hasOwn(houseStocks || {}, 'food')) {
-                    requireSessionConstructionApi().makeInfoSection('Stocks nourriture');
-                    requireSessionConstructionApi().makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`);
-                    requireSessionConstructionApi().makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`);
-                    requireSessionConstructionApi().makeInfoKeyValue('Autres légumes', `${houseStocks.carrot || 0} paniers`);
-                    requireSessionConstructionApi().makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers`);
+                    makeInfoSection('Stocks nourriture');
+                    makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`);
+                    makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`);
+                    makeInfoKeyValue('Autres légumes', `${houseStocks.carrot || 0} paniers`);
+                    makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers`);
                     
                     // Evolution section - show conditions for next evolution step
                     const buildingType = selectedObject.userData.id;
@@ -223,42 +232,42 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                         hasRoadAccess,
                     });
                     
-                    requireSessionConstructionApi().makeInfoSection('Évolution');
+                    makeInfoSection('Évolution');
                     
                     // House-Blue: Show conditions to become House-Red
                     if (buildingType === 'House-Blue') {
-                        requireSessionConstructionApi().makeInfoKeyValue('→ Maison Rouge', '');
+                        makeInfoKeyValue('→ Maison Rouge', '');
                         const isInhabited = (buildingPop || 0) > 0;
                         const roadStatus = hasRoadAccess ? '✅' : '❌';
                         const popStatus = isInhabited ? '✅' : '❌';
-                        requireSessionConstructionApi().makeInfoKeyValue('  • Accès routier', `${roadStatus} ${hasRoadAccess ? 'Oui' : 'Non'}`);
-                        requireSessionConstructionApi().makeInfoKeyValue('  • Habitée', `${popStatus} ${isInhabited ? 'Oui' : 'Non'}`);
-                        requireSessionConstructionApi().makeInfoKeyValue('  • Nourriture de base', `${totalFood > 0 ? '✅' : '❌'} ${totalFood} panier${totalFood !== 1 ? 's' : ''}`);
+                        makeInfoKeyValue('  • Accès routier', `${roadStatus} ${hasRoadAccess ? 'Oui' : 'Non'}`);
+                        makeInfoKeyValue('  • Habitée', `${popStatus} ${isInhabited ? 'Oui' : 'Non'}`);
+                        makeInfoKeyValue('  • Nourriture de base', `${totalFood > 0 ? '✅' : '❌'} ${totalFood} panier${totalFood !== 1 ? 's' : ''}`);
                     }
                     
                     // House-Red: Show conditions to become House-Purple (only Purple-specific conditions)
                     else if (buildingType === 'House-Red') {
-                        requireSessionConstructionApi().makeInfoKeyValue('→ Maison Violette', '');
+                        makeInfoKeyValue('→ Maison Violette', '');
                         const purpleCheck = evolutionPreview.toPurple;
                         // Show Purple-specific conditions
-                        requireSessionConstructionApi().makeInfoKeyValue('  • Population > 5', `${(buildingPop || 0) > 5 ? '✅' : '❌'} ${buildingPop || 0}`);
+                        makeInfoKeyValue('  • Population > 5', `${(buildingPop || 0) > 5 ? '✅' : '❌'} ${buildingPop || 0}`);
                         const foodStatus = totalFood >= (buildingPop || 0) ? '✅' : '❌';
-                        requireSessionConstructionApi().makeInfoKeyValue('  • Nourriture ≥ Population', `${foodStatus} ${totalFood}/${buildingPop || 0}`);
+                        makeInfoKeyValue('  • Nourriture ≥ Population', `${foodStatus} ${totalFood}/${buildingPop || 0}`);
                         
                         if (!purpleCheck.canEvolve) {
                             if (purpleCheck.reason === 'hunger_present') {
                                 const needed = Math.max(0, (buildingPop || 0) - totalFood);
-                                requireSessionConstructionApi().makeInfoKeyValue('  • Manque', `${needed} panier${needed > 1 ? 's' : ''}`);
+                                makeInfoKeyValue('  • Manque', `${needed} panier${needed > 1 ? 's' : ''}`);
                             } else if (purpleCheck.reason === 'population_too_low') {
                                 const needed = Math.max(0, 6 - (buildingPop || 0));
-                                requireSessionConstructionApi().makeInfoKeyValue('  • Manque', `${needed} habitant${needed > 1 ? 's' : ''}`);
+                                makeInfoKeyValue('  • Manque', `${needed} habitant${needed > 1 ? 's' : ''}`);
                             }
                         }
                     }
                     
                     // House-Purple: Show conditions to become Palace (only Palace-specific conditions)
                     else if (buildingType === 'House-Purple') {
-                        requireSessionConstructionApi().makeInfoKeyValue('→ Palais', '');
+                        makeInfoKeyValue('→ Palais', '');
                         const palaceCheck = evolutionPreview.toPalace;
                         
                         // Palace-specific conditions (food goal, not basic conditions)
@@ -279,14 +288,14 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                             ? `Oui (${availableFoodTypesCount} types: ${Object.entries(foodTypes).filter(([_, available]) => available).map(([type]) => type).join(', ')})`
                             : `Non (${availableFoodTypesCount} type${availableFoodTypesCount !== 1 ? 's' : ''} disponible)`;
                         
-                        requireSessionConstructionApi().makeInfoKeyValue('  • Population > 5', `${(buildingPop || 0) > 5 ? '✅' : '❌'} ${buildingPop || 0}`);
-                        requireSessionConstructionApi().makeInfoKeyValue('  • Nourriture > Pop × 2', `${foodGoalStatus} ${foodGoalText}`);
-                        requireSessionConstructionApi().makeInfoKeyValue('  • 2 types de nourriture', `${foodVarietyStatus} ${foodVarietyText}`);
+                        makeInfoKeyValue('  • Population > 5', `${(buildingPop || 0) > 5 ? '✅' : '❌'} ${buildingPop || 0}`);
+                        makeInfoKeyValue('  • Nourriture > Pop × 2', `${foodGoalStatus} ${foodGoalText}`);
+                        makeInfoKeyValue('  • 2 types de nourriture', `${foodVarietyStatus} ${foodVarietyText}`);
                     }
                     
                     // Palace: No further evolution
                     else if (buildingType === 'House-2Story') {
-                        requireSessionConstructionApi().makeInfoKeyValue('→ Palais', '✅ Niveau maximum atteint');
+                        makeInfoKeyValue('→ Palais', '✅ Niveau maximum atteint');
                     }
                 }
 
@@ -294,11 +303,11 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                 if(supplyView?.kind === 'market' && Object.hasOwn(houseStocks || {}, 'food')) {
                     const maxStock = supplyView.maxStock || 500;
                     
-                    requireSessionConstructionApi().makeInfoSection('Stock marché');
-                    requireSessionConstructionApi().makeInfoKeyValue('Blé', `${houseStocks.wheat || 0}/${maxStock} paniers`);
-                    requireSessionConstructionApi().makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0}/${maxStock} paniers`);
-                    requireSessionConstructionApi().makeInfoKeyValue('Autres légumes', `${houseStocks.carrot || 0}/${maxStock} paniers`);
-                    requireSessionConstructionApi().makeInfoKeyValue('Total', `${houseStocks.food || 0}/${maxStock} paniers disponibles`);
+                    makeInfoSection('Stock marché');
+                    makeInfoKeyValue('Blé', `${houseStocks.wheat || 0}/${maxStock} paniers`);
+                    makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0}/${maxStock} paniers`);
+                    makeInfoKeyValue('Autres légumes', `${houseStocks.carrot || 0}/${maxStock} paniers`);
+                    makeInfoKeyValue('Total', `${houseStocks.food || 0}/${maxStock} paniers disponibles`);
                     
                     const noFarmsNearby = supplyView.noFarmsNearby === true;
                     const noHousesNearby = !supplyView.hasHousesNearby;
@@ -311,57 +320,57 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                     
                     const buyingPeriodName = 'Automne';
                     
-                    requireSessionConstructionApi().makeInfoSection('État du marché');
+                    makeInfoSection('État du marché');
                     if (hasNoWorkersForState) {
-                        requireSessionConstructionApi().makeInfoKeyValue('État', '🔴 Inactif : pas d\'employés');
+                        makeInfoKeyValue('État', '🔴 Inactif : pas d\'employés');
                     } else if (isBuying) {
-                        requireSessionConstructionApi().makeInfoKeyValue('État', '🟢 Achats en cours : c\'est le mois des affaires !');
+                        makeInfoKeyValue('État', '🟢 Achats en cours : c\'est le mois des affaires !');
                     } else {
-                        requireSessionConstructionApi().makeInfoKeyValue('État', `⏸️ En attente : le marché n'achète qu'en ${buyingPeriodName}`);
+                        makeInfoKeyValue('État', `⏸️ En attente : le marché n'achète qu'en ${buyingPeriodName}`);
                     }
                     
-                    requireSessionConstructionApi().makeInfoSection('Approvisionnement');
+                    makeInfoSection('Approvisionnement');
                     if (noFarmsNearby) {
-                        requireSessionConstructionApi().makeInfoKeyValue('Fermes', '❌ Aucune ferme à proximité');
+                        makeInfoKeyValue('Fermes', '❌ Aucune ferme à proximité');
                     } else {
-                        requireSessionConstructionApi().makeInfoKeyValue('Fermes', '✅ Fermes accessibles');
+                        makeInfoKeyValue('Fermes', '✅ Fermes accessibles');
                     }
                     if (noHousesNearby) {
-                        requireSessionConstructionApi().makeInfoKeyValue('Distribution', '❌ Aucune maison à portée');
+                        makeInfoKeyValue('Distribution', '❌ Aucune maison à portée');
                     } else {
-                        requireSessionConstructionApi().makeInfoKeyValue('Distribution', '✅ Maisons à portée');
+                        makeInfoKeyValue('Distribution', '✅ Maisons à portée');
                     }
                     
                     renderWorkplaceEmployeesInfo(marketData, {
                         fullyStaffed: '✅ Le marché marche à plein régime',
                         noWorkers: '❌ Le marché manque de bras, il ne peut fonctionner',
                         partialWorkers: '⚠️ Le marché tente de vendre avec peine car trop peu d\'employés',
-                    });
+                    }, employment);
                 }
 
                 if(supplyView?.kind === 'farm') {
                     if (!houseStocks) {
                         houseStocks = { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
                     }
-                    requireSessionConstructionApi().makeInfoSection('Stocks ferme');
+                    makeInfoSection('Stocks ferme');
                     if(selectedObject.userData.id.includes('Farm-Wheat')) {
-                        requireSessionConstructionApi().makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`);
+                        makeInfoKeyValue('Blé', `${houseStocks.wheat || 0} paniers`);
                     }
                     if(selectedObject.userData.id.includes('Farm-Carrot')) {
-                        requireSessionConstructionApi().makeInfoKeyValue('Carottes', `${houseStocks.carrot || 0} paniers`);
+                        makeInfoKeyValue('Carottes', `${houseStocks.carrot || 0} paniers`);
                     }
                     if(selectedObject.userData.id.includes('Farm-Cabbage')) {
-                        requireSessionConstructionApi().makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`);
+                        makeInfoKeyValue('Légumes verts', `${houseStocks.cabbage || 0} paniers`);
                     }
-                    requireSessionConstructionApi().makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers`);
+                    makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers`);
                     
                     const salesToMarket = supplyView.salesToMarket || [];
                     const salesToWindmill = supplyView.salesToWindmill || [];
                     
                     let currentYear = 0;
-                    const budget = await requireSessionAccountingApi().getTreasurySnapshot();
+                    const budget = await accounting.getTreasurySnapshot();
                     if (budget && budget.turn !== undefined) {
-                        const timeInfo = getTimeInfo(budget.turn);
+                        const timeInfo = TimeManager.getTimeInfo(budget.turn);
                         currentYear = timeInfo ? timeInfo.year : 0;
                     }
                     
@@ -369,27 +378,27 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                     const currentYearWindmillSales = salesToWindmill.filter(sale => sale.year === currentYear);
                     
                     if (currentYearMarketSales.length > 0 || currentYearWindmillSales.length > 0) {
-                        requireSessionConstructionApi().makeInfoSection('Ventes de l\'année');
+                        makeInfoSection('Ventes de l\'année');
                         
                         if (currentYearMarketSales.length > 0) {
-                            requireSessionConstructionApi().makeInfoKeyValue('Ventes au marché', `${currentYearMarketSales.length} vente(s)`);
+                            makeInfoKeyValue('Ventes au marché', `${currentYearMarketSales.length} vente(s)`);
                             currentYearMarketSales.forEach(sale => {
                                 const productName = sale.productType === 'wheat' ? 'Blé' : 
                                                    sale.productType === 'carrot' ? 'Carotte' : 
                                                    sale.productType === 'cabbage' ? 'Chou' : sale.productType;
                                 const subtext = `${sale.monthName || `Mois ${sale.month + 1}`} - Tour ${sale.turn}: ${sale.quantity} paniers`;
-                                requireSessionConstructionApi().makeInfoKeyValue(`  → ${productName}`, `${sale.quantity} paniers`, subtext);
+                                makeInfoKeyValue(`  → ${productName}`, `${sale.quantity} paniers`, subtext);
                             });
                         }
                         
                         if (currentYearWindmillSales.length > 0) {
-                            requireSessionConstructionApi().makeInfoKeyValue('Ventes au moulin', `${currentYearWindmillSales.length} type(s) de produit`);
+                            makeInfoKeyValue('Ventes au moulin', `${currentYearWindmillSales.length} type(s) de produit`);
                             currentYearWindmillSales.forEach(sale => {
                                 const productName = sale.productType === 'wheat' ? 'Blé' : 
                                                    sale.productType === 'carrot' ? 'Carotte' : 
                                                    sale.productType === 'cabbage' ? 'Chou' : sale.productType;
                                 const subtext = `${sale.count || 1} collecte(s) cette année`;
-                                requireSessionConstructionApi().makeInfoKeyValue(`  → ${productName}`, `${sale.quantity} paniers`, subtext);
+                                makeInfoKeyValue(`  → ${productName}`, `${sale.quantity} paniers`, subtext);
                             });
                         }
                     }
@@ -398,7 +407,7 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                         fullyStaffed: '✅ La ferme a tout ce qu\'il faut pour fonctionner',
                         noWorkers: '❌ La ferme n\'a aucun employé et ne peut pas fonctionner',
                         partialWorkers: '⚠️ La ferme ne peut fonctionner à sa pleine capacité',
-                    });
+                    }, employment);
                 }
 
                 // Display windmill food stocks (collected from all farms in December)
@@ -410,7 +419,7 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                     const lastImportDetails = supplyView.lastImportDetails;
                     const maxStock = supplyView.maxStock || 1000;
                     
-                    requireSessionConstructionApi().makeInfoSection('Stock moulin');
+                    makeInfoSection('Stock moulin');
                     
                     const wheatCollectionAmount = lastCollection?.wheat || 0;
                     const wheatCollectionText = `+${wheatCollectionAmount} dernière collecte`;
@@ -442,15 +451,15 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                     const totalImportText = `+${totalImportAmount} paniers importés`;
                     const totalSubtext = `${totalCollectionText}, ${totalImportText}`;
 
-                    requireSessionConstructionApi().makeInfoKeyValue('Blé', `${houseStocks.wheat || 0}/${maxStock} paniers`, wheatSubtext);
-                    requireSessionConstructionApi().makeInfoKeyValue('Chou', `${houseStocks.cabbage || 0}/${maxStock} paniers`, cabbageSubtext);
-                    requireSessionConstructionApi().makeInfoKeyValue('Carotte', `${houseStocks.carrot || 0}/${maxStock} paniers`, carrotSubtext);
-                    requireSessionConstructionApi().makeInfoKeyValue('Dattes', `${houseStocks.dattes || 0}/${maxStock} paniers`, dattesSubtext);
-                    requireSessionConstructionApi().makeInfoKeyValue('Bois', `${houseStocks.wood || 0}/${maxStock} paniers`);
-                    requireSessionConstructionApi().makeInfoKeyValue('Total', `${houseStocks.food || 0}/${maxStock} paniers collectés`, totalSubtext);
+                    makeInfoKeyValue('Blé', `${houseStocks.wheat || 0}/${maxStock} paniers`, wheatSubtext);
+                    makeInfoKeyValue('Chou', `${houseStocks.cabbage || 0}/${maxStock} paniers`, cabbageSubtext);
+                    makeInfoKeyValue('Carotte', `${houseStocks.carrot || 0}/${maxStock} paniers`, carrotSubtext);
+                    makeInfoKeyValue('Dattes', `${houseStocks.dattes || 0}/${maxStock} paniers`, dattesSubtext);
+                    makeInfoKeyValue('Bois', `${houseStocks.wood || 0}/${maxStock} paniers`);
+                    makeInfoKeyValue('Total', `${houseStocks.food || 0}/${maxStock} paniers collectés`, totalSubtext);
 
                     if (lastImportDetails && Object.keys(lastImportDetails).length > 0) {
-                        requireSessionConstructionApi().makeInfoSection('Imports par partenaire');
+                        makeInfoSection('Imports par partenaire');
 
                         const productNames = { wheat: 'Blé', carrot: 'Carotte', cabbage: 'Chou', dattes: 'Dattes', wood: 'Bois' };
 
@@ -458,7 +467,7 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                             if (partners && partners.length > 0) {
                                 const productName = productNames[productId] || productId;
                                 partners.forEach(partnerInfo => {
-                                    requireSessionConstructionApi().makeInfoKeyValue(
+                                    makeInfoKeyValue(
                                         `${productName}`,
                                         `${partnerInfo.quantity} paniers`,
                                         `depuis ${partnerInfo.partnerName}`
@@ -468,17 +477,17 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                         }
                     }
 
-                    requireSessionConstructionApi().makeInfoSection('Approvisionnement');
+                    makeInfoSection('Approvisionnement');
                     if (hasRoadAccess) {
-                        requireSessionConstructionApi().makeInfoKeyValue('Routes', '✅ Accès routier');
+                        makeInfoKeyValue('Routes', '✅ Accès routier');
                     } else {
-                        requireSessionConstructionApi().makeInfoKeyValue('Routes', '❌ Pas d\'accès routier');
+                        makeInfoKeyValue('Routes', '❌ Pas d\'accès routier');
                     }
-                    requireSessionConstructionApi().makeInfoKeyValue('Source', 'Toutes les fermes du jeu');
+                    makeInfoKeyValue('Source', 'Toutes les fermes du jeu');
                     if (isCollecting) {
-                        requireSessionConstructionApi().makeInfoKeyValue('État', '🟢 En collecte (décembre)');
+                        makeInfoKeyValue('État', '🟢 En collecte (décembre)');
                     } else {
-                        requireSessionConstructionApi().makeInfoKeyValue('État', '⏸️ En attente (collecte en décembre)');
+                        makeInfoKeyValue('État', '⏸️ En attente (collecte en décembre)');
                     }
                     
                     if (!hasRoadAccess) {
@@ -489,7 +498,7 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                         fullyStaffed: '✅ Le moulin tourne à plein régime',
                         noWorkers: '❌ Le moulin manque de bras, il ne peut fonctionner',
                         partialWorkers: '⚠️ Le moulin tourne avec peine car trop peu d\'employés',
-                    });
+                    }, employment);
                 }
             }
            

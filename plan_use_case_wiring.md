@@ -169,7 +169,9 @@ Notées volontairement hors barres 1–5 :
 | ~~`composition/runGameTick` → `CleanupNotificationPresenter` (DOM)~~ | ✅ injecté depuis `game.js` (`notifyBudgetCleanup`) |
 | ~~`CityAssetsValuationAdapter` → `composition/createCityAssetsContext`~~ | ✅ collaborateur injecté ; câblé dans `createAccountingContext` / `bootGameContexts` |
 | ~~Getters shell → injection panel (pilote compta)~~ | ✅ `init*(deps)` + câblage depuis `GameSessionBootstrap` ; `src/presentation/dom/compta` sans `requireSession*` / `sessionShell` |
-| Getters shell restants (admin sections, BuildingInfo, ToolPanel, onboarding) | **Tranche 2** : supprimer auto-`DOMContentLoaded` des `init*Section`, injecter depuis `AdministratorPanel` / boot |
+| ~~Getters shell → injection admin (tranche 2)~~ | ✅ `initAdminSections(deps)` après sessionApi ; presenters via constructeur ; plus de script `initAdminSections` dans `index.html` |
+| ~~Getters shell → BuildingInfo / ToolPanel / onboarding (tranche 3)~~ | ✅ `presentBuildingInfoSelection(ctx)` + `bindToolPanelDeps` + `initObjectives*` / `initTutorialPanel` ; scripts onboarding retirés de `index.html` |
+| Getters shell résiduels (`PlaybackControls`, `PopupManager`, `ResourceManager`, `syncTileNeighborsPass`, `ParametersPanel`, `buttons.js`) | **Tranche 4** éventuelle / hygiène |
 | `scene.js` / `game.js` volume rendu | Pas un problème de règle de dépendance tant que le métier n’y revient pas |
 | Miroir debug `AppRegistry` / `window.app` | OK derrière flag ; ne pas en refaire une spine |
 | Orchestrations composition (`syncEmploymentAfterBuildingChange`, bridges trésorerie) | Légitimes au root **ou** à monter en workflow application si un BC devient propriétaire clair — juger au cas par cas |

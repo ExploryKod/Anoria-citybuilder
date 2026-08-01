@@ -1,11 +1,19 @@
-import { registerAppService } from '../../../../composition/sessionShell.js';
 import { StorageSectionPresenter } from './StorageSectionPresenter.js';
 
-export function initStorageSection() {
+/**
+ * @param {{
+ *   supply: object,
+ *   construction: object,
+ *   registerAppService?: (name: string, instance: *) => void,
+ * }} deps
+ */
+export function initStorageSection(deps) {
+  if (typeof document === 'undefined') return;
+
   const storageSection = document.getElementById('admin-section-storage');
   if (!storageSection) return;
 
-  const presenter = new StorageSectionPresenter();
+  const presenter = new StorageSectionPresenter(deps);
 
   const observer = new MutationObserver(() => {
     if (storageSection.classList.contains('active')) {
@@ -19,11 +27,5 @@ export function initStorageSection() {
     presenter.init();
   }
 
-  registerAppService('storageSectionPresenter', presenter);
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initStorageSection);
-} else {
-  initStorageSection();
+  deps.registerAppService?.('storageSectionPresenter', presenter);
 }

@@ -1,111 +1,112 @@
 import { renderCityLedger } from '../../compta/livret/CityLedgerPresenter.js';
-import { getSessionAccountingApi, requireSessionAccountingApi } from '../../../../composition/sessionRuntime.js';
-
 
 export class FinancesSectionPresenter {
-    constructor() {
-        this.citizenTaxAmount = getSessionAccountingApi()?.getCitizenTaxPerCapita() ?? 0;
-        this.financialData = null;
+  /**
+   * @param {{ accounting: object }} deps
+   */
+  constructor(deps) {
+    this.accounting = deps.accounting;
+    this.citizenTaxAmount = this.accounting?.getCitizenTaxPerCapita?.() ?? 0;
+    this.financialData = null;
+  }
+
+  init() {
+    this.setupEventListeners();
+    this.loadFinancialData();
+  }
+
+  setupEventListeners() {
+    const taxDecreaseBtn = document.getElementById('tax-decrease-btn');
+    const taxIncreaseBtn = document.getElementById('tax-increase-btn');
+
+    const handleTaxDecrease = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.adjustCitizenTaxAmount(-10);
+    };
+
+    const handleTaxIncrease = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.adjustCitizenTaxAmount(10);
+    };
+
+    if (taxDecreaseBtn) {
+      taxDecreaseBtn.removeEventListener('click', this._handleTaxDecrease);
+      this._handleTaxDecrease = handleTaxDecrease;
+      taxDecreaseBtn.addEventListener('click', this._handleTaxDecrease);
     }
 
-    init() {
-        this.setupEventListeners();
-        this.loadFinancialData();
+    if (taxIncreaseBtn) {
+      taxIncreaseBtn.removeEventListener('click', this._handleTaxIncrease);
+      this._handleTaxIncrease = handleTaxIncrease;
+      taxIncreaseBtn.addEventListener('click', this._handleTaxIncrease);
     }
 
-    setupEventListeners() {
-        const taxDecreaseBtn = document.getElementById('tax-decrease-btn');
-        const taxIncreaseBtn = document.getElementById('tax-increase-btn');
+    this.updateTaxDisplay();
+  }
 
-        const handleTaxDecrease = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.adjustCitizenTaxAmount(-10);
-        };
+  async loadFinancialData() {
+    this.setupEventListeners();
 
-        const handleTaxIncrease = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.adjustCitizenTaxAmount(10);
-        };
+    try {
+      this.financialData = await this.accounting.getCityLedgerYearComparison();
+      this.render();
+    } catch (error) {
+      console.error('[FinancesSection] Error loading financial data:', error);
+      this.renderStaticData();
+    }
+  }
 
-        if (taxDecreaseBtn) {
-            taxDecreaseBtn.removeEventListener('click', this._handleTaxDecrease);
-            this._handleTaxDecrease = handleTaxDecrease;
-            taxDecreaseBtn.addEventListener('click', this._handleTaxDecrease);
-        }
+  getEmptyYearData(year) {
+    return this.accounting.createEmptyCityLedgerYearLines(year);
+  }
 
-        if (taxIncreaseBtn) {
-            taxIncreaseBtn.removeEventListener('click', this._handleTaxIncrease);
-            this._handleTaxIncrease = handleTaxIncrease;
-            taxIncreaseBtn.addEventListener('click', this._handleTaxIncrease);
-        }
+  adjustCitizenTaxAmount(delta) {
+    const newAmount = Math.max(0, Math.min(1000, this.citizenTaxAmount + delta));
 
-        this.updateTaxDisplay();
+    if (newAmount !== this.citizenTaxAmount) {
+      this.citizenTaxAmount = this.accounting.setCitizenTaxPerCapita(newAmount);
+      this.updateTaxDisplay();
+    }
+  }
+
+  updateTaxDisplay() {
+    const taxRateDisplay = document.getElementById('tax-rate-display');
+    const taxEstimate = document.getElementById('tax-estimate');
+
+    if (taxRateDisplay) {
+      taxRateDisplay.textContent = this.citizenTaxAmount;
     }
 
-    async loadFinancialData() {
-        this.setupEventListeners();
+    if (taxEstimate) {
+      taxEstimate.textContent = `${this.citizenTaxAmount}€ par citoyen`;
+    }
+  }
 
-        try {
-            this.financialData = await requireSessionAccountingApi().getCityLedgerYearComparison();
-            this.render();
-        } catch (error) {
-            console.error('[FinancesSection] Error loading financial data:', error);
-            this.renderStaticData();
-        }
+  render() {
+    if (!this.financialData) {
+      this.renderStaticData();
+      return;
     }
 
-    getEmptyYearData(year) {
-        return requireSessionAccountingApi().createEmptyCityLedgerYearLines(year);
-    }
+    renderCityLedger(this.financialData);
+    this.updateTaxDisplay();
+  }
 
-    adjustCitizenTaxAmount(delta) {
-        const newAmount = Math.max(0, Math.min(1000, this.citizenTaxAmount + delta));
+  renderStaticData() {
+    const staticData = {
+      thisYear: this.getEmptyYearData(0),
+      lastYear: this.getEmptyYearData(0),
+      twoYearsAgo: this.getEmptyYearData(0),
+      debt: 0,
+      message: {
+        text: 'La situation financière est stable.',
+        type: 'info',
+      },
+    };
 
-        if (newAmount !== this.citizenTaxAmount) {
-            this.citizenTaxAmount = requireSessionAccountingApi().setCitizenTaxPerCapita(newAmount);
-            this.updateTaxDisplay();
-        }
-    }
-
-    updateTaxDisplay() {
-        const taxRateDisplay = document.getElementById('tax-rate-display');
-        const taxEstimate = document.getElementById('tax-estimate');
-
-        if (taxRateDisplay) {
-            taxRateDisplay.textContent = this.citizenTaxAmount;
-        }
-
-        if (taxEstimate) {
-            taxEstimate.textContent = `${this.citizenTaxAmount}€ par citoyen`;
-        }
-    }
-
-    render() {
-        if (!this.financialData) {
-            this.renderStaticData();
-            return;
-        }
-
-        renderCityLedger(this.financialData);
-        this.updateTaxDisplay();
-    }
-
-    renderStaticData() {
-        const staticData = {
-            thisYear: this.getEmptyYearData(0),
-            lastYear: this.getEmptyYearData(0),
-            twoYearsAgo: this.getEmptyYearData(0),
-            debt: 0,
-            message: {
-                text: 'La situation financière est stable.',
-                type: 'info',
-            },
-        };
-
-        this.financialData = staticData;
-        this.render();
-    }
+    this.financialData = staticData;
+    this.render();
+  }
 }
-

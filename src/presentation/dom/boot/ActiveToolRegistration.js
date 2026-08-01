@@ -1,5 +1,3 @@
-import { registerAppFunction, getPopupManager } from '../../../composition/sessionShell.js';
-import { getSessionGame } from '../../../composition/sessionRuntime.js';
 import {
   getButtonsDisabled,
   getButtonsUnactive,
@@ -7,7 +5,15 @@ import {
   toggleModal,
 } from '../tools/ToolPanel.js';
 
-export function registerActiveToolHandler() {
+/**
+ * @param {{
+ *   registerAppFunction: (name: string, fn: Function) => void,
+ *   popupManager?: object | null,
+ *   getGame?: () => { setActiveToolId?: Function } | null,
+ * }} deps
+ */
+export function registerActiveToolHandler(deps) {
+  const { registerAppFunction, popupManager, getGame } = deps;
   let selectedControl = document.getElementById('bulldoze-btn');
 
   registerAppFunction('setActiveTool', (e) => {
@@ -24,13 +30,13 @@ export function registerActiveToolHandler() {
         canvas.classList.add('canvas-interactive');
       }
 
-      getPopupManager()?.forceClosePopup('panel-layout');
+      popupManager?.forceClosePopup('panel-layout');
     } else if (!e.target.dataset.toolid) {
       toggleModal(e);
     }
 
     selectedControl = e.currentTarget;
     selectedControl.classList.add('selected');
-    getSessionGame()?.setActiveToolId(e.target.dataset.toolid);
+    getGame()?.setActiveToolId(e.target.dataset.toolid);
   });
 }

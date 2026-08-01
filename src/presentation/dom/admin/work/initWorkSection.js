@@ -1,12 +1,21 @@
-import { registerAppService } from '../../../../composition/sessionShell.js';
 import { WorkSectionPresenter } from './WorkSectionPresenter.js';
 
-export function initWorkSection() {
+/**
+ * @param {{
+ *   accounting: object,
+ *   employment: object,
+ *   housing: object,
+ *   registerAppService?: (name: string, instance: *) => void,
+ * }} deps
+ */
+export function initWorkSection(deps) {
+  if (typeof document === 'undefined') return;
+
   const workSection = document.getElementById('admin-section-work');
   if (!workSection) return;
 
-  const presenter = new WorkSectionPresenter();
-  registerAppService('workSectionPresenter', presenter);
+  const presenter = new WorkSectionPresenter(deps);
+  deps.registerAppService?.('workSectionPresenter', presenter);
 
   const observer = new MutationObserver(() => {
     if (workSection.classList.contains('active')) {
@@ -19,10 +28,4 @@ export function initWorkSection() {
   if (workSection.classList.contains('active')) {
     presenter.init();
   }
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initWorkSection);
-} else {
-  initWorkSection();
 }
