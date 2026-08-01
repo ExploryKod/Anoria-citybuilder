@@ -54,7 +54,7 @@ import { PerformanceManager } from './managers/PerformanceManager.js';
 import { bindSceneBuildingGrid } from '../../js/acl/construction.js';
 import { processTurnBudget, resetProcessTurnBudget } from '../../js/acl/accounting.js';
 import { notifyBudgetCleanupIfNeeded } from '../../ui/compta/tresorerie/CleanupNotificationPresenter.js';
-import gameUI from './GameUI.js';
+import gameUI from '../../ui/shell/GameUI.js';
 import { CitizenManager } from './managers/CitizenManager.js';
 import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
 

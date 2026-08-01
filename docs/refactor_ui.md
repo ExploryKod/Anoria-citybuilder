@@ -148,7 +148,13 @@ Ce fichier + chemins majeurs accounting / FINANCIAL_DATA_SOURCE_OF_TRUTH.
 
 ---
 
-## Suite possible
+## Suite — presentation/three vs infrastructure
 
-1. Clarifier `presentation/three` vs `infrastructure/` (hors UI)
+**Tranche 1 ✅** — Doc de placement ([`src/infrastructure/README.md`](../src/infrastructure/README.md)) + `GameUI.js` sorti de Three → [`src/ui/shell/GameUI.js`](../src/ui/shell/GameUI.js).
+
+Règle : Three = WebGL ; `ui/` = DOM ; adapters BC = `contexts/*/infrastructure/` ; `src/infrastructure/` = tech transverse (multiplayer). Pas de big-bang move de `scene.js` / `game.js`.
+
+**Suite possible**
+
+1. Inventaire dettes hors Three dans `game.js` / `scene.js` (budget, wiring ACL) — sans déplacement massif
 2. Optionnel : `#budget-states-panel` → nom FR compte de résultat ; classes contenu `.budget-item`
