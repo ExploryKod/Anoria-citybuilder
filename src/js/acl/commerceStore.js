@@ -8,6 +8,9 @@ const commerceStore = {
   loadConfig() {
     return getOrCreateCommerceContext().commerceRepository.loadConfig();
   },
+  loadOrSeedConfig() {
+    return getOrCreateCommerceContext().commerceRepository.loadOrSeedConfig();
+  },
   getProductConfig(productId) {
     return getOrCreateCommerceContext().commerceRepository.getProductConfig(productId);
   },
@@ -28,6 +31,9 @@ const commerceStore = {
   },
   loadPartners() {
     return getOrCreateCommerceContext().commerceRepository.loadPartners();
+  },
+  loadOrSeedPartners() {
+    return getOrCreateCommerceContext().commerceRepository.loadOrSeedPartners();
   },
   savePartners(partnersData) {
     return getOrCreateCommerceContext().commerceRepository.savePartners(partnersData);

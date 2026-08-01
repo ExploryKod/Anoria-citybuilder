@@ -42,4 +42,11 @@ export {
   evaluatePartnerActivationConditions,
 } from '../../contexts/commerce/domain/policies/PartnerActivationPolicy.js';
 
+export {
+  createDefaultPartners,
+  migrateStoredPartners,
+} from '../../contexts/commerce/domain/catalogs/PartnerCatalog.js';
+
+export { createDefaultProductConfig } from '../../contexts/commerce/domain/catalogs/ProductConfigCatalog.js';
+
 export { LocalStorageCommerceRepository } from '../../contexts/commerce/infrastructure/persistence/LocalStorageCommerceRepository.js';

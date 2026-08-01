@@ -1,3 +1,9 @@
+import {
+  createDefaultPartners,
+  migrateStoredPartners,
+} from '../../domain/catalogs/PartnerCatalog.js';
+import { createDefaultProductConfig } from '../../domain/catalogs/ProductConfigCatalog.js';
+
 /**
  * localStorage adapter — commerce config, stats, partners.
  */
@@ -31,6 +37,16 @@ export class LocalStorageCommerceRepository {
       console.warn('[CommerceRepository] Error loading config:', error);
     }
     return null;
+  }
+
+  loadOrSeedConfig() {
+    const existing = this.loadConfig();
+    if (existing) {
+      return existing;
+    }
+    const defaults = createDefaultProductConfig();
+    this.saveConfig(defaults);
+    return defaults;
   }
 
   /** @param {string} productId */
@@ -97,6 +113,27 @@ export class LocalStorageCommerceRepository {
       console.warn('[CommerceRepository] Error loading partners:', error);
     }
     return null;
+  }
+
+  loadOrSeedPartners() {
+    const stored = this.loadPartners();
+    if (stored) {
+      try {
+        const { partners, needsSave } = migrateStoredPartners(stored);
+        if (needsSave) {
+          this.savePartners(partners);
+        }
+        return partners;
+      } catch (_error) {
+        const defaults = createDefaultPartners();
+        this.savePartners(defaults);
+        return defaults;
+      }
+    }
+
+    const defaults = createDefaultPartners();
+    this.savePartners(defaults);
+    return defaults;
   }
 
   /** @param {Array} partnersData */
