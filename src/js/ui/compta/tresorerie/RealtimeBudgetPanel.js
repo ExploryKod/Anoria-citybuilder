@@ -1,5 +1,6 @@
 /**
- * RealtimeBudgetManager - Gère l'affichage et la mise à jour du budget en temps réel
+ * RealtimeBudgetPanel — popup trésorerie temps réel (DOM + événements).
+ * Rendu : RealtimeBudgetPresenter.js
  */
 import {
   getTreasurySnapshot,
@@ -93,14 +94,14 @@ export async function updateRealtimeBudget() {
       population = await getCityTotalPopulation();
     } catch (error) {
       populationError = true;
-      console.error('[RealtimeBudgetManager] Error fetching population from Housing BC:', error);
+      console.error('[RealtimeBudgetPanel] Error fetching population from Housing BC:', error);
       const gameStore = getGameStore();
       if (gameStore && typeof gameStore.getLatestGameItemByField === 'function') {
-        console.warn('[RealtimeBudgetManager] ⚠️ FALLING BACK to gameStore (may be stale)');
+        console.warn('[RealtimeBudgetPanel] ⚠️ FALLING BACK to gameStore (may be stale)');
         const gamePop = await gameStore.getLatestGameItemByField('population');
         population = gamePop !== null && gamePop !== undefined ? gamePop : 0;
       } else {
-        console.error('[RealtimeBudgetManager] ❌ Housing BC and gameStore unavailable! Population set to 0');
+        console.error('[RealtimeBudgetPanel] ❌ Housing BC and gameStore unavailable! Population set to 0');
         population = 0;
       }
     }

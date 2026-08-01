@@ -2,14 +2,14 @@ import { registerAppService } from '../../acl/appRuntime.js';
 import { getOrCreateGameSessionContext } from '../../acl/gameSession.js';
 import { createGame } from '../../../presentation/three/game.js';
 import { showCitySizeSelection } from './CitySizeSelectionModal.js';
-import { initRealtimeBudgetPopup } from '../compta/tresorerie/RealtimeBudgetManager.js';
-import { initBudgetStatesPopup } from '../compta/compte-de-resultat/BudgetStatesManager.js';
+import { initRealtimeBudgetPopup } from '../compta/tresorerie/RealtimeBudgetPanel.js';
+import { initBudgetStatesPopup } from '../compta/compte-de-resultat/CompteDeResultatPanel.js';
 import { initBalanceSheetPopup } from '../compta/bilan/BalanceSheetPanel.js';
 import { initCityMapPopup } from '../carte-ville/CityMapPanel.js';
-import { initLoansPopup, initLoanPaymentSystem } from '../compta/prets/LoansManager.js';
-import { initJournalPopup } from '../compta/journal/JournalManager.js';
-import { initFoodTraceabilityPopup } from '../admin/food-traceability/FoodTraceabilityManager.js';
-import { initUrbanAdviceCenter } from '../conseil-urbain/UrbanAdviceManager.js';
+import { initLoansPopup, initLoanPaymentSystem } from '../compta/prets/PretsPanel.js';
+import { initJournalPopup } from '../compta/journal/JournalPanel.js';
+import { initFoodTraceabilityPopup } from '../admin/food-traceability/FoodTraceabilityPanel.js';
+import { initUrbanAdviceCenter } from '../conseil-urbain/ConseilUrbainPanel.js';
 
 export async function bootstrapGameSession(assetManager) {
   const selectionResult = await showCitySizeSelection();

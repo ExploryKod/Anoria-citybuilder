@@ -1,6 +1,6 @@
 /**
- * Journal UI presenter — DOM + events only (Phase 2b).
- * Data: acl/accounting.js → GetGeneralLedger
+ * JournalPanel — popup journal comptable (DOM + événements).
+ * Données : acl/accounting.js → GetGeneralLedger
  */
 
 import { getPopupManager, getTimeInfo } from '../../../acl/appRuntime.js';
