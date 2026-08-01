@@ -1,5 +1,6 @@
-import { getOrCreateGameSessionContext } from '../composition/createGameSessionContext.js';
-import { getAppService } from '../js/acl/appRuntime.js';
+import { getOrCreateGameSessionContext } from './createGameSessionContext.js';
+import { getOrCreateHousingContext } from './createHousingContext.js';
+import { getSessionProcessLoanPayments } from './sessionRuntime.js';
 import { LocalStorageFiscalSettingsRepository } from '../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
 import { GetTreasuryBalance } from '../contexts/accounting/application/queries/treasury/GetTreasuryBalance.js';
 import { GetTreasurySnapshot } from '../contexts/accounting/application/queries/treasury/GetTreasurySnapshot.js';
@@ -68,12 +69,17 @@ import {
   buildExpenseBreakdown,
   canAffordFromBudget,
 } from '../contexts/accounting/application/queries/treasury/GameTreasuryProjections.js';
-import {
-  getCityTotalPopulation,
-  clearPopulationWithoutRoadAccess,
-} from '../js/acl/housing.js';
 import { listSceneBuildingTypesForMaintenance } from './sceneBuildingInventoryBridge.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
+
+async function getCityTotalPopulation() {
+  const { totalPop } = await getOrCreateHousingContext().getCityPopulationSummary();
+  return totalPop;
+}
+
+async function clearPopulationWithoutRoadAccess() {
+  return getOrCreateHousingContext().clearPopulationWithoutRoadAccess();
+}
 
 /**
  * Composition root — Accounting bounded context.
@@ -396,7 +402,7 @@ export function createAccountingContext(deps = {}) {
     processLoanPayments:
       deps.processLoanPayments ??
       (async () => {
-        const processLoanPayments = getAppService('processLoanPayments');
+        const processLoanPayments = getSessionProcessLoanPayments();
         if (processLoanPayments) {
           await processLoanPayments();
         }

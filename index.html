@@ -9,67 +9,67 @@
     <meta name="keywords" content="city builder, jeu de construction, simulation, ville, 3D">
     <meta name="author" content="Eraanurbs">
 
-    <link rel="stylesheet" href="./src/styles/main.css">
-    <link rel="stylesheet" href="./src/styles/btn.css">
-    <link rel="stylesheet" href="./src/styles/tooltip.css">
-    <link rel="stylesheet" href="./src/styles/tutorial.css">
-    <link rel="stylesheet" href="./src/styles/parameters.css">
-    <link rel="stylesheet" href="./src/styles/legends.css">
-    <link rel="stylesheet" href="./src/styles/orientation-toast.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/main.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/btn.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/tooltip.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/tutorial.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/parameters.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/legends.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/orientation-toast.css">
     
     <!-- Modal Styles -->
-    <link rel="stylesheet" href="./src/styles/modals/global.css">
-    <link rel="stylesheet" href="./src/styles/modals/loader-modal.css">
-    <link rel="stylesheet" href="./src/styles/modals/city-size-selection.css">
-    <link rel="stylesheet" href="./src/styles/mobile-controls.css">
-    <link rel="stylesheet" href="./src/styles/modals/realtime-budget.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/global.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/loader-modal.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/city-size-selection.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/mobile-controls.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/realtime-budget.css">
     
     <!-- OPTIMIZATION: Load non-critical modal CSS asynchronously using media="print" trick -->
     <!-- These modals are not visible on initial load, so they can load non-blocking -->
     <!-- This saves ~140ms of render blocking time -->
-    <link rel="stylesheet" href="./src/styles/modals/compte-de-resultat-panel.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/bilan-panel.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/loans-panel.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/bilan-panel-content.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/compte-de-resultat-panel-content.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/balance-sheet.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/cleanup-notification.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/city-map.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/journal.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/food-traceability.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/objectives.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/reset-confirm.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/administrator-panel.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/finances-section.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/report-section.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/work-section.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/storage-section.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/factory-section.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/commerce-section.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/health-section.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/multiplayer.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/compte-de-resultat-panel.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/bilan-panel.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/loans-panel.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/bilan-panel-content.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/compte-de-resultat-panel-content.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/balance-sheet.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/cleanup-notification.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/city-map.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/journal.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/food-traceability.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/objectives.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/reset-confirm.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/administrator-panel.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/finances-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/report-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/work-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/storage-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/factory-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/commerce-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/health-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/multiplayer.css" media="print" onload="this.media='all'">
     <noscript>
-        <link rel="stylesheet" href="./src/styles/modals/compte-de-resultat-panel.css">
-        <link rel="stylesheet" href="./src/styles/modals/bilan-panel.css">
-        <link rel="stylesheet" href="./src/styles/modals/loans-panel.css">
-        <link rel="stylesheet" href="./src/styles/modals/bilan-panel-content.css">
-        <link rel="stylesheet" href="./src/styles/modals/compte-de-resultat-panel-content.css">
-        <link rel="stylesheet" href="./src/styles/modals/balance-sheet.css">
-        <link rel="stylesheet" href="./src/styles/modals/cleanup-notification.css">
-        <link rel="stylesheet" href="./src/styles/modals/city-map.css">
-        <link rel="stylesheet" href="./src/styles/modals/journal.css">
-        <link rel="stylesheet" href="./src/styles/modals/food-traceability.css">
-        <link rel="stylesheet" href="./src/styles/modals/objectives.css">
-        <link rel="stylesheet" href="./src/styles/modals/reset-confirm.css">
-        <link rel="stylesheet" href="./src/styles/modals/administrator-panel.css">
-        <link rel="stylesheet" href="./src/styles/modals/finances-section.css">
-        <link rel="stylesheet" href="./src/styles/modals/report-section.css">
-        <link rel="stylesheet" href="./src/styles/modals/work-section.css">
-        <link rel="stylesheet" href="./src/styles/modals/storage-section.css">
-        <link rel="stylesheet" href="./src/styles/modals/factory-section.css">
-        <link rel="stylesheet" href="./src/styles/modals/commerce-section.css">
-        <link rel="stylesheet" href="./src/styles/modals/health-section.css">
-        <link rel="stylesheet" href="./src/styles/multiplayer.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/compte-de-resultat-panel.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/bilan-panel.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/loans-panel.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/bilan-panel-content.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/compte-de-resultat-panel-content.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/balance-sheet.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/cleanup-notification.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/city-map.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/journal.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/food-traceability.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/objectives.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/reset-confirm.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/administrator-panel.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/finances-section.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/report-section.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/work-section.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/storage-section.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/factory-section.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/commerce-section.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/health-section.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/multiplayer.css">
     </noscript>
 
     <!-- Tarteaucitron.js - Cookie consent management -->
@@ -3171,16 +3171,16 @@
 
 <script type="module" src="/src/main.js"></script>
 <script type="module" src="/src/presentation/three/game.js"></script>
-<script type="module" src="/src/js/utils/EventBlocker.js"></script>
-<script type="module" src="/src/js/utils/ButtonStateManager.js"></script>
-<script type="module" src="/src/ui/shell/PopupManager.js"></script>
-<script type="module" src="/src/ui/onboarding/ObjectivesTracker.js"></script>
-<script type="module" src="/src/ui/buttons.js"></script>
-<script type="module" src="/src/ui/admin/initAdminSections.js"></script>
-<script type="module" src="/src/ui/onboarding/TutorialPanel.js"></script>
-<script type="module" src="/src/ui/parametres/ParametersPanel.js"></script>
-<script type="module" src="/src/ui/onboarding/ObjectivesPanel.js"></script>
-<script type="module" src="/src/ui/onboarding/objectives-history.js"></script>
+<script type="module" src="/src/presentation/dom/shell/EventBlocker.js"></script>
+<script type="module" src="/src/presentation/dom/shell/ButtonStateManager.js"></script>
+<script type="module" src="/src/presentation/dom/shell/PopupManager.js"></script>
+<script type="module" src="/src/presentation/dom/onboarding/ObjectivesTracker.js"></script>
+<script type="module" src="/src/presentation/dom/buttons.js"></script>
+<script type="module" src="/src/presentation/dom/admin/initAdminSections.js"></script>
+<script type="module" src="/src/presentation/dom/onboarding/TutorialPanel.js"></script>
+<script type="module" src="/src/presentation/dom/parametres/ParametersPanel.js"></script>
+<script type="module" src="/src/presentation/dom/onboarding/ObjectivesPanel.js"></script>
+<script type="module" src="/src/presentation/dom/onboarding/objectives-history.js"></script>
 
 <!-- Tarteaucitron.js - Cookie consent management -->
 <!-- OPTIMIZATION: Load tarteaucitron after page is interactive to reduce TBT -->

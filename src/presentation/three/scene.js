@@ -4,36 +4,14 @@ import { createPerfHud } from './PerfHud.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { AnimationMixer } from 'three';
-import {applyHoverColor, resetHoveredObject, resetObjectColor} from '../../js/utils/meshUtils.js';
+import {applyHoverColor, resetHoveredObject, resetObjectColor} from './meshUtils.js';
 import {  textures  } from './meshs/data.js'
-import {
-    updateBuildingNeighbors,
-} from "../../js/utils/utils.js";
-import { toBuildingIdString, getOrCreateParcelsContext, getBuildingsNamesInZone } from '../../js/acl/parcels.js';
-import { getOrCreateSupplyContext } from '../../js/acl/supply.js';
-import { getOrCreateHousingContext } from '../../js/acl/housing.js';
-import { getCityEmploymentSummary, ensureBuildingEmployeesSchema } from '../../js/acl/employment.js';
-import { getTreasurySnapshot } from '../../js/acl/accountingGame.js';
-import {
-  getPopupManager,
-  getGameUI,
-  getInputManagerMouse,
-  registerAppFunction,
-} from '../../js/acl/appRuntime.js';
-import {
-    findBuildingAtTile,
-    getBuildingById,
-    updateBuildingFields,
-    getBuildingField,
-    incrementBuildingField,
-    listAllBuildingRows,
-} from '../../js/acl/construction.js';
 import {
     bulldozeSelected,
     delayBox,
     displayDelayUI,
     gameWindow,
-} from '../../ui/shell/nodes.js';
+} from '../dom/shell/nodes.js';
 import {
     assetsPrices,
     commerce,
@@ -42,25 +20,58 @@ import {
     houses,
     palaces,
 } from '../../shared/building-catalog/index.js';
-import { setupRoadAccessIcons } from '../../js/acl/parcels.js';
-import { getDefaultEmployees } from '../../js/acl/employment.js';
-import { getBuildingAge, getTimeInfo } from '../../js/acl/appRuntime.js';
+import { setupRoadAccessIcons } from '../../contexts/parcels/infrastructure/presentation/roadAccessIcons.js';
+import { TimeManager } from '../../shared/time/TimeManager.js';
 import { LightingManager } from './managers/LightingManager.js';
 import { BackdropManager } from './managers/BackdropManager.js';
 import { DecorativeVillageManager } from './managers/DecorativeVillageManager.js';
 import { ResourceManager } from './managers/ResourceManager.js';
 import { PerformanceManager } from './managers/PerformanceManager.js';
-import { resetProcessTurnBudget } from '../../js/acl/accounting.js';
-import gameUI from '../../ui/shell/GameUI.js';
+import gameUIDefault from '../dom/shell/GameUI.js';
 import { CitizenManager } from './managers/CitizenManager.js';
 import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
 import { syncTileNeighborsPass } from './sync/syncTileNeighborsPass.js';
 import { cleanupOrphanedBuildings } from './sync/cleanupOrphanedBuildings.js';
+import { registerAppService } from '../../composition/appServices.js';
+import {
+  getSessionPopupManager,
+  getSessionService,
+  getSessionGameUI,
+} from '../../composition/sessionRuntime.js';
 
 const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
 
-export function createScene(_gameStore, assetManager, parcelsOption, supplyOption, housingOption) {
-    // Treasury initialized via acl/accountingGame.js during game boot
+/**
+ * @param {*} _gameStore
+ * @param {object} assetManager
+ * @param {object} deps
+ * @param {object} deps.parcels
+ * @param {object} deps.supply
+ * @param {object} deps.housing
+ * @param {object} deps.construction
+ * @param {object} deps.employment
+ * @param {() => void} [deps.resetProcessTurnBudget]
+ * @param {object} [deps.gameUI]
+ */
+export function createScene(_gameStore, assetManager, deps) {
+    const {
+      parcels,
+      supply,
+      housing,
+      construction,
+      employment,
+      resetProcessTurnBudget = () => {},
+      gameUI = getSessionGameUI() ?? gameUIDefault,
+    } = deps;
+
+    const findBuildingAtTile = (params) => construction.findBuildingAtTile(params);
+    const getBuildingById = (id) => construction.getBuildingById(id);
+    const updateBuildingFields = (id, fields) => construction.updateBuildingFields(id, fields);
+    const getBuildingField = (id, key) => construction.getBuildingField(id, key);
+    const incrementBuildingField = (params) => construction.incrementBuildingField(params);
+    const listAllBuildingRows = () => construction.listAllBuildingRows();
+    const ensureBuildingEmployeesSchema = (id, type) =>
+      construction.ensureBuildingEmployeesSchema(id, type);
 
     const scene = new THREE.Scene();
     // Subtle atmospheric fog to blend far terrain and sky (tuned to match background)
@@ -71,9 +82,6 @@ export function createScene(_gameStore, assetManager, parcelsOption, supplyOptio
     const backdropManager = new BackdropManager(scene);
     const decorativeVillageManager = new DecorativeVillageManager(scene, assetManager);
     const citizenManager = new CitizenManager(scene, assetManager);
-    const parcels = parcelsOption ?? getOrCreateParcelsContext();
-    const supply = supplyOption ?? getOrCreateSupplyContext();
-    const housing = housingOption ?? getOrCreateHousingContext();
     const syncRoadAccess = setupRoadAccessIcons(parcels, { assetManager, textures });
 
     // Use simple scene background with sky texture - this ensures sky covers everything
@@ -200,7 +208,7 @@ export function createScene(_gameStore, assetManager, parcelsOption, supplyOptio
     const TAP_THRESHOLD = 10; // pixels - movement below this is considered a tap
 
     function getPointerClientXY(event) {
-        const mouse = getInputManagerMouse();
+        const mouse = (getSessionService('inputManager')?.mouse ?? null);
         if (mouse) {
             return { x: mouse.x, y: mouse.y };
         }
@@ -387,35 +395,11 @@ export function createScene(_gameStore, assetManager, parcelsOption, supplyOptio
         // Previously this was called 16 times for a 16×16 city, creating 80 lights!
         lightingManager.setUpLights(city.size);
         
-        // OPTIMIZATION: Defer DOM updates to reduce main-thread work
-        // Use requestIdleCallback or setTimeout to defer non-critical DOM operations
+        // HUD placeholders — GameUI owns DOM (Barre D)
         if (typeof requestIdleCallback !== 'undefined') {
-            requestIdleCallback(() => {
-                const displayPop = document.querySelector('.display-pop');
-                const displayFunds = document.querySelector('.display-funds');
-                if (displayPop) {
-                    displayPop.textContent = '0 (0, 0)';
-                }
-                if (displayFunds) {
-                    displayFunds.textContent = '0';
-                }
-                
-                // Hide the entire expenses box to avoid confusion
-                const debtBox = document.querySelector('.debt-box');
-                if (debtBox) {
-                    debtBox.style.display = 'none';
-                }
-            }, { timeout: 1000 });
+            requestIdleCallback(() => gameUI.resetInitialHud?.(), { timeout: 1000 });
         } else {
-            // Fallback for browsers without requestIdleCallback
-            setTimeout(() => {
-                const displayPop = document.querySelector('.display-pop');
-                const displayFunds = document.querySelector('.display-funds');
-                if (displayPop) displayPop.textContent = '0 (0, 0)';
-                if (displayFunds) displayFunds.textContent = '0';
-                const debtBox = document.querySelector('.debt-box');
-                if (debtBox) debtBox.style.display = 'none';
-            }, 0);
+            setTimeout(() => gameUI.resetInitialHud?.(), 0);
         }
         
         // Wait for any remaining promises to complete
@@ -1131,7 +1115,7 @@ export function createScene(_gameStore, assetManager, parcelsOption, supplyOptio
                         assetManager.removeStatusSprite(buildings[x][y], spriteName);
                     });
 
-                    const timeInfo = getTimeInfo(time);
+                    const timeInfo = TimeManager.getTimeInfo(time);
                     const season = timeInfo.season;
 
                     // Season sprites from Supply/time — employment icons via refreshEmploymentPresentation
@@ -1272,7 +1256,7 @@ export function createScene(_gameStore, assetManager, parcelsOption, supplyOptio
                     const { hasFood, isInsufficient } = foodAffluence;
                     // Road icon refreshed after neighbor pass (see refresh loop below)
                     // Use unified time system for decay check (worldTime is source of truth)
-                    const buildingAge = getBuildingAge(time, worldTime);
+                    const buildingAge = TimeManager.getBuildingAge(time, worldTime);
                     const decay = buildingAge > 3 && isInsufficient;
 
                     // Set food status sprite based on module result
@@ -1373,29 +1357,8 @@ export function createScene(_gameStore, assetManager, parcelsOption, supplyOptio
             );
         }
         
-        // Get budget data from BudgetManager
-        let funds = 0;
-        const endTurnBudget = await getTreasurySnapshot();
-        funds = endTurnBudget.funds;
-
-        // Update famished population and funds (citizen/elite counts via refreshEmploymentPresentation)
-        const gameUI = getGameUI();
-        if (gameUI) {
-            gameUI.updateFamishedPopulation(famishedPopulation || 0);
-            gameUI.updateFunds(funds);
-        } else {
-            // Fallback to direct DOM update if GameUI not available
-            const displayHungerPop = document.querySelector('.display-hunger-pop');
-            const displayFunds = document.querySelector('.display-funds');
-            if (displayHungerPop) {
-                displayHungerPop.textContent = (famishedPopulation || 0).toString();
-            }
-            if (displayFunds) {
-                displayFunds.textContent = funds.toString();
-            }
-        }
-
-        // End turn processing
+        // Famished icon count only — funds/employment HUD owned by syncSessionHud / tick
+        gameUI.updateFamishedPopulation(famishedPopulation || 0);
 
     }
 
@@ -1415,7 +1378,7 @@ export function createScene(_gameStore, assetManager, parcelsOption, supplyOptio
         let understaffedBuildingIds = [];
 
         try {
-            const summary = await getCityEmploymentSummary();
+            const summary = await employment.getCityEmploymentSummary();
             unemployedCount = summary.unemployed;
             unemploymentPercentage = summary.unemploymentPercentage;
             employmentLack = summary.lack;
@@ -1426,30 +1389,13 @@ export function createScene(_gameStore, assetManager, parcelsOption, supplyOptio
             console.warn('[scene.js] Error calculating employment summary:', error);
         }
 
-        const gameUI = getGameUI();
-        if (gameUI) {
-            gameUI.updatePopulationBreakdown(
-                citizenPopulation + elitePopulation,
-                citizenPopulation,
-                elitePopulation
-            );
-            gameUI.updateUnemployedPopulation(unemployedCount, unemploymentPercentage);
-            gameUI.updateWorkerLack(employmentLack);
-        } else {
-            const displayPop = document.querySelector('.display-pop');
-            const displayUnemployedPop = document.querySelector('.display-unemployed-pop');
-            const displayWorkerLackEl = document.querySelector('.display-worker-lack');
-            if (displayPop) {
-                const total = citizenPopulation + elitePopulation;
-                displayPop.textContent = `${total} (${citizenPopulation}, ${elitePopulation})`;
-            }
-            if (displayUnemployedPop) {
-                displayUnemployedPop.textContent = `${unemployedCount} (${unemploymentPercentage}%)`;
-            }
-            if (displayWorkerLackEl) {
-                displayWorkerLackEl.textContent = String(employmentLack);
-            }
-        }
+        gameUI.updatePopulationBreakdown(
+            citizenPopulation + elitePopulation,
+            citizenPopulation,
+            elitePopulation
+        );
+        gameUI.updateUnemployedPopulation(unemployedCount, unemploymentPercentage);
+        gameUI.updateWorkerLack(employmentLack);
 
         const understaffed = new Set(understaffedBuildingIds);
         const noWorkSpriteColor = 0xFF0000;
@@ -1577,7 +1523,7 @@ export function createScene(_gameStore, assetManager, parcelsOption, supplyOptio
      * instead of all scene children (backdrop, lights, etc.)
      */
     function updateFocusedObject() {
-        const inputMouse = getInputManagerMouse();
+        const inputMouse = (getSessionService('inputManager')?.mouse ?? null);
         if (!inputMouse) {
             return;
         }
@@ -1667,13 +1613,13 @@ export function createScene(_gameStore, assetManager, parcelsOption, supplyOptio
     }
     
     // Expose function to toggle stats
-    registerAppFunction('togglePerformanceStats', function() {
+    registerAppService('togglePerformanceStats', function() {
         performanceStats.enabled = !performanceStats.enabled;
         localStorage.setItem('show-performance-stats', performanceStats.enabled.toString());
         return performanceStats.enabled;
     });
 
-    registerAppFunction('toggleStatsJs', function() {
+    registerAppService('toggleStatsJs', function() {
         const next = stats.dom.style.display === 'none';
         stats.dom.style.display = next ? 'block' : 'none';
         localStorage.setItem('show-stats-js', next ? 'true' : 'false');
@@ -1740,7 +1686,7 @@ export function createScene(_gameStore, assetManager, parcelsOption, supplyOptio
 
     function onMouseDown(event){
         // Block interaction if a popup is open or info modal is open
-        if (getPopupManager() && getPopupManager().getActivePopups().length > 0) {
+        if (getSessionPopupManager() && getSessionPopupManager().getActivePopups().length > 0) {
             return;
         }
         if (isInfoModalOpen()) {
@@ -1773,7 +1719,7 @@ export function createScene(_gameStore, assetManager, parcelsOption, supplyOptio
 
     function onMouseUp(event){
         // Block interaction if a popup is open or info modal is open
-        if (getPopupManager() && getPopupManager().getActivePopups().length > 0) {
+        if (getSessionPopupManager() && getSessionPopupManager().getActivePopups().length > 0) {
             return;
         }
         if (isInfoModalOpen()) {
@@ -1788,7 +1734,7 @@ export function createScene(_gameStore, assetManager, parcelsOption, supplyOptio
 
 function onMouseMove(event) {
     // Block interaction if a popup is open or info modal is open
-    if (getPopupManager() && getPopupManager().getActivePopups().length > 0) {
+    if (getSessionPopupManager() && getSessionPopupManager().getActivePopups().length > 0) {
         return;
     }
     if (isInfoModalOpen()) {
@@ -1824,9 +1770,9 @@ function onTouchStart(event) {
     // If canvas has pointer-events-disabled, touch events won't reach us at all
     // But if they do, we should still check for blocking popups
     // BUT: panel-layout should not block events (it's configured with shouldBlockEvents: false)
-    const activePopups = getPopupManager()?.getActivePopups() || [];
+    const activePopups = getSessionPopupManager()?.getActivePopups() || [];
     const blockingPopups = activePopups.filter(id => {
-        const config = getPopupManager()?.popupConfigs?.get(id);
+        const config = getSessionPopupManager()?.popupConfigs?.get(id);
         return config && config.shouldBlockEvents;
     });
     
@@ -1875,7 +1821,7 @@ function onTouchStart(event) {
 
 function onTouchMove(event) {
     // Block interaction if a popup is open or info modal is open
-    if (getPopupManager() && getPopupManager().getActivePopups().length > 0) {
+    if (getSessionPopupManager() && getSessionPopupManager().getActivePopups().length > 0) {
         return;
     }
     if (isInfoModalOpen()) {
@@ -1911,9 +1857,9 @@ function onTouchMove(event) {
 
 function onTouchEnd(event) {
     // Block interaction if a popup is open or info modal is open
-    const activePopups = getPopupManager()?.getActivePopups() || [];
+    const activePopups = getSessionPopupManager()?.getActivePopups() || [];
     const blockingPopups = activePopups.filter(id => {
-        const config = getPopupManager()?.popupConfigs?.get(id);
+        const config = getSessionPopupManager()?.popupConfigs?.get(id);
         return config && config.shouldBlockEvents;
     });
     
@@ -1995,7 +1941,7 @@ function onTouchEnd(event) {
         camera.onKeyBoardDown(event);
         // Raycasting need y and x axis as + on the terrain (plan) (y-1,y1,x1,x-1)
         // (number btw 0 and 1) * 2 - 1 > to get the value between -1 and 1
-        const p = getInputManagerMouse() ?? { x: undefined, y: undefined };
+        const p = (getSessionService('inputManager')?.mouse ?? null) ?? { x: undefined, y: undefined };
         if (p.x !== undefined && p.y !== undefined) {
             mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
             mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
@@ -2025,7 +1971,7 @@ function onTouchEnd(event) {
 
     function onMouseWheel(event) {
         // Block interaction if a popup is open or info modal is open
-        if (getPopupManager() && getPopupManager().getActivePopups().length > 0) {
+        if (getSessionPopupManager() && getSessionPopupManager().getActivePopups().length > 0) {
             return;
         }
         if (isInfoModalOpen()) {

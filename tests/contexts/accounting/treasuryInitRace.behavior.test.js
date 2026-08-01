@@ -6,11 +6,11 @@ import 'fake-indexeddb/auto';
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import db from '../../../src/core/persistence/dexie/db.js';
 import { resetAccountingContextForTests } from '../../../src/composition/createAccountingContext.js';
-import { resetSessionLedgerBufferForTests } from '../../../src/js/acl/accountingSessionJournal.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/composition/facades/accountingSessionJournal.js';
 import {
   forceReinitializeTreasury,
   getTreasurySnapshot,
-} from '../../../src/js/acl/accounting.js';
+} from '../../../src/composition/facades/accounting.js';
 import { DexieTreasuryRepository } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryRepository.js';
 
 describe('Treasury initialization races', () => {

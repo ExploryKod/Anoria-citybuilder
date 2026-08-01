@@ -2,12 +2,13 @@
  * Full simulation tick owned by the game session (not scene.update).
  */
 
-import { updateTreasuryTurn } from '../js/acl/accountingGame.js';
+import { getOrCreateAccountingContext } from './createAccountingContext.js';
 import {
   persistGameplayTurn,
   processGameTurnBudget,
 } from './runGameTurnEconomy.js';
-import { notifyBudgetCleanupIfNeeded } from '../ui/compta/tresorerie/CleanupNotificationPresenter.js';
+import { notifyBudgetCleanupIfNeeded } from '../presentation/dom/compta/tresorerie/CleanupNotificationPresenter.js';
+import { syncSessionHud } from './syncSessionHud.js';
 
 /**
  * @param {object} params
@@ -17,6 +18,7 @@ import { notifyBudgetCleanupIfNeeded } from '../ui/compta/tresorerie/CleanupNoti
  * @param {object} params.scene
  * @param {{ runSimulation: Function }} params.runtime
  * @param {object} params.housing
+ * @param {object} [params.employment]
  * @param {object} params.gameStore
  * @param {{ updateTimeDisplay: Function }} params.gameUI
  * @param {() => Promise<void>} params.refreshEmploymentPresentation
@@ -29,6 +31,7 @@ export async function runGameTick({
   scene,
   runtime,
   housing,
+  employment,
   gameStore,
   gameUI,
   refreshEmploymentPresentation,
@@ -41,7 +44,7 @@ export async function runGameTick({
   gameUI.updateTimeDisplay(time);
   city.update();
 
-  await updateTreasuryTurn(time);
+  await getOrCreateAccountingContext().updateTreasuryTurn(time);
   if (shouldAbort()) {
     return;
   }
@@ -80,6 +83,7 @@ export async function runGameTick({
     return;
   }
 
+  await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
   await refreshEmploymentPresentation();
 
   if (objectivesTracker.enabled) {

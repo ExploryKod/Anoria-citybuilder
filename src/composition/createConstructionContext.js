@@ -6,18 +6,16 @@ import { PlaceBuildingAtTile } from '../contexts/construction/application/servic
 import { BulldozeBuildingAtTile } from '../contexts/construction/application/services/BulldozeBuildingAtTile.js';
 import { ReclaimStaleBuildingRecords } from '../contexts/construction/application/services/ReclaimStaleBuildingRecords.js';
 import { SceneBuildingInventoryAdapter } from '../contexts/construction/infrastructure/adapters/three/SceneBuildingInventoryAdapter.js';
-import {
-  recordConstructionExpense,
-  recordConstructionRefund,
-} from '../js/acl/budget.js';
-import {
-  awaitBudgetReady,
-  getTreasurySnapshot,
-} from '../js/acl/accountingGame.js';
-import { getOrCreateParcelsContext } from '../js/acl/parcels.js';
 import { getDefaultEmployees } from '../contexts/employment/domain/policies/BuildingEmploymentDefaults.js';
 import { assetsPrices } from '../shared/building-catalog/index.js';
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
+import {
+  recordConstructionExpense,
+  recordConstructionRefund,
+} from './constructionTreasuryBridge.js';
+import { awaitBudgetReady } from './budgetReadyGate.js';
+import { getOrCreateAccountingContext } from './createAccountingContext.js';
+import { getOrCreateParcelsContext } from './createParcelsContext.js';
 import {
   registerSceneBuildingTypeListing,
   resetSceneBuildingInventoryBridgeForTests,
@@ -64,7 +62,9 @@ export function createConstructionContext({
     reclaimStaleBuildingRecords: (params) => reclaimStaleBuildingRecords.execute(params),
     getDefaultEmployees: getDefaultEmployeesDep ?? getDefaultEmployees,
     awaitBudgetReady: awaitBudgetReadyDep ?? awaitBudgetReady,
-    getTreasurySnapshot: getTreasurySnapshotDep ?? getTreasurySnapshot,
+    getTreasurySnapshot:
+      getTreasurySnapshotDep
+      ?? (() => getOrCreateAccountingContext().getTreasurySnapshot()),
     assetCatalog: catalog,
     getAssetPrice: (buildingId, prices) => prices?.[buildingId]?.price,
   });
@@ -144,6 +144,75 @@ export function createConstructionContext({
 
     async listAllBuildingRows() {
       return repository.listAllRows();
+    },
+
+    /**
+     * @param {string} instanceId
+     * @param {string} key
+     */
+    async getBuildingField(instanceId, key) {
+      const row = await repository.findById(instanceId);
+      if (row && key in row) {
+        return row[key];
+      }
+
+      const defaults = {
+        stocks: { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
+        neighbors: [],
+        pop: 0,
+        roads: 0,
+        worldTime: 0,
+      };
+
+      if (defaults[key] !== undefined) {
+        return defaults[key];
+      }
+
+      return false;
+    },
+
+    /**
+     * Idempotent legacy schema migration for `employees` on existing rows.
+     * @param {string} instanceId
+     * @param {string} buildingType
+     */
+    async ensureBuildingEmployeesSchema(instanceId, buildingType) {
+      const buildingData = await repository.findById(instanceId);
+      if (!buildingData) return;
+
+      const getDefaults = getDefaultEmployeesDep ?? getDefaultEmployees;
+
+      if (!buildingData.employees) {
+        await repository.updateFields(instanceId, {
+          employees: getDefaults(buildingType),
+        });
+        return;
+      }
+
+      const employees = buildingData.employees;
+      const needsUpdate =
+        employees.category !== undefined ||
+        employees.worker_need === undefined ||
+        employees.elite_need === undefined;
+
+      if (!needsUpdate) return;
+
+      const defaultEmployees = getDefaults(buildingType);
+      await repository.updateFields(instanceId, {
+        employees: {
+          priority:
+            employees.priority !== undefined ? employees.priority : defaultEmployees.priority,
+          worker_need: defaultEmployees.worker_need,
+          elite_need: defaultEmployees.elite_need,
+          worker: employees.worker || 0,
+          elite: employees.elite || 0,
+          sector:
+            employees.category !== undefined
+              ? employees.category
+              : employees.sector || defaultEmployees.sector,
+          salary: employees.salary || 0,
+        },
+      });
     },
 
     /** Hard delete row only — prefer Parcels `syncRemovedBuilding` when adjacency matters. */

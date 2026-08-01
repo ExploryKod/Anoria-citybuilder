@@ -3,33 +3,37 @@
  * Context / treasury / tick wiring live in composition/.
  */
 
-import { registerAppService, getMultiplayerManager, invokeStartTutorial } from '../../js/acl/appRuntime.js';
+import { registerAppService, getMultiplayerManager, invokeStartTutorial } from '../../composition/facades/appRuntime.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
-import { syncEmploymentAfterBuildingChange } from '../../js/acl/employment.js';
-import { placeBuildingAtTile, bulldozeBuildingAtTile } from '../../js/acl/construction.js';
+import { syncEmploymentAfterBuildingChange } from '../../composition/syncEmploymentAfterBuildingChange.js';
+import { placeBuildingAtTile, bulldozeBuildingAtTile } from '../../composition/facades/construction.js';
 import { ensureGameRuntimeBootstrapped } from '../../composition/ensureGameRuntimeBootstrapped.js';
 import { bootGameContexts } from '../../composition/bootGameContexts.js';
 import { bootTreasuryHud } from '../../composition/bootTreasuryHud.js';
 import { resolveSelectedCitySize } from '../../composition/resolveCitySize.js';
 import { runGameTick } from '../../composition/runGameTick.js';
+import { bindSessionRuntime } from '../../composition/sessionRuntime.js';
+import { getOrCreateConstructionContext } from '../../composition/createConstructionContext.js';
+import { getOrCreateAccountingContext } from '../../composition/createAccountingContext.js';
+import { syncSessionHud } from '../../composition/syncSessionHud.js';
 import { DEFAULT_TICK_MS } from '../../shared/gameplay/SimulationDefaults.js';
 import { GameLoop } from '../../engine/loop/GameLoop.js';
 import {
   overOverlay,
   infoObjectOverlay,
   infoObjectCloseBtn,
-} from '../../ui/shell/nodes.js';
-import loaderManager from '../../js/utils/LoaderManager.js';
-import objectivesTracker from '../../ui/onboarding/ObjectivesTracker.js';
+} from '../dom/shell/nodes.js';
+import loaderManager from '../dom/shell/LoaderManager.js';
+import objectivesTracker from '../dom/onboarding/ObjectivesTracker.js';
 import InputManager from './InputManager.js';
-import gameUI from '../../ui/shell/GameUI.js';
+import gameUI from '../dom/shell/GameUI.js';
 import {
   showInsufficientFundsNotification,
   showGenericErrorNotification,
-} from '../../ui/shell/BuildingNotifications.js';
-import { presentBuildingInfoSelection } from '../../ui/info/BuildingInfoPanel.js';
-import { clearCommercePersistence } from '../../js/acl/commerce.js';
+} from '../dom/shell/BuildingNotifications.js';
+import { presentBuildingInfoSelection } from '../dom/info/BuildingInfoPanel.js';
+import { clearCommercePersistence } from '../../composition/facades/commerce.js';
 
 ensureGameRuntimeBootstrapped();
 
@@ -54,9 +58,40 @@ export function createGame(gameStore, assetManager, citySize = null) {
   gameUI.updateTimeDisplay(time);
   bootTreasuryHud({ gameUI });
 
-  const { parcels, supply, housing, runtime } = bootGameContexts();
-  const scene = createScene(gameStore, assetManager, parcels, supply, housing);
+  const {
+    parcels,
+    supply,
+    housing,
+    employment,
+    commerce,
+    gameplay,
+    runtime,
+  } = bootGameContexts();
+  const construction = getOrCreateConstructionContext();
+  const accounting = getOrCreateAccountingContext();
+  const scene = createScene(gameStore, assetManager, {
+    parcels,
+    supply,
+    housing,
+    construction,
+    employment,
+    resetProcessTurnBudget: () => accounting.resetProcessTurnBudget(),
+    gameUI,
+  });
   const city = createCity(resolveSelectedCitySize(citySize));
+
+  bindSessionRuntime({
+    gameUI,
+    city,
+    scene,
+    parcels,
+    supply,
+    housing,
+    employment,
+    commerce,
+    gameplay,
+    ecsRuntime: runtime,
+  });
 
   scene.initialize(city).then(() => {
     loaderManager.hide(500);
@@ -128,6 +163,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       });
       await scene.update(city, time);
       await syncEmploymentAfterBuildingChange(scene, city, buildingId);
+      await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
     } else if (activeToolId === 'select-object') {
       await presentBuildingInfoSelection(selectedObject, {
         city,
@@ -186,6 +222,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       await scene.update(city, time);
       await runSimulationPass(time);
       await syncEmploymentAfterBuildingChange(scene, city, activeToolId);
+      await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
       const multiplayerManager = getMultiplayerManager();
       if (multiplayerManager?.isMultiplayer) {
         try {
@@ -253,6 +290,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
         scene,
         runtime,
         housing,
+        employment,
         gameStore,
         gameUI,
         refreshEmploymentPresentation: refreshEmploymentPresentationForCity,
@@ -367,7 +405,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
   } catch (_) {}
 
   if (scene && scene.camera) {
-    import('../../ui/shell/mobile-controls.js')
+    import('../dom/shell/mobile-controls.js')
       .then(({ initMobileControls }) => {
         initMobileControls(scene.camera);
       })
@@ -377,6 +415,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
   }
 
   registerAppService('game', game);
+  bindSessionRuntime({ game, city, scene });
 
   return game;
 }

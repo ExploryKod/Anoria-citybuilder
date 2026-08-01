@@ -12,8 +12,8 @@ import { SaveBudgetTurnEnrichment } from '../../../src/contexts/accounting/appli
 import { buildBudgetTurnEnrichmentSnapshot } from '../../../src/contexts/accounting/domain/policies/BudgetTurnEnrichmentPolicy.js';
 import { InitializeTreasury } from '../../../src/contexts/accounting/application/commands/treasury/InitializeTreasury.js';
 import { SessionJournalRepository } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalRepository.js';
-import { JournalManager } from '../../../src/js/acl/accountingSessionJournal.js';
-import { resetSessionLedgerBufferForTests } from '../../../src/js/acl/accountingSessionJournal.js';
+import { JournalManager } from '../../../src/composition/facades/accountingSessionJournal.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/composition/facades/accountingSessionJournal.js';
 
 function createTestDb() {
   const testDb = new Dexie('testBudgetTurnEnrichmentDb');

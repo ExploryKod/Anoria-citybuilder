@@ -4,14 +4,14 @@
 
 import Dexie from 'dexie';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
-import { JournalManager } from '../../../src/js/acl/accountingSessionJournal.js';
+import { JournalManager } from '../../../src/composition/facades/accountingSessionJournal.js';
 import { BudgetManager } from '../../../tests/helpers/testBudgetFacade.js';
-import { resetSessionLedgerBufferForTests } from '../../../src/js/acl/accountingSessionJournal.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/composition/facades/accountingSessionJournal.js';
 import {
   getOrCreateAccountingContext,
   resetAccountingContextForTests,
 } from '../../../src/composition/createAccountingContext.js';
-import { processLoanPayments } from '../../../src/ui/compta/prets/PretsPanel.js';
+import { processLoanPayments } from '../../../src/presentation/dom/compta/prets/PretsPanel.js';
 import { isInformativeJournalType } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/dexie/journalAggregations.js';
 import { buildInfoMovementBusinessKey } from '../../../src/contexts/accounting/domain/policies/LedgerInformativeTypePolicy.js';
 

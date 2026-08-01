@@ -5,7 +5,7 @@
 import { describe, test, expect } from '@jest/globals';
 import {
   isEmploymentWorkplaceType,
-} from '../../src/js/acl/employment.js';
+} from '../../src/composition/facades/employment.js';
 
 describe('ACL Employment — isEmploymentWorkplaceType', () => {
   test('workplaces with worker_need', () => {

@@ -15,7 +15,7 @@ import {
     getAssetsByCategory,
     updateAssetsPrices,
     getBuildingNeighbors
-} from '../src/js/utils/utils.js';
+} from '../src/presentation/three/sceneSpatialUtils.js';
 import { createBuildingInstanceId } from './fixtures/parcelsFixtures.js';
 
 // ============================================================================

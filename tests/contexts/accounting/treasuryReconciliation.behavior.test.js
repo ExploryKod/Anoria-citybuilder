@@ -1,13 +1,13 @@
 import Dexie from 'dexie';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { BudgetManager } from '../../../tests/helpers/testBudgetFacade.js';
-import { JournalManager } from '../../../src/js/acl/accountingSessionJournal.js';
-import { resetSessionLedgerBufferForTests } from '../../../src/js/acl/accountingSessionJournal.js';
+import { JournalManager } from '../../../src/composition/facades/accountingSessionJournal.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/composition/facades/accountingSessionJournal.js';
 import {
   getOrCreateAccountingContext,
   resetAccountingContextForTests,
 } from '../../../src/composition/createAccountingContext.js';
-import { getTreasuryJournalReconciliation } from '../../../src/js/acl/accounting.js';
+import { getTreasuryJournalReconciliation } from '../../../src/composition/facades/accounting.js';
 
 class FixedGameTimePort {
   getTimeInfo(turn) {

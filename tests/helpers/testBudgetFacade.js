@@ -1,9 +1,9 @@
 /**
  * Test-only treasury façade — replaces deleted stores/BudgetManager.js.
- * Production code must use js/acl/accounting.js and js/acl/accountingGame.js.
+ * Production code must use composition/facades/accounting.js and accountingGame.js.
  */
 import db from '../../src/core/persistence/dexie/db.js';
-import sessionJournalStore from '../../src/js/acl/accountingSessionJournal.js';
+import sessionJournalStore from '../../src/composition/facades/accountingSessionJournal.js';
 import {
   initializeTreasury,
   getTreasurySnapshot,
@@ -14,13 +14,13 @@ import {
   forceReinitializeTreasury,
   resetAccountingContextForTests,
   getOrCreateAccountingContext,
-} from '../../src/js/acl/accounting.js';
-import { resetSessionLedgerBufferForTests } from '../../src/js/acl/accountingSessionJournal.js';
+} from '../../src/composition/facades/accounting.js';
+import { resetSessionLedgerBufferForTests } from '../../src/composition/facades/accountingSessionJournal.js';
 import {
   recordConstructionExpense,
   recordConstructionRefund,
-} from '../../src/js/acl/budget.js';
-import * as accountingGame from '../../src/js/acl/accountingGame.js';
+} from '../../src/composition/facades/budget.js';
+import * as accountingGame from '../../src/composition/facades/accountingGame.js';
 
 /** @deprecated Tests only — use acl/accounting.js in production. */
 export class TestBudgetFacade {

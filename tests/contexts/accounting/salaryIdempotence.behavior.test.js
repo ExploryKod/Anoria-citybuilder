@@ -5,14 +5,14 @@
 import Dexie from 'dexie';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { BudgetManager } from '../../../tests/helpers/testBudgetFacade.js';
-import { JournalManager } from '../../../src/js/acl/accountingSessionJournal.js';
-import { processTurnBudget } from '../../../src/js/acl/accounting.js';
-import { resetSessionLedgerBufferForTests } from '../../../src/js/acl/accountingSessionJournal.js';
+import { JournalManager } from '../../../src/composition/facades/accountingSessionJournal.js';
+import { processTurnBudget } from '../../../src/composition/facades/accounting.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/composition/facades/accountingSessionJournal.js';
 import {
   getOrCreateAccountingContext,
   resetAccountingContextForTests,
 } from '../../../src/composition/createAccountingContext.js';
-import appRegistry from '../../../src/js/acl/AppRegistry.js';
+import appRegistry from '../../../src/composition/AppRegistry.js';
 import { TimeManager } from '../../../src/shared/time/TimeManager.js';
 
 function createTestDb() {

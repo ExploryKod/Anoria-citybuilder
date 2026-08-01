@@ -10,7 +10,7 @@ import { canMarketBuyFromFarms } from '../../../src/contexts/supply/domain/polic
 import { remainingMarketCapacity } from '../../../src/contexts/supply/domain/policies/MarketCapacityPolicy.js';
 import { isOperational } from '../../../src/contexts/supply/domain/policies/OperationalGatePolicy.js';
 import { MarketBuysFromNearbyFarms } from '../../../src/contexts/supply/application/commands/procurement/MarketBuysFromNearbyFarms.js';
-import { toSupplySeason } from '../../../src/js/acl/supply.js';
+import { toSupplySeason } from '../../../src/composition/facades/supply.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 
 class InMemorySupplyBuildingRepository {
