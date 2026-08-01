@@ -83,7 +83,7 @@ function renderWorkplaceEmployeesInfo(buildingData, messages) {
     }
 }
 import InputManager from './InputManager.js';
-import gameUI from './GameUI.js';
+import gameUI from '../../ui/shell/GameUI.js';
 import { getMultiplayerManager, invokeStartTutorial } from '../../js/acl/appRuntime.js';
 import webglDetector from '../../js/utils/WebGLResourceDetector.js';
 import { clearCommercePersistence } from '../../js/acl/commerce.js';
