@@ -11,9 +11,9 @@ import { GetFinancialHealth } from '../../../src/contexts/accounting/application
 import { SaveBudgetTurnEnrichment } from '../../../src/contexts/accounting/application/commands/budget-turn-enrichment/SaveBudgetTurnEnrichment.js';
 import { buildBudgetTurnEnrichmentSnapshot } from '../../../src/contexts/accounting/domain/policies/BudgetTurnEnrichmentPolicy.js';
 import { InitializeTreasury } from '../../../src/contexts/accounting/application/commands/treasury/InitializeTreasury.js';
-import { LegacyJournalRepository } from '../../../src/contexts/accounting/infrastructure/adapters/legacy/LegacyJournalRepository.js';
-import { JournalManager } from '../../../src/js/stores/JournalManager.js';
-import { resetSessionLedgerBufferForTests } from '../../../src/js/stores/SessionLedgerBuffer.js';
+import { SessionJournalRepository } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalRepository.js';
+import { JournalManager } from '../../../src/js/acl/accountingSessionJournal.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/js/acl/accountingSessionJournal.js';
 
 function createTestDb() {
   const testDb = new Dexie('testBudgetTurnEnrichmentDb');
@@ -46,7 +46,10 @@ describe('Accounting — SaveBudgetTurnEnrichment', () => {
 
     const journalManager = new JournalManager();
     journalManager.db = testDb;
-    const journalRepository = new LegacyJournalRepository(journalManager);
+    const journalRepository = new SessionJournalRepository({
+      sessionJournalStore: journalManager,
+      gameTimePort: { getTimeInfo: () => ({ year: 0, monthIndex: 0, month: 'Janvier' }) },
+    });
     const initializeTreasury = new InitializeTreasury(
       treasuryRepository,
       journalRepository,

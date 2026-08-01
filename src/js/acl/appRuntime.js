@@ -195,21 +195,3 @@ export async function invokeStartObjectives() {
     await handler();
   }
 }
-
-/** @param {*} employmentPriorityService */
-export function attachEmploymentPriorityToWorkSection(employmentPriorityService) {
-  const workSection = getWorkSectionManager();
-  if (workSection?.setPriorityService) {
-    workSection.setPriorityService(employmentPriorityService);
-    return;
-  }
-
-  const checkWorkSection = setInterval(() => {
-    const mgr = getWorkSectionManager();
-    if (mgr?.setPriorityService) {
-      mgr.setPriorityService(employmentPriorityService);
-      clearInterval(checkWorkSection);
-    }
-  }, 100);
-  setTimeout(() => clearInterval(checkWorkSection), 5000);
-}

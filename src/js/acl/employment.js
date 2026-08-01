@@ -8,7 +8,7 @@ import {
   createEmploymentContext,
   getOrCreateEmploymentContext,
 } from '../../composition/createEmploymentContext.js';
-import { getAllSectorPriorities, getDefaultEmployees } from '../game/modules/EmployeeHelper.js';
+import { getDefaultEmployees } from '../game/modules/employmentBuildingDefaults.js';
 import { synchronizeFactoryWorkerDistribution } from '../../contexts/employment/infrastructure/runtime/synchronizeFactoryWorkerDistribution.js';
 import {
   getBuildingById,
@@ -20,6 +20,36 @@ import {
 } from '../../contexts/employment/domain/policies/BuildingRolePolicy.js';
 
 export { createEmploymentContext, getOrCreateEmploymentContext };
+
+/** Ensure localStorage has default sector priorities on first run. */
+export function ensureSectorPrioritiesInitialized() {
+  getOrCreateEmploymentContext().ensureSectorPrioritiesInitialized();
+}
+
+/** @param {number} sector */
+export function getSectorPriority(sector) {
+  return getOrCreateEmploymentContext().getSectorPriority(sector);
+}
+
+/** Raw map for worker redistribution (localStorage or defaults). */
+export function getAllSectorPriorities() {
+  return getOrCreateEmploymentContext().getAllSectorPriorities();
+}
+
+/** Merged map for UI display (every sector). */
+export function getMergedSectorPriorities() {
+  return getOrCreateEmploymentContext().getMergedSectorPriorities();
+}
+
+/** Caesar 3-style priority swap (localStorage only). */
+export function updateSectorPrioritySync(sector, newPriority) {
+  getOrCreateEmploymentContext().updateSectorPrioritySync(sector, newPriority);
+}
+
+/** @param {number} sector */
+export function getSectorName(sector) {
+  return getOrCreateEmploymentContext().getSectorName(sector);
+}
 
 /** Single employment read model for UI (status bar, work-section, commerce checks). */
 export async function getCityEmploymentSummary() {

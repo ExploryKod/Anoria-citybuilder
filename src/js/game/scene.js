@@ -61,7 +61,7 @@ import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
 const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
 
 export function createScene(gameStore, assetManager, parcelsOption, supplyOption, housingOption) {
-    // BudgetManager will be set by the game initialization
+    // Treasury initialized via acl/accountingGame.js during game boot
 
     const scene = new THREE.Scene();
     // Subtle atmospheric fog to blend far terrain and sky (tuned to match background)
@@ -646,7 +646,7 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
         const totalPop = popSummary.totalPop;
         let totalImmoExpenses = 0;
         
-        // Get budget data from BudgetManager (single source of truth)
+        // Treasury snapshot via Accounting ACL
         let budgetData = null;
         budgetData = await getTreasurySnapshot();
         

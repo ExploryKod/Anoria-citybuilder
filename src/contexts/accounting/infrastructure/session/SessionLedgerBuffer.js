@@ -1,12 +1,12 @@
 /**
  * In-memory journal buffer — authoritative ledger during an active game session.
  *
- * IndexedDB receives batched checkpoints via JournalManager.flushSessionToDexie().
+ * IndexedDB receives batched checkpoints via FlushJournalSession / SessionJournalStore.
  * Entries with persist=false (e.g. balance snapshots) stay session-only but remain
  * readable for export/UI.
  */
 
-import { inferBusinessKeyFromRow } from './ledgerBusinessKeys.js';
+import { inferBusinessKeyFromRow } from '../../domain/policies/LedgerBusinessKeys.js';
 
 let nextSessionId = 1;
 

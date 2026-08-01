@@ -5,8 +5,8 @@
  */
 
 import Dexie from 'dexie';
-import { JournalManager } from '../src/js/stores/JournalManager.js';
-import { resetSessionLedgerBufferForTests } from '../src/js/stores/SessionLedgerBuffer.js';
+import { JournalManager } from '../src/js/acl/accountingSessionJournal.js';
+import { resetSessionLedgerBufferForTests } from '../src/js/acl/accountingSessionJournal.js';
 import appRegistry from '../src/js/game/AppRegistry.js';
 import { TimeManager } from '../src/js/game/utils/TimeManager.js';
 

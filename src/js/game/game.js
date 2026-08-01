@@ -26,7 +26,6 @@ import {
     infoPanelNoClockIcon,
     displaySpeed
 } from '../ui/nodes.js';
-import budgetManager from '../stores/BudgetManager.js';
 import {
   forceReinitializeTreasury,
   getTreasurySnapshot,
@@ -34,7 +33,7 @@ import {
   setBudgetReadyPromise,
   awaitBudgetReady,
 } from '../acl/accountingGame.js';
-import journalManager from '../stores/JournalManager.js';
+import sessionJournalStore from '../acl/accountingSessionJournal.js';
 import FoodTraceabilityService from '../stores/FoodTraceabilityService.js';
 import loaderManager from '../utils/LoaderManager.js';
 import objectivesTracker from '../ui/ObjectivesTracker.js';
@@ -83,7 +82,7 @@ function renderWorkplaceEmployeesInfo(buildingData, messages) {
 import InputManager from './InputManager.js';
 import gameUI from './GameUI.js';
 import appRegistry from './AppRegistry.js';
-import { attachEmploymentPriorityToWorkSection, getMultiplayerManager, invokeStartTutorial } from '../acl/appRuntime.js';
+import { getMultiplayerManager, invokeStartTutorial } from '../acl/appRuntime.js';
 import webglDetector from '../utils/WebGLResourceDetector.js';
 import commerceStore from '../stores/CommerceStore.js';
 
@@ -109,13 +108,6 @@ let services = [];
         // Priority is stored in localStorage (not IndexedDB) for instant updates
         const employmentPriorityService = new EmploymentPriorityService();
         services.push(employmentPriorityService);
-        
-        console.log('[game.js] Employment services registered (priority from localStorage, sector from IndexedDB)');
-        
-        // Note: Initial simulation will run on first game.update() call
-        // The service is now synchronized with the game loop
-        
-        attachEmploymentPriorityToWorkSection(employmentPriorityService);
         
         console.log('[game.js] Services loaded successfully:', services.length, services.map(s => s.constructor.name));
     } catch (err) {
@@ -453,8 +445,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     
     // Register with AppRegistry (centralized namespace)
     appRegistry.register('gameUI', gameUI);
-    appRegistry.register('budgetManager', budgetManager, false);
-    appRegistry.register('journalManager', journalManager);
+    appRegistry.register('journalManager', sessionJournalStore);
     
     // Initialize FoodTraceabilityService
     const foodTraceabilityService = new FoodTraceabilityService();

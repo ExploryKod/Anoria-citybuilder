@@ -102,3 +102,13 @@ export async function getSupplyBuildingRow(buildingId) {
 export async function updateSupplyBuildingFields(buildingId, fields) {
   return getOrCreateSupplyContext().updateSupplyBuildingFields(buildingId, fields);
 }
+
+/** Production journal entries (factory-section UI). */
+export async function listProductionJournalEntries(factoryId = null, turn = null) {
+  return getOrCreateSupplyContext().listProductionJournalEntries(factoryId, turn);
+}
+
+/** Production journal entries for one factory. */
+export async function getFactoryProductionJournalEntries(factoryId) {
+  return getOrCreateSupplyContext().getFactoryProductionJournalEntries(factoryId);
+}
