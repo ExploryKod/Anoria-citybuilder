@@ -1,5 +1,6 @@
-import { setCommercePartnerContractFinishedHandler } from '../../../../composition/facades/commerce.js';
-import { registerAppService } from '../../../../composition/facades/appRuntime.js';
+import { registerAppService } from '../../../../composition/sessionShell.js';
+import { requireSessionCommerceApi } from '../../../../composition/sessionRuntime.js';
+
 import { CommerceSectionPresenter } from './CommerceSectionPresenter.js';
 
 export async function initCommerceSection() {
@@ -9,7 +10,7 @@ export async function initCommerceSection() {
   const presenter = new CommerceSectionPresenter();
   registerAppService('commerceSectionPresenter', presenter);
 
-  setCommercePartnerContractFinishedHandler(({ partnerName, finishedProducts }) => {
+  requireSessionCommerceApi().setCommercePartnerContractFinishedHandler(({ partnerName, finishedProducts }) => {
     const productsText = finishedProducts.length > 0 ? finishedProducts.join(', ') : 'toutes les denrées';
     presenter.showPartnerMessage(
       `Contrat terminé avec ${partnerName} (${productsText}). Le partenaire a été désactivé automatiquement.`,

@@ -1,14 +1,12 @@
 /**
- * ACL Housing — composition root access from legacy `src/js/`.
- *
- * Do not import `contexts/housing/domain/**` from UI. Use Housing context queries
- * (e.g. `evaluateHouseFoodAffluence`, `getFamishedPopulation`).
+ * Composition ops — migrated from facades/housing.js (plan_use_case_wiring Barre 5).
+ * Prefer sessionApi / create*Context for new call sites.
  */
 
 import {
   createHousingContext,
   getOrCreateHousingContext,
-} from '../createHousingContext.js';
+} from './createHousingContext.js';
 
 export { createHousingContext, getOrCreateHousingContext };
 

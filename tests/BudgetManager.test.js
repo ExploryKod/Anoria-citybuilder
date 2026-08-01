@@ -9,13 +9,13 @@
 
 import Dexie from 'dexie';
 import { BudgetManager } from './helpers/testBudgetFacade.js';
-import { JournalManager } from '../src/composition/facades/accountingSessionJournal.js';
-import { resetSessionLedgerBufferForTests } from '../src/composition/facades/accountingSessionJournal.js';
+import { JournalManager } from '../src/composition/accountingSessionJournal.js';
+import { resetSessionLedgerBufferForTests } from '../src/composition/accountingSessionJournal.js';
 import {
     getOrCreateAccountingContext,
     resetAccountingContextForTests,
 } from '../src/composition/createAccountingContext.js';
-import { composeLegacyConfigMirror } from '../src/composition/facades/gameConfig.js';
+import { composeLegacyConfigMirror } from '../src/composition/gameConfig.js';
 import appRegistry from '../src/composition/AppRegistry.js';
 import { TimeManager } from '../src/shared/time/TimeManager.js';
 

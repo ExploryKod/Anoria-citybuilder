@@ -1,6 +1,6 @@
-import { getPopupManager, registerAppFunction } from '../../../../composition/facades/appRuntime.js';
-import { getBalanceSheet } from '../../../../composition/facades/accounting.js';
-import { getFinancialHealth, getTreasurySnapshot } from '../../../../composition/facades/accountingGame.js';
+import { getPopupManager, registerAppFunction } from '../../../../composition/sessionShell.js';
+import { requireSessionAccountingApi } from '../../../../composition/sessionRuntime.js';
+
 import { renderBilan } from './BilanPresenter.js';
 import { updateTresorerie } from '../tresorerie/TresoreriePanel.js';
 
@@ -53,9 +53,9 @@ function applyBalanceSheetFilter(filter) {
 export async function updateBudgetDisplay() {
   try {
     const [financialHealth, currentBudget, balanceSheet] = await Promise.all([
-      getFinancialHealth(),
-      getTreasurySnapshot(),
-      getBalanceSheet(),
+      requireSessionAccountingApi().getFinancialHealth(),
+      requireSessionAccountingApi().getTreasurySnapshot(),
+      requireSessionAccountingApi().getBalanceSheet(),
     ]);
 
     await renderBilan({

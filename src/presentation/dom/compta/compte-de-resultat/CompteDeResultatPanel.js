@@ -3,11 +3,9 @@
  * Rendu : CompteDeResultatPresenter.js
  */
 
-import { getPopupManager, registerAppFunction } from '../../../../composition/facades/appRuntime.js';
-import {
-  getFinancialStatementsHistory,
-  getIncomeStatement,
-} from '../../../../composition/facades/accounting.js';
+import { getPopupManager, registerAppFunction } from '../../../../composition/sessionShell.js';
+import { requireSessionAccountingApi } from '../../../../composition/sessionRuntime.js';
+
 import {
   renderFinancialStatementsBundles,
   renderBudgetSummary,
@@ -82,7 +80,7 @@ export function initBudgetStatesPopup() {
 
 export async function updateFilterButtonLabels() {
   try {
-    const bundles = await getFinancialStatementsHistory({ everyNTurns: 3 });
+    const bundles = await requireSessionAccountingApi().getFinancialStatementsHistory({ everyNTurns: 3 });
 
     if (bundles.length === 0) {
       return;
@@ -136,13 +134,13 @@ export async function loadBudgetStates(period = '3', showLoading = true) {
     let bundles;
 
     if (period === 'all') {
-      bundles = await getFinancialStatementsHistory({ everyNTurns: null });
+      bundles = await requireSessionAccountingApi().getFinancialStatementsHistory({ everyNTurns: null });
     } else {
       const turnNumber = parseInt(period, 10);
       if (!Number.isNaN(turnNumber)) {
-        bundles = await getFinancialStatementsHistory({ filterTurn: turnNumber });
+        bundles = await requireSessionAccountingApi().getFinancialStatementsHistory({ filterTurn: turnNumber });
       } else {
-        bundles = await getFinancialStatementsHistory({ everyNTurns: 3 });
+        bundles = await requireSessionAccountingApi().getFinancialStatementsHistory({ everyNTurns: 3 });
       }
     }
 
@@ -159,7 +157,7 @@ export async function loadBudgetStates(period = '3', showLoading = true) {
 
     renderFinancialStatementsBundles(bundles, compteDeResultatList);
 
-    const fiscalYearStatement = await getIncomeStatement();
+    const fiscalYearStatement = await requireSessionAccountingApi().getIncomeStatement();
     renderBudgetSummary(bundles, summaryContent, fiscalYearStatement);
   } catch (error) {
     console.error('Error loading financial statements:', error);

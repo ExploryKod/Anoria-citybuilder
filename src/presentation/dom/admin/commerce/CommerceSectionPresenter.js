@@ -1,26 +1,11 @@
-import { updateDisplayedFunds, getGameTime, getTimeInfo } from '../../../../composition/facades/appRuntime.js';
+import { updateDisplayedFunds, getGameTime, getTimeInfo } from '../../../../composition/sessionShell.js';
 import {
-  loadOrSeedCommercePartners,
-  saveCommercePartners,
-  loadCommerceStats,
-  loadOrSeedCommerceConfig,
-  saveCommerceConfig,
-  getPriceStatus as resolvePriceStatus,
-  getContractStatus as resolvePartnerContractStatus,
-  getProductStockKey,
-  getProductDisplayName,
-  evaluatePartnerActivationConditions,
-} from '../../../../composition/facades/commerce.js';
-import { getCityEmploymentSummary } from '../../../../composition/facades/employment.js';
-import { getCityTotalPopulation } from '../../../../composition/facades/housing.js';
-import {
-  listCommercializableWindmills,
-  listSupplyMapBuildings,
-  listWindmillSupplyViews,
-  getAllFoodTraceabilityTransactions,
-} from '../../../../composition/facades/supply.js';
-import { getTreasuryBalance, getTreasurySnapshot, recordCommercialRouteFee, getCommercialRouteFee } from '../../../../composition/facades/accountingGame.js';
-
+  requireSessionAccountingApi,
+  requireSessionCommerceApi,
+  requireSessionEmploymentApi,
+  requireSessionHousingApi,
+  requireSessionSupplyApi,
+} from '../../../../composition/sessionRuntime.js';
 export class CommerceSectionPresenter {
     constructor() {
         this.selectedGood = null;
@@ -102,7 +87,7 @@ export class CommerceSectionPresenter {
     }
 
     loadPartnersData() {
-        this.partnersData = loadOrSeedCommercePartners();
+        this.partnersData = requireSessionCommerceApi().loadOrSeedCommercePartners();
     }
 
 
@@ -113,8 +98,8 @@ export class CommerceSectionPresenter {
      */
     async checkWindmillStocks(partner) {
         try {
-            const allWindmills = await listWindmillSupplyViews();
-            const commercializableWindmills = await listCommercializableWindmills();
+            const allWindmills = await requireSessionSupplyApi().listWindmillSupplyViews();
+            const commercializableWindmills = await requireSessionSupplyApi().listCommercializableWindmills();
 
             if (allWindmills.length === 0) {
                 return { hasStocks: false, missingProducts: ['Aucun moulin construit'], noCommercializableWindmills: false };
@@ -130,7 +115,7 @@ export class CommerceSectionPresenter {
 
             // Check each required product
             for (const productId of requiredProducts) {
-                const stockKey = getProductStockKey(productId);
+                const stockKey = requireSessionCommerceApi().getProductStockKey(productId);
                 if (!stockKey) continue;
 
                 // Sum stocks from commercializable windmills only
@@ -142,7 +127,7 @@ export class CommerceSectionPresenter {
 
                 // For now, require at least 1 unit in stock (can be adjusted)
                 if (totalStock < 1) {
-                    const productName = getProductDisplayName(productId);
+                    const productName = requireSessionCommerceApi().getProductDisplayName(productId);
                     missingProducts.push(`${productName} (stock: ${totalStock})`);
                 }
             }
@@ -164,7 +149,7 @@ export class CommerceSectionPresenter {
      */
     async getCurrentPopulation() {
         try {
-            return await getCityTotalPopulation();
+            return await requireSessionHousingApi().getCityTotalPopulation();
         } catch (error) {
             console.error('[CommerceSectionPresenter] Error getting population:', error);
         }
@@ -177,7 +162,7 @@ export class CommerceSectionPresenter {
      */
     async getUnemploymentPercentage() {
         try {
-            const summary = await getCityEmploymentSummary();
+            const summary = await requireSessionEmploymentApi().getCityEmploymentSummary();
             return summary.unemploymentPercentage;
         } catch (error) {
             console.error('[CommerceSectionPresenter] Error calculating unemployment:', error);
@@ -191,7 +176,7 @@ export class CommerceSectionPresenter {
      */
     async getCurrentFunds() {
         try {
-            return await getTreasuryBalance();
+            return await requireSessionAccountingApi().getTreasuryBalance();
         } catch (error) {
             console.error('[CommerceSectionPresenter] Error getting funds:', error);
             return 0;
@@ -210,7 +195,7 @@ export class CommerceSectionPresenter {
             this.checkWindmillStocks(partner),
         ]);
 
-        return evaluatePartnerActivationConditions({
+        return requireSessionCommerceApi().evaluatePartnerActivationConditions({
             partner,
             activationConditions: partner.activationConditions,
             metrics: { population, unemployment, stocksCheck },
@@ -246,9 +231,9 @@ export class CommerceSectionPresenter {
         // Note: La désactivation se fera automatiquement quand le contrat sera terminé
         
         // Pay commercial route fee (one-time payment to open commercial road)
-        const commercialRouteFee = getCommercialRouteFee();
+        const commercialRouteFee = requireSessionAccountingApi().getCommercialRouteFee();
         try {
-            const currentBudget = await getTreasurySnapshot();
+            const currentBudget = await requireSessionAccountingApi().getTreasurySnapshot();
             const timeInfo = currentBudget?.turn !== undefined ? getTimeInfo(currentBudget.turn) : null;
             const yearDisplay = timeInfo && timeInfo.year === 0 ? '0 JC' : timeInfo ? `${timeInfo.year} ap JC` : '';
             const monthName = timeInfo ? timeInfo.month || 'Mois' : 'Mois';
@@ -262,7 +247,7 @@ export class CommerceSectionPresenter {
             }];
             const description = `Route commerciale - ${dateDisplay} |BREAKDOWN|${JSON.stringify(breakdown)}|BREAKDOWN|`;
 
-            const feeResult = await recordCommercialRouteFee(
+            const feeResult = await requireSessionAccountingApi().recordCommercialRouteFee(
                 commercialRouteFee,
                 description,
                 partnerId
@@ -298,7 +283,7 @@ export class CommerceSectionPresenter {
     }
 
     savePartnersData() {
-        saveCommercePartners(this.partnersData);
+        requireSessionCommerceApi().saveCommercePartners(this.partnersData);
     }
 
     /**
@@ -388,14 +373,14 @@ export class CommerceSectionPresenter {
         });
         if (needsSave) this.savePartnersData();
 
-        const stats = loadCommerceStats();
+        const stats = requireSessionCommerceApi().loadCommerceStats();
         const yearlyExports = stats?.yearlyExports || {};
         const yearlyImports = stats?.yearlyImports || {};
 
         // Check if there are any commercializable windmills
         let hasCommercializableWindmills = false;
         try {
-            const commercializableWindmills = await listCommercializableWindmills();
+            const commercializableWindmills = await requireSessionSupplyApi().listCommercializableWindmills();
             hasCommercializableWindmills = commercializableWindmills.length > 0;
         } catch (error) {
             console.warn('[CommerceSection] Error checking commercializable windmills:', error);
@@ -496,7 +481,7 @@ export class CommerceSectionPresenter {
             }).join('');
 
             // Get contract status (which products have finished contracts)
-            const contractStatus = resolvePartnerContractStatus(partner);
+            const contractStatus = requireSessionCommerceApi().getContractStatus(partner);
             const hasActiveContract = contractStatus.hasActiveContract;
             const hasFinishedProducts = contractStatus.finishedImports.length > 0 || contractStatus.finishedExports.length > 0;
 
@@ -727,7 +712,7 @@ export class CommerceSectionPresenter {
     }
 
     async loadGoodsData() {
-        this.goodsData = loadOrSeedCommerceConfig();
+        this.goodsData = requireSessionCommerceApi().loadOrSeedCommerceConfig();
         
         // Charger les stats dynamiques depuis le store
         this.loadDynamicStats();
@@ -753,14 +738,14 @@ export class CommerceSectionPresenter {
         }
 
         // Sauvegarder la configuration mise à jour
-        saveCommerceConfig(this.goodsData);
+        requireSessionCommerceApi().saveCommerceConfig(this.goodsData);
     }
 
     /**
      * Charge les statistiques dynamiques depuis le repository (écrites par la simulation Commerce)
      */
     loadDynamicStats() {
-        const stats = loadCommerceStats();
+        const stats = requireSessionCommerceApi().loadCommerceStats();
         if (!stats || !this.goodsData) return;
 
         // Mettre à jour les données avec les stats
@@ -795,7 +780,7 @@ export class CommerceSectionPresenter {
         try {
             // 1. Calculer la consommation annuelle réelle
             let annualConsumption = 0;
-            const allTransactions = await getAllFoodTraceabilityTransactions();
+            const allTransactions = await requireSessionSupplyApi().getAllFoodTraceabilityTransactions();
             let currentYear = 0;
             const gameTime = getGameTime();
             const timeInfo = getTimeInfo(gameTime);
@@ -815,7 +800,7 @@ export class CommerceSectionPresenter {
 
             // Si pas de données de traçabilité, estimer depuis la population
             if (annualConsumption === 0) {
-                const totalPopulation = await getCityTotalPopulation();
+                const totalPopulation = await requireSessionHousingApi().getCityTotalPopulation();
                 // Estimation : chaque citoyen consomme 1 panier/mois = 12 paniers/an
                 // Répartition approximative : 40% wheat, 30% carrot, 30% cabbage
                 const consumptionRatios = {
@@ -828,7 +813,7 @@ export class CommerceSectionPresenter {
 
             // 2. Calculer la production annuelle locale
             let annualProduction = 0;
-            const allBuildings = await listSupplyMapBuildings();
+            const allBuildings = await requireSessionSupplyApi().listSupplyMapBuildings();
             const farmTypeMap = {
                 wheat: ['Farm-Wheat', 'Farms-Wheat'],
                 carrot: ['Farm-Carrot', 'Farms-Carrot'],
@@ -849,7 +834,7 @@ export class CommerceSectionPresenter {
             annualProduction = farms.length * 78;
 
             // 3. Récupérer les imports/exports actuels
-            const stats = loadCommerceStats();
+            const stats = requireSessionCommerceApi().loadCommerceStats();
             const yearlyImports = stats?.yearlyImports?.[productId] || 0;
             const yearlyExports = stats?.yearlyExports?.[productId] || 0;
 
@@ -959,8 +944,8 @@ export class CommerceSectionPresenter {
 
         goodsList.innerHTML = this.goodsData.map(good => {
             const marketPositionClass = this.getMarketPositionClass(good.marketShare);
-            const sellingStatus = resolvePriceStatus(good.sellingPrice, good.marketPrice, 'selling');
-            const buyingStatus = resolvePriceStatus(good.buyingPrice, good.marketPrice, 'buying');
+            const sellingStatus = requireSessionCommerceApi().getPriceStatus(good.sellingPrice, good.marketPrice, 'selling');
+            const buyingStatus = requireSessionCommerceApi().getPriceStatus(good.buyingPrice, good.marketPrice, 'buying');
             const consumptionStatusClass = this.getConsumptionStatusClass(good.consumptionStatus);
 
             return `
@@ -1185,7 +1170,7 @@ export class CommerceSectionPresenter {
         }
 
         // Sauvegarder dans le store
-        saveCommerceConfig(this.goodsData);
+        requireSessionCommerceApi().saveCommerceConfig(this.goodsData);
     }
 
     updatePrice(goodId, type, price) {
@@ -1201,7 +1186,7 @@ export class CommerceSectionPresenter {
             this.updatePriceStatus(goodId, type, price, good.marketPrice);
             
             // Sauvegarder dans le store
-            saveCommerceConfig(this.goodsData);
+            requireSessionCommerceApi().saveCommerceConfig(this.goodsData);
         }
     }
 
@@ -1209,7 +1194,7 @@ export class CommerceSectionPresenter {
         const inputElement = document.getElementById(`${type}-price-${goodId}`);
         if (!inputElement) return;
 
-        const status = resolvePriceStatus(price, marketPrice, type);
+        const status = requireSessionCommerceApi().getPriceStatus(price, marketPrice, type);
         inputElement.className = `commerce-price-input ${type} ${status}`;
     }
 
@@ -1233,7 +1218,7 @@ export class CommerceSectionPresenter {
         }
 
         // Sauvegarder dans le store
-        saveCommerceConfig(this.goodsData);
+        requireSessionCommerceApi().saveCommerceConfig(this.goodsData);
     }
 
     updateTax(goodId, tax) {
@@ -1243,7 +1228,7 @@ export class CommerceSectionPresenter {
         if (good) {
             good.tax = Math.max(0, Math.min(500, tax));
             // Sauvegarder dans le store
-            saveCommerceConfig(this.goodsData);
+            requireSessionCommerceApi().saveCommerceConfig(this.goodsData);
         }
     }
 
@@ -1254,7 +1239,7 @@ export class CommerceSectionPresenter {
         if (good) {
             good.stockpiling = stockpiling;
             // Sauvegarder dans le store
-            saveCommerceConfig(this.goodsData);
+            requireSessionCommerceApi().saveCommerceConfig(this.goodsData);
         }
     }
 }

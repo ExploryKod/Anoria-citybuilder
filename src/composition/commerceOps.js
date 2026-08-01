@@ -1,4 +1,4 @@
-export { CommerceSimulationService } from '../../contexts/commerce/application/services/CommerceSimulationService.js';
+export { CommerceSimulationService } from '../contexts/commerce/application/services/CommerceSimulationService.js';
 
 /**
  * ACL — Commerce bounded context entry points.
@@ -8,50 +8,50 @@ export {
   getOrCreateCommerceContext,
   resetCommerceContextForTests,
   setCommercePartnerContractFinishedHandler,
-} from '../createCommerceContext.js';
+} from './createCommerceContext.js';
 
 export {
   getPriceStatus,
-} from '../../contexts/commerce/domain/policies/PriceStatusPolicy.js';
+} from '../contexts/commerce/domain/policies/PriceStatusPolicy.js';
 
 export {
   hasActiveContract,
   isContractFinished,
   getContractStatus,
-} from '../../contexts/commerce/domain/policies/PartnerContractPolicy.js';
+} from '../contexts/commerce/domain/policies/PartnerContractPolicy.js';
 
 export {
   canTradeWithPartner,
   getPartnerTradeLimit,
-} from '../../contexts/commerce/domain/policies/PartnerTradePolicy.js';
+} from '../contexts/commerce/domain/policies/PartnerTradePolicy.js';
 
 export {
   canImportProduct,
   canExportProduct,
   isStockableProduct,
   getProductTradeConditions,
-} from '../../contexts/commerce/domain/policies/ProductTradePolicy.js';
+} from '../contexts/commerce/domain/policies/ProductTradePolicy.js';
 
 export {
   getProductStockKey,
   getProductDisplayName,
-} from '../../contexts/commerce/domain/catalogs/ProductCatalog.js';
+} from '../contexts/commerce/domain/catalogs/ProductCatalog.js';
 
 export {
   evaluateDefaultActivationConditions,
   evaluatePartnerActivationConditions,
-} from '../../contexts/commerce/domain/policies/PartnerActivationPolicy.js';
+} from '../contexts/commerce/domain/policies/PartnerActivationPolicy.js';
 
 export {
   createDefaultPartners,
   migrateStoredPartners,
-} from '../../contexts/commerce/domain/catalogs/PartnerCatalog.js';
+} from '../contexts/commerce/domain/catalogs/PartnerCatalog.js';
 
-export { createDefaultProductConfig } from '../../contexts/commerce/domain/catalogs/ProductConfigCatalog.js';
+export { createDefaultProductConfig } from '../contexts/commerce/domain/catalogs/ProductConfigCatalog.js';
 
-export { LocalStorageCommerceRepository } from '../../contexts/commerce/infrastructure/persistence/LocalStorageCommerceRepository.js';
+export { LocalStorageCommerceRepository } from '../contexts/commerce/infrastructure/persistence/LocalStorageCommerceRepository.js';
 
-import { getOrCreateCommerceContext } from '../createCommerceContext.js';
+import { getOrCreateCommerceContext } from './createCommerceContext.js';
 
 function commerceRepository() {
   return getOrCreateCommerceContext().commerceRepository;

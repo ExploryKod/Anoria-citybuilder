@@ -1,11 +1,8 @@
+import { requireSessionParcelsApi } from '../../../composition/sessionRuntime.js';
 /**
  * Full-grid neighbor persist after the mesh tile loop.
  * Writes Parcels neighbors + markets + road access (not sprite painting).
  */
-
-import { updateBuildingNeighbors } from '../sceneSpatialUtils.js';
-import { getBuildingsNamesInZone } from '../../../composition/facades/parcels.js';
-import { updateBuildingFields } from '../../../composition/facades/construction.js';
 
 /**
  * @param {object} params
@@ -18,6 +15,7 @@ import { updateBuildingFields } from '../../../composition/facades/construction.
  * @param {string} params.buildingId
  * @param {string} params.instanceId
  * @param {{ updateNeighbors: Function, recalculateRoadAccessForBuilding: { execute: Function } }} params.parcels
+ * @param {(instanceId: string, fields: Record<string, unknown>) => Promise<unknown>} params.updateBuildingFields
  */
 export async function persistTileNeighbors({
   city,
@@ -29,6 +27,7 @@ export async function persistTileNeighbors({
   buildingId,
   instanceId,
   parcels,
+  updateBuildingFields,
 }) {
   const mesh = buildings[x]?.[y];
   if (!mesh?.userData || !instanceId || !buildingId) {
@@ -73,8 +72,16 @@ export async function persistTileNeighbors({
  * @param {object[][]} params.terrain
  * @param {number} params.time
  * @param {object} params.parcels
+ * @param {(instanceId: string, fields: Record<string, unknown>) => Promise<unknown>} params.updateBuildingFields
  */
-export async function syncTileNeighborsPass({ city, buildings, terrain, time, parcels }) {
+export async function syncTileNeighborsPass({
+  city,
+  buildings,
+  terrain,
+  time,
+  parcels,
+  updateBuildingFields,
+}) {
   for (let nx = 0; nx < city.size; nx++) {
     for (let ny = 0; ny < city.size; ny++) {
       const tileBuildingId = city.tiles[nx]?.[ny]?.buildingId;
@@ -100,6 +107,7 @@ export async function syncTileNeighborsPass({ city, buildings, terrain, time, pa
         buildingId,
         instanceId,
         parcels,
+        updateBuildingFields,
       });
     }
   }

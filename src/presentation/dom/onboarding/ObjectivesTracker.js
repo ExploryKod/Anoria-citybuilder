@@ -1,15 +1,14 @@
 /**
  * ObjectivesTracker - Gestion des objectifs financiers
- * Treasury via Accounting BC (acl/accountingGame.js)
+ * Treasury via sessionApi.accounting
  */
 
-import { getTreasurySnapshot } from '../../../composition/facades/accountingGame.js';
-import { getObjectivesManager, getButtonStateManager, registerAppService } from '../../../composition/facades/appRuntime.js';
-import { getObjectivesStore } from '../../../composition/facades/objectives.js';
+import { getObjectivesManager, getButtonStateManager, registerAppService } from '../../../composition/sessionShell.js';
 import {
   OBJECTIVE_CATALOG,
   isObjectiveRequirementMet,
-} from '../../../composition/facades/objectives.js';
+} from '../../../composition/accountingObjectivesCatalog.js';
+import { requireSessionAccountingApi } from '../../../composition/sessionRuntime.js';
 
 const BUDGET_CHALLENGE_OBJECTIVE_ID = 'budget_challenge_5000';
 const budgetChallengeDefinition = OBJECTIVE_CATALOG[BUDGET_CHALLENGE_OBJECTIVE_ID];
@@ -97,7 +96,7 @@ class ObjectivesTracker {
 
             this.trackingData.currentDay = currentDay;
 
-            const budget = await getTreasurySnapshot();
+            const budget = await requireSessionAccountingApi().getTreasurySnapshot();
             this.trackingData.currentFunds = budget.funds || 0;
 
             if (
@@ -480,7 +479,7 @@ class ObjectivesTracker {
         try {
             const objective = this.objectives.find(obj => obj.id === objectiveId);
             
-            const objectivesStore = getObjectivesStore();
+            const objectivesStore = requireSessionAccountingApi().getObjectivesStore();
             if (objectivesStore) {
                 await objectivesStore.recordObjectiveSuccess({
                     objectiveId: objectiveId,

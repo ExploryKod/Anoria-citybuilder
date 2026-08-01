@@ -2,7 +2,7 @@
  * Renders CityLedgerComparison read model into the admin finances table.
  */
 
-import { buildCityLedgerTableViewModel } from '../../../../composition/facades/accountingPresentation.js';
+import { buildCityLedgerTableViewModel } from '../../../../contexts/accounting/presentation/index.js';
 
 /**
  * @param {string} fieldId

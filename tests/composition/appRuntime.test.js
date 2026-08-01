@@ -8,7 +8,7 @@ import {
   registerAppService,
   pauseGame,
   playGame,
-} from '../../src/composition/facades/appRuntime.js';
+} from '../../src/composition/sessionShell.js';
 
 describe('appRuntime façade', () => {
   beforeEach(() => {

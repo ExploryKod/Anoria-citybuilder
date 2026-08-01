@@ -3,19 +3,16 @@
  * Context / treasury / tick wiring live in composition/.
  */
 
-import { registerAppService, getMultiplayerManager, invokeStartTutorial } from '../../composition/facades/appRuntime.js';
+import { registerAppService, getMultiplayerManager, invokeStartTutorial } from '../../composition/sessionShell.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
 import { syncEmploymentAfterBuildingChange } from '../../composition/syncEmploymentAfterBuildingChange.js';
-import { placeBuildingAtTile, bulldozeBuildingAtTile } from '../../composition/facades/construction.js';
 import { ensureGameRuntimeBootstrapped } from '../../composition/ensureGameRuntimeBootstrapped.js';
 import { bootGameContexts } from '../../composition/bootGameContexts.js';
 import { bootTreasuryHud } from '../../composition/bootTreasuryHud.js';
 import { resolveSelectedCitySize } from '../../composition/resolveCitySize.js';
 import { runGameTick } from '../../composition/runGameTick.js';
-import { bindSessionRuntime } from '../../composition/sessionRuntime.js';
-import { getOrCreateConstructionContext } from '../../composition/createConstructionContext.js';
-import { getOrCreateAccountingContext } from '../../composition/createAccountingContext.js';
+import { bindSessionRuntime, requireSessionCommerceApi } from '../../composition/sessionRuntime.js';
 import { syncSessionHud } from '../../composition/syncSessionHud.js';
 import { DEFAULT_TICK_MS } from '../../shared/gameplay/SimulationDefaults.js';
 import { GameLoop } from '../../engine/loop/GameLoop.js';
@@ -33,7 +30,6 @@ import {
   showGenericErrorNotification,
 } from '../dom/shell/BuildingNotifications.js';
 import { presentBuildingInfoSelection } from '../dom/info/BuildingInfoPanel.js';
-import { clearCommercePersistence } from '../../composition/facades/commerce.js';
 
 ensureGameRuntimeBootstrapped();
 
@@ -65,10 +61,13 @@ export function createGame(gameStore, assetManager, citySize = null) {
     employment,
     commerce,
     gameplay,
+    construction,
+    accounting,
+    sessionApi,
     runtime,
   } = bootGameContexts();
-  const construction = getOrCreateConstructionContext();
-  const accounting = getOrCreateAccountingContext();
+  const { construction: constructionApi } = sessionApi;
+
   const scene = createScene(gameStore, assetManager, {
     parcels,
     supply,
@@ -91,6 +90,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     commerce,
     gameplay,
     ecsRuntime: runtime,
+    sessionApi,
   });
 
   scene.initialize(city).then(() => {
@@ -155,7 +155,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
 
     if (activeToolId === 'bulldoze') {
-      const { buildingId } = await bulldozeBuildingAtTile({
+      const { buildingId } = await constructionApi.bulldozeBuildingAtTile({
         city,
         x,
         y,
@@ -199,7 +199,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       }
 
       const { x: placeX, y: placeY } = selectedObject.userData;
-      const result = await placeBuildingAtTile({
+      const result = await constructionApi.placeBuildingAtTile({
         city,
         x: placeX,
         y: placeY,
@@ -326,7 +326,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       overOverlay.classList.remove('active');
 
       try {
-        clearCommercePersistence();
+        requireSessionCommerceApi().clearCommercePersistence();
         localStorage.removeItem('journal_year_end_balances');
         localStorage.removeItem('citizen_tax_amount');
         localStorage.removeItem('work_salary_per_month');

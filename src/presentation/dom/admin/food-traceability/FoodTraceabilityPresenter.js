@@ -2,7 +2,7 @@
  * FoodTraceabilityPresenter — HTML sections / stats (données déjà calculées).
  */
 
-import { tryResolveBuildingInstanceIdFromRef } from '../../../../composition/facades/building-identity.js';
+import { tryResolveBuildingInstanceIdFromRef } from '../../../../shared/building-identity/index.js';
 
 /**
  * @param {object|null|undefined} building

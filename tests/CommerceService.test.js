@@ -6,16 +6,16 @@ import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
 import { createCommerceContext } from '../src/composition/createCommerceContext.js';
 import { BudgetManager } from './helpers/testBudgetFacade.js';
-import { JournalManager } from '../src/composition/facades/accountingSessionJournal.js';
+import { JournalManager } from '../src/composition/accountingSessionJournal.js';
 import {
   loadOrSeedCommerceConfig,
   loadOrSeedCommercePartners,
-} from '../src/composition/facades/commerce.js';
+} from '../src/composition/commerceOps.js';
 import db from '../src/core/persistence/dexie/db.js';
 import { resetSupplyContextForTests } from '../src/composition/createSupplyContext.js';
 import { resetCommerceContextForTests } from '../src/composition/createCommerceContext.js';
-import { resetAccountingContextForTests } from '../src/composition/facades/accounting.js';
-import { resetSessionLedgerBufferForTests } from '../src/composition/facades/accountingSessionJournal.js';
+import { resetAccountingContextForTests } from '../src/composition/accountingOps.js';
+import { resetSessionLedgerBufferForTests } from '../src/composition/accountingSessionJournal.js';
 import { makeHouseRecord, createBuildingInstanceId } from './fixtures/buildingRecord.js';
 import appRegistry from '../src/composition/AppRegistry.js';
 import { TimeManager } from '../src/shared/time/TimeManager.js';

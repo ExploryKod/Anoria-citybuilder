@@ -7,7 +7,7 @@
 import {
     getSectorPriority,
     getAllSectorPriorities
-} from '../src/composition/facades/employment.js';
+} from '../src/composition/employmentOps.js';
 
 // ============================================================================
 // Tests pour les priorités d'emploi (localStorage)

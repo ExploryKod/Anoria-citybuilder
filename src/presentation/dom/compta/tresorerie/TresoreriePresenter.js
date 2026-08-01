@@ -6,7 +6,7 @@ import {
   buildLoanInterestDetailHtml,
   buildRealtimeBudgetViewModel,
   financialHealthStatusLabel,
-} from '../../../../composition/facades/accountingPresentation.js';
+} from '../../../../contexts/accounting/presentation/index.js';
 
 /** @param {HTMLElement|null} element @param {string} text */
 function setTextContent(element, text) {

@@ -1,4 +1,4 @@
-import { registerAppService } from '../../../../composition/facades/appRuntime.js';
+import { registerAppService } from '../../../../composition/sessionShell.js';
 import { StorageSectionPresenter } from './StorageSectionPresenter.js';
 
 export function initStorageSection() {

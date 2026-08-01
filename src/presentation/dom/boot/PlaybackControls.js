@@ -12,7 +12,7 @@ import {
   pauseGame,
   playGame,
   replayGame,
-} from '../../../composition/facades/appRuntime.js';
+} from '../../../composition/sessionShell.js';
 import { getSessionScene } from '../../../composition/sessionRuntime.js';
 import { initResetGameFlow } from './ResetGameFlow.js';
 

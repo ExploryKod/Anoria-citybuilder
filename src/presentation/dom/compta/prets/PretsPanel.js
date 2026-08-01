@@ -4,26 +4,11 @@
  */
 
 import {
-  getTreasurySnapshot,
-  getFinancialHealth,
-  getActiveLoans,
-  recordLoanCapital,
-  recordLoanInterest,
-  recordLoanRepayment,
-  recordInfoLoanInstallment,
-  advanceLoanInstallmentWithoutPayment,
-} from '../../../../composition/facades/accountingGame.js';
-import {
   getPopupManager,
   invokeUpdateBudgetDisplay,
   registerAppFunction,
-} from '../../../../composition/facades/appRuntime.js';
-import { bindSessionRuntime } from '../../../../composition/sessionRuntime.js';
-import {
-  computeLoanRate,
-  computeLoanRatesByType,
-  computeLoanInterestAmount,
-} from '../../../../composition/facades/accountingLoans.js';
+} from '../../../../composition/sessionShell.js';
+import { bindSessionRuntime, requireSessionAccountingApi } from '../../../../composition/sessionRuntime.js';
 import {
   updateLoansElement,
   renderHealthImpact,
@@ -108,8 +93,8 @@ export function initLoansPopup() {
  */
 export async function updateLoansDisplay() {
   try {
-    const currentBudget = await getTreasurySnapshot();
-    const financialHealth = await getFinancialHealth();
+    const currentBudget = await requireSessionAccountingApi().getTreasurySnapshot();
+    const financialHealth = await requireSessionAccountingApi().getFinancialHealth();
 
     updateLoansElement('loans-date', `Tour ${currentBudget.turn || 0}`);
 
@@ -131,7 +116,7 @@ export async function updateLoansDisplay() {
     }
 
     renderHealthImpact(financialHealth);
-    renderLoanRates(computeLoanRatesByType(financialHealth.status));
+    renderLoanRates(requireSessionAccountingApi().computeLoanRatesByType(financialHealth.status));
     loadActiveLoans();
   } catch (error) {
     console.error('Error updating loans display:', error);
@@ -206,12 +191,12 @@ function updateLoanSummary() {
   const amount = parseInt(loanAmountInput.value) || 0;
   const loanType = loanFormSection.dataset.loanType || 'bank';
 
-  getFinancialHealth().then((health) => {
-    const interestRate = computeLoanRate({
+  requireSessionAccountingApi().getFinancialHealth().then((health) => {
+    const interestRate = requireSessionAccountingApi().computeLoanRate({
       loanType,
       financialHealthStatus: health.status,
     });
-    const interest = computeLoanInterestAmount(amount, interestRate);
+    const interest = requireSessionAccountingApi().computeLoanInterestAmount(amount, interestRate);
     const total = amount + interest;
 
     updateLoansElement('loan-principal-display', `${amount}€`);
@@ -241,13 +226,13 @@ export async function contractLoan() {
   }
 
   try {
-    const financialHealth = await getFinancialHealth();
-    const interestRate = computeLoanRate({
+    const financialHealth = await requireSessionAccountingApi().getFinancialHealth();
+    const interestRate = requireSessionAccountingApi().computeLoanRate({
       loanType,
       financialHealthStatus: financialHealth.status,
     });
 
-    const interest = computeLoanInterestAmount(amount, interestRate);
+    const interest = requireSessionAccountingApi().computeLoanInterestAmount(amount, interestRate);
     const total = amount + interest;
 
     const loan = {
@@ -262,7 +247,7 @@ export async function contractLoan() {
       contractedAt: new Date().toISOString(),
     };
 
-    await recordLoanCapital(amount, `Prêt ${loanType} contracté (${duration} tours)`, loan);
+    await requireSessionAccountingApi().recordLoanCapital(amount, `Prêt ${loanType} contracté (${duration} tours)`, loan);
 
     await invokeUpdateBudgetDisplay();
 
@@ -286,7 +271,7 @@ export async function loadActiveLoans() {
   if (!activeLoansList) return;
 
   try {
-    const activeLoans = await getActiveLoans();
+    const activeLoans = await requireSessionAccountingApi().getActiveLoans();
     activeLoansList.innerHTML = renderActiveLoansHtml(activeLoans);
   } catch (error) {
     console.error('Error loading active loans:', error);
@@ -300,7 +285,7 @@ export async function loadActiveLoans() {
  */
 export async function processLoanPayments() {
   try {
-    const activeLoans = await getActiveLoans();
+    const activeLoans = await requireSessionAccountingApi().getActiveLoans();
     if (activeLoans.length === 0) return;
 
     for (const loan of activeLoans) {
@@ -310,16 +295,16 @@ export async function processLoanPayments() {
       );
       const principalPayment = Math.max(0, monthlyPayment - interestPayment);
 
-      const budget = await getTreasurySnapshot();
+      const budget = await requireSessionAccountingApi().getTreasurySnapshot();
 
       if (budget.funds >= monthlyPayment) {
-        await recordLoanInterest(
+        await requireSessionAccountingApi().recordLoanInterest(
           interestPayment,
           `Intérêts prêt ${loan.type} (${loan.id})`,
           loan.id
         );
 
-        await recordLoanRepayment(
+        await requireSessionAccountingApi().recordLoanRepayment(
           principalPayment,
           `Remboursement prêt ${loan.type} (${loan.id})`,
           loan.id
@@ -328,14 +313,14 @@ export async function processLoanPayments() {
       }
 
       if (budget.funds >= interestPayment && interestPayment > 0) {
-        await recordLoanInterest(
+        await requireSessionAccountingApi().recordLoanInterest(
           interestPayment,
           `Intérêts prêt ${loan.type} (${loan.id})`,
           loan.id
         );
 
         if (principalPayment > 0) {
-          await recordInfoLoanInstallment({
+          await requireSessionAccountingApi().recordInfoLoanInstallment({
             interestAmount: 0,
             principalAmount: principalPayment,
             loanId: loan.id,
@@ -343,21 +328,21 @@ export async function processLoanPayments() {
           });
         }
 
-        await advanceLoanInstallmentWithoutPayment(loan.id);
+        await requireSessionAccountingApi().advanceLoanInstallmentWithoutPayment(loan.id);
         console.warn(
           `[Loans] Échéance partielle — intérêts payés, capital impayé (${principalPayment}€) pour ${loan.id}`
         );
         continue;
       }
 
-      await recordInfoLoanInstallment({
+      await requireSessionAccountingApi().recordInfoLoanInstallment({
         interestAmount: interestPayment,
         principalAmount: principalPayment,
         loanId: loan.id,
         loanType: loan.type,
       });
 
-      await advanceLoanInstallmentWithoutPayment(loan.id);
+      await requireSessionAccountingApi().advanceLoanInstallmentWithoutPayment(loan.id);
       console.warn(
         `[Loans] Défaut de paiement — échéance journalisée (info) pour ${loan.id}`
       );

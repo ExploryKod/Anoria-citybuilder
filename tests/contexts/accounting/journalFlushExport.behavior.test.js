@@ -11,12 +11,12 @@ import { SessionJournalRepository } from '../../../src/contexts/accounting/infra
 import { LegacyYearEndBalanceAdapter } from '../../../src/contexts/accounting/infrastructure/adapters/legacy/LegacyYearEndBalanceAdapter.js';
 import { LegacyGameTimePort } from '../../../src/contexts/accounting/infrastructure/adapters/legacy/LegacyGameTimePort.js';
 import { TimeManager } from '../../../src/shared/time/TimeManager.js';
-import { JournalManager } from '../../../src/composition/facades/accountingSessionJournal.js';
+import { JournalManager } from '../../../src/composition/accountingSessionJournal.js';
 import {
   buildJournalExportPayload,
 } from '../../../src/contexts/accounting/presentation/JournalExportViewModel.js';
 import { filterJournalEntriesForPdfExport } from '../../../src/contexts/accounting/domain/policies/JournalExportFilterPolicy.js';
-import { resetSessionLedgerBufferForTests } from '../../../src/composition/facades/accountingSessionJournal.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/composition/accountingSessionJournal.js';
 
 function createTestDb() {
   const testDb = new Dexie('testJournalFlushExportDb');

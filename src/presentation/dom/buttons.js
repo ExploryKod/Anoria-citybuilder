@@ -1,4 +1,4 @@
-import { registerAppFunction } from '../../composition/facades/appRuntime.js';
+import { registerAppFunction } from '../../composition/sessionShell.js';
 import { loadBudgetStates } from './compta/compte-de-resultat/CompteDeResultatPanel.js';
 import { initAppBoot } from './boot/initAppBoot.js';
 

@@ -1,52 +1,48 @@
 /**
- * ACL façade — thin adapters over sessionRuntime for legacy UI imports.
- * Do not add new call sites; prefer composition/sessionRuntime.js.
+ * Presentation shell accessors — sessionRuntime + registered handlers.
+ * Prefer this over composition/sessionShell.js (legacy ACL façade).
+ *
+ * Shell ≠ BC use cases: pause/popup/tool handlers live here;
+ * accounting/construction/etc. belong on sessionApi (see sessionApi.js).
  */
+
+import { TimeManager as TimeManagerClass } from '../shared/time/TimeManager.js';
 import {
-  getSessionGame,
-  getSessionGameUI,
-  getSessionCity,
-  getSessionScene,
-  getSessionGameTime,
   getSessionService,
   getSessionPopupManager,
   getSessionButtonStateManager,
   getSessionTimeManager,
+  getSessionGameUI,
   pauseSessionGame,
   playSessionGame,
   replaySessionGame,
   updateSessionDisplayedFunds,
-} from '../sessionRuntime.js';
+} from './sessionRuntime.js';
 import {
-  registerAppService as registerAppServiceComposition,
-  getAppService as getAppServiceComposition,
-} from '../appServices.js';
-import { TimeManager as TimeManagerClass } from '../../shared/time/TimeManager.js';
+  registerAppService,
+  getAppService,
+  getGame,
+  getGameTime,
+  getGameScene,
+  getGameCity,
+} from './appServices.js';
 
-export { default as appRegistry } from '../AppRegistry.js';
-export { getGameStore } from './gameSession.js';
+export {
+  registerAppService,
+  getAppService,
+  getGame,
+  getGameTime,
+  getGameScene,
+  getGameCity,
+};
 
-/** @param {string} name @param {*} instance @param {boolean} [exposeOnWindow] */
-export function registerAppService(name, instance, exposeOnWindow = false) {
-  registerAppServiceComposition(name, instance, exposeOnWindow);
+export function getGameUI() {
+  return getSessionGameUI();
 }
 
 /** @param {string} name @param {Function} fn */
 export function registerAppFunction(name, fn) {
   registerAppService(name, fn);
-}
-
-/** @param {string} name @returns {*} */
-export function getAppService(name) {
-  return getAppServiceComposition(name);
-}
-
-export function getGame() {
-  return getSessionGame();
-}
-
-export function getGameUI() {
-  return getSessionGameUI();
 }
 
 export function getPopupManager() {
@@ -145,6 +141,9 @@ export function getMultiplayerManager() {
   return getSessionService('multiplayerManager');
 }
 
+/** @deprecated Prefer getOrCreateGameSessionContext from createGameSessionContext.js */
+export { getOrCreateGameSessionContext as getGameStore } from './createGameSessionContext.js';
+
 export function getEventBlockerClass() {
   return getSessionService('EventBlocker');
 }
@@ -163,18 +162,6 @@ export function getStartObjectivesHandler() {
 
 export function getWebglTestMode() {
   return getSessionService('webglTestMode');
-}
-
-export function getGameTime() {
-  return getSessionGameTime();
-}
-
-export function getGameScene() {
-  return getSessionScene();
-}
-
-export function getGameCity() {
-  return getSessionCity();
 }
 
 export function pauseGame() {

@@ -6,7 +6,7 @@ import {
   SessionLedgerBuffer,
   toDexieRow,
   toPublicEntry,
-} from '../src/composition/facades/accountingSessionJournal.js';
+} from '../src/composition/accountingSessionJournal.js';
 
 describe('SessionLedgerBuffer', () => {
   let buffer;

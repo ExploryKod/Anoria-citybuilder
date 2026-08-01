@@ -2,7 +2,7 @@
  * Architecture guard — Lot 8 (D6 globals) + plan_ca Barre B/F.
  *
  * Direct window.service = assignments are forbidden outside AppRegistry.
- * Direct window.service reads must go through composition/facades/appRuntime.js
+ * Direct window.service reads must go through composition/sessionShell.js
  * or composition/sessionRuntime.js.
  */
 

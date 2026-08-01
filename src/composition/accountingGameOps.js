@@ -1,7 +1,6 @@
 /**
- * Game-facing ACL — thin legacy signatures over acl/accounting.js.
- *
- * Boot-only state (budgetReadyPromise) stays here; orchestration lives in the BC.
+ * Composition ops — migrated from facades/accountingGame.js (plan_use_case_wiring Barre 5).
+ * Prefer sessionApi / create*Context for new call sites.
  */
 
 export {
@@ -37,14 +36,14 @@ export {
   cleanupOldJournalEntries,
   readInitialFundsFromImportMeta,
   getCommercialRouteFee,
-} from './accounting.js';
+} from './accountingOps.js';
 
-import { recordInfoLoanInstallmentForGame } from './accounting.js';
+import { recordInfoLoanInstallmentForGame } from './accountingOps.js';
 
 export {
   setBudgetReadyPromise,
   awaitBudgetReady,
-} from '../budgetReadyGate.js';
+} from './budgetReadyGate.js';
 
 /** @deprecated Prefer recordInfoLoanInstallmentForGame — kept for PretsPanel. */
 export async function recordInfoLoanInstallment(params) {

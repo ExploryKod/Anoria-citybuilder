@@ -1,4 +1,4 @@
-import { registerAppFunction } from './composition/facades/appRuntime.js'
+import { registerAppFunction } from './composition/sessionShell.js'
 
 import { initPWA } from './pwa.js'
 import { gsap } from 'gsap'

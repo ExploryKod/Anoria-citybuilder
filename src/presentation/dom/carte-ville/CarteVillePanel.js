@@ -3,10 +3,12 @@
  * Rendu grille : CarteVillePresenter.js
  */
 
-import { getPopupManager, registerAppFunction } from '../../../composition/facades/appRuntime.js';
-import { getSessionCity } from '../../../composition/sessionRuntime.js';
-import { hasRoadAccessFromCount } from '../../../composition/facades/parcels.js';
-import { listSupplyMapBuildings } from '../../../composition/facades/supply.js';
+import { getPopupManager, registerAppFunction } from '../../../composition/sessionShell.js';
+import {
+  getSessionCity,
+  requireSessionParcelsApi,
+  requireSessionSupplyApi,
+} from '../../../composition/sessionRuntime.js';
 import {
   renderCityMapGridHtml,
   renderCityMapLoadingHtml,
@@ -88,7 +90,7 @@ export async function generateCarteVille() {
 
     let buildings = [];
     try {
-      buildings = await listSupplyMapBuildings();
+      buildings = await requireSessionSupplyApi().listSupplyMapBuildings();
     } catch (error) {
       console.warn('Could not load Supply map buildings:', error);
       buildings = [];

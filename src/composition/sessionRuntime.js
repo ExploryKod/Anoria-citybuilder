@@ -27,6 +27,11 @@ const state = {
   ecsRuntime: null,
   popupManager: null,
   buttonStateManager: null,
+  /**
+   * Presentation-facing application APIs (plan_use_case_wiring).
+   * @type {ReturnType<import('./sessionApi.js').assembleSessionApi> | null}
+   */
+  sessionApi: null,
 };
 
 const TYPED_KEYS = new Set(Object.keys(state));
@@ -116,6 +121,109 @@ export function getSessionButtonStateManager() {
 
 export function getSessionTimeManager() {
   return state.timeManager ?? getSessionService('timeManager');
+}
+
+/** @returns {ReturnType<import('./sessionApi.js').assembleSessionApi> | null} */
+export function getSessionApi() {
+  return state.sessionApi ?? getSessionService('sessionApi');
+}
+
+/** @returns {ReturnType<import('./sessionApi.js').createConstructionSessionApi> | null} */
+export function getSessionConstructionApi() {
+  return getSessionApi()?.construction ?? null;
+}
+
+/** @returns {ReturnType<import('./sessionApi.js').createAccountingSessionApi> | null} */
+export function getSessionAccountingApi() {
+  return getSessionApi()?.accounting ?? null;
+}
+
+/** @returns {ReturnType<import('./sessionApi.js').createSupplySessionApi> | null} */
+export function getSessionSupplyApi() {
+  return getSessionApi()?.supply ?? null;
+}
+
+/** @returns {ReturnType<import('./sessionApi.js').createEmploymentSessionApi> | null} */
+export function getSessionEmploymentApi() {
+  return getSessionApi()?.employment ?? null;
+}
+
+/** @returns {ReturnType<import('./sessionApi.js').createHousingSessionApi> | null} */
+export function getSessionHousingApi() {
+  return getSessionApi()?.housing ?? null;
+}
+
+/** @returns {ReturnType<import('./sessionApi.js').createCommerceSessionApi> | null} */
+export function getSessionCommerceApi() {
+  return getSessionApi()?.commerce ?? null;
+}
+
+/** @returns {ReturnType<import('./sessionApi.js').createParcelsSessionApi> | null} */
+export function getSessionParcelsApi() {
+  return getSessionApi()?.parcels ?? null;
+}
+
+/** @returns {ReturnType<import('./sessionApi.js').createAccountingSessionApi>} */
+export function requireSessionAccountingApi() {
+  const api = getSessionAccountingApi();
+  if (!api) {
+    throw new Error('sessionApi.accounting is not bound (bootGameContexts / bindSessionRuntime)');
+  }
+  return api;
+}
+
+/** @returns {ReturnType<import('./sessionApi.js').createConstructionSessionApi>} */
+export function requireSessionConstructionApi() {
+  const api = getSessionConstructionApi();
+  if (!api) {
+    throw new Error('sessionApi.construction is not bound (bootGameContexts / bindSessionRuntime)');
+  }
+  return api;
+}
+
+/** @returns {ReturnType<import('./sessionApi.js').createSupplySessionApi>} */
+export function requireSessionSupplyApi() {
+  const api = getSessionSupplyApi();
+  if (!api) {
+    throw new Error('sessionApi.supply is not bound (bootGameContexts / bindSessionRuntime)');
+  }
+  return api;
+}
+
+/** @returns {ReturnType<import('./sessionApi.js').createEmploymentSessionApi>} */
+export function requireSessionEmploymentApi() {
+  const api = getSessionEmploymentApi();
+  if (!api) {
+    throw new Error('sessionApi.employment is not bound (bootGameContexts / bindSessionRuntime)');
+  }
+  return api;
+}
+
+/** @returns {ReturnType<import('./sessionApi.js').createHousingSessionApi>} */
+export function requireSessionHousingApi() {
+  const api = getSessionHousingApi();
+  if (!api) {
+    throw new Error('sessionApi.housing is not bound (bootGameContexts / bindSessionRuntime)');
+  }
+  return api;
+}
+
+/** @returns {ReturnType<import('./sessionApi.js').createCommerceSessionApi>} */
+export function requireSessionCommerceApi() {
+  const api = getSessionCommerceApi();
+  if (!api) {
+    throw new Error('sessionApi.commerce is not bound (bootGameContexts / bindSessionRuntime)');
+  }
+  return api;
+}
+
+/** @returns {ReturnType<import('./sessionApi.js').createParcelsSessionApi>} */
+export function requireSessionParcelsApi() {
+  const api = getSessionParcelsApi();
+  if (!api) {
+    throw new Error('sessionApi.parcels is not bound (bootGameContexts / bindSessionRuntime)');
+  }
+  return api;
 }
 
 export function pauseSessionGame() {

@@ -11,7 +11,7 @@ import {
   selectButton,
   workshopButton,
 } from '../shell/nodes.js';
-import { getButtonStateManager, invokeSetActiveTool } from '../../../composition/facades/appRuntime.js';
+import { getButtonStateManager, invokeSetActiveTool } from '../../../composition/sessionShell.js';
 import { closeModal, toggleModal } from '../tools/ToolPanel.js';
 
 export function initToolBarBindings() {

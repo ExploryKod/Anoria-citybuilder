@@ -1,4 +1,4 @@
-import { pauseGame, playGame, registerAppService, getTimeManager } from '../../../composition/facades/appRuntime.js';
+import { pauseGame, playGame, registerAppService, getTimeManager } from '../../../composition/sessionShell.js';
 import EventBlocker from '../shell/EventBlocker.js';
 
 class ParametersPanel {

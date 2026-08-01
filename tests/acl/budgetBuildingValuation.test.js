@@ -10,7 +10,7 @@ import {
   getCityBuildingValuation,
   getCityTotalBuildingValue,
   getCityBuildingPricesByType,
-} from '../../src/composition/facades/budget.js';
+} from '../../src/composition/budgetOps.js';
 import { makeHouseRecord } from '../fixtures/buildingRecord.js';
 
 async function clearHousesTable() {

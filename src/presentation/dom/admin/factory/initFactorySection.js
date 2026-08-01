@@ -1,4 +1,4 @@
-import { registerAppService } from '../../../../composition/facades/appRuntime.js';
+import { registerAppService } from '../../../../composition/sessionShell.js';
 import { FactorySectionPresenter } from './FactorySectionPresenter.js';
 
 export function initFactorySection() {

@@ -10,8 +10,12 @@ import { getOrCreateHousingContext } from './createHousingContext.js';
 import { getOrCreateEmploymentContext } from './createEmploymentContext.js';
 import { getOrCreateCommerceContext } from './createCommerceContext.js';
 import { getOrCreateGameplayContext } from './createGameplayContext.js';
+import { getOrCreateConstructionContext } from './createConstructionContext.js';
+import { getOrCreateAccountingContext } from './createAccountingContext.js';
+import { getOrCreateCityAssetsContext } from './createCityAssetsContext.js';
 import { toSupplySeason, toSupplyMonth } from './supplyTimeLabels.js';
 import { createGameRuntime } from './createGameRuntime.js';
+import { assembleSessionApi } from './sessionApi.js';
 
 /**
  * @returns {{
@@ -21,6 +25,9 @@ import { createGameRuntime } from './createGameRuntime.js';
  *   employment: object,
  *   commerce: object,
  *   gameplay: object,
+ *   construction: object,
+ *   accounting: object,
+ *   sessionApi: ReturnType<typeof assembleSessionApi>,
  *   runtime: ReturnType<typeof createGameRuntime>,
  * }}
  */
@@ -32,6 +39,19 @@ export function bootGameContexts() {
   employment.ensureSectorPrioritiesInitialized();
   const commerce = getOrCreateCommerceContext();
   const gameplay = getOrCreateGameplayContext();
+  const construction = getOrCreateConstructionContext();
+  const accounting = getOrCreateAccountingContext();
+  const cityAssets = getOrCreateCityAssetsContext();
+  const sessionApi = assembleSessionApi({
+    construction,
+    accounting,
+    cityAssets,
+    supply,
+    employment,
+    housing,
+    commerce,
+    parcels,
+  });
   const runtime = createGameRuntime({
     parcels,
     supply,
@@ -53,6 +73,9 @@ export function bootGameContexts() {
     employment,
     commerce,
     gameplay,
+    construction,
+    accounting,
+    sessionApi,
     runtime,
   };
 }

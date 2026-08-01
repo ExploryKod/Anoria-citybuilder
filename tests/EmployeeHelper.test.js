@@ -13,7 +13,7 @@ import {
     calculateSalary,
     updateEmployeeSalary,
     getSectorName 
-} from '../src/composition/facades/employment.js';
+} from '../src/composition/employmentOps.js';
 
 // ============================================================================
 // getBuildingSector - Associe chaque type de bâtiment à un secteur d'emploi

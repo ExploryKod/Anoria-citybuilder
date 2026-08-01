@@ -428,7 +428,9 @@ export function createScene(_gameStore, assetManager, deps) {
         
         // Initialize resources (trees, boulders, clay, iron, gold) before decorative village
         const resourceManager = new ResourceManager();
-        await resourceManager.initializeResources(city, assetManager, buildings, zoneGroups);
+        await resourceManager.initializeResources(city, assetManager, buildings, zoneGroups, {
+          placeBuildingRecord: (data) => construction.placeBuildingRecord(data),
+        });
         
         // Create decorative village around the playable area
         decorativeVillageManager.createDecorativeVillage(citySize);
@@ -1294,7 +1296,14 @@ export function createScene(_gameStore, assetManager, deps) {
         }
 
         // Neighbor sync once every tile mesh is up to date this frame
-        await syncTileNeighborsPass({ city, buildings, terrain, time, parcels });
+        await syncTileNeighborsPass({
+          city,
+          buildings,
+          terrain,
+          time,
+          parcels,
+          updateBuildingFields,
+        });
 
         // Sync residential meshes + road icons after neighbors (evolution may have run in ECS)
         for (let nx = 0; nx < city.size; nx++) {

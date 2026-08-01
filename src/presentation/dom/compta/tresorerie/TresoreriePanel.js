@@ -1,23 +1,8 @@
+import { requireSessionHousingApi } from '../../../../composition/sessionRuntime.js';
 /**
  * TresoreriePanel — popup trésorerie temps réel (DOM + événements).
  * Rendu : TresoreriePresenter.js
  */
-import {
-  getTreasurySnapshot,
-  getFinancialHealth,
-  getIncomeBreakdown,
-  getExpenseBreakdown,
-  getActiveLoans,
-} from '../../../../composition/facades/accountingGame.js';
-import {
-  renderLoanInterestDetail,
-  renderTresorerieError,
-  renderTresorerieFromData,
-  financialHealthStatusLabel,
-} from './TresoreriePresenter.js';
-import { getPopupManager, getGameStore } from '../../../../composition/facades/appRuntime.js';
-import { getCityTotalPopulation } from '../../../../composition/facades/housing.js';
-
 export { financialHealthStatusLabel as getHealthStatusText };
 
 /**
@@ -82,10 +67,10 @@ export function initTresoreriePopup() {
 export async function updateTresorerie() {
   try {
     const [budgetData, financialHealth, incomeBreakdown, expenseBreakdown] = await Promise.all([
-      getTreasurySnapshot(),
-      getFinancialHealth(),
-      getIncomeBreakdown(),
-      getExpenseBreakdown(),
+      requireSessionAccountingApi().getTreasurySnapshot(),
+      requireSessionAccountingApi().getFinancialHealth(),
+      requireSessionAccountingApi().getIncomeBreakdown(),
+      requireSessionAccountingApi().getExpenseBreakdown(),
     ]);
 
     let population = 0;
@@ -106,7 +91,7 @@ export async function updateTresorerie() {
       }
     }
 
-    if (!renderTresorerieFromData({
+    if (!requireSessionHousingApi().renderTresorerieFromData({
       treasurySnapshot: budgetData,
       financialHealth,
       incomeBreakdown,
@@ -118,10 +103,10 @@ export async function updateTresorerie() {
       return;
     }
 
-    const activeLoans = await getActiveLoans();
+    const activeLoans = await requireSessionAccountingApi().getActiveLoans();
     renderLoanInterestDetail(activeLoans);
   } catch (error) {
     console.error('Error updating real-time budget:', error);
-    renderTresorerieError();
+    requireSessionHousingApi().renderTresorerieError();
   }
 }

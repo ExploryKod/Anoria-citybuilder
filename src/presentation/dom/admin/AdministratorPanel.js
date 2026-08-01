@@ -2,7 +2,7 @@
  * Administrator Panel — shell + navigation between admin sections.
  */
 
-import { getPopupManager, registerAppFunction } from '../../../composition/facades/appRuntime.js';
+import { getPopupManager, registerAppFunction } from '../../../composition/sessionShell.js';
 import {
   initializeFoodTraceabilityTabs,
   loadFoodTraceabilityEntries,

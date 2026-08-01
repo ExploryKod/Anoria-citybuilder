@@ -3,19 +3,30 @@ export class ResourceManager {
         this.resources = new Map();
     }
 
-    async initializeResources(city, assetManager, buildings, zoneGroups) {
+    /**
+     * @param {object} city
+     * @param {object} assetManager
+     * @param {object[][]} buildings
+     * @param {object[]} zoneGroups
+     * @param {{ placeBuildingRecord: (data: object) => Promise<object> }} constructionApi
+     */
+    async initializeResources(city, assetManager, buildings, zoneGroups, constructionApi) {
         const treeCount = Math.floor(city.size * city.size * 0.05);
         const boulderCount = Math.floor(city.size * city.size * 0.03);
 
-        await this.placeRandomTrees(city, assetManager, buildings, zoneGroups, treeCount);
-        await this.placeRandomBoulders(city, assetManager, buildings, zoneGroups, boulderCount);
+        await this.placeRandomTrees(
+          city, assetManager, buildings, zoneGroups, treeCount, constructionApi
+        );
+        await this.placeRandomBoulders(
+          city, assetManager, buildings, zoneGroups, boulderCount, constructionApi
+        );
         this.markClayTiles(city);
         await this.markIronBoulders(city);
         await this.markGoldBoulders(city);
     }
 
-    async placeRandomTrees(city, assetManager, buildings, zoneGroups, count) {
-        const { placeBuildingRecord } = await import('../../../composition/facades/construction.js');
+    async placeRandomTrees(city, assetManager, buildings, zoneGroups, count, constructionApi) {
+        const { placeBuildingRecord } = constructionApi;
         const treeMapping = {
             'Tree-Sapin': 'Tree-Pine-001',
             'Tree-Arbuste': 'Tree-Square-001',
@@ -96,8 +107,8 @@ export class ResourceManager {
         }
     }
 
-    async placeRandomBoulders(city, assetManager, buildings, zoneGroups, count) {
-        const { placeBuildingRecord } = await import('../../../composition/facades/construction.js');
+    async placeRandomBoulders(city, assetManager, buildings, zoneGroups, count, constructionApi) {
+        const { placeBuildingRecord } = constructionApi;
         const ZONE_SIZE = 4;
         let placed = 0;
 
@@ -192,8 +203,8 @@ export class ResourceManager {
 
     async markIronBoulders(city) {
         try {
-            const { listNatureResources } = await import('../../../composition/facades/supply.js');
-            const boulders = (await listNatureResources()).filter((h) =>
+            const { requireSessionSupplyApi } = await import('../../../composition/sessionRuntime.js');
+            const boulders = (await requireSessionSupplyApi().listNatureResources()).filter((h) =>
                 (h.type || '').includes('Boulder')
             );
             const ironBoulderCount = Math.floor(boulders.length * 0.15);
@@ -213,8 +224,8 @@ export class ResourceManager {
 
     async markGoldBoulders(city) {
         try {
-            const { listNatureResources } = await import('../../../composition/facades/supply.js');
-            const boulders = (await listNatureResources()).filter((h) =>
+            const { requireSessionSupplyApi } = await import('../../../composition/sessionRuntime.js');
+            const boulders = (await requireSessionSupplyApi().listNatureResources()).filter((h) =>
                 (h.type || '').includes('Boulder')
             );
             const goldBoulderCount = Math.floor(boulders.length * 0.1);
