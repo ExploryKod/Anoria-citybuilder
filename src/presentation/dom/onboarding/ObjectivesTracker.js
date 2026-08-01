@@ -3,12 +3,10 @@
  * Treasury via sessionApi.accounting
  */
 
-import { getObjectivesManager, getButtonStateManager, registerAppService } from '../../../composition/sessionShell.js';
 import {
   OBJECTIVE_CATALOG,
   isObjectiveRequirementMet,
 } from '../../../composition/accountingObjectivesCatalog.js';
-import { requireSessionAccountingApi } from '../../../composition/sessionRuntime.js';
 
 const BUDGET_CHALLENGE_OBJECTIVE_ID = 'budget_challenge_5000';
 const budgetChallengeDefinition = OBJECTIVE_CATALOG[BUDGET_CHALLENGE_OBJECTIVE_ID];
@@ -96,7 +94,7 @@ class ObjectivesTracker {
 
             this.trackingData.currentDay = currentDay;
 
-            const budget = await requireSessionAccountingApi().getTreasurySnapshot();
+            const budget = await deps.accounting.getTreasurySnapshot();
             this.trackingData.currentFunds = budget.funds || 0;
 
             if (
@@ -238,8 +236,8 @@ class ObjectivesTracker {
         });
         
         // Désactiver les événements Three.js quand la modale est ouverte
-        if (getObjectivesManager() && getObjectivesManager().disableThreeJSEvents) {
-            getObjectivesManager().disableThreeJSEvents();
+        if (deps?.getObjectivesManager?.() && deps?.getObjectivesManager?.().disableThreeJSEvents) {
+            deps?.getObjectivesManager?.().disableThreeJSEvents();
         }
     }
 
@@ -331,8 +329,8 @@ class ObjectivesTracker {
      */
     showObjectiveCompletion(objective) {
         // Déverrouiller House-Purple quand l'objectif est complété
-        if (getButtonStateManager()) {
-            getButtonStateManager().enable('House-Purple');
+        if (deps?.getButtonStateManager?.()) {
+            deps?.getButtonStateManager?.().enable('House-Purple');
             
             // Animation pour attirer l'attention sur le bouton déverrouillé
             setTimeout(() => {
@@ -479,7 +477,7 @@ class ObjectivesTracker {
         try {
             const objective = this.objectives.find(obj => obj.id === objectiveId);
             
-            const objectivesStore = requireSessionAccountingApi().getObjectivesStore();
+            const objectivesStore = deps.accounting.getObjectivesStore();
             if (objectivesStore) {
                 await objectivesStore.recordObjectiveSuccess({
                     objectiveId: objectiveId,
@@ -517,10 +515,23 @@ class ObjectivesTracker {
     }
 }
 
-// Créer une instance globale
 const objectivesTracker = new ObjectivesTracker();
 
-registerAppService('objectivesTracker', objectivesTracker);
+/** @type {{
+ *   accounting: object,
+ *   getObjectivesManager?: () => object | null,
+ *   getButtonStateManager?: () => object | null,
+ *   registerAppService?: (name: string, instance: *) => void,
+ * } | null} */
+let deps = null;
+
+/**
+ * @param {NonNullable<typeof deps>} panelDeps
+ */
+export function bindObjectivesTrackerDeps(panelDeps) {
+  deps = panelDeps;
+  panelDeps.registerAppService?.('objectivesTracker', objectivesTracker);
+}
 
 export default objectivesTracker;
 

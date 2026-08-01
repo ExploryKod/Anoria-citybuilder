@@ -1,11 +1,18 @@
-import { registerAppService } from '../../../../composition/sessionShell.js';
 import { FactorySectionPresenter } from './FactorySectionPresenter.js';
 
-export function initFactorySection() {
+/**
+ * @param {{
+ *   supply: object,
+ *   registerAppService?: (name: string, instance: *) => void,
+ * }} deps
+ */
+export function initFactorySection(deps) {
+  if (typeof document === 'undefined') return;
+
   const factorySection = document.getElementById('admin-section-factory');
   if (!factorySection) return;
 
-  const presenter = new FactorySectionPresenter();
+  const presenter = new FactorySectionPresenter(deps);
 
   const observer = new MutationObserver(() => {
     if (factorySection.classList.contains('active')) {
@@ -20,11 +27,5 @@ export function initFactorySection() {
     presenter.init();
   }
 
-  registerAppService('factorySectionPresenter', presenter);
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initFactorySection);
-} else {
-  initFactorySection();
+  deps.registerAppService?.('factorySectionPresenter', presenter);
 }

@@ -4,12 +4,25 @@ import {
   panelLayoutInner,
   toolBarButtons,
 } from '../shell/nodes.js';
-import {
-  getPopupManager,
-  getButtonStateManager,
-  invokeSetActiveTool,
-  playGame,
-} from '../../../composition/sessionShell.js';
+/** @type {{
+ *   popupManager?: object | null,
+ *   buttonStateManager?: object | null,
+ *   playGame?: () => void,
+ *   invokeSetActiveTool?: (e: Event) => void,
+ * } | null} */
+let deps = null;
+
+/**
+ * @param {{
+ *   popupManager?: object | null,
+ *   buttonStateManager?: object | null,
+ *   playGame?: () => void,
+ *   invokeSetActiveTool?: (e: Event) => void,
+ * }} panelDeps
+ */
+export function bindToolPanelDeps(panelDeps) {
+  deps = panelDeps;
+}
 
 let buttonData;
 let toolIds;
@@ -57,7 +70,7 @@ export function closeModal() {
         }
         
         // Resume the game when closing building selection modal
-        playGame();
+        deps?.playGame?.();
     }
 }
 
@@ -79,14 +92,10 @@ export function toggleModal(e) {
                 panelLayout.classList.add('active');
                 
                 // Utiliser PopupManager pour gérer les événements
-                if (getPopupManager()) {
-                    getPopupManager().forceOpenPopup('panel-layout');
-                }
+                deps?.popupManager?.forceOpenPopup('panel-layout');
             } else {
                 // Utiliser PopupManager pour gérer les événements
-                if (getPopupManager()) {
-                    getPopupManager().forceClosePopup('panel-layout');
-                }
+                deps?.popupManager?.forceClosePopup('panel-layout');
             }
 
             break;
@@ -101,14 +110,10 @@ export function toggleModal(e) {
                 createFarmsButtons(buttonData);
                 
                 // Utiliser PopupManager pour gérer les événements
-                if (getPopupManager()) {
-                    getPopupManager().forceOpenPopup('panel-layout');
-                }
+                deps?.popupManager?.forceOpenPopup('panel-layout');
             } else {
                 // Utiliser PopupManager pour gérer les événements
-                if (getPopupManager()) {
-                    getPopupManager().forceClosePopup('panel-layout');
-                }
+                deps?.popupManager?.forceClosePopup('panel-layout');
             }
             break;
         case 'industry':
@@ -122,14 +127,10 @@ export function toggleModal(e) {
                 createIndustryButtons(buttonData);
                 
                 // Utiliser PopupManager pour gérer les événements
-                if (getPopupManager()) {
-                    getPopupManager().forceOpenPopup('panel-layout');
-                }
+                deps?.popupManager?.forceOpenPopup('panel-layout');
             } else {
                 // Utiliser PopupManager pour gérer les événements
-                if (getPopupManager()) {
-                    getPopupManager().forceClosePopup('panel-layout');
-                }
+                deps?.popupManager?.forceClosePopup('panel-layout');
             }
             break;
         case 'markets':
@@ -142,14 +143,10 @@ export function toggleModal(e) {
                 createMarketsStallsButtons(buttonData)
                 
                 // Utiliser PopupManager pour gérer les événements
-                if (getPopupManager()) {
-                    getPopupManager().forceOpenPopup('panel-layout');
-                }
+                deps?.popupManager?.forceOpenPopup('panel-layout');
             } else {
                 // Utiliser PopupManager pour gérer les événements
-                if (getPopupManager()) {
-                    getPopupManager().forceClosePopup('panel-layout');
-                }
+                deps?.popupManager?.forceClosePopup('panel-layout');
             }
             break;
         case 'infrastructure':
@@ -162,14 +159,10 @@ export function toggleModal(e) {
                 createInfrastructureButtons(buttonData)
                 
                 // Utiliser PopupManager pour gérer les événements
-                if (getPopupManager()) {
-                    getPopupManager().forceOpenPopup('panel-layout');
-                }
+                deps?.popupManager?.forceOpenPopup('panel-layout');
             } else {
                 // Utiliser PopupManager pour gérer les événements
-                if (getPopupManager()) {
-                    getPopupManager().forceClosePopup('panel-layout');
-                }
+                deps?.popupManager?.forceClosePopup('panel-layout');
             }
             break;
         case 'public':
@@ -183,19 +176,15 @@ export function toggleModal(e) {
                 createPublicButtons(buttonData)
                 
                 // Utiliser PopupManager pour gérer les événements
-                if (getPopupManager()) {
-                    getPopupManager().forceOpenPopup('panel-layout');
-                }
+                deps?.popupManager?.forceOpenPopup('panel-layout');
             } else {
                 // Utiliser PopupManager pour gérer les événements
-                if (getPopupManager()) {
-                    getPopupManager().forceClosePopup('panel-layout');
-                }
+                deps?.popupManager?.forceClosePopup('panel-layout');
             }
             break;
         case 'palaces':
             // Check if palace button is disabled
-            if (getButtonStateManager() && !getButtonStateManager().isEnabled('palace-btn')) {
+            if (deps?.buttonStateManager && !deps.buttonStateManager.isEnabled('palace-btn')) {
                 console.warn('🏛️ Palace button is disabled');
                 return; // Don't open panel if disabled
             }
@@ -209,14 +198,10 @@ export function toggleModal(e) {
                 createPalacesButtons(buttonData)
                 
                 // Utiliser PopupManager pour gérer les événements
-                if (getPopupManager()) {
-                    getPopupManager().forceOpenPopup('panel-layout');
-                }
+                deps?.popupManager?.forceOpenPopup('panel-layout');
             } else {
                 // Utiliser PopupManager pour gérer les événements
-                if (getPopupManager()) {
-                    getPopupManager().forceClosePopup('panel-layout');
-                }
+                deps?.popupManager?.forceClosePopup('panel-layout');
             }
             break;
         case 'nature':
@@ -229,14 +214,10 @@ export function toggleModal(e) {
                 createNatureButtons(buttonData)
                 
                 // Utiliser PopupManager pour gérer les événements
-                if (getPopupManager()) {
-                    getPopupManager().forceOpenPopup('panel-layout');
-                }
+                deps?.popupManager?.forceOpenPopup('panel-layout');
             } else {
                 // Utiliser PopupManager pour gérer les événements
-                if (getPopupManager()) {
-                    getPopupManager().forceClosePopup('panel-layout');
-                }
+                deps?.popupManager?.forceClosePopup('panel-layout');
             }
             break;
         case 'roads':
@@ -249,14 +230,10 @@ export function toggleModal(e) {
                 createRoadsButtons(buttonData)
                 
                 // Utiliser PopupManager pour gérer les événements
-                if (getPopupManager()) {
-                    getPopupManager().forceOpenPopup('panel-layout');
-                }
+                deps?.popupManager?.forceOpenPopup('panel-layout');
             } else {
                 // Utiliser PopupManager pour gérer les événements
-                if (getPopupManager()) {
-                    getPopupManager().forceClosePopup('panel-layout');
-                }
+                deps?.popupManager?.forceClosePopup('panel-layout');
             }
             break;
         default:
@@ -560,8 +537,8 @@ function makeNewButton(buttonInfo, svg="") {
 
     button.addEventListener('click', (e) => {
         // Check if button is disabled before allowing click
-        if (getButtonStateManager() && getButtonStateManager().isEnabled(buttonInfo.tool)) {
-            invokeSetActiveTool(e);
+        if (deps?.buttonStateManager && deps.buttonStateManager.isEnabled(buttonInfo.tool)) {
+            deps.invokeSetActiveTool?.(e);
         }
     });
 
@@ -570,7 +547,7 @@ function makeNewButton(buttonInfo, svg="") {
     loaderButton.classList.remove('active')
     
     // Register button with ButtonStateManager if available
-    if (getButtonStateManager()) {
-        getButtonStateManager().registerButton(buttonInfo.tool, button);
+    if (deps?.buttonStateManager) {
+        deps.buttonStateManager.registerButton(buttonInfo.tool, button);
     }
 }

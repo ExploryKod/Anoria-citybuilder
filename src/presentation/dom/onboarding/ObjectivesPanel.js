@@ -2,34 +2,34 @@
  * ObjectivesPanel — popup objectifs (DOM + événements).
  */
 import EventBlocker from '../shell/EventBlocker.js';
-import { requireSessionAccountingApi } from '../../../composition/sessionRuntime.js';
-
 
 class ObjectivesPanel {
-    constructor() {
+    /**
+     * @param {{
+     *   accounting: object,
+     *   pauseGame?: () => void,
+     *   playGame?: () => void,
+     *   getObjectivesTracker?: () => object | null,
+     *   getObjectivesHistory?: () => object | null,
+     *   getObjectivesManager?: () => object | null,
+     *   invokeStartObjectives?: () => Promise<void> | void,
+     *   registerAppService?: (name: string, instance: *) => void,
+     *   registerAppFunction?: (name: string, fn: Function) => void,
+     * }} deps
+     */
+    constructor(deps) {
+        this.deps = deps;
         this.panel = null;
         this.currentStep = 0;
         this.steps = [];
         this.isVisible = false;
         this.isInitialized = false;
-        
-        // Utilisation de EventBlocker par composition
         this.eventBlocker = new EventBlocker();
-        
-        this.init();
     }
 
-    /**
-     * Initialise le système de tutoriel
-     */
     async init() {
         if (this.isInitialized) return;
-        
-        // Attendre que le DOM soit chargé
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', async () => await this.init());
-            return;
-        }
+        if (typeof document === 'undefined') return;
         
         this.panel = document.getElementById('objectives-panel');
         if (!this.panel) {
@@ -80,7 +80,7 @@ class ObjectivesPanel {
      */
     async setupDefaultSteps() {
         // Charger les objectifs depuis le tracker
-        const objectivesTracker = requireSessionAccountingApi().getObjectivesTracker();
+        const objectivesTracker = this.deps.getObjectivesTracker?.();
         if (objectivesTracker) {
             const objectives = objectivesTracker.objectives;
             const activeObjectives = objectives.filter(obj => obj.active && !obj.completed);
@@ -148,7 +148,7 @@ class ObjectivesPanel {
         }
 
         // Afficher l'état actuel de manière simplifiée
-        const objectivesTracker = requireSessionAccountingApi().getObjectivesTracker();
+        const objectivesTracker = this.deps.getObjectivesTracker?.();
         if (objectivesTracker) {
             const trackingData = objectivesTracker.getTrackingData();
             
@@ -222,7 +222,7 @@ class ObjectivesPanel {
         this.disableThreeJSEvents();
         
         // Mettre le jeu en pause
-        requireSessionAccountingApi().pauseGame();
+        this.deps.pauseGame?.();
     }
 
     /**
@@ -236,7 +236,7 @@ class ObjectivesPanel {
         this.enableThreeJSEvents();
         
         // Reprendre le jeu
-        requireSessionAccountingApi().playGame();
+        this.deps.playGame?.();
     }
 
     /**
@@ -286,7 +286,7 @@ class ObjectivesPanel {
             if (historyBtn) {
                 historyBtn.addEventListener('click', (e) => {
                     e.preventDefault();
-                    const objectivesHistory = requireSessionAccountingApi().getObjectivesHistory();
+                    const objectivesHistory = this.deps.getObjectivesHistory?.();
                     if (objectivesHistory?.showHistory) {
                         objectivesHistory.showHistory();
                     } else {
@@ -308,7 +308,7 @@ class ObjectivesPanel {
         if (!historyContent) return;
         
         try {
-            const allRecords = await requireSessionAccountingApi().getObjectivesStore().getAllFailures();
+            const allRecords = await this.deps.accounting.getObjectivesStore().getAllFailures();
             const failures = allRecords.filter(r => r.name?.startsWith('failure_'));
             const successes = allRecords.filter(r => r.name?.startsWith('success_'));
             
@@ -355,7 +355,7 @@ class ObjectivesPanel {
                 const fullHistoryBtn = historyContent.querySelector('#open-full-history-btn');
                 if (fullHistoryBtn) {
                     fullHistoryBtn.addEventListener('click', () => {
-                        const objectivesHistory = requireSessionAccountingApi().getObjectivesHistory();
+                        const objectivesHistory = this.deps.getObjectivesHistory?.();
                         if (objectivesHistory) {
                             objectivesHistory.showHistory();
                         }
@@ -432,42 +432,44 @@ class ObjectivesPanel {
     }
 }
 
-const objectivesPanel = new ObjectivesPanel();
 
-requireSessionAccountingApi().registerAppService('objectivesManager', objectivesPanel);
+/**
+ * @param {ConstructorParameters<typeof ObjectivesPanel>[0]} deps
+ */
+export function initObjectivesPanel(deps) {
+  const objectivesPanel = new ObjectivesPanel(deps);
+  void objectivesPanel.init();
 
-requireSessionAccountingApi().registerAppFunction('startObjectives', async () => {
+  deps.registerAppService?.('objectivesManager', objectivesPanel);
+  deps.registerAppFunction?.('startObjectives', async () => {
     await objectivesPanel.showObjectives();
-});
-
-requireSessionAccountingApi().registerAppFunction('closeObjectives', () => {
+  });
+  deps.registerAppFunction?.('closeObjectives', () => {
     objectivesPanel.closeObjectives();
-});
+  });
 
-document.addEventListener('DOMContentLoaded', () => {
-    const objectivesBtn = document.getElementById('objectives-btn');
-    if (objectivesBtn) {
-        const newBtn = objectivesBtn.cloneNode(true);
-        objectivesBtn.parentNode.replaceChild(newBtn, objectivesBtn);
+  const objectivesBtn = document.getElementById('objectives-btn');
+  if (objectivesBtn) {
+    const newBtn = objectivesBtn.cloneNode(true);
+    objectivesBtn.parentNode.replaceChild(newBtn, objectivesBtn);
+    newBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      await deps.invokeStartObjectives?.();
+    }, true);
+  }
 
-        newBtn.addEventListener('click', async (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-
-            await requireSessionAccountingApi().invokeStartObjectives();
-        }, true);
-    }
-});
-
-window.addEventListener('error', () => {
-    const objectivesManagerRef = requireSessionAccountingApi().getObjectivesManager();
+  window.addEventListener('error', () => {
+    const objectivesManagerRef = deps.getObjectivesManager?.();
     if (objectivesManagerRef && objectivesManagerRef.eventBlocker.isEventsBlocked()) {
-        objectivesManagerRef.cleanup();
+      objectivesManagerRef.cleanup();
     }
-});
+  });
 
-window.addEventListener('beforeunload', () => {
-    requireSessionAccountingApi().getObjectivesManager()?.cleanup();
-});
+  window.addEventListener('beforeunload', () => {
+    deps.getObjectivesManager?.()?.cleanup();
+  });
 
+  return objectivesPanel;
+}

@@ -1,5 +1,4 @@
-import { getTimeInfo } from '../../../../composition/sessionShell.js';
-import { requireSessionSupplyApi } from '../../../../composition/sessionRuntime.js';
+import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import {
     instanceIdFromHouseRow,
     displayLabelFromHouseRow,
@@ -13,12 +12,16 @@ function factoryDisplayLabel(factory) {
     return displayLabelFromHouseRow(factory);
 }
 
-async function loadFactoryJournalEntries(factoryData) {
-    return requireSessionSupplyApi().getFactoryProductionJournalEntries(factoryInstanceId(factoryData));
+async function loadFactoryJournalEntries(supply, factoryData) {
+    return supply.getFactoryProductionJournalEntries(factoryInstanceId(factoryData));
 }
 
 export class FactorySectionPresenter {
-    constructor() {
+    /**
+     * @param {{ supply: object }} deps
+     */
+    constructor(deps = {}) {
+        this.supply = deps.supply;
         this.factories = [];
         this.naturalResources = [];
         this.naturalResourcesExpanded = true; // Par défaut, le panneau est ouvert
@@ -134,7 +137,7 @@ export class FactorySectionPresenter {
     
     async loadFactories() {
         try {
-            const filteredFactories = await requireSessionSupplyApi().listCityFactories();
+            const filteredFactories = await this.supply.listCityFactories();
             
             // Éviter les doublons basés sur le nom de la factory
             const uniqueFactories = [];
@@ -149,7 +152,7 @@ export class FactorySectionPresenter {
             
             this.factories = uniqueFactories;
 
-            this.naturalResources = await requireSessionSupplyApi().listNatureResources();
+            this.naturalResources = await this.supply.listNatureResources();
 
             this.render();
         } catch (error) {
@@ -253,7 +256,7 @@ export class FactorySectionPresenter {
         
         // Recharger les ressources naturelles depuis IndexedDB pour avoir les données à jour
         try {
-            this.naturalResources = await requireSessionSupplyApi().listNatureResources();
+            this.naturalResources = await this.supply.listNatureResources();
         } catch (_error) {
             // preserve silent failure
         }
@@ -338,7 +341,7 @@ export class FactorySectionPresenter {
         // Recharger les données depuis IndexedDB pour avoir les données à jour (notamment employees et productWorkerDistribution)
         let factoryData = factory;
         try {
-            const freshData = await requireSessionSupplyApi().getFactoryById(factoryInstanceId(factory));
+            const freshData = await this.supply.getFactoryById(factoryInstanceId(factory));
             if (freshData) {
                 factoryData = freshData;
             }
@@ -368,7 +371,7 @@ export class FactorySectionPresenter {
         const lastProcessTurn = factoryData.lastProcessTurn || 0;
         
         // Récupérer les entrées du journal de production pour cette factory
-        const journalEntries = await loadFactoryJournalEntries(factoryData);
+        const journalEntries = await loadFactoryJournalEntries(this.supply, factoryData);
         
         // Trouver les dernières transformations
         const lastWoodTransformEntry = journalEntries
@@ -474,11 +477,11 @@ export class FactorySectionPresenter {
             bijoutier: 'Bijoutier'
         };
 
-        const getMaxStorage = (type) => requireSessionSupplyApi().getFactoryMaxStorage(type);
+        const getMaxStorage = (type) => this.supply.getFactoryMaxStorage(type);
 
-        const getEmployeeNeed = (type) => requireSessionSupplyApi().getFactoryWorkerNeed(type);
+        const getEmployeeNeed = (type) => this.supply.getFactoryWorkerNeed(type);
 
-        const getEmployeeType = (type) => requireSessionSupplyApi().getFactoryEmployeeRoleType(type);
+        const getEmployeeType = (type) => this.supply.getFactoryEmployeeRoleType(type);
 
         const getEmployeesForResource = (resourceType) => {
             const employeeType = getEmployeeType(resourceType);
@@ -795,7 +798,7 @@ export class FactorySectionPresenter {
     
     async updateFactorySetting(factoryId, setting, value) {
         try {
-            await requireSessionSupplyApi().updateFactoryFields(factoryId, {
+            await this.supply.updateFactoryFields(factoryId, {
                 [setting]: value,
             });
             
@@ -814,7 +817,7 @@ export class FactorySectionPresenter {
      */
     async recruitWorkerForProduct(factoryId, productKey) {
         try {
-            const factoryData = await requireSessionSupplyApi().getFactoryById(factoryId);
+            const factoryData = await this.supply.getFactoryById(factoryId);
             if (!factoryData) {
                 return;
             }
@@ -855,7 +858,7 @@ export class FactorySectionPresenter {
             };
 
             // Sauvegarder dans IndexedDB : workers alloués + pourcentages de production
-            await requireSessionSupplyApi().updateFactoryFields(factoryId, {
+            await this.supply.updateFactoryFields(factoryId, {
                 productWorkerDistribution: newDistribution,
                 productProductionPercentages: newProductionPercentages,
             });
@@ -895,7 +898,7 @@ export class FactorySectionPresenter {
             journalContent.innerHTML = '<div class="factory-loading">Chargement du journal...</div>';
             
             // Récupérer toutes les entrées du journal depuis IndexedDB
-            const entries = await requireSessionSupplyApi().listProductionJournalEntries();
+            const entries = await this.supply.listProductionJournalEntries();
             
             if (entries.length === 0) {
                 journalContent.innerHTML = '<div class="factory-empty">Aucune entrée dans le journal de production</div>';
@@ -959,7 +962,7 @@ export class FactorySectionPresenter {
         if (!journalFactorySelect) return;
         
         // Récupérer toutes les entrées du journal pour obtenir la liste des factories
-        const entries = await requireSessionSupplyApi().listProductionJournalEntries();
+        const entries = await this.supply.listProductionJournalEntries();
         
         // Extraire les IDs de factories uniques
         const factoryIds = new Set();
@@ -1011,7 +1014,7 @@ export class FactorySectionPresenter {
         let monthDisplay = '';
         let yearDisplay = '';
         if (entry.turn !== undefined) {
-            const timeInfo = getTimeInfo(entry.turn);
+            const timeInfo = TimeManager.getTimeInfo(entry.turn);
             monthDisplay = timeInfo.month;
             yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
         }

@@ -1,16 +1,27 @@
-import { registerAppService } from '../../../../composition/sessionShell.js';
-import { requireSessionCommerceApi } from '../../../../composition/sessionRuntime.js';
-
 import { CommerceSectionPresenter } from './CommerceSectionPresenter.js';
 
-export async function initCommerceSection() {
+/**
+ * @param {{
+ *   accounting: object,
+ *   commerce: object,
+ *   employment: object,
+ *   housing: object,
+ *   supply: object,
+ *   updateDisplayedFunds?: (funds: number) => void,
+ *   getGameTime?: () => number,
+ *   registerAppService?: (name: string, instance: *) => void,
+ * }} deps
+ */
+export async function initCommerceSection(deps) {
+  if (typeof document === 'undefined') return;
+
   const commerceSection = document.getElementById('admin-section-commerce');
   if (!commerceSection) return;
 
-  const presenter = new CommerceSectionPresenter();
-  registerAppService('commerceSectionPresenter', presenter);
+  const presenter = new CommerceSectionPresenter(deps);
+  deps.registerAppService?.('commerceSectionPresenter', presenter);
 
-  requireSessionCommerceApi().setCommercePartnerContractFinishedHandler(({ partnerName, finishedProducts }) => {
+  deps.commerce.setCommercePartnerContractFinishedHandler(({ partnerName, finishedProducts }) => {
     const productsText = finishedProducts.length > 0 ? finishedProducts.join(', ') : 'toutes les denrées';
     presenter.showPartnerMessage(
       `Contrat terminé avec ${partnerName} (${productsText}). Le partenaire a été désactivé automatiquement.`,
@@ -39,16 +50,4 @@ export async function initCommerceSection() {
     presenter.setupTabs();
     presenter.loadPartnersData();
   }
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    initCommerceSection().catch((error) => {
-      console.error('[CommerceSection] init failed:', error);
-    });
-  });
-} else {
-  initCommerceSection().catch((error) => {
-    console.error('[CommerceSection] init failed:', error);
-  });
 }

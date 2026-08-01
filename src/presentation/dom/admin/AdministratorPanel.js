@@ -2,13 +2,22 @@
  * Administrator Panel — shell + navigation between admin sections.
  */
 
-import { getPopupManager, registerAppFunction } from '../../../composition/sessionShell.js';
 import {
   initializeFoodTraceabilityTabs,
   loadFoodTraceabilityEntries,
 } from './food-traceability/FoodTraceabilityPanel.js';
 
-function initAdministratorPanel() {
+/**
+ * @param {{
+ *   popupManager?: object | null,
+ *   registerAppFunction?: (name: string, fn: Function) => void,
+ * }} deps
+ */
+export function initAdministratorPanel(deps = {}) {
+  if (typeof document === 'undefined') return;
+
+  const { popupManager, registerAppFunction } = deps;
+
   const administratorPanel = document.getElementById('administrator-panel');
   const administratorCloseBtn = document.getElementById('administrator-panel-close-btn');
   const navButtons = document.querySelectorAll('.administrator-nav-btn');
@@ -21,7 +30,7 @@ function initAdministratorPanel() {
 
   function openPanel() {
     administratorPanel.classList.add('active');
-    getPopupManager()?.forceOpenPopup('administrator-panel');
+    popupManager?.forceOpenPopup('administrator-panel');
     if (sections.length > 0) {
       showSection('finances');
     }
@@ -29,7 +38,7 @@ function initAdministratorPanel() {
 
   function closePanel() {
     administratorPanel.classList.remove('active');
-    getPopupManager()?.forceClosePopup('administrator-panel');
+    popupManager?.forceClosePopup('administrator-panel');
   }
 
   function showSection(sectionId) {
@@ -66,20 +75,12 @@ function initAdministratorPanel() {
     if (e.target === administratorPanel) closePanel();
   });
 
-  registerAppFunction('openAdministratorPanel', openPanel);
-  registerAppFunction('closeAdministratorPanel', closePanel);
-  registerAppFunction('showAdministratorSection', showSection);
+  registerAppFunction?.('openAdministratorPanel', openPanel);
+  registerAppFunction?.('closeAdministratorPanel', closePanel);
+  registerAppFunction?.('showAdministratorSection', showSection);
 
   document.getElementById('administrator-btn')?.addEventListener('click', (e) => {
     e.stopPropagation();
     openPanel();
   });
 }
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initAdministratorPanel);
-} else {
-  initAdministratorPanel();
-}
-
-export { initAdministratorPanel };

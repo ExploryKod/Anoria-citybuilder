@@ -1,7 +1,11 @@
-import { registerAppService } from '../../../../composition/sessionShell.js';
 import { HealthSectionPresenter } from './HealthSectionPresenter.js';
 
-export function initHealthSection() {
+/**
+ * @param {{ registerAppService?: (name: string, instance: *) => void }} deps
+ */
+export function initHealthSection(deps = {}) {
+  if (typeof document === 'undefined') return;
+
   const healthSection = document.getElementById('admin-section-health');
   if (!healthSection) return;
 
@@ -21,11 +25,5 @@ export function initHealthSection() {
     observer.disconnect();
   }
 
-  registerAppService('healthSectionPresenter', presenter);
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initHealthSection);
-} else {
-  initHealthSection();
+  deps.registerAppService?.('healthSectionPresenter', presenter);
 }

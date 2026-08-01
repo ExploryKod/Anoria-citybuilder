@@ -1,8 +1,12 @@
-import { getSessionAccountingApi, requireSessionAccountingApi, requireSessionEmploymentApi, requireSessionHousingApi } from '../../../../composition/sessionRuntime.js';
-
 export class WorkSectionPresenter {
-    constructor() {
-        const settings = getSessionAccountingApi()?.getSalarySettings() ?? {
+    /**
+     * @param {{ accounting: object, employment: object, housing: object }} deps
+     */
+    constructor(deps) {
+        this.accounting = deps.accounting;
+        this.employment = deps.employment;
+        this.housing = deps.housing;
+        const settings = this.accounting?.getSalarySettings?.() ?? {
           salaryPerMonth: 0,
           salaryTaxRate: 0,
         };
@@ -90,7 +94,7 @@ export class WorkSectionPresenter {
     }
 
     async loadWorkData() {
-        const allPriorities = requireSessionEmploymentApi().getMergedSectorPriorities();
+        const allPriorities = this.employment.getMergedSectorPriorities();
         if (this.workData) {
             this.workData.sectors.forEach(sector => {
                 if (sector.sectorNumber !== undefined) {
@@ -116,7 +120,7 @@ export class WorkSectionPresenter {
      */
     async updateEmployeeStatistics() {
         try {
-            const summary = await requireSessionEmploymentApi().getCityEmploymentSummary();
+            const summary = await this.employment.getCityEmploymentSummary();
 
             if (this.workData && this.workData.sectors) {
                 this.workData.sectors.forEach(sector => {
@@ -156,15 +160,15 @@ export class WorkSectionPresenter {
 
     generatePlaceholderWorkData() {
         // Get sectors from config
-        const sectors = requireSessionEmploymentApi().EMPLOYMENT_SECTOR_NAMES;
-        const defaultPriorities = requireSessionEmploymentApi().DEFAULT_SECTOR_PRIORITIES;
+        const sectors = this.employment.EMPLOYMENT_SECTOR_NAMES;
+        const defaultPriorities = this.employment.DEFAULT_SECTOR_PRIORITIES;
         
         // Generate sectors from config
         const sectorList = Object.entries(sectors).map(([sectorNum, sectorName]) => {
             const secNum = parseInt(sectorNum, 10);
             // Get priority from service if available, otherwise use default
             let priority = defaultPriorities[secNum] || 1;
-            priority = requireSessionEmploymentApi().getSectorPriority(secNum);
+            priority = this.employment.getSectorPriority(secNum);
             
             return {
                 id: `sector-${secNum}`, // Use sector number as ID
@@ -194,7 +198,7 @@ export class WorkSectionPresenter {
         const newSalary = Math.max(10, Math.min(500, this.salary + delta));
         
         if (newSalary !== this.salary) {
-            const settings = requireSessionAccountingApi().setSalarySettings({ salaryPerMonth: newSalary });
+            const settings = this.accounting.setSalarySettings({ salaryPerMonth: newSalary });
             this.salary = settings.salaryPerMonth;
             this.updateSalaryDisplay();
         }
@@ -204,7 +208,7 @@ export class WorkSectionPresenter {
         const newRate = Math.max(0, Math.min(1, this.salaryTaxRate + delta));
         
         if (newRate !== this.salaryTaxRate) {
-            const settings = requireSessionAccountingApi().setSalarySettings({ salaryTaxRate: newRate });
+            const settings = this.accounting.setSalarySettings({ salaryTaxRate: newRate });
             this.salaryTaxRate = settings.salaryTaxRate;
             this.updateSalaryTaxDisplay();
         }
@@ -225,17 +229,17 @@ export class WorkSectionPresenter {
         const sectorData = this.workData.sectors.find(s => s.id === sector);
         if (sectorData && sectorData.sectorNumber !== undefined) {
             // Get max sectors directly from config (source of truth)
-            const maxSectors = requireSessionEmploymentApi().EMPLOYMENT_MAX_SECTORS;
+            const maxSectors = this.employment.EMPLOYMENT_MAX_SECTORS;
             
             // Clamp priority to valid range (1 to max sectors)
             const clampedPriority = Math.max(1, Math.min(maxSectors, priority));
             
-            requireSessionEmploymentApi().updateSectorPrioritySync(
+            this.employment.updateSectorPrioritySync(
                 sectorData.sectorNumber,
                 clampedPriority
             );
 
-            const allPriorities = requireSessionEmploymentApi().getMergedSectorPriorities();
+            const allPriorities = this.employment.getMergedSectorPriorities();
 
             this.workData.sectors.forEach(sec => {
                 if (sec.sectorNumber !== undefined) {
@@ -272,7 +276,7 @@ export class WorkSectionPresenter {
 
         let totalPopulation = 0;
         try {
-            totalPopulation = await requireSessionHousingApi().getCityTotalPopulation();
+            totalPopulation = await this.housing.getCityTotalPopulation();
         } catch (error) {
             console.warn('[WorkSection] Error getting population for salary display:', error);
         }
@@ -300,7 +304,7 @@ export class WorkSectionPresenter {
 
         let totalPopulation = 0;
         try {
-            totalPopulation = await requireSessionHousingApi().getCityTotalPopulation();
+            totalPopulation = await this.housing.getCityTotalPopulation();
         } catch (error) {
             console.warn('[WorkSection] Error getting population for salary tax display:', error);
         }
@@ -356,17 +360,17 @@ export class WorkSectionPresenter {
             priorityInput.className = 'work-priority-input';
             priorityInput.id = `priority-${sector.id}`;
             // Get max sectors directly from config (source of truth)
-            const maxSectors = requireSessionEmploymentApi().EMPLOYMENT_MAX_SECTORS;
+            const maxSectors = this.employment.EMPLOYMENT_MAX_SECTORS;
             priorityInput.min = '1';
             priorityInput.max = maxSectors.toString();
             priorityInput.step = '1'; // Only allow integers
             // Ensure priority value is set (use sector.priority or get from service)
             let priorityValue = sector.priority;
             if (!priorityValue && sector.sectorNumber !== undefined) {
-                priorityValue = requireSessionEmploymentApi().getSectorPriority(sector.sectorNumber);
+                priorityValue = this.employment.getSectorPriority(sector.sectorNumber);
             }
             if (!priorityValue) {
-                priorityValue = requireSessionEmploymentApi().DEFAULT_SECTOR_PRIORITIES[sector.sectorNumber] || 1;
+                priorityValue = this.employment.DEFAULT_SECTOR_PRIORITIES[sector.sectorNumber] || 1;
             }
             priorityInput.value = priorityValue;
             // Also update sector.priority to ensure consistency

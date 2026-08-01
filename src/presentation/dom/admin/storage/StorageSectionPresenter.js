@@ -1,4 +1,3 @@
-import { requireSessionConstructionApi, requireSessionSupplyApi } from '../../../../composition/sessionRuntime.js';
 import {
     instanceIdFromHouseRow,
     displayLabelFromHouseRow,
@@ -13,7 +12,12 @@ function windmillInstanceId(windmill) {
  * Displays and manages all windmills with their stocks, settings, and distribution
  */
 export class StorageSectionPresenter {
-    constructor() {
+    /**
+     * @param {{ supply: object, construction: object }} deps
+     */
+    constructor(deps = {}) {
+        this.supply = deps.supply;
+        this.construction = deps.construction;
         this.windmills = [];
     }
     
@@ -37,11 +41,11 @@ export class StorageSectionPresenter {
      */
     async loadWindmills() {
         try {
-            const supplyViews = await requireSessionSupplyApi().listWindmillSupplyViews();
+            const supplyViews = await this.supply.listWindmillSupplyViews();
 
             this.windmills = [];
             for (const view of supplyViews) {
-                const raw = await requireSessionConstructionApi().getBuildingById(view.buildingId);
+                const raw = await this.construction.getBuildingById(view.buildingId);
                 this.windmills.push({
                     ...(raw || {}),
                     instanceId: view.buildingId,
@@ -318,7 +322,7 @@ export class StorageSectionPresenter {
      */
     async updateWindmillSetting(windmillId, setting, value) {
         try {
-            await requireSessionSupplyApi().updateSupplyBuildingFields(windmillId, {
+            await this.supply.updateSupplyBuildingFields(windmillId, {
                 [setting]: value
             });
             

@@ -1,7 +1,11 @@
-import { registerAppService } from '../../../../composition/sessionShell.js';
 import { ReportSectionPresenter } from './ReportSectionPresenter.js';
 
-export function initReportSection() {
+/**
+ * @param {{ registerAppService?: (name: string, instance: *) => void }} deps
+ */
+export function initReportSection(deps = {}) {
+  if (typeof document === 'undefined') return;
+
   const reportSection = document.getElementById('admin-section-report');
   if (!reportSection) return;
 
@@ -21,11 +25,5 @@ export function initReportSection() {
     observer.disconnect();
   }
 
-  registerAppService('reportSectionPresenter', presenter);
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initReportSection);
-} else {
-  initReportSection();
+  deps.registerAppService?.('reportSectionPresenter', presenter);
 }

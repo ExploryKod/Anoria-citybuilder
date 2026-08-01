@@ -1,4 +1,3 @@
-import { requireSessionAccountingApi } from '../../../composition/sessionRuntime.js';
 /**
  * Gestion de l'historique des objectifs (succès et échecs)
  */
@@ -20,7 +19,7 @@ class ObjectivesHistory {
 
         try {
             // Récupérer toutes les données du store
-            const allRecords = await requireSessionAccountingApi().getObjectivesStore().getAllFailures();
+            const allRecords = await deps.accounting.getObjectivesStore().getAllFailures();
             
             const failures = allRecords.filter(r => r.name?.startsWith('failure_'));
             const successes = allRecords.filter(r => r.name?.startsWith('success_'));
@@ -111,8 +110,8 @@ class ObjectivesHistory {
             this.isOpen = true;
 
             // Désactiver les événements Three.js
-            if (requireSessionAccountingApi().getObjectivesManager() && requireSessionAccountingApi().getObjectivesManager().disableThreeJSEvents) {
-                requireSessionAccountingApi().getObjectivesManager().disableThreeJSEvents();
+            if (deps?.getObjectivesManager?.() && deps?.getObjectivesManager?.().disableThreeJSEvents) {
+                deps?.getObjectivesManager?.().disableThreeJSEvents();
             }
         } catch (error) {
             console.error('Error showing objectives history:', error);
@@ -193,13 +192,28 @@ class ObjectivesHistory {
         this.isOpen = false;
 
         // Réactiver les événements Three.js
-        if (requireSessionAccountingApi().getObjectivesManager() && requireSessionAccountingApi().getObjectivesManager().enableThreeJSEvents) {
-            requireSessionAccountingApi().getObjectivesManager().enableThreeJSEvents();
+        if (deps?.getObjectivesManager?.() && deps?.getObjectivesManager?.().enableThreeJSEvents) {
+            deps?.getObjectivesManager?.().enableThreeJSEvents();
         }
     }
 }
 
 const objectivesHistory = new ObjectivesHistory();
-registerAppService('objectivesHistory', objectivesHistory);
+
+/** @type {{
+ *   accounting: object,
+ *   getObjectivesManager?: () => object | null,
+ *   registerAppService?: (name: string, instance: *) => void,
+ * } | null} */
+let deps = null;
+
+/**
+ * @param {NonNullable<typeof deps>} panelDeps
+ */
+export function bindObjectivesHistoryDeps(panelDeps) {
+  deps = panelDeps;
+  panelDeps.registerAppService?.('objectivesHistory', objectivesHistory);
+}
+
 export default objectivesHistory;
 

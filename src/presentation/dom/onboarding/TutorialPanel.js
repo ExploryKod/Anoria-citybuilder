@@ -1,41 +1,32 @@
 /**
  * TutorialPanel — popup tutoriel (DOM + événements).
  */
-import {
-    pauseGame,
-    playGame,
-    registerAppService,
-    registerAppFunction,
-    getTutorialManager,
-    invokeStartTutorial,
-} from '../../../composition/sessionShell.js';
 import EventBlocker from '../shell/EventBlocker.js';
 
 class TutorialPanel {
-    constructor() {
+    /**
+     * @param {{
+     *   pauseGame?: () => void,
+     *   playGame?: () => void,
+     *   registerAppService?: (name: string, instance: *) => void,
+     *   registerAppFunction?: (name: string, fn: Function) => void,
+     *   getTutorialManager?: () => object | null,
+     *   invokeStartTutorial?: () => boolean | void,
+     * }} deps
+     */
+    constructor(deps) {
+        this.deps = deps;
         this.panel = null;
         this.currentStep = 0;
         this.steps = [];
         this.isVisible = false;
         this.isInitialized = false;
-        
-        // Utilisation de EventBlocker par composition
         this.eventBlocker = new EventBlocker();
-        
-        this.init();
     }
 
-    /**
-     * Initialise le système de tutoriel
-     */
     init() {
         if (this.isInitialized) return;
-        
-        // Attendre que le DOM soit chargé
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => this.init());
-            return;
-        }
+        if (typeof document === 'undefined') return;
         
         this.panel = document.getElementById('tutorial-panel');
         if (!this.panel) {
@@ -184,7 +175,7 @@ class TutorialPanel {
         this.disableThreeJSEvents();
         
         // Mettre le jeu en pause
-        pauseGame();
+        this.deps.pauseGame?.();
 
     }
 
@@ -199,7 +190,7 @@ class TutorialPanel {
         this.enableThreeJSEvents();
         
         // Reprendre le jeu
-        playGame();
+        this.deps.playGame?.();
 
     }
 
@@ -322,52 +313,47 @@ class TutorialPanel {
     }
 }
 
-const tutorialPanel = new TutorialPanel();
 
-registerAppService('tutorialManager', tutorialPanel);
+/**
+ * @param {ConstructorParameters<typeof TutorialPanel>[0]} deps
+ */
+export function initTutorialPanel(deps) {
+  const tutorialPanel = new TutorialPanel(deps);
+  tutorialPanel.init();
 
-registerAppFunction('startTutorial', () => {
+  deps.registerAppService?.('tutorialManager', tutorialPanel);
+  deps.registerAppFunction?.('startTutorial', () => {
     tutorialPanel.showTutorial();
-});
-
-registerAppFunction('closeTutorial', () => {
+  });
+  deps.registerAppFunction?.('closeTutorial', () => {
     tutorialPanel.closeTutorial();
-});
+  });
 
-// Vérifier que le bouton tutoriel existe et ajouter un event listener direct
-document.addEventListener('DOMContentLoaded', () => {
-    const tutorialBtn = document.getElementById('tutorial-btn');
-    if (tutorialBtn) {
-        
-        // Supprimer tous les event listeners existants
-        const newBtn = tutorialBtn.cloneNode(true);
-        tutorialBtn.parentNode.replaceChild(newBtn, tutorialBtn);
-        
-        // Ajouter notre gestionnaire avec capture pour intercepter avant les autres
-        newBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            
-            invokeStartTutorial();
-        }, true); // true = capture phase
-        
-    } else {
-        console.error('Tutorial button not found');
-    }
-});
+  const tutorialBtn = document.getElementById('tutorial-btn');
+  if (tutorialBtn) {
+    const newBtn = tutorialBtn.cloneNode(true);
+    tutorialBtn.parentNode.replaceChild(newBtn, tutorialBtn);
+    newBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      deps.invokeStartTutorial?.();
+    }, true);
+  } else {
+    console.error('Tutorial button not found');
+  }
 
-// Gestion d'erreur globale pour s'assurer que les événements Three.js sont réactivés
-window.addEventListener('error', (e) => {
-    const tutorialManagerRef = getTutorialManager();
+  window.addEventListener('error', () => {
+    const tutorialManagerRef = deps.getTutorialManager?.();
     if (tutorialManagerRef && tutorialManagerRef.eventBlocker.isEventsBlocked()) {
-        console.warn('Error detected while tutorial is open, cleaning up Three.js events');
-        tutorialManagerRef.cleanup();
+      console.warn('Error detected while tutorial is open, cleaning up Three.js events');
+      tutorialManagerRef.cleanup();
     }
-});
+  });
 
-// Nettoyage lors de la fermeture de la page
-window.addEventListener('beforeunload', () => {
-    getTutorialManager()?.cleanup();
-});
+  window.addEventListener('beforeunload', () => {
+    deps.getTutorialManager?.()?.cleanup();
+  });
 
+  return tutorialPanel;
+}
