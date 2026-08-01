@@ -21,7 +21,7 @@ import {
 } from '../../../acl/supply.js';
 import { getTreasuryBalance, getTreasurySnapshot, recordCommercialRouteFee, getCommercialRouteFee } from '../../../acl/accountingGame.js';
 
-export class CommerceSectionManager {
+export class CommerceSectionPresenter {
     constructor() {
         this.selectedGood = null;
         this.goodsData = null;
@@ -62,7 +62,7 @@ export class CommerceSectionManager {
                     // Setup refresh button when partners tab is opened
                     this.setupRefreshButton();
                     this.renderPartners().catch(error => {
-                        console.error('[CommerceSectionManager] Error rendering partners:', error);
+                        console.error('[CommerceSectionPresenter] Error rendering partners:', error);
                     });
                 }
             });
@@ -91,7 +91,7 @@ export class CommerceSectionManager {
                 await this.renderPartners();
                 this.showPartnerMessage('Données actualisées avec succès', 'success');
             } catch (error) {
-                console.error('[CommerceSectionManager] Error refreshing partners:', error);
+                console.error('[CommerceSectionPresenter] Error refreshing partners:', error);
                 this.showPartnerMessage('Erreur lors de l\'actualisation', 'error');
             } finally {
                 // Re-enable button
@@ -153,7 +153,7 @@ export class CommerceSectionManager {
                 noCommercializableWindmills: false
             };
         } catch (error) {
-            console.error('[CommerceSectionManager] Error checking windmill stocks:', error);
+            console.error('[CommerceSectionPresenter] Error checking windmill stocks:', error);
             return { hasStocks: false, missingProducts: ['Erreur lors de la vérification'], noCommercializableWindmills: false };
         }
     }
@@ -166,7 +166,7 @@ export class CommerceSectionManager {
         try {
             return await getCityTotalPopulation();
         } catch (error) {
-            console.error('[CommerceSectionManager] Error getting population:', error);
+            console.error('[CommerceSectionPresenter] Error getting population:', error);
         }
         return 0;
     }
@@ -180,7 +180,7 @@ export class CommerceSectionManager {
             const summary = await getCityEmploymentSummary();
             return summary.unemploymentPercentage;
         } catch (error) {
-            console.error('[CommerceSectionManager] Error calculating unemployment:', error);
+            console.error('[CommerceSectionPresenter] Error calculating unemployment:', error);
             return 0;
         }
     }
@@ -193,7 +193,7 @@ export class CommerceSectionManager {
         try {
             return await getTreasuryBalance();
         } catch (error) {
-            console.error('[CommerceSectionManager] Error getting funds:', error);
+            console.error('[CommerceSectionPresenter] Error getting funds:', error);
             return 0;
         }
     }
@@ -280,7 +280,7 @@ export class CommerceSectionManager {
                 updateDisplayedFunds(feeResult.budget.funds);
                 
             } catch (error) {
-                console.error('[CommerceSectionManager] Error paying commercial route fee:', error);
+                console.error('[CommerceSectionPresenter] Error paying commercial route fee:', error);
                 return {
                     success: false,
                     newStatus: false,
@@ -612,7 +612,7 @@ export class CommerceSectionManager {
                         activationBtn.disabled = !canActivate;
                     }
                 } catch (error) {
-                    console.error(`[CommerceSectionManager] Error loading conditions for ${partner.id}:`, error);
+                    console.error(`[CommerceSectionPresenter] Error loading conditions for ${partner.id}:`, error);
                     conditionsEl.textContent = 'Erreur lors de la vérification';
                     conditionsEl.style.color = '#dc3545';
                     
@@ -685,7 +685,7 @@ export class CommerceSectionManager {
                         }
                     }
                 } catch (error) {
-                    console.error('[CommerceSectionManager] Error activating partner:', error);
+                    console.error('[CommerceSectionPresenter] Error activating partner:', error);
                     this.showPartnerMessage('Erreur lors de l\'activation', 'error');
                     
                     // Re-enable button if conditions are still met
@@ -889,7 +889,7 @@ export class CommerceSectionManager {
                 yearlyExports
             };
         } catch (error) {
-            console.error('[CommerceSectionManager] Error calculating consumption status:', error);
+            console.error('[CommerceSectionPresenter] Error calculating consumption status:', error);
             return {
                 consumptionShare: 0,
                 consumptionStatus: 'unable',

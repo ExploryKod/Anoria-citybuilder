@@ -1,7 +1,7 @@
 /**
- * UrbanAdviceManager - Gère le centre de conseils urbains
+ * ConseilUrbainPanel — centre de conseils urbains (DOM + événements).
  */
-import { loadActiveLoans } from '../compta/prets/LoansManager.js';
+import { loadActiveLoans } from '../compta/prets/PretsPanel.js';
 import { hasRoadAccessFromCount } from '../../../acl/parcels.js';
 import { listAllBuildingRows } from '../../../acl/construction.js';
 import { getCityTotalPopulation } from '../../../acl/housing.js';

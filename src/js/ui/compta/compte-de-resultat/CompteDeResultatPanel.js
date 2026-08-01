@@ -1,12 +1,9 @@
 /**
- * BudgetStatesManager — CR + bilan par tour via Accounting BC (journal-primary).
- *
- * `budget_turn_*` reste en Dexie comme cache d'enrichissement (population, breakdowns).
- * Source primaire CR/bilan : journal via getFinancialStatementsHistory().
+ * CompteDeResultatPanel — popup compte de résultat (DOM + événements).
  */
 
 import { getPopupManager, registerAppFunction } from '../../../acl/appRuntime.js';
-import { getHealthStatusText } from '../tresorerie/RealtimeBudgetManager.js';
+import { getHealthStatusText } from '../tresorerie/RealtimeBudgetPanel.js';
 import {
   getFinancialStatementsHistory,
   getIncomeStatement,

@@ -2,7 +2,7 @@ import { getPopupManager, registerAppFunction } from '../../../acl/appRuntime.js
 import { getBalanceSheet } from '../../../acl/accounting.js';
 import { getFinancialHealth, getTreasurySnapshot } from '../../../acl/accountingGame.js';
 import { renderBalanceSheet } from './BalanceSheetPresenter.js';
-import { updateRealtimeBudget } from '../tresorerie/RealtimeBudgetManager.js';
+import { updateRealtimeBudget } from '../tresorerie/RealtimeBudgetPanel.js';
 
 function initBalanceSheetFilters() {
   const filterButtons = document.querySelectorAll('.balance-filter-btn');

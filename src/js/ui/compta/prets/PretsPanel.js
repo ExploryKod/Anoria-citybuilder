@@ -1,5 +1,5 @@
 /**
- * LoansManager - Gère le système de prêts (bancaires et commerciaux)
+ * PretsPanel — popup prêts bancaires (DOM + événements + commandes UI).
  */
 
 import {

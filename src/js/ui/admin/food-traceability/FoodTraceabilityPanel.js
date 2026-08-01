@@ -1,5 +1,5 @@
 /**
- * FoodTraceabilityManager - Gère l'affichage de la traçabilité alimentaire
+ * FoodTraceabilityPanel — traçabilité alimentaire admin (DOM + événements).
  */
 import { getOrCreateSupplyContext, getAllFoodTraceabilityTransactions } from "../../acl/supply.js";
 import { tryResolveBuildingInstanceIdFromRef } from "../../acl/building-identity.js";

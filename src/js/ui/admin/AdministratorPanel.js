@@ -6,7 +6,7 @@ import { getPopupManager, registerAppFunction } from '../../acl/appRuntime.js';
 import {
   initializeFoodTraceabilityTabs,
   loadFoodTraceabilityEntries,
-} from './food-traceability/FoodTraceabilityManager.js';
+} from './food-traceability/FoodTraceabilityPanel.js';
 
 function initAdministratorPanel() {
   const administratorPanel = document.getElementById('administrator-panel');
