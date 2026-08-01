@@ -475,8 +475,8 @@ Inventaire après migration Phase 3½ (write path opérationnel). **Ne pas patch
 | Enrichissement UI (population, breakdowns) | `BudgetTurnEnrichmentRepository` → `budget_turn_*` (**pas** source CR) |
 
 - ACL : `getIncomeStatement()`, `getBalanceSheet()`, `getFinancialStatementsAtTurn()`, `getFinancialStatementsHistory()`
-- `#budget-panel` → `getBalanceSheet()` (bundle lié CR)
-- `#budget-states-panel` → `getFinancialStatementsHistory()` (journal-primary ; cache enrichissement only)
+- `#bilan-panel` → `getBalanceSheet()` (bundle lié CR)
+- `#compte-de-resultat-panel` → `getFinancialStatementsHistory()` (journal-primary ; cache enrichissement only)
 
 **Limite** : raccourci journal → CR/bilan, **sans** grand livre ni balance PCG — voir Phase 5 (non prioritaire).
 

@@ -1,8 +1,9 @@
 /**
- * Architecture guard — Lot 8 (D6 globals).
+ * Architecture guard — Lot 8 (D6 globals) + plan_ca Barre B/F.
  *
  * Direct window.service = assignments are forbidden outside AppRegistry.
- * Direct window.service reads must go through js/acl/appRuntime.js instead.
+ * Direct window.service reads must go through composition/sessionShell.js
+ * or composition/sessionRuntime.js.
  */
 
 import fs from 'fs';
@@ -26,19 +27,20 @@ const FORBIDDEN_ASSIGNMENT_RES = [
   /window\.objectivesTracker\s*=/,
   /window\.objectivesHistory\s*=/,
   /window\.objectivesStore\s*=/,
-  /window\.workSectionManager\s*=/,
+  /window\.workSectionPresenter\s*=/,
   /window\.multiplayerManager\s*=/,
-  /window\.financesSectionManager\s*=/,
-  /window\.storageSectionManager\s*=/,
-  /window\.factorySectionManager\s*=/,
-  /window\.reportSectionManager\s*=/,
-  /window\.healthSectionManager\s*=/,
-  /window\.parametersPanelManager\s*=/,
+  /window\.financesSectionPresenter\s*=/,
+  /window\.storageSectionPresenter\s*=/,
+  /window\.factorySectionPresenter\s*=/,
+  /window\.reportSectionPresenter\s*=/,
+  /window\.healthSectionPresenter\s*=/,
+  /window\.commerceSectionPresenter\s*=/,
+  /window\.parametersPanel\s*=/,
   /window\.EventBlocker\s*=/,
   /window\.setActiveTool\s*=/,
   /window\.processLoanPayments\s*=/,
   /window\.loadBudgetStates\s*=/,
-  /window\.generateCityMap\s*=/,
+  /window\.generateCarteVille\s*=/,
   /window\.refreshBudgetStatesModal\s*=/,
   /window\.startObjectives\s*=/,
   /window\.closeObjectives\s*=/,
@@ -59,7 +61,7 @@ const FORBIDDEN_ASSIGNMENT_RES = [
   /window\.scene\s*=/,
 ];
 
-/** Direct reads of legacy service globals (use js/acl/appRuntime.js). */
+/** Direct reads of legacy service globals (use composition session/facades). */
 const FORBIDDEN_READ_RES = [
   /window\.inputManager\b/,
   /window\.updateBudgetDisplay\b/,
@@ -68,9 +70,9 @@ const FORBIDDEN_READ_RES = [
   /window\.app\.game\b/,
 ];
 
-/** Files allowed to reference window.app (composition root namespace). */
+/** Files allowed to reference window.app (debug mirror only). */
 const READ_GUARD_SKIP_FILES = new Set([
-  'js/game/AppRegistry.js',
+  'composition/AppRegistry.js',
 ]);
 
 /** `${fileRel}::${lineNumber}` */

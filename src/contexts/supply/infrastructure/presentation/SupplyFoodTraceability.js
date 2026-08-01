@@ -1,22 +1,15 @@
-import db from '../../../../core/persistence/dexie/db.js';
-
 /**
- * Food traceability side-effects via injected legacy service resolver.
+ * Side-effect adapter — records food chain movements in the traceability log.
  */
 export class SupplyFoodTraceability {
   /**
-   * @param {object} [deps]
-   * @param {() => object|null} [deps.resolveFoodTraceabilityService]
+   * @param {object} deps
+   * @param {import('../dexie/DexieFoodTraceabilityRepository.js').DexieFoodTraceabilityRepository} deps.foodTraceabilityRepository
+   * @param {import('../../application/ports/SupplyBuildingRepository.js').SupplyBuildingRepository} deps.supplyBuildingRepository
    */
-  constructor(deps = {}) {
-    this.#resolveService = deps.resolveFoodTraceabilityService ?? (() => null);
-  }
-
-  /** @type {() => object|null} */
-  #resolveService;
-
-  get #service() {
-    return this.#resolveService();
+  constructor({ foodTraceabilityRepository, supplyBuildingRepository }) {
+    this.foodTraceabilityRepository = foodTraceabilityRepository;
+    this.supplyBuildingRepository = supplyBuildingRepository;
   }
 
   /**
@@ -25,17 +18,16 @@ export class SupplyFoodTraceability {
    * @param {object[]} transfers
    */
   async recordFarmToMarketTransfers(timeInfo, marketId, transfers = []) {
-    const service = this.#service;
-    if (!service || transfers.length === 0) return;
+    if (transfers.length === 0) return;
 
-    const marketData = await db.houses.get(marketId);
+    const marketData = await this.supplyBuildingRepository.findRowById(marketId);
     if (!marketData) return;
 
     for (const transfer of transfers) {
-      const farmData = await db.houses.get(transfer.farmId);
+      const farmData = await this.supplyBuildingRepository.findRowById(transfer.farmId);
       if (!farmData) continue;
 
-      await service.recordFarmToMarket(
+      await this.foodTraceabilityRepository.recordFarmToMarket(
         timeInfo.turn || 0,
         timeInfo.monthIndex || 0,
         timeInfo.year || 0,
@@ -64,17 +56,16 @@ export class SupplyFoodTraceability {
    * @param {object[]} transfers
    */
   async recordMarketToHouseTransfers(timeInfo, marketId, transfers = []) {
-    const service = this.#service;
-    if (!service || transfers.length === 0) return;
+    if (transfers.length === 0) return;
 
-    const marketData = await db.houses.get(marketId);
+    const marketData = await this.supplyBuildingRepository.findRowById(marketId);
     if (!marketData) return;
 
     for (const transfer of transfers) {
-      const houseData = await db.houses.get(transfer.houseId);
+      const houseData = await this.supplyBuildingRepository.findRowById(transfer.houseId);
       if (!houseData) continue;
 
-      await service.recordMarketToHouse(
+      await this.foodTraceabilityRepository.recordMarketToHouse(
         timeInfo.turn || 0,
         timeInfo.monthIndex || 0,
         timeInfo.year || 0,
@@ -102,11 +93,10 @@ export class SupplyFoodTraceability {
    * @param {object[]} consumptions
    */
   async recordHouseConsumptions(timeInfo, consumptions = []) {
-    const service = this.#service;
-    if (!service || consumptions.length === 0) return;
+    if (consumptions.length === 0) return;
 
     for (const entry of consumptions) {
-      const houseData = await db.houses.get(entry.houseId);
+      const houseData = await this.supplyBuildingRepository.findRowById(entry.houseId);
       if (!houseData) continue;
 
       const houseRef = {
@@ -121,7 +111,7 @@ export class SupplyFoodTraceability {
         const amount = crops[crop] || 0;
         if (amount <= 0) continue;
 
-        await service.recordHouseConsumption(
+        await this.foodTraceabilityRepository.recordHouseConsumption(
           timeInfo.turn || 0,
           timeInfo.monthIndex,
           timeInfo.year || 0,

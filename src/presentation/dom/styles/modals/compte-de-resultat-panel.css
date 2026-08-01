@@ -1,0 +1,656 @@
+/* Budget States Panel Styles - Common toolbar button styles */
+.stats-buttons {
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    border: 3px solid #fff !important;
+    background: var(--cta);
+    border-radius: var(--border-radius-small);
+    position: relative;
+    overflow: hidden;
+}
+
+.stats-buttons:hover {
+    transform: translateY(-2px);
+    background: #fff;
+}
+
+.stats-buttons.active {
+    transform: translateY(0px);
+    background: #fff;
+}
+
+/* Budget States Panel - Centered Modal like bilan-panel but larger */
+.compte-de-resultat-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: var(--z-index-modal);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.compte-de-resultat-panel.active {
+    display: flex !important;
+}
+
+.compte-de-resultat-wrapper {
+    background: #fafafa;
+    color: var(--primary);
+    border-radius: var(--border-radius);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    width: 95%;
+    max-width: 1200px; /* Larger than bilan-panel (1000px) */
+    max-height: 90vh;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Custom scrollbar for budget states panel content */
+.compte-de-resultat-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.compte-de-resultat-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.compte-de-resultat-content::-webkit-scrollbar-thumb {
+    background: var(--cta);
+    border-radius: 3px;
+}
+
+.compte-de-resultat-content::-webkit-scrollbar-thumb:hover {
+    background: var(--cta-05);
+}
+
+/* Firefox scrollbar for budget states panel content */
+.compte-de-resultat-content {
+    scrollbar-width: thin;
+    scrollbar-color: var(--cta) transparent;
+}
+
+/* Compte de Résultat Styles */
+.budget-income-statement {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 12px 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.statement-section {
+    margin-bottom: 16px;
+}
+
+.statement-section:last-child {
+    margin-bottom: 0;
+}
+
+.statement-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--cta);
+    margin: 0 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 4px;
+}
+
+.statement-line {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.statement-line:last-child {
+    border-bottom: none;
+}
+
+.statement-label {
+    font-size: 0.85rem;
+    color: var(--primary);
+    font-weight: 500;
+    text-align: left;
+}
+
+.statement-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: left;
+    color: var(--primary);
+}
+
+.statement-value.positive {
+    color: #4ade80;
+}
+
+.statement-value.negative {
+    color: #ff6b6b;
+}
+
+.statement-value.total {
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.statement-value.result {
+    font-size: 1rem;
+    font-weight: 800;
+    padding: 8px 12px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.statement-value.result.positive {
+    background: rgba(74, 222, 128, 0.2);
+    border: 1px solid rgba(74, 222, 128, 0.4);
+}
+
+.statement-value.result.negative {
+    background: rgba(255, 107, 107, 0.2);
+    border: 1px solid rgba(255, 107, 107, 0.4);
+}
+
+/* Statement notes and subnotes alignment */
+.statement-subnote,
+.statement-note {
+    text-align: left;
+}
+
+.statement-subnote small,
+.statement-note small {
+    text-align: left;
+    display: block;
+}
+
+.total-line {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 2px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.result-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.result-line {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 12px 12px 12px 0;
+    margin: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 8px;
+}
+
+.budget-state-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.info-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* Budget States Header Styles */
+.compte-de-resultat-header {
+    background: white;
+    padding: 20px;
+    border-bottom: 2px solid var(--cta);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.compte-de-resultat-title-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.compte-de-resultat-header h3 {
+    color: var(--primary);
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0;
+    text-align: center;
+}
+
+.compte-de-resultat-close-btn {
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--border-radius-small);
+    background: white;
+    color: var(--cta);
+    border: 3px solid var(--cta);
+    transition: all 0.3s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    min-width: 40px;
+}
+
+.compte-de-resultat-close-btn:hover {
+    background: var(--cta);
+    color: white;
+}
+
+.compte-de-resultat-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.compte-de-resultat-filters {
+    display: flex;
+    gap: 10px;
+    padding: 15px;
+    background: rgba(251, 129, 34, 0.1);
+    border-radius: var(--border-radius-small);
+    border: 1px solid rgba(251, 129, 34, 0.2);
+}
+
+.compte-de-resultat-filters button {
+    flex: 1;
+    padding: 8px 16px;
+    border: 2px solid var(--cta);
+    border-radius: 8px;
+    background: white;
+    color: var(--cta);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.compte-de-resultat-filters button:hover {
+    background: var(--cta);
+    color: white;
+}
+
+.compte-de-resultat-filters button.active {
+    background: var(--cta);
+    color: white;
+}
+
+.compte-de-resultat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.budget-state-item {
+    background: rgba(251, 129, 34, 0.05);
+    border: 1px solid rgba(251, 129, 34, 0.2);
+    border-radius: var(--border-radius-small);
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.budget-state-item:hover {
+    background: rgba(251, 129, 34, 0.1);
+    transform: translateY(-2px);
+}
+
+.budget-state-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.budget-state-turn {
+    font-weight: 700;
+    color: var(--cta);
+    font-size: 1.1rem;
+}
+
+.budget-state-date {
+    color: var(--primary);
+    font-size: 0.9rem;
+}
+
+.budget-state-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.budget-state-detail {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(251, 129, 34, 0.1);
+}
+
+.budget-state-detail:last-child {
+    border-bottom: none;
+}
+
+.budget-state-label {
+    color: var(--primary);
+}
+
+.budget-state-value {
+    color: var(--cta);
+    font-weight: 600;
+}
+
+.budget-state-loading {
+    display: flex;
+    flex-direction: column; 
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    color: var(--primary);
+    font-size: 0.9rem;
+    gap: 15px;
+}
+
+.budget-state-loading p {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.budget-state-loading small {
+    color: var(--primary);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.compte-de-resultat-summary {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(251, 129, 34, 0.1);
+    border-radius: var(--border-radius-small);
+    border: 1px solid rgba(251, 129, 34, 0.2);
+}
+
+.compte-de-resultat-summary h4 {
+    color: var(--primary);
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 10px 0;
+}
+
+/* Budget Filter Buttons */
+.budget-filter-btn {
+    padding: 8px 16px;
+    border: 3px solid var(--cta);
+    border-radius: var(--border-radius-small);
+    background: white;
+    color: var(--cta);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.budget-filter-btn:hover {
+    background: var(--cta);
+    color: white;
+}
+
+.budget-filter-btn.active {
+    background: var(--cta);
+    color: white;
+}
+
+.budget-filter-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: rgba(251, 129, 34, 0.3);
+    color: rgba(251, 129, 34, 0.7);
+}
+
+.budget-filter-btn:disabled:hover {
+    background: rgba(251, 129, 34, 0.3);
+    color: rgba(251, 129, 34, 0.7);
+}
+
+/* Budget States Refresh Section */
+.compte-de-resultat-refresh-section {
+    display: flex;
+    justify-content: center;
+    margin: 8px 0;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(251, 129, 34, 0.1);
+}
+
+.budget-global-refresh-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(251, 129, 34, 0.1);
+    color: var(--cta);
+    border: 1px solid rgba(251, 129, 34, 0.3);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.budget-global-refresh-btn:hover {
+    background: var(--cta);
+    color: white;
+    border-color: var(--cta);
+}
+
+.budget-global-refresh-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.journal-access-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(0, 153, 153, 0.1);
+    color: var(--cta);
+    border: 1px solid rgba(0, 153, 153, 0.3);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.journal-access-btn:hover {
+    background: var(--cta);
+    color: white;
+    border-color: var(--cta);
+}
+
+/* Mobile Landscape Responsive Styles */
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    .compte-de-resultat-wrapper {
+        width: 98%;
+        max-width: none;
+        max-height: 95vh;
+    }
+
+    .compte-de-resultat-header {
+        padding: 15px;
+    }
+
+    .compte-de-resultat-header h3 {
+        font-size: 1.3rem;
+    }
+
+    .compte-de-resultat-close-btn {
+        width: 32px;
+        height: 32px;
+        padding: 4px;
+    }
+
+    .compte-de-resultat-content {
+        padding: 15px;
+        gap: 15px;
+    }
+
+    .compte-de-resultat-filters {
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .compte-de-resultat-filters button {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .compte-de-resultat-list {
+        gap: 10px;
+    }
+
+    .budget-state-item {
+        padding: 12px;
+    }
+
+    .budget-state-header {
+        margin-bottom: 8px;
+    }
+
+    .budget-state-turn {
+        font-size: 1rem;
+    }
+
+    .budget-state-date {
+        font-size: 0.8rem;
+    }
+
+    .budget-state-details {
+        gap: 8px;
+    }
+
+    .budget-state-detail {
+        padding: 4px 0;
+    }
+
+    .budget-state-label {
+        font-size: 0.8rem;
+    }
+
+    .budget-state-value {
+        font-size: 0.8rem;
+    }
+
+    .budget-income-statement {
+        padding: 12px;
+        margin: 8px 0;
+    }
+
+    .statement-title {
+        font-size: 0.8rem;
+        margin-bottom: 6px;
+    }
+
+    .statement-line {
+        padding: 4px 0;
+    }
+
+    .statement-label {
+        font-size: 0.75rem;
+    }
+
+    .statement-value {
+        font-size: 0.75rem;
+    }
+
+    .statement-value.total {
+        font-size: 0.8rem;
+        padding: 3px 6px;
+    }
+
+    .statement-value.result {
+        font-size: 0.9rem;
+        padding: 6px 10px;
+    }
+
+    .budget-state-info {
+        gap: 6px;
+        margin-top: 8px;
+        padding: 8px;
+    }
+
+    .info-label {
+        font-size: 0.7rem;
+        margin-bottom: 3px;
+    }
+
+    .info-value {
+        font-size: 0.8rem;
+    }
+
+    .compte-de-resultat-summary {
+        margin-top: 15px;
+        padding: 12px;
+    }
+
+    .compte-de-resultat-summary h4 {
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+    .budget-filter-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .budget-global-refresh-btn {
+        padding: 4px 8px;
+        font-size: 0.7rem;
+    }
+
+    .journal-access-btn {
+        padding: 4px 8px;
+        font-size: 0.7rem;
+    }
+}

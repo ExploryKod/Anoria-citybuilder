@@ -1,7 +1,7 @@
 import {
   sessionLedgerBuffer,
   toDexieRow,
-} from '../../../../../../js/stores/SessionLedgerBuffer.js';
+} from '../../../session/SessionLedgerBuffer.js';
 import { JournalSessionPersistencePort } from '../../../../application/ports/JournalSessionPersistencePort.js';
 import db from '../../../../../../core/persistence/dexie/db.js';
 

@@ -6,6 +6,9 @@ import { createHousingPopulationGrowthSystem } from '../contexts/housing/infrast
 import { createHousingEvolutionSystem } from '../contexts/housing/infrastructure/runtime/housingEvolutionSystem.js';
 import { createEmploymentRedistributeSystem } from '../contexts/employment/infrastructure/runtime/employmentRedistributeSystem.js';
 import { createFactoryProductionSystem } from '../contexts/supply/infrastructure/runtime/supplyFactoryProductionSystem.js';
+import { createCommerceTurnSystem } from '../contexts/commerce/infrastructure/runtime/commerceTurnSystem.js';
+import { createRandomEventsSystem } from '../contexts/gameplay/infrastructure/runtime/randomEventsSystem.js';
+import { resolveGetTimeInfo } from './gameTimeBridge.js';
 
 /**
  * Composition root du runtime ECS (engine + systèmes minces).
@@ -16,7 +19,9 @@ import { createFactoryProductionSystem } from '../contexts/supply/infrastructure
  * @param {ReturnType<import('./createSupplyContext.js').createSupplyContext>} deps.supply
  * @param {ReturnType<import('./createHousingContext.js').createHousingContext>} deps.housing
  * @param {ReturnType<import('./createEmploymentContext.js').createEmploymentContext>} deps.employment
- * @param {import('../js/game/utils/TimeManager.js').TimeManager} deps.timeManager
+ * @param {ReturnType<import('./createCommerceContext.js').createCommerceContext>} deps.commerce
+ * @param {ReturnType<import('./createGameplayContext.js').createGameplayContext>} deps.gameplay
+ * @param {(time: number) => object} [deps.getTimeInfo]
  * @param {Function} deps.toSupplySeason
  * @param {Function} deps.toSupplyMonth
  * @param {() => Record<number|string, number>} deps.getSectorPriorities
@@ -27,7 +32,9 @@ export function createGameRuntime({
   supply,
   housing,
   employment,
-  timeManager,
+  commerce,
+  gameplay,
+  getTimeInfo: getTimeInfoDep,
   toSupplySeason,
   toSupplyMonth,
   getSectorPriorities,
@@ -45,23 +52,31 @@ export function createGameRuntime({
   if (!employment) {
     throw new Error('createGameRuntime: employment context required');
   }
+  if (!commerce) {
+    throw new Error('createGameRuntime: commerce context required');
+  }
+  if (!gameplay) {
+    throw new Error('createGameRuntime: gameplay context required');
+  }
   if (typeof getSectorPriorities !== 'function') {
     throw new Error('createGameRuntime: getSectorPriorities required');
   }
+
+  const getTimeInfo = getTimeInfoDep ?? resolveGetTimeInfo();
 
   const world = new World();
   const pipeline = new Pipeline();
 
   const supplyMonthlyFood = createSupplyMonthlyFoodSystem({
     supply,
-    timeManager,
+    getTimeInfo,
     toSupplySeason,
     toSupplyMonth,
     foodDistributionDistance,
   });
   const housingPopulationGrowth = createHousingPopulationGrowthSystem({
     housing,
-    timeManager,
+    getTimeInfo,
   });
   const housingEvolution = createHousingEvolutionSystem({ housing });
   const employmentRedistribute = createEmploymentRedistributeSystem({
@@ -77,7 +92,9 @@ export function createGameRuntime({
     .register('housing.populationGrowth', housingPopulationGrowth)
     .register('housing.evolution', housingEvolution)
     .register('employment.redistribute', employmentRedistribute)
-    .register('supply.factoryProduction', supplyFactoryProduction);
+    .register('supply.factoryProduction', supplyFactoryProduction)
+    .register('commerce.turn', createCommerceTurnSystem({ commerce }))
+    .register('gameplay.randomEvents', createRandomEventsSystem({ gameplay }));
 
   return {
     world,

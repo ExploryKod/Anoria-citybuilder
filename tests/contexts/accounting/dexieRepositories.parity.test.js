@@ -4,12 +4,12 @@
 
 import Dexie from 'dexie';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
-import { JournalManager } from '../../../src/js/stores/JournalManager.js';
+import { JournalManager } from '../../../src/composition/accountingSessionJournal.js';
 import { SessionJournalRepository } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalRepository.js';
-import { resetSessionLedgerBufferForTests } from '../../../src/js/stores/SessionLedgerBuffer.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/composition/accountingSessionJournal.js';
 import { LegacyGameTimePort } from '../../../src/contexts/accounting/infrastructure/adapters/legacy/LegacyGameTimePort.js';
-import { TimeManager } from '../../../src/js/game/utils/TimeManager.js';
-import appRegistry from '../../../src/js/game/AppRegistry.js';
+import { TimeManager } from '../../../src/shared/time/TimeManager.js';
+import appRegistry from '../../../src/composition/AppRegistry.js';
 
 function createTestDb() {
   const testDb = new Dexie('testAccountingDexieRepo');

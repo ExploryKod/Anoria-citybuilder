@@ -58,8 +58,8 @@ C'est la seule vraie violation de la règle de dépendance. Le domaine dépend d
 
 ### D3 — Règles métier restées dans l'UI (duplication active)
 
-- `js/ui/loans/LoansManager.js:274` **et** `:316` : le calcul de taux d'intérêt (`bank ? 5 : 7`, majorations selon santé financière) est **écrit deux fois** dans le même fichier. Un changement de barème casse silencieusement l'un des deux.
-- `js/ui/ObjectivesTracker.js:40` et `:95` : le seuil d'objectif `>= 5000` est dupliqué entre la déclaration et la vérification.
+- `js/ui/loans/LoansManager.js:274` **et** `:316` : ~~duplication taux~~ → corrigé via `LoanRatePolicy` + `ui/compta/prets/`.
+- `js/ui/ObjectivesTracker.js:40` et `:95` : seuils → `ObjectiveCatalog` ; fichier désormais `ui/onboarding/ObjectivesTracker.js`.
 - `js/game/managers/BudgetProcessor.js` : arbitrage budgétaire par tour, hors contexte.
 - `js/game/services/CommerceService.js` (804 LOC) : règles de contrats, limites d'import/export, stocks — le plus gros bloc de domaine encore hors BC.
 

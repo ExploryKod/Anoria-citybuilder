@@ -10,8 +10,10 @@ import { createConstructionContext } from '../../../src/composition/createConstr
 import {
   findBuildingAtTile,
   placeBuildingWithPayment,
-} from '../../../src/js/acl/construction.js';
-import { BudgetManager } from '../../../src/js/stores/BudgetManager.js';
+  reclaimStaleBuildingRecordsForPlacement,
+} from '../../../src/composition/constructionOps.js';
+import { initializeTreasury, resetAccountingContextForTests } from '../../../src/composition/accountingOps.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/composition/accountingSessionJournal.js';
 import { makeHouseRecord } from '../../fixtures/buildingRecord.js';
 
 async function clearTables() {
@@ -21,9 +23,9 @@ async function clearTables() {
 }
 
 async function seedBudget(funds = null) {
-  const budgetManager = new BudgetManager();
-  budgetManager.db = db;
-  await budgetManager.initialize(funds);
+  resetSessionLedgerBufferForTests();
+  resetAccountingContextForTests();
+  await initializeTreasury(funds);
 }
 
 describe('Construction — placement with payment (step 2)', () => {
@@ -78,6 +80,69 @@ describe('Construction — placement with payment (step 2)', () => {
 
     expect(result.success).toBe(false);
     expect(result.reason).toBe('duplicate');
+  });
+
+  test('placeBuildingWithPayment replaces stale occupant at same anchor', async () => {
+    const existing = makeHouseRecord({
+      type: 'Tree-Sapin',
+      x: 4,
+      y: 6,
+      extra: { category: 'nature' },
+    });
+    await db.houses.add(existing);
+
+    const result = await placeBuildingWithPayment(
+      makeHouseRecord({
+        type: 'House-Blue',
+        x: 4,
+        y: 6,
+        extra: { price: 10 },
+      })
+    );
+
+    expect(result.success).toBe(true);
+
+    const rows = await db.houses.where('[anchorX+anchorY]').equals([4, 6]).toArray();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].type).toBe('House-Blue');
+    expect(rows[0].instanceId).not.toBe(existing.instanceId);
+  });
+
+  test('reclaimStaleBuildingRecordsForPlacement removes ghost rows on empty tiles', async () => {
+    const ghost = makeHouseRecord({
+      type: 'Tree-Sapin',
+      x: 2,
+      y: 3,
+      extra: { category: 'nature' },
+    });
+    await db.houses.add(ghost);
+
+    const city = {
+      size: 8,
+      tiles: Array.from({ length: 8 }, () =>
+        Array.from({ length: 8 }, () => ({ buildingId: undefined, instanceId: undefined }))
+      ),
+    };
+
+    const reclaimed = await reclaimStaleBuildingRecordsForPlacement({
+      city,
+      x: 2,
+      y: 3,
+      gridSize: 1,
+    });
+
+    expect(reclaimed).toEqual([ghost.instanceId]);
+    expect(await db.houses.count()).toBe(0);
+
+    const result = await placeBuildingWithPayment(
+      makeHouseRecord({
+        type: 'House-Blue',
+        x: 2,
+        y: 3,
+        extra: { price: 10 },
+      })
+    );
+    expect(result.success).toBe(true);
   });
 
   test('refunds budget when insert fails after payment', async () => {

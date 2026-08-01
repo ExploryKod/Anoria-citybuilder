@@ -51,6 +51,20 @@ export class PlaceBuildingWithPayment {
    * @returns {Promise<object>}
    */
   async execute(data) {
+    try {
+      return await this.#executePlacement(data);
+    } catch (error) {
+      console.error('[Construction] Unexpected placement error:', error);
+      return {
+        success: false,
+        reason: 'database_error',
+        error: error?.message ?? 'Unexpected placement error',
+        message: error?.message ?? 'Unexpected placement error',
+      };
+    }
+  }
+
+  async #executePlacement(data) {
     const instanceId = data.instanceId ?? data.id ?? createBuildingInstanceId();
 
     if (this.pendingAdditions.has(instanceId)) {
@@ -100,17 +114,22 @@ export class PlaceBuildingWithPayment {
     if (!addResult.success) {
       console.error('[Construction] Error adding building after payment:', addResult.error);
 
-      if (addResult.reason === 'duplicate') {
-        await this.recordRefund(data.price, `Refund for duplicate ${data.type}`);
-        return {
-          success: false,
-          reason: 'duplicate',
-          error: 'Building already exists at this location',
-          message: 'Building already exists at this location',
-        };
+      try {
+        if (addResult.reason === 'duplicate') {
+          await this.recordRefund(data.price, `Refund for duplicate ${data.type}`);
+          return {
+            success: false,
+            reason: 'duplicate',
+            error: 'Building already exists at this location',
+            message: 'Building already exists at this location',
+          };
+        }
+
+        await this.recordRefund(data.price, `Refund for failed ${data.type}`);
+      } catch (refundError) {
+        console.error('[Construction] Refund failed after insert error:', refundError);
       }
 
-      await this.recordRefund(data.price, `Refund for failed ${data.type}`);
       return { success: false, reason: 'database_error', error: addResult.error };
     }
 
