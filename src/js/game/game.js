@@ -14,6 +14,7 @@ import { getOrCreateCommerceContext } from '../acl/commerce.js';
 import { getOrCreateGameplayContext } from '../acl/gameplay.js';
 import { findBuildingAtTile, placeBuildingWithPayment, getBuildingById, getBuildingField } from '../acl/construction.js';
 import { createGameRuntime } from '../../composition/createGameRuntime.js';
+import { registerGetTimeInfo } from '../../composition/gameTimeBridge.js';
 import { GameLoop } from '../../engine/loop/GameLoop.js';
 import config from './config.js';
 import {
@@ -90,6 +91,8 @@ import { clearCommercePersistence } from '../acl/commerce.js';
 TimeManager.initializeCache().catch(err => {
     console.warn('[game.js] Could not initialize TimeManager cache:', err);
 });
+
+registerGetTimeInfo((turn) => TimeManager.getTimeInfo(turn));
 
 // Translation object for building IDs to French names
 const BUILDING_TRANSLATIONS = {
@@ -458,7 +461,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
         employment,
         commerce,
         gameplay,
-        timeManager: TimeManager,
+        getTimeInfo: (turn) => TimeManager.getTimeInfo(turn),
         toSupplySeason,
         toSupplyMonth,
         getSectorPriorities: getAllSectorPriorities,

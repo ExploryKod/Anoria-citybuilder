@@ -3,14 +3,14 @@
  */
 export function createSupplyMonthlyFoodSystem({
   supply,
-  timeManager,
+  getTimeInfo,
   toSupplySeason,
   toSupplyMonth,
   foodDistributionDistance = 5,
 }) {
   return async function supplyMonthlyFood(_world, context = {}) {
     const time = context.time ?? 0;
-    const timeInfo = timeManager.getTimeInfo(time);
+    const timeInfo = getTimeInfo(time);
 
     await supply.runMonthlyFoodSupplyCycle({
       season: toSupplySeason(timeInfo.season),

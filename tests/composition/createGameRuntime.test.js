@@ -94,7 +94,7 @@ function baseRuntimeDeps(overrides = {}) {
     employment: fakeEmployment(),
     commerce: fakeCommerce(),
     gameplay: fakeGameplay(),
-    timeManager: TimeManager,
+    getTimeInfo: (turn) => TimeManager.getTimeInfo(turn),
     toSupplySeason: () => 'summer',
     toSupplyMonth: () => 'july',
     getSectorPriorities: () => ({}),

@@ -26,7 +26,7 @@ import { GetCityFactoryResources } from '../contexts/supply/application/queries/
 import { DexieFactoryBuildingRepository } from '../contexts/supply/infrastructure/dexie/DexieFactoryBuildingRepository.js';
 import { DexieFoodTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieFoodTraceabilityRepository.js';
 import { SupplyProductionJournal } from '../contexts/supply/infrastructure/presentation/SupplyProductionJournal.js';
-import { getTimeManager } from '../js/acl/appRuntime.js';
+import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { SupplyFoodTraceability } from '../contexts/supply/infrastructure/presentation/SupplyFoodTraceability.js';
 import { GetBuildingSupplyView } from '../contexts/supply/application/queries/GetBuildingSupplyView.js';
 import { ListSupplyMapBuildings } from '../contexts/supply/application/queries/ListSupplyMapBuildings.js';
@@ -40,12 +40,15 @@ import { ListSupplyStockSnapshots } from '../contexts/supply/application/queries
  * @param {import('../contexts/supply/application/ports/SupplyBuildingRepository.js').SupplyBuildingRepository} [deps.supplyBuildingRepository]
  * @param {import('../contexts/supply/application/ports/FactoryBuildingRepository.js').FactoryBuildingRepository} [deps.factoryBuildingRepository]
  * @param {import('../contexts/supply/infrastructure/dexie/DexieFoodTraceabilityRepository.js').DexieFoodTraceabilityRepository} [deps.foodTraceabilityRepository]
+ * @param {(turn: number) => object} [deps.getTimeInfo]
  */
 export function createSupplyContext({
   supplyBuildingRepository,
   factoryBuildingRepository,
   foodTraceabilityRepository,
+  getTimeInfo: getTimeInfoDep,
 } = {}) {
+  const getTimeInfo = getTimeInfoDep ?? resolveGetTimeInfo();
   const supplyBuildingRepositoryImpl =
     supplyBuildingRepository ?? new DexieSupplyBuildingRepository();
   const factoryBuildingRepositoryImpl =
@@ -53,10 +56,7 @@ export function createSupplyContext({
   const foodTraceabilityRepositoryImpl =
     foodTraceabilityRepository ?? new DexieFoodTraceabilityRepository();
   const productionJournal = new SupplyProductionJournal({
-    resolveTimeInfo: (turn) => {
-      const timeManager = getTimeManager();
-      return timeManager?.getTimeInfo?.(turn) ?? null;
-    },
+    resolveTimeInfo: (turn) => getTimeInfo(turn) ?? null,
   });
   const marketBuysFromNearbyFarms = new MarketBuysFromNearbyFarms(
     supplyBuildingRepositoryImpl
