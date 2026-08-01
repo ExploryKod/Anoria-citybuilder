@@ -8,3 +8,5 @@ allowBuilds:
 
 overrides:
   caniuse-lite: 1.0.30001806
+  sharp: 0.32.6
+  sharp-ico: 0.1.5

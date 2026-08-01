@@ -1,7 +1,7 @@
 {
   "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
-  "installCommand": "corepack enable && corepack prepare pnpm@11.17.0 --activate && pnpm install --frozen-lockfile",
+  "installCommand": "npx pnpm@11.17.0 install --frozen-lockfile",
   "headers": [
     {
       "source": "/(.*)",
