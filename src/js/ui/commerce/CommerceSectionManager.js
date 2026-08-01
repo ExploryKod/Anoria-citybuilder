@@ -1,31 +1,27 @@
-import { updateDisplayedFunds, getGameTime, getTimeInfo } from '../acl/appRuntime.js';
+import { updateDisplayedFunds, getGameTime, getTimeInfo } from '../../acl/appRuntime.js';
 import {
   loadOrSeedCommercePartners,
   saveCommercePartners,
   loadCommerceStats,
   loadOrSeedCommerceConfig,
   saveCommerceConfig,
-  clearCommercePersistence,
-} from '../acl/commerce.js';
-import { getCityEmploymentSummary } from '../acl/employment.js';
-import { getCityTotalPopulation } from '../acl/housing.js';
+  getPriceStatus as resolvePriceStatus,
+  getContractStatus as resolvePartnerContractStatus,
+  getProductStockKey,
+  getProductDisplayName,
+  evaluatePartnerActivationConditions,
+} from '../../acl/commerce.js';
+import { getCityEmploymentSummary } from '../../acl/employment.js';
+import { getCityTotalPopulation } from '../../acl/housing.js';
 import {
   listCommercializableWindmills,
   listSupplyMapBuildings,
   listWindmillSupplyViews,
   getAllFoodTraceabilityTransactions,
-} from '../acl/supply.js';
-import { getTreasuryBalance, getTreasurySnapshot, recordCommercialRouteFee, getCommercialRouteFee } from '../acl/accountingGame.js';
-import {
-    getPriceStatus as resolvePriceStatus,
-    getContractStatus as resolvePartnerContractStatus,
-    getProductStockKey,
-    getProductDisplayName,
-    evaluatePartnerActivationConditions,
-    setCommercePartnerContractFinishedHandler,
-} from '../acl/commerce.js';
+} from '../../acl/supply.js';
+import { getTreasuryBalance, getTreasurySnapshot, recordCommercialRouteFee, getCommercialRouteFee } from '../../acl/accountingGame.js';
 
-class CommerceSectionManager {
+export class CommerceSectionManager {
     constructor() {
         this.selectedGood = null;
         this.goodsData = null;
@@ -1262,55 +1258,3 @@ class CommerceSectionManager {
         }
     }
 }
-
-async function initCommerceSection() {
-    const commerceSection = document.getElementById('admin-section-commerce');
-    if (!commerceSection) return;
-
-    const manager = new CommerceSectionManager();
-
-    setCommercePartnerContractFinishedHandler(({ partnerName, finishedProducts }) => {
-        const productsText = finishedProducts.length > 0
-            ? finishedProducts.join(', ')
-            : 'toutes les denrées';
-        manager.showPartnerMessage(
-            `Contrat terminé avec ${partnerName} (${productsText}). Le partenaire a été désactivé automatiquement.`,
-            'info'
-        );
-        manager.loadPartnersData();
-        manager.renderPartners().catch((error) => {
-            console.error('[CommerceSectionManager] Error rendering partners after contract finish:', error);
-        });
-    });
-    
-    // Initialiser la configuration au démarrage (même si le panneau n'est pas ouvert)
-    // Cela garantit que CommerceService peut trouver la config dès le début
-    await manager.loadGoodsData();
-    
-    const observer = new MutationObserver(async () => {
-        if (commerceSection.classList.contains('active')) {
-            // Recharger les données à chaque activation (pour mettre à jour les stats dynamiques)
-            await manager.loadGoodsData();
-        }
-    });
-
-    observer.observe(commerceSection, { attributes: true, attributeFilter: ['class'] });
-
-    // Initialiser si déjà actif
-    if (commerceSection.classList.contains('active')) {
-        await manager.init();
-    } else {
-        // Même si le panneau n'est pas actif, initialiser les event listeners et les tabs
-        manager.setupEventListeners();
-        manager.setupTabs();
-        manager.loadPartnersData();
-    }
-
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initCommerceSection);
-} else {
-    initCommerceSection();
-}
-
