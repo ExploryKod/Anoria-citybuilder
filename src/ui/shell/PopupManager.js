@@ -85,7 +85,7 @@ class PopupManager {
             onClose: () => {}
         });
 
-        this.popupConfigs.set('budget-panel', {
+        this.popupConfigs.set('bilan-panel', {
             shouldBlockEvents: true,
             shouldPauseGame: true,
             eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],

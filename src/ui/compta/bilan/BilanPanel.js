@@ -64,7 +64,7 @@ export async function updateBudgetDisplay() {
       treasurySnapshot: currentBudget,
     });
 
-    const healthIndicatorEl = document.getElementById('budget-health-indicator');
+    const healthIndicatorEl = document.getElementById('bilan-health-indicator');
     const healthStatusEl = healthIndicatorEl?.querySelector('.health-status');
 
     if (healthIndicatorEl && healthStatusEl) {
@@ -89,9 +89,9 @@ export async function updateBudgetDisplay() {
 }
 
 export function initBilanPopup() {
-  const budgetBtn = document.getElementById('budget-btn');
-  const budgetPanel = document.getElementById('budget-panel');
-  const budgetPanelCloseBtn = document.querySelector('.budget-panel-close-btn');
+  const budgetBtn = document.getElementById('bilan-btn');
+  const budgetPanel = document.getElementById('bilan-panel');
+  const budgetPanelCloseBtn = document.querySelector('.bilan-panel-close-btn');
 
   if (!budgetBtn || !budgetPanel || !budgetPanelCloseBtn) {
     console.warn('Balance sheet popup elements not found');
@@ -104,7 +104,7 @@ export function initBilanPopup() {
     budgetPanel.classList.add('active');
 
     if (getPopupManager()) {
-      getPopupManager().forceOpenPopup('budget-panel');
+      getPopupManager().forceOpenPopup('bilan-panel');
     }
 
     updateBudgetDisplay();
@@ -114,7 +114,7 @@ export function initBilanPopup() {
     budgetPanel.classList.remove('active');
 
     if (getPopupManager()) {
-      getPopupManager().forceClosePopup('budget-panel');
+      getPopupManager().forceClosePopup('bilan-panel');
     }
   });
 
@@ -123,7 +123,7 @@ export function initBilanPopup() {
       budgetPanel.classList.remove('active');
 
       if (getPopupManager()) {
-        getPopupManager().forceClosePopup('budget-panel');
+        getPopupManager().forceClosePopup('bilan-panel');
       }
     }
   });

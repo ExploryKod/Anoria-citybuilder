@@ -28,9 +28,9 @@
     <!-- These modals are not visible on initial load, so they can load non-blocking -->
     <!-- This saves ~140ms of render blocking time -->
     <link rel="stylesheet" href="./src/styles/modals/budget-states.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/budget-panel.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/styles/modals/bilan-panel.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/styles/modals/loans-panel.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/budget-panel-content.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/styles/modals/bilan-panel-content.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/styles/modals/budget-states-content.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/styles/modals/balance-sheet.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/styles/modals/cleanup-notification.css" media="print" onload="this.media='all'">
@@ -50,9 +50,9 @@
     <link rel="stylesheet" href="./src/styles/multiplayer.css" media="print" onload="this.media='all'">
     <noscript>
         <link rel="stylesheet" href="./src/styles/modals/budget-states.css">
-        <link rel="stylesheet" href="./src/styles/modals/budget-panel.css">
+        <link rel="stylesheet" href="./src/styles/modals/bilan-panel.css">
         <link rel="stylesheet" href="./src/styles/modals/loans-panel.css">
-        <link rel="stylesheet" href="./src/styles/modals/budget-panel-content.css">
+        <link rel="stylesheet" href="./src/styles/modals/bilan-panel-content.css">
         <link rel="stylesheet" href="./src/styles/modals/budget-states-content.css">
         <link rel="stylesheet" href="./src/styles/modals/balance-sheet.css">
         <link rel="stylesheet" href="./src/styles/modals/cleanup-notification.css">
@@ -413,7 +413,7 @@
                     <div class="toolbar__sub-container">
                         <div class="manager-label">Gestion</div>
                         <div class="toolbar__buttons">
-                            <button type="button" id="budget-btn" data-toolid="budget" class="toolbar-btn" title="Bilan comptable" aria-label="Ouvrir le bilan comptable">
+                            <button type="button" id="bilan-btn" data-toolid="bilan" class="toolbar-btn" title="Bilan comptable" aria-label="Ouvrir le bilan comptable">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-scale">
                                     <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
                                     <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
@@ -1057,16 +1057,16 @@
 
 
     <!-- Budget Panel -->
-    <div id="budget-panel" class="budget-panel">
-        <div class="budget-panel-wrapper">
-            <div class="budget-panel-header">
-                <div class="budget-health-indicator" id="budget-health-indicator">
+    <div id="bilan-panel" class="bilan-panel">
+        <div class="bilan-panel-wrapper">
+            <div class="bilan-panel-header">
+                <div class="bilan-health-indicator" id="bilan-health-indicator">
                     <span class="health-status">Finance saine</span>
                 </div>
-                <div class="budget-panel-title-container">
+                <div class="bilan-panel-title-container">
                     <h2>💰 Bilan Comptable</h2>
                 </div>
-                <div class="budget-panel-close-btn">
+                <div class="bilan-panel-close-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
                         <circle cx="12" cy="12" r="10"/>
                         <path d="m15 9-6 6"/>
@@ -1074,7 +1074,7 @@
                     </svg>
                 </div>
             </div>
-            <div class="budget-panel-content">
+            <div class="bilan-panel-content">
                 <!-- Bilan Comptable -->
                 <div class="balance-sheet">
                     <div class="balance-sheet-header">
