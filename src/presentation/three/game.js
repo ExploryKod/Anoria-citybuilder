@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {  assetsPrices } from './meshs/data.js';
-import { getDefaultEmployees, getSectorPriority, getSectorName, getAllSectorPriorities } from '../../js/game/modules/EmployeeHelper.js';
+import { getDefaultEmployees, getSectorPriority, getSectorName, getAllSectorPriorities } from '../../js/acl/employment.js';
 import { TimeManager } from '../../js/game/utils/TimeManager.js';
 import { getTimeInfo, registerAppService } from '../../js/acl/appRuntime.js';
 import { createScene } from './scene.js';
