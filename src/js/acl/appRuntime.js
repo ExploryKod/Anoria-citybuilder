@@ -60,6 +60,26 @@ export function getFoodTraceabilityService() {
   return appRegistry.get('foodTraceabilityService');
 }
 
+export function getInputManager() {
+  return appRegistry.get('inputManager');
+}
+
+/** @returns {{ x: number, y: number } | null} */
+export function getInputManagerMouse() {
+  return getInputManager()?.mouse ?? null;
+}
+
+export function getUpdateBudgetDisplayHandler() {
+  return appRegistry.get('updateBudgetDisplay');
+}
+
+export async function invokeUpdateBudgetDisplay() {
+  const handler = getUpdateBudgetDisplayHandler();
+  if (typeof handler === 'function') {
+    await handler();
+  }
+}
+
 export function getObjectivesTracker() {
   return appRegistry.get('objectivesTracker');
 }

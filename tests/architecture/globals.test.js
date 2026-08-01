@@ -2,7 +2,7 @@
  * Architecture guard — Lot 8 (D6 globals).
  *
  * Direct window.service = assignments are forbidden outside AppRegistry.
- * Access services via js/acl/appRuntime.js instead.
+ * Direct window.service reads must go through js/acl/appRuntime.js instead.
  */
 
 import fs from 'fs';
@@ -53,7 +53,25 @@ const FORBIDDEN_ASSIGNMENT_RES = [
   /window\.toggleStatsJs\s*=/,
   /window\.webglTestMode\s*=/,
   /window\.testAnimation\s*=/,
+  // Lot 8 phase 4
+  /window\.inputManager\s*=/,
+  /window\.updateBudgetDisplay\s*=/,
+  /window\.scene\s*=/,
 ];
+
+/** Direct reads of legacy service globals (use js/acl/appRuntime.js). */
+const FORBIDDEN_READ_RES = [
+  /window\.inputManager\b/,
+  /window\.updateBudgetDisplay\b/,
+  /window\.foodTraceabilityService\b/,
+  /window\.scene\b/,
+  /window\.app\.game\b/,
+];
+
+/** Files allowed to reference window.app (composition root namespace). */
+const READ_GUARD_SKIP_FILES = new Set([
+  'js/game/AppRegistry.js',
+]);
 
 /** `${fileRel}::${lineNumber}` */
 const ALLOWLIST = new Set([]);
@@ -75,6 +93,11 @@ function toSrcRelative(absolutePath) {
   return path.relative(SRC_ROOT, absolutePath).split(path.sep).join('/');
 }
 
+function isCommentOnlyLine(line) {
+  const trimmed = line.trim();
+  return trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*');
+}
+
 describe('architecture globals (Lot 8)', () => {
   test('no direct window.* service assignments outside allowlist', () => {
     const violations = [];
@@ -85,6 +108,36 @@ describe('architecture globals (Lot 8)', () => {
 
       lines.forEach((line, index) => {
         for (const pattern of FORBIDDEN_ASSIGNMENT_RES) {
+          if (pattern.test(line)) {
+            const key = `${fileRel}::${index + 1}`;
+            if (!ALLOWLIST.has(key)) {
+              violations.push(`${key}: ${line.trim()}`);
+            }
+          }
+        }
+      });
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  test('no direct window.* service reads outside allowlist', () => {
+    const violations = [];
+
+    for (const absolutePath of listJsFiles(SRC_ROOT)) {
+      const fileRel = toSrcRelative(absolutePath);
+      if (READ_GUARD_SKIP_FILES.has(fileRel)) {
+        continue;
+      }
+
+      const lines = fs.readFileSync(absolutePath, 'utf8').split('\n');
+
+      lines.forEach((line, index) => {
+        if (isCommentOnlyLine(line)) {
+          return;
+        }
+
+        for (const pattern of FORBIDDEN_READ_RES) {
           if (pattern.test(line)) {
             const key = `${fileRel}::${index + 1}`;
             if (!ALLOWLIST.has(key)) {
