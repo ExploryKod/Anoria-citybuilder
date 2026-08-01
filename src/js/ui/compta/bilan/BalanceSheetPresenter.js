@@ -2,7 +2,7 @@
  * Renders BalanceSheet read model (via presentation policy) into bilan DOM elements.
  */
 
-import { buildBalanceSheetViewModel } from '../../acl/accountingPresentation.js';
+import { buildBalanceSheetViewModel } from '../../../acl/accountingPresentation.js';
 import { fetchBuildingBreakdownElementValues } from './BuildingBreakdownEnrichment.js';
 
 /**

@@ -7,15 +7,15 @@ import {
   getIncomeBreakdown,
   getExpenseBreakdown,
   getActiveLoans,
-} from '../../acl/accountingGame.js';
+} from '../../../acl/accountingGame.js';
 import {
   renderLoanInterestDetail,
   renderRealtimeBudgetError,
   renderRealtimeBudgetFromData,
   financialHealthStatusLabel,
 } from './RealtimeBudgetPresenter.js';
-import { getPopupManager, getGameStore } from '../../acl/appRuntime.js';
-import { getCityTotalPopulation } from '../../acl/housing.js';
+import { getPopupManager, getGameStore } from '../../../acl/appRuntime.js';
+import { getCityTotalPopulation } from '../../../acl/housing.js';
 
 export { financialHealthStatusLabel as getHealthStatusText };
 

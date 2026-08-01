@@ -3,9 +3,9 @@
  * Not the source of balance sheet totals (those come from BalanceSheet read model).
  */
 
-import { listAllBuildingRows } from '../../acl/construction.js';
-import { getCityBuildingValuation } from '../../acl/budget.js';
-import { formatEuroOrNa } from '../../acl/accountingPresentation.js';
+import { listAllBuildingRows } from '../../../acl/construction.js';
+import { getCityBuildingValuation } from '../../../acl/budget.js';
+import { formatEuroOrNa } from '../../../acl/accountingPresentation.js';
 
 /**
  * @returns {Promise<Record<string, string>>}

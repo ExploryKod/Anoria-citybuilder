@@ -5,12 +5,12 @@
  * Source primaire CR/bilan : journal via getFinancialStatementsHistory().
  */
 
-import { getPopupManager, registerAppFunction } from '../../acl/appRuntime.js';
-import { getHealthStatusText } from './RealtimeBudgetManager.js';
+import { getPopupManager, registerAppFunction } from '../../../acl/appRuntime.js';
+import { getHealthStatusText } from '../tresorerie/RealtimeBudgetManager.js';
 import {
   getFinancialStatementsHistory,
   getIncomeStatement,
-} from '../../acl/accounting.js';
+} from '../../../acl/accounting.js';
 
 /**
  * Initialise le popup des états budgétaires

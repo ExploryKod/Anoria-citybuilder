@@ -6,9 +6,9 @@ import {
   EMPLOYMENT_SECTOR_NAMES,
   DEFAULT_SECTOR_PRIORITIES,
   EMPLOYMENT_MAX_SECTORS,
-} from '../acl/employment.js';
-import { getCityTotalPopulation } from '../acl/housing.js';
-import { registerAppService } from '../acl/appRuntime.js';
+} from '../../../acl/employment.js';
+import { getCityTotalPopulation } from '../../../acl/housing.js';
+import { registerAppService } from '../../../acl/appRuntime.js';
 
 class WorkSectionManager {
     constructor() {
