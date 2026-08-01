@@ -39,7 +39,7 @@ import {
     getButtonStateManager,
     invokeSetActiveTool,
 } from '../acl/appRuntime.js';
-import { createGame } from '../game/game.js';
+import { createGame } from '../../presentation/three/game.js';
 import webglDetector from '../utils/WebGLResourceDetector.js';
 import { getOrCreateGameSessionContext } from "../acl/gameSession.js";
 import { hasRoadAccessFromCount } from '../acl/parcels.js';
@@ -49,7 +49,7 @@ import {
   getFinancialHealth,
   getTreasurySnapshot,
 } from '../acl/accountingGame.js';
-import AssetManager from "../meshs/AssetManager.js";
+import AssetManager from '../../presentation/three/meshs/AssetManager.js';
 import { initRealtimeBudgetPopup, updateRealtimeBudget } from "./budget/RealtimeBudgetManager.js";
 import { initBudgetStatesPopup, refreshBudgetStatesModal } from "./budget/BudgetStatesManager.js";
 import { renderBalanceSheet } from "./budget/BalanceSheetPresenter.js";
@@ -2081,7 +2081,7 @@ window.onload = async () => {
     // Activer le multijoueur uniquement si l'utilisateur a explicitement créé/rejoint un salon
     if (multiplayerEnabled && playerPseudo && (selectionResult.action === 'create' || selectionResult.action === 'join')) {
         try {
-            const { getMultiplayerManager } = await import('../multiplayer/MultiplayerManager.js');
+            const { getMultiplayerManager } = await import('../../infrastructure/multiplayer/MultiplayerManager.js');
             const multiplayerManager = getMultiplayerManager(game, game.scene);
             
             // Déterminer l'action et les paramètres
