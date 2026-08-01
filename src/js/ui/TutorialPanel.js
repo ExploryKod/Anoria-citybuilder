@@ -1,6 +1,5 @@
 /**
- * Système de Tutoriel - Anoria City Builder
- * Gère l'affichage et la logique de la popup de tutoriel
+ * TutorialPanel — popup tutoriel (DOM + événements).
  */
 import {
     pauseGame,
@@ -12,7 +11,7 @@ import {
 } from '../acl/appRuntime.js';
 import EventBlocker from '../utils/EventBlocker.js';
 
-class TutorialManager {
+class TutorialPanel {
     constructor() {
         this.panel = null;
         this.currentStep = 0;
@@ -323,17 +322,16 @@ class TutorialManager {
     }
 }
 
-// Créer une instance globale
-const tutorialManager = new TutorialManager();
+const tutorialPanel = new TutorialPanel();
 
-registerAppService('tutorialManager', tutorialManager);
+registerAppService('tutorialManager', tutorialPanel);
 
 registerAppFunction('startTutorial', () => {
-    tutorialManager.showTutorial();
+    tutorialPanel.showTutorial();
 });
 
 registerAppFunction('closeTutorial', () => {
-    tutorialManager.closeTutorial();
+    tutorialPanel.closeTutorial();
 });
 
 // Vérifier que le bouton tutoriel existe et ajouter un event listener direct

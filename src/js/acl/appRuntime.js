@@ -39,6 +39,10 @@ export function getTutorialManager() {
   return appRegistry.get('tutorialManager');
 }
 
+export function getObjectivesManager() {
+  return appRegistry.get('objectivesManager');
+}
+
 export function getButtonStateManager() {
   return appRegistry.get('buttonStateManager');
 }
@@ -93,6 +97,30 @@ export function getObjectivesHistory() {
 
 export function getWorkSectionPresenter() {
   return appRegistry.get('workSectionPresenter');
+}
+
+export function getFinancesSectionPresenter() {
+  return appRegistry.get('financesSectionPresenter');
+}
+
+export function getCommerceSectionPresenter() {
+  return appRegistry.get('commerceSectionPresenter');
+}
+
+export function getFactorySectionPresenter() {
+  return appRegistry.get('factorySectionPresenter');
+}
+
+export function getStorageSectionPresenter() {
+  return appRegistry.get('storageSectionPresenter');
+}
+
+export function getHealthSectionPresenter() {
+  return appRegistry.get('healthSectionPresenter');
+}
+
+export function getReportSectionPresenter() {
+  return appRegistry.get('reportSectionPresenter');
 }
 
 export function getMultiplayerManager() {

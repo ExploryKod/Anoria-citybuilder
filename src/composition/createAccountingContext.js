@@ -1,5 +1,5 @@
 import { getOrCreateGameSessionContext } from '../composition/createGameSessionContext.js';
-import { getWorkSectionPresenter, getAppService } from '../js/acl/appRuntime.js';
+import { getWorkSectionPresenter, getFinancesSectionPresenter, getAppService } from '../js/acl/appRuntime.js';
 import { GetTreasuryBalance } from '../contexts/accounting/application/queries/treasury/GetTreasuryBalance.js';
 import { GetTreasurySnapshot } from '../contexts/accounting/application/queries/treasury/GetTreasurySnapshot.js';
 import { GetFinancialHealth } from '../contexts/accounting/application/queries/treasury/GetFinancialHealth.js';
@@ -315,7 +315,7 @@ export function createAccountingContext(deps = {}) {
   };
 
   const getCitizenTaxPerCapita = () => {
-    const financesSectionPresenter = getAppService('financesSectionPresenter');
+    const financesSectionPresenter = getFinancesSectionPresenter();
     if (
       financesSectionPresenter &&
       typeof financesSectionPresenter.citizenTaxAmount === 'number'

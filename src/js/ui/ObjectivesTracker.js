@@ -4,7 +4,7 @@
  */
 
 import { getTreasurySnapshot } from '../acl/accountingGame.js';
-import { getTutorialManager, getButtonStateManager, registerAppService } from '../acl/appRuntime.js';
+import { getObjectivesManager, getButtonStateManager, registerAppService } from '../acl/appRuntime.js';
 import { getObjectivesStore } from '../acl/objectives.js';
 import {
   OBJECTIVE_CATALOG,
@@ -239,8 +239,8 @@ class ObjectivesTracker {
         });
         
         // Désactiver les événements Three.js quand la modale est ouverte
-        if (getTutorialManager() && getTutorialManager().disableThreeJSEvents) {
-            getTutorialManager().disableThreeJSEvents();
+        if (getObjectivesManager() && getObjectivesManager().disableThreeJSEvents) {
+            getObjectivesManager().disableThreeJSEvents();
         }
     }
 

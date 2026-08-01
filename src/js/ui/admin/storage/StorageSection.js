@@ -1,6 +1,5 @@
 import { listWindmillSupplyViews, updateSupplyBuildingFields } from '../../../acl/supply.js';
 import { getBuildingById } from '../../../acl/construction.js';
-import { registerAppService } from '../../../acl/appRuntime.js';
 import {
     instanceIdFromHouseRow,
     displayLabelFromHouseRow,
@@ -14,7 +13,7 @@ function windmillInstanceId(windmill) {
  * StorageSectionPresenter - Présente les unités de stock (Unités de Stock) section
  * Displays and manages all windmills with their stocks, settings, and distribution
  */
-class StorageSectionPresenter {
+export class StorageSectionPresenter {
     constructor() {
         this.windmills = [];
     }
@@ -346,37 +345,3 @@ class StorageSectionPresenter {
     }
 }
 
-/**
- * Initialize the storage section
- */
-function initStorageSection() {
-    const storageSection = document.getElementById('admin-section-storage');
-    if (!storageSection) return;
-    
-    const presenter = new StorageSectionPresenter();
-    
-    // Initialize when section becomes active
-    const observer = new MutationObserver(() => {
-        if (storageSection.classList.contains('active')) {
-            // Refresh data when section becomes active
-            presenter.refresh();
-        }
-    });
-    
-    observer.observe(storageSection, { attributes: true, attributeFilter: ['class'] });
-    
-    // If already active, initialize immediately
-    if (storageSection.classList.contains('active')) {
-        presenter.init();
-    }
-    
-    // Expose presenter via globally
-    registerAppService('storageSectionPresenter', presenter);
-}
-
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initStorageSection);
-} else {
-    initStorageSection();
-}
