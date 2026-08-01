@@ -66,16 +66,6 @@ class BudgetManager {
     }
 
     /**
-     * @deprecated Removed — use typed BC services (e.g. addConstructionRefund, addTaxes).
-     */
-    async addIncome(amount, source = 'unknown') {
-        console.warn(
-            `[BudgetManager] addIncome() is deprecated (source: ${source}). Use a typed accounting method.`
-        );
-        throw new Error('BudgetManager.addIncome is deprecated — use a typed Record* service');
-    }
-
-    /**
      * Add loan to budget (principal amount)
      * @param {number} amount - Loan principal amount
      * @param {string} description - Description of loan
@@ -94,11 +84,6 @@ class BudgetManager {
 
     async recordInfoLoanInstallment(params) {
         return accountingGame.recordInfoLoanInstallment(params);
-    }
-
-    /** @deprecated Use recordInfoLoanInstallment */
-    async recordLoanDefaultInstallment(params) {
-        return this.recordInfoLoanInstallment(params);
     }
 
     /**
@@ -233,17 +218,6 @@ class BudgetManager {
     }
 
     /**
-     * Check if we can afford an expense
-     * @param {number} amount - Amount to check
-     * @returns {Promise<boolean>} True if affordable
-     */
-    async canAfford(amount) {
-        const budget = await this.getCurrentBudget();
-        return budget.funds >= amount;
-    }
-
-
-    /**
      * Get budget summary for display
      * @returns {Promise<Object>} Budget summary
      */
@@ -287,38 +261,6 @@ class BudgetManager {
     async addCommercialRouteFee(amount, description, partnerId) {
         return accountingGame.recordCommercialRouteFee(amount, description, partnerId);
     }
-
-    /**
-     * Add daily income (taxes, sales, etc.)
-     * @param {number} amount - Daily income amount
-     * @param {string} source - Source of income
-     */
-    async addDailyIncome(amount, source = "daily_income") {
-        const budget = await this.getCurrentBudget();
-        
-        // Validate input amount
-        if (typeof amount !== 'number' || isNaN(amount) || !isFinite(amount)) {
-            console.error(`Invalid daily income amount: ${amount} (type: ${typeof amount})`);
-            return budget; // Return current budget without changes
-        }
-        
-        // Use budget values directly (they should be valid now)
-        const currentFunds = budget.funds;
-        const currentIncome = budget.income;
-        const currentDailyIncome = budget.dailyIncome;
-        
-        budget.funds = currentFunds + amount;
-        budget.income = currentIncome + amount;
-        const roundedAmount = Math.round(amount);
-        budget.funds = Math.round(budget.funds + roundedAmount);
-        budget.income = Math.round(budget.income + roundedAmount);
-        budget.dailyIncome = Math.round(currentDailyIncome + roundedAmount);
-        budget.netFlow = Math.round(budget.income - budget.expenses);
-        
-        await this.db.budget.put(budget);
-        return budget;
-    }
-
 
     /**
      * Add building maintenance expenses only
@@ -392,169 +334,9 @@ class BudgetManager {
         const { getFinancialHealth } = await import('../acl/accounting.js');
         return getFinancialHealth();
     }
-
-    /**
-     * Save budget state snapshot (called every 3 turns)
-     * @param {number} turn - Current turn number
-     * @param {Object} additionalData - Additional data (population, building counts, etc.)
-     */
-    async saveBudgetState(turn, additionalData = {}) {
-        return accountingGame.saveBudgetTurnEnrichment(turn, additionalData, { db: this.db });
-    }
-
-    /**
-     * Get budget states (all saved states)
-     */
-    async getBudgetStates() {
-        const allBudgets = await this.db.budget.toArray();
-        // Filter only budget states (not the main budget)
-        const budgetStates = allBudgets.filter(budget => budget.name.startsWith('budget_turn_'))
-                         .sort((a, b) => b.turn - a.turn);
-        
-        // Migrate existing budget states to include loan fields
-        let needsMigration = false;
-        for (const state of budgetStates) {
-            if (state.totalLoanInterestExpenses === undefined) {
-                state.totalLoanInterestExpenses = 0;
-                needsMigration = true;
-            }
-            if (state.totalLoanRepayments === undefined) {
-                state.totalLoanRepayments = 0;
-                needsMigration = true;
-            }
-        }
-        
-        if (needsMigration) {
-            for (const state of budgetStates) {
-                await this.db.budget.put(state);
-            }
-        }
-        
-        // Recalculate expenses for existing states to include loan interest
-        let needsRecalculation = false;
-        for (const state of budgetStates) {
-            const calculatedExpenses = (state.totalBuildingMaintenance || 0) + 
-                                     (state.totalLoanInterestExpenses || 0) + 
-                                     (state.totalLoanRepayments || 0);
-            
-            if (state.expenses !== calculatedExpenses && calculatedExpenses > 0) {
-                state.expenses = calculatedExpenses;
-                state.netFlow = (state.income || 0) - state.expenses;
-                needsRecalculation = true;
-            }
-        }
-        
-        if (needsRecalculation) {
-            for (const state of budgetStates) {
-                await this.db.budget.put(state);
-            }
-        }
-        
-        return budgetStates;
-    }
-
-    /**
-     * Get budget states every N turns
-     * @param {number} n - Every N turns (default: 3)
-     */
-    async getBudgetStatesEveryNTurns(n = 3) {
-        const allStates = await this.getBudgetStates();
-        return allStates.filter(state => state.turn % n === 0);
-    }
-
-    /**
-     * Get budget states for a specific period
-     * @param {number} startTurn - Start turn
-     * @param {number} endTurn - End turn
-     */
-    async getBudgetStatesForPeriod(startTurn, endTurn) {
-        const allStates = await this.getBudgetStates();
-        return allStates.filter(state => state.turn >= startTurn && state.turn <= endTurn);
-    }
-
-    /**
-     * Get the last N batches of budget states (each batch contains states every M turns)
-     * @param {number} nBatches - Number of batches to retrieve
-     * @param {number} batchSize - Size of each batch (every M turns)
-     * @returns {Promise<Array>} Last N batches of budget states
-     */
-    async getLastNBatches(nBatches, batchSize) {
-        const allStates = await this.getBudgetStates();
-        
-        if (allStates.length === 0) {
-            return [];
-        }
-
-        // Get states that are multiples of batchSize (every M turns)
-        const batchStates = allStates.filter(state => state.turn % batchSize === 0);
-        
-        if (batchStates.length === 0) {
-            return [];
-        }
-
-        // Sort by turn descending to get the most recent first
-        batchStates.sort((a, b) => b.turn - a.turn);
-        
-        // Take the last N batches
-        const lastNBatches = batchStates.slice(0, nBatches);
-        
-        // Sort by turn ascending for display
-        lastNBatches.sort((a, b) => a.turn - b.turn);
-
-        return lastNBatches;
-    }
-
-    /**
-     * Clean up old budget states (keep only last N)
-     * @param {number} keepLast - Number of states to keep (default: 10)
-     */
-    async cleanupOldBudgetStates(keepLast = 10) {
-        const allStates = await this.getBudgetStates();
-        if (allStates.length > keepLast) {
-            const statesToDelete = allStates.slice(keepLast);
-            for (const state of statesToDelete) {
-                await this.db.budget.delete(state.name);
-            }
-        }
-    }
-
-    /**
-     * Clean up budget states older than 60 days (approximately 20 periods of 3 turns)
-     * @returns {Promise<Object>} Cleanup result with count and message
-     */
-    async cleanupOldBudgetStatesByAge() {
-        return accountingGame.cleanupOldBudgetTurnSnapshotsByAge({ db: this.db });
-    }
-
-    /**
-     * Get current turn from game store
-     * @returns {Promise<number>} Current turn number
-     */
-    async getCurrentTurn() {
-        try {
-            if (window.gameStore) {
-                const turnData = await window.gameStore.getLatestGameItemByField('turn');
-                return turnData || 0;
-            }
-            return 0;
-        } catch (error) {
-            console.warn('Could not get current turn:', error);
-            return 0;
-        }
-    }
 }
 
 const budgetManager = new BudgetManager();
 
-// Make it globally available for debugging
-if (typeof window !== 'undefined') {
-    window.budgetManager = budgetManager;
-    // Also register with AppRegistry if available
-    if (window.app && window.app.register) {
-        window.app.register('budgetManager', budgetManager);
-    }
-}
-
-// Export both the class (for testing) and the singleton instance (for production)
 export { BudgetManager };
 export default budgetManager;

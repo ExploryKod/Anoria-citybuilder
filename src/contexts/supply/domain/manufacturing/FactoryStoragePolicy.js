@@ -1,22 +1,18 @@
-import config from '../../../../js/game/config.js';
+import { FACTORY_MAX_STORAGE } from './ProductRecipeCatalog.js';
+
+const REFINED_STORAGE_ALIASES = Object.freeze({
+  logs: 'wood',
+  refinedGold: 'gold',
+  refinedClay: 'clay',
+  refinedIron: 'iron',
+});
 
 /**
  * @param {string} resourceType
  */
 export function factoryMaxStorage(resourceType) {
-  if (resourceType === 'logs') {
-    return config.factoryMaxStorage?.wood || 200;
-  }
-  if (resourceType === 'refinedGold') {
-    return config.factoryMaxStorage?.gold || 200;
-  }
-  if (resourceType === 'refinedClay') {
-    return config.factoryMaxStorage?.clay || 200;
-  }
-  if (resourceType === 'refinedIron') {
-    return config.factoryMaxStorage?.iron || 200;
-  }
-  return config.factoryMaxStorage?.[resourceType] || 200;
+  const key = REFINED_STORAGE_ALIASES[resourceType] ?? resourceType;
+  return FACTORY_MAX_STORAGE[key] ?? 200;
 }
 
 /**

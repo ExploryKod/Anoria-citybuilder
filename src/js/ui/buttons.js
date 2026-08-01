@@ -40,17 +40,15 @@ function appRegister(name, instance) {
 import gameStore from "../stores/GameStore.js";
 import { hasRoadAccessFromCount } from '../acl/parcels.js';
 import { listSupplyMapBuildings } from '../acl/supply.js';
-import { listAllBuildingRows } from '../acl/construction.js';
-import { getCityBuildingValuation } from '../acl/budget.js';
 import { getBalanceSheet } from '../acl/accounting.js';
 import {
-  getBudgetSummary,
   getFinancialHealth,
   getTreasurySnapshot,
 } from '../acl/accountingGame.js';
 import AssetManager from "../meshs/AssetManager.js";
 import { initRealtimeBudgetPopup, updateRealtimeBudget } from "./budget/RealtimeBudgetManager.js";
 import { initBudgetStatesPopup, refreshBudgetStatesModal } from "./budget/BudgetStatesManager.js";
+import { renderBalanceSheet } from "./budget/BalanceSheetPresenter.js";
 import { initLoansPopup, updateLoansDisplay, contractLoan, loadActiveLoans, processLoanPayments, initLoanPaymentSystem } from "./loans/LoansManager.js";
 import { initJournalPopup, loadJournalEntries, exportJournalToJSON, exportJournalToPDF } from "./journal/JournalManager.js";
 import { initFoodTraceabilityPopup, initializeFoodTraceabilityTabs, loadFoodTraceabilityEntries, loadFoodCharts } from "./food-traceability/FoodTraceabilityManager.js";
@@ -83,241 +81,39 @@ function createBudgetElements() {
 
 async function updateBudgetDisplay() {
     try {
-        const [budgetSummary, financialHealth, currentBudget, balanceSheet] = await Promise.all([
-            getBudgetSummary(),
+        const [financialHealth, currentBudget, balanceSheet] = await Promise.all([
             getFinancialHealth(),
             getTreasurySnapshot(),
             getBalanceSheet(),
         ]);
-        
-        // Get building valuation (patrimoine bâti)
-        const { totalValue: totalBuildingValue, pricesByType: buildingPrices } =
-            await getCityBuildingValuation();
-        const houses = await listAllBuildingRows();
-        
-        // Analyze buildings by type and color
-        const buildingAnalysis = {
-            redHouses: 0,
-            blueHouses: 0,
-            purpleHouses: 0,
-            cabbageFields: 0,
-            wheatFields: 0,
-            carrotFields: 0,
-            foodMarkets: 0,
-            roads: 0
-        };
-        
-        houses.forEach(house => {
-            const type = house.type;
-            if (type.includes('House-Red')) buildingAnalysis.redHouses++;
-            else if (type.includes('House-Blue')) buildingAnalysis.blueHouses++;
-            else if (type.includes('House-Purple')) buildingAnalysis.purpleHouses++;
-            else if (type.includes('Farm-Cabbage')) buildingAnalysis.cabbageFields++;
-            else if (type.includes('Farm-Wheat')) buildingAnalysis.wheatFields++;
-            else if (type.includes('Farm-Carrot')) buildingAnalysis.carrotFields++;
-            else if (type.includes('Market')) buildingAnalysis.foodMarkets++;
-            else if (type.includes('roads')) buildingAnalysis.roads++;
+
+        await renderBalanceSheet({
+            balanceSheet,
+            turn: currentBudget.turn || 0,
+            treasurySnapshot: currentBudget,
         });
-        
-        // Use actual building prices from city-assets valuation
-        const housePrices = {
-            red: buildingPrices['House-Red'] || 'N/A',
-            blue: buildingPrices['House-Blue'] || 'N/A',
-            purple: buildingPrices['House-Purple'] || 'N/A'
-        };
-        
-        const farmPrices = {
-            cabbage: buildingPrices['Farm-Cabbage'] || 'N/A',
-            wheat: buildingPrices['Farm-Wheat'] || 'N/A',
-            carrot: buildingPrices['Farm-Carrot'] || 'N/A'
-        };
-        
-        const marketPrice = buildingPrices['Market'] || 'N/A';
-        const roadPrice = buildingPrices['roads'] || 'N/A';
-        
-        
-        // Calculate detailed values (handle N/A prices)
-        const redHousesValue = typeof housePrices.red === 'number' ? buildingAnalysis.redHouses * housePrices.red : 0;
-        const blueHousesValue = typeof housePrices.blue === 'number' ? buildingAnalysis.blueHouses * housePrices.blue : 0;
-        const purpleHousesValue = typeof housePrices.purple === 'number' ? buildingAnalysis.purpleHouses * housePrices.purple : 0;
-        const totalHousesValue = redHousesValue + blueHousesValue + purpleHousesValue;
-        
-        const cabbageValue = typeof farmPrices.cabbage === 'number' ? buildingAnalysis.cabbageFields * farmPrices.cabbage : 0;
-        const wheatValue = typeof farmPrices.wheat === 'number' ? buildingAnalysis.wheatFields * farmPrices.wheat : 0;
-        const carrotValue = typeof farmPrices.carrot === 'number' ? buildingAnalysis.carrotFields * farmPrices.carrot : 0;
-        const totalFarmsValue = cabbageValue + wheatValue + carrotValue;
-        
-        const marketsValue = typeof marketPrice === 'number' ? buildingAnalysis.foodMarkets * marketPrice : 0;
-        const roadsValue = typeof roadPrice === 'number' ? buildingAnalysis.roads * roadPrice : 0;
-        
-        // Calculate depreciation (amortissements) - based on actual game mechanics
-        // For now, no depreciation until we implement building aging mechanics
-        const totalDepreciation = 0; // No depreciation system implemented yet
-        
-        // Calculate provisions for risks and charges
-        // For now, no provisions until we implement risk management mechanics
-        const riskProvisions = 0; // No risk provisions system implemented yet
-        const chargeProvisions = 0; // No charge provisions system implemented yet
-        
-        // Calculate additional assets (according to French standards)
-        const intangibleAssets = 0; // No intangible assets for now (software, patents, etc.)
-        const financialAssets = 0; // No financial assets for now (securities, guarantees, etc.)
-        
-        // Calculate net values
-        const totalBuildingsNet = totalBuildingValue - totalDepreciation;
-        const inventoryGross = 0; // No inventory for now
-        const inventoryProvisions = 0; // No inventory provisions for now
-        const inventoryNet = inventoryGross - inventoryProvisions;
-        const receivables = 0; // No receivables for now
-        
-        // Update Balance Sheet - ACTIF
-        updateBalanceSheetElement('balance-sheet-date', `Tour ${currentBudget.turn || 0} (état du passif et de l'actif au ${currentBudget.turn || 0}e tour)`);
-        
-        // Update detailed intangible assets (all 0€ for now - not implemented)
-        updateBalanceSheetElement('intangible-assets-value', `${intangibleAssets.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('establishment-costs', '0€');
-        updateBalanceSheetElement('rd-costs', '0€');
-        updateBalanceSheetElement('patents-licenses', '0€');
-        updateBalanceSheetElement('goodwill', '0€');
-        updateBalanceSheetElement('software-rights', '0€');
-        updateBalanceSheetElement('other-intangible', '0€');
-        updateBalanceSheetElement('intangible-in-progress', '0€');
-        updateBalanceSheetElement('intangible-advances', '0€');
-        
-        // Update detailed tangible assets
-        updateBalanceSheetElement('total-buildings-gross-value', `${totalBuildingValue.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('land-value', '0€'); // No land system implemented
-        updateBalanceSheetElement('constructions-value', `${totalBuildingValue.toLocaleString('fr-FR')}€`); // All buildings are constructions
-        updateBalanceSheetElement('technical-equipment', '0€'); // No technical equipment system
-        updateBalanceSheetElement('other-tangible', '0€');
-        updateBalanceSheetElement('tangible-in-progress', '0€');
-        updateBalanceSheetElement('tangible-advances', '0€');
-        
-        updateBalanceSheetElement('total-depreciation-value', `${totalDepreciation.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('total-buildings-net-value', `${totalBuildingsNet.toLocaleString('fr-FR')}€`);
-        
-        // Update detailed financial assets (all 0€ for now - not implemented)
-        updateBalanceSheetElement('financial-assets-value', `${financialAssets.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('equity-interests', '0€');
-        updateBalanceSheetElement('participation-receivables', '0€');
-        updateBalanceSheetElement('portfolio-securities', '0€');
-        updateBalanceSheetElement('other-securities', '0€');
-        updateBalanceSheetElement('loans-granted', '0€'); // Prêts accordés (not implemented)
-        updateBalanceSheetElement('other-financial', '0€');
-        updateBalanceSheetElement('total-houses-value', `${totalHousesValue.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('red-houses-value', typeof housePrices.red === 'number' ? `${redHousesValue.toLocaleString('fr-FR')}€` : 'N/A');
-        updateBalanceSheetElement('blue-houses-value', typeof housePrices.blue === 'number' ? `${blueHousesValue.toLocaleString('fr-FR')}€` : 'N/A');
-        updateBalanceSheetElement('purple-houses-value', typeof housePrices.purple === 'number' ? `${purpleHousesValue.toLocaleString('fr-FR')}€` : 'N/A');
-        updateBalanceSheetElement('total-farms-value', `${totalFarmsValue.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('cabbage-fields-value', typeof farmPrices.cabbage === 'number' ? `${cabbageValue.toLocaleString('fr-FR')}€` : 'N/A');
-        updateBalanceSheetElement('wheat-fields-value', typeof farmPrices.wheat === 'number' ? `${wheatValue.toLocaleString('fr-FR')}€` : 'N/A');
-        updateBalanceSheetElement('carrot-fields-value', typeof farmPrices.carrot === 'number' ? `${carrotValue.toLocaleString('fr-FR')}€` : 'N/A');
-        updateBalanceSheetElement('total-markets-value', typeof marketPrice === 'number' ? `${marketsValue.toLocaleString('fr-FR')}€` : 'N/A');
-        updateBalanceSheetElement('food-markets-value', typeof marketPrice === 'number' ? `${marketsValue.toLocaleString('fr-FR')}€` : 'N/A');
-        updateBalanceSheetElement('total-roads-value', typeof roadPrice === 'number' ? `${roadsValue.toLocaleString('fr-FR')}€` : 'N/A');
-        updateBalanceSheetElement('roads-value', typeof roadPrice === 'number' ? `${roadsValue.toLocaleString('fr-FR')}€` : 'N/A');
-        
-        // Update detailed current assets (all 0€ for now - not implemented)
-        updateBalanceSheetElement('stocks-work-in-progress', '0€');
-        updateBalanceSheetElement('raw-materials', '0€');
-        updateBalanceSheetElement('work-in-progress', '0€');
-        updateBalanceSheetElement('finished-products', '0€');
-        updateBalanceSheetElement('merchandise', '0€');
-        updateBalanceSheetElement('advances-on-orders', '0€');
-        
-        // Update receivables details
-        updateBalanceSheetElement('total-receivables', `${receivables.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('client-receivables', '0€');
-        updateBalanceSheetElement('other-receivables', '0€');
-        updateBalanceSheetElement('called-unpaid-capital', '0€');
-        
-        // Update marketable securities
-        updateBalanceSheetElement('marketable-securities', '0€');
-        updateBalanceSheetElement('own-shares', '0€');
-        updateBalanceSheetElement('other-securities', '0€');
-        
-        // Update treasury and cash
-        updateBalanceSheetElement('treasury-instruments', '0€');
-        updateBalanceSheetElement('cash-value', `${balanceSheet.assets.cash.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('prepaid-expenses', '0€');
-        
-        const totalCurrentAssets = balanceSheet.assets.receivables + balanceSheet.assets.cash;
-        updateBalanceSheetElement('total-current-assets', `${totalCurrentAssets.toLocaleString('fr-FR')}€`);
-        
-        // Update additional sections (all 0€ for now)
-        updateBalanceSheetElement('deferred-charges', '0€');
-        updateBalanceSheetElement('loan-redemption-premiums', '0€');
-        updateBalanceSheetElement('conversion-differences', '0€');
-        
-        const totalAssets = balanceSheet.assets.total;
-        updateBalanceSheetElement('total-assets', `${totalAssets.toLocaleString('fr-FR')}€`);
-        
-        updateBalanceSheetElement('share-capital', `${balanceSheet.liabilities.shareCapital.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('legal-reserves', '0€');
-        updateBalanceSheetElement('carried-forward', '0€');
-        updateBalanceSheetElement('net-result', `${balanceSheet.liabilities.netResult.toLocaleString('fr-FR')}€`);
-        
-        updateBalanceSheetElement('risk-provisions', `${riskProvisions.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('charge-provisions', `${chargeProvisions.toLocaleString('fr-FR')}€`);
-        
-        updateBalanceSheetElement('bank-loans-debt', `${balanceSheet.liabilities.bankLoans.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('commercial-loans-debt', `${balanceSheet.liabilities.commercialLoans.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('supplier-debts', '0€');
-        updateBalanceSheetElement('social-fiscal-debts', '0€');
-        
-        updateBalanceSheetElement('accrued-expenses', `${balanceSheet.liabilities.accruedExpenses.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('loan-interest-expenses', `${(currentBudget.totalLoanInterestExpenses || 0).toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('building-maintenance-expenses', `${(currentBudget.totalBuildingMaintenance || 0).toLocaleString('fr-FR')}€`);
-        
-        const financialDebtsTotal = balanceSheet.liabilities.bankLoans + balanceSheet.liabilities.commercialLoans;
-        const operatingDebtsTotal = balanceSheet.liabilities.accruedExpenses;
-        updateBalanceSheetElement('financial-debts-total', `${financialDebtsTotal.toLocaleString('fr-FR')}€`);
-        updateBalanceSheetElement('operating-debts-total', `${operatingDebtsTotal.toLocaleString('fr-FR')}€`);
-        
-        const totalLiabilities = balanceSheet.liabilities.total;
-        updateBalanceSheetElement('total-liabilities', `${totalLiabilities.toLocaleString('fr-FR')}€`);
-        
-        if (balanceSheet.balanced) {
-            console.info(`✅ Bilan équilibré: ACTIF = PASSIF = ${totalAssets}€`);
-        } else {
-            console.warn(`⚠️ Bilan déséquilibré: ACTIF (${totalAssets}€) ≠ PASSIF (${totalLiabilities}€).`);
-        }
-        
+
         // Update financial health indicator in header
         const healthIndicatorEl = document.getElementById('budget-health-indicator');
         const healthStatusEl = healthIndicatorEl?.querySelector('.health-status');
-        
+
         if (healthIndicatorEl && healthStatusEl) {
-            // Update text and styling based on financial health
             healthStatusEl.textContent = financialHealth.message;
-            
-            // Remove existing classes
+
             healthIndicatorEl.classList.remove('warning', 'critical');
-            
-            // Add appropriate class based on status
+
             if (financialHealth.status === 'critical') {
                 healthIndicatorEl.classList.add('critical');
             } else if (financialHealth.status === 'warning' || financialHealth.status === 'deficit') {
                 healthIndicatorEl.classList.add('warning');
             }
-            // Default styling (healthy/excellent) is already applied via CSS
         }
-        
-        // Update real-time budget display
+
         updateRealtimeBudget();
-        
-        // Initialize balance sheet filters
         initBalanceSheetFilters();
-        
+
     } catch (error) {
         console.error('Error updating budget display:', error);
-    }
-}
-
-function updateBalanceSheetElement(elementId, value) {
-    const element = document.getElementById(elementId);
-    if (element) {
-        element.textContent = value;
     }
 }
 

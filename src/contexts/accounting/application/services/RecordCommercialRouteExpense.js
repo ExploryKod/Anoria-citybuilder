@@ -1,4 +1,4 @@
-import { buildCommercialRouteBusinessKey } from '../../../../js/stores/ledgerBusinessKeys.js';
+import { buildCommercialRouteBusinessKey } from '../../domain/policies/LedgerBusinessKeys.js';
 
 /**
  * Application service — commercial route opening fee (journal + treasury).

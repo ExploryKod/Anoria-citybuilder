@@ -1,7 +1,7 @@
 import db from '../../../../../../core/persistence/dexie/db.js';
 
 /**
- * Read-only access to budget_turn_* rows — enrichment cache only (NOT source for CR totals).
+ * Read/write access to budget_turn_* rows — enrichment cache only (NOT source for CR totals).
  *
  * `budget_current` remains the live treasury cumul row; never deleted.
  */
@@ -43,5 +43,27 @@ export class BudgetTurnEnrichmentRepository {
       totalLoanRepayments: row.totalLoanRepayments ?? 0,
       date: row.date ?? null,
     };
+  }
+
+  /**
+   * @param {import('../../../domain/read-models/BudgetTurnEnrichmentSnapshot.js').BudgetTurnEnrichmentSnapshot} snapshot
+   * @returns {Promise<object>} Persisted Dexie row
+   */
+  async saveEnrichment(snapshot) {
+    const row = {
+      name: `budget_turn_${snapshot.turn}`,
+      ...snapshot,
+    };
+
+    try {
+      await this.db.budget.add(row);
+      return row;
+    } catch (err) {
+      if (err.name === 'ConstraintError') {
+        await this.db.budget.put(row);
+        return row;
+      }
+      throw err;
+    }
   }
 }

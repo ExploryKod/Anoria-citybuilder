@@ -17,4 +17,9 @@ export class YearEndBalancePort {
   async saveYearEndBalance(_year, _netFlow) {
     throw new Error('YearEndBalancePort: port not implemented');
   }
+
+  /** @returns {Promise<Array<object>>} */
+  async listAllYearEndBalances() {
+    throw new Error('YearEndBalancePort: port not implemented');
+  }
 }

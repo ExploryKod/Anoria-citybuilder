@@ -5,6 +5,7 @@ import {
   cityLedgerBalanceForYear,
   financialStatusMessageForCityLedger,
 } from '../../../domain/policies/CityLedgerFinancialStatusPolicy.js';
+import { enrichCityLedgerYearLinesWithNetColumns } from '../../../domain/policies/CityLedgerNetColumnsPolicy.js';
 
 /**
  * Query: César 3 admin livret — fiscal year comparison (N vs N-1).
@@ -45,10 +46,6 @@ export class GetCityLedgerYearComparison {
     const lastYearSummary = journalYear(currentYear - 1);
     const twoYearsAgoSummary = journalYear(currentYear - 2);
 
-    const thisYear = cityLedgerYearLinesFromJournalSummary(
-      thisYearSummary,
-      cityLedgerBalanceForYear(thisYearSummary, treasuryBalance, true)
-    );
     const lastYearBalance = cityLedgerBalanceForYear(
       lastYearSummary,
       treasuryBalance,
@@ -60,13 +57,20 @@ export class GetCityLedgerYearComparison {
       false
     );
 
-    const lastYear = cityLedgerYearLinesFromJournalSummary(
-      lastYearSummary,
-      lastYearBalance
+    const twoYearsAgo = enrichCityLedgerYearLinesWithNetColumns(
+      cityLedgerYearLinesFromJournalSummary(twoYearsAgoSummary, twoYearsAgoBalance),
+      0
     );
-    const twoYearsAgo = cityLedgerYearLinesFromJournalSummary(
-      twoYearsAgoSummary,
+    const lastYear = enrichCityLedgerYearLinesWithNetColumns(
+      cityLedgerYearLinesFromJournalSummary(lastYearSummary, lastYearBalance),
       twoYearsAgoBalance
+    );
+    const thisYear = enrichCityLedgerYearLinesWithNetColumns(
+      cityLedgerYearLinesFromJournalSummary(
+        thisYearSummary,
+        cityLedgerBalanceForYear(thisYearSummary, treasuryBalance, true)
+      ),
+      lastYearBalance
     );
 
     return createCityLedgerComparison({

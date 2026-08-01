@@ -12,6 +12,11 @@ import {
   recordInfoLoanInstallment,
   advanceLoanInstallmentWithoutPayment,
 } from '../../acl/accountingGame.js';
+import {
+  computeLoanRate,
+  computeLoanRatesByType,
+  computeLoanInterestAmount,
+} from '../../acl/accountingLoans.js';
 
 /**
  * Initialise le popup des prêts
@@ -179,22 +184,9 @@ function updateHealthImpact(financialHealth) {
  * Met à jour les taux de prêt selon la santé financière
  */
 function updateLoanRates(financialHealth) {
-    // Base rates
-    let bankRate = 5;
-    let commercialRate = 7;
-    
-    // Adjust rates based on financial health
-    if (financialHealth.status === 'critical') {
-        bankRate += 5; // +5% penalty
-        commercialRate += 7; // +7% penalty
-    } else if (financialHealth.status === 'warning' || financialHealth.status === 'deficit') {
-        bankRate += 2; // +2% penalty
-        commercialRate += 3; // +3% penalty
-    }
-    
-    // Update display
-    updateLoansElement('bank-rate', `Taux: ${bankRate}%`);
-    updateLoansElement('commercial-rate', `Taux: ${commercialRate}%`);
+    const rates = computeLoanRatesByType(financialHealth.status);
+    updateLoansElement('bank-rate', `Taux: ${rates.bank}%`);
+    updateLoansElement('commercial-rate', `Taux: ${rates.commercial}%`);
 }
 
 /**
@@ -270,18 +262,12 @@ function updateLoanSummary() {
     const duration = parseInt(loanDurationInput.value) || 10;
     const loanType = loanFormSection.dataset.loanType || 'bank';
     
-    // Calculate interest rate based on loan type and financial health
-    let interestRate = loanType === 'bank' ? 5 : 7;
-    
-    // Apply financial health penalties
     getFinancialHealth().then((health) => {
-        if (health.status === 'critical') {
-            interestRate += loanType === 'bank' ? 5 : 7;
-        } else if (health.status === 'warning' || health.status === 'deficit') {
-            interestRate += loanType === 'bank' ? 2 : 3;
-        }
-
-        const interest = Math.round(amount * (interestRate / 100));
+        const interestRate = computeLoanRate({
+            loanType,
+            financialHealthStatus: health.status,
+        });
+        const interest = computeLoanInterestAmount(amount, interestRate);
         const total = amount + interest;
 
         updateLoansElement('loan-principal-display', `${amount}€`);
@@ -313,15 +299,12 @@ export async function contractLoan() {
     try {
         // Calculate final interest rate
         const financialHealth = await getFinancialHealth();
-        let interestRate = loanType === 'bank' ? 5 : 7;
+        const interestRate = computeLoanRate({
+            loanType,
+            financialHealthStatus: financialHealth.status,
+        });
         
-        if (financialHealth.status === 'critical') {
-            interestRate += loanType === 'bank' ? 5 : 7;
-        } else if (financialHealth.status === 'warning' || financialHealth.status === 'deficit') {
-            interestRate += loanType === 'bank' ? 2 : 3;
-        }
-        
-        const interest = Math.round(amount * (interestRate / 100));
+        const interest = computeLoanInterestAmount(amount, interestRate);
         const total = amount + interest;
         
         // Create loan object
