@@ -158,7 +158,7 @@ Règle : Three = WebGL ; `ui/` = DOM ; adapters BC = `contexts/*/infrastructure/
 
 **Suite possible (impl)**
 
-1. Extraire `assetsPrices` (+ listes catégories) hors `meshs/data.js` → catalog partagé
+1. ~~Extraire `assetsPrices` (+ listes catégories) hors `meshs/data.js` → catalog partagé~~ ✅ `src/shared/building-catalog/`
 2. Info panel + notifications hors `game.js` → `ui/`
 3. Place / bulldoze → use-cases construction (handler mince)
 4. Owner unique du tick : budget / `infoGameplay` hors `scene.runUpdate`
@@ -186,10 +186,10 @@ Scene bootstrap, managers (`Lighting*`, `Backdrop*`, `Citizen*`, `Resource*`, �
 | 6 | Persist tour + budget dans `scene.runUpdate` | `gameStore.addGameItems`, `processTurnBudget`, funds HUD | persistence | **high** |
 | 7 | Neighbors / orphan GC dans boucle tiles | `persistTileNeighbors`, orphan scan Dexie | persistence | **high** |
 | 8 | Mutateurs stocks commerce morts / legacy | `calculateNetStocks`, `updateMarketStocks` | sim_logic | med |
-| 9 | `assetsPrices` catalogue économie sous meshes | `meshs/data.js` | economy_catalog | med |
+| 9 | `assetsPrices` catalogue économie sous meshes | ✅ → `shared/building-catalog/` | economy_catalog | med |
 | 10 | Fallback DOM dans scene | querySelector funds/pop, WebGL toast | hud_dom | med |
 | 11 | Replay / settings `localStorage` | `game.replay`, speed keys | persistence | low–med |
-| 12 | Catégories bâtiments importées depuis `ui/shell/nodes` | `scene.js` ← `commerce`/`farms`/… | layering | med |
+| 12 | Catégories bâtiments importées depuis `ui/shell/nodes` | ✅ scene ← catalog ; nodes re-exporte | layering | med |
 | 13 | Input + pause couplés overlay info | listeners / `game.play` | other | low |
 
-Ordre de slices recommandé : **9 → 3+4 → 2 → 5+6 → 7+8 → 1**.
+Ordre de slices recommandé : ~~9~~ → **3+4** → 2 → 5+6 → 7+8 → 1.

@@ -32,17 +32,18 @@ import {
 import { updateSupplyBuildingFields } from '../../js/acl/supply.js';
 import {
     bulldozeSelected,
-    commerce,
     delayBox,
     displayDelayUI,
+    gameWindow,
+} from '../../ui/shell/nodes.js';
+import {
+    assetsPrices,
+    commerce,
     factories,
     farms,
-    firstHouses,
-    gameWindow,
     houses,
-    palaces
-} from '../../ui/shell/nodes.js';
-import {assetsPrices} from "./meshs/data.js";
+    palaces,
+} from '../../shared/building-catalog/index.js';
 import { setupRoadAccessIcons } from '../../js/acl/parcels.js';
 import { getDefaultEmployees } from '../../js/acl/employment.js';
 import { getBuildingAge, getTimeInfo } from '../../js/acl/appRuntime.js';

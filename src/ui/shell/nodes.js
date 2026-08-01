@@ -11,11 +11,15 @@ export const overOverlay = document.querySelector('#over-overlay');
 export const overOverlayMessage = document.querySelector('#over-overlay .over-overlay__text');
 export const infoObjectOverlay = document.querySelector('.info-building-overlay');
 export const infoObjectCloseBtn = document.querySelector('.info-building-overlay .panel-close-btn');
-export const buildingsObjects = [
-    'House-Red', 'House-Purple', 'House-Blue', 'Market-Stall', 
-    'Tombstone-1', 'Farm-Carrot', 'Farm-Wheat', 'Farm-Cabbage', 'House-2Story',
-    'Windmill-001', 'Barn-001'
-];
+export {
+    buildingsObjects,
+    houses,
+    firstHouses,
+    palaces,
+    farms,
+    commerce,
+    factories,
+} from '../../shared/building-catalog/index.js';
 
 export const infoPanelClock = document.querySelector('.info-panel .clock-box');
 export const infoPanelClockIcon = document.querySelector('.info-panel svg.lucide-clock-4')
@@ -32,12 +36,6 @@ export const displayDelayUI = document.querySelector('.delay-ui');
 export const bulldozeSelected = document.querySelector('.bulldoze-btn');
 export const displayFunds = document.querySelector('.info-panel .display-funds');
 export const displayDebt = document.querySelector('.info-panel .display-debt');
-export const houses = ['House-Red', 'House-Purple', 'House-Blue'];
-export const firstHouses = ['House-Red', 'House-Purple', 'House-Blue'];
-export const palaces = ['House-2Story'];
-export const farms = ['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage'];
-export const commerce = ['Market-Stall'];
-export const factories = ['Winery-001'];
 
 // index.html
 export const panelLayout = document.getElementById('panel-layout')

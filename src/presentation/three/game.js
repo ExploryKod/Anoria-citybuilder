@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {  assetsPrices } from './meshs/data.js';
+import { assetsPrices, buildingsObjects } from '../../shared/building-catalog/index.js';
 import { getDefaultEmployees, getSectorPriority, getSectorName, getAllSectorPriorities } from '../../js/acl/employment.js';
 import { TimeManager } from '../../shared/time/TimeManager.js';
 import { getTimeInfo, registerAppService } from '../../js/acl/appRuntime.js';
@@ -24,7 +24,6 @@ import {
     overOverlayMessage,
     infoObjectOverlay,
     infoObjectCloseBtn,
-    buildingsObjects,
     infoPanelClock,
     infoPanelClockIcon,
     infoPanelNoClockIcon,

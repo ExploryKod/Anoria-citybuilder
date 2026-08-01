@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import {wantedHouses} from "./data.js";
+import { wantedHouses } from '../../../shared/building-catalog/index.js';
 
 const toolIds = {
     zones: ['grass', 'roads'],
