@@ -1,11 +1,16 @@
 import EventBlocker from '../shell/EventBlocker.js';
 import * as eventsConfig from '../../../config/events.js';
+import { readStoredTileGridVisibility } from '../../three/managers/TileGridOverlay.js';
 
 /** @type {{
  *   pauseGame?: () => void,
  *   playGame?: () => void,
  *   registerAppService?: (name: string, instance: unknown) => void,
  *   getTimeManager?: () => { refreshCache?: () => Promise<void> } | null,
+ *   getScene?: () => {
+ *     setTileGridVisible?: (visible: boolean) => void,
+ *     isTileGridVisible?: () => boolean,
+ *   } | null,
  * } | null} */
 let deps = null;
 
@@ -23,6 +28,7 @@ class ParametersPanel {
         this.eventsEnabledToggle = null;
         this.eventProbabilityInput = null;
         this.daysPerMonthInput = null;
+        this.tileGridToggle = null;
 
         this.handleDocumentKeyDown = this.handleDocumentKeyDown.bind(this);
         this.handleOutsideClick = this.handleOutsideClick.bind(this);
@@ -53,6 +59,7 @@ class ParametersPanel {
         this.eventsEnabledToggle = this.panel.querySelector('#events-enabled-toggle');
         this.eventProbabilityInput = this.panel.querySelector('#event-probability-input');
         this.daysPerMonthInput = this.panel.querySelector('#days-per-month-input');
+        this.tileGridToggle = this.panel.querySelector('#tile-grid-toggle');
 
         this.setupEventListeners();
         this.loadValues();
@@ -129,6 +136,12 @@ class ParametersPanel {
                 }
             });
         }
+
+        if (this.tileGridToggle) {
+            this.tileGridToggle.addEventListener('change', (e) => {
+                this.handleTileGridChange(e.target.checked);
+            });
+        }
     }
 
     async loadValues() {
@@ -144,8 +157,31 @@ class ParametersPanel {
             if (this.daysPerMonthInput) {
                 this.daysPerMonthInput.value = eventsConfig.getDaysPerMonth();
             }
+
+            if (this.tileGridToggle) {
+                const scene = deps?.getScene?.();
+                this.tileGridToggle.checked =
+                    scene?.isTileGridVisible?.() ?? readStoredTileGridVisibility();
+            }
         } catch (error) {
             console.error('[ParametersPanel] Error loading values:', error);
+        }
+    }
+
+    handleTileGridChange(enabled) {
+        try {
+            const scene = deps?.getScene?.();
+            if (scene?.setTileGridVisible) {
+                scene.setTileGridVisible(enabled);
+                return;
+            }
+            try {
+                localStorage.setItem('anoria.tileGridVisible', enabled ? '1' : '0');
+            } catch {
+                /* ignore */
+            }
+        } catch (error) {
+            console.error('[ParametersPanel] Error toggling tile grid:', error);
         }
     }
 
@@ -278,6 +314,10 @@ class ParametersPanel {
  *   playGame?: () => void,
  *   registerAppService?: (name: string, instance: unknown) => void,
  *   getTimeManager?: () => { refreshCache?: () => Promise<void> } | null,
+ *   getScene?: () => {
+ *     setTileGridVisible?: (visible: boolean) => void,
+ *     isTileGridVisible?: () => boolean,
+ *   } | null,
  * }} panelDeps
  */
 export function initParametersPanel(panelDeps) {

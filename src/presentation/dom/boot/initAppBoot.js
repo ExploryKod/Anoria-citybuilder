@@ -60,6 +60,7 @@ export async function initAppBoot() {
     playGame,
     registerAppService,
     getTimeManager,
+    getScene: getSessionScene,
   });
   registerAppFunction('loadBudgetStates', (period = '3', showLoading = true) =>
     loadBudgetStates(period, showLoading)
