@@ -1,5 +1,6 @@
 import {
   clearBuildingFootprint,
+  findFootprintAnchor,
   isAreaAvailableForBuilding,
   isRoadBuildingType,
   resolveGridSize,
@@ -40,6 +41,15 @@ describe('FootprintAvailabilityPolicy', () => {
 
   test('resolveGridSize falls back to 1', () => {
     expect(resolveGridSize({ 'Church-002': { gridSize: 3 } }, 'Church-002')).toBe(3);
+    expect(resolveGridSize({ 'Barn-001': { gridSize: 2 } }, 'Barn-001')).toBe(2);
     expect(resolveGridSize({}, 'House-Blue')).toBe(1);
+  });
+
+  test('findFootprintAnchor returns min tile of the instance footprint', () => {
+    const city = makeCity(3);
+    stampBuildingFootprint(city, 1, 1, 2, 'Barn-001', 'barn-uuid');
+    expect(findFootprintAnchor(city, 2, 2, 'barn-uuid')).toEqual({ x: 1, y: 1 });
+    expect(findFootprintAnchor(city, 1, 2, 'barn-uuid')).toEqual({ x: 1, y: 1 });
+    expect(findFootprintAnchor(city, 0, 0, null)).toEqual({ x: 0, y: 0 });
   });
 });

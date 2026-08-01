@@ -4,12 +4,47 @@
 
 import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { buildingsObjects } from '../../../shared/building-catalog/index.js';
+import {
+  footprintFromRecord,
+  footprintTilesAsPairs,
+} from '../../../shared/building-identity/index.js';
 import { infoObjectOverlay } from '../shell/nodes.js';
 import {
   makeInfoBuildingText,
   makeInfoKeyValue,
   makeInfoSection,
 } from './buildingInfoDom.js';
+
+/**
+ * @param {ReadonlyArray<[number, number]> | null | undefined} tiles
+ * @returns {string}
+ */
+function formatTerrainFootprint(tiles) {
+  if (!tiles?.length) return '—';
+  return tiles.map(([tx, ty]) => `(${tx},${ty})`).join(', ');
+}
+
+/**
+ * Anchor + footprintTiles for the info overlay (quartier-ready later).
+ * @param {object | null | undefined} buildingRow
+ * @param {number} clickX
+ * @param {number} clickY
+ */
+function resolveTerrainDisplay(buildingRow, clickX, clickY) {
+  const footprint = buildingRow ? footprintFromRecord(buildingRow) : null;
+  if (footprint) {
+    return {
+      anchorX: footprint.anchor.x,
+      anchorY: footprint.anchor.y,
+      terrainLabel: formatTerrainFootprint(footprintTilesAsPairs(footprint)),
+    };
+  }
+  return {
+    anchorX: clickX,
+    anchorY: clickY,
+    terrainLabel: formatTerrainFootprint([[clickX, clickY]]),
+  };
+}
 
 /**
  * Info panel: workplace staffing section (workers in aggregates; elites display-only).
@@ -116,10 +151,15 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                 const uniqueId =
                     selectedObject.userData.instanceId
                     ?? city.tiles?.[selX]?.[selY]?.instanceId
-                    ?? (await findBuildingAtTile({ x: selX, y: selY }))?.instanceId
+                    ?? (await construction.findBuildingAtTile({ x: selX, y: selY }))?.instanceId
                     ?? null;
                 
                 const buildingRow = uniqueId ? await construction.getBuildingById(uniqueId) : null;
+                const { anchorX, anchorY, terrainLabel } = resolveTerrainDisplay(
+                    buildingRow,
+                    selX,
+                    selY
+                );
                 const buildingPop = buildingRow?.pop ?? 0;
                 const roadAccess = await parcels.getRoadAccess(uniqueId);
                 const neighbors = uniqueId ? await parcels.getNeighbors(uniqueId) : [];
@@ -154,7 +194,8 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                     // Affichage pour les items nature
                     makeInfoSection('Ressource naturelle');
                     makeInfoKeyValue('Type', `${selectedObject.userData.id}`);
-                    makeInfoKeyValue('Adresse', `x: ${selectedObject.userData.x} | y: ${selectedObject.userData.y}`);
+                    makeInfoKeyValue('Adresse', `x: ${anchorX} | y: ${anchorY}`);
+                    makeInfoKeyValue('Terrain', terrainLabel);
                     
                     // Nature stocks are not Supply — read building row for wood/rock/etc.
                     houseStocks = buildingRow?.stocks ?? (await construction.getBuildingField(uniqueId, 'stocks'));
@@ -194,7 +235,8 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                     // Affichage normal pour les autres bâtiments
                     makeInfoSection('Bâtiment');
                     makeInfoKeyValue('Type', `${selectedObject.userData.id}`);
-                    makeInfoKeyValue('Adresse', `x: ${selectedObject.userData.x} | y: ${selectedObject.userData.y}`);
+                    makeInfoKeyValue('Adresse', `x: ${anchorX} | y: ${anchorY}`);
+                    makeInfoKeyValue('Terrain', terrainLabel);
                     makeInfoKeyValue(`Habitants`, buildingPop);
                     makeInfoKeyValue('Routes desservies', roadAccess.roadCount);
                 }

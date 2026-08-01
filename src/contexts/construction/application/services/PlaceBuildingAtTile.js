@@ -122,6 +122,9 @@ export class PlaceBuildingAtTile {
         worldTime: 0,
         x,
         y,
+        gridSize,
+        footprintWidth: gridSize,
+        footprintHeight: gridSize,
         employees: this.getDefaultEmployees(buildingType),
       };
 

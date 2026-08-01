@@ -35,7 +35,7 @@ export const assetsPrices = Object.freeze({
 
   // Industry (agricultural industry)
   'Windmill-001': { price: 50, category: 'industry', gridSize: 1 },
-  'Barn-001': { price: 40, category: 'industry', gridSize: 1 },
+  'Barn-001': { price: 40, category: 'industry', gridSize: 2 },
   'Crate-001': { price: 2, category: 'industry', gridSize: 1 },
   'Winery-001': { price: 50, category: 'industry', gridSize: 1 },
 

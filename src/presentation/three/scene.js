@@ -30,6 +30,7 @@ import { PerformanceManager } from './managers/PerformanceManager.js';
 import gameUIDefault from '../dom/shell/GameUI.js';
 import { CitizenManager } from './managers/CitizenManager.js';
 import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
+import { TileGridOverlay } from './managers/TileGridOverlay.js';
 import { syncTileNeighborsPass } from './sync/syncTileNeighborsPass.js';
 import { cleanupOrphanedBuildings } from './sync/cleanupOrphanedBuildings.js';
 import { registerAppService } from '../../composition/appServices.js';
@@ -83,6 +84,7 @@ export function createScene(_gameStore, assetManager, deps) {
     const backdropManager = new BackdropManager(scene);
     const decorativeVillageManager = new DecorativeVillageManager(scene, assetManager);
     const citizenManager = new CitizenManager(scene, assetManager);
+    const tileGridOverlay = new TileGridOverlay();
     const syncRoadAccess = setupRoadAccessIcons(parcels, { assetManager, textures });
 
     // Use simple scene background with sky texture - this ensures sky covers everything
@@ -403,6 +405,9 @@ export function createScene(_gameStore, assetManager, deps) {
         // Previously this was called 16 times for a 16×16 city, creating 80 lights!
         lightingManager.setUpLights(city.size);
         scene.userData.requestShadowRefresh?.();
+
+        // Visual tile grid (indication only — rebuilt after scene.clear())
+        tileGridOverlay.rebuild(scene, city.size);
         
         // HUD placeholders — GameUI owns DOM (Barre D)
         if (typeof requestIdleCallback !== 'undefined') {
@@ -571,23 +576,37 @@ export function createScene(_gameStore, assetManager, deps) {
 
             const buildingData = assetsPrices[newBuildingId];
             const gridSize = buildingData?.gridSize || 1;
+            const placedInstanceId = city.tiles[x]?.[y]?.instanceId;
 
+            // Origin = min (x,y) of this instance's footprint (not merely same building type).
             let isOriginTile = true;
             if (gridSize > 1) {
-                if (
-                    (x > 0 && city.tiles[x - 1][y].buildingId === newBuildingId) ||
-                    (y > 0 && city.tiles[x][y - 1].buildingId === newBuildingId)
+                if (placedInstanceId) {
+                    if (
+                        (x > 0 && city.tiles[x - 1]?.[y]?.instanceId === placedInstanceId) ||
+                        (y > 0 && city.tiles[x]?.[y - 1]?.instanceId === placedInstanceId)
+                    ) {
+                        isOriginTile = false;
+                    }
+                } else if (
+                    (x > 0 && city.tiles[x - 1]?.[y]?.buildingId === newBuildingId) ||
+                    (y > 0 && city.tiles[x]?.[y - 1]?.buildingId === newBuildingId)
                 ) {
                     isOriginTile = false;
                 }
             }
 
             const assetId = newBuildingId === 'roads' ? 'StonePath-001' : newBuildingId;
-            const placedInstanceId = city.tiles[x]?.[y]?.instanceId;
 
             if (isOriginTile) {
                 removeInteractiveObject(buildings[x][y]);
                 buildings[x][y] = assetManager.createAsset(assetId, x, y);
+                // Center multi-tile meshes on their footprint (anchor is NW corner).
+                if (gridSize > 1 && buildings[x][y]) {
+                    const centerOffset = (gridSize - 1) / 2;
+                    buildings[x][y].position.x += centerOffset;
+                    buildings[x][y].position.z += centerOffset;
+                }
                 scene.userData.requestShadowRefresh?.();
                 const zoneX = Math.floor(x / ZONE_SIZE);
                 const zoneY = Math.floor(y / ZONE_SIZE);
@@ -2061,6 +2080,12 @@ function onTouchEnd(event) {
         refreshEmploymentPresentation,
         /** Live mesh grid for turn-budget maintenance input. */
         get buildings() { return buildings; },
+        setTileGridVisible(visible) {
+            tileGridOverlay.setVisible(visible);
+        },
+        isTileGridVisible() {
+            return tileGridOverlay.isVisible();
+        },
     }
 
     /**
