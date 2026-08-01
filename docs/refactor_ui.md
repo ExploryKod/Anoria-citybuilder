@@ -159,7 +159,7 @@ Règle : Three = WebGL ; `ui/` = DOM ; adapters BC = `contexts/*/infrastructure/
 **Suite possible (impl)**
 
 1. ~~Extraire `assetsPrices` (+ listes catégories) hors `meshs/data.js` → catalog partagé~~ ✅ `src/shared/building-catalog/`
-2. Info panel + notifications hors `game.js` → `ui/`
+2. ~~Info panel + notifications hors `game.js` → `ui/`~~ ✅ `ui/info/BuildingInfoPanel.js`, `ui/shell/BuildingNotifications.js`
 3. Place / bulldoze → use-cases construction (handler mince)
 4. Owner unique du tick : budget / `infoGameplay` hors `scene.runUpdate`
 5. Sync neighbors / orphans hors boucle mesh
@@ -180,8 +180,8 @@ Scene bootstrap, managers (`Lighting*`, `Backdrop*`, `Citizen*`, `Resource*`, �
 |---|---|---|---|---|
 | 1 | `createGame` mega composition root | `game.js` — contexts, runtime, treasury, GameLoop, registry | composition | **high** |
 | 2 | Place / bulldoze dans `onObjectSelected` | `game.js` — `placeBuildingWithPayment`, `parcels.syncRemovedBuilding`, … | sim_logic | **high** |
-| 3 | Info bâtiment = viewmodel + DOM | `game.js` — `renderWorkplaceEmployeesInfo`, branche select-object | hud_dom | **high** |
-| 4 | Notifications construction inline | `game.js` — `showInsufficientFundsNotification`, … | hud_dom | med |
+| 3 | Info bâtiment = viewmodel + DOM | ✅ → `ui/info/BuildingInfoPanel.js` | hud_dom | **high** |
+| 4 | Notifications construction inline | ✅ → `ui/shell/BuildingNotifications.js` | hud_dom | med |
 | 5 | Tick scindé game + scene | `game.update` / `runSimulationPass` / `processTurnBudget` | composition | **high** |
 | 6 | Persist tour + budget dans `scene.runUpdate` | `gameStore.addGameItems`, `processTurnBudget`, funds HUD | persistence | **high** |
 | 7 | Neighbors / orphan GC dans boucle tiles | `persistTileNeighbors`, orphan scan Dexie | persistence | **high** |
@@ -192,4 +192,4 @@ Scene bootstrap, managers (`Lighting*`, `Backdrop*`, `Citizen*`, `Resource*`, �
 | 12 | Catégories bâtiments importées depuis `ui/shell/nodes` | ✅ scene ← catalog ; nodes re-exporte | layering | med |
 | 13 | Input + pause couplés overlay info | listeners / `game.play` | other | low |
 
-Ordre de slices recommandé : ~~9~~ → **3+4** → 2 → 5+6 → 7+8 → 1.
+Ordre de slices recommandé : ~~9~~ → ~~3+4~~ → **2** → 5+6 → 7+8 → 1.
