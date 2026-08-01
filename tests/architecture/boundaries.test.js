@@ -65,6 +65,10 @@ function checkViolation(fileRel, importSpec) {
     return 'application must not import legacy js/';
   }
 
+  if (fileRel.startsWith('contexts/') && isLegacyJsImport) {
+    return 'contexts/ must not import legacy js/';
+  }
+
   if (fileRel.startsWith('js/') && !fileRel.startsWith('js/acl/') && isContextsImport) {
     return 'js/ must reach contexts/ only via js/acl/';
   }
