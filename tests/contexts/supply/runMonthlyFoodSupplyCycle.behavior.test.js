@@ -5,12 +5,12 @@
 import 'fake-indexeddb/auto';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { createSupplyContext, resetSupplyContextForTests } from '../../../src/composition/createSupplyContext.js';
-import { TimeManager } from '../../../src/js/game/utils/TimeManager.js';
-import { toSupplySeason, toSupplyMonth } from '../../../src/js/acl/supply.js';
+import { TimeManager } from '../../../src/shared/time/TimeManager.js';
+import { toSupplySeason, toSupplyMonth } from '../../../src/composition/supplyOps.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 import { makeHouseRecord } from '../../fixtures/buildingRecord.js';
 import { clearBuildingsTable, seedBuilding, getBuildingRow } from '../../helpers/buildingDb.js';
-import { updateBuildingFields } from '../../../src/js/acl/construction.js';
+import { updateBuildingFields } from '../../../src/composition/constructionOps.js';
 
 describe('Supply — RunMonthlyFoodSupplyCycle', () => {
   let supply;

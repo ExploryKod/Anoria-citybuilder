@@ -4,16 +4,16 @@
 
 import Dexie from 'dexie';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
-import { BudgetManager } from '../../../src/js/stores/BudgetManager.js';
-import { JournalManager } from '../../../src/js/stores/JournalManager.js';
-import { BudgetProcessor } from '../../../src/js/game/managers/BudgetProcessor.js';
-import { resetSessionLedgerBufferForTests } from '../../../src/js/stores/SessionLedgerBuffer.js';
+import { BudgetManager } from '../../../tests/helpers/testBudgetFacade.js';
+import { JournalManager } from '../../../src/composition/accountingSessionJournal.js';
+import { processTurnBudget } from '../../../src/composition/accountingOps.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/composition/accountingSessionJournal.js';
 import {
   getOrCreateAccountingContext,
   resetAccountingContextForTests,
 } from '../../../src/composition/createAccountingContext.js';
-import appRegistry from '../../../src/js/game/AppRegistry.js';
-import { TimeManager } from '../../../src/js/game/utils/TimeManager.js';
+import appRegistry from '../../../src/composition/AppRegistry.js';
+import { TimeManager } from '../../../src/shared/time/TimeManager.js';
 
 function createTestDb() {
   const testDb = new Dexie('testSalaryIdempotenceDb');
@@ -29,7 +29,6 @@ describe('Accounting — salary idempotence (J6/J7)', () => {
   let testDb;
   let budgetManager;
   let journalManager;
-  let budgetProcessor;
 
   beforeEach(async () => {
     resetSessionLedgerBufferForTests();
@@ -64,18 +63,13 @@ describe('Accounting — salary idempotence (J6/J7)', () => {
 
     getOrCreateAccountingContext({ journalManager, db: testDb });
 
-    budgetProcessor = new BudgetProcessor();
     global.window = global.window ?? {};
-    global.window.budgetManager = budgetManager;
-    appRegistry.register('workSectionManager', { salary: 100, salaryTaxRate: 0.2 });
 
     await budgetManager.initialize(500);
   });
 
   afterEach(async () => {
     appRegistry.register('timeManager', TimeManager);
-    delete global.window.budgetManager;
-    appRegistry.register('workSectionManager', null);
     resetAccountingContextForTests();
     if (testDb) {
       await testDb.delete();
@@ -97,11 +91,21 @@ describe('Accounting — salary idempotence (J6/J7)', () => {
     await budgetManager.updateTurn(turn);
 
     await Promise.all([
-      budgetProcessor.processBudget(turn, 10, { total: 0 }, {
-        roads: { cost: 0 }, houses: { cost: 0 }, farms: { cost: 0 }, markets: { cost: 0 },
+      processTurnBudget({
+        time: turn,
+        totalPop: 10,
+        buildingCounts: { total: 0 },
+        maintenanceBreakdown: {
+          roads: { cost: 0 }, houses: { cost: 0 }, farms: { cost: 0 }, markets: { cost: 0 },
+        },
       }),
-      budgetProcessor.processBudget(turn, 10, { total: 0 }, {
-        roads: { cost: 0 }, houses: { cost: 0 }, farms: { cost: 0 }, markets: { cost: 0 },
+      processTurnBudget({
+        time: turn,
+        totalPop: 10,
+        buildingCounts: { total: 0 },
+        maintenanceBreakdown: {
+          roads: { cost: 0 }, houses: { cost: 0 }, farms: { cost: 0 }, markets: { cost: 0 },
+        },
       }),
     ]);
 

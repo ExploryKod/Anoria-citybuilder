@@ -1,4 +1,5 @@
 import { getProductStockKey, isStockableProduct } from '../../domain/catalogs/ProductCatalog.js';
+import { tryInstanceIdFromHouseRow } from '../../../../shared/building-identity/index.js';
 
 /**
  * Windmill stock mutations for commerce import/export flows.
@@ -7,7 +8,7 @@ export class WindmillStockOperations {
   /**
    * @param {object} deps
    * @param {() => Promise<Array>} deps.listCommercializableWindmills
-   * @param {(row: object) => string} deps.instanceIdFromHouseRow
+   * @param {(row: object) => string} [deps.instanceIdFromHouseRow]
    * @param {(id: string) => Promise<object|null>} deps.getSupplyBuildingRow
    * @param {(id: string, fields: object) => Promise<unknown>} deps.updateSupplyBuildingFields
    * @param {() => Promise<Array>} deps.listWindmillSupplyViews
@@ -20,6 +21,20 @@ export class WindmillStockOperations {
     this.updateSupplyBuildingFields = deps.updateSupplyBuildingFields;
     this.listWindmillSupplyViews = deps.listWindmillSupplyViews;
     this.getPartner = deps.getPartner;
+  }
+
+  /**
+   * Resolve UUID from a windmill DTO or Dexie row (legacy DTOs used `buildingId` only).
+   * @param {object} windmill
+   * @returns {string | null}
+   */
+  resolveWindmillInstanceId(windmill) {
+    if (!windmill || typeof windmill !== 'object') return null;
+    const fromRow = tryInstanceIdFromHouseRow(windmill);
+    if (fromRow) return fromRow;
+    return tryInstanceIdFromHouseRow({
+      instanceId: windmill.buildingId ?? windmill.name,
+    });
   }
 
   isStockable(productId) {
@@ -76,8 +91,13 @@ export class WindmillStockOperations {
       const stockKey = this.getStockKey(productId);
       if (!stockKey) return null;
 
-      const firstWindmill = windmills[0];
-      const windmillId = this.instanceIdFromHouseRow(firstWindmill);
+      const firstWindmill = windmills.find((w) => this.resolveWindmillInstanceId(w));
+      if (!firstWindmill) {
+        console.warn('[CommerceService] No windmill with valid instanceId for import');
+        return null;
+      }
+
+      const windmillId = this.resolveWindmillInstanceId(firstWindmill);
       const windmillData = await this.getSupplyBuildingRow(windmillId);
       if (!windmillData) {
         console.warn(`[CommerceService] Windmill not found: ${windmillId}`);
@@ -157,7 +177,9 @@ export class WindmillStockOperations {
       for (const windmill of windmills) {
         if (remaining <= 0) break;
 
-        const windmillId = this.instanceIdFromHouseRow(windmill);
+        const windmillId = this.resolveWindmillInstanceId(windmill);
+        if (!windmillId) continue;
+
         const row = await this.getSupplyBuildingRow(windmillId);
         const stocks = row?.stocks || windmill.stocks || {};
         const currentStock = stocks[stockKey] || 0;
@@ -222,7 +244,8 @@ export class WindmillStockOperations {
       const windmills = await this.listWindmillSupplyViews();
 
       for (const windmill of windmills) {
-        const windmillId = this.instanceIdFromHouseRow(windmill);
+        const windmillId = this.resolveWindmillInstanceId(windmill);
+        if (!windmillId) continue;
         try {
           const windmillData = await this.getSupplyBuildingRow(windmillId);
           if (windmillData && windmillData.lastImport !== undefined) {

@@ -72,10 +72,10 @@ db.budget
 
 | Surface | Fichier | Query BC |
 |---|---|---|
-| CR historique par tour | `ui/budget/BudgetStatesManager.js` | `getFinancialStatementsHistory()` |
+| CR historique par tour | `ui/compta/compte-de-resultat/` | `getFinancialStatementsHistory()` |
 | Bilan panneau budget | `ui/buttons.js` | `getBalanceSheet()` → bundle lié |
 | Journal (UI chronologique) | `ui/journal/JournalManager.js` | `getGeneralLedger()` ⚠️ = journal, pas grand livre PCG |
-| Livret César 3 | `ui/finances-section.js` | `getCityLedgerYearComparison()` |
+| Livret César 3 | `ui/admin/finances/` + `ui/compta/livret/` | `getCityLedgerYearComparison()` |
 
 ---
 

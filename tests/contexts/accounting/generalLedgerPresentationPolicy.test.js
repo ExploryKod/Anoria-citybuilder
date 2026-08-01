@@ -2,7 +2,7 @@ import { describe, test, expect } from '@jest/globals';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { TimeManager } from '../../../src/js/game/utils/TimeManager.js';
+import { TimeManager } from '../../../src/shared/time/TimeManager.js';
 import {
   filterAndSortJournalEntries,
   buildMonthlyFinancialSummary,

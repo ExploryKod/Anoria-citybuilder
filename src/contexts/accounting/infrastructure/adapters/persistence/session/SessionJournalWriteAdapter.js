@@ -1,21 +1,21 @@
 import { JournalWritePort } from '../../../../application/ports/JournalWritePort.js';
-import { sessionLedgerBuffer } from '../../../../../../js/stores/SessionLedgerBuffer.js';
+import { sessionLedgerBuffer } from '../../../session/SessionLedgerBuffer.js';
 
 /**
- * Writes through the session journal buffer (same path as JournalManager).
+ * Writes through the session journal buffer (SessionJournalStore).
  */
 export class SessionJournalWriteAdapter extends JournalWritePort {
   /**
-   * @param {import('../../../../../../js/stores/JournalManager.js').JournalManager} journalManager
+   * @param {import('../../../session/SessionJournalStore.js').SessionJournalStore} sessionJournalStore
    */
-  constructor(journalManager) {
+  constructor(sessionJournalStore) {
     super();
-    this.journalManager = journalManager;
+    this.sessionJournalStore = sessionJournalStore;
   }
 
   /** @param {string} businessKey */
   async hasBusinessKey(businessKey) {
-    await this.journalManager.ensureHydrated();
+    await this.sessionJournalStore.ensureHydrated();
     return sessionLedgerBuffer.hasBusinessKey(businessKey);
   }
 
@@ -25,7 +25,7 @@ export class SessionJournalWriteAdapter extends JournalWritePort {
    * @returns {Promise<{ recorded: boolean, skipped?: boolean, reason?: string }>}
    */
   async appendEntry(entry, options = {}) {
-    const result = await this.journalManager.addJournalEntry(
+    const result = await this.sessionJournalStore.addJournalEntry(
       entry.turn,
       entry.type,
       entry.amount,
@@ -47,6 +47,6 @@ export class SessionJournalWriteAdapter extends JournalWritePort {
 
   /** @inheritdoc */
   async upsertBalanceSnapshot(turn, amount) {
-    await this.journalManager.addBalanceEntry(turn, amount);
+    await this.sessionJournalStore.addBalanceEntry(turn, amount);
   }
 }

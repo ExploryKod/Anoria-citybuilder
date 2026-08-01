@@ -1,12 +1,7 @@
-import { getTimeManager } from '../js/acl/appRuntime.js';
-import { recordImportExpense, recordExportIncome } from '../js/acl/accountingGame.js';
-import { instanceIdFromHouseRow } from '../js/acl/building-identity.js';
-import {
-  listCommercializableWindmills,
-  getSupplyBuildingRow,
-  updateSupplyBuildingFields,
-  listWindmillSupplyViews,
-} from '../js/acl/supply.js';
+import { resolveGetTimeInfo } from './gameTimeBridge.js';
+import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
+import { getOrCreateAccountingContext } from './createAccountingContext.js';
+import { getOrCreateSupplyContext } from './createSupplyContext.js';
 import { LocalStorageCommerceRepository } from '../contexts/commerce/infrastructure/persistence/LocalStorageCommerceRepository.js';
 import { CommerceSimulationService } from '../contexts/commerce/application/services/CommerceSimulationService.js';
 
@@ -17,23 +12,37 @@ let sharedCommerce = null;
 let partnerContractFinishedHandler = null;
 
 /**
+ * @returns {Promise<object[]>}
+ */
+async function listCommercializableWindmills() {
+  const windmills = await getOrCreateSupplyContext().listWindmillSupplyViews();
+  return windmills.filter(
+    (windmill) => windmill.isActive && windmill.commercializeEnabled
+  );
+}
+
+/**
  * @param {object} [deps]
  * @param {LocalStorageCommerceRepository} [deps.commerceRepository]
  * @param {((payload: object) => void)|null} [deps.onPartnerContractFinished]
+ * @param {(turn: number) => object} [deps.getTimeInfo]
  */
 export function createCommerceContext(deps = {}) {
   const commerceRepository = deps.commerceRepository ?? new LocalStorageCommerceRepository();
+  const accounting = getOrCreateAccountingContext();
 
-  const getTimeInfo = (time) => getTimeManager().getTimeInfo(time);
+  const getTimeInfo = deps.getTimeInfo ?? resolveGetTimeInfo();
 
   const simulationDeps = {
     commerceRepository,
-    recordImportExpense,
-    recordExportIncome,
+    recordImportExpense: (...args) => accounting.recordImportExpense(...args),
+    recordExportIncome: (...args) => accounting.recordExportIncome(...args),
     listCommercializableWindmills,
-    getSupplyBuildingRow,
-    updateSupplyBuildingFields,
-    listWindmillSupplyViews,
+    getSupplyBuildingRow: (buildingId) =>
+      getOrCreateSupplyContext().getSupplyBuildingRow(buildingId),
+    updateSupplyBuildingFields: (buildingId, fields) =>
+      getOrCreateSupplyContext().updateSupplyBuildingFields(buildingId, fields),
+    listWindmillSupplyViews: () => getOrCreateSupplyContext().listWindmillSupplyViews(),
     getTimeInfo,
     instanceIdFromHouseRow,
     onPartnerContractFinished:

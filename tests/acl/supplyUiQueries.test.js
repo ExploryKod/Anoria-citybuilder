@@ -14,7 +14,7 @@ import {
   listNatureResources,
   getFactoryById,
   updateFactoryFields,
-} from '../../src/js/acl/supply.js';
+} from '../../src/composition/supplyOps.js';
 import { makeHouseRecord } from '../fixtures/buildingRecord.js';
 
 async function clearHousesTable() {
@@ -62,6 +62,8 @@ describe('ACL Supply UI queries', () => {
     const views = await listWindmillSupplyViews();
     expect(views).toHaveLength(1);
     expect(views[0].buildingId).toBe(windmillId);
+    expect(views[0].instanceId).toBe(windmillId);
+    expect(views[0].id).toBe(windmillId);
     expect(views[0].stocks.wheat).toBe(5);
     expect(views[0].isActive).toBe(false);
     expect(views[0].commercializeEnabled).toBe(true);

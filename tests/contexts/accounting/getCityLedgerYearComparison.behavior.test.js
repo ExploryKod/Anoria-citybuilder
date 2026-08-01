@@ -12,7 +12,7 @@ import { createEmptyCityLedgerYearLines } from '../../../src/contexts/accounting
 import { GetCityLedgerYearComparison } from '../../../src/contexts/accounting/application/queries/city-ledger/GetCityLedgerYearComparison.js';
 import { GetTreasuryBalance } from '../../../src/contexts/accounting/application/queries/treasury/GetTreasuryBalance.js';
 import { createAccountingContext } from '../../../src/composition/createAccountingContext.js';
-import { resetAccountingContextForTests } from '../../../src/js/acl/accounting.js';
+import { resetAccountingContextForTests } from '../../../src/composition/accountingOps.js';
 
 class FakeJournalRepository {
   constructor({ entries = [], yearlyData = [], currentBalance = 0 } = {}) {

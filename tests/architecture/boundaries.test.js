@@ -1,7 +1,11 @@
 /**
- * Architecture boundary guard (Lot 1).
+ * Architecture boundary guard (plan_ca Barre F).
  *
- * Scans src/ imports and enforces dependency rules from src/archi.md §3.
+ * Enforces dependency rules after strangler removal:
+ * - no src/js/ package
+ * - composition / ui / presentation must not import legacy js/
+ * - ui / presentation must not import contexts domain layers (use facades or application)
+ * - domain must not import infrastructure; contexts must not import js; engine must not import contexts/js
  */
 
 import fs from 'fs';
@@ -10,10 +14,16 @@ import { describe, test, expect } from '@jest/globals';
 
 const SRC_ROOT = path.resolve('src');
 
-/** @type {Set<string>} `${relativeFile}::${importSpec}` — empty once Lot 4 cleared js/ bypasses. */
+/** @type {Set<string>} `${relativeFile}::${importSpec}` */
 const ALLOWLIST = new Set([]);
 
 const IMPORT_FROM_RE = /\bfrom\s+['"]([^'"]+)['"]/g;
+const DYNAMIC_IMPORT_RE = /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
+
+/** Remove block/line comments so JSDoc type imports are not treated as runtime imports. */
+function stripComments(content) {
+  return content.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+}
 
 function listJsFiles(dir) {
   const files = [];
@@ -36,14 +46,27 @@ function isAllowlisted(fileRel, importSpec) {
   return ALLOWLIST.has(`${fileRel}::${importSpec}`);
 }
 
+function isLegacyJsImport(importSpec) {
+  return (
+    importSpec.includes('/js/')
+    || importSpec.includes('../js/')
+    || /(^|\/)js\/acl\//.test(importSpec)
+    || /(^|\/)js\/utils\//.test(importSpec)
+  );
+}
+
+function isContextsDomainImport(importSpec) {
+  return /contexts\/[^/]+\/domain\//.test(importSpec);
+}
+
 function checkViolation(fileRel, importSpec) {
   if (isAllowlisted(fileRel, importSpec)) {
     return null;
   }
 
-  const isLegacyJsImport = importSpec.includes('/js/') || importSpec.includes('../js/');
   const isContextsImport = importSpec.includes('contexts/');
-  const isInfraImport = importSpec.includes('/infrastructure/') || importSpec.includes('../infrastructure/');
+  const isInfraImport =
+    importSpec.includes('/infrastructure/') || importSpec.includes('../infrastructure/');
 
   if (fileRel.startsWith('contexts/') && isContextsImport) {
     const fromContext = fileRel.split('/')[1];
@@ -53,7 +76,7 @@ function checkViolation(fileRel, importSpec) {
     }
   }
 
-  if (fileRel.includes('/domain/') && isLegacyJsImport) {
+  if (fileRel.includes('/domain/') && isLegacyJsImport(importSpec)) {
     return 'domain must not import legacy js/';
   }
 
@@ -61,15 +84,39 @@ function checkViolation(fileRel, importSpec) {
     return 'domain must not import infrastructure';
   }
 
-  if (fileRel.includes('/application/') && isLegacyJsImport) {
+  if (fileRel.includes('/application/') && isLegacyJsImport(importSpec)) {
     return 'application must not import legacy js/';
   }
 
-  if (fileRel.startsWith('js/') && !fileRel.startsWith('js/acl/') && isContextsImport) {
-    return 'js/ must reach contexts/ only via js/acl/';
+  if (fileRel.startsWith('contexts/') && isLegacyJsImport(importSpec)) {
+    return 'contexts/ must not import legacy js/';
   }
 
-  if (fileRel.startsWith('engine/') && (isContextsImport || isLegacyJsImport)) {
+  if (fileRel.startsWith('composition/') && isLegacyJsImport(importSpec)) {
+    return 'composition/ must not import legacy js/';
+  }
+
+  // src/presentation/{dom,three} — not contexts/*/infrastructure/presentation
+  if (
+    fileRel.startsWith('composition/')
+    && /(^|\/)presentation\/(dom|three)\//.test(importSpec)
+  ) {
+    return 'composition must not import presentation (inject callbacks / ports at the edge)';
+  }
+
+  if (fileRel.startsWith('contexts/') && /(^|\/)composition\//.test(importSpec)) {
+    return 'contexts must not import composition (inject collaborators from the root)';
+  }
+
+  if (fileRel.startsWith('presentation/') && isLegacyJsImport(importSpec)) {
+    return 'presentation must not import legacy js/';
+  }
+
+  if (fileRel.startsWith('presentation/') && isContextsDomainImport(importSpec)) {
+    return 'presentation must not import contexts/*/domain (use sessionApi / composition ops or application)';
+  }
+
+  if (fileRel.startsWith('engine/') && (isContextsImport || isLegacyJsImport(importSpec))) {
     return 'engine/ must not depend on contexts/ or js/';
   }
 
@@ -77,19 +124,63 @@ function checkViolation(fileRel, importSpec) {
 }
 
 describe('architecture boundaries', () => {
+  test('src/js/ package is gone', () => {
+    const jsRoot = path.join(SRC_ROOT, 'js');
+    expect(fs.existsSync(jsRoot)).toBe(false);
+  });
+
+  test('src/ui/ package is gone (migrated to presentation/dom)', () => {
+    const uiRoot = path.join(SRC_ROOT, 'ui');
+    expect(fs.existsSync(uiRoot)).toBe(false);
+  });
+
+  test('composition/facades/ package is gone (sessionApi + *Ops)', () => {
+    const facadesRoot = path.join(SRC_ROOT, 'composition', 'facades');
+    expect(fs.existsSync(facadesRoot)).toBe(false);
+  });
+
+  test('presentation must not import *Ops or getOrCreate*Context (except game session)', () => {
+    const presentationRoot = path.join(SRC_ROOT, 'presentation');
+    const files = listJsFiles(presentationRoot);
+    const violations = [];
+    for (const absolutePath of files) {
+      const fileRel = toSrcRelative(absolutePath);
+      const content = stripComments(fs.readFileSync(absolutePath, 'utf8'));
+      for (const re of [IMPORT_FROM_RE, DYNAMIC_IMPORT_RE]) {
+        re.lastIndex = 0;
+        for (const match of content.matchAll(re)) {
+          const importSpec = match[1];
+          if (/composition\/facades\//.test(importSpec) || /\/facades\//.test(importSpec)) {
+            violations.push(`${fileRel} imports "${importSpec}" — presentation must not import facades`);
+          }
+          if (importSpec.includes('Ops.js')) {
+            violations.push(`${fileRel} imports "${importSpec}" — presentation must use sessionApi, not *Ops`);
+          }
+        }
+      }
+      if (/getOrCreate(?!GameSession)\w*Context/.test(content)) {
+        violations.push(`${fileRel} calls getOrCreate*Context — use sessionApi / injected deps`);
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
   test('import graph respects layer rules', () => {
     const files = listJsFiles(SRC_ROOT);
     const violations = [];
 
     for (const absolutePath of files) {
       const fileRel = toSrcRelative(absolutePath);
-      const content = fs.readFileSync(absolutePath, 'utf8');
+      const content = stripComments(fs.readFileSync(absolutePath, 'utf8'));
 
-      for (const match of content.matchAll(IMPORT_FROM_RE)) {
-        const importSpec = match[1];
-        const reason = checkViolation(fileRel, importSpec);
-        if (reason) {
-          violations.push(`${fileRel} imports "${importSpec}" — ${reason}`);
+      for (const re of [IMPORT_FROM_RE, DYNAMIC_IMPORT_RE]) {
+        re.lastIndex = 0;
+        for (const match of content.matchAll(re)) {
+          const importSpec = match[1];
+          const reason = checkViolation(fileRel, importSpec);
+          if (reason) {
+            violations.push(`${fileRel} imports "${importSpec}" — ${reason}`);
+          }
         }
       }
     }
@@ -99,5 +190,41 @@ describe('architecture boundaries', () => {
 
   test('allowlist is empty (no known boundary debt)', () => {
     expect(ALLOWLIST.size).toBe(0);
+  });
+
+  test('commerce BC does not read UI goodsData via presenter/registry', () => {
+    const commerceRoot = path.join(SRC_ROOT, 'contexts', 'commerce');
+    const files = listJsFiles(commerceRoot);
+    const violations = [];
+
+    const forbidden = [
+      /getCommerceSectionPresenter\s*\(/,
+      /commerceSectionPresenter/,
+      /commerceSectionManager/,
+      /from\s+['"][^'"]*\/presentation\/dom\//,
+      /\.goodsData\b/,
+    ];
+
+    for (const absolutePath of files) {
+      const fileRel = toSrcRelative(absolutePath);
+      const content = fs.readFileSync(absolutePath, 'utf8');
+
+      if (/\w+\.goodsData\b/.test(content) && !/saveConfig\s*\(\s*goodsData/.test(content)) {
+        const propertyReads = content.match(/\w+\.goodsData\b/g) || [];
+        for (const hit of propertyReads) {
+          if (hit === 'this.goodsData' || hit.includes('Presenter') || hit.includes('Manager')) {
+            violations.push(`${fileRel} accesses "${hit}"`);
+          }
+        }
+      }
+
+      for (const pattern of forbidden.slice(0, 4)) {
+        if (pattern.test(content)) {
+          violations.push(`${fileRel} matches ${pattern}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
   });
 });
