@@ -1,4 +1,3 @@
-import { getButtonStateManager } from '../../../composition/sessionShell.js';
 import { setToolPanelAssets } from '../tools/ToolPanel.js';
 import { updateSpeedDisplay } from './SpeedControls.js';
 
@@ -46,9 +45,11 @@ export async function loadGameAssets(assetManager) {
   }
 }
 
-export function initButtonStateRegistry() {
-  const manager = getButtonStateManager();
-  if (!manager) {
+/**
+ * @param {{ registerButton?: (id: string, button: HTMLElement) => void } | null} [buttonStateManager]
+ */
+export function initButtonStateRegistry(buttonStateManager = null) {
+  if (!buttonStateManager) {
     console.warn('⚠️ ButtonStateManager not available');
     return;
   }
@@ -56,7 +57,7 @@ export function initButtonStateRegistry() {
   ['palace-btn', 'infrastructure-btn', 'workshop-btn'].forEach((id) => {
     const button = document.getElementById(id);
     if (button) {
-      manager.registerButton(id, button);
+      buttonStateManager.registerButton(id, button);
     }
   });
 }

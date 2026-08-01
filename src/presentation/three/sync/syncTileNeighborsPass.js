@@ -1,8 +1,11 @@
-import { requireSessionParcelsApi } from '../../../composition/sessionRuntime.js';
 /**
  * Full-grid neighbor persist after the mesh tile loop.
  * Writes Parcels neighbors + markets + road access (not sprite painting).
  */
+import {
+  getBuildingsNamesInZone,
+  updateBuildingNeighbors,
+} from '../sceneSpatialUtils.js';
 
 /**
  * @param {object} params

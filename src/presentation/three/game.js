@@ -27,7 +27,10 @@ import objectivesTracker, {
   bindObjectivesTrackerDeps,
 } from '../dom/onboarding/ObjectivesTracker.js';
 import InputManager from './InputManager.js';
-import gameUI from '../dom/shell/GameUI.js';
+import gameUI, {
+  bindGameUIDeps,
+} from '../dom/shell/GameUI.js';
+import { popupManager } from '../dom/shell/PopupManager.js';
 import {
   showInsufficientFundsNotification,
   showGenericErrorNotification,
@@ -86,8 +89,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
     employment,
     resetProcessTurnBudget: () => accounting.resetProcessTurnBudget(),
     gameUI,
+    popupManager,
   });
   const city = createCity(resolveSelectedCitySize(citySize));
+
+  bindGameUIDeps({ getScene: () => scene });
 
   bindSessionRuntime({
     gameUI,

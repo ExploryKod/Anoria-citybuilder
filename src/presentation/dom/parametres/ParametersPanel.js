@@ -1,5 +1,12 @@
-import { pauseGame, playGame, registerAppService, getTimeManager } from '../../../composition/sessionShell.js';
 import EventBlocker from '../shell/EventBlocker.js';
+
+/** @type {{
+ *   pauseGame?: () => void,
+ *   playGame?: () => void,
+ *   registerAppService?: (name: string, instance: unknown) => void,
+ *   getTimeManager?: () => { refreshCache?: () => Promise<void> } | null,
+ * } | null} */
+let deps = null;
 
 class ParametersPanel {
     constructor() {
@@ -11,8 +18,7 @@ class ParametersPanel {
         this.isVisible = false;
         this.eventBlocker = new EventBlocker();
         this.lastFocusedElement = null;
-        
-        // Contrôles
+
         this.eventsEnabledToggle = null;
         this.eventProbabilityInput = null;
         this.daysPerMonthInput = null;
@@ -42,8 +48,7 @@ class ParametersPanel {
         this.closeButton = this.panel.querySelector('.parameters-close-btn');
         this.prevButton = this.panel.querySelector('.parameters-previous-btn');
         this.nextButton = this.panel.querySelector('.parameters-next-btn');
-        
-        // Contrôles
+
         this.eventsEnabledToggle = this.panel.querySelector('#events-enabled-toggle');
         this.eventProbabilityInput = this.panel.querySelector('#event-probability-input');
         this.daysPerMonthInput = this.panel.querySelector('#days-per-month-input');
@@ -53,7 +58,6 @@ class ParametersPanel {
     }
 
     setupEventListeners() {
-        // Ensure we don't keep duplicated listeners on the open button
         const clonedButton = this.openButton.cloneNode(true);
         this.openButton.parentNode.replaceChild(clonedButton, this.openButton);
         this.openButton = clonedButton;
@@ -82,22 +86,20 @@ class ParametersPanel {
         if (this.nextButton) {
             this.nextButton.addEventListener('click', disabledHandler);
         }
-        
-        // Gestion des contrôles
+
         if (this.eventsEnabledToggle) {
             this.eventsEnabledToggle.addEventListener('change', (e) => {
                 this.handleEventsEnabledChange(e.target.checked);
             });
         }
-        
+
         if (this.eventProbabilityInput) {
             this.eventProbabilityInput.addEventListener('change', (e) => {
                 this.handleEventProbabilityChange(parseInt(e.target.value, 10));
             });
             this.eventProbabilityInput.addEventListener('input', (e) => {
-                // Ne pas bloquer la saisie, juste valider à la fin
                 const value = e.target.value;
-                if (value === '' || value === '-') return; // Permettre la saisie en cours
+                if (value === '' || value === '-') return;
                 const numValue = parseInt(value, 10);
                 if (!isNaN(numValue)) {
                     if (numValue < 0) {
@@ -108,15 +110,14 @@ class ParametersPanel {
                 }
             });
         }
-        
+
         if (this.daysPerMonthInput) {
             this.daysPerMonthInput.addEventListener('change', (e) => {
                 this.handleDaysPerMonthChange(parseInt(e.target.value, 10));
             });
             this.daysPerMonthInput.addEventListener('input', (e) => {
-                // Ne pas bloquer la saisie, juste valider à la fin
                 const value = e.target.value;
-                if (value === '' || value === '-') return; // Permettre la saisie en cours
+                if (value === '' || value === '-') return;
                 const numValue = parseInt(value, 10);
                 if (!isNaN(numValue)) {
                     if (numValue < 1) {
@@ -128,23 +129,19 @@ class ParametersPanel {
             });
         }
     }
-    
-    /**
-     * Charge les valeurs depuis localStorage
-     */
+
     async loadValues() {
         try {
-            // Import dynamique pour éviter les dépendances circulaires
             const eventsConfig = await import('../../../config/events.js');
-            
+
             if (this.eventsEnabledToggle) {
                 this.eventsEnabledToggle.checked = eventsConfig.isEventsEnabled();
             }
-            
+
             if (this.eventProbabilityInput) {
                 this.eventProbabilityInput.value = eventsConfig.getEventProbability();
             }
-            
+
             if (this.daysPerMonthInput) {
                 this.daysPerMonthInput.value = eventsConfig.getDaysPerMonth();
             }
@@ -152,10 +149,7 @@ class ParametersPanel {
             console.error('[ParametersPanel] Error loading values:', error);
         }
     }
-    
-    /**
-     * Gère le changement d'état des événements
-     */
+
     async handleEventsEnabledChange(enabled) {
         try {
             const eventsConfig = await import('../../../config/events.js');
@@ -164,10 +158,7 @@ class ParametersPanel {
             console.error('[ParametersPanel] Error setting events enabled:', error);
         }
     }
-    
-    /**
-     * Gère le changement de probabilité
-     */
+
     async handleEventProbabilityChange(probability) {
         try {
             const eventsConfig = await import('../../../config/events.js');
@@ -176,16 +167,13 @@ class ParametersPanel {
             console.error('[ParametersPanel] Error setting event probability:', error);
         }
     }
-    
-    /**
-     * Gère le changement de jours par mois
-     */
+
     async handleDaysPerMonthChange(days) {
         try {
             const eventsConfig = await import('../../../config/events.js');
             eventsConfig.setDaysPerMonth(days);
-            
-            const timeManager = getTimeManager();
+
+            const timeManager = deps?.getTimeManager?.();
             if (timeManager && typeof timeManager.refreshCache === 'function') {
                 await timeManager.refreshCache();
             }
@@ -197,19 +185,16 @@ class ParametersPanel {
     handleDocumentKeyDown(event) {
         if (!this.isVisible) return;
 
-        // Ne pas bloquer les événements sur les inputs de la modale
         const target = event.target;
         if (target && (
-            target.tagName === 'INPUT' || 
+            target.tagName === 'INPUT' ||
             target.tagName === 'TEXTAREA' ||
             target.closest('#parameters-panel')
         )) {
-            // Si c'est Escape dans un input, fermer la modale
             if (event.key === 'Escape') {
                 event.preventDefault();
                 this.hide();
             }
-            // Sinon, laisser passer tous les autres événements
             return;
         }
 
@@ -231,7 +216,6 @@ class ParametersPanel {
 
     blockGameEvents() {
         if (this.eventBlocker && !this.eventBlocker.isEventsBlocked()) {
-            // Bloquer les événements Three.js mais permettre les interactions avec les inputs
             this.eventBlocker.blockThreeJSEvents({
                 excludeSelectors: [
                     '#parameters-panel',
@@ -255,7 +239,6 @@ class ParametersPanel {
         this.isVisible = true;
         this.lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
-        // Recharger les valeurs à chaque ouverture
         this.loadValues();
 
         this.panel.classList.add('visible');
@@ -270,7 +253,7 @@ class ParametersPanel {
 
         this.blockGameEvents();
 
-        pauseGame();
+        deps?.pauseGame?.();
     }
 
     hide() {
@@ -285,7 +268,7 @@ class ParametersPanel {
 
         this.unblockGameEvents();
 
-        playGame();
+        deps?.playGame?.();
 
         if (this.lastFocusedElement && typeof this.lastFocusedElement.focus === 'function') {
             this.lastFocusedElement.focus();
@@ -293,6 +276,17 @@ class ParametersPanel {
     }
 }
 
-const parametersPanel = new ParametersPanel();
-registerAppService('parametersPanel', parametersPanel);
-
+/**
+ * @param {{
+ *   pauseGame?: () => void,
+ *   playGame?: () => void,
+ *   registerAppService?: (name: string, instance: unknown) => void,
+ *   getTimeManager?: () => { refreshCache?: () => Promise<void> } | null,
+ * }} panelDeps
+ */
+export function initParametersPanel(panelDeps) {
+    deps = panelDeps;
+    const parametersPanel = new ParametersPanel();
+    deps.registerAppService?.('parametersPanel', parametersPanel);
+    return parametersPanel;
+}

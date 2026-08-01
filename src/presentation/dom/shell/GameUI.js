@@ -21,7 +21,16 @@ import {
     bulldozeSelected
 } from './nodes.js';
 import { TimeManager } from '../../../shared/time/TimeManager.js';
-import { getSessionScene } from '../../../composition/sessionRuntime.js';
+
+/** @type {{ getScene?: () => { controls?: { enabled: boolean } } | null } | null} */
+let deps = null;
+
+/**
+ * @param {{ getScene?: () => { controls?: { enabled: boolean } } | null }} uiDeps
+ */
+export function bindGameUIDeps(uiDeps) {
+    deps = uiDeps;
+}
 
 class GameUI {
     /**
@@ -279,7 +288,7 @@ class GameUI {
                 }
                 // Disable OrbitControls to prevent scene movement
                 // Try to access scene through various paths
-                let sceneObj = getSessionScene();
+                let sceneObj = deps?.getScene?.();
                 if (sceneObj && sceneObj.controls) {
                     sceneObj.controls.enabled = false;
                 }
@@ -304,7 +313,7 @@ class GameUI {
                 }
                 // Re-enable OrbitControls when modal closes
                 // Try to access scene through various paths
-                let sceneObj = getSessionScene();
+                let sceneObj = deps?.getScene?.();
                 if (sceneObj && sceneObj.controls) {
                     sceneObj.controls.enabled = true;
                 }

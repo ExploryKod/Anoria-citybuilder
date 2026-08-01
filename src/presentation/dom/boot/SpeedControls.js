@@ -1,5 +1,4 @@
 import { displaySpeed, speedChangeIndicator, fasterButton, slowerButton } from '../shell/nodes.js';
-import { getSessionGame } from '../../../composition/sessionRuntime.js';
 import {
   DEFAULT_TICK_MS,
   TICK_MS_MAX,
@@ -17,13 +16,18 @@ export function updateSpeedDisplay(changeDirection = '') {
   }
 }
 
-export function initSpeedControls() {
+/**
+ * @param {{ getGame?: () => { startInterval?: () => void } | null }} [speedDeps]
+ */
+export function initSpeedControls(speedDeps = {}) {
+  const { getGame = () => null } = speedDeps;
+
   fasterButton.addEventListener('click', () => {
     let speed = parseInt(localStorage.getItem('speed'), 10) || DEFAULT_TICK_MS;
     const previousSpeed = speed;
     speed = Math.max(TICK_MS_MIN, speed - 500);
     localStorage.setItem('speed', speed.toString());
-    getSessionGame()?.startInterval();
+    getGame()?.startInterval?.();
     const changeDirection = speed !== previousSpeed ? '+' : '';
     updateSpeedDisplay(changeDirection);
     if (changeDirection) {
@@ -38,7 +42,7 @@ export function initSpeedControls() {
     const previousSpeed = speed;
     speed = Math.min(TICK_MS_MAX, speed + 500);
     localStorage.setItem('speed', speed.toString());
-    getSessionGame()?.startInterval();
+    getGame()?.startInterval?.();
     const changeDirection = speed !== previousSpeed ? '−' : '';
     updateSpeedDisplay(changeDirection);
     if (changeDirection) {
