@@ -13,7 +13,6 @@ import { toBuildingIdString, getOrCreateParcelsContext, getBuildingsNamesInZone 
 import { getOrCreateSupplyContext } from '../../js/acl/supply.js';
 import { getOrCreateHousingContext } from '../../js/acl/housing.js';
 import { getCityEmploymentSummary, ensureBuildingEmployeesSchema } from '../../js/acl/employment.js';
-import { getCityTotalBuildingValue } from '../../js/acl/budget.js';
 import { getTreasurySnapshot } from '../../js/acl/accountingGame.js';
 import {
   getPopupManager,
@@ -52,16 +51,14 @@ import { BackdropManager } from './managers/BackdropManager.js';
 import { DecorativeVillageManager } from './managers/DecorativeVillageManager.js';
 import { ResourceManager } from './managers/ResourceManager.js';
 import { PerformanceManager } from './managers/PerformanceManager.js';
-import { bindSceneBuildingGrid } from '../../js/acl/construction.js';
-import { processTurnBudget, resetProcessTurnBudget } from '../../js/acl/accounting.js';
-import { notifyBudgetCleanupIfNeeded } from '../../ui/compta/tresorerie/CleanupNotificationPresenter.js';
+import { resetProcessTurnBudget } from '../../js/acl/accounting.js';
 import gameUI from '../../ui/shell/GameUI.js';
 import { CitizenManager } from './managers/CitizenManager.js';
 import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
 
 const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
 
-export function createScene(gameStore, assetManager, parcelsOption, supplyOption, housingOption) {
+export function createScene(_gameStore, assetManager, parcelsOption, supplyOption, housingOption) {
     // Treasury initialized via acl/accountingGame.js during game boot
 
     const scene = new THREE.Scene();
@@ -472,8 +469,7 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
         return queued;
     }
 
-    async function runUpdate(city, time = 0, options = {}) {
-        const { skipBudget = false } = options;
+    async function runUpdate(city, time = 0, _options = {}) {
 
         /**
          * Housing ECS may rename persisted id/type (Blue→Red, etc.) while the mesh
@@ -655,43 +651,9 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
             }
         }
 
-        // Time turn processing
-        const gamePlayVersion = 'gameplay_' + time
+        // Population for HUD / citizens (gameplay persist + turn budget owned by game tick)
         const popSummary = await housing.getCityPopulationSummary();
         const totalPop = popSummary.totalPop;
-        let totalImmoExpenses = 0;
-        
-        // Treasury snapshot via Accounting ACL
-        let budgetData = null;
-        budgetData = await getTreasurySnapshot();
-        
-        totalImmoExpenses = (await getCityTotalBuildingValue()) || 0
-
-        const infoGameplay = {
-            name: time === 0 ? 'gameplay_init' : gamePlayVersion,
-            turn: time,
-            population: totalPop ? totalPop : 0,
-            maxPop: 5000,
-            deads: 0,
-            foodAvailable: 0,
-            foodNeeded: 0,
-            salaries: 0,
-            salesTax: 0.2,
-            citizenTax: 0.2,
-            markets: 0,
-            foodMarkets: 0,
-            goodsMarkets: 0,
-            goodsNeeded: 0,
-            goodsAvailable: 0,
-            foodSales: 0,
-            goodSales: 0,
-            lastImmoExpense: totalImmoExpenses || 0,
-            // Remove budget fields from game table - they're now in budget table
-            // debt: debts,     // ← Removed
-            // funds: funds     // ← Removed
-        }
-
-            await gameStore.addGameItems(infoGameplay);
 
         // --- BOUCLE SUR LA VILLE ----
         parcels.bindSpatialContext({ city, buildings, terrain, time });
@@ -1577,14 +1539,6 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
             }
         }
 
-        if (!skipBudget) {
-            bindSceneBuildingGrid({ city, buildings });
-            const result = await processTurnBudget({
-                time,
-                totalPop,
-            });
-            await notifyBudgetCleanupIfNeeded(result?.cleanupResult);
-        }
 
         // Display results in UI — population read at start of update (ECS already applied)
         const currentPopulation = totalPop;
@@ -2317,7 +2271,8 @@ function onTouchEnd(event) {
         pauseCitizen,
         resumeCitizen,
         refreshEmploymentPresentation,
-        // updateRoadImmediate removed - roads are now 3D meshes
+        /** Live mesh grid for turn-budget maintenance input. */
+        get buildings() { return buildings; },
     }
 
     /**
