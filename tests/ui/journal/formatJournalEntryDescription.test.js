@@ -3,7 +3,7 @@ import {
   formatJournalEntryDescription,
   formatJournalEntryDetails,
   stripBreakdownMarkup,
-} from '../../../src/js/ui/compta/journal/formatJournalEntryDescription.js';
+} from '../../../src/ui/compta/journal/formatJournalEntryDescription.js';
 
 describe('formatJournalEntryDescription', () => {
   test('stripBreakdownMarkup removes embedded JSON', () => {

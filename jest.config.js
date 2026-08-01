@@ -27,7 +27,7 @@ export default {
     // Coverage configuration
     collectCoverageFrom: [
         'src/js/**/*.js',
-        '!src/js/ui/**/*.js',  // Exclude UI files (DOM dependent)
+        '!src/ui/**/*.js',  // Exclude UI files (DOM dependent)
         '!**/node_modules/**'
     ],
     

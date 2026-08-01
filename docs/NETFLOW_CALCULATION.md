@@ -163,7 +163,7 @@ Balance : 350€ (fonds actuels = flux net + report)
 
 ## Notes importantes
 
-1. **Synchronisation en temps réel** : Le `FinancesSectionManager` utilise maintenant `JournalManager.getYearlyFinancialSummary()` directement, garantissant que les données sont à jour à chaque transaction, exactement comme le journal.
+1. **Synchronisation en temps réel** : la section Finances admin utilise le livret via ACL (`getCityLedgerYearComparison`), aligné sur le journal.
 
 2. **Source de vérité unique** : Toutes les données financières proviennent du journal (IndexedDB), qui est la source de vérité unique pour toutes les transactions.
 

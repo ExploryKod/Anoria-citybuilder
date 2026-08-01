@@ -73,8 +73,8 @@ C'est la seule vraie violation de la règle de dépendance. Le domaine dépend d
 
 ### D3 — Règles métier restées dans l'UI (duplication active)
 
-- `js/ui/loans/LoansManager.js:274` **et** `:316` : le calcul de taux d'intérêt (`bank ? 5 : 7`, majorations selon santé financière) est **écrit deux fois** dans le même fichier. Un changement de barème casse silencieusement l'un des deux.
-- `js/ui/ObjectivesTracker.js:40` et `:95` : le seuil d'objectif `>= 5000` est dupliqué entre la déclaration et la vérification.
+- `ui/compta/prets/PretsPanel.js` : taux via `LoanRatePolicy` (ACL `accountingLoans`) — plus de duplication locale.
+- `ui/onboarding/ObjectivesTracker.js` : seuils via `ObjectiveCatalog` (éviter duplication inline).
 - `js/game/managers/BudgetProcessor.js` : arbitrage budgétaire par tour, hors contexte.
 - `js/game/services/CommerceService.js` (804 LOC) : règles de contrats, limites d'import/export, stocks — le plus gros bloc de domaine encore hors BC.
 
@@ -124,7 +124,7 @@ Quatre couches, une seule règle : **les flèches ne pointent que vers l'intéri
                     │  domain  (policies, VO, snapshots)   │   règles pures
                     └──────────────────────────────────────┘
 
-   src/js/ (legacy UI + rendu)  ──→ src/js/acl/ ──→ composition/ ──→ contexts/
+   src/ui/ (DOM) + src/presentation/ (Three)  ──→ src/js/acl/ ──→ composition/ ──→ contexts/
    engine/  ne dépend de rien   ; contexts/ ne dépend pas de engine/
 ```
 

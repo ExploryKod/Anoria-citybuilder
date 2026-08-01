@@ -41,7 +41,7 @@ import {
     gameWindow,
     houses,
     palaces
-} from '../../js/ui/nodes.js';
+} from '../../ui/shell/nodes.js';
 import {assetsPrices} from "./meshs/data.js";
 import { setupRoadAccessIcons } from '../../js/acl/parcels.js';
 import { getDefaultEmployees } from '../../js/acl/employment.js';
@@ -53,7 +53,7 @@ import { ResourceManager } from './managers/ResourceManager.js';
 import { PerformanceManager } from './managers/PerformanceManager.js';
 import { bindSceneBuildingGrid } from '../../js/acl/construction.js';
 import { processTurnBudget, resetProcessTurnBudget } from '../../js/acl/accounting.js';
-import { notifyBudgetCleanupIfNeeded } from '../../js/ui/compta/tresorerie/CleanupNotificationPresenter.js';
+import { notifyBudgetCleanupIfNeeded } from '../../ui/compta/tresorerie/CleanupNotificationPresenter.js';
 import gameUI from './GameUI.js';
 import { CitizenManager } from './managers/CitizenManager.js';
 import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
