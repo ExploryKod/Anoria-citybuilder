@@ -6,7 +6,7 @@
  * - 4 saisons : Printemps, Été, Automne, Hiver
  * - Chaque saison dure 3 mois (3 jours en mode test)
  */
-import appRegistry from '../AppRegistry.js';
+import { registerAppService } from '../../acl/appRuntime.js';
 
 export class TimeManager {
     /**
@@ -301,4 +301,4 @@ export class TimeManager {
     }
 }
 
-appRegistry.register('timeManager', TimeManager);
+registerAppService('timeManager', TimeManager);

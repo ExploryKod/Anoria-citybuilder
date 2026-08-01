@@ -62,18 +62,49 @@ function fakeEmployment() {
   };
 }
 
+function fakeCommerce() {
+  let turnCalls = 0;
+  return {
+    turnCalls: () => turnCalls,
+    simulation: {
+      simulate: async () => {
+        turnCalls += 1;
+      },
+    },
+  };
+}
+
+function fakeGameplay() {
+  let eventCalls = 0;
+  return {
+    eventCalls: () => eventCalls,
+    randomEventsSimulation: {
+      simulate: async () => {
+        eventCalls += 1;
+      },
+    },
+  };
+}
+
+function baseRuntimeDeps(overrides = {}) {
+  return {
+    parcels: fakeParcels(),
+    supply: fakeSupply(),
+    housing: fakeHousing(),
+    employment: fakeEmployment(),
+    commerce: fakeCommerce(),
+    gameplay: fakeGameplay(),
+    timeManager: TimeManager,
+    toSupplySeason: () => 'summer',
+    toSupplyMonth: () => 'july',
+    getSectorPriorities: () => ({}),
+    ...overrides,
+  };
+}
+
 describe('createGameRuntime', () => {
-  test('enregistre parcels, supply, housing et employment dans le pipeline simulation', () => {
-    const runtime = createGameRuntime({
-      parcels: fakeParcels(),
-      supply: fakeSupply(),
-      housing: fakeHousing(),
-      employment: fakeEmployment(),
-      timeManager: TimeManager,
-      toSupplySeason: () => 'summer',
-      toSupplyMonth: () => 'july',
-      getSectorPriorities: () => ({}),
-    });
+  test('enregistre tous les systèmes dans le pipeline simulation', () => {
+    const runtime = createGameRuntime(baseRuntimeDeps());
 
     expect(runtime.pipeline.getGroupNames()).toEqual(['simulation']);
     expect(runtime.pipeline.getSystemNames('simulation')).toEqual([
@@ -83,25 +114,22 @@ describe('createGameRuntime', () => {
       'housing.evolution',
       'employment.redistribute',
       'supply.factoryProduction',
+      'commerce.turn',
+      'gameplay.randomEvents',
     ]);
     expect(runtime.world).toBeDefined();
   });
 
-  test('runSimulation délègue aux BC Parcels, Supply, Housing et Employment', async () => {
+  test('runSimulation délègue aux BC du pipeline', async () => {
     const parcels = fakeParcels();
     const supply = fakeSupply();
     const housing = fakeHousing();
     const employment = fakeEmployment();
-    const runtime = createGameRuntime({
-      parcels,
-      supply,
-      housing,
-      employment,
-      timeManager: TimeManager,
-      toSupplySeason: () => 'summer',
-      toSupplyMonth: () => 'july',
-      getSectorPriorities: () => ({}),
-    });
+    const commerce = fakeCommerce();
+    const gameplay = fakeGameplay();
+    const runtime = createGameRuntime(
+      baseRuntimeDeps({ parcels, supply, housing, employment, commerce, gameplay })
+    );
 
     await runtime.runSimulation({
       time: 3,
@@ -114,6 +142,8 @@ describe('createGameRuntime', () => {
     expect(housing.evolutionCalls()).toBe(1);
     expect(employment.redistributeCalls()).toBe(1);
     expect(supply.factoryCalls()).toBe(1);
+    expect(commerce.turnCalls()).toBe(1);
+    expect(gameplay.eventCalls()).toBe(1);
   });
 
   test('refuse un contexte invalide', () => {
@@ -129,5 +159,22 @@ describe('createGameRuntime', () => {
         housing: fakeHousing(),
       })
     ).toThrow(/employment/);
+    expect(() =>
+      createGameRuntime({
+        parcels: fakeParcels(),
+        supply: fakeSupply(),
+        housing: fakeHousing(),
+        employment: fakeEmployment(),
+      })
+    ).toThrow(/commerce/);
+    expect(() =>
+      createGameRuntime({
+        parcels: fakeParcels(),
+        supply: fakeSupply(),
+        housing: fakeHousing(),
+        employment: fakeEmployment(),
+        commerce: fakeCommerce(),
+      })
+    ).toThrow(/gameplay/);
   });
 });

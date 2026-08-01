@@ -50,3 +50,58 @@ export {
 export { createDefaultProductConfig } from '../../contexts/commerce/domain/catalogs/ProductConfigCatalog.js';
 
 export { LocalStorageCommerceRepository } from '../../contexts/commerce/infrastructure/persistence/LocalStorageCommerceRepository.js';
+
+import { getOrCreateCommerceContext } from '../../composition/createCommerceContext.js';
+
+function commerceRepository() {
+  return getOrCreateCommerceContext().commerceRepository;
+}
+
+/** Commerce localStorage persistence — UI + simulation. */
+export function saveCommerceConfig(goodsData) {
+  return commerceRepository().saveConfig(goodsData);
+}
+
+export function loadCommerceConfig() {
+  return commerceRepository().loadConfig();
+}
+
+export function loadOrSeedCommerceConfig() {
+  return commerceRepository().loadOrSeedConfig();
+}
+
+export function getCommerceProductConfig(productId) {
+  return commerceRepository().getProductConfig(productId);
+}
+
+export function saveCommerceStats(stats) {
+  return commerceRepository().saveStats(stats);
+}
+
+export function loadCommerceStats() {
+  return commerceRepository().loadStats();
+}
+
+export function updateCommerceProductStats(productId, productStats) {
+  return commerceRepository().updateProductStats(productId, productStats);
+}
+
+export function resetCommerceYearlyStats() {
+  return commerceRepository().resetYearlyStats();
+}
+
+export function loadCommercePartners() {
+  return commerceRepository().loadPartners();
+}
+
+export function loadOrSeedCommercePartners() {
+  return commerceRepository().loadOrSeedPartners();
+}
+
+export function saveCommercePartners(partnersData) {
+  return commerceRepository().savePartners(partnersData);
+}
+
+export function clearCommercePersistence() {
+  return getOrCreateCommerceContext().clear();
+}

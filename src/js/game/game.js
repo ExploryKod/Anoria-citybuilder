@@ -2,14 +2,16 @@ import * as THREE from 'three';
 import {  assetsPrices } from '../meshs/data.js';
 import { getDefaultEmployees, getSectorPriority, getSectorName, getAllSectorPriorities } from './modules/EmployeeHelper.js';
 import { TimeManager } from './utils/TimeManager.js';
-import { getTimeInfo } from '../acl/appRuntime.js';
+import { getTimeInfo, registerAppService } from '../acl/appRuntime.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
 import {getAssetPrice, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, isAreaAvailableForBuilding} from '../utils/utils.js';
 import { toBuildingIdString, createBuildingInstanceId, getOrCreateParcelsContext } from '../acl/parcels.js';
 import { getOrCreateSupplyContext, toSupplySeason, toSupplyMonth } from '../acl/supply.js';
 import { getOrCreateHousingContext } from '../acl/housing.js';
-import { syncEmploymentAfterBuildingChange, getOrCreateEmploymentContext } from '../acl/employment.js';
+import { syncEmploymentAfterBuildingChange, getOrCreateEmploymentContext, ensureSectorPrioritiesInitialized } from '../acl/employment.js';
+import { getOrCreateCommerceContext } from '../acl/commerce.js';
+import { getOrCreateGameplayContext } from '../acl/gameplay.js';
 import { findBuildingAtTile, placeBuildingWithPayment, getBuildingById, getBuildingField } from '../acl/construction.js';
 import { createGameRuntime } from '../../composition/createGameRuntime.js';
 import { GameLoop } from '../../engine/loop/GameLoop.js';
@@ -33,8 +35,6 @@ import {
   setBudgetReadyPromise,
   awaitBudgetReady,
 } from '../acl/accountingGame.js';
-import sessionJournalStore from '../acl/accountingSessionJournal.js';
-import FoodTraceabilityService from '../stores/FoodTraceabilityService.js';
 import loaderManager from '../utils/LoaderManager.js';
 import objectivesTracker from '../ui/ObjectivesTracker.js';
 
@@ -81,42 +81,14 @@ function renderWorkplaceEmployeesInfo(buildingData, messages) {
 }
 import InputManager from './InputManager.js';
 import gameUI from './GameUI.js';
-import appRegistry from './AppRegistry.js';
 import { getMultiplayerManager, invokeStartTutorial } from '../acl/appRuntime.js';
 import webglDetector from '../utils/WebGLResourceDetector.js';
-import commerceStore from '../stores/CommerceStore.js';
+import { clearCommercePersistence } from '../acl/commerce.js';
 
 // Initialiser le cache de TimeManager au démarrage
 TimeManager.initializeCache().catch(err => {
     console.warn('[game.js] Could not initialize TimeManager cache:', err);
 });
-
-// Services (city-wide simulation systems) - optional, non-invasive
-let services = [];
-// Load services asynchronously (non-blocking)
-(async () => {
-    try {
-        // Load city-wide simulation services (food chain → ECS supply.monthlyFood)
-        const { RandomEventsService } = await import('./services/RandomEventsService.js');
-        const { EmploymentPriorityService } = await import('./services/EmploymentPriorityService.js');
-        const { CommerceService } = await import('./services/CommerceService.js');
-        
-        services.push(new RandomEventsService()); // Événements aléatoires (ouragan, inondation)
-        services.push(new CommerceService()); // Gestion des imports/exports
-        
-        // Employment Priority Service - manages sector priorities in localStorage
-        // Priority is stored in localStorage (not IndexedDB) for instant updates
-        const employmentPriorityService = new EmploymentPriorityService();
-        services.push(employmentPriorityService);
-        
-        console.log('[game.js] Services loaded successfully:', services.length, services.map(s => s.constructor.name));
-    } catch (err) {
-        console.warn('[game.js] Failed to load services (continuing without them):', {
-            error: err?.message || err,
-            note: 'Services are optional enhancements and game will function normally'
-        });
-    }
-})();
 
 // Translation object for building IDs to French names
 const BUILDING_TRANSLATIONS = {
@@ -443,13 +415,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     // Set initial speed within limits (500ms - 20,000ms)
     localStorage.setItem("speed", "4000");
     
-    // Register with AppRegistry (centralized namespace)
-    appRegistry.register('gameUI', gameUI);
-    appRegistry.register('journalManager', sessionJournalStore);
-    
-    // Initialize FoodTraceabilityService
-    const foodTraceabilityService = new FoodTraceabilityService();
-    appRegistry.register('foodTraceabilityService', foodTraceabilityService);
+    registerAppService('gameUI', gameUI);
     
     gameUI.updateTimeDisplay(time);
     
@@ -481,11 +447,16 @@ export function createGame(gameStore, assetManager, citySize = null) {
     const supply = getOrCreateSupplyContext();
     const housing = getOrCreateHousingContext();
     const employment = getOrCreateEmploymentContext();
+    ensureSectorPrioritiesInitialized();
+    const commerce = getOrCreateCommerceContext();
+    const gameplay = getOrCreateGameplayContext();
     const runtime = createGameRuntime({
         parcels,
         supply,
         housing,
         employment,
+        commerce,
+        gameplay,
         timeManager: TimeManager,
         toSupplySeason,
         toSupplyMonth,
@@ -534,7 +505,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
         await scene.refreshEmploymentPresentation(city);
     }
 
-    /** ECS + services + second scene.update (budget once per tick when not skipped). */
+    /** ECS simulation + scene.update (budget once per tick when not skipped). */
     async function runSimulationPass(time, options = {}) {
         if (isPause || isOver) {
             return;
@@ -547,23 +518,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 error: err?.message || err,
                 time,
             });
-        }
-
-        if (isPause || isOver) {
-            return;
-        }
-
-        if (services.length > 0) {
-            try {
-                await Promise.allSettled(
-                    services.map((service) => service.simulate(city, time))
-                );
-            } catch (err) {
-                console.error('[game.js] Service simulation error:', {
-                    error: err?.message || err,
-                    time,
-                });
-            }
         }
 
         if (isPause || isOver) {
@@ -1369,7 +1323,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
             
             // Clear localStorage before replay
             try {
-                commerceStore.clear();
+                clearCommercePersistence();
                 // Also clear other localStorage items that should be reset on replay
                 localStorage.removeItem('journal_year_end_balances');
                 localStorage.removeItem('citizen_tax_amount');
@@ -1443,7 +1397,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
         if (target) {
             const inputManager = new InputManager();
             inputManager.attach(target);
-            appRegistry.register('inputManager', inputManager);
+            registerAppService('inputManager', inputManager);
         }
     } catch (_) {}
     
@@ -1460,7 +1414,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
     
     // Register game instance
-    appRegistry.register('game', game);
+    registerAppService('game', game);
     
     return game;
 }

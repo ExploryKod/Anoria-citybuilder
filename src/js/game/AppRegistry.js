@@ -9,7 +9,6 @@ class AppRegistry {
     constructor() {
         // Core game systems
         this.game = null;
-        this.gameStore = null;
         this.timeManager = null;
         
         // UI systems
@@ -23,9 +22,6 @@ class AppRegistry {
         this.inputManager = null;
         this.buttonStateManager = null;
         
-        // Stores
-        this.objectivesStore = null;
-
         // Admin / section UI
         this.workSectionManager = null;
         this.multiplayerManager = null;
@@ -58,7 +54,6 @@ class AppRegistry {
         this.toggleStatsJs = null;
         this.testAnimation = null;
         this.webglTestMode = null;
-        this.foodTraceabilityService = null;
         this.updateBudgetDisplay = null;
     }
 
@@ -106,7 +101,6 @@ class AppRegistry {
     getAll() {
         return {
             game: this.game,
-            gameStore: this.gameStore,
             gameUI: this.gameUI,
             popupManager: this.popupManager,
             objectivesTracker: this.objectivesTracker,
@@ -114,7 +108,6 @@ class AppRegistry {
             tutorialManager: this.tutorialManager,
             inputManager: this.inputManager,
             buttonStateManager: this.buttonStateManager,
-            objectivesStore: this.objectivesStore,
             EventBlocker: this.EventBlocker,
         };
     }

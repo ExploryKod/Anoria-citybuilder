@@ -1,12 +1,20 @@
-import { updateDisplayedFunds, getGameTime, getFoodTraceabilityService, getTimeInfo } from '../acl/appRuntime.js';
-import commerceStore from '../stores/CommerceStore.js';
+import { updateDisplayedFunds, getGameTime, getTimeInfo } from '../acl/appRuntime.js';
+import {
+  loadOrSeedCommercePartners,
+  saveCommercePartners,
+  loadCommerceStats,
+  loadOrSeedCommerceConfig,
+  saveCommerceConfig,
+  clearCommercePersistence,
+} from '../acl/commerce.js';
 import config from '../game/config.js';
 import { getCityEmploymentSummary } from '../acl/employment.js';
 import { getCityTotalPopulation } from '../acl/housing.js';
 import {
-    listCommercializableWindmills,
-    listSupplyMapBuildings,
-    listWindmillSupplyViews,
+  listCommercializableWindmills,
+  listSupplyMapBuildings,
+  listWindmillSupplyViews,
+  getAllFoodTraceabilityTransactions,
 } from '../acl/supply.js';
 import { getTreasuryBalance, getTreasurySnapshot, recordCommercialRouteFee } from '../acl/accountingGame.js';
 import {
@@ -99,7 +107,7 @@ class CommerceSectionManager {
     }
 
     loadPartnersData() {
-        this.partnersData = commerceStore.loadOrSeedPartners();
+        this.partnersData = loadOrSeedCommercePartners();
     }
 
 
@@ -295,7 +303,7 @@ class CommerceSectionManager {
     }
 
     savePartnersData() {
-        commerceStore.savePartners(this.partnersData);
+        saveCommercePartners(this.partnersData);
     }
 
     /**
@@ -385,7 +393,7 @@ class CommerceSectionManager {
         });
         if (needsSave) this.savePartnersData();
 
-        const stats = commerceStore.loadStats();
+        const stats = loadCommerceStats();
         const yearlyExports = stats?.yearlyExports || {};
         const yearlyImports = stats?.yearlyImports || {};
 
@@ -724,7 +732,7 @@ class CommerceSectionManager {
     }
 
     async loadGoodsData() {
-        this.goodsData = commerceStore.loadOrSeedConfig();
+        this.goodsData = loadOrSeedCommerceConfig();
         
         // Charger les stats dynamiques depuis le store
         this.loadDynamicStats();
@@ -741,26 +749,23 @@ class CommerceSectionManager {
     async updateConsumptionStatuses() {
         if (!this.goodsData) return;
 
-        const foodTraceabilityService = getFoodTraceabilityService() || null;
-
-        // Mettre à jour chaque produit alimentaire
         for (const good of this.goodsData) {
             if (['wheat', 'carrot', 'cabbage'].includes(good.id)) {
-                const status = await this.calculateConsumptionStatus(good.id, foodTraceabilityService);
+                const status = await this.calculateConsumptionStatus(good.id);
                 good.consumptionShare = status.consumptionShare;
                 good.consumptionStatus = status.consumptionStatus;
             }
         }
 
         // Sauvegarder la configuration mise à jour
-        commerceStore.saveConfig(this.goodsData);
+        saveCommerceConfig(this.goodsData);
     }
 
     /**
      * Charge les statistiques dynamiques depuis le store (écrites par CommerceService)
      */
     loadDynamicStats() {
-        const stats = commerceStore.loadStats();
+        const stats = loadCommerceStats();
         if (!stats || !this.goodsData) return;
 
         // Mettre à jour les données avec les stats
@@ -777,10 +782,9 @@ class CommerceSectionManager {
     /**
      * Calcule la consommation et le statut d'export pour un produit alimentaire
      * @param {string} productId - ID du produit (wheat, carrot, cabbage)
-     * @param {FoodTraceabilityService} foodTraceabilityService - Service de traçabilité
      * @returns {Promise<Object>} { consumptionShare, consumptionStatus, annualConsumption, annualProduction, netAvailable }
      */
-    async calculateConsumptionStatus(productId, foodTraceabilityService) {
+    async calculateConsumptionStatus(productId) {
         // Seulement pour les produits alimentaires
         const foodProducts = ['wheat', 'carrot', 'cabbage'];
         if (!foodProducts.includes(productId)) {
@@ -796,29 +800,23 @@ class CommerceSectionManager {
         try {
             // 1. Calculer la consommation annuelle réelle
             let annualConsumption = 0;
-            if (foodTraceabilityService && typeof foodTraceabilityService.getAllTransactions === 'function') {
-                const allTransactions = await foodTraceabilityService.getAllTransactions();
-                // Obtenir l'année actuelle depuis TimeManager ou utiliser la dernière année dans les transactions
-                let currentYear = 0;
-                const gameTime = getGameTime();
-                const timeInfo = getTimeInfo(gameTime);
-                if (timeInfo && timeInfo.year !== undefined) {
-                    currentYear = timeInfo.year;
-                } else if (allTransactions.length > 0) {
-                    // Utiliser la dernière année dans les transactions
-                    currentYear = Math.max(...allTransactions.map(t => t.year || 0));
-                }
-                
-                // Filtrer les transactions de consommation de l'année en cours
-                const consumptionTransactions = allTransactions.filter(t => 
-                    t.transactionType === 'house_consumption' &&
-                    t.foodType === productId &&
-                    t.year === currentYear
-                );
-                
-                // Somme de toutes les consommations de l'année
-                annualConsumption = consumptionTransactions.reduce((sum, t) => sum + (t.quantity || 0), 0);
+            const allTransactions = await getAllFoodTraceabilityTransactions();
+            let currentYear = 0;
+            const gameTime = getGameTime();
+            const timeInfo = getTimeInfo(gameTime);
+            if (timeInfo && timeInfo.year !== undefined) {
+                currentYear = timeInfo.year;
+            } else if (allTransactions.length > 0) {
+                currentYear = Math.max(...allTransactions.map(t => t.year || 0));
             }
+
+            const consumptionTransactions = allTransactions.filter(t =>
+                t.transactionType === 'house_consumption' &&
+                t.foodType === productId &&
+                t.year === currentYear
+            );
+
+            annualConsumption = consumptionTransactions.reduce((sum, t) => sum + (t.quantity || 0), 0);
 
             // Si pas de données de traçabilité, estimer depuis la population
             if (annualConsumption === 0) {
@@ -856,7 +854,7 @@ class CommerceSectionManager {
             annualProduction = farms.length * 78;
 
             // 3. Récupérer les imports/exports actuels
-            const stats = commerceStore.loadStats();
+            const stats = loadCommerceStats();
             const yearlyImports = stats?.yearlyImports?.[productId] || 0;
             const yearlyExports = stats?.yearlyExports?.[productId] || 0;
 
@@ -1192,7 +1190,7 @@ class CommerceSectionManager {
         }
 
         // Sauvegarder dans le store
-        commerceStore.saveConfig(this.goodsData);
+        saveCommerceConfig(this.goodsData);
     }
 
     updatePrice(goodId, type, price) {
@@ -1208,7 +1206,7 @@ class CommerceSectionManager {
             this.updatePriceStatus(goodId, type, price, good.marketPrice);
             
             // Sauvegarder dans le store
-            commerceStore.saveConfig(this.goodsData);
+            saveCommerceConfig(this.goodsData);
         }
     }
 
@@ -1240,7 +1238,7 @@ class CommerceSectionManager {
         }
 
         // Sauvegarder dans le store
-        commerceStore.saveConfig(this.goodsData);
+        saveCommerceConfig(this.goodsData);
     }
 
     updateTax(goodId, tax) {
@@ -1250,7 +1248,7 @@ class CommerceSectionManager {
         if (good) {
             good.tax = Math.max(0, Math.min(500, tax));
             // Sauvegarder dans le store
-            commerceStore.saveConfig(this.goodsData);
+            saveCommerceConfig(this.goodsData);
         }
     }
 
@@ -1261,7 +1259,7 @@ class CommerceSectionManager {
         if (good) {
             good.stockpiling = stockpiling;
             // Sauvegarder dans le store
-            commerceStore.saveConfig(this.goodsData);
+            saveCommerceConfig(this.goodsData);
         }
     }
 }

@@ -10,9 +10,9 @@ import {
     getTutorialManager,
     getObjectivesTracker,
     getObjectivesHistory,
-    getObjectivesStore,
     invokeStartObjectives,
 } from '../acl/appRuntime.js';
+import { getObjectivesStore } from '../acl/objectives.js';
 import EventBlocker from '../utils/EventBlocker.js';
 
 class ObjectivesManager {

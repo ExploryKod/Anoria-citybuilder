@@ -1,4 +1,5 @@
-import { getGameStore, getWorkSectionManager, getAppService, getTimeManager, getTimeInfo } from '../js/acl/appRuntime.js';
+import { getOrCreateGameSessionContext } from '../composition/createGameSessionContext.js';
+import { getWorkSectionManager, getAppService, getTimeManager, getTimeInfo } from '../js/acl/appRuntime.js';
 import { GetTreasuryBalance } from '../contexts/accounting/application/queries/treasury/GetTreasuryBalance.js';
 import { GetTreasurySnapshot } from '../contexts/accounting/application/queries/treasury/GetTreasurySnapshot.js';
 import { GetFinancialHealth } from '../contexts/accounting/application/queries/treasury/GetFinancialHealth.js';
@@ -49,6 +50,7 @@ import { SessionJournalRepository } from '../contexts/accounting/infrastructure/
 import { SessionJournalWriteAdapter } from '../contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalWriteAdapter.js';
 import { DexieTreasuryRepository } from '../contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryRepository.js';
 import { DexieTreasuryWriteAdapter } from '../contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryWriteAdapter.js';
+import { DexieObjectiveHistoryRepository } from '../contexts/accounting/infrastructure/dexie/DexieObjectiveHistoryRepository.js';
 import { LegacyGameTimePort } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyGameTimePort.js';
 import sessionJournalStore from '../contexts/accounting/infrastructure/session/SessionJournalStore.js';
 import config from '../js/game/config.js';
@@ -83,12 +85,15 @@ import {
  * @param {import('../contexts/accounting/infrastructure/session/SessionJournalStore.js').SessionJournalStore} [deps.sessionJournalStore]
  * @param {import('../contexts/accounting/infrastructure/session/SessionJournalStore.js').SessionJournalStore} [deps.journalManager]
  * @param {import('dexie').Dexie} [deps.db]
+ * @param {import('../contexts/accounting/infrastructure/dexie/DexieObjectiveHistoryRepository.js').DexieObjectiveHistoryRepository} [deps.objectiveHistoryRepository]
  */
 export function createAccountingContext(deps = {}) {
   const sessionJournalStoreInstance =
     deps.sessionJournalStore ?? deps.journalManager ?? sessionJournalStore;
   const dexieDb = deps.db ?? sessionJournalStoreInstance.db;
   const defaultInitialFunds = deps.defaultInitialFunds ?? config?.budget?.initialFunds ?? 200;
+  const objectiveHistoryRepository =
+    deps.objectiveHistoryRepository ?? new DexieObjectiveHistoryRepository(dexieDb);
 
   const gameTimePort =
     deps.gameTimePort ??
@@ -357,12 +362,9 @@ export function createAccountingContext(deps = {}) {
     },
     getCurrentTurn: async () => {
       try {
-        const gameStore = getGameStore();
-        if (gameStore) {
-          const turnData = await gameStore.getLatestGameItemByField('turn');
-          return turnData || 0;
-        }
-        return 0;
+        const gameSession = getOrCreateGameSessionContext();
+        const turnData = await gameSession.getLatestGameItemByField('turn');
+        return turnData || 0;
       } catch (error) {
         console.warn('Could not get current turn:', error);
         return 0;
@@ -757,6 +759,22 @@ export function createAccountingContext(deps = {}) {
 
     resetProcessTurnBudget() {
       processTurnBudget.reset();
+    },
+
+    async recordObjectiveFailure(failureData) {
+      return objectiveHistoryRepository.recordObjectiveFailure(failureData);
+    },
+
+    async recordObjectiveSuccess(successData) {
+      return objectiveHistoryRepository.recordObjectiveSuccess(successData);
+    },
+
+    async getAllObjectiveFailures() {
+      return objectiveHistoryRepository.getAllFailures();
+    },
+
+    async getObjectiveFailuresForObjective(objectiveId) {
+      return objectiveHistoryRepository.getFailuresForObjective(objectiveId);
     },
   };
 }
