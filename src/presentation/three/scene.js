@@ -34,7 +34,6 @@ import { syncTileNeighborsPass } from './sync/syncTileNeighborsPass.js';
 import { cleanupOrphanedBuildings } from './sync/cleanupOrphanedBuildings.js';
 import { registerAppService } from '../../composition/appServices.js';
 import {
-  getSessionPopupManager,
   getSessionService,
   getSessionGameUI,
 } from '../../composition/sessionRuntime.js';
@@ -52,6 +51,7 @@ const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
  * @param {object} deps.employment
  * @param {() => void} [deps.resetProcessTurnBudget]
  * @param {object} [deps.gameUI]
+ * @param {{ getActivePopups?: () => unknown[] } | null} [deps.popupManager]
  */
 export function createScene(_gameStore, assetManager, deps) {
     const {
@@ -62,6 +62,7 @@ export function createScene(_gameStore, assetManager, deps) {
       employment,
       resetProcessTurnBudget = () => {},
       gameUI = getSessionGameUI() ?? gameUIDefault,
+      popupManager = null,
     } = deps;
 
     const findBuildingAtTile = (params) => construction.findBuildingAtTile(params);
@@ -428,9 +429,14 @@ export function createScene(_gameStore, assetManager, deps) {
         
         // Initialize resources (trees, boulders, clay, iron, gold) before decorative village
         const resourceManager = new ResourceManager();
-        await resourceManager.initializeResources(city, assetManager, buildings, zoneGroups, {
-          placeBuildingRecord: (data) => construction.placeBuildingRecord(data),
-        });
+        await resourceManager.initializeResources(
+          city,
+          assetManager,
+          buildings,
+          zoneGroups,
+          { placeBuildingRecord: (data) => construction.placeBuildingRecord(data) },
+          supply
+        );
         
         // Create decorative village around the playable area
         decorativeVillageManager.createDecorativeVillage(citySize);
@@ -1695,7 +1701,7 @@ export function createScene(_gameStore, assetManager, deps) {
 
     function onMouseDown(event){
         // Block interaction if a popup is open or info modal is open
-        if (getSessionPopupManager() && getSessionPopupManager().getActivePopups().length > 0) {
+        if (popupManager?.getActivePopups?.()?.length > 0) {
             return;
         }
         if (isInfoModalOpen()) {
@@ -1728,7 +1734,7 @@ export function createScene(_gameStore, assetManager, deps) {
 
     function onMouseUp(event){
         // Block interaction if a popup is open or info modal is open
-        if (getSessionPopupManager() && getSessionPopupManager().getActivePopups().length > 0) {
+        if (popupManager?.getActivePopups?.()?.length > 0) {
             return;
         }
         if (isInfoModalOpen()) {
@@ -1743,7 +1749,7 @@ export function createScene(_gameStore, assetManager, deps) {
 
 function onMouseMove(event) {
     // Block interaction if a popup is open or info modal is open
-    if (getSessionPopupManager() && getSessionPopupManager().getActivePopups().length > 0) {
+    if (popupManager?.getActivePopups?.()?.length > 0) {
         return;
     }
     if (isInfoModalOpen()) {
@@ -1779,9 +1785,9 @@ function onTouchStart(event) {
     // If canvas has pointer-events-disabled, touch events won't reach us at all
     // But if they do, we should still check for blocking popups
     // BUT: panel-layout should not block events (it's configured with shouldBlockEvents: false)
-    const activePopups = getSessionPopupManager()?.getActivePopups() || [];
+    const activePopups = popupManager?.getActivePopups?.() || [];
     const blockingPopups = activePopups.filter(id => {
-        const config = getSessionPopupManager()?.popupConfigs?.get(id);
+        const config = popupManager?.popupConfigs?.get(id);
         return config && config.shouldBlockEvents;
     });
     
@@ -1830,7 +1836,7 @@ function onTouchStart(event) {
 
 function onTouchMove(event) {
     // Block interaction if a popup is open or info modal is open
-    if (getSessionPopupManager() && getSessionPopupManager().getActivePopups().length > 0) {
+    if (popupManager?.getActivePopups?.()?.length > 0) {
         return;
     }
     if (isInfoModalOpen()) {
@@ -1866,9 +1872,9 @@ function onTouchMove(event) {
 
 function onTouchEnd(event) {
     // Block interaction if a popup is open or info modal is open
-    const activePopups = getSessionPopupManager()?.getActivePopups() || [];
+    const activePopups = popupManager?.getActivePopups?.() || [];
     const blockingPopups = activePopups.filter(id => {
-        const config = getSessionPopupManager()?.popupConfigs?.get(id);
+        const config = popupManager?.popupConfigs?.get(id);
         return config && config.shouldBlockEvents;
     });
     
@@ -1980,7 +1986,7 @@ function onTouchEnd(event) {
 
     function onMouseWheel(event) {
         // Block interaction if a popup is open or info modal is open
-        if (getSessionPopupManager() && getSessionPopupManager().getActivePopups().length > 0) {
+        if (popupManager?.getActivePopups?.()?.length > 0) {
             return;
         }
         if (isInfoModalOpen()) {

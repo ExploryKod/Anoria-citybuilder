@@ -2,7 +2,17 @@
  * PopupManager - Gestionnaire unifié pour toutes les popups
  * Utilise pointer-events CSS pour désactiver les interactions avec le canvas 3D
  */
-import { pauseGame, playGame, registerAppService } from '../../../composition/sessionShell.js';
+import { registerAppService } from '../../../composition/appServices.js';
+
+/** @type {{ pauseGame?: () => void, playGame?: () => void } | null} */
+let deps = null;
+
+/**
+ * @param {{ pauseGame?: () => void, playGame?: () => void }} panelDeps
+ */
+export function bindPopupManagerDeps(panelDeps) {
+    deps = panelDeps;
+}
 
 class PopupManager {
     constructor() {
@@ -221,7 +231,7 @@ class PopupManager {
                     });
                 }
                 if (config.shouldPauseGame) {
-                    pauseGame();
+                    deps?.pauseGame?.();
                 }
                 if (config.onOpen) {
                     config.onOpen();
@@ -252,7 +262,7 @@ class PopupManager {
 
         // Mettre le jeu en pause si nécessaire
         if (config.shouldPauseGame) {
-            pauseGame();
+            deps?.pauseGame?.();
         }
 
         // Callback d'ouverture
@@ -294,7 +304,7 @@ class PopupManager {
             });
 
             if (!hasOtherPausingPopups) {
-                playGame();
+                deps?.playGame?.();
             }
         }
 
@@ -388,7 +398,8 @@ const popupManager = new PopupManager();
 
 registerAppService('popupManager', popupManager);
 
-// PopupManager initialized
+export { popupManager };
+export default popupManager;
 
 // Gestion d'erreur globale
 window.addEventListener('error', (e) => {

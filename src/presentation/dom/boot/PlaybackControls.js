@@ -7,16 +7,26 @@ import {
   replayButton,
   resetButton,
 } from '../shell/nodes.js';
-import {
-  getPopupManager,
-  pauseGame,
-  playGame,
-  replayGame,
-} from '../../../composition/sessionShell.js';
-import { getSessionScene } from '../../../composition/sessionRuntime.js';
 import { initResetGameFlow } from './ResetGameFlow.js';
 
-export function initPlaybackControls() {
+/**
+ * @param {{
+ *   popupManager?: { forceClosePopup?: (id: string) => void, forceOpenPopup?: (id: string) => void } | null,
+ *   pauseGame?: () => void,
+ *   playGame?: () => void,
+ *   replayGame?: () => void,
+ *   getScene?: () => { controls?: { enabled: boolean }, suppressInput?: (ms: number) => void } | null,
+ * }} [controlDeps]
+ */
+export function initPlaybackControls(controlDeps = {}) {
+  const {
+    popupManager = null,
+    pauseGame = () => {},
+    playGame = () => {},
+    replayGame = () => {},
+    getScene = () => null,
+  } = controlDeps;
+
   infoObjectCloseBtn.addEventListener('click', () => {
     if (infoObjectOverlay.classList.contains('active')) {
       infoObjectOverlay.classList.remove('active');
@@ -26,7 +36,7 @@ export function initPlaybackControls() {
         canvas.classList.remove('pointer-events-disabled');
       }
 
-      const sceneObj = getSessionScene();
+      const sceneObj = getScene();
       if (sceneObj?.controls) {
         sceneObj.controls.enabled = true;
       }
@@ -40,13 +50,13 @@ export function initPlaybackControls() {
 
   playButton.addEventListener('click', () => {
     pauseOverlay.classList.remove('active');
-    getPopupManager()?.forceClosePopup('pause-overlay');
+    popupManager?.forceClosePopup?.('pause-overlay');
     playGame();
   });
 
   pauseButton.addEventListener('click', () => {
     pauseOverlay.classList.add('active');
-    getPopupManager()?.forceOpenPopup('pause-overlay');
+    popupManager?.forceOpenPopup?.('pause-overlay');
     pauseGame();
   });
 

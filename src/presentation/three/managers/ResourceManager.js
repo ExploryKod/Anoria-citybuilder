@@ -9,8 +9,9 @@ export class ResourceManager {
      * @param {object[][]} buildings
      * @param {object[]} zoneGroups
      * @param {{ placeBuildingRecord: (data: object) => Promise<object> }} constructionApi
+     * @param {{ listNatureResources: () => Promise<object[]> }} [supplyApi]
      */
-    async initializeResources(city, assetManager, buildings, zoneGroups, constructionApi) {
+    async initializeResources(city, assetManager, buildings, zoneGroups, constructionApi, supplyApi = null) {
         const treeCount = Math.floor(city.size * city.size * 0.05);
         const boulderCount = Math.floor(city.size * city.size * 0.03);
 
@@ -21,8 +22,8 @@ export class ResourceManager {
           city, assetManager, buildings, zoneGroups, boulderCount, constructionApi
         );
         this.markClayTiles(city);
-        await this.markIronBoulders(city);
-        await this.markGoldBoulders(city);
+        await this.markIronBoulders(city, supplyApi);
+        await this.markGoldBoulders(city, supplyApi);
     }
 
     async placeRandomTrees(city, assetManager, buildings, zoneGroups, count, constructionApi) {
@@ -201,10 +202,14 @@ export class ResourceManager {
         }
     }
 
-    async markIronBoulders(city) {
+    /**
+     * @param {object} city
+     * @param {{ listNatureResources: () => Promise<object[]> } | null} supplyApi
+     */
+    async markIronBoulders(city, supplyApi) {
         try {
-            const { requireSessionSupplyApi } = await import('../../../composition/sessionRuntime.js');
-            const boulders = (await requireSessionSupplyApi().listNatureResources()).filter((h) =>
+            if (!supplyApi?.listNatureResources) return;
+            const boulders = (await supplyApi.listNatureResources()).filter((h) =>
                 (h.type || '').includes('Boulder')
             );
             const ironBoulderCount = Math.floor(boulders.length * 0.15);
@@ -222,10 +227,14 @@ export class ResourceManager {
         }
     }
 
-    async markGoldBoulders(city) {
+    /**
+     * @param {object} city
+     * @param {{ listNatureResources: () => Promise<object[]> } | null} supplyApi
+     */
+    async markGoldBoulders(city, supplyApi) {
         try {
-            const { requireSessionSupplyApi } = await import('../../../composition/sessionRuntime.js');
-            const boulders = (await requireSessionSupplyApi().listNatureResources()).filter((h) =>
+            if (!supplyApi?.listNatureResources) return;
+            const boulders = (await supplyApi.listNatureResources()).filter((h) =>
                 (h.type || '').includes('Boulder')
             );
             const goldBoulderCount = Math.floor(boulders.length * 0.1);

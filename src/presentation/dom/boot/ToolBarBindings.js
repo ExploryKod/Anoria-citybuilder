@@ -11,10 +11,20 @@ import {
   selectButton,
   workshopButton,
 } from '../shell/nodes.js';
-import { getButtonStateManager, invokeSetActiveTool } from '../../../composition/sessionShell.js';
 import { closeModal, toggleModal } from '../tools/ToolPanel.js';
 
-export function initToolBarBindings() {
+/**
+ * @param {{
+ *   buttonStateManager?: { isEnabled?: (id: string) => boolean } | null,
+ *   invokeSetActiveTool?: (e: Event) => void,
+ * }} [bindingDeps]
+ */
+export function initToolBarBindings(bindingDeps = {}) {
+  const {
+    buttonStateManager = null,
+    invokeSetActiveTool = () => {},
+  } = bindingDeps;
+
   bullDozeButton.addEventListener('click', (e) => {
     invokeSetActiveTool(e);
   });
@@ -32,7 +42,7 @@ export function initToolBarBindings() {
   });
 
   palacesButton.addEventListener('click', (e) => {
-    if (getButtonStateManager() && !getButtonStateManager().isEnabled('palace-btn')) {
+    if (buttonStateManager && !buttonStateManager.isEnabled('palace-btn')) {
       return;
     }
     toggleModal(e);
@@ -46,7 +56,7 @@ export function initToolBarBindings() {
   });
 
   infrastructureButton.addEventListener('click', (e) => {
-    if (getButtonStateManager() && !getButtonStateManager().isEnabled('infrastructure-btn')) {
+    if (buttonStateManager && !buttonStateManager.isEnabled('infrastructure-btn')) {
       return;
     }
     toggleModal(e);
