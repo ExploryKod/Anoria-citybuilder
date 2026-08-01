@@ -154,7 +154,42 @@ Ce fichier + chemins majeurs accounting / FINANCIAL_DATA_SOURCE_OF_TRUTH.
 
 Règle : Three = WebGL ; `ui/` = DOM ; adapters BC = `contexts/*/infrastructure/` ; `src/infrastructure/` = tech transverse (multiplayer). Pas de big-bang move de `scene.js` / `game.js`.
 
-**Suite possible**
+**Tranche 2 ✅** — Inventaire dettes hors Three (sans déplacement). Voir ci-dessous.
 
-1. Inventaire dettes hors Three dans `game.js` / `scene.js` (budget, wiring ACL) — sans déplacement massif
-2. Optionnel : `#budget-states-panel` → nom FR compte de résultat ; classes contenu `.budget-item`
+**Suite possible (impl)**
+
+1. Extraire `assetsPrices` (+ listes catégories) hors `meshs/data.js` → catalog partagé
+2. Info panel + notifications hors `game.js` → `ui/`
+3. Place / bulldoze → use-cases construction (handler mince)
+4. Owner unique du tick : budget / `infoGameplay` hors `scene.runUpdate`
+5. Sync neighbors / orphans hors boucle mesh
+6. Réduire `createGame` à une façade (`composition/`)
+7. Optionnel : `#budget-states-panel` → nom FR compte de résultat
+
+---
+
+## Inventaire dettes — `game.js` / `scene.js` (Tranche 2)
+
+### À garder en Three (pur rendu)
+
+Scene bootstrap, managers (`Lighting*`, `Backdrop*`, `Citizen*`, `Resource*`, …), camera / `draw`, mesh lifecycle, sprites statut (lecture read-model → visuelle), raycast / input plumbing, `refreshEmploymentPresentation` (peinture seule).
+
+### Smells (priorisés)
+
+| # | Smell | Fichier / symboles | Catégorie | Sévérité |
+|---|---|---|---|---|
+| 1 | `createGame` mega composition root | `game.js` — contexts, runtime, treasury, GameLoop, registry | composition | **high** |
+| 2 | Place / bulldoze dans `onObjectSelected` | `game.js` — `placeBuildingWithPayment`, `parcels.syncRemovedBuilding`, … | sim_logic | **high** |
+| 3 | Info bâtiment = viewmodel + DOM | `game.js` — `renderWorkplaceEmployeesInfo`, branche select-object | hud_dom | **high** |
+| 4 | Notifications construction inline | `game.js` — `showInsufficientFundsNotification`, … | hud_dom | med |
+| 5 | Tick scindé game + scene | `game.update` / `runSimulationPass` / `processTurnBudget` | composition | **high** |
+| 6 | Persist tour + budget dans `scene.runUpdate` | `gameStore.addGameItems`, `processTurnBudget`, funds HUD | persistence | **high** |
+| 7 | Neighbors / orphan GC dans boucle tiles | `persistTileNeighbors`, orphan scan Dexie | persistence | **high** |
+| 8 | Mutateurs stocks commerce morts / legacy | `calculateNetStocks`, `updateMarketStocks` | sim_logic | med |
+| 9 | `assetsPrices` catalogue économie sous meshes | `meshs/data.js` | economy_catalog | med |
+| 10 | Fallback DOM dans scene | querySelector funds/pop, WebGL toast | hud_dom | med |
+| 11 | Replay / settings `localStorage` | `game.replay`, speed keys | persistence | low–med |
+| 12 | Catégories bâtiments importées depuis `ui/shell/nodes` | `scene.js` ← `commerce`/`farms`/… | layering | med |
+| 13 | Input + pause couplés overlay info | listeners / `game.play` | other | low |
+
+Ordre de slices recommandé : **9 → 3+4 → 2 → 5+6 → 7+8 → 1**.
