@@ -7,7 +7,6 @@ import {
   persistGameplayTurn,
   processGameTurnBudget,
 } from './runGameTurnEconomy.js';
-import { notifyBudgetCleanupIfNeeded } from '../presentation/dom/compta/tresorerie/CleanupNotificationPresenter.js';
 import { syncSessionHud } from './syncSessionHud.js';
 
 /**
@@ -23,6 +22,7 @@ import { syncSessionHud } from './syncSessionHud.js';
  * @param {{ updateTimeDisplay: Function }} params.gameUI
  * @param {() => Promise<void>} params.refreshEmploymentPresentation
  * @param {{ enabled?: boolean, checkObjectives: Function }} params.objectivesTracker
+ * @param {(cleanupResult?: { deleted?: number, deletedTurns?: number[] }) => void | Promise<void>} [params.notifyBudgetCleanup]
  */
 export async function runGameTick({
   time,
@@ -36,6 +36,7 @@ export async function runGameTick({
   gameUI,
   refreshEmploymentPresentation,
   objectivesTracker,
+  notifyBudgetCleanup,
 }) {
   if (shouldAbort()) {
     return;
@@ -78,7 +79,7 @@ export async function runGameTick({
     time,
     totalPop,
   });
-  await notifyBudgetCleanupIfNeeded(budgetResult?.cleanupResult);
+  await notifyBudgetCleanup?.(budgetResult?.cleanupResult);
   if (shouldAbort()) {
     return;
   }

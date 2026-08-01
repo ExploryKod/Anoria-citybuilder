@@ -25,6 +25,7 @@ import { ExportJournalJson } from '../contexts/accounting/application/queries/jo
 import { ExportJournalPdf } from '../contexts/accounting/application/queries/journal/ExportJournalPdf.js';
 import { DexieJournalSessionPersistenceAdapter } from '../contexts/accounting/infrastructure/adapters/persistence/dexie/DexieJournalSessionPersistenceAdapter.js';
 import { CityAssetsValuationAdapter } from '../contexts/accounting/infrastructure/adapters/shared/CityAssetsValuationAdapter.js';
+import { getOrCreateCityAssetsContext } from './createCityAssetsContext.js';
 import { RecordLedgerEntry } from '../contexts/accounting/application/commands/journal/RecordLedgerEntry.js';
 import { ApplyTreasuryMovement } from '../contexts/accounting/application/commands/treasury/ApplyTreasuryMovement.js';
 import { RecordMaintenanceExpense } from '../contexts/accounting/application/services/RecordMaintenanceExpense.js';
@@ -279,7 +280,10 @@ export function createAccountingContext(deps = {}) {
     gameTimePort
   );
   const cityAssetsValuationPort =
-    deps.cityAssetsValuationPort ?? new CityAssetsValuationAdapter();
+    deps.cityAssetsValuationPort
+    ?? new CityAssetsValuationAdapter(
+      deps.cityAssets ?? getOrCreateCityAssetsContext()
+    );
   const budgetTurnEnrichmentRepository =
     deps.budgetTurnEnrichmentRepository ??
     new BudgetTurnEnrichmentRepository(dexieDb);

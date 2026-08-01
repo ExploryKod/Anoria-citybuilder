@@ -166,8 +166,8 @@ Notées volontairement hors barres 1–5 :
 
 | Dette | Pourquoi plus tard |
 |---|---|
-| `composition/runGameTick` → `CleanupNotificationPresenter` (DOM) | Wiring inverse mineur ; extraire port `NotifyBudgetCleanup` si ça gêne |
-| `CityAssetsValuationAdapter` → `composition/createCityAssetsContext` | Contexte → root ; inverser via port déjà partiellement là |
+| ~~`composition/runGameTick` → `CleanupNotificationPresenter` (DOM)~~ | ✅ injecté depuis `game.js` (`notifyBudgetCleanup`) |
+| ~~`CityAssetsValuationAdapter` → `composition/createCityAssetsContext`~~ | ✅ collaborateur injecté ; câblé dans `createAccountingContext` / `bootGameContexts` |
 | `scene.js` / `game.js` volume rendu | Pas un problème de règle de dépendance tant que le métier n’y revient pas |
 | Miroir debug `AppRegistry` / `window.app` | OK derrière flag ; ne pas en refaire une spine |
 | Getters shell (`getPopupManager`, `getSessionService('…')`) vs injection constructeur | Barre 2 a sorti le chemin `facades/` ; raffiner l’injection panel-scoped plus tard |
