@@ -19,6 +19,8 @@ export class ListWindmillSupplyViews {
     return views
       .filter((view) => classifySupplyKind(view.type) === 'windmill')
       .map((view) => ({
+        instanceId: view.id,
+        id: view.id,
         buildingId: view.id,
         name: view.id,
         type: view.type,

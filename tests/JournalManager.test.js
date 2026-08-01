@@ -5,10 +5,10 @@
  */
 
 import Dexie from 'dexie';
-import { JournalManager } from '../src/js/stores/JournalManager.js';
-import { resetSessionLedgerBufferForTests } from '../src/js/stores/SessionLedgerBuffer.js';
-import appRegistry from '../src/js/game/AppRegistry.js';
-import { TimeManager } from '../src/js/game/utils/TimeManager.js';
+import { JournalManager } from '../src/composition/accountingSessionJournal.js';
+import { resetSessionLedgerBufferForTests } from '../src/composition/accountingSessionJournal.js';
+import appRegistry from '../src/composition/AppRegistry.js';
+import { TimeManager } from '../src/shared/time/TimeManager.js';
 
 // ============================================================================
 // Setup : Créer une base de données de test isolée

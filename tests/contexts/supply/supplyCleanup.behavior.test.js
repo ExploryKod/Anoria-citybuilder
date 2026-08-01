@@ -12,7 +12,7 @@ import { ListSupplyStockSnapshots } from '../../../src/contexts/supply/applicati
 import { MarkWindmillCollectingSeason } from '../../../src/contexts/supply/application/commands/surplus/MarkWindmillCollectingSeason.js';
 import { ResetFarmsSoldToWindmill } from '../../../src/contexts/supply/application/commands/surplus/ResetFarmsSoldToWindmill.js';
 import { UpdateMarketFarmProximity } from '../../../src/contexts/supply/application/commands/procurement/UpdateMarketFarmProximity.js';
-import { isWithinMarketRange } from '../../../src/js/acl/supply.js';
+import { isWithinMarketRange } from '../../../src/composition/supplyOps.js';
 
 class InMemorySupplyBuildingRepository {
   constructor({ snapshots = [], views = [] } = {}) {

@@ -73,8 +73,8 @@ C'est la seule vraie violation de la règle de dépendance. Le domaine dépend d
 
 ### D3 — Règles métier restées dans l'UI (duplication active)
 
-- `js/ui/loans/LoansManager.js:274` **et** `:316` : le calcul de taux d'intérêt (`bank ? 5 : 7`, majorations selon santé financière) est **écrit deux fois** dans le même fichier. Un changement de barème casse silencieusement l'un des deux.
-- `js/ui/ObjectivesTracker.js:40` et `:95` : le seuil d'objectif `>= 5000` est dupliqué entre la déclaration et la vérification.
+- `ui/compta/prets/PretsPanel.js` : taux via `LoanRatePolicy` (ACL `accountingLoans`) — plus de duplication locale.
+- `ui/onboarding/ObjectivesTracker.js` : seuils via `ObjectiveCatalog` (éviter duplication inline).
 - `js/game/managers/BudgetProcessor.js` : arbitrage budgétaire par tour, hors contexte.
 - `js/game/services/CommerceService.js` (804 LOC) : règles de contrats, limites d'import/export, stocks — le plus gros bloc de domaine encore hors BC.
 
@@ -100,13 +100,10 @@ L'ACL est du couplage **visible, nommé, documenté**. Ce n'est pas lui qui rend
 | `window.app` | 40 |
 | `window.tutorialManager` | 24 |
 | `window.buttonStateManager` | 18 |
-| `window.commerceSectionManager` | 14 |
 
-Ces ~280 accès sont des arêtes du graphe que ni le compilateur, ni un test d'architecture, ni une recherche d'imports ne voient. **C'est la source principale de la complexité ressentie** — bien plus que les 1 432 lignes d'ACL.
+Ces accès `window.*` restent une dette de graphe invisible. **Commerce n’en fait plus partie** : la config produits passe par `LocalStorageCommerceRepository` (`getProductConfig` / `loadOrSeedConfig`), pas par un presenter UI.
 
-Cas le plus net, Commerce : `CommerceService.js:281` et `:737` lisent `window.commerceSectionManager.goodsData`. Le service métier lit donc l'état de l'UI, à travers un global, **et** via `localStorage` (`CommerceStore` sert de bus inter-modules entre le service et la section UI). Deux canaux implicites en sens inverse de la dépendance normale. Aucun DDD ne survivra à ça tant que ça reste.
-
-**Ce couplage-là est prioritaire sur D3, D4 et D5.**
+**Historique (corrigé) :** l’ancien `CommerceService` lisait `window.commerceSectionManager.goodsData`. Remplacé par `CommerceSimulationService` + repository injecté au composition root. `CommerceStore` / `commerceSectionManager` n’existent plus.
 
 ---
 
@@ -124,7 +121,7 @@ Quatre couches, une seule règle : **les flèches ne pointent que vers l'intéri
                     │  domain  (policies, VO, snapshots)   │   règles pures
                     └──────────────────────────────────────┘
 
-   src/js/ (legacy UI + rendu)  ──→ src/js/acl/ ──→ composition/ ──→ contexts/
+   src/ui/ (DOM) + src/presentation/ (Three)  ──→ src/js/acl/ ──→ composition/ ──→ contexts/
    engine/  ne dépend de rien   ; contexts/ ne dépend pas de engine/
 ```
 
@@ -256,22 +253,18 @@ Elles existent de facto ; les écrire évite la dérive.
 |---|---|---:|---|
 | 1 — Test d'architecture | ½ j | 0 (mais gèle la dette) | 🔴 |
 | 2 — `domain` ⊥ legacy | 1–2 j | 11 | 🔴 |
-| 7 — Couper les globals Commerce (D6) | ½ j | 2 canaux implicites | 🔴 |
-| 6 — Commerce → contexte | 2–3 j | — (804 LOC déjà purs) | 🟠 |
+| 7 — Couper les globals Commerce (D6) | ✅ | goodsData via repository | ✅ |
+| 6 — Commerce → contexte | ✅ | `CommerceSimulationService` + BC | ✅ |
 | 3 — Presentation hors domaine | 1 j | 12 | 🟠 |
 | 5 — Règles UI dupliquées | ½ j | — (corrige des bugs) | 🟠 |
-| 4 — Dégonfler l'ACL comptable | 1 j | — | 🟡 |
+| 4 — ACL comptable (traduction pure vs orchestration) | 1 j | — | 🟡 |
 
-Les lots 1 à 3 (≈ 3 jours) suppriment **23 des 29 violations d'import** et rendent la règle de dépendance vraie.
+### Lot 7 — Couper les canaux implicites (D6) ✅
 
-### Lot 7 — Couper les canaux implicites (D6)
+1. ~~`window.commerceSectionManager.goodsData`~~ → `commerceRepository.getProductConfig` / `loadOrSeedConfig`
+2. ~~`CommerceStore` bus implicite~~ → `LocalStorageCommerceRepository` injecté dans `createCommerceContext`
 
-Avant d'extraire Commerce, supprimer les deux canaux qui contourneraient le contexte de toute façon :
-
-1. `CommerceService.js:281` et `:737` : `window.commerceSectionManager.goodsData` → passer `goodsData` en **argument** ou via le composition root.
-2. `CommerceStore` (localStorage) comme bus service ↔ UI → dépendance explicite injectée.
-
-Une demi-journée, et elle conditionne la valeur du lot 6.
+Garde-fou : `tests/architecture/boundaries.test.js` (« commerce BC does not read UI goodsData… »).
 
 ### Le critère de décision, une bonne fois
 

@@ -18,8 +18,26 @@ describe('EvaluateHouseFoodAffluence', () => {
       expect(query.execute({ stocks: { wheat: 5, carrot: 0, cabbage: 0 }, population: 0 }).totalFood).toBe(5);
     });
 
+    test('uses food field when set even if crop types differ', () => {
+      expect(
+        query.execute({ stocks: { food: 10, wheat: 8, carrot: 5, cabbage: 2 }, population: 0 }).totalFood
+      ).toBe(10);
+    });
+
+    test('handles undefined crop fields', () => {
+      expect(query.execute({ stocks: { wheat: 5, carrot: undefined, cabbage: null }, population: 0 }).totalFood).toBe(
+        5
+      );
+    });
+
     test('empty stocks', () => {
       const result = query.execute({ stocks: { wheat: 0, carrot: 0, cabbage: 0 }, population: 0 });
+      expect(result.totalFood).toBe(0);
+      expect(result.hasFood).toBe(false);
+    });
+
+    test('null stocks', () => {
+      const result = query.execute({ stocks: null, population: 0 });
       expect(result.totalFood).toBe(0);
       expect(result.hasFood).toBe(false);
     });
@@ -47,6 +65,10 @@ describe('EvaluateHouseFoodAffluence', () => {
     test('balanced', () => {
       expect(query.execute({ stocks: { food: 6 }, population: 6 }).netFood).toBe(0);
     });
+
+    test('returns total when population is 0', () => {
+      expect(query.execute({ stocks: { food: 10 }, population: 0 }).netFood).toBe(10);
+    });
   });
 
   describe('meetsFoodGoal', () => {
@@ -66,6 +88,10 @@ describe('EvaluateHouseFoodAffluence', () => {
   describe('isInsufficient', () => {
     test('true when food < population', () => {
       expect(query.execute({ stocks: { wheat: 2 }, population: 5 }).isInsufficient).toBe(true);
+    });
+
+    test('false when population < 2', () => {
+      expect(query.execute({ stocks: { food: 0 }, population: 1 }).isInsufficient).toBe(false);
     });
 
     test('false when food >= population', () => {

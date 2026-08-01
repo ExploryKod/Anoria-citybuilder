@@ -1,5 +1,4 @@
 import db from '../../../../../../core/persistence/dexie/db.js';
-import config from '../../../../../../js/game/config.js';
 import { TreasuryRepository } from '../../../../application/ports/TreasuryRepository.js';
 import { normalizeTreasuryBudgetRow } from './normalizeTreasuryBudgetRow.js';
 
@@ -17,8 +16,7 @@ export class DexieTreasuryRepository extends TreasuryRepository {
   constructor(deps = {}) {
     super();
     this.db = deps.db ?? db;
-    this.expectedInitialFunds =
-      deps.expectedInitialFunds ?? config?.budget?.initialFunds ?? 200;
+    this.expectedInitialFunds = deps.expectedInitialFunds ?? 200;
   }
 
   /** @returns {Promise<number>} */
@@ -105,6 +103,8 @@ export class DexieTreasuryRepository extends TreasuryRepository {
   }
 
   /**
+   * Upsert `budget_current` (put — safe under concurrent init races).
+   *
    * @param {number} startingFunds
    * @returns {Promise<object>}
    */
@@ -131,7 +131,7 @@ export class DexieTreasuryRepository extends TreasuryRepository {
       totalLoanRepayments: 0,
     };
 
-    await this.db.budget.add(initialBudget);
+    await this.db.budget.put(initialBudget);
     return initialBudget;
   }
 }

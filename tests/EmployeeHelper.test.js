@@ -13,7 +13,7 @@ import {
     calculateSalary,
     updateEmployeeSalary,
     getSectorName 
-} from '../src/js/game/modules/EmployeeHelper.js';
+} from '../src/composition/employmentOps.js';
 
 // ============================================================================
 // getBuildingSector - Associe chaque type de bâtiment à un secteur d'emploi
