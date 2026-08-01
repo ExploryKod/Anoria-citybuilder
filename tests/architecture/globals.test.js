@@ -1,8 +1,9 @@
 /**
- * Architecture guard — Lot 8 (D6 globals).
+ * Architecture guard — Lot 8 (D6 globals) + plan_ca Barre B/F.
  *
  * Direct window.service = assignments are forbidden outside AppRegistry.
- * Direct window.service reads must go through js/acl/appRuntime.js instead.
+ * Direct window.service reads must go through composition/facades/appRuntime.js
+ * or composition/sessionRuntime.js.
  */
 
 import fs from 'fs';
@@ -60,7 +61,7 @@ const FORBIDDEN_ASSIGNMENT_RES = [
   /window\.scene\s*=/,
 ];
 
-/** Direct reads of legacy service globals (use js/acl/appRuntime.js). */
+/** Direct reads of legacy service globals (use composition session/facades). */
 const FORBIDDEN_READ_RES = [
   /window\.inputManager\b/,
   /window\.updateBudgetDisplay\b/,
@@ -69,9 +70,9 @@ const FORBIDDEN_READ_RES = [
   /window\.app\.game\b/,
 ];
 
-/** Files allowed to reference window.app (composition root namespace). */
+/** Files allowed to reference window.app (debug mirror only). */
 const READ_GUARD_SKIP_FILES = new Set([
-  'js/acl/AppRegistry.js',
+  'composition/AppRegistry.js',
 ]);
 
 /** `${fileRel}::${lineNumber}` */

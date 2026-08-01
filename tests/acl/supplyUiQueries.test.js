@@ -14,7 +14,7 @@ import {
   listNatureResources,
   getFactoryById,
   updateFactoryFields,
-} from '../../src/js/acl/supply.js';
+} from '../../src/composition/facades/supply.js';
 import { makeHouseRecord } from '../fixtures/buildingRecord.js';
 
 async function clearHousesTable() {

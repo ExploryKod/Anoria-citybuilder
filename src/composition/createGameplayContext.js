@@ -3,15 +3,15 @@ import {
   getEventProbability,
   isEventsEnabled,
 } from '../config/events.js';
-import { listAllBuildingRows } from '../js/acl/construction.js';
-import { syncRemovedBuilding } from '../js/acl/parcels.js';
-import { instanceIdFromHouseRow } from '../js/acl/building-identity.js';
-import { recordExceptionalRepairExpense } from '../js/acl/accountingGame.js';
+import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
+import { getOrCreateConstructionContext } from './createConstructionContext.js';
+import { getOrCreateParcelsContext } from './createParcelsContext.js';
+import { getOrCreateAccountingContext } from './createAccountingContext.js';
 import {
-  getGameCity,
-  getGameScene,
-  getGameTime,
-} from '../js/acl/appRuntime.js';
+  getSessionCity,
+  getSessionGameTime,
+  getSessionScene,
+} from './sessionRuntime.js';
 import { RandomEventsSimulationService } from '../contexts/gameplay/application/services/RandomEventsSimulationService.js';
 
 /** @type {ReturnType<typeof createGameplayContext>|null} */
@@ -26,13 +26,15 @@ export function createGameplayContext(deps = {}) {
     isEventsEnabled,
     getEventProbabilityPercent: getEventProbability,
     getDaysPerMonth,
-    listAllBuildingRows,
-    syncRemovedBuilding,
+    listAllBuildingRows: () => getOrCreateConstructionContext().listAllBuildingRows(),
+    syncRemovedBuilding: (params) =>
+      getOrCreateParcelsContext().syncRemovedBuilding(params),
     instanceIdFromHouseRow,
-    recordExceptionalRepairExpense,
-    getGameScene,
-    getGameCity,
-    getGameTime,
+    recordExceptionalRepairExpense: (...args) =>
+      getOrCreateAccountingContext().recordExceptionalRepairExpense(...args),
+    getGameScene: () => getSessionScene(),
+    getGameCity: () => getSessionCity(),
+    getGameTime: () => getSessionGameTime(),
   };
 
   const randomEventsSimulation =

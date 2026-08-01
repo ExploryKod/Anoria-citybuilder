@@ -8,7 +8,7 @@ import {
   buildCommercialRouteBusinessKey,
   buildCarryForwardBusinessKey,
   buildCumulBusinessKey,
-} from '../src/js/acl/accountingLedgerKeys.js';
+} from '../src/composition/facades/accountingLedgerKeys.js';
 import { describe, test, expect } from '@jest/globals';
 
 describe('ledgerBusinessKeys', () => {

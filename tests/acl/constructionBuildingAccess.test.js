@@ -19,9 +19,9 @@ import {
   listAllBuildingRows,
   removeBuildingRecord,
   incrementBuildingField,
-} from '../../src/js/acl/construction.js';
-import { getCityTotalBuildingValue, getCityBuildingPricesByType } from '../../src/js/acl/budget.js';
-import { getCityTotalPopulation, getFamishedPopulation, clearPopulationWithoutRoadAccess } from '../../src/js/acl/housing.js';
+} from '../../src/composition/facades/construction.js';
+import { getCityTotalBuildingValue, getCityBuildingPricesByType } from '../../src/composition/facades/budget.js';
+import { getCityTotalPopulation, getFamishedPopulation, clearPopulationWithoutRoadAccess } from '../../src/composition/facades/housing.js';
 
 describe('ACL Construction — building access', () => {
   beforeEach(async () => {

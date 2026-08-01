@@ -9,14 +9,14 @@
 
 import Dexie from 'dexie';
 import { BudgetManager } from './helpers/testBudgetFacade.js';
-import { JournalManager } from '../src/js/acl/accountingSessionJournal.js';
-import { resetSessionLedgerBufferForTests } from '../src/js/acl/accountingSessionJournal.js';
+import { JournalManager } from '../src/composition/facades/accountingSessionJournal.js';
+import { resetSessionLedgerBufferForTests } from '../src/composition/facades/accountingSessionJournal.js';
 import {
     getOrCreateAccountingContext,
     resetAccountingContextForTests,
 } from '../src/composition/createAccountingContext.js';
-import { composeLegacyConfigMirror } from '../src/js/acl/gameConfig.js';
-import appRegistry from '../src/js/acl/AppRegistry.js';
+import { composeLegacyConfigMirror } from '../src/composition/facades/gameConfig.js';
+import appRegistry from '../src/composition/AppRegistry.js';
 import { TimeManager } from '../src/shared/time/TimeManager.js';
 
 const config = composeLegacyConfigMirror();

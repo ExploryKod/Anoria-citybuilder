@@ -6,18 +6,18 @@ import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
 import { createCommerceContext } from '../src/composition/createCommerceContext.js';
 import { BudgetManager } from './helpers/testBudgetFacade.js';
-import { JournalManager } from '../src/js/acl/accountingSessionJournal.js';
+import { JournalManager } from '../src/composition/facades/accountingSessionJournal.js';
 import {
   loadOrSeedCommerceConfig,
   loadOrSeedCommercePartners,
-} from '../src/js/acl/commerce.js';
+} from '../src/composition/facades/commerce.js';
 import db from '../src/core/persistence/dexie/db.js';
 import { resetSupplyContextForTests } from '../src/composition/createSupplyContext.js';
 import { resetCommerceContextForTests } from '../src/composition/createCommerceContext.js';
-import { resetAccountingContextForTests } from '../src/js/acl/accounting.js';
-import { resetSessionLedgerBufferForTests } from '../src/js/acl/accountingSessionJournal.js';
+import { resetAccountingContextForTests } from '../src/composition/facades/accounting.js';
+import { resetSessionLedgerBufferForTests } from '../src/composition/facades/accountingSessionJournal.js';
 import { makeHouseRecord, createBuildingInstanceId } from './fixtures/buildingRecord.js';
-import appRegistry from '../src/js/acl/AppRegistry.js';
+import appRegistry from '../src/composition/AppRegistry.js';
 import { TimeManager } from '../src/shared/time/TimeManager.js';
 
 // ============================================================================

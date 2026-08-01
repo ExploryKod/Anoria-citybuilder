@@ -4,9 +4,9 @@
 
 import Dexie from 'dexie';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
-import { JournalManager } from '../../../src/js/acl/accountingSessionJournal.js';
+import { JournalManager } from '../../../src/composition/facades/accountingSessionJournal.js';
 import { BudgetManager } from '../../../tests/helpers/testBudgetFacade.js';
-import { resetSessionLedgerBufferForTests } from '../../../src/js/acl/accountingSessionJournal.js';
+import { resetSessionLedgerBufferForTests } from '../../../src/composition/facades/accountingSessionJournal.js';
 import {
   getOrCreateAccountingContext,
   resetAccountingContextForTests,

@@ -15,7 +15,7 @@ export class ResourceManager {
     }
 
     async placeRandomTrees(city, assetManager, buildings, zoneGroups, count) {
-        const { placeBuildingRecord } = await import('../../../js/acl/construction.js');
+        const { placeBuildingRecord } = await import('../../../composition/facades/construction.js');
         const treeMapping = {
             'Tree-Sapin': 'Tree-Pine-001',
             'Tree-Arbuste': 'Tree-Square-001',
@@ -97,7 +97,7 @@ export class ResourceManager {
     }
 
     async placeRandomBoulders(city, assetManager, buildings, zoneGroups, count) {
-        const { placeBuildingRecord } = await import('../../../js/acl/construction.js');
+        const { placeBuildingRecord } = await import('../../../composition/facades/construction.js');
         const ZONE_SIZE = 4;
         let placed = 0;
 
@@ -192,7 +192,7 @@ export class ResourceManager {
 
     async markIronBoulders(city) {
         try {
-            const { listNatureResources } = await import('../../../js/acl/supply.js');
+            const { listNatureResources } = await import('../../../composition/facades/supply.js');
             const boulders = (await listNatureResources()).filter((h) =>
                 (h.type || '').includes('Boulder')
             );
@@ -213,7 +213,7 @@ export class ResourceManager {
 
     async markGoldBoulders(city) {
         try {
-            const { listNatureResources } = await import('../../../js/acl/supply.js');
+            const { listNatureResources } = await import('../../../composition/facades/supply.js');
             const boulders = (await listNatureResources()).filter((h) =>
                 (h.type || '').includes('Boulder')
             );

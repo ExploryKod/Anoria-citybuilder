@@ -5,9 +5,9 @@
  */
 
 import Dexie from 'dexie';
-import { JournalManager } from '../src/js/acl/accountingSessionJournal.js';
-import { resetSessionLedgerBufferForTests } from '../src/js/acl/accountingSessionJournal.js';
-import appRegistry from '../src/js/acl/AppRegistry.js';
+import { JournalManager } from '../src/composition/facades/accountingSessionJournal.js';
+import { resetSessionLedgerBufferForTests } from '../src/composition/facades/accountingSessionJournal.js';
+import appRegistry from '../src/composition/AppRegistry.js';
 import { TimeManager } from '../src/shared/time/TimeManager.js';
 
 // ============================================================================

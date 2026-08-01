@@ -3,21 +3,14 @@
  */
 
 import { TimeManager } from '../shared/time/TimeManager.js';
-import { getAllSectorPriorities } from '../js/acl/employment.js';
-import { getOrCreateParcelsContext } from '../js/acl/parcels.js';
-import {
-  getOrCreateSupplyContext,
-  toSupplySeason,
-  toSupplyMonth,
-  getDefaultFoodDistributionDistance,
-} from '../js/acl/supply.js';
-import { getOrCreateHousingContext } from '../js/acl/housing.js';
-import {
-  getOrCreateEmploymentContext,
-  ensureSectorPrioritiesInitialized,
-} from '../js/acl/employment.js';
-import { getOrCreateCommerceContext } from '../js/acl/commerce.js';
-import { getOrCreateGameplayContext } from '../js/acl/gameplay.js';
+import { DEFAULT_FOOD_DISTRIBUTION_DISTANCE } from '../contexts/supply/domain/catalogs/SupplySimulationCatalog.js';
+import { getOrCreateParcelsContext } from './createParcelsContext.js';
+import { getOrCreateSupplyContext } from './createSupplyContext.js';
+import { getOrCreateHousingContext } from './createHousingContext.js';
+import { getOrCreateEmploymentContext } from './createEmploymentContext.js';
+import { getOrCreateCommerceContext } from './createCommerceContext.js';
+import { getOrCreateGameplayContext } from './createGameplayContext.js';
+import { toSupplySeason, toSupplyMonth } from './supplyTimeLabels.js';
 import { createGameRuntime } from './createGameRuntime.js';
 
 /**
@@ -36,7 +29,7 @@ export function bootGameContexts() {
   const supply = getOrCreateSupplyContext();
   const housing = getOrCreateHousingContext();
   const employment = getOrCreateEmploymentContext();
-  ensureSectorPrioritiesInitialized();
+  employment.ensureSectorPrioritiesInitialized();
   const commerce = getOrCreateCommerceContext();
   const gameplay = getOrCreateGameplayContext();
   const runtime = createGameRuntime({
@@ -49,8 +42,8 @@ export function bootGameContexts() {
     getTimeInfo: (turn) => TimeManager.getTimeInfo(turn),
     toSupplySeason,
     toSupplyMonth,
-    getSectorPriorities: getAllSectorPriorities,
-    foodDistributionDistance: getDefaultFoodDistributionDistance(),
+    getSectorPriorities: () => employment.getAllSectorPriorities(),
+    foodDistributionDistance: DEFAULT_FOOD_DISTRIBUTION_DISTANCE,
   });
 
   return {

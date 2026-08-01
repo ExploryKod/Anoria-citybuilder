@@ -1,7 +1,11 @@
 /**
- * Architecture boundary guard (Lot 1).
+ * Architecture boundary guard (plan_ca Barre F).
  *
- * Scans src/ imports and enforces dependency rules from src/archi.md §3.
+ * Enforces dependency rules after strangler removal:
+ * - no src/js/ package
+ * - composition / ui / presentation must not import legacy js/
+ * - ui / presentation must not import contexts domain layers (use facades or application)
+ * - domain must not import infrastructure; contexts must not import js; engine must not import contexts/js
  */
 
 import fs from 'fs';
@@ -10,10 +14,16 @@ import { describe, test, expect } from '@jest/globals';
 
 const SRC_ROOT = path.resolve('src');
 
-/** @type {Set<string>} `${relativeFile}::${importSpec}` — empty once Lot 4 cleared js/ bypasses. */
+/** @type {Set<string>} `${relativeFile}::${importSpec}` */
 const ALLOWLIST = new Set([]);
 
 const IMPORT_FROM_RE = /\bfrom\s+['"]([^'"]+)['"]/g;
+const DYNAMIC_IMPORT_RE = /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
+
+/** Remove block/line comments so JSDoc type imports are not treated as runtime imports. */
+function stripComments(content) {
+  return content.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+}
 
 function listJsFiles(dir) {
   const files = [];
@@ -36,14 +46,27 @@ function isAllowlisted(fileRel, importSpec) {
   return ALLOWLIST.has(`${fileRel}::${importSpec}`);
 }
 
+function isLegacyJsImport(importSpec) {
+  return (
+    importSpec.includes('/js/')
+    || importSpec.includes('../js/')
+    || /(^|\/)js\/acl\//.test(importSpec)
+    || /(^|\/)js\/utils\//.test(importSpec)
+  );
+}
+
+function isContextsDomainImport(importSpec) {
+  return /contexts\/[^/]+\/domain\//.test(importSpec);
+}
+
 function checkViolation(fileRel, importSpec) {
   if (isAllowlisted(fileRel, importSpec)) {
     return null;
   }
 
-  const isLegacyJsImport = importSpec.includes('/js/') || importSpec.includes('../js/');
   const isContextsImport = importSpec.includes('contexts/');
-  const isInfraImport = importSpec.includes('/infrastructure/') || importSpec.includes('../infrastructure/');
+  const isInfraImport =
+    importSpec.includes('/infrastructure/') || importSpec.includes('../infrastructure/');
 
   if (fileRel.startsWith('contexts/') && isContextsImport) {
     const fromContext = fileRel.split('/')[1];
@@ -53,7 +76,7 @@ function checkViolation(fileRel, importSpec) {
     }
   }
 
-  if (fileRel.includes('/domain/') && isLegacyJsImport) {
+  if (fileRel.includes('/domain/') && isLegacyJsImport(importSpec)) {
     return 'domain must not import legacy js/';
   }
 
@@ -61,23 +84,27 @@ function checkViolation(fileRel, importSpec) {
     return 'domain must not import infrastructure';
   }
 
-  if (fileRel.includes('/application/') && isLegacyJsImport) {
+  if (fileRel.includes('/application/') && isLegacyJsImport(importSpec)) {
     return 'application must not import legacy js/';
   }
 
-  if (fileRel.startsWith('contexts/') && isLegacyJsImport) {
+  if (fileRel.startsWith('contexts/') && isLegacyJsImport(importSpec)) {
     return 'contexts/ must not import legacy js/';
   }
 
-  if (fileRel.startsWith('contexts/') && importSpec.includes('js/game/')) {
-    return 'contexts/ must not import js/game/ legacy paths';
+  if (fileRel.startsWith('composition/') && isLegacyJsImport(importSpec)) {
+    return 'composition/ must not import legacy js/';
   }
 
-  if (fileRel.startsWith('js/') && !fileRel.startsWith('js/acl/') && isContextsImport) {
-    return 'js/ must reach contexts/ only via js/acl/';
+  if (fileRel.startsWith('presentation/') && isLegacyJsImport(importSpec)) {
+    return 'presentation must not import legacy js/';
   }
 
-  if (fileRel.startsWith('engine/') && (isContextsImport || isLegacyJsImport)) {
+  if (fileRel.startsWith('presentation/') && isContextsDomainImport(importSpec)) {
+    return 'presentation must not import contexts/*/domain (use composition/facades or application)';
+  }
+
+  if (fileRel.startsWith('engine/') && (isContextsImport || isLegacyJsImport(importSpec))) {
     return 'engine/ must not depend on contexts/ or js/';
   }
 
@@ -85,19 +112,32 @@ function checkViolation(fileRel, importSpec) {
 }
 
 describe('architecture boundaries', () => {
+  test('src/js/ package is gone', () => {
+    const jsRoot = path.join(SRC_ROOT, 'js');
+    expect(fs.existsSync(jsRoot)).toBe(false);
+  });
+
+  test('src/ui/ package is gone (migrated to presentation/dom)', () => {
+    const uiRoot = path.join(SRC_ROOT, 'ui');
+    expect(fs.existsSync(uiRoot)).toBe(false);
+  });
+
   test('import graph respects layer rules', () => {
     const files = listJsFiles(SRC_ROOT);
     const violations = [];
 
     for (const absolutePath of files) {
       const fileRel = toSrcRelative(absolutePath);
-      const content = fs.readFileSync(absolutePath, 'utf8');
+      const content = stripComments(fs.readFileSync(absolutePath, 'utf8'));
 
-      for (const match of content.matchAll(IMPORT_FROM_RE)) {
-        const importSpec = match[1];
-        const reason = checkViolation(fileRel, importSpec);
-        if (reason) {
-          violations.push(`${fileRel} imports "${importSpec}" — ${reason}`);
+      for (const re of [IMPORT_FROM_RE, DYNAMIC_IMPORT_RE]) {
+        re.lastIndex = 0;
+        for (const match of content.matchAll(re)) {
+          const importSpec = match[1];
+          const reason = checkViolation(fileRel, importSpec);
+          if (reason) {
+            violations.push(`${fileRel} imports "${importSpec}" — ${reason}`);
+          }
         }
       }
     }
@@ -118,7 +158,7 @@ describe('architecture boundaries', () => {
       /getCommerceSectionPresenter\s*\(/,
       /commerceSectionPresenter/,
       /commerceSectionManager/,
-      /from\s+['"][^'"]*\/ui\//,
+      /from\s+['"][^'"]*\/presentation\/dom\//,
       /\.goodsData\b/,
     ];
 
@@ -126,9 +166,7 @@ describe('architecture boundaries', () => {
       const fileRel = toSrcRelative(absolutePath);
       const content = fs.readFileSync(absolutePath, 'utf8');
 
-      // Param name goodsData on repository saveConfig is OK — only forbid reading presenter.goodsData
       if (/\w+\.goodsData\b/.test(content) && !/saveConfig\s*\(\s*goodsData/.test(content)) {
-        // Allow JSDoc `@param {Array} goodsData` and method params without property access
         const propertyReads = content.match(/\w+\.goodsData\b/g) || [];
         for (const hit of propertyReads) {
           if (hit === 'this.goodsData' || hit.includes('Presenter') || hit.includes('Manager')) {

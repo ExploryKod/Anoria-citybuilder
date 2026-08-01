@@ -8,7 +8,7 @@ Ce dossier accueille l’infrastructure **cross-cutting** (partagée entre BCs),
 |---|---|
 | Adapters d’un BC (Dexie, ECS systems, sprites Three liés au BC, toasts) | `contexts/*/infrastructure/` |
 | Rendu WebGL / scène / meshes | `src/presentation/three/` |
-| HUD DOM, panneaux, shell | `src/ui/` |
+| HUD DOM, panneaux, shell, CSS | `src/presentation/dom/` |
 | Tech transverse (réseau, etc.) | `src/infrastructure/` (ici) |
 
 ## Contenu actuel

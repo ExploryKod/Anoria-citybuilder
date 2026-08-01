@@ -2,12 +2,9 @@
  * Boot treasury + HUD funds for a new game session.
  */
 
-import {
-  forceReinitializeTreasury,
-  getTreasurySnapshot,
-  setBudgetReadyPromise,
-  readInitialFundsFromImportMeta,
-} from '../js/acl/accountingGame.js';
+import { readInitialFundsFromImportMeta } from '../contexts/accounting/domain/catalogs/TreasuryCatalog.js';
+import { getOrCreateAccountingContext } from './createAccountingContext.js';
+import { setBudgetReadyPromise } from './budgetReadyGate.js';
 
 /**
  * @param {object} params
@@ -16,10 +13,11 @@ import {
  */
 export function bootTreasuryHud({ gameUI }) {
   const initialFunds = readInitialFundsFromImportMeta();
+  const accounting = getOrCreateAccountingContext();
 
   setBudgetReadyPromise(
-    forceReinitializeTreasury(initialFunds).then(async () => {
-      const initialBudget = await getTreasurySnapshot();
+    accounting.forceReinitializeTreasury(initialFunds).then(async () => {
+      const initialBudget = await accounting.getTreasurySnapshot();
       console.log('[Game] Budget initialized, current budget:', initialBudget);
       gameUI.updateFunds(initialBudget.funds ?? initialFunds);
       return initialBudget;

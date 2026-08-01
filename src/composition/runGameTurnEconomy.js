@@ -3,9 +3,9 @@
  * Persists gameplay snapshot + runs accounting ProcessTurnBudget.
  */
 
-import { getCityTotalBuildingValue } from '../js/acl/budget.js';
-import { processTurnBudget } from '../js/acl/accounting.js';
-import { bindSceneBuildingGrid } from '../js/acl/construction.js';
+import { getOrCreateCityAssetsContext } from './createCityAssetsContext.js';
+import { getOrCreateAccountingContext } from './createAccountingContext.js';
+import { getOrCreateConstructionContext } from './createConstructionContext.js';
 
 /**
  * @param {object} params
@@ -17,7 +17,8 @@ import { bindSceneBuildingGrid } from '../js/acl/construction.js';
 export async function persistGameplayTurn({ gameStore, housing, time }) {
   const popSummary = await housing.getCityPopulationSummary();
   const totalPop = popSummary.totalPop ?? 0;
-  const totalImmoExpenses = (await getCityTotalBuildingValue()) || 0;
+  const { totalValue } = await getOrCreateCityAssetsContext().getCityBuildingValuation();
+  const totalImmoExpenses = totalValue || 0;
 
   await gameStore.addGameItems({
     name: time === 0 ? 'gameplay_init' : `gameplay_${time}`,
@@ -52,8 +53,8 @@ export async function persistGameplayTurn({ gameStore, housing, time }) {
  * @returns {Promise<object | undefined>}
  */
 export async function processGameTurnBudget({ city, buildings, time, totalPop }) {
-  bindSceneBuildingGrid({ city, buildings });
-  return processTurnBudget({
+  getOrCreateConstructionContext().bindSceneBuildingGrid({ city, buildings });
+  return getOrCreateAccountingContext().processTurnBudget({
     time,
     totalPop,
   });

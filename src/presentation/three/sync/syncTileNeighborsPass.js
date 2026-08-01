@@ -3,9 +3,9 @@
  * Writes Parcels neighbors + markets + road access (not sprite painting).
  */
 
-import { updateBuildingNeighbors } from '../../../js/utils/utils.js';
-import { getBuildingsNamesInZone } from '../../../js/acl/parcels.js';
-import { updateBuildingFields } from '../../../js/acl/construction.js';
+import { updateBuildingNeighbors } from '../sceneSpatialUtils.js';
+import { getBuildingsNamesInZone } from '../../../composition/facades/parcels.js';
+import { updateBuildingFields } from '../../../composition/facades/construction.js';
 
 /**
  * @param {object} params
