@@ -1,0 +1,386 @@
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { meshNameMapping } from './data.js';
+
+// Import JSON catalog - adjust path as needed
+let assetCatalog;
+
+async function loadAssetCatalog() {
+    if (!assetCatalog) {
+        const response = await fetch('/village_town_assets.json');
+        assetCatalog = await response.json();
+    }
+    return assetCatalog;
+}
+
+/**
+ * Optimized MeshLoader that uses JSON catalog for better performance
+ * 
+ * Improvements:
+ * 1. Pre-built lookup tables from JSON (no parsing at runtime)
+ * 2. Uses Sets for O(1) lookup instead of array includes
+ * 3. Skips meshes we don't need
+ * 4. Batch processing instead of per-mesh checks
+ * 5. Early exit patterns
+ */
+class MeshLoaderOptimized {
+
+    toolIds = {
+        zones: ['grass'],
+        houses: ['House-Blue', 'House-Red', 'House-Purple'],
+        tombs: ['Tombstone-1', 'Tombstone-2', 'Tombstone-3'],
+        farms: ['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage'],
+        industry: ['Windmill-001', 'Barn-001', 'Crate-001', 'Winery-001'],
+        markets: ['Market-Stall'],
+        infrastructure: ['Well-001', 'Fountain-001', 'Streetlight-001', 'roads', 'StonePath-001', 'StonePath-Right-001', 'StonePath-Left-001', 'StonePath-Cross-001'],
+        public: ['Church-002'],
+        palaces: ['House-2Story'],
+        nature: ['Tree-Pine-001', 'Tree-Square-001', 'Tree-Tall-001', 'Tree-Sapin', 'Tree-Arbuste', 'Tree-Chene', 'Boulder-001']
+    }
+
+    allAssetsNames = [
+        { houses: [] },
+        { nature: [] },
+        { farms: [] },
+        { industry: [] },
+        { markets: [] },
+        { infrastructure: [] },
+        { public: [] },
+        { palaces: [] },
+        { other: [] }
+    ];
+
+    buttonData = [];
+    modelsObj = {
+        'houses': {},
+        'tombs': {},
+        'farms': {},
+        'industry': {},
+        'markets': {},
+        'infrastructure': {},
+        'public': {},
+        'palaces': {},
+        'nature': {}
+    }
+
+    modelMetas = {
+        'houses': { size: 0.5 },
+        'tombs': { size: 0.5 },
+        'farms': { size: 1 },
+        'industry': { size: 0.5 },
+        'markets': { size: 0.7 },
+        'infrastructure': { size: 0.8 },
+        'public': { size: 0.8 },
+        'palaces': { size: 0.5 },
+        'nature': { size: 0.5 }
+    }
+
+    // Per-asset size overrides (for assets that need different size than their category)
+    assetSizeOverrides = {
+        'Windmill-001': 0.5,  // Windmills should match one case size like houses
+        'Barn-001': 0.2,
+        'Church-002': 0.2,
+        'Winery-001': 0.009,
+        'BookShop-001': 0.002
+    }
+
+    assetNames = [];
+
+    constructor() {
+        // Lookup tables will be built when loadAssets is called
+        this.validMeshNames = new Set();
+        this.meshToToolName = new Map();
+        this.toolToCategory = new Map();
+        this.categoryMeshSets = {
+            houses: new Set(),
+            farms: new Set(),
+            industry: new Set(),
+            markets: new Set(),
+            tombs: new Set(),
+            infrastructure: new Set(),
+            public: new Set(),
+            palaces: new Set(),
+            nature: new Set()
+        };
+    }
+
+    /**
+     * Build fast lookup tables from the JSON catalog
+     * This happens once at initialization instead of at runtime
+     */
+    async _buildLookupTables() {
+        // Load catalog if not already loaded
+        const assetCatalog = await loadAssetCatalog();
+        // Set of all mesh names we care about (from JSON)
+        this.validMeshNames = new Set();
+        
+        // Map: mesh name → tool name
+        this.meshToToolName = new Map();
+        
+        // Map: tool name → category
+        this.toolToCategory = new Map();
+        
+        // Category → Set of valid mesh names
+        this.categoryMeshSets = {
+            houses: new Set(),
+            farms: new Set(),
+            industry: new Set(),
+            markets: new Set(),
+            tombs: new Set(),
+            infrastructure: new Set(),
+            public: new Set(),
+            palaces: new Set(),
+            nature: new Set()
+        };
+
+        // Build catalog mappings
+        // Map JSON categories to our internal categories
+        const categoryMapping = {
+            'vegetation': 'nature',  // Map vegetation to nature
+            'decoration': 'nature'   // Map decoration (boulders, benches) to nature
+        };
+        
+        Object.entries(assetCatalog.assets).forEach(([jsonCategory, data]) => {
+            // Map JSON category to our internal category
+            const internalCategory = categoryMapping[jsonCategory] || jsonCategory;
+            
+            data.mesh_names?.forEach(meshName => {
+                this.validMeshNames.add(meshName);
+                // Add to the internal category set
+                if (this.categoryMeshSets[internalCategory]) {
+                    this.categoryMeshSets[internalCategory].add(meshName);
+                }
+                
+                // Parse mesh name to tool name
+                const toolName = this._parseMeshNameToToolName(meshName);
+                this.meshToToolName.set(meshName, toolName);
+                
+                // Special handling: StonePath meshes should be in 'infrastructure' category
+                if (toolName === 'StonePath-001' && this.categoryMeshSets['infrastructure']) {
+                    this.categoryMeshSets['infrastructure'].add(meshName);
+                }
+                
+                // Special handling: Boulder meshes should be in 'nature' category
+                if (toolName === 'Boulder-001' && this.categoryMeshSets['nature']) {
+                    this.categoryMeshSets['nature'].add(meshName);
+                }
+                
+                // Track which category this tool belongs to (use internal category)
+                if (this.toolIds[internalCategory]?.includes(toolName)) {
+                    this.toolToCategory.set(toolName, internalCategory);
+                }
+                
+                // Also track if it belongs to 'infrastructure' category
+                if (this.toolIds['infrastructure']?.includes(toolName)) {
+                    this.toolToCategory.set(toolName, 'infrastructure');
+                }
+                
+                // Also track if it belongs to 'nature' category
+                if (this.toolIds['nature']?.includes(toolName)) {
+                    this.toolToCategory.set(toolName, 'nature');
+                }
+            });
+        });
+    }
+
+    /**
+     * Parse mesh name to tool name (same logic as before but extracted for reuse)
+     */
+    _parseMeshNameToToolName(meshName) {
+        // Remove _MaterialXXX_X suffix
+        const baseName = meshName.split('_Material')[0];
+        
+        // Check if base name or any variant needs special mapping (check BEFORE standard parsing)
+        // Sort mappings by length (descending) to check most specific first
+        const sortedMappings = Object.entries(meshNameMapping).sort((a, b) => b[0].length - a[0].length);
+        
+        for (const [variant, mappedName] of sortedMappings) {
+            // Check exact match
+            if (baseName === variant) {
+                return mappedName;
+            }
+            // Check if it starts with variant (for numbered variants like House_2Story_Purple001)
+            if (baseName.startsWith(variant)) {
+                return mappedName;
+            }
+        }
+        
+        // Check if it's already a mapped tree name (Tree-Sapin, Tree-Arbuste, Tree-Chene)
+        if (baseName === 'Tree-Sapin') return 'Tree-Pine-001';
+        if (baseName === 'Tree-Arbuste') return 'Tree-Square-001';
+        if (baseName === 'Tree-Chene') return 'Tree-Tall-001';
+        
+        // Standard parsing for objects like Farm_Wheat, House_Blue, etc.
+        const normalized = baseName.replace(/[.\s]/g, '_');
+        const parts = normalized.split('_');
+        
+        // Special handling for Tree variants (Tree_Pine, Tree_Square, Tree_Tall)
+        if (parts[0] === 'Tree' && parts.length >= 2) {
+            const treeType = parts[1]; // Pine, Square, or Tall
+            // Remove numbers from type (e.g., "Pine001" -> "Pine", "Tall018" -> "Tall")
+            const cleanType = treeType.replace(/\d+$/, '');
+            // Map to Tree-{Type}-001 format
+            if (cleanType === 'Pine') return 'Tree-Pine-001';
+            if (cleanType === 'Square') return 'Tree-Square-001';
+            if (cleanType === 'Tall') return 'Tree-Tall-001';
+            if (cleanType === 'Sapin') return 'Tree-Pine-001';
+            if (cleanType === 'Arbuste') return 'Tree-Square-001';
+            if (cleanType === 'Chene') return 'Tree-Tall-001';
+        }
+        
+        // Special handling for Crate (all variants map to Crate-001)
+        if (parts[0] === 'Crate') {
+            return 'Crate-001';
+        }
+        
+        // Special handling for Boulder (all variants map to Boulder-001)
+        if (parts[0] === 'Boulder') {
+            return 'Boulder-001';
+        }
+        
+        // Special handling for StonePath (all variants map to StonePath-001)
+        if (parts[0] === 'StonePath') {
+            return 'StonePath-001';
+        }
+        
+        let toolName = `${parts[0]}-${parts[1] || ''}`;
+        
+        // Apply mapping if needed
+        if (meshNameMapping[toolName]) {
+            return meshNameMapping[toolName];
+        }
+        
+        return toolName;
+    }
+
+    /**
+     * Check if a mesh is in our catalog and which category it belongs to
+     */
+    _getMeshCategory(meshName) {
+        // Fast lookup in Sets
+        // Categories are already mapped in _buildLookupTables
+        for (const [category, meshSet] of Object.entries(this.categoryMeshSets)) {
+            if (meshSet.has(meshName)) {
+                // Return the internal category (already mapped in _buildLookupTables)
+                return category;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Optimized asset loading using JSON catalog
+     */
+    async loadAssets(assetFullName, propertyKey, modelsObj, allAssetsNames, assetNames, toolIds, buttonData) {
+        // Build lookup tables once (will be cached after first call)
+        await this._buildLookupTables();
+        
+        return new Promise((resolve, reject) => {
+            const gltfloader = new GLTFLoader();
+            const dracoLoader = new DRACOLoader();
+            dracoLoader.setDecoderPath('/examples/jsm/libs/draco/');
+            gltfloader.setDRACOLoader(dracoLoader);
+
+            // Track what we've already processed to avoid duplicates
+            const processedMeshes = new Set();
+
+            // Use standardized asset path (can be overridden by passing baseUrl)
+            const modelPath = assetFullName || `./resources/lowpoly/village_town_assets_v2.glb`;
+            
+            gltfloader.load(
+                modelPath,
+                
+                // Success callback
+                function (gltf) {
+                    // Single pass through all meshes
+                    gltf.scene.traverse(function (child) {
+                        if (!(child instanceof THREE.Mesh)) {
+                            return; // Skip non-meshes
+                        }
+
+                        const meshName = child.name;
+                        
+                        // Early exit: Skip if we don't care about this mesh
+                        if (!this.validMeshNames.has(meshName)) {
+                            return; // Skip unknown meshes
+                        }
+
+                        // Early exit: Skip if already processed
+                        if (processedMeshes.has(meshName)) {
+                            return;
+                        }
+                        processedMeshes.add(meshName);
+
+                        // Get category from JSON catalog (already mapped in _buildLookupTables)
+                        const category = this._getMeshCategory(meshName);
+                        if (!category) {
+                            return;
+                        }
+
+                        // Get tool name from pre-built map
+                        const toolName = this.meshToToolName.get(meshName);
+                        if (!toolName) {
+                            return;
+                        }
+
+                        // Check if this tool is in our toolIds
+                        if (!toolIds[category]?.includes(toolName)) {
+                            return;
+                        }
+
+                        // Only process if it matches the requested category
+                        if (category !== propertyKey) {
+                            return;
+                        }
+                        
+                        // Found palace mesh
+
+                        // Parse mesh name parts for button text
+                        const normalized = meshName.replace(/[._\s]/g, '_');
+                        const firstNamePart = normalized.split('_')[0];
+                        const secondNamePart = normalized.split('_')[1] || '';
+
+
+                        // Store mesh
+                        modelsObj[propertyKey][toolName] = child;
+                        assetNames.push(toolName);
+
+                        // Add to button data
+                        buttonData.push({
+                            text: `${firstNamePart} ${secondNamePart}`,
+                            tool: toolName,
+                            group: firstNamePart
+                        });
+
+                        // Add to asset array
+                        const assetArray = allAssetsNames.find(a => a[propertyKey]);
+                        if (assetArray) {
+                            assetArray[propertyKey].push({
+                                fullName: child.userData.name,
+                                name: toolName,
+                                mesh: child
+                            });
+                        }
+                    }.bind(this)); // Bind 'this' to access class methods
+
+                    resolve(modelsObj);
+                }.bind(this),
+                
+                // Progress callback
+                function (xhr) {
+                    // Loading progress
+                },
+                
+                // Error callback
+                function (error) {
+                    console.error('An error happened', error);
+                    reject(error);
+                }
+            );
+        });
+    }
+}
+
+export default MeshLoaderOptimized;
+
