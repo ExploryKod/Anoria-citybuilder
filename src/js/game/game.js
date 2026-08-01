@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {  assetsPrices } from '../meshs/data.js';
 import { getDefaultEmployees, getSectorPriority, getSectorName, getAllSectorPriorities } from './modules/EmployeeHelper.js';
 import { TimeManager } from './utils/TimeManager.js';
+import { getTimeInfo } from '../acl/appRuntime.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
 import {getAssetPrice, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, isAreaAvailableForBuilding} from '../utils/utils.js';
@@ -948,8 +949,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
                     
                     let currentYear = 0;
                     const budget = await getTreasurySnapshot();
-                    if (budget && budget.turn !== undefined && window.TimeManager) {
-                        const timeInfo = window.TimeManager.getTimeInfo(budget.turn);
+                    if (budget && budget.turn !== undefined) {
+                        const timeInfo = getTimeInfo(budget.turn);
                         currentYear = timeInfo ? timeInfo.year : 0;
                     }
                     

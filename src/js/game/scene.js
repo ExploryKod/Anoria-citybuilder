@@ -16,7 +16,7 @@ import { getOrCreateHousingContext } from '../acl/housing.js';
 import { getCityEmploymentSummary, ensureBuildingEmployeesSchema } from '../acl/employment.js';
 import { getCityTotalBuildingValue } from '../acl/budget.js';
 import { getTreasurySnapshot } from '../acl/accountingGame.js';
-import { getPopupManager, getGameUI } from '../acl/appRuntime.js';
+import { getPopupManager, getGameUI, registerAppFunction } from '../acl/appRuntime.js';
 import {
     findBuildingAtTile,
     getBuildingById,
@@ -1855,18 +1855,18 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
     }
     
     // Expose function to toggle stats
-    window.togglePerformanceStats = function() {
+    registerAppFunction('togglePerformanceStats', function() {
         performanceStats.enabled = !performanceStats.enabled;
         localStorage.setItem('show-performance-stats', performanceStats.enabled.toString());
         return performanceStats.enabled;
-    };
+    });
 
-    window.toggleStatsJs = function() {
+    registerAppFunction('toggleStatsJs', function() {
         const next = stats.dom.style.display === 'none';
         stats.dom.style.display = next ? 'block' : 'none';
         localStorage.setItem('show-stats-js', next ? 'true' : 'false');
         return next;
-    };
+    });
     
     // Store last frame time for animation delta calculation
     let lastFrameTime = performance.now();

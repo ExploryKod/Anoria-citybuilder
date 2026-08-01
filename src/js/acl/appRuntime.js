@@ -3,6 +3,7 @@
  * Point d'entrée unique : AppRegistry via window.app (composition legacy).
  */
 import appRegistry from '../game/AppRegistry.js';
+import { TimeManager as TimeManagerClass } from '../game/utils/TimeManager.js';
 
 export { default as appRegistry } from '../game/AppRegistry.js';
 
@@ -45,6 +46,16 @@ export function getGameStore() {
   return appRegistry.get('gameStore');
 }
 
+/** @returns {typeof TimeManagerClass} */
+export function getTimeManager() {
+  return appRegistry.get('timeManager') ?? TimeManagerClass;
+}
+
+/** @param {number} turn */
+export function getTimeInfo(turn) {
+  return getTimeManager().getTimeInfo(turn);
+}
+
 export function getFoodTraceabilityService() {
   return appRegistry.get('foodTraceabilityService');
 }
@@ -83,6 +94,10 @@ export function getStartTutorialHandler() {
 
 export function getStartObjectivesHandler() {
   return appRegistry.get('startObjectives');
+}
+
+export function getWebglTestMode() {
+  return appRegistry.get('webglTestMode');
 }
 
 export function getGameTime() {

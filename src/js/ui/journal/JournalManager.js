@@ -3,7 +3,7 @@
  * Data: acl/accounting.js → GetGeneralLedger
  */
 
-import { getPopupManager } from '../../acl/appRuntime.js';
+import { getPopupManager, getTimeInfo } from '../../acl/appRuntime.js';
 import {
   getGeneralLedger,
   exportJournalJson,
@@ -315,8 +315,8 @@ function createJournalEntryHTML(entry) {
     });
 
     let yearDisplay = '';
-    if (window.TimeManager && entry.turn !== undefined) {
-        const timeInfo = window.TimeManager.getTimeInfo(entry.turn);
+    if (entry.turn !== undefined) {
+        const timeInfo = getTimeInfo(entry.turn);
         yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
     }
 

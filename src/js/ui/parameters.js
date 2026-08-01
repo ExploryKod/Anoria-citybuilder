@@ -1,4 +1,4 @@
-import { pauseGame, playGame, registerAppService } from '../acl/appRuntime.js';
+import { pauseGame, playGame, registerAppService, getTimeManager } from '../acl/appRuntime.js';
 import EventBlocker from '../utils/EventBlocker.js';
 
 class ParametersPanelManager {
@@ -185,17 +185,9 @@ class ParametersPanelManager {
             const eventsConfig = await import('../../config/events.js');
             eventsConfig.setDaysPerMonth(days);
             
-            // Mettre à jour le cache de TimeManager
-            if (window.TimeManager && typeof window.TimeManager.refreshCache === 'function') {
-                await window.TimeManager.refreshCache();
-            } else {
-                // Essayer d'importer TimeManager
-                try {
-                    const { TimeManager } = await import('../game/utils/TimeManager.js');
-                    await TimeManager.refreshCache();
-                } catch (err) {
-                    console.warn('[ParametersPanel] Could not refresh TimeManager cache:', err);
-                }
+            const timeManager = getTimeManager();
+            if (timeManager && typeof timeManager.refreshCache === 'function') {
+                await timeManager.refreshCache();
             }
         } catch (error) {
             console.error('[ParametersPanel] Error setting days per month:', error);

@@ -1,4 +1,5 @@
 import db from '../../core/persistence/dexie/db.js';
+import { getTimeManager, getTimeInfo } from '../acl/appRuntime.js';
 import {
   buildMonthlyFinancialSummary,
   buildYearlyFinancialSummary,
@@ -68,9 +69,8 @@ class JournalManager {
 
     /** @returns {(turn: number) => object|null} */
     _getTimeInfoResolver() {
-        const timeManager =
-            (typeof window !== 'undefined' ? window : global)?.TimeManager;
-        if (!timeManager) {
+        const timeManager = getTimeManager();
+        if (!timeManager || typeof timeManager.getTimeInfo !== 'function') {
             return () => null;
         }
         return (turn) => timeManager.getTimeInfo(turn);
@@ -195,7 +195,7 @@ class JournalManager {
             let month = null;
             let year = null;
 
-            const timeManager = (typeof window !== 'undefined' ? window : global)?.TimeManager;
+            const timeManager = getTimeManager();
             let timeInfo = null;
             if (timeManager) {
                 timeInfo = timeManager.getTimeInfo(turn);
@@ -388,12 +388,13 @@ class JournalManager {
             return;
         }
         
-        if (!window.TimeManager) {
+        const timeManager = getTimeManager();
+        if (!timeManager) {
             console.warn('[JournalManager] TimeManager not available, cannot create carry forward entry');
             return;
         }
-        
-        const currentTimeInfo = window.TimeManager.getTimeInfo(turn);
+
+        const currentTimeInfo = getTimeInfo(turn);
         const previousYear = currentTimeInfo.year - 1;
         
         // Si on est en année 0, pas de report à nouveau
@@ -442,7 +443,8 @@ class JournalManager {
      * @returns {Promise<void>}
      */
     async createCumulEntries(year, turn) {
-        if (!window.TimeManager) {
+        const timeManager = getTimeManager();
+        if (!timeManager) {
             console.warn('[JournalManager] TimeManager not available, cannot create cumul entries');
             return;
         }
@@ -450,7 +452,7 @@ class JournalManager {
         // Récupérer toutes les entrées du journal pour cette année
         const allEntries = await this.getJournalEntries();
         const yearEntries = allEntries.filter(entry => {
-            const timeInfo = window.TimeManager.getTimeInfo(entry.turn);
+            const timeInfo = getTimeInfo(entry.turn);
             return timeInfo.year === year;
         });
 

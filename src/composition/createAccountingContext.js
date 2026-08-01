@@ -1,5 +1,4 @@
-import { getGameStore, getWorkSectionManager, getAppService } from '../js/acl/appRuntime.js';
-import { TimeManager } from '../js/game/utils/TimeManager.js';
+import { getGameStore, getWorkSectionManager, getAppService, getTimeManager, getTimeInfo } from '../js/acl/appRuntime.js';
 import { GetTreasuryBalance } from '../contexts/accounting/application/queries/treasury/GetTreasuryBalance.js';
 import { GetTreasurySnapshot } from '../contexts/accounting/application/queries/treasury/GetTreasurySnapshot.js';
 import { GetFinancialHealth } from '../contexts/accounting/application/queries/treasury/GetFinancialHealth.js';
@@ -95,11 +94,7 @@ export function createAccountingContext(deps = {}) {
 
   const gameTimePort =
     deps.gameTimePort ??
-    new LegacyGameTimePort(
-      typeof window !== 'undefined' && window.TimeManager
-        ? window.TimeManager
-        : TimeManager
-    );
+    new LegacyGameTimePort(getTimeManager());
 
   const journalWritePort =
     deps.journalWritePort ??
@@ -395,15 +390,7 @@ export function createAccountingContext(deps = {}) {
     recordPayrollTax: (...args) => gameTreasuryRecording.recordPayrollTax(...args),
     recordBuildingMaintenance: (amount, description, turn) =>
       recordBuildingMaintenanceForCity.execute({ amount, description, turn }),
-    getTimeInfo: (time) => {
-      const timeManager =
-        typeof window !== 'undefined' && window.TimeManager
-          ? window.TimeManager
-          : typeof global !== 'undefined' && global.TimeManager
-            ? global.TimeManager
-            : TimeManager;
-      return timeManager.getTimeInfo(time);
-    },
+    getTimeInfo: (time) => getTimeInfo(time),
     getCityTotalPopulation:
       deps.getCityTotalPopulation ?? (() => getCityTotalPopulation()),
     getSalarySettings: deps.getSalarySettings ?? getSalarySettings,

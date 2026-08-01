@@ -13,6 +13,7 @@ import {
   resetAccountingContextForTests,
 } from '../../../src/composition/createAccountingContext.js';
 import appRegistry from '../../../src/js/game/AppRegistry.js';
+import { TimeManager } from '../../../src/js/game/utils/TimeManager.js';
 
 function createTestDb() {
   const testDb = new Dexie('testSalaryIdempotenceDb');
@@ -37,7 +38,7 @@ describe('Accounting — salary idempotence (J6/J7)', () => {
     testDb = createTestDb();
     await testDb.open();
 
-    global.TimeManager = {
+    appRegistry.register('timeManager', {
       getTimeInfo(turn) {
         const monthNames = [
           'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -52,7 +53,7 @@ describe('Accounting — salary idempotence (J6/J7)', () => {
           dayInMonth: 1,
         };
       },
-    };
+    });
 
     journalManager = new JournalManager();
     journalManager.db = testDb;
@@ -72,7 +73,7 @@ describe('Accounting — salary idempotence (J6/J7)', () => {
   });
 
   afterEach(async () => {
-    delete global.TimeManager;
+    appRegistry.register('timeManager', TimeManager);
     delete global.window.budgetManager;
     appRegistry.register('workSectionManager', null);
     resetAccountingContextForTests();

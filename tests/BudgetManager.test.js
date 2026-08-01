@@ -16,6 +16,8 @@ import {
     resetAccountingContextForTests,
 } from '../src/composition/createAccountingContext.js';
 import config from '../src/js/game/config.js';
+import appRegistry from '../src/js/game/AppRegistry.js';
+import { TimeManager } from '../src/js/game/utils/TimeManager.js';
 
 // ============================================================================
 // Setup : Créer une base de données de test isolée
@@ -50,9 +52,8 @@ describe('BudgetManager', () => {
         // Attendre que la base soit complètement prête
         await new Promise(resolve => setTimeout(resolve, 10));
         
-        // Mock TimeManager pour les tests (utiliser global pour Jest)
-        const globalObj = typeof window !== 'undefined' ? window : global;
-        globalObj.TimeManager = {
+        // Mock TimeManager for tests
+        appRegistry.register('timeManager', {
             getTimeInfo: (turn) => {
                 // Simulation simple : 1 jour = 1 tour, 12 tours = 1 an
                 const year = Math.floor(turn / 12);
@@ -66,7 +67,7 @@ describe('BudgetManager', () => {
                     season: 'Printemps'
                 };
             }
-        };
+        });
         
         // Créer un BudgetManager avec la base de test
         budgetManager = new BudgetManager();
@@ -92,9 +93,8 @@ describe('BudgetManager', () => {
         if (testDb && testDb.isOpen()) {
             await testDb.delete();
         }
-        // Nettoyer le mock TimeManager
-        const globalObj = typeof window !== 'undefined' ? window : global;
-        delete globalObj.TimeManager;
+        // Restore TimeManager
+        appRegistry.register('timeManager', TimeManager);
     });
 
     // ========================================================================

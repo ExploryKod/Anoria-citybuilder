@@ -9,6 +9,7 @@ import { SessionJournalRepository } from '../../../src/contexts/accounting/infra
 import { resetSessionLedgerBufferForTests } from '../../../src/js/stores/SessionLedgerBuffer.js';
 import { LegacyGameTimePort } from '../../../src/contexts/accounting/infrastructure/adapters/legacy/LegacyGameTimePort.js';
 import { TimeManager } from '../../../src/js/game/utils/TimeManager.js';
+import appRegistry from '../../../src/js/game/AppRegistry.js';
 
 function createTestDb() {
   const testDb = new Dexie('testAccountingDexieRepo');
@@ -51,7 +52,7 @@ describe('Accounting — Dexie persistence adapters (Phase 2a)', () => {
         };
       },
     };
-    global.TimeManager = timeManager;
+    appRegistry.register('timeManager', timeManager);
 
     journalManager = new JournalManager();
     journalManager.db = testDb;
@@ -63,7 +64,7 @@ describe('Accounting — Dexie persistence adapters (Phase 2a)', () => {
   });
 
   afterEach(async () => {
-    delete global.TimeManager;
+    appRegistry.register('timeManager', TimeManager);
     if (testDb) {
       await testDb.delete();
     }

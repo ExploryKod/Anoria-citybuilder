@@ -11,6 +11,7 @@ class AppRegistry {
         // Core game systems
         this.game = null;
         this.gameStore = null;
+        this.timeManager = null;
         
         // UI systems
         this.gameUI = null;
@@ -53,6 +54,12 @@ class AppRegistry {
         this.openAdministratorPanel = null;
         this.closeAdministratorPanel = null;
         this.showAdministratorSection = null;
+
+        // Dev / diagnostics (console via window.app.*)
+        this.togglePerformanceStats = null;
+        this.toggleStatsJs = null;
+        this.testAnimation = null;
+        this.webglTestMode = null;
     }
 
     /**
