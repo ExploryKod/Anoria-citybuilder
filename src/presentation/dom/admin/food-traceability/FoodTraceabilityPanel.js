@@ -2,9 +2,8 @@
  * FoodTraceabilityPanel — traçabilité alimentaire admin (DOM + événements).
  * Rendu HTML : FoodTraceabilityPresenter.js
  */
-import {
-import { requireSessionSupplyApi } from '../../../../composition/sessionRuntime.js';
 
+import {
     buildingStockKey,
     createFarmMarketSectionHTML,
     createMarketHouseSectionHTML,
@@ -12,13 +11,20 @@ import { requireSessionSupplyApi } from '../../../../composition/sessionRuntime.
     renderFoodStats,
 } from './FoodTraceabilityPresenter.js';
 
+/** @type {{ supply: object } | null} */
+let deps = null;
+
 // Initialize food traceability tabs (separate function so it can be called when modal opens)
 let tabsInitialized = false;
 
 /**
  * Initialise le popup de traçabilité alimentaire
  */
-export function initFoodTraceabilityPopup() {
+/**
+ * @param {{ supply: object }} panelDeps
+ */
+export function initFoodTraceabilityPopup(panelDeps) {
+    deps = panelDeps;
     const foodTraceabilityRefreshBtn = document.getElementById('food-traceability-refresh-btn');
     const filterButtons = document.querySelectorAll('.food-traceability-filter-btn');
     
@@ -125,7 +131,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
     `;
     
     try {
-        let transactions = await requireSessionSupplyApi().getAllFoodTraceabilityTransactions();
+        let transactions = await deps.supply.getAllFoodTraceabilityTransactions();
         
         // Filter by period
         if (period !== 'all') {
@@ -177,7 +183,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
         let currentStocks = {};
         let allBuildingsData = [];
         try {
-            allBuildingsData = await requireSessionSupplyApi().listSupplyStockSnapshots();
+            allBuildingsData = await deps.supply.listSupplyStockSnapshots();
             allBuildingsData.forEach(building => {
                 const buildingKey = buildingStockKey(building);
                 if (buildingKey && building.stocks) {
@@ -605,10 +611,10 @@ export async function loadFoodCharts() {
     `;
     
     try {
-        const transactions = await requireSessionSupplyApi().getAllFoodTraceabilityTransactions();
+        const transactions = await deps.supply.getAllFoodTraceabilityTransactions();
         
         // House pop via Supply BC (not raw Dexie)
-        const allHouses = (await requireSessionSupplyApi().listSupplyStockSnapshots()).filter(
+        const allHouses = (await deps.supply.listSupplyStockSnapshots()).filter(
             (b) => b.kind === 'house' || (b.type && (b.type.includes('House') || b.type.includes('Maison')))
         );
         

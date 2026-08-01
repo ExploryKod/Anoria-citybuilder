@@ -11,7 +11,7 @@ import {
   getOrCreateAccountingContext,
   resetAccountingContextForTests,
 } from '../../../src/composition/createAccountingContext.js';
-import { processLoanPayments } from '../../../src/presentation/dom/compta/prets/PretsPanel.js';
+import { processLoanPayments, initLoansPopup } from '../../../src/presentation/dom/compta/prets/PretsPanel.js';
 import { isInformativeJournalType } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/dexie/journalAggregations.js';
 import { buildInfoMovementBusinessKey } from '../../../src/contexts/accounting/domain/policies/LedgerInformativeTypePolicy.js';
 import { assembleSessionApi } from '../../../src/composition/sessionApi.js';
@@ -88,8 +88,11 @@ describe('Accounting — info loan installment (informative journal)', () => {
 
     const construction = getOrCreateConstructionContext();
     const cityAssets = getOrCreateCityAssetsContext();
-    bindSessionRuntime({
-      sessionApi: assembleSessionApi({ construction, accounting, cityAssets }),
+    const sessionApi = assembleSessionApi({ construction, accounting, cityAssets });
+    bindSessionRuntime({ sessionApi });
+    initLoansPopup({
+      accounting: sessionApi.accounting,
+      updateBudgetDisplay: async () => {},
     });
   });
 

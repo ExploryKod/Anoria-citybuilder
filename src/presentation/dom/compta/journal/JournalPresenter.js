@@ -2,20 +2,19 @@
  * JournalPresenter — rendu HTML du grand livre (données déjà chargées).
  */
 
-import { getTimeInfo } from '../../../../composition/sessionShell.js';
+import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import { formatJournalEntryDetails } from './formatJournalEntryDescription.js';
-import { requireSessionAccountingApi } from '../../../../composition/sessionRuntime.js';
 
 /**
  * @param {import('../../../../contexts/accounting/domain/read-models/GeneralLedgerView.js').GeneralLedgerView} ledger
+ * @param {{
+ *   INFO_JOURNAL_TYPE_LABELS: Record<string, string>,
+ *   isInfoPseudoMovementType: (type: string) => boolean,
+ *   labelForInfoJournalType: (type: string) => string,
+ * }} accounting
  * @returns {string}
  */
-export function renderJournalList(ledger) {
-  const {
-    INFO_JOURNAL_TYPE_LABELS,
-    isInfoPseudoMovementType,
-    labelForInfoJournalType,
-  } = requireSessionAccountingApi();
+export function renderJournalList(ledger, accounting) {
   const sortHint = `
         <p class="journal-sort-hint">Plus récent en haut — années et mois triés du plus récent au plus ancien.</p>
     `;
@@ -74,7 +73,7 @@ export function renderJournalList(ledger) {
                                 </div>
                             </div>
                             <div class="journal-month-entries">
-                                ${monthData.entries.map((entry) => createJournalEntryHTML(entry)).join('')}
+                                ${monthData.entries.map((entry) => createJournalEntryHTML(entry, accounting)).join('')}
                             </div>
                         </div>
                     `;
@@ -89,14 +88,19 @@ export function renderJournalList(ledger) {
 
 /**
  * @param {object} entry
+ * @param {{
+ *   INFO_JOURNAL_TYPE_LABELS: Record<string, string>,
+ *   isInfoPseudoMovementType: (type: string) => boolean,
+ *   labelForInfoJournalType: (type: string) => string,
+ * }} accounting
  * @returns {string}
  */
-function createJournalEntryHTML(entry) {
+function createJournalEntryHTML(entry, accounting) {
   const {
     INFO_JOURNAL_TYPE_LABELS,
     isInfoPseudoMovementType,
     labelForInfoJournalType,
-  } = requireSessionAccountingApi();
+  } = accounting;
   const date = new Date(entry.date);
   const formattedDate = date.toLocaleString('fr-FR', {
     day: '2-digit',
@@ -108,7 +112,7 @@ function createJournalEntryHTML(entry) {
 
   let yearDisplay = '';
   if (entry.turn !== undefined) {
-    const timeInfo = getTimeInfo(entry.turn);
+    const timeInfo = TimeManager.getTimeInfo(entry.turn);
     yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
   }
 

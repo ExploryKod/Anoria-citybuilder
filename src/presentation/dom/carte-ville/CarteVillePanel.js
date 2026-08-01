@@ -3,17 +3,21 @@
  * Rendu grille : CarteVillePresenter.js
  */
 
-import { getPopupManager, registerAppFunction } from '../../../composition/sessionShell.js';
-import {
-  getSessionCity,
-  requireSessionParcelsApi,
-  requireSessionSupplyApi,
-} from '../../../composition/sessionRuntime.js';
 import {
   renderCityMapGridHtml,
   renderCityMapLoadingHtml,
   renderCityMapErrorHtml,
 } from './CarteVillePresenter.js';
+
+/**
+ * @type {{
+ *   supply: object,
+ *   parcels: object,
+ *   popupManager?: object | null,
+ *   getCity?: () => { size?: number } | null,
+ * } | null}
+ */
+let deps = null;
 
 let carteVilleFiltersInitialized = false;
 let carteVilleLegendInitialized = false;
@@ -76,6 +80,12 @@ function initCarteVilleFilters() {
 }
 
 export async function generateCarteVille() {
+  if (!deps?.supply || !deps?.parcels) {
+    console.warn('[CarteVillePanel] deps not initialized');
+    return;
+  }
+
+  const { supply, parcels, getCity } = deps;
   const cityMapGrid = document.getElementById('city-map-grid');
   if (!cityMapGrid) return;
 
@@ -83,14 +93,14 @@ export async function generateCarteVille() {
     cityMapGrid.innerHTML = renderCityMapLoadingHtml();
 
     let citySize = 16;
-    const city = getSessionCity();
+    const city = getCity?.();
     if (city?.size) {
       citySize = city.size;
     }
 
     let buildings = [];
     try {
-      buildings = await requireSessionSupplyApi().listSupplyMapBuildings();
+      buildings = await supply.listSupplyMapBuildings();
     } catch (error) {
       console.warn('Could not load Supply map buildings:', error);
       buildings = [];
@@ -112,7 +122,7 @@ export async function generateCarteVille() {
     cityMapGrid.innerHTML = renderCityMapGridHtml({
       citySize,
       buildingMap,
-      hasRoadAccessFromCount,
+      hasRoadAccessFromCount: (...args) => parcels.hasRoadAccessFromCount(...args),
     });
   } catch (error) {
     console.error('Error generating city map:', error);
@@ -123,7 +133,18 @@ export async function generateCarteVille() {
   }
 }
 
-export function initCarteVillePopup() {
+/**
+ * @param {{
+ *   supply: object,
+ *   parcels: object,
+ *   popupManager?: object | null,
+ *   getCity?: () => { size?: number } | null,
+ * }} panelDeps
+ */
+export function initCarteVillePopup(panelDeps) {
+  deps = panelDeps;
+  const { popupManager } = deps;
+
   const cityMapBtn = document.getElementById('city-map-btn');
   const cityMapPanel = document.getElementById('city-map-panel');
   const cityMapCloseBtn = document.querySelector('.city-map-close-btn');
@@ -154,32 +175,24 @@ export function initCarteVillePopup() {
     cityMapPanel.classList.toggle('active');
 
     if (cityMapPanel.classList.contains('active')) {
-      if (getPopupManager()) {
-        getPopupManager().forceOpenPopup('city-map-panel');
-      }
+      popupManager?.forceOpenPopup('city-map-panel');
       await generateCarteVille();
       setTimeout(initCollapsibleLegend, 100);
       initCarteVilleFilters();
-    } else if (getPopupManager()) {
-      getPopupManager().forceClosePopup('city-map-panel');
+    } else {
+      popupManager?.forceClosePopup('city-map-panel');
     }
   });
 
   cityMapCloseBtn.addEventListener('click', () => {
     cityMapPanel.classList.remove('active');
-    if (getPopupManager()) {
-      getPopupManager().forceClosePopup('city-map-panel');
-    }
+    popupManager?.forceClosePopup('city-map-panel');
   });
 
   cityMapPanel.addEventListener('click', (e) => {
     if (e.target === cityMapPanel) {
       cityMapPanel.classList.remove('active');
-      if (getPopupManager()) {
-        getPopupManager().forceClosePopup('city-map-panel');
-      }
+      popupManager?.forceClosePopup('city-map-panel');
     }
   });
 }
-
-registerAppFunction('generateCarteVille', generateCarteVille);
