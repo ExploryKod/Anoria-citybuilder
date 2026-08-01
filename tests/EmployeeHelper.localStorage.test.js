@@ -7,7 +7,7 @@
 import {
     getSectorPriority,
     getAllSectorPriorities
-} from '../src/js/game/modules/EmployeeHelper.js';
+} from '../src/js/acl/employment.js';
 
 // ============================================================================
 // Tests pour les priorités d'emploi (localStorage)

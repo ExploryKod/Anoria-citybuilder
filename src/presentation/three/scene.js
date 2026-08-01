@@ -44,7 +44,7 @@ import {
 } from '../../js/ui/nodes.js';
 import {assetsPrices} from "./meshs/data.js";
 import { setupRoadAccessIcons } from '../../js/acl/parcels.js';
-import { getDefaultEmployees } from '../../js/game/modules/EmployeeHelper.js';
+import { getDefaultEmployees } from '../../js/acl/employment.js';
 import { TimeManager } from '../../js/game/utils/TimeManager.js';
 import config from '../../js/game/config.js';
 import { LightingManager } from './managers/LightingManager.js';
