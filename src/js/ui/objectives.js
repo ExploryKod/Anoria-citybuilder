@@ -2,6 +2,18 @@
  * Système de Tutoriel - Anoria City Builder
  * Gère l'affichage et la logique de la popup de tutoriel
  */
+import {
+    pauseGame,
+    playGame,
+    registerAppService,
+    registerAppFunction,
+    getTutorialManager,
+    getObjectivesTracker,
+    getObjectivesHistory,
+    getObjectivesStore,
+    invokeStartObjectives,
+} from '../acl/appRuntime.js';
+import EventBlocker from '../utils/EventBlocker.js';
 
 class ObjectivesManager {
     constructor() {
@@ -78,8 +90,9 @@ class ObjectivesManager {
      */
     async setupDefaultSteps() {
         // Charger les objectifs depuis le tracker
-        if (window.objectivesTracker) {
-            const objectives = window.objectivesTracker.objectives;
+        const objectivesTracker = getObjectivesTracker();
+        if (objectivesTracker) {
+            const objectives = objectivesTracker.objectives;
             const activeObjectives = objectives.filter(obj => obj.active && !obj.completed);
             
             // Initialiser les étapes
@@ -145,8 +158,9 @@ class ObjectivesManager {
         }
 
         // Afficher l'état actuel de manière simplifiée
-        if (window.objectivesTracker) {
-            const trackingData = window.objectivesTracker.getTrackingData();
+        const objectivesTracker = getObjectivesTracker();
+        if (objectivesTracker) {
+            const trackingData = objectivesTracker.getTrackingData();
             
             html += `<div style="background: rgba(251, 129, 34, 0.05); border-radius: 8px; padding: 16px; margin-top: 16px; border: 1px solid rgba(251, 129, 34, 0.2);">`;
             html += '<strong style="color: var(--cta); display: block; margin-bottom: 12px; font-size: 14px;">État actuel :</strong>';
@@ -218,9 +232,7 @@ class ObjectivesManager {
         this.disableThreeJSEvents();
         
         // Mettre le jeu en pause
-        if (window.game && typeof window.game.pause === 'function') {
-            window.game.pause();
-        }
+        pauseGame();
     }
 
     /**
@@ -234,9 +246,7 @@ class ObjectivesManager {
         this.enableThreeJSEvents();
         
         // Reprendre le jeu
-        if (window.game && typeof window.game.play === 'function') {
-            window.game.play();
-        }
+        playGame();
     }
 
     /**
@@ -286,10 +296,11 @@ class ObjectivesManager {
             if (historyBtn) {
                 historyBtn.addEventListener('click', (e) => {
                     e.preventDefault();
-                    if (window.objectivesHistory && window.objectivesHistory.showHistory) {
-                        window.objectivesHistory.showHistory();
+                    const objectivesHistory = getObjectivesHistory();
+                    if (objectivesHistory?.showHistory) {
+                        objectivesHistory.showHistory();
                     } else {
-                        console.warn('window.objectivesHistory not available');
+                        console.warn('objectivesHistory not available');
                     }
                 });
             }
@@ -307,7 +318,7 @@ class ObjectivesManager {
         if (!historyContent) return;
         
         try {
-            const allRecords = await window.objectivesStore.getAllFailures();
+            const allRecords = await getObjectivesStore().getAllFailures();
             const failures = allRecords.filter(r => r.name?.startsWith('failure_'));
             const successes = allRecords.filter(r => r.name?.startsWith('success_'));
             
@@ -354,8 +365,9 @@ class ObjectivesManager {
                 const fullHistoryBtn = historyContent.querySelector('#open-full-history-btn');
                 if (fullHistoryBtn) {
                     fullHistoryBtn.addEventListener('click', () => {
-                        if (window.objectivesHistory) {
-                            window.objectivesHistory.showHistory();
+                        const objectivesHistory = getObjectivesHistory();
+                        if (objectivesHistory) {
+                            objectivesHistory.showHistory();
                         }
                     });
                 }
@@ -433,22 +445,15 @@ class ObjectivesManager {
 // Créer une instance globale
 const tutorialManager = new ObjectivesManager();
 
-// Exposer globalement pour les tests
-window.tutorialManager = tutorialManager;
-// Also register with AppRegistry if available
-if (window.app && window.app.register) {
-    window.app.register('tutorialManager', tutorialManager);
-}
+registerAppService('tutorialManager', tutorialManager);
 
-// Fonction utilitaire pour démarrer les objectifs
-window.startObjectives = async () => {
+registerAppFunction('startObjectives', async () => {
     await tutorialManager.showObjectives();
-};
+});
 
-// Fonction utilitaire pour fermer le tutoriel
-window.closeObjectives = () => {
+registerAppFunction('closeObjectives', () => {
     tutorialManager.closeObjectives();
-};
+});
 
 // Vérifier que le bouton objectives existe et ajouter un event listener direct
 document.addEventListener('DOMContentLoaded', () => {
@@ -464,24 +469,21 @@ document.addEventListener('DOMContentLoaded', () => {
             e.stopPropagation();
             e.stopImmediatePropagation();
             
-            if (window.startObjectives) {
-                await window.startObjectives();
-            }
+            await invokeStartObjectives();
         }, true); // true = capture phase
     }
 });
 
 // Gestion d'erreur globale pour s'assurer que les événements Three.js sont réactivés
 window.addEventListener('error', (e) => {
-    if (window.tutorialManager && window.tutorialManager.eventBlocker.isEventsBlocked()) {
-        window.tutorialManager.cleanup();
+    const tutorialManagerRef = getTutorialManager();
+    if (tutorialManagerRef && tutorialManagerRef.eventBlocker.isEventsBlocked()) {
+        tutorialManagerRef.cleanup();
     }
 });
 
 // Nettoyage lors de la fermeture de la page
 window.addEventListener('beforeunload', () => {
-    if (window.tutorialManager) {
-        window.tutorialManager.cleanup();
-    }
+    getTutorialManager()?.cleanup();
 });
 

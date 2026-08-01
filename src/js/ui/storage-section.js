@@ -1,4 +1,14 @@
-import config from '../game/config.js';
+import { listWindmillSupplyViews, updateSupplyBuildingFields } from '../acl/supply.js';
+import { getBuildingById } from '../acl/construction.js';
+import { registerAppService } from '../acl/appRuntime.js';
+import {
+    instanceIdFromHouseRow,
+    displayLabelFromHouseRow,
+} from '../acl/building-identity.js';
+
+function windmillInstanceId(windmill) {
+    return instanceIdFromHouseRow(windmill);
+}
 
 /**
  * StorageSectionManager - Manages the Storage Units (Unités de Stock) section
@@ -7,15 +17,6 @@ import config from '../game/config.js';
 class StorageSectionManager {
     constructor() {
         this.windmills = [];
-        this.housesStore = null;
-    }
-    
-    /**
-     * Set the housesStore reference
-     * @param {HousesStore} housesStore - Database store
-     */
-    setHousesStore(housesStore) {
-        this.housesStore = housesStore;
     }
     
     /**
@@ -24,8 +25,6 @@ class StorageSectionManager {
     async init() {
         this.setupEventListeners();
         await this.loadWindmills();
-        // No automatic refresh - data is read directly from IndexedDB when panel opens
-        // Just like info panel, it shows current state at that moment
     }
     
     /**
@@ -36,29 +35,33 @@ class StorageSectionManager {
     }
     
     /**
-     * Load all windmills from IndexedDB
+     * Load all windmills — Supply stocks via BC; settings/employees via Construction ACL.
      */
     async loadWindmills() {
-        if (!this.housesStore) {
-            // Try to get housesStore from window
-            if (window.app && window.app.housesStore) {
-                this.housesStore = window.app.housesStore;
-            } else if (window.housesStore) {
-                this.housesStore = window.housesStore;
-            } else if (window.game && window.game.housesStore) {
-                this.housesStore = window.game.housesStore;
-            } else {
-                console.warn('[StorageSection] housesStore not available');
-                return;
-            }
-        }
-        
         try {
-            const allHouses = await this.housesStore.listAllHouses();
-            this.windmills = allHouses.filter(house => {
-                const type = house.type || '';
-                return type.includes('Windmill') || type.includes('windmill');
-            });
+            const supplyViews = await listWindmillSupplyViews();
+
+            this.windmills = [];
+            for (const view of supplyViews) {
+                const raw = await getBuildingById(view.buildingId);
+                this.windmills.push({
+                    ...(raw || {}),
+                    instanceId: view.buildingId,
+                    id: view.buildingId,
+                    type: view.type,
+                    x: view.x,
+                    y: view.y,
+                    stocks: view.stocks,
+                    maxStock: view.maxStock,
+                    lastImportDetails: view.lastImportDetails || raw?.lastImportDetails || {},
+                    lastExportDetails: raw?.lastExportDetails || {},
+                    employees: raw?.employees,
+                    isActive: view.isActive ?? raw?.isActive,
+                    distributionEnabled: raw?.distributionEnabled,
+                    commercializeEnabled: view.commercializeEnabled ?? raw?.commercializeEnabled,
+                    distributionMonth: raw?.distributionMonth,
+                });
+            }
             
             this.render();
         } catch (error) {
@@ -94,10 +97,10 @@ class StorageSectionManager {
     createWindmillCard(windmill) {
         const card = document.createElement('div');
         card.className = 'storage-windmill-card';
-        card.dataset.windmillId = windmill.name;
+        card.dataset.windmillId = windmillInstanceId(windmill);
         
         const stocks = windmill.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0, dattes: 0 };
-        const maxStock = 1000;
+        const maxStock = windmill.maxStock || 1000;
         const isActive = windmill.isActive !== false; // Default to true
         const distributionEnabled = windmill.distributionEnabled !== false; // Default to true
         const commercializeEnabled = windmill.commercializeEnabled !== false; // Default to true
@@ -136,7 +139,7 @@ class StorageSectionManager {
         card.innerHTML = `
             <div class="storage-windmill-header">
                 <div class="storage-windmill-id">
-                    <strong>Moulin ID:</strong> ${windmill.name}
+                    <strong>Moulin:</strong> ${displayLabelFromHouseRow(windmill)}
                 </div>
                 <div class="storage-windmill-location">
                     Position: x: ${windmill.x || 0} | y: ${windmill.y || 0}
@@ -210,28 +213,28 @@ class StorageSectionManager {
             <div class="storage-windmill-controls">
                 <div class="storage-control-item">
                     <label class="storage-toggle-label">
-                        <input type="checkbox" class="storage-toggle" data-windmill="${windmill.name}" data-setting="isActive" ${isActive ? 'checked' : ''}>
+                        <input type="checkbox" class="storage-toggle" data-windmill="${windmillInstanceId(windmill)}" data-setting="isActive" ${isActive ? 'checked' : ''}>
                         <span>Moulin actif</span>
                     </label>
                 </div>
                 
                 <div class="storage-control-item">
                     <label class="storage-toggle-label">
-                        <input type="checkbox" class="storage-toggle" data-windmill="${windmill.name}" data-setting="distributionEnabled" ${distributionEnabled ? 'checked' : ''}>
+                        <input type="checkbox" class="storage-toggle" data-windmill="${windmillInstanceId(windmill)}" data-setting="distributionEnabled" ${distributionEnabled ? 'checked' : ''}>
                         <span>Distribuer les stocks</span>
                     </label>
                 </div>
                 
                 <div class="storage-control-item">
                     <label class="storage-toggle-label">
-                        <input type="checkbox" class="storage-toggle" data-windmill="${windmill.name}" data-setting="commercializeEnabled" ${commercializeEnabled ? 'checked' : ''}>
+                        <input type="checkbox" class="storage-toggle" data-windmill="${windmillInstanceId(windmill)}" data-setting="commercializeEnabled" ${commercializeEnabled ? 'checked' : ''}>
                         <span>Commercialiser</span>
                     </label>
                 </div>
                 
                 <div class="storage-control-item">
                     <label>Période de distribution:</label>
-                    <select class="storage-month-select" data-windmill="${windmill.name}" data-setting="distributionMonth">
+                    <select class="storage-month-select" data-windmill="${windmillInstanceId(windmill)}" data-setting="distributionMonth">
                         <option value="0" ${distributionMonth === 0 ? 'selected' : ''}>Janvier</option>
                         <option value="1" ${distributionMonth === 1 ? 'selected' : ''}>Février</option>
                         <option value="2" ${distributionMonth === 2 ? 'selected' : ''}>Mars</option>
@@ -281,7 +284,7 @@ class StorageSectionManager {
      * @param {Object} windmill - Windmill data
      */
     attachEventListeners(card, windmill) {
-        const windmillId = windmill.name;
+        const windmillId = windmillInstanceId(windmill);
         
         // Max stock input (single input for total capacity)
         // Toggle switches
@@ -316,18 +319,13 @@ class StorageSectionManager {
      * @param {*} value - Setting value
      */
     async updateWindmillSetting(windmillId, setting, value) {
-        if (!this.housesStore) {
-            console.warn('[StorageSection] Cannot update: housesStore not available');
-            return;
-        }
-        
         try {
-            await this.housesStore.updateHouseFields(windmillId, {
+            await updateSupplyBuildingFields(windmillId, {
                 [setting]: value
             });
             
             // Update local data
-            const windmill = this.windmills.find(w => w.name === windmillId);
+            const windmill = this.windmills.find((w) => windmillInstanceId(w) === windmillId);
             if (windmill) {
                 windmill[setting] = value;
             }
@@ -357,15 +355,6 @@ function initStorageSection() {
     
     const manager = new StorageSectionManager();
     
-    // Try to get housesStore
-    if (window.app && window.app.housesStore) {
-        manager.setHousesStore(window.app.housesStore);
-    } else if (window.housesStore) {
-        manager.setHousesStore(window.housesStore);
-    } else if (window.game && window.game.housesStore) {
-        manager.setHousesStore(window.game.housesStore);
-    }
-    
     // Initialize when section becomes active
     const observer = new MutationObserver(() => {
         if (storageSection.classList.contains('active')) {
@@ -382,24 +371,7 @@ function initStorageSection() {
     }
     
     // Make manager available globally
-    window.storageSectionManager = manager;
-    
-    // Try to set housesStore from game if available
-    const checkHousesStore = setInterval(() => {
-        if (window.app && window.app.housesStore) {
-            manager.setHousesStore(window.app.housesStore);
-            clearInterval(checkHousesStore);
-        } else if (window.housesStore) {
-            manager.setHousesStore(window.housesStore);
-            clearInterval(checkHousesStore);
-        } else if (window.game && window.game.housesStore) {
-            manager.setHousesStore(window.game.housesStore);
-            clearInterval(checkHousesStore);
-        }
-    }, 100);
-    
-    // Stop checking after 5 seconds
-    setTimeout(() => clearInterval(checkHousesStore), 5000);
+    registerAppService('storageSectionManager', manager);
 }
 
 // Initialize when DOM is ready
@@ -408,4 +380,3 @@ if (document.readyState === 'loading') {
 } else {
     initStorageSection();
 }
-

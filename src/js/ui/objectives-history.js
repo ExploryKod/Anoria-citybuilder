@@ -1,3 +1,5 @@
+import { getTutorialManager, getObjectivesStore, registerAppService } from '../acl/appRuntime.js';
+
 /**
  * Gestion de l'historique des objectifs (succès et échecs)
  */
@@ -19,7 +21,7 @@ class ObjectivesHistory {
 
         try {
             // Récupérer toutes les données du store
-            const allRecords = await window.objectivesStore.getAllFailures();
+            const allRecords = await getObjectivesStore().getAllFailures();
             
             const failures = allRecords.filter(r => r.name?.startsWith('failure_'));
             const successes = allRecords.filter(r => r.name?.startsWith('success_'));
@@ -110,8 +112,8 @@ class ObjectivesHistory {
             this.isOpen = true;
 
             // Désactiver les événements Three.js
-            if (window.tutorialManager && window.tutorialManager.disableThreeJSEvents) {
-                window.tutorialManager.disableThreeJSEvents();
+            if (getTutorialManager() && getTutorialManager().disableThreeJSEvents) {
+                getTutorialManager().disableThreeJSEvents();
             }
         } catch (error) {
             console.error('Error showing objectives history:', error);
@@ -192,17 +194,13 @@ class ObjectivesHistory {
         this.isOpen = false;
 
         // Réactiver les événements Three.js
-        if (window.tutorialManager && window.tutorialManager.enableThreeJSEvents) {
-            window.tutorialManager.enableThreeJSEvents();
+        if (getTutorialManager() && getTutorialManager().enableThreeJSEvents) {
+            getTutorialManager().enableThreeJSEvents();
         }
     }
 }
 
 const objectivesHistory = new ObjectivesHistory();
-window.objectivesHistory = objectivesHistory;
-// Also register with AppRegistry if available
-if (window.app && window.app.register) {
-    window.app.register('objectivesHistory', objectivesHistory);
-}
+registerAppService('objectivesHistory', objectivesHistory);
 export default objectivesHistory;
 

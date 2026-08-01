@@ -29,7 +29,7 @@ import { BudgetProcessor } from './managers/BudgetProcessor.js';
 ### 2. Initialisation dans createScene()
 
 ```javascript
-export function createScene(housesStore, gameStore, assetManager) {
+export function createScene(gameStore, assetManager, parcelsOption, supplyOption, housingOption) {
     const scene = new THREE.Scene();
     // ... autres initialisations ...
     
@@ -86,7 +86,7 @@ async function update(city, time=0) {
     await budgetProcessor.processBudget(time, totalPop, buildingCounts, maintenanceBreakdown);
     
     // Remplacer la gestion des citoyens par:
-    const currentPopulation = await housesStore.getGlobalPopulation();
+    const currentPopulation = await getCityTotalPopulation();
     await citizenManager.updateCitizens(
         currentPopulation, 
         city, 
@@ -98,6 +98,12 @@ async function update(city, time=0) {
     
     // ... reste du code ...
 }
+```
+
+Import requis en tête de `scene.js` :
+
+```javascript
+import { getCityTotalPopulation } from '../acl/housing.js';
 ```
 
 ### 5. Dans draw()

@@ -2,8 +2,7 @@
  * AppRegistry - Centralized namespace for application globals
  * Inspired by simcity's minimal global surface pattern
  * 
- * Instead of many window.* globals, use window.app.* for better organization
- * Maintains backwards compatibility by also exposing on window.*
+ * Instead of many window.* globals, use window.app.* or js/acl/appRuntime.js.
  */
 
 class AppRegistry {
@@ -11,7 +10,7 @@ class AppRegistry {
         // Core game systems
         this.game = null;
         this.gameStore = null;
-        this.housesStore = null;
+        this.timeManager = null;
         
         // UI systems
         this.gameUI = null;
@@ -27,11 +26,21 @@ class AppRegistry {
         
         // Stores
         this.objectivesStore = null;
-        
+
+        // Admin / section UI
+        this.workSectionManager = null;
+        this.multiplayerManager = null;
+        this.financesSectionManager = null;
+        this.storageSectionManager = null;
+        this.factorySectionManager = null;
+        this.reportSectionManager = null;
+        this.healthSectionManager = null;
+        this.parametersPanelManager = null;
+
         // Utilities
         this.EventBlocker = null;
-        
-        // Functions (kept for backwards compatibility)
+
+        // Functions (legacy entry points — prefer ACL getters)
         this.setActiveTool = null;
         this.processLoanPayments = null;
         this.loadBudgetStates = null;
@@ -41,15 +50,26 @@ class AppRegistry {
         this.closeObjectives = null;
         this.startTutorial = null;
         this.closeTutorial = null;
+        this.openAdministratorPanel = null;
+        this.closeAdministratorPanel = null;
+        this.showAdministratorSection = null;
+
+        // Dev / diagnostics (console via window.app.*)
+        this.togglePerformanceStats = null;
+        this.toggleStatsJs = null;
+        this.testAnimation = null;
+        this.webglTestMode = null;
+        this.foodTraceabilityService = null;
+        this.updateBudgetDisplay = null;
     }
 
     /**
      * Registers a core game instance
      * @param {string} name - Name of the instance
      * @param {*} instance - The instance to register
-     * @param {boolean} exposeOnWindow - Also expose on window.* for backwards compatibility (default: true)
+     * @param {boolean} exposeOnWindow - Legacy window.* mirror (default: false — use js/acl/appRuntime.js)
      */
-    register(name, instance, exposeOnWindow = true) {
+    register(name, instance, exposeOnWindow = false) {
         if (!this.hasOwnProperty(name)) {
             console.warn(`AppRegistry: Unknown property "${name}" - adding dynamically`);
         }
@@ -88,7 +108,6 @@ class AppRegistry {
         return {
             game: this.game,
             gameStore: this.gameStore,
-            housesStore: this.housesStore,
             gameUI: this.gameUI,
             popupManager: this.popupManager,
             objectivesTracker: this.objectivesTracker,
@@ -106,8 +125,10 @@ class AppRegistry {
 // Create singleton instance
 const appRegistry = new AppRegistry();
 
-// Expose as window.app (following simcity's pattern of minimal, organized globals)
-window.app = appRegistry;
+// Expose as window.app (single intentional global namespace in browser)
+if (typeof window !== 'undefined') {
+  window.app = appRegistry;
+}
 
 export default appRegistry;
 

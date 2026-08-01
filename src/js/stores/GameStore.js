@@ -1,4 +1,4 @@
-import db from './db';
+import db from '../../core/persistence/dexie/db.js';
 
 class GameStore {
     constructor() {

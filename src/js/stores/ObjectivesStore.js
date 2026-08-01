@@ -1,4 +1,5 @@
-import db from './db.js';
+import db from '../../core/persistence/dexie/db.js';
+import { registerAppService } from '../acl/appRuntime.js';
 
 /**
  * ObjectivesStore - Gestion du store des objectifs (échecs, succès, etc.)
@@ -94,12 +95,7 @@ class ObjectivesStore {
 // Export an instance of the ObjectivesStore class
 const objectivesStore = new ObjectivesStore();
 
-// Expose globally for easy access
-window.objectivesStore = objectivesStore;
-// Also register with AppRegistry if available
-if (window.app && window.app.register) {
-    window.app.register('objectivesStore', objectivesStore);
-}
+registerAppService('objectivesStore', objectivesStore);
 
 export default objectivesStore;
 

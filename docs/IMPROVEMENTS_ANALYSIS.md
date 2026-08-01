@@ -51,20 +51,16 @@ class GameObject extends THREE.Object3D {
 - Testable (modules can be tested independently)
 - Reusable (same module across different building types)
 
-**Apply to Anoria:**
+**Apply to Anoria (état actuel) :**
+- Accès routier / voisinage : **BC Parcels** (use cases + ports), plus `RoadAccessModule` legacy (supprimé)
+- Food / emploi : encore legacy / futurs BC — ne pas réintroduire des modules Three.js couplés
 ```javascript
-// Instead of monolithic building logic:
-class Building extends SimObject {
-  power = new PowerModule(this);
-  roadAccess = new RoadAccessModule(this);
-  food = new FoodModule(this); // New feature!
-  
-  simulate(city) {
-    this.power.simulate(city);
-    this.roadAccess.simulate(city);
-    this.food.simulate(city);
-  }
-}
+// Lecture UI / gameplay :
+parcels.getRoadAccess(buildingId)
+parcels.getNeighbors(buildingId)
+// Actions :
+parcels.syncPlacedBuilding({ buildingId, x, y, type })
+parcels.syncRemovedBuilding({ buildingId })
 ```
 
 ---

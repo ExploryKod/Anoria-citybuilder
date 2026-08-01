@@ -1,4 +1,22 @@
+import { updateDisplayedFunds, getGameTime, getFoodTraceabilityService, getTimeInfo } from '../acl/appRuntime.js';
 import commerceStore from '../stores/CommerceStore.js';
+import config from '../game/config.js';
+import { getCityEmploymentSummary } from '../acl/employment.js';
+import { getCityTotalPopulation } from '../acl/housing.js';
+import {
+    listCommercializableWindmills,
+    listSupplyMapBuildings,
+    listWindmillSupplyViews,
+} from '../acl/supply.js';
+import { getTreasuryBalance, getTreasurySnapshot, recordCommercialRouteFee } from '../acl/accountingGame.js';
+import {
+    getPriceStatus as resolvePriceStatus,
+    getContractStatus as resolvePartnerContractStatus,
+    getProductStockKey,
+    getProductDisplayName,
+    evaluatePartnerActivationConditions,
+    setCommercePartnerContractFinishedHandler,
+} from '../acl/commerce.js';
 
 class CommerceSectionManager {
     constructor() {
@@ -80,416 +98,10 @@ class CommerceSectionManager {
         });
     }
 
-    /**
-     * Generate initial partners data
-     * @returns {Array<Object>} Partners with trade configurations
-     * Dependencies: None
-     */
-    generatePartnersData() {
-        return [
-            {
-                id: 'deserta',
-                name: 'Deserta',
-                description: 'Ville désertique spécialisée dans les dattes',
-                isActive: false, // Relation commerciale désactivée par défaut
-                activationConditions: [
-                    'population_min_5',
-                    'unemployment_max_10',
-                    'windmill_stocks_available'
-                ], // Conditions requises pour activer
-                imports: [
-                    {
-                        productId: 'carrot',
-                        productName: 'Carotte',
-                        months: [7, 8, 11],
-                        maxPerTurn: 8,
-                        maxOccurrences: 9,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    },
-                    {
-                        productId: 'wood',
-                        productName: 'Bois',
-                        months: [11],
-                        maxPerTurn: 5,
-                        maxOccurrences: 2,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    }
-                ],
-                exports: [
-                    {
-                        productId: 'dattes',
-                        productName: 'Dattes',
-                        months: [0, 2],
-                        maxOccurrences: 2,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    }
-                ]
-            },
-            {
-                id: 'tropicala',
-                name: 'Tropicala',
-                description: 'Ville tropicale aux ressources exotiques',
-                isActive: false,
-                activationConditions: [],
-                imports: [
-                    {
-                        productId: 'wheat',
-                        productName: 'Blé',
-                        months: [3, 4, 9],
-                        maxPerTurn: 6,
-                        maxOccurrences: 8,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    },
-                    {
-                        productId: 'cabbage',
-                        productName: 'Chou',
-                        months: [5, 6, 10],
-                        maxPerTurn: 4,
-                        maxOccurrences: 6,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    }
-                ],
-                exports: [
-                    {
-                        productId: 'wood',
-                        productName: 'Bois tropical',
-                        months: [1, 2, 8],
-                        maxOccurrences: 4,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    }
-                ]
-            },
-            {
-                id: 'arctica',
-                name: 'Arctica',
-                description: 'Ville du nord aux ressources rares',
-                isActive: false,
-                activationConditions: [],
-                imports: [
-                    {
-                        productId: 'carrot',
-                        productName: 'Carotte',
-                        months: [1, 2, 6, 10],
-                        maxPerTurn: 5,
-                        maxOccurrences: 10,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    }
-                ],
-                exports: [
-                    {
-                        productId: 'wood',
-                        productName: 'Bois du nord',
-                        months: [4, 5, 9, 11],
-                        maxOccurrences: 6,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    }
-                ]
-            },
-            {
-                id: 'montana',
-                name: 'Montana',
-                description: 'Ville montagnarde spécialisée dans les légumes',
-                isActive: false,
-                activationConditions: [],
-                imports: [
-                    {
-                        productId: 'wood',
-                        productName: 'Bois',
-                        months: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-                        maxPerTurn: 5,
-                        maxOccurrences: 20,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    }
-                ],
-                exports: [
-                    {
-                        productId: 'cabbage',
-                        productName: 'Chou',
-                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-                        maxOccurrences: 15,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    }
-                ]
-            },
-            {
-                id: 'riviera',
-                name: 'Riviera',
-                description: 'Ville côtière méditerranéenne',
-                isActive: false,
-                activationConditions: [],
-                imports: [
-                    {
-                        productId: 'wood',
-                        productName: 'Bois',
-                        months: [3, 4, 5, 6, 7, 8, 9],
-                        maxPerTurn: 6,
-                        maxOccurrences: 18,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    }
-                ],
-                exports: [
-                    {
-                        productId: 'cabbage',
-                        productName: 'Chou',
-                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-                        maxOccurrences: 12,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    }
-                ]
-            },
-            {
-                id: 'oceania',
-                name: 'Oceania',
-                description: 'Archipel océanique aux ressources variées',
-                isActive: false,
-                activationConditions: [],
-                imports: [
-                    {
-                        productId: 'carrot',
-                        productName: 'Carotte',
-                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-                        maxPerTurn: 4,
-                        maxOccurrences: 24,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    }
-                ],
-                exports: [
-                    {
-                        productId: 'wood',
-                        productName: 'Bois',
-                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-                        maxOccurrences: 20,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    }
-                ]
-            },
-            {
-                id: 'paysana',
-                name: 'Paysana',
-                description: 'Région agricole très productive',
-                isActive: false,
-                activationConditions: [],
-                imports: [
-                    {
-                        productId: 'carrot',
-                        productName: 'Carotte',
-                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-                        maxPerTurn: 8,
-                        maxOccurrences: 30,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    },
-                    {
-                        productId: 'wheat',
-                        productName: 'Blé',
-                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-                        maxPerTurn: 10,
-                        maxOccurrences: 36,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    },
-                    {
-                        productId: 'cabbage',
-                        productName: 'Chou',
-                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-                        maxPerTurn: 7,
-                        maxOccurrences: 28,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    }
-                ],
-                exports: [
-                    {
-                        productId: 'wood',
-                        productName: 'Bois',
-                        months: [4, 5, 6, 7, 8],
-                        maxOccurrences: 8,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    }
-                ]
-            },
-            {
-                id: 'savana',
-                name: 'Savana',
-                description: 'Région de savane aux échanges variés',
-                isActive: false,
-                activationConditions: [],
-                imports: [
-                    {
-                        productId: 'carrot',
-                        productName: 'Carotte',
-                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-                        maxPerTurn: 5,
-                        maxOccurrences: 20,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    },
-                    {
-                        productId: 'wood',
-                        productName: 'Bois',
-                        months: [2, 3, 4, 5, 6, 7, 8, 9],
-                        maxPerTurn: 4,
-                        maxOccurrences: 16,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    }
-                ],
-                exports: [
-                    {
-                        productId: 'wheat',
-                        productName: 'Blé',
-                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-                        maxOccurrences: 25,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    }
-                ]
-            },
-            {
-                id: 'foresta',
-                name: 'Foresta',
-                description: 'Région forestière riche en bois',
-                isActive: false,
-                activationConditions: [],
-                imports: [
-                    {
-                        productId: 'wood',
-                        productName: 'Bois',
-                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-                        maxPerTurn: 12,
-                        maxOccurrences: 40,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    }
-                ],
-                exports: [
-                    {
-                        productId: 'wheat',
-                        productName: 'Blé',
-                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-                        maxOccurrences: 18,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    }
-                ]
-            }
-        ];
-    }
-
-    /**
-     * Load partners data from localStorage
-     * Dependencies: localStorage
-     */
     loadPartnersData() {
-        const stored = localStorage.getItem('commerce_partners');
-        if (stored) {
-            try {
-                this.partnersData = JSON.parse(stored);
-                // Migration: Remove deprecated condition 'funds_min_3000_deficit'
-                let needsSave = false;
-                this.partnersData.forEach(partner => {
-                    if (partner.activationConditions && Array.isArray(partner.activationConditions)) {
-                        const index = partner.activationConditions.indexOf('funds_min_3000_deficit');
-                        if (index !== -1) {
-                            partner.activationConditions.splice(index, 1);
-                            needsSave = true;
-                        }
-                    }
-                });
-                if (needsSave) {
-                    this.savePartnersData();
-                }
-            } catch (e) {
-                this.partnersData = this.generatePartnersData();
-                this.savePartnersData();
-            }
-        } else {
-            this.partnersData = this.generatePartnersData();
-            this.savePartnersData();
-        }
+        this.partnersData = commerceStore.loadOrSeedPartners();
     }
 
-    /**
-     * Get housesStore instance
-     * @returns {HousesStore|null} HousesStore instance or null
-     */
-    getHousesStore() {
-        if (window.app && window.app.housesStore) {
-            return window.app.housesStore;
-        } else if (window.housesStore) {
-            return window.housesStore;
-        } else if (window.game && window.game.housesStore) {
-            return window.game.housesStore;
-        }
-        return null;
-    }
-
-    /**
-     * Check if partner has active contract (not all occurrences used)
-     * @param {Object} partner - Partner object
-     * @returns {boolean} True if contract is still active
-     */
-    hasActiveContract(partner) {
-        // Check imports (our exports to partner)
-        const hasActiveImports = partner.imports.some(imp => 
-            (imp.currentOccurrences || 0) < imp.maxOccurrences
-        );
-        
-        // Check exports (our imports from partner)
-        const hasActiveExports = partner.exports.some(exp => 
-            (exp.currentOccurrences || 0) < exp.maxOccurrences
-        );
-        
-        return hasActiveImports || hasActiveExports;
-    }
-
-    /**
-     * Get information about finished contracts per product
-     * @param {Object} partner - Partner object
-     * @returns {Object} { finishedImports: Array, finishedExports: Array, hasActiveContract: boolean }
-     */
-    getContractStatus(partner) {
-        const finishedImports = partner.imports.filter(imp => 
-            (imp.currentOccurrences || 0) >= imp.maxOccurrences
-        ).map(imp => ({
-            productId: imp.productId,
-            productName: imp.productName,
-            currentOccurrences: imp.currentOccurrences || 0,
-            maxOccurrences: imp.maxOccurrences
-        }));
-
-        const finishedExports = partner.exports.filter(exp => 
-            (exp.currentOccurrences || 0) >= exp.maxOccurrences
-        ).map(exp => ({
-            productId: exp.productId,
-            productName: exp.productName,
-            currentOccurrences: exp.currentOccurrences || 0,
-            maxOccurrences: exp.maxOccurrences
-        }));
-
-        const hasActiveContract = this.hasActiveContract(partner);
-
-        return {
-            finishedImports,
-            finishedExports,
-            hasActiveContract
-        };
-    }
 
     /**
      * Check if windmills have sufficient stocks for partner's required products
@@ -497,29 +109,13 @@ class CommerceSectionManager {
      * @returns {Promise<Object>} { hasStocks: boolean, missingProducts: Array<string> }
      */
     async checkWindmillStocks(partner) {
-        const housesStore = this.getHousesStore();
-        if (!housesStore) {
-            return { hasStocks: false, missingProducts: ['HousesStore non disponible'], noCommercializableWindmills: false };
-        }
-
         try {
-            // Get commercializable windmills (active and commercializeEnabled)
-            const allHouses = await housesStore.listAllHouses();
-            const allWindmills = allHouses.filter(house => {
-                const type = house.type || '';
-                return type.includes('Windmill') || type.includes('windmill');
-            });
+            const allWindmills = await listWindmillSupplyViews();
+            const commercializableWindmills = await listCommercializableWindmills();
 
             if (allWindmills.length === 0) {
                 return { hasStocks: false, missingProducts: ['Aucun moulin construit'], noCommercializableWindmills: false };
             }
-
-            // Filter commercializable windmills
-            const commercializableWindmills = allWindmills.filter(windmill => {
-                const isActive = windmill.isActive !== false; // Default to true
-                const commercializeEnabled = windmill.commercializeEnabled !== false; // Default to true
-                return isActive && commercializeEnabled;
-            });
 
             if (commercializableWindmills.length === 0) {
                 return { hasStocks: false, missingProducts: ['Commerce impossible : aucun moulin'], noCommercializableWindmills: true };
@@ -531,7 +127,7 @@ class CommerceSectionManager {
 
             // Check each required product
             for (const productId of requiredProducts) {
-                const stockKey = this.getStockKey(productId);
+                const stockKey = getProductStockKey(productId);
                 if (!stockKey) continue;
 
                 // Sum stocks from commercializable windmills only
@@ -543,7 +139,7 @@ class CommerceSectionManager {
 
                 // For now, require at least 1 unit in stock (can be adjusted)
                 if (totalStock < 1) {
-                    const productName = this.getProductName(productId);
+                    const productName = getProductDisplayName(productId);
                     missingProducts.push(`${productName} (stock: ${totalStock})`);
                 }
             }
@@ -560,49 +156,12 @@ class CommerceSectionManager {
     }
 
     /**
-     * Get stock key for a product ID
-     * @param {string} productId - Product ID
-     * @returns {string|null} Stock key or null
-     */
-    getStockKey(productId) {
-        const stockMap = {
-            'wheat': 'wheat',
-            'carrot': 'carrot',
-            'cabbage': 'cabbage',
-            'wood': 'wood',
-            'dattes': 'dattes'
-        };
-        return stockMap[productId] || null;
-    }
-
-    /**
-     * Get product name for a product ID
-     * @param {string} productId - Product ID
-     * @returns {string} Product name
-     */
-    getProductName(productId) {
-        const productNames = {
-            'wheat': 'Blé',
-            'carrot': 'Carotte',
-            'cabbage': 'Chou',
-            'wood': 'Bois',
-            'dattes': 'Dattes'
-        };
-        return productNames[productId] || productId;
-    }
-
-    /**
      * Get current population
      * @returns {Promise<number>} Current population
      */
     async getCurrentPopulation() {
-        const housesStore = this.getHousesStore();
-        if (!housesStore) return 0;
-
         try {
-            if (typeof housesStore.getGlobalPopulation === 'function') {
-                return await housesStore.getGlobalPopulation();
-            }
+            return await getCityTotalPopulation();
         } catch (error) {
             console.error('[CommerceSectionManager] Error getting population:', error);
         }
@@ -614,43 +173,9 @@ class CommerceSectionManager {
      * @returns {Promise<number>} Unemployment percentage (0-100)
      */
     async getUnemploymentPercentage() {
-        const housesStore = this.getHousesStore();
-        if (!housesStore) return 0;
-
         try {
-            const allBuildings = await housesStore.listAllHouses();
-            
-            // Calculate available workers from houses
-            let workerPopulation = 0;
-            for (const house of allBuildings) {
-                const type = house.type || '';
-                const pop = house.pop || 0;
-                
-                if (type.includes('House')) {
-                    if (type.includes('2Story') || type.includes('2-Story')) {
-                        // Palace: 1/6 becomes elite, 5/6 remain workers
-                        const elitesFromThisHouse = Math.floor(pop / 6);
-                        workerPopulation += (pop - elitesFromThisHouse);
-                    } else if (type.includes('Blue') || type.includes('Red') || type.includes('Purple')) {
-                        workerPopulation += pop;
-                    }
-                }
-            }
-            
-            if (workerPopulation === 0) return 0;
-            
-            // Calculate total assigned workers
-            let totalAssignedWorkers = 0;
-            for (const building of allBuildings) {
-                if (!building.employees) continue;
-                const sector = building.employees.sector || 0;
-                if (sector === 0) continue; // Skip residential
-                totalAssignedWorkers += building.employees.worker || 0;
-            }
-            
-            // Calculate unemployment percentage
-            const unemployedCount = Math.max(0, workerPopulation - totalAssignedWorkers);
-            return Math.round((unemployedCount / workerPopulation) * 100);
+            const summary = await getCityEmploymentSummary();
+            return summary.unemploymentPercentage;
         } catch (error) {
             console.error('[CommerceSectionManager] Error calculating unemployment:', error);
             return 0;
@@ -662,15 +187,12 @@ class CommerceSectionManager {
      * @returns {Promise<number>} Current funds (can be negative)
      */
     async getCurrentFunds() {
-        if (window.budgetManager) {
-            try {
-                const budget = await window.budgetManager.getCurrentBudget();
-                return budget.funds || 0;
-            } catch (error) {
-                console.error('[CommerceSectionManager] Error getting funds:', error);
-            }
+        try {
+            return await getTreasuryBalance();
+        } catch (error) {
+            console.error('[CommerceSectionManager] Error getting funds:', error);
+            return 0;
         }
-        return 0;
     }
 
     /**
@@ -679,90 +201,17 @@ class CommerceSectionManager {
      * @returns {Promise<Object>} { canActivate: boolean, unmetConditions: Array<string> }
      */
     async checkPartnerActivationConditions(partner) {
-        // If no conditions specified, allow activation
-        if (!partner.activationConditions || partner.activationConditions.length === 0) {
-            // Apply default conditions for first partner (Deserta)
-            if (partner.id === 'deserta') {
-                return await this.checkDefaultActivationConditions(partner);
-            }
-            return { canActivate: true, unmetConditions: [] };
-        }
+        const [population, unemployment, stocksCheck] = await Promise.all([
+            this.getCurrentPopulation(),
+            this.getUnemploymentPercentage(),
+            this.checkWindmillStocks(partner),
+        ]);
 
-        const unmetConditions = [];
-
-        // Check each condition
-        for (const condition of partner.activationConditions) {
-            let conditionMet = false;
-            let conditionMessage = '';
-
-            switch (condition) {
-                case 'population_min_5':
-                    const population = await this.getCurrentPopulation();
-                    conditionMet = population > 5;
-                    conditionMessage = `Population > 5 (actuelle: ${population})`;
-                    break;
-
-                case 'unemployment_max_10':
-                    const unemployment = await this.getUnemploymentPercentage();
-                    conditionMet = unemployment < 10;
-                    conditionMessage = `Chômage < 10% (actuel: ${unemployment}%)`;
-                    break;
-
-                case 'windmill_stocks_available':
-                    const stocksCheck = await this.checkWindmillStocks(partner);
-                    conditionMet = stocksCheck.hasStocks;
-                    conditionMessage = stocksCheck.hasStocks 
-                        ? 'Stocks disponibles dans les moulins'
-                        : `Stocks manquants: ${stocksCheck.missingProducts.join(', ')}`;
-                    break;
-
-                default:
-                    // Unknown condition - consider unmet
-                    conditionMessage = `Condition inconnue: ${condition}`;
-                    break;
-            }
-
-            if (!conditionMet) {
-                unmetConditions.push(conditionMessage);
-            }
-        }
-
-        return {
-            canActivate: unmetConditions.length === 0,
-            unmetConditions
-        };
-    }
-
-    /**
-     * Check default activation conditions for first partner (Deserta)
-     * @param {Object} partner - Partner object
-     * @returns {Promise<Object>} { canActivate: boolean, unmetConditions: Array<string> }
-     */
-    async checkDefaultActivationConditions(partner) {
-        const unmetConditions = [];
-
-        // Check population > 5
-        const population = await this.getCurrentPopulation();
-        if (population <= 5) {
-            unmetConditions.push(`Population > 5 (actuelle: ${population})`);
-        }
-
-        // Check unemployment < 10%
-        const unemployment = await this.getUnemploymentPercentage();
-        if (unemployment >= 10) {
-            unmetConditions.push(`Chômage < 10% (actuel: ${unemployment}%)`);
-        }
-
-        // Check windmill stocks
-        const stocksCheck = await this.checkWindmillStocks(partner);
-        if (!stocksCheck.hasStocks) {
-            unmetConditions.push(`Stocks manquants: ${stocksCheck.missingProducts.join(', ')}`);
-        }
-
-        return {
-            canActivate: unmetConditions.length === 0,
-            unmetConditions
-        };
+        return evaluatePartnerActivationConditions({
+            partner,
+            activationConditions: partner.activationConditions,
+            metrics: { population, unemployment, stocksCheck },
+        });
     }
 
     /**
@@ -794,60 +243,48 @@ class CommerceSectionManager {
         // Note: La désactivation se fera automatiquement quand le contrat sera terminé
         
         // Pay commercial route fee (one-time payment to open commercial road)
-        const commercialRouteFee = 500; // Cost to open commercial route (negotiators)
-        const globalObj = typeof window !== 'undefined' ? window : global;
-        
-        if (globalObj.budgetManager) {
-            try {
-                const budget = await globalObj.budgetManager.getCurrentBudget();
-                const timeInfo = globalObj.TimeManager ? globalObj.TimeManager.getTimeInfo(budget.turn) : null;
-                const yearDisplay = timeInfo && timeInfo.year === 0 ? '0 JC' : timeInfo ? `${timeInfo.year} ap JC` : '';
-                const monthName = timeInfo ? timeInfo.month || 'Mois' : 'Mois';
-                const dateDisplay = `${monthName} ${yearDisplay}`;
-                
-                // Create description with breakdown to clearly show the partner
-                const breakdown = [{
-                    label: partner.name,
-                    quantity: 1,
-                    unitCost: commercialRouteFee,
-                    total: commercialRouteFee
-                }];
-                const description = `Route commerciale - ${dateDisplay} |BREAKDOWN|${JSON.stringify(breakdown)}|BREAKDOWN|`;
-                
-                // Deduct funds and update budget
-                const roundedAmount = Math.round(commercialRouteFee);
-                budget.funds = Math.round(budget.funds - roundedAmount);
-                budget.expenses = Math.round(budget.expenses + roundedAmount);
-                budget.netFlow = Math.round(budget.income - budget.expenses);
-                
-                // Add journal entry
-                await globalObj.budgetManager.addJournalEntry(
-                    budget.turn,
-                    'commercial_route',
-                    roundedAmount,
-                    description,
-                    partnerId
-                );
-                
-                // Save budget
-                await globalObj.budgetManager.db.budget.put(budget);
+        const commercialRouteFee = config?.budget?.commercialRouteFee ?? 500;
+        try {
+            const currentBudget = await getTreasurySnapshot();
+            const timeInfo = currentBudget?.turn !== undefined ? getTimeInfo(currentBudget.turn) : null;
+            const yearDisplay = timeInfo && timeInfo.year === 0 ? '0 JC' : timeInfo ? `${timeInfo.year} ap JC` : '';
+            const monthName = timeInfo ? timeInfo.month || 'Mois' : 'Mois';
+            const dateDisplay = `${monthName} ${yearDisplay}`;
+
+            const breakdown = [{
+                label: partner.name,
+                quantity: 1,
+                unitCost: commercialRouteFee,
+                total: commercialRouteFee
+            }];
+            const description = `Route commerciale - ${dateDisplay} |BREAKDOWN|${JSON.stringify(breakdown)}|BREAKDOWN|`;
+
+            const feeResult = await recordCommercialRouteFee(
+                commercialRouteFee,
+                description,
+                partnerId
+            );
+
+                if (feeResult.skipped && feeResult.reason === 'duplicate_business_key') {
+                    return {
+                        success: false,
+                        newStatus: partner.isActive,
+                        message: 'La route commerciale pour ce partenaire est déjà ouverte',
+                    };
+                }
                 
                 // Update funds display if available
-                if (window.gameUI) {
-                    window.gameUI.updateFunds(budget.funds);
-                } else {
-                    const displayFunds = document.querySelector('.display-funds');
-                    if (displayFunds) {
-                        displayFunds.textContent = budget.funds.toString();
-                    }
-                }
+                updateDisplayedFunds(feeResult.budget.funds);
                 
             } catch (error) {
                 console.error('[CommerceSectionManager] Error paying commercial route fee:', error);
-                // Continue with activation even if payment fails (for now)
+                return {
+                    success: false,
+                    newStatus: false,
+                    message: 'Erreur lors du paiement de la commission négociants',
+                };
             }
-        }
-        
+
         partner.isActive = true;
         this.savePartnersData();
         return { 
@@ -858,7 +295,7 @@ class CommerceSectionManager {
     }
 
     savePartnersData() {
-        localStorage.setItem('commerce_partners', JSON.stringify(this.partnersData));
+        commerceStore.savePartners(this.partnersData);
     }
 
     /**
@@ -953,24 +390,12 @@ class CommerceSectionManager {
         const yearlyImports = stats?.yearlyImports || {};
 
         // Check if there are any commercializable windmills
-        const housesStore = this.getHousesStore();
         let hasCommercializableWindmills = false;
-        if (housesStore) {
-            try {
-                const allHouses = await housesStore.listAllHouses();
-                const allWindmills = allHouses.filter(house => {
-                    const type = house.type || '';
-                    return type.includes('Windmill') || type.includes('windmill');
-                });
-                const commercializableWindmills = allWindmills.filter(windmill => {
-                    const isActive = windmill.isActive !== false;
-                    const commercializeEnabled = windmill.commercializeEnabled !== false;
-                    return isActive && commercializeEnabled;
-                });
-                hasCommercializableWindmills = commercializableWindmills.length > 0;
-            } catch (error) {
-                console.warn('[CommerceSection] Error checking commercializable windmills:', error);
-            }
+        try {
+            const commercializableWindmills = await listCommercializableWindmills();
+            hasCommercializableWindmills = commercializableWindmills.length > 0;
+        } catch (error) {
+            console.warn('[CommerceSection] Error checking commercializable windmills:', error);
         }
 
         // Render partners HTML first
@@ -1068,7 +493,7 @@ class CommerceSectionManager {
             }).join('');
 
             // Get contract status (which products have finished contracts)
-            const contractStatus = this.getContractStatus(partner);
+            const contractStatus = resolvePartnerContractStatus(partner);
             const hasActiveContract = contractStatus.hasActiveContract;
             const hasFinishedProducts = contractStatus.finishedImports.length > 0 || contractStatus.finishedExports.length > 0;
 
@@ -1299,14 +724,7 @@ class CommerceSectionManager {
     }
 
     async loadGoodsData() {
-        // Charger depuis le store (ou générer si première fois)
-        const storedConfig = commerceStore.loadConfig();
-        if (storedConfig) {
-            this.goodsData = storedConfig;
-        } else {
-            this.goodsData = this.generatePlaceholderGoodsData();
-            commerceStore.saveConfig(this.goodsData);
-        }
+        this.goodsData = commerceStore.loadOrSeedConfig();
         
         // Charger les stats dynamiques depuis le store
         this.loadDynamicStats();
@@ -1323,22 +741,12 @@ class CommerceSectionManager {
     async updateConsumptionStatuses() {
         if (!this.goodsData) return;
 
-        // Récupérer housesStore et foodTraceabilityService
-        let housesStore = null;
-        if (window.app && window.app.housesStore) {
-            housesStore = window.app.housesStore;
-        } else if (window.housesStore) {
-            housesStore = window.housesStore;
-        } else if (window.game && window.game.housesStore) {
-            housesStore = window.game.housesStore;
-        }
-
-        const foodTraceabilityService = window.foodTraceabilityService || null;
+        const foodTraceabilityService = getFoodTraceabilityService() || null;
 
         // Mettre à jour chaque produit alimentaire
         for (const good of this.goodsData) {
             if (['wheat', 'carrot', 'cabbage'].includes(good.id)) {
-                const status = await this.calculateConsumptionStatus(good.id, housesStore, foodTraceabilityService);
+                const status = await this.calculateConsumptionStatus(good.id, foodTraceabilityService);
                 good.consumptionShare = status.consumptionShare;
                 good.consumptionStatus = status.consumptionStatus;
             }
@@ -1369,11 +777,10 @@ class CommerceSectionManager {
     /**
      * Calcule la consommation et le statut d'export pour un produit alimentaire
      * @param {string} productId - ID du produit (wheat, carrot, cabbage)
-     * @param {HousesStore} housesStore - Store des maisons
      * @param {FoodTraceabilityService} foodTraceabilityService - Service de traçabilité
      * @returns {Promise<Object>} { consumptionShare, consumptionStatus, annualConsumption, annualProduction, netAvailable }
      */
-    async calculateConsumptionStatus(productId, housesStore, foodTraceabilityService) {
+    async calculateConsumptionStatus(productId, foodTraceabilityService) {
         // Seulement pour les produits alimentaires
         const foodProducts = ['wheat', 'carrot', 'cabbage'];
         if (!foodProducts.includes(productId)) {
@@ -1393,10 +800,9 @@ class CommerceSectionManager {
                 const allTransactions = await foodTraceabilityService.getAllTransactions();
                 // Obtenir l'année actuelle depuis TimeManager ou utiliser la dernière année dans les transactions
                 let currentYear = 0;
-                if (window.TimeManager && typeof window.TimeManager.getTimeInfo === 'function') {
-                    // Essayer d'obtenir le temps depuis le jeu si disponible
-                    const gameTime = window.game?.city?.time || window.game?.time || 0;
-                    const timeInfo = window.TimeManager.getTimeInfo(gameTime);
+                const gameTime = getGameTime();
+                const timeInfo = getTimeInfo(gameTime);
+                if (timeInfo && timeInfo.year !== undefined) {
                     currentYear = timeInfo.year;
                 } else if (allTransactions.length > 0) {
                     // Utiliser la dernière année dans les transactions
@@ -1415,8 +821,8 @@ class CommerceSectionManager {
             }
 
             // Si pas de données de traçabilité, estimer depuis la population
-            if (annualConsumption === 0 && housesStore) {
-                const totalPopulation = await housesStore.getGlobalPopulation();
+            if (annualConsumption === 0) {
+                const totalPopulation = await getCityTotalPopulation();
                 // Estimation : chaque citoyen consomme 1 panier/mois = 12 paniers/an
                 // Répartition approximative : 40% wheat, 30% carrot, 30% cabbage
                 const consumptionRatios = {
@@ -1429,25 +835,25 @@ class CommerceSectionManager {
 
             // 2. Calculer la production annuelle locale
             let annualProduction = 0;
-            if (housesStore) {
-                const allBuildings = await housesStore.listAllHouses();
-                const farmTypeMap = {
-                    'wheat': ['Farm-Wheat', 'Farms-Wheat'],
-                    'carrot': ['Farm-Carrot', 'Farms-Carrot'],
-                    'cabbage': ['Farm-Cabbage', 'Farms-Cabbage']
-                };
-                const farmTypes = farmTypeMap[productId] || [];
-                
-                // Compter les fermes de ce type
-                const farms = allBuildings.filter(b => {
-                    if (!b.type) return false;
-                    return farmTypes.some(type => b.type === type) ||
-                           (b.type.includes('Farm') && b.type.toLowerCase().includes(productId));
-                });
-                
-                // Chaque ferme produit 78 paniers/an
-                annualProduction = farms.length * 78;
-            }
+            const allBuildings = await listSupplyMapBuildings();
+            const farmTypeMap = {
+                wheat: ['Farm-Wheat', 'Farms-Wheat'],
+                carrot: ['Farm-Carrot', 'Farms-Carrot'],
+                cabbage: ['Farm-Cabbage', 'Farms-Cabbage'],
+            };
+            const farmTypes = farmTypeMap[productId] || [];
+
+            const farms = allBuildings.filter((building) => {
+                if (building.kind !== 'farm' || !building.type) return false;
+                return (
+                    farmTypes.some((type) => building.type === type) ||
+                    (building.type.includes('Farm') &&
+                        building.type.toLowerCase().includes(productId))
+                );
+            });
+
+            // Chaque ferme produit 78 paniers/an
+            annualProduction = farms.length * 78;
 
             // 3. Récupérer les imports/exports actuels
             const stats = commerceStore.loadStats();
@@ -1501,104 +907,6 @@ class CommerceSectionManager {
         }
     }
 
-    generatePlaceholderGoodsData() {
-        return [
-            {
-                id: 'wheat',
-                name: 'Blé',
-                sellingPrice: 15,
-                buyingPrice: 5,  // Prix par défaut : 5€
-                marketPrice: 14,
-                marketShare: 45,
-                marketPosition: 'normal',
-                stockpiling: false,
-                sellingMax: 8,  // Seuil maximum d'export annuel (8 paniers)
-                // sellingMin supprimé
-                buyingMax: 8,  // Seuil maximum d'achat annuel (8 paniers)
-                // buyingMin supprimé
-                tax: 10,
-                consumptionShare: 60,
-                consumptionStatus: 'able',
-                yearlyImports: 0,  // Stats dynamiques
-                yearlyExports: 0
-            },
-            {
-                id: 'carrot',
-                name: 'Carotte',
-                sellingPrice: 18,
-                buyingPrice: 15,
-                marketPrice: 16,
-                marketShare: 25,
-                marketPosition: 'few',
-                stockpiling: false,
-                sellingMax: 8,  // Seuil maximum d'export annuel
-                // sellingMin supprimé
-                buyingMax: 400,
-                // buyingMin supprimé
-                tax: 15,
-                consumptionShare: 40,
-                consumptionStatus: 'able',
-                yearlyImports: 0,
-                yearlyExports: 0
-            },
-            {
-                id: 'cabbage',
-                name: 'Chou',
-                sellingPrice: 20,
-                buyingPrice: 17,
-                marketPrice: 18,
-                marketShare: 15,
-                marketPosition: 'inferior',
-                stockpiling: false,
-                sellingMax: 8,  // Seuil maximum d'export annuel
-                // sellingMin supprimé
-                buyingMax: 300,
-                // buyingMin supprimé
-                tax: 20,
-                consumptionShare: 30,
-                consumptionStatus: 'unable',
-                yearlyImports: 0,
-                yearlyExports: 0
-            },
-            {
-                id: 'wood',
-                name: 'Bois',
-                sellingPrice: 25,
-                buyingPrice: 20,
-                marketPrice: 22,
-                marketShare: 70,
-                marketPosition: 'dominant',
-                stockpiling: false,
-                sellingMax: 8,  // Seuil maximum d'export annuel
-                // sellingMin supprimé
-                buyingMax: 1000,
-                // buyingMin supprimé
-                tax: 5,
-                consumptionShare: 80,
-                consumptionStatus: 'exceeding',
-                yearlyImports: 0,
-                yearlyExports: 0
-            },
-            {
-                id: 'dattes',
-                name: 'Dattes',
-                sellingPrice: 22,
-                buyingPrice: 12,
-                marketPrice: 16,
-                marketShare: 5,
-                marketPosition: 'inferior',
-                stockpiling: false,
-                sellingMax: 0,  // On n'exporte pas de dattes (produit exotique importé)
-                buyingMax: 200,
-                tax: 8,
-                consumptionShare: 15,
-                consumptionStatus: 'unable',
-                yearlyImports: 0,
-                yearlyExports: 0
-            }
-        ];
-    }
-
     toggleGoodDetails(goodId) {
         const goodItem = document.querySelector(`[data-good-id="${goodId}"]`);
         const detailsPanel = goodItem?.querySelector('.commerce-good-details');
@@ -1622,21 +930,6 @@ class CommerceSectionManager {
             goodItem.classList.add('active');
             detailsPanel.classList.add('active');
         }
-    }
-
-    getPriceStatus(price, marketPrice, type) {
-        const diff = Math.abs(price - marketPrice);
-        const percentDiff = (diff / marketPrice) * 100;
-
-        if (type === 'selling') {
-            if (price < marketPrice * 0.7) return 'generous';
-            if (price > marketPrice * 1.5) return 'unacceptable';
-        } else if (type === 'buying') {
-            if (price > marketPrice * 1.3) return 'generous';
-            if (price < marketPrice * 0.5) return 'unacceptable';
-        }
-
-        return '';
     }
 
     getMarketPositionClass(marketShare) {
@@ -1673,8 +966,8 @@ class CommerceSectionManager {
 
         goodsList.innerHTML = this.goodsData.map(good => {
             const marketPositionClass = this.getMarketPositionClass(good.marketShare);
-            const sellingStatus = this.getPriceStatus(good.sellingPrice, good.marketPrice, 'selling');
-            const buyingStatus = this.getPriceStatus(good.buyingPrice, good.marketPrice, 'buying');
+            const sellingStatus = resolvePriceStatus(good.sellingPrice, good.marketPrice, 'selling');
+            const buyingStatus = resolvePriceStatus(good.buyingPrice, good.marketPrice, 'buying');
             const consumptionStatusClass = this.getConsumptionStatusClass(good.consumptionStatus);
 
             return `
@@ -1923,7 +1216,7 @@ class CommerceSectionManager {
         const inputElement = document.getElementById(`${type}-price-${goodId}`);
         if (!inputElement) return;
 
-        const status = this.getPriceStatus(price, marketPrice, type);
+        const status = resolvePriceStatus(price, marketPrice, type);
         inputElement.className = `commerce-price-input ${type} ${status}`;
     }
 
@@ -1978,6 +1271,20 @@ async function initCommerceSection() {
     if (!commerceSection) return;
 
     const manager = new CommerceSectionManager();
+
+    setCommercePartnerContractFinishedHandler(({ partnerName, finishedProducts }) => {
+        const productsText = finishedProducts.length > 0
+            ? finishedProducts.join(', ')
+            : 'toutes les denrées';
+        manager.showPartnerMessage(
+            `Contrat terminé avec ${partnerName} (${productsText}). Le partenaire a été désactivé automatiquement.`,
+            'info'
+        );
+        manager.loadPartnersData();
+        manager.renderPartners().catch((error) => {
+            console.error('[CommerceSectionManager] Error rendering partners after contract finish:', error);
+        });
+    });
     
     // Initialiser la configuration au démarrage (même si le panneau n'est pas ouvert)
     // Cela garantit que CommerceService peut trouver la config dès le début
@@ -2002,7 +1309,6 @@ async function initCommerceSection() {
         manager.loadPartnersData();
     }
 
-    window.commerceSectionManager = manager;
 }
 
 if (document.readyState === 'loading') {

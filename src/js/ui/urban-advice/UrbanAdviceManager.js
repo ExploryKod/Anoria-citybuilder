@@ -1,7 +1,11 @@
 /**
  * UrbanAdviceManager - Gère le centre de conseils urbains
  */
-import { initLoanSystem, loadActiveLoans } from '../loans/LoansManager.js';
+import { loadActiveLoans } from '../loans/LoansManager.js';
+import { hasRoadAccessFromCount } from '../../acl/parcels.js';
+import { listAllBuildingRows } from '../../acl/construction.js';
+import { getCityTotalPopulation } from '../../acl/housing.js';
+import { getTreasurySnapshot } from '../../acl/accountingGame.js';
 
 /**
  * Initialise le centre de conseils urbains
@@ -70,9 +74,6 @@ export function initUrbanAdviceCenter() {
             }
         });
     });
-
-    // Initialize loan system
-    initLoanSystem();
 }
 
 /**
@@ -81,7 +82,7 @@ export function initUrbanAdviceCenter() {
 export async function loadUrbanAnalysis() {
     try {
         // Get all houses from database
-        const houses = await window.housesStore.listAllHouses();
+        const houses = await listAllBuildingRows();
         
         // Analyze social classes
         const socialClasses = {
@@ -149,8 +150,8 @@ export async function loadAdvice() {
     
     try {
         // Get current city data
-        const houses = await window.housesStore.listAllHouses();
-        const budget = await window.budgetManager.getCurrentBudget();
+        const houses = await listAllBuildingRows();
+        const budget = await getTreasurySnapshot();
         
         const advice = [];
 
@@ -172,9 +173,7 @@ export async function loadAdvice() {
         const farms = houses.filter(house => 
             house.type && house.type.includes('Farm')
         );
-        const totalPopulation = houses.reduce((sum, house) => 
-            sum + (house.pop || 0), 0
-        );
+        const totalPopulation = await getCityTotalPopulation();
 
         if (totalPopulation > 0 && farms.length === 0) {
             advice.push({
@@ -189,18 +188,7 @@ export async function loadAdvice() {
         const housesWithoutRoads = [];
         for (const house of houses) {
             if (!house.type || !house.type.includes('House')) continue;
-            let hasRoadAccess = false;
-            try {
-                const { checkRoadAccess } = await import('../../game/modules/ModuleHelper.js');
-                hasRoadAccess = !!(house.neighbors && checkRoadAccess(house.neighbors).hasAccess);
-            } catch (err) {
-                console.warn('[UrbanAdviceManager] Falling back to inline road access check because ModuleHelper import failed.', {
-                    error: err?.message || err,
-                    houseId: house.id,
-                    neighborsCount: house.neighbors?.length ?? 0
-                });
-                hasRoadAccess = !!(house.neighbors && house.neighbors.filter(n => n.name === 'roads').length > 0);
-            }
+            const hasRoadAccess = hasRoadAccessFromCount(house.roads);
             if (!hasRoadAccess) housesWithoutRoads.push(house);
         }
 

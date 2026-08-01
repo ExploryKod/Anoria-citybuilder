@@ -12,6 +12,7 @@ import {
     displayPop,
     displayHungerPop,
     displayUnemployedPop,
+    displayWorkerLack,
     displayFunds,
     infoObjectOverlay,
     infoObjectCloseBtn,
@@ -20,6 +21,7 @@ import {
     bulldozeSelected
 } from '../ui/nodes.js';
 import { TimeManager } from './utils/TimeManager.js';
+import { getGameScene } from '../acl/appRuntime.js';
 
 class GameUI {
     /**
@@ -152,13 +154,33 @@ class GameUI {
     }
 
     /**
-     * Updates population display
-     * @param {number} population - Population count
+     * Population totale avec détail (citoyens, élites).
+     * @param {number} totalPopulation
+     * @param {number} citizenPopulation
+     * @param {number} elitePopulation
      */
-    updatePopulation(population) {
+    updatePopulationBreakdown(totalPopulation, citizenPopulation, elitePopulation) {
         if (displayPop) {
-            displayPop.textContent = population?.toString() || '0';
+            const total = Math.max(0, Math.floor(totalPopulation) || 0);
+            const citizens = Math.max(0, Math.floor(citizenPopulation) || 0);
+            const elites = Math.max(0, Math.floor(elitePopulation) || 0);
+            displayPop.textContent = `${total} (${citizens}, ${elites})`;
         }
+    }
+
+    /** @deprecated Use updatePopulationBreakdown */
+    updateCitizenPopulation(citizenPopulation) {
+        this.updatePopulationBreakdown(citizenPopulation, citizenPopulation, 0);
+    }
+
+    /** @deprecated Use updatePopulationBreakdown */
+    updatePopulation(population) {
+        this.updatePopulationBreakdown(population, population, 0);
+    }
+
+    /** @deprecated Use updatePopulationBreakdown */
+    updateElitePopulation(elitePopulation) {
+        this.updatePopulationBreakdown(elitePopulation, 0, elitePopulation);
     }
 
     /**
@@ -172,7 +194,17 @@ class GameUI {
     }
 
     /**
-     * Updates unemployed population display
+     * Updates global worker shortage (lack) — standalone number, no icon, always red.
+     * @param {number} lack - Missing workers on road-eligible workplaces
+     */
+    updateWorkerLack(lack = 0) {
+        if (displayWorkerLack) {
+            displayWorkerLack.textContent = String(Math.max(0, Math.floor(lack) || 0));
+        }
+    }
+
+    /**
+     * Updates unemployed population display (chômage — surplus labor, with icon).
      * @param {number} unemployedPopulation - Number of unemployed people
      * @param {number} unemploymentPercentage - Unemployment percentage (optional)
      */
@@ -183,6 +215,7 @@ class GameUI {
             } else {
                 displayUnemployedPop.textContent = (unemployedPopulation || 0).toString();
             }
+            displayUnemployedPop.style.color = '';
         }
     }
 
@@ -232,14 +265,7 @@ class GameUI {
                 }
                 // Disable OrbitControls to prevent scene movement
                 // Try to access scene through various paths
-                let sceneObj = null;
-                if (window.game && window.game.scene) {
-                    sceneObj = window.game.scene;
-                } else if (window.scene) {
-                    sceneObj = window.scene;
-                } else if (window.app && window.app.game && window.app.game.scene) {
-                    sceneObj = window.app.game.scene;
-                }
+                let sceneObj = getGameScene();
                 if (sceneObj && sceneObj.controls) {
                     sceneObj.controls.enabled = false;
                 }
@@ -264,14 +290,7 @@ class GameUI {
                 }
                 // Re-enable OrbitControls when modal closes
                 // Try to access scene through various paths
-                let sceneObj = null;
-                if (window.game && window.game.scene) {
-                    sceneObj = window.game.scene;
-                } else if (window.scene) {
-                    sceneObj = window.scene;
-                } else if (window.app && window.app.game && window.app.game.scene) {
-                    sceneObj = window.app.game.scene;
-                }
+                let sceneObj = getGameScene();
                 if (sceneObj && sceneObj.controls) {
                     sceneObj.controls.enabled = true;
                 }

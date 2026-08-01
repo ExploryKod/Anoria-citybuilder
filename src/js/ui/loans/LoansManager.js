@@ -2,100 +2,26 @@
  * LoansManager - Gère le système de prêts (bancaires et commerciaux)
  */
 
-/**
- * Initialise le système de prêts (ancien système, peut être supprimé)
- */
-export function initLoanSystem() {
-    const loanAmountInput = document.getElementById('loan-amount');
-    const loanDurationSelect = document.getElementById('loan-duration');
-    const contractLoanBtn = document.getElementById('contract-loan-btn');
-    const loanPrincipal = document.getElementById('loan-principal');
-    const loanInterest = document.getElementById('loan-interest');
-    const loanTotal = document.getElementById('loan-total');
-
-    if (!loanAmountInput || !loanDurationSelect || !contractLoanBtn) {
-        console.warn('Loan system elements not found');
-        return;
-    }
-
-    // Update loan summary when inputs change
-    function updateLoanSummary() {
-        const amount = parseInt(loanAmountInput.value) || 0;
-        const duration = parseInt(loanDurationSelect.value) || 10;
-        
-        // Calculate interest rate based on duration
-        let interestRate = 0.05; // 5%
-        if (duration === 15) interestRate = 0.07; // 7%
-        if (duration === 20) interestRate = 0.10; // 10%
-        
-        const interest = Math.round(amount * interestRate);
-        const total = amount + interest;
-        
-        loanPrincipal.textContent = `${amount}€`;
-        loanInterest.textContent = `${interest}€`;
-        loanTotal.textContent = `${total}€`;
-    }
-
-    loanAmountInput.addEventListener('input', updateLoanSummary);
-    loanDurationSelect.addEventListener('change', updateLoanSummary);
-
-    // Contract loan
-    contractLoanBtn.addEventListener('click', async () => {
-        const amount = parseInt(loanAmountInput.value);
-        const duration = parseInt(loanDurationSelect.value);
-        
-        if (!amount || amount < 50 || amount > 1000) {
-            alert('Le montant doit être entre 50€ et 1000€');
-            return;
-        }
-
-        try {
-            // Calculate interest
-            let interestRate = 0.05;
-            if (duration === 15) interestRate = 0.07;
-            if (duration === 20) interestRate = 0.10;
-            
-            const interest = Math.round(amount * interestRate);
-            const total = amount + interest;
-
-            // Add loan to budget
-            await window.budgetManager.addIncome(amount, `Prêt contracté (${duration} tours)`);
-            
-            // Store loan information (you might want to create a loans table)
-            const loan = {
-                id: `loan_${Date.now()}`,
-                amount: amount,
-                total: total,
-                interest: interest,
-                duration: duration,
-                remainingTurns: duration,
-                contractedAt: new Date().toISOString()
-            };
-
-            // Store in localStorage for now (you might want to use IndexedDB)
-            const activeLoans = JSON.parse(localStorage.getItem('activeLoans') || '[]');
-            activeLoans.push(loan);
-            localStorage.setItem('activeLoans', JSON.stringify(activeLoans));
-
-            alert(`Prêt de ${amount}€ contracté ! Total à rembourser : ${total}€ sur ${duration} tours.`);
-            
-            // Reset form
-            loanAmountInput.value = '200';
-            loanDurationSelect.value = '10';
-            updateLoanSummary();
-            
-            // Reload active loans
-            loadActiveLoans();
-
-        } catch (error) {
-            console.error('Error contracting loan:', error);
-            alert('Erreur lors de la contraction du prêt');
-        }
-    });
-
-    // Initial update
-    updateLoanSummary();
-}
+import {
+  getTreasurySnapshot,
+  getFinancialHealth,
+  getActiveLoans,
+  recordLoanCapital,
+  recordLoanInterest,
+  recordLoanRepayment,
+  recordInfoLoanInstallment,
+  advanceLoanInstallmentWithoutPayment,
+} from '../../acl/accountingGame.js';
+import {
+  getPopupManager,
+  invokeUpdateBudgetDisplay,
+  registerAppFunction,
+} from '../../acl/appRuntime.js';
+import {
+  computeLoanRate,
+  computeLoanRatesByType,
+  computeLoanInterestAmount,
+} from '../../acl/accountingLoans.js';
 
 /**
  * Initialise le popup des prêts
@@ -121,8 +47,8 @@ export function initLoansPopup() {
         loansPanel.classList.add('active');
         
         // Utiliser PopupManager pour gérer les événements
-        if (window.popupManager) {
-            window.popupManager.forceOpenPopup('loans-panel');
+        if (getPopupManager()) {
+            getPopupManager().forceOpenPopup('loans-panel');
         }
         
         updateLoansDisplay();
@@ -133,8 +59,8 @@ export function initLoansPopup() {
         loansPanel.classList.remove('active');
         
         // Utiliser PopupManager pour gérer les événements
-        if (window.popupManager) {
-            window.popupManager.forceClosePopup('loans-panel');
+        if (getPopupManager()) {
+            getPopupManager().forceClosePopup('loans-panel');
         }
     });
 
@@ -144,8 +70,8 @@ export function initLoansPopup() {
             loansPanel.classList.remove('active');
             
             // Utiliser PopupManager pour gérer les événements
-            if (window.popupManager) {
-                window.popupManager.forceClosePopup('loans-panel');
+            if (getPopupManager()) {
+                getPopupManager().forceClosePopup('loans-panel');
             }
         }
     });
@@ -185,8 +111,8 @@ export function initLoansPopup() {
 export async function updateLoansDisplay() {
     try {
         // Get budget data
-        const currentBudget = await window.budgetManager.getCurrentBudget();
-        const financialHealth = await window.budgetManager.getFinancialHealth();
+        const currentBudget = await getTreasurySnapshot();
+        const financialHealth = await getFinancialHealth();
         
         // Update date
         updateLoansElement('loans-date', `Tour ${currentBudget.turn || 0}`);
@@ -263,22 +189,9 @@ function updateHealthImpact(financialHealth) {
  * Met à jour les taux de prêt selon la santé financière
  */
 function updateLoanRates(financialHealth) {
-    // Base rates
-    let bankRate = 5;
-    let commercialRate = 7;
-    
-    // Adjust rates based on financial health
-    if (financialHealth.status === 'critical') {
-        bankRate += 5; // +5% penalty
-        commercialRate += 7; // +7% penalty
-    } else if (financialHealth.status === 'warning' || financialHealth.status === 'deficit') {
-        bankRate += 2; // +2% penalty
-        commercialRate += 3; // +3% penalty
-    }
-    
-    // Update display
-    updateLoansElement('bank-rate', `Taux: ${bankRate}%`);
-    updateLoansElement('commercial-rate', `Taux: ${commercialRate}%`);
+    const rates = computeLoanRatesByType(financialHealth.status);
+    updateLoansElement('bank-rate', `Taux: ${rates.bank}%`);
+    updateLoansElement('commercial-rate', `Taux: ${rates.commercial}%`);
 }
 
 /**
@@ -354,27 +267,19 @@ function updateLoanSummary() {
     const duration = parseInt(loanDurationInput.value) || 10;
     const loanType = loanFormSection.dataset.loanType || 'bank';
     
-    // Calculate interest rate based on loan type and financial health
-    let interestRate = loanType === 'bank' ? 5 : 7;
-    
-    // Apply financial health penalties
-    if (window.budgetManager) {
-        window.budgetManager.getFinancialHealth().then(health => {
-            if (health.status === 'critical') {
-                interestRate += loanType === 'bank' ? 5 : 7;
-            } else if (health.status === 'warning' || health.status === 'deficit') {
-                interestRate += loanType === 'bank' ? 2 : 3;
-            }
-            
-            const interest = Math.round(amount * (interestRate / 100));
-            const total = amount + interest;
-            
-            updateLoansElement('loan-principal-display', `${amount}€`);
-            updateLoansElement('loan-rate-display', `${interestRate}%`);
-            updateLoansElement('loan-interest-display', `${interest}€`);
-            updateLoansElement('loan-total-display', `${total}€`);
+    getFinancialHealth().then((health) => {
+        const interestRate = computeLoanRate({
+            loanType,
+            financialHealthStatus: health.status,
         });
-    }
+        const interest = computeLoanInterestAmount(amount, interestRate);
+        const total = amount + interest;
+
+        updateLoansElement('loan-principal-display', `${amount}€`);
+        updateLoansElement('loan-rate-display', `${interestRate}%`);
+        updateLoansElement('loan-interest-display', `${interest}€`);
+        updateLoansElement('loan-total-display', `${total}€`);
+    });
 }
 
 /**
@@ -398,16 +303,13 @@ export async function contractLoan() {
     
     try {
         // Calculate final interest rate
-        const financialHealth = await window.budgetManager.getFinancialHealth();
-        let interestRate = loanType === 'bank' ? 5 : 7;
+        const financialHealth = await getFinancialHealth();
+        const interestRate = computeLoanRate({
+            loanType,
+            financialHealthStatus: financialHealth.status,
+        });
         
-        if (financialHealth.status === 'critical') {
-            interestRate += loanType === 'bank' ? 5 : 7;
-        } else if (financialHealth.status === 'warning' || financialHealth.status === 'deficit') {
-            interestRate += loanType === 'bank' ? 2 : 3;
-        }
-        
-        const interest = Math.round(amount * (interestRate / 100));
+        const interest = computeLoanInterestAmount(amount, interestRate);
         const total = amount + interest;
         
         // Create loan object
@@ -424,12 +326,9 @@ export async function contractLoan() {
         };
         
         // Add loan to budget using proper accounting method
-        await window.budgetManager.addLoan(amount, `Prêt ${loanType} contracté (${duration} tours)`, loan);
+        await recordLoanCapital(amount, `Prêt ${loanType} contracté (${duration} tours)`, loan);
         
-        // Update budget display to show the new loan interest
-        if (window.updateBudgetDisplay) {
-            window.updateBudgetDisplay();
-        }
+        await invokeUpdateBudgetDisplay();
         
         alert(`Prêt ${loanType} de ${amount}€ contracté ! Total à rembourser : ${total}€ sur ${duration} tours.`);
         
@@ -451,7 +350,7 @@ export async function loadActiveLoans() {
     if (!activeLoansList) return;
     
     try {
-        const activeLoans = await window.budgetManager.getActiveLoans();
+        const activeLoans = await getActiveLoans();
         
         if (activeLoans.length === 0) {
             activeLoansList.innerHTML = `
@@ -570,55 +469,75 @@ function generateAmortizationSchedule(loan) {
 }
 
 /**
- * Traite les paiements de prêts à chaque tour
+ * Traite les paiements de prêts à chaque tour.
+ * En cas d'insolvabilité : écritures informatives au journal (sans débit trésorerie).
  */
 export async function processLoanPayments() {
     try {
-        const activeLoans = await window.budgetManager.getActiveLoans();
+        const activeLoans = await getActiveLoans();
         if (activeLoans.length === 0) return;
-        
-        const loansToRemove = [];
-        
-        for (let i = 0; i < activeLoans.length; i++) {
-            const loan = activeLoans[i];
-            
-            // Calculate monthly payment (principal + interest)
+
+        for (const loan of activeLoans) {
             const monthlyPayment = Math.round(loan.total / loan.duration);
-            const interestPayment = Math.round(loan.amount * (loan.interestRate / 100) / loan.duration);
-            const principalPayment = monthlyPayment - interestPayment;
-            
-            // Check if we have enough funds
-            const currentBudget = await window.budgetManager.getCurrentBudget();
-            if (currentBudget.funds >= monthlyPayment) {
-                // Pay interest first
-                await window.budgetManager.addLoanInterest(interestPayment, `Intérêts prêt ${loan.type} (${loan.id})`);
-                
-                // Pay principal
-                await window.budgetManager.repayLoan(principalPayment, `Remboursement prêt ${loan.type} (${loan.id})`, loan.id);
-                
-                // Remove loan if fully paid
-                if (loan.remainingTurns <= 0 || loan.amount <= 0) {
-                    loansToRemove.push(i);
-                }
-            } else {
-                // Not enough funds - just pay interest if possible
-                if (currentBudget.funds >= interestPayment) {
-                    await window.budgetManager.addLoanInterest(interestPayment, `Intérêts prêt ${loan.type} (${loan.id})`);
-                    loan.remainingTurns--; // Still count as a turn
-                    console.warn(`⚠️ Only paid ${interestPayment}€ in interest (not enough funds for full payment)`);
-                } else {
-                    // Can't even pay interest - loan goes into default
-                    console.warn(`Loan ${loan.id} in default - cannot pay interest`);
-                    loan.remainingTurns--;
-                }
+            const interestPayment = Math.round(
+                (loan.amount * (loan.interestRate / 100)) / loan.duration
+            );
+            const principalPayment = Math.max(0, monthlyPayment - interestPayment);
+
+            let budget = await getTreasurySnapshot();
+
+            if (budget.funds >= monthlyPayment) {
+                await recordLoanInterest(
+                    interestPayment,
+                    `Intérêts prêt ${loan.type} (${loan.id})`,
+                    loan.id
+                );
+
+                await recordLoanRepayment(
+                    principalPayment,
+                    `Remboursement prêt ${loan.type} (${loan.id})`,
+                    loan.id
+                );
+                continue;
             }
+
+            if (budget.funds >= interestPayment && interestPayment > 0) {
+                await recordLoanInterest(
+                    interestPayment,
+                    `Intérêts prêt ${loan.type} (${loan.id})`,
+                    loan.id
+                );
+
+                if (principalPayment > 0) {
+                    await recordInfoLoanInstallment({
+                        interestAmount: 0,
+                        principalAmount: principalPayment,
+                        loanId: loan.id,
+                        loanType: loan.type,
+                    });
+                }
+
+                await advanceLoanInstallmentWithoutPayment(loan.id);
+                console.warn(
+                    `[Loans] Échéance partielle — intérêts payés, capital impayé (${principalPayment}€) pour ${loan.id}`
+                );
+                continue;
+            }
+
+            await recordInfoLoanInstallment({
+                interestAmount: interestPayment,
+                principalAmount: principalPayment,
+                loanId: loan.id,
+                loanType: loan.type,
+            });
+
+            await advanceLoanInstallmentWithoutPayment(loan.id);
+            console.warn(
+                `[Loans] Défaut de paiement — échéance journalisée (info) pour ${loan.id}`
+            );
         }
-        
-        // Update displays
-        if (window.updateBudgetDisplay) {
-            window.updateBudgetDisplay();
-        }
-        
+
+        await invokeUpdateBudgetDisplay();
     } catch (error) {
         console.error('Error processing loan payments:', error);
     }
@@ -628,20 +547,6 @@ export async function processLoanPayments() {
  * Initialise le système de paiement des prêts
  */
 export function initLoanPaymentSystem() {
-    // Expose processLoanPayments globally for scene.js
-    // Register utility functions with AppRegistry
-    if (window.appRegister) {
-        window.appRegister('processLoanPayments', processLoanPayments);
-    }
-    window.processLoanPayments = processLoanPayments; // Keep direct access for backwards compatibility
-    
-    // Process loan payments every turn
-    if (window.game && window.game.onTurnEnd) {
-        const originalOnTurnEnd = window.game.onTurnEnd;
-        window.game.onTurnEnd = function() {
-            originalOnTurnEnd.call(this);
-            processLoanPayments();
-        };
-    }
+    registerAppFunction('processLoanPayments', processLoanPayments);
 }
 

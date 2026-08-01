@@ -1,0 +1,49 @@
+/**
+ * Command: apply monthly population growth for every residential house.
+ */
+export class GrowAllHousePopulation {
+  /**
+   * @param {import('../../ports/HousingBuildingRepository.js').HousingBuildingRepository} housingBuildingRepository
+   * @param {import('./GrowHousePopulation.js').GrowHousePopulation} growHousePopulation
+   */
+  constructor(housingBuildingRepository, growHousePopulation) {
+    this.repository = housingBuildingRepository;
+    this.growHousePopulation = growHousePopulation;
+  }
+
+  /**
+   * @param {object} params
+   * @param {number} params.monthIndex
+   * @returns {Promise<{
+   *   housesProcessed: number,
+   *   housesChanged: number,
+   *   changes: Array<{ houseId: string, pop: number, previousPop: number, reason?: string }>,
+   * }>}
+   */
+  async execute({ monthIndex }) {
+    const houses = await this.repository.findResidentialHouses();
+    const changes = [];
+
+    for (const house of houses) {
+      const result = await this.growHousePopulation.execute({
+        houseId: house.id,
+        monthIndex,
+      });
+
+      if (result.changed) {
+        changes.push({
+          houseId: result.houseId,
+          pop: result.pop,
+          previousPop: result.previousPop,
+          reason: result.reason,
+        });
+      }
+    }
+
+    return {
+      housesProcessed: houses.length,
+      housesChanged: changes.length,
+      changes,
+    };
+  }
+}

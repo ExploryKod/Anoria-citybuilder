@@ -1,5 +1,5 @@
 // FoodTraceabilityService.js
-import db from './db.js';
+import db from '../../core/persistence/dexie/db.js';
 
 /**
  * Service de traçabilité alimentaire

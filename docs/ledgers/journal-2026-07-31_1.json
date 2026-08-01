@@ -1,0 +1,6314 @@
+{
+  "exportDate": "2026-07-31T09:23:24.558Z",
+  "entries": [
+    {
+      "turn": 374,
+      "date": "2026-07-31T09:20:17.338Z",
+      "type": "balance",
+      "amount": -274194,
+      "description": "Solde"
+    },
+    {
+      "turn": 373,
+      "date": "2026-07-31T09:20:16.319Z",
+      "type": "balance",
+      "amount": -274194,
+      "description": "Solde"
+    },
+    {
+      "turn": 372,
+      "date": "2026-07-31T09:20:15.320Z",
+      "type": "balance",
+      "amount": -274194,
+      "description": "Solde"
+    },
+    {
+      "turn": 371,
+      "date": "2026-07-31T09:20:14.320Z",
+      "type": "balance",
+      "amount": -274194,
+      "description": "Solde"
+    },
+    {
+      "id": 451,
+      "turn": 370,
+      "date": "2026-07-31T09:20:13.907Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Mars 7 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 450,
+      "turn": 370,
+      "date": "2026-07-31T09:20:13.903Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Mars 6 ap JC (20%)"
+    },
+    {
+      "id": 449,
+      "turn": 370,
+      "date": "2026-07-31T09:20:13.900Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Mars 6 ap JC (78 hab. × 100€)"
+    },
+    {
+      "turn": 370,
+      "date": "2026-07-31T09:20:13.319Z",
+      "type": "balance",
+      "amount": -267897,
+      "description": "Solde"
+    },
+    {
+      "turn": 369,
+      "date": "2026-07-31T09:20:12.313Z",
+      "type": "balance",
+      "amount": -267897,
+      "description": "Solde"
+    },
+    {
+      "turn": 368,
+      "date": "2026-07-31T09:20:11.313Z",
+      "type": "balance",
+      "amount": -267897,
+      "description": "Solde"
+    },
+    {
+      "turn": 367,
+      "date": "2026-07-31T09:20:10.322Z",
+      "type": "balance",
+      "amount": -267897,
+      "description": "Solde"
+    },
+    {
+      "turn": 366,
+      "date": "2026-07-31T09:20:09.323Z",
+      "type": "balance",
+      "amount": -267897,
+      "description": "Solde"
+    },
+    {
+      "id": 448,
+      "turn": 365,
+      "date": "2026-07-31T09:20:08.895Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Février 7 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 447,
+      "turn": 365,
+      "date": "2026-07-31T09:20:08.891Z",
+      "type": "payroll_tax",
+      "amount": 1700,
+      "description": "Impôt sur les salaires - Février 6 ap JC (20%)"
+    },
+    {
+      "id": 446,
+      "turn": 365,
+      "date": "2026-07-31T09:20:08.885Z",
+      "type": "salary",
+      "amount": 8500,
+      "description": "Salaires fonctionnaires - Février 6 ap JC (85 hab. × 100€)"
+    },
+    {
+      "turn": 365,
+      "date": "2026-07-31T09:20:08.314Z",
+      "type": "balance",
+      "amount": -261040,
+      "description": "Solde"
+    },
+    {
+      "turn": 364,
+      "date": "2026-07-31T09:20:07.319Z",
+      "type": "balance",
+      "amount": -261040,
+      "description": "Solde"
+    },
+    {
+      "turn": 363,
+      "date": "2026-07-31T09:20:06.323Z",
+      "type": "balance",
+      "amount": -261040,
+      "description": "Solde"
+    },
+    {
+      "turn": 362,
+      "date": "2026-07-31T09:20:05.314Z",
+      "type": "balance",
+      "amount": -261040,
+      "description": "Solde"
+    },
+    {
+      "turn": 361,
+      "date": "2026-07-31T09:20:04.314Z",
+      "type": "balance",
+      "amount": -261040,
+      "description": "Solde"
+    },
+    {
+      "id": 445,
+      "turn": 360,
+      "date": "2026-07-31T09:20:03.856Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Janvier 7 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 444,
+      "turn": 360,
+      "date": "2026-07-31T09:20:03.847Z",
+      "type": "payroll_tax",
+      "amount": 1800,
+      "description": "Impôt sur les salaires - Janvier 6 ap JC (20%)"
+    },
+    {
+      "id": 443,
+      "turn": 360,
+      "date": "2026-07-31T09:20:03.843Z",
+      "type": "salary",
+      "amount": 9000,
+      "description": "Salaires fonctionnaires - Janvier 6 ap JC (90 hab. × 100€)"
+    },
+    {
+      "id": 442,
+      "turn": 360,
+      "date": "2026-07-31T09:20:03.317Z",
+      "type": "carry_forward",
+      "amount": 253783,
+      "description": "Report à nouveau de l'année 5 ap JC (-)"
+    },
+    {
+      "turn": 360,
+      "date": "2026-07-31T09:20:03.314Z",
+      "type": "balance",
+      "amount": -253783,
+      "description": "Solde"
+    },
+    {
+      "id": 440,
+      "turn": 359,
+      "date": "2026-07-31T09:20:03.315Z",
+      "type": "cumul_maintenance",
+      "amount": 684,
+      "description": "Cumul Maintenance - Année 5 ap JC"
+    },
+    {
+      "id": 441,
+      "turn": 359,
+      "date": "2026-07-31T09:20:03.315Z",
+      "type": "cumul_salary",
+      "amount": 96700,
+      "description": "Cumul Salaires - Année 5 ap JC"
+    },
+    {
+      "turn": 359,
+      "date": "2026-07-31T09:20:02.313Z",
+      "type": "balance",
+      "amount": -253783,
+      "description": "Solde"
+    },
+    {
+      "turn": 358,
+      "date": "2026-07-31T09:20:01.313Z",
+      "type": "balance",
+      "amount": -253783,
+      "description": "Solde"
+    },
+    {
+      "turn": 357,
+      "date": "2026-07-31T09:20:00.312Z",
+      "type": "balance",
+      "amount": -253783,
+      "description": "Solde"
+    },
+    {
+      "turn": 356,
+      "date": "2026-07-31T09:19:59.313Z",
+      "type": "balance",
+      "amount": -253783,
+      "description": "Solde"
+    },
+    {
+      "id": 439,
+      "turn": 355,
+      "date": "2026-07-31T09:19:58.551Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Décembre 6 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 438,
+      "turn": 355,
+      "date": "2026-07-31T09:19:58.546Z",
+      "type": "payroll_tax",
+      "amount": 1800,
+      "description": "Impôt sur les salaires - Décembre 5 ap JC (20%)"
+    },
+    {
+      "id": 437,
+      "turn": 355,
+      "date": "2026-07-31T09:19:58.543Z",
+      "type": "salary",
+      "amount": 9000,
+      "description": "Salaires fonctionnaires - Décembre 5 ap JC (90 hab. × 100€)"
+    },
+    {
+      "turn": 355,
+      "date": "2026-07-31T09:19:57.314Z",
+      "type": "balance",
+      "amount": -246526,
+      "description": "Solde"
+    },
+    {
+      "turn": 354,
+      "date": "2026-07-31T09:19:56.314Z",
+      "type": "balance",
+      "amount": -246526,
+      "description": "Solde"
+    },
+    {
+      "turn": 353,
+      "date": "2026-07-31T09:19:55.318Z",
+      "type": "balance",
+      "amount": -246526,
+      "description": "Solde"
+    },
+    {
+      "turn": 352,
+      "date": "2026-07-31T09:19:54.314Z",
+      "type": "balance",
+      "amount": -246526,
+      "description": "Solde"
+    },
+    {
+      "turn": 351,
+      "date": "2026-07-31T09:19:53.313Z",
+      "type": "balance",
+      "amount": -246526,
+      "description": "Solde"
+    },
+    {
+      "id": 436,
+      "turn": 350,
+      "date": "2026-07-31T09:19:52.923Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Novembre 6 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 435,
+      "turn": 350,
+      "date": "2026-07-31T09:19:52.916Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Novembre 5 ap JC (20%)"
+    },
+    {
+      "id": 434,
+      "turn": 350,
+      "date": "2026-07-31T09:19:52.913Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Novembre 5 ap JC (78 hab. × 100€)"
+    },
+    {
+      "id": 433,
+      "turn": 350,
+      "date": "2026-07-31T09:19:52.906Z",
+      "type": "citizen_tax",
+      "amount": 7800,
+      "description": "Impôt Citoyen (78 hab.) - Novembre"
+    },
+    {
+      "turn": 350,
+      "date": "2026-07-31T09:19:52.313Z",
+      "type": "balance",
+      "amount": -248029,
+      "description": "Solde"
+    },
+    {
+      "turn": 349,
+      "date": "2026-07-31T09:19:51.314Z",
+      "type": "balance",
+      "amount": -248029,
+      "description": "Solde"
+    },
+    {
+      "turn": 348,
+      "date": "2026-07-31T09:19:50.318Z",
+      "type": "balance",
+      "amount": -248029,
+      "description": "Solde"
+    },
+    {
+      "turn": 347,
+      "date": "2026-07-31T09:19:45.330Z",
+      "type": "balance",
+      "amount": -248029,
+      "description": "Solde"
+    },
+    {
+      "turn": 346,
+      "date": "2026-07-31T09:19:44.314Z",
+      "type": "balance",
+      "amount": -248029,
+      "description": "Solde"
+    },
+    {
+      "id": 432,
+      "turn": 345,
+      "date": "2026-07-31T09:19:43.898Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Octobre 6 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 431,
+      "turn": 345,
+      "date": "2026-07-31T09:19:43.893Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Octobre 5 ap JC (20%)"
+    },
+    {
+      "id": 430,
+      "turn": 345,
+      "date": "2026-07-31T09:19:43.887Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Octobre 5 ap JC (78 hab. × 100€)"
+    },
+    {
+      "turn": 345,
+      "date": "2026-07-31T09:19:43.314Z",
+      "type": "balance",
+      "amount": -241732,
+      "description": "Solde"
+    },
+    {
+      "turn": 344,
+      "date": "2026-07-31T09:19:42.316Z",
+      "type": "balance",
+      "amount": -241732,
+      "description": "Solde"
+    },
+    {
+      "turn": 343,
+      "date": "2026-07-31T09:19:41.313Z",
+      "type": "balance",
+      "amount": -241732,
+      "description": "Solde"
+    },
+    {
+      "turn": 342,
+      "date": "2026-07-31T09:19:40.316Z",
+      "type": "balance",
+      "amount": -241732,
+      "description": "Solde"
+    },
+    {
+      "turn": 341,
+      "date": "2026-07-31T09:19:39.318Z",
+      "type": "balance",
+      "amount": -241732,
+      "description": "Solde"
+    },
+    {
+      "id": 429,
+      "turn": 340,
+      "date": "2026-07-31T09:19:39.015Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Septembre 6 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 428,
+      "turn": 340,
+      "date": "2026-07-31T09:19:39.010Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Septembre 5 ap JC (20%)"
+    },
+    {
+      "id": 427,
+      "turn": 340,
+      "date": "2026-07-31T09:19:39.005Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Septembre 5 ap JC (78 hab. × 100€)"
+    },
+    {
+      "turn": 340,
+      "date": "2026-07-31T09:19:38.321Z",
+      "type": "balance",
+      "amount": -235435,
+      "description": "Solde"
+    },
+    {
+      "turn": 339,
+      "date": "2026-07-31T09:19:37.318Z",
+      "type": "balance",
+      "amount": -235435,
+      "description": "Solde"
+    },
+    {
+      "turn": 338,
+      "date": "2026-07-31T09:19:36.317Z",
+      "type": "balance",
+      "amount": -235435,
+      "description": "Solde"
+    },
+    {
+      "turn": 337,
+      "date": "2026-07-31T09:19:35.317Z",
+      "type": "balance",
+      "amount": -235435,
+      "description": "Solde"
+    },
+    {
+      "turn": 336,
+      "date": "2026-07-31T09:19:34.316Z",
+      "type": "balance",
+      "amount": -235435,
+      "description": "Solde"
+    },
+    {
+      "id": 426,
+      "turn": 335,
+      "date": "2026-07-31T09:19:34.025Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Août 6 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 425,
+      "turn": 335,
+      "date": "2026-07-31T09:19:34.020Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Août 5 ap JC (20%)"
+    },
+    {
+      "id": 424,
+      "turn": 335,
+      "date": "2026-07-31T09:19:34.017Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Août 5 ap JC (78 hab. × 100€)"
+    },
+    {
+      "turn": 335,
+      "date": "2026-07-31T09:19:33.316Z",
+      "type": "balance",
+      "amount": -229138,
+      "description": "Solde"
+    },
+    {
+      "turn": 334,
+      "date": "2026-07-31T09:19:32.319Z",
+      "type": "balance",
+      "amount": -229138,
+      "description": "Solde"
+    },
+    {
+      "turn": 333,
+      "date": "2026-07-31T09:19:31.317Z",
+      "type": "balance",
+      "amount": -229138,
+      "description": "Solde"
+    },
+    {
+      "turn": 332,
+      "date": "2026-07-31T09:19:30.317Z",
+      "type": "balance",
+      "amount": -229138,
+      "description": "Solde"
+    },
+    {
+      "turn": 331,
+      "date": "2026-07-31T09:19:29.316Z",
+      "type": "balance",
+      "amount": -229138,
+      "description": "Solde"
+    },
+    {
+      "id": 423,
+      "turn": 330,
+      "date": "2026-07-31T09:19:29.005Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Juillet 6 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 422,
+      "turn": 330,
+      "date": "2026-07-31T09:19:29.001Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Juillet 5 ap JC (20%)"
+    },
+    {
+      "id": 421,
+      "turn": 330,
+      "date": "2026-07-31T09:19:28.997Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Juillet 5 ap JC (78 hab. × 100€)"
+    },
+    {
+      "turn": 330,
+      "date": "2026-07-31T09:19:28.318Z",
+      "type": "balance",
+      "amount": -222841,
+      "description": "Solde"
+    },
+    {
+      "turn": 329,
+      "date": "2026-07-31T09:19:27.319Z",
+      "type": "balance",
+      "amount": -222841,
+      "description": "Solde"
+    },
+    {
+      "turn": 328,
+      "date": "2026-07-31T09:19:26.321Z",
+      "type": "balance",
+      "amount": -222841,
+      "description": "Solde"
+    },
+    {
+      "turn": 327,
+      "date": "2026-07-31T09:19:25.319Z",
+      "type": "balance",
+      "amount": -222841,
+      "description": "Solde"
+    },
+    {
+      "turn": 326,
+      "date": "2026-07-31T09:19:24.317Z",
+      "type": "balance",
+      "amount": -222841,
+      "description": "Solde"
+    },
+    {
+      "id": 420,
+      "turn": 325,
+      "date": "2026-07-31T09:19:23.965Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Juin 6 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 419,
+      "turn": 325,
+      "date": "2026-07-31T09:19:23.959Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Juin 5 ap JC (20%)"
+    },
+    {
+      "id": 418,
+      "turn": 325,
+      "date": "2026-07-31T09:19:23.957Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Juin 5 ap JC (78 hab. × 100€)"
+    },
+    {
+      "turn": 325,
+      "date": "2026-07-31T09:19:23.316Z",
+      "type": "balance",
+      "amount": -216544,
+      "description": "Solde"
+    },
+    {
+      "turn": 324,
+      "date": "2026-07-31T09:19:22.318Z",
+      "type": "balance",
+      "amount": -216544,
+      "description": "Solde"
+    },
+    {
+      "turn": 323,
+      "date": "2026-07-31T09:19:21.318Z",
+      "type": "balance",
+      "amount": -216544,
+      "description": "Solde"
+    },
+    {
+      "turn": 322,
+      "date": "2026-07-31T09:19:20.320Z",
+      "type": "balance",
+      "amount": -216544,
+      "description": "Solde"
+    },
+    {
+      "turn": 321,
+      "date": "2026-07-31T09:19:19.313Z",
+      "type": "balance",
+      "amount": -216544,
+      "description": "Solde"
+    },
+    {
+      "id": 417,
+      "turn": 320,
+      "date": "2026-07-31T09:19:18.990Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Mai 6 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 416,
+      "turn": 320,
+      "date": "2026-07-31T09:19:18.984Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Mai 5 ap JC (20%)"
+    },
+    {
+      "id": 415,
+      "turn": 320,
+      "date": "2026-07-31T09:19:18.979Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Mai 5 ap JC (78 hab. × 100€)"
+    },
+    {
+      "turn": 320,
+      "date": "2026-07-31T09:19:18.313Z",
+      "type": "balance",
+      "amount": -210247,
+      "description": "Solde"
+    },
+    {
+      "turn": 319,
+      "date": "2026-07-31T09:19:17.312Z",
+      "type": "balance",
+      "amount": -210247,
+      "description": "Solde"
+    },
+    {
+      "turn": 318,
+      "date": "2026-07-31T09:19:16.314Z",
+      "type": "balance",
+      "amount": -210247,
+      "description": "Solde"
+    },
+    {
+      "turn": 317,
+      "date": "2026-07-31T09:19:15.313Z",
+      "type": "balance",
+      "amount": -210247,
+      "description": "Solde"
+    },
+    {
+      "turn": 316,
+      "date": "2026-07-31T09:19:14.323Z",
+      "type": "balance",
+      "amount": -210247,
+      "description": "Solde"
+    },
+    {
+      "id": 414,
+      "turn": 315,
+      "date": "2026-07-31T09:19:13.938Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Avril 6 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 413,
+      "turn": 315,
+      "date": "2026-07-31T09:19:13.931Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Avril 5 ap JC (20%)"
+    },
+    {
+      "id": 412,
+      "turn": 315,
+      "date": "2026-07-31T09:19:13.929Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Avril 5 ap JC (78 hab. × 100€)"
+    },
+    {
+      "turn": 315,
+      "date": "2026-07-31T09:19:13.313Z",
+      "type": "balance",
+      "amount": -203950,
+      "description": "Solde"
+    },
+    {
+      "turn": 314,
+      "date": "2026-07-31T09:19:12.315Z",
+      "type": "balance",
+      "amount": -203950,
+      "description": "Solde"
+    },
+    {
+      "turn": 313,
+      "date": "2026-07-31T09:19:11.313Z",
+      "type": "balance",
+      "amount": -203950,
+      "description": "Solde"
+    },
+    {
+      "turn": 312,
+      "date": "2026-07-31T09:19:10.313Z",
+      "type": "balance",
+      "amount": -203950,
+      "description": "Solde"
+    },
+    {
+      "turn": 311,
+      "date": "2026-07-31T09:19:09.313Z",
+      "type": "balance",
+      "amount": -203950,
+      "description": "Solde"
+    },
+    {
+      "id": 411,
+      "turn": 310,
+      "date": "2026-07-31T09:19:09.007Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Mars 6 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 410,
+      "turn": 310,
+      "date": "2026-07-31T09:19:09.001Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Mars 5 ap JC (20%)"
+    },
+    {
+      "id": 409,
+      "turn": 310,
+      "date": "2026-07-31T09:19:08.997Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Mars 5 ap JC (78 hab. × 100€)"
+    },
+    {
+      "turn": 310,
+      "date": "2026-07-31T09:19:08.315Z",
+      "type": "balance",
+      "amount": -197653,
+      "description": "Solde"
+    },
+    {
+      "turn": 309,
+      "date": "2026-07-31T09:19:07.313Z",
+      "type": "balance",
+      "amount": -197653,
+      "description": "Solde"
+    },
+    {
+      "turn": 308,
+      "date": "2026-07-31T09:19:06.314Z",
+      "type": "balance",
+      "amount": -197653,
+      "description": "Solde"
+    },
+    {
+      "turn": 307,
+      "date": "2026-07-31T09:19:05.313Z",
+      "type": "balance",
+      "amount": -197653,
+      "description": "Solde"
+    },
+    {
+      "turn": 306,
+      "date": "2026-07-31T09:19:04.312Z",
+      "type": "balance",
+      "amount": -197653,
+      "description": "Solde"
+    },
+    {
+      "id": 408,
+      "turn": 305,
+      "date": "2026-07-31T09:19:03.915Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Février 6 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 407,
+      "turn": 305,
+      "date": "2026-07-31T09:19:03.911Z",
+      "type": "payroll_tax",
+      "amount": 1700,
+      "description": "Impôt sur les salaires - Février 5 ap JC (20%)"
+    },
+    {
+      "id": 406,
+      "turn": 305,
+      "date": "2026-07-31T09:19:03.908Z",
+      "type": "salary",
+      "amount": 8500,
+      "description": "Salaires fonctionnaires - Février 5 ap JC (85 hab. × 100€)"
+    },
+    {
+      "turn": 305,
+      "date": "2026-07-31T09:19:03.314Z",
+      "type": "balance",
+      "amount": -190796,
+      "description": "Solde"
+    },
+    {
+      "turn": 304,
+      "date": "2026-07-31T09:19:02.318Z",
+      "type": "balance",
+      "amount": -190796,
+      "description": "Solde"
+    },
+    {
+      "turn": 303,
+      "date": "2026-07-31T09:19:01.314Z",
+      "type": "balance",
+      "amount": -190796,
+      "description": "Solde"
+    },
+    {
+      "id": 405,
+      "turn": 302,
+      "date": "2026-07-31T09:19:00.692Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "turn": 302,
+      "date": "2026-07-31T09:19:00.313Z",
+      "type": "balance",
+      "amount": -190791,
+      "description": "Solde"
+    },
+    {
+      "id": 404,
+      "turn": 301,
+      "date": "2026-07-31T09:18:59.780Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "turn": 301,
+      "date": "2026-07-31T09:18:59.313Z",
+      "type": "balance",
+      "amount": -190786,
+      "description": "Solde"
+    },
+    {
+      "id": 403,
+      "turn": 300,
+      "date": "2026-07-31T09:18:58.879Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Janvier 6 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 402,
+      "turn": 300,
+      "date": "2026-07-31T09:18:58.874Z",
+      "type": "payroll_tax",
+      "amount": 1800,
+      "description": "Impôt sur les salaires - Janvier 5 ap JC (20%)"
+    },
+    {
+      "id": 401,
+      "turn": 300,
+      "date": "2026-07-31T09:18:58.868Z",
+      "type": "salary",
+      "amount": 9000,
+      "description": "Salaires fonctionnaires - Janvier 5 ap JC (90 hab. × 100€)"
+    },
+    {
+      "id": 400,
+      "turn": 300,
+      "date": "2026-07-31T09:18:58.626Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 399,
+      "turn": 300,
+      "date": "2026-07-31T09:18:58.314Z",
+      "type": "carry_forward",
+      "amount": 183524,
+      "description": "Report à nouveau de l'année 4 ap JC (-)"
+    },
+    {
+      "turn": 300,
+      "date": "2026-07-31T09:18:58.313Z",
+      "type": "balance",
+      "amount": -183524,
+      "description": "Solde"
+    },
+    {
+      "id": 397,
+      "turn": 299,
+      "date": "2026-07-31T09:18:58.313Z",
+      "type": "cumul_maintenance",
+      "amount": 684,
+      "description": "Cumul Maintenance - Année 4 ap JC"
+    },
+    {
+      "id": 398,
+      "turn": 299,
+      "date": "2026-07-31T09:18:58.313Z",
+      "type": "cumul_salary",
+      "amount": 96700,
+      "description": "Cumul Salaires - Année 4 ap JC"
+    },
+    {
+      "turn": 299,
+      "date": "2026-07-31T09:18:57.313Z",
+      "type": "balance",
+      "amount": -183524,
+      "description": "Solde"
+    },
+    {
+      "turn": 298,
+      "date": "2026-07-31T09:18:56.313Z",
+      "type": "balance",
+      "amount": -183524,
+      "description": "Solde"
+    },
+    {
+      "turn": 297,
+      "date": "2026-07-31T09:18:55.313Z",
+      "type": "balance",
+      "amount": -183524,
+      "description": "Solde"
+    },
+    {
+      "turn": 296,
+      "date": "2026-07-31T09:18:54.315Z",
+      "type": "balance",
+      "amount": -183524,
+      "description": "Solde"
+    },
+    {
+      "id": 396,
+      "turn": 295,
+      "date": "2026-07-31T09:18:53.612Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Décembre 5 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 395,
+      "turn": 295,
+      "date": "2026-07-31T09:18:53.598Z",
+      "type": "payroll_tax",
+      "amount": 1800,
+      "description": "Impôt sur les salaires - Décembre 4 ap JC (20%)"
+    },
+    {
+      "id": 394,
+      "turn": 295,
+      "date": "2026-07-31T09:18:53.594Z",
+      "type": "salary",
+      "amount": 9000,
+      "description": "Salaires fonctionnaires - Décembre 4 ap JC (90 hab. × 100€)"
+    },
+    {
+      "turn": 295,
+      "date": "2026-07-31T09:18:52.319Z",
+      "type": "balance",
+      "amount": -176267,
+      "description": "Solde"
+    },
+    {
+      "turn": 294,
+      "date": "2026-07-31T09:18:51.314Z",
+      "type": "balance",
+      "amount": -176267,
+      "description": "Solde"
+    },
+    {
+      "turn": 293,
+      "date": "2026-07-31T09:18:50.317Z",
+      "type": "balance",
+      "amount": -176267,
+      "description": "Solde"
+    },
+    {
+      "turn": 292,
+      "date": "2026-07-31T09:18:49.318Z",
+      "type": "balance",
+      "amount": -176267,
+      "description": "Solde"
+    },
+    {
+      "turn": 291,
+      "date": "2026-07-31T09:18:48.317Z",
+      "type": "balance",
+      "amount": -176267,
+      "description": "Solde"
+    },
+    {
+      "id": 393,
+      "turn": 290,
+      "date": "2026-07-31T09:18:47.990Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Novembre 5 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 392,
+      "turn": 290,
+      "date": "2026-07-31T09:18:47.986Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Novembre 4 ap JC (20%)"
+    },
+    {
+      "id": 391,
+      "turn": 290,
+      "date": "2026-07-31T09:18:47.984Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Novembre 4 ap JC (78 hab. × 100€)"
+    },
+    {
+      "id": 390,
+      "turn": 290,
+      "date": "2026-07-31T09:18:47.972Z",
+      "type": "citizen_tax",
+      "amount": 7800,
+      "description": "Impôt Citoyen (78 hab.) - Novembre"
+    },
+    {
+      "turn": 290,
+      "date": "2026-07-31T09:18:47.317Z",
+      "type": "balance",
+      "amount": -177770,
+      "description": "Solde"
+    },
+    {
+      "turn": 289,
+      "date": "2026-07-31T09:18:46.317Z",
+      "type": "balance",
+      "amount": -177770,
+      "description": "Solde"
+    },
+    {
+      "turn": 288,
+      "date": "2026-07-31T09:18:45.318Z",
+      "type": "balance",
+      "amount": -177770,
+      "description": "Solde"
+    },
+    {
+      "turn": 287,
+      "date": "2026-07-31T09:18:44.318Z",
+      "type": "balance",
+      "amount": -177770,
+      "description": "Solde"
+    },
+    {
+      "turn": 286,
+      "date": "2026-07-31T09:18:43.319Z",
+      "type": "balance",
+      "amount": -177770,
+      "description": "Solde"
+    },
+    {
+      "id": 389,
+      "turn": 285,
+      "date": "2026-07-31T09:18:42.952Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Octobre 5 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 388,
+      "turn": 285,
+      "date": "2026-07-31T09:18:42.947Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Octobre 4 ap JC (20%)"
+    },
+    {
+      "id": 387,
+      "turn": 285,
+      "date": "2026-07-31T09:18:42.941Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Octobre 4 ap JC (78 hab. × 100€)"
+    },
+    {
+      "turn": 285,
+      "date": "2026-07-31T09:18:42.317Z",
+      "type": "balance",
+      "amount": -171473,
+      "description": "Solde"
+    },
+    {
+      "turn": 284,
+      "date": "2026-07-31T09:18:41.316Z",
+      "type": "balance",
+      "amount": -171473,
+      "description": "Solde"
+    },
+    {
+      "turn": 283,
+      "date": "2026-07-31T09:18:40.319Z",
+      "type": "balance",
+      "amount": -171473,
+      "description": "Solde"
+    },
+    {
+      "turn": 282,
+      "date": "2026-07-31T09:18:39.316Z",
+      "type": "balance",
+      "amount": -171473,
+      "description": "Solde"
+    },
+    {
+      "turn": 281,
+      "date": "2026-07-31T09:18:38.315Z",
+      "type": "balance",
+      "amount": -171473,
+      "description": "Solde"
+    },
+    {
+      "id": 386,
+      "turn": 280,
+      "date": "2026-07-31T09:18:37.971Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Septembre 5 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 385,
+      "turn": 280,
+      "date": "2026-07-31T09:18:37.967Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Septembre 4 ap JC (20%)"
+    },
+    {
+      "id": 384,
+      "turn": 280,
+      "date": "2026-07-31T09:18:37.962Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Septembre 4 ap JC (78 hab. × 100€)"
+    },
+    {
+      "turn": 280,
+      "date": "2026-07-31T09:18:37.319Z",
+      "type": "balance",
+      "amount": -165176,
+      "description": "Solde"
+    },
+    {
+      "turn": 279,
+      "date": "2026-07-31T09:18:36.318Z",
+      "type": "balance",
+      "amount": -165176,
+      "description": "Solde"
+    },
+    {
+      "turn": 278,
+      "date": "2026-07-31T09:18:35.318Z",
+      "type": "balance",
+      "amount": -165176,
+      "description": "Solde"
+    },
+    {
+      "turn": 277,
+      "date": "2026-07-31T09:18:34.319Z",
+      "type": "balance",
+      "amount": -165176,
+      "description": "Solde"
+    },
+    {
+      "turn": 276,
+      "date": "2026-07-31T09:18:33.316Z",
+      "type": "balance",
+      "amount": -165176,
+      "description": "Solde"
+    },
+    {
+      "id": 383,
+      "turn": 275,
+      "date": "2026-07-31T09:18:32.968Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Août 5 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 382,
+      "turn": 275,
+      "date": "2026-07-31T09:18:32.961Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Août 4 ap JC (20%)"
+    },
+    {
+      "id": 381,
+      "turn": 275,
+      "date": "2026-07-31T09:18:32.959Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Août 4 ap JC (78 hab. × 100€)"
+    },
+    {
+      "turn": 275,
+      "date": "2026-07-31T09:18:32.318Z",
+      "type": "balance",
+      "amount": -158879,
+      "description": "Solde"
+    },
+    {
+      "turn": 274,
+      "date": "2026-07-31T09:18:31.318Z",
+      "type": "balance",
+      "amount": -158879,
+      "description": "Solde"
+    },
+    {
+      "turn": 273,
+      "date": "2026-07-31T09:18:30.313Z",
+      "type": "balance",
+      "amount": -158879,
+      "description": "Solde"
+    },
+    {
+      "turn": 272,
+      "date": "2026-07-31T09:18:29.319Z",
+      "type": "balance",
+      "amount": -158879,
+      "description": "Solde"
+    },
+    {
+      "turn": 271,
+      "date": "2026-07-31T09:18:28.314Z",
+      "type": "balance",
+      "amount": -158879,
+      "description": "Solde"
+    },
+    {
+      "id": 380,
+      "turn": 270,
+      "date": "2026-07-31T09:18:28.022Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Juillet 5 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 379,
+      "turn": 270,
+      "date": "2026-07-31T09:18:28.018Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Juillet 4 ap JC (20%)"
+    },
+    {
+      "id": 378,
+      "turn": 270,
+      "date": "2026-07-31T09:18:28.013Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Juillet 4 ap JC (78 hab. × 100€)"
+    },
+    {
+      "turn": 270,
+      "date": "2026-07-31T09:18:27.314Z",
+      "type": "balance",
+      "amount": -152582,
+      "description": "Solde"
+    },
+    {
+      "turn": 269,
+      "date": "2026-07-31T09:18:26.314Z",
+      "type": "balance",
+      "amount": -152582,
+      "description": "Solde"
+    },
+    {
+      "turn": 268,
+      "date": "2026-07-31T09:18:25.314Z",
+      "type": "balance",
+      "amount": -152582,
+      "description": "Solde"
+    },
+    {
+      "turn": 267,
+      "date": "2026-07-31T09:18:24.314Z",
+      "type": "balance",
+      "amount": -152582,
+      "description": "Solde"
+    },
+    {
+      "turn": 266,
+      "date": "2026-07-31T09:18:23.315Z",
+      "type": "balance",
+      "amount": -152582,
+      "description": "Solde"
+    },
+    {
+      "id": 377,
+      "turn": 265,
+      "date": "2026-07-31T09:18:22.991Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Juin 5 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 376,
+      "turn": 265,
+      "date": "2026-07-31T09:18:22.980Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Juin 4 ap JC (20%)"
+    },
+    {
+      "id": 375,
+      "turn": 265,
+      "date": "2026-07-31T09:18:22.978Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Juin 4 ap JC (78 hab. × 100€)"
+    },
+    {
+      "turn": 265,
+      "date": "2026-07-31T09:18:22.314Z",
+      "type": "balance",
+      "amount": -146285,
+      "description": "Solde"
+    },
+    {
+      "turn": 264,
+      "date": "2026-07-31T09:18:21.313Z",
+      "type": "balance",
+      "amount": -146285,
+      "description": "Solde"
+    },
+    {
+      "turn": 263,
+      "date": "2026-07-31T09:18:20.314Z",
+      "type": "balance",
+      "amount": -146285,
+      "description": "Solde"
+    },
+    {
+      "turn": 262,
+      "date": "2026-07-31T09:18:19.312Z",
+      "type": "balance",
+      "amount": -146285,
+      "description": "Solde"
+    },
+    {
+      "turn": 261,
+      "date": "2026-07-31T09:18:18.312Z",
+      "type": "balance",
+      "amount": -146285,
+      "description": "Solde"
+    },
+    {
+      "id": 374,
+      "turn": 260,
+      "date": "2026-07-31T09:18:18.083Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Mai 5 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 373,
+      "turn": 260,
+      "date": "2026-07-31T09:18:18.080Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Mai 4 ap JC (20%)"
+    },
+    {
+      "id": 372,
+      "turn": 260,
+      "date": "2026-07-31T09:18:18.077Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Mai 4 ap JC (78 hab. × 100€)"
+    },
+    {
+      "turn": 260,
+      "date": "2026-07-31T09:18:17.314Z",
+      "type": "balance",
+      "amount": -139988,
+      "description": "Solde"
+    },
+    {
+      "turn": 259,
+      "date": "2026-07-31T09:18:16.315Z",
+      "type": "balance",
+      "amount": -139988,
+      "description": "Solde"
+    },
+    {
+      "turn": 258,
+      "date": "2026-07-31T09:18:15.314Z",
+      "type": "balance",
+      "amount": -139988,
+      "description": "Solde"
+    },
+    {
+      "turn": 257,
+      "date": "2026-07-31T09:18:14.314Z",
+      "type": "balance",
+      "amount": -139988,
+      "description": "Solde"
+    },
+    {
+      "turn": 256,
+      "date": "2026-07-31T09:18:13.313Z",
+      "type": "balance",
+      "amount": -139988,
+      "description": "Solde"
+    },
+    {
+      "id": 371,
+      "turn": 255,
+      "date": "2026-07-31T09:18:12.979Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Avril 5 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 370,
+      "turn": 255,
+      "date": "2026-07-31T09:18:12.975Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Avril 4 ap JC (20%)"
+    },
+    {
+      "id": 369,
+      "turn": 255,
+      "date": "2026-07-31T09:18:12.969Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Avril 4 ap JC (78 hab. × 100€)"
+    },
+    {
+      "turn": 255,
+      "date": "2026-07-31T09:18:12.312Z",
+      "type": "balance",
+      "amount": -133691,
+      "description": "Solde"
+    },
+    {
+      "turn": 254,
+      "date": "2026-07-31T09:18:11.313Z",
+      "type": "balance",
+      "amount": -133691,
+      "description": "Solde"
+    },
+    {
+      "turn": 253,
+      "date": "2026-07-31T09:18:10.314Z",
+      "type": "balance",
+      "amount": -133691,
+      "description": "Solde"
+    },
+    {
+      "turn": 252,
+      "date": "2026-07-31T09:18:09.313Z",
+      "type": "balance",
+      "amount": -133691,
+      "description": "Solde"
+    },
+    {
+      "turn": 251,
+      "date": "2026-07-31T09:18:08.315Z",
+      "type": "balance",
+      "amount": -133691,
+      "description": "Solde"
+    },
+    {
+      "id": 368,
+      "turn": 250,
+      "date": "2026-07-31T09:18:07.884Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Mars 5 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 367,
+      "turn": 250,
+      "date": "2026-07-31T09:18:07.880Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Mars 4 ap JC (20%)"
+    },
+    {
+      "id": 366,
+      "turn": 250,
+      "date": "2026-07-31T09:18:07.878Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Mars 4 ap JC (78 hab. × 100€)"
+    },
+    {
+      "turn": 250,
+      "date": "2026-07-31T09:18:07.313Z",
+      "type": "balance",
+      "amount": -127394,
+      "description": "Solde"
+    },
+    {
+      "turn": 249,
+      "date": "2026-07-31T09:18:06.313Z",
+      "type": "balance",
+      "amount": -127394,
+      "description": "Solde"
+    },
+    {
+      "turn": 248,
+      "date": "2026-07-31T09:18:05.314Z",
+      "type": "balance",
+      "amount": -127394,
+      "description": "Solde"
+    },
+    {
+      "turn": 247,
+      "date": "2026-07-31T09:18:04.313Z",
+      "type": "balance",
+      "amount": -127394,
+      "description": "Solde"
+    },
+    {
+      "turn": 246,
+      "date": "2026-07-31T09:18:03.315Z",
+      "type": "balance",
+      "amount": -127394,
+      "description": "Solde"
+    },
+    {
+      "id": 365,
+      "turn": 245,
+      "date": "2026-07-31T09:18:02.910Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Février 5 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 364,
+      "turn": 245,
+      "date": "2026-07-31T09:18:02.904Z",
+      "type": "payroll_tax",
+      "amount": 1700,
+      "description": "Impôt sur les salaires - Février 4 ap JC (20%)"
+    },
+    {
+      "id": 363,
+      "turn": 245,
+      "date": "2026-07-31T09:18:02.902Z",
+      "type": "salary",
+      "amount": 8500,
+      "description": "Salaires fonctionnaires - Février 4 ap JC (85 hab. × 100€)"
+    },
+    {
+      "id": 362,
+      "turn": 245,
+      "date": "2026-07-31T09:18:02.663Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "turn": 245,
+      "date": "2026-07-31T09:18:02.315Z",
+      "type": "balance",
+      "amount": -120532,
+      "description": "Solde"
+    },
+    {
+      "id": 361,
+      "turn": 244,
+      "date": "2026-07-31T09:18:01.668Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "turn": 244,
+      "date": "2026-07-31T09:18:01.319Z",
+      "type": "balance",
+      "amount": -120527,
+      "description": "Solde"
+    },
+    {
+      "id": 360,
+      "turn": 243,
+      "date": "2026-07-31T09:18:00.679Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "turn": 243,
+      "date": "2026-07-31T09:18:00.319Z",
+      "type": "balance",
+      "amount": -120522,
+      "description": "Solde"
+    },
+    {
+      "id": 359,
+      "turn": 242,
+      "date": "2026-07-31T09:17:59.817Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "turn": 242,
+      "date": "2026-07-31T09:17:59.316Z",
+      "type": "balance",
+      "amount": -120517,
+      "description": "Solde"
+    },
+    {
+      "id": 358,
+      "turn": 241,
+      "date": "2026-07-31T09:17:58.748Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Foresta\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 357,
+      "turn": 241,
+      "date": "2026-07-31T09:17:58.741Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "turn": 241,
+      "date": "2026-07-31T09:17:58.316Z",
+      "type": "balance",
+      "amount": -120507,
+      "description": "Solde"
+    },
+    {
+      "id": 356,
+      "turn": 240,
+      "date": "2026-07-31T09:17:57.945Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Janvier 5 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 355,
+      "turn": 240,
+      "date": "2026-07-31T09:17:57.939Z",
+      "type": "payroll_tax",
+      "amount": 1800,
+      "description": "Impôt sur les salaires - Janvier 4 ap JC (20%)"
+    },
+    {
+      "id": 354,
+      "turn": 240,
+      "date": "2026-07-31T09:17:57.937Z",
+      "type": "salary",
+      "amount": 9000,
+      "description": "Salaires fonctionnaires - Janvier 4 ap JC (90 hab. × 100€)"
+    },
+    {
+      "id": 353,
+      "turn": 240,
+      "date": "2026-07-31T09:17:57.669Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Foresta\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 352,
+      "turn": 240,
+      "date": "2026-07-31T09:17:57.658Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 351,
+      "turn": 240,
+      "date": "2026-07-31T09:17:57.321Z",
+      "type": "carry_forward",
+      "amount": 113240,
+      "description": "Report à nouveau de l'année 3 ap JC (-)"
+    },
+    {
+      "turn": 240,
+      "date": "2026-07-31T09:17:57.319Z",
+      "type": "balance",
+      "amount": -113240,
+      "description": "Solde"
+    },
+    {
+      "id": 348,
+      "turn": 239,
+      "date": "2026-07-31T09:17:57.320Z",
+      "type": "cumul_maintenance",
+      "amount": 659,
+      "description": "Cumul Maintenance - Année 3 ap JC"
+    },
+    {
+      "id": 349,
+      "turn": 239,
+      "date": "2026-07-31T09:17:57.320Z",
+      "type": "cumul_construction",
+      "amount": 35,
+      "description": "Cumul Construction - Année 3 ap JC"
+    },
+    {
+      "id": 350,
+      "turn": 239,
+      "date": "2026-07-31T09:17:57.320Z",
+      "type": "cumul_salary",
+      "amount": 91000,
+      "description": "Cumul Salaires - Année 3 ap JC"
+    },
+    {
+      "turn": 239,
+      "date": "2026-07-31T09:17:56.318Z",
+      "type": "balance",
+      "amount": -113240,
+      "description": "Solde"
+    },
+    {
+      "turn": 238,
+      "date": "2026-07-31T09:17:55.319Z",
+      "type": "balance",
+      "amount": -113240,
+      "description": "Solde"
+    },
+    {
+      "turn": 237,
+      "date": "2026-07-31T09:17:54.315Z",
+      "type": "balance",
+      "amount": -113240,
+      "description": "Solde"
+    },
+    {
+      "turn": 236,
+      "date": "2026-07-31T09:17:53.318Z",
+      "type": "balance",
+      "amount": -113240,
+      "description": "Solde"
+    },
+    {
+      "id": 347,
+      "turn": 235,
+      "date": "2026-07-31T09:17:52.399Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Décembre 4 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 346,
+      "turn": 235,
+      "date": "2026-07-31T09:17:52.392Z",
+      "type": "payroll_tax",
+      "amount": 1800,
+      "description": "Impôt sur les salaires - Décembre 3 ap JC (20%)"
+    },
+    {
+      "id": 345,
+      "turn": 235,
+      "date": "2026-07-31T09:17:52.390Z",
+      "type": "salary",
+      "amount": 9000,
+      "description": "Salaires fonctionnaires - Décembre 3 ap JC (90 hab. × 100€)"
+    },
+    {
+      "turn": 235,
+      "date": "2026-07-31T09:17:51.317Z",
+      "type": "balance",
+      "amount": -105983,
+      "description": "Solde"
+    },
+    {
+      "turn": 234,
+      "date": "2026-07-31T09:17:50.318Z",
+      "type": "balance",
+      "amount": -105983,
+      "description": "Solde"
+    },
+    {
+      "turn": 233,
+      "date": "2026-07-31T09:17:49.319Z",
+      "type": "balance",
+      "amount": -105983,
+      "description": "Solde"
+    },
+    {
+      "turn": 232,
+      "date": "2026-07-31T09:17:48.317Z",
+      "type": "balance",
+      "amount": -105983,
+      "description": "Solde"
+    },
+    {
+      "turn": 231,
+      "date": "2026-07-31T09:17:47.326Z",
+      "type": "balance",
+      "amount": -105983,
+      "description": "Solde"
+    },
+    {
+      "id": 344,
+      "turn": 230,
+      "date": "2026-07-31T09:17:46.879Z",
+      "type": "maintenance",
+      "amount": 57,
+      "description": "Maintenance mensuelle - Novembre 4 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":16,\"unitCost\":1,\"total\":16},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 343,
+      "turn": 230,
+      "date": "2026-07-31T09:17:46.876Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Novembre 3 ap JC (20%)"
+    },
+    {
+      "id": 342,
+      "turn": 230,
+      "date": "2026-07-31T09:17:46.873Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Novembre 3 ap JC (78 hab. × 100€)"
+    },
+    {
+      "id": 341,
+      "turn": 230,
+      "date": "2026-07-31T09:17:46.868Z",
+      "type": "citizen_tax",
+      "amount": 7800,
+      "description": "Impôt Citoyen (78 hab.) - Novembre"
+    },
+    {
+      "turn": 230,
+      "date": "2026-07-31T09:17:46.316Z",
+      "type": "balance",
+      "amount": -107486,
+      "description": "Solde"
+    },
+    {
+      "turn": 229,
+      "date": "2026-07-31T09:17:45.317Z",
+      "type": "balance",
+      "amount": -107486,
+      "description": "Solde"
+    },
+    {
+      "turn": 228,
+      "date": "2026-07-31T09:17:44.320Z",
+      "type": "balance",
+      "amount": -107486,
+      "description": "Solde"
+    },
+    {
+      "turn": 227,
+      "date": "2026-07-31T09:17:42.311Z",
+      "type": "balance",
+      "amount": -107486,
+      "description": "Solde"
+    },
+    {
+      "id": 340,
+      "turn": 226,
+      "date": "2026-07-31T09:17:42.260Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: Farm-Wheat"
+    },
+    {
+      "turn": 226,
+      "date": "2026-07-31T09:17:38.314Z",
+      "type": "balance",
+      "amount": -107476,
+      "description": "Solde"
+    },
+    {
+      "id": 339,
+      "turn": 225,
+      "date": "2026-07-31T09:17:37.920Z",
+      "type": "maintenance",
+      "amount": 56,
+      "description": "Maintenance mensuelle - Octobre 4 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":15,\"unitCost\":1,\"total\":15},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 338,
+      "turn": 225,
+      "date": "2026-07-31T09:17:37.913Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Octobre 3 ap JC (20%)"
+    },
+    {
+      "id": 337,
+      "turn": 225,
+      "date": "2026-07-31T09:17:37.911Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Octobre 3 ap JC (78 hab. × 100€)"
+    },
+    {
+      "turn": 225,
+      "date": "2026-07-31T09:17:37.315Z",
+      "type": "balance",
+      "amount": -101180,
+      "description": "Solde"
+    },
+    {
+      "turn": 224,
+      "date": "2026-07-31T09:17:36.314Z",
+      "type": "balance",
+      "amount": -101180,
+      "description": "Solde"
+    },
+    {
+      "turn": 223,
+      "date": "2026-07-31T09:17:35.313Z",
+      "type": "balance",
+      "amount": -101180,
+      "description": "Solde"
+    },
+    {
+      "turn": 222,
+      "date": "2026-07-31T09:17:34.314Z",
+      "type": "balance",
+      "amount": -101180,
+      "description": "Solde"
+    },
+    {
+      "turn": 221,
+      "date": "2026-07-31T09:17:24.312Z",
+      "type": "balance",
+      "amount": -101180,
+      "description": "Solde"
+    },
+    {
+      "id": 336,
+      "turn": 220,
+      "date": "2026-07-31T09:17:17.321Z",
+      "type": "maintenance",
+      "amount": 56,
+      "description": "Maintenance mensuelle - Septembre 4 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":15,\"unitCost\":1,\"total\":15},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 335,
+      "turn": 220,
+      "date": "2026-07-31T09:17:17.317Z",
+      "type": "payroll_tax",
+      "amount": 1560,
+      "description": "Impôt sur les salaires - Septembre 3 ap JC (20%)"
+    },
+    {
+      "id": 334,
+      "turn": 220,
+      "date": "2026-07-31T09:17:17.313Z",
+      "type": "salary",
+      "amount": 7800,
+      "description": "Salaires fonctionnaires - Septembre 3 ap JC (78 hab. × 100€)"
+    },
+    {
+      "turn": 220,
+      "date": "2026-07-31T09:17:16.314Z",
+      "type": "balance",
+      "amount": -94884,
+      "description": "Solde"
+    },
+    {
+      "turn": 219,
+      "date": "2026-07-31T09:17:15.315Z",
+      "type": "balance",
+      "amount": -94884,
+      "description": "Solde"
+    },
+    {
+      "turn": 218,
+      "date": "2026-07-31T09:17:14.316Z",
+      "type": "balance",
+      "amount": -94884,
+      "description": "Solde"
+    },
+    {
+      "turn": 217,
+      "date": "2026-07-31T09:17:13.315Z",
+      "type": "balance",
+      "amount": -94884,
+      "description": "Solde"
+    },
+    {
+      "turn": 216,
+      "date": "2026-07-31T09:17:12.316Z",
+      "type": "balance",
+      "amount": -94884,
+      "description": "Solde"
+    },
+    {
+      "id": 333,
+      "turn": 215,
+      "date": "2026-07-31T09:17:12.271Z",
+      "type": "maintenance",
+      "amount": 56,
+      "description": "Maintenance mensuelle - Août 4 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":15,\"unitCost\":1,\"total\":15},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 332,
+      "turn": 215,
+      "date": "2026-07-31T09:17:12.268Z",
+      "type": "payroll_tax",
+      "amount": 1540,
+      "description": "Impôt sur les salaires - Août 3 ap JC (20%)"
+    },
+    {
+      "id": 331,
+      "turn": 215,
+      "date": "2026-07-31T09:17:12.264Z",
+      "type": "salary",
+      "amount": 7700,
+      "description": "Salaires fonctionnaires - Août 3 ap JC (77 hab. × 100€)"
+    },
+    {
+      "turn": 215,
+      "date": "2026-07-31T09:17:11.316Z",
+      "type": "balance",
+      "amount": -88668,
+      "description": "Solde"
+    },
+    {
+      "turn": 214,
+      "date": "2026-07-31T09:17:10.319Z",
+      "type": "balance",
+      "amount": -88668,
+      "description": "Solde"
+    },
+    {
+      "turn": 213,
+      "date": "2026-07-31T09:17:09.318Z",
+      "type": "balance",
+      "amount": -88668,
+      "description": "Solde"
+    },
+    {
+      "turn": 212,
+      "date": "2026-07-31T09:17:08.318Z",
+      "type": "balance",
+      "amount": -88668,
+      "description": "Solde"
+    },
+    {
+      "turn": 211,
+      "date": "2026-07-31T09:17:07.317Z",
+      "type": "balance",
+      "amount": -88668,
+      "description": "Solde"
+    },
+    {
+      "id": 330,
+      "turn": 210,
+      "date": "2026-07-31T09:17:07.218Z",
+      "type": "maintenance",
+      "amount": 56,
+      "description": "Maintenance mensuelle - Juillet 4 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":15,\"unitCost\":1,\"total\":15},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 329,
+      "turn": 210,
+      "date": "2026-07-31T09:17:07.208Z",
+      "type": "payroll_tax",
+      "amount": 1520,
+      "description": "Impôt sur les salaires - Juillet 3 ap JC (20%)"
+    },
+    {
+      "id": 328,
+      "turn": 210,
+      "date": "2026-07-31T09:17:07.205Z",
+      "type": "salary",
+      "amount": 7600,
+      "description": "Salaires fonctionnaires - Juillet 3 ap JC (76 hab. × 100€)"
+    },
+    {
+      "turn": 210,
+      "date": "2026-07-31T09:17:06.321Z",
+      "type": "balance",
+      "amount": -82532,
+      "description": "Solde"
+    },
+    {
+      "turn": 209,
+      "date": "2026-07-31T09:17:05.321Z",
+      "type": "balance",
+      "amount": -82532,
+      "description": "Solde"
+    },
+    {
+      "turn": 208,
+      "date": "2026-07-31T09:17:04.322Z",
+      "type": "balance",
+      "amount": -82532,
+      "description": "Solde"
+    },
+    {
+      "turn": 207,
+      "date": "2026-07-31T09:17:03.322Z",
+      "type": "balance",
+      "amount": -82532,
+      "description": "Solde"
+    },
+    {
+      "turn": 206,
+      "date": "2026-07-31T09:17:02.321Z",
+      "type": "balance",
+      "amount": -82532,
+      "description": "Solde"
+    },
+    {
+      "id": 327,
+      "turn": 205,
+      "date": "2026-07-31T09:17:02.051Z",
+      "type": "maintenance",
+      "amount": 56,
+      "description": "Maintenance mensuelle - Juin 4 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":15,\"unitCost\":1,\"total\":15},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 326,
+      "turn": 205,
+      "date": "2026-07-31T09:17:02.042Z",
+      "type": "payroll_tax",
+      "amount": 1500,
+      "description": "Impôt sur les salaires - Juin 3 ap JC (20%)"
+    },
+    {
+      "id": 325,
+      "turn": 205,
+      "date": "2026-07-31T09:17:02.038Z",
+      "type": "salary",
+      "amount": 7500,
+      "description": "Salaires fonctionnaires - Juin 3 ap JC (75 hab. × 100€)"
+    },
+    {
+      "turn": 205,
+      "date": "2026-07-31T09:17:01.322Z",
+      "type": "balance",
+      "amount": -76476,
+      "description": "Solde"
+    },
+    {
+      "turn": 204,
+      "date": "2026-07-31T09:17:00.322Z",
+      "type": "balance",
+      "amount": -76476,
+      "description": "Solde"
+    },
+    {
+      "turn": 203,
+      "date": "2026-07-31T09:16:59.321Z",
+      "type": "balance",
+      "amount": -76476,
+      "description": "Solde"
+    },
+    {
+      "turn": 202,
+      "date": "2026-07-31T09:16:58.322Z",
+      "type": "balance",
+      "amount": -76476,
+      "description": "Solde"
+    },
+    {
+      "turn": 201,
+      "date": "2026-07-31T09:16:57.322Z",
+      "type": "balance",
+      "amount": -76476,
+      "description": "Solde"
+    },
+    {
+      "id": 324,
+      "turn": 200,
+      "date": "2026-07-31T09:16:56.322Z",
+      "type": "maintenance",
+      "amount": 56,
+      "description": "Maintenance mensuelle - Mai 4 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":13,\"unitCost\":3,\"total\":39},{\"label\":\"Fermes\",\"count\":15,\"unitCost\":1,\"total\":15},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 323,
+      "turn": 200,
+      "date": "2026-07-31T09:16:56.311Z",
+      "type": "payroll_tax",
+      "amount": 1460,
+      "description": "Impôt sur les salaires - Mai 3 ap JC (20%)"
+    },
+    {
+      "id": 322,
+      "turn": 200,
+      "date": "2026-07-31T09:16:56.308Z",
+      "type": "salary",
+      "amount": 7300,
+      "description": "Salaires fonctionnaires - Mai 3 ap JC (73 hab. × 100€)"
+    },
+    {
+      "turn": 200,
+      "date": "2026-07-31T09:16:55.312Z",
+      "type": "balance",
+      "amount": -70580,
+      "description": "Solde"
+    },
+    {
+      "turn": 199,
+      "date": "2026-07-31T09:16:54.312Z",
+      "type": "balance",
+      "amount": -70580,
+      "description": "Solde"
+    },
+    {
+      "turn": 198,
+      "date": "2026-07-31T09:16:53.312Z",
+      "type": "balance",
+      "amount": -70580,
+      "description": "Solde"
+    },
+    {
+      "turn": 197,
+      "date": "2026-07-31T09:16:52.313Z",
+      "type": "balance",
+      "amount": -70580,
+      "description": "Solde"
+    },
+    {
+      "turn": 196,
+      "date": "2026-07-31T09:16:51.313Z",
+      "type": "balance",
+      "amount": -70580,
+      "description": "Solde"
+    },
+    {
+      "id": 321,
+      "turn": 195,
+      "date": "2026-07-31T09:16:50.443Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "id": 320,
+      "turn": 195,
+      "date": "2026-07-31T09:16:50.257Z",
+      "type": "maintenance",
+      "amount": 53,
+      "description": "Maintenance mensuelle - Avril 4 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":12,\"unitCost\":3,\"total\":36},{\"label\":\"Fermes\",\"count\":15,\"unitCost\":1,\"total\":15},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 319,
+      "turn": 195,
+      "date": "2026-07-31T09:16:50.164Z",
+      "type": "payroll_tax",
+      "amount": 1400,
+      "description": "Impôt sur les salaires - Avril 3 ap JC (20%)"
+    },
+    {
+      "id": 318,
+      "turn": 195,
+      "date": "2026-07-31T09:16:50.148Z",
+      "type": "salary",
+      "amount": 7000,
+      "description": "Salaires fonctionnaires - Avril 3 ap JC (70 hab. × 100€)"
+    },
+    {
+      "turn": 195,
+      "date": "2026-07-31T09:16:49.312Z",
+      "type": "balance",
+      "amount": -64917,
+      "description": "Solde"
+    },
+    {
+      "turn": 194,
+      "date": "2026-07-31T09:16:48.313Z",
+      "type": "balance",
+      "amount": -64917,
+      "description": "Solde"
+    },
+    {
+      "turn": 193,
+      "date": "2026-07-31T09:16:47.312Z",
+      "type": "balance",
+      "amount": -64917,
+      "description": "Solde"
+    },
+    {
+      "turn": 192,
+      "date": "2026-07-31T09:16:46.312Z",
+      "type": "balance",
+      "amount": -64917,
+      "description": "Solde"
+    },
+    {
+      "turn": 191,
+      "date": "2026-07-31T09:16:45.312Z",
+      "type": "balance",
+      "amount": -64917,
+      "description": "Solde"
+    },
+    {
+      "id": 317,
+      "turn": 190,
+      "date": "2026-07-31T09:16:45.131Z",
+      "type": "maintenance",
+      "amount": 53,
+      "description": "Maintenance mensuelle - Mars 4 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":12,\"unitCost\":3,\"total\":36},{\"label\":\"Fermes\",\"count\":15,\"unitCost\":1,\"total\":15},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 316,
+      "turn": 190,
+      "date": "2026-07-31T09:16:45.127Z",
+      "type": "payroll_tax",
+      "amount": 1400,
+      "description": "Impôt sur les salaires - Mars 3 ap JC (20%)"
+    },
+    {
+      "id": 315,
+      "turn": 190,
+      "date": "2026-07-31T09:16:45.117Z",
+      "type": "salary",
+      "amount": 7000,
+      "description": "Salaires fonctionnaires - Mars 3 ap JC (70 hab. × 100€)"
+    },
+    {
+      "turn": 190,
+      "date": "2026-07-31T09:16:44.312Z",
+      "type": "balance",
+      "amount": -59264,
+      "description": "Solde"
+    },
+    {
+      "turn": 189,
+      "date": "2026-07-31T09:16:43.312Z",
+      "type": "balance",
+      "amount": -59264,
+      "description": "Solde"
+    },
+    {
+      "turn": 188,
+      "date": "2026-07-31T09:16:42.313Z",
+      "type": "balance",
+      "amount": -59264,
+      "description": "Solde"
+    },
+    {
+      "turn": 187,
+      "date": "2026-07-31T09:16:41.314Z",
+      "type": "balance",
+      "amount": -59264,
+      "description": "Solde"
+    },
+    {
+      "turn": 186,
+      "date": "2026-07-31T09:16:40.313Z",
+      "type": "balance",
+      "amount": -59264,
+      "description": "Solde"
+    },
+    {
+      "id": 314,
+      "turn": 185,
+      "date": "2026-07-31T09:16:40.108Z",
+      "type": "maintenance",
+      "amount": 53,
+      "description": "Maintenance mensuelle - Février 4 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":12,\"unitCost\":3,\"total\":36},{\"label\":\"Fermes\",\"count\":15,\"unitCost\":1,\"total\":15},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 313,
+      "turn": 185,
+      "date": "2026-07-31T09:16:40.099Z",
+      "type": "payroll_tax",
+      "amount": 1500,
+      "description": "Impôt sur les salaires - Février 3 ap JC (20%)"
+    },
+    {
+      "id": 312,
+      "turn": 185,
+      "date": "2026-07-31T09:16:40.096Z",
+      "type": "salary",
+      "amount": 7500,
+      "description": "Salaires fonctionnaires - Février 3 ap JC (75 hab. × 100€)"
+    },
+    {
+      "turn": 185,
+      "date": "2026-07-31T09:16:39.313Z",
+      "type": "balance",
+      "amount": -53211,
+      "description": "Solde"
+    },
+    {
+      "turn": 184,
+      "date": "2026-07-31T09:16:37.312Z",
+      "type": "balance",
+      "amount": -53211,
+      "description": "Solde"
+    },
+    {
+      "id": 311,
+      "turn": 183,
+      "date": "2026-07-31T09:16:37.229Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "turn": 183,
+      "date": "2026-07-31T09:16:35.312Z",
+      "type": "balance",
+      "amount": -53206,
+      "description": "Solde"
+    },
+    {
+      "id": 310,
+      "turn": 182,
+      "date": "2026-07-31T09:16:34.680Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Foresta\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 309,
+      "turn": 182,
+      "date": "2026-07-31T09:16:34.667Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "turn": 182,
+      "date": "2026-07-31T09:16:34.313Z",
+      "type": "balance",
+      "amount": -53196,
+      "description": "Solde"
+    },
+    {
+      "id": 308,
+      "turn": 181,
+      "date": "2026-07-31T09:16:32.987Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Foresta\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 307,
+      "turn": 181,
+      "date": "2026-07-31T09:16:32.970Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 306,
+      "turn": 181,
+      "date": "2026-07-31T09:16:32.929Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Foresta\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 305,
+      "turn": 181,
+      "date": "2026-07-31T09:16:32.917Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 304,
+      "turn": 181,
+      "date": "2026-07-31T09:16:32.365Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "turn": 181,
+      "date": "2026-07-31T09:16:32.314Z",
+      "type": "balance",
+      "amount": -53166,
+      "description": "Solde"
+    },
+    {
+      "id": 303,
+      "turn": 180,
+      "date": "2026-07-31T09:16:32.101Z",
+      "type": "maintenance",
+      "amount": 50,
+      "description": "Maintenance mensuelle - Janvier 4 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":11,\"unitCost\":3,\"total\":33},{\"label\":\"Fermes\",\"count\":15,\"unitCost\":1,\"total\":15},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 302,
+      "turn": 180,
+      "date": "2026-07-31T09:16:32.098Z",
+      "type": "payroll_tax",
+      "amount": 1400,
+      "description": "Impôt sur les salaires - Janvier 3 ap JC (20%)"
+    },
+    {
+      "id": 301,
+      "turn": 180,
+      "date": "2026-07-31T09:16:32.095Z",
+      "type": "salary",
+      "amount": 7000,
+      "description": "Salaires fonctionnaires - Janvier 3 ap JC (70 hab. × 100€)"
+    },
+    {
+      "id": 300,
+      "turn": 180,
+      "date": "2026-07-31T09:16:31.716Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Foresta\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 299,
+      "turn": 180,
+      "date": "2026-07-31T09:16:31.701Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 298,
+      "turn": 180,
+      "date": "2026-07-31T09:16:31.318Z",
+      "type": "carry_forward",
+      "amount": 47506,
+      "description": "Report à nouveau de l'année 2 ap JC (-)"
+    },
+    {
+      "turn": 180,
+      "date": "2026-07-31T09:16:31.317Z",
+      "type": "balance",
+      "amount": -47506,
+      "description": "Solde"
+    },
+    {
+      "id": 295,
+      "turn": 179,
+      "date": "2026-07-31T09:16:31.317Z",
+      "type": "cumul_maintenance",
+      "amount": 430,
+      "description": "Cumul Maintenance - Année 2 ap JC"
+    },
+    {
+      "id": 296,
+      "turn": 179,
+      "date": "2026-07-31T09:16:31.317Z",
+      "type": "cumul_construction",
+      "amount": 285,
+      "description": "Cumul Construction - Année 2 ap JC"
+    },
+    {
+      "id": 297,
+      "turn": 179,
+      "date": "2026-07-31T09:16:31.317Z",
+      "type": "cumul_salary",
+      "amount": 50600,
+      "description": "Cumul Salaires - Année 2 ap JC"
+    },
+    {
+      "turn": 179,
+      "date": "2026-07-31T09:16:30.314Z",
+      "type": "balance",
+      "amount": -47506,
+      "description": "Solde"
+    },
+    {
+      "turn": 178,
+      "date": "2026-07-31T09:16:29.314Z",
+      "type": "balance",
+      "amount": -47506,
+      "description": "Solde"
+    },
+    {
+      "turn": 177,
+      "date": "2026-07-31T09:16:28.314Z",
+      "type": "balance",
+      "amount": -47506,
+      "description": "Solde"
+    },
+    {
+      "turn": 176,
+      "date": "2026-07-31T09:16:27.316Z",
+      "type": "balance",
+      "amount": -47506,
+      "description": "Solde"
+    },
+    {
+      "id": 294,
+      "turn": 175,
+      "date": "2026-07-31T09:16:26.697Z",
+      "type": "maintenance",
+      "amount": 50,
+      "description": "Maintenance mensuelle - Décembre 3 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":11,\"unitCost\":3,\"total\":33},{\"label\":\"Fermes\",\"count\":15,\"unitCost\":1,\"total\":15},{\"label\":\"Marchés\",\"count\":2,\"unitCost\":1,\"total\":2}]|BREAKDOWN|"
+    },
+    {
+      "id": 293,
+      "turn": 175,
+      "date": "2026-07-31T09:16:26.687Z",
+      "type": "payroll_tax",
+      "amount": 1340,
+      "description": "Impôt sur les salaires - Décembre 2 ap JC (20%)"
+    },
+    {
+      "id": 292,
+      "turn": 175,
+      "date": "2026-07-31T09:16:26.684Z",
+      "type": "salary",
+      "amount": 6700,
+      "description": "Salaires fonctionnaires - Décembre 2 ap JC (67 hab. × 100€)"
+    },
+    {
+      "turn": 175,
+      "date": "2026-07-31T09:16:25.315Z",
+      "type": "balance",
+      "amount": -42096,
+      "description": "Solde"
+    },
+    {
+      "turn": 174,
+      "date": "2026-07-31T09:16:24.315Z",
+      "type": "balance",
+      "amount": -42096,
+      "description": "Solde"
+    },
+    {
+      "turn": 173,
+      "date": "2026-07-31T09:16:23.414Z",
+      "type": "balance",
+      "amount": -42096,
+      "description": "Solde"
+    },
+    {
+      "turn": 172,
+      "date": "2026-07-31T09:16:22.319Z",
+      "type": "balance",
+      "amount": -42096,
+      "description": "Solde"
+    },
+    {
+      "turn": 171,
+      "date": "2026-07-31T09:16:21.320Z",
+      "type": "balance",
+      "amount": -42096,
+      "description": "Solde"
+    },
+    {
+      "id": 291,
+      "turn": 170,
+      "date": "2026-07-31T09:16:20.952Z",
+      "type": "maintenance",
+      "amount": 49,
+      "description": "Maintenance mensuelle - Novembre 3 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":11,\"unitCost\":3,\"total\":33},{\"label\":\"Fermes\",\"count\":15,\"unitCost\":1,\"total\":15},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 290,
+      "turn": 170,
+      "date": "2026-07-31T09:16:20.923Z",
+      "type": "payroll_tax",
+      "amount": 1120,
+      "description": "Impôt sur les salaires - Novembre 2 ap JC (20%)"
+    },
+    {
+      "id": 289,
+      "turn": 170,
+      "date": "2026-07-31T09:16:20.920Z",
+      "type": "salary",
+      "amount": 5600,
+      "description": "Salaires fonctionnaires - Novembre 2 ap JC (56 hab. × 100€)"
+    },
+    {
+      "id": 288,
+      "turn": 170,
+      "date": "2026-07-31T09:16:20.915Z",
+      "type": "citizen_tax",
+      "amount": 5600,
+      "description": "Impôt Citoyen (56 hab.) - Novembre"
+    },
+    {
+      "id": 287,
+      "turn": 170,
+      "date": "2026-07-31T09:16:20.887Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: Market-Stall"
+    },
+    {
+      "turn": 170,
+      "date": "2026-07-31T09:16:20.318Z",
+      "type": "balance",
+      "amount": -43157,
+      "description": "Solde"
+    },
+    {
+      "turn": 169,
+      "date": "2026-07-31T09:16:19.318Z",
+      "type": "balance",
+      "amount": -43157,
+      "description": "Solde"
+    },
+    {
+      "turn": 168,
+      "date": "2026-07-31T09:16:18.500Z",
+      "type": "balance",
+      "amount": -43157,
+      "description": "Solde"
+    },
+    {
+      "turn": 167,
+      "date": "2026-07-31T09:16:17.318Z",
+      "type": "balance",
+      "amount": -43157,
+      "description": "Solde"
+    },
+    {
+      "id": 286,
+      "turn": 166,
+      "date": "2026-07-31T09:16:15.940Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "turn": 166,
+      "date": "2026-07-31T09:16:15.323Z",
+      "type": "balance",
+      "amount": -43152,
+      "description": "Solde"
+    },
+    {
+      "id": 285,
+      "turn": 165,
+      "date": "2026-07-31T09:16:15.306Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "id": 284,
+      "turn": 165,
+      "date": "2026-07-31T09:16:15.205Z",
+      "type": "maintenance",
+      "amount": 49,
+      "description": "Maintenance mensuelle - Octobre 3 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":11,\"unitCost\":3,\"total\":33},{\"label\":\"Fermes\",\"count\":15,\"unitCost\":1,\"total\":15},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 283,
+      "turn": 165,
+      "date": "2026-07-31T09:16:15.191Z",
+      "type": "payroll_tax",
+      "amount": 1060,
+      "description": "Impôt sur les salaires - Octobre 2 ap JC (20%)"
+    },
+    {
+      "id": 282,
+      "turn": 165,
+      "date": "2026-07-31T09:16:15.188Z",
+      "type": "salary",
+      "amount": 5300,
+      "description": "Salaires fonctionnaires - Octobre 2 ap JC (53 hab. × 100€)"
+    },
+    {
+      "id": 281,
+      "turn": 165,
+      "date": "2026-07-31T09:16:14.573Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "turn": 165,
+      "date": "2026-07-31T09:16:14.321Z",
+      "type": "balance",
+      "amount": -38853,
+      "description": "Solde"
+    },
+    {
+      "turn": 164,
+      "date": "2026-07-31T09:16:12.322Z",
+      "type": "balance",
+      "amount": -38853,
+      "description": "Solde"
+    },
+    {
+      "id": 280,
+      "turn": 163,
+      "date": "2026-07-31T09:16:11.126Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "id": 279,
+      "turn": 163,
+      "date": "2026-07-31T09:16:10.471Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "turn": 163,
+      "date": "2026-07-31T09:16:10.324Z",
+      "type": "balance",
+      "amount": -38833,
+      "description": "Solde"
+    },
+    {
+      "turn": 162,
+      "date": "2026-07-31T09:16:09.327Z",
+      "type": "balance",
+      "amount": -38833,
+      "description": "Solde"
+    },
+    {
+      "id": 278,
+      "turn": 161,
+      "date": "2026-07-31T09:16:08.958Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "turn": 161,
+      "date": "2026-07-31T09:16:08.312Z",
+      "type": "balance",
+      "amount": -38823,
+      "description": "Solde"
+    },
+    {
+      "id": 277,
+      "turn": 160,
+      "date": "2026-07-31T09:16:07.459Z",
+      "type": "maintenance",
+      "amount": 40,
+      "description": "Maintenance mensuelle - Septembre 3 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":8,\"unitCost\":3,\"total\":24},{\"label\":\"Fermes\",\"count\":15,\"unitCost\":1,\"total\":15},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 276,
+      "turn": 160,
+      "date": "2026-07-31T09:16:07.456Z",
+      "type": "payroll_tax",
+      "amount": 960,
+      "description": "Impôt sur les salaires - Septembre 2 ap JC (20%)"
+    },
+    {
+      "id": 275,
+      "turn": 160,
+      "date": "2026-07-31T09:16:07.446Z",
+      "type": "salary",
+      "amount": 4800,
+      "description": "Salaires fonctionnaires - Septembre 2 ap JC (48 hab. × 100€)"
+    },
+    {
+      "turn": 160,
+      "date": "2026-07-31T09:16:06.328Z",
+      "type": "balance",
+      "amount": -34943,
+      "description": "Solde"
+    },
+    {
+      "id": 274,
+      "turn": 159,
+      "date": "2026-07-31T09:16:05.725Z",
+      "type": "construction",
+      "amount": 20,
+      "description": "Building: Farm-Carrot"
+    },
+    {
+      "id": 273,
+      "turn": 159,
+      "date": "2026-07-31T09:16:05.258Z",
+      "type": "construction",
+      "amount": 20,
+      "description": "Building: Farm-Carrot"
+    },
+    {
+      "id": 272,
+      "turn": 159,
+      "date": "2026-07-31T09:16:04.558Z",
+      "type": "construction",
+      "amount": 20,
+      "description": "Building: Farm-Carrot"
+    },
+    {
+      "turn": 159,
+      "date": "2026-07-31T09:16:04.311Z",
+      "type": "balance",
+      "amount": -34883,
+      "description": "Solde"
+    },
+    {
+      "id": 271,
+      "turn": 158,
+      "date": "2026-07-31T09:16:03.838Z",
+      "type": "construction",
+      "amount": 20,
+      "description": "Building: Farm-Carrot"
+    },
+    {
+      "turn": 158,
+      "date": "2026-07-31T09:16:03.312Z",
+      "type": "balance",
+      "amount": -34863,
+      "description": "Solde"
+    },
+    {
+      "turn": 157,
+      "date": "2026-07-31T09:16:02.313Z",
+      "type": "balance",
+      "amount": -34863,
+      "description": "Solde"
+    },
+    {
+      "turn": 156,
+      "date": "2026-07-31T09:16:00.312Z",
+      "type": "balance",
+      "amount": -34863,
+      "description": "Solde"
+    },
+    {
+      "id": 270,
+      "turn": 155,
+      "date": "2026-07-31T09:15:59.358Z",
+      "type": "maintenance",
+      "amount": 36,
+      "description": "Maintenance mensuelle - Août 3 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":8,\"unitCost\":3,\"total\":24},{\"label\":\"Fermes\",\"count\":11,\"unitCost\":1,\"total\":11},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 269,
+      "turn": 155,
+      "date": "2026-07-31T09:15:59.346Z",
+      "type": "payroll_tax",
+      "amount": 960,
+      "description": "Impôt sur les salaires - Août 2 ap JC (20%)"
+    },
+    {
+      "id": 268,
+      "turn": 155,
+      "date": "2026-07-31T09:15:59.325Z",
+      "type": "salary",
+      "amount": 4800,
+      "description": "Salaires fonctionnaires - Août 2 ap JC (48 hab. × 100€)"
+    },
+    {
+      "id": 267,
+      "turn": 155,
+      "date": "2026-07-31T09:15:59.197Z",
+      "type": "construction",
+      "amount": 30,
+      "description": "Building: Farm-Cabbage"
+    },
+    {
+      "id": 266,
+      "turn": 155,
+      "date": "2026-07-31T09:15:58.580Z",
+      "type": "construction",
+      "amount": 30,
+      "description": "Building: Farm-Cabbage"
+    },
+    {
+      "turn": 155,
+      "date": "2026-07-31T09:15:58.313Z",
+      "type": "balance",
+      "amount": -30927,
+      "description": "Solde"
+    },
+    {
+      "turn": 154,
+      "date": "2026-07-31T09:15:55.313Z",
+      "type": "balance",
+      "amount": -30927,
+      "description": "Solde"
+    },
+    {
+      "id": 265,
+      "turn": 153,
+      "date": "2026-07-31T09:15:53.363Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: Farm-Wheat"
+    },
+    {
+      "turn": 153,
+      "date": "2026-07-31T09:15:53.311Z",
+      "type": "balance",
+      "amount": -30917,
+      "description": "Solde"
+    },
+    {
+      "id": 264,
+      "turn": 152,
+      "date": "2026-07-31T09:15:52.744Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: Farm-Wheat"
+    },
+    {
+      "turn": 152,
+      "date": "2026-07-31T09:15:52.312Z",
+      "type": "balance",
+      "amount": -30907,
+      "description": "Solde"
+    },
+    {
+      "id": 263,
+      "turn": 151,
+      "date": "2026-07-31T09:15:51.825Z",
+      "type": "maintenance",
+      "amount": 32,
+      "description": "Maintenance mensuelle - Juillet 3 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":8,\"unitCost\":3,\"total\":24},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "turn": 151,
+      "date": "2026-07-31T09:15:51.312Z",
+      "type": "balance",
+      "amount": -30875,
+      "description": "Solde"
+    },
+    {
+      "turn": 150,
+      "date": "2026-07-31T09:15:49.312Z",
+      "type": "balance",
+      "amount": -30875,
+      "description": "Solde"
+    },
+    {
+      "turn": 149,
+      "date": "2026-07-31T09:15:48.312Z",
+      "type": "balance",
+      "amount": -30875,
+      "description": "Solde"
+    },
+    {
+      "turn": 148,
+      "date": "2026-07-31T09:14:22.313Z",
+      "type": "balance",
+      "amount": -30875,
+      "description": "Solde"
+    },
+    {
+      "turn": 147,
+      "date": "2026-07-31T09:14:21.314Z",
+      "type": "balance",
+      "amount": -30875,
+      "description": "Solde"
+    },
+    {
+      "turn": 146,
+      "date": "2026-07-31T09:14:20.315Z",
+      "type": "balance",
+      "amount": -30875,
+      "description": "Solde"
+    },
+    {
+      "id": 262,
+      "turn": 145,
+      "date": "2026-07-31T09:14:19.714Z",
+      "type": "maintenance",
+      "amount": 32,
+      "description": "Maintenance mensuelle - Juin 3 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":8,\"unitCost\":3,\"total\":24},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 261,
+      "turn": 145,
+      "date": "2026-07-31T09:14:19.712Z",
+      "type": "payroll_tax",
+      "amount": 880,
+      "description": "Impôt sur les salaires - Juin 2 ap JC (20%)"
+    },
+    {
+      "id": 260,
+      "turn": 145,
+      "date": "2026-07-31T09:14:19.708Z",
+      "type": "salary",
+      "amount": 4400,
+      "description": "Salaires fonctionnaires - Juin 2 ap JC (44 hab. × 100€)"
+    },
+    {
+      "turn": 145,
+      "date": "2026-07-31T09:14:19.316Z",
+      "type": "balance",
+      "amount": -27323,
+      "description": "Solde"
+    },
+    {
+      "turn": 144,
+      "date": "2026-07-31T09:14:18.314Z",
+      "type": "balance",
+      "amount": -27323,
+      "description": "Solde"
+    },
+    {
+      "turn": 143,
+      "date": "2026-07-31T09:14:17.316Z",
+      "type": "balance",
+      "amount": -27323,
+      "description": "Solde"
+    },
+    {
+      "turn": 142,
+      "date": "2026-07-31T09:14:16.315Z",
+      "type": "balance",
+      "amount": -27323,
+      "description": "Solde"
+    },
+    {
+      "turn": 141,
+      "date": "2026-07-31T09:14:15.314Z",
+      "type": "balance",
+      "amount": -27323,
+      "description": "Solde"
+    },
+    {
+      "id": 259,
+      "turn": 140,
+      "date": "2026-07-31T09:14:14.692Z",
+      "type": "maintenance",
+      "amount": 32,
+      "description": "Maintenance mensuelle - Mai 3 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":8,\"unitCost\":3,\"total\":24},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 258,
+      "turn": 140,
+      "date": "2026-07-31T09:14:14.661Z",
+      "type": "payroll_tax",
+      "amount": 840,
+      "description": "Impôt sur les salaires - Mai 2 ap JC (20%)"
+    },
+    {
+      "id": 257,
+      "turn": 140,
+      "date": "2026-07-31T09:14:14.659Z",
+      "type": "salary",
+      "amount": 4200,
+      "description": "Salaires fonctionnaires - Mai 2 ap JC (42 hab. × 100€)"
+    },
+    {
+      "turn": 140,
+      "date": "2026-07-31T09:14:14.313Z",
+      "type": "balance",
+      "amount": -23931,
+      "description": "Solde"
+    },
+    {
+      "turn": 139,
+      "date": "2026-07-31T09:14:13.313Z",
+      "type": "balance",
+      "amount": -23931,
+      "description": "Solde"
+    },
+    {
+      "turn": 138,
+      "date": "2026-07-31T09:14:12.314Z",
+      "type": "balance",
+      "amount": -23931,
+      "description": "Solde"
+    },
+    {
+      "turn": 137,
+      "date": "2026-07-31T09:14:11.313Z",
+      "type": "balance",
+      "amount": -23931,
+      "description": "Solde"
+    },
+    {
+      "turn": 136,
+      "date": "2026-07-31T09:14:10.313Z",
+      "type": "balance",
+      "amount": -23931,
+      "description": "Solde"
+    },
+    {
+      "id": 256,
+      "turn": 135,
+      "date": "2026-07-31T09:14:09.664Z",
+      "type": "maintenance",
+      "amount": 32,
+      "description": "Maintenance mensuelle - Avril 3 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":8,\"unitCost\":3,\"total\":24},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 255,
+      "turn": 135,
+      "date": "2026-07-31T09:14:09.662Z",
+      "type": "payroll_tax",
+      "amount": 800,
+      "description": "Impôt sur les salaires - Avril 2 ap JC (20%)"
+    },
+    {
+      "id": 254,
+      "turn": 135,
+      "date": "2026-07-31T09:14:09.660Z",
+      "type": "salary",
+      "amount": 4000,
+      "description": "Salaires fonctionnaires - Avril 2 ap JC (40 hab. × 100€)"
+    },
+    {
+      "turn": 135,
+      "date": "2026-07-31T09:14:09.313Z",
+      "type": "balance",
+      "amount": -20699,
+      "description": "Solde"
+    },
+    {
+      "turn": 134,
+      "date": "2026-07-31T09:14:08.313Z",
+      "type": "balance",
+      "amount": -20699,
+      "description": "Solde"
+    },
+    {
+      "id": 253,
+      "turn": 133,
+      "date": "2026-07-31T09:14:07.711Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "turn": 133,
+      "date": "2026-07-31T09:14:07.312Z",
+      "type": "balance",
+      "amount": -20689,
+      "description": "Solde"
+    },
+    {
+      "id": 252,
+      "turn": 132,
+      "date": "2026-07-31T09:14:07.082Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "turn": 132,
+      "date": "2026-07-31T09:14:06.314Z",
+      "type": "balance",
+      "amount": -20679,
+      "description": "Solde"
+    },
+    {
+      "turn": 131,
+      "date": "2026-07-31T09:14:05.313Z",
+      "type": "balance",
+      "amount": -20679,
+      "description": "Solde"
+    },
+    {
+      "id": 251,
+      "turn": 130,
+      "date": "2026-07-31T09:14:04.653Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Mars 3 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 250,
+      "turn": 130,
+      "date": "2026-07-31T09:14:04.650Z",
+      "type": "payroll_tax",
+      "amount": 720,
+      "description": "Impôt sur les salaires - Mars 2 ap JC (20%)"
+    },
+    {
+      "id": 249,
+      "turn": 130,
+      "date": "2026-07-31T09:14:04.647Z",
+      "type": "salary",
+      "amount": 3600,
+      "description": "Salaires fonctionnaires - Mars 2 ap JC (36 hab. × 100€)"
+    },
+    {
+      "turn": 130,
+      "date": "2026-07-31T09:14:04.316Z",
+      "type": "balance",
+      "amount": -17773,
+      "description": "Solde"
+    },
+    {
+      "turn": 129,
+      "date": "2026-07-31T09:14:03.316Z",
+      "type": "balance",
+      "amount": -17773,
+      "description": "Solde"
+    },
+    {
+      "turn": 128,
+      "date": "2026-07-31T09:14:02.316Z",
+      "type": "balance",
+      "amount": -17773,
+      "description": "Solde"
+    },
+    {
+      "turn": 127,
+      "date": "2026-07-31T09:14:01.314Z",
+      "type": "balance",
+      "amount": -17773,
+      "description": "Solde"
+    },
+    {
+      "turn": 126,
+      "date": "2026-07-31T09:14:00.315Z",
+      "type": "balance",
+      "amount": -17773,
+      "description": "Solde"
+    },
+    {
+      "id": 248,
+      "turn": 125,
+      "date": "2026-07-31T09:13:59.621Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Février 3 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 247,
+      "turn": 125,
+      "date": "2026-07-31T09:13:59.617Z",
+      "type": "payroll_tax",
+      "amount": 720,
+      "description": "Impôt sur les salaires - Février 2 ap JC (20%)"
+    },
+    {
+      "id": 246,
+      "turn": 125,
+      "date": "2026-07-31T09:13:59.613Z",
+      "type": "salary",
+      "amount": 3600,
+      "description": "Salaires fonctionnaires - Février 2 ap JC (36 hab. × 100€)"
+    },
+    {
+      "turn": 125,
+      "date": "2026-07-31T09:13:59.316Z",
+      "type": "balance",
+      "amount": -14867,
+      "description": "Solde"
+    },
+    {
+      "id": 245,
+      "turn": 124,
+      "date": "2026-07-31T09:13:58.720Z",
+      "type": "construction",
+      "amount": 50,
+      "description": "Building: Winery-001"
+    },
+    {
+      "turn": 124,
+      "date": "2026-07-31T09:13:58.317Z",
+      "type": "balance",
+      "amount": -14817,
+      "description": "Solde"
+    },
+    {
+      "id": 244,
+      "turn": 123,
+      "date": "2026-07-31T09:13:57.467Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Foresta\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 243,
+      "turn": 123,
+      "date": "2026-07-31T09:13:57.462Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "turn": 123,
+      "date": "2026-07-31T09:13:57.315Z",
+      "type": "balance",
+      "amount": -14807,
+      "description": "Solde"
+    },
+    {
+      "id": 242,
+      "turn": 122,
+      "date": "2026-07-31T09:13:56.498Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Foresta\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 241,
+      "turn": 122,
+      "date": "2026-07-31T09:13:56.490Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "turn": 122,
+      "date": "2026-07-31T09:13:56.318Z",
+      "type": "balance",
+      "amount": -14797,
+      "description": "Solde"
+    },
+    {
+      "id": 240,
+      "turn": 121,
+      "date": "2026-07-31T09:13:55.462Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Foresta\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 239,
+      "turn": 121,
+      "date": "2026-07-31T09:13:55.455Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "turn": 121,
+      "date": "2026-07-31T09:13:55.317Z",
+      "type": "balance",
+      "amount": -14787,
+      "description": "Solde"
+    },
+    {
+      "id": 238,
+      "turn": 120,
+      "date": "2026-07-31T09:13:54.655Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Janvier 3 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 237,
+      "turn": 120,
+      "date": "2026-07-31T09:13:54.650Z",
+      "type": "payroll_tax",
+      "amount": 720,
+      "description": "Impôt sur les salaires - Janvier 2 ap JC (20%)"
+    },
+    {
+      "id": 236,
+      "turn": 120,
+      "date": "2026-07-31T09:13:54.641Z",
+      "type": "salary",
+      "amount": 3600,
+      "description": "Salaires fonctionnaires - Janvier 2 ap JC (36 hab. × 100€)"
+    },
+    {
+      "id": 235,
+      "turn": 120,
+      "date": "2026-07-31T09:13:54.512Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Foresta\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 234,
+      "turn": 120,
+      "date": "2026-07-31T09:13:54.506Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 233,
+      "turn": 120,
+      "date": "2026-07-31T09:13:54.318Z",
+      "type": "carry_forward",
+      "amount": 11871,
+      "description": "Report à nouveau de l'année 1 ap JC (-)"
+    },
+    {
+      "turn": 120,
+      "date": "2026-07-31T09:13:54.316Z",
+      "type": "balance",
+      "amount": -11871,
+      "description": "Solde"
+    },
+    {
+      "id": 228,
+      "turn": 119,
+      "date": "2026-07-31T09:13:54.317Z",
+      "type": "cumul_maintenance",
+      "amount": 312,
+      "description": "Cumul Maintenance - Année 1 ap JC"
+    },
+    {
+      "id": 229,
+      "turn": 119,
+      "date": "2026-07-31T09:13:54.317Z",
+      "type": "cumul_construction",
+      "amount": 50,
+      "description": "Cumul Construction - Année 1 ap JC"
+    },
+    {
+      "id": 230,
+      "turn": 119,
+      "date": "2026-07-31T09:13:54.317Z",
+      "type": "cumul_salary",
+      "amount": 43200,
+      "description": "Cumul Salaires - Année 1 ap JC"
+    },
+    {
+      "id": 231,
+      "turn": 119,
+      "date": "2026-07-31T09:13:54.317Z",
+      "type": "cumul_loan_interest",
+      "amount": 1246,
+      "description": "Cumul Intérêts Prêt - Année 1 ap JC"
+    },
+    {
+      "id": 232,
+      "turn": 119,
+      "date": "2026-07-31T09:13:54.317Z",
+      "type": "cumul_loan_repayment",
+      "amount": 479,
+      "description": "Cumul Remboursement Prêt - Année 1 ap JC"
+    },
+    {
+      "turn": 119,
+      "date": "2026-07-31T09:13:53.318Z",
+      "type": "balance",
+      "amount": -11871,
+      "description": "Solde"
+    },
+    {
+      "turn": 118,
+      "date": "2026-07-31T09:13:52.320Z",
+      "type": "balance",
+      "amount": -11871,
+      "description": "Solde"
+    },
+    {
+      "turn": 117,
+      "date": "2026-07-31T09:13:51.321Z",
+      "type": "balance",
+      "amount": -11871,
+      "description": "Solde"
+    },
+    {
+      "turn": 116,
+      "date": "2026-07-31T09:13:50.336Z",
+      "type": "balance",
+      "amount": -11871,
+      "description": "Solde"
+    },
+    {
+      "id": 227,
+      "turn": 115,
+      "date": "2026-07-31T09:13:49.941Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Décembre 2 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 226,
+      "turn": 115,
+      "date": "2026-07-31T09:13:49.938Z",
+      "type": "payroll_tax",
+      "amount": 720,
+      "description": "Impôt sur les salaires - Décembre 1 ap JC (20%)"
+    },
+    {
+      "id": 225,
+      "turn": 115,
+      "date": "2026-07-31T09:13:49.936Z",
+      "type": "salary",
+      "amount": 3600,
+      "description": "Salaires fonctionnaires - Décembre 1 ap JC (36 hab. × 100€)"
+    },
+    {
+      "turn": 115,
+      "date": "2026-07-31T09:13:49.320Z",
+      "type": "balance",
+      "amount": -8965,
+      "description": "Solde"
+    },
+    {
+      "turn": 114,
+      "date": "2026-07-31T09:13:48.319Z",
+      "type": "balance",
+      "amount": -8965,
+      "description": "Solde"
+    },
+    {
+      "turn": 113,
+      "date": "2026-07-31T09:13:47.315Z",
+      "type": "balance",
+      "amount": -8965,
+      "description": "Solde"
+    },
+    {
+      "turn": 112,
+      "date": "2026-07-31T09:13:46.320Z",
+      "type": "balance",
+      "amount": -8965,
+      "description": "Solde"
+    },
+    {
+      "turn": 111,
+      "date": "2026-07-31T09:13:45.324Z",
+      "type": "balance",
+      "amount": -8965,
+      "description": "Solde"
+    },
+    {
+      "id": 224,
+      "turn": 110,
+      "date": "2026-07-31T09:13:44.617Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Novembre 2 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 223,
+      "turn": 110,
+      "date": "2026-07-31T09:13:44.608Z",
+      "type": "payroll_tax",
+      "amount": 720,
+      "description": "Impôt sur les salaires - Novembre 1 ap JC (20%)"
+    },
+    {
+      "id": 222,
+      "turn": 110,
+      "date": "2026-07-31T09:13:44.605Z",
+      "type": "salary",
+      "amount": 3600,
+      "description": "Salaires fonctionnaires - Novembre 1 ap JC (36 hab. × 100€)"
+    },
+    {
+      "id": 221,
+      "turn": 110,
+      "date": "2026-07-31T09:13:44.600Z",
+      "type": "citizen_tax",
+      "amount": 3600,
+      "description": "Impôt Citoyen (36 hab.) - Novembre"
+    },
+    {
+      "turn": 110,
+      "date": "2026-07-31T09:13:44.320Z",
+      "type": "balance",
+      "amount": -9659,
+      "description": "Solde"
+    },
+    {
+      "turn": 109,
+      "date": "2026-07-31T09:13:43.318Z",
+      "type": "balance",
+      "amount": -9659,
+      "description": "Solde"
+    },
+    {
+      "turn": 108,
+      "date": "2026-07-31T09:13:42.319Z",
+      "type": "balance",
+      "amount": -9659,
+      "description": "Solde"
+    },
+    {
+      "turn": 107,
+      "date": "2026-07-31T09:13:41.317Z",
+      "type": "balance",
+      "amount": -9659,
+      "description": "Solde"
+    },
+    {
+      "turn": 106,
+      "date": "2026-07-31T09:13:40.312Z",
+      "type": "balance",
+      "amount": -9659,
+      "description": "Solde"
+    },
+    {
+      "id": 220,
+      "turn": 105,
+      "date": "2026-07-31T09:13:39.788Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Octobre 2 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 219,
+      "turn": 105,
+      "date": "2026-07-31T09:13:39.778Z",
+      "type": "payroll_tax",
+      "amount": 720,
+      "description": "Impôt sur les salaires - Octobre 1 ap JC (20%)"
+    },
+    {
+      "id": 218,
+      "turn": 105,
+      "date": "2026-07-31T09:13:39.776Z",
+      "type": "salary",
+      "amount": 3600,
+      "description": "Salaires fonctionnaires - Octobre 1 ap JC (36 hab. × 100€)"
+    },
+    {
+      "turn": 105,
+      "date": "2026-07-31T09:13:39.313Z",
+      "type": "balance",
+      "amount": -6753,
+      "description": "Solde"
+    },
+    {
+      "turn": 104,
+      "date": "2026-07-31T09:13:38.311Z",
+      "type": "balance",
+      "amount": -6753,
+      "description": "Solde"
+    },
+    {
+      "id": 217,
+      "turn": 103,
+      "date": "2026-07-31T09:13:38.222Z",
+      "type": "construction",
+      "amount": 50,
+      "description": "Building: Windmill-001"
+    },
+    {
+      "turn": 103,
+      "date": "2026-07-31T09:13:36.313Z",
+      "type": "balance",
+      "amount": -6703,
+      "description": "Solde"
+    },
+    {
+      "turn": 102,
+      "date": "2026-07-31T09:13:35.313Z",
+      "type": "balance",
+      "amount": -6703,
+      "description": "Solde"
+    },
+    {
+      "turn": 101,
+      "date": "2026-07-31T09:13:34.312Z",
+      "type": "balance",
+      "amount": -6703,
+      "description": "Solde"
+    },
+    {
+      "id": 216,
+      "turn": 100,
+      "date": "2026-07-31T09:13:33.741Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Septembre 2 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 215,
+      "turn": 100,
+      "date": "2026-07-31T09:13:33.731Z",
+      "type": "payroll_tax",
+      "amount": 720,
+      "description": "Impôt sur les salaires - Septembre 1 ap JC (20%)"
+    },
+    {
+      "id": 214,
+      "turn": 100,
+      "date": "2026-07-31T09:13:33.729Z",
+      "type": "salary",
+      "amount": 3600,
+      "description": "Salaires fonctionnaires - Septembre 1 ap JC (36 hab. × 100€)"
+    },
+    {
+      "turn": 100,
+      "date": "2026-07-31T09:13:33.312Z",
+      "type": "balance",
+      "amount": -3797,
+      "description": "Solde"
+    },
+    {
+      "turn": 99,
+      "date": "2026-07-31T09:13:32.312Z",
+      "type": "balance",
+      "amount": -3797,
+      "description": "Solde"
+    },
+    {
+      "turn": 98,
+      "date": "2026-07-31T09:13:31.312Z",
+      "type": "balance",
+      "amount": -3797,
+      "description": "Solde"
+    },
+    {
+      "turn": 97,
+      "date": "2026-07-31T09:13:30.312Z",
+      "type": "balance",
+      "amount": -3797,
+      "description": "Solde"
+    },
+    {
+      "turn": 96,
+      "date": "2026-07-31T09:13:29.312Z",
+      "type": "balance",
+      "amount": -3797,
+      "description": "Solde"
+    },
+    {
+      "id": 213,
+      "turn": 95,
+      "date": "2026-07-31T09:13:28.749Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Août 2 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 212,
+      "turn": 95,
+      "date": "2026-07-31T09:13:28.745Z",
+      "type": "payroll_tax",
+      "amount": 720,
+      "description": "Impôt sur les salaires - Août 1 ap JC (20%)"
+    },
+    {
+      "id": 211,
+      "turn": 95,
+      "date": "2026-07-31T09:13:28.742Z",
+      "type": "salary",
+      "amount": 3600,
+      "description": "Salaires fonctionnaires - Août 1 ap JC (36 hab. × 100€)"
+    },
+    {
+      "turn": 95,
+      "date": "2026-07-31T09:13:28.313Z",
+      "type": "balance",
+      "amount": -891,
+      "description": "Solde"
+    },
+    {
+      "turn": 94,
+      "date": "2026-07-31T09:13:27.313Z",
+      "type": "balance",
+      "amount": -891,
+      "description": "Solde"
+    },
+    {
+      "turn": 93,
+      "date": "2026-07-31T09:13:26.313Z",
+      "type": "balance",
+      "amount": -891,
+      "description": "Solde"
+    },
+    {
+      "turn": 92,
+      "date": "2026-07-31T09:13:25.312Z",
+      "type": "balance",
+      "amount": -891,
+      "description": "Solde"
+    },
+    {
+      "turn": 91,
+      "date": "2026-07-31T09:13:24.313Z",
+      "type": "balance",
+      "amount": -891,
+      "description": "Solde"
+    },
+    {
+      "id": 210,
+      "turn": 90,
+      "date": "2026-07-31T09:13:23.716Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Juillet 2 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 209,
+      "turn": 90,
+      "date": "2026-07-31T09:13:23.713Z",
+      "type": "payroll_tax",
+      "amount": 720,
+      "description": "Impôt sur les salaires - Juillet 1 ap JC (20%)"
+    },
+    {
+      "id": 208,
+      "turn": 90,
+      "date": "2026-07-31T09:13:23.711Z",
+      "type": "salary",
+      "amount": 3600,
+      "description": "Salaires fonctionnaires - Juillet 1 ap JC (36 hab. × 100€)"
+    },
+    {
+      "turn": 90,
+      "date": "2026-07-31T09:13:23.312Z",
+      "type": "balance",
+      "amount": 2015,
+      "description": "Solde"
+    },
+    {
+      "id": 207,
+      "turn": 89,
+      "date": "2026-07-31T09:13:22.696Z",
+      "type": "loan_repayment",
+      "amount": 67,
+      "description": "Remboursement prêt commercial (loan_1785489166803)"
+    },
+    {
+      "id": 206,
+      "turn": 89,
+      "date": "2026-07-31T09:13:22.694Z",
+      "type": "loan_interest",
+      "amount": 4,
+      "description": "Intérêts prêt commercial (loan_1785489166803)"
+    },
+    {
+      "id": 205,
+      "turn": 89,
+      "date": "2026-07-31T09:13:22.691Z",
+      "type": "loan_interest",
+      "amount": 400,
+      "description": "Intérêts prêt bank (loan_1785489162639)"
+    },
+    {
+      "id": 204,
+      "turn": 89,
+      "date": "2026-07-31T09:13:22.683Z",
+      "type": "loan_repayment",
+      "amount": 68,
+      "description": "Remboursement prêt commercial (loan_1785489149076)"
+    },
+    {
+      "id": 203,
+      "turn": 89,
+      "date": "2026-07-31T09:13:22.681Z",
+      "type": "loan_interest",
+      "amount": 8,
+      "description": "Intérêts prêt commercial (loan_1785489149076)"
+    },
+    {
+      "id": 202,
+      "turn": 89,
+      "date": "2026-07-31T09:13:22.679Z",
+      "type": "loan_repayment",
+      "amount": 26,
+      "description": "Remboursement prêt bank (loan_1785489138414)"
+    },
+    {
+      "id": 201,
+      "turn": 89,
+      "date": "2026-07-31T09:13:22.677Z",
+      "type": "loan_interest",
+      "amount": 2,
+      "description": "Intérêts prêt bank (loan_1785489138414)"
+    },
+    {
+      "turn": 89,
+      "date": "2026-07-31T09:13:22.313Z",
+      "type": "balance",
+      "amount": 2590,
+      "description": "Solde"
+    },
+    {
+      "id": 200,
+      "turn": 88,
+      "date": "2026-07-31T09:13:21.752Z",
+      "type": "loan_repayment",
+      "amount": 67,
+      "description": "Remboursement prêt commercial (loan_1785489166803)"
+    },
+    {
+      "id": 199,
+      "turn": 88,
+      "date": "2026-07-31T09:13:21.751Z",
+      "type": "loan_interest",
+      "amount": 4,
+      "description": "Intérêts prêt commercial (loan_1785489166803)"
+    },
+    {
+      "id": 198,
+      "turn": 88,
+      "date": "2026-07-31T09:13:21.748Z",
+      "type": "loan_interest",
+      "amount": 400,
+      "description": "Intérêts prêt bank (loan_1785489162639)"
+    },
+    {
+      "id": 197,
+      "turn": 88,
+      "date": "2026-07-31T09:13:21.746Z",
+      "type": "loan_repayment",
+      "amount": 67,
+      "description": "Remboursement prêt commercial (loan_1785489149076)"
+    },
+    {
+      "id": 196,
+      "turn": 88,
+      "date": "2026-07-31T09:13:21.743Z",
+      "type": "loan_interest",
+      "amount": 9,
+      "description": "Intérêts prêt commercial (loan_1785489149076)"
+    },
+    {
+      "id": 195,
+      "turn": 88,
+      "date": "2026-07-31T09:13:21.735Z",
+      "type": "loan_repayment",
+      "amount": 26,
+      "description": "Remboursement prêt bank (loan_1785489138414)"
+    },
+    {
+      "id": 194,
+      "turn": 88,
+      "date": "2026-07-31T09:13:21.733Z",
+      "type": "loan_interest",
+      "amount": 2,
+      "description": "Intérêts prêt bank (loan_1785489138414)"
+    },
+    {
+      "turn": 88,
+      "date": "2026-07-31T09:13:21.312Z",
+      "type": "balance",
+      "amount": 3165,
+      "description": "Solde"
+    },
+    {
+      "id": 193,
+      "turn": 87,
+      "date": "2026-07-31T09:13:20.768Z",
+      "type": "loan_repayment",
+      "amount": 66,
+      "description": "Remboursement prêt commercial (loan_1785489166803)"
+    },
+    {
+      "id": 192,
+      "turn": 87,
+      "date": "2026-07-31T09:13:20.766Z",
+      "type": "loan_interest",
+      "amount": 5,
+      "description": "Intérêts prêt commercial (loan_1785489166803)"
+    },
+    {
+      "id": 191,
+      "turn": 87,
+      "date": "2026-07-31T09:13:20.763Z",
+      "type": "loan_interest",
+      "amount": 400,
+      "description": "Intérêts prêt bank (loan_1785489162639)"
+    },
+    {
+      "id": 190,
+      "turn": 87,
+      "date": "2026-07-31T09:13:20.761Z",
+      "type": "loan_repayment",
+      "amount": 67,
+      "description": "Remboursement prêt commercial (loan_1785489149076)"
+    },
+    {
+      "id": 189,
+      "turn": 87,
+      "date": "2026-07-31T09:13:20.753Z",
+      "type": "loan_interest",
+      "amount": 9,
+      "description": "Intérêts prêt commercial (loan_1785489149076)"
+    },
+    {
+      "id": 188,
+      "turn": 87,
+      "date": "2026-07-31T09:13:20.750Z",
+      "type": "loan_repayment",
+      "amount": 25,
+      "description": "Remboursement prêt bank (loan_1785489138414)"
+    },
+    {
+      "id": 187,
+      "turn": 87,
+      "date": "2026-07-31T09:13:20.748Z",
+      "type": "loan_interest",
+      "amount": 3,
+      "description": "Intérêts prêt bank (loan_1785489138414)"
+    },
+    {
+      "turn": 87,
+      "date": "2026-07-31T09:13:20.312Z",
+      "type": "balance",
+      "amount": 3740,
+      "description": "Solde"
+    },
+    {
+      "id": 186,
+      "turn": 86,
+      "date": "2026-07-31T09:12:46.806Z",
+      "type": "loan_capital",
+      "amount": 1000,
+      "description": "Prêt commercial contracté (15 tours)"
+    },
+    {
+      "id": 185,
+      "turn": 86,
+      "date": "2026-07-31T09:12:42.641Z",
+      "type": "loan_capital",
+      "amount": 40000,
+      "description": "Prêt bank contracté (10 tours)"
+    },
+    {
+      "id": 184,
+      "turn": 86,
+      "date": "2026-07-31T09:12:29.078Z",
+      "type": "loan_capital",
+      "amount": 1000,
+      "description": "Prêt commercial contracté (15 tours)"
+    },
+    {
+      "id": 183,
+      "turn": 86,
+      "date": "2026-07-31T09:12:18.416Z",
+      "type": "loan_capital",
+      "amount": 500,
+      "description": "Prêt bank contracté (20 tours)"
+    },
+    {
+      "turn": 86,
+      "date": "2026-07-31T09:11:57.312Z",
+      "type": "balance",
+      "amount": -38760,
+      "description": "Solde"
+    },
+    {
+      "id": 182,
+      "turn": 85,
+      "date": "2026-07-31T09:11:56.739Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Juin 2 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 181,
+      "turn": 85,
+      "date": "2026-07-31T09:11:56.730Z",
+      "type": "payroll_tax",
+      "amount": 720,
+      "description": "Impôt sur les salaires - Juin 1 ap JC (20%)"
+    },
+    {
+      "id": 180,
+      "turn": 85,
+      "date": "2026-07-31T09:11:56.727Z",
+      "type": "salary",
+      "amount": 3600,
+      "description": "Salaires fonctionnaires - Juin 1 ap JC (36 hab. × 100€)"
+    },
+    {
+      "turn": 85,
+      "date": "2026-07-31T09:11:56.313Z",
+      "type": "balance",
+      "amount": -35854,
+      "description": "Solde"
+    },
+    {
+      "turn": 84,
+      "date": "2026-07-31T09:11:55.312Z",
+      "type": "balance",
+      "amount": -35854,
+      "description": "Solde"
+    },
+    {
+      "turn": 83,
+      "date": "2026-07-31T09:11:14.312Z",
+      "type": "balance",
+      "amount": -35854,
+      "description": "Solde"
+    },
+    {
+      "turn": 82,
+      "date": "2026-07-31T09:11:13.312Z",
+      "type": "balance",
+      "amount": -35854,
+      "description": "Solde"
+    },
+    {
+      "turn": 81,
+      "date": "2026-07-31T09:10:45.322Z",
+      "type": "balance",
+      "amount": -35854,
+      "description": "Solde"
+    },
+    {
+      "id": 179,
+      "turn": 80,
+      "date": "2026-07-31T09:10:44.740Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Mai 2 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 178,
+      "turn": 80,
+      "date": "2026-07-31T09:10:44.737Z",
+      "type": "payroll_tax",
+      "amount": 720,
+      "description": "Impôt sur les salaires - Mai 1 ap JC (20%)"
+    },
+    {
+      "id": 177,
+      "turn": 80,
+      "date": "2026-07-31T09:10:44.735Z",
+      "type": "salary",
+      "amount": 3600,
+      "description": "Salaires fonctionnaires - Mai 1 ap JC (36 hab. × 100€)"
+    },
+    {
+      "id": 176,
+      "turn": 80,
+      "date": "2026-07-31T09:10:44.566Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Paysana\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 80,
+      "date": "2026-07-31T09:10:44.315Z",
+      "type": "balance",
+      "amount": -32928,
+      "description": "Solde"
+    },
+    {
+      "turn": 79,
+      "date": "2026-07-31T09:10:43.315Z",
+      "type": "balance",
+      "amount": -32928,
+      "description": "Solde"
+    },
+    {
+      "turn": 78,
+      "date": "2026-07-31T09:10:42.315Z",
+      "type": "balance",
+      "amount": -32928,
+      "description": "Solde"
+    },
+    {
+      "turn": 77,
+      "date": "2026-07-31T09:10:41.316Z",
+      "type": "balance",
+      "amount": -32928,
+      "description": "Solde"
+    },
+    {
+      "turn": 76,
+      "date": "2026-07-31T09:10:40.316Z",
+      "type": "balance",
+      "amount": -32928,
+      "description": "Solde"
+    },
+    {
+      "id": 175,
+      "turn": 75,
+      "date": "2026-07-31T09:10:39.836Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Avril 2 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 174,
+      "turn": 75,
+      "date": "2026-07-31T09:10:39.833Z",
+      "type": "payroll_tax",
+      "amount": 720,
+      "description": "Impôt sur les salaires - Avril 1 ap JC (20%)"
+    },
+    {
+      "id": 173,
+      "turn": 75,
+      "date": "2026-07-31T09:10:39.831Z",
+      "type": "salary",
+      "amount": 3600,
+      "description": "Salaires fonctionnaires - Avril 1 ap JC (36 hab. × 100€)"
+    },
+    {
+      "turn": 75,
+      "date": "2026-07-31T09:10:39.397Z",
+      "type": "balance",
+      "amount": -30022,
+      "description": "Solde"
+    },
+    {
+      "turn": 74,
+      "date": "2026-07-31T09:10:38.317Z",
+      "type": "balance",
+      "amount": -30022,
+      "description": "Solde"
+    },
+    {
+      "turn": 73,
+      "date": "2026-07-31T09:10:37.316Z",
+      "type": "balance",
+      "amount": -30022,
+      "description": "Solde"
+    },
+    {
+      "turn": 72,
+      "date": "2026-07-31T09:10:36.320Z",
+      "type": "balance",
+      "amount": -30022,
+      "description": "Solde"
+    },
+    {
+      "turn": 71,
+      "date": "2026-07-31T09:10:35.318Z",
+      "type": "balance",
+      "amount": -30022,
+      "description": "Solde"
+    },
+    {
+      "id": 172,
+      "turn": 70,
+      "date": "2026-07-31T09:10:34.776Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Mars 2 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 171,
+      "turn": 70,
+      "date": "2026-07-31T09:10:34.773Z",
+      "type": "payroll_tax",
+      "amount": 720,
+      "description": "Impôt sur les salaires - Mars 1 ap JC (20%)"
+    },
+    {
+      "id": 170,
+      "turn": 70,
+      "date": "2026-07-31T09:10:34.771Z",
+      "type": "salary",
+      "amount": 3600,
+      "description": "Salaires fonctionnaires - Mars 1 ap JC (36 hab. × 100€)"
+    },
+    {
+      "turn": 70,
+      "date": "2026-07-31T09:10:34.376Z",
+      "type": "balance",
+      "amount": -27116,
+      "description": "Solde"
+    },
+    {
+      "turn": 69,
+      "date": "2026-07-31T09:10:33.320Z",
+      "type": "balance",
+      "amount": -27116,
+      "description": "Solde"
+    },
+    {
+      "turn": 68,
+      "date": "2026-07-31T09:10:32.320Z",
+      "type": "balance",
+      "amount": -27116,
+      "description": "Solde"
+    },
+    {
+      "turn": 67,
+      "date": "2026-07-31T09:10:31.320Z",
+      "type": "balance",
+      "amount": -27116,
+      "description": "Solde"
+    },
+    {
+      "turn": 66,
+      "date": "2026-07-31T09:10:30.321Z",
+      "type": "balance",
+      "amount": -27116,
+      "description": "Solde"
+    },
+    {
+      "id": 169,
+      "turn": 65,
+      "date": "2026-07-31T09:10:29.666Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Février 2 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 168,
+      "turn": 65,
+      "date": "2026-07-31T09:10:29.659Z",
+      "type": "payroll_tax",
+      "amount": 720,
+      "description": "Impôt sur les salaires - Février 1 ap JC (20%)"
+    },
+    {
+      "id": 167,
+      "turn": 65,
+      "date": "2026-07-31T09:10:29.657Z",
+      "type": "salary",
+      "amount": 3600,
+      "description": "Salaires fonctionnaires - Février 1 ap JC (36 hab. × 100€)"
+    },
+    {
+      "turn": 65,
+      "date": "2026-07-31T09:10:29.320Z",
+      "type": "balance",
+      "amount": -24210,
+      "description": "Solde"
+    },
+    {
+      "turn": 64,
+      "date": "2026-07-31T09:10:28.320Z",
+      "type": "balance",
+      "amount": -24210,
+      "description": "Solde"
+    },
+    {
+      "id": 166,
+      "turn": 63,
+      "date": "2026-07-31T09:10:27.561Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Foresta\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 165,
+      "turn": 63,
+      "date": "2026-07-31T09:10:27.556Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "turn": 63,
+      "date": "2026-07-31T09:10:27.320Z",
+      "type": "balance",
+      "amount": -24200,
+      "description": "Solde"
+    },
+    {
+      "id": 164,
+      "turn": 62,
+      "date": "2026-07-31T09:10:26.527Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Foresta\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 163,
+      "turn": 62,
+      "date": "2026-07-31T09:10:26.523Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "turn": 62,
+      "date": "2026-07-31T09:10:26.320Z",
+      "type": "balance",
+      "amount": -24190,
+      "description": "Solde"
+    },
+    {
+      "id": 162,
+      "turn": 61,
+      "date": "2026-07-31T09:10:25.512Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Foresta\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 161,
+      "turn": 61,
+      "date": "2026-07-31T09:10:25.507Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "turn": 61,
+      "date": "2026-07-31T09:10:25.313Z",
+      "type": "balance",
+      "amount": -24180,
+      "description": "Solde"
+    },
+    {
+      "id": 160,
+      "turn": 60,
+      "date": "2026-07-31T09:10:24.695Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Janvier 2 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 159,
+      "turn": 60,
+      "date": "2026-07-31T09:10:24.692Z",
+      "type": "payroll_tax",
+      "amount": 720,
+      "description": "Impôt sur les salaires - Janvier 1 ap JC (20%)"
+    },
+    {
+      "id": 158,
+      "turn": 60,
+      "date": "2026-07-31T09:10:24.689Z",
+      "type": "salary",
+      "amount": 3600,
+      "description": "Salaires fonctionnaires - Janvier 1 ap JC (36 hab. × 100€)"
+    },
+    {
+      "id": 157,
+      "turn": 60,
+      "date": "2026-07-31T09:10:24.544Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Foresta\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 156,
+      "turn": 60,
+      "date": "2026-07-31T09:10:24.540Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 155,
+      "turn": 60,
+      "date": "2026-07-31T09:10:24.313Z",
+      "type": "carry_forward",
+      "amount": 21264,
+      "description": "Report à nouveau de l'année 0 JC (-)"
+    },
+    {
+      "turn": 60,
+      "date": "2026-07-31T09:10:24.312Z",
+      "type": "balance",
+      "amount": -21264,
+      "description": "Solde"
+    },
+    {
+      "id": 152,
+      "turn": 59,
+      "date": "2026-07-31T09:10:24.313Z",
+      "type": "cumul_maintenance",
+      "amount": 255,
+      "description": "Cumul Maintenance - Année 0 JC"
+    },
+    {
+      "id": 153,
+      "turn": 59,
+      "date": "2026-07-31T09:10:24.313Z",
+      "type": "cumul_construction",
+      "amount": 370,
+      "description": "Cumul Construction - Année 0 JC"
+    },
+    {
+      "id": 154,
+      "turn": 59,
+      "date": "2026-07-31T09:10:24.313Z",
+      "type": "cumul_salary",
+      "amount": 30000,
+      "description": "Cumul Salaires - Année 0 JC"
+    },
+    {
+      "turn": 59,
+      "date": "2026-07-31T09:10:23.313Z",
+      "type": "balance",
+      "amount": -21264,
+      "description": "Solde"
+    },
+    {
+      "turn": 58,
+      "date": "2026-07-31T09:10:22.313Z",
+      "type": "balance",
+      "amount": -21264,
+      "description": "Solde"
+    },
+    {
+      "id": 151,
+      "turn": 57,
+      "date": "2026-07-31T09:10:21.519Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 57,
+      "date": "2026-07-31T09:10:21.313Z",
+      "type": "balance",
+      "amount": -21244,
+      "description": "Solde"
+    },
+    {
+      "id": 150,
+      "turn": 56,
+      "date": "2026-07-31T09:10:20.530Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 56,
+      "date": "2026-07-31T09:10:20.312Z",
+      "type": "balance",
+      "amount": -21224,
+      "description": "Solde"
+    },
+    {
+      "id": 149,
+      "turn": 55,
+      "date": "2026-07-31T09:10:19.945Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Décembre 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 148,
+      "turn": 55,
+      "date": "2026-07-31T09:10:19.942Z",
+      "type": "payroll_tax",
+      "amount": 720,
+      "description": "Impôt sur les salaires - Décembre 0 JC (20%)"
+    },
+    {
+      "id": 147,
+      "turn": 55,
+      "date": "2026-07-31T09:10:19.940Z",
+      "type": "salary",
+      "amount": 3600,
+      "description": "Salaires fonctionnaires - Décembre 0 JC (36 hab. × 100€)"
+    },
+    {
+      "id": 146,
+      "turn": 55,
+      "date": "2026-07-31T09:10:19.731Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 145,
+      "turn": 55,
+      "date": "2026-07-31T09:10:19.726Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Arctica\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 55,
+      "date": "2026-07-31T09:10:19.312Z",
+      "type": "balance",
+      "amount": -18278,
+      "description": "Solde"
+    },
+    {
+      "id": 144,
+      "turn": 54,
+      "date": "2026-07-31T09:10:18.581Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 54,
+      "date": "2026-07-31T09:10:18.313Z",
+      "type": "balance",
+      "amount": -18258,
+      "description": "Solde"
+    },
+    {
+      "id": 143,
+      "turn": 53,
+      "date": "2026-07-31T09:10:17.578Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 53,
+      "date": "2026-07-31T09:10:17.313Z",
+      "type": "balance",
+      "amount": -18238,
+      "description": "Solde"
+    },
+    {
+      "id": 142,
+      "turn": 52,
+      "date": "2026-07-31T09:10:16.488Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 141,
+      "turn": 52,
+      "date": "2026-07-31T09:10:16.479Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "turn": 52,
+      "date": "2026-07-31T09:10:16.313Z",
+      "type": "balance",
+      "amount": -18201,
+      "description": "Solde"
+    },
+    {
+      "id": 140,
+      "turn": 51,
+      "date": "2026-07-31T09:10:15.496Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 139,
+      "turn": 51,
+      "date": "2026-07-31T09:10:15.491Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "turn": 51,
+      "date": "2026-07-31T09:10:15.313Z",
+      "type": "balance",
+      "amount": -18164,
+      "description": "Solde"
+    },
+    {
+      "id": 138,
+      "turn": 50,
+      "date": "2026-07-31T09:10:14.665Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Novembre 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 137,
+      "turn": 50,
+      "date": "2026-07-31T09:10:14.661Z",
+      "type": "payroll_tax",
+      "amount": 720,
+      "description": "Impôt sur les salaires - Novembre 0 JC (20%)"
+    },
+    {
+      "id": 136,
+      "turn": 50,
+      "date": "2026-07-31T09:10:14.658Z",
+      "type": "salary",
+      "amount": 3600,
+      "description": "Salaires fonctionnaires - Novembre 0 JC (36 hab. × 100€)"
+    },
+    {
+      "id": 135,
+      "turn": 50,
+      "date": "2026-07-31T09:10:14.649Z",
+      "type": "citizen_tax",
+      "amount": 3600,
+      "description": "Impôt Citoyen (36 hab.) - Novembre"
+    },
+    {
+      "id": 134,
+      "turn": 50,
+      "date": "2026-07-31T09:10:14.499Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 133,
+      "turn": 50,
+      "date": "2026-07-31T09:10:14.495Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "turn": 50,
+      "date": "2026-07-31T09:10:14.312Z",
+      "type": "balance",
+      "amount": -18821,
+      "description": "Solde"
+    },
+    {
+      "id": 132,
+      "turn": 49,
+      "date": "2026-07-31T09:10:13.538Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 131,
+      "turn": 49,
+      "date": "2026-07-31T09:10:13.529Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Riviera\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 130,
+      "turn": 49,
+      "date": "2026-07-31T09:10:13.522Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 129,
+      "turn": 49,
+      "date": "2026-07-31T09:10:13.515Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Arctica\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 49,
+      "date": "2026-07-31T09:10:13.313Z",
+      "type": "balance",
+      "amount": -18747,
+      "description": "Solde"
+    },
+    {
+      "id": 128,
+      "turn": 48,
+      "date": "2026-07-31T09:10:12.547Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 127,
+      "turn": 48,
+      "date": "2026-07-31T09:10:12.532Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Riviera\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 126,
+      "turn": 48,
+      "date": "2026-07-31T09:10:12.527Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 125,
+      "turn": 48,
+      "date": "2026-07-31T09:10:12.523Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Arctica\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 48,
+      "date": "2026-07-31T09:10:12.312Z",
+      "type": "balance",
+      "amount": -18673,
+      "description": "Solde"
+    },
+    {
+      "id": 124,
+      "turn": 47,
+      "date": "2026-07-31T09:10:11.506Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 123,
+      "turn": 47,
+      "date": "2026-07-31T09:10:11.497Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Riviera\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 122,
+      "turn": 47,
+      "date": "2026-07-31T09:10:11.490Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 121,
+      "turn": 47,
+      "date": "2026-07-31T09:10:11.482Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Arctica\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 47,
+      "date": "2026-07-31T09:10:11.313Z",
+      "type": "balance",
+      "amount": -18599,
+      "description": "Solde"
+    },
+    {
+      "id": 120,
+      "turn": 46,
+      "date": "2026-07-31T09:10:10.535Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 119,
+      "turn": 46,
+      "date": "2026-07-31T09:10:10.529Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Riviera\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 118,
+      "turn": 46,
+      "date": "2026-07-31T09:10:10.522Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 117,
+      "turn": 46,
+      "date": "2026-07-31T09:10:10.514Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Arctica\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 46,
+      "date": "2026-07-31T09:10:10.312Z",
+      "type": "balance",
+      "amount": -18525,
+      "description": "Solde"
+    },
+    {
+      "id": 116,
+      "turn": 45,
+      "date": "2026-07-31T09:10:09.765Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Octobre 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 115,
+      "turn": 45,
+      "date": "2026-07-31T09:10:09.763Z",
+      "type": "payroll_tax",
+      "amount": 720,
+      "description": "Impôt sur les salaires - Octobre 0 JC (20%)"
+    },
+    {
+      "id": 114,
+      "turn": 45,
+      "date": "2026-07-31T09:10:09.760Z",
+      "type": "salary",
+      "amount": 3600,
+      "description": "Salaires fonctionnaires - Octobre 0 JC (36 hab. × 100€)"
+    },
+    {
+      "id": 113,
+      "turn": 45,
+      "date": "2026-07-31T09:10:09.557Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 112,
+      "turn": 45,
+      "date": "2026-07-31T09:10:09.548Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Riviera\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 111,
+      "turn": 45,
+      "date": "2026-07-31T09:10:09.542Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 110,
+      "turn": 45,
+      "date": "2026-07-31T09:10:09.534Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Arctica\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 45,
+      "date": "2026-07-31T09:10:09.313Z",
+      "type": "balance",
+      "amount": -15545,
+      "description": "Solde"
+    },
+    {
+      "id": 109,
+      "turn": 44,
+      "date": "2026-07-31T09:10:08.529Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Paysana\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 108,
+      "turn": 44,
+      "date": "2026-07-31T09:10:08.525Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 107,
+      "turn": 44,
+      "date": "2026-07-31T09:10:08.515Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Riviera\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 106,
+      "turn": 44,
+      "date": "2026-07-31T09:10:08.508Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "turn": 44,
+      "date": "2026-07-31T09:10:08.313Z",
+      "type": "balance",
+      "amount": -15471,
+      "description": "Solde"
+    },
+    {
+      "id": 105,
+      "turn": 43,
+      "date": "2026-07-31T09:10:07.576Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Paysana\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 104,
+      "turn": 43,
+      "date": "2026-07-31T09:10:07.567Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 103,
+      "turn": 43,
+      "date": "2026-07-31T09:10:07.561Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Riviera\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 102,
+      "turn": 43,
+      "date": "2026-07-31T09:10:07.551Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 101,
+      "turn": 43,
+      "date": "2026-07-31T09:10:07.547Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Tropicala\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 43,
+      "date": "2026-07-31T09:10:07.312Z",
+      "type": "balance",
+      "amount": -15377,
+      "description": "Solde"
+    },
+    {
+      "id": 100,
+      "turn": 42,
+      "date": "2026-07-31T09:10:06.546Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Paysana\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 99,
+      "turn": 42,
+      "date": "2026-07-31T09:10:06.541Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 98,
+      "turn": 42,
+      "date": "2026-07-31T09:10:06.532Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Riviera\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 97,
+      "turn": 42,
+      "date": "2026-07-31T09:10:06.526Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 96,
+      "turn": 42,
+      "date": "2026-07-31T09:10:06.518Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Tropicala\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 42,
+      "date": "2026-07-31T09:10:06.312Z",
+      "type": "balance",
+      "amount": -15283,
+      "description": "Solde"
+    },
+    {
+      "id": 95,
+      "turn": 41,
+      "date": "2026-07-31T09:10:05.592Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Foresta\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 94,
+      "turn": 41,
+      "date": "2026-07-31T09:10:05.581Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 93,
+      "turn": 41,
+      "date": "2026-07-31T09:10:05.566Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Paysana\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 92,
+      "turn": 41,
+      "date": "2026-07-31T09:10:05.560Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 91,
+      "turn": 41,
+      "date": "2026-07-31T09:10:05.548Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Riviera\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 90,
+      "turn": 41,
+      "date": "2026-07-31T09:10:05.541Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 89,
+      "turn": 41,
+      "date": "2026-07-31T09:10:05.534Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Tropicala\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 41,
+      "date": "2026-07-31T09:10:05.312Z",
+      "type": "balance",
+      "amount": -15179,
+      "description": "Solde"
+    },
+    {
+      "id": 88,
+      "turn": 40,
+      "date": "2026-07-31T09:10:04.863Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Septembre 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 87,
+      "turn": 40,
+      "date": "2026-07-31T09:10:04.858Z",
+      "type": "payroll_tax",
+      "amount": 720,
+      "description": "Impôt sur les salaires - Septembre 0 JC (20%)"
+    },
+    {
+      "id": 86,
+      "turn": 40,
+      "date": "2026-07-31T09:10:04.851Z",
+      "type": "salary",
+      "amount": 3600,
+      "description": "Salaires fonctionnaires - Septembre 0 JC (36 hab. × 100€)"
+    },
+    {
+      "id": 85,
+      "turn": 40,
+      "date": "2026-07-31T09:10:04.675Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Foresta\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 84,
+      "turn": 40,
+      "date": "2026-07-31T09:10:04.664Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 83,
+      "turn": 40,
+      "date": "2026-07-31T09:10:04.652Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Paysana\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 82,
+      "turn": 40,
+      "date": "2026-07-31T09:10:04.648Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 81,
+      "turn": 40,
+      "date": "2026-07-31T09:10:04.642Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Riviera\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 80,
+      "turn": 40,
+      "date": "2026-07-31T09:10:04.633Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 79,
+      "turn": 40,
+      "date": "2026-07-31T09:10:04.616Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Tropicala\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 40,
+      "date": "2026-07-31T09:10:04.314Z",
+      "type": "balance",
+      "amount": -12169,
+      "description": "Solde"
+    },
+    {
+      "id": 78,
+      "turn": 39,
+      "date": "2026-07-31T09:08:05.538Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Foresta\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 77,
+      "turn": 39,
+      "date": "2026-07-31T09:08:05.527Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 76,
+      "turn": 39,
+      "date": "2026-07-31T09:08:05.522Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Paysana\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 75,
+      "turn": 39,
+      "date": "2026-07-31T09:08:05.519Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 74,
+      "turn": 39,
+      "date": "2026-07-31T09:08:05.510Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Riviera\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 73,
+      "turn": 39,
+      "date": "2026-07-31T09:08:05.506Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "turn": 39,
+      "date": "2026-07-31T09:08:05.319Z",
+      "type": "balance",
+      "amount": -12085,
+      "description": "Solde"
+    },
+    {
+      "id": 72,
+      "turn": 38,
+      "date": "2026-07-31T09:08:04.627Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Foresta\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 71,
+      "turn": 38,
+      "date": "2026-07-31T09:08:04.619Z",
+      "type": "import_wheat",
+      "amount": 5,
+      "description": "Import wheat |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":5,\"total\":5}]|BREAKDOWN|"
+    },
+    {
+      "id": 70,
+      "turn": 38,
+      "date": "2026-07-31T09:08:04.608Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Paysana\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 69,
+      "turn": 38,
+      "date": "2026-07-31T09:08:04.605Z",
+      "type": "import_wood",
+      "amount": 20,
+      "description": "Import wood |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":20,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "id": 68,
+      "turn": 38,
+      "date": "2026-07-31T09:08:04.599Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Riviera\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "id": 67,
+      "turn": 38,
+      "date": "2026-07-31T09:08:04.588Z",
+      "type": "import_cabbage",
+      "amount": 17,
+      "description": "Import cabbage |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":17,\"total\":17}]|BREAKDOWN|"
+    },
+    {
+      "turn": 38,
+      "date": "2026-07-31T09:08:04.320Z",
+      "type": "balance",
+      "amount": -12001,
+      "description": "Solde"
+    },
+    {
+      "id": 66,
+      "turn": 37,
+      "date": "2026-07-31T09:06:56.059Z",
+      "type": "commercial_route",
+      "amount": 500,
+      "description": "Route commerciale - Août 0 JC |BREAKDOWN|[{\"label\":\"Foresta\",\"quantity\":1,\"unitCost\":500,\"total\":500}]|BREAKDOWN|"
+    },
+    {
+      "id": 65,
+      "turn": 37,
+      "date": "2026-07-31T09:06:54.908Z",
+      "type": "commercial_route",
+      "amount": 500,
+      "description": "Route commerciale - Août 0 JC |BREAKDOWN|[{\"label\":\"Savana\",\"quantity\":1,\"unitCost\":500,\"total\":500}]|BREAKDOWN|"
+    },
+    {
+      "id": 64,
+      "turn": 37,
+      "date": "2026-07-31T09:06:53.442Z",
+      "type": "commercial_route",
+      "amount": 500,
+      "description": "Route commerciale - Août 0 JC |BREAKDOWN|[{\"label\":\"Paysana\",\"quantity\":1,\"unitCost\":500,\"total\":500}]|BREAKDOWN|"
+    },
+    {
+      "id": 63,
+      "turn": 37,
+      "date": "2026-07-31T09:06:52.142Z",
+      "type": "commercial_route",
+      "amount": 500,
+      "description": "Route commerciale - Août 0 JC |BREAKDOWN|[{\"label\":\"Oceania\",\"quantity\":1,\"unitCost\":500,\"total\":500}]|BREAKDOWN|"
+    },
+    {
+      "id": 62,
+      "turn": 37,
+      "date": "2026-07-31T09:06:48.727Z",
+      "type": "commercial_route",
+      "amount": 500,
+      "description": "Route commerciale - Août 0 JC |BREAKDOWN|[{\"label\":\"Riviera\",\"quantity\":1,\"unitCost\":500,\"total\":500}]|BREAKDOWN|"
+    },
+    {
+      "id": 61,
+      "turn": 37,
+      "date": "2026-07-31T09:06:47.314Z",
+      "type": "commercial_route",
+      "amount": 500,
+      "description": "Route commerciale - Août 0 JC |BREAKDOWN|[{\"label\":\"Montana\",\"quantity\":1,\"unitCost\":500,\"total\":500}]|BREAKDOWN|"
+    },
+    {
+      "id": 60,
+      "turn": 37,
+      "date": "2026-07-31T09:06:45.394Z",
+      "type": "commercial_route",
+      "amount": 500,
+      "description": "Route commerciale - Août 0 JC |BREAKDOWN|[{\"label\":\"Arctica\",\"quantity\":1,\"unitCost\":500,\"total\":500}]|BREAKDOWN|"
+    },
+    {
+      "id": 59,
+      "turn": 37,
+      "date": "2026-07-31T09:06:39.281Z",
+      "type": "commercial_route",
+      "amount": 500,
+      "description": "Route commerciale - Août 0 JC |BREAKDOWN|[{\"label\":\"Tropicala\",\"quantity\":1,\"unitCost\":500,\"total\":500}]|BREAKDOWN|"
+    },
+    {
+      "turn": 37,
+      "date": "2026-07-31T09:06:29.317Z",
+      "type": "balance",
+      "amount": -8001,
+      "description": "Solde"
+    },
+    {
+      "turn": 36,
+      "date": "2026-07-31T09:06:28.315Z",
+      "type": "balance",
+      "amount": -8001,
+      "description": "Solde"
+    },
+    {
+      "id": 58,
+      "turn": 35,
+      "date": "2026-07-31T09:06:27.632Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Août 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 57,
+      "turn": 35,
+      "date": "2026-07-31T09:06:27.627Z",
+      "type": "payroll_tax",
+      "amount": 700,
+      "description": "Impôt sur les salaires - Août 0 JC (20%)"
+    },
+    {
+      "id": 56,
+      "turn": 35,
+      "date": "2026-07-31T09:06:27.625Z",
+      "type": "salary",
+      "amount": 3500,
+      "description": "Salaires fonctionnaires - Août 0 JC (35 hab. × 100€)"
+    },
+    {
+      "turn": 35,
+      "date": "2026-07-31T09:06:27.318Z",
+      "type": "balance",
+      "amount": -5175,
+      "description": "Solde"
+    },
+    {
+      "turn": 34,
+      "date": "2026-07-31T09:06:26.320Z",
+      "type": "balance",
+      "amount": -5175,
+      "description": "Solde"
+    },
+    {
+      "turn": 33,
+      "date": "2026-07-31T09:06:25.318Z",
+      "type": "balance",
+      "amount": -5175,
+      "description": "Solde"
+    },
+    {
+      "turn": 32,
+      "date": "2026-07-31T09:06:24.318Z",
+      "type": "balance",
+      "amount": -5175,
+      "description": "Solde"
+    },
+    {
+      "turn": 31,
+      "date": "2026-07-31T09:06:23.321Z",
+      "type": "balance",
+      "amount": -5175,
+      "description": "Solde"
+    },
+    {
+      "id": 55,
+      "turn": 30,
+      "date": "2026-07-31T09:06:22.637Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Juillet 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 54,
+      "turn": 30,
+      "date": "2026-07-31T09:06:22.634Z",
+      "type": "payroll_tax",
+      "amount": 680,
+      "description": "Impôt sur les salaires - Juillet 0 JC (20%)"
+    },
+    {
+      "id": 53,
+      "turn": 30,
+      "date": "2026-07-31T09:06:22.628Z",
+      "type": "salary",
+      "amount": 3400,
+      "description": "Salaires fonctionnaires - Juillet 0 JC (34 hab. × 100€)"
+    },
+    {
+      "turn": 30,
+      "date": "2026-07-31T09:06:22.316Z",
+      "type": "balance",
+      "amount": -2429,
+      "description": "Solde"
+    },
+    {
+      "turn": 29,
+      "date": "2026-07-31T09:06:21.318Z",
+      "type": "balance",
+      "amount": -2429,
+      "description": "Solde"
+    },
+    {
+      "turn": 28,
+      "date": "2026-07-31T09:06:20.314Z",
+      "type": "balance",
+      "amount": -2429,
+      "description": "Solde"
+    },
+    {
+      "turn": 27,
+      "date": "2026-07-31T09:06:19.319Z",
+      "type": "balance",
+      "amount": -2429,
+      "description": "Solde"
+    },
+    {
+      "turn": 26,
+      "date": "2026-07-31T09:06:18.315Z",
+      "type": "balance",
+      "amount": -2429,
+      "description": "Solde"
+    },
+    {
+      "id": 52,
+      "turn": 25,
+      "date": "2026-07-31T09:06:17.608Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Juin 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 51,
+      "turn": 25,
+      "date": "2026-07-31T09:06:17.605Z",
+      "type": "payroll_tax",
+      "amount": 600,
+      "description": "Impôt sur les salaires - Juin 0 JC (20%)"
+    },
+    {
+      "id": 50,
+      "turn": 25,
+      "date": "2026-07-31T09:06:17.602Z",
+      "type": "salary",
+      "amount": 3000,
+      "description": "Salaires fonctionnaires - Juin 0 JC (30 hab. × 100€)"
+    },
+    {
+      "turn": 25,
+      "date": "2026-07-31T09:06:17.314Z",
+      "type": "balance",
+      "amount": -3,
+      "description": "Solde"
+    },
+    {
+      "turn": 24,
+      "date": "2026-07-31T09:06:16.313Z",
+      "type": "balance",
+      "amount": -3,
+      "description": "Solde"
+    },
+    {
+      "turn": 23,
+      "date": "2026-07-31T09:06:15.313Z",
+      "type": "balance",
+      "amount": -3,
+      "description": "Solde"
+    },
+    {
+      "turn": 22,
+      "date": "2026-07-31T09:06:14.314Z",
+      "type": "balance",
+      "amount": -3,
+      "description": "Solde"
+    },
+    {
+      "turn": 21,
+      "date": "2026-07-31T09:06:11.411Z",
+      "type": "balance",
+      "amount": -3,
+      "description": "Solde"
+    },
+    {
+      "id": 49,
+      "turn": 20,
+      "date": "2026-07-31T09:06:08.738Z",
+      "type": "maintenance",
+      "amount": 26,
+      "description": "Maintenance mensuelle - Mai 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":6,\"unitCost\":3,\"total\":18},{\"label\":\"Fermes\",\"count\":7,\"unitCost\":1,\"total\":7},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 48,
+      "turn": 20,
+      "date": "2026-07-31T09:06:08.733Z",
+      "type": "payroll_tax",
+      "amount": 480,
+      "description": "Impôt sur les salaires - Mai 0 JC (20%)"
+    },
+    {
+      "id": 47,
+      "turn": 20,
+      "date": "2026-07-31T09:06:08.731Z",
+      "type": "salary",
+      "amount": 2400,
+      "description": "Salaires fonctionnaires - Mai 0 JC (24 hab. × 100€)"
+    },
+    {
+      "turn": 20,
+      "date": "2026-07-31T09:06:08.412Z",
+      "type": "balance",
+      "amount": 1943,
+      "description": "Solde"
+    },
+    {
+      "turn": 19,
+      "date": "2026-07-31T09:06:02.114Z",
+      "type": "balance",
+      "amount": 1943,
+      "description": "Solde"
+    },
+    {
+      "turn": 18,
+      "date": "2026-07-31T09:05:58.111Z",
+      "type": "balance",
+      "amount": 1943,
+      "description": "Solde"
+    },
+    {
+      "id": 46,
+      "turn": 17,
+      "date": "2026-07-31T09:05:55.980Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "turn": 17,
+      "date": "2026-07-31T09:05:54.118Z",
+      "type": "balance",
+      "amount": 1953,
+      "description": "Solde"
+    },
+    {
+      "id": 45,
+      "turn": 16,
+      "date": "2026-07-31T09:05:51.634Z",
+      "type": "construction",
+      "amount": 30,
+      "description": "Building: Farm-Cabbage"
+    },
+    {
+      "id": 44,
+      "turn": 16,
+      "date": "2026-07-31T09:05:50.834Z",
+      "type": "construction",
+      "amount": 30,
+      "description": "Building: Farm-Cabbage"
+    },
+    {
+      "turn": 16,
+      "date": "2026-07-31T09:05:50.111Z",
+      "type": "balance",
+      "amount": 2013,
+      "description": "Solde"
+    },
+    {
+      "id": 43,
+      "turn": 15,
+      "date": "2026-07-31T09:05:49.496Z",
+      "type": "construction",
+      "amount": 30,
+      "description": "Building: Farm-Cabbage"
+    },
+    {
+      "id": 42,
+      "turn": 15,
+      "date": "2026-07-31T09:05:48.885Z",
+      "type": "construction",
+      "amount": 30,
+      "description": "Building: Farm-Cabbage"
+    },
+    {
+      "id": 41,
+      "turn": 15,
+      "date": "2026-07-31T09:05:46.372Z",
+      "type": "maintenance",
+      "amount": 19,
+      "description": "Maintenance mensuelle - Avril 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":5,\"unitCost\":3,\"total\":15},{\"label\":\"Fermes\",\"count\":3,\"unitCost\":1,\"total\":3},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 40,
+      "turn": 15,
+      "date": "2026-07-31T09:05:46.370Z",
+      "type": "payroll_tax",
+      "amount": 340,
+      "description": "Impôt sur les salaires - Avril 0 JC (20%)"
+    },
+    {
+      "id": 39,
+      "turn": 15,
+      "date": "2026-07-31T09:05:46.369Z",
+      "type": "salary",
+      "amount": 1700,
+      "description": "Salaires fonctionnaires - Avril 0 JC (17 hab. × 100€)"
+    },
+    {
+      "turn": 15,
+      "date": "2026-07-31T09:05:46.107Z",
+      "type": "balance",
+      "amount": 3452,
+      "description": "Solde"
+    },
+    {
+      "id": 38,
+      "turn": 14,
+      "date": "2026-07-31T09:05:43.768Z",
+      "type": "construction",
+      "amount": 50,
+      "description": "Building: Windmill-001"
+    },
+    {
+      "turn": 14,
+      "date": "2026-07-31T09:05:38.107Z",
+      "type": "balance",
+      "amount": 3502,
+      "description": "Solde"
+    },
+    {
+      "turn": 13,
+      "date": "2026-07-31T09:05:34.106Z",
+      "type": "balance",
+      "amount": 3502,
+      "description": "Solde"
+    },
+    {
+      "id": 37,
+      "turn": 12,
+      "date": "2026-07-31T09:05:33.925Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "id": 36,
+      "turn": 12,
+      "date": "2026-07-31T09:05:33.457Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "id": 35,
+      "turn": 12,
+      "date": "2026-07-31T09:05:33.026Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "id": 34,
+      "turn": 12,
+      "date": "2026-07-31T09:05:32.486Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "id": 33,
+      "turn": 12,
+      "date": "2026-07-31T09:05:32.006Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "id": 32,
+      "turn": 12,
+      "date": "2026-07-31T09:05:31.240Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "id": 31,
+      "turn": 12,
+      "date": "2026-07-31T09:05:30.557Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "turn": 12,
+      "date": "2026-07-31T09:05:30.106Z",
+      "type": "balance",
+      "amount": 3537,
+      "description": "Solde"
+    },
+    {
+      "id": 30,
+      "turn": 11,
+      "date": "2026-07-31T09:05:30.074Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "id": 29,
+      "turn": 11,
+      "date": "2026-07-31T09:05:29.563Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "id": 28,
+      "turn": 11,
+      "date": "2026-07-31T09:05:27.943Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "id": 27,
+      "turn": 11,
+      "date": "2026-07-31T09:05:27.473Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "id": 26,
+      "turn": 11,
+      "date": "2026-07-31T09:05:26.941Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "turn": 11,
+      "date": "2026-07-31T09:05:26.108Z",
+      "type": "balance",
+      "amount": 3562,
+      "description": "Solde"
+    },
+    {
+      "id": 25,
+      "turn": 10,
+      "date": "2026-07-31T09:05:25.777Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Right-001"
+    },
+    {
+      "id": 24,
+      "turn": 10,
+      "date": "2026-07-31T09:05:22.292Z",
+      "type": "maintenance",
+      "amount": 19,
+      "description": "Maintenance mensuelle - Mars 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":5,\"unitCost\":3,\"total\":15},{\"label\":\"Fermes\",\"count\":3,\"unitCost\":1,\"total\":3},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 23,
+      "turn": 10,
+      "date": "2026-07-31T09:05:22.289Z",
+      "type": "payroll_tax",
+      "amount": 240,
+      "description": "Impôt sur les salaires - Mars 0 JC (20%)"
+    },
+    {
+      "id": 22,
+      "turn": 10,
+      "date": "2026-07-31T09:05:22.288Z",
+      "type": "salary",
+      "amount": 1200,
+      "description": "Salaires fonctionnaires - Mars 0 JC (12 hab. × 100€)"
+    },
+    {
+      "turn": 10,
+      "date": "2026-07-31T09:05:22.111Z",
+      "type": "balance",
+      "amount": 4546,
+      "description": "Solde"
+    },
+    {
+      "turn": 9,
+      "date": "2026-07-31T09:05:18.110Z",
+      "type": "balance",
+      "amount": 4546,
+      "description": "Solde"
+    },
+    {
+      "id": 21,
+      "turn": 8,
+      "date": "2026-07-31T09:05:17.717Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Cross-001"
+    },
+    {
+      "id": 20,
+      "turn": 8,
+      "date": "2026-07-31T09:05:12.508Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: Market-Stall"
+    },
+    {
+      "turn": 8,
+      "date": "2026-07-31T09:05:10.114Z",
+      "type": "balance",
+      "amount": 4561,
+      "description": "Solde"
+    },
+    {
+      "id": 19,
+      "turn": 7,
+      "date": "2026-07-31T09:05:09.226Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: Farm-Wheat"
+    },
+    {
+      "id": 18,
+      "turn": 7,
+      "date": "2026-07-31T09:05:08.664Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: Farm-Wheat"
+    },
+    {
+      "id": 17,
+      "turn": 7,
+      "date": "2026-07-31T09:05:08.131Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: Farm-Wheat"
+    },
+    {
+      "turn": 7,
+      "date": "2026-07-31T09:05:06.111Z",
+      "type": "balance",
+      "amount": 4591,
+      "description": "Solde"
+    },
+    {
+      "id": 16,
+      "turn": 6,
+      "date": "2026-07-31T09:05:04.584Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "id": 15,
+      "turn": 6,
+      "date": "2026-07-31T09:05:03.947Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "id": 14,
+      "turn": 6,
+      "date": "2026-07-31T09:05:03.330Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "turn": 6,
+      "date": "2026-07-31T09:05:02.113Z",
+      "type": "balance",
+      "amount": 4621,
+      "description": "Solde"
+    },
+    {
+      "id": 13,
+      "turn": 5,
+      "date": "2026-07-31T09:04:58.223Z",
+      "type": "maintenance",
+      "amount": 6,
+      "description": "Maintenance mensuelle - Février 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":2,\"unitCost\":3,\"total\":6}]|BREAKDOWN|"
+    },
+    {
+      "id": 12,
+      "turn": 5,
+      "date": "2026-07-31T09:04:58.220Z",
+      "type": "payroll_tax",
+      "amount": 80,
+      "description": "Impôt sur les salaires - Février 0 JC (20%)"
+    },
+    {
+      "id": 11,
+      "turn": 5,
+      "date": "2026-07-31T09:04:58.219Z",
+      "type": "salary",
+      "amount": 400,
+      "description": "Salaires fonctionnaires - Février 0 JC (4 hab. × 100€)"
+    },
+    {
+      "turn": 5,
+      "date": "2026-07-31T09:04:58.114Z",
+      "type": "balance",
+      "amount": 4947,
+      "description": "Solde"
+    },
+    {
+      "turn": 4,
+      "date": "2026-07-31T09:04:54.109Z",
+      "type": "balance",
+      "amount": 4947,
+      "description": "Solde"
+    },
+    {
+      "id": 10,
+      "turn": 3,
+      "date": "2026-07-31T09:04:50.803Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "id": 9,
+      "turn": 3,
+      "date": "2026-07-31T09:04:50.321Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "turn": 3,
+      "date": "2026-07-31T09:04:50.108Z",
+      "type": "balance",
+      "amount": 4957,
+      "description": "Solde"
+    },
+    {
+      "id": 8,
+      "turn": 2,
+      "date": "2026-07-31T09:04:49.807Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "id": 7,
+      "turn": 2,
+      "date": "2026-07-31T09:04:49.235Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "id": 6,
+      "turn": 2,
+      "date": "2026-07-31T09:04:48.619Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "id": 5,
+      "turn": 2,
+      "date": "2026-07-31T09:04:47.810Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001"
+    },
+    {
+      "id": 4,
+      "turn": 2,
+      "date": "2026-07-31T09:04:43.792Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "id": 3,
+      "turn": 2,
+      "date": "2026-07-31T09:04:42.164Z",
+      "type": "maintenance",
+      "amount": 3,
+      "description": "Maintenance mensuelle - Janvier 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":1,\"unitCost\":3,\"total\":3}]|BREAKDOWN|"
+    },
+    {
+      "turn": 2,
+      "date": "2026-07-31T09:04:42.108Z",
+      "type": "balance",
+      "amount": 4990,
+      "description": "Solde"
+    },
+    {
+      "id": 2,
+      "turn": 1,
+      "date": "2026-07-31T09:04:41.421Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "turn": 1,
+      "date": "2026-07-31T09:04:38.115Z",
+      "type": "balance",
+      "amount": 5000,
+      "description": "Solde"
+    },
+    {
+      "id": 1,
+      "turn": 0,
+      "date": "2026-07-31T09:04:34.936Z",
+      "type": "capital_funds",
+      "amount": 5000,
+      "description": "Capital de départ: 5000€"
+    }
+  ],
+  "yearlySummary": [
+    {
+      "year": 6,
+      "income": 5060,
+      "expenses": 279254,
+      "netFlow": -274194,
+      "monthCount": 3
+    },
+    {
+      "year": 5,
+      "income": 27140,
+      "expenses": 280923,
+      "netFlow": -253783,
+      "monthCount": 12
+    },
+    {
+      "year": 4,
+      "income": 27140,
+      "expenses": 210664,
+      "netFlow": -183524,
+      "monthCount": 12
+    },
+    {
+      "year": 3,
+      "income": 26000,
+      "expenses": 139240,
+      "netFlow": -113240,
+      "monthCount": 12
+    },
+    {
+      "year": 2,
+      "income": 15720,
+      "expenses": 63226,
+      "netFlow": -47506,
+      "monthCount": 12
+    },
+    {
+      "year": 1,
+      "income": 54740,
+      "expenses": 66611,
+      "netFlow": -11871,
+      "monthCount": 12
+    },
+    {
+      "year": 0,
+      "income": 14600,
+      "expenses": 35864,
+      "netFlow": -21264,
+      "monthCount": 12
+    }
+  ],
+  "yearEndBalances": [
+    {
+      "an": 0,
+      "nature": "deficit",
+      "amount": 21264
+    },
+    {
+      "an": 1,
+      "nature": "deficit",
+      "amount": 11871
+    },
+    {
+      "an": 2,
+      "nature": "deficit",
+      "amount": 47506
+    },
+    {
+      "an": 3,
+      "nature": "deficit",
+      "amount": 113240
+    },
+    {
+      "an": 4,
+      "nature": "deficit",
+      "amount": 183524
+    },
+    {
+      "an": 5,
+      "nature": "deficit",
+      "amount": 253783
+    }
+  ]
+}

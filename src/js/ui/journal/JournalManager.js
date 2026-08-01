@@ -1,6 +1,22 @@
 /**
- * JournalManager - Gère l'affichage et l'export du journal financier
+ * Journal UI presenter — DOM + events only (Phase 2b).
+ * Data: acl/accounting.js → GetGeneralLedger
  */
+
+import { getPopupManager, getTimeInfo } from '../../acl/appRuntime.js';
+import {
+  getGeneralLedger,
+  exportJournalJson,
+  exportJournalPdf,
+} from '../../acl/accounting.js';
+import {
+  formatJournalEntryDetails,
+} from './formatJournalEntryDescription.js';
+import {
+  INFO_JOURNAL_TYPE_LABELS,
+  isInfoPseudoMovementType,
+  labelForInfoJournalType,
+} from '../../acl/accountingJournalUi.js';
 
 /**
  * Initialise le popup du journal
@@ -11,71 +27,61 @@ export function initJournalPopup() {
     const journalCloseBtn = document.querySelector('.journal-close-btn');
     const journalRefreshBtn = document.getElementById('journal-refresh-btn');
     const filterButtons = document.querySelectorAll('.journal-filter-btn');
-    
+
     if (!journalBtn || !journalPanel || !journalCloseBtn || !journalRefreshBtn) {
         console.warn('Journal popup elements not found');
         return;
     }
-    
-    // Toggle journal popup on journal button click
+
     journalBtn.addEventListener('click', () => {
         journalPanel.classList.add('active');
-        if (window.popupManager) {
-            window.popupManager.forceOpenPopup('journal-panel');
+        if (getPopupManager()) {
+            getPopupManager().forceOpenPopup('journal-panel');
         }
         loadJournalEntries('all');
     });
-    
-    // Close journal popup
+
     journalCloseBtn.addEventListener('click', () => {
         journalPanel.classList.remove('active');
-        if (window.popupManager) {
-            window.popupManager.forceClosePopup('journal-panel');
+        if (getPopupManager()) {
+            getPopupManager().forceClosePopup('journal-panel');
         }
     });
-    
-    // Close popup when clicking outside
+
     journalPanel.addEventListener('click', (e) => {
         if (e.target === journalPanel) {
             journalPanel.classList.remove('active');
-            if (window.popupManager) {
-                window.popupManager.forceClosePopup('journal-panel');
+            if (getPopupManager()) {
+                getPopupManager().forceClosePopup('journal-panel');
             }
         }
     });
-    
-    // Refresh button
+
     journalRefreshBtn.addEventListener('click', () => {
         const activeFilterBtn = document.querySelector('.journal-filter-btn.active');
         const currentPeriod = activeFilterBtn ? activeFilterBtn.dataset.period : 'all';
         loadJournalEntries(currentPeriod);
     });
-    
-    // Filter buttons (period)
+
     filterButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             filterButtons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            // Réinitialiser le filtre de type quand on change de période
             const activePill = document.querySelector('.journal-filter-pill.active');
             const typeFilter = activePill ? JSON.parse(activePill.dataset.types || '[]') : null;
             loadJournalEntries(btn.dataset.period, typeFilter);
         });
     });
-    
-    // Filter pills (type)
+
     const filterPills = document.querySelectorAll('.journal-filter-pill');
     filterPills.forEach(pill => {
         pill.addEventListener('click', () => {
-            // Toggle active state
             if (pill.classList.contains('active')) {
-                // Désactiver le filtre
                 pill.classList.remove('active');
                 const activeFilterBtn = document.querySelector('.journal-filter-btn.active');
                 const currentPeriod = activeFilterBtn ? activeFilterBtn.dataset.period : 'all';
                 loadJournalEntries(currentPeriod, null);
             } else {
-                // Activer ce filtre et désactiver les autres
                 filterPills.forEach(p => p.classList.remove('active'));
                 pill.classList.add('active');
                 const typeFilter = JSON.parse(pill.dataset.types || '[]');
@@ -85,17 +91,16 @@ export function initJournalPopup() {
             }
         });
     });
-    
-    // Export buttons
+
     const exportJsonBtn = document.getElementById('journal-export-json-btn');
     const exportPdfBtn = document.getElementById('journal-export-pdf-btn');
-    
+
     if (exportJsonBtn) {
         exportJsonBtn.addEventListener('click', async () => {
             await exportJournalToJSON();
         });
     }
-    
+
     if (exportPdfBtn) {
         exportPdfBtn.addEventListener('click', async () => {
             await exportJournalToPDF();
@@ -103,144 +108,38 @@ export function initJournalPopup() {
     }
 }
 
+/** @param {string} period */
+function parsePeriodDays(period) {
+    if (period === 'all' || period == null) {
+        return null;
+    }
+    const days = parseInt(period, 10);
+    return Number.isNaN(days) ? null : days;
+}
+
 /**
- * Charge et affiche les entrées du journal
+ * Charge et affiche les entrées du journal via Accounting BC
+ * @param {string} [period='all']
+ * @param {string[]|null} [typeFilter=null]
  */
 export async function loadJournalEntries(period = 'all', typeFilter = null) {
     const journalList = document.getElementById('journal-list');
     if (!journalList) return;
-    
+
     journalList.innerHTML = `
         <div class="journal-loading">
             <div class="loading-spinner"></div>
             <p>Chargement du journal...</p>
         </div>
     `;
-    
+
     try {
-        // Try to use journalManager directly if available, otherwise fall back to budgetManager
-        const manager = window.journalManager || window.app?.journalManager || window.budgetManager;
-        if (!manager) {
-            throw new Error('Journal/BudgetManager not available');
-        }
-        
-        // Récupérer les données groupées par année et mois
-        const yearlyData = await manager.getYearlyFinancialSummary();
-        
-        // Obtenir le budget actuel (source unique de vérité : budget.funds)
-        let currentFunds = 0;
-        let currentYear = 0;
-        let currentTurn = 0;
-        
-        if (window.budgetManager) {
-            const budget = await window.budgetManager.getCurrentBudget();
-            currentFunds = budget.funds || 0;
-            currentTurn = budget.turn || 0;
-            if (window.TimeManager) {
-                const timeInfo = window.TimeManager.getTimeInfo(currentTurn);
-                currentYear = timeInfo.year;
-            }
-        } else {
-            // Fallback: utiliser le turn le plus récent du journal
-            const allEntries = await manager.getJournalEntries();
-            if (allEntries.length > 0) {
-                // Trier par turn décroissant pour obtenir le plus récent
-                const sortedEntries = [...allEntries].sort((a, b) => b.turn - a.turn);
-                currentTurn = sortedEntries[0].turn;
-            }
-        }
-        const currentDate = new Date().toISOString();
-        
-        // Sauvegarder les soldes de fin d'année dans localStorage
-        // Utiliser les entrées 'balance' qui reflètent budget.funds
-        const LOCALSTORAGE_KEY = 'journal_year_end_balances';
-        let soldes = []; // Déclarer en dehors du try pour être accessible plus tard
-        
-        try {
-            const stored = localStorage.getItem(LOCALSTORAGE_KEY);
-            soldes = stored ? JSON.parse(stored) : [];
-            
-            // NETTOYER : supprimer les entrées avec amount NaN ou undefined
-            soldes = soldes.filter(s => typeof s.amount === 'number' && !isNaN(s.amount));
-            
-            // Pour chaque année affichée, récupérer le solde depuis les entrées balance
-            for (const yearData of yearlyData) {
-                try {
-                    let nature;
-                    let amount;
-                    
-                    // Pour l'année en cours, utiliser currentFunds (budget.funds actuel)
-                    if (yearData.year === currentYear) {
-                        nature = currentFunds >= 0 ? 'revenue' : 'deficit';
-                        amount = Math.abs(currentFunds);
-                    } else {
-                        // Pour les années précédentes, utiliser localStorage (méthode synchrone)
-                        // Retourne {an, nature, amount, turn, date} ou null
-                        const yearEndBalance = manager.getYearEndBalance(yearData.year);
-                        
-                        if (yearEndBalance && typeof yearEndBalance.amount === 'number' && !isNaN(yearEndBalance.amount)) {
-                            nature = yearEndBalance.nature;
-                            amount = yearEndBalance.amount;
-                        } else {
-                            // Pas de solde valide trouvé, utiliser netFlow calculé comme fallback
-                            const netFlow = yearData.netFlow;
-                            if (typeof netFlow === 'number' && !isNaN(netFlow)) {
-                                nature = netFlow >= 0 ? 'revenue' : 'deficit';
-                                amount = Math.abs(netFlow);
-                                console.warn(`[Journal] No valid balance in localStorage for year ${yearData.year}, using netFlow: ${netFlow}`);
-                            } else {
-                                console.warn(`[Journal] No valid balance for year ${yearData.year}, skipping`);
-                                continue;
-                            }
-                        }
-                    }
-                    
-                    // Validation finale : ne pas sauvegarder si amount est NaN
-                    if (typeof amount !== 'number' || isNaN(amount)) {
-                        console.error(`[Journal] Invalid amount for year ${yearData.year}: ${amount}`);
-                        continue;
-                    }
-                    
-                    // Vérifier si cette combinaison (an + turn) existe déjà
-                    const existingIndex = soldes.findIndex(s => s.an === yearData.year && s.turn === currentTurn);
-                    
-                    if (existingIndex >= 0) {
-                        // Mettre à jour l'entrée existante
-                        soldes[existingIndex] = {
-                            an: yearData.year,
-                            nature: nature,
-                            amount: amount,
-                            turn: currentTurn,
-                            date: currentDate
-                        };
-                    } else {
-                        // Ajouter une nouvelle entrée
-                        soldes.push({
-                            an: yearData.year,
-                            nature: nature,
-                            amount: amount,
-                            turn: currentTurn,
-                            date: currentDate
-                        });
-                    }
-                } catch (error) {
-                    console.error(`[Journal] Error getting balance for year ${yearData.year}:`, error.message);
-                    // Ne pas sauvegarder cette année si erreur
-                }
-            }
-            
-            // Trier par année puis par turn (décroissant)
-            soldes.sort((a, b) => {
-                if (a.an !== b.an) return b.an - a.an;
-                return b.turn - a.turn;
-            });
-            
-            localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(soldes));
-        } catch (error) {
-            console.error('[Journal] Error saving balances to localStorage:', error);
-        }
-        
-        if (yearlyData.length === 0) {
+        const ledger = await getGeneralLedger({
+            periodDays: parsePeriodDays(period),
+            types: typeFilter,
+        });
+
+        if (ledger.years.length === 0) {
             journalList.innerHTML = `
                 <div class="no-journal-entries">
                     <div class="no-journal-entries-icon">📔</div>
@@ -249,146 +148,8 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
             `;
             return;
         }
-        
-        // Créer le HTML avec regroupements Année → Mois → Entrées
-        let html = '';
-        
-        yearlyData.forEach(yearData => {
-            // En-tête Année
-            const yearDisplay = yearData.year === 0 ? '0 JC' : `${yearData.year} ap JC`;
-            
-            // Pour le solde : utiliser budget.funds (source unique de vérité)
-            let displayBalance;
-            let balanceClass;
-            
-            if (yearData.year === currentYear) {
-                // Année en cours : utiliser budget.funds actuel
-                displayBalance = currentFunds;
-                balanceClass = displayBalance >= 0 ? 'positive' : 'negative';
-            } else {
-                // Années précédentes : utiliser le solde sauvegardé depuis localStorage
-                const savedBalance = soldes.find(s => s.an === yearData.year);
-                if (savedBalance && typeof savedBalance.amount === 'number' && !isNaN(savedBalance.amount)) {
-                    displayBalance = savedBalance.nature === 'revenue' ? savedBalance.amount : -savedBalance.amount;
-                    balanceClass = savedBalance.nature === 'revenue' ? 'positive' : 'negative';
-                } else {
-                    // Fallback : utiliser netFlow calculé
-                    const netFlow = yearData.netFlow;
-                    if (typeof netFlow === 'number' && !isNaN(netFlow)) {
-                        displayBalance = netFlow;
-                        balanceClass = displayBalance >= 0 ? 'positive' : 'negative';
-                    } else {
-                        // Dernier recours : afficher 0 avec avertissement
-                        displayBalance = 0;
-                        balanceClass = 'error';
-                        console.warn(`[Journal] No valid balance for year ${yearData.year}`);
-                    }
-                }
-            }
-            
-            html += `
-                <div class="journal-year-group">
-                    <div class="journal-year-header">
-                        <h3>Année ${yearDisplay}</h3>
-                        <div class="journal-year-summary">
-                            <div class="journal-summary-item income">
-                                <span class="label">Revenus:</span>
-                                <span class="amount">+${yearData.income.total}€</span>
-                            </div>
-                            <div class="journal-summary-item expenses">
-                                <span class="label">Dépenses:</span>
-                                <span class="amount">-${yearData.expenses.total}€</span>
-                            </div>
-                            <div class="journal-summary-item netflow ${balanceClass}">
-                                <span class="label">Solde:</span>
-                                <span class="amount">${displayBalance >= 0 ? '+' : ''}${displayBalance}€</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    ${yearData.months.map(monthData => {
-                        // En-tête Mois
-                        const yearDisplayMonth = monthData.year === 0 ? '0 JC' : `${monthData.year} ap JC`;
-                        return `
-                            <div class="journal-month-group">
-                                <div class="journal-month-header">
-                                    <h4>${monthData.monthName} ${yearDisplayMonth}</h4>
-                                    <div class="journal-month-summary">
-                                        <div class="journal-summary-item income">
-                                            <span class="label">Revenus:</span>
-                                            <span class="amount">+${monthData.income.total}€</span>
-                                        </div>
-                                        <div class="journal-summary-item expenses">
-                                            <span class="label">Dépenses:</span>
-                                            <span class="amount">-${monthData.expenses.total}€</span>
-                                        </div>
-                                        <div class="journal-summary-item netflow ${monthData.netFlow >= 0 ? 'positive' : 'negative'}">
-                                            <span class="label">Solde:</span>
-                                            <span class="amount">${monthData.netFlow >= 0 ? '+' : ''}${monthData.netFlow}€</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="journal-month-entries">
-                                    ${(() => {
-                                        // Filtrer les entrées selon typeFilter si défini
-                                        let filteredIncome = monthData.income.entries;
-                                        let filteredExpenses = monthData.expenses.entries;
-                                        
-                                        if (typeFilter && typeFilter.length > 0) {
-                                            filteredIncome = monthData.income.entries.filter(e => {
-                                                // Vérifier si le type correspond exactement ou commence par un préfixe dans typeFilter
-                                                return typeFilter.some(filterType => {
-                                                    // Type exact (ex: "citizen_tax", "loan_capital")
-                                                    if (e.type === filterType) {
-                                                        return true;
-                                                    }
-                                                    // Préfixe avec underscore (ex: "export_" pour tous les exports)
-                                                    if (filterType.endsWith('_') && e.type.startsWith(filterType)) {
-                                                        return true;
-                                                    }
-                                                    return false;
-                                                });
-                                            });
-                                            filteredExpenses = monthData.expenses.entries.filter(e => {
-                                                return typeFilter.some(filterType => {
-                                                    // Type exact
-                                                    if (e.type === filterType) {
-                                                        return true;
-                                                    }
-                                                    // Préfixe avec underscore
-                                                    if (filterType.endsWith('_') && e.type.startsWith(filterType)) {
-                                                        return true;
-                                                    }
-                                                    return false;
-                                                });
-                                            });
-                                        }
-                                        
-                                        // Séparer les entrées : report à nouveau en premier, puis les autres
-                                        const carryForwardIncome = filteredIncome.filter(e => e.type === 'carry_forward');
-                                        const carryForwardExpenses = filteredExpenses.filter(e => e.type === 'carry_forward');
-                                        const otherIncome = filteredIncome.filter(e => e.type !== 'carry_forward');
-                                        const otherExpenses = filteredExpenses.filter(e => e.type !== 'carry_forward');
-                                        
-                                        // Afficher d'abord les reports à nouveau (revenus puis dépenses), puis les autres
-                                        return [
-                                            ...carryForwardIncome.map(entry => createJournalEntryHTML(entry)),
-                                            ...carryForwardExpenses.map(entry => createJournalEntryHTML(entry)),
-                                            ...otherIncome.map(entry => createJournalEntryHTML(entry)),
-                                            ...otherExpenses.map(entry => createJournalEntryHTML(entry))
-                                        ].join('');
-                                    })()}
-                                </div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            `;
-        });
-        
-        journalList.innerHTML = html;
-        
+
+        journalList.innerHTML = renderGeneralLedger(ledger);
     } catch (error) {
         console.error('Error loading journal entries:', error);
         journalList.innerHTML = `
@@ -399,17 +160,77 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
     }
 }
 
+/** @param {import('../../../contexts/accounting/domain/read-models/GeneralLedgerView.js').GeneralLedgerView} ledger */
+function renderGeneralLedger(ledger) {
+    const sortHint = `
+        <p class="journal-sort-hint">Plus récent en haut — années et mois triés du plus récent au plus ancien.</p>
+    `;
+
+    return sortHint + ledger.years.map(yearData => {
+        const yearDisplay = yearData.year === 0 ? '0 JC' : `${yearData.year} ap JC`;
+        const displayBalance = yearData.displayBalance;
+        const balanceClass = displayBalance >= 0 ? 'positive' : 'negative';
+
+        return `
+            <div class="journal-year-group">
+                <div class="journal-year-header">
+                    <h3>Année ${yearDisplay}</h3>
+                    <div class="journal-year-summary">
+                        <div class="journal-summary-item income">
+                            <span class="label">Revenus:</span>
+                            <span class="amount">+${yearData.incomeTotal}€</span>
+                        </div>
+                        <div class="journal-summary-item expenses">
+                            <span class="label">Dépenses:</span>
+                            <span class="amount">-${yearData.expensesTotal}€</span>
+                        </div>
+                        <div class="journal-summary-item netflow ${balanceClass}">
+                            <span class="label">Solde:</span>
+                            <span class="amount">${displayBalance >= 0 ? '+' : ''}${displayBalance}€</span>
+                        </div>
+                    </div>
+                </div>
+
+                ${yearData.months.map(monthData => {
+                    const yearDisplayMonth = monthData.year === 0 ? '0 JC' : `${monthData.year} ap JC`;
+                    const monthNetClass = monthData.netFlow >= 0 ? 'positive' : 'negative';
+
+                    return `
+                        <div class="journal-month-group">
+                            <div class="journal-month-header">
+                                <h4>${monthData.monthName} ${yearDisplayMonth}</h4>
+                                <div class="journal-month-summary">
+                                    <div class="journal-summary-item income">
+                                        <span class="label">Revenus:</span>
+                                        <span class="amount">+${monthData.incomeTotal}€</span>
+                                    </div>
+                                    <div class="journal-summary-item expenses">
+                                        <span class="label">Dépenses:</span>
+                                        <span class="amount">-${monthData.expensesTotal}€</span>
+                                    </div>
+                                    <div class="journal-summary-item netflow ${monthNetClass}">
+                                        <span class="label">Solde:</span>
+                                        <span class="amount">${monthData.netFlow >= 0 ? '+' : ''}${monthData.netFlow}€</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="journal-month-entries">
+                                ${monthData.entries.map(entry => createJournalEntryHTML(entry)).join('')}
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }).join('');
+}
+
 /**
- * Export journal to JSON and download
+ * Export JSON — legacy store (Phase 3+)
  */
 export async function exportJournalToJSON() {
     try {
-        const manager = window.journalManager || window.app?.journalManager || window.budgetManager;
-        if (!manager) {
-            throw new Error('JournalManager not available');
-        }
-        
-        const jsonString = await manager.exportToJSON();
+        const jsonString = await exportJournalJson();
         const blob = new Blob([jsonString], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -426,23 +247,17 @@ export async function exportJournalToJSON() {
 }
 
 /**
- * Export journal to PDF and download
+ * Export PDF — legacy store (Phase 3+)
  */
 export async function exportJournalToPDF() {
     try {
-        const manager = window.journalManager || window.app?.journalManager || window.budgetManager;
-        if (!manager) {
-            throw new Error('JournalManager not available');
-        }
-        
-        // Show loading indicator
         const exportPdfBtn = document.getElementById('journal-export-pdf-btn');
         if (exportPdfBtn) {
             exportPdfBtn.disabled = true;
             exportPdfBtn.innerHTML = '<span>Génération...</span>';
         }
-        
-        const pdfBlob = await manager.exportToPDF();
+
+        const pdfBlob = await exportJournalPdf();
         const url = URL.createObjectURL(pdfBlob);
         const a = document.createElement('a');
         a.href = url;
@@ -451,8 +266,7 @@ export async function exportJournalToPDF() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        
-        // Restore button
+
         if (exportPdfBtn) {
             exportPdfBtn.disabled = false;
             exportPdfBtn.innerHTML = `
@@ -469,8 +283,7 @@ export async function exportJournalToPDF() {
     } catch (error) {
         console.error('[Journal] Error exporting to PDF:', error);
         alert('Erreur lors de l\'export PDF: ' + error.message);
-        
-        // Restore button on error
+
         const exportPdfBtn = document.getElementById('journal-export-pdf-btn');
         if (exportPdfBtn) {
             exportPdfBtn.disabled = false;
@@ -500,49 +313,48 @@ function createJournalEntryHTML(entry) {
         hour: '2-digit',
         minute: '2-digit'
     });
-    
-    // Obtenir l'année depuis le turn
+
     let yearDisplay = '';
-    if (window.TimeManager && entry.turn !== undefined) {
-        const timeInfo = window.TimeManager.getTimeInfo(entry.turn);
+    if (entry.turn !== undefined) {
+        const timeInfo = getTimeInfo(entry.turn);
         yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
     }
-    
-    // Déterminer si c'est un revenu (positif) ou une dépense (négatif)
-    // Les cumuls et les balances sont informatifs seulement (pas comptés dans les calculs)
+
     let isIncome = false;
-    
-    if (entry.type === 'cumul_maintenance' || 
-        entry.type === 'cumul_construction' || 
+
+    if (entry.type === 'cumul_maintenance' ||
+        entry.type === 'cumul_construction' ||
         entry.type === 'cumul_salary' ||
         entry.type === 'cumul_exceptional_expenses' ||
         entry.type === 'cumul_loan_interest' ||
-        entry.type === 'cumul_loan_repayment') {
-        isIncome = false; // Les cumuls sont toujours des dépenses
+        entry.type === 'cumul_loan_repayment' ||
+        isInfoPseudoMovementType(entry.type) ||
+        entry.type === 'loan_default_interest' ||
+        entry.type === 'loan_default_repayment') {
+        isIncome = false;
     } else if (entry.type === 'balance') {
-        // La balance peut être positive ou négative selon le montant
         isIncome = entry.amount >= 0;
     } else if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds' || entry.type === 'loan_capital') {
         isIncome = true;
     } else if (entry.type.startsWith('export_')) {
-        isIncome = true; // Tous les exports sont des revenus
+        isIncome = true;
     } else if (entry.type.startsWith('import_')) {
-        isIncome = false; // Tous les imports sont des dépenses
-    } else if (entry.type === 'salary' || entry.type === 'maintenance' || entry.type === 'construction' || entry.type === 'exceptional_expenses' || entry.type === 'commercial_route') {
-        isIncome = false; // Dépenses
+        isIncome = false;
+    } else if (entry.type === 'salary' || entry.type === 'maintenance' || entry.type === 'construction' || entry.type === 'construction_refund' || entry.type === 'exceptional_expenses' || entry.type === 'commercial_route') {
+        isIncome = false;
     } else if (entry.type === 'carry_forward') {
-        // Pour carry_forward, utiliser la propriété isCarryForwardIncome si disponible
         isIncome = entry.isCarryForwardIncome !== undefined ? entry.isCarryForwardIncome : true;
     }
-    
+
     const typeClass = isIncome ? 'positive' : 'negative';
-    
+
     const typeLabels = {
         'citizen_tax': 'Impôt Citoyen',
         'payroll_tax': 'Impôt sur les salaires',
         'capital_funds': 'Capital de départ',
         'carry_forward': 'Report à nouveau',
         'construction': 'Construction',
+        'construction_refund': 'Remboursement construction',
         'exceptional_expenses': 'Réparation',
         'maintenance': 'Maintenance mensuelle',
         'salary': 'Salaires',
@@ -560,6 +372,9 @@ function createJournalEntryHTML(entry) {
         'loan_capital': 'Capital Prêt',
         'loan_interest': 'Intérêts prêt',
         'loan_repayment': 'Remboursement prêt',
+        ...INFO_JOURNAL_TYPE_LABELS,
+        'loan_default_interest': labelForInfoJournalType('info_loan_interest'),
+        'loan_default_repayment': labelForInfoJournalType('info_loan_repayment'),
         'cumul_maintenance': 'Cumul Maintenance',
         'cumul_construction': 'Cumul Construction',
         'cumul_salary': 'Cumul Salaires',
@@ -568,13 +383,10 @@ function createJournalEntryHTML(entry) {
         'cumul_loan_repayment': 'Cumul Remboursement Prêt',
         'balance': 'Solde'
     };
-    
-    // Check if description contains breakdown data
+
     const breakdownMatch = entry.description?.match(/\|BREAKDOWN\|(.*?)\|BREAKDOWN\|/);
-    let descriptionText = entry.description || '';
     let breakdownItems = null;
 
-    // Support breakdown for maintenance, imports, exports, and commercial routes
     const supportsBreakdown = entry.type === 'maintenance' ||
                               entry.type === 'commercial_route' ||
                               entry.type.startsWith('import_') ||
@@ -583,14 +395,13 @@ function createJournalEntryHTML(entry) {
     if (breakdownMatch && supportsBreakdown) {
         try {
             breakdownItems = JSON.parse(breakdownMatch[1]);
-            // Remove breakdown data from description text
-            descriptionText = entry.description.replace(/\|BREAKDOWN\|.*?\|BREAKDOWN\|/, '').trim();
         } catch (e) {
             console.warn('Failed to parse breakdown:', e);
         }
     }
 
-    // Get partner name if partnerId exists
+    const entryDetails = formatJournalEntryDetails(entry);
+
     let partnerName = null;
     if (entry.partnerId && (entry.type.startsWith('import_') || entry.type.startsWith('export_') || entry.type === 'commercial_route')) {
         try {
@@ -617,7 +428,16 @@ function createJournalEntryHTML(entry) {
                 </span>
             </div>
             <div class="journal-entry-details">
-                <div class="journal-entry-description">${descriptionText}</div>
+                ${entryDetails.length ? `
+                <div class="journal-entry-facts">
+                    ${entryDetails.map(({ label, value }) => `
+                        <span class="journal-entry-fact">
+                            <span class="journal-entry-fact-label">${label}:</span>
+                            <span class="journal-entry-fact-value">${value}</span>
+                        </span>
+                    `).join('')}
+                </div>
+                ` : ''}
                 ${breakdownItems ? `
                 <ul class="journal-maintenance-breakdown">
                     ${breakdownItems.map(item => `
@@ -633,6 +453,8 @@ function createJournalEntryHTML(entry) {
                 </ul>
                 ` : ''}
                 <div class="journal-entry-meta">
+                    ${entry.id != null ? `<span class="journal-entry-id">N° ${entry.id}</span>` : ''}
+                    ${entry.buildingInstanceId ? `<span class="journal-entry-asset-id" title="${entry.buildingInstanceId}">Id bâtiment: ${entry.buildingInstanceId}</span>` : ''}
                     ${yearDisplay ? `<span class="journal-entry-year">Année: ${yearDisplay}</span>` : ''}
                     ${entry.turn !== undefined ? `<span class="journal-entry-turn-number">Tour: ${entry.turn}</span>` : ''}
                     <span class="journal-entry-date">${formattedDate}</span>
@@ -641,4 +463,3 @@ function createJournalEntryHTML(entry) {
         </div>
     `;
 }
-

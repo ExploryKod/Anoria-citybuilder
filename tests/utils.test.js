@@ -1,92 +1,22 @@
 /**
  * Tests pour utils.js
- * 
- * Ce module contient des fonctions utilitaires pures :
- * - Génération d'identifiants pour la base de données
+ *
+ * Ce module contient des fonctions utilitaires :
  * - Récupération des prix des bâtiments
  * - Vérification de disponibilité des zones de construction
  * - Filtrage et manipulation d'assets
+ *
+ * Identifiants bâtiment : tests/contexts/parcels/buildingId.behavior.test.js
  */
 
-import { 
-    makeDbItemId,
+import {
     getAssetPrice,
     isAreaAvailableForBuilding,
     getAssetsByCategory,
     updateAssetsPrices,
     getBuildingNeighbors
 } from '../src/js/utils/utils.js';
-
-// ============================================================================
-// makeDbItemId - Génère un identifiant unique pour IndexedDB
-// Format: "buildingType-x-y" (ex: "Farm-Wheat-5-3")
-// ============================================================================
-describe('makeDbItemId', () => {
-    
-    describe('Génération d\'ID valide', () => {
-        test('crée un ID au format "type-x-y"', () => {
-            const id = makeDbItemId('Farm-Wheat', 5, 3);
-            
-            expect(id).toBe('Farm-Wheat-5-3');
-        });
-
-        test('fonctionne avec des coordonnées à 0', () => {
-            const id = makeDbItemId('House-Blue', 0, 0);
-            
-            expect(id).toBe('House-Blue-0-0');
-        });
-
-        test('fonctionne avec de grandes coordonnées', () => {
-            const id = makeDbItemId('roads', 15, 15);
-            
-            expect(id).toBe('roads-15-15');
-        });
-    });
-
-    describe('Validation du buildingId', () => {
-        test('retourne false si buildingId est undefined', () => {
-            expect(makeDbItemId(undefined, 5, 3)).toBe(false);
-        });
-
-        test('retourne false si buildingId est null', () => {
-            expect(makeDbItemId(null, 5, 3)).toBe(false);
-        });
-
-        test('retourne false si buildingId est vide', () => {
-            expect(makeDbItemId('', 5, 3)).toBe(false);
-        });
-
-        test('retourne false si buildingId n\'est pas une chaîne', () => {
-            expect(makeDbItemId(123, 5, 3)).toBe(false);
-        });
-    });
-
-    describe('Validation des coordonnées x et y', () => {
-        test('retourne false si x est undefined', () => {
-            expect(makeDbItemId('Farm-Wheat', undefined, 3)).toBe(false);
-        });
-
-        test('retourne false si y est undefined', () => {
-            expect(makeDbItemId('Farm-Wheat', 5, undefined)).toBe(false);
-        });
-
-        test('retourne false si x est null', () => {
-            expect(makeDbItemId('Farm-Wheat', null, 3)).toBe(false);
-        });
-
-        test('retourne false si y est null', () => {
-            expect(makeDbItemId('Farm-Wheat', 5, null)).toBe(false);
-        });
-
-        test('retourne false si x est NaN', () => {
-            expect(makeDbItemId('Farm-Wheat', NaN, 3)).toBe(false);
-        });
-
-        test('retourne false si y est NaN', () => {
-            expect(makeDbItemId('Farm-Wheat', 5, NaN)).toBe(false);
-        });
-    });
-});
+import { createBuildingInstanceId } from './fixtures/parcelsFixtures.js';
 
 // ============================================================================
 // getAssetPrice - Récupère le prix d'un bâtiment depuis le catalogue
@@ -401,33 +331,35 @@ describe('updateAssetsPrices', () => {
 // getBuildingNeighbors - Trouve un voisin dans la liste des voisins
 // ============================================================================
 describe('getBuildingNeighbors', () => {
-    
+    const houseId = createBuildingInstanceId();
+    const farmId = createBuildingInstanceId();
+    const roadId = createBuildingInstanceId();
+
     describe('Trouve un voisin existant', () => {
-        test('retourne le nom du voisin trouvé', () => {
+        test('retourne l\'instanceId du voisin trouvé', () => {
             const building = {
                 userData: {
-                    neighborsNames: ['House-Blue', 'Farm-Wheat', 'roads']
+                    neighborInstanceIds: [houseId, farmId, roadId]
                 }
             };
-            const neighbors = ['Farm-Wheat', 'Market-Stall'];
-            
-            const result = getBuildingNeighbors(building, neighbors);
-            
-            expect(result).toBe('Farm-Wheat');
+            const instanceIds = [farmId, createBuildingInstanceId()];
+
+            const result = getBuildingNeighbors(building, instanceIds);
+
+            expect(result).toBe(farmId);
         });
 
         test('retourne le premier voisin trouvé si plusieurs correspondances', () => {
             const building = {
                 userData: {
-                    neighborsNames: ['House-Blue', 'Farm-Wheat', 'roads']
+                    neighborInstanceIds: [houseId, farmId, roadId]
                 }
             };
-            const neighbors = ['Farm-Wheat', 'House-Blue'];
-            
-            const result = getBuildingNeighbors(building, neighbors);
-            
-            // Devrait retourner le premier trouvé dans neighborsNames
-            expect(['Farm-Wheat', 'House-Blue']).toContain(result);
+            const instanceIds = [farmId, houseId];
+
+            const result = getBuildingNeighbors(building, instanceIds);
+
+            expect([farmId, houseId]).toContain(result);
         });
     });
 
@@ -435,13 +367,13 @@ describe('getBuildingNeighbors', () => {
         test('retourne false si aucun voisin ne correspond', () => {
             const building = {
                 userData: {
-                    neighborsNames: ['House-Blue', 'Farm-Wheat']
+                    neighborInstanceIds: [houseId, farmId]
                 }
             };
-            const neighbors = ['Market-Stall', 'roads'];
-            
-            const result = getBuildingNeighbors(building, neighbors);
-            
+            const instanceIds = [createBuildingInstanceId(), roadId];
+
+            const result = getBuildingNeighbors(building, instanceIds);
+
             expect(result).toBe(false);
         });
     });
@@ -449,47 +381,47 @@ describe('getBuildingNeighbors', () => {
     describe('Cas limites', () => {
         test('retourne false si building n\'a pas de userData', () => {
             const building = {};
-            const neighbors = ['House-Blue'];
-            
-            const result = getBuildingNeighbors(building, neighbors);
-            
+            const instanceIds = [houseId];
+
+            const result = getBuildingNeighbors(building, instanceIds);
+
             expect(result).toBe(false);
         });
 
-        test('retourne false si userData n\'a pas de neighborsNames', () => {
+        test('retourne false si userData n\'a pas de neighborInstanceIds', () => {
             const building = {
                 userData: {}
             };
-            const neighbors = ['House-Blue'];
-            
-            const result = getBuildingNeighbors(building, neighbors);
-            
+            const instanceIds = [houseId];
+
+            const result = getBuildingNeighbors(building, instanceIds);
+
             expect(result).toBe(false);
         });
 
-        test('retourne false si neighbors est vide', () => {
+        test('retourne false si instanceIds est vide', () => {
             const building = {
                 userData: {
-                    neighborsNames: ['House-Blue']
+                    neighborInstanceIds: [houseId]
                 }
             };
-            const neighbors = [];
-            
-            const result = getBuildingNeighbors(building, neighbors);
-            
+            const instanceIds = [];
+
+            const result = getBuildingNeighbors(building, instanceIds);
+
             expect(result).toBe(false);
         });
 
-        test('retourne false si neighborsNames est vide', () => {
+        test('retourne false si neighborInstanceIds est vide', () => {
             const building = {
                 userData: {
-                    neighborsNames: []
+                    neighborInstanceIds: []
                 }
             };
-            const neighbors = ['House-Blue'];
-            
-            const result = getBuildingNeighbors(building, neighbors);
-            
+            const instanceIds = [houseId];
+
+            const result = getBuildingNeighbors(building, instanceIds);
+
             expect(result).toBe(false);
         });
     });
