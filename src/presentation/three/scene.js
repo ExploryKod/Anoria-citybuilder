@@ -28,7 +28,6 @@ import {
     incrementBuildingField,
     listAllBuildingRows,
 } from '../../js/acl/construction.js';
-import { updateSupplyBuildingFields } from '../../js/acl/supply.js';
 import {
     bulldozeSelected,
     delayBox,
@@ -55,6 +54,8 @@ import { resetProcessTurnBudget } from '../../js/acl/accounting.js';
 import gameUI from '../../ui/shell/GameUI.js';
 import { CitizenManager } from './managers/CitizenManager.js';
 import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
+import { syncTileNeighborsPass } from './sync/syncTileNeighborsPass.js';
+import { cleanupOrphanedBuildings } from './sync/cleanupOrphanedBuildings.js';
 
 const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
 
@@ -524,42 +525,6 @@ export function createScene(_gameStore, assetManager, parcelsOption, supplyOptio
             return { buildingId: nextType, instanceId, synced: true };
         }
 
-        async function persistTileNeighbors(x, y, buildingId, instanceId) {
-            const mesh = buildings[x]?.[y];
-            if (!mesh?.userData || !instanceId || !buildingId) {
-                return;
-            }
-            if (mesh.userData.instanceId !== instanceId) {
-                mesh.userData.instanceId = instanceId;
-            }
-            const buildingData = {
-                city,
-                buildings,
-                x,
-                y,
-                currentBuildingId: buildingId,
-                currentInstanceId: instanceId,
-                terrain,
-            };
-            updateBuildingNeighbors(buildingData, 1, time);
-            try {
-                const allNeighborsWithinZone = getBuildingsNamesInZone(
-                    buildingData,
-                    time,
-                    { buildingTarget: '', zones: [1, 2] }
-                );
-                const allMarketsInZone = getBuildingsNamesInZone(
-                    buildingData,
-                    time,
-                    { buildingTarget: 'Market-Stall', zones: [1, 2] }
-                );
-                await parcels.updateNeighbors(instanceId, allNeighborsWithinZone ?? []);
-                await updateBuildingFields(instanceId, { markets: allMarketsInZone });
-                await parcels.recalculateRoadAccessForBuilding.execute(instanceId);
-            } catch (err) {
-                console.warn('[Scene] Failed to update neighbors/markets for', buildingId, err);
-            }
-        }
 
         async function placeTileMeshIfNeeded(x, y, needsMeshPlacement, tileBuildingId) {
             if (!needsMeshPlacement || !tileBuildingId) {
@@ -999,16 +964,6 @@ export function createScene(_gameStore, assetManager, parcelsOption, supplyOptio
                     continue;
                 }
 
-                  /* utils for scene updates */
-                  function calculateNetStocks(houseFood, housePop) {
-                      if(houseFood > 0 && housePop > 0) {
-                          const netFood = houseFood - housePop
-                          return netFood > 0 ? netFood : 0;
-                      }
-                      return houseFood;
-                  }
-
-
                 /* Only for commerce buildings */
                 if(commerce.includes(currentBuildingId)) {
                     await incrementBuildingField({
@@ -1103,72 +1058,7 @@ export function createScene(_gameStore, assetManager, parcelsOption, supplyOptio
                         );
                     }
 
-                    /**
-                     * Update market stocks of food in userData and in DB
-                     * @param buildings
-                     * @param datas
-                     * @returns {Promise<void>}
-                     */
-                    async function updateMarketStocks(buildings, datas = [{key: "", number: 0, decrease: false}]) {
-
-                        if(!buildings) {
-                            return;
-                        }
-
-                        if(Array.isArray(datas) && datas.length <= 0) {
-                            return;
-                        }
-
-                        // Initialize stocks if they don't exist - get from Supply BC first
-                        if (!buildings[x][y].userData.stocks) {
-                            const existingStocks = (await supply.getBuildingSupplyView(currentInstanceId))?.stocks;
-                            buildings[x][y].userData.stocks = existingStocks || {
-                                food: 0,
-                                cabbage: 0,
-                                wheat: 0,
-                                carrot: 0
-                            };
-                        }
-
-                        // Update userData food
-                        datas.filter(data => !data.decrease).forEach((data) => {
-                            if (buildings[x][y].userData.stocks[data.key] !== undefined) {
-                                buildings[x][y].userData.stocks[data.key] += data.number
-                            }
-                        })
-
-                        datas.filter(data => data.decrease).forEach((data) => {
-                            if (buildings[x][y].userData.stocks[data.key] !== undefined) {
-                                buildings[x][y].userData.stocks[data.key] -= data.number
-                            }
-                        })
-
-                        // turn by turn values from userData need to be mirrored in indexDB using userData
-                        const commerceUserData = {
-                            stocks:
-                                {
-                                    food: buildings[x][y].userData.stocks.food || 0,
-                                    carrot: buildings[x][y].userData.stocks.carrot || 0,
-                                    cabbage: buildings[x][y].userData.stocks.cabbage || 0,
-                                    wheat: buildings[x][y].userData.stocks.wheat || 0
-                                }
-                        }
-
-                        await updateSupplyBuildingFields(currentInstanceId, commerceUserData)
-                    }
-
-
-
-                    // Food chain (harvest, market, windmill, consumption) → Supply BC via ECS
-                    // Service runs before scene.update() and processes all markets city-wide using IndexedDB
-                    // This ensures consistent food distribution logic across the entire city
-                    // The service: collects from farms → adds to market stocks → distributes to houses
-                    
-                    // Market processing disabled here — Supply BC handles it via ECS pipeline
-                    // - Farm collection and market stock updates
-                    // - House food distribution
-                    // - Market stock decreases after distribution
-                    // All using IndexedDB as source of truth
+                    // Market stocks — Supply BC / ECS (legacy updateMarketStocks removed)
                 }
 
                 // Process windmills: show road access and collecting status sprites
@@ -1419,25 +1309,8 @@ export function createScene(_gameStore, assetManager, parcelsOption, supplyOptio
 
         }
 
-        // Second pass: neighbor sync once every tile mesh is up to date this frame
-        for (let nx = 0; nx < city.size; nx++) {
-            for (let ny = 0; ny < city.size; ny++) {
-                const tileBuildingId = city.tiles[nx]?.[ny]?.buildingId;
-                const instanceId =
-                    city.tiles[nx]?.[ny]?.instanceId
-                    ?? buildings[nx]?.[ny]?.userData?.instanceId
-                    ?? null;
-                if (!tileBuildingId || !instanceId) {
-                    continue;
-                }
-                const mesh = buildings[nx]?.[ny];
-                if (!mesh?.userData) {
-                    continue;
-                }
-                const buildingId = mesh.userData.type || mesh.userData.id || tileBuildingId;
-                await persistTileNeighbors(nx, ny, buildingId, instanceId);
-            }
-        }
+        // Neighbor sync once every tile mesh is up to date this frame
+        await syncTileNeighborsPass({ city, buildings, terrain, time, parcels });
 
         // Sync residential meshes + road icons after neighbors (evolution may have run in ECS)
         for (let nx = 0; nx < city.size; nx++) {
@@ -1459,71 +1332,14 @@ export function createScene(_gameStore, assetManager, parcelsOption, supplyOptio
             }
         }
 
-        // Cleanup: Remove orphaned house records from IndexedDB (houses that don't exist in scene)
-        // This ensures population is accurate and prevents ghost population from deleted houses
+        // Cleanup: Remove orphaned house records from IndexedDB
         try {
-            const allHousesInDb = await listAllBuildingRows();
-            const orphanedHouses = [];
-            
-            for (const house of allHousesInDb) {
-                const x = house.x;
-                const y = house.y;
-                const instanceId = house.instanceId ?? house.id;
-
-                if (!instanceId || !house.type || typeof house.type !== 'string') {
-                    continue;
-                }
-
-                const tile = city.tiles[x]?.[y];
-                // city.tiles is the placement source of truth — mesh may lag one frame
-                if (tile?.instanceId === instanceId) {
-                    continue;
-                }
-
-                if (x >= 0 && x < city.size && y >= 0 && y < city.size) {
-                    const buildingInScene = buildings[x] && buildings[x][y];
-                    const buildingType = buildingInScene?.userData?.type;
-                    const meshInstanceId = buildingInScene?.userData?.instanceId;
-
-                    const isRoad = house.type === 'roads' || house.type === 'Road' || (house.type && house.type.startsWith('StonePath-'));
-                    const typeMatches = isRoad
-                        ? buildingType === 'roads' || buildingType === house.type
-                        : buildingType === house.type;
-
-                    if (!buildingInScene || (!typeMatches && meshInstanceId !== instanceId)) {
-                        orphanedHouses.push(instanceId);
-                    }
-                } else {
-                    orphanedHouses.push(instanceId);
-                }
-            }
-            
-            // Delete orphaned houses
-            if (orphanedHouses.length > 0) {
-                for (const houseId of orphanedHouses) {
-                    // Double-check that houseId is valid before deletion
-                    if (houseId && typeof houseId === 'string') {
-                        try {
-                            const orphanRow = allHousesInDb.find(
-                                (row) => (row.instanceId ?? row.id) === houseId
-                            );
-                            await parcels.syncRemovedBuilding({ instanceId: houseId });
-                            const ox = orphanRow?.x ?? orphanRow?.anchorX;
-                            const oy = orphanRow?.y ?? orphanRow?.anchorY;
-                            if (
-                                typeof ox === 'number' &&
-                                typeof oy === 'number' &&
-                                city.tiles?.[ox]?.[oy]
-                            ) {
-                                city.tiles[ox][oy].buildingId = undefined;
-                                city.tiles[ox][oy].instanceId = undefined;
-                            }
-                        } catch (error) {
-                            console.warn(`[Scene] Failed to delete orphaned house ${houseId}:`, error);
-                        }
-                    }
-                }
-            }
+            await cleanupOrphanedBuildings({
+                city,
+                buildings,
+                listAllBuildingRows,
+                syncRemovedBuilding: (params) => parcels.syncRemovedBuilding(params),
+            });
         } catch (error) {
             console.warn('[Scene] Error during orphaned house cleanup:', error);
         }
