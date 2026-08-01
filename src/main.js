@@ -1,9 +1,9 @@
 import { registerAppFunction } from './js/acl/appRuntime.js'
 import { initPWA } from './pwa.js'
 import { gsap } from 'gsap'
-import infoPanelAnimations from './js/ui/InfoPanelAnimations.js'
-import modalAnimations from './js/ui/ModalAnimations.js'
-import './js/ui/OrientationToast.js'
+import infoPanelAnimations from './ui/shell/InfoPanelAnimations.js'
+import modalAnimations from './ui/shell/ModalAnimations.js'
+import './ui/shell/OrientationToast.js'
 
 const app = document.querySelector('#game-window')
 

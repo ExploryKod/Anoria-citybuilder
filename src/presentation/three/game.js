@@ -29,7 +29,7 @@ import {
     infoPanelClockIcon,
     infoPanelNoClockIcon,
     displaySpeed
-} from '../../js/ui/nodes.js';
+} from '../../ui/shell/nodes.js';
 import {
   forceReinitializeTreasury,
   getTreasurySnapshot,
@@ -39,7 +39,7 @@ import {
   readInitialFundsFromImportMeta,
 } from '../../js/acl/accountingGame.js';
 import loaderManager from '../../js/utils/LoaderManager.js';
-import objectivesTracker from '../../js/ui/ObjectivesTracker.js';
+import objectivesTracker from '../../ui/onboarding/ObjectivesTracker.js';
 
 /**
  * Info panel: workplace staffing section (workers in aggregates; elites display-only).
@@ -1434,7 +1434,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     // Initialize mobile controls for touch devices (if camera is available)
     // Use dynamic import with .then() to avoid making createGame async
     if (scene && scene.camera) {
-        import('../../js/ui/mobile-controls.js')
+        import('../../ui/shell/mobile-controls.js')
             .then(({ initMobileControls }) => {
                 initMobileControls(scene.camera);
             })

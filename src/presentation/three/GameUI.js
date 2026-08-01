@@ -19,7 +19,7 @@ import {
     overOverlay,
     overOverlayMessage,
     bulldozeSelected
-} from '../../js/ui/nodes.js';
+} from '../../ui/shell/nodes.js';
 import { formatGameTime } from '../../js/acl/appRuntime.js';
 import { getGameScene } from '../../js/acl/appRuntime.js';
 

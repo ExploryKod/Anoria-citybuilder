@@ -19,27 +19,27 @@ Branche de travail : `refactor/on-ecs-ddd--stores-dependencies`
 
 ---
 
-## Structure cible `ui/`
+## Structure actuelle `src/ui/`
 
 ```
-ui/
-  admin/                    ← Panneau Administrateur (César 3)
+src/ui/                         ← hissé hors de src/js/ (js/ = acl + utils)
+  admin/
     AdministratorPanel.js
-    initAdminSections.js
-    finances/  health/  work/  storage/  factory/  commerce/  report/
+    initAdminSections.js        ← importe uniquement init*Section.js
+    finances/ health/ work/ storage/ factory/ commerce/ report/
     food-traceability/
   compta/
-    tresorerie/             ← encart trésorerie temps réel
-    bilan/                  ← Bilan comptable
-    compte-de-resultat/     ← Compte de résultat
-    livret/                 ← Livret ville (admin → Finances)
-    prets/
-    journal/
+    tresorerie/ bilan/ compte-de-resultat/ livret/ prets/ journal/
   carte-ville/
   boot/
   tools/
-  …                         ← meta UI à regrouper (étape 8)
+  onboarding/                   ← TutorialPanel, ObjectivesPanel, tracker, history
+  parametres/                   ← ParametersPanel
+  shell/                        ← PopupManager, nodes, animations, mobile-controls
+  buttons.js
 ```
+
+`src/js/` ne contient plus que `acl/` et `utils/`.
 
 ---
 
@@ -49,189 +49,103 @@ ui/
 - `81eca4a` — regrouper l’UI par domaines métier (`admin/`, `compta/`, `carte-ville/`, `conseil-urbain/`)
 - `4110b6f` — renommer les `*Manager` UI en `*Panel` / `*Presenter` (fichiers)
 
-**Réalisé :**
-- Panneau admin sous `ui/admin/` + point d’entrée `initAdminSections.js`
-- Compta éclatée : `tresorerie/`, `bilan/`, `compte-de-resultat/`, `livret/`, `prets/`, `journal/`
-- Renommages fichiers : `RealtimeBudgetPanel`, `CompteDeResultatPanel`, `JournalPanel`, `PretsPanel`, `ConseilUrbainPanel`, `FoodTraceabilityPanel`, `CommerceSection.js`
-- Split Panel/Presenter pour trésorerie et bilan
-- 627 tests verts
-
 ---
 
-## Étape 1 — Commit du lot SectionPresenter ✅
+## Étape 1 — SectionPresenter ✅
 
-**Réalisé :** classes admin `*SectionManager` → `*SectionPresenter`, clés registry, ACL `getWorkSectionPresenter()`, `ParametersPanel`, tests associés.
-
-**Critère de done :** ✅ commit + tests verts.
+Classes admin `*SectionManager` → `*SectionPresenter`, clés registry, ACL.
 
 ---
 
 ## Étape 2 — Harmoniser les noms (français métier) — **reportée**
 
-**Problème :** mélange français / anglais dans les fichiers.
-
 | Actuel | Cible proposée |
 |---|---|
 | `BalanceSheetPanel` / `BalanceSheetPresenter` | `BilanPanel` / `BilanPresenter` |
 | `CityMapPanel` | `CarteVillePanel` |
-| `RealtimeBudgetPanel` | `TresoreriePanel` (ou garder si DOM `#realtime-budget-*`) |
-| `FinancesSection.js` + classe `FinancesSectionPresenter` | fichier `FinancesSectionPresenter.js` ou dossier `finances/FinancesSection.js` cohérent |
-
-**Statut :** reportée — pas de rename de fichiers dans le lot Presenters (étape 3 d’abord).
-
-**Critère de done :** une seule langue de nommage fichiers/classes UI ; imports et tests mis à jour.
+| `RealtimeBudgetPanel` | `TresoreriePanel` |
 
 ---
 
 ## Étape 3 — Extraire les Presenters manquants ✅
 
-**Présents avant ce lot :** `bilan/`, `tresorerie/`, `livret/`
-
-**Créés dans ce lot :**
-
-| Panel | Presenter |
-|---|---|
-| `JournalPanel.js` | `JournalPresenter.js` (`renderJournalList`) |
-| `CompteDeResultatPanel.js` | `CompteDeResultatPresenter.js` |
-| `PretsPanel.js` | `PretsPresenter.js` |
-| `CityMapPanel.js` | `CityMapPresenter.js` (pas de rename CarteVille) |
-| `FoodTraceabilityPanel.js` | `FoodTraceabilityPresenter.js` (+ dead code `createFoodTraceabilityTransactionHTML` supprimé) |
-
-**Hors scope (étape 7) :** sections admin (`FactorySection.js`, etc.).
-
-**Critère de done :** ✅ chaque popup listé a un couple Panel + Presenter ; Panels sans gros blocs HTML inline.
+Journal, CompteDeResultat, Prets, CityMap, FoodTraceability (+ dead code supprimé).
 
 ---
 
 ## Étape 4 — Trancher `ConseilUrbainPanel` ✅
 
-**Décision :** supprimer le code mort — le DOM conseil urbain n’existe plus ; `#budget-panel` = bilan comptable uniquement.
+Code mort supprimé ; `#budget-panel` = bilan uniquement.
+
+---
+
+## Étape 5 — Registry runtime cohérent ✅
 
 **Réalisé :**
-- suppression `ui/conseil-urbain/ConseilUrbainPanel.js`
-- retrait `initUrbanAdviceCenter()` de `GameSessionBootstrap`
-- `#budget-btn` : `title` / `aria-label` « Bilan comptable »
-- fix listeners filtres bilan/carte dupliqués à chaque ouverture
+- Getters ACL : `getFinancesSectionPresenter`, `getCommerceSectionPresenter`, `getFactorySectionPresenter`, `getStorageSectionPresenter`, `getHealthSectionPresenter`, `getReportSectionPresenter` (+ `getWorkSectionPresenter`)
+- Clés documentées dans `AppRegistry.js`
+- `createAccountingContext` utilise les getters (plus de `getAppService('…SectionPresenter')` hors ACL)
 
-**Critère de done :** ✅ un seul listener sur `#budget-btn` ; plus de code mort sur `#budget-panel`.
-
-**Restauration future :** recréer `#conseil-urbain-panel` + bouton toolbar dédié si la feature revient.
+**Reporté (DDD) :** salary / taxe citoyenne hors lecture UI directe.
 
 ---
 
-## Étape 5 — Registry runtime cohérent
+## Étape 6 — Tutorial / objectives ✅
 
-**Problème :**
-- Seul `getWorkSectionPresenter()` existe ; les autres clés passent par `getAppService('…')` ad hoc
-- `commerceSectionPresenter` enregistré sans getter ACL
-- Le BC comptable lit l’UI (`citizenTaxAmount`, `salary`) via le registre → coupling inverse
-
-**Actions :**
-1. Getters ACL symétriques : `getFinancesSectionPresenter()`, `getCommerceSectionPresenter()`, …
-2. Documenter les clés registry UI dans `AppRegistry` ou `appRuntime.js`
-3. (Plus tard) migrer salary / taxe citoyenne vers persistance domaine, plus lecture directe UI
-
-**Critère de done :** plus d’accès `getAppService('…SectionPresenter')` dispersé hors ACL.
+- `TutorialPanel` → clé `tutorialManager`
+- `ObjectivesPanel` → clé **`objectivesManager`** (plus de collision)
+- `getObjectivesManager()` ; tracker / history branchés correctement
 
 ---
 
-## Étape 6 — Corriger tutorial / objectives
+## Étape 7 — Uniformiser les sections admin ✅
 
-**Problème :** `tutorial.js` et `objectives.js` enregistrent tous deux `registerAppService('tutorialManager', …)` ; le second écrase le premier. `ObjectivesManager` → clé `tutorialManager` incohérente.
-
-**Actions :**
-1. Clés distinctes : `tutorialManager`, `objectivesManager`
-2. Renommer classes / fichiers : `TutorialPanel`, `ObjectivesPanel` (ou Presenter selon rôle)
-3. Mettre à jour `appRuntime.js`, `ObjectivesTracker`, `objectives-history.js`
-
-**Critère de done :** plus de collision registry ; noms alignés convention étape 0.
+Chaque section a `init{Domaine}Section.js` ; `initAdminSections.js` n’importe que des `init*.js` (+ `AdministratorPanel`).
 
 ---
 
-## Étape 7 — Uniformiser les sections admin
+## Étape 8 — Meta UI + hoist `src/ui` ✅
 
-**Problème :** commerce a `CommerceSection.js` + `initCommerceSection.js` ; les autres sections sont monolithiques (`FinancesSection.js`, …).
-
-**Actions :**
-1. Pattern unique : `{domaine}/{Domaine}SectionPresenter.js` + `init{Domaine}Section.js` **ou** tout dans un fichier par section (comme aujourd’hui) mais nom de fichier = `{Domaine}SectionPresenter.js`
-2. `initAdminSections.js` importe uniquement des `init*.js`
-
-**Critère de done :** même shape pour finances, commerce, usine, stock, travail, santé, rapport.
+- Dossiers `onboarding/`, `parametres/`, `shell/`
+- `src/js/ui` → `src/ui`
 
 ---
 
-## Étape 8 — Regrouper la meta UI à la racine `ui/`
+## Étape 9 — Documentation ✅
 
-Fichiers encore à la racine `ui/` sans dossier métier :
-
-- `tutorial.js`, `objectives.js`, `objectives-history.js`, `ObjectivesTracker.js`
-- `parameters.js`
-- `PopupManager.js` (vrai Manager — peut rester racine ou `ui/shell/`)
-- `nodes.js`, animations, `mobile-controls.js`
-
-**Dossiers proposés :**
-```
-ui/
-  onboarding/     ← tutorial, objectives
-  parametres/     ← parameters
-  shell/          ← PopupManager, nodes (si souhaité)
-```
-
-**Critère de done :** racine `ui/` limitée à boot, buttons, shell ; pas de feature métier orpheline.
+Ce fichier + chemins majeurs accounting / FINANCIAL_DATA_SOURCE_OF_TRUTH.
 
 ---
 
-## Étape 9 — Documentation
+## Étape 10 — Dette technique (partiel)
 
-**Fichiers obsolètes à mettre à jour :**
-- `src/archi.md`, `src/archi2.md`, `src/archi.claude.md`
-- `src/contexts/accounting/README.md`, `docs/refactor.md`, `docs/FINANCIAL_DATA_SOURCE_OF_TRUTH.md`
-- `docs/NETFLOW_CALCULATION.md`
-
-**Contenu :** chemins `ui/compta/…`, noms Panel/Presenter, suppression refs `ui/budget/`, `LoansManager`, `finances-section.js`.
-
-**Critère de done :** grep `ui/budget/`, `SectionManager`, `LoansManager` → 0 hit hors historique git.
+| Issue | Statut |
+|---|---|
+| Taux prêt via `LoanRatePolicy` | ✅ déjà en place |
+| `BuildingBreakdownEnrichment.js` | enrichissement UI bilan (pas de rename) |
+| `#budget-panel` → `#bilan-panel` | **reporté** (breaking DOM/CSS) |
+| Commerce `goodsData` sans global | **reporté** (lot DDD Commerce) |
 
 ---
 
-## Étape 10 — Dette technique restante (hors rename)
-
-Issues connues à traiter dans le code UI (indépendamment de l’arborescence) :
-
-| Issue | Fichier | Action |
-|---|---|---|
-| Taux prêt dupliqué | `PretsPanel.js` | centraliser via `LoanRatePolicy` (cf. `archi.md`) |
-| `BuildingBreakdownEnrichment.js` | `compta/bilan/` | renommer ou documenter rôle (enrichissement UI bilan) |
-| IDs DOM legacy | `index.html` | `#budget-panel` → `#bilan-panel` (breaking CSS/JS coordonné) |
-| Commerce lit UI | `CommerceService` | passer `goodsData` en argument, pas global (cf. `archi.md`) |
-
----
-
-## Correspondance écran joueur ↔ code (référence)
+## Correspondance écran joueur ↔ code
 
 | Écran | DOM | Code |
 |---|---|---|
-| Panneau Administrateur | `#administrator-panel` | `ui/admin/` |
-| Trésorerie temps réel | `#realtime-budget-panel` | `ui/compta/tresorerie/` |
-| Bilan comptable | `#budget-panel` | `ui/compta/bilan/` |
-| Compte de résultat | `#budget-states-panel` | `ui/compta/compte-de-resultat/` |
-| Livret (admin Finances) | `#admin-section-finances` | `ui/compta/livret/` + `ui/admin/finances/` |
-| Prêts | `#loans-panel` | `ui/compta/prets/` |
-| Journal | `#journal-panel` | `ui/compta/journal/` |
-| Carte | `#city-map-panel` | `ui/carte-ville/` |
+| Panneau Administrateur | `#administrator-panel` | `src/ui/admin/` |
+| Trésorerie temps réel | `#realtime-budget-panel` | `src/ui/compta/tresorerie/` |
+| Bilan comptable | `#budget-panel` | `src/ui/compta/bilan/` |
+| Compte de résultat | `#budget-states-panel` | `src/ui/compta/compte-de-resultat/` |
+| Livret (admin Finances) | `#admin-section-finances` | `src/ui/compta/livret/` + `src/ui/admin/finances/` |
+| Prêts | `#loans-panel` | `src/ui/compta/prets/` |
+| Journal | `#journal-panel` | `src/ui/compta/journal/` |
+| Carte | `#city-map-panel` | `src/ui/carte-ville/` |
+| Tutoriel / Objectifs | | `src/ui/onboarding/` |
 
 ---
 
-## Ordre d’exécution recommandé
+## Suite possible
 
-1. Étape 4 — bugs DOM bilan ✅
-2. Étape 3 — extraction Presenters ✅
-3. Étape 2 — harmonisation noms (reportée)
-4. Étape 6 — tutorial/objectives
-5. Étape 5 — registry ACL
-6. Étape 7 — sections admin
-7. Étape 8 — meta UI
-8. Étape 9 — doc
-9. Étape 10 — dette technique
-
-À chaque étape : `npm test`, pas de shims — déplacer + mettre à jour imports directement.
+1. Étape 2 — renames FR
+2. Étape 10 restante — DOM bilan + Commerce goodsData
+3. Clarifier `presentation/three` vs `infrastructure/` (hors UI)
