@@ -31,6 +31,26 @@ export async function placeBuildingWithPayment(data) {
 }
 
 /**
+ * Player click placement: footprint + pay + stamp city tiles.
+ *
+ * @param {{ city: object, x: number, y: number, buildingType: string, gameTurn: number }} params
+ * @returns {Promise<object>}
+ */
+export async function placeBuildingAtTile(params) {
+  return getOrCreateConstructionContext().placeBuildingAtTile(params);
+}
+
+/**
+ * Player bulldoze: clear footprint + Dexie remove via Parcels.
+ *
+ * @param {{ city: object, x: number, y: number, meshInstanceId?: string | null }} params
+ * @returns {Promise<object>}
+ */
+export async function bulldozeBuildingAtTile(params) {
+  return getOrCreateConstructionContext().bulldozeBuildingAtTile(params);
+}
+
+/**
  * Remove ghost Dexie rows on visually empty tiles before player placement.
  *
  * @param {{ city: object, x: number, y: number, gridSize?: number }} params
