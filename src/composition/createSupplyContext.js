@@ -26,6 +26,7 @@ import { GetCityFactoryResources } from '../contexts/supply/application/queries/
 import { DexieFactoryBuildingRepository } from '../contexts/supply/infrastructure/dexie/DexieFactoryBuildingRepository.js';
 import { SupplyProductionJournal } from '../contexts/supply/infrastructure/presentation/SupplyProductionJournal.js';
 import { SupplyFoodTraceability } from '../contexts/supply/infrastructure/presentation/SupplyFoodTraceability.js';
+import appRegistry from '../js/game/AppRegistry.js';
 import { GetBuildingSupplyView } from '../contexts/supply/application/queries/GetBuildingSupplyView.js';
 import { ListSupplyMapBuildings } from '../contexts/supply/application/queries/ListSupplyMapBuildings.js';
 import { ListWindmillSupplyViews } from '../contexts/supply/application/queries/ListWindmillSupplyViews.js';
@@ -97,7 +98,9 @@ export function createSupplyContext({
     resetFarmsSoldToWindmill,
     processWindmillCollection
   );
-  const traceability = new SupplyFoodTraceability();
+  const traceability = new SupplyFoodTraceability({
+    resolveFoodTraceabilityService: () => appRegistry.get('foodTraceabilityService'),
+  });
   const runCityMarketFoodCycle = new RunCityMarketFoodCycle(
     supplyBuildingRepositoryImpl,
     marketBuysFromNearbyFarms,

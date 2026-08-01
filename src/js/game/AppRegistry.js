@@ -2,8 +2,7 @@
  * AppRegistry - Centralized namespace for application globals
  * Inspired by simcity's minimal global surface pattern
  * 
- * Instead of many window.* globals, use window.app.* for better organization
- * Maintains backwards compatibility by also exposing on window.*
+ * Instead of many window.* globals, use window.app.* or js/acl/appRuntime.js.
  */
 
 class AppRegistry {
@@ -60,6 +59,8 @@ class AppRegistry {
         this.toggleStatsJs = null;
         this.testAnimation = null;
         this.webglTestMode = null;
+        this.foodTraceabilityService = null;
+        this.updateBudgetDisplay = null;
     }
 
     /**

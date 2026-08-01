@@ -12,7 +12,11 @@ import {
   recordInfoLoanInstallment,
   advanceLoanInstallmentWithoutPayment,
 } from '../../acl/accountingGame.js';
-import { getPopupManager, registerAppFunction } from '../../acl/appRuntime.js';
+import {
+  getPopupManager,
+  invokeUpdateBudgetDisplay,
+  registerAppFunction,
+} from '../../acl/appRuntime.js';
 import {
   computeLoanRate,
   computeLoanRatesByType,
@@ -324,10 +328,7 @@ export async function contractLoan() {
         // Add loan to budget using proper accounting method
         await recordLoanCapital(amount, `Prêt ${loanType} contracté (${duration} tours)`, loan);
         
-        // Update budget display to show the new loan interest
-        if (window.updateBudgetDisplay) {
-            window.updateBudgetDisplay();
-        }
+        await invokeUpdateBudgetDisplay();
         
         alert(`Prêt ${loanType} de ${amount}€ contracté ! Total à rembourser : ${total}€ sur ${duration} tours.`);
         
@@ -536,9 +537,7 @@ export async function processLoanPayments() {
             );
         }
 
-        if (window.updateBudgetDisplay) {
-            window.updateBudgetDisplay();
-        }
+        await invokeUpdateBudgetDisplay();
     } catch (error) {
         console.error('Error processing loan payments:', error);
     }

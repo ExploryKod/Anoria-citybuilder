@@ -16,7 +16,12 @@ import { getOrCreateHousingContext } from '../acl/housing.js';
 import { getCityEmploymentSummary, ensureBuildingEmployeesSchema } from '../acl/employment.js';
 import { getCityTotalBuildingValue } from '../acl/budget.js';
 import { getTreasurySnapshot } from '../acl/accountingGame.js';
-import { getPopupManager, getGameUI, registerAppFunction } from '../acl/appRuntime.js';
+import {
+  getPopupManager,
+  getGameUI,
+  getInputManagerMouse,
+  registerAppFunction,
+} from '../acl/appRuntime.js';
 import {
     findBuildingAtTile,
     getBuildingById,
@@ -197,8 +202,9 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
     const TAP_THRESHOLD = 10; // pixels - movement below this is considered a tap
 
     function getPointerClientXY(event) {
-        if (window.inputManager && window.inputManager.mouse) {
-            return { x: window.inputManager.mouse.x, y: window.inputManager.mouse.y };
+        const mouse = getInputManagerMouse();
+        if (mouse) {
+            return { x: mouse.x, y: mouse.y };
         }
         return { x: event.clientX, y: event.clientY };
     }
@@ -1767,12 +1773,12 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
      * instead of all scene children (backdrop, lights, etc.)
      */
     function updateFocusedObject() {
-        // Use InputManager mouse position if available, otherwise skip
-        if (!window.inputManager || !window.inputManager.mouse) {
+        const inputMouse = getInputManagerMouse();
+        if (!inputMouse) {
             return;
         }
 
-        const { x: clientX, y: clientY } = window.inputManager.mouse;
+        const { x: clientX, y: clientY } = inputMouse;
         mouse.x = (clientX / renderer.domElement.clientWidth) * 2 - 1;
         mouse.y = -(clientY / renderer.domElement.clientHeight) * 2 + 1;
         
@@ -2183,7 +2189,7 @@ function onTouchEnd(event) {
         camera.onKeyBoardDown(event);
         // Raycasting need y and x axis as + on the terrain (plan) (y-1,y1,x1,x-1)
         // (number btw 0 and 1) * 2 - 1 > to get the value between -1 and 1
-        const p = window.inputManager ? window.inputManager.mouse : {x: undefined, y: undefined};
+        const p = getInputManagerMouse() ?? { x: undefined, y: undefined };
         if (p.x !== undefined && p.y !== undefined) {
             mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
             mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;

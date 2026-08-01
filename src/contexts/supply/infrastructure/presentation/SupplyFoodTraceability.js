@@ -1,17 +1,22 @@
 import db from '../../../../core/persistence/dexie/db.js';
 
 /**
- * Legacy food traceability side-effects (window.foodTraceabilityService).
+ * Food traceability side-effects via injected legacy service resolver.
  */
 export class SupplyFoodTraceability {
+  /**
+   * @param {object} [deps]
+   * @param {() => object|null} [deps.resolveFoodTraceabilityService]
+   */
+  constructor(deps = {}) {
+    this.#resolveService = deps.resolveFoodTraceabilityService ?? (() => null);
+  }
+
+  /** @type {() => object|null} */
+  #resolveService;
+
   get #service() {
-    if (typeof globalThis !== 'undefined' && globalThis.foodTraceabilityService) {
-      return globalThis.foodTraceabilityService;
-    }
-    if (typeof window !== 'undefined' && window.foodTraceabilityService) {
-      return window.foodTraceabilityService;
-    }
-    return null;
+    return this.#resolveService();
   }
 
   /**

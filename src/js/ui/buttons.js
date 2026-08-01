@@ -31,6 +31,7 @@ import {
     registerAppFunction,
     getGame,
     getGameScene,
+    getGameCity,
     playGame,
     pauseGame,
     replayGame,
@@ -1435,11 +1436,6 @@ window.onload = async () => {
             // Re-enable OrbitControls when modal closes
             // Try to access scene through various paths
             let sceneObj = getGameScene();
-            if (!sceneObj && window.scene) {
-                sceneObj = window.scene;
-            } else if (window.app && window.app.game && window.app.game.scene) {
-                sceneObj = window.app.game.scene;
-            }
             if (sceneObj && sceneObj.controls) {
                 sceneObj.controls.enabled = true;
             }
@@ -2073,7 +2069,7 @@ window.onload = async () => {
     // The old budget-panel slide-in functionality is replaced by balance-sheet-panel
     // Note: budget-panel code is kept for backwards compatibility but not used
     
-    // Register with AppRegistry (window.app) if available, else use direct window.* (backwards compatible)
+    // Register with AppRegistry (window.app)
     registerAppService('gameStore', gameStore);
     
     // Show city size selection modal before creating game
@@ -2334,8 +2330,9 @@ async function generateCityMap() {
         
         // Get city dimensions from game - default to 16x16 if not available
         let citySize = 16;
-        if (window.scene && window.scene.city) {
-            citySize = window.scene.city.size;
+        const city = getGameCity();
+        if (city?.size) {
+            citySize = city.size;
         }
         
         // Get all buildings via Supply BC (hasFood / marketTooFar + layout fields)
@@ -2534,6 +2531,7 @@ function initBalanceSheetPopup() {
 
 registerAppFunction('loadBudgetStates', (period = '3', showLoading = true) => loadBudgetStates(period, showLoading));
 registerAppFunction('generateCityMap', generateCityMap);
+registerAppFunction('updateBudgetDisplay', updateBudgetDisplay);
 
 // Global refresh function for budget states modal
 // refreshBudgetStatesModal - Moved to budget/BudgetStatesManager.js
