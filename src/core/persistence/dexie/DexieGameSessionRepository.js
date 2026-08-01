@@ -32,27 +32,8 @@ export class DexieGameSessionRepository {
   }
 
   async addGameItems(data) {
-    try {
-      const existingItem = await this.db.game.get(data.name);
-      if (existingItem) {
-        console.warn(
-          `[DexieGameSessionRepository] Game object ${data.name} already exists, updating instead.`
-        );
-        await this.db.game.put(data);
-        return;
-      }
-
-      await this.db.game.add(data);
-    } catch (err) {
-      if (err.name === 'ConstraintError') {
-        console.warn(
-          `[DexieGameSessionRepository] Game object ${data.name} already exists (race condition), updating instead.`
-        );
-        await this.db.game.put(data);
-      } else {
-        throw err;
-      }
-    }
+    // Always put — clear+add races under concurrent scene.update caused ConstraintError
+    await this.db.game.put(data);
   }
 
   async updateLatestGameItemFields(updates) {

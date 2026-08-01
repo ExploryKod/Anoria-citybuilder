@@ -139,7 +139,7 @@ export function showCitySizeSelection() {
             
             try {
                 // Importer la configuration WebSocket
-                const getWebSocketUrl = (await import('../../config/websocket.js')).default;
+                const getWebSocketUrl = (await import('../../../config/websocket.js')).default;
                 const wsUrl = getWebSocketUrl();
                 
                 // Se connecter temporairement au WebSocket pour recevoir la liste des salons

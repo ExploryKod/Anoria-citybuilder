@@ -103,6 +103,8 @@ export class DexieTreasuryRepository extends TreasuryRepository {
   }
 
   /**
+   * Upsert `budget_current` (put — safe under concurrent init races).
+   *
    * @param {number} startingFunds
    * @returns {Promise<object>}
    */
@@ -129,7 +131,7 @@ export class DexieTreasuryRepository extends TreasuryRepository {
       totalLoanRepayments: 0,
     };
 
-    await this.db.budget.add(initialBudget);
+    await this.db.budget.put(initialBudget);
     return initialBudget;
   }
 }

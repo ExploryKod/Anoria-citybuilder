@@ -2,6 +2,9 @@ import { resolveStartingFunds } from '../../../domain/policies/TreasuryInitializ
 
 /**
  * Initialize treasury row and capital_funds journal entry if needed.
+ *
+ * @param {object} [options]
+ * @param {boolean} [options.clearExisting=true] — false = ensure-only (GetTreasurySnapshot race-safe)
  */
 export class InitializeTreasury {
   /**
@@ -24,12 +27,21 @@ export class InitializeTreasury {
 
   /**
    * @param {number|null} [startingFunds]
+   * @param {{ clearExisting?: boolean }} [options]
    * @returns {Promise<object>}
    */
-  async execute(startingFunds = null) {
+  async execute(startingFunds = null, { clearExisting = true } = {}) {
     const funds = resolveStartingFunds(startingFunds, this.defaultInitialFunds);
 
-    await this.treasuryRepository.clearCurrentBudget();
+    if (!clearExisting) {
+      const existing = await this.treasuryRepository.getNormalizedBudgetRow();
+      if (existing) {
+        return existing;
+      }
+    } else {
+      await this.treasuryRepository.clearCurrentBudget();
+    }
+
     const initialBudget = await this.treasuryRepository.createInitialBudgetRow(funds);
 
     const existingEntries = await this.journalRepository.getJournalEntries();

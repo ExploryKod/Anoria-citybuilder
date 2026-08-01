@@ -2,6 +2,7 @@ import { DexieConstructionBuildingRepository } from '../contexts/construction/in
 import { GetBuildingAtTile } from '../contexts/construction/application/queries/GetBuildingAtTile.js';
 import { ListSceneBuildingTypes } from '../contexts/construction/application/queries/ListSceneBuildingTypes.js';
 import { PlaceBuildingWithPayment } from '../contexts/construction/application/services/PlaceBuildingWithPayment.js';
+import { ReclaimStaleBuildingRecords } from '../contexts/construction/application/services/ReclaimStaleBuildingRecords.js';
 import { SceneBuildingInventoryAdapter } from '../contexts/construction/infrastructure/adapters/three/SceneBuildingInventoryAdapter.js';
 import {
   recordConstructionExpense,
@@ -37,6 +38,7 @@ export function createConstructionContext({
     recordExpense: recordExpense ?? recordConstructionExpense,
     recordRefund: recordRefund ?? recordConstructionRefund,
   });
+  const reclaimStaleBuildingRecords = new ReclaimStaleBuildingRecords(repository);
 
   registerSceneBuildingTypeListing(() => listSceneBuildingTypes.execute());
 
@@ -60,6 +62,14 @@ export function createConstructionContext({
     /** @param {object} data */
     async placeBuildingWithPayment(data) {
       return placeBuildingWithPayment.execute(data);
+    },
+
+    /**
+     * Drop Dexie rows on tiles that city.tiles still treats as empty.
+     * @param {{ city: object, x: number, y: number, gridSize?: number }} params
+     */
+    async reclaimStaleBuildingRecordsForPlacement(params) {
+      return reclaimStaleBuildingRecords.execute(params);
     },
 
     /** @param {object} data — nature spawns / free placement (no budget). */

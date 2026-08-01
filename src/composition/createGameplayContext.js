@@ -2,7 +2,7 @@ import {
   getDaysPerMonth,
   getEventProbability,
   isEventsEnabled,
-} from '../../config/events.js';
+} from '../config/events.js';
 import { listAllBuildingRows } from '../js/acl/construction.js';
 import { syncRemovedBuilding } from '../js/acl/parcels.js';
 import { instanceIdFromHouseRow } from '../js/acl/building-identity.js';

@@ -1,6 +1,9 @@
-import { getGameCity, getPopupManager, registerAppFunction } from '../../../acl/appRuntime.js';
-import { hasRoadAccessFromCount } from '../../../acl/parcels.js';
-import { listSupplyMapBuildings } from '../../../acl/supply.js';
+import { getGameCity, getPopupManager, registerAppFunction } from '../../acl/appRuntime.js';
+import { hasRoadAccessFromCount } from '../../acl/parcels.js';
+import { listSupplyMapBuildings } from '../../acl/supply.js';
+
+let cityMapFiltersInitialized = false;
+let cityMapLegendInitialized = false;
 
 function applyCityMapFilter(filter) {
   const grid = document.getElementById('city-map-grid');
@@ -17,6 +20,15 @@ function applyCityMapFilter(filter) {
 }
 
 function initCityMapFilters() {
+  if (cityMapFiltersInitialized) {
+    const filterBar = document.querySelector('.city-map-filters');
+    const activeBtn = filterBar?.querySelector('.filter-btn.active');
+    const current = activeBtn ? activeBtn.getAttribute('data-filter') : 'all';
+    applyCityMapFilter(current);
+    return;
+  }
+  cityMapFiltersInitialized = true;
+
   const filterBar = document.querySelector('.city-map-filters');
   if (!filterBar) return;
   const btns = filterBar.querySelectorAll('.filter-btn');
@@ -254,6 +266,9 @@ export function initCityMapPopup() {
   }
 
   function initCollapsibleLegend() {
+    if (cityMapLegendInitialized) return;
+    cityMapLegendInitialized = true;
+
     const legendToggle = document.querySelector('.legend-toggle');
     const legend = document.querySelector('.city-map-legend');
 

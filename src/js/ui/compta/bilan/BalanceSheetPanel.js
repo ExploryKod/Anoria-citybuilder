@@ -4,7 +4,12 @@ import { getFinancialHealth, getTreasurySnapshot } from '../../../acl/accounting
 import { renderBalanceSheet } from './BalanceSheetPresenter.js';
 import { updateRealtimeBudget } from '../tresorerie/RealtimeBudgetPanel.js';
 
+let balanceSheetFiltersInitialized = false;
+
 function initBalanceSheetFilters() {
+  if (balanceSheetFiltersInitialized) return;
+  balanceSheetFiltersInitialized = true;
+
   const filterButtons = document.querySelectorAll('.balance-filter-btn');
 
   filterButtons.forEach((button) => {
@@ -78,7 +83,6 @@ export async function updateBudgetDisplay() {
     }
 
     updateRealtimeBudget();
-    initBalanceSheetFilters();
   } catch (error) {
     console.error('Error updating budget display:', error);
   }
@@ -93,6 +97,8 @@ export function initBalanceSheetPopup() {
     console.warn('Balance sheet popup elements not found');
     return;
   }
+
+  initBalanceSheetFilters();
 
   budgetBtn.addEventListener('click', () => {
     budgetPanel.classList.add('active');

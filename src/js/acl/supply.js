@@ -9,6 +9,8 @@ import {
   getOrCreateSupplyContext,
 } from '../../composition/createSupplyContext.js';
 
+import { DEFAULT_FOOD_DISTRIBUTION_DISTANCE } from '../../contexts/supply/domain/catalogs/SupplySimulationCatalog.js';
+
 export { createSupplyContext, getOrCreateSupplyContext };
 
 export { isWithinMarketRange, manhattanDistance, findHousesInMarketRange } from '../../contexts/supply/domain/policies/MarketRangePolicy.js';
@@ -21,7 +23,7 @@ export {
   FACTORY_EMPLOYEE_NEEDS,
 } from '../../contexts/supply/domain/manufacturing/ProductRecipeCatalog.js';
 
-export { DEFAULT_FOOD_DISTRIBUTION_DISTANCE } from '../../contexts/supply/domain/catalogs/SupplySimulationCatalog.js';
+export { DEFAULT_FOOD_DISTRIBUTION_DISTANCE };
 
 /** @returns {number} */
 export function getDefaultFoodDistributionDistance() {

@@ -34,7 +34,22 @@ export class DexieBuildingRepository {
       }
     }
 
-    await db.houses.put(canonicalizeHouseRecord(next));
+    try {
+      await db.houses.put(canonicalizeHouseRecord(next));
+    } catch (err) {
+      if (
+        err?.name === 'ConstraintError' ||
+        err?.inner?.name === 'ConstraintError' ||
+        (typeof err?.message === 'string' && err.message.includes('Key already exists'))
+      ) {
+        console.warn(
+          `[Parcels] Skipped update for ${instanceId}: constraint conflict`,
+          err
+        );
+        return;
+      }
+      throw err;
+    }
   }
 
   async findById(instanceId) {
