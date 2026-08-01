@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { AnimationMixer } from 'three';
-import config from '../../../js/game/config.js';
+import { assetsConfig } from '../presentationConfig.js';
 
 const MAX_CITIZENS = 3;
 const WALK_SPEED = 2; // Units per second
@@ -92,7 +92,7 @@ export class CitizenManager {
         }
         
         const gltfLoader = new GLTFLoader();
-        const baseUrl = config.assets.baseUrl || '/';
+        const baseUrl = assetsConfig.baseUrl || '/';
         const citizenPath = `${baseUrl}citizen02/citizenAnimated02.glb`.replace(/\/+/g, '/');
         
         gltfLoader.load(
@@ -123,7 +123,7 @@ export class CitizenManager {
         }
         
         const gltfLoader = new GLTFLoader();
-        const baseUrl = config.assets.baseUrl || '/';
+        const baseUrl = assetsConfig.baseUrl || '/';
         const citizenPath = `${baseUrl}citizenCool/citizenCoolTwoAnim.glb`.replace(/\/+/g, '/');
         
         gltfLoader.load(
@@ -193,7 +193,7 @@ export class CitizenManager {
     createCitizenInstance(citizenType = 'citizen02') {
         return new Promise((resolve) => {
             const gltfLoader = new GLTFLoader();
-            const baseUrl = config.assets.baseUrl || '/';
+            const baseUrl = assetsConfig.baseUrl || '/';
             
             let citizenPath, citizenName, animationsToUse;
             if (citizenType === 'citizen-cool') {

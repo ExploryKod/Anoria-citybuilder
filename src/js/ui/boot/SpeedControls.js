@@ -1,8 +1,13 @@
 import { displaySpeed, speedChangeIndicator, fasterButton, slowerButton } from '../nodes.js';
 import { getGame } from '../../acl/appRuntime.js';
+import {
+  DEFAULT_TICK_MS,
+  TICK_MS_MAX,
+  TICK_MS_MIN,
+} from '../../../shared/gameplay/SimulationDefaults.js';
 
 export function updateSpeedDisplay(changeDirection = '') {
-  const speed = parseInt(localStorage.getItem('speed'), 10) || 3000;
+  const speed = parseInt(localStorage.getItem('speed'), 10) || DEFAULT_TICK_MS;
   if (displaySpeed) {
     displaySpeed.textContent = speed.toString();
   }
@@ -14,9 +19,9 @@ export function updateSpeedDisplay(changeDirection = '') {
 
 export function initSpeedControls() {
   fasterButton.addEventListener('click', () => {
-    let speed = parseInt(localStorage.getItem('speed'), 10) || 3000;
+    let speed = parseInt(localStorage.getItem('speed'), 10) || DEFAULT_TICK_MS;
     const previousSpeed = speed;
-    speed = Math.max(500, speed - 500);
+    speed = Math.max(TICK_MS_MIN, speed - 500);
     localStorage.setItem('speed', speed.toString());
     getGame()?.startInterval();
     const changeDirection = speed !== previousSpeed ? '+' : '';
@@ -29,9 +34,9 @@ export function initSpeedControls() {
   });
 
   slowerButton.addEventListener('click', () => {
-    let speed = parseInt(localStorage.getItem('speed'), 10) || 3000;
+    let speed = parseInt(localStorage.getItem('speed'), 10) || DEFAULT_TICK_MS;
     const previousSpeed = speed;
-    speed = Math.min(20000, speed + 500);
+    speed = Math.min(TICK_MS_MAX, speed + 500);
     localStorage.setItem('speed', speed.toString());
     getGame()?.startInterval();
     const changeDirection = speed !== previousSpeed ? '−' : '';

@@ -19,7 +19,6 @@ export async function bootstrapGameSession(assetManager) {
 
   const gameSession = getOrCreateGameSessionContext();
   const game = createGame(gameSession, assetManager, selectedCitySize);
-  registerAppService('game', game);
 
   if (
     multiplayerEnabled &&

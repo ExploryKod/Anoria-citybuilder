@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {  assetsPrices } from './meshs/data.js';
 import { getDefaultEmployees, getSectorPriority, getSectorName, getAllSectorPriorities } from '../../js/acl/employment.js';
-import { TimeManager } from '../../js/game/utils/TimeManager.js';
+import { TimeManager } from '../../shared/time/TimeManager.js';
 import { getTimeInfo, registerAppService } from '../../js/acl/appRuntime.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
@@ -15,8 +15,9 @@ import { getOrCreateGameplayContext } from '../../js/acl/gameplay.js';
 import { findBuildingAtTile, placeBuildingWithPayment, getBuildingById, getBuildingField } from '../../js/acl/construction.js';
 import { createGameRuntime } from '../../../composition/createGameRuntime.js';
 import { registerGetTimeInfo } from '../../../composition/gameTimeBridge.js';
+import { registerCoreRuntimeServices } from '../../../composition/registerCoreRuntimeServices.js';
+import { DEFAULT_CITY_SIZE, DEFAULT_TICK_MS } from '../../shared/gameplay/SimulationDefaults.js';
 import { GameLoop } from '../../../engine/loop/GameLoop.js';
-import config from '../../js/game/config.js';
 import {
     displayTime,
     overOverlay,
@@ -92,6 +93,7 @@ TimeManager.initializeCache().catch(err => {
     console.warn('[game.js] Could not initialize TimeManager cache:', err);
 });
 
+registerCoreRuntimeServices();
 registerGetTimeInfo((turn) => TimeManager.getTimeInfo(turn));
 
 // Translation object for building IDs to French names
@@ -417,7 +419,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     // Track pending building placements to prevent race conditions from rapid clicks
     const pendingPlacements = new Set();
     // Set initial speed within limits (500ms - 20,000ms)
-    localStorage.setItem("speed", "4000");
+    localStorage.setItem("speed", String(DEFAULT_TICK_MS));
     
     registerAppService('gameUI', gameUI);
     
@@ -425,14 +427,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     
     // Initialize budget system - use initial funds from config (can be set via .env)
     const initialFunds = readInitialFundsFromImportMeta();
-    
-    console.log('[game.js] Initializing budget with:', {
-        initialFunds,
-        configValue: config?.budget?.initialFunds,
-        envValue: import.meta.env.VITE_INITIAL_FUNDS,
-        configObject: config
-    });
-    
+
     setBudgetReadyPromise(
         forceReinitializeTreasury(initialFunds).then(async () => {
             const initialBudget = await getTreasurySnapshot();
@@ -476,9 +471,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
     
     // Get city size from parameter, localStorage, config, or default to 16
     // Clamp to valid range (12-24) to prevent WebGL shader/material errors
-    let selectedCitySize = citySize || 
-                          parseInt(localStorage.getItem('selectedCitySize'), 10) || 
-                          config?.simulation?.citySize || 
+    let selectedCitySize = citySize ||
+                          parseInt(localStorage.getItem('selectedCitySize'), 10) ||
+                          DEFAULT_CITY_SIZE ||
                           16;
     
     // Enforce maximum size of 18 to prevent WebGL shader compilation errors

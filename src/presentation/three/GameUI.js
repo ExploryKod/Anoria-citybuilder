@@ -20,7 +20,7 @@ import {
     overOverlayMessage,
     bulldozeSelected
 } from '../../js/ui/nodes.js';
-import { TimeManager } from '../../js/game/utils/TimeManager.js';
+import { formatGameTime } from '../../js/acl/appRuntime.js';
 import { getGameScene } from '../../js/acl/appRuntime.js';
 
 class GameUI {
@@ -68,7 +68,7 @@ class GameUI {
                 // Stocker le temps actuel pour pouvoir le réafficher même en pause
                 this.currentTime = time;
                 // Utiliser le TimeManager pour formater le temps avec jours, mois et saisons
-                const formattedTime = TimeManager.formatTime(time);
+                const formattedTime = formatGameTime(time);
                 // S'assurer que le formatage n'a pas retourné undefined
                 if (formattedTime && formattedTime !== 'undefined') {
                     displayTime.textContent = formattedTime;
@@ -130,7 +130,7 @@ class GameUI {
         
         // Réafficher le temps stocké si disponible (pour s'assurer qu'il est toujours affiché)
         if (this.currentTime !== null && displayTime) {
-            displayTime.textContent = TimeManager.formatTime(this.currentTime);
+            displayTime.textContent = formatGameTime(this.currentTime);
         }
     }
 

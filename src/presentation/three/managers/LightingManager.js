@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import config from '../../../js/game/config.js';
+import { renderingConfig } from '../presentationConfig.js';
 
 /**
  * Manages scene lighting configuration
@@ -45,7 +45,7 @@ export class LightingManager {
         // Setup THREE directional lights
         const dirLight1 = new THREE.DirectionalLight(0x999999, DirectionalLightIntensity);
         dirLight1.position.set(0, 1, 0);
-        dirLight1.castShadow = config.rendering.shadows.enabled;
+        dirLight1.castShadow = renderingConfig.shadows.enabled;
 
         if (dirLight1.castShadow) {
             dirLight1.shadow.camera.left = -10;

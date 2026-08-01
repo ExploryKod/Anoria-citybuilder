@@ -7,8 +7,8 @@
 import Dexie from 'dexie';
 import { JournalManager } from '../src/js/acl/accountingSessionJournal.js';
 import { resetSessionLedgerBufferForTests } from '../src/js/acl/accountingSessionJournal.js';
-import appRegistry from '../src/js/game/AppRegistry.js';
-import { TimeManager } from '../src/js/game/utils/TimeManager.js';
+import appRegistry from '../src/js/acl/AppRegistry.js';
+import { TimeManager } from '../src/shared/time/TimeManager.js';
 
 // ============================================================================
 // Setup : Créer une base de données de test isolée

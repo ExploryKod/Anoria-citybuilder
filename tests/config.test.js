@@ -5,7 +5,14 @@
  * Ces tests servent aussi de documentation pour les paramètres disponibles.
  */
 
-import config from '../src/js/game/config.js';
+import { composeLegacyConfigMirror } from '../src/js/acl/gameConfig.js';
+import { assetsConfig, renderingConfig } from '../src/presentation/three/presentationConfig.js';
+
+const config = {
+  ...composeLegacyConfigMirror(),
+  rendering: renderingConfig,
+  assets: assetsConfig,
+};
 
 // ============================================================================
 // Structure générale de la configuration

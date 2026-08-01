@@ -5,7 +5,7 @@ import { createSupplyMonthlyFoodSystem } from '../contexts/supply/infrastructure
  *
  * @param {object} deps
  * @param {ReturnType<import('./createSupplyContext.js').createSupplyContext>} deps.supply
- * @param {import('../js/game/utils/TimeManager.js').TimeManager} deps.timeManager
+ * @param {import('../shared/time/TimeManager.js').TimeManager} deps.timeManager
  * @param {typeof import('../js/acl/supply.js').toSupplySeason} deps.toSupplySeason
  * @param {typeof import('../js/acl/supply.js').toSupplyMonth} deps.toSupplyMonth
  * @param {number} [deps.foodDistributionDistance=5]

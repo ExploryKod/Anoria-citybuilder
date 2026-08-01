@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { textures } from './data.js';
 import MeshLoader from "./MeshLoaderOptimized.js";
-import config from '../../../js/game/config.js';
+import { assetsConfig } from '../presentationConfig.js';
 import instancingManager from './InstancingManager.js';
 
 /**
@@ -16,10 +16,9 @@ function getAssetBaseUrl() {
     try {
         // In Vite, import.meta.url or import.meta.env can provide base
         // For now, use config value - can be enhanced to read from vite.config.js
-        return config.assets.baseUrl;
+        return assetsConfig.baseUrl;
     } catch (e) {
-        // Fallback to config
-        return config.assets.baseUrl || '/';
+        return assetsConfig.baseUrl || '/';
     }
 }
 

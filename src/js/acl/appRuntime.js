@@ -2,10 +2,10 @@
  * ACL — accès au runtime applicatif (remplace window.* legacy).
  * Point d'entrée unique : AppRegistry via window.app (composition legacy).
  */
-import appRegistry from '../game/AppRegistry.js';
-import { TimeManager as TimeManagerClass } from '../game/utils/TimeManager.js';
+import appRegistry from './AppRegistry.js';
+import { TimeManager as TimeManagerClass } from '../../shared/time/TimeManager.js';
 
-export { default as appRegistry } from '../game/AppRegistry.js';
+export { default as appRegistry } from './AppRegistry.js';
 export { getGameStore } from './gameSession.js';
 
 /** @param {string} name @param {*} instance @param {boolean} [exposeOnWindow] */
@@ -51,6 +51,16 @@ export function getTimeManager() {
 /** @param {number} turn */
 export function getTimeInfo(turn) {
   return getTimeManager().getTimeInfo(turn);
+}
+
+/** @param {number} currentTime @param {number} worldTime */
+export function getBuildingAge(currentTime, worldTime) {
+  return getTimeManager().getBuildingAge(currentTime, worldTime);
+}
+
+/** @param {number} days */
+export function formatGameTime(days) {
+  return getTimeManager().formatTime(days);
 }
 
 export function getInputManager() {
