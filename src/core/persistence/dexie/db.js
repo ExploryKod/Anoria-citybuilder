@@ -31,6 +31,8 @@ function clearLegacyLocalStorage() {
   try {
     localStorage.removeItem('journal_year_end_balances');
     localStorage.removeItem('citizen_tax_amount');
+    localStorage.removeItem('work_salary_per_month');
+    localStorage.removeItem('work_salary_tax_rate');
     localStorage.removeItem('commerce_config');
     localStorage.removeItem('commerce_stats');
   } catch (error) {

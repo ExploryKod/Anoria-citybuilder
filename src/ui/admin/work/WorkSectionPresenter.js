@@ -8,11 +8,13 @@ import {
   EMPLOYMENT_MAX_SECTORS,
 } from '../../../js/acl/employment.js';
 import { getCityTotalPopulation } from '../../../js/acl/housing.js';
+import { getSalarySettings, setSalarySettings } from '../../../js/acl/accounting.js';
 
 export class WorkSectionPresenter {
     constructor() {
-        this.salary = 100; // Valeur par défaut : 100€/mois
-        this.salaryTaxRate = 0.2; // Valeur par défaut : 20% (0.2)
+        const settings = getSalarySettings();
+        this.salary = settings.salaryPerMonth;
+        this.salaryTaxRate = settings.salaryTaxRate;
         this.unemploymentRate = 50;
         this.workData = null;
     }
@@ -199,7 +201,8 @@ export class WorkSectionPresenter {
         const newSalary = Math.max(10, Math.min(500, this.salary + delta));
         
         if (newSalary !== this.salary) {
-            this.salary = newSalary;
+            const settings = setSalarySettings({ salaryPerMonth: newSalary });
+            this.salary = settings.salaryPerMonth;
             this.updateSalaryDisplay();
         }
     }
@@ -208,7 +211,8 @@ export class WorkSectionPresenter {
         const newRate = Math.max(0, Math.min(1, this.salaryTaxRate + delta));
         
         if (newRate !== this.salaryTaxRate) {
-            this.salaryTaxRate = newRate;
+            const settings = setSalarySettings({ salaryTaxRate: newRate });
+            this.salaryTaxRate = settings.salaryTaxRate;
             this.updateSalaryTaxDisplay();
         }
     }
