@@ -58,22 +58,15 @@ ui/
 
 ---
 
-## Étape 1 — Commit du lot SectionPresenter ⏳
+## Étape 1 — Commit du lot SectionPresenter ✅
 
-**Statut :** modifié, non commité.
+**Réalisé :** classes admin `*SectionManager` → `*SectionPresenter`, clés registry, ACL `getWorkSectionPresenter()`, `ParametersPanel`, tests associés.
 
-**Contenu :**
-- Classes admin : `*SectionManager` → `*SectionPresenter`
-- Clés registry : `financesSectionPresenter`, `workSectionPresenter`, etc.
-- ACL : `getWorkSectionManager()` → `getWorkSectionPresenter()`
-- `ParametersPanelManager` → `ParametersPanel` (`parametersPanel`)
-- Tests : `globals.test.js`, `salaryIdempotence.behavior.test.js`
-
-**Critère de done :** commit + push, 627 tests verts.
+**Critère de done :** ✅ commit + tests verts.
 
 ---
 
-## Étape 2 — Harmoniser les noms (français métier)
+## Étape 2 — Harmoniser les noms (français métier) — **reportée**
 
 **Problème :** mélange français / anglais dans les fichiers.
 
@@ -84,26 +77,29 @@ ui/
 | `RealtimeBudgetPanel` | `TresoreriePanel` (ou garder si DOM `#realtime-budget-*`) |
 | `FinancesSection.js` + classe `FinancesSectionPresenter` | fichier `FinancesSectionPresenter.js` ou dossier `finances/FinancesSection.js` cohérent |
 
+**Statut :** reportée — pas de rename de fichiers dans le lot Presenters (étape 3 d’abord).
+
 **Critère de done :** une seule langue de nommage fichiers/classes UI ; imports et tests mis à jour.
 
 ---
 
-## Étape 3 — Extraire les Presenters manquants
+## Étape 3 — Extraire les Presenters manquants ✅
 
-**OK aujourd’hui :** `bilan/`, `tresorerie/`, `livret/`
+**Présents avant ce lot :** `bilan/`, `tresorerie/`, `livret/`
 
-**Monolithiques à éclater :**
+**Créés dans ce lot :**
 
-| Fichier | Action |
+| Panel | Presenter |
 |---|---|
-| `JournalPanel.js` | extraire `JournalPresenter.js` (`renderGeneralLedger`, formatage lignes) |
-| `CompteDeResultatPanel.js` | extraire `CompteDeResultatPresenter.js` |
-| `PretsPanel.js` | extraire `PretsPresenter.js` |
-| `CarteVillePanel.js` | extraire `CarteVillePresenter.js` |
-| `FoodTraceabilityPanel.js` | extraire `FoodTraceabilityPresenter.js` |
-| Sections admin (`FactorySection.js`, etc.) | presenter dédié ou split progressif par onglet |
+| `JournalPanel.js` | `JournalPresenter.js` (`renderJournalList`) |
+| `CompteDeResultatPanel.js` | `CompteDeResultatPresenter.js` |
+| `PretsPanel.js` | `PretsPresenter.js` |
+| `CityMapPanel.js` | `CityMapPresenter.js` (pas de rename CarteVille) |
+| `FoodTraceabilityPanel.js` | `FoodTraceabilityPresenter.js` (+ dead code `createFoodTraceabilityTransactionHTML` supprimé) |
 
-**Critère de done :** chaque popup/compta suit le couple Panel + Presenter ; Panels < ~200 LOC de rendu inline.
+**Hors scope (étape 7) :** sections admin (`FactorySection.js`, etc.).
+
+**Critère de done :** ✅ chaque popup listé a un couple Panel + Presenter ; Panels sans gros blocs HTML inline.
 
 ---
 
@@ -229,8 +225,8 @@ Issues connues à traiter dans le code UI (indépendamment de l’arborescence) 
 ## Ordre d’exécution recommandé
 
 1. Étape 4 — bugs DOM bilan ✅
-2. Étape 2 — harmonisation noms
-3. Étape 3 — extraction Presenters
+2. Étape 3 — extraction Presenters ✅
+3. Étape 2 — harmonisation noms (reportée)
 4. Étape 6 — tutorial/objectives
 5. Étape 5 — registry ACL
 6. Étape 7 — sections admin
@@ -238,4 +234,4 @@ Issues connues à traiter dans le code UI (indépendamment de l’arborescence) 
 8. Étape 9 — doc
 9. Étape 10 — dette technique
 
-À chaque étape : `npm test` (627 tests), pas de shims — déplacer + mettre à jour imports directement.
+À chaque étape : `npm test`, pas de shims — déplacer + mettre à jour imports directement.
