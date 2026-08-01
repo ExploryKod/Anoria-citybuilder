@@ -1,5 +1,5 @@
 /**
- * Renders BalanceSheet read model (via presentation policy) into bilan DOM elements.
+ * BilanPresenter — rendu du read model bilan dans le DOM.
  */
 
 import { buildBalanceSheetViewModel } from '../../../js/acl/accountingPresentation.js';
@@ -9,7 +9,7 @@ import { fetchBuildingBreakdownElementValues } from './BuildingBreakdownEnrichme
  * @param {string} elementId
  * @param {string} value
  */
-function updateBalanceSheetElement(elementId, value) {
+function updateBilanElement(elementId, value) {
   const element = document.getElementById(elementId);
   if (element) {
     element.textContent = value;
@@ -21,7 +21,7 @@ function updateBalanceSheetElement(elementId, value) {
  */
 function applyElementValues(elementValues) {
   for (const [elementId, value] of Object.entries(elementValues)) {
-    updateBalanceSheetElement(elementId, value);
+    updateBilanElement(elementId, value);
   }
 }
 
@@ -32,7 +32,7 @@ function applyElementValues(elementValues) {
  * @param {{ totalLoanInterestExpenses?: number, totalBuildingMaintenance?: number }|null} [params.treasurySnapshot]
  * @param {boolean} [params.includeBuildingBreakdown]
  */
-export async function renderBalanceSheet({
+export async function renderBilan({
   balanceSheet,
   turn = 0,
   treasurySnapshot = null,

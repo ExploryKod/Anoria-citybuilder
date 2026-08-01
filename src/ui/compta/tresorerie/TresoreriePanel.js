@@ -1,6 +1,6 @@
 /**
- * RealtimeBudgetPanel — popup trésorerie temps réel (DOM + événements).
- * Rendu : RealtimeBudgetPresenter.js
+ * TresoreriePanel — popup trésorerie temps réel (DOM + événements).
+ * Rendu : TresoreriePresenter.js
  */
 import {
   getTreasurySnapshot,
@@ -11,10 +11,10 @@ import {
 } from '../../../js/acl/accountingGame.js';
 import {
   renderLoanInterestDetail,
-  renderRealtimeBudgetError,
-  renderRealtimeBudgetFromData,
+  renderTresorerieError,
+  renderTresorerieFromData,
   financialHealthStatusLabel,
-} from './RealtimeBudgetPresenter.js';
+} from './TresoreriePresenter.js';
 import { getPopupManager, getGameStore } from '../../../js/acl/appRuntime.js';
 import { getCityTotalPopulation } from '../../../js/acl/housing.js';
 
@@ -23,7 +23,7 @@ export { financialHealthStatusLabel as getHealthStatusText };
 /**
  * Initialise le popup de budget en temps réel
  */
-export function initRealtimeBudgetPopup() {
+export function initTresoreriePopup() {
   const realtimeBudgetBtn = document.getElementById('realtime-budget-btn');
   const realtimeBudgetPanel = document.getElementById('realtime-budget-panel');
   const realtimeBudgetCloseBtn = document.querySelector('.realtime-budget-close-btn');
@@ -46,7 +46,7 @@ export function initRealtimeBudgetPopup() {
         if (getPopupManager()) {
           getPopupManager().forceOpenPopup('realtime-budget-panel');
         }
-        updateRealtimeBudget();
+        updateTresorerie();
       } else if (getPopupManager()) {
         getPopupManager().forceClosePopup('realtime-budget-panel');
       }
@@ -71,7 +71,7 @@ export function initRealtimeBudgetPopup() {
 
   setInterval(() => {
     if (realtimeBudgetPanel.classList.contains('active')) {
-      updateRealtimeBudget();
+      updateTresorerie();
     }
   }, 1000);
 }
@@ -79,7 +79,7 @@ export function initRealtimeBudgetPopup() {
 /**
  * Met à jour l'affichage du budget en temps réel
  */
-export async function updateRealtimeBudget() {
+export async function updateTresorerie() {
   try {
     const [budgetData, financialHealth, incomeBreakdown, expenseBreakdown] = await Promise.all([
       getTreasurySnapshot(),
@@ -94,19 +94,19 @@ export async function updateRealtimeBudget() {
       population = await getCityTotalPopulation();
     } catch (error) {
       populationError = true;
-      console.error('[RealtimeBudgetPanel] Error fetching population from Housing BC:', error);
+      console.error('[TresoreriePanel] Error fetching population from Housing BC:', error);
       const gameStore = getGameStore();
       if (gameStore && typeof gameStore.getLatestGameItemByField === 'function') {
-        console.warn('[RealtimeBudgetPanel] ⚠️ FALLING BACK to gameStore (may be stale)');
+        console.warn('[TresoreriePanel] ⚠️ FALLING BACK to gameStore (may be stale)');
         const gamePop = await gameStore.getLatestGameItemByField('population');
         population = gamePop !== null && gamePop !== undefined ? gamePop : 0;
       } else {
-        console.error('[RealtimeBudgetPanel] ❌ Housing BC and gameStore unavailable! Population set to 0');
+        console.error('[TresoreriePanel] ❌ Housing BC and gameStore unavailable! Population set to 0');
         population = 0;
       }
     }
 
-    if (!renderRealtimeBudgetFromData({
+    if (!renderTresorerieFromData({
       treasurySnapshot: budgetData,
       financialHealth,
       incomeBreakdown,
@@ -122,6 +122,6 @@ export async function updateRealtimeBudget() {
     renderLoanInterestDetail(activeLoans);
   } catch (error) {
     console.error('Error updating real-time budget:', error);
-    renderRealtimeBudgetError();
+    renderTresorerieError();
   }
 }

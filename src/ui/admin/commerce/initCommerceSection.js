@@ -1,6 +1,6 @@
 import { setCommercePartnerContractFinishedHandler } from '../../../js/acl/commerce.js';
 import { registerAppService } from '../../../js/acl/appRuntime.js';
-import { CommerceSectionPresenter } from './CommerceSection.js';
+import { CommerceSectionPresenter } from './CommerceSectionPresenter.js';
 
 export async function initCommerceSection() {
   const commerceSection = document.getElementById('admin-section-commerce');

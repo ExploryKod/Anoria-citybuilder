@@ -1,5 +1,5 @@
 /**
- * CityMapPresenter — codes bâtiments et HTML grille carte ville.
+ * CarteVillePresenter — codes bâtiments et HTML grille carte ville.
  */
 
 /**

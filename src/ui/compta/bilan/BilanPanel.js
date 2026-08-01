@@ -1,12 +1,12 @@
 import { getPopupManager, registerAppFunction } from '../../../js/acl/appRuntime.js';
 import { getBalanceSheet } from '../../../js/acl/accounting.js';
 import { getFinancialHealth, getTreasurySnapshot } from '../../../js/acl/accountingGame.js';
-import { renderBalanceSheet } from './BalanceSheetPresenter.js';
-import { updateRealtimeBudget } from '../tresorerie/RealtimeBudgetPanel.js';
+import { renderBilan } from './BilanPresenter.js';
+import { updateTresorerie } from '../tresorerie/TresoreriePanel.js';
 
 let balanceSheetFiltersInitialized = false;
 
-function initBalanceSheetFilters() {
+function initBilanFilters() {
   if (balanceSheetFiltersInitialized) return;
   balanceSheetFiltersInitialized = true;
 
@@ -58,7 +58,7 @@ export async function updateBudgetDisplay() {
       getBalanceSheet(),
     ]);
 
-    await renderBalanceSheet({
+    await renderBilan({
       balanceSheet,
       turn: currentBudget.turn || 0,
       treasurySnapshot: currentBudget,
@@ -82,13 +82,13 @@ export async function updateBudgetDisplay() {
       }
     }
 
-    updateRealtimeBudget();
+    updateTresorerie();
   } catch (error) {
     console.error('Error updating budget display:', error);
   }
 }
 
-export function initBalanceSheetPopup() {
+export function initBilanPopup() {
   const budgetBtn = document.getElementById('budget-btn');
   const budgetPanel = document.getElementById('budget-panel');
   const budgetPanelCloseBtn = document.querySelector('.budget-panel-close-btn');
@@ -98,7 +98,7 @@ export function initBalanceSheetPopup() {
     return;
   }
 
-  initBalanceSheetFilters();
+  initBilanFilters();
 
   budgetBtn.addEventListener('click', () => {
     budgetPanel.classList.add('active');

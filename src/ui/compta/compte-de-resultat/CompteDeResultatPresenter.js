@@ -2,7 +2,7 @@
  * CompteDeResultatPresenter — rendu HTML du compte de résultat (données déjà chargées).
  */
 
-import { getHealthStatusText } from '../tresorerie/RealtimeBudgetPanel.js';
+import { getHealthStatusText } from '../tresorerie/TresoreriePanel.js';
 
 function productAmount(bundle, label) {
   return bundle.incomeStatement.products.find((p) => p.label === label)?.amount ?? 0;

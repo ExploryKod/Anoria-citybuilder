@@ -3,10 +3,10 @@ import { getOrCreateGameSessionContext } from '../../js/acl/gameSession.js';
 import { waitForDatabaseReady } from '../../core/persistence/dexie/db.js';
 import { createGame } from '../../presentation/three/game.js';
 import { showCitySizeSelection } from './CitySizeSelectionModal.js';
-import { initRealtimeBudgetPopup } from '../compta/tresorerie/RealtimeBudgetPanel.js';
+import { initTresoreriePopup } from '../compta/tresorerie/TresoreriePanel.js';
 import { initBudgetStatesPopup } from '../compta/compte-de-resultat/CompteDeResultatPanel.js';
-import { initBalanceSheetPopup } from '../compta/bilan/BalanceSheetPanel.js';
-import { initCityMapPopup } from '../carte-ville/CityMapPanel.js';
+import { initBilanPopup } from '../compta/bilan/BilanPanel.js';
+import { initCarteVillePopup } from '../carte-ville/CarteVillePanel.js';
 import { initLoansPopup, initLoanPaymentSystem } from '../compta/prets/PretsPanel.js';
 import { initJournalPopup } from '../compta/journal/JournalPanel.js';
 import { initFoodTraceabilityPopup } from '../admin/food-traceability/FoodTraceabilityPanel.js';
@@ -51,12 +51,12 @@ export async function bootstrapGameSession(assetManager) {
     }
   }
 
-  initRealtimeBudgetPopup();
+  initTresoreriePopup();
   initBudgetStatesPopup();
-  initCityMapPopup();
+  initCarteVillePopup();
   initLoansPopup();
   initLoanPaymentSystem();
   initJournalPopup();
   initFoodTraceabilityPopup();
-  initBalanceSheetPopup();
+  initBilanPopup();
 }

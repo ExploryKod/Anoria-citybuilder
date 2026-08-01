@@ -1,5 +1,5 @@
 /**
- * Renders treasury snapshot and breakdowns into the realtime budget panel.
+ * TresoreriePresenter — rendu snapshot trésorerie dans le panel temps réel.
  */
 
 import {
@@ -41,7 +41,7 @@ function setNestedSpanText(parent, text) {
 /**
  * @param {ReturnType<typeof buildRealtimeBudgetViewModel>} viewModel
  */
-export function renderRealtimeBudgetPanel(viewModel) {
+export function renderTresoreriePanel(viewModel) {
   const realtimeFundsEl = document.getElementById('realtime-funds');
   if (!realtimeFundsEl) {
     return false;
@@ -93,8 +93,8 @@ export function renderRealtimeBudgetPanel(viewModel) {
  *
  * @param {Parameters<typeof buildRealtimeBudgetViewModel>[0]} data
  */
-export function renderRealtimeBudgetFromData(data) {
-  return renderRealtimeBudgetPanel(buildRealtimeBudgetViewModel(data));
+export function renderTresorerieFromData(data) {
+  return renderTresoreriePanel(buildRealtimeBudgetViewModel(data));
 }
 
 /** @param {Array<object>} activeLoans */
@@ -106,7 +106,7 @@ export function renderLoanInterestDetail(activeLoans) {
   detailContainer.innerHTML = buildLoanInterestDetailHtml(activeLoans);
 }
 
-export function renderRealtimeBudgetError() {
+export function renderTresorerieError() {
   const realtimeFundsEl = document.getElementById('realtime-funds');
   const healthStatusEl = document.getElementById('realtime-health-status');
   const healthMessageEl = document.getElementById('realtime-health-message');

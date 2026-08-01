@@ -1,5 +1,5 @@
 import { registerAppService } from '../../../js/acl/appRuntime.js';
-import { StorageSectionPresenter } from './StorageSection.js';
+import { StorageSectionPresenter } from './StorageSectionPresenter.js';
 
 export function initStorageSection() {
   const storageSection = document.getElementById('admin-section-storage');

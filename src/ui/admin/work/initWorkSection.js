@@ -1,5 +1,5 @@
 import { registerAppService } from '../../../js/acl/appRuntime.js';
-import { WorkSectionPresenter } from './WorkSection.js';
+import { WorkSectionPresenter } from './WorkSectionPresenter.js';
 
 export function initWorkSection() {
   const workSection = document.getElementById('admin-section-work');

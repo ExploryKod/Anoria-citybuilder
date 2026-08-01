@@ -57,19 +57,22 @@ Classes admin `*SectionManager` → `*SectionPresenter`, clés registry, ACL.
 
 ---
 
-## Étape 2 — Harmoniser les noms (français métier) — **reportée**
+## Étape 2 — Harmoniser les noms (français métier) ✅
 
-| Actuel | Cible proposée |
+| Avant | Après |
 |---|---|
 | `BalanceSheetPanel` / `BalanceSheetPresenter` | `BilanPanel` / `BilanPresenter` |
-| `CityMapPanel` | `CarteVillePanel` |
-| `RealtimeBudgetPanel` | `TresoreriePanel` |
+| `CityMapPanel` / `CityMapPresenter` | `CarteVillePanel` / `CarteVillePresenter` |
+| `RealtimeBudgetPanel` / `RealtimeBudgetPresenter` | `TresoreriePanel` / `TresoreriePresenter` |
+| `*Section.js` (classe Presenter) | `*SectionPresenter.js` |
+
+**Note :** le domaine accounting garde les noms EN (`BalanceSheet`, `RealtimeBudgetViewModel`, ACL `getBalanceSheet`). DOM IDs `#budget-panel` / `#realtime-budget-*` inchangés (étape 10).
 
 ---
 
 ## Étape 3 — Extraire les Presenters manquants ✅
 
-Journal, CompteDeResultat, Prets, CityMap, FoodTraceability (+ dead code supprimé).
+Journal, CompteDeResultat, Prets, CarteVille, FoodTraceability (+ dead code supprimé).
 
 ---
 
@@ -133,19 +136,18 @@ Ce fichier + chemins majeurs accounting / FINANCIAL_DATA_SOURCE_OF_TRUTH.
 | Écran | DOM | Code |
 |---|---|---|
 | Panneau Administrateur | `#administrator-panel` | `src/ui/admin/` |
-| Trésorerie temps réel | `#realtime-budget-panel` | `src/ui/compta/tresorerie/` |
-| Bilan comptable | `#budget-panel` | `src/ui/compta/bilan/` |
+| Trésorerie temps réel | `#realtime-budget-panel` | `src/ui/compta/tresorerie/TresoreriePanel.js` |
+| Bilan comptable | `#budget-panel` | `src/ui/compta/bilan/BilanPanel.js` |
 | Compte de résultat | `#budget-states-panel` | `src/ui/compta/compte-de-resultat/` |
 | Livret (admin Finances) | `#admin-section-finances` | `src/ui/compta/livret/` + `src/ui/admin/finances/` |
 | Prêts | `#loans-panel` | `src/ui/compta/prets/` |
 | Journal | `#journal-panel` | `src/ui/compta/journal/` |
-| Carte | `#city-map-panel` | `src/ui/carte-ville/` |
+| Carte | `#city-map-panel` | `src/ui/carte-ville/CarteVillePanel.js` |
 | Tutoriel / Objectifs | | `src/ui/onboarding/` |
 
 ---
 
 ## Suite possible
 
-1. Étape 2 — renames FR
-2. Étape 10 restante — DOM bilan + Commerce goodsData
-3. Clarifier `presentation/three` vs `infrastructure/` (hors UI)
+1. Étape 10 restante — DOM `#budget-panel` → `#bilan-panel` + Commerce goodsData
+2. Clarifier `presentation/three` vs `infrastructure/` (hors UI)

@@ -1,6 +1,6 @@
 /**
- * CityMapPanel — popup carte ville (init, filtres, légende, fetch).
- * Rendu grille : CityMapPresenter.js
+ * CarteVillePanel — popup carte ville (init, filtres, légende, fetch).
+ * Rendu grille : CarteVillePresenter.js
  */
 
 import { getGameCity, getPopupManager, registerAppFunction } from '../../js/acl/appRuntime.js';
@@ -10,10 +10,10 @@ import {
   renderCityMapGridHtml,
   renderCityMapLoadingHtml,
   renderCityMapErrorHtml,
-} from './CityMapPresenter.js';
+} from './CarteVillePresenter.js';
 
-let cityMapFiltersInitialized = false;
-let cityMapLegendInitialized = false;
+let carteVilleFiltersInitialized = false;
+let carteVilleLegendInitialized = false;
 
 function applyCityMapFilter(filter) {
   const grid = document.getElementById('city-map-grid');
@@ -29,15 +29,15 @@ function applyCityMapFilter(filter) {
   });
 }
 
-function initCityMapFilters() {
-  if (cityMapFiltersInitialized) {
+function initCarteVilleFilters() {
+  if (carteVilleFiltersInitialized) {
     const filterBar = document.querySelector('.city-map-filters');
     const activeBtn = filterBar?.querySelector('.filter-btn.active');
     const current = activeBtn ? activeBtn.getAttribute('data-filter') : 'all';
     applyCityMapFilter(current);
     return;
   }
-  cityMapFiltersInitialized = true;
+  carteVilleFiltersInitialized = true;
 
   const filterBar = document.querySelector('.city-map-filters');
   if (!filterBar) return;
@@ -72,7 +72,7 @@ function initCityMapFilters() {
   }
 }
 
-export async function generateCityMap() {
+export async function generateCarteVille() {
   const cityMapGrid = document.getElementById('city-map-grid');
   if (!cityMapGrid) return;
 
@@ -115,12 +115,12 @@ export async function generateCityMap() {
     console.error('Error generating city map:', error);
     cityMapGrid.innerHTML = renderCityMapErrorHtml(error);
     cityMapGrid.querySelector('.city-map-retry-btn')?.addEventListener('click', () => {
-      void generateCityMap();
+      void generateCarteVille();
     });
   }
 }
 
-export function initCityMapPopup() {
+export function initCarteVillePopup() {
   const cityMapBtn = document.getElementById('city-map-btn');
   const cityMapPanel = document.getElementById('city-map-panel');
   const cityMapCloseBtn = document.querySelector('.city-map-close-btn');
@@ -131,8 +131,8 @@ export function initCityMapPopup() {
   }
 
   function initCollapsibleLegend() {
-    if (cityMapLegendInitialized) return;
-    cityMapLegendInitialized = true;
+    if (carteVilleLegendInitialized) return;
+    carteVilleLegendInitialized = true;
 
     const legendToggle = document.querySelector('.legend-toggle');
     const legend = document.querySelector('.city-map-legend');
@@ -154,9 +154,9 @@ export function initCityMapPopup() {
       if (getPopupManager()) {
         getPopupManager().forceOpenPopup('city-map-panel');
       }
-      await generateCityMap();
+      await generateCarteVille();
       setTimeout(initCollapsibleLegend, 100);
-      initCityMapFilters();
+      initCarteVilleFilters();
     } else if (getPopupManager()) {
       getPopupManager().forceClosePopup('city-map-panel');
     }
@@ -179,4 +179,4 @@ export function initCityMapPopup() {
   });
 }
 
-registerAppFunction('generateCityMap', generateCityMap);
+registerAppFunction('generateCarteVille', generateCarteVille);
