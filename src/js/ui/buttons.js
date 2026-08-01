@@ -26,17 +26,20 @@ import {
     toolBarButtons,
     workshopButton
 } from "./nodes.js";
+import {
+    registerAppService,
+    registerAppFunction,
+    getGame,
+    getGameScene,
+    playGame,
+    pauseGame,
+    replayGame,
+    getPopupManager,
+    getButtonStateManager,
+    invokeSetActiveTool,
+} from '../acl/appRuntime.js';
 import { createGame } from '../game/game.js';
 import webglDetector from '../utils/WebGLResourceDetector.js';
-
-// Global app registry helper (available throughout this module)
-function appRegister(name, instance) {
-    if (window.app && typeof window.app.register === 'function') {
-        window.app.register(name, instance);
-    } else {
-        window[name] = instance;
-    }
-}
 import gameStore from "../stores/GameStore.js";
 import { hasRoadAccessFromCount } from '../acl/parcels.js';
 import { listSupplyMapBuildings } from '../acl/supply.js';
@@ -225,9 +228,7 @@ function closeModal() {
         }
         
         // Resume the game when closing building selection modal
-        if (window.game) {
-            window.game.play();
-        }
+        playGame();
     }
 }
 
@@ -249,13 +250,13 @@ function toggleModal(e) {
                 panelLayout.classList.add('active');
                 
                 // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceOpenPopup('panel-layout');
+                if (getPopupManager()) {
+                    getPopupManager().forceOpenPopup('panel-layout');
                 }
             } else {
                 // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceClosePopup('panel-layout');
+                if (getPopupManager()) {
+                    getPopupManager().forceClosePopup('panel-layout');
                 }
             }
 
@@ -271,13 +272,13 @@ function toggleModal(e) {
                 createFarmsButtons(buttonData);
                 
                 // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceOpenPopup('panel-layout');
+                if (getPopupManager()) {
+                    getPopupManager().forceOpenPopup('panel-layout');
                 }
             } else {
                 // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceClosePopup('panel-layout');
+                if (getPopupManager()) {
+                    getPopupManager().forceClosePopup('panel-layout');
                 }
             }
             break;
@@ -292,13 +293,13 @@ function toggleModal(e) {
                 createIndustryButtons(buttonData);
                 
                 // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceOpenPopup('panel-layout');
+                if (getPopupManager()) {
+                    getPopupManager().forceOpenPopup('panel-layout');
                 }
             } else {
                 // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceClosePopup('panel-layout');
+                if (getPopupManager()) {
+                    getPopupManager().forceClosePopup('panel-layout');
                 }
             }
             break;
@@ -312,13 +313,13 @@ function toggleModal(e) {
                 createMarketsStallsButtons(buttonData)
                 
                 // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceOpenPopup('panel-layout');
+                if (getPopupManager()) {
+                    getPopupManager().forceOpenPopup('panel-layout');
                 }
             } else {
                 // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceClosePopup('panel-layout');
+                if (getPopupManager()) {
+                    getPopupManager().forceClosePopup('panel-layout');
                 }
             }
             break;
@@ -332,13 +333,13 @@ function toggleModal(e) {
                 createInfrastructureButtons(buttonData)
                 
                 // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceOpenPopup('panel-layout');
+                if (getPopupManager()) {
+                    getPopupManager().forceOpenPopup('panel-layout');
                 }
             } else {
                 // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceClosePopup('panel-layout');
+                if (getPopupManager()) {
+                    getPopupManager().forceClosePopup('panel-layout');
                 }
             }
             break;
@@ -353,19 +354,19 @@ function toggleModal(e) {
                 createPublicButtons(buttonData)
                 
                 // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceOpenPopup('panel-layout');
+                if (getPopupManager()) {
+                    getPopupManager().forceOpenPopup('panel-layout');
                 }
             } else {
                 // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceClosePopup('panel-layout');
+                if (getPopupManager()) {
+                    getPopupManager().forceClosePopup('panel-layout');
                 }
             }
             break;
         case 'palaces':
             // Check if palace button is disabled
-            if (window.buttonStateManager && !window.buttonStateManager.isEnabled('palace-btn')) {
+            if (getButtonStateManager() && !getButtonStateManager().isEnabled('palace-btn')) {
                 console.warn('🏛️ Palace button is disabled');
                 return; // Don't open panel if disabled
             }
@@ -379,13 +380,13 @@ function toggleModal(e) {
                 createPalacesButtons(buttonData)
                 
                 // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceOpenPopup('panel-layout');
+                if (getPopupManager()) {
+                    getPopupManager().forceOpenPopup('panel-layout');
                 }
             } else {
                 // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceClosePopup('panel-layout');
+                if (getPopupManager()) {
+                    getPopupManager().forceClosePopup('panel-layout');
                 }
             }
             break;
@@ -399,13 +400,13 @@ function toggleModal(e) {
                 createNatureButtons(buttonData)
                 
                 // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceOpenPopup('panel-layout');
+                if (getPopupManager()) {
+                    getPopupManager().forceOpenPopup('panel-layout');
                 }
             } else {
                 // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceClosePopup('panel-layout');
+                if (getPopupManager()) {
+                    getPopupManager().forceClosePopup('panel-layout');
                 }
             }
             break;
@@ -419,13 +420,13 @@ function toggleModal(e) {
                 createRoadsButtons(buttonData)
                 
                 // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceOpenPopup('panel-layout');
+                if (getPopupManager()) {
+                    getPopupManager().forceOpenPopup('panel-layout');
                 }
             } else {
                 // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceClosePopup('panel-layout');
+                if (getPopupManager()) {
+                    getPopupManager().forceClosePopup('panel-layout');
                 }
             }
             break;
@@ -730,8 +731,8 @@ function makeNewButton(buttonInfo, svg="") {
 
     button.addEventListener('click', (e) => {
         // Check if button is disabled before allowing click
-        if (window.buttonStateManager && window.buttonStateManager.isEnabled(buttonInfo.tool)) {
-            setActiveTool(e);
+        if (getButtonStateManager() && getButtonStateManager().isEnabled(buttonInfo.tool)) {
+            invokeSetActiveTool(e);
         }
     });
 
@@ -740,8 +741,8 @@ function makeNewButton(buttonInfo, svg="") {
     loaderButton.classList.remove('active')
     
     // Register button with ButtonStateManager if available
-    if (window.buttonStateManager) {
-        window.buttonStateManager.registerButton(buttonInfo.tool, button);
+    if (getButtonStateManager()) {
+        getButtonStateManager().registerButton(buttonInfo.tool, button);
     }
 }
 
@@ -1290,6 +1291,33 @@ window.onload = async () => {
     // Root initialization
     const assetManager = new AssetManager();
     let selectedControl = document.getElementById('bulldoze-btn');
+
+    registerAppFunction('setActiveTool', (e) => {
+        getButtonsUnactive(e);
+        if (e.target.classList.contains('panel-btn')) {
+            getButtonsDisabled();
+            closeModal();
+
+            const canvas = document.querySelector('canvas');
+            if (canvas) {
+                canvas.classList.remove('pointer-events-disabled');
+                canvas.style.pointerEvents = 'auto';
+                canvas.style.touchAction = 'none';
+                canvas.classList.add('canvas-interactive');
+            }
+
+            if (getPopupManager()) {
+                getPopupManager().forceClosePopup('panel-layout');
+            }
+        } else if (e.target.dataset.toolid) {
+            // Toolbar buttons with data-toolid — no modal
+        } else {
+            toggleModal(e);
+        }
+        selectedControl = e.currentTarget;
+        selectedControl.classList.add('selected');
+        getGame()?.setActiveToolId(e.target.dataset.toolid);
+    });
     
     // OPTIMIZATION: Break up asset loading into smaller chunks to reduce TBT
     // Load critical assets first, then defer the rest
@@ -1354,21 +1382,21 @@ window.onload = async () => {
     }
     
     // Initialize button states for game start
-    if (window.buttonStateManager) {
+    if (getButtonStateManager()) {
         // Register category buttons
         const palaceBtn = document.getElementById('palace-btn');
         if (palaceBtn) {
-            window.buttonStateManager.registerButton('palace-btn', palaceBtn);
+            getButtonStateManager().registerButton('palace-btn', palaceBtn);
         }
         
         const infrastructureBtn = document.getElementById('infrastructure-btn');
         if (infrastructureBtn) {
-            window.buttonStateManager.registerButton('infrastructure-btn', infrastructureBtn);
+            getButtonStateManager().registerButton('infrastructure-btn', infrastructureBtn);
         }
         
         const workshopBtn = document.getElementById('workshop-btn');
         if (workshopBtn) {
-            window.buttonStateManager.registerButton('workshop-btn', workshopBtn);
+            getButtonStateManager().registerButton('workshop-btn', workshopBtn);
         }
         
         // Disable initial unavailable buildings
@@ -1381,7 +1409,7 @@ window.onload = async () => {
         initialDisabledBuildings.forEach(buildingId => {
             const button = document.getElementById(buildingId);
             if (button) {
-                window.buttonStateManager.disable(buildingId);
+                getButtonStateManager().disable(buildingId);
             } else {
                 console.warn(`⚠️ Button ${buildingId} not found in DOM, will be disabled when created`);
             }
@@ -1406,10 +1434,8 @@ window.onload = async () => {
             
             // Re-enable OrbitControls when modal closes
             // Try to access scene through various paths
-            let sceneObj = null;
-            if (window.game && window.game.scene) {
-                sceneObj = window.game.scene;
-            } else if (window.scene) {
+            let sceneObj = getGameScene();
+            if (!sceneObj && window.scene) {
                 sceneObj = window.scene;
             } else if (window.app && window.app.game && window.app.game.scene) {
                 sceneObj = window.app.game.scene;
@@ -1421,7 +1447,7 @@ window.onload = async () => {
                 sceneObj.suppressInput(200);
             }
             
-            window.game.play()
+            playGame()
         }
     })
 
@@ -1429,26 +1455,26 @@ window.onload = async () => {
         pauseOverlay.classList.remove('active')
         
         // Utiliser PopupManager pour gérer les événements
-        if (window.popupManager) {
-            window.popupManager.forceClosePopup('pause-overlay');
+        if (getPopupManager()) {
+            getPopupManager().forceClosePopup('pause-overlay');
         }
         
-        window.game.play()
+        playGame()
     })
 
     pauseButton.addEventListener('click', () => {
         pauseOverlay.classList.add('active')
         
         // Utiliser PopupManager pour gérer les événements
-        if (window.popupManager) {
-            window.popupManager.forceOpenPopup('pause-overlay');
+        if (getPopupManager()) {
+            getPopupManager().forceOpenPopup('pause-overlay');
         }
         
-        window.game.pause()
+        pauseGame()
     })
 
     replayButton.addEventListener('click', () => {
-        window.game.replay()
+        replayGame()
     })
 
     resetButton.addEventListener('click', () => {
@@ -1565,7 +1591,7 @@ window.onload = async () => {
         speed = Math.max(500, speed - 500);
         
         localStorage.setItem('speed', speed.toString());
-        window.game.startInterval()
+        getGame()?.startInterval()
         
         // Show '+' indicator badge if speed actually changed
         const changeDirection = (speed !== previousSpeed) ? '+' : '';
@@ -1587,7 +1613,7 @@ window.onload = async () => {
         speed = Math.min(20000, speed + 500);
         
         localStorage.setItem('speed', speed.toString());
-        window.game.startInterval()
+        getGame()?.startInterval()
         
         // Show '−' indicator badge if speed actually changed
         const changeDirection = (speed !== previousSpeed) ? '−' : '';
@@ -1602,28 +1628,26 @@ window.onload = async () => {
     });
 
     bullDozeButton.addEventListener('click', (e) => {
-        setActiveTool(e);
+        invokeSetActiveTool(e);
     })
 
     selectButton.addEventListener('click', (e) => {
-        setActiveTool(e);
+        invokeSetActiveTool(e);
     })
 
     if (roadButton) {
         roadButton.addEventListener('click', (e) => {
-            setActiveTool(e);
+            invokeSetActiveTool(e);
         });
     }
 
     housesButton.addEventListener('click', (e) => {
-        if (window.setActiveTool) {
-            window.setActiveTool(e);
-        }
+        invokeSetActiveTool(e);
     })
     
     palacesButton.addEventListener('click', (e) => {
         // Check if palace button is disabled before toggling modal
-        if (window.buttonStateManager && !window.buttonStateManager.isEnabled('palace-btn')) {
+        if (getButtonStateManager() && !getButtonStateManager().isEnabled('palace-btn')) {
             e.preventDefault();
             e.stopPropagation();
             return false;
@@ -1636,14 +1660,12 @@ window.onload = async () => {
     industryButton.addEventListener('click', toggleModal)
 
     marketButton.addEventListener('click', (e) => {
-        if (window.setActiveTool) {
-            window.setActiveTool(e);
-        }
+        invokeSetActiveTool(e);
     })
     
     infrastructureButton.addEventListener('click', (e) => {
         // Check if infrastructure button is disabled before toggling modal
-        if (window.buttonStateManager && !window.buttonStateManager.isEnabled('infrastructure-btn')) {
+        if (getButtonStateManager() && !getButtonStateManager().isEnabled('infrastructure-btn')) {
             e.preventDefault();
             e.stopPropagation();
             return false;
@@ -1654,17 +1676,13 @@ window.onload = async () => {
     const bookshopButton = document.getElementById('bookshop-btn');
     if (bookshopButton) {
         bookshopButton.addEventListener('click', (e) => {
-            if (window.setActiveTool) {
-                window.setActiveTool(e);
-            }
+            invokeSetActiveTool(e);
         });
     }
 
     if (workshopButton) {
         workshopButton.addEventListener('click', (e) => {
-            if (window.setActiveTool) {
-                window.setActiveTool(e);
-            }
+            invokeSetActiveTool(e);
         });
     }
 
@@ -2056,7 +2074,7 @@ window.onload = async () => {
     // Note: budget-panel code is kept for backwards compatibility but not used
     
     // Register with AppRegistry (window.app) if available, else use direct window.* (backwards compatible)
-    appRegister('gameStore', gameStore);
+    registerAppService('gameStore', gameStore);
     
     // Show city size selection modal before creating game
     const selectionResult = await showCitySizeSelection();
@@ -2065,7 +2083,7 @@ window.onload = async () => {
     const playerPseudo = selectionResult.pseudo || null;
     
     const game = createGame(gameStore, assetManager, selectedCitySize);
-    appRegister('game', game);
+    registerAppService('game', game);
     
     // Activer le multijoueur uniquement si l'utilisateur a explicitement créé/rejoint un salon
     if (multiplayerEnabled && playerPseudo && (selectionResult.action === 'create' || selectionResult.action === 'join')) {
@@ -2091,7 +2109,7 @@ window.onload = async () => {
             const wsUrl = getWebSocketUrl();
             
             await multiplayerManager.enable(wsUrl, playerPseudo, roomIdOrCitySize, action, roomName);
-            window.multiplayerManager = multiplayerManager;
+            registerAppService('multiplayerManager', multiplayerManager);
         } catch (error) {
             console.error('[Multiplayer] Erreur d\'activation:', error);
             
@@ -2102,41 +2120,6 @@ window.onload = async () => {
         }
     }
     
-    // Functions can be registered as well
-    window.setActiveTool = (e) => {
-        getButtonsUnactive(e)
-        if(e.target.classList.contains('panel-btn')) {
-            getButtonsDisabled()
-            // For panel buttons (house selection), just close the modal and set the tool
-            closeModal();
-            
-            // Ensure canvas pointer events are enabled after closing modal
-            const canvas = document.querySelector('canvas');
-            if (canvas) {
-                canvas.classList.remove('pointer-events-disabled');
-                // Force enable pointer events on mobile
-                canvas.style.pointerEvents = 'auto';
-                canvas.style.touchAction = 'none';
-                // Add canvas-interactive class for mobile landscape
-                canvas.classList.add('canvas-interactive');
-            }
-            
-            // Also ensure PopupManager knows panel-layout is closed
-            if (window.popupManager) {
-                window.popupManager.forceClosePopup('panel-layout');
-            }
-        } else if(e.target.dataset.toolid) {
-            // For toolbar buttons with data-toolid (like roads, residential), directly set the tool
-            // No modal needed
-        } else {
-            // For toolbar buttons without data-toolid, toggle the modal
-            toggleModal(e)
-        }
-        selectedControl = e.currentTarget;
-        selectedControl.classList.add('selected');
-        window.game.setActiveToolId(e.target.dataset.toolid);
-    }
-
     // Initialize real-time budget popup
     initRealtimeBudgetPopup();
 
@@ -2203,8 +2186,8 @@ function initCityMapPopup() {
         
         if (cityMapPanel.classList.contains('active')) {
             // Use PopupManager to handle events
-            if (window.popupManager) {
-                window.popupManager.forceOpenPopup('city-map-panel');
+            if (getPopupManager()) {
+                getPopupManager().forceOpenPopup('city-map-panel');
             }
             // Generate the city map grid
             await generateCityMap();
@@ -2216,8 +2199,8 @@ function initCityMapPopup() {
             initCityMapFilters();
         } else {
             // Use PopupManager to handle events
-            if (window.popupManager) {
-                window.popupManager.forceClosePopup('city-map-panel');
+            if (getPopupManager()) {
+                getPopupManager().forceClosePopup('city-map-panel');
             }
         }
     });
@@ -2226,8 +2209,8 @@ function initCityMapPopup() {
     cityMapCloseBtn.addEventListener('click', () => {
         cityMapPanel.classList.remove('active');
         
-        if (window.popupManager) {
-            window.popupManager.forceClosePopup('city-map-panel');
+        if (getPopupManager()) {
+            getPopupManager().forceClosePopup('city-map-panel');
         }
     });
 
@@ -2236,8 +2219,8 @@ function initCityMapPopup() {
         if (e.target === cityMapPanel) {
             cityMapPanel.classList.remove('active');
             
-            if (window.popupManager) {
-                window.popupManager.forceClosePopup('city-map-panel');
+            if (getPopupManager()) {
+                getPopupManager().forceClosePopup('city-map-panel');
             }
         }
     });
@@ -2485,7 +2468,7 @@ async function generateCityMap() {
                         ${error.message || 'Erreur inconnue'}
                     </p>
                 </div>
-                <button onclick="generateCityMap()" style="margin-top: 20px; padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                <button onclick="window.app.generateCityMap()" style="margin-top: 20px; padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
                     🔄 Réessayer
                 </button>
             </div>
@@ -2516,8 +2499,8 @@ function initBalanceSheetPopup() {
         budgetPanel.classList.add('active');
         
         // Utiliser PopupManager pour gérer les événements
-        if (window.popupManager) {
-            window.popupManager.forceOpenPopup('budget-panel');
+        if (getPopupManager()) {
+            getPopupManager().forceOpenPopup('budget-panel');
         }
         
         // Update balance sheet data
@@ -2529,8 +2512,8 @@ function initBalanceSheetPopup() {
         budgetPanel.classList.remove('active');
         
         // Utiliser PopupManager pour gérer les événements
-        if (window.popupManager) {
-            window.popupManager.forceClosePopup('budget-panel');
+        if (getPopupManager()) {
+            getPopupManager().forceClosePopup('budget-panel');
         }
     });
 
@@ -2540,8 +2523,8 @@ function initBalanceSheetPopup() {
             budgetPanel.classList.remove('active');
             
             // Utiliser PopupManager pour gérer les événements
-            if (window.popupManager) {
-                window.popupManager.forceClosePopup('budget-panel');
+            if (getPopupManager()) {
+                getPopupManager().forceClosePopup('budget-panel');
             }
         }
     });
@@ -2549,11 +2532,8 @@ function initBalanceSheetPopup() {
 
 // Loans Popup Functions - Moved to loans/LoansManager.js
 
-// Make loadBudgetStates globally accessible
-window.loadBudgetStates = (period = '3', showLoading = true) => loadBudgetStates(period, showLoading);
-
-// Make generateCityMap globally accessible
-window.generateCityMap = generateCityMap;
+registerAppFunction('loadBudgetStates', (period = '3', showLoading = true) => loadBudgetStates(period, showLoading));
+registerAppFunction('generateCityMap', generateCityMap);
 
 // Global refresh function for budget states modal
 // refreshBudgetStatesModal - Moved to budget/BudgetStatesManager.js

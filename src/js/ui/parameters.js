@@ -1,3 +1,6 @@
+import { pauseGame, playGame, registerAppService } from '../acl/appRuntime.js';
+import EventBlocker from '../utils/EventBlocker.js';
+
 class ParametersPanelManager {
     constructor() {
         this.panel = null;
@@ -6,7 +9,7 @@ class ParametersPanelManager {
         this.prevButton = null;
         this.nextButton = null;
         this.isVisible = false;
-        this.eventBlocker = typeof EventBlocker !== 'undefined' ? new EventBlocker() : null;
+        this.eventBlocker = new EventBlocker();
         this.lastFocusedElement = null;
         
         // Contrôles
@@ -275,9 +278,7 @@ class ParametersPanelManager {
 
         this.blockGameEvents();
 
-        if (window.game && typeof window.game.pause === 'function') {
-            window.game.pause();
-        }
+        pauseGame();
     }
 
     hide() {
@@ -292,9 +293,7 @@ class ParametersPanelManager {
 
         this.unblockGameEvents();
 
-        if (window.game && typeof window.game.play === 'function') {
-            window.game.play();
-        }
+        playGame();
 
         if (this.lastFocusedElement && typeof this.lastFocusedElement.focus === 'function') {
             this.lastFocusedElement.focus();
@@ -303,5 +302,5 @@ class ParametersPanelManager {
 }
 
 const parametersPanelManager = new ParametersPanelManager();
-window.parametersPanelManager = parametersPanelManager;
+registerAppService('parametersPanelManager', parametersPanelManager);
 

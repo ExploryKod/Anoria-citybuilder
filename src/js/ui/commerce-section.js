@@ -1,3 +1,4 @@
+import { updateDisplayedFunds, getGameTime, getFoodTraceabilityService } from '../acl/appRuntime.js';
 import commerceStore from '../stores/CommerceStore.js';
 import config from '../game/config.js';
 import { getCityEmploymentSummary } from '../acl/employment.js';
@@ -275,14 +276,7 @@ class CommerceSectionManager {
                 }
                 
                 // Update funds display if available
-                if (window.gameUI) {
-                    window.gameUI.updateFunds(feeResult.budget.funds);
-                } else {
-                    const displayFunds = document.querySelector('.display-funds');
-                    if (displayFunds) {
-                        displayFunds.textContent = feeResult.budget.funds.toString();
-                    }
-                }
+                updateDisplayedFunds(feeResult.budget.funds);
                 
             } catch (error) {
                 console.error('[CommerceSectionManager] Error paying commercial route fee:', error);
@@ -749,7 +743,7 @@ class CommerceSectionManager {
     async updateConsumptionStatuses() {
         if (!this.goodsData) return;
 
-        const foodTraceabilityService = window.foodTraceabilityService || null;
+        const foodTraceabilityService = getFoodTraceabilityService() || null;
 
         // Mettre à jour chaque produit alimentaire
         for (const good of this.goodsData) {
@@ -810,7 +804,7 @@ class CommerceSectionManager {
                 let currentYear = 0;
                 if (window.TimeManager && typeof window.TimeManager.getTimeInfo === 'function') {
                     // Essayer d'obtenir le temps depuis le jeu si disponible
-                    const gameTime = window.game?.city?.time || window.game?.time || 0;
+                    const gameTime = getGameTime();
                     const timeInfo = window.TimeManager.getTimeInfo(gameTime);
                     currentYear = timeInfo.year;
                 } else if (allTransactions.length > 0) {

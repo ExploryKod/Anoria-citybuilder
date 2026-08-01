@@ -14,6 +14,7 @@ import {
   renderRealtimeBudgetFromData,
   financialHealthStatusLabel,
 } from './RealtimeBudgetPresenter.js';
+import { getPopupManager, getGameStore } from '../../acl/appRuntime.js';
 import { getCityTotalPopulation } from '../../acl/housing.js';
 
 export { financialHealthStatusLabel as getHealthStatusText };
@@ -41,12 +42,12 @@ export function initRealtimeBudgetPopup() {
       realtimeBudgetBtn.classList.toggle('active');
 
       if (realtimeBudgetPanel.classList.contains('active')) {
-        if (window.popupManager) {
-          window.popupManager.forceOpenPopup('realtime-budget-panel');
+        if (getPopupManager()) {
+          getPopupManager().forceOpenPopup('realtime-budget-panel');
         }
         updateRealtimeBudget();
-      } else if (window.popupManager) {
-        window.popupManager.forceClosePopup('realtime-budget-panel');
+      } else if (getPopupManager()) {
+        getPopupManager().forceClosePopup('realtime-budget-panel');
       }
     }
   });
@@ -55,8 +56,8 @@ export function initRealtimeBudgetPopup() {
     realtimeBudgetPanel.classList.remove('active');
     realtimeBudgetBtn.classList.remove('active');
 
-    if (window.popupManager) {
-      window.popupManager.forceClosePopup('realtime-budget-panel');
+    if (getPopupManager()) {
+      getPopupManager().forceClosePopup('realtime-budget-panel');
     }
   });
 
@@ -93,9 +94,10 @@ export async function updateRealtimeBudget() {
     } catch (error) {
       populationError = true;
       console.error('[RealtimeBudgetManager] Error fetching population from Housing BC:', error);
-      if (window.gameStore && typeof window.gameStore.getLatestGameItemByField === 'function') {
+      const gameStore = getGameStore();
+      if (gameStore && typeof gameStore.getLatestGameItemByField === 'function') {
         console.warn('[RealtimeBudgetManager] ⚠️ FALLING BACK to gameStore (may be stale)');
-        const gamePop = await window.gameStore.getLatestGameItemByField('population');
+        const gamePop = await gameStore.getLatestGameItemByField('population');
         population = gamePop !== null && gamePop !== undefined ? gamePop : 0;
       } else {
         console.error('[RealtimeBudgetManager] ❌ Housing BC and gameStore unavailable! Population set to 0');

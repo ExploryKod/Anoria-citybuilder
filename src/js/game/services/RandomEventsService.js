@@ -8,6 +8,7 @@ import { listAllBuildingRows } from '../../acl/construction.js';
 import { syncRemovedBuilding } from '../../acl/parcels.js';
 import { instanceIdFromHouseRow } from '../../acl/building-identity.js';
 import { recordExceptionalRepairExpense } from '../../acl/accountingGame.js';
+import { getGameScene, getGameCity, getGameTime } from '../../acl/appRuntime.js';
 
 export class RandomEventsService extends SimService {
     
@@ -112,7 +113,7 @@ export class RandomEventsService extends SimService {
             city.tiles[x][y].buildingId = undefined;
 
             // Forcer une mise à jour de la scène si possible
-            if (window.game && window.game.scene && window.game.city) {
+            if (getGameScene() && getGameCity()) {
                 // La scène se mettra à jour automatiquement au prochain tour
                 // mais on peut aussi forcer une mise à jour immédiate si nécessaire
                 // await window.game.scene.update(window.game.city, window.game.time || 0);
@@ -154,11 +155,11 @@ export class RandomEventsService extends SimService {
             
             // Forcer une mise à jour immédiate de la scène pour supprimer visuellement le bâtiment
             // La scène vérifiera maintenant que le bâtiment n'existe plus dans la DB et le supprimera
-            if (window.game && window.game.scene && window.game.city) {
+            if (getGameScene() && getGameCity()) {
                 try {
-                    const currentTime = window.game.time || 0;
+                    const currentTime = getGameTime();
                     // Forcer une mise à jour immédiate pour que la suppression soit visible tout de suite
-                    await window.game.scene.update(window.game.city, currentTime, { skipBudget: true });
+                    await getGameScene().update(getGameCity(), currentTime, { skipBudget: true });
                 } catch (err) {
                     console.warn('[RandomEventsService] Could not force scene update:', err);
                 }

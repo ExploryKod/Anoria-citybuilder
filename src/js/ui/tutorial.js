@@ -2,6 +2,15 @@
  * Système de Tutoriel - Anoria City Builder
  * Gère l'affichage et la logique de la popup de tutoriel
  */
+import {
+    pauseGame,
+    playGame,
+    registerAppService,
+    registerAppFunction,
+    getTutorialManager,
+    invokeStartTutorial,
+} from '../acl/appRuntime.js';
+import EventBlocker from '../utils/EventBlocker.js';
 
 class TutorialManager {
     constructor() {
@@ -176,11 +185,7 @@ class TutorialManager {
         this.disableThreeJSEvents();
         
         // Mettre le jeu en pause
-        if (window.game && typeof window.game.pause === 'function') {
-            window.game.pause();
-        } else {
-            console.warn('Game object not available for pausing');
-        }
+        pauseGame();
 
     }
 
@@ -195,11 +200,7 @@ class TutorialManager {
         this.enableThreeJSEvents();
         
         // Reprendre le jeu
-        if (window.game && typeof window.game.play === 'function') {
-            window.game.play();
-        } else {
-            console.warn('Game object not available for resuming');
-        }
+        playGame();
 
     }
 
@@ -325,22 +326,15 @@ class TutorialManager {
 // Créer une instance globale
 const tutorialManager = new TutorialManager();
 
-// Exposer globalement pour les tests
-window.tutorialManager = tutorialManager;
-// Also register with AppRegistry if available
-if (window.app && window.app.register) {
-    window.app.register('tutorialManager', tutorialManager);
-}
+registerAppService('tutorialManager', tutorialManager);
 
-// Fonction utilitaire pour démarrer le tutoriel
-window.startTutorial = () => {
+registerAppFunction('startTutorial', () => {
     tutorialManager.showTutorial();
-};
+});
 
-// Fonction utilitaire pour fermer le tutoriel
-window.closeTutorial = () => {
+registerAppFunction('closeTutorial', () => {
     tutorialManager.closeTutorial();
-};
+});
 
 // Vérifier que le bouton tutoriel existe et ajouter un event listener direct
 document.addEventListener('DOMContentLoaded', () => {
@@ -357,11 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.stopPropagation();
             e.stopImmediatePropagation();
             
-            if (window.startTutorial) {
-                window.startTutorial();
-            } else {
-                console.error('startTutorial function not available');
-            }
+            invokeStartTutorial();
         }, true); // true = capture phase
         
     } else {
@@ -371,16 +361,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Gestion d'erreur globale pour s'assurer que les événements Three.js sont réactivés
 window.addEventListener('error', (e) => {
-    if (window.tutorialManager && window.tutorialManager.eventBlocker.isEventsBlocked()) {
+    const tutorialManagerRef = getTutorialManager();
+    if (tutorialManagerRef && tutorialManagerRef.eventBlocker.isEventsBlocked()) {
         console.warn('Error detected while tutorial is open, cleaning up Three.js events');
-        window.tutorialManager.cleanup();
+        tutorialManagerRef.cleanup();
     }
 });
 
 // Nettoyage lors de la fermeture de la page
 window.addEventListener('beforeunload', () => {
-    if (window.tutorialManager) {
-        window.tutorialManager.cleanup();
-    }
+    getTutorialManager()?.cleanup();
 });
 

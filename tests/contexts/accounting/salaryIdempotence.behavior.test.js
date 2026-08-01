@@ -12,6 +12,7 @@ import {
   getOrCreateAccountingContext,
   resetAccountingContextForTests,
 } from '../../../src/composition/createAccountingContext.js';
+import appRegistry from '../../../src/js/game/AppRegistry.js';
 
 function createTestDb() {
   const testDb = new Dexie('testSalaryIdempotenceDb');
@@ -65,7 +66,7 @@ describe('Accounting — salary idempotence (J6/J7)', () => {
     budgetProcessor = new BudgetProcessor();
     global.window = global.window ?? {};
     global.window.budgetManager = budgetManager;
-    global.window.workSectionManager = { salary: 100, salaryTaxRate: 0.2 };
+    appRegistry.register('workSectionManager', { salary: 100, salaryTaxRate: 0.2 });
 
     await budgetManager.initialize(500);
   });
@@ -73,7 +74,7 @@ describe('Accounting — salary idempotence (J6/J7)', () => {
   afterEach(async () => {
     delete global.TimeManager;
     delete global.window.budgetManager;
-    delete global.window.workSectionManager;
+    appRegistry.register('workSectionManager', null);
     resetAccountingContextForTests();
     if (testDb) {
       await testDb.delete();

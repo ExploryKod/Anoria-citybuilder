@@ -1,3 +1,5 @@
+import { registerAppService } from '../acl/appRuntime.js';
+
 /**
  * EventBlocker - Utilitaire pour bloquer les événements DOM
  * Peut être utilisé par composition dans n'importe quelle classe
@@ -229,5 +231,6 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = EventBlocker;
 }
 
-// Exposer globalement pour utilisation directe
-window.EventBlocker = EventBlocker;
+registerAppService('EventBlocker', EventBlocker);
+
+export default EventBlocker;

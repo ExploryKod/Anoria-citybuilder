@@ -3,6 +3,7 @@
  * Data: acl/accounting.js → GetGeneralLedger
  */
 
+import { getPopupManager } from '../../acl/appRuntime.js';
 import {
   getGeneralLedger,
   exportJournalJson,
@@ -34,24 +35,24 @@ export function initJournalPopup() {
 
     journalBtn.addEventListener('click', () => {
         journalPanel.classList.add('active');
-        if (window.popupManager) {
-            window.popupManager.forceOpenPopup('journal-panel');
+        if (getPopupManager()) {
+            getPopupManager().forceOpenPopup('journal-panel');
         }
         loadJournalEntries('all');
     });
 
     journalCloseBtn.addEventListener('click', () => {
         journalPanel.classList.remove('active');
-        if (window.popupManager) {
-            window.popupManager.forceClosePopup('journal-panel');
+        if (getPopupManager()) {
+            getPopupManager().forceClosePopup('journal-panel');
         }
     });
 
     journalPanel.addEventListener('click', (e) => {
         if (e.target === journalPanel) {
             journalPanel.classList.remove('active');
-            if (window.popupManager) {
-                window.popupManager.forceClosePopup('journal-panel');
+            if (getPopupManager()) {
+                getPopupManager().forceClosePopup('journal-panel');
             }
         }
     });

@@ -1,5 +1,6 @@
 import config from '../game/config.js';
 import productionJournalManager from '../stores/ProductionJournalManager.js';
+import { registerAppService } from '../acl/appRuntime.js';
 import {
     instanceIdFromHouseRow,
     displayLabelFromHouseRow,
@@ -1248,7 +1249,7 @@ function initFactorySection() {
         manager.init();
     }
     
-    window.factorySectionManager = manager;
+    registerAppService('factorySectionManager', manager);
 }
 
 if (document.readyState === 'loading') {
