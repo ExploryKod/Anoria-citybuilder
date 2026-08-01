@@ -20,7 +20,7 @@
 }
 
 /* Budget States Panel - Centered Modal like bilan-panel but larger */
-.budget-states-panel {
+.compte-de-resultat-panel {
     position: fixed;
     top: 0;
     left: 0;
@@ -33,11 +33,11 @@
     justify-content: center;
 }
 
-.budget-states-panel.active {
+.compte-de-resultat-panel.active {
     display: flex !important;
 }
 
-.budget-states-wrapper {
+.compte-de-resultat-wrapper {
     background: #fafafa;
     color: var(--primary);
     border-radius: var(--border-radius);
@@ -52,25 +52,25 @@
 }
 
 /* Custom scrollbar for budget states panel content */
-.budget-states-content::-webkit-scrollbar {
+.compte-de-resultat-content::-webkit-scrollbar {
     width: 6px;
 }
 
-.budget-states-content::-webkit-scrollbar-track {
+.compte-de-resultat-content::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.budget-states-content::-webkit-scrollbar-thumb {
+.compte-de-resultat-content::-webkit-scrollbar-thumb {
     background: var(--cta);
     border-radius: 3px;
 }
 
-.budget-states-content::-webkit-scrollbar-thumb:hover {
+.compte-de-resultat-content::-webkit-scrollbar-thumb:hover {
     background: var(--cta-05);
 }
 
 /* Firefox scrollbar for budget states panel content */
-.budget-states-content {
+.compte-de-resultat-content {
     scrollbar-width: thin;
     scrollbar-color: var(--cta) transparent;
 }
@@ -230,7 +230,7 @@
 }
 
 /* Budget States Header Styles */
-.budget-states-header {
+.compte-de-resultat-header {
     background: white;
     padding: 20px;
     border-bottom: 2px solid var(--cta);
@@ -239,14 +239,14 @@
     gap: 20px;
 }
 
-.budget-states-title-container {
+.compte-de-resultat-title-container {
     flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-.budget-states-header h3 {
+.compte-de-resultat-header h3 {
     color: var(--primary);
     font-size: 24px;
     font-weight: 600;
@@ -254,7 +254,7 @@
     text-align: center;
 }
 
-.budget-states-close-btn {
+.compte-de-resultat-close-btn {
     cursor: pointer;
     width: 40px;
     height: 40px;
@@ -270,12 +270,12 @@
     min-width: 40px;
 }
 
-.budget-states-close-btn:hover {
+.compte-de-resultat-close-btn:hover {
     background: var(--cta);
     color: white;
 }
 
-.budget-states-content {
+.compte-de-resultat-content {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -284,7 +284,7 @@
     overflow-y: auto;
 }
 
-.budget-states-filters {
+.compte-de-resultat-filters {
     display: flex;
     gap: 10px;
     padding: 15px;
@@ -293,7 +293,7 @@
     border: 1px solid rgba(251, 129, 34, 0.2);
 }
 
-.budget-states-filters button {
+.compte-de-resultat-filters button {
     flex: 1;
     padding: 8px 16px;
     border: 2px solid var(--cta);
@@ -306,17 +306,17 @@
     transition: all 0.3s ease-in-out;
 }
 
-.budget-states-filters button:hover {
+.compte-de-resultat-filters button:hover {
     background: var(--cta);
     color: white;
 }
 
-.budget-states-filters button.active {
+.compte-de-resultat-filters button.active {
     background: var(--cta);
     color: white;
 }
 
-.budget-states-list {
+.compte-de-resultat-list {
     display: flex;
     flex-direction: column;
     gap: 15px;
@@ -403,7 +403,7 @@
     margin: 0;
 }
 
-.budget-states-summary {
+.compte-de-resultat-summary {
     margin-top: 20px;
     padding: 15px;
     background: rgba(251, 129, 34, 0.1);
@@ -411,7 +411,7 @@
     border: 1px solid rgba(251, 129, 34, 0.2);
 }
 
-.budget-states-summary h4 {
+.compte-de-resultat-summary h4 {
     color: var(--primary);
     font-size: 1rem;
     font-weight: 600;
@@ -454,7 +454,7 @@
 }
 
 /* Budget States Refresh Section */
-.budget-states-refresh-section {
+.compte-de-resultat-refresh-section {
     display: flex;
     justify-content: center;
     margin: 8px 0;
@@ -511,42 +511,42 @@
 
 /* Mobile Landscape Responsive Styles */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
-    .budget-states-wrapper {
+    .compte-de-resultat-wrapper {
         width: 98%;
         max-width: none;
         max-height: 95vh;
     }
 
-    .budget-states-header {
+    .compte-de-resultat-header {
         padding: 15px;
     }
 
-    .budget-states-header h3 {
+    .compte-de-resultat-header h3 {
         font-size: 1.3rem;
     }
 
-    .budget-states-close-btn {
+    .compte-de-resultat-close-btn {
         width: 32px;
         height: 32px;
         padding: 4px;
     }
 
-    .budget-states-content {
+    .compte-de-resultat-content {
         padding: 15px;
         gap: 15px;
     }
 
-    .budget-states-filters {
+    .compte-de-resultat-filters {
         padding: 10px;
         gap: 8px;
     }
 
-    .budget-states-filters button {
+    .compte-de-resultat-filters button {
         padding: 6px 12px;
         font-size: 0.8rem;
     }
 
-    .budget-states-list {
+    .compte-de-resultat-list {
         gap: 10px;
     }
 
@@ -629,12 +629,12 @@
         font-size: 0.8rem;
     }
 
-    .budget-states-summary {
+    .compte-de-resultat-summary {
         margin-top: 15px;
         padding: 12px;
     }
 
-    .budget-states-summary h4 {
+    .compte-de-resultat-summary h4 {
         font-size: 0.9rem;
         margin-bottom: 8px;
     }

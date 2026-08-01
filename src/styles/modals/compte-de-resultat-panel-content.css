@@ -1,18 +1,18 @@
 /* Budget States Styles */
-.budget-states-wrapper {
+.compte-de-resultat-wrapper {
     padding: 20px;
     height: 100%;
     display: flex;
     flex-direction: column;
 }
 
-.budget-states-content {
+.compte-de-resultat-content {
     flex: 1;
     display: flex;
     flex-direction: column;
 }
 
-.budget-states-list {
+.compte-de-resultat-list {
     flex: 1;
     margin-bottom: 20px;
 }

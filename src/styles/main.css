@@ -89,7 +89,7 @@
 
 /* Réactiver les scrollbars pour les popups */
 .bilan-panel,
-.budget-states-panel,
+.compte-de-resultat-panel,
 .realtime-budget-panel,
 .loans-panel {
     scrollbar-width: thin;
@@ -1798,7 +1798,7 @@ button#pwa-refresh:hover {
     }
 
     /* Éléments informatifs s'adaptent au contenu */
-    .info-panel > .info-box:not(.realtime-budget-box):not(.budget-states-box):not(.journal-box):not(.city-map-box):not(.game-control-box) {
+    .info-panel > .info-box:not(.realtime-budget-box):not(.compte-de-resultat-box):not(.journal-box):not(.city-map-box):not(.game-control-box) {
         width: auto;
         height: auto;
         min-width: fit-content;
@@ -1866,7 +1866,7 @@ button#pwa-refresh:hover {
 
     /* Ajuster les modales pour mobile */
     .bilan-panel,
-    .budget-states-panel,
+    .compte-de-resultat-panel,
     .realtime-budget-panel,
     .loans-panel,
     .journal-panel,

@@ -17,48 +17,48 @@ import {
  * Initialise le popup des états budgétaires
  */
 export function initBudgetStatesPopup() {
-  const budgetStatesBtn = document.getElementById('budget-states-btn');
-  const budgetStatesPanel = document.getElementById('budget-states-panel');
-  const budgetStatesCloseBtn = document.querySelector('.budget-states-close-btn');
+  const compteDeResultatBtn = document.getElementById('compte-de-resultat-btn');
+  const compteDeResultatPanel = document.getElementById('compte-de-resultat-panel');
+  const compteDeResultatCloseBtn = document.querySelector('.compte-de-resultat-close-btn');
   const filterButtons = document.querySelectorAll('.budget-filter-btn');
 
-  if (!budgetStatesBtn || !budgetStatesPanel || !budgetStatesCloseBtn) {
+  if (!compteDeResultatBtn || !compteDeResultatPanel || !compteDeResultatCloseBtn) {
     console.warn('Budget states popup elements not found');
     return;
   }
 
-  budgetStatesBtn.addEventListener('click', async (e) => {
+  compteDeResultatBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
     e.preventDefault();
 
-    if (e.target === budgetStatesBtn || budgetStatesBtn.contains(e.target)) {
-      budgetStatesPanel.classList.toggle('active');
-      budgetStatesBtn.classList.toggle('active');
+    if (e.target === compteDeResultatBtn || compteDeResultatBtn.contains(e.target)) {
+      compteDeResultatPanel.classList.toggle('active');
+      compteDeResultatBtn.classList.toggle('active');
 
-      if (budgetStatesPanel.classList.contains('active')) {
+      if (compteDeResultatPanel.classList.contains('active')) {
         if (getPopupManager()) {
-          getPopupManager().forceOpenPopup('budget-states-panel');
+          getPopupManager().forceOpenPopup('compte-de-resultat-panel');
         }
         await loadBudgetStates('3', true);
         await updateFilterButtonLabels();
       } else if (getPopupManager()) {
-        getPopupManager().forceClosePopup('budget-states-panel');
+        getPopupManager().forceClosePopup('compte-de-resultat-panel');
       }
     }
   });
 
-  budgetStatesCloseBtn.addEventListener('click', () => {
-    budgetStatesPanel.classList.remove('active');
-    budgetStatesBtn.classList.remove('active');
+  compteDeResultatCloseBtn.addEventListener('click', () => {
+    compteDeResultatPanel.classList.remove('active');
+    compteDeResultatBtn.classList.remove('active');
     if (getPopupManager()) {
-      getPopupManager().forceClosePopup('budget-states-panel');
+      getPopupManager().forceClosePopup('compte-de-resultat-panel');
     }
   });
 
-  budgetStatesPanel.addEventListener('click', (e) => {
-    if (e.target === budgetStatesPanel) {
-      budgetStatesPanel.classList.remove('active');
-      budgetStatesBtn.classList.remove('active');
+  compteDeResultatPanel.addEventListener('click', (e) => {
+    if (e.target === compteDeResultatPanel) {
+      compteDeResultatPanel.classList.remove('active');
+      compteDeResultatBtn.classList.remove('active');
     }
   });
 
@@ -116,16 +116,16 @@ export async function updateFilterButtonLabels() {
 }
 
 export async function loadBudgetStates(period = '3', showLoading = true) {
-  const budgetStatesList = document.getElementById('budget-states-list');
+  const compteDeResultatList = document.getElementById('compte-de-resultat-list');
   const summaryContent = document.getElementById('summary-content');
 
-  if (!budgetStatesList || !summaryContent) {
+  if (!compteDeResultatList || !summaryContent) {
     console.warn('Budget states display elements not found');
     return;
   }
 
   if (showLoading) {
-    budgetStatesList.innerHTML = `
+    compteDeResultatList.innerHTML = `
             <div class="budget-state-loading">
                 <p>Chargement du compte de résultat...</p>
             </div>
@@ -147,7 +147,7 @@ export async function loadBudgetStates(period = '3', showLoading = true) {
     }
 
     if (bundles.length === 0) {
-      budgetStatesList.innerHTML = `
+      compteDeResultatList.innerHTML = `
                 <div class="budget-state-loading">
                     <p>Aucun compte de résultat disponible</p>
                     <small>Les états sont dérivés du journal (checkpoints tous les 3 tours)</small>
@@ -157,13 +157,13 @@ export async function loadBudgetStates(period = '3', showLoading = true) {
       return;
     }
 
-    renderFinancialStatementsBundles(bundles, budgetStatesList);
+    renderFinancialStatementsBundles(bundles, compteDeResultatList);
 
     const fiscalYearStatement = await getIncomeStatement();
     renderBudgetSummary(bundles, summaryContent, fiscalYearStatement);
   } catch (error) {
     console.error('Error loading financial statements:', error);
-    budgetStatesList.innerHTML = `
+    compteDeResultatList.innerHTML = `
             <div class="budget-state-loading">
                 <p>Erreur lors du chargement</p>
                 <small>${error.message}</small>

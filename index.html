@@ -27,11 +27,11 @@
     <!-- OPTIMIZATION: Load non-critical modal CSS asynchronously using media="print" trick -->
     <!-- These modals are not visible on initial load, so they can load non-blocking -->
     <!-- This saves ~140ms of render blocking time -->
-    <link rel="stylesheet" href="./src/styles/modals/budget-states.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/styles/modals/compte-de-resultat-panel.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/styles/modals/bilan-panel.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/styles/modals/loans-panel.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/styles/modals/bilan-panel-content.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/styles/modals/budget-states-content.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/styles/modals/compte-de-resultat-panel-content.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/styles/modals/balance-sheet.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/styles/modals/cleanup-notification.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/styles/modals/city-map.css" media="print" onload="this.media='all'">
@@ -49,11 +49,11 @@
     <link rel="stylesheet" href="./src/styles/modals/health-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/styles/multiplayer.css" media="print" onload="this.media='all'">
     <noscript>
-        <link rel="stylesheet" href="./src/styles/modals/budget-states.css">
+        <link rel="stylesheet" href="./src/styles/modals/compte-de-resultat-panel.css">
         <link rel="stylesheet" href="./src/styles/modals/bilan-panel.css">
         <link rel="stylesheet" href="./src/styles/modals/loans-panel.css">
         <link rel="stylesheet" href="./src/styles/modals/bilan-panel-content.css">
-        <link rel="stylesheet" href="./src/styles/modals/budget-states-content.css">
+        <link rel="stylesheet" href="./src/styles/modals/compte-de-resultat-panel-content.css">
         <link rel="stylesheet" href="./src/styles/modals/balance-sheet.css">
         <link rel="stylesheet" href="./src/styles/modals/cleanup-notification.css">
         <link rel="stylesheet" href="./src/styles/modals/city-map.css">
@@ -431,7 +431,7 @@
                                     <circle cx="6" cy="5" r="3"/>
                                 </svg>
                             </button>
-                            <button type="button" id="budget-states-btn" data-toolid="budget-states" class="toolbar-btn" title="Compte de Résultat" aria-label="Ouvrir le compte de résultat">
+                            <button type="button" id="compte-de-resultat-btn" data-toolid="compte-de-resultat" class="toolbar-btn" title="Compte de Résultat" aria-label="Ouvrir le compte de résultat">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M3 3v18h18"/>
                                     <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
@@ -2676,13 +2676,13 @@
     </div>
 
     <!-- Budget States Popup -->
-<div id="budget-states-panel" class="budget-states-panel">
-    <div class="budget-states-wrapper">
-        <div class="budget-states-header">
-            <div class="budget-states-title-container">
+<div id="compte-de-resultat-panel" class="compte-de-resultat-panel">
+    <div class="compte-de-resultat-wrapper">
+        <div class="compte-de-resultat-header">
+            <div class="compte-de-resultat-title-container">
                 <h3>Compte de Résultat</h3>
             </div>
-            <div class="budget-states-close-btn">
+            <div class="compte-de-resultat-close-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
                     <circle cx="12" cy="12" r="10"/>
                     <path d="m15 9-6 6"/>
@@ -2691,9 +2691,9 @@
             </div>
         </div>
         
-        <div class="budget-states-content">
+        <div class="compte-de-resultat-content">
             <!-- Filter buttons for different periods -->
-            <div class="budget-states-filters">
+            <div class="compte-de-resultat-filters">
                 <button class="budget-filter-btn active" data-period="3">3 jours</button>
                 <button class="budget-filter-btn" data-period="6">6 jours</button>
                 <button class="budget-filter-btn" data-period="9">9 jours</button>
@@ -2701,7 +2701,7 @@
             </div>
             
             <!-- Global refresh button -->
-            <div class="budget-states-refresh-section">
+            <div class="compte-de-resultat-refresh-section">
                 <button type="button" class="budget-global-refresh-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
                         <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
@@ -2714,7 +2714,7 @@
             </div>
             
             <!-- Budget states list -->
-            <div class="budget-states-list" id="budget-states-list">
+            <div class="compte-de-resultat-list" id="compte-de-resultat-list">
                 <div class="budget-state-loading">
                     <div class="loading-spinner"></div>
                     <p>Chargement des états de budget...</p>
@@ -2722,7 +2722,7 @@
             </div>
             
             <!-- Summary section -->
-            <div class="budget-states-summary" id="budget-states-summary">
+            <div class="compte-de-resultat-summary" id="compte-de-resultat-summary">
                 <h4>Résumé de la période</h4>
                 <div class="summary-content" id="summary-content">
                     <p>Aucune donnée disponible</p>
