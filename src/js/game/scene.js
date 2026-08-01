@@ -7,10 +7,9 @@ import { AnimationMixer } from 'three';
 import {applyHoverColor, resetHoveredObject, resetObjectColor} from '../utils/meshUtils.js';
 import {  textures  } from '../meshs/data.js'
 import {
-    getBuildingsNamesInZone,
     updateBuildingNeighbors,
 } from "../utils/utils.js";
-import { toBuildingIdString, getOrCreateParcelsContext } from '../acl/parcels.js';
+import { toBuildingIdString, getOrCreateParcelsContext, getBuildingsNamesInZone } from '../acl/parcels.js';
 import { getOrCreateSupplyContext } from '../acl/supply.js';
 import { getOrCreateHousingContext } from '../acl/housing.js';
 import { getCityEmploymentSummary, ensureBuildingEmployeesSchema } from '../acl/employment.js';

@@ -37,6 +37,11 @@ export {
   clearRoadAccessIconViews,
 } from '../../contexts/parcels/infrastructure/presentation/roadAccessIcons.js';
 
+export {
+  getBuildingsNamesInZone,
+  zoneBordersBuildings,
+} from '../../contexts/parcels/infrastructure/spatial/sceneNeighborhoodScan.js';
+
 import { getOrCreateParcelsContext } from '../../composition/createParcelsContext.js';
 
 /** Delete building row + refresh neighbors / road access (Parcels BC). */
