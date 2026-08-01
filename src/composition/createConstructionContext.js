@@ -2,12 +2,21 @@ import { DexieConstructionBuildingRepository } from '../contexts/construction/in
 import { GetBuildingAtTile } from '../contexts/construction/application/queries/GetBuildingAtTile.js';
 import { ListSceneBuildingTypes } from '../contexts/construction/application/queries/ListSceneBuildingTypes.js';
 import { PlaceBuildingWithPayment } from '../contexts/construction/application/services/PlaceBuildingWithPayment.js';
+import { PlaceBuildingAtTile } from '../contexts/construction/application/services/PlaceBuildingAtTile.js';
+import { BulldozeBuildingAtTile } from '../contexts/construction/application/services/BulldozeBuildingAtTile.js';
 import { ReclaimStaleBuildingRecords } from '../contexts/construction/application/services/ReclaimStaleBuildingRecords.js';
 import { SceneBuildingInventoryAdapter } from '../contexts/construction/infrastructure/adapters/three/SceneBuildingInventoryAdapter.js';
 import {
   recordConstructionExpense,
   recordConstructionRefund,
 } from '../js/acl/budget.js';
+import {
+  awaitBudgetReady,
+  getTreasurySnapshot,
+} from '../js/acl/accountingGame.js';
+import { getOrCreateParcelsContext } from '../js/acl/parcels.js';
+import { getDefaultEmployees } from '../contexts/employment/domain/policies/BuildingEmploymentDefaults.js';
+import { assetsPrices } from '../shared/building-catalog/index.js';
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
 import {
   registerSceneBuildingTypeListing,
@@ -20,17 +29,28 @@ import {
  * @param {object} [deps]
  * @param {import('../contexts/construction/application/ports/ConstructionBuildingRepository.js').ConstructionBuildingRepository} [deps.buildingRepository]
  * @param {import('../contexts/construction/application/ports/SceneBuildingInventoryPort.js').SceneBuildingInventoryPort} [deps.sceneBuildingInventory]
-   * @param {(amount: number, reason: string, options?: { buildingInstanceId?: string }) => Promise<object>} [deps.recordExpense]
-   * @param {(amount: number, reason: string) => Promise<object>} [deps.recordRefund]
+ * @param {(amount: number, reason: string, options?: { buildingInstanceId?: string }) => Promise<object>} [deps.recordExpense]
+ * @param {(amount: number, reason: string) => Promise<object>} [deps.recordRefund]
+ * @param {(params: { instanceId: string }) => Promise<unknown>} [deps.syncRemovedBuilding]
+ * @param {Record<string, { price?: number, gridSize?: number }>} [deps.assetCatalog]
+ * @param {(buildingType: string) => object} [deps.getDefaultEmployees]
+ * @param {() => Promise<unknown>} [deps.awaitBudgetReady]
+ * @param {() => Promise<{ funds?: number }>} [deps.getTreasurySnapshot]
  */
 export function createConstructionContext({
   buildingRepository,
   sceneBuildingInventory,
   recordExpense,
   recordRefund,
+  syncRemovedBuilding,
+  assetCatalog,
+  getDefaultEmployees: getDefaultEmployeesDep,
+  awaitBudgetReady: awaitBudgetReadyDep,
+  getTreasurySnapshot: getTreasurySnapshotDep,
 } = {}) {
   const repository = buildingRepository ?? new DexieConstructionBuildingRepository();
   const sceneInventory = sceneBuildingInventory ?? new SceneBuildingInventoryAdapter();
+  const catalog = assetCatalog ?? assetsPrices;
   const getBuildingAtTile = new GetBuildingAtTile(repository);
   const listSceneBuildingTypes = new ListSceneBuildingTypes(sceneInventory);
   const placeBuildingWithPayment = new PlaceBuildingWithPayment({
@@ -39,13 +59,27 @@ export function createConstructionContext({
     recordRefund: recordRefund ?? recordConstructionRefund,
   });
   const reclaimStaleBuildingRecords = new ReclaimStaleBuildingRecords(repository);
+  const placeBuildingAtTile = new PlaceBuildingAtTile({
+    placeBuildingWithPayment: (data) => placeBuildingWithPayment.execute(data),
+    reclaimStaleBuildingRecords: (params) => reclaimStaleBuildingRecords.execute(params),
+    getDefaultEmployees: getDefaultEmployeesDep ?? getDefaultEmployees,
+    awaitBudgetReady: awaitBudgetReadyDep ?? awaitBudgetReady,
+    getTreasurySnapshot: getTreasurySnapshotDep ?? getTreasurySnapshot,
+    assetCatalog: catalog,
+    getAssetPrice: (buildingId, prices) => prices?.[buildingId]?.price,
+  });
+  const bulldozeBuildingAtTile = new BulldozeBuildingAtTile({
+    syncRemovedBuilding:
+      syncRemovedBuilding
+      ?? (({ instanceId }) => getOrCreateParcelsContext().syncRemovedBuilding({ instanceId })),
+    assetCatalog: catalog,
+  });
 
   registerSceneBuildingTypeListing(() => listSceneBuildingTypes.execute());
 
   return {
     buildingRepository: repository,
     getBuildingAtTile,
-    placeBuildingWithPayment,
 
     /** @param {{ x: number, y: number }} params */
     async findBuildingAtTile({ x, y }) {
@@ -62,6 +96,20 @@ export function createConstructionContext({
     /** @param {object} data */
     async placeBuildingWithPayment(data) {
       return placeBuildingWithPayment.execute(data);
+    },
+
+    /**
+     * @param {{ city: object, x: number, y: number, buildingType: string, gameTurn: number }} params
+     */
+    async placeBuildingAtTile(params) {
+      return placeBuildingAtTile.execute(params);
+    },
+
+    /**
+     * @param {{ city: object, x: number, y: number, meshInstanceId?: string | null }} params
+     */
+    async bulldozeBuildingAtTile(params) {
+      return bulldozeBuildingAtTile.execute(params);
     },
 
     /**

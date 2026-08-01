@@ -1,17 +1,15 @@
-import { assetsPrices } from '../../shared/building-catalog/index.js';
-import { getDefaultEmployees, getAllSectorPriorities } from '../../js/acl/employment.js';
+import { getAllSectorPriorities } from '../../js/acl/employment.js';
 import { TimeManager } from '../../shared/time/TimeManager.js';
 import { getTimeInfo, registerAppService, getMultiplayerManager, invokeStartTutorial } from '../../js/acl/appRuntime.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
-import {getAssetPrice, isAreaAvailableForBuilding} from '../../js/utils/utils.js';
-import { createBuildingInstanceId, getOrCreateParcelsContext } from '../../js/acl/parcels.js';
+import { getOrCreateParcelsContext } from '../../js/acl/parcels.js';
 import { getOrCreateSupplyContext, toSupplySeason, toSupplyMonth, getDefaultFoodDistributionDistance } from '../../js/acl/supply.js';
 import { getOrCreateHousingContext } from '../../js/acl/housing.js';
 import { syncEmploymentAfterBuildingChange, getOrCreateEmploymentContext, ensureSectorPrioritiesInitialized } from '../../js/acl/employment.js';
 import { getOrCreateCommerceContext } from '../../js/acl/commerce.js';
 import { getOrCreateGameplayContext } from '../../js/acl/gameplay.js';
-import { placeBuildingWithPayment, reclaimStaleBuildingRecordsForPlacement } from '../../js/acl/construction.js';
+import { placeBuildingAtTile, bulldozeBuildingAtTile } from '../../js/acl/construction.js';
 import { createGameRuntime } from '../../composition/createGameRuntime.js';
 import { registerGetTimeInfo } from '../../composition/gameTimeBridge.js';
 import { registerCoreRuntimeServices } from '../../composition/registerCoreRuntimeServices.js';
@@ -33,7 +31,6 @@ import {
   getTreasurySnapshot,
   updateTreasuryTurn,
   setBudgetReadyPromise,
-  awaitBudgetReady,
   readInitialFundsFromImportMeta,
 } from '../../js/acl/accountingGame.js';
 import loaderManager from '../../js/utils/LoaderManager.js';
@@ -70,8 +67,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
     function getTickIntervalMs() {
         return Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed'), 10) || 4000));
     }
-    // Track pending building placements to prevent race conditions from rapid clicks
-    const pendingPlacements = new Set();
     // Set initial speed within limits (500ms - 20,000ms)
     localStorage.setItem("speed", String(DEFAULT_TICK_MS));
     
@@ -215,55 +210,12 @@ export function createGame(gameStore, assetManager, citySize = null) {
         }
         // Object placed on terrain
         if(activeToolId === 'bulldoze') {
-            // Debug: Log what we're trying to remove
-            console.log('[game.js] Bulldoze click:', {
-                selectedObjectName: selectedObject.name,
-                selectedObjectUserData: selectedObject.userData,
-                tileBuildingId: tile.buildingId,
-                x, y
+            const { buildingId } = await bulldozeBuildingAtTile({
+                city,
+                x,
+                y,
+                meshInstanceId: selectedObject.userData?.instanceId ?? null,
             });
-            
-            // Find the building at this location and its size
-            const buildingId = tile.buildingId;
-            const removedInstanceId =
-                tile.instanceId
-                ?? selectedObject.userData?.instanceId
-                ?? null;
-            const buildingInfo = buildingId ? assetsPrices[buildingId] : null;
-            const gridSize = buildingInfo?.gridSize || 1;
-            
-            // Debug: Log building info
-            console.log('[game.js] Building to remove:', {
-                buildingId,
-                buildingInfo,
-                gridSize,
-                removedInstanceId,
-            });
-            
-            // Remove building from all tiles it occupies (SoT before scene.update)
-            for (let dx = 0; dx < gridSize; dx++) {
-                for (let dy = 0; dy < gridSize; dy++) {
-                    const tileX = x + dx;
-                    const tileY = y + dy;
-                    // Check bounds before accessing tiles (important for edge cases)
-                    if (tileX >= 0 && tileX < city.size && tileY >= 0 && tileY < city.size) {
-                        if (city.tiles[tileX] && city.tiles[tileX][tileY]) {
-                            city.tiles[tileX][tileY].buildingId = undefined;
-                            city.tiles[tileX][tileY].instanceId = undefined;
-                        }
-                    }
-                }
-            }
-
-            // Delete Dexie row immediately so an in-flight scene.update cannot resurrect the mesh
-            if (removedInstanceId) {
-                try {
-                    await parcels.syncRemovedBuilding({ instanceId: removedInstanceId });
-                } catch (err) {
-                    console.warn('[game.js] Bulldoze Dexie remove failed:', removedInstanceId, err);
-                }
-            }
-
             await scene.update(city, time, { skipBudget: true });
             await syncEmploymentAfterBuildingChange(scene, city, buildingId);
         } else if(activeToolId === "select-object") {
@@ -278,170 +230,51 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 runScenePresentationPass,
             });
         } else if(!tile.buildingId || (activeToolId && (activeToolId === 'roads' || activeToolId === 'Road' || activeToolId.startsWith('StonePath-')) && (tile.buildingId === 'roads' || tile.buildingId === 'Road' || (tile.buildingId && tile.buildingId.startsWith('StonePath-'))))) {
-            // PLACING A BUILDING - Ensure game is NOT paused
-            // Allow placement if tile is empty OR if placing a road on an existing road (replacement)
-            // Close info overlay if it's open from a previous selection
             if (infoObjectOverlay.classList.contains('active')) {
                 infoObjectOverlay.classList.remove('active');
                 const canvas = document.querySelector('canvas');
                 if (canvas) {
                     canvas.classList.remove('pointer-events-disabled');
                 }
-                // Ensure game is playing (not paused)
                 if (game && typeof game.play === 'function') {
                     game.play();
                 }
             }
-            
-            // Check if building requires multiple tiles
-            const buildingInfo = assetsPrices[activeToolId];
-            const gridSize = buildingInfo?.gridSize || 1;
-            
-            // Check if area is available for this building
-            const { x, y } = selectedObject.userData;
-            // Special rule: roads can be placed on empty or existing road tiles without multi-tile checks
-            const isRoadTool = activeToolId === 'roads' || activeToolId === 'Road' || (activeToolId && activeToolId.startsWith('StonePath-'));
-            const targetTile = city.tiles?.[x]?.[y];
-            const isTargetRoad = targetTile?.buildingId === 'roads' || targetTile?.buildingId === 'Road' || (targetTile?.buildingId && targetTile.buildingId.startsWith('StonePath-'));
-            const canPlaceRoad = isRoadTool && (!targetTile?.buildingId || isTargetRoad);
-            if (!canPlaceRoad && !isAreaAvailableForBuilding(city, x, y, gridSize)) {
-                showGenericErrorNotification(activeToolId, 'area_not_available');
-                return;
-            }
-            
-            // Prepare building data for payment validation
-            let price = 0
-            const placementKey = `${x}-${y}`;
-            const instanceId = createBuildingInstanceId();
-            
-            if (pendingPlacements.has(placementKey)) {
-                console.warn('[game.js] Building placement already in progress:', placementKey);
-                return;
-            }
-            
-            pendingPlacements.add(placementKey);
-            
-            setTimeout(() => {
-                if (pendingPlacements.has(placementKey)) {
-                    console.warn('[game.js] Clearing stuck pending placement for:', placementKey);
-                    pendingPlacements.delete(placementKey);
-                }
-            }, 10000);
-            
-            try {
-                await awaitBudgetReady();
 
-                if (tile.buildingId) {
-                    console.warn('[game.js] Tile already occupied in city grid:', placementKey);
-                    showGenericErrorNotification(activeToolId, 'building_already_exists');
+            const { x: placeX, y: placeY } = selectedObject.userData;
+            const result = await placeBuildingAtTile({
+                city,
+                x: placeX,
+                y: placeY,
+                buildingType: activeToolId,
+                gameTurn: time,
+            });
+
+            if (!result.success) {
+                if (result.reason === 'in_progress') {
                     return;
                 }
+                if (result.reason === 'insufficient_funds') {
+                    showInsufficientFundsNotification(activeToolId, result.price || 0);
+                } else if (result.reason) {
+                    showGenericErrorNotification(activeToolId, result.reason);
+                }
+                return;
+            }
 
-                const reclaimedIds = await reclaimStaleBuildingRecordsForPlacement({
-                    city,
-                    x,
-                    y,
-                    gridSize,
-                });
-                if (reclaimedIds.length > 0) {
-                    console.info('[game.js] Reclaimed stale Dexie rows before placement:', reclaimedIds);
+            await scene.update(city, time, { skipBudget: true });
+            await runSimulationPass(time, { skipBudget: true });
+            await syncEmploymentAfterBuildingChange(scene, city, activeToolId);
+            const multiplayerManager = getMultiplayerManager();
+            if (multiplayerManager?.isMultiplayer) {
+                try {
+                    await multiplayerManager.placeBuilding(activeToolId, placeX, placeY);
+                } catch (error) {
+                    console.warn('[Multiplayer] Erreur envoi bâtiment:', error);
                 }
-            
-                price = getAssetPrice(activeToolId, assetsPrices) || 0
-                
-                const [houseStocks, budgetData] = await Promise.all([
-                    Promise.resolve({ food: 0, cabbage: 0, wheat: 0, carrot: 0 }),
-                    getTreasurySnapshot().catch(() => ({ funds: 0 }))
-                ]);
-
-                const funds = budgetData.funds || 0;
-                
-                const dbHouseData = {
-                    instanceId,
-                    type: activeToolId,
-                    category: 'construction',
-                    neighbors: [],
-                    pop: 0,
-                    stocks : houseStocks ? houseStocks : {food: 0, cabbage : 0, wheat: 0, carrot: 0},
-                    gameTurn: time,
-                    time: 0,
-                    isBuilding: true,
-                    roads: 0,
-                    stage : 0,
-                    stageName: "",
-                    price : price ? price : 0,
-                    cityFunds: funds,
-                    maintenance: 0,
-                    worldTime: 0,
-                    x : selectedObject.userData.x,
-                    y : selectedObject.userData.y,
-                    employees: getDefaultEmployees(activeToolId)
-                }
-
-                if (activeToolId && (activeToolId.startsWith('StonePath-') || activeToolId === 'roads' || activeToolId === 'Road')) {
-                    console.log('[game.js] Placing road:', { activeToolId, instanceId, dbHouseData });
-                }
-                const paymentResult = await placeBuildingWithPayment(dbHouseData);
-                
-                if (activeToolId && (activeToolId.startsWith('StonePath-') || activeToolId === 'roads' || activeToolId === 'Road')) {
-                    console.log('[game.js] Road payment result:', paymentResult);
-                }
-                
-                if (!paymentResult.success && paymentResult.reason === 'duplicate') {
-                    console.warn('[game.js] Building already exists, skipping placement:', placementKey);
-                    showGenericErrorNotification(activeToolId, 'building_already_exists');
-                    return;
-                }
-                
-                if (paymentResult.success) {
-                const placedInstanceId = paymentResult.instanceId ?? instanceId;
-                for (let dx = 0; dx < gridSize; dx++) {
-                    for (let dy = 0; dy < gridSize; dy++) {
-                        const tileX = x + dx;
-                        const tileY = y + dy;
-                        if (city.tiles[tileX] && city.tiles[tileX][tileY]) {
-                            city.tiles[tileX][tileY].buildingId = activeToolId;
-                            city.tiles[tileX][tileY].instanceId = placedInstanceId;
-                        }
-                    }
-                }
-                
-                // Meshes + neighbors, then ECS evolution, then employment refresh
-                await scene.update(city, time, { skipBudget: true });
-                await runSimulationPass(time, { skipBudget: true });
-                await syncEmploymentAfterBuildingChange(scene, city, activeToolId);
-                const multiplayerManager = getMultiplayerManager();
-                if (multiplayerManager?.isMultiplayer) {
-                    try {
-                        await multiplayerManager.placeBuilding(activeToolId, x, y);
-                    } catch (error) {
-                        console.warn('[Multiplayer] Erreur envoi bâtiment:', error);
-                        // On continue même si l'envoi échoue (placement local réussi)
-                    }
-                }
-                
-                // Resume the game after successful building placement
-                if (game) {
-                    game.play();
-                }
-                } else {
-                    // Payment failed - show error message
-                    // Show beautiful popup notification
-                    if (paymentResult.reason === 'insufficient_funds') {
-                        showInsufficientFundsNotification(activeToolId, price);
-                } else {
-                    showGenericErrorNotification(activeToolId, paymentResult.reason);
-                }
-                
-                // Building is not placed visually, so no cleanup needed
-                }
-            } catch (placementError) {
-                console.error('[game.js] Building placement failed:', placementError);
-                // ConstraintError is usually a treasury/game-table race, not a tile collision
-                showGenericErrorNotification(activeToolId, 'persistence_conflict');
-            } finally {
-                // Always clear pending placement, even if there was an error
-                pendingPlacements.delete(placementKey);
+            }
+            if (game) {
+                game.play();
             }
         }
     }
