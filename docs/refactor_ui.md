@@ -162,7 +162,7 @@ Règle : Three = WebGL ; `ui/` = DOM ; adapters BC = `contexts/*/infrastructure/
 2. ~~Info panel + notifications hors `game.js` → `ui/`~~ ✅ `ui/info/BuildingInfoPanel.js`, `ui/shell/BuildingNotifications.js`
 3. ~~Place / bulldoze → use-cases construction (handler mince)~~ ✅ `PlaceBuildingAtTile` / `BulldozeBuildingAtTile`
 4. ~~Owner unique du tick : budget / `infoGameplay` hors `scene.runUpdate`~~ ✅ `composition/runGameTurnEconomy.js`
-5. Sync neighbors / orphans hors boucle mesh
+5. ~~Sync neighbors / orphans hors boucle mesh~~ ✅ `presentation/three/sync/` (+ dead `updateMarketStocks` supprimé)
 6. Réduire `createGame` à une façade (`composition/`)
 7. Optionnel : `#budget-states-panel` → nom FR compte de résultat
 
@@ -184,12 +184,12 @@ Scene bootstrap, managers (`Lighting*`, `Backdrop*`, `Citizen*`, `Resource*`, �
 | 4 | Notifications construction inline | ✅ → `ui/shell/BuildingNotifications.js` | hud_dom | med |
 | 5 | Tick scindé game + scene | ✅ économie de tour dans `game.update` via `runGameTurnEconomy` | composition | **high** |
 | 6 | Persist tour + budget dans `scene.runUpdate` | ✅ sorti de scene → `persistGameplayTurn` / `processGameTurnBudget` | persistence | **high** |
-| 7 | Neighbors / orphan GC dans boucle tiles | `persistTileNeighbors`, orphan scan Dexie | persistence | **high** |
-| 8 | Mutateurs stocks commerce morts / legacy | `calculateNetStocks`, `updateMarketStocks` | sim_logic | med |
+| 7 | Neighbors / orphan GC dans boucle tiles | ✅ pass dédiée `sync/` + orphan cleanup extrait | persistence | **high** |
+| 8 | Mutateurs stocks commerce morts / legacy | ✅ `calculateNetStocks` / `updateMarketStocks` supprimés | sim_logic | med |
 | 9 | `assetsPrices` catalogue économie sous meshes | ✅ → `shared/building-catalog/` | economy_catalog | med |
 | 10 | Fallback DOM dans scene | querySelector funds/pop, WebGL toast | hud_dom | med |
 | 11 | Replay / settings `localStorage` | `game.replay`, speed keys | persistence | low–med |
 | 12 | Catégories bâtiments importées depuis `ui/shell/nodes` | ✅ scene ← catalog ; nodes re-exporte | layering | med |
 | 13 | Input + pause couplés overlay info | listeners / `game.play` | other | low |
 
-Ordre de slices recommandé : ~~9~~ → ~~3+4~~ → ~~2~~ → ~~5+6~~ → **7+8** → 1.
+Ordre de slices recommandé : ~~9~~ → ~~3+4~~ → ~~2~~ → ~~5+6~~ → ~~7+8~~ → **1**.
