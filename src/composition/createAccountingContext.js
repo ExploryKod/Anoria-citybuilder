@@ -1,5 +1,6 @@
 import { getOrCreateGameSessionContext } from '../composition/createGameSessionContext.js';
-import { getWorkSectionPresenter, getFinancesSectionPresenter, getAppService } from '../js/acl/appRuntime.js';
+import { getAppService } from '../js/acl/appRuntime.js';
+import { LocalStorageFiscalSettingsRepository } from '../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
 import { GetTreasuryBalance } from '../contexts/accounting/application/queries/treasury/GetTreasuryBalance.js';
 import { GetTreasurySnapshot } from '../contexts/accounting/application/queries/treasury/GetTreasurySnapshot.js';
 import { GetFinancialHealth } from '../contexts/accounting/application/queries/treasury/GetFinancialHealth.js';
@@ -92,6 +93,9 @@ import { resolveGetTimeInfo } from './gameTimeBridge.js';
  * @param {import('../contexts/accounting/infrastructure/dexie/DexieObjectiveHistoryRepository.js').DexieObjectiveHistoryRepository} [deps.objectiveHistoryRepository]
  * @param {() => string[]} [deps.listBuildingTypesForMaintenance]
  * @param {(turn: number) => object} [deps.getTimeInfo]
+ * @param {import('../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js').LocalStorageFiscalSettingsRepository} [deps.fiscalSettingsRepository]
+ * @param {() => number} [deps.getCitizenTaxPerCapita]
+ * @param {() => { salaryPerMonth: number, salaryTaxRate: number }} [deps.getSalarySettings]
  */
 export function createAccountingContext(deps = {}) {
   const sessionJournalStoreInstance =
@@ -100,6 +104,8 @@ export function createAccountingContext(deps = {}) {
   const defaultInitialFunds = deps.defaultInitialFunds ?? readInitialFundsFromImportMeta();
   const objectiveHistoryRepository =
     deps.objectiveHistoryRepository ?? new DexieObjectiveHistoryRepository(dexieDb);
+  const fiscalSettingsRepository =
+    deps.fiscalSettingsRepository ?? new LocalStorageFiscalSettingsRepository();
 
   const getTimeInfo = deps.getTimeInfo ?? resolveGetTimeInfo();
 
@@ -314,16 +320,8 @@ export function createAccountingContext(deps = {}) {
     listHouses: () => dexieDb.houses.toArray(),
   };
 
-  const getCitizenTaxPerCapita = () => {
-    const financesSectionPresenter = getFinancesSectionPresenter();
-    if (
-      financesSectionPresenter &&
-      typeof financesSectionPresenter.citizenTaxAmount === 'number'
-    ) {
-      return financesSectionPresenter.citizenTaxAmount;
-    }
-    return 100;
-  };
+  const getCitizenTaxPerCapita =
+    deps.getCitizenTaxPerCapita ?? (() => fiscalSettingsRepository.getCitizenTaxPerCapita());
 
   const collectCitizenTaxes = new CollectCitizenTaxes({
     getTreasurySnapshot: getTreasurySnapshotQuery,
@@ -380,21 +378,8 @@ export function createAccountingContext(deps = {}) {
     },
   });
 
-  const getSalarySettings = () => {
-    const workSectionPresenter = getWorkSectionPresenter();
-    let salaryPerMonth = 100;
-    let salaryTaxRate = 0.2;
-    if (workSectionPresenter && typeof workSectionPresenter.salary === 'number') {
-      salaryPerMonth = workSectionPresenter.salary;
-    }
-    if (
-      workSectionPresenter &&
-      typeof workSectionPresenter.salaryTaxRate === 'number'
-    ) {
-      salaryTaxRate = workSectionPresenter.salaryTaxRate;
-    }
-    return { salaryPerMonth, salaryTaxRate };
-  };
+  const getSalarySettings =
+    deps.getSalarySettings ?? (() => fiscalSettingsRepository.getSalarySettings());
 
   const processTurnBudget = new ProcessTurnBudget({
     collectCitizenTaxes: (time) => collectCitizenTaxes.execute({ time }),
@@ -405,7 +390,7 @@ export function createAccountingContext(deps = {}) {
     getTimeInfo: (time) => gameTimePort.getTimeInfo(time),
     getCityTotalPopulation:
       deps.getCityTotalPopulation ?? (() => getCityTotalPopulation()),
-    getSalarySettings: deps.getSalarySettings ?? getSalarySettings,
+    getSalarySettings,
     clearPopulationWithoutRoadAccess:
       deps.clearPopulationWithoutRoadAccess ?? (() => clearPopulationWithoutRoadAccess()),
     processLoanPayments:
@@ -430,6 +415,7 @@ export function createAccountingContext(deps = {}) {
   return {
     journalRepository,
     treasuryRepository,
+    fiscalSettingsRepository,
     journalWritePort,
     treasuryWritePort,
     gameTimePort,

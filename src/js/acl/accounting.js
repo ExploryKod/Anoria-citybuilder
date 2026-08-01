@@ -22,6 +22,12 @@ export {
 };
 
 export {
+  LocalStorageFiscalSettingsRepository,
+  DEFAULT_FISCAL_SETTINGS,
+  FISCAL_STORAGE_KEYS,
+} from '../../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
+
+export {
   readInitialFundsFromImportMeta,
   COMMERCIAL_ROUTE_FEE,
   DEFAULT_INITIAL_FUNDS,
@@ -30,6 +36,34 @@ export {
 /** @returns {number} One-time fee to open a commercial trade route */
 export function getCommercialRouteFee() {
   return COMMERCIAL_ROUTE_FEE;
+}
+
+/** @returns {number} */
+export function getCitizenTaxPerCapita() {
+  return getOrCreateAccountingContext().fiscalSettingsRepository.getCitizenTaxPerCapita();
+}
+
+/** @param {number} amount @returns {number} */
+export function setCitizenTaxPerCapita(amount) {
+  return getOrCreateAccountingContext().fiscalSettingsRepository.setCitizenTaxPerCapita(amount);
+}
+
+/** @returns {{ salaryPerMonth: number, salaryTaxRate: number }} */
+export function getSalarySettings() {
+  return getOrCreateAccountingContext().fiscalSettingsRepository.getSalarySettings();
+}
+
+/**
+ * @param {{ salaryPerMonth?: number, salaryTaxRate?: number }} partial
+ * @returns {{ salaryPerMonth: number, salaryTaxRate: number }}
+ */
+export function setSalarySettings(partial) {
+  return getOrCreateAccountingContext().fiscalSettingsRepository.setSalarySettings(partial);
+}
+
+/** Clear persisted fiscal settings (new game / reset). */
+export function clearFiscalSettings() {
+  return getOrCreateAccountingContext().fiscalSettingsRepository.clear();
 }
 
 /** @returns {Promise<number>} Treasury balance (budget_current.funds) */

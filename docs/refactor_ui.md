@@ -89,7 +89,7 @@ Code mort supprimé ; `#budget-panel` = bilan uniquement.
 - Clés documentées dans `AppRegistry.js`
 - `createAccountingContext` utilise les getters (plus de `getAppService('…SectionPresenter')` hors ACL)
 
-**Reporté (DDD) :** salary / taxe citoyenne hors lecture UI directe.
+**Reporté (DDD) :** ~~salary / taxe citoyenne hors lecture UI directe~~ → ✅ `LocalStorageFiscalSettingsRepository`
 
 ---
 
@@ -126,7 +126,8 @@ Ce fichier + chemins majeurs accounting / FINANCIAL_DATA_SOURCE_OF_TRUTH.
 |---|---|
 | Taux prêt via `LoanRatePolicy` | ✅ déjà en place |
 | `BuildingBreakdownEnrichment.js` | enrichissement UI bilan (pas de rename) |
-| Commerce `goodsData` sans lecture UI | ✅ BC via `LocalStorageCommerceRepository` (plus de `commerceSectionManager`) |
+| Commerce `goodsData` sans lecture UI | ✅ BC via `LocalStorageCommerceRepository` |
+| Salary / taxe hors SectionPresenters | ✅ `LocalStorageFiscalSettingsRepository` |
 | `#budget-panel` → `#bilan-panel` | **reporté** (breaking DOM/CSS) |
 
 ---
@@ -151,4 +152,3 @@ Ce fichier + chemins majeurs accounting / FINANCIAL_DATA_SOURCE_OF_TRUTH.
 
 1. Étape 10 restante — DOM `#budget-panel` → `#bilan-panel`
 2. Clarifier `presentation/three` vs `infrastructure/` (hors UI)
-3. Salary / taxe citoyenne : ne plus lire depuis les SectionPresenters dans `createAccountingContext`

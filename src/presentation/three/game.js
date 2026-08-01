@@ -1357,6 +1357,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 // Also clear other localStorage items that should be reset on replay
                 localStorage.removeItem('journal_year_end_balances');
                 localStorage.removeItem('citizen_tax_amount');
+                localStorage.removeItem('work_salary_per_month');
+                localStorage.removeItem('work_salary_tax_rate');
                 localStorage.removeItem('show-performance-stats');
                 localStorage.removeItem('hasSeenCleanupNotification');
                 localStorage.removeItem('speed');

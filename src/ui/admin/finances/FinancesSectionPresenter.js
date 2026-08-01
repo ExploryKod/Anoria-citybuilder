@@ -1,33 +1,10 @@
-import { getCityLedgerYearComparison, createEmptyCityLedgerYearLines } from '../../../js/acl/accounting.js';
+import { getCityLedgerYearComparison, createEmptyCityLedgerYearLines, getCitizenTaxPerCapita, setCitizenTaxPerCapita } from '../../../js/acl/accounting.js';
 import { renderCityLedger } from '../../compta/livret/CityLedgerPresenter.js';
 
 export class FinancesSectionPresenter {
     constructor() {
-        this.citizenTaxAmount = this.loadCitizenTaxAmount();
+        this.citizenTaxAmount = getCitizenTaxPerCapita();
         this.financialData = null;
-    }
-
-    loadCitizenTaxAmount() {
-        try {
-            const stored = localStorage.getItem('citizen_tax_amount');
-            if (stored !== null) {
-                const parsed = parseInt(stored, 10);
-                if (!isNaN(parsed) && parsed >= 0) {
-                    return parsed;
-                }
-            }
-        } catch (error) {
-            console.warn('[FinancesSection] Error loading citizen tax amount from localStorage:', error);
-        }
-        return 100;
-    }
-
-    saveCitizenTaxAmount(amount) {
-        try {
-            localStorage.setItem('citizen_tax_amount', amount.toString());
-        } catch (error) {
-            console.warn('[FinancesSection] Error saving citizen tax amount to localStorage:', error);
-        }
     }
 
     init() {
@@ -86,8 +63,7 @@ export class FinancesSectionPresenter {
         const newAmount = Math.max(0, Math.min(1000, this.citizenTaxAmount + delta));
 
         if (newAmount !== this.citizenTaxAmount) {
-            this.citizenTaxAmount = newAmount;
-            this.saveCitizenTaxAmount(newAmount);
+            this.citizenTaxAmount = setCitizenTaxPerCapita(newAmount);
             this.updateTaxDisplay();
         }
     }
