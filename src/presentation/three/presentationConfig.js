@@ -23,7 +23,8 @@ export const renderingConfig = {
       color: 0xffffff,
       intensity: 2,
       position: { x: 0, y: 1, z: 0 },
-      camera: { left: -10, right: 10, top: 0, bottom: -10, near: 0.5, far: 50 },
+      // Orthographic shadow camera extents are derived from citySize in LightingManager
+      camera: { left: -20, right: 20, top: 20, bottom: -20, near: 0.5, far: 80 },
     },
     ambient: { color: 0xffffff, intensity: 0.5 },
   },

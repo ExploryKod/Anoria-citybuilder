@@ -162,6 +162,13 @@ export function createScene(_gameStore, assetManager, deps) {
     // ORIGINAL ANORIA RENDERER SHADOW SETUP (restored exactly)
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // Rebuild the shadow map only when requested (placement / throttled), not every frame.
+    // Per-frame autoUpdate is what made walking citizens flash the whole board.
+    renderer.shadowMap.autoUpdate = false;
+    renderer.shadowMap.needsUpdate = true;
+    scene.userData.requestShadowRefresh = () => {
+        renderer.shadowMap.needsUpdate = true;
+    };
     
     const controls = new OrbitControls(camera.camera, renderer.domElement);
     // Disable OrbitControls so custom camera controls handle input
@@ -395,6 +402,7 @@ export function createScene(_gameStore, assetManager, deps) {
         // CRITICAL FIX: Set up lights ONCE after terrain is created, not in the loop
         // Previously this was called 16 times for a 16×16 city, creating 80 lights!
         lightingManager.setUpLights(city.size);
+        scene.userData.requestShadowRefresh?.();
         
         // HUD placeholders — GameUI owns DOM (Barre D)
         if (typeof requestIdleCallback !== 'undefined') {
@@ -497,6 +505,7 @@ export function createScene(_gameStore, assetManager, deps) {
             if (nextType !== meshBuildingId) {
                 removeInteractiveObject(buildings[x][y]);
                 buildings[x][y] = assetManager.createAsset(nextType, x, y);
+                scene.userData.requestShadowRefresh?.();
                 const zoneX = Math.floor(x / ZONE_SIZE);
                 const zoneY = Math.floor(y / ZONE_SIZE);
                 const citySize = city.size || 16;
@@ -579,6 +588,7 @@ export function createScene(_gameStore, assetManager, deps) {
             if (isOriginTile) {
                 removeInteractiveObject(buildings[x][y]);
                 buildings[x][y] = assetManager.createAsset(assetId, x, y);
+                scene.userData.requestShadowRefresh?.();
                 const zoneX = Math.floor(x / ZONE_SIZE);
                 const zoneY = Math.floor(y / ZONE_SIZE);
                 const citySize = city.size || 16;
@@ -1527,6 +1537,7 @@ export function createScene(_gameStore, assetManager, deps) {
         if (scene.children.includes(object)) {
             scene.remove(object);
         }
+        scene.userData.requestShadowRefresh?.();
     }
 
     // Note: updateFrustumCulling() and updateShadowCasting() moved to PerformanceManager
@@ -1643,7 +1654,7 @@ export function createScene(_gameStore, assetManager, deps) {
     
     // Store last frame time for animation delta calculation
     let lastFrameTime = performance.now();
-    
+
     // Note: updateCitizen() moved to CitizenManager.updateAllCitizens()
     
     function draw() {

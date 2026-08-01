@@ -221,12 +221,19 @@ export class CitizenManager {
                     
                     const characterScale = 0.5;
                     citizen.scale.set(characterScale, characterScale, characterScale);
-                    
+
+                    const lightsToStrip = [];
                     citizen.traverse((child) => {
-                        if (child instanceof THREE.Mesh) {
-                            child.castShadow = true;
-                            child.receiveShadow = true;
-                            
+                        // GLBs ship with KHR_lights_punctual DirectionalLight — if left
+                        // in the graph it moves with the character and flashes the whole city.
+                        if (child.isLight) {
+                            lightsToStrip.push(child);
+                            return;
+                        }
+                        if (child.isMesh) {
+                            child.castShadow = false;
+                            child.receiveShadow = false;
+
                             if (child.material) {
                                 if (child.material instanceof THREE.MeshBasicMaterial) {
                                     const newMaterial = new THREE.MeshLambertMaterial({
@@ -237,13 +244,17 @@ export class CitizenManager {
                                     });
                                     child.material = newMaterial;
                                 }
-                                
+
                                 if (child.material.needsUpdate !== undefined) {
                                     child.material.needsUpdate = true;
                                 }
                             }
                         }
                     });
+                    for (const light of lightsToStrip) {
+                        light.parent?.remove(light);
+                        light.dispose?.();
+                    }
                     
                     const citizenData = new CitizenData();
                     citizenData.character = citizen;
@@ -346,6 +357,12 @@ export class CitizenManager {
                     const borderRoads = findBorderRoads(city);
                     if (borderRoads.length > 0) {
                         citizen.waitingForRoad = false;
+                        // Force re-entry: waiting citizens are already spawned+parented
+                        // at the off-board hold point; spawnCitizenCharacter must run again.
+                        citizen.spawned = false;
+                        if (citizen.character.parent) {
+                            citizen.character.parent.remove(citizen.character);
+                        }
                         this.spawnCitizenCharacter(citizen, city, findBorderRoads, createRoadPath);
                     }
                 }
