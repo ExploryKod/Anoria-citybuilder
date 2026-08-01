@@ -104,3 +104,38 @@ export function resolveGridSize(assetCatalog, buildingType) {
   if (!buildingType) return 1;
   return assetCatalog?.[buildingType]?.gridSize || 1;
 }
+
+/**
+ * Resolve the NW/min footprint anchor for a multi-tile building from any occupied tile.
+ * Falls back to (x, y) when instanceId is missing or not found on the grid.
+ *
+ * @param {{ size: number, tiles: object[][] }} city
+ * @param {number} x
+ * @param {number} y
+ * @param {string | null | undefined} instanceId
+ * @returns {{ x: number, y: number }}
+ */
+export function findFootprintAnchor(city, x, y, instanceId) {
+  if (!instanceId || !city?.tiles) {
+    return { x, y };
+  }
+
+  let minX = Infinity;
+  let minY = Infinity;
+  const size = city.size ?? 0;
+
+  for (let ix = 0; ix < size; ix++) {
+    for (let iy = 0; iy < size; iy++) {
+      if (city.tiles[ix]?.[iy]?.instanceId === instanceId) {
+        if (ix < minX) minX = ix;
+        if (iy < minY) minY = iy;
+      }
+    }
+  }
+
+  if (minX === Infinity || minY === Infinity) {
+    return { x, y };
+  }
+
+  return { x: minX, y: minY };
+}
