@@ -1,4 +1,4 @@
-import { buildCumulBusinessKey } from '../../../../js/stores/ledgerBusinessKeys.js';
+import { buildCumulBusinessKey } from '../../domain/policies/LedgerBusinessKeys.js';
 
 const CUMUL_SPECS = [
   { cumulType: 'cumul_maintenance', sourceType: 'maintenance', label: 'Cumul Maintenance' },

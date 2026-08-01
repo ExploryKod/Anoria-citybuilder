@@ -58,4 +58,21 @@ export class LegacyYearEndBalanceAdapter extends YearEndBalancePort {
       console.error('[LegacyYearEndBalanceAdapter] save failed:', error);
     }
   }
+
+  /** @inheritdoc */
+  async listAllYearEndBalances() {
+    if (typeof localStorage === 'undefined') {
+      return [];
+    }
+
+    try {
+      const stored = localStorage.getItem(LOCALSTORAGE_KEY);
+      if (!stored) {
+        return [];
+      }
+      return JSON.parse(stored);
+    } catch {
+      return [];
+    }
+  }
 }

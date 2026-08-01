@@ -1,4 +1,4 @@
-import { buildLoanInstallmentBusinessKey } from '../../../../js/stores/ledgerBusinessKeys.js';
+import { buildLoanInstallmentBusinessKey } from '../../domain/policies/LedgerBusinessKeys.js';
 
 /**
  * Application service — loan principal repayment (journal + treasury).

@@ -30,6 +30,8 @@ import {
   forceReinitializeTreasury,
   getTreasurySnapshot,
   updateTreasuryTurn,
+  setBudgetReadyPromise,
+  awaitBudgetReady,
 } from '../acl/accountingGame.js';
 import journalManager from '../stores/JournalManager.js';
 import FoodTraceabilityService from '../stores/FoodTraceabilityService.js';
@@ -460,7 +462,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     
     // Register with AppRegistry (centralized namespace)
     appRegistry.register('gameUI', gameUI);
-    appRegistry.register('budgetManager', budgetManager);
+    appRegistry.register('budgetManager', budgetManager, false);
     appRegistry.register('journalManager', journalManager);
     
     // Initialize FoodTraceabilityService
@@ -480,8 +482,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
         configObject: config
     });
     
-    budgetManager.budgetReadyPromise = forceReinitializeTreasury(initialFunds)
-        .then(async () => {
+    setBudgetReadyPromise(
+        forceReinitializeTreasury(initialFunds).then(async () => {
             const initialBudget = await getTreasurySnapshot();
 
             console.log('[game.js] Budget initialized, current budget:', initialBudget);
@@ -496,7 +498,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
             }
 
             return initialBudget;
-        });
+        })
+    );
 
 
     /* Scene + ECS runtime */
@@ -1170,9 +1173,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
             }, 10000);
             
             try {
-                if (window.budgetManager?.budgetReadyPromise) {
-                    await window.budgetManager.budgetReadyPromise;
-                }
+                await awaitBudgetReady();
 
                 const existingHouse = await findBuildingAtTile({ x, y });
                 if (existingHouse) {

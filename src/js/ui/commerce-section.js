@@ -8,6 +8,15 @@ import {
     listWindmillSupplyViews,
 } from '../acl/supply.js';
 import { getTreasuryBalance, getTreasurySnapshot, recordCommercialRouteFee } from '../acl/accountingGame.js';
+import {
+    getPriceStatus as resolvePriceStatus,
+    hasActiveContract as partnerHasActiveContract,
+    getContractStatus as resolvePartnerContractStatus,
+    getProductStockKey,
+    getProductDisplayName,
+    evaluatePartnerActivationConditions,
+    setCommercePartnerContractFinishedHandler,
+} from '../acl/commerce.js';
 
 class CommerceSectionManager {
     constructor() {
@@ -439,17 +448,7 @@ class CommerceSectionManager {
      * @returns {boolean} True if contract is still active
      */
     hasActiveContract(partner) {
-        // Check imports (our exports to partner)
-        const hasActiveImports = partner.imports.some(imp => 
-            (imp.currentOccurrences || 0) < imp.maxOccurrences
-        );
-        
-        // Check exports (our imports from partner)
-        const hasActiveExports = partner.exports.some(exp => 
-            (exp.currentOccurrences || 0) < exp.maxOccurrences
-        );
-        
-        return hasActiveImports || hasActiveExports;
+        return partnerHasActiveContract(partner);
     }
 
     /**
@@ -458,31 +457,7 @@ class CommerceSectionManager {
      * @returns {Object} { finishedImports: Array, finishedExports: Array, hasActiveContract: boolean }
      */
     getContractStatus(partner) {
-        const finishedImports = partner.imports.filter(imp => 
-            (imp.currentOccurrences || 0) >= imp.maxOccurrences
-        ).map(imp => ({
-            productId: imp.productId,
-            productName: imp.productName,
-            currentOccurrences: imp.currentOccurrences || 0,
-            maxOccurrences: imp.maxOccurrences
-        }));
-
-        const finishedExports = partner.exports.filter(exp => 
-            (exp.currentOccurrences || 0) >= exp.maxOccurrences
-        ).map(exp => ({
-            productId: exp.productId,
-            productName: exp.productName,
-            currentOccurrences: exp.currentOccurrences || 0,
-            maxOccurrences: exp.maxOccurrences
-        }));
-
-        const hasActiveContract = this.hasActiveContract(partner);
-
-        return {
-            finishedImports,
-            finishedExports,
-            hasActiveContract
-        };
+        return resolvePartnerContractStatus(partner);
     }
 
     /**
@@ -509,7 +484,7 @@ class CommerceSectionManager {
 
             // Check each required product
             for (const productId of requiredProducts) {
-                const stockKey = this.getStockKey(productId);
+                const stockKey = getProductStockKey(productId);
                 if (!stockKey) continue;
 
                 // Sum stocks from commercializable windmills only
@@ -521,7 +496,7 @@ class CommerceSectionManager {
 
                 // For now, require at least 1 unit in stock (can be adjusted)
                 if (totalStock < 1) {
-                    const productName = this.getProductName(productId);
+                    const productName = getProductDisplayName(productId);
                     missingProducts.push(`${productName} (stock: ${totalStock})`);
                 }
             }
@@ -535,38 +510,6 @@ class CommerceSectionManager {
             console.error('[CommerceSectionManager] Error checking windmill stocks:', error);
             return { hasStocks: false, missingProducts: ['Erreur lors de la vérification'], noCommercializableWindmills: false };
         }
-    }
-
-    /**
-     * Get stock key for a product ID
-     * @param {string} productId - Product ID
-     * @returns {string|null} Stock key or null
-     */
-    getStockKey(productId) {
-        const stockMap = {
-            'wheat': 'wheat',
-            'carrot': 'carrot',
-            'cabbage': 'cabbage',
-            'wood': 'wood',
-            'dattes': 'dattes'
-        };
-        return stockMap[productId] || null;
-    }
-
-    /**
-     * Get product name for a product ID
-     * @param {string} productId - Product ID
-     * @returns {string} Product name
-     */
-    getProductName(productId) {
-        const productNames = {
-            'wheat': 'Blé',
-            'carrot': 'Carotte',
-            'cabbage': 'Chou',
-            'wood': 'Bois',
-            'dattes': 'Dattes'
-        };
-        return productNames[productId] || productId;
     }
 
     /**
@@ -615,90 +558,17 @@ class CommerceSectionManager {
      * @returns {Promise<Object>} { canActivate: boolean, unmetConditions: Array<string> }
      */
     async checkPartnerActivationConditions(partner) {
-        // If no conditions specified, allow activation
-        if (!partner.activationConditions || partner.activationConditions.length === 0) {
-            // Apply default conditions for first partner (Deserta)
-            if (partner.id === 'deserta') {
-                return await this.checkDefaultActivationConditions(partner);
-            }
-            return { canActivate: true, unmetConditions: [] };
-        }
+        const [population, unemployment, stocksCheck] = await Promise.all([
+            this.getCurrentPopulation(),
+            this.getUnemploymentPercentage(),
+            this.checkWindmillStocks(partner),
+        ]);
 
-        const unmetConditions = [];
-
-        // Check each condition
-        for (const condition of partner.activationConditions) {
-            let conditionMet = false;
-            let conditionMessage = '';
-
-            switch (condition) {
-                case 'population_min_5':
-                    const population = await this.getCurrentPopulation();
-                    conditionMet = population > 5;
-                    conditionMessage = `Population > 5 (actuelle: ${population})`;
-                    break;
-
-                case 'unemployment_max_10':
-                    const unemployment = await this.getUnemploymentPercentage();
-                    conditionMet = unemployment < 10;
-                    conditionMessage = `Chômage < 10% (actuel: ${unemployment}%)`;
-                    break;
-
-                case 'windmill_stocks_available':
-                    const stocksCheck = await this.checkWindmillStocks(partner);
-                    conditionMet = stocksCheck.hasStocks;
-                    conditionMessage = stocksCheck.hasStocks 
-                        ? 'Stocks disponibles dans les moulins'
-                        : `Stocks manquants: ${stocksCheck.missingProducts.join(', ')}`;
-                    break;
-
-                default:
-                    // Unknown condition - consider unmet
-                    conditionMessage = `Condition inconnue: ${condition}`;
-                    break;
-            }
-
-            if (!conditionMet) {
-                unmetConditions.push(conditionMessage);
-            }
-        }
-
-        return {
-            canActivate: unmetConditions.length === 0,
-            unmetConditions
-        };
-    }
-
-    /**
-     * Check default activation conditions for first partner (Deserta)
-     * @param {Object} partner - Partner object
-     * @returns {Promise<Object>} { canActivate: boolean, unmetConditions: Array<string> }
-     */
-    async checkDefaultActivationConditions(partner) {
-        const unmetConditions = [];
-
-        // Check population > 5
-        const population = await this.getCurrentPopulation();
-        if (population <= 5) {
-            unmetConditions.push(`Population > 5 (actuelle: ${population})`);
-        }
-
-        // Check unemployment < 10%
-        const unemployment = await this.getUnemploymentPercentage();
-        if (unemployment >= 10) {
-            unmetConditions.push(`Chômage < 10% (actuel: ${unemployment}%)`);
-        }
-
-        // Check windmill stocks
-        const stocksCheck = await this.checkWindmillStocks(partner);
-        if (!stocksCheck.hasStocks) {
-            unmetConditions.push(`Stocks manquants: ${stocksCheck.missingProducts.join(', ')}`);
-        }
-
-        return {
-            canActivate: unmetConditions.length === 0,
-            unmetConditions
-        };
+        return evaluatePartnerActivationConditions({
+            partner,
+            activationConditions: partner.activationConditions,
+            metrics: { population, unemployment, stocksCheck },
+        });
     }
 
     /**
@@ -1535,18 +1405,7 @@ class CommerceSectionManager {
     }
 
     getPriceStatus(price, marketPrice, type) {
-        const diff = Math.abs(price - marketPrice);
-        const percentDiff = (diff / marketPrice) * 100;
-
-        if (type === 'selling') {
-            if (price < marketPrice * 0.7) return 'generous';
-            if (price > marketPrice * 1.5) return 'unacceptable';
-        } else if (type === 'buying') {
-            if (price > marketPrice * 1.3) return 'generous';
-            if (price < marketPrice * 0.5) return 'unacceptable';
-        }
-
-        return '';
+        return resolvePriceStatus(price, marketPrice, type);
     }
 
     getMarketPositionClass(marketShare) {
@@ -1888,6 +1747,20 @@ async function initCommerceSection() {
     if (!commerceSection) return;
 
     const manager = new CommerceSectionManager();
+
+    setCommercePartnerContractFinishedHandler(({ partnerName, finishedProducts }) => {
+        const productsText = finishedProducts.length > 0
+            ? finishedProducts.join(', ')
+            : 'toutes les denrées';
+        manager.showPartnerMessage(
+            `Contrat terminé avec ${partnerName} (${productsText}). Le partenaire a été désactivé automatiquement.`,
+            'info'
+        );
+        manager.loadPartnersData();
+        manager.renderPartners().catch((error) => {
+            console.error('[CommerceSectionManager] Error rendering partners after contract finish:', error);
+        });
+    });
     
     // Initialiser la configuration au démarrage (même si le panneau n'est pas ouvert)
     // Cela garantit que CommerceService peut trouver la config dès le début

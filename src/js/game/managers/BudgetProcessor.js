@@ -1,41 +1,17 @@
-import { TimeManager } from '../utils/TimeManager.js';
-import { getCityTotalPopulation, clearPopulationWithoutRoadAccess } from '../../acl/housing.js';
-import {
-  collectCitizenTaxes,
-  recordSalaries,
-  recordPayrollTax,
-  recordBuildingMaintenance,
-  getTreasurySnapshot,
-  recalculateLoanTotals,
-  saveBudgetTurnEnrichment,
-  cleanupOldBudgetTurnSnapshotsByAge,
-  cleanupOldJournalEntries,
-  flushJournalSessionToDexie,
-} from '../../acl/accountingGame.js';
+import { processTurnBudget, resetProcessTurnBudget } from '../../acl/accounting.js';
 
 /**
- * Processes budget-related operations
+ * Processes budget-related operations (Three.js building scan stays here).
  */
 export class BudgetProcessor {
     constructor() {
-        this.lastMaintenanceCivilKey = null;
-        this.lastSalaryCivilKey = null;
     }
-
-    #processBudgetInFlight = false;
 
     /**
      * Reset maintenance and salary tracking
      */
     reset() {
-        this.lastMaintenanceCivilKey = null;
-        this.lastSalaryCivilKey = null;
-        this.#processBudgetInFlight = false;
-    }
-
-    /** @param {{ year: number, monthIndex: number }} timeInfo */
-    #civilMonthKey(timeInfo) {
-        return `${timeInfo.year}:${timeInfo.monthIndex}`;
+        resetProcessTurnBudget();
     }
 
     /**
@@ -108,153 +84,15 @@ export class BudgetProcessor {
      * Process budget operations (taxes, salaries, maintenance)
      */
     async processBudget(time, totalPop, buildingCounts, maintenanceBreakdown) {
-        if (this.#processBudgetInFlight) {
-            return;
-        }
+        const result = await processTurnBudget({
+            time,
+            totalPop,
+            buildingCounts,
+            maintenanceBreakdown,
+        });
 
-        this.#processBudgetInFlight = true;
-
-        try {
-            await collectCitizenTaxes(time);
-            
-            const timeInfo = TimeManager.getTimeInfo(time);
-            const civilMonthKey = this.#civilMonthKey(timeInfo);
-            const isFirstTurnOfMonth = timeInfo.dayInMonth === 1;
-            
-            if (isFirstTurnOfMonth && civilMonthKey !== this.lastSalaryCivilKey) {
-                this.lastSalaryCivilKey = civilMonthKey;
-                
-                let salaryPerMonth = 100;
-                if (window.workSectionManager && typeof window.workSectionManager.salary === 'number') {
-                    salaryPerMonth = window.workSectionManager.salary;
-                }
-                
-                const totalPopulation = await getCityTotalPopulation();
-                
-                if (totalPopulation > 0 && salaryPerMonth > 0) {
-                    const yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
-                    const monthName = timeInfo.month || 'Mois';
-                    const salaryDescription = `Salaires fonctionnaires - ${monthName} ${yearDisplay} (${totalPopulation} hab. × ${salaryPerMonth}€)`;
-                    
-                    const totalSalaryAmount = totalPopulation * salaryPerMonth;
-                    await recordSalaries(
-                        salaryPerMonth,
-                        totalPopulation,
-                        salaryDescription,
-                        time
-                    );
-                    
-                    let salaryTaxRate = 0.2;
-                    if (window.workSectionManager && typeof window.workSectionManager.salaryTaxRate === 'number') {
-                        salaryTaxRate = window.workSectionManager.salaryTaxRate;
-                    }
-                    
-                    if (salaryTaxRate > 0) {
-                        const taxDescription = `Impôt sur les salaires - ${monthName} ${yearDisplay} (${Math.round(salaryTaxRate * 100)}%)`;
-                        await recordPayrollTax(
-                            totalSalaryAmount,
-                            salaryTaxRate,
-                            taxDescription,
-                            time
-                        );
-                    }
-                }
-            }
-            
-            if (civilMonthKey !== this.lastMaintenanceCivilKey) {
-                const buildingAmount = maintenanceBreakdown.roads.cost + 
-                                     maintenanceBreakdown.houses.cost + 
-                                     maintenanceBreakdown.farms.cost + 
-                                     maintenanceBreakdown.markets.cost;
-                
-                if (buildingAmount > 0) {
-                    const year = timeInfo.year + 1;
-                    const monthName = timeInfo.month || 'Mois';
-                    
-                    const breakdownItems = [];
-                    if (maintenanceBreakdown.roads.count > 0) {
-                        breakdownItems.push({
-                            label: 'Routes',
-                            count: maintenanceBreakdown.roads.count,
-                            unitCost: 2,
-                            total: maintenanceBreakdown.roads.cost
-                        });
-                    }
-                    if (maintenanceBreakdown.houses.count > 0) {
-                        breakdownItems.push({
-                            label: 'Maisons',
-                            count: maintenanceBreakdown.houses.count,
-                            unitCost: 3,
-                            total: maintenanceBreakdown.houses.cost
-                        });
-                    }
-                    if (maintenanceBreakdown.farms.count > 0) {
-                        breakdownItems.push({
-                            label: 'Fermes',
-                            count: maintenanceBreakdown.farms.count,
-                            unitCost: 1,
-                            total: maintenanceBreakdown.farms.cost
-                        });
-                    }
-                    if (maintenanceBreakdown.markets.count > 0) {
-                        breakdownItems.push({
-                            label: 'Marchés',
-                            count: maintenanceBreakdown.markets.count,
-                            unitCost: 1,
-                            total: maintenanceBreakdown.markets.cost
-                        });
-                    }
-                    
-                    const breakdownData = JSON.stringify(breakdownItems);
-                    const maintenanceDescription = `Maintenance mensuelle - ${monthName} ${year} |BREAKDOWN|${breakdownData}|BREAKDOWN|`;
-                    
-                    await recordBuildingMaintenance(
-                        buildingAmount,
-                        maintenanceDescription,
-                        time
-                    );
-                    this.lastMaintenanceCivilKey = civilMonthKey;
-                }
-            }
-            
-            // Process population/food logic
-            const populationResult = await clearPopulationWithoutRoadAccess();
-            if (populationResult.totalPopulationLost > 0) {
-                console.warn(`⚠️ ${populationResult.message}`);
-            }
-            
-            // Process loan payments
-            if (window.processLoanPayments) {
-                await window.processLoanPayments();
-                await recalculateLoanTotals();
-            }
-            
-            // Save budget state every 3 turns
-            if (time % 3 === 0 && time > 0) {
-                try {
-                    const additionalData = {
-                        population: totalPop,
-                        buildingCounts: buildingCounts
-                    };
-                    
-                    await saveBudgetTurnEnrichment(time, additionalData);
-                    
-                    const cleanupResult = await cleanupOldBudgetTurnSnapshotsByAge();
-                    if (cleanupResult.deleted > 0) {
-                        this.showCleanupNotificationOnce(cleanupResult);
-                    }
-                    
-                    await cleanupOldJournalEntries(60);
-                } catch (error) {
-                    console.warn('Failed to save budget state:', error);
-                }
-            }
-
-                await flushJournalSessionToDexie();
-        } catch (error) {
-            console.warn('Budget operations failed:', error);
-        } finally {
-            this.#processBudgetInFlight = false;
+        if (result?.cleanupResult?.deleted > 0) {
+            this.showCleanupNotificationOnce(result.cleanupResult);
         }
     }
 

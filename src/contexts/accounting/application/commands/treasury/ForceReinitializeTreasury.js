@@ -1,4 +1,4 @@
-import { resolveStartingFunds } from '../../queries/treasury/GetTreasurySnapshot.js';
+import { resolveStartingFunds } from '../../../domain/policies/TreasuryInitializationPolicy.js';
 
 /**
  * Reset treasury + journal and reinitialize (new game / corrupted data).
@@ -27,7 +27,7 @@ export class ForceReinitializeTreasury {
    * @returns {Promise<object>}
    */
   async execute(startingFunds = null) {
-    resolveStartingFunds(startingFunds);
+    resolveStartingFunds(startingFunds, this.initializeTreasury.defaultInitialFunds);
 
     if (this.journalClearPort?.clear) {
       await this.journalClearPort.clear();

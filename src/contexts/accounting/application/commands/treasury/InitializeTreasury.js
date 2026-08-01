@@ -1,4 +1,4 @@
-import { resolveStartingFunds } from '../../queries/treasury/GetTreasurySnapshot.js';
+import { resolveStartingFunds } from '../../../domain/policies/TreasuryInitializationPolicy.js';
 
 /**
  * Initialize treasury row and capital_funds journal entry if needed.
@@ -8,11 +8,18 @@ export class InitializeTreasury {
    * @param {import('../../../infrastructure/adapters/persistence/dexie/DexieTreasuryRepository.js').DexieTreasuryRepository} treasuryRepository
    * @param {import('../../../application/ports/JournalRepository.js').JournalRepository} journalRepository
    * @param {{ execute: Function }} recordCapitalFundsIncome
+   * @param {number} [defaultInitialFunds=200]
    */
-  constructor(treasuryRepository, journalRepository, recordCapitalFundsIncome) {
+  constructor(
+    treasuryRepository,
+    journalRepository,
+    recordCapitalFundsIncome,
+    defaultInitialFunds = 200
+  ) {
     this.treasuryRepository = treasuryRepository;
     this.journalRepository = journalRepository;
     this.recordCapitalFundsIncome = recordCapitalFundsIncome;
+    this.defaultInitialFunds = defaultInitialFunds;
   }
 
   /**
@@ -20,7 +27,7 @@ export class InitializeTreasury {
    * @returns {Promise<object>}
    */
   async execute(startingFunds = null) {
-    const funds = resolveStartingFunds(startingFunds);
+    const funds = resolveStartingFunds(startingFunds, this.defaultInitialFunds);
 
     await this.treasuryRepository.clearCurrentBudget();
     const initialBudget = await this.treasuryRepository.createInitialBudgetRow(funds);

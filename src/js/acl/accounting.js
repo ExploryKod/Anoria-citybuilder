@@ -75,6 +75,8 @@ export async function getCityLedgerYearComparison() {
   return getOrCreateAccountingContext().getCityLedgerYearComparison();
 }
 
+export { createEmptyCityLedgerYearLines } from '../../contexts/accounting/domain/value-objects/CityLedgerYearLines.js';
+
 /**
  * @param {{ periodDays?: number|null, types?: string[]|null }} [filters]
  * @returns {Promise<object>} Journal UI — grouped general ledger
@@ -100,6 +102,18 @@ export async function getFinancialStatementsAtTurn(atTurn) {
 /** @param {{ everyNTurns?: number, turns?: number[]|null, filterTurn?: number|null }} [options] */
 export async function getFinancialStatementsHistory(options) {
   return getOrCreateAccountingContext().getFinancialStatementsHistory(options);
+}
+
+/**
+ * @param {number} turn
+ * @param {{ population?: number, buildingCounts?: object }} [additionalData]
+ */
+export async function saveBudgetTurnEnrichment(turn, additionalData = {}) {
+  return getOrCreateAccountingContext().saveBudgetTurnEnrichment({ turn, additionalData });
+}
+
+export async function flushJournalSessionToDexie() {
+  return getOrCreateAccountingContext().flushJournalSessionToDexie();
 }
 
 export async function exportJournalJson() {
@@ -237,4 +251,139 @@ export async function recordConstructionRefundIncome(params) {
  */
 export async function recordLedgerEntry(params) {
   return getOrCreateAccountingContext().recordLedgerEntry(params);
+}
+
+// --- Game loop façade (legacy signatures; logic lives in BC application/services/game) ---
+
+export async function getBudgetSummary() {
+  return getOrCreateAccountingContext().getBudgetSummary();
+}
+
+export async function getIncomeBreakdown() {
+  return getOrCreateAccountingContext().getIncomeBreakdown();
+}
+
+export async function getExpenseBreakdown() {
+  return getOrCreateAccountingContext().getExpenseBreakdown();
+}
+
+export async function canAfford(amount) {
+  return getOrCreateAccountingContext().canAfford(amount);
+}
+
+/** @param {number} [time] @param {{ db?: import('dexie').Dexie }} [options] */
+export async function collectCitizenTaxes(time = 0, options = {}) {
+  const ctx = options.db ? createAccountingContext({ db: options.db }) : getOrCreateAccountingContext();
+  return ctx.collectCitizenTaxes({ time });
+}
+
+export async function recordSalaries(salaryPerMonth, population, description = null, turn = null) {
+  return getOrCreateAccountingContext().recordSalaries(
+    salaryPerMonth,
+    population,
+    description,
+    turn
+  );
+}
+
+export async function recordPayrollTax(salaryAmount, taxRate, description = null, turn = null) {
+  return getOrCreateAccountingContext().recordPayrollTax(
+    salaryAmount,
+    taxRate,
+    description,
+    turn
+  );
+}
+
+export async function recordBuildingMaintenance(
+  amount,
+  description = 'Maintenance bâtiments',
+  turn = null
+) {
+  return getOrCreateAccountingContext().recordBuildingMaintenanceForCity({
+    amount,
+    description,
+    turn,
+  });
+}
+
+export async function recordExceptionalRepairExpense(amount, description) {
+  return getOrCreateAccountingContext().recordExceptionalRepairExpense(amount, description);
+}
+
+export async function recordCommercialRouteFee(amount, description, partnerId) {
+  return getOrCreateAccountingContext().recordCommercialRouteFee(
+    amount,
+    description,
+    partnerId
+  );
+}
+
+export async function recordImportExpense(
+  amount,
+  description,
+  productId = 'unknown',
+  partnerId = null
+) {
+  return getOrCreateAccountingContext().recordImportExpense(
+    amount,
+    description,
+    productId,
+    partnerId
+  );
+}
+
+export async function recordExportIncome(
+  amount,
+  description,
+  productId = 'unknown',
+  partnerId = null
+) {
+  return getOrCreateAccountingContext().recordExportIncome(
+    amount,
+    description,
+    productId,
+    partnerId
+  );
+}
+
+export async function recordLoanCapital(amount, description = 'Loan', loanData = null) {
+  return getOrCreateAccountingContext().recordLoanCapital(amount, description, loanData);
+}
+
+export async function recordLoanInterest(amount, description = 'Loan Interest', loanId = null) {
+  return getOrCreateAccountingContext().recordLoanInterest(amount, description, loanId);
+}
+
+export async function recordLoanRepayment(
+  amount,
+  description = 'Loan Repayment',
+  loanId = null
+) {
+  return getOrCreateAccountingContext().recordLoanRepayment(amount, description, loanId);
+}
+
+/** Game-loop wrapper — returns current budget without forcing a treasury refresh. */
+export async function recordInfoLoanInstallmentForGame(params) {
+  return getOrCreateAccountingContext().recordInfoLoanInstallmentFromGame(params);
+}
+
+export async function cleanupOldBudgetTurnSnapshotsByAge(options = {}) {
+  if (options.db) {
+    return createAccountingContext({ db: options.db }).cleanupOldBudgetTurnSnapshotsByAge();
+  }
+  return getOrCreateAccountingContext().cleanupOldBudgetTurnSnapshotsByAge();
+}
+
+export async function cleanupOldJournalEntries(maxAge = 60) {
+  return getOrCreateAccountingContext().cleanupOldJournalEntries(maxAge);
+}
+
+/** @param {Parameters<ReturnType<typeof createAccountingContext>['processTurnBudget']>[0]} params */
+export async function processTurnBudget(params) {
+  return getOrCreateAccountingContext().processTurnBudget(params);
+}
+
+export function resetProcessTurnBudget() {
+  return getOrCreateAccountingContext().resetProcessTurnBudget();
 }

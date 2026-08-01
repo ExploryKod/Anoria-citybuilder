@@ -1,7 +1,7 @@
 import {
   isInformativeJournalType,
   isJournalEntryIncomeForMonthlySummary,
-} from '../../infrastructure/adapters/persistence/dexie/journalAggregations.js';
+} from './JournalEntryClassificationPolicy.js';
 import { incomeStatementFromJournalPartition } from './IncomeStatementMappingPolicy.js';
 import { balanceSheetLinkedToIncomeStatement } from './BalanceSheetMappingPolicy.js';
 import { createFinancialStatementsBundle } from '../read-models/FinancialStatementsBundle.js';

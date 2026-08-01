@@ -1,4 +1,4 @@
-import { buildCapitalFundsBusinessKey } from '../../../../js/stores/ledgerBusinessKeys.js';
+import { buildCapitalFundsBusinessKey } from '../../domain/policies/LedgerBusinessKeys.js';
 
 /**
  * Application service — initial capital journal line at game start.

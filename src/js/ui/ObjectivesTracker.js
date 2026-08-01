@@ -4,7 +4,13 @@
  */
 
 import { getTreasurySnapshot } from '../acl/accountingGame.js';
+import {
+  OBJECTIVE_CATALOG,
+  isObjectiveRequirementMet,
+} from '../acl/objectives.js';
 
+const BUDGET_CHALLENGE_OBJECTIVE_ID = 'budget_challenge_5000';
+const budgetChallengeDefinition = OBJECTIVE_CATALOG[BUDGET_CHALLENGE_OBJECTIVE_ID];
 class ObjectivesTracker {
     constructor() {
         // TEST MODE: Désactiver les objectifs pour les tests
@@ -31,13 +37,14 @@ class ObjectivesTracker {
         
         this.objectives = [
             {
-                id: 'budget_challenge_5000',
-                title: '💰 Objectif Financier',
-                description: 'Atteindre 5000€ de fonds pour déverrouiller la Maison Violette.',
+                id: budgetChallengeDefinition.id,
+                title: budgetChallengeDefinition.title,
+                description: budgetChallengeDefinition.description,
                 requirements: [
                     {
-                        text: 'Les fonds doivent atteindre au moins 5000€',
-                        check: (data) => data.currentFunds >= 5000,
+                        text: budgetChallengeDefinition.requirementText,
+                        check: (data) =>
+                            isObjectiveRequirementMet(BUDGET_CHALLENGE_OBJECTIVE_ID, data),
                         value: null
                     }
                 ],
@@ -53,7 +60,7 @@ class ObjectivesTracker {
         
         // Au démarrage d'un nouveau jeu, l'objectif est inactif par défaut
         // Il sera activé au tour 0 par checkObjectives(0)
-        const objective = this.objectives.find(obj => obj.id === 'budget_challenge_5000');
+        const objective = this.objectives.find((obj) => obj.id === BUDGET_CHALLENGE_OBJECTIVE_ID);
         if (objective) {
             objective.active = false; // Activé au tour 0
             objective.completed = false;
@@ -80,7 +87,7 @@ class ObjectivesTracker {
         
         try {
             // Activer l'objectif au tour 0 (initialisation d'un nouveau jeu)
-            const objective = this.objectives.find(obj => obj.id === 'budget_challenge_5000');
+            const objective = this.objectives.find((obj) => obj.id === BUDGET_CHALLENGE_OBJECTIVE_ID);
             if (currentDay === 0 && objective) {
                 objective.active = true;
                 objective.completed = false;
@@ -91,9 +98,13 @@ class ObjectivesTracker {
             const budget = await getTreasurySnapshot();
             this.trackingData.currentFunds = budget.funds || 0;
 
-            // Vérifier si l'objectif est complété (fond >= 5000)
-            if (objective && objective.active && !objective.completed && this.trackingData.currentFunds >= 5000) {
-                await this.verifyObjective('budget_challenge_5000');
+            if (
+                objective &&
+                objective.active &&
+                !objective.completed &&
+                isObjectiveRequirementMet(BUDGET_CHALLENGE_OBJECTIVE_ID, this.trackingData)
+            ) {
+                await this.verifyObjective(BUDGET_CHALLENGE_OBJECTIVE_ID);
             }
 
         } catch (error) {
@@ -496,7 +507,7 @@ class ObjectivesTracker {
         };
         
         // Désactiver l'objectif après succès
-        const objective = this.objectives.find(obj => obj.id === 'budget_challenge_5000');
+        const objective = this.objectives.find((obj) => obj.id === BUDGET_CHALLENGE_OBJECTIVE_ID);
         if (objective) {
             objective.active = false;
             objective.completed = false;

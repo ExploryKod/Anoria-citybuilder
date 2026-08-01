@@ -1,4 +1,4 @@
-import { buildCarryForwardBusinessKey } from '../../../../js/stores/ledgerBusinessKeys.js';
+import { buildCarryForwardBusinessKey } from '../../domain/policies/LedgerBusinessKeys.js';
 
 /**
  * Application service — year-opening carry forward (informative, journal only).

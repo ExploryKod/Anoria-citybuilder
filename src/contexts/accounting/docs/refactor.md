@@ -15,12 +15,12 @@ Voir aussi [`../README.md`](../README.md) (spec Phase 0, cartographie, phases).
 | 1 | Livret ville → `GetCityLedgerYearComparison` + ACL | ✅ validé en jeu |
 | 2a | Persistence Dexie (`DexieJournalRepository`, `DexieTreasuryRepository`) | ✅ |
 | 2b | Journal UI → `GetGeneralLedger` + presenter pur | ✅ |
-| 2c | Calculs nets livret hors presenter | 🔲 |
+| 2c | Calculs nets livret hors presenter | ✅ |
 | **3½** | **Write path fiable + idempotence + réconciliation** | 🟡 slice 1 (buffer session) |
 | 3 | Bilan + CR depuis journal (ports) | ✅ journal-primary + bundle lié |
 | 4 | Réduction `BudgetManager` (legacy write éteint) | 🔲 |
 | **5** | **Chaîne PCG stricte** (plan de comptes, grand livre, balance) | 🔲 **non prioritaire — noté, pas en cours** |
-| **6** | **Branchement UI/game → BC** (sans nouvelle feature) | 🟡 step 1 ✅ |
+| **6** | **Branchement UI/game → BC** (sans nouvelle feature) | ✅ |
 
 ---
 
@@ -32,10 +32,10 @@ Objectif : les callers game/UI passent par l’ACL, pas `window.budgetManager` d
 | Step | Description | Statut |
 |---|---|---|
 | **6.1** | UI/game → `acl/accountingGame.js` + `acl/accounting.js` | ✅ |
-| **6.2** | Presenters → read models BC (bilan complet, livret 2c, budget temps réel) | 🔲 |
-| **6.3** | `saveBudgetTurnEnrichment` → command BC + repo write | 🔲 |
-| **6.4** | Export / flush journal → ports BC (plus d’appel direct `JournalManager`) | 🔲 |
-| **6.5** | Nettoyage façade `BudgetManager` (méthodes mortes, retrait `window`) | 🔲 |
+| **6.2** | Presenters → read models BC (bilan complet, livret 2c, budget temps réel) | ✅ |
+| **6.3** | `saveBudgetTurnEnrichment` → command BC + repo write | ✅ |
+| **6.4** | Export / flush journal → ports BC (plus d’appel direct `JournalManager`) | ✅ |
+| **6.5** | Nettoyage façade `BudgetManager` (méthodes mortes, retrait `window`) | ✅ |
 
 ### Step 6.1 livré (2026-07-31)
 
@@ -49,7 +49,66 @@ Objectif : les callers game/UI passent par l’ACL, pas `window.budgetManager` d
 - `game/game.js`, `game/scene.js`
 - `ui/urban-advice/UrbanAdviceManager.js`, `ui/ObjectivesTracker.js`
 
-**Encore sur `BudgetManager`** : enregistrement global, `budgetReadyPromise`, tests legacy, adapters régression.
+**Encore sur `BudgetManager`** : singleton pour tests legacy + `LegacyTreasury*` adapters ; accès prod via `app.budgetManager` (sans `window.budgetManager`).
+
+### Step 6.2 — bilan (2026-07-31)
+
+**Nouveaux fichiers** :
+- `domain/policies/BalanceSheetPresentationPolicy.js` — view model DOM depuis `BalanceSheet`
+- `ui/budget/BalanceSheetPresenter.js` — rendu bilan
+- `ui/budget/BuildingBreakdownEnrichment.js` — détail bâtiments (enrichissement UI, pas source des totaux)
+
+**Migré** : `updateBudgetDisplay()` dans `ui/buttons.js` → `renderBalanceSheet()`.
+
+**Reste step 6.2** : — (livret 2c + budget temps réel livrés 2026-07-31)
+
+### Step 6.2 — livret + budget temps réel (2026-07-31)
+
+**Policies BC** :
+- `CityLedgerPresentationPolicy.js` — bénéfice/déficit N−1, revenus/dépenses nets, flux net
+- `RealtimeBudgetPresentationPolicy.js` — view model popup trésorerie live
+
+**Presenters UI** :
+- `ui/budget/CityLedgerPresenter.js` — tableau admin César 3
+- `ui/budget/RealtimeBudgetPresenter.js` — popup budget temps réel
+
+**Migrés** : `finances-section.js` (plus de calculs nets locaux), `RealtimeBudgetManager.js`.
+
+**Query enrichie** : `GetCityLedgerYearComparison` remplit `netIncome` / `netExpenses` / `netFlow` sur chaque colonne annuelle.
+
+### Step 6.3 — enrichissement budget_turn (2026-07-31)
+
+**Command BC** : `SaveBudgetTurnEnrichment` — assemble trésorerie live + santé financière + données game (population, bâtiments).
+
+**Domain** :
+- `read-models/BudgetTurnEnrichmentSnapshot.js`
+- `policies/BudgetTurnEnrichmentPolicy.js`
+
+**Port + repo** : `BudgetTurnEnrichmentRepository.saveEnrichment()` (upsert `budget_turn_{turn}`).
+
+**ACL** : `accounting.js` + `accountingGame.js` délèguent au BC (`options.db` pour tests).
+
+### Step 6.4 — flush & export journal (2026-07-31)
+
+**Command** : `FlushJournalSession` — via `JournalSessionPersistencePort` / `DexieJournalSessionPersistenceAdapter`.
+
+**Queries** : `ExportJournalJson`, `ExportJournalPdf` — `JournalExportPolicy` + `BrowserJournalPdfExporter`.
+
+**ACL** : `flushJournalSessionToDexie()`, `exportJournalJson()`, `exportJournalPdf()` passent par le BC (plus `journalManager` direct dans `createAccountingContext`).
+
+**Legacy** : `JournalManager` délègue flush/export aux mêmes adapters (compat tests + hook visibility).
+
+### Step 6.5 — façade BudgetManager (2026-07-31)
+
+**Retiré** :
+- `window.budgetManager` (plus d’exposition globale automatique)
+- Méthodes mortes : `addIncome`, `addDailyIncome`, `canAfford`, `saveBudgetState`, `getBudgetStates*`, `cleanupOldBudgetStates*`, `getCurrentTurn`, `recordLoanDefaultInstallment`
+
+**Déplacé** :
+- `budgetReadyPromise` → `setBudgetReadyPromise` / `awaitBudgetReady()` dans `acl/accountingGame.js`
+- `game.js` : init trésorerie + placement bâtiment via ACL ; `appRegistry.register('budgetManager', …, false)`
+
+**Conservé** : façade mince pour tests + adapters legacy treasury.
 
 ---
 

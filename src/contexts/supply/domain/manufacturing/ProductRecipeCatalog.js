@@ -28,3 +28,16 @@ export const FACTORY_RESOURCE_TYPES = Object.freeze([
   'iron',
   'gold',
 ]);
+
+/** Max storage per resource/product (canonical game rules). */
+export const FACTORY_MAX_STORAGE = Object.freeze({
+  wood: 200,
+  rock: 200,
+  clay: 200,
+  iron: 200,
+  gold: 200,
+  furniture: 100,
+  weapons: 100,
+  pottery: 100,
+  jewelry: 100,
+});

@@ -10,6 +10,7 @@ import { JournalManager } from '../src/js/stores/JournalManager.js';
 import commerceStore from '../src/js/stores/CommerceStore.js';
 import db from '../src/core/persistence/dexie/db.js';
 import { resetSupplyContextForTests } from '../src/composition/createSupplyContext.js';
+import { resetCommerceContextForTests } from '../src/composition/createCommerceContext.js';
 import { makeHouseRecord, createBuildingInstanceId } from './fixtures/buildingRecord.js';
 
 // ============================================================================
@@ -35,6 +36,7 @@ describe('CommerceService - Partenaires', () => {
     let budgetManager;
 
     beforeEach(async () => {
+        resetCommerceContextForTests();
         // Créer une nouvelle base de données pour chaque test
         testDb = createTestDb();
         await testDb.open();
@@ -77,6 +79,7 @@ describe('CommerceService - Partenaires', () => {
     });
 
     afterEach(async () => {
+        resetCommerceContextForTests();
         resetSupplyContextForTests();
         if (testDb && testDb.isOpen()) {
             await testDb.delete();

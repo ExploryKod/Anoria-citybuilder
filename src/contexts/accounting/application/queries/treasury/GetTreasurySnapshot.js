@@ -1,5 +1,3 @@
-import config from '../../../../../js/game/config.js';
-
 /**
  * Load treasury snapshot, auto-initialize if missing.
  */
@@ -23,11 +21,4 @@ export class GetTreasurySnapshot {
 
     return budget;
   }
-}
-
-export function resolveStartingFunds(startingFunds = null) {
-  if (startingFunds !== null) {
-    return startingFunds;
-  }
-  return config?.budget?.initialFunds || 200;
 }

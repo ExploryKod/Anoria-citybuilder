@@ -15,7 +15,7 @@ import {
   INFO_JOURNAL_TYPE_LABELS,
   isInfoPseudoMovementType,
   labelForInfoJournalType,
-} from '../../../contexts/accounting/domain/policies/LedgerInformativeTypePolicy.js';
+} from '../../acl/accountingJournalUi.js';
 
 /**
  * Initialise le popup du journal
