@@ -3,6 +3,11 @@
  */
 export class ConstructionBuildingRepository {
   /** @param {number} x @param {number} y @returns {Promise<object | null>} */
+  async findByAnchor(_x, _y) {
+    throw new Error('ConstructionBuildingRepository.findByAnchor not implemented');
+  }
+
+  /** @param {number} x @param {number} y @returns {Promise<object | null>} */
   async findAtTile(_x, _y) {
     throw new Error('ConstructionBuildingRepository.findAtTile not implemented');
   }

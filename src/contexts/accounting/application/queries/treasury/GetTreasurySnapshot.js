@@ -16,7 +16,8 @@ export class GetTreasurySnapshot {
     let budget = await this.treasuryRepository.getNormalizedBudgetRow();
 
     if (!budget) {
-      budget = await this.initializeTreasury.execute(null);
+      // Ensure-only: never clear (avoids ConstraintError races with ForceReinitialize / concurrent snapshots)
+      budget = await this.initializeTreasury.execute(null, { clearExisting: false });
     }
 
     return budget;

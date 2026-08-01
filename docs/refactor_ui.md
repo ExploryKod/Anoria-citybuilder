@@ -36,7 +36,6 @@ ui/
     prets/
     journal/
   carte-ville/
-  conseil-urbain/           ← à trancher (voir étape 4)
   boot/
   tools/
   …                         ← meta UI à regrouper (étape 8)
@@ -108,15 +107,19 @@ ui/
 
 ---
 
-## Étape 4 — Trancher `ConseilUrbainPanel` ⚠️ bug latent
+## Étape 4 — Trancher `ConseilUrbainPanel` ✅
 
-**Problème :** `ConseilUrbainPanel` et `BalanceSheetPanel` accrochent tous deux `#budget-btn` / `#budget-panel`, alors que le HTML de `#budget-panel` affiche le **Bilan comptable**. Le conseil urbain cible des éléments DOM absents (`#red-houses`, `.budget-tab`, …).
+**Décision :** supprimer le code mort — le DOM conseil urbain n’existe plus ; `#budget-panel` = bilan comptable uniquement.
 
-**Options :**
-1. **Supprimer** `conseil-urbain/` + `initUrbanAdviceCenter()` si feature abandonnée
-2. **Restaurer** un panneau dédié `#conseil-urbain-panel` + bouton toolbar séparé
+**Réalisé :**
+- suppression `ui/conseil-urbain/ConseilUrbainPanel.js`
+- retrait `initUrbanAdviceCenter()` de `GameSessionBootstrap`
+- `#budget-btn` : `title` / `aria-label` « Bilan comptable »
+- fix listeners filtres bilan/carte dupliqués à chaque ouverture
 
-**Critère de done :** un seul listener par bouton ; plus de code mort sur `#budget-panel`.
+**Critère de done :** ✅ un seul listener sur `#budget-btn` ; plus de code mort sur `#budget-panel`.
+
+**Restauration future :** recréer `#conseil-urbain-panel` + bouton toolbar dédié si la feature revient.
 
 ---
 
@@ -220,21 +223,19 @@ Issues connues à traiter dans le code UI (indépendamment de l’arborescence) 
 | Prêts | `#loans-panel` | `ui/compta/prets/` |
 | Journal | `#journal-panel` | `ui/compta/journal/` |
 | Carte | `#city-map-panel` | `ui/carte-ville/` |
-| Conseil urbain | *(absent)* | `ui/conseil-urbain/` — étape 4 |
 
 ---
 
 ## Ordre d’exécution recommandé
 
-1. Étape 1 — commit SectionPresenter
-2. Étape 4 — trancher conseil urbain (évite régressions sur bilan)
-3. Étape 2 — harmonisation noms
-4. Étape 3 — extraction Presenters
-5. Étape 6 — tutorial/objectives
-6. Étape 5 — registry ACL
-7. Étape 7 — sections admin
-8. Étape 8 — meta UI
-9. Étape 9 — doc
-10. Étape 10 — dette technique
+1. Étape 4 — bugs DOM bilan ✅
+2. Étape 2 — harmonisation noms
+3. Étape 3 — extraction Presenters
+4. Étape 6 — tutorial/objectives
+5. Étape 5 — registry ACL
+6. Étape 7 — sections admin
+7. Étape 8 — meta UI
+8. Étape 9 — doc
+9. Étape 10 — dette technique
 
 À chaque étape : `npm test` (627 tests), pas de shims — déplacer + mettre à jour imports directement.

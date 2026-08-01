@@ -457,7 +457,21 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
         citizenPathfinding = new CitizenPathfinding(buildings, terrain);
     }
 
+    /** @type {Promise<void>} */
+    let updateQueue = Promise.resolve();
+
     async function update(city, time = 0, options = {}) {
+        // Serialize updates — concurrent scene.update (placement + game loop) raced on Dexie writes
+        const run = () => runUpdate(city, time, options);
+        const queued = updateQueue.then(run, run);
+        updateQueue = queued.then(
+            () => undefined,
+            () => undefined
+        );
+        return queued;
+    }
+
+    async function runUpdate(city, time = 0, options = {}) {
         const { skipBudget = false } = options;
 
         /**
@@ -484,7 +498,8 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
             const nextType = tileHouse.type;
             const instanceId = tileHouse.id;
 
-            if (city.tiles[x]?.[y]) {
+            // city.tiles is placement SoT — do not rewrite a cleared (bulldozed) tile
+            if (city.tiles[x]?.[y]?.buildingId) {
                 city.tiles[x][y].buildingId = nextType;
                 city.tiles[x][y].instanceId = instanceId;
             }
@@ -675,7 +690,6 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
             // funds: funds     // ← Removed
         }
 
-            await gameStore.clearGameItems();
             await gameStore.addGameItems(infoGameplay);
 
         // --- BOUCLE SUR LA VILLE ----
@@ -813,7 +827,10 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
                     ?? buildings[x][y]?.userData?.instanceId
                     ?? null;
 
-                if (!currentInstanceId) {
+                // Only resolve/backfill instanceId when the tile still claims a building.
+                // After bulldoze, city.tiles is cleared first — looking up Dexie would
+                // briefly resurrect buildingId/instanceId and flash a mesh/sprite.
+                if (!currentInstanceId && tileBuildingId) {
                     const atTile = await findBuildingAtTile({ x, y });
                     currentInstanceId = atTile?.instanceId ?? atTile?.id ?? null;
                     if (currentInstanceId && city.tiles[x]?.[y]) {
@@ -830,7 +847,11 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
                     continue;
                 }
 
-                if (houses.includes(currentBuildingId) || palaces.includes(currentBuildingId)) {
+                // Never sync residential FROM Dexie onto a cleared tile (bulldoze / orphan)
+                if (
+                    tileBuildingId &&
+                    (houses.includes(currentBuildingId) || palaces.includes(currentBuildingId))
+                ) {
                     const residentialSync = await syncResidentialHouseMeshFromDb(
                         x,
                         y,
@@ -882,8 +903,10 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
                 // Ne vérifier la suppression que si aucun nouveau bâtiment n'est en cours de création
                 if (!isRoad && !hasNewBuilding) {
                     let buildingExists = await getBuildingById(currentInstanceId);
+                    // Resurrect from Housing only when the tile still claims this building
                     if (
                         !buildingExists &&
+                        tileBuildingId &&
                         (houses.includes(currentBuildingId) || palaces.includes(currentBuildingId))
                     ) {
                         const tileHouse = await housing.getResidentialHouseAt({ x, y });
@@ -1518,7 +1541,20 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
                     // Double-check that houseId is valid before deletion
                     if (houseId && typeof houseId === 'string') {
                         try {
+                            const orphanRow = allHousesInDb.find(
+                                (row) => (row.instanceId ?? row.id) === houseId
+                            );
                             await parcels.syncRemovedBuilding({ instanceId: houseId });
+                            const ox = orphanRow?.x ?? orphanRow?.anchorX;
+                            const oy = orphanRow?.y ?? orphanRow?.anchorY;
+                            if (
+                                typeof ox === 'number' &&
+                                typeof oy === 'number' &&
+                                city.tiles?.[ox]?.[oy]
+                            ) {
+                                city.tiles[ox][oy].buildingId = undefined;
+                                city.tiles[ox][oy].instanceId = undefined;
+                            }
                         } catch (error) {
                             console.warn(`[Scene] Failed to delete orphaned house ${houseId}:`, error);
                         }
@@ -1824,7 +1860,9 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
 
         // Call the selection callback if registered
         if (this.onObjectSelected && object) {
-            this.onObjectSelected(object);
+            Promise.resolve(this.onObjectSelected(object)).catch((error) => {
+                console.error('[scene.js] onObjectSelected failed:', error);
+            });
         }
     }
 

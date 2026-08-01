@@ -30,6 +30,16 @@ export async function placeBuildingWithPayment(data) {
   return getOrCreateConstructionContext().placeBuildingWithPayment(data);
 }
 
+/**
+ * Remove ghost Dexie rows on visually empty tiles before player placement.
+ *
+ * @param {{ city: object, x: number, y: number, gridSize?: number }} params
+ * @returns {Promise<string[]>} reclaimed instanceIds
+ */
+export async function reclaimStaleBuildingRecordsForPlacement(params) {
+  return getOrCreateConstructionContext().reclaimStaleBuildingRecordsForPlacement(params);
+}
+
 /** Persist row without budget debit (nature spawns, admin). */
 export async function placeBuildingRecord(data) {
   return getOrCreateConstructionContext().placeBuildingRecord(data);

@@ -1,8 +1,8 @@
 /**
  * FoodTraceabilityPanel — traçabilité alimentaire admin (DOM + événements).
  */
-import { getOrCreateSupplyContext, getAllFoodTraceabilityTransactions } from "../../acl/supply.js";
-import { tryResolveBuildingInstanceIdFromRef } from "../../acl/building-identity.js";
+import { getOrCreateSupplyContext, getAllFoodTraceabilityTransactions } from '../../../acl/supply.js';
+import { tryResolveBuildingInstanceIdFromRef } from '../../../acl/building-identity.js';
 
 function buildingStockKey(building) {
     return tryResolveBuildingInstanceIdFromRef(building) ?? building?.id ?? null;

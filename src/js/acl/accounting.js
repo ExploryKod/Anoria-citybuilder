@@ -9,6 +9,11 @@ import {
   getOrCreateAccountingContext,
   resetAccountingContextForTests,
 } from '../../composition/createAccountingContext.js';
+import {
+  readInitialFundsFromImportMeta,
+  COMMERCIAL_ROUTE_FEE,
+  DEFAULT_INITIAL_FUNDS,
+} from '../../contexts/accounting/domain/catalogs/TreasuryCatalog.js';
 
 export {
   createAccountingContext,
@@ -20,7 +25,7 @@ export {
   readInitialFundsFromImportMeta,
   COMMERCIAL_ROUTE_FEE,
   DEFAULT_INITIAL_FUNDS,
-} from '../../contexts/accounting/domain/catalogs/TreasuryCatalog.js';
+};
 
 /** @returns {number} One-time fee to open a commercial trade route */
 export function getCommercialRouteFee() {

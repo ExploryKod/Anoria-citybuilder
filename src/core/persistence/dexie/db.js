@@ -22,6 +22,11 @@ const stores = {
 
 const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
 
+db.version(1).stores(stores);
+
+/** @type {Promise<void> | null} */
+let dbReadyPromise = null;
+
 function clearLegacyLocalStorage() {
   try {
     localStorage.removeItem('journal_year_end_balances');
@@ -33,17 +38,29 @@ function clearLegacyLocalStorage() {
   }
 }
 
-if (isTestEnv) {
-  db.version(1).stores(stores);
-} else {
-  db.delete({ disableAutoOpen: false })
-    .then(() => {
-      db.version(1).stores(stores);
-      clearLegacyLocalStorage();
-    })
-    .catch((err) => {
-      console.error('[core/persistence/dexie/db] Error clearing and recreating the database:', err);
-    });
+/**
+ * Open IndexedDB once before any gameplay persistence (avoids races with async db.delete).
+ * @returns {Promise<void>}
+ */
+export function waitForDatabaseReady() {
+  if (!dbReadyPromise) {
+    dbReadyPromise = db
+      .open()
+      .then(() => {
+        if (!isTestEnv) {
+          clearLegacyLocalStorage();
+        }
+      })
+      .catch((err) => {
+        dbReadyPromise = null;
+        throw err;
+      });
+  }
+  return dbReadyPromise;
+}
+
+if (!isTestEnv) {
+  waitForDatabaseReady();
 }
 
 export default db;

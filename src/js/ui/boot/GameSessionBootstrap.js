@@ -1,5 +1,6 @@
 import { registerAppService } from '../../acl/appRuntime.js';
 import { getOrCreateGameSessionContext } from '../../acl/gameSession.js';
+import { waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
 import { createGame } from '../../../presentation/three/game.js';
 import { showCitySizeSelection } from './CitySizeSelectionModal.js';
 import { initRealtimeBudgetPopup } from '../compta/tresorerie/RealtimeBudgetPanel.js';
@@ -9,9 +10,10 @@ import { initCityMapPopup } from '../carte-ville/CityMapPanel.js';
 import { initLoansPopup, initLoanPaymentSystem } from '../compta/prets/PretsPanel.js';
 import { initJournalPopup } from '../compta/journal/JournalPanel.js';
 import { initFoodTraceabilityPopup } from '../admin/food-traceability/FoodTraceabilityPanel.js';
-import { initUrbanAdviceCenter } from '../conseil-urbain/ConseilUrbainPanel.js';
 
 export async function bootstrapGameSession(assetManager) {
+  await waitForDatabaseReady();
+
   const selectionResult = await showCitySizeSelection();
   const selectedCitySize = selectionResult.size || selectionResult;
   const multiplayerEnabled = selectionResult.multiplayer || false;
@@ -50,7 +52,6 @@ export async function bootstrapGameSession(assetManager) {
   }
 
   initRealtimeBudgetPopup();
-  initUrbanAdviceCenter();
   initBudgetStatesPopup();
   initCityMapPopup();
   initLoansPopup();
