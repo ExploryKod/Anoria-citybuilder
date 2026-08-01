@@ -35,6 +35,8 @@ export {
   saveBudgetTurnEnrichment,
   cleanupOldBudgetTurnSnapshotsByAge,
   cleanupOldJournalEntries,
+  readInitialFundsFromImportMeta,
+  getCommercialRouteFee,
 } from './accounting.js';
 
 import { recordInfoLoanInstallmentForGame } from './accounting.js';

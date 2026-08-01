@@ -53,7 +53,9 @@ import { DexieTreasuryWriteAdapter } from '../contexts/accounting/infrastructure
 import { DexieObjectiveHistoryRepository } from '../contexts/accounting/infrastructure/dexie/DexieObjectiveHistoryRepository.js';
 import { LegacyGameTimePort } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyGameTimePort.js';
 import sessionJournalStore from '../contexts/accounting/infrastructure/session/SessionJournalStore.js';
-import config from '../js/game/config.js';
+import {
+  readInitialFundsFromImportMeta,
+} from '../contexts/accounting/domain/catalogs/TreasuryCatalog.js';
 import { CollectCitizenTaxes } from '../contexts/accounting/application/services/game/CollectCitizenTaxes.js';
 import { RecordBuildingMaintenanceForCity } from '../contexts/accounting/application/services/game/RecordBuildingMaintenanceForCity.js';
 import { GameTreasuryRecording } from '../contexts/accounting/application/services/game/GameTreasuryRecording.js';
@@ -91,7 +93,7 @@ export function createAccountingContext(deps = {}) {
   const sessionJournalStoreInstance =
     deps.sessionJournalStore ?? deps.journalManager ?? sessionJournalStore;
   const dexieDb = deps.db ?? sessionJournalStoreInstance.db;
-  const defaultInitialFunds = deps.defaultInitialFunds ?? config?.budget?.initialFunds ?? 200;
+  const defaultInitialFunds = deps.defaultInitialFunds ?? readInitialFundsFromImportMeta();
   const objectiveHistoryRepository =
     deps.objectiveHistoryRepository ?? new DexieObjectiveHistoryRepository(dexieDb);
 

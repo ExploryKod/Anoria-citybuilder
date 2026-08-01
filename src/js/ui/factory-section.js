@@ -1,4 +1,8 @@
-import config from '../game/config.js';
+import {
+  getFactoryMaxStorage,
+  getFactoryWorkerNeed,
+  getFactoryEmployeeRoleType,
+} from '../acl/supply.js';
 import { registerAppService, getTimeInfo } from '../acl/appRuntime.js';
 import {
     instanceIdFromHouseRow,
@@ -482,17 +486,11 @@ class FactorySectionManager {
             bijoutier: 'Bijoutier'
         };
 
-        const getMaxStorage = (type) => {
-            return config.factoryMaxStorage?.[type] || 200;
-        };
+        const getMaxStorage = (type) => getFactoryMaxStorage(type);
 
-        const getEmployeeNeed = (type) => {
-            return config.factoryEmployeeNeeds?.[type]?.worker_need || 2;
-        };
+        const getEmployeeNeed = (type) => getFactoryWorkerNeed(type);
 
-        const getEmployeeType = (type) => {
-            return config.factoryEmployeeNeeds?.[type]?.type || 'worker';
-        };
+        const getEmployeeType = (type) => getFactoryEmployeeRoleType(type);
 
         const getEmployeesForResource = (resourceType) => {
             const employeeType = getEmployeeType(resourceType);

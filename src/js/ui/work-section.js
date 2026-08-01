@@ -1,9 +1,11 @@
-import config from '../game/config.js';
 import {
   getCityEmploymentSummary,
   getSectorPriority,
   getMergedSectorPriorities,
   updateSectorPrioritySync,
+  EMPLOYMENT_SECTOR_NAMES,
+  DEFAULT_SECTOR_PRIORITIES,
+  EMPLOYMENT_MAX_SECTORS,
 } from '../acl/employment.js';
 import { getCityTotalPopulation } from '../acl/housing.js';
 import { registerAppService } from '../acl/appRuntime.js';
@@ -160,8 +162,8 @@ class WorkSectionManager {
 
     generatePlaceholderWorkData() {
         // Get sectors from config
-        const sectors = config.employment?.sectors || {};
-        const defaultPriorities = config.employment?.defaultPriorities || {};
+        const sectors = EMPLOYMENT_SECTOR_NAMES;
+        const defaultPriorities = DEFAULT_SECTOR_PRIORITIES;
         
         // Generate sectors from config
         const sectorList = Object.entries(sectors).map(([sectorNum, sectorName]) => {
@@ -227,7 +229,7 @@ class WorkSectionManager {
         const sectorData = this.workData.sectors.find(s => s.id === sector);
         if (sectorData && sectorData.sectorNumber !== undefined) {
             // Get max sectors directly from config (source of truth)
-            const maxSectors = config.employment?.maxSectors || 6;
+            const maxSectors = EMPLOYMENT_MAX_SECTORS;
             
             // Clamp priority to valid range (1 to max sectors)
             const clampedPriority = Math.max(1, Math.min(maxSectors, priority));
@@ -358,7 +360,7 @@ class WorkSectionManager {
             priorityInput.className = 'work-priority-input';
             priorityInput.id = `priority-${sector.id}`;
             // Get max sectors directly from config (source of truth)
-            const maxSectors = config.employment?.maxSectors || 6;
+            const maxSectors = EMPLOYMENT_MAX_SECTORS;
             priorityInput.min = '1';
             priorityInput.max = maxSectors.toString();
             priorityInput.step = '1'; // Only allow integers
@@ -368,7 +370,7 @@ class WorkSectionManager {
                 priorityValue = getSectorPriority(sector.sectorNumber);
             }
             if (!priorityValue) {
-                priorityValue = config.employment?.defaultPriorities?.[sector.sectorNumber] || 1;
+                priorityValue = DEFAULT_SECTOR_PRIORITIES[sector.sectorNumber] || 1;
             }
             priorityInput.value = priorityValue;
             // Also update sector.priority to ensure consistency
