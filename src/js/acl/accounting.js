@@ -16,6 +16,17 @@ export {
   resetAccountingContextForTests,
 };
 
+export {
+  readInitialFundsFromImportMeta,
+  COMMERCIAL_ROUTE_FEE,
+  DEFAULT_INITIAL_FUNDS,
+} from '../../contexts/accounting/domain/catalogs/TreasuryCatalog.js';
+
+/** @returns {number} One-time fee to open a commercial trade route */
+export function getCommercialRouteFee() {
+  return COMMERCIAL_ROUTE_FEE;
+}
+
 /** @returns {Promise<number>} Treasury balance (budget_current.funds) */
 export async function getTreasuryBalance() {
   return getOrCreateAccountingContext().getTreasuryBalance();

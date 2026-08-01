@@ -7,7 +7,6 @@ import {
   saveCommerceConfig,
   clearCommercePersistence,
 } from '../acl/commerce.js';
-import config from '../game/config.js';
 import { getCityEmploymentSummary } from '../acl/employment.js';
 import { getCityTotalPopulation } from '../acl/housing.js';
 import {
@@ -16,7 +15,7 @@ import {
   listWindmillSupplyViews,
   getAllFoodTraceabilityTransactions,
 } from '../acl/supply.js';
-import { getTreasuryBalance, getTreasurySnapshot, recordCommercialRouteFee } from '../acl/accountingGame.js';
+import { getTreasuryBalance, getTreasurySnapshot, recordCommercialRouteFee, getCommercialRouteFee } from '../acl/accountingGame.js';
 import {
     getPriceStatus as resolvePriceStatus,
     getContractStatus as resolvePartnerContractStatus,
@@ -251,7 +250,7 @@ class CommerceSectionManager {
         // Note: La désactivation se fera automatiquement quand le contrat sera terminé
         
         // Pay commercial route fee (one-time payment to open commercial road)
-        const commercialRouteFee = config?.budget?.commercialRouteFee ?? 500;
+        const commercialRouteFee = getCommercialRouteFee();
         try {
             const currentBudget = await getTreasurySnapshot();
             const timeInfo = currentBudget?.turn !== undefined ? getTimeInfo(currentBudget.turn) : null;

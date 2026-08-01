@@ -13,6 +13,21 @@ export { createSupplyContext, getOrCreateSupplyContext };
 
 export { isWithinMarketRange, manhattanDistance, findHousesInMarketRange } from '../../contexts/supply/domain/policies/MarketRangePolicy.js';
 
+export {
+  getFactoryMaxStorage,
+  getFactoryWorkerNeed,
+  getFactoryEmployeeRoleType,
+  FACTORY_MAX_STORAGE,
+  FACTORY_EMPLOYEE_NEEDS,
+} from '../../contexts/supply/domain/manufacturing/ProductRecipeCatalog.js';
+
+export { DEFAULT_FOOD_DISTRIBUTION_DISTANCE } from '../../contexts/supply/domain/catalogs/SupplySimulationCatalog.js';
+
+/** @returns {number} */
+export function getDefaultFoodDistributionDistance() {
+  return DEFAULT_FOOD_DISTRIBUTION_DISTANCE;
+}
+
 /** Map TimeManager French season labels → Supply English seasons. */
 const LEGACY_SEASON_TO_SUPPLY = Object.freeze({
   Printemps: 'spring',

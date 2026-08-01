@@ -7,7 +7,7 @@ import { createScene } from './scene.js';
 import { createCity } from './city.js';
 import {getAssetPrice, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, isAreaAvailableForBuilding} from '../utils/utils.js';
 import { toBuildingIdString, createBuildingInstanceId, getOrCreateParcelsContext } from '../acl/parcels.js';
-import { getOrCreateSupplyContext, toSupplySeason, toSupplyMonth } from '../acl/supply.js';
+import { getOrCreateSupplyContext, toSupplySeason, toSupplyMonth, getDefaultFoodDistributionDistance } from '../acl/supply.js';
 import { getOrCreateHousingContext } from '../acl/housing.js';
 import { syncEmploymentAfterBuildingChange, getOrCreateEmploymentContext, ensureSectorPrioritiesInitialized } from '../acl/employment.js';
 import { getOrCreateCommerceContext } from '../acl/commerce.js';
@@ -34,6 +34,7 @@ import {
   updateTreasuryTurn,
   setBudgetReadyPromise,
   awaitBudgetReady,
+  readInitialFundsFromImportMeta,
 } from '../acl/accountingGame.js';
 import loaderManager from '../utils/LoaderManager.js';
 import objectivesTracker from '../ui/ObjectivesTracker.js';
@@ -420,7 +421,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     gameUI.updateTimeDisplay(time);
     
     // Initialize budget system - use initial funds from config (can be set via .env)
-    const initialFunds = config?.budget?.initialFunds || 200;
+    const initialFunds = readInitialFundsFromImportMeta();
     
     console.log('[game.js] Initializing budget with:', {
         initialFunds,
@@ -461,7 +462,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
         toSupplySeason,
         toSupplyMonth,
         getSectorPriorities: getAllSectorPriorities,
-        foodDistributionDistance: config?.simulation?.foodDistributionDistance || 5,
+        foodDistributionDistance: getDefaultFoodDistributionDistance(),
     });
     const scene = createScene(gameStore, assetManager, parcels, supply, housing);
 

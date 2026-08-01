@@ -69,6 +69,10 @@ function checkViolation(fileRel, importSpec) {
     return 'contexts/ must not import legacy js/';
   }
 
+  if (fileRel.startsWith('contexts/') && importSpec.includes('js/game/config.js')) {
+    return 'contexts/ must not import js/game/config.js';
+  }
+
   if (fileRel.startsWith('js/') && !fileRel.startsWith('js/acl/') && isContextsImport) {
     return 'js/ must reach contexts/ only via js/acl/';
   }

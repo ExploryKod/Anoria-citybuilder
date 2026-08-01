@@ -8,7 +8,17 @@ import {
   createEmploymentContext,
   getOrCreateEmploymentContext,
 } from '../../composition/createEmploymentContext.js';
-import { getDefaultEmployees } from '../game/modules/employmentBuildingDefaults.js';
+import {
+  getDefaultEmployees,
+  calculateSalary,
+  updateEmployeeSalary,
+} from '../../contexts/employment/domain/policies/BuildingEmploymentDefaults.js';
+import { getBuildingEmploymentSector } from '../../contexts/employment/domain/catalogs/EmploymentSectorCatalog.js';
+import {
+  EMPLOYMENT_MAX_SECTORS,
+  EMPLOYMENT_SECTOR_NAMES,
+  DEFAULT_SECTOR_PRIORITIES,
+} from '../../contexts/employment/domain/catalogs/EmploymentSectorCatalog.js';
 import { synchronizeFactoryWorkerDistribution } from '../../contexts/employment/infrastructure/runtime/synchronizeFactoryWorkerDistribution.js';
 import {
   getBuildingById,
@@ -20,6 +30,24 @@ import {
 } from '../../contexts/employment/domain/policies/BuildingRolePolicy.js';
 
 export { createEmploymentContext, getOrCreateEmploymentContext };
+
+export {
+  EMPLOYMENT_MAX_SECTORS,
+  EMPLOYMENT_SECTOR_NAMES,
+  DEFAULT_SECTOR_PRIORITIES,
+  getBuildingEmploymentSector,
+};
+
+export {
+  getDefaultEmployees,
+  calculateSalary,
+  updateEmployeeSalary,
+};
+
+/** @param {string} buildingType */
+export function getBuildingSector(buildingType) {
+  return getBuildingEmploymentSector(buildingType);
+}
 
 /** Ensure localStorage has default sector priorities on first run. */
 export function ensureSectorPrioritiesInitialized() {
