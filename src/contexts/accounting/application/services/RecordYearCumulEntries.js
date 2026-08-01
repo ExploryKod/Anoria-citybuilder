@@ -3,7 +3,7 @@ import { buildCumulBusinessKey } from '../../domain/policies/LedgerBusinessKeys.
 const CUMUL_SPECS = [
   { cumulType: 'cumul_maintenance', sourceType: 'maintenance', label: 'Cumul Maintenance' },
   { cumulType: 'cumul_construction', sourceType: 'construction', label: 'Cumul Construction' },
-  { cumulType: 'cumul_salary', sourceType: 'salary', label: 'Cumul Salaires' },
+  { cumulType: 'cumul_salary', sourceType: 'salary', label: 'Cumul salaires fonctionnaires' },
   {
     cumulType: 'cumul_exceptional_expenses',
     sourceType: 'exceptional_expenses',

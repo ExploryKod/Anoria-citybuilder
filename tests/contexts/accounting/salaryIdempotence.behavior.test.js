@@ -78,8 +78,8 @@ describe('Accounting — salary idempotence (J6/J7)', () => {
 
   test('duplicate salary same civil month is skipped via businessKey', async () => {
     const turn = 24;
-    await budgetManager.addSalaries(100, 5, 'Salaires test', turn);
-    await budgetManager.addSalaries(100, 5, 'Salaires test duplicate', turn);
+    await budgetManager.addSalaries(100, 12, 'Salaires test', turn);
+    await budgetManager.addSalaries(100, 12, 'Salaires test duplicate', turn);
 
     const entries = await journalManager.getJournalEntries();
     const salaries = entries.filter((e) => e.type === 'salary');
@@ -119,7 +119,7 @@ describe('Accounting — salary idempotence (J6/J7)', () => {
 
   test('salary uses game turn for businessKey alignment', async () => {
     const turn = 48;
-    await budgetManager.addSalaries(100, 3, 'Salaires alignés', turn);
+    await budgetManager.addSalaries(100, 12, 'Salaires alignés', turn);
 
     const entries = await journalManager.getJournalEntries();
     const salary = entries.find((e) => e.type === 'salary');

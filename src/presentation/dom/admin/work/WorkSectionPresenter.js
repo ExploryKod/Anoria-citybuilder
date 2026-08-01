@@ -1,3 +1,5 @@
+import { computeReferenceSalaryPayrollBreakdown } from '../../../../contexts/accounting/domain/policies/ReferenceSalaryPayrollPolicy.js';
+
 export class WorkSectionPresenter {
     /**
      * @param {{ accounting: object, employment: object, housing: object }} deps
@@ -9,10 +11,12 @@ export class WorkSectionPresenter {
         const settings = this.accounting?.getSalarySettings?.() ?? {
           salaryPerMonth: 0,
           salaryTaxRate: 0,
+          unemploymentBenefitRate: 0.5,
         };
         this.salary = settings.salaryPerMonth;
         this.salaryTaxRate = settings.salaryTaxRate;
-        this.unemploymentRate = 50;
+        this.unemploymentBenefitRate = settings.unemploymentBenefitRate ?? 0.5;
+        this.lastKnownPopulation = 0;
         this.workData = null;
     }
 
@@ -215,10 +219,15 @@ export class WorkSectionPresenter {
     }
 
     adjustUnemploymentRate(delta) {
-        const newRate = Math.max(0, Math.min(100, this.unemploymentRate + delta));
-        
-        if (newRate !== this.unemploymentRate) {
-            this.unemploymentRate = newRate;
+        const currentPercent = Math.round(this.unemploymentBenefitRate * 100);
+        const newPercent = Math.max(0, Math.min(100, currentPercent + delta));
+        const newRate = newPercent / 100;
+
+        if (newRate !== this.unemploymentBenefitRate) {
+            const settings = this.accounting.setSalarySettings({
+              unemploymentBenefitRate: newRate,
+            });
+            this.unemploymentBenefitRate = settings.unemploymentBenefitRate;
             this.updateUnemploymentDisplay();
         }
     }
@@ -254,6 +263,17 @@ export class WorkSectionPresenter {
         }
     }
 
+    #buildPayrollPreview(population, unemployed, eliteCount = 0) {
+        return computeReferenceSalaryPayrollBreakdown({
+            population,
+            unemployed,
+            eliteCount,
+            referenceSalaryPerMonth: this.salary,
+            unemploymentBenefitRate: this.unemploymentBenefitRate,
+            salaryTaxRate: this.salaryTaxRate,
+        });
+    }
+
     async updateSalaryDisplay() {
         const salaryDisplay = document.getElementById('salary-display');
         const salaryMonthDisplay = document.getElementById('salary-month-display');
@@ -285,15 +305,21 @@ export class WorkSectionPresenter {
             populationDisplay.textContent = totalPopulation;
         }
 
+        this.lastKnownPopulation = totalPopulation;
+
         if (annualBillDisplay) {
-            const annualBill = totalPopulation * this.salary * 12;
-            annualBillDisplay.textContent = Math.round(annualBill);
+            const payroll = this.#buildPayrollPreview(
+              totalPopulation,
+              this.workData?.totalUnemployed ?? 0,
+              this.workData?.totalAvailableElites ?? 0
+            );
+            annualBillDisplay.textContent = Math.round(payroll.cityExpenseTotal * 12);
         }
         
-        this.updateSalaryTaxDisplay();
+        this.updateSalaryTaxDisplay(totalPopulation);
     }
 
-    async updateSalaryTaxDisplay() {
+    async updateSalaryTaxDisplay(totalPopulation = null) {
         const salaryTaxRateDisplay = document.getElementById('salary-tax-rate-display');
         const salaryTaxAmountDisplay = document.getElementById('salary-tax-amount-display');
         const salaryTaxAnnualDisplay = document.getElementById('salary-tax-annual-display');
@@ -302,28 +328,69 @@ export class WorkSectionPresenter {
             salaryTaxRateDisplay.textContent = Math.round(this.salaryTaxRate * 100);
         }
 
-        let totalPopulation = 0;
-        try {
-            totalPopulation = await this.housing.getCityTotalPopulation();
-        } catch (error) {
-            console.warn('[WorkSection] Error getting population for salary tax display:', error);
+        let population = totalPopulation;
+        if (population == null) {
+            try {
+                population = await this.housing.getCityTotalPopulation();
+            } catch (error) {
+                console.warn('[WorkSection] Error getting population for salary tax display:', error);
+                population = 0;
+            }
         }
 
+        const payroll = this.#buildPayrollPreview(
+          population,
+          this.workData?.totalUnemployed ?? 0,
+          this.workData?.totalAvailableElites ?? 0
+        );
+
         if (salaryTaxAmountDisplay) {
-            const monthlyTaxAmount = Math.round(totalPopulation * this.salary * this.salaryTaxRate);
-            salaryTaxAmountDisplay.textContent = monthlyTaxAmount;
+            salaryTaxAmountDisplay.textContent = payroll.payrollTax;
         }
 
         if (salaryTaxAnnualDisplay) {
-            const annualTaxAmount = Math.round(totalPopulation * this.salary * 12 * this.salaryTaxRate);
-            salaryTaxAnnualDisplay.textContent = annualTaxAmount;
+            salaryTaxAnnualDisplay.textContent = Math.round(payroll.payrollTax * 12);
         }
     }
 
     updateUnemploymentDisplay() {
         const unemploymentDisplay = document.getElementById('unemployment-rate-display');
+        const unemploymentCountDisplay = document.getElementById('unemployment-count-display');
+        const unemploymentBenefitDisplay = document.getElementById('unemployment-benefit-display');
+
         if (unemploymentDisplay) {
-            unemploymentDisplay.textContent = `${this.unemploymentRate}%`;
+            unemploymentDisplay.textContent = `${Math.round(this.unemploymentBenefitRate * 100)}%`;
+        }
+
+        const unemployed = this.workData?.totalUnemployed ?? 0;
+        const population = this.lastKnownPopulation;
+        const payroll = this.#buildPayrollPreview(
+            population,
+            unemployed,
+            this.workData?.totalAvailableElites ?? 0
+        );
+
+        if (unemploymentCountDisplay) {
+            unemploymentCountDisplay.textContent = unemployed;
+        }
+
+        if (unemploymentBenefitDisplay) {
+            unemploymentBenefitDisplay.textContent = payroll.unemploymentBenefitExpense;
+        }
+
+        const citizenPayrollDisplay = document.getElementById('citizen-payroll-display');
+        if (citizenPayrollDisplay) {
+            citizenPayrollDisplay.textContent = payroll.citizenPayrollMass;
+        }
+
+        const civilServantCountDisplay = document.getElementById('civil-servant-count-display');
+        if (civilServantCountDisplay) {
+            civilServantCountDisplay.textContent = payroll.civilServantCount;
+        }
+
+        const payrollTaxBaseDisplay = document.getElementById('payroll-tax-base-display');
+        if (payrollTaxBaseDisplay) {
+            payrollTaxBaseDisplay.textContent = payroll.payrollTaxBase;
         }
     }
 

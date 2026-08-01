@@ -22,6 +22,7 @@ export {
   canAfford,
   collectCitizenTaxes,
   recordSalaries,
+  recordUnemploymentBenefits,
   recordPayrollTax,
   recordBuildingMaintenance,
   recordExceptionalRepairExpense,

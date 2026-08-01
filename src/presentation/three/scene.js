@@ -1416,8 +1416,11 @@ export function createScene(_gameStore, assetManager, deps) {
         let unemployedCount = 0;
         let unemploymentPercentage = 0;
         let employmentLack = 0;
-        let citizenPopulation = 0;
+        let activeCitizenCount = 0;
         let elitePopulation = 0;
+        let civilServantCount = 0;
+        let activePopulationCount = 0;
+        let totalPopulation = 0;
         /** @type {string[]} */
         let understaffedBuildingIds = [];
 
@@ -1426,17 +1429,22 @@ export function createScene(_gameStore, assetManager, deps) {
             unemployedCount = summary.unemployed;
             unemploymentPercentage = summary.unemploymentPercentage;
             employmentLack = summary.lack;
-            citizenPopulation = summary.workerPool;
+            activeCitizenCount = summary.activeCitizenCount;
             elitePopulation = summary.elitePool;
+            civilServantCount = summary.civilServantCount;
+            activePopulationCount = summary.activePopulationCount;
+            totalPopulation = summary.totalPopulation;
             understaffedBuildingIds = summary.understaffedBuildingIds;
         } catch (error) {
             console.warn('[scene.js] Error calculating employment summary:', error);
         }
 
         gameUI.updatePopulationBreakdown(
-            citizenPopulation + elitePopulation,
-            citizenPopulation,
-            elitePopulation
+            totalPopulation,
+            activeCitizenCount,
+            elitePopulation,
+            civilServantCount,
+            activePopulationCount
         );
         gameUI.updateUnemployedPopulation(unemployedCount, unemploymentPercentage);
         gameUI.updateWorkerLack(employmentLack);

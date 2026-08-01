@@ -93,6 +93,11 @@ export function renderCityLedgerTable(comparison) {
     { key: 'construction', thisYear: 'constructionThisYear', lastYear: 'constructionLastYear' },
     { key: 'maintenance', thisYear: 'maintenanceThisYear', lastYear: 'maintenanceLastYear' },
     { key: 'salary', thisYear: 'salaryThisYear', lastYear: 'salaryLastYear' },
+    {
+      key: 'unemploymentBenefit',
+      thisYear: 'unemploymentBenefitThisYear',
+      lastYear: 'unemploymentBenefitLastYear',
+    },
     { key: 'repairs', thisYear: 'repairsThisYear', lastYear: 'repairsLastYear' },
     { key: 'imports', thisYear: 'importsThisYear', lastYear: 'importsLastYear' },
     { key: 'loanInterest', thisYear: 'loanInterestThisYear', lastYear: 'loanInterestLastYear' },
