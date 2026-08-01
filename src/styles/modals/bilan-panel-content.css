@@ -1,30 +1,30 @@
 /* Budget Panel Content Styles */
-.budget-panel-content {
+.bilan-panel-content {
     padding: 20px;
     height: 100%;
     overflow-y: auto;
 }
 
 /* Custom scrollbar for budget panel content */
-.budget-panel-content::-webkit-scrollbar {
+.bilan-panel-content::-webkit-scrollbar {
     width: 6px;
 }
 
-.budget-panel-content::-webkit-scrollbar-track {
+.bilan-panel-content::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.budget-panel-content::-webkit-scrollbar-thumb {
+.bilan-panel-content::-webkit-scrollbar-thumb {
     background: var(--cta);
     border-radius: 3px;
 }
 
-.budget-panel-content::-webkit-scrollbar-thumb:hover {
+.bilan-panel-content::-webkit-scrollbar-thumb:hover {
     background: var(--cta-05);
 }
 
 /* Firefox scrollbar for budget panel content */
-.budget-panel-content {
+.bilan-panel-content {
     scrollbar-width: thin;
     scrollbar-color: var(--cta) transparent;
 }
@@ -66,7 +66,7 @@
     color: #ff6b6b;
 }
 
-.budget-health-indicator {
+.bilan-health-indicator {
     max-width: max(80%, 200px);
     margin: 10px auto;
     background: rgba(76, 222, 128, 0.2);
@@ -78,19 +78,19 @@
     border: 1px solid rgba(76, 222, 128, 0.3);
 }
 
-.budget-health-indicator.warning {
+.bilan-health-indicator.warning {
     background: rgba(255, 167, 38, 0.2);
     color: #ffa726;
     border-color: rgba(255, 167, 38, 0.3);
 }
 
-.budget-health-indicator.critical {
+.bilan-health-indicator.critical {
     background: rgba(255, 107, 107, 0.2);
     color: #ff6b6b;
     border-color: rgba(255, 107, 107, 0.3);
 }
 
-.budget-panel-header h2 {
+.bilan-panel-header h2 {
     margin: 5px 10px 0 10px;
     font-size: 24px;
     font-weight: 600;
@@ -108,7 +108,7 @@
     width: 100%;
 }
 
-.budget-panel-close-btn {
+.bilan-panel-close-btn {
     margin: 5px;
     background: white;
     border: none;
@@ -123,12 +123,12 @@
     transition: all 0.3s ease-in-out;
 }
 
-.budget-panel-close-btn svg {
+.bilan-panel-close-btn svg {
     width: 24px;
     height: 24px;
 }
 
-.budget-panel-close-btn:hover {
+.bilan-panel-close-btn:hover {
     background: var(--cta);
     color: white;
 }

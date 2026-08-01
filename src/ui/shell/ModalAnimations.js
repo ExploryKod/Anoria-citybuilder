@@ -14,7 +14,7 @@ class ModalAnimations {
   initializeModals() {
     // List of modals to animate
     const modalIds = [
-      'budget-panel',
+      'bilan-panel',
       'loans-panel',
       'realtime-budget-panel',
       'budget-states-panel',
@@ -36,7 +36,7 @@ class ModalAnimations {
 
     // Find wrapper - supports various naming conventions
     const wrapper = modal.querySelector(`
-      .budget-panel-wrapper, 
+      .bilan-panel-wrapper, 
       .loans-panel-wrapper, 
       .realtime-budget-wrapper, 
       .realtime-budget-panel-wrapper,
@@ -51,7 +51,7 @@ class ModalAnimations {
     
     // Find header - supports various naming conventions
     const header = wrapper?.querySelector(`
-      .budget-panel-header, 
+      .bilan-panel-header, 
       .loans-panel-header, 
       .realtime-budget-header,
       .realtime-budget-panel-header,
@@ -66,7 +66,7 @@ class ModalAnimations {
     
     // Find content - supports various naming conventions
     const content = wrapper?.querySelector(`
-      .budget-panel-content, 
+      .bilan-panel-content, 
       .loans-panel-content, 
       .realtime-budget-content,
       .realtime-budget-panel-content,

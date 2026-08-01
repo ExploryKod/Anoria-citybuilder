@@ -1,5 +1,5 @@
 /* Budget Panel - Centered Modal like loans-panel */
-.budget-panel {
+.bilan-panel {
     position: fixed;
     top: 0;
     left: 0;
@@ -12,11 +12,11 @@
     justify-content: center;
 }
 
-.budget-panel.active {
+.bilan-panel.active {
     display: flex !important;
 }
 
-.budget-panel-wrapper {
+.bilan-panel-wrapper {
     background: #fafafa;
     color: var(--primary);
     border-radius: var(--border-radius);
@@ -30,7 +30,7 @@
     flex-direction: column;
 }
 
-.budget-panel-header {
+.bilan-panel-header {
     background: white;
     padding: 20px;
     border-bottom: 2px solid var(--cta);
@@ -39,19 +39,19 @@
     gap: 20px;
 }
 
-.budget-health-indicator {
+.bilan-health-indicator {
     flex-shrink: 0;
     min-width: fit-content;
 }
 
-.budget-panel-title-container {
+.bilan-panel-title-container {
     flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-.budget-panel-header h2 {
+.bilan-panel-header h2 {
     margin: 0;
     font-size: 24px;
     font-weight: 600;
@@ -59,7 +59,7 @@
     text-align: center;
 }
 
-.budget-panel-close-btn {
+.bilan-panel-close-btn {
     background: white;
     border: none;
     color: var(--cta);
@@ -76,31 +76,31 @@
     min-width: 40px;
 }
 
-.budget-panel-close-btn:hover {
+.bilan-panel-close-btn:hover {
     background: var(--cta);
     color: white;
 }
 
 /* Custom scrollbar for budget panel content */
-.budget-panel-content::-webkit-scrollbar {
+.bilan-panel-content::-webkit-scrollbar {
     width: 6px;
 }
 
-.budget-panel-content::-webkit-scrollbar-track {
+.bilan-panel-content::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.budget-panel-content::-webkit-scrollbar-thumb {
+.bilan-panel-content::-webkit-scrollbar-thumb {
     background: var(--cta);
     border-radius: 3px;
 }
 
-.budget-panel-content::-webkit-scrollbar-thumb:hover {
+.bilan-panel-content::-webkit-scrollbar-thumb:hover {
     background: var(--cta-05);
 }
 
 /* Firefox scrollbar for budget panel content */
-.budget-panel-content {
+.bilan-panel-content {
     padding: 20px;
     flex: 1;
     overflow-y: auto;
@@ -154,27 +154,27 @@
 
 /* Mobile Landscape Responsive Styles */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
-    .budget-panel-wrapper {
+    .bilan-panel-wrapper {
         width: 95%;
         max-width: none;
         max-height: 90vh;
     }
 
-    .budget-panel-header {
+    .bilan-panel-header {
         padding: 15px;
     }
 
-    .budget-panel-header h2 {
+    .bilan-panel-header h2 {
         font-size: 1.3rem;
     }
 
-    .budget-panel-close-btn {
+    .bilan-panel-close-btn {
         width: 32px;
         height: 32px;
         padding: 4px;
     }
 
-    .budget-panel-content {
+    .bilan-panel-content {
         padding: 15px;
     }
 

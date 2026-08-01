@@ -91,7 +91,7 @@ Presenters dans `src/ui/`. Chaque surface appelle l'ACL → **use case** (pas De
 |---|---|---|---|---|
 | **Journal** | `#journal-panel` | `ui/compta/journal/` | `queries/journal/GetGeneralLedger` ⚠️ | Journal chronologique (mois/années, export) — **pas** le grand livre PCG |
 | **Livret ville** | `#admin-section-finances` | `ui/admin/finances/` + `ui/compta/livret/` | `queries/city-ledger/*` | Tableau César 3 N vs N−1 — vue joueur simplifiée |
-| **CR + Bilan** | `#budget-panel`, `#budget-states-panel` | `ui/compta/bilan/`, `ui/compta/compte-de-resultat/` | `queries/financial-statements/*` | États PCG (exercice / patrimoine) — cible **annuelle** |
+| **CR + Bilan** | `#bilan-panel`, `#budget-states-panel` | `ui/compta/bilan/`, `ui/compta/compte-de-resultat/` | `queries/financial-statements/*` | États PCG (exercice / patrimoine) — cible **annuelle** |
 | **Trésorerie live** | `.display-funds`, `#realtime-budget-panel` | HUD, `ui/compta/tresorerie/` | `queries/treasury/*` | Solde courant + flux du tour |
 
 ### Niveau 1 — couches (un BC, domain unifié)
@@ -409,7 +409,7 @@ Types legacy `loan_default_*` restent lisibles à l’export (alias UI).
 |---|---|---|---|---|---|
 | **Livret ville** (admin César 3) | `#admin-section-finances` | `ui/admin/finances/` + `ui/compta/livret/` | `GetCityLedgerYearComparison` | `DexieJournalRepository` + `DexieTreasuryRepository` | Trésorerie ≠ journal pour balance N |
 | **Compte de résultat** | `#budget-states-panel` | `ui/compta/compte-de-resultat/` | `GetFinancialStatementsHistory()` | Journal + enrichissement `budget_turn_*` | ✅ journal-primary |
-| **Bilan** (compta classique) | `#budget-panel` | `ui/buttons.js` → `updateBudgetDisplay()` | `GetBalanceSheet()` → bundle lié CR | Journal + City Assets + cache prêts | ✅ lié CR |
+| **Bilan** (compta classique) | `#bilan-panel` | `ui/buttons.js` → `updateBudgetDisplay()` | `GetBalanceSheet()` → bundle lié CR | Journal + City Assets + cache prêts | ✅ lié CR |
 | **Journal** (grand livre) | `#journal-panel` | `ui/compta/journal/` | `GetGeneralLedger(filters)` ⚠️ nom legacy | Journal chronologique — **≠ grand livre PCG** |
 | **Budget temps réel** | `#realtime-budget-panel` | `ui/compta/tresorerie/` | `GetPeriodCashFlow(currentTurn)` | `budget_current` + `getFinancialHealth()` (**daily** netFlow) | Flux tour ≠ flux exercice |
 | **Info-box fonds** | `#display-funds` | (HUD) | `GetTreasuryBalance()` | `budget_current.funds` | ✅ Cohérent avec tréso co-maintenue |
@@ -516,7 +516,7 @@ C’est le **livret ville César 3** — seul panneau migré en Phase 1. Vérifi
 
 | Panneau | Bouton | Pourquoi pas Phase 1 |
 |---|---|---|
-| Bilan | `#budget-panel` | Toujours sur `budget_current` + City Assets |
+| Bilan | `#bilan-panel` | Toujours sur `budget_current` + City Assets |
 | Compte de résultat | `#budget-states-panel` | Toujours sur snapshots `budget_turn_*` |
 | Budget temps réel | `#realtime-budget-panel` | Pas encore branché sur `acl/accounting` |
 | Journal | `#journal-panel` | Déjà isolé ; sert de **référence croisée**, pas de migration |
@@ -592,7 +592,7 @@ Journal non fiable comme SoT unique tant que tous les types opérationnels ne pa
 ### Phase 3 — Bilan + compte de résultat ✅ (2026-07-31)
 
 - `GetIncomeStatement` / `GetBalanceSheet` depuis journal + trésorerie + City Assets
-- Presenters `#budget-panel` et résumé `#budget-states-panel` via ACL
+- Presenters `#bilan-panel` et résumé `#budget-states-panel` via ACL
 - Snapshots `budget_turn_*` conservés pour historique par tour (CR détaillé)
 
 ### Phase 3 — Unifier les lectures sur le journal (**après 3½**)

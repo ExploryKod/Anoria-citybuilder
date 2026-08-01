@@ -8,11 +8,11 @@ This directory contains modularized CSS files for all modal components in the ap
 - `global.css` - Common styles and utilities shared across all modals
 - `realtime-budget.css` - Real-time budget popup styles
 - `budget-states.css` - Budget states panel styles
-- `budget-panel.css` - Urban Advice Center (budget panel) styles
+- `bilan-panel.css` - Bilan comptable (balance sheet) panel styles
 - `loans-panel.css` - Loans panel styles
 
 ### Content-Specific Files
-- `budget-panel-content.css` - Budget panel content styles
+- `bilan-panel-content.css` - Bilan panel content styles
 - `budget-states-content.css` - Budget states content styles
 - `balance-sheet.css` - Balance sheet styles
 - `cleanup-notification.css` - Cleanup notification styles
@@ -26,11 +26,11 @@ Each modal file should be imported in the main HTML file or through a CSS bundle
 <link rel="stylesheet" href="./src/styles/modals/global.css">
 <link rel="stylesheet" href="./src/styles/modals/realtime-budget.css">
 <link rel="stylesheet" href="./src/styles/modals/budget-states.css">
-<link rel="stylesheet" href="./src/styles/modals/budget-panel.css">
+<link rel="stylesheet" href="./src/styles/modals/bilan-panel.css">
 <link rel="stylesheet" href="./src/styles/modals/loans-panel.css">
 
 <!-- Content-specific styles -->
-<link rel="stylesheet" href="./src/styles/modals/budget-panel-content.css">
+<link rel="stylesheet" href="./src/styles/modals/bilan-panel-content.css">
 <link rel="stylesheet" href="./src/styles/modals/budget-states-content.css">
 <link rel="stylesheet" href="./src/styles/modals/balance-sheet.css">
 <link rel="stylesheet" href="./src/styles/modals/cleanup-notification.css">

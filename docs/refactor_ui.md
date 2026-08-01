@@ -66,7 +66,7 @@ Classes admin `*SectionManager` → `*SectionPresenter`, clés registry, ACL.
 | `RealtimeBudgetPanel` / `RealtimeBudgetPresenter` | `TresoreriePanel` / `TresoreriePresenter` |
 | `*Section.js` (classe Presenter) | `*SectionPresenter.js` |
 
-**Note :** le domaine accounting garde les noms EN (`BalanceSheet`, `RealtimeBudgetViewModel`, ACL `getBalanceSheet`). DOM IDs `#budget-panel` / `#realtime-budget-*` inchangés (étape 10).
+**Note :** le domaine accounting garde les noms EN (`BalanceSheet`, `RealtimeBudgetViewModel`, ACL `getBalanceSheet`). DOM shell bilan : `#bilan-panel` (étape 10) ; trésorerie live : `#realtime-budget-*` (inchangé).
 
 ---
 
@@ -78,7 +78,7 @@ Journal, CompteDeResultat, Prets, CarteVille, FoodTraceability (+ dead code supp
 
 ## Étape 4 — Trancher `ConseilUrbainPanel` ✅
 
-Code mort supprimé ; `#budget-panel` = bilan uniquement.
+Code mort supprimé ; `#bilan-panel` = bilan uniquement.
 
 ---
 
@@ -128,7 +128,7 @@ Ce fichier + chemins majeurs accounting / FINANCIAL_DATA_SOURCE_OF_TRUTH.
 | `BuildingBreakdownEnrichment.js` | enrichissement UI bilan (pas de rename) |
 | Commerce `goodsData` sans lecture UI | ✅ BC via `LocalStorageCommerceRepository` |
 | Salary / taxe hors SectionPresenters | ✅ `LocalStorageFiscalSettingsRepository` |
-| `#budget-panel` → `#bilan-panel` | **reporté** (breaking DOM/CSS) |
+| `#budget-panel` → `#bilan-panel` (+ `#bilan-btn`, CSS `bilan-panel*.css`) | ✅ ; `#realtime-budget-*` / `#budget-states-*` inchangés |
 
 ---
 
@@ -138,7 +138,7 @@ Ce fichier + chemins majeurs accounting / FINANCIAL_DATA_SOURCE_OF_TRUTH.
 |---|---|---|
 | Panneau Administrateur | `#administrator-panel` | `src/ui/admin/` |
 | Trésorerie temps réel | `#realtime-budget-panel` | `src/ui/compta/tresorerie/TresoreriePanel.js` |
-| Bilan comptable | `#budget-panel` | `src/ui/compta/bilan/BilanPanel.js` |
+| Bilan comptable | `#bilan-panel` | `src/ui/compta/bilan/BilanPanel.js` |
 | Compte de résultat | `#budget-states-panel` | `src/ui/compta/compte-de-resultat/` |
 | Livret (admin Finances) | `#admin-section-finances` | `src/ui/compta/livret/` + `src/ui/admin/finances/` |
 | Prêts | `#loans-panel` | `src/ui/compta/prets/` |
@@ -150,5 +150,5 @@ Ce fichier + chemins majeurs accounting / FINANCIAL_DATA_SOURCE_OF_TRUTH.
 
 ## Suite possible
 
-1. Étape 10 restante — DOM `#budget-panel` → `#bilan-panel`
-2. Clarifier `presentation/three` vs `infrastructure/` (hors UI)
+1. Clarifier `presentation/three` vs `infrastructure/` (hors UI)
+2. Optionnel : `#budget-states-panel` → nom FR compte de résultat ; classes contenu `.budget-item`
