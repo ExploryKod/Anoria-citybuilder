@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {  assetsPrices } from '../meshs/data.js';
 import { getDefaultEmployees, getSectorPriority, getSectorName, getAllSectorPriorities } from './modules/EmployeeHelper.js';
 import { TimeManager } from './utils/TimeManager.js';
+import { getTimeInfo } from '../acl/appRuntime.js';
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
 import {getAssetPrice, makeInfoBuildingText, makeInfoKeyValue, makeInfoSection, isAreaAvailableForBuilding} from '../utils/utils.js';
@@ -11,6 +12,7 @@ import { getOrCreateHousingContext } from '../acl/housing.js';
 import { syncEmploymentAfterBuildingChange, getOrCreateEmploymentContext } from '../acl/employment.js';
 import { findBuildingAtTile, placeBuildingWithPayment, getBuildingById, getBuildingField } from '../acl/construction.js';
 import { createGameRuntime } from '../../composition/createGameRuntime.js';
+import { GameLoop } from '../../engine/loop/GameLoop.js';
 import config from './config.js';
 import {
     displayTime,
@@ -25,6 +27,13 @@ import {
     displaySpeed
 } from '../ui/nodes.js';
 import budgetManager from '../stores/BudgetManager.js';
+import {
+  forceReinitializeTreasury,
+  getTreasurySnapshot,
+  updateTreasuryTurn,
+  setBudgetReadyPromise,
+  awaitBudgetReady,
+} from '../acl/accountingGame.js';
 import journalManager from '../stores/JournalManager.js';
 import FoodTraceabilityService from '../stores/FoodTraceabilityService.js';
 import loaderManager from '../utils/LoaderManager.js';
@@ -74,6 +83,7 @@ function renderWorkplaceEmployeesInfo(buildingData, messages) {
 import InputManager from './InputManager.js';
 import gameUI from './GameUI.js';
 import appRegistry from './AppRegistry.js';
+import { attachEmploymentPriorityToWorkSection, getMultiplayerManager, invokeStartTutorial } from '../acl/appRuntime.js';
 import webglDetector from '../utils/WebGLResourceDetector.js';
 import commerceStore from '../stores/CommerceStore.js';
 
@@ -105,20 +115,7 @@ let services = [];
         // Note: Initial simulation will run on first game.update() call
         // The service is now synchronized with the game loop
         
-        // Make service available to work section manager
-        if (window.workSectionManager) {
-            window.workSectionManager.setPriorityService(employmentPriorityService);
-        } else {
-            // If work section manager isn't initialized yet, set it when it becomes available
-            const checkWorkSection = setInterval(() => {
-                if (window.workSectionManager) {
-                    window.workSectionManager.setPriorityService(employmentPriorityService);
-                    clearInterval(checkWorkSection);
-                }
-            }, 100);
-            // Stop checking after 5 seconds
-            setTimeout(() => clearInterval(checkWorkSection), 5000);
-        }
+        attachEmploymentPriorityToWorkSection(employmentPriorityService);
         
         console.log('[game.js] Services loaded successfully:', services.length, services.map(s => s.constructor.name));
     } catch (err) {
@@ -441,7 +438,14 @@ export function createGame(gameStore, assetManager, citySize = null) {
     let isPause;
     let isOver;
     let infos = {};
-    let intervalId = null;
+    /** @type {GameLoop | null} */
+    let gameLoop = null;
+    /** @type {ReturnType<typeof createGame> extends infer T ? T : never} */
+    let game;
+
+    function getTickIntervalMs() {
+        return Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed'), 10) || 4000));
+    }
     // Track pending building placements to prevent race conditions from rapid clicks
     const pendingPlacements = new Set();
     // Set initial speed within limits (500ms - 20,000ms)
@@ -449,13 +453,12 @@ export function createGame(gameStore, assetManager, citySize = null) {
     
     // Register with AppRegistry (centralized namespace)
     appRegistry.register('gameUI', gameUI);
-    appRegistry.register('budgetManager', budgetManager);
+    appRegistry.register('budgetManager', budgetManager, false);
     appRegistry.register('journalManager', journalManager);
     
     // Initialize FoodTraceabilityService
     const foodTraceabilityService = new FoodTraceabilityService();
     appRegistry.register('foodTraceabilityService', foodTraceabilityService);
-    window.foodTraceabilityService = foodTraceabilityService; // Make globally available
     
     gameUI.updateTimeDisplay(time);
     
@@ -469,22 +472,17 @@ export function createGame(gameStore, assetManager, citySize = null) {
         configObject: config
     });
     
-    budgetManager.forceReinitialize(initialFunds).then(async () => {
-        // BudgetManager registered above - available via window.app.budgetManager or window.budgetManager
-        // Update funds display in navigation bar immediately after initialization
-        const initialBudget = await budgetManager.getCurrentBudget();
-        
-        console.log('[game.js] Budget initialized, current budget:', initialBudget);
-        
-        if (window.gameUI) {
-            window.gameUI.updateFunds(initialBudget.funds || initialFunds);
-        } else {
-            const displayFunds = document.querySelector('.display-funds');
-            if (displayFunds) {
-                displayFunds.textContent = (initialBudget.funds || initialFunds).toString();
-            }
-        }
-    });
+    setBudgetReadyPromise(
+        forceReinitializeTreasury(initialFunds).then(async () => {
+            const initialBudget = await getTreasurySnapshot();
+
+            console.log('[game.js] Budget initialized, current budget:', initialBudget);
+
+            gameUI.updateFunds(initialBudget.funds ?? initialFunds);
+
+            return initialBudget;
+        })
+    );
 
 
     /* Scene + ECS runtime */
@@ -536,11 +534,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
         // Ouvrir automatiquement le tutoriel au démarrage du jeu (premier mois)
         // Petit délai pour s'assurer que tout est bien initialisé après le chargement
         setTimeout(() => {
-            if (window.startTutorial && typeof window.startTutorial === 'function') {
-                window.startTutorial();
-            } else if (window.tutorialManager && typeof window.tutorialManager.showTutorial === 'function') {
-                window.tutorialManager.showTutorial();
-            }
+            invokeStartTutorial();
         }, 800); // Délai après le masquage du loader pour une meilleure UX
     });
 
@@ -549,8 +543,12 @@ export function createGame(gameStore, assetManager, citySize = null) {
         await scene.refreshEmploymentPresentation(city);
     }
 
-    /** ECS + services + second scene.update (after an initial scene.update). */
-    async function runSimulationPass(time) {
+    /** ECS + services + second scene.update (budget once per tick when not skipped). */
+    async function runSimulationPass(time, options = {}) {
+        if (isPause || isOver) {
+            return;
+        }
+
         try {
             await runtime.runSimulation({ city, time });
         } catch (err) {
@@ -558,6 +556,10 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 error: err?.message || err,
                 time,
             });
+        }
+
+        if (isPause || isOver) {
+            return;
         }
 
         if (services.length > 0) {
@@ -573,12 +575,16 @@ export function createGame(gameStore, assetManager, citySize = null) {
             }
         }
 
-        await scene.update(city, time);
+        if (isPause || isOver) {
+            return;
+        }
+
+        await scene.update(city, time, options);
     }
 
     /** scene.update + employment refresh — player interactions without full simulation tick. */
     async function runScenePresentationPass(time) {
-        await scene.update(city, time);
+        await scene.update(city, time, { skipBudget: true });
         await refreshEmploymentPresentationForCity();
     }
 
@@ -645,7 +651,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
                     }
                 }
             }
-            await scene.update(city, time);
+            await scene.update(city, time, { skipBudget: true });
             await syncEmploymentAfterBuildingChange(scene, city, buildingId);
         } else if(activeToolId === "select-object") {
             // Object selection - ONLY open info modal when using select tool
@@ -942,12 +948,10 @@ export function createGame(gameStore, assetManager, citySize = null) {
                     const salesToWindmill = supplyView.salesToWindmill || [];
                     
                     let currentYear = 0;
-                    if (window.budgetManager) {
-                        const budget = await window.budgetManager.getCurrentBudget();
-                        if (budget && budget.turn !== undefined && window.TimeManager) {
-                            const timeInfo = window.TimeManager.getTimeInfo(budget.turn);
-                            currentYear = timeInfo ? timeInfo.year : 0;
-                        }
+                    const budget = await getTreasurySnapshot();
+                    if (budget && budget.turn !== undefined) {
+                        const timeInfo = getTimeInfo(budget.turn);
+                        currentYear = timeInfo ? timeInfo.year : 0;
                     }
                     
                     const currentYearMarketSales = salesToMarket.filter(sale => sale.year === currentYear);
@@ -1086,14 +1090,14 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 if (canvas) {
                     canvas.classList.add('pointer-events-disabled');
                 }
-                window.game.pause()
+                game.pause()
             } else {
                 // Re-enable pointer events on 3D scene when info overlay is not active
                 const canvas = document.querySelector('canvas');
                 if (canvas) {
                     canvas.classList.remove('pointer-events-disabled');
                 }
-                window.game.play()
+                game.play()
             }
             await runScenePresentationPass(time);
         } else if(!tile.buildingId || (activeToolId && (activeToolId === 'roads' || activeToolId === 'Road' || activeToolId.startsWith('StonePath-')) && (tile.buildingId === 'roads' || tile.buildingId === 'Road' || (tile.buildingId && tile.buildingId.startsWith('StonePath-'))))) {
@@ -1107,8 +1111,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
                     canvas.classList.remove('pointer-events-disabled');
                 }
                 // Ensure game is playing (not paused)
-                if (window.game && typeof window.game.play === 'function') {
-                    window.game.play();
+                if (game && typeof game.play === 'function') {
+                    game.play();
                 }
             }
             
@@ -1148,6 +1152,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
             }, 10000);
             
             try {
+                await awaitBudgetReady();
+
                 const existingHouse = await findBuildingAtTile({ x, y });
                 if (existingHouse) {
                     console.warn('[game.js] Building already exists at this location:', placementKey);
@@ -1159,7 +1165,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 
                 const [houseStocks, budgetData] = await Promise.all([
                     Promise.resolve({ food: 0, cabbage: 0, wheat: 0, carrot: 0 }),
-                    window.budgetManager ? window.budgetManager.getCurrentBudget() : Promise.resolve({ funds: 0 })
+                    getTreasurySnapshot().catch(() => ({ funds: 0 }))
                 ]);
 
                 const funds = budgetData.funds || 0;
@@ -1214,12 +1220,13 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 }
                 
                 // Meshes + neighbors, then ECS evolution, then employment refresh
-                await scene.update(city, time);
-                await runSimulationPass(time);
+                await scene.update(city, time, { skipBudget: true });
+                await runSimulationPass(time, { skipBudget: true });
                 await syncEmploymentAfterBuildingChange(scene, city, activeToolId);
-                if (window.multiplayerManager && window.multiplayerManager.isMultiplayer) {
+                const multiplayerManager = getMultiplayerManager();
+                if (multiplayerManager?.isMultiplayer) {
                     try {
-                        await window.multiplayerManager.placeBuilding(activeToolId, x, y);
+                        await multiplayerManager.placeBuilding(activeToolId, x, y);
                     } catch (error) {
                         console.warn('[Multiplayer] Erreur envoi bâtiment:', error);
                         // On continue même si l'envoi échoue (placement local réussi)
@@ -1227,8 +1234,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 }
                 
                 // Resume the game after successful building placement
-                if (window.game) {
-                    window.game.play();
+                if (game) {
+                    game.play();
                 }
                 } else {
                     // Payment failed - show error message
@@ -1297,26 +1304,43 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 scene.suppressInput(200);
             }
             
-            window.game.play()
+            game.play()
         }
     })
 
     // Expose scene and city on game object so it can be accessed from other modules
-    const game = {
+    game = {
         scene: scene,
         city: city,
         runtime,
 
         async update(time) {
+            if (isPause || isOver) {
+                return;
+            }
+
             gameUI.updateTimeDisplay(time);
             city.update();
 
-            await scene.update(city, time);
+            // Turn boundary first (balance, carry-forward, cumuls) — survives pause mid-tick
+            await updateTreasuryTurn(time);
+            if (isPause || isOver) {
+                return;
+            }
+
+            await scene.update(city, time, { skipBudget: true });
+            if (isPause || isOver) {
+                return;
+            }
+
             await runSimulationPass(time);
+            if (isPause || isOver) {
+                return;
+            }
+
             await refreshEmploymentPresentationForCity();
 
-            // Vérifier les objectifs à chaque tour (seulement si activés)
-            if (window.objectivesTracker && objectivesTracker.enabled) {
+            if (objectivesTracker.enabled) {
                 await objectivesTracker.checkObjectives(time);
             }
         },
@@ -1343,7 +1367,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 scene.resumeCitizen();
             }
             // Appeler update(0) pour activer l'objectif au tour 0 au démarrage (seulement si activés)
-            if (window.objectivesTracker && objectivesTracker.enabled) {
+            if (objectivesTracker.enabled) {
                 await objectivesTracker.checkObjectives(0);
             }
         },
@@ -1396,25 +1420,28 @@ export function createGame(gameStore, assetManager, citySize = null) {
         },
 
         startInterval() {
-            const speed = Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed')) || 4000));
-            if (intervalId) clearInterval(intervalId);
-            intervalId = setInterval(() => {
-                if (!isPause && !isOver) {
-                    time += 1;
-                    game.update(time);
-                }
-            }, speed);
-        }
-    }; 
-
-    setInterval(() => {
-        if(!isPause) {
-            if(!isOver) {
-                time += 1;
-                game.update(time);
+            if (!gameLoop) {
+                return;
             }
-        }
-    }, Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed')) || 4000)));
+            gameLoop.setIntervalMs(getTickIntervalMs());
+        },
+
+        get time() {
+            return time;
+        },
+    };
+
+    gameLoop = new GameLoop({
+        intervalMs: getTickIntervalMs(),
+        onTick: async () => {
+            if (isPause || isOver) {
+                return;
+            }
+            time += 1;
+            await game.update(time);
+        },
+    });
+    gameLoop.start();
 
     scene.start();
     void refreshEmploymentPresentationForCity();

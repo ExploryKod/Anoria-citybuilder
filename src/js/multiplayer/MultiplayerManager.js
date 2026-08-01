@@ -4,6 +4,7 @@
  */
 
 import { WebSocketClient } from './WebSocketClient.js';
+import { getGame, getGameCity, getPopupManager } from '../acl/appRuntime.js';
 
 export class MultiplayerManager {
     constructor(game, scene) {
@@ -131,8 +132,9 @@ export class MultiplayerManager {
         this.wsClient.on('playerId', (playerId) => {
             console.log(`[Multiplayer] ID joueur: ${playerId}`);
             // Vous pouvez stocker l'ID pour l'afficher dans l'UI
-            if (window.game) {
-                window.game.playerId = playerId;
+            const game = getGame();
+            if (game) {
+                game.playerId = playerId;
             }
             
             // Ajouter ce joueur à la liste locale avec le bon pseudo
@@ -401,13 +403,13 @@ export class MultiplayerManager {
             }
 
             // Récupérer la ville depuis le jeu
-            if (!this.game || !this.game.scene || !window.game) {
+            if (!this.game || !this.game.scene || !getGame()) {
                 console.warn('[Multiplayer] Impossible de placer bâtiment: jeu non initialisé');
                 return;
             }
 
             // Accéder à la ville via le jeu
-            const city = (window.game && window.game.city) || (this.game && this.game.city);
+            const city = getGameCity() || (this.game && this.game.city);
             
             if (!city || !city.tiles) {
                 console.warn('[Multiplayer] Impossible de placer bâtiment: ville non trouvée');
@@ -421,7 +423,7 @@ export class MultiplayerManager {
             }
 
             // Mettre à jour la scène pour afficher le bâtiment
-            await this.scene.update(city);
+            await this.scene.update(city, 0, { skipBudget: true });
 
             // Marquer comme placé
             this.remoteBuildings.set(id, building);
@@ -731,7 +733,7 @@ export class MultiplayerManager {
      */
     showNotification(message, type = 'info') {
         // Utiliser votre système de notification existant
-        if (window.popupManager) {
+        if (getPopupManager()) {
             // Exemple avec popupManager si disponible
             console.log(`[Multiplayer] ${type}: ${message}`);
         } else {

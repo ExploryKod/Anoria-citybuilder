@@ -1,3 +1,5 @@
+import { registerAppService } from '../acl/appRuntime.js';
+
 class ReportSectionManager {
     constructor() {
         this.periodType = 'year';
@@ -126,7 +128,7 @@ function initReportSection() {
         observer.disconnect();
     }
 
-    window.reportSectionManager = manager;
+    registerAppService('reportSectionManager', manager);
 }
 
 if (document.readyState === 'loading') {

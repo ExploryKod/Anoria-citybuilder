@@ -1,7 +1,10 @@
 import { DexieConstructionBuildingRepository } from '../contexts/construction/infrastructure/dexie/DexieConstructionBuildingRepository.js';
 import { GetBuildingAtTile } from '../contexts/construction/application/queries/GetBuildingAtTile.js';
 import { PlaceBuildingWithPayment } from '../contexts/construction/application/services/PlaceBuildingWithPayment.js';
-import budgetManager from '../js/stores/BudgetManager.js';
+import {
+  recordConstructionExpense,
+  recordConstructionRefund,
+} from '../js/acl/budget.js';
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
 
 /**
@@ -9,8 +12,8 @@ import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
  *
  * @param {object} [deps]
  * @param {import('../contexts/construction/application/ports/ConstructionBuildingRepository.js').ConstructionBuildingRepository} [deps.buildingRepository]
- * @param {(amount: number, reason: string) => Promise<object>} [deps.recordExpense]
- * @param {(amount: number, reason: string) => Promise<object>} [deps.recordRefund]
+   * @param {(amount: number, reason: string, options?: { buildingInstanceId?: string }) => Promise<object>} [deps.recordExpense]
+   * @param {(amount: number, reason: string) => Promise<object>} [deps.recordRefund]
  */
 export function createConstructionContext({
   buildingRepository,
@@ -21,11 +24,8 @@ export function createConstructionContext({
   const getBuildingAtTile = new GetBuildingAtTile(repository);
   const placeBuildingWithPayment = new PlaceBuildingWithPayment({
     repository,
-    recordExpense:
-      recordExpense ??
-      ((amount, reason) => budgetManager.addConstructionExpense(amount, reason)),
-    recordRefund:
-      recordRefund ?? ((amount, reason) => budgetManager.addIncome(amount, reason)),
+    recordExpense: recordExpense ?? recordConstructionExpense,
+    recordRefund: recordRefund ?? recordConstructionRefund,
   });
 
   return {

@@ -21,6 +21,7 @@ import {
     bulldozeSelected
 } from '../ui/nodes.js';
 import { TimeManager } from './utils/TimeManager.js';
+import { getGameScene } from '../acl/appRuntime.js';
 
 class GameUI {
     /**
@@ -264,14 +265,7 @@ class GameUI {
                 }
                 // Disable OrbitControls to prevent scene movement
                 // Try to access scene through various paths
-                let sceneObj = null;
-                if (window.game && window.game.scene) {
-                    sceneObj = window.game.scene;
-                } else if (window.scene) {
-                    sceneObj = window.scene;
-                } else if (window.app && window.app.game && window.app.game.scene) {
-                    sceneObj = window.app.game.scene;
-                }
+                let sceneObj = getGameScene();
                 if (sceneObj && sceneObj.controls) {
                     sceneObj.controls.enabled = false;
                 }
@@ -296,14 +290,7 @@ class GameUI {
                 }
                 // Re-enable OrbitControls when modal closes
                 // Try to access scene through various paths
-                let sceneObj = null;
-                if (window.game && window.game.scene) {
-                    sceneObj = window.game.scene;
-                } else if (window.scene) {
-                    sceneObj = window.scene;
-                } else if (window.app && window.app.game && window.app.game.scene) {
-                    sceneObj = window.app.game.scene;
-                }
+                let sceneObj = getGameScene();
                 if (sceneObj && sceneObj.controls) {
                     sceneObj.controls.enabled = true;
                 }

@@ -415,6 +415,25 @@
     font-weight: 600;
 }
 
+/* Info pseudo-movements — no treasury (prefix info_) */
+.journal-entry-type.info_loan_interest,
+.journal-entry-type.info_loan_repayment,
+.journal-entry-type.loan_default_interest,
+.journal-entry-type.loan_default_repayment {
+    background: #fff3e0;
+    color: #e65100;
+    font-weight: 600;
+    border: 1px dashed #ffb74d;
+}
+
+.journal-entry-type.info_loan_interest .journal-entry-amount,
+.journal-entry-type.info_loan_repayment .journal-entry-amount,
+.journal-entry-type.loan_default_interest .journal-entry-amount,
+.journal-entry-type.loan_default_repayment .journal-entry-amount {
+    opacity: 0.85;
+    font-style: italic;
+}
+
 /* Balance */
 .journal-entry-type.balance {
     background: #e7f3ff;
@@ -522,10 +541,50 @@
     margin-top: 4px;
 }
 
+.journal-entry-facts {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: #495057;
+    margin-top: 2px;
+}
+
+.journal-entry-fact {
+    display: inline-flex;
+    gap: 4px;
+    align-items: baseline;
+}
+
+.journal-entry-fact-label {
+    font-weight: 500;
+    color: #6c757d;
+}
+
+.journal-entry-fact-value {
+    color: #212529;
+}
+
 .journal-entry-year,
 .journal-entry-turn-number,
+.journal-entry-id,
+.journal-entry-asset-id,
 .journal-entry-date {
     display: inline-block;
+}
+
+.journal-entry-id,
+.journal-entry-asset-id {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    color: #868e96;
+}
+
+.journal-entry-asset-id {
+    max-width: 12em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
 }
 
 .journal-entry-year {

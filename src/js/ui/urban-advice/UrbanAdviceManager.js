@@ -1,10 +1,11 @@
 /**
  * UrbanAdviceManager - Gère le centre de conseils urbains
  */
-import { initLoanSystem, loadActiveLoans } from '../loans/LoansManager.js';
+import { loadActiveLoans } from '../loans/LoansManager.js';
 import { hasRoadAccessFromCount } from '../../acl/parcels.js';
 import { listAllBuildingRows } from '../../acl/construction.js';
 import { getCityTotalPopulation } from '../../acl/housing.js';
+import { getTreasurySnapshot } from '../../acl/accountingGame.js';
 
 /**
  * Initialise le centre de conseils urbains
@@ -73,9 +74,6 @@ export function initUrbanAdviceCenter() {
             }
         });
     });
-
-    // Initialize loan system
-    initLoanSystem();
 }
 
 /**
@@ -153,7 +151,7 @@ export async function loadAdvice() {
     try {
         // Get current city data
         const houses = await listAllBuildingRows();
-        const budget = await window.budgetManager.getCurrentBudget();
+        const budget = await getTreasurySnapshot();
         
         const advice = [];
 

@@ -1,6 +1,7 @@
 import config from '../game/config.js';
 import { getCityEmploymentSummary } from '../acl/employment.js';
 import { getCityTotalPopulation } from '../acl/housing.js';
+import { registerAppService } from '../acl/appRuntime.js';
 
 class WorkSectionManager {
     constructor() {
@@ -690,7 +691,7 @@ function initWorkSection() {
     if (!workSection) return;
 
     const manager = new WorkSectionManager();
-    window.workSectionManager = manager;
+    registerAppService('workSectionManager', manager);
     
     // Update data every time the section becomes active (like info panel)
     const observer = new MutationObserver(() => {

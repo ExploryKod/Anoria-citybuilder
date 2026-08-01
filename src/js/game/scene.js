@@ -15,6 +15,13 @@ import { getOrCreateSupplyContext } from '../acl/supply.js';
 import { getOrCreateHousingContext } from '../acl/housing.js';
 import { getCityEmploymentSummary, ensureBuildingEmployeesSchema } from '../acl/employment.js';
 import { getCityTotalBuildingValue } from '../acl/budget.js';
+import { getTreasurySnapshot } from '../acl/accountingGame.js';
+import {
+  getPopupManager,
+  getGameUI,
+  getInputManagerMouse,
+  registerAppFunction,
+} from '../acl/appRuntime.js';
 import {
     findBuildingAtTile,
     getBuildingById,
@@ -47,6 +54,7 @@ import { DecorativeVillageManager } from './managers/DecorativeVillageManager.js
 import { ResourceManager } from './managers/ResourceManager.js';
 import { PerformanceManager } from './managers/PerformanceManager.js';
 import { BudgetProcessor } from './managers/BudgetProcessor.js';
+import gameUI from './GameUI.js';
 import { CitizenManager } from './managers/CitizenManager.js';
 import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
 
@@ -194,8 +202,9 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
     const TAP_THRESHOLD = 10; // pixels - movement below this is considered a tap
 
     function getPointerClientXY(event) {
-        if (window.inputManager && window.inputManager.mouse) {
-            return { x: window.inputManager.mouse.x, y: window.inputManager.mouse.y };
+        const mouse = getInputManagerMouse();
+        if (mouse) {
+            return { x: mouse.x, y: mouse.y };
         }
         return { x: event.clientX, y: event.clientY };
     }
@@ -449,7 +458,8 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
         citizenPathfinding = new CitizenPathfinding(buildings, terrain);
     }
 
-    async function update(city, time=0) {
+    async function update(city, time = 0, options = {}) {
+        const { skipBudget = false } = options;
 
         /**
          * Housing ECS may rename persisted id/type (Blue→Red, etc.) while the mesh
@@ -638,9 +648,7 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
         
         // Get budget data from BudgetManager (single source of truth)
         let budgetData = null;
-        if (window.budgetManager) {
-            budgetData = await window.budgetManager.getCurrentBudget();
-        }
+        budgetData = await getTreasurySnapshot();
         
         totalImmoExpenses = (await getCityTotalBuildingValue()) || 0
 
@@ -1533,11 +1541,16 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
             }
         }
 
-        // Calculate building counts and maintenance costs for budget operations
-        const { buildingCounts, maintenanceBreakdown } = budgetProcessor.calculateBuildingCounts(city, buildings);
-
-        // Process budget operations (taxes, salaries, maintenance, loans, etc.)
-        await budgetProcessor.processBudget(time, totalPop, buildingCounts, maintenanceBreakdown);
+        if (!skipBudget) {
+            const { buildingCounts, maintenanceBreakdown } =
+                budgetProcessor.calculateBuildingCounts(city, buildings);
+            await budgetProcessor.processBudget(
+                time,
+                totalPop,
+                buildingCounts,
+                maintenanceBreakdown
+            );
+        }
 
         // Display results in UI — population read at start of update (ECS already applied)
         const currentPopulation = totalPop;
@@ -1558,15 +1571,14 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
         
         // Get budget data from BudgetManager
         let funds = 0;
-        if (window.budgetManager) {
-            const budgetData = await window.budgetManager.getCurrentBudget();
-            funds = budgetData.funds;
-        }
+        const endTurnBudget = await getTreasurySnapshot();
+        funds = endTurnBudget.funds;
 
         // Update famished population and funds (citizen/elite counts via refreshEmploymentPresentation)
-        if (window.gameUI) {
-            window.gameUI.updateFamishedPopulation(famishedPopulation || 0);
-            window.gameUI.updateFunds(funds);
+        const gameUI = getGameUI();
+        if (gameUI) {
+            gameUI.updateFamishedPopulation(famishedPopulation || 0);
+            gameUI.updateFunds(funds);
         } else {
             // Fallback to direct DOM update if GameUI not available
             const displayHungerPop = document.querySelector('.display-hunger-pop');
@@ -1610,14 +1622,15 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
             console.warn('[scene.js] Error calculating employment summary:', error);
         }
 
-        if (window.gameUI) {
-            window.gameUI.updatePopulationBreakdown(
+        const gameUI = getGameUI();
+        if (gameUI) {
+            gameUI.updatePopulationBreakdown(
                 citizenPopulation + elitePopulation,
                 citizenPopulation,
                 elitePopulation
             );
-            window.gameUI.updateUnemployedPopulation(unemployedCount, unemploymentPercentage);
-            window.gameUI.updateWorkerLack(employmentLack);
+            gameUI.updateUnemployedPopulation(unemployedCount, unemploymentPercentage);
+            gameUI.updateWorkerLack(employmentLack);
         } else {
             const displayPop = document.querySelector('.display-pop');
             const displayUnemployedPop = document.querySelector('.display-unemployed-pop');
@@ -1760,12 +1773,12 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
      * instead of all scene children (backdrop, lights, etc.)
      */
     function updateFocusedObject() {
-        // Use InputManager mouse position if available, otherwise skip
-        if (!window.inputManager || !window.inputManager.mouse) {
+        const inputMouse = getInputManagerMouse();
+        if (!inputMouse) {
             return;
         }
 
-        const { x: clientX, y: clientY } = window.inputManager.mouse;
+        const { x: clientX, y: clientY } = inputMouse;
         mouse.x = (clientX / renderer.domElement.clientWidth) * 2 - 1;
         mouse.y = -(clientY / renderer.domElement.clientHeight) * 2 + 1;
         
@@ -1848,18 +1861,18 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
     }
     
     // Expose function to toggle stats
-    window.togglePerformanceStats = function() {
+    registerAppFunction('togglePerformanceStats', function() {
         performanceStats.enabled = !performanceStats.enabled;
         localStorage.setItem('show-performance-stats', performanceStats.enabled.toString());
         return performanceStats.enabled;
-    };
+    });
 
-    window.toggleStatsJs = function() {
+    registerAppFunction('toggleStatsJs', function() {
         const next = stats.dom.style.display === 'none';
         stats.dom.style.display = next ? 'block' : 'none';
         localStorage.setItem('show-stats-js', next ? 'true' : 'false');
         return next;
-    };
+    });
     
     // Store last frame time for animation delta calculation
     let lastFrameTime = performance.now();
@@ -1874,8 +1887,8 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
         const deltaTime = (currentTime - lastFrameTime) / 1000; // Convert to seconds
         lastFrameTime = currentTime;
         
-        // Update all citizens
-        if (citizenPathfinding && currentCity) {
+        // Update all citizens (skip while game is paused)
+        if (citizenPathfinding && currentCity && !gameUI.isPaused) {
             citizenManager.updateAllCitizens(
                 deltaTime,
                 currentCity,
@@ -1921,7 +1934,7 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
 
     function onMouseDown(event){
         // Block interaction if a popup is open or info modal is open
-        if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+        if (getPopupManager() && getPopupManager().getActivePopups().length > 0) {
             return;
         }
         if (isInfoModalOpen()) {
@@ -1954,7 +1967,7 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
 
     function onMouseUp(event){
         // Block interaction if a popup is open or info modal is open
-        if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+        if (getPopupManager() && getPopupManager().getActivePopups().length > 0) {
             return;
         }
         if (isInfoModalOpen()) {
@@ -1969,7 +1982,7 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
 
 function onMouseMove(event) {
     // Block interaction if a popup is open or info modal is open
-    if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+    if (getPopupManager() && getPopupManager().getActivePopups().length > 0) {
         return;
     }
     if (isInfoModalOpen()) {
@@ -2005,9 +2018,9 @@ function onTouchStart(event) {
     // If canvas has pointer-events-disabled, touch events won't reach us at all
     // But if they do, we should still check for blocking popups
     // BUT: panel-layout should not block events (it's configured with shouldBlockEvents: false)
-    const activePopups = window.popupManager?.getActivePopups() || [];
+    const activePopups = getPopupManager()?.getActivePopups() || [];
     const blockingPopups = activePopups.filter(id => {
-        const config = window.popupManager?.popupConfigs?.get(id);
+        const config = getPopupManager()?.popupConfigs?.get(id);
         return config && config.shouldBlockEvents;
     });
     
@@ -2056,7 +2069,7 @@ function onTouchStart(event) {
 
 function onTouchMove(event) {
     // Block interaction if a popup is open or info modal is open
-    if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+    if (getPopupManager() && getPopupManager().getActivePopups().length > 0) {
         return;
     }
     if (isInfoModalOpen()) {
@@ -2092,9 +2105,9 @@ function onTouchMove(event) {
 
 function onTouchEnd(event) {
     // Block interaction if a popup is open or info modal is open
-    const activePopups = window.popupManager?.getActivePopups() || [];
+    const activePopups = getPopupManager()?.getActivePopups() || [];
     const blockingPopups = activePopups.filter(id => {
-        const config = window.popupManager?.popupConfigs?.get(id);
+        const config = getPopupManager()?.popupConfigs?.get(id);
         return config && config.shouldBlockEvents;
     });
     
@@ -2176,7 +2189,7 @@ function onTouchEnd(event) {
         camera.onKeyBoardDown(event);
         // Raycasting need y and x axis as + on the terrain (plan) (y-1,y1,x1,x-1)
         // (number btw 0 and 1) * 2 - 1 > to get the value between -1 and 1
-        const p = window.inputManager ? window.inputManager.mouse : {x: undefined, y: undefined};
+        const p = getInputManagerMouse() ?? { x: undefined, y: undefined };
         if (p.x !== undefined && p.y !== undefined) {
             mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
             mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
@@ -2206,7 +2219,7 @@ function onTouchEnd(event) {
 
     function onMouseWheel(event) {
         // Block interaction if a popup is open or info modal is open
-        if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+        if (getPopupManager() && getPopupManager().getActivePopups().length > 0) {
             return;
         }
         if (isInfoModalOpen()) {

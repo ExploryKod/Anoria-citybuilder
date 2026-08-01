@@ -4,6 +4,8 @@
  * based on GPU resources (texture units, texture size, vertex attributes, etc.)
  */
 
+import { registerAppService } from '../acl/appRuntime.js';
+
 export class WebGLResourceDetector {
     constructor() {
         this.capabilities = null;
@@ -322,9 +324,9 @@ if (typeof window !== 'undefined') {
     }
 }
 
-// Expose test helper to window for easy console access
+// Expose test helper via AppRegistry for easy console access (app.webglTestMode)
 if (typeof window !== 'undefined') {
-    window.webglTestMode = {
+    const webglTestMode = {
         /**
          * Enable test mode to simulate limited WebGL resources
          * @param {string} mode - 'limited' (12x12 max), 'moderate' (16x16 max), or 'none' (normal)
@@ -364,22 +366,24 @@ if (typeof window !== 'undefined') {
 WebGL Test Mode Helper
 ======================
 Usage:
-  webglTestMode.set('limited')   - Simulate very limited system (12×12 max)
-  webglTestMode.set('moderate')   - Simulate moderate limitations (16×16 max)
-  webglTestMode.set('none')       - Use normal detection
-  webglTestMode.get()             - Show current mode
-  webglTestMode.disable()         - Disable test mode
-  webglTestMode.help()            - Show this help
+  app.webglTestMode.set('limited')   - Simulate very limited system (12×12 max)
+  app.webglTestMode.set('moderate')   - Simulate moderate limitations (16×16 max)
+  app.webglTestMode.set('none')       - Use normal detection
+  app.webglTestMode.get()             - Show current mode
+  app.webglTestMode.disable()         - Disable test mode
+  app.webglTestMode.help()            - Show this help
 
 After setting a mode, reload the page (F5) for changes to take effect.
             `);
         }
     };
+
+    registerAppService('webglTestMode', webglTestMode);
     
     // Show help on first load if test mode is active
     const testMode = localStorage.getItem('webgl-test-mode');
     if (testMode === 'limited' || testMode === 'moderate') {
-        console.info(`[WebGL Test Mode] Active: ${testMode}. Use webglTestMode.help() for more info.`);
+        console.info(`[WebGL Test Mode] Active: ${testMode}. Use app.webglTestMode.help() for more info.`);
     }
 }
 
