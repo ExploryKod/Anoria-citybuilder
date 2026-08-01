@@ -4,12 +4,6 @@
  */
 
 import {
-  getPopupManager,
-  invokeUpdateBudgetDisplay,
-  registerAppFunction,
-} from '../../../../composition/sessionShell.js';
-import { bindSessionRuntime, requireSessionAccountingApi } from '../../../../composition/sessionRuntime.js';
-import {
   updateLoansElement,
   renderHealthImpact,
   renderLoanRates,
@@ -18,9 +12,29 @@ import {
 } from './PretsPresenter.js';
 
 /**
- * Initialise le popup des prêts
+ * @type {{
+ *   accounting: object,
+ *   popupManager?: object | null,
+ *   updateBudgetDisplay?: () => Promise<void> | void,
+ * } | null}
  */
-export function initLoansPopup() {
+let deps = null;
+
+/**
+ * @param {{
+ *   accounting: object,
+ *   popupManager?: object | null,
+ *   updateBudgetDisplay?: () => Promise<void> | void,
+ * }} panelDeps
+ */
+export function initLoansPopup(panelDeps) {
+  deps = panelDeps;
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const { popupManager } = deps;
+
   const loansBtn = document.getElementById('loans-btn');
   const loansPanel = document.getElementById('loans-panel');
   const loansCloseBtn = document.querySelector('.loans-panel-close-btn');
@@ -37,29 +51,19 @@ export function initLoansPopup() {
 
   loansBtn.addEventListener('click', () => {
     loansPanel.classList.add('active');
-
-    if (getPopupManager()) {
-      getPopupManager().forceOpenPopup('loans-panel');
-    }
-
+    popupManager?.forceOpenPopup('loans-panel');
     updateLoansDisplay();
   });
 
   loansCloseBtn.addEventListener('click', () => {
     loansPanel.classList.remove('active');
-
-    if (getPopupManager()) {
-      getPopupManager().forceClosePopup('loans-panel');
-    }
+    popupManager?.forceClosePopup('loans-panel');
   });
 
   loansPanel.addEventListener('click', (e) => {
     if (e.target === loansPanel) {
       loansPanel.classList.remove('active');
-
-      if (getPopupManager()) {
-        getPopupManager().forceClosePopup('loans-panel');
-      }
+      popupManager?.forceClosePopup('loans-panel');
     }
   });
 
@@ -88,13 +92,13 @@ export function initLoansPopup() {
   }
 }
 
-/**
- * Met à jour l'affichage des prêts
- */
 export async function updateLoansDisplay() {
+  if (!deps?.accounting) return;
+  const { accounting } = deps;
+
   try {
-    const currentBudget = await requireSessionAccountingApi().getTreasurySnapshot();
-    const financialHealth = await requireSessionAccountingApi().getFinancialHealth();
+    const currentBudget = await accounting.getTreasurySnapshot();
+    const financialHealth = await accounting.getFinancialHealth();
 
     updateLoansElement('loans-date', `Tour ${currentBudget.turn || 0}`);
 
@@ -116,16 +120,13 @@ export async function updateLoansDisplay() {
     }
 
     renderHealthImpact(financialHealth);
-    renderLoanRates(requireSessionAccountingApi().computeLoanRatesByType(financialHealth.status));
+    renderLoanRates(accounting.computeLoanRatesByType(financialHealth.status));
     loadActiveLoans();
   } catch (error) {
     console.error('Error updating loans display:', error);
   }
 }
 
-/**
- * Affiche le formulaire de prêt
- */
 function showLoanForm(loanType) {
   const loanFormSection = document.getElementById('loan-form-section');
   if (loanFormSection) {
@@ -168,9 +169,6 @@ function showLoanForm(loanType) {
   }
 }
 
-/**
- * Cache le formulaire de prêt
- */
 function hideLoanForm() {
   const loanFormSection = document.getElementById('loan-form-section');
   if (loanFormSection) {
@@ -178,10 +176,10 @@ function hideLoanForm() {
   }
 }
 
-/**
- * Met à jour le résumé du prêt
- */
 function updateLoanSummary() {
+  if (!deps?.accounting) return;
+  const { accounting } = deps;
+
   const loanAmountInput = document.getElementById('loan-amount-input');
   const loanDurationInput = document.getElementById('loan-duration-input');
   const loanFormSection = document.getElementById('loan-form-section');
@@ -191,12 +189,12 @@ function updateLoanSummary() {
   const amount = parseInt(loanAmountInput.value) || 0;
   const loanType = loanFormSection.dataset.loanType || 'bank';
 
-  requireSessionAccountingApi().getFinancialHealth().then((health) => {
-    const interestRate = requireSessionAccountingApi().computeLoanRate({
+  accounting.getFinancialHealth().then((health) => {
+    const interestRate = accounting.computeLoanRate({
       loanType,
       financialHealthStatus: health.status,
     });
-    const interest = requireSessionAccountingApi().computeLoanInterestAmount(amount, interestRate);
+    const interest = accounting.computeLoanInterestAmount(amount, interestRate);
     const total = amount + interest;
 
     updateLoansElement('loan-principal-display', `${amount}€`);
@@ -206,10 +204,10 @@ function updateLoanSummary() {
   });
 }
 
-/**
- * Contracte un prêt
- */
 export async function contractLoan() {
+  if (!deps?.accounting) return;
+  const { accounting, updateBudgetDisplay } = deps;
+
   const loanAmountInput = document.getElementById('loan-amount-input');
   const loanDurationInput = document.getElementById('loan-duration-input');
   const loanFormSection = document.getElementById('loan-form-section');
@@ -226,13 +224,13 @@ export async function contractLoan() {
   }
 
   try {
-    const financialHealth = await requireSessionAccountingApi().getFinancialHealth();
-    const interestRate = requireSessionAccountingApi().computeLoanRate({
+    const financialHealth = await accounting.getFinancialHealth();
+    const interestRate = accounting.computeLoanRate({
       loanType,
       financialHealthStatus: financialHealth.status,
     });
 
-    const interest = requireSessionAccountingApi().computeLoanInterestAmount(amount, interestRate);
+    const interest = accounting.computeLoanInterestAmount(amount, interestRate);
     const total = amount + interest;
 
     const loan = {
@@ -247,9 +245,9 @@ export async function contractLoan() {
       contractedAt: new Date().toISOString(),
     };
 
-    await requireSessionAccountingApi().recordLoanCapital(amount, `Prêt ${loanType} contracté (${duration} tours)`, loan);
+    await accounting.recordLoanCapital(amount, `Prêt ${loanType} contracté (${duration} tours)`, loan);
 
-    await invokeUpdateBudgetDisplay();
+    await updateBudgetDisplay?.();
 
     alert(
       `Prêt ${loanType} de ${amount}€ contracté ! Total à rembourser : ${total}€ sur ${duration} tours.`
@@ -263,15 +261,13 @@ export async function contractLoan() {
   }
 }
 
-/**
- * Charge et affiche les prêts actifs
- */
 export async function loadActiveLoans() {
+  if (!deps?.accounting) return;
   const activeLoansList = document.getElementById('active-loans-list');
   if (!activeLoansList) return;
 
   try {
-    const activeLoans = await requireSessionAccountingApi().getActiveLoans();
+    const activeLoans = await deps.accounting.getActiveLoans();
     activeLoansList.innerHTML = renderActiveLoansHtml(activeLoans);
   } catch (error) {
     console.error('Error loading active loans:', error);
@@ -284,8 +280,11 @@ export async function loadActiveLoans() {
  * En cas d'insolvabilité : écritures informatives au journal (sans débit trésorerie).
  */
 export async function processLoanPayments() {
+  if (!deps?.accounting) return;
+  const { accounting, updateBudgetDisplay } = deps;
+
   try {
-    const activeLoans = await requireSessionAccountingApi().getActiveLoans();
+    const activeLoans = await accounting.getActiveLoans();
     if (activeLoans.length === 0) return;
 
     for (const loan of activeLoans) {
@@ -295,16 +294,16 @@ export async function processLoanPayments() {
       );
       const principalPayment = Math.max(0, monthlyPayment - interestPayment);
 
-      const budget = await requireSessionAccountingApi().getTreasurySnapshot();
+      const budget = await accounting.getTreasurySnapshot();
 
       if (budget.funds >= monthlyPayment) {
-        await requireSessionAccountingApi().recordLoanInterest(
+        await accounting.recordLoanInterest(
           interestPayment,
           `Intérêts prêt ${loan.type} (${loan.id})`,
           loan.id
         );
 
-        await requireSessionAccountingApi().recordLoanRepayment(
+        await accounting.recordLoanRepayment(
           principalPayment,
           `Remboursement prêt ${loan.type} (${loan.id})`,
           loan.id
@@ -313,14 +312,14 @@ export async function processLoanPayments() {
       }
 
       if (budget.funds >= interestPayment && interestPayment > 0) {
-        await requireSessionAccountingApi().recordLoanInterest(
+        await accounting.recordLoanInterest(
           interestPayment,
           `Intérêts prêt ${loan.type} (${loan.id})`,
           loan.id
         );
 
         if (principalPayment > 0) {
-          await requireSessionAccountingApi().recordInfoLoanInstallment({
+          await accounting.recordInfoLoanInstallment({
             interestAmount: 0,
             principalAmount: principalPayment,
             loanId: loan.id,
@@ -328,37 +327,39 @@ export async function processLoanPayments() {
           });
         }
 
-        await requireSessionAccountingApi().advanceLoanInstallmentWithoutPayment(loan.id);
+        await accounting.advanceLoanInstallmentWithoutPayment(loan.id);
         console.warn(
           `[Loans] Échéance partielle — intérêts payés, capital impayé (${principalPayment}€) pour ${loan.id}`
         );
         continue;
       }
 
-      await requireSessionAccountingApi().recordInfoLoanInstallment({
+      await accounting.recordInfoLoanInstallment({
         interestAmount: interestPayment,
         principalAmount: principalPayment,
         loanId: loan.id,
         loanType: loan.type,
       });
 
-      await requireSessionAccountingApi().advanceLoanInstallmentWithoutPayment(loan.id);
+      await accounting.advanceLoanInstallmentWithoutPayment(loan.id);
       console.warn(
         `[Loans] Défaut de paiement — échéance journalisée (info) pour ${loan.id}`
       );
     }
 
-    await invokeUpdateBudgetDisplay();
+    await updateBudgetDisplay?.();
   } catch (error) {
     console.error('Error processing loan payments:', error);
   }
 }
 
 /**
- * Initialise le système de paiement des prêts
+ * @param {{
+ *   bindProcessLoanPayments?: (fn: typeof processLoanPayments) => void,
+ *   registerHandler?: (name: string, fn: Function) => void,
+ * }} [hooks]
  */
-export function initLoanPaymentSystem() {
-  bindSessionRuntime({ processLoanPayments });
-  // Legacy mirror for UI / tests still reading the registry
-  registerAppFunction('processLoanPayments', processLoanPayments);
+export function initLoanPaymentSystem(hooks = {}) {
+  hooks.bindProcessLoanPayments?.(processLoanPayments);
+  hooks.registerHandler?.('processLoanPayments', processLoanPayments);
 }

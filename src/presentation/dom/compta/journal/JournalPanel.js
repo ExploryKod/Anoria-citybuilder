@@ -1,18 +1,28 @@
 /**
  * JournalPanel — popup journal comptable (DOM + événements).
  * Rendu : JournalPresenter.js
- * Données : acl/accounting.js → GetGeneralLedger
  */
-
-import { getPopupManager } from '../../../../composition/sessionShell.js';
-import { requireSessionAccountingApi } from '../../../../composition/sessionRuntime.js';
 
 import { renderJournalList } from './JournalPresenter.js';
 
 /**
- * Initialise le popup du journal
+ * @type {{
+ *   accounting: object,
+ *   popupManager?: object | null,
+ * } | null}
  */
-export function initJournalPopup() {
+let deps = null;
+
+/**
+ * @param {{
+ *   accounting: object,
+ *   popupManager?: object | null,
+ * }} panelDeps
+ */
+export function initJournalPopup(panelDeps) {
+  deps = panelDeps;
+  const { popupManager } = deps;
+
   const journalBtn = document.getElementById('journal-btn');
   const journalPanel = document.getElementById('journal-panel');
   const journalCloseBtn = document.querySelector('.journal-close-btn');
@@ -26,25 +36,19 @@ export function initJournalPopup() {
 
   journalBtn.addEventListener('click', () => {
     journalPanel.classList.add('active');
-    if (getPopupManager()) {
-      getPopupManager().forceOpenPopup('journal-panel');
-    }
+    popupManager?.forceOpenPopup('journal-panel');
     loadJournalEntries('all');
   });
 
   journalCloseBtn.addEventListener('click', () => {
     journalPanel.classList.remove('active');
-    if (getPopupManager()) {
-      getPopupManager().forceClosePopup('journal-panel');
-    }
+    popupManager?.forceClosePopup('journal-panel');
   });
 
   journalPanel.addEventListener('click', (e) => {
     if (e.target === journalPanel) {
       journalPanel.classList.remove('active');
-      if (getPopupManager()) {
-        getPopupManager().forceClosePopup('journal-panel');
-      }
+      popupManager?.forceClosePopup('journal-panel');
     }
   });
 
@@ -109,11 +113,16 @@ function parsePeriodDays(period) {
 }
 
 /**
- * Charge et affiche les entrées du journal via Accounting BC
  * @param {string} [period='all']
  * @param {string[]|null} [typeFilter=null]
  */
 export async function loadJournalEntries(period = 'all', typeFilter = null) {
+  if (!deps?.accounting) {
+    console.warn('[JournalPanel] deps not initialized');
+    return;
+  }
+
+  const { accounting } = deps;
   const journalList = document.getElementById('journal-list');
   if (!journalList) return;
 
@@ -125,7 +134,7 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
     `;
 
   try {
-    const ledger = await requireSessionAccountingApi().getGeneralLedger({
+    const ledger = await accounting.getGeneralLedger({
       periodDays: parsePeriodDays(period),
       types: typeFilter,
     });
@@ -140,7 +149,7 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
       return;
     }
 
-    journalList.innerHTML = renderJournalList(ledger);
+    journalList.innerHTML = renderJournalList(ledger, accounting);
   } catch (error) {
     console.error('Error loading journal entries:', error);
     journalList.innerHTML = `
@@ -151,12 +160,10 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
   }
 }
 
-/**
- * Export JSON — legacy store (Phase 3+)
- */
 export async function exportJournalToJSON() {
+  if (!deps?.accounting) return;
   try {
-    const jsonString = await requireSessionAccountingApi().exportJournalJson();
+    const jsonString = await deps.accounting.exportJournalJson();
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -172,10 +179,8 @@ export async function exportJournalToJSON() {
   }
 }
 
-/**
- * Export PDF — legacy store (Phase 3+)
- */
 export async function exportJournalToPDF() {
+  if (!deps?.accounting) return;
   try {
     const exportPdfBtn = document.getElementById('journal-export-pdf-btn');
     if (exportPdfBtn) {
@@ -183,7 +188,7 @@ export async function exportJournalToPDF() {
       exportPdfBtn.innerHTML = '<span>Génération...</span>';
     }
 
-    const pdfBlob = await requireSessionAccountingApi().exportJournalPdf();
+    const pdfBlob = await deps.accounting.exportJournalPdf();
     const url = URL.createObjectURL(pdfBlob);
     const a = document.createElement('a');
     a.href = url;

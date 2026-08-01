@@ -3,15 +3,13 @@
  * Not the source of balance sheet totals (those come from BalanceSheet read model).
  */
 
-import { requireSessionConstructionApi, requireSessionAccountingApi } from '../../../../composition/sessionRuntime.js';
 import { formatEuroOrNa } from '../../../../contexts/accounting/presentation/index.js';
 
 /**
+ * @param {{ accounting: object, construction: object }} deps
  * @returns {Promise<Record<string, string>>}
  */
-export async function fetchBuildingBreakdownElementValues() {
-  const construction = requireSessionConstructionApi();
-  const accounting = requireSessionAccountingApi();
+export async function fetchBuildingBreakdownElementValues({ accounting, construction }) {
   const [{ totalValue: _totalBuildingValue, pricesByType: buildingPrices }, houses] =
     await Promise.all([
       accounting.getCityBuildingValuation(),

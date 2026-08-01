@@ -31,19 +31,30 @@ function applyElementValues(elementValues) {
  * @param {number} [params.turn]
  * @param {{ totalLoanInterestExpenses?: number, totalBuildingMaintenance?: number }|null} [params.treasurySnapshot]
  * @param {boolean} [params.includeBuildingBreakdown]
+ * @param {object} [params.accounting]
+ * @param {object} [params.construction]
  */
 export async function renderBilan({
   balanceSheet,
   turn = 0,
   treasurySnapshot = null,
   includeBuildingBreakdown = true,
+  accounting = null,
+  construction = null,
 }) {
   const viewModel = buildBalanceSheetViewModel({ balanceSheet, turn, treasurySnapshot });
   applyElementValues(viewModel.elementValues);
 
   if (includeBuildingBreakdown) {
-    const buildingDetail = await fetchBuildingBreakdownElementValues();
-    applyElementValues(buildingDetail);
+    if (!accounting || !construction) {
+      console.warn('[BilanPresenter] building breakdown skipped — accounting/construction deps missing');
+    } else {
+      const buildingDetail = await fetchBuildingBreakdownElementValues({
+        accounting,
+        construction,
+      });
+      applyElementValues(buildingDetail);
+    }
   }
 
   if (viewModel.balanced) {

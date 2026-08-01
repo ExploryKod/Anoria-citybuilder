@@ -1,8 +1,14 @@
-import { getPopupManager, registerAppFunction } from '../../../../composition/sessionShell.js';
-import { requireSessionAccountingApi } from '../../../../composition/sessionRuntime.js';
-
 import { renderBilan } from './BilanPresenter.js';
 import { updateTresorerie } from '../tresorerie/TresoreriePanel.js';
+
+/**
+ * @type {{
+ *   accounting: object,
+ *   construction: object,
+ *   popupManager?: object | null,
+ * } | null}
+ */
+let deps = null;
 
 let balanceSheetFiltersInitialized = false;
 
@@ -51,17 +57,26 @@ function applyBalanceSheetFilter(filter) {
 }
 
 export async function updateBudgetDisplay() {
+  if (!deps?.accounting || !deps?.construction) {
+    console.warn('[BilanPanel] deps not initialized');
+    return;
+  }
+
+  const { accounting, construction } = deps;
+
   try {
     const [financialHealth, currentBudget, balanceSheet] = await Promise.all([
-      requireSessionAccountingApi().getFinancialHealth(),
-      requireSessionAccountingApi().getTreasurySnapshot(),
-      requireSessionAccountingApi().getBalanceSheet(),
+      accounting.getFinancialHealth(),
+      accounting.getTreasurySnapshot(),
+      accounting.getBalanceSheet(),
     ]);
 
     await renderBilan({
       balanceSheet,
       turn: currentBudget.turn || 0,
       treasurySnapshot: currentBudget,
+      accounting,
+      construction,
     });
 
     const healthIndicatorEl = document.getElementById('bilan-health-indicator');
@@ -88,7 +103,17 @@ export async function updateBudgetDisplay() {
   }
 }
 
-export function initBilanPopup() {
+/**
+ * @param {{
+ *   accounting: object,
+ *   construction: object,
+ *   popupManager?: object | null,
+ * }} panelDeps
+ */
+export function initBilanPopup(panelDeps) {
+  deps = panelDeps;
+  const { popupManager } = deps;
+
   const budgetBtn = document.getElementById('bilan-btn');
   const budgetPanel = document.getElementById('bilan-panel');
   const budgetPanelCloseBtn = document.querySelector('.bilan-panel-close-btn');
@@ -102,31 +127,19 @@ export function initBilanPopup() {
 
   budgetBtn.addEventListener('click', () => {
     budgetPanel.classList.add('active');
-
-    if (getPopupManager()) {
-      getPopupManager().forceOpenPopup('bilan-panel');
-    }
-
+    popupManager?.forceOpenPopup('bilan-panel');
     updateBudgetDisplay();
   });
 
   budgetPanelCloseBtn.addEventListener('click', () => {
     budgetPanel.classList.remove('active');
-
-    if (getPopupManager()) {
-      getPopupManager().forceClosePopup('bilan-panel');
-    }
+    popupManager?.forceClosePopup('bilan-panel');
   });
 
   budgetPanel.addEventListener('click', (e) => {
     if (e.target === budgetPanel) {
       budgetPanel.classList.remove('active');
-
-      if (getPopupManager()) {
-        getPopupManager().forceClosePopup('bilan-panel');
-      }
+      popupManager?.forceClosePopup('bilan-panel');
     }
   });
 }
-
-registerAppFunction('updateBudgetDisplay', updateBudgetDisplay);

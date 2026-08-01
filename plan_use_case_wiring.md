@@ -168,9 +168,10 @@ Notées volontairement hors barres 1–5 :
 |---|---|
 | ~~`composition/runGameTick` → `CleanupNotificationPresenter` (DOM)~~ | ✅ injecté depuis `game.js` (`notifyBudgetCleanup`) |
 | ~~`CityAssetsValuationAdapter` → `composition/createCityAssetsContext`~~ | ✅ collaborateur injecté ; câblé dans `createAccountingContext` / `bootGameContexts` |
+| ~~Getters shell → injection panel (pilote compta)~~ | ✅ `init*(deps)` + câblage depuis `GameSessionBootstrap` ; `src/presentation/dom/compta` sans `requireSession*` / `sessionShell` |
+| Getters shell restants (admin sections, BuildingInfo, ToolPanel, onboarding) | **Tranche 2** : supprimer auto-`DOMContentLoaded` des `init*Section`, injecter depuis `AdministratorPanel` / boot |
 | `scene.js` / `game.js` volume rendu | Pas un problème de règle de dépendance tant que le métier n’y revient pas |
 | Miroir debug `AppRegistry` / `window.app` | OK derrière flag ; ne pas en refaire une spine |
-| Getters shell (`getPopupManager`, `getSessionService('…')`) vs injection constructeur | Barre 2 a sorti le chemin `facades/` ; raffiner l’injection panel-scoped plus tard |
 | Orchestrations composition (`syncEmploymentAfterBuildingChange`, bridges trésorerie) | Légitimes au root **ou** à monter en workflow application si un BC devient propriétaire clair — juger au cas par cas |
 | Doc stale (`docs/refactor_ui.md`, `archi.md`, chemins `src/ui`) | Cosmétique archi |
 | Colocaliser CSS à côté des panels | Organisation DOM, pas CA |

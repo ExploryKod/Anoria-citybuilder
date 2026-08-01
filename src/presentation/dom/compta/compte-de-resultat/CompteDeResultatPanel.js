@@ -3,18 +3,29 @@
  * Rendu : CompteDeResultatPresenter.js
  */
 
-import { getPopupManager, registerAppFunction } from '../../../../composition/sessionShell.js';
-import { requireSessionAccountingApi } from '../../../../composition/sessionRuntime.js';
-
 import {
   renderFinancialStatementsBundles,
   renderBudgetSummary,
 } from './CompteDeResultatPresenter.js';
 
 /**
- * Initialise le popup des états budgétaires
+ * @type {{
+ *   accounting: object,
+ *   popupManager?: object | null,
+ * } | null}
  */
-export function initBudgetStatesPopup() {
+let deps = null;
+
+/**
+ * @param {{
+ *   accounting: object,
+ *   popupManager?: object | null,
+ * }} panelDeps
+ */
+export function initBudgetStatesPopup(panelDeps) {
+  deps = panelDeps;
+  const { popupManager } = deps;
+
   const compteDeResultatBtn = document.getElementById('compte-de-resultat-btn');
   const compteDeResultatPanel = document.getElementById('compte-de-resultat-panel');
   const compteDeResultatCloseBtn = document.querySelector('.compte-de-resultat-close-btn');
@@ -34,13 +45,11 @@ export function initBudgetStatesPopup() {
       compteDeResultatBtn.classList.toggle('active');
 
       if (compteDeResultatPanel.classList.contains('active')) {
-        if (getPopupManager()) {
-          getPopupManager().forceOpenPopup('compte-de-resultat-panel');
-        }
+        popupManager?.forceOpenPopup('compte-de-resultat-panel');
         await loadBudgetStates('3', true);
         await updateFilterButtonLabels();
-      } else if (getPopupManager()) {
-        getPopupManager().forceClosePopup('compte-de-resultat-panel');
+      } else {
+        popupManager?.forceClosePopup('compte-de-resultat-panel');
       }
     }
   });
@@ -48,9 +57,7 @@ export function initBudgetStatesPopup() {
   compteDeResultatCloseBtn.addEventListener('click', () => {
     compteDeResultatPanel.classList.remove('active');
     compteDeResultatBtn.classList.remove('active');
-    if (getPopupManager()) {
-      getPopupManager().forceClosePopup('compte-de-resultat-panel');
-    }
+    popupManager?.forceClosePopup('compte-de-resultat-panel');
   });
 
   compteDeResultatPanel.addEventListener('click', (e) => {
@@ -79,8 +86,10 @@ export function initBudgetStatesPopup() {
 }
 
 export async function updateFilterButtonLabels() {
+  if (!deps?.accounting) return;
+
   try {
-    const bundles = await requireSessionAccountingApi().getFinancialStatementsHistory({ everyNTurns: 3 });
+    const bundles = await deps.accounting.getFinancialStatementsHistory({ everyNTurns: 3 });
 
     if (bundles.length === 0) {
       return;
@@ -114,6 +123,12 @@ export async function updateFilterButtonLabels() {
 }
 
 export async function loadBudgetStates(period = '3', showLoading = true) {
+  if (!deps?.accounting) {
+    console.warn('[CompteDeResultatPanel] deps not initialized');
+    return;
+  }
+
+  const { accounting } = deps;
   const compteDeResultatList = document.getElementById('compte-de-resultat-list');
   const summaryContent = document.getElementById('summary-content');
 
@@ -134,13 +149,13 @@ export async function loadBudgetStates(period = '3', showLoading = true) {
     let bundles;
 
     if (period === 'all') {
-      bundles = await requireSessionAccountingApi().getFinancialStatementsHistory({ everyNTurns: null });
+      bundles = await accounting.getFinancialStatementsHistory({ everyNTurns: null });
     } else {
       const turnNumber = parseInt(period, 10);
       if (!Number.isNaN(turnNumber)) {
-        bundles = await requireSessionAccountingApi().getFinancialStatementsHistory({ filterTurn: turnNumber });
+        bundles = await accounting.getFinancialStatementsHistory({ filterTurn: turnNumber });
       } else {
-        bundles = await requireSessionAccountingApi().getFinancialStatementsHistory({ everyNTurns: 3 });
+        bundles = await accounting.getFinancialStatementsHistory({ everyNTurns: 3 });
       }
     }
 
@@ -157,7 +172,7 @@ export async function loadBudgetStates(period = '3', showLoading = true) {
 
     renderFinancialStatementsBundles(bundles, compteDeResultatList);
 
-    const fiscalYearStatement = await requireSessionAccountingApi().getIncomeStatement();
+    const fiscalYearStatement = await accounting.getIncomeStatement();
     renderBudgetSummary(bundles, summaryContent, fiscalYearStatement);
   } catch (error) {
     console.error('Error loading financial statements:', error);
@@ -175,8 +190,4 @@ export async function refreshBudgetStatesModal() {
   const currentPeriod = activeFilterBtn ? activeFilterBtn.dataset.period : '3';
   await loadBudgetStates(currentPeriod, true);
   await updateFilterButtonLabels();
-}
-
-if (typeof window !== 'undefined') {
-  registerAppFunction('refreshBudgetStatesModal', refreshBudgetStatesModal);
 }
