@@ -44,6 +44,11 @@ import {
 import { presentBuildingInfoSelection } from '../../ui/info/BuildingInfoPanel.js';
 import webglDetector from '../../js/utils/WebGLResourceDetector.js';
 import { clearCommercePersistence } from '../../js/acl/commerce.js';
+import {
+  persistGameplayTurn,
+  processGameTurnBudget,
+} from '../../composition/runGameTurnEconomy.js';
+import { notifyBudgetCleanupIfNeeded } from '../../ui/compta/tresorerie/CleanupNotificationPresenter.js';
 
 // Initialiser le cache de TimeManager au démarrage
 TimeManager.initializeCache().catch(err => {
@@ -153,8 +158,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
         await scene.refreshEmploymentPresentation(city);
     }
 
-    /** ECS simulation + scene.update (budget once per tick when not skipped). */
-    async function runSimulationPass(time, options = {}) {
+    /** ECS simulation + scene presentation sync (no turn budget — owned by game.update). */
+    async function runSimulationPass(time) {
         if (isPause || isOver) {
             return;
         }
@@ -172,12 +177,12 @@ export function createGame(gameStore, assetManager, citySize = null) {
             return;
         }
 
-        await scene.update(city, time, options);
+        await scene.update(city, time);
     }
 
     /** scene.update + employment refresh — player interactions without full simulation tick. */
     async function runScenePresentationPass(time) {
-        await scene.update(city, time, { skipBudget: true });
+        await scene.update(city, time);
         await refreshEmploymentPresentationForCity();
     }
 
@@ -216,7 +221,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 y,
                 meshInstanceId: selectedObject.userData?.instanceId ?? null,
             });
-            await scene.update(city, time, { skipBudget: true });
+            await scene.update(city, time);
             await syncEmploymentAfterBuildingChange(scene, city, buildingId);
         } else if(activeToolId === "select-object") {
             await presentBuildingInfoSelection(selectedObject, {
@@ -262,8 +267,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 return;
             }
 
-            await scene.update(city, time, { skipBudget: true });
-            await runSimulationPass(time, { skipBudget: true });
+            await scene.update(city, time);
+            await runSimulationPass(time);
             await syncEmploymentAfterBuildingChange(scene, city, activeToolId);
             const multiplayerManager = getMultiplayerManager();
             if (multiplayerManager?.isMultiplayer) {
@@ -352,12 +357,27 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 return;
             }
 
-            await scene.update(city, time, { skipBudget: true });
+            // Pre-ECS presentation sync
+            await scene.update(city, time);
             if (isPause || isOver) {
                 return;
             }
 
+            // ECS + post-ECS presentation sync
             await runSimulationPass(time);
+            if (isPause || isOver) {
+                return;
+            }
+
+            // Turn economy owned here (not inside scene.update)
+            const { totalPop } = await persistGameplayTurn({ gameStore, housing, time });
+            const budgetResult = await processGameTurnBudget({
+                city,
+                buildings: scene.buildings,
+                time,
+                totalPop,
+            });
+            await notifyBudgetCleanupIfNeeded(budgetResult?.cleanupResult);
             if (isPause || isOver) {
                 return;
             }

@@ -161,7 +161,7 @@ Règle : Three = WebGL ; `ui/` = DOM ; adapters BC = `contexts/*/infrastructure/
 1. ~~Extraire `assetsPrices` (+ listes catégories) hors `meshs/data.js` → catalog partagé~~ ✅ `src/shared/building-catalog/`
 2. ~~Info panel + notifications hors `game.js` → `ui/`~~ ✅ `ui/info/BuildingInfoPanel.js`, `ui/shell/BuildingNotifications.js`
 3. ~~Place / bulldoze → use-cases construction (handler mince)~~ ✅ `PlaceBuildingAtTile` / `BulldozeBuildingAtTile`
-4. Owner unique du tick : budget / `infoGameplay` hors `scene.runUpdate`
+4. ~~Owner unique du tick : budget / `infoGameplay` hors `scene.runUpdate`~~ ✅ `composition/runGameTurnEconomy.js`
 5. Sync neighbors / orphans hors boucle mesh
 6. Réduire `createGame` à une façade (`composition/`)
 7. Optionnel : `#budget-states-panel` → nom FR compte de résultat
@@ -182,8 +182,8 @@ Scene bootstrap, managers (`Lighting*`, `Backdrop*`, `Citizen*`, `Resource*`, �
 | 2 | Place / bulldoze dans `onObjectSelected` | ✅ → `PlaceBuildingAtTile` / `BulldozeBuildingAtTile` | sim_logic | **high** |
 | 3 | Info bâtiment = viewmodel + DOM | ✅ → `ui/info/BuildingInfoPanel.js` | hud_dom | **high** |
 | 4 | Notifications construction inline | ✅ → `ui/shell/BuildingNotifications.js` | hud_dom | med |
-| 5 | Tick scindé game + scene | `game.update` / `runSimulationPass` / `processTurnBudget` | composition | **high** |
-| 6 | Persist tour + budget dans `scene.runUpdate` | `gameStore.addGameItems`, `processTurnBudget`, funds HUD | persistence | **high** |
+| 5 | Tick scindé game + scene | ✅ économie de tour dans `game.update` via `runGameTurnEconomy` | composition | **high** |
+| 6 | Persist tour + budget dans `scene.runUpdate` | ✅ sorti de scene → `persistGameplayTurn` / `processGameTurnBudget` | persistence | **high** |
 | 7 | Neighbors / orphan GC dans boucle tiles | `persistTileNeighbors`, orphan scan Dexie | persistence | **high** |
 | 8 | Mutateurs stocks commerce morts / legacy | `calculateNetStocks`, `updateMarketStocks` | sim_logic | med |
 | 9 | `assetsPrices` catalogue économie sous meshes | ✅ → `shared/building-catalog/` | economy_catalog | med |
@@ -192,4 +192,4 @@ Scene bootstrap, managers (`Lighting*`, `Backdrop*`, `Citizen*`, `Resource*`, �
 | 12 | Catégories bâtiments importées depuis `ui/shell/nodes` | ✅ scene ← catalog ; nodes re-exporte | layering | med |
 | 13 | Input + pause couplés overlay info | listeners / `game.play` | other | low |
 
-Ordre de slices recommandé : ~~9~~ → ~~3+4~~ → ~~2~~ → **5+6** → 7+8 → 1.
+Ordre de slices recommandé : ~~9~~ → ~~3+4~~ → ~~2~~ → ~~5+6~~ → **7+8** → 1.
