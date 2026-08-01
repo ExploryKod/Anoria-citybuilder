@@ -1,5 +1,6 @@
 import { listWindmillSupplyViews, updateSupplyBuildingFields } from '../acl/supply.js';
 import { getBuildingById } from '../acl/construction.js';
+import { registerAppService } from '../acl/appRuntime.js';
 import {
     instanceIdFromHouseRow,
     displayLabelFromHouseRow,
@@ -370,7 +371,7 @@ function initStorageSection() {
     }
     
     // Make manager available globally
-    window.storageSectionManager = manager;
+    registerAppService('storageSectionManager', manager);
 }
 
 // Initialize when DOM is ready

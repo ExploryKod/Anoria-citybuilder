@@ -1,3 +1,4 @@
+import { getGameStore, getWorkSectionManager, getAppService } from '../js/acl/appRuntime.js';
 import { TimeManager } from '../js/game/utils/TimeManager.js';
 import { GetTreasuryBalance } from '../contexts/accounting/application/queries/treasury/GetTreasuryBalance.js';
 import { GetTreasurySnapshot } from '../contexts/accounting/application/queries/treasury/GetTreasurySnapshot.js';
@@ -304,12 +305,12 @@ export function createAccountingContext(deps = {}) {
   };
 
   const getCitizenTaxPerCapita = () => {
-    const globalObj = typeof window !== 'undefined' ? window : global;
+    const financesSectionManager = getAppService('financesSectionManager');
     if (
-      globalObj.financesSectionManager &&
-      typeof globalObj.financesSectionManager.citizenTaxAmount === 'number'
+      financesSectionManager &&
+      typeof financesSectionManager.citizenTaxAmount === 'number'
     ) {
-      return globalObj.financesSectionManager.citizenTaxAmount;
+      return financesSectionManager.citizenTaxAmount;
     }
     return 100;
   };
@@ -359,8 +360,9 @@ export function createAccountingContext(deps = {}) {
     },
     getCurrentTurn: async () => {
       try {
-        if (typeof window !== 'undefined' && window.gameStore) {
-          const turnData = await window.gameStore.getLatestGameItemByField('turn');
+        const gameStore = getGameStore();
+        if (gameStore) {
+          const turnData = await gameStore.getLatestGameItemByField('turn');
           return turnData || 0;
         }
         return 0;
@@ -372,17 +374,17 @@ export function createAccountingContext(deps = {}) {
   });
 
   const getSalarySettings = () => {
-    const globalObj = typeof window !== 'undefined' ? window : global;
+    const workSectionManager = getWorkSectionManager();
     let salaryPerMonth = 100;
     let salaryTaxRate = 0.2;
-    if (globalObj.workSectionManager && typeof globalObj.workSectionManager.salary === 'number') {
-      salaryPerMonth = globalObj.workSectionManager.salary;
+    if (workSectionManager && typeof workSectionManager.salary === 'number') {
+      salaryPerMonth = workSectionManager.salary;
     }
     if (
-      globalObj.workSectionManager &&
-      typeof globalObj.workSectionManager.salaryTaxRate === 'number'
+      workSectionManager &&
+      typeof workSectionManager.salaryTaxRate === 'number'
     ) {
-      salaryTaxRate = globalObj.workSectionManager.salaryTaxRate;
+      salaryTaxRate = workSectionManager.salaryTaxRate;
     }
     return { salaryPerMonth, salaryTaxRate };
   };
@@ -410,9 +412,9 @@ export function createAccountingContext(deps = {}) {
     processLoanPayments:
       deps.processLoanPayments ??
       (async () => {
-        const globalObj = typeof window !== 'undefined' ? window : global;
-        if (globalObj.processLoanPayments) {
-          await globalObj.processLoanPayments();
+        const processLoanPayments = getAppService('processLoanPayments');
+        if (processLoanPayments) {
+          await processLoanPayments();
         }
       }),
     recalculateLoanTotals: () => treasuryLoanPortfolio.recalculateLoanTotals(),

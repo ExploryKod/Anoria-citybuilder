@@ -16,6 +16,7 @@ import { getOrCreateHousingContext } from '../acl/housing.js';
 import { getCityEmploymentSummary, ensureBuildingEmployeesSchema } from '../acl/employment.js';
 import { getCityTotalBuildingValue } from '../acl/budget.js';
 import { getTreasurySnapshot } from '../acl/accountingGame.js';
+import { getPopupManager, getGameUI } from '../acl/appRuntime.js';
 import {
     findBuildingAtTile,
     getBuildingById,
@@ -1564,13 +1565,14 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
         
         // Get budget data from BudgetManager
         let funds = 0;
-        const budgetData = await getTreasurySnapshot();
-        funds = budgetData.funds;
+        const endTurnBudget = await getTreasurySnapshot();
+        funds = endTurnBudget.funds;
 
         // Update famished population and funds (citizen/elite counts via refreshEmploymentPresentation)
-        if (window.gameUI) {
-            window.gameUI.updateFamishedPopulation(famishedPopulation || 0);
-            window.gameUI.updateFunds(funds);
+        const gameUI = getGameUI();
+        if (gameUI) {
+            gameUI.updateFamishedPopulation(famishedPopulation || 0);
+            gameUI.updateFunds(funds);
         } else {
             // Fallback to direct DOM update if GameUI not available
             const displayHungerPop = document.querySelector('.display-hunger-pop');
@@ -1614,14 +1616,15 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
             console.warn('[scene.js] Error calculating employment summary:', error);
         }
 
-        if (window.gameUI) {
-            window.gameUI.updatePopulationBreakdown(
+        const gameUI = getGameUI();
+        if (gameUI) {
+            gameUI.updatePopulationBreakdown(
                 citizenPopulation + elitePopulation,
                 citizenPopulation,
                 elitePopulation
             );
-            window.gameUI.updateUnemployedPopulation(unemployedCount, unemploymentPercentage);
-            window.gameUI.updateWorkerLack(employmentLack);
+            gameUI.updateUnemployedPopulation(unemployedCount, unemploymentPercentage);
+            gameUI.updateWorkerLack(employmentLack);
         } else {
             const displayPop = document.querySelector('.display-pop');
             const displayUnemployedPop = document.querySelector('.display-unemployed-pop');
@@ -1925,7 +1928,7 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
 
     function onMouseDown(event){
         // Block interaction if a popup is open or info modal is open
-        if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+        if (getPopupManager() && getPopupManager().getActivePopups().length > 0) {
             return;
         }
         if (isInfoModalOpen()) {
@@ -1958,7 +1961,7 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
 
     function onMouseUp(event){
         // Block interaction if a popup is open or info modal is open
-        if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+        if (getPopupManager() && getPopupManager().getActivePopups().length > 0) {
             return;
         }
         if (isInfoModalOpen()) {
@@ -1973,7 +1976,7 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
 
 function onMouseMove(event) {
     // Block interaction if a popup is open or info modal is open
-    if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+    if (getPopupManager() && getPopupManager().getActivePopups().length > 0) {
         return;
     }
     if (isInfoModalOpen()) {
@@ -2009,9 +2012,9 @@ function onTouchStart(event) {
     // If canvas has pointer-events-disabled, touch events won't reach us at all
     // But if they do, we should still check for blocking popups
     // BUT: panel-layout should not block events (it's configured with shouldBlockEvents: false)
-    const activePopups = window.popupManager?.getActivePopups() || [];
+    const activePopups = getPopupManager()?.getActivePopups() || [];
     const blockingPopups = activePopups.filter(id => {
-        const config = window.popupManager?.popupConfigs?.get(id);
+        const config = getPopupManager()?.popupConfigs?.get(id);
         return config && config.shouldBlockEvents;
     });
     
@@ -2060,7 +2063,7 @@ function onTouchStart(event) {
 
 function onTouchMove(event) {
     // Block interaction if a popup is open or info modal is open
-    if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+    if (getPopupManager() && getPopupManager().getActivePopups().length > 0) {
         return;
     }
     if (isInfoModalOpen()) {
@@ -2096,9 +2099,9 @@ function onTouchMove(event) {
 
 function onTouchEnd(event) {
     // Block interaction if a popup is open or info modal is open
-    const activePopups = window.popupManager?.getActivePopups() || [];
+    const activePopups = getPopupManager()?.getActivePopups() || [];
     const blockingPopups = activePopups.filter(id => {
-        const config = window.popupManager?.popupConfigs?.get(id);
+        const config = getPopupManager()?.popupConfigs?.get(id);
         return config && config.shouldBlockEvents;
     });
     
@@ -2210,7 +2213,7 @@ function onTouchEnd(event) {
 
     function onMouseWheel(event) {
         // Block interaction if a popup is open or info modal is open
-        if (window.popupManager && window.popupManager.getActivePopups().length > 0) {
+        if (getPopupManager() && getPopupManager().getActivePopups().length > 0) {
             return;
         }
         if (isInfoModalOpen()) {

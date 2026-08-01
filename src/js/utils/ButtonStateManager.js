@@ -1,3 +1,5 @@
+import { registerAppService } from '../acl/appRuntime.js';
+
 /**
  * ButtonStateManager - Manages the enabled/disabled state of building buttons
  * 
@@ -287,14 +289,7 @@ class ButtonStateManager {
 // Create singleton instance
 const buttonStateManager = new ButtonStateManager();
 
-// Expose to global window for easy access from anywhere
-if (typeof window !== 'undefined') {
-    window.buttonStateManager = buttonStateManager;
-    // Also register with AppRegistry if available
-    if (window.app && window.app.register) {
-        window.app.register('buttonStateManager', buttonStateManager);
-    }
-}
+registerAppService('buttonStateManager', buttonStateManager);
 
 // Export singleton instance for module access
 export { buttonStateManager };

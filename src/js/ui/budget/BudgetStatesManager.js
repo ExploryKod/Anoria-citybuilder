@@ -5,6 +5,7 @@
  * Source primaire CR/bilan : journal via getFinancialStatementsHistory().
  */
 
+import { getPopupManager, registerAppFunction } from '../../acl/appRuntime.js';
 import { getHealthStatusText } from './RealtimeBudgetManager.js';
 import {
   getFinancialStatementsHistory,
@@ -36,13 +37,13 @@ export function initBudgetStatesPopup() {
             budgetStatesBtn.classList.toggle('active');
             
             if (budgetStatesPanel.classList.contains('active')) {
-                if (window.popupManager) {
-                    window.popupManager.forceOpenPopup('budget-states-panel');
+                if (getPopupManager()) {
+                    getPopupManager().forceOpenPopup('budget-states-panel');
                 }
                 await loadBudgetStates('3', true);
                 await updateFilterButtonLabels();
-            } else if (window.popupManager) {
-                window.popupManager.forceClosePopup('budget-states-panel');
+            } else if (getPopupManager()) {
+                getPopupManager().forceClosePopup('budget-states-panel');
             }
         }
     });
@@ -50,8 +51,8 @@ export function initBudgetStatesPopup() {
     budgetStatesCloseBtn.addEventListener('click', () => {
         budgetStatesPanel.classList.remove('active');
         budgetStatesBtn.classList.remove('active');
-        if (window.popupManager) {
-            window.popupManager.forceClosePopup('budget-states-panel');
+        if (getPopupManager()) {
+            getPopupManager().forceClosePopup('budget-states-panel');
         }
     });
 
@@ -376,5 +377,5 @@ export async function refreshBudgetStatesModal() {
 }
 
 if (typeof window !== 'undefined') {
-    window.refreshBudgetStatesModal = refreshBudgetStatesModal;
+    registerAppFunction('refreshBudgetStatesModal', refreshBudgetStatesModal);
 }

@@ -82,6 +82,7 @@ function renderWorkplaceEmployeesInfo(buildingData, messages) {
 import InputManager from './InputManager.js';
 import gameUI from './GameUI.js';
 import appRegistry from './AppRegistry.js';
+import { attachEmploymentPriorityToWorkSection, getMultiplayerManager, invokeStartTutorial } from '../acl/appRuntime.js';
 import webglDetector from '../utils/WebGLResourceDetector.js';
 import commerceStore from '../stores/CommerceStore.js';
 
@@ -113,20 +114,7 @@ let services = [];
         // Note: Initial simulation will run on first game.update() call
         // The service is now synchronized with the game loop
         
-        // Make service available to work section manager
-        if (window.workSectionManager) {
-            window.workSectionManager.setPriorityService(employmentPriorityService);
-        } else {
-            // If work section manager isn't initialized yet, set it when it becomes available
-            const checkWorkSection = setInterval(() => {
-                if (window.workSectionManager) {
-                    window.workSectionManager.setPriorityService(employmentPriorityService);
-                    clearInterval(checkWorkSection);
-                }
-            }, 100);
-            // Stop checking after 5 seconds
-            setTimeout(() => clearInterval(checkWorkSection), 5000);
-        }
+        attachEmploymentPriorityToWorkSection(employmentPriorityService);
         
         console.log('[game.js] Services loaded successfully:', services.length, services.map(s => s.constructor.name));
     } catch (err) {
@@ -451,6 +439,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
     let infos = {};
     /** @type {GameLoop | null} */
     let gameLoop = null;
+    /** @type {ReturnType<typeof createGame> extends infer T ? T : never} */
+    let game;
 
     function getTickIntervalMs() {
         return Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed'), 10) || 4000));
@@ -468,7 +458,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
     // Initialize FoodTraceabilityService
     const foodTraceabilityService = new FoodTraceabilityService();
     appRegistry.register('foodTraceabilityService', foodTraceabilityService);
-    window.foodTraceabilityService = foodTraceabilityService; // Make globally available
     
     gameUI.updateTimeDisplay(time);
     
@@ -488,14 +477,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
             console.log('[game.js] Budget initialized, current budget:', initialBudget);
 
-            if (window.gameUI) {
-                window.gameUI.updateFunds(initialBudget.funds ?? initialFunds);
-            } else {
-                const displayFunds = document.querySelector('.display-funds');
-                if (displayFunds) {
-                    displayFunds.textContent = String(initialBudget.funds ?? initialFunds);
-                }
-            }
+            gameUI.updateFunds(initialBudget.funds ?? initialFunds);
 
             return initialBudget;
         })
@@ -551,11 +533,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
         // Ouvrir automatiquement le tutoriel au démarrage du jeu (premier mois)
         // Petit délai pour s'assurer que tout est bien initialisé après le chargement
         setTimeout(() => {
-            if (window.startTutorial && typeof window.startTutorial === 'function') {
-                window.startTutorial();
-            } else if (window.tutorialManager && typeof window.tutorialManager.showTutorial === 'function') {
-                window.tutorialManager.showTutorial();
-            }
+            invokeStartTutorial();
         }, 800); // Délai après le masquage du loader pour une meilleure UX
     });
 
@@ -1111,14 +1089,14 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 if (canvas) {
                     canvas.classList.add('pointer-events-disabled');
                 }
-                window.game.pause()
+                game.pause()
             } else {
                 // Re-enable pointer events on 3D scene when info overlay is not active
                 const canvas = document.querySelector('canvas');
                 if (canvas) {
                     canvas.classList.remove('pointer-events-disabled');
                 }
-                window.game.play()
+                game.play()
             }
             await runScenePresentationPass(time);
         } else if(!tile.buildingId || (activeToolId && (activeToolId === 'roads' || activeToolId === 'Road' || activeToolId.startsWith('StonePath-')) && (tile.buildingId === 'roads' || tile.buildingId === 'Road' || (tile.buildingId && tile.buildingId.startsWith('StonePath-'))))) {
@@ -1132,8 +1110,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
                     canvas.classList.remove('pointer-events-disabled');
                 }
                 // Ensure game is playing (not paused)
-                if (window.game && typeof window.game.play === 'function') {
-                    window.game.play();
+                if (game && typeof game.play === 'function') {
+                    game.play();
                 }
             }
             
@@ -1244,9 +1222,10 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 await scene.update(city, time, { skipBudget: true });
                 await runSimulationPass(time, { skipBudget: true });
                 await syncEmploymentAfterBuildingChange(scene, city, activeToolId);
-                if (window.multiplayerManager && window.multiplayerManager.isMultiplayer) {
+                const multiplayerManager = getMultiplayerManager();
+                if (multiplayerManager?.isMultiplayer) {
                     try {
-                        await window.multiplayerManager.placeBuilding(activeToolId, x, y);
+                        await multiplayerManager.placeBuilding(activeToolId, x, y);
                     } catch (error) {
                         console.warn('[Multiplayer] Erreur envoi bâtiment:', error);
                         // On continue même si l'envoi échoue (placement local réussi)
@@ -1254,8 +1233,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 }
                 
                 // Resume the game after successful building placement
-                if (window.game) {
-                    window.game.play();
+                if (game) {
+                    game.play();
                 }
                 } else {
                     // Payment failed - show error message
@@ -1324,12 +1303,12 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 scene.suppressInput(200);
             }
             
-            window.game.play()
+            game.play()
         }
     })
 
     // Expose scene and city on game object so it can be accessed from other modules
-    const game = {
+    game = {
         scene: scene,
         city: city,
         runtime,
@@ -1360,7 +1339,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
             await refreshEmploymentPresentationForCity();
 
-            if (window.objectivesTracker && objectivesTracker.enabled) {
+            if (objectivesTracker.enabled) {
                 await objectivesTracker.checkObjectives(time);
             }
         },
@@ -1387,7 +1366,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
                 scene.resumeCitizen();
             }
             // Appeler update(0) pour activer l'objectif au tour 0 au démarrage (seulement si activés)
-            if (window.objectivesTracker && objectivesTracker.enabled) {
+            if (objectivesTracker.enabled) {
                 await objectivesTracker.checkObjectives(0);
             }
         },

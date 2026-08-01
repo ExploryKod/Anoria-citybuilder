@@ -4,6 +4,7 @@
  */
 
 import { getTreasurySnapshot } from '../acl/accountingGame.js';
+import { getTutorialManager, getButtonStateManager, getObjectivesStore, registerAppService } from '../acl/appRuntime.js';
 import {
   OBJECTIVE_CATALOG,
   isObjectiveRequirementMet,
@@ -237,8 +238,8 @@ class ObjectivesTracker {
         });
         
         // Désactiver les événements Three.js quand la modale est ouverte
-        if (window.tutorialManager && window.tutorialManager.disableThreeJSEvents) {
-            window.tutorialManager.disableThreeJSEvents();
+        if (getTutorialManager() && getTutorialManager().disableThreeJSEvents) {
+            getTutorialManager().disableThreeJSEvents();
         }
     }
 
@@ -330,8 +331,8 @@ class ObjectivesTracker {
      */
     showObjectiveCompletion(objective) {
         // Déverrouiller House-Purple quand l'objectif est complété
-        if (window.buttonStateManager) {
-            window.buttonStateManager.enable('House-Purple');
+        if (getButtonStateManager()) {
+            getButtonStateManager().enable('House-Purple');
             
             // Animation pour attirer l'attention sur le bouton déverrouillé
             setTimeout(() => {
@@ -478,8 +479,9 @@ class ObjectivesTracker {
         try {
             const objective = this.objectives.find(obj => obj.id === objectiveId);
             
-            if (window.objectivesStore) {
-                await window.objectivesStore.recordObjectiveSuccess({
+            const objectivesStore = getObjectivesStore();
+            if (objectivesStore) {
+                await objectivesStore.recordObjectiveSuccess({
                     objectiveId: objectiveId,
                     turn: turn,
                     details: {
@@ -518,12 +520,7 @@ class ObjectivesTracker {
 // Créer une instance globale
 const objectivesTracker = new ObjectivesTracker();
 
-// Exposer globalement
-window.objectivesTracker = objectivesTracker;
-// Also register with AppRegistry if available
-if (window.app && window.app.register) {
-    window.app.register('objectivesTracker', objectivesTracker);
-}
+registerAppService('objectivesTracker', objectivesTracker);
 
 export default objectivesTracker;
 

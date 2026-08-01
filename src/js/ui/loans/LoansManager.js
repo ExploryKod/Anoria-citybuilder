@@ -12,6 +12,7 @@ import {
   recordInfoLoanInstallment,
   advanceLoanInstallmentWithoutPayment,
 } from '../../acl/accountingGame.js';
+import { getPopupManager, registerAppFunction } from '../../acl/appRuntime.js';
 import {
   computeLoanRate,
   computeLoanRatesByType,
@@ -42,8 +43,8 @@ export function initLoansPopup() {
         loansPanel.classList.add('active');
         
         // Utiliser PopupManager pour gérer les événements
-        if (window.popupManager) {
-            window.popupManager.forceOpenPopup('loans-panel');
+        if (getPopupManager()) {
+            getPopupManager().forceOpenPopup('loans-panel');
         }
         
         updateLoansDisplay();
@@ -54,8 +55,8 @@ export function initLoansPopup() {
         loansPanel.classList.remove('active');
         
         // Utiliser PopupManager pour gérer les événements
-        if (window.popupManager) {
-            window.popupManager.forceClosePopup('loans-panel');
+        if (getPopupManager()) {
+            getPopupManager().forceClosePopup('loans-panel');
         }
     });
 
@@ -65,8 +66,8 @@ export function initLoansPopup() {
             loansPanel.classList.remove('active');
             
             // Utiliser PopupManager pour gérer les événements
-            if (window.popupManager) {
-                window.popupManager.forceClosePopup('loans-panel');
+            if (getPopupManager()) {
+                getPopupManager().forceClosePopup('loans-panel');
             }
         }
     });
@@ -547,10 +548,6 @@ export async function processLoanPayments() {
  * Initialise le système de paiement des prêts
  */
 export function initLoanPaymentSystem() {
-    // Expose processLoanPayments globally for BudgetProcessor (single orchestrator per turn)
-    if (window.appRegister) {
-        window.appRegister('processLoanPayments', processLoanPayments);
-    }
-    window.processLoanPayments = processLoanPayments;
+    registerAppFunction('processLoanPayments', processLoanPayments);
 }
 

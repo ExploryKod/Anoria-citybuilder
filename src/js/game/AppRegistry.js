@@ -26,11 +26,21 @@ class AppRegistry {
         
         // Stores
         this.objectivesStore = null;
-        
+
+        // Admin / section UI
+        this.workSectionManager = null;
+        this.multiplayerManager = null;
+        this.financesSectionManager = null;
+        this.storageSectionManager = null;
+        this.factorySectionManager = null;
+        this.reportSectionManager = null;
+        this.healthSectionManager = null;
+        this.parametersPanelManager = null;
+
         // Utilities
         this.EventBlocker = null;
-        
-        // Functions (kept for backwards compatibility)
+
+        // Functions (legacy entry points — prefer ACL getters)
         this.setActiveTool = null;
         this.processLoanPayments = null;
         this.loadBudgetStates = null;
@@ -40,15 +50,18 @@ class AppRegistry {
         this.closeObjectives = null;
         this.startTutorial = null;
         this.closeTutorial = null;
+        this.openAdministratorPanel = null;
+        this.closeAdministratorPanel = null;
+        this.showAdministratorSection = null;
     }
 
     /**
      * Registers a core game instance
      * @param {string} name - Name of the instance
      * @param {*} instance - The instance to register
-     * @param {boolean} exposeOnWindow - Also expose on window.* for backwards compatibility (default: true)
+     * @param {boolean} exposeOnWindow - Legacy window.* mirror (default: false — use js/acl/appRuntime.js)
      */
-    register(name, instance, exposeOnWindow = true) {
+    register(name, instance, exposeOnWindow = false) {
         if (!this.hasOwnProperty(name)) {
             console.warn(`AppRegistry: Unknown property "${name}" - adding dynamically`);
         }
@@ -104,8 +117,10 @@ class AppRegistry {
 // Create singleton instance
 const appRegistry = new AppRegistry();
 
-// Expose as window.app (following simcity's pattern of minimal, organized globals)
-window.app = appRegistry;
+// Expose as window.app (single intentional global namespace in browser)
+if (typeof window !== 'undefined') {
+  window.app = appRegistry;
+}
 
 export default appRegistry;
 

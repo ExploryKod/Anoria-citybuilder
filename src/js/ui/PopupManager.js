@@ -2,6 +2,8 @@
  * PopupManager - Gestionnaire unifié pour toutes les popups
  * Utilise pointer-events CSS pour désactiver les interactions avec le canvas 3D
  */
+import { pauseGame, playGame, registerAppService } from '../acl/appRuntime.js';
+
 class PopupManager {
     constructor() {
         this.activePopups = new Set();
@@ -218,8 +220,8 @@ class PopupManager {
                         });
                     });
                 }
-                if (config.shouldPauseGame && window.game && typeof window.game.pause === 'function') {
-                    window.game.pause();
+                if (config.shouldPauseGame) {
+                    pauseGame();
                 }
                 if (config.onOpen) {
                     config.onOpen();
@@ -249,8 +251,8 @@ class PopupManager {
         }
 
         // Mettre le jeu en pause si nécessaire
-        if (config.shouldPauseGame && window.game && typeof window.game.pause === 'function') {
-            window.game.pause();
+        if (config.shouldPauseGame) {
+            pauseGame();
         }
 
         // Callback d'ouverture
@@ -284,7 +286,7 @@ class PopupManager {
         }
 
         // Reprendre le jeu si nécessaire
-        if (config.shouldPauseGame && window.game && typeof window.game.play === 'function') {
+        if (config.shouldPauseGame) {
             // Vérifier s'il y a d'autres popups actives qui nécessitent la pause
             const hasOtherPausingPopups = Array.from(this.activePopups).some(id => {
                 const otherConfig = this.popupConfigs.get(id);
@@ -292,7 +294,7 @@ class PopupManager {
             });
 
             if (!hasOtherPausingPopups) {
-                window.game.play();
+                playGame();
             }
         }
 
@@ -384,12 +386,7 @@ class PopupManager {
 // Créer une instance globale
 const popupManager = new PopupManager();
 
-// Exposer globalement
-window.popupManager = popupManager;
-// Also register with AppRegistry if available
-if (window.app && window.app.register) {
-    window.app.register('popupManager', popupManager);
-}
+registerAppService('popupManager', popupManager);
 
 // PopupManager initialized
 
