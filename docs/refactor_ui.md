@@ -128,7 +128,8 @@ Ce fichier + chemins majeurs accounting / FINANCIAL_DATA_SOURCE_OF_TRUTH.
 | `BuildingBreakdownEnrichment.js` | enrichissement UI bilan (pas de rename) |
 | Commerce `goodsData` sans lecture UI | ✅ BC via `LocalStorageCommerceRepository` |
 | Salary / taxe hors SectionPresenters | ✅ `LocalStorageFiscalSettingsRepository` |
-| `#budget-panel` → `#bilan-panel` (+ `#bilan-btn`, CSS `bilan-panel*.css`) | ✅ ; `#realtime-budget-*` / `#budget-states-*` inchangés |
+| `#budget-panel` → `#bilan-panel` (+ `#bilan-btn`, CSS `bilan-panel*.css`) | ✅ ; `#realtime-budget-*` inchangé |
+| `#budget-states-panel` → `#compte-de-resultat-panel` | ✅ |
 
 ---
 
@@ -139,7 +140,7 @@ Ce fichier + chemins majeurs accounting / FINANCIAL_DATA_SOURCE_OF_TRUTH.
 | Panneau Administrateur | `#administrator-panel` | `src/ui/admin/` |
 | Trésorerie temps réel | `#realtime-budget-panel` | `src/ui/compta/tresorerie/TresoreriePanel.js` |
 | Bilan comptable | `#bilan-panel` | `src/ui/compta/bilan/BilanPanel.js` |
-| Compte de résultat | `#budget-states-panel` | `src/ui/compta/compte-de-resultat/` |
+| Compte de résultat | `#compte-de-resultat-panel` | `src/ui/compta/compte-de-resultat/` |
 | Livret (admin Finances) | `#admin-section-finances` | `src/ui/compta/livret/` + `src/ui/admin/finances/` |
 | Prêts | `#loans-panel` | `src/ui/compta/prets/` |
 | Journal | `#journal-panel` | `src/ui/compta/journal/` |
@@ -164,7 +165,7 @@ Règle : Three = WebGL ; `ui/` = DOM ; adapters BC = `contexts/*/infrastructure/
 4. ~~Owner unique du tick : budget / `infoGameplay` hors `scene.runUpdate`~~ ✅ `composition/runGameTurnEconomy.js`
 5. ~~Sync neighbors / orphans hors boucle mesh~~ ✅ `presentation/three/sync/` (+ dead `updateMarketStocks` supprimé)
 6. ~~Réduire `createGame` à une façade (`composition/`)~~ ✅ `bootGameContexts` / `runGameTick` / `bootTreasuryHud` / …
-7. Optionnel : `#budget-states-panel` → nom FR compte de résultat
+7. ~~`#budget-states-panel` → nom FR compte de résultat~~ ✅ `#compte-de-resultat-panel`
 
 ---
 

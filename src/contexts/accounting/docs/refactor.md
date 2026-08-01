@@ -476,7 +476,7 @@ Inventaire après migration Phase 3½ (write path opérationnel). **Ne pas patch
 
 - ACL : `getIncomeStatement()`, `getBalanceSheet()`, `getFinancialStatementsAtTurn()`, `getFinancialStatementsHistory()`
 - `#bilan-panel` → `getBalanceSheet()` (bundle lié CR)
-- `#budget-states-panel` → `getFinancialStatementsHistory()` (journal-primary ; cache enrichissement only)
+- `#compte-de-resultat-panel` → `getFinancialStatementsHistory()` (journal-primary ; cache enrichissement only)
 
 **Limite** : raccourci journal → CR/bilan, **sans** grand livre ni balance PCG — voir Phase 5 (non prioritaire).
 
