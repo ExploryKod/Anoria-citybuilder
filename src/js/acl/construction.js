@@ -86,3 +86,17 @@ export async function listAllBuildingRows() {
 export async function removeBuildingRecord(instanceId) {
   return getOrCreateConstructionContext().removeBuildingRecord(instanceId);
 }
+
+/**
+ * Bind live Three.js grid for scene building inventory (turn-budget maintenance input).
+ *
+ * @param {{ city: { size: number }, buildings: object[][] }} ctx
+ */
+export function bindSceneBuildingGrid(ctx) {
+  getOrCreateConstructionContext().bindSceneBuildingGrid(ctx);
+}
+
+/** @returns {string[]} */
+export function listSceneBuildingTypes() {
+  return getOrCreateConstructionContext().listSceneBuildingTypes();
+}

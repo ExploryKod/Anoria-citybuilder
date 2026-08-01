@@ -71,6 +71,7 @@ import {
   getCityTotalPopulation,
   clearPopulationWithoutRoadAccess,
 } from '../js/acl/housing.js';
+import { listSceneBuildingTypesForMaintenance } from './sceneBuildingInventoryBridge.js';
 
 /**
  * Composition root — Accounting bounded context.
@@ -88,6 +89,7 @@ import {
  * @param {import('../contexts/accounting/infrastructure/session/SessionJournalStore.js').SessionJournalStore} [deps.journalManager]
  * @param {import('dexie').Dexie} [deps.db]
  * @param {import('../contexts/accounting/infrastructure/dexie/DexieObjectiveHistoryRepository.js').DexieObjectiveHistoryRepository} [deps.objectiveHistoryRepository]
+ * @param {() => string[]} [deps.listBuildingTypesForMaintenance]
  */
 export function createAccountingContext(deps = {}) {
   const sessionJournalStoreInstance =
@@ -417,6 +419,8 @@ export function createAccountingContext(deps = {}) {
     cleanupOldJournalEntries: (maxAge) =>
       sessionJournalStoreInstance.cleanupOldJournalEntries(maxAge),
     flushJournalSessionToDexie: () => flushJournalSession.execute(),
+    listBuildingTypesForMaintenance:
+      deps.listBuildingTypesForMaintenance ?? listSceneBuildingTypesForMaintenance,
   });
 
   return {

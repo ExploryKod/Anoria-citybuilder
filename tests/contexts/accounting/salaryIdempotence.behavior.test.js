@@ -6,7 +6,7 @@ import Dexie from 'dexie';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { BudgetManager } from '../../../tests/helpers/testBudgetFacade.js';
 import { JournalManager } from '../../../src/js/acl/accountingSessionJournal.js';
-import { BudgetProcessor } from '../../../src/js/game/managers/BudgetProcessor.js';
+import { processTurnBudget } from '../../../src/js/acl/accounting.js';
 import { resetSessionLedgerBufferForTests } from '../../../src/js/acl/accountingSessionJournal.js';
 import {
   getOrCreateAccountingContext,
@@ -29,7 +29,6 @@ describe('Accounting — salary idempotence (J6/J7)', () => {
   let testDb;
   let budgetManager;
   let journalManager;
-  let budgetProcessor;
 
   beforeEach(async () => {
     resetSessionLedgerBufferForTests();
@@ -64,7 +63,6 @@ describe('Accounting — salary idempotence (J6/J7)', () => {
 
     getOrCreateAccountingContext({ journalManager, db: testDb });
 
-    budgetProcessor = new BudgetProcessor();
     global.window = global.window ?? {};
     appRegistry.register('workSectionManager', { salary: 100, salaryTaxRate: 0.2 });
 
@@ -95,11 +93,21 @@ describe('Accounting — salary idempotence (J6/J7)', () => {
     await budgetManager.updateTurn(turn);
 
     await Promise.all([
-      budgetProcessor.processBudget(turn, 10, { total: 0 }, {
-        roads: { cost: 0 }, houses: { cost: 0 }, farms: { cost: 0 }, markets: { cost: 0 },
+      processTurnBudget({
+        time: turn,
+        totalPop: 10,
+        buildingCounts: { total: 0 },
+        maintenanceBreakdown: {
+          roads: { cost: 0 }, houses: { cost: 0 }, farms: { cost: 0 }, markets: { cost: 0 },
+        },
       }),
-      budgetProcessor.processBudget(turn, 10, { total: 0 }, {
-        roads: { cost: 0 }, houses: { cost: 0 }, farms: { cost: 0 }, markets: { cost: 0 },
+      processTurnBudget({
+        time: turn,
+        totalPop: 10,
+        buildingCounts: { total: 0 },
+        maintenanceBreakdown: {
+          roads: { cost: 0 }, houses: { cost: 0 }, farms: { cost: 0 }, markets: { cost: 0 },
+        },
       }),
     ]);
 
