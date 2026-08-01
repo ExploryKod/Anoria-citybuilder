@@ -10,7 +10,10 @@ import { JournalManager } from '../src/js/stores/JournalManager.js';
 import commerceStore from '../src/js/stores/CommerceStore.js';
 import db from '../src/core/persistence/dexie/db.js';
 import { resetSupplyContextForTests } from '../src/composition/createSupplyContext.js';
+import { resetCommerceContextForTests } from '../src/composition/createCommerceContext.js';
 import { makeHouseRecord, createBuildingInstanceId } from './fixtures/buildingRecord.js';
+import appRegistry from '../src/js/game/AppRegistry.js';
+import { TimeManager } from '../src/js/game/utils/TimeManager.js';
 
 // ============================================================================
 // Setup : Créer une base de données de test isolée
@@ -35,6 +38,7 @@ describe('CommerceService - Partenaires', () => {
     let budgetManager;
 
     beforeEach(async () => {
+        resetCommerceContextForTests();
         // Créer une nouvelle base de données pour chaque test
         testDb = createTestDb();
         await testDb.open();
@@ -43,8 +47,7 @@ describe('CommerceService - Partenaires', () => {
         global.localStorage.clear();
 
         // Mock TimeManager
-        const globalObj = typeof window !== 'undefined' ? window : global;
-        globalObj.TimeManager = {
+        appRegistry.register('timeManager', {
             getTimeInfo: (turn) => {
                 const year = Math.floor(turn / 12);
                 const monthIndex = turn % 12;
@@ -57,7 +60,7 @@ describe('CommerceService - Partenaires', () => {
                     season: 'Printemps'
                 };
             }
-        };
+        });
 
         // Créer BudgetManager
         budgetManager = new BudgetManager();
@@ -67,6 +70,7 @@ describe('CommerceService - Partenaires', () => {
         journalManager.db = testDb;
         budgetManager.journalManager = journalManager;
 
+        const globalObj = typeof window !== 'undefined' ? window : global;
         globalObj.budgetManager = budgetManager;
 
         // Créer CommerceService
@@ -77,7 +81,9 @@ describe('CommerceService - Partenaires', () => {
     });
 
     afterEach(async () => {
+        resetCommerceContextForTests();
         resetSupplyContextForTests();
+        appRegistry.register('timeManager', TimeManager);
         if (testDb && testDb.isOpen()) {
             await testDb.delete();
             testDb = null;

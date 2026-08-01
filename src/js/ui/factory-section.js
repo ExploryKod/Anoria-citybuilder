@@ -1,5 +1,6 @@
 import config from '../game/config.js';
 import productionJournalManager from '../stores/ProductionJournalManager.js';
+import { registerAppService, getTimeInfo } from '../acl/appRuntime.js';
 import {
     instanceIdFromHouseRow,
     displayLabelFromHouseRow,
@@ -1024,8 +1025,8 @@ class FactorySectionManager {
         // Obtenir le mois et l'année depuis TimeManager
         let monthDisplay = '';
         let yearDisplay = '';
-        if (window.TimeManager && entry.turn !== undefined) {
-            const timeInfo = window.TimeManager.getTimeInfo(entry.turn);
+        if (entry.turn !== undefined) {
+            const timeInfo = getTimeInfo(entry.turn);
             monthDisplay = timeInfo.month;
             yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
         }
@@ -1248,7 +1249,7 @@ function initFactorySection() {
         manager.init();
     }
     
-    window.factorySectionManager = manager;
+    registerAppService('factorySectionManager', manager);
 }
 
 if (document.readyState === 'loading') {

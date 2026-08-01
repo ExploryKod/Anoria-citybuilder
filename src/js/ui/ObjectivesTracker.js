@@ -1,10 +1,17 @@
 /**
  * ObjectivesTracker - Gestion des objectifs financiers
- * Utilise le BudgetManager comme single source of truth
+ * Treasury via Accounting BC (acl/accountingGame.js)
  */
 
-import budgetManager from '../stores/BudgetManager.js';
+import { getTreasurySnapshot } from '../acl/accountingGame.js';
+import { getTutorialManager, getButtonStateManager, getObjectivesStore, registerAppService } from '../acl/appRuntime.js';
+import {
+  OBJECTIVE_CATALOG,
+  isObjectiveRequirementMet,
+} from '../acl/objectives.js';
 
+const BUDGET_CHALLENGE_OBJECTIVE_ID = 'budget_challenge_5000';
+const budgetChallengeDefinition = OBJECTIVE_CATALOG[BUDGET_CHALLENGE_OBJECTIVE_ID];
 class ObjectivesTracker {
     constructor() {
         // TEST MODE: Désactiver les objectifs pour les tests
@@ -31,13 +38,14 @@ class ObjectivesTracker {
         
         this.objectives = [
             {
-                id: 'budget_challenge_5000',
-                title: '💰 Objectif Financier',
-                description: 'Atteindre 5000€ de fonds pour déverrouiller la Maison Violette.',
+                id: budgetChallengeDefinition.id,
+                title: budgetChallengeDefinition.title,
+                description: budgetChallengeDefinition.description,
                 requirements: [
                     {
-                        text: 'Les fonds doivent atteindre au moins 5000€',
-                        check: (data) => data.currentFunds >= 5000,
+                        text: budgetChallengeDefinition.requirementText,
+                        check: (data) =>
+                            isObjectiveRequirementMet(BUDGET_CHALLENGE_OBJECTIVE_ID, data),
                         value: null
                     }
                 ],
@@ -53,7 +61,7 @@ class ObjectivesTracker {
         
         // Au démarrage d'un nouveau jeu, l'objectif est inactif par défaut
         // Il sera activé au tour 0 par checkObjectives(0)
-        const objective = this.objectives.find(obj => obj.id === 'budget_challenge_5000');
+        const objective = this.objectives.find((obj) => obj.id === BUDGET_CHALLENGE_OBJECTIVE_ID);
         if (objective) {
             objective.active = false; // Activé au tour 0
             objective.completed = false;
@@ -78,30 +86,26 @@ class ObjectivesTracker {
             return;
         }
         
-        if (!window.budgetManager) {
-            console.warn('BudgetManager not available for objectives check');
-            return;
-        }
-
         try {
             // Activer l'objectif au tour 0 (initialisation d'un nouveau jeu)
-            const objective = this.objectives.find(obj => obj.id === 'budget_challenge_5000');
+            const objective = this.objectives.find((obj) => obj.id === BUDGET_CHALLENGE_OBJECTIVE_ID);
             if (currentDay === 0 && objective) {
-                // Toujours réactiver au tour 0 pour un nouveau jeu
                 objective.active = true;
                 objective.completed = false;
             }
 
-            // Mettre à jour les données de tracking
             this.trackingData.currentDay = currentDay;
-            
-            // Récupérer les fonds actuels depuis BudgetManager
-            const budget = await window.budgetManager.getCurrentBudget();
+
+            const budget = await getTreasurySnapshot();
             this.trackingData.currentFunds = budget.funds || 0;
 
-            // Vérifier si l'objectif est complété (fond >= 5000)
-            if (objective && objective.active && !objective.completed && this.trackingData.currentFunds >= 5000) {
-                await this.verifyObjective('budget_challenge_5000');
+            if (
+                objective &&
+                objective.active &&
+                !objective.completed &&
+                isObjectiveRequirementMet(BUDGET_CHALLENGE_OBJECTIVE_ID, this.trackingData)
+            ) {
+                await this.verifyObjective(BUDGET_CHALLENGE_OBJECTIVE_ID);
             }
 
         } catch (error) {
@@ -234,8 +238,8 @@ class ObjectivesTracker {
         });
         
         // Désactiver les événements Three.js quand la modale est ouverte
-        if (window.tutorialManager && window.tutorialManager.disableThreeJSEvents) {
-            window.tutorialManager.disableThreeJSEvents();
+        if (getTutorialManager() && getTutorialManager().disableThreeJSEvents) {
+            getTutorialManager().disableThreeJSEvents();
         }
     }
 
@@ -327,8 +331,8 @@ class ObjectivesTracker {
      */
     showObjectiveCompletion(objective) {
         // Déverrouiller House-Purple quand l'objectif est complété
-        if (window.buttonStateManager) {
-            window.buttonStateManager.enable('House-Purple');
+        if (getButtonStateManager()) {
+            getButtonStateManager().enable('House-Purple');
             
             // Animation pour attirer l'attention sur le bouton déverrouillé
             setTimeout(() => {
@@ -475,8 +479,9 @@ class ObjectivesTracker {
         try {
             const objective = this.objectives.find(obj => obj.id === objectiveId);
             
-            if (window.objectivesStore) {
-                await window.objectivesStore.recordObjectiveSuccess({
+            const objectivesStore = getObjectivesStore();
+            if (objectivesStore) {
+                await objectivesStore.recordObjectiveSuccess({
                     objectiveId: objectiveId,
                     turn: turn,
                     details: {
@@ -504,7 +509,7 @@ class ObjectivesTracker {
         };
         
         // Désactiver l'objectif après succès
-        const objective = this.objectives.find(obj => obj.id === 'budget_challenge_5000');
+        const objective = this.objectives.find((obj) => obj.id === BUDGET_CHALLENGE_OBJECTIVE_ID);
         if (objective) {
             objective.active = false;
             objective.completed = false;
@@ -515,12 +520,7 @@ class ObjectivesTracker {
 // Créer une instance globale
 const objectivesTracker = new ObjectivesTracker();
 
-// Exposer globalement
-window.objectivesTracker = objectivesTracker;
-// Also register with AppRegistry if available
-if (window.app && window.app.register) {
-    window.app.register('objectivesTracker', objectivesTracker);
-}
+registerAppService('objectivesTracker', objectivesTracker);
 
 export default objectivesTracker;
 

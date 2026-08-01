@@ -1,7 +1,16 @@
 /**
- * BudgetStatesManager - Gère l'affichage et la gestion des états budgétaires
+ * BudgetStatesManager — CR + bilan par tour via Accounting BC (journal-primary).
+ *
+ * `budget_turn_*` reste en Dexie comme cache d'enrichissement (population, breakdowns).
+ * Source primaire CR/bilan : journal via getFinancialStatementsHistory().
  */
+
+import { getPopupManager, registerAppFunction } from '../../acl/appRuntime.js';
 import { getHealthStatusText } from './RealtimeBudgetManager.js';
+import {
+  getFinancialStatementsHistory,
+  getIncomeStatement,
+} from '../../acl/accounting.js';
 
 /**
  * Initialise le popup des états budgétaires
@@ -19,7 +28,6 @@ export function initBudgetStatesPopup() {
         return;
     }
 
-    // Toggle popup on budget states button click
     budgetStatesBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -29,35 +37,25 @@ export function initBudgetStatesPopup() {
             budgetStatesBtn.classList.toggle('active');
             
             if (budgetStatesPanel.classList.contains('active')) {
-                // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceOpenPopup('budget-states-panel');
+                if (getPopupManager()) {
+                    getPopupManager().forceOpenPopup('budget-states-panel');
                 }
-                // Load budget states first
                 await loadBudgetStates('3', true);
-                // Update labels after loading data
                 await updateFilterButtonLabels();
-            } else {
-                // Utiliser PopupManager pour gérer les événements
-                if (window.popupManager) {
-                    window.popupManager.forceClosePopup('budget-states-panel');
-                }
+            } else if (getPopupManager()) {
+                getPopupManager().forceClosePopup('budget-states-panel');
             }
         }
     });
 
-    // Close popup on close button click
     budgetStatesCloseBtn.addEventListener('click', () => {
         budgetStatesPanel.classList.remove('active');
         budgetStatesBtn.classList.remove('active');
-        
-        // Utiliser PopupManager pour gérer les événements
-        if (window.popupManager) {
-            window.popupManager.forceClosePopup('budget-states-panel');
+        if (getPopupManager()) {
+            getPopupManager().forceClosePopup('budget-states-panel');
         }
     });
 
-    // Close popup when clicking outside
     budgetStatesPanel.addEventListener('click', (e) => {
         if (e.target === budgetStatesPanel) {
             budgetStatesPanel.classList.remove('active');
@@ -65,221 +63,177 @@ export function initBudgetStatesPopup() {
         }
     });
 
-    // Filter button event listeners
     filterButtons.forEach(btn => {
         btn.addEventListener('click', async () => {
-            // Remove active class from all buttons
             filterButtons.forEach(b => b.classList.remove('active'));
-            // Add active class to clicked button
             btn.classList.add('active');
-            
-            // Load budget states with filter first (no loading state to avoid flash)
             const period = btn.dataset.period;
             await loadBudgetStates(period, false);
-            
-            // Update labels after loading data to avoid hiding buttons prematurely
             await updateFilterButtonLabels();
         });
     });
 
-    // Update filter button labels dynamically
     updateFilterButtonLabels();
 }
 
-/**
- * Met à jour les labels des boutons de filtre avec les tours réels
- */
 export async function updateFilterButtonLabels() {
     try {
-        if (!window.budgetManager) {
-            console.warn('BudgetManager not available for updating filter labels');
+        const bundles = await getFinancialStatementsHistory({ everyNTurns: 3 });
+
+        if (bundles.length === 0) {
             return;
         }
 
-        // Get all budget states from the store
-        const allStates = await window.budgetManager.getBudgetStates();
-        
-        if (allStates.length === 0) {
-            return;
-        }
+        const sorted = [...bundles].sort((a, b) => b.atTurn - a.atTurn);
+        const last3 = sorted.slice(0, 3).sort((a, b) => a.atTurn - b.atTurn);
 
-        // Sort by turn descending to get the most recent first
-        const sortedStates = allStates.sort((a, b) => b.turn - a.turn);
-        
-        // Take the last 3 states (most recent)
-        const last3States = sortedStates.slice(0, 3);
-        
-        // Sort by turn ascending for display order
-        last3States.sort((a, b) => a.turn - b.turn);
-
-        // Update the first 3 filter buttons (skip "Tous")
         const filterButtons = document.querySelectorAll('.budget-filter-btn');
         for (let i = 0; i < 3; i++) {
             const btn = filterButtons[i];
             if (btn && !btn.dataset.period.includes('all')) {
-                if (i < last3States.length) {
-                    // Show the actual turn from budget state
-                    const turn = last3States[i].turn;
+                if (i < last3.length) {
+                    const turn = last3[i].atTurn;
                     btn.textContent = `${turn} jours`;
                     btn.dataset.period = turn.toString();
                     btn.style.display = 'block';
                     btn.disabled = false;
                     btn.style.opacity = '1';
                 } else {
-                    // Keep button visible but disabled if no state available
                     btn.style.display = 'block';
                     btn.disabled = true;
                     btn.style.opacity = '0.5';
-                    btn.textContent = `${3 + i} jours`; // Fallback text
+                    btn.textContent = `${3 + i} jours`;
                 }
             }
         }
-
     } catch (error) {
         console.warn('Error updating filter button labels:', error);
     }
 }
 
-/**
- * Charge les états budgétaires selon la période
- */
 export async function loadBudgetStates(period = '3', showLoading = true) {
     const budgetStatesList = document.getElementById('budget-states-list');
     const summaryContent = document.getElementById('summary-content');
-    
+
     if (!budgetStatesList || !summaryContent) {
         console.warn('Budget states display elements not found');
         return;
     }
 
-    // Only show loading state if explicitly requested (first load)
     if (showLoading) {
         budgetStatesList.innerHTML = `
             <div class="budget-state-loading">
-                <p>Chargement des états de budget...</p>
+                <p>Chargement du compte de résultat...</p>
             </div>
         `;
     }
 
     try {
-        if (!window.budgetManager) {
-            throw new Error('BudgetManager not available');
-        }
+        let bundles;
 
-        let budgetStates = [];
-        
         if (period === 'all') {
-            budgetStates = await window.budgetManager.getBudgetStates();
+            bundles = await getFinancialStatementsHistory({ everyNTurns: null });
         } else {
-            const turnNumber = parseInt(period);
-            if (!isNaN(turnNumber)) {
-                // Pour les périodes dynamiques : afficher l'état du tour spécifique
-                const allStates = await window.budgetManager.getBudgetStates();
-                budgetStates = allStates.filter(state => state.turn === turnNumber);
+            const turnNumber = parseInt(period, 10);
+            if (!Number.isNaN(turnNumber)) {
+                bundles = await getFinancialStatementsHistory({ filterTurn: turnNumber });
             } else {
-                // Fallback pour autres valeurs
-                budgetStates = await window.budgetManager.getBudgetStatesEveryNTurns(3);
+                bundles = await getFinancialStatementsHistory({ everyNTurns: 3 });
             }
         }
 
-        if (budgetStates.length === 0) {
+        if (bundles.length === 0) {
             budgetStatesList.innerHTML = `
                 <div class="budget-state-loading">
-                    <p>Aucun état de budget disponible</p>
-                    <small>Les états sont collectés tous les 3 tours</small>
+                    <p>Aucun compte de résultat disponible</p>
+                    <small>Les états sont dérivés du journal (checkpoints tous les 3 tours)</small>
                 </div>
             `;
             summaryContent.innerHTML = '<p>Aucune donnée disponible</p>';
             return;
         }
 
-        // Filter out invalid states (missing required fields)
-        const validStates = budgetStates.filter(state => 
-            state && 
-            typeof state.funds === 'number' && 
-            typeof state.income === 'number' && 
-            typeof state.expenses === 'number'
-        );
+        displayFinancialStatementsBundles(bundles, budgetStatesList);
 
-        if (validStates.length === 0) {
-            budgetStatesList.innerHTML = `
-                <div class="budget-state-loading">
-                    <p>Aucun état de budget valide disponible</p>
-                    <small>Les données peuvent être corrompues</small>
-                </div>
-            `;
-            summaryContent.innerHTML = '<p>Aucune donnée valide disponible</p>';
-            return;
-        }
-
-        // Display budget states
-        displayBudgetStates(validStates, budgetStatesList);
-        
-        // Display summary
-        displayBudgetSummary(validStates, summaryContent);
-
+        const fiscalYearStatement = await getIncomeStatement();
+        displayBudgetSummary(bundles, summaryContent, fiscalYearStatement);
     } catch (error) {
-        console.error('Error loading budget states:', error);
+        console.error('Error loading financial statements:', error);
         budgetStatesList.innerHTML = `
             <div class="budget-state-loading">
-                <p>Erreur lors du chargement des états</p>
+                <p>Erreur lors du chargement</p>
                 <small>${error.message}</small>
             </div>
         `;
     }
 }
 
-/**
- * Affiche les états budgétaires dans le conteneur
- */
-function displayBudgetStates(states, container) {
-    container.innerHTML = states.map(state => {
-        // Safely get values with fallbacks (using same keys as budget_current)
-        const funds = state.funds || 0;
-        const income = state.income || 0;
-        const expenses = state.expenses || 0;
-        const netFlow = state.netFlow || 0;
-        const dailyIncome = state.dailyIncome || 0;
-        const dailyExpenses = state.dailyExpenses || 0;
-        const population = state.population || 0;
-        const healthStatus = state.financialHealth?.status || 'healthy';
-        const date = state.date ? new Date(state.date).toLocaleDateString('fr-FR') : 'N/A';
-        
+function productAmount(bundle, label) {
+    return bundle.incomeStatement.products.find((p) => p.label === label)?.amount ?? 0;
+}
+
+function chargeAmount(bundle, label) {
+    return bundle.incomeStatement.charges.find((c) => c.label === label)?.amount ?? 0;
+}
+
+function displayFinancialStatementsBundles(bundles, container) {
+    container.innerHTML = bundles.map((bundle) => {
+        const { incomeStatement, balanceSheet, enrichment } = bundle;
+        const income = incomeStatement.totalProducts;
+        const expenses = incomeStatement.totalCharges;
+        const netFlow = incomeStatement.netResult;
+        const funds = balanceSheet.assets.cash;
+        const population = enrichment?.population ?? 0;
+        const healthStatus = enrichment?.financialHealth?.status ?? 'healthy';
+        const date = enrichment?.date
+            ? new Date(enrichment.date).toLocaleDateString('fr-FR')
+            : 'N/A';
+
+        const totalTaxes = productAmount(bundle, 'Impôt citoyen');
+        const totalBuildingMaintenance = chargeAmount(bundle, 'Maintenance');
+        const totalLoanInterestExpenses = chargeAmount(bundle, 'Intérêts de prêts');
+        const totalLoanRepayments = chargeAmount(bundle, 'Remboursements prêts');
+        const taxBreakdown = enrichment?.taxBreakdown;
+        const maintenanceBreakdown = enrichment?.maintenanceBreakdown;
+        const loanDebt = enrichment?.loanDebt ?? 0;
+
         return `
         <div class="budget-state-item">
             <div class="budget-state-header">
-                <div class="budget-state-turn">Tour ${state.turn || 'N/A'}</div>
+                <div class="budget-state-turn">Tour ${bundle.atTurn}</div>
                 <div class="budget-state-date">${date}</div>
+                <div class="budget-state-source"><small>Source: ${bundle.source === 'journal+cache' ? 'journal + cache budget' : 'journal'}</small></div>
             </div>
             
-            <!-- Compte de Résultat -->
             <div class="budget-income-statement">
                 <div class="statement-section">
-                    <h4 class="statement-title">PRODUITS</h4>
+                    <h4 class="statement-title">PRODUITS (cumul journal)</h4>
                     <div class="statement-line">
                         <span class="statement-label">Impôt Citoyen (${population} hab.)</span>
-                        <span class="statement-value positive">${(state.totalTaxes || 0).toLocaleString('fr-FR')}€</span>
+                        <span class="statement-value positive">${totalTaxes.toLocaleString('fr-FR')}€</span>
                     </div>
-                    ${state.taxBreakdown ? `
+                    ${taxBreakdown ? `
                     <div class="statement-subdetail" style="padding-left: 20px; margin: 8px 0;">
                         <div class="statement-line" style="font-size: 0.85em;">
                             <span class="statement-label">• Maisons bleues</span>
-                            <span class="statement-value">${(state.taxBreakdown['House-Blue'] || 0).toLocaleString('fr-FR')}€</span>
+                            <span class="statement-value">${(taxBreakdown['House-Blue'] || 0).toLocaleString('fr-FR')}€</span>
                         </div>
                         <div class="statement-line" style="font-size: 0.85em;">
                             <span class="statement-label">• Maisons rouges</span>
-                            <span class="statement-value">${(state.taxBreakdown['House-Red'] || 0).toLocaleString('fr-FR')}€</span>
+                            <span class="statement-value">${(taxBreakdown['House-Red'] || 0).toLocaleString('fr-FR')}€</span>
                         </div>
                         <div class="statement-line" style="font-size: 0.85em;">
                             <span class="statement-label">• Maisons violettes</span>
-                            <span class="statement-value">${(state.taxBreakdown['House-Purple'] || 0).toLocaleString('fr-FR')}€</span>
+                            <span class="statement-value">${(taxBreakdown['House-Purple'] || 0).toLocaleString('fr-FR')}€</span>
                         </div>
                     </div>
                     ` : ''}
+                    ${incomeStatement.products.filter((p) => p.label !== 'Impôt citoyen').map((p) => `
                     <div class="statement-line">
-                        <span class="statement-label">Autres revenus</span>
-                        <span class="statement-value positive">${((income || 0) - (state.totalTaxes || 0)).toLocaleString('fr-FR')}€</span>
+                        <span class="statement-label">${p.label}</span>
+                        <span class="statement-value positive">${p.amount.toLocaleString('fr-FR')}€</span>
                     </div>
+                    `).join('')}
                     <div class="statement-line total-line">
                         <span class="statement-label">TOTAL PRODUITS</span>
                         <span class="statement-value total positive">${income.toLocaleString('fr-FR')}€</span>
@@ -287,66 +241,16 @@ function displayBudgetStates(states, container) {
                 </div>
                 
                 <div class="statement-section">
-                    <h4 class="statement-title">CHARGES</h4>
+                    <h4 class="statement-title">CHARGES (cumul journal)</h4>
+                    ${incomeStatement.charges.map((c) => `
                     <div class="statement-line">
-                        <span class="statement-label">Maintenance bâtiments</span>
-                        <span class="statement-value negative">-${(state.totalBuildingMaintenance || 0).toLocaleString('fr-FR')}€</span>
+                        <span class="statement-label">${c.label}</span>
+                        <span class="statement-value negative">-${c.amount.toLocaleString('fr-FR')}€</span>
                     </div>
-                    ${state.maintenanceBreakdown ? `
-                    <div class="statement-subdetail" style="padding-left: 20px; margin: 8px 0;">
-                        <div class="statement-line" style="font-size: 0.85em;">
-                            <span class="statement-label">• Habitations</span>
-                            <span class="statement-value">-${(state.maintenanceBreakdown.houses || 0).toLocaleString('fr-FR')}€</span>
-                        </div>
-                        <div class="statement-line" style="font-size: 0.85em;">
-                            <span class="statement-label">• Fermes</span>
-                            <span class="statement-value">-${(state.maintenanceBreakdown.farms || 0).toLocaleString('fr-FR')}€</span>
-                        </div>
-                        <div class="statement-line" style="font-size: 0.85em;">
-                            <span class="statement-label">• Marchés</span>
-                            <span class="statement-value">-${(state.maintenanceBreakdown.markets || 0).toLocaleString('fr-FR')}€</span>
-                        </div>
-                        <div class="statement-line" style="font-size: 0.85em;">
-                            <span class="statement-label">• Routes</span>
-                            <span class="statement-value">-${(state.maintenanceBreakdown.roads || 0).toLocaleString('fr-FR')}€</span>
-                        </div>
-                        <div class="statement-line" style="font-size: 0.85em;">
-                            <span class="statement-label">• Infrastructure</span>
-                            <span class="statement-value">-${(state.maintenanceBreakdown.infrastructure || 0).toLocaleString('fr-FR')}€</span>
-                        </div>
-                        <div class="statement-line" style="font-size: 0.85em;">
-                            <span class="statement-label">• Industrie</span>
-                            <span class="statement-value">-${(state.maintenanceBreakdown.industry || 0).toLocaleString('fr-FR')}€</span>
-                        </div>
-                    </div>
-                    ` : ''}
-                    <div class="statement-line">
-                        <span class="statement-label">Intérêts dettes</span>
-                        <span class="statement-value negative">-${(state.totalLoanInterestExpenses || 0).toLocaleString('fr-FR')}€</span>
-                    </div>
-                    <div class="statement-subnote">
-                        <small>Intérêts des prêts bancaires et commerciaux contractés</small>
-                    </div>
-                    <div class="statement-line">
-                        <span class="statement-label">Remboursements prêts</span>
-                        <span class="statement-value negative">-${(state.totalLoanRepayments || 0).toLocaleString('fr-FR')}€</span>
-                    </div>
-                    <div class="statement-subnote">
-                        <small>Remboursement du capital des prêts (principal)</small>
-                    </div>
-                    <div class="statement-line">
-                        <span class="statement-label">Autres charges</span>
-                        <span class="statement-value negative">-${Math.max(0, (expenses || 0) - (state.totalBuildingMaintenance || 0) - (state.totalLoanInterestExpenses || 0) - (state.totalLoanRepayments || 0)).toLocaleString('fr-FR')}€</span>
-                    </div>
-                    <div class="statement-subnote">
-                        <small>Autres dépenses non catégorisées (salaires, services, etc.)</small>
-                    </div>
+                    `).join('')}
                     <div class="statement-line total-line">
                         <span class="statement-label">TOTAL CHARGES</span>
                         <span class="statement-value total negative">-${expenses.toLocaleString('fr-FR')}€</span>
-                    </div>
-                    <div class="statement-note">
-                        <small>Vérification: Maintenance (${state.totalBuildingMaintenance || 0}€) + Intérêts (${state.totalLoanInterestExpenses || 0}€) + Remboursements (${state.totalLoanRepayments || 0}€) + Autres (${Math.max(0, (expenses || 0) - (state.totalBuildingMaintenance || 0) - (state.totalLoanInterestExpenses || 0) - (state.totalLoanRepayments || 0))}€) = ${(state.totalBuildingMaintenance || 0) + (state.totalLoanInterestExpenses || 0) + (state.totalLoanRepayments || 0) + Math.max(0, (expenses || 0) - (state.totalBuildingMaintenance || 0) - (state.totalLoanInterestExpenses || 0) - (state.totalLoanRepayments || 0))}€</small>
                     </div>
                 </div>
                 
@@ -358,15 +262,14 @@ function displayBudgetStates(states, container) {
                         </span>
                     </div>
                     <div class="statement-note">
-                        <small>Ce résultat doit correspondre au "Résultat de l'exercice" du bilan</small>
+                        <small>Lien bilan : résultat de l'exercice = ${balanceSheet.liabilities.netResult.toLocaleString('fr-FR')}€</small>
                     </div>
                 </div>
             </div>
             
-            <!-- Informations complémentaires -->
             <div class="budget-state-info">
                 <div class="info-item">
-                    <span class="info-label">Trésorerie</span>
+                    <span class="info-label">Trésorerie (bilan)</span>
                     <span class="info-value">${funds.toLocaleString('fr-FR')}€</span>
                 </div>
                 <div class="info-item">
@@ -380,8 +283,8 @@ function displayBudgetStates(states, container) {
                     </span>
                 </div>
                 <div class="info-item">
-                    <span class="info-label"></span>
-                    <span class="info-value ${(state.loanDebt || 0) > 0 ? 'negative' : ''}">${(state.loanDebt || 0).toLocaleString('fr-FR')}€</span>
+                    <span class="info-label">Dette prêts (cache)</span>
+                    <span class="info-value ${loanDebt > 0 ? 'negative' : ''}">${loanDebt.toLocaleString('fr-FR')}€</span>
                 </div>
             </div>
         </div>
@@ -389,56 +292,54 @@ function displayBudgetStates(states, container) {
     }).join('');
 }
 
-/**
- * Affiche le résumé des états budgétaires
- */
-function displayBudgetSummary(states, container) {
-    if (states.length === 0) {
+function displayBudgetSummary(bundles, container, fiscalYearStatement = null) {
+    if (bundles.length === 0 && !fiscalYearStatement) {
         container.innerHTML = '<p>Aucune donnée disponible</p>';
         return;
     }
 
-    const firstState = states[0];
-    const lastState = states[states.length - 1];
-    
-    // Safely calculate totals with fallbacks (using same keys as budget_current)
-    const totalIncome = states.reduce((sum, state) => sum + (state.income || 0), 0);
-    const totalExpenses = states.reduce((sum, state) => sum + (state.expenses || 0), 0);
-    const averageFunds = states.reduce((sum, state) => sum + (state.funds || 0), 0) / states.length;
-    const populationGrowth = (lastState.population || 0) - (firstState.population || 0);
-    
-    // Calculate loan-related totals
-    const totalLoanInterest = states.reduce((sum, state) => sum + (state.totalLoanInterest || 0), 0);
-    const totalLoanRepayments = states.reduce((sum, state) => sum + (state.totalLoanRepayments || 0), 0);
-    const currentLoanDebt = lastState.loanDebt || 0;
-    
-    const buildingGrowth = calculateBuildingGrowth(firstState.buildingCounts || {}, lastState.buildingCounts || {});
-
-    container.innerHTML = `
-        <div class="budget-income-statement">
+    const fiscalSection = fiscalYearStatement
+        ? `
             <div class="statement-section">
-                <h4 class="statement-title">RÉSUMÉ PÉRIODE (Tours ${firstState.turn || 'N/A'} - ${lastState.turn || 'N/A'})</h4>
+                <h4 class="statement-title">CR EXERCICE (année ${fiscalYearStatement.fiscalYear} ap JC — journal)</h4>
                 <div class="statement-line">
-                    <span class="statement-label">Revenus totaux</span>
-                    <span class="statement-value positive">${totalIncome.toLocaleString('fr-FR')}€</span>
+                    <span class="statement-label">Total produits</span>
+                    <span class="statement-value positive">${fiscalYearStatement.totalProducts.toLocaleString('fr-FR')}€</span>
                 </div>
                 <div class="statement-line">
-                    <span class="statement-label">Dépenses totales</span>
-                    <span class="statement-value negative">-${totalExpenses.toLocaleString('fr-FR')}€</span>
+                    <span class="statement-label">Total charges</span>
+                    <span class="statement-value negative">-${fiscalYearStatement.totalCharges.toLocaleString('fr-FR')}€</span>
                 </div>
-                <div class="statement-line total-line">
+                <div class="statement-line result-line">
                     <span class="statement-label">Résultat net</span>
-                    <span class="statement-value total ${(totalIncome - totalExpenses) >= 0 ? 'positive' : 'negative'}">
-                        ${(totalIncome - totalExpenses) >= 0 ? '+' : ''}${(totalIncome - totalExpenses).toLocaleString('fr-FR')}€
+                    <span class="statement-value result ${fiscalYearStatement.netResult >= 0 ? 'positive' : 'negative'}">
+                        ${fiscalYearStatement.netResult >= 0 ? '+' : ''}${fiscalYearStatement.netResult.toLocaleString('fr-FR')}€
                     </span>
                 </div>
             </div>
-            
+        `
+        : '';
+
+    if (bundles.length === 0) {
+        container.innerHTML = fiscalSection;
+        return;
+    }
+
+    const first = bundles[0];
+    const last = bundles[bundles.length - 1];
+    const avgCash =
+        bundles.reduce((sum, b) => sum + b.balanceSheet.assets.cash, 0) / bundles.length;
+    const populationGrowth =
+        (last.enrichment?.population ?? 0) - (first.enrichment?.population ?? 0);
+
+    container.innerHTML = `
+        <div class="budget-income-statement">
+            ${fiscalSection}
             <div class="statement-section">
-                <h4 class="statement-title">INDICATEURS</h4>
+                <h4 class="statement-title">RÉSUMÉ CHECKPOINTS (Tours ${first.atTurn} - ${last.atTurn})</h4>
                 <div class="statement-line">
-                    <span class="statement-label">Trésorerie moyenne</span>
-                    <span class="statement-value">${averageFunds.toLocaleString('fr-FR')}€</span>
+                    <span class="statement-label">Trésorerie moyenne (bilan)</span>
+                    <span class="statement-value">${Math.round(avgCash).toLocaleString('fr-FR')}€</span>
                 </div>
                 <div class="statement-line">
                     <span class="statement-label">Croissance population</span>
@@ -447,86 +348,34 @@ function displayBudgetSummary(states, container) {
                     </span>
                 </div>
                 <div class="statement-line">
-                    <span class="statement-label">Nouveaux bâtiments</span>
-                    <span class="statement-value">
-                        ${Object.entries(buildingGrowth)
-                            .filter(([type, growth]) => growth > 0)
-                            .map(([type, growth]) => `${type}: +${growth}`)
-                            .join(', ') || 'Aucun'}
+                    <span class="statement-label">Résultat net (dernier checkpoint)</span>
+                    <span class="statement-value ${last.incomeStatement.netResult >= 0 ? 'positive' : 'negative'}">
+                        ${last.incomeStatement.netResult >= 0 ? '+' : ''}${last.incomeStatement.netResult.toLocaleString('fr-FR')}€
                     </span>
-                </div>
-            </div>
-            
-            <div class="statement-section">
-                <h4 class="statement-title">DETTES</h4>
-                <div class="statement-line">
-                    <span class="statement-label">Intérêts payés</span>
-                    <span class="statement-value negative">-${totalLoanInterest.toLocaleString('fr-FR')}€</span>
-                </div>
-                <div class="statement-line">
-                    <span class="statement-label">Remboursements</span>
-                    <span class="statement-value negative">-${totalLoanRepayments.toLocaleString('fr-FR')}€</span>
-                </div>
-                <div class="statement-line">
-                    <span class="statement-label">Dette actuelle</span>
-                    <span class="statement-value ${currentLoanDebt > 0 ? 'negative' : ''}">${currentLoanDebt.toLocaleString('fr-FR')}€</span>
                 </div>
             </div>
         </div>
     `;
 }
 
-/**
- * Calcule la croissance des bâtiments entre deux états
- */
-function calculateBuildingGrowth(startBuildings, endBuildings) {
-    const growth = {};
-    const buildingTypes = ['houses', 'farms', 'markets', 'roads'];
-    
-    // Ensure we have valid objects
-    const start = startBuildings || {};
-    const end = endBuildings || {};
-    
-    for (const type of buildingTypes) {
-        const startValue = start[type] || 0;
-        const endValue = end[type] || 0;
-        growth[type] = endValue - startValue;
-    }
-    
-    return growth;
-}
-
-/**
- * Retourne la couleur associée au statut de santé financière
- */
 function getHealthStatusColor(status) {
     const colorMap = {
-        'healthy': '#4ade80',
-        'warning': '#ffa726',
-        'critical': '#ff6b6b',
-        'excellent': '#4ade80',
-        'deficit': '#ff9800'
+        healthy: '#4ade80',
+        warning: '#ffa726',
+        critical: '#ff6b6b',
+        excellent: '#4ade80',
+        deficit: '#ff9800',
     };
     return colorMap[status] || '#4ade80';
 }
 
-/**
- * Rafraîchit le modal des états budgétaires
- */
 export async function refreshBudgetStatesModal() {
-    // Get current active filter button
     const activeFilterBtn = document.querySelector('.budget-filter-btn.active');
     const currentPeriod = activeFilterBtn ? activeFilterBtn.dataset.period : '3';
-    
-    // Reload budget states with current period
     await loadBudgetStates(currentPeriod, true);
-    
-    // Update filter button labels
     await updateFilterButtonLabels();
 }
 
-// Make refresh function globally accessible
 if (typeof window !== 'undefined') {
-    window.refreshBudgetStatesModal = refreshBudgetStatesModal;
+    registerAppFunction('refreshBudgetStatesModal', refreshBudgetStatesModal);
 }
-

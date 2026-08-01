@@ -8,7 +8,10 @@ import { assembleGeneralLedgerView } from './assembleGeneralLedgerView.js';
  */
 
 /**
- * Query: journal UI — grouped general ledger with coherent filtered totals.
+ * Query: journal UI — chronological journal grouped by month/year.
+ *
+ * PCG note: this is the **journal** (livre chronologique), NOT the grand livre
+ * (classé par compte). Rename target: GetJournal / JournalView.
  */
 export class GetGeneralLedger {
   /**

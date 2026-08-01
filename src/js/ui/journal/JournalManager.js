@@ -1,10 +1,22 @@
 /**
  * Journal UI presenter — DOM + events only (Phase 2b).
  * Data: acl/accounting.js → GetGeneralLedger
- * Export JSON/PDF: legacy store until Phase 3+
  */
 
-import { getGeneralLedger } from '../../acl/accounting.js';
+import { getPopupManager, getTimeInfo } from '../../acl/appRuntime.js';
+import {
+  getGeneralLedger,
+  exportJournalJson,
+  exportJournalPdf,
+} from '../../acl/accounting.js';
+import {
+  formatJournalEntryDetails,
+} from './formatJournalEntryDescription.js';
+import {
+  INFO_JOURNAL_TYPE_LABELS,
+  isInfoPseudoMovementType,
+  labelForInfoJournalType,
+} from '../../acl/accountingJournalUi.js';
 
 /**
  * Initialise le popup du journal
@@ -23,24 +35,24 @@ export function initJournalPopup() {
 
     journalBtn.addEventListener('click', () => {
         journalPanel.classList.add('active');
-        if (window.popupManager) {
-            window.popupManager.forceOpenPopup('journal-panel');
+        if (getPopupManager()) {
+            getPopupManager().forceOpenPopup('journal-panel');
         }
         loadJournalEntries('all');
     });
 
     journalCloseBtn.addEventListener('click', () => {
         journalPanel.classList.remove('active');
-        if (window.popupManager) {
-            window.popupManager.forceClosePopup('journal-panel');
+        if (getPopupManager()) {
+            getPopupManager().forceClosePopup('journal-panel');
         }
     });
 
     journalPanel.addEventListener('click', (e) => {
         if (e.target === journalPanel) {
             journalPanel.classList.remove('active');
-            if (window.popupManager) {
-                window.popupManager.forceClosePopup('journal-panel');
+            if (getPopupManager()) {
+                getPopupManager().forceClosePopup('journal-panel');
             }
         }
     });
@@ -150,7 +162,11 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
 
 /** @param {import('../../../contexts/accounting/domain/read-models/GeneralLedgerView.js').GeneralLedgerView} ledger */
 function renderGeneralLedger(ledger) {
-    return ledger.years.map(yearData => {
+    const sortHint = `
+        <p class="journal-sort-hint">Plus récent en haut — années et mois triés du plus récent au plus ancien.</p>
+    `;
+
+    return sortHint + ledger.years.map(yearData => {
         const yearDisplay = yearData.year === 0 ? '0 JC' : `${yearData.year} ap JC`;
         const displayBalance = yearData.displayBalance;
         const balanceClass = displayBalance >= 0 ? 'positive' : 'negative';
@@ -214,12 +230,7 @@ function renderGeneralLedger(ledger) {
  */
 export async function exportJournalToJSON() {
     try {
-        const manager = window.journalManager || window.app?.journalManager || window.budgetManager;
-        if (!manager) {
-            throw new Error('JournalManager not available');
-        }
-
-        const jsonString = await manager.exportToJSON();
+        const jsonString = await exportJournalJson();
         const blob = new Blob([jsonString], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -240,18 +251,13 @@ export async function exportJournalToJSON() {
  */
 export async function exportJournalToPDF() {
     try {
-        const manager = window.journalManager || window.app?.journalManager || window.budgetManager;
-        if (!manager) {
-            throw new Error('JournalManager not available');
-        }
-
         const exportPdfBtn = document.getElementById('journal-export-pdf-btn');
         if (exportPdfBtn) {
             exportPdfBtn.disabled = true;
             exportPdfBtn.innerHTML = '<span>Génération...</span>';
         }
 
-        const pdfBlob = await manager.exportToPDF();
+        const pdfBlob = await exportJournalPdf();
         const url = URL.createObjectURL(pdfBlob);
         const a = document.createElement('a');
         a.href = url;
@@ -309,8 +315,8 @@ function createJournalEntryHTML(entry) {
     });
 
     let yearDisplay = '';
-    if (window.TimeManager && entry.turn !== undefined) {
-        const timeInfo = window.TimeManager.getTimeInfo(entry.turn);
+    if (entry.turn !== undefined) {
+        const timeInfo = getTimeInfo(entry.turn);
         yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
     }
 
@@ -321,7 +327,10 @@ function createJournalEntryHTML(entry) {
         entry.type === 'cumul_salary' ||
         entry.type === 'cumul_exceptional_expenses' ||
         entry.type === 'cumul_loan_interest' ||
-        entry.type === 'cumul_loan_repayment') {
+        entry.type === 'cumul_loan_repayment' ||
+        isInfoPseudoMovementType(entry.type) ||
+        entry.type === 'loan_default_interest' ||
+        entry.type === 'loan_default_repayment') {
         isIncome = false;
     } else if (entry.type === 'balance') {
         isIncome = entry.amount >= 0;
@@ -331,7 +340,7 @@ function createJournalEntryHTML(entry) {
         isIncome = true;
     } else if (entry.type.startsWith('import_')) {
         isIncome = false;
-    } else if (entry.type === 'salary' || entry.type === 'maintenance' || entry.type === 'construction' || entry.type === 'exceptional_expenses' || entry.type === 'commercial_route') {
+    } else if (entry.type === 'salary' || entry.type === 'maintenance' || entry.type === 'construction' || entry.type === 'construction_refund' || entry.type === 'exceptional_expenses' || entry.type === 'commercial_route') {
         isIncome = false;
     } else if (entry.type === 'carry_forward') {
         isIncome = entry.isCarryForwardIncome !== undefined ? entry.isCarryForwardIncome : true;
@@ -345,6 +354,7 @@ function createJournalEntryHTML(entry) {
         'capital_funds': 'Capital de départ',
         'carry_forward': 'Report à nouveau',
         'construction': 'Construction',
+        'construction_refund': 'Remboursement construction',
         'exceptional_expenses': 'Réparation',
         'maintenance': 'Maintenance mensuelle',
         'salary': 'Salaires',
@@ -362,6 +372,9 @@ function createJournalEntryHTML(entry) {
         'loan_capital': 'Capital Prêt',
         'loan_interest': 'Intérêts prêt',
         'loan_repayment': 'Remboursement prêt',
+        ...INFO_JOURNAL_TYPE_LABELS,
+        'loan_default_interest': labelForInfoJournalType('info_loan_interest'),
+        'loan_default_repayment': labelForInfoJournalType('info_loan_repayment'),
         'cumul_maintenance': 'Cumul Maintenance',
         'cumul_construction': 'Cumul Construction',
         'cumul_salary': 'Cumul Salaires',
@@ -372,7 +385,6 @@ function createJournalEntryHTML(entry) {
     };
 
     const breakdownMatch = entry.description?.match(/\|BREAKDOWN\|(.*?)\|BREAKDOWN\|/);
-    let descriptionText = entry.description || '';
     let breakdownItems = null;
 
     const supportsBreakdown = entry.type === 'maintenance' ||
@@ -383,11 +395,12 @@ function createJournalEntryHTML(entry) {
     if (breakdownMatch && supportsBreakdown) {
         try {
             breakdownItems = JSON.parse(breakdownMatch[1]);
-            descriptionText = entry.description.replace(/\|BREAKDOWN\|.*?\|BREAKDOWN\|/, '').trim();
         } catch (e) {
             console.warn('Failed to parse breakdown:', e);
         }
     }
+
+    const entryDetails = formatJournalEntryDetails(entry);
 
     let partnerName = null;
     if (entry.partnerId && (entry.type.startsWith('import_') || entry.type.startsWith('export_') || entry.type === 'commercial_route')) {
@@ -415,7 +428,16 @@ function createJournalEntryHTML(entry) {
                 </span>
             </div>
             <div class="journal-entry-details">
-                <div class="journal-entry-description">${descriptionText}</div>
+                ${entryDetails.length ? `
+                <div class="journal-entry-facts">
+                    ${entryDetails.map(({ label, value }) => `
+                        <span class="journal-entry-fact">
+                            <span class="journal-entry-fact-label">${label}:</span>
+                            <span class="journal-entry-fact-value">${value}</span>
+                        </span>
+                    `).join('')}
+                </div>
+                ` : ''}
                 ${breakdownItems ? `
                 <ul class="journal-maintenance-breakdown">
                     ${breakdownItems.map(item => `
@@ -431,6 +453,8 @@ function createJournalEntryHTML(entry) {
                 </ul>
                 ` : ''}
                 <div class="journal-entry-meta">
+                    ${entry.id != null ? `<span class="journal-entry-id">N° ${entry.id}</span>` : ''}
+                    ${entry.buildingInstanceId ? `<span class="journal-entry-asset-id" title="${entry.buildingInstanceId}">Id bâtiment: ${entry.buildingInstanceId}</span>` : ''}
                     ${yearDisplay ? `<span class="journal-entry-year">Année: ${yearDisplay}</span>` : ''}
                     ${entry.turn !== undefined ? `<span class="journal-entry-turn-number">Tour: ${entry.turn}</span>` : ''}
                     <span class="journal-entry-date">${formattedDate}</span>

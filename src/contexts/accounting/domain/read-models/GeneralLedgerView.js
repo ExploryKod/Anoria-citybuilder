@@ -2,6 +2,8 @@
  * Read model — general ledger for the journal UI (year → month → entries).
  *
  * @typedef {object} GeneralLedgerEntry
+ * @property {number} [id] Persisted Dexie row id (absent for session-only rows)
+ * @property {string} [businessKey]
  * @property {string} type
  * @property {number} amount
  * @property {string} description
@@ -9,6 +11,7 @@
  * @property {number} turn
  * @property {boolean} [isCarryForwardIncome]
  * @property {string} [partnerId]
+ * @property {string} [buildingInstanceId] UUID v4 de l'asset construit (construction)
  *
  * @typedef {object} GeneralLedgerMonth
  * @property {number} year

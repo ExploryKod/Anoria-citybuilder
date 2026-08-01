@@ -6,11 +6,48 @@ Phase 0 — spécification et cartographie. **Aucun refactor métier ici** : doc
 
 1. **Journal = source de vérité** des mouvements comptables (append-only, indexé par `turn`) — **à condition d’écritures fiables** (Phase 3½ ; voir D9).
 2. **Trésorerie co-maintenue** : cache `budget_current` mis à jour en parallèle du journal pour la perf temps réel ; réconciliable avec le journal.
-3. **Trois surfaces comptables distinctes** (ne pas mélanger) :
-   - **Journal** (grand livre) — écritures chronologiques, agrégats par mois/année, export ; **source de vérité affichée**.
-   - **Livret ville** (style César 3) — revenus / dépenses simples, N vs N-1.
-   - **États financiers** (compta classique) — bilan, compte de résultat, règles comptables.
+3. **Quatre niveaux comptables distincts** (chaîne PCG — voir section dédiée) :
+   - **Journal** — enregistrement chronologique des mouvements (`db.journal`, export JSON).
+   - **Grand livre + Balance** — **absents** aujourd’hui ; cible PCG avec n° de comptes.
+   - **États annuels PCG** — compte de résultat (activité) + bilan (patrimoine), liés via le résultat net.
+   - **Livret ville** (style César 3) — vue simplifiée pour non-comptables ; **hors chaîne PCG stricte**.
 4. Les bugs comptables métier seront traités **après** l’organisation du code (plus facile si les frontières sont claires).
+
+---
+
+## Chaîne comptable PCG (référence)
+
+Workflow classique ([finref.fr — Journal, Grand Livre et Balance](https://finref.fr/comptabilite/generale/journal-grand-livre-balance/)) :
+
+```
+Journal  →  Grand livre  →  Balance  →  Compte de résultat + Bilan
+(chrono)    (par compte)     (soldes)     (états annuels PCG)
+```
+
+| Étape PCG | Rôle | Anoria aujourd’hui | Code / données |
+|---|---|---|---|
+| **Journal** | Enregistre **tous** les mouvements dans l’ordre chronologique (date, libellé, montant, type) | ✅ | `db.journal`, export `docs/ledgers/journal-*.json`, UI `#journal-panel` |
+| **Grand livre** | Reprend les écritures du journal **classées par compte PCG** (601, 512, 701…) avec débit/crédit et solde par compte | ❌ **absent** | Pas de table/compte PCG ; agrégats par `type` métier (`citizen_tax`, `salary`…) |
+| **Balance** | Synthèse : total débits / crédits / solde **par compte** ; contrôle partie double | ❌ **absent** | Pas de contrôle débit=crédit par compte |
+| **Compte de résultat** | **Activité** de l’exercice : produits − charges = résultat net (**annuel**) | 🟡 partiel | `IncomeStatement` / `GetIncomeStatement({ fiscalYear })` — dérivé du journal, pas encore lignes PCG strictes |
+| **Bilan** | **Patrimoine** à la clôture : actif = passif (**annuel**) ; le résultat net du CR apparaît au passif | 🟡 partiel | `BalanceSheet` / `GetBalanceSheet()` — lié au CR via `liabilities.netResult` |
+| **Livret ville** | Vue **joueur / admin** simplifiée (César 3), N vs N−1 | ✅ | `GetCityLedgerYearComparison` — **ne remplace pas** journal ni états PCG |
+
+### Dette de nommage code (à ne pas confondre)
+
+| Terme PCG (FR) | Terme anglais compta | Nom actuel dans le code | Commentaire |
+|---|---|---|---|
+| Journal | Journal / Book of original entry | `GetGeneralLedger`, `GeneralLedgerView` | **Mal nommé** : c’est le **journal** chronologique, pas le grand livre |
+| Grand livre | General Ledger (by account) | — | À créer (`GetLedgerByAccount` ?) avec plan de comptes PCG |
+| Balance | Trial balance | — | À créer (`GetTrialBalance` ?) |
+| Compte de résultat | **Income statement** (P&L) | `IncomeStatement` | ✅ nom code correct |
+| Bilan | **Balance sheet** | `BalanceSheet` | ✅ nom code correct — **≠** compte de résultat |
+
+### Raccourci actuel (hors PCG strict)
+
+Le CR/bilan récent (`FinancialStatementsBundle`) **saute** grand livre et balance : agrégation directe journal → produits/charges par `type` → CR, puis bilan lié. C’est un **prototype** utile en jeu, pas encore une clôture PCG avec numéros de comptes.
+
+**Cible PCG** : chaque écriture journal → imputation débit/crédit sur comptes (512, 641, 741…) → grand livre → balance équilibrée → CR + bilan annuels.
 
 ---
 
@@ -18,12 +55,15 @@ Phase 0 — spécification et cartographie. **Aucun refactor métier ici** : doc
 
 | Terme FR | Terme code (cible) | Définition |
 |---|---|---|
-| **Journal** | `GeneralLedger` | Grand livre : toutes les écritures (`db.journal`). Source de vérité. |
-| **Écriture** | `LedgerEntry` | Mouvement `{ turn, type, amount, description, year?, month?, partnerId? }`. |
+| **Journal** | `Journal` (cible) — aujourd’hui `GeneralLedger*` | Enregistrement **chronologique** de toutes les écritures (`db.journal`). Source de vérité des mouvements. |
+| **Grand livre** | `LedgerByAccount` (à venir) | Écritures **classées par compte PCG**, avec soldes — **distinct du journal**. |
+| **Balance** | `TrialBalance` (à venir) | Tableau des soldes par compte ; contrôle débit = crédit. |
+| **Écriture** | `LedgerEntry` | Mouvement `{ turn, type, amount, description, year?, month?, partnerId?, businessKey? }`. |
+| **Clé métier** | `businessKey` | Identifiant logique d’une opération récurrente (ex. `maintenance:0:5`) — garantit **au plus une** écriture par période pour certains types. |
 | **Trésorerie** | `Treasury` | Solde courant (`budget_current.funds`). Cache co-maintenu, pas dérivé à la lecture temps réel. |
-| **Livret ville** | `CityLedger` | Présentation admin César 3 : dépenses/revenus par type, comparaison annuelle. |
-| **Compte de résultat** | `IncomeStatement` | Produits / charges / résultat net sur une période (règles comptables). |
-| **Bilan** | `BalanceSheet` | Actif / passif à une date (règles comptables + actif immobilisé bâti). |
+| **Livret ville** | `CityLedger` | Présentation **simplifiée** admin César 3 : dépenses/revenus par type, N vs N−1 — pour non-comptables. |
+| **Compte de résultat** | `IncomeStatement` | Produits / charges / **résultat net** sur un **exercice** (activité). Lien bilan : poste « résultat de l’exercice ». |
+| **Bilan** | `BalanceSheet` | **Actif / passif** à la clôture (patrimoine). `netResult` passif = résultat net du CR. |
 | **Flux net (exercice)** | `PeriodNetFlow` | Revenus − dépenses sur une période (journal ou agrégat exercice). |
 | **Flux net (tour)** | `DailyNetFlow` | `dailyIncome − dailyExpenses` du tour en cours (`budget_current`). |
 | **Report à nouveau** | `carry_forward` | Solde N−1 reporté en début d’année N (écriture journal). |
@@ -49,9 +89,9 @@ Presenters dans `src/js/ui/`. Chaque surface appelle l'ACL → **use case** (pas
 
 | Surface | Panneau | Presenter (UI) | Use case | Rôle |
 |---|---|---|---|---|
-| **Journal** | `#journal-panel` | `ui/journal/JournalManager.js` | `queries/journal/*` | Grand livre : écritures, mois/années, export |
-| **Livret ville** | `#admin-section-finances` | `ui/finances-section.js` | `queries/city-ledger/*` | Tableau César 3 N vs N−1 |
-| **Bilan + CR** | `#budget-panel`, `#budget-states-panel` | `buttons.js`, `BudgetStatesManager.js` | `queries/financial-statements/*` | Compta classique (PCG) |
+| **Journal** | `#journal-panel` | `ui/journal/JournalManager.js` | `queries/journal/GetGeneralLedger` ⚠️ | Journal chronologique (mois/années, export) — **pas** le grand livre PCG |
+| **Livret ville** | `#admin-section-finances` | `ui/finances-section.js` | `queries/city-ledger/*` | Tableau César 3 N vs N−1 — vue joueur simplifiée |
+| **CR + Bilan** | `#budget-panel`, `#budget-states-panel` | `buttons.js`, `BudgetStatesManager.js` | `queries/financial-statements/*` | États PCG (exercice / patrimoine) — cible **annuelle** |
 | **Trésorerie live** | `.display-funds`, `#realtime-budget-panel` | HUD, `RealtimeBudgetManager.js` | `queries/treasury/*` | Solde courant + flux du tour |
 
 ### Niveau 1 — couches (un BC, domain unifié)
@@ -85,7 +125,9 @@ contexts/accounting/
       financial-statements/        # GetBalanceSheet, GetIncomeStatement
     ports/                         # interfaces — DIP
       JournalRepository.js
+      JournalWritePort.js          # append session buffer (Phase 3½)
       TreasuryRepository.js
+      TreasuryWritePort.js         # débits/credits budget_current (Phase 3½)
       CityAssetsValuationPort.js
   infrastructure/
     adapters/
@@ -93,11 +135,16 @@ contexts/accounting/
         dexie/
           DexieJournalRepository.js
           DexieTreasuryRepository.js
+          DexieTreasuryWriteAdapter.js   # écriture trésorerie directe Dexie (Phase 4)
+        session/
+          SessionJournalRepository.js   # lecture buffer
+          SessionJournalWriteAdapter.js # écriture buffer
       shared/                      # autres modules Anoria (même repo, autre contexte)
         CityAssetsValuationAdapter.js   # → src/shared/city-assets/
       legacy/                      # temporaire Phase 1–2 — wraps stores actuels
         LegacyJournalRepository.js      # → stores/JournalManager
         LegacyTreasuryRepository.js     # → BudgetManager.getCurrentBudget
+        LegacyTreasuryWriteAdapter.js   # régression tests uniquement (Phase 4)
       fakes/                       # tests — doubles in-memory (Quizzam)
         InMemoryJournalRepository.js
 ```
@@ -131,8 +178,9 @@ Phase 1 : `legacy/` wrappe les stores existants ; Phase 2 : bascule vers `persis
 
 | Sous-ensemble | Commands | Queries | Domain |
 |---|---|---|---|
-| **journal** | `RecordLedgerEntry`, `CreateCarryForwardEntry`… | `GetGeneralLedger`, `ExportJournal`… | `LedgerEntry` (à venir), `IncomeExpenseClassificationPolicy` |
+| **journal** | `RecordLedgerEntry`, `CreateCarryForwardEntry`… | `GetGeneralLedger`, `ExportJournal`… | `LedgerEntry` (à venir), `LedgerIdempotencePolicy`, `IncomeExpenseClassificationPolicy` |
 | **treasury** | `ApplyTreasuryMovement`, `UpdateTreasuryTurn` | `GetTreasuryBalance`, `GetFinancialHealth` | `TreasurySnapshot` (à venir), `FinancialHealthPolicy` |
+| **services** | `RecordMaintenanceExpense` (orchestration journal + trésorerie) | — | — |
 | **city-ledger** | — | `GetCityLedgerYearComparison` | `value-objects/CityLedgerYearLines`, `read-models/CityLedgerComparison`, policies |
 | **financial-statements** | — | `GetBalanceSheet`, `GetIncomeStatement` | `read-models/BalanceSheet`, `read-models/IncomeStatement` (à venir) |
 
@@ -169,16 +217,94 @@ Use cases **city-ledger** et **financial-statements** consomment journal/trésor
 Événements jeu
         ↓
  commands/journal/RecordLedgerEntry  +  commands/treasury/ApplyTreasuryMovement
-        ↓
-   JournalRepository          TreasuryRepository        (ports)
-        ↓                              ↓
-   adapters/persistence/dexie/…     adapters/shared/…
+        ↓                                    ↓
+   JournalWritePort                    TreasuryWritePort
+        ↓                                    ↓
+   SessionJournalWriteAdapter         DexieTreasuryWriteAdapter
+        ↓                                    ↓
+   SessionLedgerBuffer (RAM)           budget_current (Dexie)
 
  queries/journal/*        ──→ Journal UI
  queries/treasury/*       ──→ HUD + temps réel
  queries/city-ledger/*     ──→ Livret admin
  queries/financial-statements/* → Bilan + CR (+ CityAssetsValuationPort)
 ```
+
+---
+
+## RecordLedgerEntry et idempotence (`businessKey`)
+
+### Objectif
+
+**Idempotent** ici = rappeler plusieurs fois la même opération métier **ne produit qu’une seule écriture** (et, via les services orchestrateurs, **un seul mouvement de trésorerie**).
+
+Cela protège contre les doubles ticks (vitesse 2×), les races async, ou un orchestrateur legacy appelé deux fois dans le même mois civil.
+
+### Mécanisme
+
+1. **`RecordLedgerEntry`** (`application/commands/journal/RecordLedgerEntry.js`) reçoit `{ turn, type, amount, description, … }`.
+2. Elle dérive une **`businessKey`** via `LedgerIdempotencePolicy` → `buildLedgerBusinessKey(type, timeInfo)` (source : `js/stores/ledgerBusinessKeys.js`).
+3. **Avant d’écrire**, elle interroge `JournalWritePort.hasBusinessKey(key)` sur le buffer session.
+4. Si la clé existe déjà → `{ recorded: false, skipped: true, reason: 'duplicate_business_key' }` — **aucune nouvelle ligne**.
+5. Sinon → append dans `SessionLedgerBuffer` avec la clé persistée sur la row.
+
+Les services métier (ex. **`RecordMaintenanceExpense`**) n’appliquent la trésorerie **que si** `recorded === true` — un skip journal implique skip trésorerie.
+
+### Clés par type (aujourd’hui)
+
+| Type | `businessKey` | Règle |
+|---|---|---|
+| `maintenance` | `maintenance:{year}:{monthIndex}` | Au plus **1× par mois civil** |
+| `salary` | `salary:{year}:{monthIndex}` | Au plus **1× par mois civil** |
+| `payroll_tax` | `payroll_tax:{year}:{monthIndex}` | Au plus **1× par mois civil** |
+| `citizen_tax` | `citizen_tax:{year}` | Au plus **1× par année civile** |
+| `loan_capital` | `loan_capital:{loanId}` | Au plus **1× par contrat** |
+| `loan_interest` | `loan_interest:{loanId}:{turn}` | Au plus **1× par prêt et par tour** |
+| `loan_repayment` | `loan_repayment:{loanId}:{turn}` | Au plus **1× par prêt et par tour** |
+| `capital_funds` | `capital_funds:0` | Au plus **1× par partie** (journal ; trésorerie déjà initialisée) |
+| `commercial_route` | `commercial_route:{partnerId}` | Au plus **1× par partenaire** |
+| `construction`, imports, exports, exceptional… | `null` | **Pas idempotent** — chaque événement = une ligne distincte |
+
+Exemple : maintenance de juin année 0 → `maintenance:0:5`. Un 2ᵉ appel au tour 31 (toujours juin) est ignoré ; au tour suivant en juillet → nouvelle clé `maintenance:0:6`.
+
+### Périmètre et limites
+
+- L’idempotence porte sur le **buffer session** (autoritaire en jeu) ; au chargement, `inferBusinessKeyFromRow()` reconstitue les clés des lignes IndexedDB legacy.
+- Ce n’est **pas** une idempotence HTTP générique (pas de `Idempotency-Key` arbitraire) : c’est une **règle métier par type + période calendaire**.
+- Les gardes legacy (`BudgetProcessor.lastMaintenanceMonth`, etc.) restent en place ; `businessKey` est la **ceinture de sécurité** au niveau journal.
+
+### Slice livrée (Phase 3½ — maintenance + construction + paie + impôt citoyen)
+
+| Élément | Maintenance | Construction | Salaires | Impôt paie | Impôt citoyen |
+|---|---|---|---|---|---|
+| Orchestrateur | `RecordMaintenanceExpense` | `RecordConstructionExpense` | `RecordSalaryExpense` | `RecordPayrollTaxIncome` | `RecordCitizenTaxIncome` |
+| Idempotence | Oui (mensuel) | Non | Oui (mensuel) | Oui (mensuel) | Oui (`citizen_tax:{année}`) |
+| Call site migré | `addBuildingMaintenance()` | `addConstructionExpense()` | `addSalaries()` | `addSalaryTax()` | `addTaxes()` |
+| Trésorerie | `expenses` + maintenance | investissements / dépenses | `expenses` + salaires | `income` | `income` + `totalTaxes` + `lastTaxYear` |
+| Id bâtiment | — | `buildingInstanceId` | — | — | — |
+
+Fichiers communs : `RecordLedgerEntry`, `ApplyTreasuryMovement`, adapters write, `createAccountingContext`, tests `recordLedgerEntry.behavior.test.js`.
+
+**Prochaines slices write :** réconciliation trésorerie ↔ journal (global), types restants (`exceptional_expenses`, `commercial_route`, `capital_funds`…).
+
+### Commerce (Phase 3½)
+
+| Type | Orchestrateur | Call site | Idempotence | Trésorerie |
+|---|---|---|---|---|
+| `import_{productId}` | `RecordCommerceImportExpense` | `addImportExpense()` | Non — 1 ligne par transaction | débit `expenses` + `totalImports[productId]` |
+| `export_{productId}` | `RecordCommerceExportIncome` | `addExportIncome()` | Non — 1 ligne par transaction | crédit `income` + `totalExports[productId]` |
+
+`partnerId` (ville négociante) est persisté sur la ligne journal quand fourni par `CommerceService`.
+
+### Prêts (Phase 3½)
+
+| Type | Orchestrateur | Call site | Idempotence | Trésorerie |
+|---|---|---|---|---|
+| `loan_capital` | `RecordLoanCapitalIncome` | `addLoan()` | `loan_capital:{loanId}` | crédit `income` |
+| `loan_interest` | `RecordLoanInterestExpense` | `addLoanInterest()` | `loan_interest:{loanId}:{turn}` | débit `expenses` + cumuls intérêts |
+| `loan_repayment` | `RecordLoanRepaymentExpense` | `repayLoan()` | `loan_repayment:{loanId}:{turn}` | débit `expenses` + `totalLoanRepayments` |
+
+Le portefeuille prêts (`budget.loans`, `loanDebt`, `calculateLoanTotals`) reste dans `BudgetManager` après l’écriture BC. Les clés d’échéance s’appuient sur le **tour de jeu**, pas le mois civil — voir [`docs/refactor.md`](docs/refactor.md) (dette J8).
 
 ### Composition et injection (Quizzam / Employment)
 
@@ -224,20 +350,25 @@ Code : **anglais**. Libellés UI : **français**.
 
 | Type | Sens comptable | Revenu / Charge | Écrit par |
 |---|---|---|---|
-| `capital_funds` | Capital de départ | Revenu | `BudgetManager.initialize()` |
-| `citizen_tax` | Impôt citoyen | Revenu | `BudgetManager.addTaxes()`, `addIncome()` |
-| `payroll_tax` | Impôt sur les salaires | Revenu | `BudgetManager.addSalaryTax()` |
-| `loan_capital` | Tirage de prêt | Revenu | `BudgetManager.addLoan()` |
-| `export_{productId}` | Export commerce | Revenu | `BudgetManager.recordExport()` |
-| `construction` | Dépense construction | Charge | `BudgetManager.addConstructionExpense()` |
-| `maintenance` | Maintenance mensuelle | Charge | `BudgetManager.addBuildingMaintenance()` |
-| `salary` | Salaires fonctionnaires | Charge | `BudgetManager.addSalaries()` |
-| `loan_interest` | Intérêts de prêt | Charge | `BudgetManager.addLoanInterest()` |
-| `loan_repayment` | Remboursement capital | Charge | `BudgetManager.addLoanRepayment()` |
-| `import_{productId}` | Import commerce | Charge | `BudgetManager.recordImport()` |
-| `exceptional_expenses` | Réparation (événement) | Charge | `RandomEventsService` |
-| `commercial_route` | Commission négociants | Charge | `commerce-section.js` |
-| `carry_forward` | Report à nouveau | Revenu ou charge (signe) | `JournalManager.createCarryForwardEntry()` |
+| `capital_funds` | Capital de départ | Revenu | `BudgetManager.initialize()` → **`RecordCapitalFundsIncome`** (journal ; `funds` + `income` pré-amorcés) |
+| `citizen_tax` | Impôt citoyen | Revenu | `BudgetManager.addTaxes()` → **`RecordCitizenTaxIncome`** (Phase 3½) |
+| `construction_refund` | Remboursement placement | Contre-investissement | `BudgetManager.addConstructionRefund()` → **`RecordConstructionRefundIncome`** (Phase 4) |
+| `payroll_tax` | Impôt sur les salaires | Revenu | `BudgetManager.addSalaryTax()` → **`RecordPayrollTaxIncome`** (Phase 3½) |
+| `loan_capital` | Tirage de prêt | Revenu | `BudgetManager.addLoan()` → **`RecordLoanCapitalIncome`** (Phase 3½) |
+| `export_{productId}` | Export commerce | Revenu | `BudgetManager.addExportIncome()` → **`RecordCommerceExportIncome`** (Phase 3½) |
+| `construction` | Dépense construction | Charge | `BudgetManager.addConstructionExpense()` → **`RecordConstructionExpense`** (Phase 3½) |
+| `maintenance` | Maintenance mensuelle | Charge | `BudgetManager.addBuildingMaintenance()` → **`RecordMaintenanceExpense`** (Phase 3½) |
+| `salary` | Salaires fonctionnaires | Charge | `BudgetManager.addSalaries()` → **`RecordSalaryExpense`** (Phase 3½) |
+| `loan_interest` | Intérêts de prêt | Charge | `BudgetManager.addLoanInterest()` → **`RecordLoanInterestExpense`** (Phase 3½) |
+| `loan_repayment` | Remboursement capital | Charge | `BudgetManager.repayLoan()` → **`RecordLoanRepaymentExpense`** (Phase 3½) |
+| `info_loan_interest` | Intérêts impayés (informatif) | Informatif — pas de trésorerie | `BudgetManager.recordInfoLoanInstallment()` → **`RecordInfoLoanInstallment`** |
+| `info_loan_repayment` | Capital impayé (informatif) | Informatif — pas de trésorerie | idem — clé `info:loan_*:{loanId}:{turn}`, description `[Informatif] …` |
+| `import_{productId}` | Import commerce | Charge | `BudgetManager.addImportExpense()` → **`RecordCommerceImportExpense`** (Phase 3½) |
+| `exceptional_expenses` | Réparation (événement) | Charge | `BudgetManager.addExceptionalExpense()` → **`RecordExceptionalExpense`** (Phase 3½) |
+| `commercial_route` | Commission négociants | Charge | `BudgetManager.addCommercialRouteFee()` → **`RecordCommercialRouteExpense`** (Phase 3½) |
+| `carry_forward` | Report à nouveau | Revenu ou charge (signe) | **`SyncTurnInformativeEntries`** → `RecordCarryForwardEntry` (Phase 4 slice 6) |
+| `balance` | Snapshot trésorerie / tour | Informatif (session) | **`SyncTurnInformativeEntries`** → `RecordBalanceSnapshot` |
+| `cumul_*` | Totaux annuels | Informatif | **`SyncTurnInformativeEntries`** → `RecordYearCumulEntries` |
 
 Produits dynamiques connus : `wheat`, `carrot`, `cabbage`, `wood` → préfixes `import_` / `export_`.
 
@@ -253,6 +384,17 @@ Produits dynamiques connus : `wheat`, `carrot`, `cabbage`, `wood` → préfixes 
 | `cumul_loan_interest` | Total annuel intérêts |
 | `cumul_loan_repayment` | Total annuel remboursements |
 
+**Pseudo-mouvements** (échéance théorique, **sans** débit/crédit trésorerie) — voir `domain/policies/LedgerInformativeTypePolicy.js` :
+
+| Élément | Convention | Exemple |
+|---|---|---|
+| `type` | `info_{sourceType}` | `info_loan_interest` |
+| `businessKey` | `info:{sourceType}:{entityId}:{turn}` | `info:loan_interest:loan_abc:12` |
+| Libellé journal | « informatif » explicite | `Intérêts prêt (informatif — impayé)` |
+| `description` | préfixe `[Informatif]` | `[Informatif] Intérêts prêt — impayés, …` |
+
+Types legacy `loan_default_*` restent lisibles à l’export (alias UI).
+
 ### Cache hors Dexie
 
 | Clé | Rôle | Risque |
@@ -266,9 +408,9 @@ Produits dynamiques connus : `wheat`, `carrot`, `cabbage`, `wood` → préfixes 
 | Surface UI | Panneau HTML | Fichier UI | Query cible (BC) | Source actuelle | Écart |
 |---|---|---|---|---|---|
 | **Livret ville** (admin César 3) | `#admin-section-finances` | `ui/finances-section.js` | `GetCityLedgerYearComparison` | `DexieJournalRepository` + `DexieTreasuryRepository` | Trésorerie ≠ journal pour balance N |
-| **Bilan** (compta classique) | `#budget-panel` | `ui/buttons.js` → `updateBudgetDisplay()` | `GetBalanceSheet(asOfTurn)` | `budget_current` + **City Assets** + prêts actifs + ajustement manuel actif=passif | Pas dérivé du journal ; mélange avec refresh temps réel |
-| **Compte de résultat** | `#budget-states-panel` | `ui/budget/BudgetStatesManager.js` | `GetIncomeStatement(period)` | **`getBudgetStates()`** → snapshots `budget_turn_*` | 2ᵉ source ; pas le journal |
-| **Journal** (grand livre) | `#journal-panel` | `ui/journal/JournalManager.js` | `GetGeneralLedger(filters)` | `DexieJournalRepository` | Export JSON/PDF encore legacy |
+| **Compte de résultat** | `#budget-states-panel` | `ui/budget/BudgetStatesManager.js` | `GetFinancialStatementsHistory()` | Journal + enrichissement `budget_turn_*` | ✅ journal-primary |
+| **Bilan** (compta classique) | `#budget-panel` | `ui/buttons.js` → `updateBudgetDisplay()` | `GetBalanceSheet()` → bundle lié CR | Journal + City Assets + cache prêts | ✅ lié CR |
+| **Journal** (grand livre) | `#journal-panel` | `ui/journal/JournalManager.js` | `GetGeneralLedger(filters)` ⚠️ nom legacy | Journal chronologique — **≠ grand livre PCG** |
 | **Budget temps réel** | `#realtime-budget-panel` | `ui/budget/RealtimeBudgetManager.js` | `GetPeriodCashFlow(currentTurn)` | `budget_current` + `getFinancialHealth()` (**daily** netFlow) | Flux tour ≠ flux exercice |
 | **Info-box fonds** | `#display-funds` | (HUD) | `GetTreasuryBalance()` | `budget_current.funds` | ✅ Cohérent avec tréso co-maintenue |
 | **Conseil urbain** | — | `ui/urban-advice/UrbanAdviceManager.js` | `GetFinancialHealth()` | `BudgetManager.getFinancialHealth()` | daily netFlow |
@@ -286,7 +428,7 @@ Produits dynamiques connus : `wheat`, `carrot`, `cabbage`, `wood` → préfixes 
 | `stores/JournalManager.js` | Persistance `db.journal`, agrégats, export | ✅ → `ports/JournalRepository` + `adapters/legacy/` puis `persistence/dexie/` |
 | `ui/finances-section.js` | Livret César 3 | Logique métier dans UI ; mix journal + tréso |
 | `ui/buttons.js` (`updateBudgetDisplay`) | Bilan compta FR (~260 L) | Pas de module dédié ; appelle aussi temps réel |
-| `ui/budget/BudgetStatesManager.js` | CR historique | Lit snapshots, pas journal |
+| `ui/budget/BudgetStatesManager.js` | CR + mini-bilan par tour | `getFinancialStatementsHistory()` (journal + cache enrichissement) |
 | `ui/budget/RealtimeBudgetManager.js` | Flux tour courant | Lit `budget_current` uniquement |
 | `ui/journal/JournalManager.js` | Présentation journal | ✅ ACL + query BC (Phase 2b) ; export legacy |
 | `game/managers/BudgetProcessor.js` | Tick : taxes, salaires, maintenance, **saveBudgetState** /3 tours | Orchestration legacy |
@@ -301,9 +443,25 @@ db.budget
   └── budget_turn_N    ← snapshots historiques (PK name)
 ```
 
-### Chemin d’écriture (mostly OK)
+### Chemin d’écriture
 
-Toute dépense/revenu significatif passe par `BudgetManager` → `addJournalEntry()` + mise à jour `budget_current`. Exceptions mineures : écritures pures journal (`balance`, `cumul_*`, `carry_forward`) créées par `JournalManager` / `updateTurn()`.
+**Maintenance (Phase 3½ — migré) :**
+
+```
+BudgetProcessor.processBudget()
+  → BudgetManager.addBuildingMaintenance(amount, description)
+    → recordMaintenanceExpense() → RecordLedgerEntry + ApplyTreasuryMovement
+```
+
+**Construction (Phase 3½ — migré) :**
+
+```
+PlaceBuildingWithPayment.execute()
+  → BudgetManager.addConstructionExpense(amount, reason)
+    → recordConstructionExpense() → RecordLedgerEntry + ApplyTreasuryMovement
+```
+
+**Autres types (legacy) :** dépense/revenu via `BudgetManager` → `addJournalEntry()` + mise à jour `budget_current`. Exceptions : écritures pures journal (`balance`, `cumul_*`, `carry_forward`) créées par `JournalManager` / `updateTurn()`.
 
 ---
 
@@ -311,15 +469,15 @@ Toute dépense/revenu significatif passe par `BudgetManager` → `addJournalEntr
 
 | # | Sujet | Détail |
 |---|---|---|
-| D1 | CR sur snapshots | `BudgetStatesManager` lit `budget_turn_*` au lieu du journal |
-| D2 | Bilan non journal-based | Actif immobilisé via City Assets OK ; passif / résultat via `budget_current` |
+| D1 | ~~CR sur snapshots~~ | ✅ `BudgetStatesManager` → journal via `GetFinancialStatementsHistory` ; `budget_turn_*` = enrichissement UI only |
+| D2 | Bilan journal-based | ✅ `GetBalanceSheet` → bundle lié ; `equityReconciliation` pour écart immobilisé |
 | D3 | Ajustement bilan | Si actif ≠ passif, le résultat net est **forcé** (`buttons.js` L297–307) |
 | D4 | `netFlow` polymorphe | Même nom, 3 sens (voir tableau ci-dessus) |
 | D5 | `localStorage` report à nouveau | Cache intermédiaire pour `carry_forward` |
 | D6 | `addIncome()` | Écrit toujours `citizen_tax` même pour remboursements construction |
 | D7 | Bilan incomplet | Amortissements, stocks, créances = 0 ; nombreuses lignes PCG vides |
 | D8 | Couplage UI | `updateBudgetDisplay()` déclenche `updateRealtimeBudget()` |
-| D9 | Doublons journal salaires / impôts | Écritures multiples même `turn`, libellés mois croisés (vitesse jeu) — **bloque Phase 3** (journal SoT unique) ; voir [`docs/refactor.md`](docs/refactor.md) |
+| D9 | Doublons journal salaires / impôts | `businessKey` + `RecordLedgerEntry` en place ; **maintenance migrée** ; salaires/impôts encore legacy write — voir [`docs/refactor.md`](docs/refactor.md) |
 
 ---
 
@@ -386,13 +544,56 @@ C’est le **livret ville César 3** — seul panneau migré en Phase 1. Vérifi
 - Extraire calculs nets restants hors `finances-section.js`
 - Presenters branchés sur `acl/accounting` uniquement
 
-### Phase 3½ — Write path fiable (**bloquant avant Phase 3**)
+### Phase 3½ — Write path fiable (**en cours** — bloquant avant Phase 3)
 
-Journal non fiable comme SoT unique tant que D9 (doublons write legacy). Voir gate dans [`docs/refactor.md`](docs/refactor.md).
+Journal non fiable comme SoT unique tant que tous les types opérationnels ne passent pas par les commands BC. Voir gate dans [`docs/refactor.md`](docs/refactor.md).
 
-- `commands/journal/RecordLedgerEntry` + `commands/treasury/ApplyTreasuryMovement`
-- Idempotence salaires / impôts / maintenance
-- Tests réconciliation trésorerie ↔ journal
+#### Slice 1 ✅ — Buffer session + flush batch
+
+- `SessionLedgerBuffer`, `SessionJournalRepository`, flush fin de tour
+
+#### Slice 2 ✅ — `RecordLedgerEntry` + charges récurrentes + impôt citoyen + prêts
+
+- Services : maintenance, construction, salaires, impôt paie, impôt citoyen, prêts (capital / intérêts / remboursement)
+- Idempotence `businessKey` : maintenance, salary, payroll_tax, citizen_tax
+- Tests : `recordLedgerEntry.behavior.test.js`
+
+#### Slice 3 ✅ — Commerce imports / exports
+
+- `RecordCommerceImportExpense`, `RecordCommerceExportIncome`
+- Types journal dynamiques `import_{productId}` / `export_{productId}`, `partnerId` optionnel
+- Tests : `recordLedgerEntry.behavior.test.js`, `BudgetManager.test.js`
+
+#### Slice 4 ✅ — Capital, réparations, route commerciale
+
+- `RecordCapitalFundsIncome` (journal only), `RecordExceptionalExpense`, `RecordCommercialRouteExpense`
+- Dette legacy documentée : [`docs/refactor.md`](docs/refactor.md) § « Dette legacy restante »
+
+#### Slice 5 ✅ — Dettes legacy write path (D6–D13)
+
+- `RecordConstructionRefundIncome` (`construction_refund`) — remplace `addIncome()` pour remboursements construction
+- `addIncome()` / `addDailyExpense()` supprimés (throw / dead code)
+- D8 : `initialize()` amorce `income` = capital social (aligné journal `capital_funds`)
+- D10–D11 : `config.budget.commercialRouteFee` + retour `{ skipped }` sur activation partenaire
+- D12–D13 : ancien `initLoanSystem` supprimé ; `processLoanPayments` uniquement via `BudgetProcessor`
+
+#### Slice 6 ✅ — Réconciliation & informatif
+
+- D14 : `RecordBalanceSnapshot`, `RecordYearCumulEntries`, `RecordCarryForwardEntry`, orchestrateur `SyncTurnInformativeEntries`
+- `GetTreasuryJournalReconciliation` + ACL `getTreasuryJournalReconciliation()`
+- `BudgetManager.updateTurn()` délègue au BC (plus d'appels directs `JournalManager` pour balance/cumul/carry)
+- Tests : `treasuryReconciliation.behavior.test.js`
+
+#### Slice 7 🔲 — États financiers unifiés
+
+- `GetIncomeStatement` / `GetBalanceSheet` depuis journal + trésorerie + City Assets
+- Lien livret ↔ CR ↔ bilan (réconciliation multi-surfaces)
+
+### Phase 3 — Bilan + compte de résultat ✅ (2026-07-31)
+
+- `GetIncomeStatement` / `GetBalanceSheet` depuis journal + trésorerie + City Assets
+- Presenters `#budget-panel` et résumé `#budget-states-panel` via ACL
+- Snapshots `budget_turn_*` conservés pour historique par tour (CR détaillé)
 
 ### Phase 3 — Unifier les lectures sur le journal (**après 3½**)
 
@@ -400,9 +601,14 @@ Journal non fiable comme SoT unique tant que D9 (doublons write legacy). Voir ga
 - `GetBalanceSheet` : ports journal + trésorerie + City Assets
 - Snapshots `budget_turn_*` : cache dérivé ou suppression
 
-### Phase 4 — Extinction write legacy
+### Phase 4 — Extinction write legacy ✅ (2026-07-31)
 
-- Réduction progressive de `BudgetManager` (plus d’écriture directe journal)
+- **`DexieTreasuryWriteAdapter`** : écritures trésorerie sans `BudgetManager`
+- **Lifecycle BC** : `InitializeTreasury`, `UpdateTreasuryTurn`, `GetTreasurySnapshot`, `GetFinancialHealth`, `TreasuryLoanPortfolio`
+- **`acl/accounting.js`** : seule façade game code pour trésorerie + écritures
+- **`BudgetManager`** : façade mince UI (délègue au BC)
+- **`acl/budget.js`** / **`createConstructionContext`** : construction via BC direct
+- **`createLegacyAccountingContext()`** : adapters legacy pour tests de régression
 
 ---
 
@@ -413,6 +619,7 @@ Journal non fiable comme SoT unique tant que D9 (doublons write legacy). Voir ga
 3. **Use cases** (`city-ledger`, `financial-statements`) consomment journal/trésorerie **via ports** — jamais Dexie, jamais entre eux directement.
 4. **`balance` et `cumul_*` ne participent pas aux totaux revenus/charges** (déjà le cas dans `JournalManager`).
 5. **Réconciliation** : `treasury.funds` ≈ `journal.getCurrentBalance()` (tolérance arrondi) — testable.
+6. **Idempotence périodique** : pour les types à `businessKey`, un 2ᵉ appel dans la même période civile ne crée ni ligne journal ni mouvement trésorerie.
 
 ---
 
@@ -425,10 +632,9 @@ Journal non fiable comme SoT unique tant que D9 (doublons write legacy). Voir ga
 | **Commerce** | Customer | import/export → journal |
 | **Employment** | Customer | salaires / impôt payroll |
 | **Housing** | Customer | population pour taxes / salaires |
-| **Legacy game** | ACL | `BudgetProcessor`, `BudgetManager` global |
+| **Legacy game** | ACL | `BudgetProcessor` → `acl/accounting.js` ; UI → `window.budgetManager` (façade) |
 
-Façade actuelle : `src/js/acl/budget.js` (valuation + construction)  
-Façade cible : `src/js/acl/accounting.js`  
+Façade actuelle : `src/js/acl/accounting.js` (+ `acl/budget.js` pour construction/valuation)  
 Composition : `createAccountingContext.js` (DI — adapters → use cases, pattern Quizzam/Employment)
 
 Règle : `src/js/**` n'importe **pas** `contexts/accounting/**/domain/**` directement (identique Employment).
@@ -442,13 +648,15 @@ Règle : `src/js/**` n'importe **pas** `contexts/accounting/**/domain/**` direct
 | `tests/JournalManager.test.js` | Persistance, agrégats journal |
 | `tests/BudgetManager.test.js` | Trésorerie, délégation journal |
 | `tests/acl/budgetBuildingValuation.test.js` | Valorisation bâti |
+| `tests/contexts/accounting/getCityLedgerYearComparison.behavior.test.js` | Mapping types → lignes livret |
+| `tests/contexts/accounting/getGeneralLedger.behavior.test.js` | Filtres journal, totaux cohérents |
+| `tests/contexts/accounting/recordLedgerEntry.behavior.test.js` | `RecordLedgerEntry` + maintenance idempotente + délégation BudgetManager |
+| `tests/ledgerBusinessKeys.test.js` | Génération / inférence `businessKey` |
 
-Tests cibles Phase 1+ :
+Tests cibles (Phase 3+) :
 
-- `getCityLedgerYearComparison.behavior.test.js` — mapping types → lignes livret
-- `getGeneralLedger.behavior.test.js` — filtres type/période, totaux cohérents
 - `incomeStatementFromJournal.behavior.test.js` — CR depuis journal
-- `treasuryReconciliation.behavior.test.js` — funds vs balance journal
+| `tests/contexts/accounting/treasuryReconciliation.behavior.test.js` | Réconciliation funds vs balance journal + informative BC |
 
 ---
 
