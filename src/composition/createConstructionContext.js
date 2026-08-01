@@ -1,32 +1,44 @@
 import { DexieConstructionBuildingRepository } from '../contexts/construction/infrastructure/dexie/DexieConstructionBuildingRepository.js';
 import { GetBuildingAtTile } from '../contexts/construction/application/queries/GetBuildingAtTile.js';
+import { ListSceneBuildingTypes } from '../contexts/construction/application/queries/ListSceneBuildingTypes.js';
 import { PlaceBuildingWithPayment } from '../contexts/construction/application/services/PlaceBuildingWithPayment.js';
+import { SceneBuildingInventoryAdapter } from '../contexts/construction/infrastructure/adapters/three/SceneBuildingInventoryAdapter.js';
 import {
   recordConstructionExpense,
   recordConstructionRefund,
 } from '../js/acl/budget.js';
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
+import {
+  registerSceneBuildingTypeListing,
+  resetSceneBuildingInventoryBridgeForTests,
+} from './sceneBuildingInventoryBridge.js';
 
 /**
  * Composition root — Construction orchestration (Budget + row persist).
  *
  * @param {object} [deps]
  * @param {import('../contexts/construction/application/ports/ConstructionBuildingRepository.js').ConstructionBuildingRepository} [deps.buildingRepository]
+ * @param {import('../contexts/construction/application/ports/SceneBuildingInventoryPort.js').SceneBuildingInventoryPort} [deps.sceneBuildingInventory]
    * @param {(amount: number, reason: string, options?: { buildingInstanceId?: string }) => Promise<object>} [deps.recordExpense]
    * @param {(amount: number, reason: string) => Promise<object>} [deps.recordRefund]
  */
 export function createConstructionContext({
   buildingRepository,
+  sceneBuildingInventory,
   recordExpense,
   recordRefund,
 } = {}) {
   const repository = buildingRepository ?? new DexieConstructionBuildingRepository();
+  const sceneInventory = sceneBuildingInventory ?? new SceneBuildingInventoryAdapter();
   const getBuildingAtTile = new GetBuildingAtTile(repository);
+  const listSceneBuildingTypes = new ListSceneBuildingTypes(sceneInventory);
   const placeBuildingWithPayment = new PlaceBuildingWithPayment({
     repository,
     recordExpense: recordExpense ?? recordConstructionExpense,
     recordRefund: recordRefund ?? recordConstructionRefund,
   });
+
+  registerSceneBuildingTypeListing(() => listSceneBuildingTypes.execute());
 
   return {
     buildingRepository: repository,
@@ -80,6 +92,16 @@ export function createConstructionContext({
     async removeBuildingRecord(instanceId) {
       return repository.deleteById(instanceId);
     },
+
+    /** @param {{ city: { size: number }, buildings: object[][] }} ctx */
+    bindSceneBuildingGrid(ctx) {
+      sceneInventory.bind(ctx);
+    },
+
+    /** @returns {string[]} */
+    listSceneBuildingTypes() {
+      return listSceneBuildingTypes.execute();
+    },
   };
 }
 
@@ -96,4 +118,5 @@ export function getOrCreateConstructionContext() {
 /** @internal Tests only */
 export function resetConstructionContextForTests() {
   sharedConstruction = null;
+  resetSceneBuildingInventoryBridgeForTests();
 }

@@ -52,7 +52,9 @@ import { BackdropManager } from './managers/BackdropManager.js';
 import { DecorativeVillageManager } from './managers/DecorativeVillageManager.js';
 import { ResourceManager } from './managers/ResourceManager.js';
 import { PerformanceManager } from './managers/PerformanceManager.js';
-import { BudgetProcessor } from './managers/BudgetProcessor.js';
+import { bindSceneBuildingGrid } from '../acl/construction.js';
+import { processTurnBudget, resetProcessTurnBudget } from '../acl/accounting.js';
+import { notifyBudgetCleanupIfNeeded } from '../ui/budget/CleanupNotificationPresenter.js';
 import gameUI from './GameUI.js';
 import { CitizenManager } from './managers/CitizenManager.js';
 import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
@@ -70,7 +72,6 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
     const lightingManager = new LightingManager(scene);
     const backdropManager = new BackdropManager(scene);
     const decorativeVillageManager = new DecorativeVillageManager(scene, assetManager);
-    const budgetProcessor = new BudgetProcessor();
     const citizenManager = new CitizenManager(scene, assetManager);
     const parcels = parcelsOption ?? getOrCreateParcelsContext();
     const supply = supplyOption ?? getOrCreateSupplyContext();
@@ -215,7 +216,7 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
     let currentCitySize = 16; // Store current city size for citizen pathfinding
     let currentCity = null; // Store current city object for citizen updates
     
-    // Note: lastMaintenanceMonth and lastSalaryMonth moved to BudgetProcessor
+    // Note: per-turn budget orchestration lives in ProcessTurnBudget (accounting BC) via scene.update
     // Note: Citizen-related variables and CitizenData class moved to CitizenManager
     
     // OPTIMIZATION: Create a separate group for interactive objects (buildings + terrain)
@@ -305,7 +306,7 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
         citizenManager.setCitySize(citySize);
         
         // Reset budget processor tracking
-        budgetProcessor.reset();
+        resetProcessTurnBudget();
         
         // Recreate interactive group after scene.clear()
         const existingGroup = scene.getObjectByName('interactive-objects');
@@ -1541,14 +1542,12 @@ export function createScene(gameStore, assetManager, parcelsOption, supplyOption
         }
 
         if (!skipBudget) {
-            const { buildingCounts, maintenanceBreakdown } =
-                budgetProcessor.calculateBuildingCounts(city, buildings);
-            await budgetProcessor.processBudget(
+            bindSceneBuildingGrid({ city, buildings });
+            const result = await processTurnBudget({
                 time,
                 totalPop,
-                buildingCounts,
-                maintenanceBreakdown
-            );
+            });
+            await notifyBudgetCleanupIfNeeded(result?.cleanupResult);
         }
 
         // Display results in UI — population read at start of update (ECS already applied)
@@ -2239,7 +2238,7 @@ function onTouchEnd(event) {
         }
     }
 
-    // Note: showCleanupNotification() and showCleanupNotificationOnce() moved to BudgetProcessor
+    // Note: cleanup toast → ui/budget/CleanupNotificationPresenter.js
 
     /**
      * Immediately update a road tile visually without waiting for full scene update
