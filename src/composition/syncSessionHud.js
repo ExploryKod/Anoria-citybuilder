@@ -45,12 +45,12 @@ export async function syncSessionHud({
 
   try {
     const summary = await employment.getCityEmploymentSummary();
-    const citizenPopulation = summary.workerPool ?? 0;
-    const elitePopulation = summary.elitePool ?? 0;
     gameUI.updatePopulationBreakdown?.(
-      citizenPopulation + elitePopulation,
-      citizenPopulation,
-      elitePopulation
+      summary.totalPopulation ?? 0,
+      summary.activeCitizenCount ?? 0,
+      summary.elitePool ?? 0,
+      summary.civilServantCount ?? 0,
+      summary.activePopulationCount ?? 0
     );
     gameUI.updateUnemployedPopulation?.(
       summary.unemployed ?? 0,

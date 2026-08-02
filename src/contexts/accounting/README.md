@@ -344,6 +344,57 @@ Code : **anglais**. Libellés UI : **français**.
 
 ---
 
+## Paie mensuelle (salaire de référence)
+
+Règle métier centralisée dans **`domain/policies/ReferenceSalaryPayrollPolicy.js`**, orchestrée par **`ProcessTurnBudget`** au 1er jour de chaque mois civil.
+
+Le paramètre **`salaryPerMonth`** (10–500 €, défaut 100 €) est un **salaire de référence interne** — il n'est plus l'assiette fiscale directe.
+
+### Trois composantes dérivées du salaire de référence
+
+| Composante | Formule | Charge ville | Assiette impôt |
+|---|---|---|---|
+| **Fonctionnaires** | `floor(pop ÷ 12) × ref × 100 %` | Oui (`salary`) | Oui |
+| **Chômeurs** | `chômeurs × ref × tauxAllocation` | Oui (`unemployment_benefit`) | Oui |
+| **Citoyens actifs** | `(pop − fonctionnaires − chômeurs) × ref × 100 %` | Non (informatif) | Oui |
+
+Les trois ensembles sont **disjoints** et partitionnent la population totale.
+
+**Assiette impôt** = somme des trois masses salariales.
+
+**Charges ville** = fonctionnaires + chômeurs uniquement.
+
+### Exemple (53 hab., 4 chômeurs, ref 100 €, allocation 50 %, impôt 20 %)
+
+| Composante | Calcul | Montant |
+|---|---|---|
+| Fonctionnaires (4) | 4 × 100 € | 400 € |
+| Chômeurs (4) | 4 × 100 € × 50 % | 200 € |
+| Citoyens actifs (45) | 45 × 100 € | 4 500 € (informatif) |
+| **Assiette impôt** | 400 + 200 + 4 500 | **5 100 €** |
+| **Impôt sur les salaires** | 5 100 × 20 % | **1 020 €** |
+| **Charges ville** | 400 + 200 | **600 €** |
+
+### Frontières BC
+
+- **Accounting** : policy, settings fiscaux, journal, trésorerie, livret.
+- **Employment** : fournit uniquement `unemployed` (aucune règle salariale).
+- **Housing** : fournit `population`.
+
+### Chaîne d'appel
+
+```
+ProcessTurnBudget
+  → ReferenceSalaryPayrollPolicy.computeReferenceSalaryPayrollBreakdown
+  → recordSalaries / recordUnemploymentBenefits / recordPayrollTax
+```
+
+Tests : `tests/contexts/accounting/referenceSalaryPayrollPolicy.test.js`.
+
+Les fichiers `CivilServantSalaryPolicy.js` et `UnemploymentBenefitPolicy.js` conservent des wrappers `@deprecated` pour compatibilité imports.
+
+---
+
 ## Inventaire des types d’écriture (`LedgerEntry.type`)
 
 ### Écritures opérationnelles (impact trésorerie + agrégats)
@@ -353,12 +404,13 @@ Code : **anglais**. Libellés UI : **français**.
 | `capital_funds` | Capital de départ | Revenu | `BudgetManager.initialize()` → **`RecordCapitalFundsIncome`** (journal ; `funds` + `income` pré-amorcés) |
 | `citizen_tax` | Impôt citoyen | Revenu | `BudgetManager.addTaxes()` → **`RecordCitizenTaxIncome`** (Phase 3½) |
 | `construction_refund` | Remboursement placement | Contre-investissement | `BudgetManager.addConstructionRefund()` → **`RecordConstructionRefundIncome`** (Phase 4) |
-| `payroll_tax` | Impôt sur les salaires | Revenu | `BudgetManager.addSalaryTax()` → **`RecordPayrollTaxIncome`** (Phase 3½) |
+| `payroll_tax` | Impôt sur les salaires (assiette citoyens) | Revenu | `BudgetManager.addSalaryTax()` → **`RecordPayrollTaxIncome`** (Phase 3½) |
 | `loan_capital` | Tirage de prêt | Revenu | `BudgetManager.addLoan()` → **`RecordLoanCapitalIncome`** (Phase 3½) |
 | `export_{productId}` | Export commerce | Revenu | `BudgetManager.addExportIncome()` → **`RecordCommerceExportIncome`** (Phase 3½) |
 | `construction` | Dépense construction | Charge | `BudgetManager.addConstructionExpense()` → **`RecordConstructionExpense`** (Phase 3½) |
 | `maintenance` | Maintenance mensuelle | Charge | `BudgetManager.addBuildingMaintenance()` → **`RecordMaintenanceExpense`** (Phase 3½) |
 | `salary` | Salaires fonctionnaires | Charge | `BudgetManager.addSalaries()` → **`RecordSalaryExpense`** (Phase 3½) |
+| `unemployment_benefit` | Salaires chômeurs | Charge | `ProcessTurnBudget` → **`RecordUnemploymentBenefitExpense`** |
 | `loan_interest` | Intérêts de prêt | Charge | `BudgetManager.addLoanInterest()` → **`RecordLoanInterestExpense`** (Phase 3½) |
 | `loan_repayment` | Remboursement capital | Charge | `BudgetManager.repayLoan()` → **`RecordLoanRepaymentExpense`** (Phase 3½) |
 | `info_loan_interest` | Intérêts impayés (informatif) | Informatif — pas de trésorerie | `BudgetManager.recordInfoLoanInstallment()` → **`RecordInfoLoanInstallment`** |

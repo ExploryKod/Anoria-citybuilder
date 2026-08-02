@@ -509,7 +509,7 @@ export class SessionJournalStore {
         }
 
         if (!hasSalaryCumul && salaryCumul > 0) {
-            await this.addJournalEntry(turn, 'cumul_salary', salaryCumul, `Cumul Salaires - Année ${yearDisplay}`);
+            await this.addJournalEntry(turn, 'cumul_salary', salaryCumul, `Cumul salaires fonctionnaires - Année ${yearDisplay}`);
         }
 
         if (!hasExceptionalExpensesCumul && exceptionalExpensesCumul > 0) {

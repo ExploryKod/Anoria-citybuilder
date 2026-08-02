@@ -7,12 +7,14 @@ export const FISCAL_STORAGE_KEYS = Object.freeze({
   citizenTaxPerCapita: 'citizen_tax_amount',
   salaryPerMonth: 'work_salary_per_month',
   salaryTaxRate: 'work_salary_tax_rate',
+  unemploymentBenefitRate: 'work_unemployment_benefit_rate',
 });
 
 export const DEFAULT_FISCAL_SETTINGS = Object.freeze({
   citizenTaxPerCapita: 100,
   salaryPerMonth: 100,
   salaryTaxRate: 0.2,
+  unemploymentBenefitRate: 0.5,
 });
 
 export class LocalStorageFiscalSettingsRepository {
@@ -40,7 +42,7 @@ export class LocalStorageFiscalSettingsRepository {
   }
 
   /**
-   * @returns {{ salaryPerMonth: number, salaryTaxRate: number }}
+   * @returns {{ salaryPerMonth: number, salaryTaxRate: number, unemploymentBenefitRate: number }}
    */
   getSalarySettings() {
     return {
@@ -54,12 +56,17 @@ export class LocalStorageFiscalSettingsRepository {
         DEFAULT_FISCAL_SETTINGS.salaryTaxRate,
         { min: 0, max: 1, integer: false }
       ),
+      unemploymentBenefitRate: this.#readNumber(
+        FISCAL_STORAGE_KEYS.unemploymentBenefitRate,
+        DEFAULT_FISCAL_SETTINGS.unemploymentBenefitRate,
+        { min: 0, max: 1, integer: false }
+      ),
     };
   }
 
   /**
-   * @param {{ salaryPerMonth?: number, salaryTaxRate?: number }} partial
-   * @returns {{ salaryPerMonth: number, salaryTaxRate: number }}
+   * @param {{ salaryPerMonth?: number, salaryTaxRate?: number, unemploymentBenefitRate?: number }} partial
+   * @returns {{ salaryPerMonth: number, salaryTaxRate: number, unemploymentBenefitRate: number }}
    */
   setSalarySettings(partial = {}) {
     const current = this.getSalarySettings();
@@ -72,9 +79,17 @@ export class LocalStorageFiscalSettingsRepository {
         partial.salaryTaxRate !== undefined
           ? this.#clamp(partial.salaryTaxRate, 0, 1, false)
           : current.salaryTaxRate,
+      unemploymentBenefitRate:
+        partial.unemploymentBenefitRate !== undefined
+          ? this.#clamp(partial.unemploymentBenefitRate, 0, 1, false)
+          : current.unemploymentBenefitRate,
     };
     this.#write(FISCAL_STORAGE_KEYS.salaryPerMonth, String(next.salaryPerMonth));
     this.#write(FISCAL_STORAGE_KEYS.salaryTaxRate, String(next.salaryTaxRate));
+    this.#write(
+      FISCAL_STORAGE_KEYS.unemploymentBenefitRate,
+      String(next.unemploymentBenefitRate)
+    );
     return next;
   }
 
@@ -83,6 +98,7 @@ export class LocalStorageFiscalSettingsRepository {
       this.storage?.removeItem(FISCAL_STORAGE_KEYS.citizenTaxPerCapita);
       this.storage?.removeItem(FISCAL_STORAGE_KEYS.salaryPerMonth);
       this.storage?.removeItem(FISCAL_STORAGE_KEYS.salaryTaxRate);
+      this.storage?.removeItem(FISCAL_STORAGE_KEYS.unemploymentBenefitRate);
     } catch (error) {
       console.warn('[FiscalSettings] Error clearing:', error);
     }

@@ -45,6 +45,10 @@ export function cityLedgerYearLinesFromJournalSummary(
   const construction = sumByType(expenseEntries, (e) => e.type === 'construction');
   const maintenance = sumByType(expenseEntries, (e) => e.type === 'maintenance');
   const salary = sumByType(expenseEntries, (e) => e.type === 'salary');
+  const unemploymentBenefit = sumByType(
+    expenseEntries,
+    (e) => e.type === 'unemployment_benefit'
+  );
   const repairs = sumByType(expenseEntries, (e) => e.type === 'exceptional_expenses');
   const commercialRoutes = sumByType(
     expenseEntries,
@@ -70,6 +74,7 @@ export function cityLedgerYearLinesFromJournalSummary(
     construction +
     maintenance +
     salary +
+    unemploymentBenefit +
     repairs +
     commercialRoutes +
     imports +
@@ -88,6 +93,7 @@ export function cityLedgerYearLinesFromJournalSummary(
     construction: Math.round(construction),
     maintenance: Math.round(maintenance),
     salary: Math.round(salary),
+    unemploymentBenefit: Math.round(unemploymentBenefit),
     repairs: Math.round(repairs),
     commercialRoutes: Math.round(commercialRoutes),
     imports: Math.round(imports),

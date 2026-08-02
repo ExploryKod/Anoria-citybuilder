@@ -1,5 +1,6 @@
 import { getOrCreateGameSessionContext } from './createGameSessionContext.js';
 import { getOrCreateHousingContext } from './createHousingContext.js';
+import { getOrCreateEmploymentContext } from './createEmploymentContext.js';
 import { getSessionProcessLoanPayments } from './sessionRuntime.js';
 import { LocalStorageFiscalSettingsRepository } from '../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
 import { GetTreasuryBalance } from '../contexts/accounting/application/queries/treasury/GetTreasuryBalance.js';
@@ -31,6 +32,7 @@ import { ApplyTreasuryMovement } from '../contexts/accounting/application/comman
 import { RecordMaintenanceExpense } from '../contexts/accounting/application/services/RecordMaintenanceExpense.js';
 import { RecordConstructionExpense } from '../contexts/accounting/application/services/RecordConstructionExpense.js';
 import { RecordSalaryExpense } from '../contexts/accounting/application/services/RecordSalaryExpense.js';
+import { RecordUnemploymentBenefitExpense } from '../contexts/accounting/application/services/RecordUnemploymentBenefitExpense.js';
 import { RecordPayrollTaxIncome } from '../contexts/accounting/application/services/RecordPayrollTaxIncome.js';
 import { RecordCitizenTaxIncome } from '../contexts/accounting/application/services/RecordCitizenTaxIncome.js';
 import { RecordLoanCapitalIncome } from '../contexts/accounting/application/services/RecordLoanCapitalIncome.js';
@@ -76,6 +78,10 @@ import { resolveGetTimeInfo } from './gameTimeBridge.js';
 async function getCityTotalPopulation() {
   const { totalPop } = await getOrCreateHousingContext().getCityPopulationSummary();
   return totalPop;
+}
+
+async function getCityEmploymentSummary() {
+  return getOrCreateEmploymentContext().getCityEmploymentSummary();
 }
 
 async function clearPopulationWithoutRoadAccess() {
@@ -155,6 +161,10 @@ export function createAccountingContext(deps = {}) {
     applyTreasuryMovementCommand
   );
   const recordSalaryExpense = new RecordSalaryExpense(
+    recordLedgerEntryCommand,
+    applyTreasuryMovementCommand
+  );
+  const recordUnemploymentBenefitExpense = new RecordUnemploymentBenefitExpense(
     recordLedgerEntryCommand,
     applyTreasuryMovementCommand
   );
@@ -351,6 +361,8 @@ export function createAccountingContext(deps = {}) {
     getTreasurySnapshot: getTreasurySnapshotQuery,
     commands: {
       recordSalaryExpense: (params) => recordSalaryExpense.execute(params),
+      recordUnemploymentBenefitExpense: (params) =>
+        recordUnemploymentBenefitExpense.execute(params),
       recordPayrollTaxIncome: (params) => recordPayrollTaxIncome.execute(params),
       recordExceptionalExpense: (params) => recordExceptionalExpense.execute(params),
       recordCommercialRouteExpense: (params) => recordCommercialRouteExpense.execute(params),
@@ -395,11 +407,15 @@ export function createAccountingContext(deps = {}) {
     collectCitizenTaxes: (time) => collectCitizenTaxes.execute({ time }),
     recordSalaries: (...args) => gameTreasuryRecording.recordSalaries(...args),
     recordPayrollTax: (...args) => gameTreasuryRecording.recordPayrollTax(...args),
+    recordUnemploymentBenefits: (...args) =>
+      gameTreasuryRecording.recordUnemploymentBenefits(...args),
     recordBuildingMaintenance: (amount, description, turn) =>
       recordBuildingMaintenanceForCity.execute({ amount, description, turn }),
     getTimeInfo: (time) => gameTimePort.getTimeInfo(time),
     getCityTotalPopulation:
       deps.getCityTotalPopulation ?? (() => getCityTotalPopulation()),
+    getCityEmploymentSummary:
+      deps.getCityEmploymentSummary ?? (() => getCityEmploymentSummary()),
     getSalarySettings,
     clearPopulationWithoutRoadAccess:
       deps.clearPopulationWithoutRoadAccess ?? (() => clearPopulationWithoutRoadAccess()),
@@ -434,6 +450,7 @@ export function createAccountingContext(deps = {}) {
     recordMaintenanceExpense,
     recordConstructionExpense,
     recordSalaryExpense,
+    recordUnemploymentBenefitExpense,
     recordPayrollTaxIncome,
     recordCitizenTaxIncome,
     recordLoanCapitalIncome,
@@ -599,6 +616,11 @@ export function createAccountingContext(deps = {}) {
       return recordSalaryExpense.execute(params);
     },
 
+    /** @param {Parameters<RecordUnemploymentBenefitExpense['execute']>[0]} params */
+    async recordUnemploymentBenefitExpense(params) {
+      return recordUnemploymentBenefitExpense.execute(params);
+    },
+
     /** @param {Parameters<RecordPayrollTaxIncome['execute']>[0]} params */
     async recordPayrollTaxIncome(params) {
       return recordPayrollTaxIncome.execute(params);
@@ -682,6 +704,11 @@ export function createAccountingContext(deps = {}) {
     /** @param {Parameters<GameTreasuryRecording['recordSalaries']>} args */
     async recordSalaries(...args) {
       return gameTreasuryRecording.recordSalaries(...args);
+    },
+
+    /** @param {Parameters<GameTreasuryRecording['recordUnemploymentBenefits']>} args */
+    async recordUnemploymentBenefits(...args) {
+      return gameTreasuryRecording.recordUnemploymentBenefits(...args);
     },
 
     /** @param {Parameters<GameTreasuryRecording['recordPayrollTax']>} args */
