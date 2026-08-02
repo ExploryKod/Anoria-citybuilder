@@ -22,14 +22,29 @@ function fakeParcels() {
 function fakeSupply() {
   let foodCalls = 0;
   let factoryCalls = 0;
+  let syncDemandCalls = 0;
+  let allocateWorkersCalls = 0;
+  let commerceCalls = 0;
   return {
     foodCalls: () => foodCalls,
     factoryCalls: () => factoryCalls,
+    syncDemandCalls: () => syncDemandCalls,
+    allocateWorkersCalls: () => allocateWorkersCalls,
+    commerceCalls: () => commerceCalls,
     runMonthlyFoodSupplyCycle: async () => {
       foodCalls += 1;
     },
+    syncFactoryWorkerDemandFromCaps: async () => {
+      syncDemandCalls += 1;
+    },
+    allocateFactoryWorkersToCommodityLines: async () => {
+      allocateWorkersCalls += 1;
+    },
     runCityFactoryProductionCycle: async () => {
       factoryCalls += 1;
+    },
+    runMonthlyCommerceSupplyCycle: async () => {
+      commerceCalls += 1;
     },
   };
 }
@@ -112,8 +127,11 @@ describe('createGameRuntime', () => {
       'supply.monthlyFood',
       'housing.populationGrowth',
       'housing.evolution',
+      'supply.syncFactoryWorkerDemand',
       'employment.redistribute',
+      'supply.allocateFactoryWorkers',
       'supply.factoryProduction',
+      'supply.monthlyCommerce',
       'commerce.turn',
       'gameplay.randomEvents',
     ]);
@@ -140,8 +158,11 @@ describe('createGameRuntime', () => {
     expect(supply.foodCalls()).toBe(1);
     expect(housing.growthCalls()).toBe(1);
     expect(housing.evolutionCalls()).toBe(1);
+    expect(supply.syncDemandCalls()).toBe(1);
     expect(employment.redistributeCalls()).toBe(1);
+    expect(supply.allocateWorkersCalls()).toBe(1);
     expect(supply.factoryCalls()).toBe(1);
+    expect(supply.commerceCalls()).toBe(1);
     expect(commerce.turnCalls()).toBe(1);
     expect(gameplay.eventCalls()).toBe(1);
   });

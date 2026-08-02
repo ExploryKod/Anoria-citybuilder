@@ -31,6 +31,7 @@ import {
   getFactoryWorkerNeed,
   getFactoryEmployeeRoleType,
 } from '../contexts/supply/domain/manufacturing/ProductRecipeCatalog.js';
+import { applyFactoryLineCapChanges } from './factoryAdminOps.js';
 import { hasRoadAccessFromCount } from '../contexts/parcels/domain/value-objects/RoadAccess.js';
 import {
   getBuildingsNamesInZone,
@@ -150,6 +151,7 @@ export function createSupplySessionApi(supply) {
       const windmills = await supply.listWindmillSupplyViews();
       return windmills.filter((w) => w.isActive && w.commercializeEnabled);
     },
+    getCommerceHubStocks: () => supply.getCommerceHubStocks(),
     updateSupplyBuildingFields: (id, fields) => supply.updateSupplyBuildingFields(id, fields),
     listProductionJournalEntries: (factoryId = null, turn = null) =>
       supply.listProductionJournalEntries(factoryId, turn),
@@ -160,6 +162,9 @@ export function createSupplySessionApi(supply) {
     getFactoryMaxStorage: (...args) => getFactoryMaxStorage(...args),
     getFactoryWorkerNeed: (...args) => getFactoryWorkerNeed(...args),
     getFactoryEmployeeRoleType: (...args) => getFactoryEmployeeRoleType(...args),
+    getFactoryWorkerPlanView: (factory, options = {}) =>
+      supply.getFactoryWorkerPlanView(factory, options),
+    applyFactoryLineCapChanges: () => applyFactoryLineCapChanges(),
   });
 }
 

@@ -10,6 +10,7 @@ let sharedCommerce = null;
  * @param {object} [deps]
  * @param {LocalStorageCommerceRepository} [deps.commerceRepository]
  * @param {(turn: number) => object} [deps.getTimeInfo]
+ * @param {import('../supply/application/services/BarnStockOperations.js').BarnStockOperations} [deps.barnStockOperations]
  */
 export function createCommerceContext(deps = {}) {
   const commerceRepository = deps.commerceRepository ?? new LocalStorageCommerceRepository();
@@ -21,6 +22,8 @@ export function createCommerceContext(deps = {}) {
     recordImportExpense: (...args) => accounting.recordImportExpense(...args),
     recordExportIncome: (...args) => accounting.recordExportIncome(...args),
     getTimeInfo,
+    barnStockOperations: deps.barnStockOperations ?? null,
+    commerceHubStock: deps.commerceHubStock,
   });
 
   return {

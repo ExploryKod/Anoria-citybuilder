@@ -1,5 +1,7 @@
 /** Employment sector catalog — language shared with work-section UI. */
 
+import { getBarnMaxWorkers } from '../../../supply/domain/catalogs/BarnCommerceCatalog.js';
+
 export const EMPLOYMENT_MAX_SECTORS = 6;
 
 /** @type {Readonly<Record<number, string>>} */
@@ -42,7 +44,7 @@ export const BUILDING_EMPLOYEE_NEEDS = Object.freeze({
   'Windmill-001': { worker_need: 4, elite_need: 2 },
   'Market-Stall': { worker_need: 2, elite_need: 1 },
   'Winery-001': { worker_need: 18, elite_need: 0 },
-  'Barn-001': { worker_need: 1, elite_need: 0 },
+  'Barn-001': { worker_need: getBarnMaxWorkers(), elite_need: 0 },
   roads: { worker_need: 0, elite_need: 0 },
 });
 

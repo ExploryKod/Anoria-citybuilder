@@ -116,11 +116,16 @@ city.update()
 2. supply.monthlyFood
 3. housing.populationGrowth
 4. housing.evolution
-5. employment.redistribute      ← reset worker=0 puis allocation
-6. supply.factoryProduction
+5. supply.syncFactoryWorkerDemand  ← publie employees.worker_need depuis les caps usine
+6. employment.redistribute         ← reset worker=0 puis allocation par priorité secteur
+7. supply.allocateFactoryWorkers   ← répartit employees.worker sur les lignes de denrées
+8. supply.factoryProduction
+9. supply.monthlyCommerce
+10. commerce.turn
 ```
 
-`employment.redistribute` appelle `DistributeCityWorkers` puis `synchronizeFactoryWorkerDistribution` (Winery).
+`employment.redistribute` appelle uniquement `DistributeCityWorkers`.  
+La demande usine (`worker_need`) et la répartition par ligne (`productWorkerDistribution`) sont owned par **Supply** ; composition enchaîne les deux côtés du tick et lors des edits caps admin (`applyFactoryLineCapChanges`).
 
 Priorités secteur : `getAllSectorPriorities()` (localStorage + défauts `config.employment.defaultPriorities`).
 
