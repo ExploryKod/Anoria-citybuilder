@@ -1,28 +1,37 @@
 /**
- * Commerce hub stock — barn warehouse (César III entrepôt).
- * Stub until Barn-001 is wired in supply; never reads or writes windmill stock.
+ * Commerce hub stock — delegates to Supply BarnStockOperations (Barn-001).
  */
 export class CommerceHubStockOperations {
-  /** @param {string} _productId */
-  async getTotalStock(_productId) {
-    return 0;
+  /**
+   * @param {import('../../../supply/application/services/BarnStockOperations.js').BarnStockOperations|null} [barnStockOperations]
+   */
+  constructor(barnStockOperations = null) {
+    this.delegate = barnStockOperations;
+  }
+
+  /** @param {string} productId */
+  async getTotalStock(productId) {
+    if (!this.delegate) return 0;
+    return this.delegate.getTotalStock(productId);
   }
 
   /**
-   * @param {string} _productId
-   * @param {number} _quantity
-   * @param {string|null} [_partnerId]
+   * @param {string} productId
+   * @param {number} quantity
+   * @param {string|null} [partnerId]
    */
-  async addToStock(_productId, _quantity, _partnerId = null) {
-    return null;
+  async addToStock(productId, quantity, partnerId = null) {
+    if (!this.delegate) return null;
+    return this.delegate.addToStock(productId, quantity, partnerId);
   }
 
   /**
-   * @param {string} _productId
-   * @param {number} _quantity
-   * @param {string|null} [_partnerId]
+   * @param {string} productId
+   * @param {number} quantity
+   * @param {string|null} [partnerId]
    */
-  async reduceStock(_productId, _quantity, _partnerId = null) {
-    return false;
+  async reduceStock(productId, quantity, partnerId = null) {
+    if (!this.delegate) return false;
+    return this.delegate.reduceStock(productId, quantity, partnerId);
   }
 }

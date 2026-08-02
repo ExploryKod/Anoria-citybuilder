@@ -37,7 +37,9 @@ export function bootGameContexts() {
   const housing = getOrCreateHousingContext();
   const employment = getOrCreateEmploymentContext();
   employment.ensureSectorPrioritiesInitialized();
-  const commerce = getOrCreateCommerceContext();
+  const commerce = getOrCreateCommerceContext({
+    barnStockOperations: supply.barnStockOperations,
+  });
   const gameplay = getOrCreateGameplayContext();
   const construction = getOrCreateConstructionContext();
   const cityAssets = getOrCreateCityAssetsContext();

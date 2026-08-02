@@ -174,8 +174,8 @@ operation = export  → playerConfig.exportEnabled[productId]
 |-------|--------|
 | Hub unique commerce | Import crédite barn ; export débite barn. |
 | Séparation interne | Le moulin / marchés **ne** voient **pas** le stock barn. |
+| Capacité | Source : `BARN_UNITS_PER_WORKER` (10) et `BARN_MAX_TOTAL_CAPACITY` (60) ; max ouvriers et stock dérivés par calcul |
 | Transfert factory → barn | Commande supply mensuelle : déplace `wood` / `furniture` de la factory vers la barn si capacité. |
-| Capacité | `BARN_COMMERCE_CAPACITY` par denrée ou globale *(à fixer en implémentation)*. |
 
 ### 4.6 `CaravanVisitPolicy` *(phase caravane)*
 
@@ -360,7 +360,7 @@ Défaut MVP commerce : 100 % direct (bois brut vers grange, sans menuiserie).
 | Phase | Livrable |
 |-------|----------|
 | **A** ✅ | Policies + factory filtrée par flux + UI admin |
-| **B** | `BarnStockPolicy` + transfert mensuel factory commerce → grange |
+| **B** ✅ | `BarnStockPolicy` + transfert mensuel factory commerce → grange + hub commerce |
 | **C** | Usine ville + consommation interne (hors commerce) |
 
 ---

@@ -235,6 +235,22 @@ export class DexieSupplyBuildingRepository {
       .map((row) => this.#toSnapshot(row));
   }
 
+  async findCommerceBarns() {
+    const rows = await db.houses.toArray();
+    return rows.filter((row) => {
+      const type = row.type || '';
+      return type.includes('Barn');
+    });
+  }
+
+  async saveCommerceStocks(buildingId, commerceStocks) {
+    await this.#putFields(buildingId, { commerceStocks });
+  }
+
+  async findCommerceBarnRows() {
+    return this.findCommerceBarns();
+  }
+
   async findFarms() {
     const rows = await db.houses.toArray();
     return rows

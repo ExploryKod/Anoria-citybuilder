@@ -216,7 +216,12 @@ export class CommerceSectionPresenter {
 
   async getStockByProductId() {
     const productConfig = this.commerce.loadOrSeedCommerceConfig();
-    return Object.fromEntries(productConfig.map((product) => [product.id, 0]));
+    const barnStocks = this.supply.getCommerceHubStocks
+      ? await this.supply.getCommerceHubStocks()
+      : {};
+    return Object.fromEntries(
+      productConfig.map((product) => [product.id, barnStocks[product.id] ?? 0])
+    );
   }
 
   async buildGoodsViewModel() {
