@@ -80,15 +80,15 @@ export function assembleGeneralLedgerView({
       const incomeTotal = months.reduce((sum, m) => sum + m.incomeTotal, 0);
       const expensesTotal = months.reduce((sum, m) => sum + m.expensesTotal, 0);
       const netFlow = incomeTotal - expensesTotal;
-      const displayBalance =
-        yearData.year === currentYear ? currentTreasuryBalance : netFlow;
+      const isCurrentYear = yearData.year === currentYear;
 
       return createGeneralLedgerYear({
         year: yearData.year,
         incomeTotal,
         expensesTotal,
         netFlow,
-        displayBalance,
+        isCurrentYear,
+        treasuryBalance: isCurrentYear ? currentTreasuryBalance : null,
         months,
       });
     })
