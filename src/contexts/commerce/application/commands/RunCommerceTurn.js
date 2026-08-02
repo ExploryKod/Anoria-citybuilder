@@ -14,14 +14,6 @@ export class RunCommerceTurn {
 
     simulation.loadPartners();
 
-    if (simulation.partnersData) {
-      for (const partner of simulation.partnersData) {
-        if (partner.isActive) {
-          simulation.checkAndDeactivateFinishedContract(partner.id);
-        }
-      }
-    }
-
     if (timeInfo.year !== simulation.lastProcessedYear) {
       if (simulation.lastProcessedYear !== -1) {
         simulation.yearlyImports = {};
@@ -32,6 +24,9 @@ export class RunCommerceTurn {
           simulation.partnersData.forEach((partner) => {
             partner.imports.forEach((imp) => {
               imp.currentYearly = 0;
+            });
+            partner.exports.forEach((exp) => {
+              exp.currentYearly = 0;
             });
           });
           simulation.commerceRepository.savePartners(simulation.partnersData);

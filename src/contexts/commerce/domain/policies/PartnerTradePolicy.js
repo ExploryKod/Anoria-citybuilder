@@ -1,3 +1,30 @@
+import { getDefaultTradePrice } from '../catalogs/ProductCatalog.js';
+
+/**
+ * @param {object|null} partner
+ * @param {string} productId
+ * @param {'import'|'export'} operation City perspective
+ */
+export function getPartnerTradePrice(partner, productId, operation) {
+  if (!partner) {
+    return getDefaultTradePrice(productId, operation);
+  }
+
+  if (operation === 'export') {
+    const trade = partner.imports.find((imp) => imp.productId === productId);
+    if (trade?.pricePerUnit != null) {
+      return trade.pricePerUnit;
+    }
+  } else if (operation === 'import') {
+    const trade = partner.exports.find((exp) => exp.productId === productId);
+    if (trade?.pricePerUnit != null) {
+      return trade.pricePerUnit;
+    }
+  }
+
+  return getDefaultTradePrice(productId, operation);
+}
+
 /**
  * @param {object} params
  * @param {object|null} params.partner
@@ -18,7 +45,7 @@ export function canTradeWithPartner({ partner, productId, operation, currentMont
     if (!trade.months.includes(currentMonthIndex)) {
       return false;
     }
-    if (trade.currentOccurrences >= trade.maxOccurrences) {
+    if ((trade.currentYearly || 0) >= trade.maxOccurrences) {
       return false;
     }
     return true;
@@ -32,7 +59,7 @@ export function canTradeWithPartner({ partner, productId, operation, currentMont
     if (!trade.months.includes(currentMonthIndex)) {
       return false;
     }
-    if (trade.currentOccurrences >= trade.maxOccurrences) {
+    if ((trade.currentYearly || 0) >= trade.maxOccurrences) {
       return false;
     }
     return true;
@@ -56,8 +83,9 @@ export function getPartnerTradeLimit(partner, productId, operation) {
     if (trade) {
       return {
         maxPerTurn: trade.maxPerTurn,
-        maxOccurrences: trade.maxOccurrences,
-        currentOccurrences: trade.currentOccurrences || 0,
+        yearlyQuota: trade.maxOccurrences,
+        currentYearly: trade.currentYearly || 0,
+        pricePerUnit: getPartnerTradePrice(partner, productId, 'export'),
       };
     }
   } else if (operation === 'import') {
@@ -65,8 +93,9 @@ export function getPartnerTradeLimit(partner, productId, operation) {
     if (trade) {
       return {
         maxPerTurn: 1,
-        maxOccurrences: trade.maxOccurrences,
-        currentOccurrences: trade.currentOccurrences || 0,
+        yearlyQuota: trade.maxOccurrences,
+        currentYearly: trade.currentYearly || 0,
+        pricePerUnit: getPartnerTradePrice(partner, productId, 'import'),
       };
     }
   }

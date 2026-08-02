@@ -2,7 +2,7 @@ import {
   createDefaultPartners,
   migrateStoredPartners,
 } from '../../domain/catalogs/PartnerCatalog.js';
-import { createDefaultProductConfig } from '../../domain/catalogs/ProductConfigCatalog.js';
+import { createDefaultProductConfig, normalizeStoredProductConfig } from '../../domain/catalogs/ProductConfigCatalog.js';
 
 /**
  * localStorage adapter — commerce config, stats, partners.
@@ -42,7 +42,9 @@ export class LocalStorageCommerceRepository {
   loadOrSeedConfig() {
     const existing = this.loadConfig();
     if (existing) {
-      return existing;
+      const normalized = normalizeStoredProductConfig(existing);
+      this.saveConfig(normalized);
+      return normalized;
     }
     const defaults = createDefaultProductConfig();
     this.saveConfig(defaults);

@@ -1,9 +1,7 @@
 import {
-  isContractFinished as isPartnerContractFinished,
-} from '../../domain/policies/PartnerContractPolicy.js';
-import {
   canTradeWithPartner as canTradeWithPartnerPolicy,
   getPartnerTradeLimit as getPartnerTradeLimitPolicy,
+  getPartnerTradePrice,
 } from '../../domain/policies/PartnerTradePolicy.js';
 import {
   canImportProduct as canImportProductPolicy,
@@ -12,6 +10,7 @@ import {
 import {
   isStockableProduct,
   getProductStockKey,
+  getDefaultTradePrice,
 } from '../../domain/catalogs/ProductCatalog.js';
 import { WindmillStockOperations } from './WindmillStockOperations.js';
 import { ProcessProductImport } from '../commands/ProcessProductImport.js';
@@ -30,7 +29,6 @@ export class CommerceSimulationService {
      * @param {() => Promise<Array>} deps.listWindmillSupplyViews
      * @param {(time: number) => object} deps.getTimeInfo
      * @param {(row: object) => string} deps.instanceIdFromHouseRow
-     * @param {((payload: object) => void)|null} [deps.onPartnerContractFinished]
      */
     constructor(deps) {
         this.commerceRepository = deps.commerceRepository;
@@ -42,7 +40,6 @@ export class CommerceSimulationService {
         this.listWindmillSupplyViews = deps.listWindmillSupplyViews;
         this.getTimeInfo = deps.getTimeInfo;
         this.instanceIdFromHouseRow = deps.instanceIdFromHouseRow;
-        this.onPartnerContractFinished = deps.onPartnerContractFinished ?? null;
         this.yearlyImports = {};
         this.yearlyExports = {};
         this.lastProcessedYear = -1;
@@ -85,48 +82,6 @@ export class CommerceSimulationService {
         });
     }
 
-    isContractFinished(partner) {
-        return isPartnerContractFinished(partner);
-    }
-
-    checkAndDeactivateFinishedContract(partnerId) {
-        const partner = this.getPartner(partnerId);
-        if (!partner || !partner.isActive) return false;
-
-        if (this.isContractFinished(partner)) {
-            const partnerName = partner.name || partnerId;
-
-            const finishedProducts = [];
-            partner.imports.forEach(imp => {
-                if ((imp.currentOccurrences || 0) >= imp.maxOccurrences) {
-                    finishedProducts.push(`${imp.productName || imp.productId} (export)`);
-                }
-            });
-            partner.exports.forEach(exp => {
-                if ((exp.currentOccurrences || 0) >= exp.maxOccurrences) {
-                    finishedProducts.push(`${exp.productName || exp.productId} (import)`);
-                }
-            });
-
-            partner.isActive = false;
-            this.commerceRepository.savePartners(this.partnersData);
-
-            if (this.onPartnerContractFinished) {
-                setTimeout(() => {
-                    this.onPartnerContractFinished({
-                        partnerId,
-                        partnerName,
-                        finishedProducts,
-                    });
-                }, 100);
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
     updatePartnerTrade(partnerId, productId, operation) {
         const partner = this.getPartner(partnerId);
         if (!partner) return false;
@@ -134,19 +89,15 @@ export class CommerceSimulationService {
         if (operation === 'export') {
             const trade = partner.imports.find(imp => imp.productId === productId);
             if (trade) {
-                trade.currentOccurrences = (trade.currentOccurrences || 0) + 1;
                 trade.currentYearly = (trade.currentYearly || 0) + 1;
                 this.commerceRepository.savePartners(this.partnersData);
-                this.checkAndDeactivateFinishedContract(partnerId);
                 return true;
             }
         } else if (operation === 'import') {
             const trade = partner.exports.find(exp => exp.productId === productId);
             if (trade) {
-                trade.currentOccurrences = (trade.currentOccurrences || 0) + 1;
                 trade.currentYearly = (trade.currentYearly || 0) + 1;
                 this.commerceRepository.savePartners(this.partnersData);
-                this.checkAndDeactivateFinishedContract(partnerId);
                 return true;
             }
         }
@@ -156,6 +107,11 @@ export class CommerceSimulationService {
 
     getPartnerTradeLimit(partnerId, productId, operation) {
         return getPartnerTradeLimitPolicy(this.getPartner(partnerId), productId, operation);
+    }
+
+    getPartnerTradePrice(partnerId, productId, operation) {
+        return getPartnerTradePrice(this.getPartner(partnerId), productId, operation)
+            ?? getDefaultTradePrice(productId, operation);
     }
 
     getProductConfig(productId) {

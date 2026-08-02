@@ -1,61 +1,76 @@
-/** @param {object} partner */
-export function hasActiveContract(partner) {
-  const hasActiveImports = partner.imports.some(
-    (imp) => (imp.currentOccurrences || 0) < imp.maxOccurrences
-  );
-  const hasActiveExports = partner.exports.some(
-    (exp) => (exp.currentOccurrences || 0) < exp.maxOccurrences
-  );
-  return hasActiveImports || hasActiveExports;
+/** @param {object} tradeLine */
+function isTradeLineQuotaExhausted(tradeLine) {
+  return (tradeLine.currentYearly || 0) >= tradeLine.maxOccurrences;
 }
 
 /** @param {object} partner */
-export function isContractFinished(partner) {
-  if (!partner || !partner.isActive) {
+export function hasRemainingYearlyQuota(partner) {
+  const hasImportQuota = partner.imports.some(
+    (imp) => !isTradeLineQuotaExhausted(imp)
+  );
+  const hasExportQuota = partner.exports.some(
+    (exp) => !isTradeLineQuotaExhausted(exp)
+  );
+  return hasImportQuota || hasExportQuota;
+}
+
+/** @param {object} partner */
+export function isYearlyQuotaExhausted(partner) {
+  if (!partner?.isActive) {
     return false;
   }
 
-  const hasImports = partner.imports && partner.imports.length > 0;
-  const hasExports = partner.exports && partner.exports.length > 0;
+  const hasImports = partner.imports?.length > 0;
+  const hasExports = partner.exports?.length > 0;
 
   if (!hasImports && !hasExports) {
     return false;
   }
 
-  const allImportsFinished = hasImports
-    ? partner.imports.every((imp) => (imp.currentOccurrences || 0) >= imp.maxOccurrences)
+  const allImportsExhausted = hasImports
+    ? partner.imports.every(isTradeLineQuotaExhausted)
     : true;
 
-  const allExportsFinished = hasExports
-    ? partner.exports.every((exp) => (exp.currentOccurrences || 0) >= exp.maxOccurrences)
+  const allExportsExhausted = hasExports
+    ? partner.exports.every(isTradeLineQuotaExhausted)
     : true;
 
-  return allImportsFinished && allExportsFinished;
+  return allImportsExhausted && allExportsExhausted;
 }
 
+/** @deprecated Use hasRemainingYearlyQuota — kept for commerceOps exports */
+export const hasActiveContract = hasRemainingYearlyQuota;
+
+/** @deprecated Use isYearlyQuotaExhausted */
+export const isContractFinished = isYearlyQuotaExhausted;
+
 /** @param {object} partner */
-export function getContractStatus(partner) {
-  const finishedImports = partner.imports
-    .filter((imp) => (imp.currentOccurrences || 0) >= imp.maxOccurrences)
+export function getPartnerQuotaStatus(partner) {
+  const exhaustedImports = partner.imports
+    .filter(isTradeLineQuotaExhausted)
     .map((imp) => ({
       productId: imp.productId,
       productName: imp.productName,
-      currentOccurrences: imp.currentOccurrences || 0,
-      maxOccurrences: imp.maxOccurrences,
+      currentYearly: imp.currentYearly || 0,
+      yearlyQuota: imp.maxOccurrences,
     }));
 
-  const finishedExports = partner.exports
-    .filter((exp) => (exp.currentOccurrences || 0) >= exp.maxOccurrences)
+  const exhaustedExports = partner.exports
+    .filter(isTradeLineQuotaExhausted)
     .map((exp) => ({
       productId: exp.productId,
       productName: exp.productName,
-      currentOccurrences: exp.currentOccurrences || 0,
-      maxOccurrences: exp.maxOccurrences,
+      currentYearly: exp.currentYearly || 0,
+      yearlyQuota: exp.maxOccurrences,
     }));
 
   return {
-    finishedImports,
-    finishedExports,
-    hasActiveContract: hasActiveContract(partner),
+    exhaustedImports,
+    exhaustedExports,
+    hasRemainingYearlyQuota: hasRemainingYearlyQuota(partner),
+    isYearlyQuotaExhausted: isYearlyQuotaExhausted(partner),
   };
 }
+
+/** @deprecated Use getPartnerQuotaStatus */
+export const getContractStatus = getPartnerQuotaStatus;
