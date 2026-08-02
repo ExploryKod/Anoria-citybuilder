@@ -3,8 +3,8 @@ import {
   canFactoryTransformResource,
 } from '../../../domain/manufacturing/FactorySupplyFlowPolicy.js';
 import {
-  getFactoryLineAllocation,
-  manufacturingEligibleStock,
+  getManufacturingEligibleStock,
+  computeFactoryLineProductionMax,
 } from '../../../domain/manufacturing/FactoryLineAllocationPolicy.js';
 
 const TRANSFORM_STEPS = [
@@ -112,8 +112,13 @@ export class TransformFactoryMaterials {
     let previousStock = factoryData[step.previousStockKey] || 0;
     if (previousStock <= 0) return;
 
-    const allocation = getFactoryLineAllocation(factoryData, step.workerKey);
-    previousStock = manufacturingEligibleStock(previousStock, allocation);
+    const productionMax = computeFactoryLineProductionMax(factoryData, step.workerKey);
+    previousStock = getManufacturingEligibleStock(
+      factoryData,
+      step.workerKey,
+      previousStock,
+      productionMax
+    );
     if (previousStock <= 0) return;
 
     const rawMaterials = factoryData.rawMaterials || {};
