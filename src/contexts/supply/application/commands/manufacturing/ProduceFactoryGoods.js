@@ -1,14 +1,10 @@
-import {
-  PRODUCT_RECIPES,
-  PRODUCT_PRODUCTION_TURNS,
-  PRODUCTS_WITH_TRANSFORMATION,
-} from '../../../domain/manufacturing/ProductRecipeCatalog.js';
+import { listFinishedFactoryCommodities, getFactoryCommodity } from '../../../domain/manufacturing/ProductRecipeCatalog.js';
 import {
   factoryMaxStorage,
   canProduceFromRecipe,
 } from '../../../domain/manufacturing/FactoryStoragePolicy.js';
 import { canFactoryProduceProduct } from '../../../domain/manufacturing/FactorySupplyFlowPolicy.js';
-import { isFactoryLineDestinationEnabled, getFactoryLineMaxCap, computeFactoryLineProductionMax } from '../../../domain/manufacturing/FactoryLineAllocationPolicy.js';
+import { isFactoryCommodityProductionEnabled } from '../../../domain/manufacturing/FactoryCommodityProductionPolicy.js';
 
 /**
  * Command: produce finished goods from refined materials at a factory.
@@ -52,11 +48,15 @@ export class ProduceFactoryGoods {
       refinedIron,
     };
 
-    for (const [productType, recipe] of Object.entries(PRODUCT_RECIPES)) {
+    for (const commodity of listFinishedFactoryCommodities()) {
+      const productType = commodity.id;
+      const recipe = commodity.recipe;
+      if (!recipe) continue;
+
       if (!canFactoryProduceProduct(factoryData, productType)) {
         continue;
       }
-      if (!isFactoryLineDestinationEnabled(factoryData, productType, 'manufacturing')) {
+      if (!isFactoryCommodityProductionEnabled(factoryData, productType)) {
         continue;
       }
 
@@ -69,12 +69,12 @@ export class ProduceFactoryGoods {
         continue;
       }
 
-      const productionTurns = PRODUCT_PRODUCTION_TURNS[productType] || 1;
+      const productionTurns = commodity.productionTurns ?? 1;
       let turnsSinceProduction;
 
       if (
         lastTransformTurn !== null &&
-        PRODUCTS_WITH_TRANSFORMATION.includes(productType)
+        commodity.hasTransformation
       ) {
         turnsSinceProduction = time - lastTransformTurn;
       } else {
@@ -97,18 +97,10 @@ export class ProduceFactoryGoods {
       const effectiveMaxStorage = Math.floor(
         baseMaxStorage * (productionPercentage / 100)
       );
-      const productionMax = computeFactoryLineProductionMax(factoryData, productType);
-      const manufacturingCap = getFactoryLineMaxCap(
-        factoryData,
-        productType,
-        'manufacturing',
-        productionMax
-      );
       const currentStock = currentProducts[productType] || 0;
       const remainingCapacity = Math.max(0, effectiveMaxStorage - currentStock);
-      const cappedCapacity = Math.min(remainingCapacity, manufacturingCap);
 
-      if (cappedCapacity <= 0) continue;
+      if (remainingCapacity <= 0) continue;
       if (!canProduceFromRecipe(recipe, availableMaterials)) continue;
 
       const quantityToProduce = this.#computeQuantityToProduce({
@@ -118,7 +110,7 @@ export class ProduceFactoryGoods {
         refinedGold,
         refinedClay,
         refinedIron,
-        remainingCapacity: cappedCapacity,
+        remainingCapacity,
       });
 
       if (quantityToProduce <= 0) continue;
@@ -147,7 +139,7 @@ export class ProduceFactoryGoods {
       });
 
       if (
-        PRODUCTS_WITH_TRANSFORMATION.includes(productType) &&
+        getFactoryCommodity(productType)?.hasTransformation &&
         quantityToProduce > 0
       ) {
         await this.#journalProduction({
@@ -315,7 +307,7 @@ export class ProduceFactoryGoods {
 
       let productionTurns = null;
       if (lastTransformTurn !== null && lastTransformTurn !== undefined) {
-        const productionTurnsCount = PRODUCT_PRODUCTION_TURNS[productType] || 1;
+        const productionTurnsCount = getFactoryCommodity(productType)?.productionTurns ?? 1;
         productionTurns = [];
         for (let i = 1; i <= productionTurnsCount; i++) {
           productionTurns.push(lastTransformTurn + i);

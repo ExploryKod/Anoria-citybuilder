@@ -10,12 +10,7 @@ import {
   isCommerceFactory,
 } from '../../../../src/contexts/supply/domain/manufacturing/FactorySupplyFlowPolicy.js';
 import {
-  normalizeLineAllocation,
-  getFactoryLineAllocation,
-  manufacturingEligibleStock,
-  directOutputReservedStock,
   isFactoryLineDestinationEnabled,
-  getEffectiveFactoryLineAllocation,
   getDirectSaleStockAmount,
   getManufacturingEligibleStock,
   factoryLineDestinationKey,
@@ -55,38 +50,7 @@ describe('FactorySupplyFlowPolicy', () => {
 });
 
 describe('FactoryLineAllocationPolicy', () => {
-  test('normalizeLineAllocation rescales to 100%', () => {
-    expect(normalizeLineAllocation({ direct: 30, manufacturing: 30 })).toEqual({
-      direct: 50,
-      manufacturing: 50,
-    });
-  });
-
-  test('commerce factory defaults wood to 100% direct export', () => {
-    expect(getFactoryLineAllocation({ supplyFlow: SUPPLY_FLOW.COMMERCE }, 'wood')).toEqual({
-      direct: 100,
-      manufacturing: 0,
-    });
-  });
-
-  test('manufacturingEligibleStock respects allocation percentage', () => {
-    const allocation = { direct: 60, manufacturing: 40 };
-    expect(manufacturingEligibleStock(10, allocation)).toBe(4);
-    expect(directOutputReservedStock(10, allocation)).toBe(6);
-  });
-
-  test('factory lineAllocations override defaults', () => {
-    const factory = {
-      supplyFlow: SUPPLY_FLOW.COMMERCE,
-      lineAllocations: { wood: { direct: 25, manufacturing: 75 } },
-    };
-    expect(getFactoryLineAllocation(factory, 'wood')).toEqual({
-      direct: 25,
-      manufacturing: 75,
-    });
-  });
-
-  test('line max cap at zero disables destination (replaces lineEnabled toggle)', () => {
+  test('line max cap at zero disables destination', () => {
     const factory = {
       supplyFlow: SUPPLY_FLOW.COMMERCE,
       productWorkerDistribution: { wood: 2 },
@@ -97,10 +61,6 @@ describe('FactoryLineAllocationPolicy', () => {
     };
     expect(isFactoryLineDestinationEnabled(factory, 'wood', 'direct')).toBe(false);
     expect(isFactoryLineDestinationEnabled(factory, 'wood', 'manufacturing')).toBe(true);
-    expect(getEffectiveFactoryLineAllocation(factory, 'wood')).toEqual({
-      direct: 0,
-      manufacturing: 100,
-    });
   });
 
   test('getDirectSaleStockAmount returns 0 when direct max is zero', () => {

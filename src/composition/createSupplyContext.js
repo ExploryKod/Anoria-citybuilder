@@ -35,6 +35,9 @@ import { ListSupplyStockSnapshots } from '../contexts/supply/application/queries
 import { BarnStockOperations } from '../contexts/supply/application/services/BarnStockOperations.js';
 import { TransferFactoryToBarn } from '../contexts/supply/application/commands/commerce/TransferFactoryToBarn.js';
 import { RunMonthlyCommerceSupplyCycle } from '../contexts/supply/application/workflows/RunMonthlyCommerceSupplyCycle.js';
+import { UpdateFactoryWorkerDemandFromCaps } from '../contexts/supply/application/commands/manufacturing/UpdateFactoryWorkerDemandFromCaps.js';
+import { AllocateFactoryWorkersToCommodityLines } from '../contexts/supply/application/commands/manufacturing/AllocateFactoryWorkersToCommodityLines.js';
+import { GetFactoryWorkerPlanView } from '../contexts/supply/application/queries/GetFactoryWorkerPlanView.js';
 
 /**
  * Composition root — Supply bounded context.
@@ -177,6 +180,13 @@ export function createSupplyContext({
   const runMonthlyCommerceSupplyCycle = new RunMonthlyCommerceSupplyCycle(
     transferFactoryToBarn
   );
+  const updateFactoryWorkerDemandFromCaps = new UpdateFactoryWorkerDemandFromCaps(
+    factoryBuildingRepositoryImpl
+  );
+  const allocateFactoryWorkersToCommodityLines = new AllocateFactoryWorkersToCommodityLines(
+    factoryBuildingRepositoryImpl
+  );
+  const getFactoryWorkerPlanView = new GetFactoryWorkerPlanView();
 
   return {
     supplyBuildingRepository: supplyBuildingRepositoryImpl,
@@ -212,6 +222,9 @@ export function createSupplyContext({
     barnStockOperations,
     transferFactoryToBarn,
     runMonthlyCommerceSupplyCycle,
+    updateFactoryWorkerDemandFromCaps,
+    allocateFactoryWorkersToCommodityLines,
+    getFactoryWorkerPlanView,
 
     async buyFromNearbyFarms(marketId, farmRefs, season) {
       return marketBuysFromNearbyFarms.execute({ marketId, farmRefs, season });
@@ -301,6 +314,18 @@ export function createSupplyContext({
 
     async runMonthlyCommerceSupplyCycle({ monthIndex, time = 0 }) {
       return runMonthlyCommerceSupplyCycle.execute({ monthIndex, time });
+    },
+
+    async syncFactoryWorkerDemandFromCaps() {
+      return updateFactoryWorkerDemandFromCaps.execute();
+    },
+
+    async allocateFactoryWorkersToCommodityLines() {
+      return allocateFactoryWorkersToCommodityLines.execute();
+    },
+
+    getFactoryWorkerPlanView(factory, options = {}) {
+      return getFactoryWorkerPlanView.execute({ factory, ...options });
     },
 
     async getCommerceHubStocks() {

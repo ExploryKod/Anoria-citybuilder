@@ -1,31 +1,24 @@
-import { getBuildingSupplyFlow, SUPPLY_FLOW } from './SupplyFlow.js';
-import { getFactoryMaxStorage } from './ProductRecipeCatalog.js';
+import { getFactoryMaxStorage, getFactoryCommodity } from './ProductRecipeCatalog.js';
+import { isFactoryCommodityProductionEnabled } from './FactoryCommodityProductionPolicy.js';
 import { workerProductionPercentage } from './FactoryStoragePolicy.js';
-
-/**
- * Split of a raw-material line between direct output (export / city distribution)
- * and the manufacturing pipeline (transform → finished goods).
- *
- * @typedef {{ direct: number, manufacturing: number }} LineAllocation
- */
-
-/** Default % targets when no player config (commerce wood → barn as raw wood). */
-export const DEFAULT_LINE_ALLOCATIONS_BY_FLOW = Object.freeze({
-  [SUPPLY_FLOW.COMMERCE]: Object.freeze({
-    wood: Object.freeze({ direct: 100, manufacturing: 0 }),
-    furniture: Object.freeze({ direct: 100, manufacturing: 0 }),
-  }),
-  [SUPPLY_FLOW.CITY]: Object.freeze({
-    wood: Object.freeze({ direct: 0, manufacturing: 100 }),
-    furniture: Object.freeze({ direct: 0, manufacturing: 100 }),
-  }),
-});
 
 /** UI / gameplay destinations for each factory line. */
 export const FACTORY_LINE_DESTINATIONS = Object.freeze([
   Object.freeze({ id: 'direct', label: 'vente directe' }),
   Object.freeze({ id: 'manufacturing', label: 'pour fabrication' }),
 ]);
+
+/**
+ * Destination lines available for a commodity (finished → direct sale only).
+ *
+ * @param {string} commodityId
+ */
+export function getFactoryLineDestinationsForCommodity(commodityId) {
+  const allowed = getFactoryCommodity(commodityId)?.lineDestinations ?? [];
+  return FACTORY_LINE_DESTINATIONS.filter((destination) =>
+    allowed.includes(destination.id)
+  );
+}
 
 /**
  * @param {string} productId
@@ -118,6 +111,15 @@ export function getFactoryLineMaxCapsPair(factory, productId, productionMax) {
   const directConfigured = caps[directKey];
   const manufacturingConfigured = caps[manufacturingKey];
 
+  const commodity = getFactoryCommodity(productId);
+  if (!commodity?.lineDestinations.includes('manufacturing')) {
+    const direct =
+      directConfigured !== undefined
+        ? normalizeFactoryLineMaxCap(directConfigured, ceiling)
+        : ceiling;
+    return { direct, manufacturing: 0 };
+  }
+
   if (directConfigured !== undefined && manufacturingConfigured !== undefined) {
     const direct = normalizeFactoryLineMaxCap(directConfigured, ceiling);
     const manufacturing = normalizeFactoryLineMaxCap(manufacturingConfigured, ceiling);
@@ -165,6 +167,13 @@ export function rebalanceFactoryLineMaxCaps(
   const directKey = factoryLineDestinationKey(productId, 'direct');
   const manufacturingKey = factoryLineDestinationKey(productId, 'manufacturing');
 
+  if (!getFactoryCommodity(productId)?.lineDestinations.includes('manufacturing')) {
+    return {
+      [directKey]: normalized,
+      [manufacturingKey]: 0,
+    };
+  }
+
   if (editedDestination === 'direct') {
     return {
       [directKey]: normalized,
@@ -204,41 +213,20 @@ export function getFactoryLineMaxCapDisplayValue(
  * @param {'direct'|'manufacturing'} destination
  */
 export function isFactoryLineDestinationEnabled(factory, productId, destination) {
+  if (!isFactoryCommodityProductionEnabled(factory, productId)) {
+    return false;
+  }
+  if (
+    destination === 'manufacturing' &&
+    !getFactoryCommodity(productId)?.lineDestinations.includes('manufacturing')
+  ) {
+    return false;
+  }
   const workerMax = computeFactoryLineProductionMax(factory, productId);
   const ceiling = lineMaxCeiling(workerMax, productId);
   const pair = getFactoryLineMaxCapsPair(factory, productId, ceiling);
   const cap = destination === 'direct' ? pair.direct : pair.manufacturing;
   return cap > 0;
-}
-
-/**
- * Allocation derived from player max caps (vase communicant).
- *
- * @param {object|null|undefined} factory
- * @param {string} resourceType
- */
-export function getEffectiveFactoryLineAllocation(factory, resourceType) {
-  const workerMax = computeFactoryLineProductionMax(factory, resourceType);
-  const productionMax = lineMaxCeiling(workerMax, resourceType);
-  if (productionMax <= 0) {
-    return { direct: 0, manufacturing: 0 };
-  }
-
-  const pair = getFactoryLineMaxCapsPair(factory, resourceType, productionMax);
-  if (pair.direct <= 0 && pair.manufacturing <= 0) {
-    return { direct: 0, manufacturing: 0 };
-  }
-  if (pair.direct > 0 && pair.manufacturing <= 0) {
-    return { direct: 100, manufacturing: 0 };
-  }
-  if (pair.direct <= 0 && pair.manufacturing > 0) {
-    return { direct: 0, manufacturing: 100 };
-  }
-
-  return normalizeLineAllocation({
-    direct: (pair.direct / productionMax) * 100,
-    manufacturing: (pair.manufacturing / productionMax) * 100,
-  });
 }
 
 /**
@@ -319,67 +307,4 @@ export function getManufacturingEligibleStock(
   const pair = getFactoryLineMaxCapsPair(factory, productId, ceiling);
   const stock = Math.max(0, Math.floor(Number(collectedStock) || 0));
   return Math.min(stock, pair.manufacturing);
-}
-
-/**
- * @param {LineAllocation|undefined|null} allocation
- * @returns {LineAllocation}
- */
-export function normalizeLineAllocation(allocation) {
-  const direct = Math.max(0, Math.min(100, Number(allocation?.direct) || 0));
-  const manufacturing = Math.max(0, Math.min(100, Number(allocation?.manufacturing) || 0));
-  const total = direct + manufacturing;
-
-  if (total === 0) {
-    return { direct: 100, manufacturing: 0 };
-  }
-  if (total === 100) {
-    return { direct, manufacturing };
-  }
-
-  return {
-    direct: Math.round((direct / total) * 100),
-    manufacturing: Math.round((manufacturing / total) * 100),
-  };
-}
-
-/**
- * @param {object|null|undefined} factory
- * @param {string} resourceType
- * @returns {LineAllocation}
- */
-export function getFactoryLineAllocation(factory, resourceType) {
-  const flow = getBuildingSupplyFlow(factory);
-  const configured = factory?.lineAllocations?.[resourceType];
-  if (configured) {
-    return normalizeLineAllocation(configured);
-  }
-  const defaults = DEFAULT_LINE_ALLOCATIONS_BY_FLOW[flow]?.[resourceType];
-  return normalizeLineAllocation(defaults);
-}
-
-/**
- * Caps transform input: only the manufacturing share of collected stock is eligible.
- *
- * @param {number} collectedStock — stock snapshot used for this transform cycle
- * @param {LineAllocation} allocation
- */
-export function manufacturingEligibleStock(collectedStock, allocation) {
-  const stock = Math.max(0, collectedStock);
-  const { manufacturing } = normalizeLineAllocation(allocation);
-  if (manufacturing <= 0) return 0;
-  return Math.floor(stock * (manufacturing / 100));
-}
-
-/**
- * Stock reserved for direct output (barn transfer or city distribution).
- *
- * @param {number} collectedStock
- * @param {LineAllocation} allocation
- */
-export function directOutputReservedStock(collectedStock, allocation) {
-  const stock = Math.max(0, collectedStock);
-  const { direct } = normalizeLineAllocation(allocation);
-  if (direct <= 0) return 0;
-  return Math.floor(stock * (direct / 100));
 }

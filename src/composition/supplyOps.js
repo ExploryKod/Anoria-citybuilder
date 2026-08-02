@@ -18,8 +18,6 @@ export {
   getFactoryMaxStorage,
   getFactoryWorkerNeed,
   getFactoryEmployeeRoleType,
-  FACTORY_MAX_STORAGE,
-  FACTORY_EMPLOYEE_NEEDS,
 } from '../contexts/supply/domain/manufacturing/ProductRecipeCatalog.js';
 
 export { DEFAULT_FOOD_DISTRIBUTION_DISTANCE };

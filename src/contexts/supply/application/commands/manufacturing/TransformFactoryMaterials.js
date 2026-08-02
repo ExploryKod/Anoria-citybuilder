@@ -2,6 +2,7 @@ import { computeTransformAmount } from '../../../domain/manufacturing/FactoryTra
 import {
   canFactoryTransformResource,
 } from '../../../domain/manufacturing/FactorySupplyFlowPolicy.js';
+import { isFactoryCommodityProductionEnabled } from '../../../domain/manufacturing/FactoryCommodityProductionPolicy.js';
 import {
   getManufacturingEligibleStock,
   computeFactoryLineProductionMax,
@@ -108,6 +109,7 @@ export class TransformFactoryMaterials {
     const allocatedWorkers = productWorkerDistribution[step.workerKey] || 0;
     if (allocatedWorkers <= 0) return;
     if (!canFactoryTransformResource(factoryData, step.workerKey)) return;
+    if (!isFactoryCommodityProductionEnabled(factoryData, step.workerKey)) return;
 
     let previousStock = factoryData[step.previousStockKey] || 0;
     if (previousStock <= 0) return;
