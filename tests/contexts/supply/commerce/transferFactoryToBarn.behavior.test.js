@@ -117,6 +117,28 @@ describe('TransferFactoryToBarn', () => {
     expect((await supplyRepo.findRowById(barnId)).commerceStocks.wood).toBe(0);
   });
 
+  test('respects line max cap on direct transfer', async () => {
+    factoryRepo.factories.set(factoryId, {
+      id: factoryId,
+      type: 'Winery-001',
+      supplyFlow: SUPPLY_FLOW.COMMERCE,
+      roads: 1,
+      isActive: true,
+      productWorkerDistribution: { wood: 2, furniture: 2 },
+      rawMaterials: { wood: 12 },
+      products: { furniture: 2 },
+      lineMaxCaps: {
+        'wood:direct': 5,
+        'furniture:direct': 1,
+      },
+    });
+
+    const outcome = await command.execute({ time: 0 });
+
+    expect(outcome.transferred.find((t) => t.productId === 'wood')?.quantity).toBe(5);
+    expect(outcome.transferred.find((t) => t.productId === 'furniture')?.quantity).toBe(1);
+  });
+
   test('respects worker-based barn capacity', async () => {
     const row = supplyRepo.rows.get(barnId);
     row.employees = { worker: 1 };

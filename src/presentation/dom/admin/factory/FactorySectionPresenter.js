@@ -13,7 +13,13 @@ import {
     getSupplyFlowLabel,
 } from '../../../../contexts/supply/domain/manufacturing/FactorySupplyFlowPolicy.js';
 import {
-    getFactoryLineAllocation,
+    FACTORY_LINE_DESTINATIONS,
+    factoryLineDestinationKey,
+    isFactoryLineDestinationEnabled,
+    getFactoryLineMaxCapDisplayValue,
+    getFactoryLineMaxCapsPair,
+    rebalanceFactoryLineMaxCaps,
+    stockForDestinationCap,
 } from '../../../../contexts/supply/domain/manufacturing/FactoryLineAllocationPolicy.js';
 
 function factoryInstanceId(factory) {
@@ -22,6 +28,81 @@ function factoryInstanceId(factory) {
 
 function factoryDisplayLabel(factory) {
     return displayLabelFromHouseRow(factory);
+}
+
+function computeDestinationLineRealized(factoryData, productId, destination, currentStock, productionMax) {
+    if (!isFactoryLineDestinationEnabled(factoryData, productId, destination)) {
+        return 0;
+    }
+    const ceiling = Math.max(0, Math.floor(Number(productionMax) || 0));
+    const pair = getFactoryLineMaxCapsPair(factoryData, productId, ceiling);
+    const stock = Math.max(0, Math.floor(Number(currentStock) || 0));
+    if (destination === 'direct') {
+        return stockForDestinationCap(stock, pair.direct, pair.manufacturing);
+    }
+    return stockForDestinationCap(stock, pair.manufacturing, pair.direct);
+}
+
+function renderFactoryDestinationRows(
+    factoryData,
+    productId,
+    commodityName,
+    factoryId,
+    productionMax,
+    currentStock
+) {
+    const ceiling = Math.max(0, Math.floor(Number(productionMax) || 0));
+    const capsPair = getFactoryLineMaxCapsPair(factoryData, productId, ceiling);
+
+    return FACTORY_LINE_DESTINATIONS.map(({ id, label }) => {
+        const maxValue = id === 'direct' ? capsPair.direct : capsPair.manufacturing;
+        const realized = computeDestinationLineRealized(
+            factoryData,
+            productId,
+            id,
+            currentStock,
+            ceiling
+        );
+        const maxDisabled = ceiling <= 0;
+
+        return `
+            <div class="factory-stock-item factory-destination-row">
+                <div class="factory-stock-item-row factory-commodity-row-grid factory-destination-row-layout">
+                    <span class="factory-destination-title">${commodityName} (${label})</span>
+                    <input
+                        type="number"
+                        min="0"
+                        max="${ceiling}"
+                        class="factory-line-max-input"
+                        data-factory="${factoryId}"
+                        data-product="${productId}"
+                        data-destination="${id}"
+                        data-production-max="${ceiling}"
+                        value="${maxValue}"
+                        ${maxDisabled ? 'disabled' : ''}
+                    />
+                    <span class="factory-commodity-row-flex" aria-hidden="true"></span>
+                    <button
+                        type="button"
+                        class="factory-line-max-save-btn"
+                        data-factory="${factoryId}"
+                        data-product="${productId}"
+                        data-destination="${id}"
+                        data-production-max="${ceiling}"
+                        title="Enregistrer"
+                        aria-label="Enregistrer"
+                        ${maxDisabled ? 'disabled' : ''}
+                    >💾</button>
+                    <span class="factory-commodity-row-gap" aria-hidden="true"></span>
+                    <span class="factory-stock-value factory-destination-stock">
+                        <span class="factory-line-realized">${realized}</span>
+                        <span class="factory-line-separator">/</span>
+                        <span class="factory-line-max-display">${maxValue}</span>
+                    </span>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 async function loadFactoryJournalEntries(supply, factoryData) {
@@ -373,7 +454,6 @@ export class FactorySectionPresenter {
         // Pourcentages de production par produit (stockés dans IndexedDB)
         const productProductionPercentages = factoryData.productProductionPercentages || {};
         const supplyFlow = getBuildingSupplyFlow(factoryData);
-        const woodAllocation = getFactoryLineAllocation(factoryData, 'wood');
         // Stock de matériaux raffinés
         const logs = factoryData.logs || 0;
         const refinedGold = factoryData.refinedGold || 0;
@@ -591,35 +671,6 @@ export class FactorySectionPresenter {
                         <option value="${SUPPLY_FLOW.COMMERCE}" ${supplyFlow === SUPPLY_FLOW.COMMERCE ? 'selected' : ''}>Commerce (grange / export)</option>
                     </select>
                 </div>
-                ${supplyFlow === SUPPLY_FLOW.COMMERCE ? `
-                <div class="factory-line-allocation" data-resource="wood">
-                    <span class="factory-line-allocation-title">Répartition bois collecté</span>
-                    <label>
-                        Vente directe (grange)
-                        <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            class="factory-allocation-input"
-                            data-factory="${factoryInstanceId(factoryData)}"
-                            data-allocation="direct"
-                            value="${woodAllocation.direct}"
-                        />%
-                    </label>
-                    <label>
-                        Fabrication (bûches → meubles)
-                        <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            class="factory-allocation-input"
-                            data-factory="${factoryInstanceId(factoryData)}"
-                            data-allocation="manufacturing"
-                            value="${woodAllocation.manufacturing}"
-                        />%
-                    </label>
-                </div>
-                ` : ''}
             </div>
 
             <div class="factory-raw-materials">
@@ -640,10 +691,15 @@ export class FactorySectionPresenter {
                     const buttonOpacity = isDisabled ? '0.5' : '1';
                     
                     return `
-                    <div class="factory-stock-item">
-                        <div class="factory-stock-item-row">
+                    <div class="factory-commodity-group" data-product="${key}" data-current-stock="${rawMaterials[key] || 0}" data-production-max="${status.max}">
+                    <div class="factory-stock-item factory-commodity-summary">
+                        <div class="factory-stock-item-row factory-commodity-row-grid factory-commodity-head-row">
                             <label>${name}:</label>
-                            <span class="factory-stock-value">${rawMaterials[key] || 0} / ${status.max}</span>
+                            <span class="factory-commodity-head-input-slot" aria-hidden="true"></span>
+                            <span class="factory-commodity-row-flex" aria-hidden="true"></span>
+                            <span class="factory-commodity-head-save-slot" aria-hidden="true"></span>
+                            <span class="factory-commodity-row-gap" aria-hidden="true"></span>
+                            <span class="factory-stock-value factory-commodity-head-stock">${rawMaterials[key] || 0} / ${status.max}</span>
                         </div>
                         <div class="factory-production-status ${statusClass}">
                             ${statusText}
@@ -664,6 +720,15 @@ export class FactorySectionPresenter {
                                 Recruter
                             </button>
                         </div>
+                    </div>
+                    ${renderFactoryDestinationRows(
+                        factoryData,
+                        key,
+                        name,
+                        factoryInstanceId(factoryData),
+                        status.max,
+                        rawMaterials[key] || 0
+                    )}
                     </div>
                 `;
                 }).join('')}
@@ -758,10 +823,15 @@ export class FactorySectionPresenter {
                     }
                     
                     return `
-                    <div class="factory-stock-item">
-                        <div class="factory-stock-item-row">
+                    <div class="factory-commodity-group" data-product="${key}" data-current-stock="${products[key] || 0}" data-production-max="${status.max}">
+                    <div class="factory-stock-item factory-commodity-summary">
+                        <div class="factory-stock-item-row factory-commodity-row-grid factory-commodity-head-row">
                             <label>${name}:</label>
-                            <span class="factory-stock-value">${products[key] || 0} / ${status.max}</span>
+                            <span class="factory-commodity-head-input-slot" aria-hidden="true"></span>
+                            <span class="factory-commodity-row-flex" aria-hidden="true"></span>
+                            <span class="factory-commodity-head-save-slot" aria-hidden="true"></span>
+                            <span class="factory-commodity-row-gap" aria-hidden="true"></span>
+                            <span class="factory-stock-value factory-commodity-head-stock">${products[key] || 0} / ${status.max}</span>
                         </div>
                         <div class="factory-production-status ${statusClass}">
                             ${statusText}
@@ -783,6 +853,15 @@ export class FactorySectionPresenter {
                                 Recruter
                             </button>
                         </div>
+                    </div>
+                    ${renderFactoryDestinationRows(
+                        factoryData,
+                        key,
+                        name,
+                        factoryInstanceId(factoryData),
+                        status.max,
+                        products[key] || 0
+                    )}
                     </div>
                 `;
                 }).join('')}
@@ -848,10 +927,37 @@ export class FactorySectionPresenter {
             });
         }
 
-        const allocationInputs = card.querySelectorAll('.factory-allocation-input');
-        allocationInputs.forEach((input) => {
-            input.addEventListener('change', async () => {
-                await this.updateFactoryWoodAllocation(factoryId, card);
+        const maxInputs = card.querySelectorAll('.factory-line-max-input');
+        maxInputs.forEach((input) => {
+            input.addEventListener('input', (e) => {
+                this.syncCommunicatingLineMaxInputs(e.target, factory);
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    this.revertLineMaxInput(input, factory);
+                }
+            });
+        });
+
+        const maxSaveButtons = card.querySelectorAll('.factory-line-max-save-btn');
+        maxSaveButtons.forEach((saveButton) => {
+            saveButton.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+            });
+            saveButton.addEventListener('click', async () => {
+                const row = saveButton.closest('.factory-destination-row-layout');
+                const input = row?.querySelector('.factory-line-max-input');
+                if (!input) return;
+                const { product, destination, productionMax } = input.dataset;
+                await this.updateFactoryLineMaxCap(
+                    factoryId,
+                    product,
+                    destination,
+                    input.value,
+                    Number(productionMax) || 0,
+                    true
+                );
             });
         });
 
@@ -888,23 +994,100 @@ export class FactorySectionPresenter {
         }
     }
 
-    async updateFactoryWoodAllocation(factoryId, card) {
-        const directInput = card.querySelector('[data-allocation="direct"]');
-        const manufacturingInput = card.querySelector('[data-allocation="manufacturing"]');
-        if (!directInput || !manufacturingInput) return;
+    async revertLineMaxInput(input, factoryData) {
+        const productionMax = Number(input.dataset.productionMax) || 0;
+        const productId = input.dataset.product;
+        const destination = input.dataset.destination;
+        const factoryId = input.dataset.factory;
+        const freshFactory = factoryData || (await this.supply.getFactoryById(factoryId));
 
+        if (!freshFactory) return;
+
+        input.value = getFactoryLineMaxCapDisplayValue(
+            freshFactory,
+            productId,
+            destination,
+            productionMax
+        );
+        this.syncCommunicatingLineMaxInputs(input, freshFactory, true);
+    }
+
+    syncCommunicatingLineMaxInputs(changedInput, factoryData, updateRealized = true) {
+        const group = changedInput.closest('.factory-commodity-group');
+        if (!group) return;
+
+        const productionMax = Number(changedInput.dataset.productionMax) || 0;
+        const destination = changedInput.dataset.destination;
+        const productId = changedInput.dataset.product;
+        const currentStock = Number(group.dataset.currentStock) || 0;
+        const rebalanced = rebalanceFactoryLineMaxCaps(
+            productId,
+            destination,
+            changedInput.value,
+            productionMax
+        );
+
+        const directKey = factoryLineDestinationKey(productId, 'direct');
+        const manufacturingKey = factoryLineDestinationKey(productId, 'manufacturing');
+        const tempFactory = {
+            ...factoryData,
+            lineMaxCaps: {
+                ...(factoryData?.lineMaxCaps || {}),
+                ...rebalanced,
+            },
+        };
+
+        group.querySelectorAll('.factory-stock-item:not(.factory-commodity-summary)').forEach((row) => {
+            const rowInput = row.querySelector('.factory-line-max-input');
+            const maxDisplay = row.querySelector('.factory-line-max-display');
+            const realizedDisplay = row.querySelector('.factory-line-realized');
+            if (!rowInput) return;
+
+            const rowDestination = rowInput.dataset.destination;
+            const rowKey = factoryLineDestinationKey(productId, rowDestination);
+            const newMax = rebalanced[rowKey];
+
+            if (document.activeElement !== rowInput) {
+                rowInput.value = newMax;
+            }
+            if (maxDisplay) {
+                maxDisplay.textContent = newMax;
+            }
+            if (updateRealized && realizedDisplay) {
+                realizedDisplay.textContent = computeDestinationLineRealized(
+                    tempFactory,
+                    productId,
+                    rowDestination,
+                    currentStock,
+                    productionMax
+                );
+            }
+        });
+    }
+
+    async updateFactoryLineMaxCap(factoryId, productId, destination, value, productionMax, skipRefresh = false) {
         try {
+            const factoryData = await this.supply.getFactoryById(factoryId);
+            const currentLineMaxCaps = factoryData?.lineMaxCaps || {};
+            const rebalanced = rebalanceFactoryLineMaxCaps(
+                productId,
+                destination,
+                value,
+                productionMax
+            );
+
             await this.supply.updateFactoryFields(factoryId, {
-                lineAllocations: {
-                    wood: {
-                        direct: Number(directInput.value) || 0,
-                        manufacturing: Number(manufacturingInput.value) || 0,
-                    },
+                lineMaxCaps: {
+                    ...currentLineMaxCaps,
+                    ...rebalanced,
                 },
             });
-            await this.refresh();
+
+            if (!skipRefresh) {
+                await this.refresh();
+            }
         } catch (error) {
-            console.error('[FactorySectionPresenter] Failed to update wood allocation:', error);
+            console.error('[FactorySectionPresenter] Failed to update line max cap:', error);
         }
     }
 

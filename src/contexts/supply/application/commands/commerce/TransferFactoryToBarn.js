@@ -1,5 +1,9 @@
 import { FACTORY_TO_BARN_TRANSFERS } from '../../../domain/catalogs/BarnCommerceCatalog.js';
 import { isCommerceFactory } from '../../../domain/manufacturing/FactorySupplyFlowPolicy.js';
+import {
+  getDirectSaleStockAmount,
+  computeFactoryLineProductionMax,
+} from '../../../domain/manufacturing/FactoryLineAllocationPolicy.js';
 import { isOperationalCommerceBarn } from '../../../domain/policies/BarnStockPolicy.js';
 import { instanceIdFromHouseRow } from '../../../../../shared/building-identity/index.js';
 
@@ -47,7 +51,13 @@ export class TransferFactoryToBarn {
           line.factoryField === 'products'
             ? factory.products || {}
             : factory.rawMaterials || {};
-        const available = container[line.factoryKey] || 0;
+        const productionMax = computeFactoryLineProductionMax(factory, line.productId);
+        const available = getDirectSaleStockAmount(
+          factory,
+          line.productId,
+          container[line.factoryKey] || 0,
+          productionMax
+        );
         if (available <= 0) continue;
 
         const moved = await this.barnStock.creditBarn(

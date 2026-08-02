@@ -8,6 +8,7 @@ import {
   canProduceFromRecipe,
 } from '../../../domain/manufacturing/FactoryStoragePolicy.js';
 import { canFactoryProduceProduct } from '../../../domain/manufacturing/FactorySupplyFlowPolicy.js';
+import { isFactoryLineDestinationEnabled, getFactoryLineMaxCap, computeFactoryLineProductionMax } from '../../../domain/manufacturing/FactoryLineAllocationPolicy.js';
 
 /**
  * Command: produce finished goods from refined materials at a factory.
@@ -55,6 +56,9 @@ export class ProduceFactoryGoods {
       if (!canFactoryProduceProduct(factoryData, productType)) {
         continue;
       }
+      if (!isFactoryLineDestinationEnabled(factoryData, productType, 'manufacturing')) {
+        continue;
+      }
 
       const allocatedWorkers = productWorkerDistribution[productType] || 0;
       if (allocatedWorkers === 0) {
@@ -93,10 +97,18 @@ export class ProduceFactoryGoods {
       const effectiveMaxStorage = Math.floor(
         baseMaxStorage * (productionPercentage / 100)
       );
+      const productionMax = computeFactoryLineProductionMax(factoryData, productType);
+      const manufacturingCap = getFactoryLineMaxCap(
+        factoryData,
+        productType,
+        'manufacturing',
+        productionMax
+      );
       const currentStock = currentProducts[productType] || 0;
       const remainingCapacity = Math.max(0, effectiveMaxStorage - currentStock);
+      const cappedCapacity = Math.min(remainingCapacity, manufacturingCap);
 
-      if (remainingCapacity <= 0) continue;
+      if (cappedCapacity <= 0) continue;
       if (!canProduceFromRecipe(recipe, availableMaterials)) continue;
 
       const quantityToProduce = this.#computeQuantityToProduce({
@@ -106,7 +118,7 @@ export class ProduceFactoryGoods {
         refinedGold,
         refinedClay,
         refinedIron,
-        remainingCapacity,
+        remainingCapacity: cappedCapacity,
       });
 
       if (quantityToProduce <= 0) continue;
