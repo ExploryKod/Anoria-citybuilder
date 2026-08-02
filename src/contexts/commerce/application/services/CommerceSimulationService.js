@@ -25,6 +25,7 @@ export class CommerceSimulationService {
      * @param {(params: object) => Promise<unknown>} deps.recordImportExpense
      * @param {(params: object) => Promise<unknown>} deps.recordExportIncome
      * @param {(time: number) => object} deps.getTimeInfo
+     * @param {import('../../supply/application/services/BarnStockOperations.js').BarnStockOperations} [deps.barnStockOperations]
      */
     constructor(deps) {
         this.commerceRepository = deps.commerceRepository;
@@ -37,7 +38,8 @@ export class CommerceSimulationService {
         this.lastResetMonth = -1;
         this.partnersData = null;
 
-        this.commerceHubStock = new CommerceHubStockOperations();
+        this.commerceHubStock = deps.commerceHubStock
+            ?? new CommerceHubStockOperations(deps.barnStockOperations ?? null);
 
         this.processProductImportCommand = new ProcessProductImport(this);
         this.processProductExportCommand = new ProcessProductExport(this);

@@ -1,5 +1,7 @@
-import { FACTORY_RESOURCE_TYPES } from '../../../domain/manufacturing/ProductRecipeCatalog.js';
+import { listRawFactoryCommodities } from '../../../domain/manufacturing/ProductRecipeCatalog.js';
 import { effectiveFactoryStorage } from '../../../domain/manufacturing/FactoryTransformPolicy.js';
+import { canFactoryCollectResource } from '../../../domain/manufacturing/FactorySupplyFlowPolicy.js';
+import { isFactoryCommodityProductionEnabled } from '../../../domain/manufacturing/FactoryCommodityProductionPolicy.js';
 
 /**
  * Command: collect raw materials from nature items into a factory.
@@ -31,7 +33,15 @@ export class CollectFactoryResources {
     let collected = false;
     const natureItems = await this.repository.listNatureItems();
 
-    for (const resourceType of FACTORY_RESOURCE_TYPES) {
+    for (const commodity of listRawFactoryCommodities()) {
+      const resourceType = commodity.id;
+      if (!canFactoryCollectResource(factoryData, resourceType)) {
+        continue;
+      }
+      if (!isFactoryCommodityProductionEnabled(factoryData, resourceType)) {
+        continue;
+      }
+
       const allocatedWorkers = productWorkerDistribution[resourceType] || 0;
       if (allocatedWorkers === 0) {
         if (currentRawMaterials[resourceType] > 0) {

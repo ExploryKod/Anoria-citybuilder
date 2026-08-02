@@ -14,6 +14,14 @@ import {
   makeInfoKeyValue,
   makeInfoSection,
 } from './buildingInfoDom.js';
+import {
+  getBarnCapacitySummary,
+} from '../../../contexts/supply/domain/policies/BarnStockPolicy.js';
+import {
+  BARN_COMMERCE_PRODUCTS,
+  BARN_COMMERCE_PRODUCT_LABELS,
+  createEmptyCommerceStocks,
+} from '../../../contexts/supply/domain/catalogs/BarnCommerceCatalog.js';
 
 /**
  * @param {ReadonlyArray<[number, number]> | null | undefined} tiles
@@ -540,6 +548,55 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                         fullyStaffed: '✅ Le moulin tourne à plein régime',
                         noWorkers: '❌ Le moulin manque de bras, il ne peut fonctionner',
                         partialWorkers: '⚠️ Le moulin tourne avec peine car trop peu d\'employés',
+                    }, employment);
+                }
+
+                if (buildingRow?.type?.includes('Barn')) {
+                    const commerceStocks = createEmptyCommerceStocks(
+                        buildingRow.commerceStocks
+                            ?? (await construction.getBuildingField(uniqueId, 'commerceStocks'))
+                            ?? {}
+                    );
+                    const capacity = getBarnCapacitySummary(buildingRow, commerceStocks);
+                    const hasRoadAccess = (buildingRow.roads ?? 0) > 0;
+
+                    makeInfoSection('Entrepôt commerce');
+                    makeInfoKeyValue(
+                        'Capacité',
+                        `${capacity.currentTotal}/${capacity.maxTotal} unités`,
+                        `${capacity.workers}/${capacity.maxWorkers} ouvrier(s) × ${capacity.unitsPerWorker} (max ${capacity.maxGoods})`
+                    );
+
+                    for (const productId of BARN_COMMERCE_PRODUCTS) {
+                        const label = BARN_COMMERCE_PRODUCT_LABELS[productId] ?? productId;
+                        makeInfoKeyValue(label, `${commerceStocks[productId] ?? 0} unité(s)`);
+                    }
+
+                    makeInfoSection('Approvisionnement');
+                    if (hasRoadAccess) {
+                        makeInfoKeyValue('Routes', '✅ Accès routier');
+                    } else {
+                        makeInfoKeyValue('Routes', '❌ Pas d\'accès routier');
+                    }
+
+                    if (capacity.workers <= 0) {
+                        makeInfoBuildingText(
+                            '❌ Sans ouvrier, la grange ne peut pas stocker de marchandises',
+                            false,
+                            'error-message'
+                        );
+                    } else if (capacity.currentTotal >= capacity.maxTotal) {
+                        makeInfoBuildingText(
+                            '⚠️ Entrepôt plein — embauchez plus d\'ouvriers ou libérez du stock',
+                            false,
+                            'warning-message'
+                        );
+                    }
+
+                    renderWorkplaceEmployeesInfo(buildingRow, {
+                        fullyStaffed: '✅ La grange peut stocker jusqu\'à sa capacité',
+                        noWorkers: '❌ Aucun magasinier — stockage impossible',
+                        partialWorkers: '⚠️ Capacité limitée par le nombre d\'ouvriers',
                     }, employment);
                 }
             }

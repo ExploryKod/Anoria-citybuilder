@@ -1,4 +1,4 @@
-import { FACTORY_MAX_STORAGE } from './ProductRecipeCatalog.js';
+import { getFactoryMaxStorage } from './ProductRecipeCatalog.js';
 
 const REFINED_STORAGE_ALIASES = Object.freeze({
   logs: 'wood',
@@ -12,7 +12,7 @@ const REFINED_STORAGE_ALIASES = Object.freeze({
  */
 export function factoryMaxStorage(resourceType) {
   const key = REFINED_STORAGE_ALIASES[resourceType] ?? resourceType;
-  return FACTORY_MAX_STORAGE[key] ?? 200;
+  return getFactoryMaxStorage(key);
 }
 
 /**

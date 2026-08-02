@@ -10,7 +10,6 @@ import {
   isHouseType,
   isRoadType,
 } from '../contexts/employment/domain/policies/BuildingRolePolicy.js';
-import { synchronizeFactoryWorkerDistribution } from '../contexts/employment/infrastructure/runtime/synchronizeFactoryWorkerDistribution.js';
 import { getBuildingEmploymentSector } from '../contexts/employment/domain/catalogs/EmploymentSectorCatalog.js';
 import { getOrCreateConstructionContext } from './createConstructionContext.js';
 
@@ -35,7 +34,6 @@ export async function redistributeCityEmployment() {
   await employment.distributeCityWorkers({
     sectorPriorities: employment.getAllSectorPriorities(),
   });
-  await synchronizeFactoryWorkerDistribution();
 }
 
 /** @param {string} buildingType */

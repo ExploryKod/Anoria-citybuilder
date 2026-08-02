@@ -3,6 +3,23 @@ import {
     instanceIdFromHouseRow,
     displayLabelFromHouseRow,
 } from '../../../../shared/building-identity/index.js';
+import {
+    getBuildingSupplyFlow,
+    SUPPLY_FLOW,
+} from '../../../../contexts/supply/domain/manufacturing/SupplyFlow.js';
+import {
+    canFactoryCollectResource,
+    canFactoryProduceProduct,
+    getSupplyFlowLabel,
+} from '../../../../contexts/supply/domain/manufacturing/FactorySupplyFlowPolicy.js';
+import {
+    factoryLineDestinationKey,
+    getFactoryLineMaxCapDisplayValue,
+    getFactoryLineMaxCapsPair,
+    rebalanceFactoryLineMaxCaps,
+    stockForDestinationCap,
+    getFactoryLineDestinationsForCommodity,
+} from '../../../../contexts/supply/domain/manufacturing/FactoryLineAllocationPolicy.js';
 
 function factoryInstanceId(factory) {
     return instanceIdFromHouseRow(factory);
@@ -10,6 +27,171 @@ function factoryInstanceId(factory) {
 
 function factoryDisplayLabel(factory) {
     return displayLabelFromHouseRow(factory);
+}
+
+function computeDestinationLineRealized(factoryData, productId, destination, currentStock, productionMax) {
+    const ceiling = Math.max(0, Math.floor(Number(productionMax) || 0));
+    const pair = getFactoryLineMaxCapsPair(factoryData, productId, ceiling);
+    const stock = Math.max(0, Math.floor(Number(currentStock) || 0));
+
+    if (destination === 'direct') {
+        if (pair.direct <= 0) return 0;
+    if (pair.manufacturing <= 0) {
+        return Math.min(stock, pair.direct);
+    }
+        return stockForDestinationCap(stock, pair.direct, pair.manufacturing);
+    }
+
+    if (pair.manufacturing <= 0) {
+        return 0;
+    }
+    return stockForDestinationCap(stock, pair.manufacturing, pair.direct);
+}
+
+function renderFactoryDestinationRows(
+    factoryData,
+    productId,
+    commodityName,
+    factoryId,
+    productionMax,
+    currentStock,
+    productionEnabled = true
+) {
+    const ceiling = Math.max(0, Math.floor(Number(productionMax) || 0));
+    const capsPair = getFactoryLineMaxCapsPair(factoryData, productId, ceiling);
+    const rowDisabled = !productionEnabled || ceiling <= 0;
+
+    return getFactoryLineDestinationsForCommodity(productId).map(({ id, label }) => {
+        const maxValue = id === 'direct' ? capsPair.direct : capsPair.manufacturing;
+        const realized = computeDestinationLineRealized(
+            factoryData,
+            productId,
+            id,
+            currentStock,
+            ceiling
+        );
+
+        return `
+            <div class="factory-stock-item factory-destination-row${rowDisabled ? ' factory-destination-row--disabled' : ''}">
+                <div class="factory-stock-item-row factory-commodity-row-grid factory-destination-row-layout">
+                    <span class="factory-destination-title">${commodityName} (${label})</span>
+                    <input
+                        type="number"
+                        min="0"
+                        max="${ceiling}"
+                        class="factory-line-max-input"
+                        data-factory="${factoryId}"
+                        data-product="${productId}"
+                        data-destination="${id}"
+                        data-production-max="${ceiling}"
+                        value="${maxValue}"
+                        ${rowDisabled ? 'disabled' : ''}
+                    />
+                    <span class="factory-commodity-row-flex" aria-hidden="true"></span>
+                    <button
+                        type="button"
+                        class="factory-line-max-save-btn"
+                        data-factory="${factoryId}"
+                        data-product="${productId}"
+                        data-destination="${id}"
+                        data-production-max="${ceiling}"
+                        title="Enregistrer"
+                        aria-label="Enregistrer"
+                        ${rowDisabled ? 'disabled' : ''}
+                    >💾</button>
+                    <span class="factory-commodity-row-gap" aria-hidden="true"></span>
+                    <span class="factory-stock-value factory-destination-stock">
+                        <span class="factory-line-realized">${realized}</span>
+                        <span class="factory-line-separator">/</span>
+                        <span class="factory-line-max-display">${maxValue}</span>
+                    </span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function getFactoryWorkerPlanLine(supply, factoryData, commodityId) {
+    const plan = supply.getFactoryWorkerPlanView(factoryData);
+    return (
+        plan.lines.find((line) => line.commodityId === commodityId) || {
+            workerDemand: 0,
+            workersAllocated: 0,
+        }
+    );
+}
+
+function formatFactoryLineWorkersLabelFromPlan(line) {
+    if (line.workerDemand <= 0) {
+        return 'Besoin: 0 ouvrier (ligne inactive)';
+    }
+    return `Alloués: ${line.workersAllocated} / ${line.workerDemand} demandé${line.workerDemand > 1 ? 's' : ''}`;
+}
+
+function formatFactoryLineWorkersLabel(supply, factoryData, commodityId) {
+    return formatFactoryLineWorkersLabelFromPlan(
+        getFactoryWorkerPlanLine(supply, factoryData, commodityId)
+    );
+}
+
+function buildPreviewFactoryFromCard(card, factoryData) {
+    const lineMaxCaps = { ...(factoryData?.lineMaxCaps || {}) };
+    const commodityProductionEnabled = { ...(factoryData?.commodityProductionEnabled || {}) };
+
+    card.querySelectorAll('.factory-commodity-group').forEach((group) => {
+        const productId = group.dataset.product;
+        if (!productId) return;
+
+        const productionToggle = group.querySelector('.factory-commodity-production-toggle');
+        if (productionToggle) {
+            commodityProductionEnabled[productId] = productionToggle.checked;
+        }
+
+        group.querySelectorAll('.factory-line-max-input').forEach((input) => {
+            const destination = input.dataset.destination;
+            if (!destination) return;
+            lineMaxCaps[factoryLineDestinationKey(productId, destination)] = Math.max(
+                0,
+                Math.floor(Number(input.value) || 0)
+            );
+        });
+    });
+
+    return {
+        ...factoryData,
+        lineMaxCaps,
+        commodityProductionEnabled,
+    };
+}
+
+function updateFactoryWorkerDemandPreview(supply, card, factoryData) {
+    if (!card) return;
+
+    const previewFactory = buildPreviewFactoryFromCard(card, factoryData);
+    const plan = supply.getFactoryWorkerPlanView(previewFactory);
+
+    card.querySelectorAll('.factory-commodity-group').forEach((group) => {
+        const commodityId = group.dataset.product;
+        const label = group.querySelector('.factory-product-workers');
+        if (!commodityId || !label) return;
+
+        const line =
+            plan.lines.find((entry) => entry.commodityId === commodityId) || {
+                workerDemand: 0,
+                productionEnabled: true,
+            };
+        label.dataset.workerDemand = line.workerDemand;
+        label.textContent = !line.productionEnabled
+            ? 'Production désactivée (0 ouvrier)'
+            : line.workerDemand <= 0
+                ? 'Besoin: 0 ouvrier (ligne inactive)'
+                : `Besoin: ${line.workerDemand} ouvrier${line.workerDemand > 1 ? 's' : ''}`;
+    });
+
+    const needEl = card.querySelector('.factory-dynamic-worker-need');
+    if (needEl) {
+        needEl.textContent = plan.totalWorkerNeed;
+    }
 }
 
 async function loadFactoryJournalEntries(supply, factoryData) {
@@ -360,6 +542,7 @@ export class FactorySectionPresenter {
         const productWorkerDistribution = factoryData.productWorkerDistribution || {};
         // Pourcentages de production par produit (stockés dans IndexedDB)
         const productProductionPercentages = factoryData.productProductionPercentages || {};
+        const supplyFlow = getBuildingSupplyFlow(factoryData);
         // Stock de matériaux raffinés
         const logs = factoryData.logs || 0;
         const refinedGold = factoryData.refinedGold || 0;
@@ -536,40 +719,41 @@ export class FactorySectionPresenter {
             return productWorkerDistribution[productKey] || 0;
         };
 
-        const getTotalDistributedWorkers = () => {
-            return Object.values(productWorkerDistribution).reduce((sum, count) => sum + (count || 0), 0);
-        };
+        const workerPlan = this.supply.getFactoryWorkerPlanView(factoryData);
+        const dynamicWorkerNeed = workerPlan.totalWorkerNeed;
+        const buildingMaxWorkers = workerPlan.buildingMaxWorkers;
 
-        const getAvailableWorkers = () => {
-            const totalWorkers = employees.worker || 0;
-            const distributed = getTotalDistributedWorkers();
-            return Math.max(0, totalWorkers - distributed);
-        };
-
-        const canRecruitForProduct = (productKey) => {
-            const currentWorkers = getWorkersForProduct(productKey);
-            const availableWorkers = getAvailableWorkers();
-            // Maximum 2 workers par produit
-            return currentWorkers < 2 && availableWorkers > 0;
-        };
-
-        const isRecruitButtonDisabled = (productKey) => {
-            return !canRecruitForProduct(productKey);
-        };
+        const getWorkerPlanLine = (commodityId) =>
+            workerPlan.lines.find((line) => line.commodityId === commodityId) || {
+                workerDemand: 0,
+                workersAllocated: 0,
+            };
 
         card.innerHTML = `
             <div class="factory-header">
                 <div class="factory-id">
                     <strong>Usine:</strong> ${factoryDisplayLabel(factoryData)}
+                    <span class="factory-flow-badge factory-flow-badge--${supplyFlow}">${getSupplyFlowLabel(supplyFlow)}</span>
                 </div>
                 <div class="factory-location">
                     Position: x: ${factoryData.x || 0} | y: ${factoryData.y || 0}
+                </div>
+                <div class="factory-supply-flow-control">
+                    <label for="factory-flow-${factoryInstanceId(factoryData)}">Flux dédié</label>
+                    <select
+                        id="factory-flow-${factoryInstanceId(factoryData)}"
+                        class="factory-supply-flow-select"
+                        data-factory="${factoryInstanceId(factoryData)}"
+                    >
+                        <option value="${SUPPLY_FLOW.CITY}" ${supplyFlow === SUPPLY_FLOW.CITY ? 'selected' : ''}>Ville (approvisionnement interne)</option>
+                        <option value="${SUPPLY_FLOW.COMMERCE}" ${supplyFlow === SUPPLY_FLOW.COMMERCE ? 'selected' : ''}>Commerce (grange / export)</option>
+                    </select>
                 </div>
             </div>
 
             <div class="factory-raw-materials">
                 <h4 class="factory-subtitle">Matières Premières</h4>
-                ${Object.entries(rawMaterialNames).map(([key, name]) => {
+                ${Object.entries(rawMaterialNames).filter(([key]) => canFactoryCollectResource(factoryData, key)).map(([key, name]) => {
                     const status = getProductionStatus(key, false);
                     const statusClass = status.status === 'full' ? 'factory-status-full' : 
                                       status.status === 'no-workers' ? 'factory-status-no-workers' : 
@@ -581,14 +765,30 @@ export class FactorySectionPresenter {
                         : `<span class="factory-status-reduced">⚠ Production réduite (${status.percentage}%)</span>`;
                     
                     const productWorkers = getWorkersForProduct(key);
-                    const isDisabled = isRecruitButtonDisabled(key);
-                    const buttonOpacity = isDisabled ? '0.5' : '1';
+                    const capCeiling = getMaxStorage(key);
+                    const workerLine = getWorkerPlanLine(key);
+                    const workerDemand = workerLine.workerDemand;
+                    const productionEnabled = workerLine.productionEnabled !== false;
                     
                     return `
-                    <div class="factory-stock-item">
-                        <div class="factory-stock-item-row">
+                    <div class="factory-commodity-group${productionEnabled ? '' : ' factory-commodity-group--disabled'}" data-product="${key}" data-current-stock="${rawMaterials[key] || 0}" data-cap-ceiling="${capCeiling}">
+                    <div class="factory-stock-item factory-commodity-summary">
+                        <div class="factory-stock-item-row factory-commodity-row-grid factory-commodity-head-row">
                             <label>${name}:</label>
-                            <span class="factory-stock-value">${rawMaterials[key] || 0} / ${status.max}</span>
+                            <label class="factory-commodity-active-label">
+                                <input
+                                    type="checkbox"
+                                    class="factory-commodity-production-toggle"
+                                    data-factory="${factoryInstanceId(factoryData)}"
+                                    data-product="${key}"
+                                    ${productionEnabled ? 'checked' : ''}
+                                />
+                                <span>Production active</span>
+                            </label>
+                            <span class="factory-commodity-row-flex" aria-hidden="true"></span>
+                            <span class="factory-commodity-head-save-slot" aria-hidden="true"></span>
+                            <span class="factory-commodity-row-gap" aria-hidden="true"></span>
+                            <span class="factory-stock-value factory-commodity-head-stock">${rawMaterials[key] || 0} / ${status.max}</span>
                         </div>
                         <div class="factory-production-status ${statusClass}">
                             ${statusText}
@@ -596,19 +796,19 @@ export class FactorySectionPresenter {
                         <div class="factory-trade-info">
                             <span class="factory-import-info">Importés: ${getTotalImports(key)}</span>
                         </div>
-                        <div class="factory-recruit-section">
-                            <span class="factory-product-workers">Workers: ${productWorkers} / 2</span>
-                            <button 
-                                class="factory-recruit-btn" 
-                                data-factory="${factoryInstanceId(factoryData)}" 
-                                data-product="${key}"
-                                data-product-type="rawMaterial"
-                                ${isDisabled ? 'disabled' : ''}
-                                style="opacity: ${buttonOpacity};"
-                            >
-                                Recruter
-                            </button>
+                        <div class="factory-line-workers">
+                            <span class="factory-product-workers" data-worker-demand="${workerDemand}">${productionEnabled ? formatFactoryLineWorkersLabelFromPlan(workerLine) : 'Production désactivée (0 ouvrier)'}</span>
                         </div>
+                    </div>
+                    ${renderFactoryDestinationRows(
+                        factoryData,
+                        key,
+                        name,
+                        factoryInstanceId(factoryData),
+                        capCeiling,
+                        rawMaterials[key] || 0,
+                        productionEnabled
+                    )}
                     </div>
                 `;
                 }).join('')}
@@ -660,7 +860,7 @@ export class FactorySectionPresenter {
 
             <div class="factory-products">
                 <h4 class="factory-subtitle">Produits Finis</h4>
-                ${Object.entries(productNames).map(([key, name]) => {
+                ${Object.entries(productNames).filter(([key]) => canFactoryProduceProduct(factoryData, key)).map(([key, name]) => {
                     const status = getProductionStatus(key, true);
                     const statusClass = status.status === 'full' ? 'factory-status-full' : 
                                       status.status === 'no-workers' ? 'factory-status-no-workers' : 
@@ -672,8 +872,10 @@ export class FactorySectionPresenter {
                         : `<span class="factory-status-reduced">⚠ Production réduite (${status.percentage}%)</span>`;
                     
                     const productWorkers = getWorkersForProduct(key);
-                    const isDisabled = isRecruitButtonDisabled(key);
-                    const buttonOpacity = isDisabled ? '0.5' : '1';
+                    const capCeiling = getMaxStorage(key);
+                    const workerLine = getWorkerPlanLine(key);
+                    const workerDemand = workerLine.workerDemand;
+                    const productionEnabled = workerLine.productionEnabled !== false;
                     
                     // Récupérer la durée de production pour ce produit
                     const productionTurns = key === 'furniture' ? 1 : 1;
@@ -703,10 +905,24 @@ export class FactorySectionPresenter {
                     }
                     
                     return `
-                    <div class="factory-stock-item">
-                        <div class="factory-stock-item-row">
+                    <div class="factory-commodity-group${productionEnabled ? '' : ' factory-commodity-group--disabled'}" data-product="${key}" data-current-stock="${products[key] || 0}" data-cap-ceiling="${capCeiling}">
+                    <div class="factory-stock-item factory-commodity-summary">
+                        <div class="factory-stock-item-row factory-commodity-row-grid factory-commodity-head-row">
                             <label>${name}:</label>
-                            <span class="factory-stock-value">${products[key] || 0} / ${status.max}</span>
+                            <label class="factory-commodity-active-label">
+                                <input
+                                    type="checkbox"
+                                    class="factory-commodity-production-toggle"
+                                    data-factory="${factoryInstanceId(factoryData)}"
+                                    data-product="${key}"
+                                    ${productionEnabled ? 'checked' : ''}
+                                />
+                                <span>Production active</span>
+                            </label>
+                            <span class="factory-commodity-row-flex" aria-hidden="true"></span>
+                            <span class="factory-commodity-head-save-slot" aria-hidden="true"></span>
+                            <span class="factory-commodity-row-gap" aria-hidden="true"></span>
+                            <span class="factory-stock-value factory-commodity-head-stock">${products[key] || 0} / ${status.max}</span>
                         </div>
                         <div class="factory-production-status ${statusClass}">
                             ${statusText}
@@ -715,19 +931,19 @@ export class FactorySectionPresenter {
                         <div class="factory-trade-info">
                             <span class="factory-export-info">Exportés: ${getTotalExports(key)}</span>
                         </div>
-                        <div class="factory-recruit-section">
-                            <span class="factory-product-workers">Workers: ${productWorkers} / 2</span>
-                            <button 
-                                class="factory-recruit-btn" 
-                                data-factory="${factoryInstanceId(factoryData)}" 
-                                data-product="${key}"
-                                data-product-type="product"
-                                ${isDisabled ? 'disabled' : ''}
-                                style="opacity: ${buttonOpacity};"
-                            >
-                                Recruter
-                            </button>
+                        <div class="factory-line-workers">
+                            <span class="factory-product-workers" data-worker-demand="${workerDemand}">${productionEnabled ? formatFactoryLineWorkersLabelFromPlan(workerLine) : 'Production désactivée (0 ouvrier)'}</span>
                         </div>
+                    </div>
+                    ${renderFactoryDestinationRows(
+                        factoryData,
+                        key,
+                        name,
+                        factoryInstanceId(factoryData),
+                        capCeiling,
+                        products[key] || 0,
+                        productionEnabled
+                    )}
                     </div>
                 `;
                 }).join('')}
@@ -753,14 +969,18 @@ export class FactorySectionPresenter {
                 ${employees ? `
                     <div class="factory-employee-item">
                         <label>Ouvriers:</label>
-                        <span class="factory-employee-value">${employees.worker || 0} / ${employees.worker_need || 0}</span>
+                        <span class="factory-employee-value factory-total-workers">
+                            ${employees.worker || 0} / <span class="factory-dynamic-worker-need">${dynamicWorkerNeed}</span>
+                            <span class="factory-worker-max">(max ${buildingMaxWorkers})</span>
+                        </span>
                     </div>
                     <div class="factory-employee-item">
                         <label>Élites:</label>
                         <span class="factory-employee-value">${employees.elite || 0} / ${employees.elite_need || 0}</span>
                     </div>
                     <div class="factory-employee-status">
-                        ${(employees.worker || 0) >= (employees.worker_need || 0) && 
+                        ${(employees.worker || 0) >= dynamicWorkerNeed &&
+                          dynamicWorkerNeed > 0 &&
                           (employees.elite || 0) >= (employees.elite_need || 0) 
                             ? '<span class="factory-status-success">✅ L\'usine a tout ce qu\'il faut pour fonctionner</span>'
                             : '<span class="factory-status-warning">⚠️ L\'usine ne peut fonctionner à sa pleine capacité</span>'}
@@ -786,12 +1006,57 @@ export class FactorySectionPresenter {
             });
         });
 
-        // Event listeners pour les boutons de recrutement
-        const recruitButtons = card.querySelectorAll('.factory-recruit-btn');
-        recruitButtons.forEach(button => {
-            button.addEventListener('click', async (e) => {
-                const productKey = e.target.dataset.product;
-                await this.recruitWorkerForProduct(factoryId, productKey);
+        const flowSelect = card.querySelector('.factory-supply-flow-select');
+        if (flowSelect) {
+            flowSelect.addEventListener('change', async (e) => {
+                await this.updateFactorySupplyFlow(factoryId, e.target.value);
+            });
+        }
+
+        const productionToggles = card.querySelectorAll('.factory-commodity-production-toggle');
+        productionToggles.forEach((toggle) => {
+            toggle.addEventListener('change', async (e) => {
+                const commodityId = e.target.dataset.product;
+                if (!commodityId) return;
+                await this.updateFactoryCommodityProduction(
+                    factoryId,
+                    commodityId,
+                    e.target.checked
+                );
+            });
+        });
+
+        const maxInputs = card.querySelectorAll('.factory-line-max-input');
+        maxInputs.forEach((input) => {
+            input.addEventListener('input', (e) => {
+                this.syncCommunicatingLineMaxInputs(e.target, factory);
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    this.revertLineMaxInput(input, factory);
+                }
+            });
+        });
+
+        const maxSaveButtons = card.querySelectorAll('.factory-line-max-save-btn');
+        maxSaveButtons.forEach((saveButton) => {
+            saveButton.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+            });
+            saveButton.addEventListener('click', async () => {
+                const row = saveButton.closest('.factory-destination-row-layout');
+                const input = row?.querySelector('.factory-line-max-input');
+                if (!input) return;
+                const { product, destination, productionMax } = input.dataset;
+                await this.updateFactoryLineMaxCap(
+                    factoryId,
+                    product,
+                    destination,
+                    input.value,
+                    Number(productionMax) || 0,
+                    false
+                );
             });
         });
     }
@@ -810,72 +1075,137 @@ export class FactorySectionPresenter {
         }
     }
 
-    /**
-     * Recrute un worker pour un produit spécifique
-     * @param {string} factoryId - ID de la factory
-     * @param {string} productKey - Clé du produit (ex: 'wood', 'furniture')
-     */
-    async recruitWorkerForProduct(factoryId, productKey) {
+    async updateFactoryCommodityProduction(factoryId, commodityId, enabled) {
         try {
             const factoryData = await this.supply.getFactoryById(factoryId);
-            if (!factoryData) {
-                return;
-            }
+            const currentFlags = factoryData?.commodityProductionEnabled || {};
 
-            const employees = factoryData.employees || { worker: 0, worker_need: 0 };
-            const productWorkerDistribution = factoryData.productWorkerDistribution || {};
-            
-            // Vérifier qu'on peut recruter
-            const currentWorkers = productWorkerDistribution[productKey] || 0;
-            const totalDistributed = Object.values(productWorkerDistribution).reduce((sum, count) => sum + (count || 0), 0);
-            const availableWorkers = Math.max(0, (employees.worker || 0) - totalDistributed);
-
-            // Vérifications
-            if (currentWorkers >= 2) {
-                return;
-            }
-
-            if (availableWorkers <= 0) {
-                return;
-            }
-
-            // Ajouter un worker au produit
-            const newWorkersForProduct = (currentWorkers || 0) + 1;
-            const newDistribution = {
-                ...productWorkerDistribution,
-                [productKey]: newWorkersForProduct
-            };
-
-            // Calculer le pourcentage de production pour ce produit
-            const maxWorkersPerProduct = 2;
-            const productionPercentage = Math.floor((newWorkersForProduct / maxWorkersPerProduct) * 100);
-
-            // Récupérer ou initialiser les pourcentages de production
-            const productProductionPercentages = factoryData.productProductionPercentages || {};
-            const newProductionPercentages = {
-                ...productProductionPercentages,
-                [productKey]: productionPercentage
-            };
-
-            // Sauvegarder dans IndexedDB : workers alloués + pourcentages de production
             await this.supply.updateFactoryFields(factoryId, {
-                productWorkerDistribution: newDistribution,
-                productProductionPercentages: newProductionPercentages,
+                commodityProductionEnabled: {
+                    ...currentFlags,
+                    [commodityId]: enabled,
+                },
             });
 
-            // Mettre à jour les données locales
-            const factory = this.factories.find((f) => factoryInstanceId(f) === factoryId);
-            if (factory) {
-                factory.productWorkerDistribution = newDistribution;
-                factory.productProductionPercentages = newProductionPercentages;
-            }
-
-            // Re-render la carte pour mettre à jour l'UI
+            await this.supply.applyFactoryLineCapChanges();
             await this.refresh();
         } catch (error) {
+            console.error('[FactorySectionPresenter] Failed to update commodity production:', error);
         }
     }
-    
+
+    async updateFactorySupplyFlow(factoryId, supplyFlow) {
+        try {
+            await this.supply.updateFactoryFields(factoryId, { supplyFlow });
+            await this.supply.applyFactoryLineCapChanges();
+            await this.refresh();
+        } catch (error) {
+            console.error('[FactorySectionPresenter] Failed to update supply flow:', error);
+        }
+    }
+
+    async revertLineMaxInput(input, factoryData) {
+        const productionMax = Number(input.dataset.productionMax) || 0;
+        const productId = input.dataset.product;
+        const destination = input.dataset.destination;
+        const factoryId = input.dataset.factory;
+        const freshFactory = factoryData || (await this.supply.getFactoryById(factoryId));
+
+        if (!freshFactory) return;
+
+        input.value = getFactoryLineMaxCapDisplayValue(
+            freshFactory,
+            productId,
+            destination,
+            productionMax
+        );
+        this.syncCommunicatingLineMaxInputs(input, freshFactory, true);
+    }
+
+    syncCommunicatingLineMaxInputs(changedInput, factoryData, updateRealized = true) {
+        const group = changedInput.closest('.factory-commodity-group');
+        if (!group) return;
+
+        const productionMax = Number(changedInput.dataset.productionMax) || 0;
+        const destination = changedInput.dataset.destination;
+        const productId = changedInput.dataset.product;
+        const currentStock = Number(group.dataset.currentStock) || 0;
+        const rebalanced = rebalanceFactoryLineMaxCaps(
+            productId,
+            destination,
+            changedInput.value,
+            productionMax
+        );
+
+        const directKey = factoryLineDestinationKey(productId, 'direct');
+        const manufacturingKey = factoryLineDestinationKey(productId, 'manufacturing');
+        const tempFactory = {
+            ...factoryData,
+            lineMaxCaps: {
+                ...(factoryData?.lineMaxCaps || {}),
+                ...rebalanced,
+            },
+        };
+
+        group.querySelectorAll('.factory-stock-item:not(.factory-commodity-summary)').forEach((row) => {
+            const rowInput = row.querySelector('.factory-line-max-input');
+            const maxDisplay = row.querySelector('.factory-line-max-display');
+            const realizedDisplay = row.querySelector('.factory-line-realized');
+            if (!rowInput) return;
+
+            const rowDestination = rowInput.dataset.destination;
+            const rowKey = factoryLineDestinationKey(productId, rowDestination);
+            const newMax = rebalanced[rowKey];
+
+            if (document.activeElement !== rowInput) {
+                rowInput.value = newMax;
+            }
+            if (maxDisplay) {
+                maxDisplay.textContent = newMax;
+            }
+            if (updateRealized && realizedDisplay) {
+                realizedDisplay.textContent = computeDestinationLineRealized(
+                    tempFactory,
+                    productId,
+                    rowDestination,
+                    currentStock,
+                    productionMax
+                );
+            }
+        });
+
+        const card = changedInput.closest('.factory-card');
+        updateFactoryWorkerDemandPreview(this.supply, card, factoryData);
+    }
+
+    async updateFactoryLineMaxCap(factoryId, productId, destination, value, productionMax, skipRefresh = false) {
+        try {
+            const factoryData = await this.supply.getFactoryById(factoryId);
+            const currentLineMaxCaps = factoryData?.lineMaxCaps || {};
+            const rebalanced = rebalanceFactoryLineMaxCaps(
+                productId,
+                destination,
+                value,
+                productionMax
+            );
+
+            await this.supply.updateFactoryFields(factoryId, {
+                lineMaxCaps: {
+                    ...currentLineMaxCaps,
+                    ...rebalanced,
+                },
+            });
+
+            await this.supply.applyFactoryLineCapChanges();
+
+            if (!skipRefresh) {
+                await this.refresh();
+            }
+        } catch (error) {
+            console.error('[FactorySectionPresenter] Failed to update line max cap:', error);
+        }
+    }
+
     async refresh() {
         await this.loadFactories();
         if (this.currentTab === 'production-journal') {
