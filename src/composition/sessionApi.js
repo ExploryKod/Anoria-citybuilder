@@ -35,10 +35,9 @@ import { hasRoadAccessFromCount } from '../contexts/parcels/domain/value-objects
 import {
   getBuildingsNamesInZone,
 } from '../contexts/parcels/infrastructure/spatial/sceneNeighborhoodScan.js';
-import { getPriceStatus } from '../contexts/commerce/domain/policies/PriceStatusPolicy.js';
 import {
-  getContractStatus,
-} from '../contexts/commerce/domain/policies/PartnerContractPolicy.js';
+  getPartnerQuotaStatus,
+} from '../contexts/commerce/domain/policies/PartnerQuotaPolicy.js';
 import {
   getProductStockKey,
   getProductDisplayName,
@@ -46,7 +45,6 @@ import {
 import {
   evaluatePartnerActivationConditions,
 } from '../contexts/commerce/domain/policies/PartnerActivationPolicy.js';
-import { setCommercePartnerContractFinishedHandler } from './createCommerceContext.js';
 
 /**
  * @param {ReturnType<import('./createConstructionContext.js').createConstructionContext>} construction
@@ -207,10 +205,7 @@ export function createCommerceSessionApi(commerce) {
     loadOrSeedCommerceConfig: () => repo.loadOrSeedConfig(),
     saveCommerceConfig: (data) => repo.saveConfig(data),
     clearCommercePersistence: () => commerce.clear(),
-    setCommercePartnerContractFinishedHandler: (handler) =>
-      setCommercePartnerContractFinishedHandler(handler),
-    getPriceStatus: (...args) => getPriceStatus(...args),
-    getContractStatus: (...args) => getContractStatus(...args),
+    getPartnerQuotaStatus: (...args) => getPartnerQuotaStatus(...args),
     getProductStockKey: (...args) => getProductStockKey(...args),
     getProductDisplayName: (...args) => getProductDisplayName(...args),
     evaluatePartnerActivationConditions: (...args) =>

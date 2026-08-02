@@ -1,6 +1,10 @@
 /**
  * Command — process a commerce product import (partner or internal limits).
  */
+import { getPartnerTradePrice } from '../../domain/policies/PartnerTradePolicy.js';
+import { getDefaultTradePrice } from '../../domain/catalogs/ProductCatalog.js';
+import { canExecuteTrade } from '../../domain/policies/PlayerTradeTogglePolicy.js';
+
 export class ProcessProductImport {
   /** @param {import('../services/CommerceSimulationService.js').CommerceSimulationService} simulation */
   constructor(simulation) {
@@ -23,6 +27,14 @@ export class ProcessProductImport {
       return null;
     }
 
+    if (!canExecuteTrade({
+      operation: 'import',
+      productConfig: config,
+      partners: simulation.partnersData ?? [],
+    })) {
+      return null;
+    }
+
     if (partnerId) {
       if (!simulation.canTradeWithPartner(partnerId, productId, 'import', time)) {
         return null;
@@ -37,11 +49,13 @@ export class ProcessProductImport {
       return null;
     }
 
-    const pricePerUnit = config.buyingPrice || 5;
-    const totalCost = quantity * pricePerUnit;
-
     const partner = partnerId ? simulation.getPartner(partnerId) : null;
     const partnerName = partner ? partner.name : null;
+    const pricePerUnit =
+      getPartnerTradePrice(partner, productId, 'import')
+      ?? getDefaultTradePrice(productId, 'import')
+      ?? 5;
+    const totalCost = quantity * pricePerUnit;
 
     let description = `Import ${productId}`;
     if (partnerName) {
@@ -64,7 +78,7 @@ export class ProcessProductImport {
 
     let stockAdded = false;
     if (simulation.isStockable(productId)) {
-      const stockResult = await simulation.windmillStock.addToStock(productId, quantity, partnerId);
+      const stockResult = await simulation.commerceHubStock.addToStock(productId, quantity, partnerId);
       stockAdded = stockResult !== null;
     }
 
