@@ -24,9 +24,8 @@ function formatTradeMonths(monthIndexes) {
  * @param {object} tradeLine
  * @param {'export'|'import'} direction
  * @param {object} globalLimits
- * @param {boolean} hasCommercializableWindmills
  */
-function mapTradeLine(tradeLine, direction, globalLimits, hasCommercializableWindmills) {
+function mapTradeLine(tradeLine, direction, globalLimits) {
   const globalUsed =
     direction === 'export'
       ? globalLimits.yearlyExports[tradeLine.productId] || 0
@@ -35,10 +34,9 @@ function mapTradeLine(tradeLine, direction, globalLimits, hasCommercializableWin
     direction === 'export'
       ? globalLimits.sellingMax[tradeLine.productId] || 0
       : globalLimits.buyingMax[tradeLine.productId] || 0;
-  const yearlyQuotaReached = (tradeLine.currentYearly || 0) >= tradeLine.maxOccurrences;
+  const yearlyQuotaReached = (tradeLine.currentYearly || 0) >= tradeLine.yearlyQuota;
   const globalLimitReached = globalCap > 0 && globalUsed >= globalCap;
-  const isUnavailable =
-    yearlyQuotaReached || globalLimitReached || !hasCommercializableWindmills;
+  const isUnavailable = yearlyQuotaReached || globalLimitReached;
 
   let statusClass = 'active';
   let statusText = 'Route active';
@@ -48,9 +46,6 @@ function mapTradeLine(tradeLine, direction, globalLimits, hasCommercializableWin
   } else if (globalLimitReached) {
     statusClass = 'limit-reached';
     statusText = 'Plafond ville atteint';
-  } else if (!hasCommercializableWindmills) {
-    statusClass = 'no-windmill';
-    statusText = 'Aucun moulin commercial';
   }
 
   return {
@@ -59,7 +54,7 @@ function mapTradeLine(tradeLine, direction, globalLimits, hasCommercializableWin
     monthsText: formatTradeMonths(tradeLine.months),
     maxPerTurn: tradeLine.maxPerTurn ?? 1,
     pricePerUnit: tradeLine.pricePerUnit ?? 0,
-    yearlyQuota: tradeLine.maxOccurrences,
+    yearlyQuota: tradeLine.yearlyQuota,
     currentYearly: tradeLine.currentYearly || 0,
     globalUsed,
     globalCap,
@@ -74,14 +69,12 @@ function mapTradeLine(tradeLine, direction, globalLimits, hasCommercializableWin
  * @param {Array<object>} params.partners
  * @param {object} params.stats
  * @param {Array<object>} params.productConfig
- * @param {boolean} params.hasCommercializableWindmills
  * @param {Record<string, { canActivate: boolean, unmetConditions: string[] }>} params.activationByPartnerId
  */
 export function buildTradePartnersView({
   partners,
   stats,
   productConfig,
-  hasCommercializableWindmills,
   activationByPartnerId,
 }) {
   const sellingMax = Object.fromEntries(
@@ -110,11 +103,11 @@ export function buildTradePartnersView({
       isActive: Boolean(partner.isActive),
       canActivate: activation.canActivate,
       unmetConditions: activation.unmetConditions,
-      buysFromUs: partner.imports.map((trade) =>
-        mapTradeLine(trade, 'export', globalLimits, hasCommercializableWindmills)
+      buysFromUs: partner.buysFromUs.map((trade) =>
+        mapTradeLine(trade, 'export', globalLimits)
       ),
-      sellsToUs: partner.exports.map((trade) =>
-        mapTradeLine(trade, 'import', globalLimits, hasCommercializableWindmills)
+      sellsToUs: partner.sellsToUs.map((trade) =>
+        mapTradeLine(trade, 'import', globalLimits)
       ),
     };
   });

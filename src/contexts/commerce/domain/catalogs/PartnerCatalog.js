@@ -1,7 +1,8 @@
 import { getDefaultTradePrice } from './ProductCatalog.js';
-
-/** Default commerce partner seed data. */
-const DEPRECATED_ACTIVATION_CONDITION = 'funds_min_3000_deficit';
+import {
+  validatePartnerCatalog,
+  isMvpPartnerCatalog,
+} from '../policies/PartnerCatalogIntegrityPolicy.js';
 
 /**
  * @param {Array<object>} partners
@@ -10,12 +11,12 @@ const DEPRECATED_ACTIVATION_CONDITION = 'funds_min_3000_deficit';
 function applyPartnerTradePrices(partners) {
   return partners.map((partner) => ({
     ...partner,
-    imports: partner.imports.map((trade) => ({
+    buysFromUs: partner.buysFromUs.map((trade) => ({
       ...trade,
       pricePerUnit:
         trade.pricePerUnit ?? getDefaultTradePrice(trade.productId, 'export') ?? 0,
     })),
-    exports: partner.exports.map((trade) => ({
+    sellsToUs: partner.sellsToUs.map((trade) => ({
       ...trade,
       pricePerUnit:
         trade.pricePerUnit ?? getDefaultTradePrice(trade.productId, 'import') ?? 0,
@@ -23,350 +24,114 @@ function applyPartnerTradePrices(partners) {
   }));
 }
 
-export function createDefaultPartners() {
-  return applyPartnerTradePrices([
+function createMvpPartnerSeed() {
+  return [
     {
-      id: 'deserta',
-      name: 'Deserta',
-      description: 'Ville désertique spécialisée dans les dattes',
-      isActive: false, // Relation commerciale désactivée par défaut
+      id: 'olivea',
+      name: 'Olivea',
+      description: 'Cité méditerranéenne — achète bois et meubles, vend des figues',
+      isActive: false,
       activationConditions: [
         'population_min_5',
         'unemployment_max_10',
-        'windmill_stocks_available',
-      ], // Conditions requises pour activer
-      imports: [
-        {
-          productId: 'carrot',
-          productName: 'Carotte',
-          months: [7, 8, 11],
-          maxPerTurn: 8,
-          maxOccurrences: 9,
-          currentOccurrences: 0,
-          currentYearly: 0,
-        },
+      ],
+      buysFromUs: [
         {
           productId: 'wood',
-          productName: 'Bois',
-          months: [11],
-          maxPerTurn: 5,
-          maxOccurrences: 2,
-          currentOccurrences: 0,
-          currentYearly: 0,
-        },
-      ],
-      exports: [
-        {
-          productId: 'dattes',
-          productName: 'Dattes',
-          months: [0, 2],
-          maxOccurrences: 2,
-          currentOccurrences: 0,
-          currentYearly: 0,
-        },
-      ],
-    },
-    {
-      id: 'tropicala',
-      name: 'Tropicala',
-      description: 'Ville tropicale aux ressources exotiques',
-      isActive: false,
-      activationConditions: [],
-      imports: [
-        {
-          productId: 'wheat',
-          productName: 'Blé',
-          months: [3, 4, 9],
-          maxPerTurn: 6,
-          maxOccurrences: 8,
-          currentOccurrences: 0,
-          currentYearly: 0,
-        },
-        {
-          productId: 'cabbage',
-          productName: 'Chou',
-          months: [5, 6, 10],
-          maxPerTurn: 4,
-          maxOccurrences: 6,
-          currentOccurrences: 0,
-          currentYearly: 0,
-        },
-      ],
-      exports: [
-        {
-          productId: 'wood',
-          productName: 'Bois tropical',
-          months: [1, 2, 8],
-          maxOccurrences: 4,
-          currentOccurrences: 0,
-          currentYearly: 0,
-        },
-      ],
-    },
-    {
-      id: 'arctica',
-      name: 'Arctica',
-      description: 'Ville du nord aux ressources rares',
-      isActive: false,
-      activationConditions: [],
-      imports: [
-        {
-          productId: 'carrot',
-          productName: 'Carotte',
-          months: [1, 2, 6, 10],
-          maxPerTurn: 5,
-          maxOccurrences: 10,
-          currentOccurrences: 0,
-          currentYearly: 0,
-        },
-      ],
-      exports: [
-        {
-          productId: 'wood',
-          productName: 'Bois du nord',
-          months: [4, 5, 9, 11],
-          maxOccurrences: 6,
-          currentOccurrences: 0,
-          currentYearly: 0,
-        },
-      ],
-    },
-    {
-      id: 'montana',
-      name: 'Montana',
-      description: 'Ville montagnarde spécialisée dans les légumes',
-      isActive: false,
-      activationConditions: [],
-      imports: [
-        {
-          productId: 'wood',
-          productName: 'Bois',
-          months: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-          maxPerTurn: 5,
-          maxOccurrences: 20,
-          currentOccurrences: 0,
-          currentYearly: 0,
-        },
-      ],
-      exports: [
-        {
-          productId: 'cabbage',
-          productName: 'Chou',
+          productName: 'Bois brut',
           months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-          maxOccurrences: 15,
-          currentOccurrences: 0,
+          maxPerTurn: 1,
+          yearlyQuota: 25,
           currentYearly: 0,
         },
-      ],
-    },
-    {
-      id: 'riviera',
-      name: 'Riviera',
-      description: 'Ville côtière méditerranéenne',
-      isActive: false,
-      activationConditions: [],
-      imports: [
         {
-          productId: 'wood',
-          productName: 'Bois',
+          productId: 'furniture',
+          productName: 'Meubles',
           months: [3, 4, 5, 6, 7, 8, 9],
-          maxPerTurn: 6,
-          maxOccurrences: 18,
-          currentOccurrences: 0,
+          maxPerTurn: 1,
+          yearlyQuota: 15,
           currentYearly: 0,
         },
       ],
-      exports: [
+      sellsToUs: [
         {
-          productId: 'cabbage',
-          productName: 'Chou',
-          months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-          maxOccurrences: 12,
-          currentOccurrences: 0,
+          productId: 'figs',
+          productName: 'Figues',
+          months: [6, 7, 8, 9, 10],
+          yearlyQuota: 10,
           currentYearly: 0,
         },
       ],
     },
     {
-      id: 'oceania',
-      name: 'Oceania',
-      description: 'Archipel océanique aux ressources variées',
+      id: 'silvania',
+      name: 'Silvania',
+      description: 'Région forestière — achète des meubles',
       isActive: false,
       activationConditions: [],
-      imports: [
+      buysFromUs: [
         {
-          productId: 'carrot',
-          productName: 'Carotte',
+          productId: 'furniture',
+          productName: 'Meubles',
           months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-          maxPerTurn: 4,
-          maxOccurrences: 24,
-          currentOccurrences: 0,
+          maxPerTurn: 1,
+          yearlyQuota: 15,
           currentYearly: 0,
         },
       ],
-      exports: [
-        {
-          productId: 'wood',
-          productName: 'Bois',
-          months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-          maxOccurrences: 20,
-          currentOccurrences: 0,
-          currentYearly: 0,
-        },
-      ],
+      sellsToUs: [],
     },
-    {
-      id: 'paysana',
-      name: 'Paysana',
-      description: 'Région agricole très productive',
-      isActive: false,
-      activationConditions: [],
-      imports: [
-        {
-          productId: 'carrot',
-          productName: 'Carotte',
-          months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-          maxPerTurn: 8,
-          maxOccurrences: 30,
-          currentOccurrences: 0,
-          currentYearly: 0,
-        },
-        {
-          productId: 'wheat',
-          productName: 'Blé',
-          months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-          maxPerTurn: 10,
-          maxOccurrences: 36,
-          currentOccurrences: 0,
-          currentYearly: 0,
-        },
-        {
-          productId: 'cabbage',
-          productName: 'Chou',
-          months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-          maxPerTurn: 7,
-          maxOccurrences: 28,
-          currentOccurrences: 0,
-          currentYearly: 0,
-        },
-      ],
-      exports: [
-        {
-          productId: 'wood',
-          productName: 'Bois',
-          months: [4, 5, 6, 7, 8],
-          maxOccurrences: 8,
-          currentOccurrences: 0,
-          currentYearly: 0,
-        },
-      ],
-    },
-    {
-      id: 'savana',
-      name: 'Savana',
-      description: 'Région de savane aux échanges variés',
-      isActive: false,
-      activationConditions: [],
-      imports: [
-        {
-          productId: 'carrot',
-          productName: 'Carotte',
-          months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-          maxPerTurn: 5,
-          maxOccurrences: 20,
-          currentOccurrences: 0,
-          currentYearly: 0,
-        },
-        {
-          productId: 'wood',
-          productName: 'Bois',
-          months: [2, 3, 4, 5, 6, 7, 8, 9],
-          maxPerTurn: 4,
-          maxOccurrences: 16,
-          currentOccurrences: 0,
-          currentYearly: 0,
-        },
-      ],
-      exports: [
-        {
-          productId: 'wheat',
-          productName: 'Blé',
-          months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-          maxOccurrences: 25,
-          currentOccurrences: 0,
-          currentYearly: 0,
-        },
-      ],
-    },
-    {
-      id: 'foresta',
-      name: 'Foresta',
-      description: 'Région forestière riche en bois',
-      isActive: false,
-      activationConditions: [],
-      imports: [
-        {
-          productId: 'wood',
-          productName: 'Bois',
-          months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-          maxPerTurn: 12,
-          maxOccurrences: 40,
-          currentOccurrences: 0,
-          currentYearly: 0,
-        },
-      ],
-      exports: [
-        {
-          productId: 'wheat',
-          productName: 'Blé',
-          months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-          maxOccurrences: 18,
-          currentOccurrences: 0,
-          currentYearly: 0,
-        },
-      ],
-    },
-  ]);
+  ];
+}
+
+export function createDefaultPartners() {
+  const partners = applyPartnerTradePrices(createMvpPartnerSeed());
+  const validation = validatePartnerCatalog(partners);
+  if (!validation.valid) {
+    throw new Error(`Invalid partner catalog: ${validation.errors.join('; ')}`);
+  }
+  return partners;
 }
 
 /**
- * @param {Array<{ activationConditions?: string[] }>} partners
- * @returns {{ partners: typeof partners, needsSave: boolean }}
+ * @param {Array<object>} partners
+ * @returns {{ partners: Array<object>, needsSave: boolean }}
  */
-export function migrateStoredPartners(partners) {
+export function normalizePartners(partners) {
+  if (!isMvpPartnerCatalog(partners)) {
+    return { partners: createDefaultPartners(), needsSave: true };
+  }
+
   let needsSave = false;
 
-  partners.forEach((partner) => {
-    if (partner.activationConditions && Array.isArray(partner.activationConditions)) {
-      const index = partner.activationConditions.indexOf(DEPRECATED_ACTIVATION_CONDITION);
-      if (index !== -1) {
-        partner.activationConditions.splice(index, 1);
-        needsSave = true;
-      }
-    }
-
-    partner.imports?.forEach((trade) => {
+  for (const partner of partners) {
+    partner.buysFromUs?.forEach((trade) => {
       if (trade.pricePerUnit == null) {
         trade.pricePerUnit = getDefaultTradePrice(trade.productId, 'export') ?? 0;
         needsSave = true;
       }
       if (trade.currentYearly == null) {
-        trade.currentYearly = trade.currentOccurrences || 0;
+        trade.currentYearly = 0;
         needsSave = true;
       }
     });
 
-    partner.exports?.forEach((trade) => {
+    partner.sellsToUs?.forEach((trade) => {
       if (trade.pricePerUnit == null) {
         trade.pricePerUnit = getDefaultTradePrice(trade.productId, 'import') ?? 0;
         needsSave = true;
       }
       if (trade.currentYearly == null) {
-        trade.currentYearly = trade.currentOccurrences || 0;
+        trade.currentYearly = 0;
         needsSave = true;
       }
     });
-  });
+  }
+
+  const validation = validatePartnerCatalog(partners);
+  if (!validation.valid) {
+    return { partners: createDefaultPartners(), needsSave: true };
+  }
 
   return { partners, needsSave };
 }

@@ -3,6 +3,7 @@
  */
 import { getPartnerTradePrice } from '../../domain/policies/PartnerTradePolicy.js';
 import { getDefaultTradePrice } from '../../domain/catalogs/ProductCatalog.js';
+import { canExecuteTrade, mergeProductTradeToggles } from '../../domain/policies/PlayerTradeTogglePolicy.js';
 
 export class ProcessProductExport {
   /** @param {import('../services/CommerceSimulationService.js').CommerceSimulationService} simulation */
@@ -36,7 +37,15 @@ export class ProcessProductExport {
       }
     }
 
-    const availableStock = await simulation.windmillStock.getTotalStock(productId);
+    const availableStock = await simulation.commerceHubStock.getTotalStock(productId);
+
+    if (!mergeProductTradeToggles(config).industryActive) {
+      return null;
+    }
+
+    if (!canExecuteTrade({ operation: 'export', productConfig: config, stock: availableStock })) {
+      return null;
+    }
 
     if (!simulation.canExportProduct(productId, quantity, availableStock, conditions)) {
       return null;
@@ -51,9 +60,8 @@ export class ProcessProductExport {
     const totalRevenue = quantity * pricePerUnit;
 
     if (simulation.isStockable(productId)) {
-      const stockReduced = await simulation.windmillStock.reduceStock(productId, quantity, partnerId);
+      const stockReduced = await simulation.commerceHubStock.reduceStock(productId, quantity, partnerId);
       if (!stockReduced) {
-        console.warn(`[CommerceService] Failed to reduce windmill stock for ${productId}`);
         return null;
       }
     }

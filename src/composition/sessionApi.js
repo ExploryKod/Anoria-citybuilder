@@ -36,8 +36,8 @@ import {
   getBuildingsNamesInZone,
 } from '../contexts/parcels/infrastructure/spatial/sceneNeighborhoodScan.js';
 import {
-  getContractStatus,
-} from '../contexts/commerce/domain/policies/PartnerContractPolicy.js';
+  getPartnerQuotaStatus,
+} from '../contexts/commerce/domain/policies/PartnerQuotaPolicy.js';
 import {
   getProductStockKey,
   getProductDisplayName,
@@ -205,7 +205,7 @@ export function createCommerceSessionApi(commerce) {
     loadOrSeedCommerceConfig: () => repo.loadOrSeedConfig(),
     saveCommerceConfig: (data) => repo.saveConfig(data),
     clearCommercePersistence: () => commerce.clear(),
-    getContractStatus: (...args) => getContractStatus(...args),
+    getPartnerQuotaStatus: (...args) => getPartnerQuotaStatus(...args),
     getProductStockKey: (...args) => getProductStockKey(...args),
     getProductDisplayName: (...args) => getProductDisplayName(...args),
     evaluatePartnerActivationConditions: (...args) =>
