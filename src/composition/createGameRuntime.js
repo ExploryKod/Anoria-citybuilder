@@ -6,6 +6,7 @@ import { createHousingPopulationGrowthSystem } from '../contexts/housing/infrast
 import { createHousingEvolutionSystem } from '../contexts/housing/infrastructure/runtime/housingEvolutionSystem.js';
 import { createEmploymentRedistributeSystem } from '../contexts/employment/infrastructure/runtime/employmentRedistributeSystem.js';
 import { createFactoryProductionSystem } from '../contexts/supply/infrastructure/runtime/supplyFactoryProductionSystem.js';
+import { createSupplyMonthlyCommerceSystem } from '../contexts/supply/infrastructure/runtime/supplyMonthlyCommerceSystem.js';
 import { createCommerceTurnSystem } from '../contexts/commerce/infrastructure/runtime/commerceTurnSystem.js';
 import { createRandomEventsSystem } from '../contexts/gameplay/infrastructure/runtime/randomEventsSystem.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
@@ -84,6 +85,10 @@ export function createGameRuntime({
     getSectorPriorities,
   });
   const supplyFactoryProduction = createFactoryProductionSystem({ supply });
+  const supplyMonthlyCommerce = createSupplyMonthlyCommerceSystem({
+    supply,
+    getTimeInfo,
+  });
 
   pipeline
     .group('simulation')
@@ -93,6 +98,7 @@ export function createGameRuntime({
     .register('housing.evolution', housingEvolution)
     .register('employment.redistribute', employmentRedistribute)
     .register('supply.factoryProduction', supplyFactoryProduction)
+    .register('supply.monthlyCommerce', supplyMonthlyCommerce)
     .register('commerce.turn', createCommerceTurnSystem({ commerce }))
     .register('gameplay.randomEvents', createRandomEventsSystem({ gameplay }));
 

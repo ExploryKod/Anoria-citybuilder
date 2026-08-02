@@ -150,6 +150,7 @@ export function createSupplySessionApi(supply) {
       const windmills = await supply.listWindmillSupplyViews();
       return windmills.filter((w) => w.isActive && w.commercializeEnabled);
     },
+    getCommerceHubStocks: () => supply.getCommerceHubStocks(),
     updateSupplyBuildingFields: (id, fields) => supply.updateSupplyBuildingFields(id, fields),
     listProductionJournalEntries: (factoryId = null, turn = null) =>
       supply.listProductionJournalEntries(factoryId, turn),
