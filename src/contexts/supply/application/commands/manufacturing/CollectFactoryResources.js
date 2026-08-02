@@ -1,5 +1,6 @@
 import { FACTORY_RESOURCE_TYPES } from '../../../domain/manufacturing/ProductRecipeCatalog.js';
 import { effectiveFactoryStorage } from '../../../domain/manufacturing/FactoryTransformPolicy.js';
+import { canFactoryCollectResource } from '../../../domain/manufacturing/FactorySupplyFlowPolicy.js';
 
 /**
  * Command: collect raw materials from nature items into a factory.
@@ -32,6 +33,10 @@ export class CollectFactoryResources {
     const natureItems = await this.repository.listNatureItems();
 
     for (const resourceType of FACTORY_RESOURCE_TYPES) {
+      if (!canFactoryCollectResource(factoryData, resourceType)) {
+        continue;
+      }
+
       const allocatedWorkers = productWorkerDistribution[resourceType] || 0;
       if (allocatedWorkers === 0) {
         if (currentRawMaterials[resourceType] > 0) {

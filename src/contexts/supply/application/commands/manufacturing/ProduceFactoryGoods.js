@@ -7,6 +7,7 @@ import {
   factoryMaxStorage,
   canProduceFromRecipe,
 } from '../../../domain/manufacturing/FactoryStoragePolicy.js';
+import { canFactoryProduceProduct } from '../../../domain/manufacturing/FactorySupplyFlowPolicy.js';
 
 /**
  * Command: produce finished goods from refined materials at a factory.
@@ -51,6 +52,10 @@ export class ProduceFactoryGoods {
     };
 
     for (const [productType, recipe] of Object.entries(PRODUCT_RECIPES)) {
+      if (!canFactoryProduceProduct(factoryData, productType)) {
+        continue;
+      }
+
       const allocatedWorkers = productWorkerDistribution[productType] || 0;
       if (allocatedWorkers === 0) {
         if (currentProducts[productType] && currentProducts[productType] > 0) {
