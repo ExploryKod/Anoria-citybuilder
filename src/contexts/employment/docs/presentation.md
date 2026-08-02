@@ -24,12 +24,16 @@ Implémentation : `computeCityEmploymentSummary.js` → query `GetCityEmployment
 
 ```javascript
 {
-  workerPool,           // citoyens ouvriers (maisons routées)
+  workerPool,           // citoyens ouvriers bruts (maisons routées)
   elitePool,            // élites palais (affichage)
   totalPopulation,      // workerPool + elitePool
+  civilServantCount,    // floor(totalPopulation / 12)
+  laborPool,            // workerPool − civilServantCount
+  activeCitizenCount,   // citoyens actifs (employés, hors chômeurs/élites/fonct.)
+  activePopulationCount,// activeCitizenCount + elitePool + civilServantCount
   totalAssigned,        // Σ employees.worker (postes routés)
   totalNeed,            // Σ workerNeed (postes routés)
-  unemployed,           // max(0, workerPool − totalAssigned)
+  unemployed,           // max(0, laborPool − totalAssigned)
   unemploymentPercentage,
   lack,                 // Σ max(0, workerNeed − worker) — déficit postes
   understaffedBuildingIds,  // instanceId où worker === 0 && need > 0 && route

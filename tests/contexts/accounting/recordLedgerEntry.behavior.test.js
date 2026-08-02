@@ -332,8 +332,8 @@ describe('Accounting — RecordLedgerEntry (salary / payroll_tax slice)', () => 
   test('records salary journal line and debits treasury once', async () => {
     const result = await accounting.recordSalaryExpense({
       turn: 30,
-      amount: 2800,
-      description: 'Salaires fonctionnaires - Juin 0 JC (28 hab. × 100€)',
+      amount: 200,
+      description: 'Salaires fonctionnaires - Juin 0 JC (2 fonct. × 100€)',
     });
 
     expect(result).toEqual({
@@ -347,22 +347,22 @@ describe('Accounting — RecordLedgerEntry (salary / payroll_tax slice)', () => 
     expect(entries[0].businessKey).toBe('salary:0:5');
 
     const budget = await testDb.budget.get('budget_current');
-    expect(budget.funds).toBe(-1800);
-    expect(budget.expenses).toBe(2800);
-    expect(budget.totalSalaries).toBe(2800);
+    expect(budget.funds).toBe(800);
+    expect(budget.expenses).toBe(200);
+    expect(budget.totalSalaries).toBe(200);
   });
 
   test('skips duplicate salary for same civil month', async () => {
     await accounting.recordSalaryExpense({
       turn: 30,
-      amount: 2800,
-      description: 'Salaires - Juin 1',
+      amount: 200,
+      description: 'Salaires fonctionnaires - Juin 1',
     });
 
     const second = await accounting.recordSalaryExpense({
       turn: 31,
       amount: 9999,
-      description: 'Salaires - Juin duplicate',
+      description: 'Salaires fonctionnaires - Juin duplicate',
     });
 
     expect(second).toMatchObject({
@@ -373,8 +373,8 @@ describe('Accounting — RecordLedgerEntry (salary / payroll_tax slice)', () => 
     });
 
     const budget = await testDb.budget.get('budget_current');
-    expect(budget.funds).toBe(-1800);
-    expect(budget.totalSalaries).toBe(2800);
+    expect(budget.funds).toBe(800);
+    expect(budget.totalSalaries).toBe(200);
   });
 
   test('records payroll tax as income once per civil month', async () => {
@@ -431,11 +431,11 @@ describe('Accounting — RecordLedgerEntry (salary / payroll_tax slice)', () => 
     const budget = await budgetManager.addSalaries(
       100,
       28,
-      'Salaires fonctionnaires - Juin 0 JC (28 hab. × 100€)'
+      'Salaires fonctionnaires - Juin 0 JC (2 fonct. × 100€)'
     );
 
-    expect(budget.funds).toBe(-1800);
-    expect(budget.totalSalaries).toBe(2800);
+    expect(budget.funds).toBe(800);
+    expect(budget.totalSalaries).toBe(200);
 
     const entries = await journalManager.getJournalEntries();
     expect(entries.filter((entry) => entry.type === 'salary')).toHaveLength(1);
@@ -461,6 +461,29 @@ describe('Accounting — RecordLedgerEntry (salary / payroll_tax slice)', () => 
 
     const entries = await journalManager.getJournalEntries();
     expect(entries.filter((entry) => entry.type === 'payroll_tax')).toHaveLength(1);
+  });
+
+  test('records unemployment benefit journal line and debits treasury once', async () => {
+    const result = await accounting.recordUnemploymentBenefitExpense({
+      turn: 30,
+      amount: 200,
+      description: 'Salaires chômeurs - Juin 0 JC (4 chôm. × 100€ × 50%)',
+    });
+
+    expect(result).toEqual({
+      recorded: true,
+      skipped: false,
+      treasuryApplied: true,
+    });
+
+    const entries = await journalManager.getJournalEntries();
+    expect(entries.filter((entry) => entry.type === 'unemployment_benefit')).toHaveLength(1);
+    expect(entries[0].businessKey).toBe('unemployment_benefit:0:5');
+
+    const budget = await testDb.budget.get('budget_current');
+    expect(budget.funds).toBe(800);
+    expect(budget.expenses).toBe(200);
+    expect(budget.totalUnemploymentBenefits).toBe(200);
   });
 });
 

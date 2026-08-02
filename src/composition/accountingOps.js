@@ -326,13 +326,12 @@ export async function collectCitizenTaxes(time = 0, options = {}) {
   return ctx.collectCitizenTaxes({ time });
 }
 
-export async function recordSalaries(salaryPerMonth, population, description = null, turn = null) {
-  return getOrCreateAccountingContext().recordSalaries(
-    salaryPerMonth,
-    population,
-    description,
-    turn
-  );
+export async function recordSalaries(amount, description = null, turn = null) {
+  return getOrCreateAccountingContext().recordSalaries(amount, description, turn);
+}
+
+export async function recordUnemploymentBenefits(amount, description = null, turn = null) {
+  return getOrCreateAccountingContext().recordUnemploymentBenefits(amount, description, turn);
 }
 
 export async function recordPayrollTax(salaryAmount, taxRate, description = null, turn = null) {

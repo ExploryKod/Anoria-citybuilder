@@ -81,6 +81,10 @@ describe('Employment — GetCityEmploymentSummary', () => {
       expect(summary.workerPool).toBe(11); // 5 + 6
       expect(summary.elitePool).toBe(1);
       expect(summary.totalPopulation).toBe(12);
+      expect(summary.civilServantCount).toBe(1);
+      expect(summary.laborPool).toBe(10);
+      expect(summary.activeCitizenCount).toBe(0);
+      expect(summary.unemployed).toBe(10);
     });
 
     test('lack and understaffed: farms without road count; other workplaces need road', () => {

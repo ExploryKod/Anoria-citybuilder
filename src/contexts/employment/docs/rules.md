@@ -29,13 +29,21 @@
 
 ### 1.4 Affichage barre d’état
 
-Format : **`total (citoyens, élites)`**
+Deux barres :
 
-- `total` = `workerPool + elitePool` *(population des maisons desservies)*
-- `citoyens` = `workerPool`
-- `élites` = `elitePool`
+**Barre principale** — pop totale + affamés :
+- 👥 **`totalPopulation`** (active + chômeurs)
 
-Exemple : **`21 (18, 3)`** = 21 habitants dont 18 citoyens ouvriers et 3 élites.
+**Barre détail** (sous la principale) — pop active + emploi :
+- **👷** `activePopulationCount` · *écart* · 🔨 citoyens · 👑 élites · 🏛 fonctionnaires
+- **Chômeurs** `unemployed (%)` — hors fonctionnaires
+- **⚠️** postes non pourvus (`lack`)
+
+```
+total = population active + chômeurs
+```
+
+Exemple : barre 1 → **`21`** · barre 2 → 👷 **`6`** · 🔨`5` 👑`0` 🏛`1` · chômage **`15 (75 %)`** · ⚠️`0`
 
 ---
 
@@ -86,17 +94,20 @@ Deux métriques **indépendantes** — ne pas les confondre.
 
 ### 5.1 Chômage classique (surplus de main-d’œuvre)
 
-Mesure les **citoyens ouvriers non assignés**, pas les postes vacants.
+Mesure les **citoyens ouvriers non assignés**, hors fonctionnaires et hors élites.
 
 ```
-totalAssigned = Σ employees.worker   (postes éligibles, avec route)
-unemployed    = max(0, workerPool − totalAssigned)
-unemploymentPercentage = round(unemployed / workerPool × 100)   si workerPool > 0, sinon 0
+civilServantCount = floor(totalPopulation / 12)
+laborPool         = max(0, workerPool − civilServantCount)
+totalAssigned     = Σ employees.worker   (postes éligibles, avec route)
+unemployed        = max(0, laborPool − totalAssigned)
+activeCitizenCount = max(0, laborPool − unemployed)
+unemploymentPercentage = round(unemployed / laborPool × 100)   si laborPool > 0, sinon 0
 ```
 
-- **Numérateur** : citoyens sans emploi ouvrier.
-- **Dénominateur** : **`workerPool` uniquement** — les élites sont **exclues**.
-- Affichage barre : **`unemployed (unemploymentPercentage %)`** — ex. `4 (22 %)`.
+- **Numérateur** : citoyens sans emploi ouvrier, **sans compter les fonctionnaires**.
+- **Dénominateur** : **`laborPool`** — pool ouvrier après réservation des fonctionnaires ; les élites sont **exclues**.
+- Affichage barre : **`unemployed (unemploymentPercentage %)`** — ex. `4 (9 %)`.
 
 ### 5.2 Manque global (déficit sur les postes)
 

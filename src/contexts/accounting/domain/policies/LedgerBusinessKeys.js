@@ -13,6 +13,7 @@ export {
 /** Types with at most one persisted entry per civil month. */
 const MONTHLY_IDEMPOTENT_TYPES = new Set([
   'salary',
+  'unemployment_benefit',
   'payroll_tax',
   'maintenance',
 ]);

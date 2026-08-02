@@ -143,7 +143,9 @@ describe('Accounting — GetGeneralLedger (Phase 2b)', () => {
       const currentYear = ledger.currentYear;
       const current = ledger.years.find((y) => y.year === currentYear);
       expect(current).toBeDefined();
-      expect(current.displayBalance).toBe(500);
+      expect(current.isCurrentYear).toBe(true);
+      expect(current.treasuryBalance).toBe(500);
+      expect(current.netFlow).toBe(current.incomeTotal - current.expensesTotal);
     });
 
     test('month totals equal sum of visible entries without filter', async () => {

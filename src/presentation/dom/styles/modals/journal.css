@@ -888,6 +888,33 @@
     color: #f87171;
 }
 
+.journal-summary-item.treasury .amount {
+    color: #fef08a;
+    font-weight: 700;
+}
+
+.journal-summary-item.treasury.positive .amount {
+    color: #fef08a;
+}
+
+.journal-summary-item.treasury.negative .amount {
+    color: #fca5a5;
+}
+
+.journal-summary-help {
+    display: inline-block;
+    margin-left: 0.2rem;
+    font-size: 0.75rem;
+    opacity: 0.75;
+    cursor: help;
+    font-style: normal;
+    line-height: 1;
+}
+
+.journal-summary-item[title] {
+    cursor: help;
+}
+
 /* Entrées du mois */
 .journal-month-entries {
     padding: 0.5rem 1.5rem;

@@ -7,6 +7,7 @@ import {
   elitePopFromHouse,
   workerPopFromHouse,
 } from './policies/LaborPoolPolicy.js';
+import { computePopulationBreakdown } from '../../../shared/population/computePopulationBreakdown.js';
 
 /**
  * Pure read model: city-wide employment summary from building snapshots.
@@ -16,6 +17,10 @@ import {
  *   workerPool: number,
  *   elitePool: number,
  *   totalPopulation: number,
+ *   civilServantCount: number,
+ *   laborPool: number,
+ *   activeCitizenCount: number,
+ *   activePopulationCount: number,
  *   totalAssigned: number,
  *   totalNeed: number,
  *   unemployed: number,
@@ -66,18 +71,24 @@ export function computeCityEmploymentSummary(buildings) {
     bySector[sector].need = Math.max(0, bySector[sector].workerNeed - bySector[sector].workers);
   }
 
-  const unemployed = Math.max(0, workerPool - totalAssigned);
-  const unemploymentPercentage =
-    workerPool > 0 ? Math.round((unemployed / workerPool) * 100) : 0;
+  const population = computePopulationBreakdown({
+    workerPool,
+    elitePool,
+    totalAssigned,
+  });
 
   return Object.freeze({
     workerPool,
     elitePool,
-    totalPopulation: workerPool + elitePool,
+    totalPopulation: population.totalPopulation,
+    civilServantCount: population.civilServantCount,
+    laborPool: population.laborPool,
+    activeCitizenCount: population.activeCitizenCount,
+    activePopulationCount: population.activePopulationCount,
     totalAssigned,
     totalNeed,
-    unemployed,
-    unemploymentPercentage,
+    unemployed: population.unemployed,
+    unemploymentPercentage: population.unemploymentPercentage,
     lack,
     understaffedBuildingIds: Object.freeze([...understaffedBuildingIds]),
     bySector: Object.freeze(bySector),
