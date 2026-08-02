@@ -1,4 +1,11 @@
 import { computeTransformAmount } from '../../../domain/manufacturing/FactoryTransformPolicy.js';
+import {
+  canFactoryTransformResource,
+} from '../../../domain/manufacturing/FactorySupplyFlowPolicy.js';
+import {
+  getFactoryLineAllocation,
+  manufacturingEligibleStock,
+} from '../../../domain/manufacturing/FactoryLineAllocationPolicy.js';
 
 const TRANSFORM_STEPS = [
   {
@@ -100,8 +107,13 @@ export class TransformFactoryMaterials {
     const productWorkerDistribution = factoryData.productWorkerDistribution || {};
     const allocatedWorkers = productWorkerDistribution[step.workerKey] || 0;
     if (allocatedWorkers <= 0) return;
+    if (!canFactoryTransformResource(factoryData, step.workerKey)) return;
 
-    const previousStock = factoryData[step.previousStockKey] || 0;
+    let previousStock = factoryData[step.previousStockKey] || 0;
+    if (previousStock <= 0) return;
+
+    const allocation = getFactoryLineAllocation(factoryData, step.workerKey);
+    previousStock = manufacturingEligibleStock(previousStock, allocation);
     if (previousStock <= 0) return;
 
     const rawMaterials = factoryData.rawMaterials || {};

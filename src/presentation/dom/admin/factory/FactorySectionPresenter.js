@@ -3,6 +3,18 @@ import {
     instanceIdFromHouseRow,
     displayLabelFromHouseRow,
 } from '../../../../shared/building-identity/index.js';
+import {
+    getBuildingSupplyFlow,
+    SUPPLY_FLOW,
+} from '../../../../contexts/supply/domain/manufacturing/SupplyFlow.js';
+import {
+    canFactoryCollectResource,
+    canFactoryProduceProduct,
+    getSupplyFlowLabel,
+} from '../../../../contexts/supply/domain/manufacturing/FactorySupplyFlowPolicy.js';
+import {
+    getFactoryLineAllocation,
+} from '../../../../contexts/supply/domain/manufacturing/FactoryLineAllocationPolicy.js';
 
 function factoryInstanceId(factory) {
     return instanceIdFromHouseRow(factory);
@@ -360,6 +372,8 @@ export class FactorySectionPresenter {
         const productWorkerDistribution = factoryData.productWorkerDistribution || {};
         // Pourcentages de production par produit (stockés dans IndexedDB)
         const productProductionPercentages = factoryData.productProductionPercentages || {};
+        const supplyFlow = getBuildingSupplyFlow(factoryData);
+        const woodAllocation = getFactoryLineAllocation(factoryData, 'wood');
         // Stock de matériaux raffinés
         const logs = factoryData.logs || 0;
         const refinedGold = factoryData.refinedGold || 0;
@@ -561,15 +575,56 @@ export class FactorySectionPresenter {
             <div class="factory-header">
                 <div class="factory-id">
                     <strong>Usine:</strong> ${factoryDisplayLabel(factoryData)}
+                    <span class="factory-flow-badge factory-flow-badge--${supplyFlow}">${getSupplyFlowLabel(supplyFlow)}</span>
                 </div>
                 <div class="factory-location">
                     Position: x: ${factoryData.x || 0} | y: ${factoryData.y || 0}
                 </div>
+                <div class="factory-supply-flow-control">
+                    <label for="factory-flow-${factoryInstanceId(factoryData)}">Flux dédié</label>
+                    <select
+                        id="factory-flow-${factoryInstanceId(factoryData)}"
+                        class="factory-supply-flow-select"
+                        data-factory="${factoryInstanceId(factoryData)}"
+                    >
+                        <option value="${SUPPLY_FLOW.CITY}" ${supplyFlow === SUPPLY_FLOW.CITY ? 'selected' : ''}>Ville (approvisionnement interne)</option>
+                        <option value="${SUPPLY_FLOW.COMMERCE}" ${supplyFlow === SUPPLY_FLOW.COMMERCE ? 'selected' : ''}>Commerce (grange / export)</option>
+                    </select>
+                </div>
+                ${supplyFlow === SUPPLY_FLOW.COMMERCE ? `
+                <div class="factory-line-allocation" data-resource="wood">
+                    <span class="factory-line-allocation-title">Répartition bois collecté</span>
+                    <label>
+                        Vente directe (grange)
+                        <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            class="factory-allocation-input"
+                            data-factory="${factoryInstanceId(factoryData)}"
+                            data-allocation="direct"
+                            value="${woodAllocation.direct}"
+                        />%
+                    </label>
+                    <label>
+                        Fabrication (bûches → meubles)
+                        <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            class="factory-allocation-input"
+                            data-factory="${factoryInstanceId(factoryData)}"
+                            data-allocation="manufacturing"
+                            value="${woodAllocation.manufacturing}"
+                        />%
+                    </label>
+                </div>
+                ` : ''}
             </div>
 
             <div class="factory-raw-materials">
                 <h4 class="factory-subtitle">Matières Premières</h4>
-                ${Object.entries(rawMaterialNames).map(([key, name]) => {
+                ${Object.entries(rawMaterialNames).filter(([key]) => canFactoryCollectResource(factoryData, key)).map(([key, name]) => {
                     const status = getProductionStatus(key, false);
                     const statusClass = status.status === 'full' ? 'factory-status-full' : 
                                       status.status === 'no-workers' ? 'factory-status-no-workers' : 
@@ -660,7 +715,7 @@ export class FactorySectionPresenter {
 
             <div class="factory-products">
                 <h4 class="factory-subtitle">Produits Finis</h4>
-                ${Object.entries(productNames).map(([key, name]) => {
+                ${Object.entries(productNames).filter(([key]) => canFactoryProduceProduct(factoryData, key)).map(([key, name]) => {
                     const status = getProductionStatus(key, true);
                     const statusClass = status.status === 'full' ? 'factory-status-full' : 
                                       status.status === 'no-workers' ? 'factory-status-no-workers' : 
@@ -786,6 +841,20 @@ export class FactorySectionPresenter {
             });
         });
 
+        const flowSelect = card.querySelector('.factory-supply-flow-select');
+        if (flowSelect) {
+            flowSelect.addEventListener('change', async (e) => {
+                await this.updateFactorySupplyFlow(factoryId, e.target.value);
+            });
+        }
+
+        const allocationInputs = card.querySelectorAll('.factory-allocation-input');
+        allocationInputs.forEach((input) => {
+            input.addEventListener('change', async () => {
+                await this.updateFactoryWoodAllocation(factoryId, card);
+            });
+        });
+
         // Event listeners pour les boutons de recrutement
         const recruitButtons = card.querySelectorAll('.factory-recruit-btn');
         recruitButtons.forEach(button => {
@@ -807,6 +876,35 @@ export class FactorySectionPresenter {
                 factory[setting] = value;
             }
         } catch (error) {
+        }
+    }
+
+    async updateFactorySupplyFlow(factoryId, supplyFlow) {
+        try {
+            await this.supply.updateFactoryFields(factoryId, { supplyFlow });
+            await this.refresh();
+        } catch (error) {
+            console.error('[FactorySectionPresenter] Failed to update supply flow:', error);
+        }
+    }
+
+    async updateFactoryWoodAllocation(factoryId, card) {
+        const directInput = card.querySelector('[data-allocation="direct"]');
+        const manufacturingInput = card.querySelector('[data-allocation="manufacturing"]');
+        if (!directInput || !manufacturingInput) return;
+
+        try {
+            await this.supply.updateFactoryFields(factoryId, {
+                lineAllocations: {
+                    wood: {
+                        direct: Number(directInput.value) || 0,
+                        manufacturing: Number(manufacturingInput.value) || 0,
+                    },
+                },
+            });
+            await this.refresh();
+        } catch (error) {
+            console.error('[FactorySectionPresenter] Failed to update wood allocation:', error);
         }
     }
 

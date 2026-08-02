@@ -320,6 +320,51 @@ Exemple : quota 25, carré = 5 → **5 carrés** ; 3 unités vendues → **0 car
 
 ---
 
+## 12. Flux factory dédiés (ville vs commerce)
+
+### 12.1 Principe
+
+| Règle | Détail |
+|-------|--------|
+| **Un bâtiment = un flux** | Chaque `Winery-001` est dédiée soit au **commerce**, soit à la **ville**. Deux usines minimum pour faire les deux en parallèle. |
+| **Hubs séparés** | Ville → moulin / marchés ; commerce → grange (`Barn-001`). |
+| **Lignes autorisées** | Commerce MVP : collecte `wood`, fabrication `furniture`. Ville : toutes les lignes actuelles. |
+
+### 12.2 Policies supply
+
+| Policy | Rôle |
+|--------|------|
+| `FactorySupplyFlowPolicy` | `supplyFlow: 'city' \| 'commerce'` ; filtre collecte / transform / production par bâtiment. |
+| `FactoryLineAllocationPolicy` | Par matière première : % **vente directe** (grange ou distribution ville) vs **fabrication** (bûches → meubles). |
+
+**Exemple commerce — bois**
+
+```
+Collecte 10 bois
+  ├─ 60 % direct  → stock usine (futur transfert grange)
+  └─ 40 % fab     → transform → logs → meubles
+```
+
+Défaut MVP commerce : 100 % direct (bois brut vers grange, sans menuiserie).
+
+### 12.3 Fichiers
+
+| Fichier | Emplacement |
+|---------|-------------|
+| `SupplyFlow.js` | `supply/domain/manufacturing/` |
+| `FactorySupplyFlowPolicy.js` | `supply/domain/manufacturing/` |
+| `FactoryLineAllocationPolicy.js` | `supply/domain/manufacturing/` |
+
+### 12.4 Roadmap (suite)
+
+| Phase | Livrable |
+|-------|----------|
+| **A** ✅ | Policies + factory filtrée par flux + UI admin |
+| **B** | `BarnStockPolicy` + transfert mensuel factory commerce → grange |
+| **C** | Usine ville + consommation interne (hors commerce) |
+
+---
+
 ## 11. Références
 
 - Captures César III : voir `docs/assets/` *(gitignored — copies locales)*.  
