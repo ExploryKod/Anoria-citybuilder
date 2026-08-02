@@ -22,17 +22,12 @@ export async function initCommerceSection(deps) {
 
   const observer = new MutationObserver(async () => {
     if (commerceSection.classList.contains('active')) {
-      await presenter.renderPartners();
+      await presenter.renderAdminEntry();
     }
   });
 
   observer.observe(commerceSection, { attributes: true, attributeFilter: ['class'] });
 
   presenter.setupEventListeners();
-
-  if (commerceSection.classList.contains('active')) {
-    await presenter.init();
-  } else {
-    presenter.loadPartnersData();
-  }
+  await presenter.init();
 }

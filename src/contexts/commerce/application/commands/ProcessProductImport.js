@@ -3,6 +3,7 @@
  */
 import { getPartnerTradePrice } from '../../domain/policies/PartnerTradePolicy.js';
 import { getDefaultTradePrice } from '../../domain/catalogs/ProductCatalog.js';
+import { canExecuteTrade } from '../../domain/policies/PlayerTradeTogglePolicy.js';
 
 export class ProcessProductImport {
   /** @param {import('../services/CommerceSimulationService.js').CommerceSimulationService} simulation */
@@ -23,6 +24,14 @@ export class ProcessProductImport {
     const config = simulation.getProductConfig(productId);
     if (!config) {
       console.warn(`[CommerceService] No config found for product: ${productId}`);
+      return null;
+    }
+
+    if (!canExecuteTrade({
+      operation: 'import',
+      productConfig: config,
+      partners: simulation.partnersData ?? [],
+    })) {
       return null;
     }
 
@@ -69,7 +78,7 @@ export class ProcessProductImport {
 
     let stockAdded = false;
     if (simulation.isStockable(productId)) {
-      const stockResult = await simulation.windmillStock.addToStock(productId, quantity, partnerId);
+      const stockResult = await simulation.commerceHubStock.addToStock(productId, quantity, partnerId);
       stockAdded = stockResult !== null;
     }
 

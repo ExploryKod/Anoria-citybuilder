@@ -1,5 +1,11 @@
 import { buildTradePartnersView } from '../../../../contexts/commerce/application/queries/GetTradePartnersView.js';
-import { renderTradePartnersList } from './renderTradePartners.js';
+import { buildTradeGoodsView } from '../../../../contexts/commerce/application/queries/GetTradeGoodsView.js';
+import {
+  renderTradeMapOverlay,
+  renderTradeMapBottomPanel,
+  renderPartnerMarkers,
+} from './renderTradeMap.js';
+import { renderCommerceGoodsList, renderCommerceGoodModal } from './renderCommerceGoods.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
 
 export class CommerceSectionPresenter {
@@ -21,13 +27,21 @@ export class CommerceSectionPresenter {
     this.supply = deps.supply;
     this.updateDisplayedFunds = deps.updateDisplayedFunds ?? (() => {});
     this.partnersData = null;
+    this.partnersViewModel = null;
+    this.selectedPartnerId = null;
     this.clickHandler = null;
+    this.mapClickHandler = null;
+    this.escapeHandler = null;
+    this.isMapOpen = false;
+    this.openGoodProductId = null;
+    this.goodModalHandler = null;
+    this.goodModalEscapeHandler = null;
   }
 
   async init() {
     this.setupEventListeners();
     this.loadPartnersData();
-    await this.renderPartners();
+    await this.renderAdminEntry();
   }
 
   loadPartnersData() {
@@ -38,72 +52,20 @@ export class CommerceSectionPresenter {
     this.commerce.saveCommercePartners(this.partnersData);
   }
 
-  async checkWindmillStocks(partner) {
-    try {
-      const allWindmills = await this.supply.listWindmillSupplyViews();
-      const commercializableWindmills = await this.supply.listCommercializableWindmills();
-
-      if (allWindmills.length === 0) {
-        return {
-          hasStocks: false,
-          missingProducts: ['Aucun moulin construit'],
-          noCommercializableWindmills: false,
-        };
-      }
-
-      if (commercializableWindmills.length === 0) {
-        return {
-          hasStocks: false,
-          missingProducts: ['Commerce impossible : aucun moulin'],
-          noCommercializableWindmills: true,
-        };
-      }
-
-      const requiredProducts = partner.imports.map((imp) => imp.productId);
-      const missingProducts = [];
-
-      for (const productId of requiredProducts) {
-        const stockKey = this.commerce.getProductStockKey(productId);
-        if (!stockKey) continue;
-
-        let totalStock = 0;
-        for (const windmill of commercializableWindmills) {
-          const stocks = windmill.stocks || {};
-          totalStock += stocks[stockKey] || 0;
-        }
-
-        if (totalStock < 1) {
-          const productName = this.commerce.getProductDisplayName(productId);
-          missingProducts.push(`${productName} (stock: ${totalStock})`);
-        }
-      }
-
-      return {
-        hasStocks: missingProducts.length === 0,
-        missingProducts,
-        noCommercializableWindmills: false,
-      };
-    } catch (error) {
-      console.error('[CommerceSectionPresenter] Error checking windmill stocks:', error);
-      return {
-        hasStocks: false,
-        missingProducts: ['Erreur lors de la vérification'],
-        noCommercializableWindmills: false,
-      };
-    }
-  }
-
   async checkPartnerActivationConditions(partner) {
-    const [population, unemployment, stocksCheck] = await Promise.all([
+    const [population, unemployment] = await Promise.all([
       this.housing.getCityTotalPopulation(),
       this.employment.getCityEmploymentSummary().then((summary) => summary.unemploymentPercentage),
-      this.checkWindmillStocks(partner),
     ]);
 
     return this.commerce.evaluatePartnerActivationConditions({
       partner,
       activationConditions: partner.activationConditions,
-      metrics: { population, unemployment, stocksCheck },
+      metrics: {
+        population,
+        unemployment,
+        stocksCheck: { hasStocks: true, missingProducts: [] },
+      },
     });
   }
 
@@ -191,7 +153,7 @@ export class CommerceSectionPresenter {
         padding: 15px 20px;
         border-radius: 8px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        z-index: 10000;
+        z-index: 21000;
         max-width: 400px;
         font-size: 14px;
         font-weight: 500;
@@ -226,7 +188,6 @@ export class CommerceSectionPresenter {
     this.loadPartnersData();
     const stats = this.commerce.loadCommerceStats();
     const productConfig = this.commerce.loadOrSeedCommerceConfig();
-    const commercializableWindmills = await this.supply.listCommercializableWindmills();
     const activationByPartnerId = {};
 
     for (const partner of this.partnersData) {
@@ -241,42 +202,297 @@ export class CommerceSectionPresenter {
       partners: this.partnersData,
       stats,
       productConfig,
-      hasCommercializableWindmills: commercializableWindmills.length > 0,
       activationByPartnerId,
     });
   }
 
-  async renderPartners() {
-    const partnersList = document.getElementById('commerce-partners-list');
-    if (!partnersList) return;
-
-    const viewModel = await this.buildPartnersViewModel();
-    partnersList.innerHTML = renderTradePartnersList(viewModel);
+  async refreshViewModel() {
+    this.partnersViewModel = await this.buildPartnersViewModel();
+    if (this.selectedPartnerId && !this.partnersViewModel.some((p) => p.id === this.selectedPartnerId)) {
+      this.selectedPartnerId = this.partnersViewModel[0]?.id ?? null;
+    }
+    return this.partnersViewModel;
   }
 
-  setupRefreshButton() {
-    const refreshBtn = document.getElementById('commerce-refresh-btn');
-    if (!refreshBtn) return;
+  async getStockByProductId() {
+    const productConfig = this.commerce.loadOrSeedCommerceConfig();
+    return Object.fromEntries(productConfig.map((product) => [product.id, 0]));
+  }
 
-    const newRefreshBtn = refreshBtn.cloneNode(true);
-    refreshBtn.parentNode.replaceChild(newRefreshBtn, refreshBtn);
+  async buildGoodsViewModel() {
+    const stats = this.commerce.loadCommerceStats();
+    const productConfig = this.commerce.loadOrSeedCommerceConfig();
+    const stockByProductId = await this.getStockByProductId();
+    const partners = this.commerce.loadOrSeedCommercePartners();
 
-    newRefreshBtn.addEventListener('click', async () => {
-      newRefreshBtn.disabled = true;
-      const originalHTML = newRefreshBtn.innerHTML;
-      newRefreshBtn.innerHTML = 'Actualisation...';
+    return buildTradeGoodsView({ productConfig, stats, stockByProductId, partners });
+  }
 
-      try {
-        await this.renderPartners();
-        this.showPartnerMessage('Données actualisées', 'success');
-      } catch (error) {
-        console.error('[CommerceSectionPresenter] Error refreshing partners:', error);
-        this.showPartnerMessage('Erreur lors de l\'actualisation', 'error');
-      } finally {
-        newRefreshBtn.disabled = false;
-        newRefreshBtn.innerHTML = originalHTML;
+  async renderAdminEntry() {
+    const goodsList = document.getElementById('commerce-goods-list');
+    if (!goodsList) return;
+
+    try {
+      const goods = await this.buildGoodsViewModel();
+      goodsList.innerHTML = renderCommerceGoodsList(goods);
+      if (this.openGoodProductId) {
+        const good = goods.find((item) => item.id === this.openGoodProductId);
+        if (good) {
+          this.renderGoodModal(good);
+        } else {
+          this.closeGoodModal();
+        }
       }
+    } catch (error) {
+      console.error('[CommerceSectionPresenter] Error rendering goods list:', error);
+      goodsList.innerHTML = renderCommerceGoodsList([]);
+    }
+  }
+
+  updateProductTradeSettings(productId, changes) {
+    const config = this.commerce.loadOrSeedCommerceConfig();
+    const index = config.findIndex((product) => product.id === productId);
+    if (index < 0) return null;
+
+    config[index] = { ...config[index], ...changes };
+    this.commerce.saveCommerceConfig(config);
+    return config[index];
+  }
+
+  renderGoodModal(good) {
+    this.closeGoodModal(false);
+    this.openGoodProductId = good.id;
+
+    const container = document.createElement('div');
+    container.innerHTML = renderCommerceGoodModal(good);
+    const modal = container.firstElementChild;
+    document.body.appendChild(modal);
+    this.setupGoodModalListeners(modal);
+  }
+
+  closeGoodModal(clearSelection = true) {
+    const modal = document.getElementById('commerce-good-modal');
+    if (modal) {
+      modal.remove();
+    }
+    if (this.goodModalHandler) {
+      document.removeEventListener('keydown', this.goodModalEscapeHandler);
+      this.goodModalHandler = null;
+      this.goodModalEscapeHandler = null;
+    }
+    if (clearSelection) {
+      this.openGoodProductId = null;
+    }
+  }
+
+  setupGoodModalListeners(modal) {
+    this.goodModalHandler = async (event) => {
+      if (event.target === modal || event.target.closest('#commerce-good-modal-close')) {
+        event.preventDefault();
+        this.closeGoodModal();
+        return;
+      }
+
+      const toggle = event.target.closest('.commerce-good-modal-toggle');
+      if (toggle && !toggle.disabled) {
+        const productId = toggle.dataset.productId;
+        const field = toggle.dataset.field;
+        this.updateProductTradeSettings(productId, { [field]: toggle.checked });
+        await this.renderAdminEntry();
+        return;
+      }
+
+      const thresholdInput = event.target.closest('.commerce-good-modal-threshold');
+      if (thresholdInput && thresholdInput === document.activeElement) {
+        return;
+      }
+
+      const industryBtn = event.target.closest('.commerce-good-modal-industry-btn');
+      if (industryBtn) {
+        event.preventDefault();
+        const productId = industryBtn.dataset.productId;
+        const nextActive = !industryBtn.classList.contains('active');
+        this.updateProductTradeSettings(productId, { industryActive: nextActive });
+        await this.renderAdminEntry();
+      }
+    };
+
+    this.goodModalEscapeHandler = (event) => {
+      if (event.key === 'Escape') {
+        this.closeGoodModal();
+      }
+    };
+
+    modal.addEventListener('click', this.goodModalHandler);
+    modal.addEventListener('change', async (event) => {
+      const thresholdInput = event.target.closest('.commerce-good-modal-threshold');
+      if (!thresholdInput || thresholdInput.disabled) return;
+
+      const productId = thresholdInput.dataset.productId;
+      const field = thresholdInput.dataset.field;
+      let value = Math.max(0, Number.parseInt(thresholdInput.value, 10) || 0);
+
+      if (field === 'importUpTo') {
+        const max = Number.parseInt(thresholdInput.dataset.max, 10) || 0;
+        value = Math.min(max, value);
+      }
+
+      thresholdInput.value = String(value);
+      this.updateProductTradeSettings(productId, { [field]: value });
+      await this.renderAdminEntry();
     });
+
+    document.addEventListener('keydown', this.goodModalEscapeHandler);
+  }
+
+  async openGoodModal(productId) {
+    const goods = await this.buildGoodsViewModel();
+    const good = goods.find((item) => item.id === productId);
+    if (!good) return;
+    this.renderGoodModal(good);
+  }
+
+  async openTradeMap() {
+    const viewModel = await this.refreshViewModel();
+    if (!this.selectedPartnerId) {
+      this.selectedPartnerId = viewModel[0]?.id ?? null;
+    }
+
+    this.closeTradeMap();
+
+    const container = document.createElement('div');
+    container.innerHTML = renderTradeMapOverlay(viewModel, this.selectedPartnerId);
+    const overlay = container.firstElementChild;
+    document.body.appendChild(overlay);
+
+    this.isMapOpen = true;
+    document.body.style.overflow = 'hidden';
+    this.setupMapEventListeners(overlay);
+  }
+
+  closeTradeMap() {
+    const overlay = document.getElementById('trade-map-overlay');
+    if (overlay) {
+      overlay.remove();
+    }
+    if (this.mapClickHandler) {
+      document.removeEventListener('keydown', this.escapeHandler);
+      this.mapClickHandler = null;
+      this.escapeHandler = null;
+    }
+    this.isMapOpen = false;
+    document.body.style.overflow = '';
+  }
+
+  updateMapMarkers(viewModel) {
+    const overlay = document.getElementById('trade-map-overlay');
+    if (!overlay) return;
+
+    overlay.querySelectorAll('.trade-map-city--partner').forEach((el) => el.remove());
+    const canvas = overlay.querySelector('#trade-map-canvas');
+    if (canvas) {
+      canvas.insertAdjacentHTML('beforeend', renderPartnerMarkers(viewModel, this.selectedPartnerId));
+    }
+  }
+
+  async selectPartnerOnMap(partnerId) {
+    this.selectedPartnerId = partnerId;
+    const viewModel = await this.refreshViewModel();
+    const overlay = document.getElementById('trade-map-overlay');
+    if (!overlay) return;
+
+    this.updateMapMarkers(viewModel);
+
+    const selected = viewModel.find((p) => p.id === partnerId) ?? null;
+    const panel = overlay.querySelector('#trade-map-panel');
+    if (panel && selected) {
+      panel.innerHTML = renderTradeMapBottomPanel(selected);
+    }
+  }
+
+  async refreshTradeMap() {
+    if (!this.isMapOpen) {
+      await this.renderAdminEntry();
+      return;
+    }
+
+    const viewModel = await this.refreshViewModel();
+    const overlay = document.getElementById('trade-map-overlay');
+    if (!overlay) return;
+
+    const openRoutes = viewModel.filter((p) => p.isActive).length;
+    const statsEl = overlay.querySelector('.trade-map-toolbar-stats');
+    if (statsEl) {
+      statsEl.textContent = `${openRoutes}/${viewModel.length} routes ouvertes`;
+    }
+
+    this.updateMapMarkers(viewModel);
+
+    const selected = viewModel.find((p) => p.id === this.selectedPartnerId) ?? viewModel[0] ?? null;
+    const panel = overlay.querySelector('#trade-map-panel');
+    if (panel && selected) {
+      panel.innerHTML = renderTradeMapBottomPanel(selected);
+    }
+
+    await this.renderAdminEntry();
+  }
+
+  setupMapEventListeners(overlay) {
+    this.mapClickHandler = async (event) => {
+      const closeBtn = event.target.closest('#trade-map-close-btn');
+      if (closeBtn) {
+        event.preventDefault();
+        this.closeTradeMap();
+        await this.renderAdminEntry();
+        return;
+      }
+
+      const cityBtn = event.target.closest('.trade-map-city--partner');
+      if (cityBtn) {
+        event.preventDefault();
+        await this.selectPartnerOnMap(cityBtn.dataset.partnerId);
+        return;
+      }
+
+      const activationBtn = event.target.closest('.partner-activation-btn');
+      if (activationBtn) {
+        event.preventDefault();
+        if (activationBtn.disabled) {
+          this.showPartnerMessage('Les conditions d\'activation ne sont pas remplies.', 'info');
+          return;
+        }
+
+        const partnerId = activationBtn.dataset.partnerId;
+        activationBtn.disabled = true;
+        activationBtn.textContent = 'Ouverture...';
+
+        try {
+          const result = await this.activatePartner(partnerId);
+          this.showPartnerMessage(result.message, result.success ? 'success' : 'error');
+          if (result.success) {
+            await this.refreshTradeMap();
+          } else {
+            activationBtn.disabled = false;
+            activationBtn.textContent = 'Ouvrir la route (500 €)';
+          }
+        } catch (error) {
+          console.error('[CommerceSectionPresenter] Error activating partner:', error);
+          this.showPartnerMessage('Erreur lors de l\'ouverture de la route', 'error');
+          activationBtn.disabled = false;
+          activationBtn.textContent = 'Ouvrir la route (500 €)';
+        }
+      }
+    };
+
+    this.escapeHandler = (event) => {
+      if (event.key === 'Escape') {
+        this.closeTradeMap();
+        this.renderAdminEntry();
+      }
+    };
+
+    overlay.addEventListener('click', this.mapClickHandler);
+    document.addEventListener('keydown', this.escapeHandler);
   }
 
   setupEventListeners() {
@@ -288,39 +504,20 @@ export class CommerceSectionPresenter {
     }
 
     this.clickHandler = async (event) => {
-      const activationBtn = event.target.closest('.partner-activation-btn');
-      if (!activationBtn) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-
-      if (activationBtn.disabled) {
-        this.showPartnerMessage('Les conditions d\'activation ne sont pas remplies.', 'info');
+      const openMapBtn = event.target.closest('#commerce-open-map-btn');
+      if (openMapBtn) {
+        event.preventDefault();
+        await this.openTradeMap();
         return;
       }
 
-      const partnerId = activationBtn.dataset.partnerId;
-      activationBtn.disabled = true;
-      activationBtn.textContent = 'Ouverture...';
-
-      try {
-        const result = await this.activatePartner(partnerId);
-        this.showPartnerMessage(result.message, result.success ? 'success' : 'error');
-        if (result.success) {
-          await this.renderPartners();
-        } else {
-          activationBtn.disabled = false;
-          activationBtn.textContent = 'Ouvrir la route (500 €)';
-        }
-      } catch (error) {
-        console.error('[CommerceSectionPresenter] Error activating partner:', error);
-        this.showPartnerMessage('Erreur lors de l\'ouverture de la route', 'error');
-        activationBtn.disabled = false;
-        activationBtn.textContent = 'Ouvrir la route (500 €)';
+      const goodRow = event.target.closest('.commerce-good-row');
+      if (goodRow?.dataset.productId) {
+        event.preventDefault();
+        await this.openGoodModal(goodRow.dataset.productId);
       }
     };
 
     commerceBoard.addEventListener('click', this.clickHandler);
-    this.setupRefreshButton();
   }
 }

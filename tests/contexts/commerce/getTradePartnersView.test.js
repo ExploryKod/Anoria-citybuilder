@@ -6,50 +6,49 @@ describe('GetTradePartnersView', () => {
     const view = buildTradePartnersView({
       partners: [
         {
-          id: 'deserta',
-          name: 'Deserta',
+          id: 'olivea',
+          name: 'Olivea',
           description: 'Test',
           isActive: true,
-          imports: [
+          buysFromUs: [
             {
-              productId: 'carrot',
-              productName: 'Carotte',
-              months: [7],
-              maxPerTurn: 8,
-              maxOccurrences: 9,
+              productId: 'wood',
+              productName: 'Bois brut',
+              months: [0],
+              maxPerTurn: 1,
+              yearlyQuota: 25,
               currentYearly: 2,
-              pricePerUnit: 18,
+              pricePerUnit: 25,
             },
           ],
-          exports: [
+          sellsToUs: [
             {
-              productId: 'dattes',
-              productName: 'Dattes',
-              months: [0],
-              maxOccurrences: 2,
+              productId: 'figs',
+              productName: 'Figues',
+              months: [6],
+              yearlyQuota: 10,
               currentYearly: 1,
-              pricePerUnit: 12,
+              pricePerUnit: 14,
             },
           ],
         },
       ],
       stats: {
-        yearlyExports: { carrot: 1 },
-        yearlyImports: { dattes: 0 },
+        yearlyExports: { wood: 1 },
+        yearlyImports: { figs: 0 },
       },
       productConfig: [
-        { id: 'carrot', sellingMax: 8, buyingMax: 400 },
-        { id: 'dattes', sellingMax: 0, buyingMax: 200 },
+        { id: 'wood', sellingMax: 25, buyingMax: 0 },
+        { id: 'figs', sellingMax: 0, buyingMax: 10 },
       ],
-      hasCommercializableWindmills: true,
       activationByPartnerId: {
-        deserta: { canActivate: true, unmetConditions: [] },
+        olivea: { canActivate: true, unmetConditions: [] },
       },
     });
 
     expect(view).toHaveLength(1);
-    expect(view[0].buysFromUs[0].pricePerUnit).toBe(18);
-    expect(view[0].sellsToUs[0].pricePerUnit).toBe(12);
+    expect(view[0].buysFromUs[0].pricePerUnit).toBe(25);
+    expect(view[0].sellsToUs[0].pricePerUnit).toBe(14);
     expect(view[0].buysFromUs[0].currentYearly).toBe(2);
   });
 });

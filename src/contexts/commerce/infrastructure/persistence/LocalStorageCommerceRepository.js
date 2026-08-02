@@ -1,6 +1,6 @@
 import {
   createDefaultPartners,
-  migrateStoredPartners,
+  normalizePartners,
 } from '../../domain/catalogs/PartnerCatalog.js';
 import { createDefaultProductConfig, normalizeStoredProductConfig } from '../../domain/catalogs/ProductConfigCatalog.js';
 
@@ -121,7 +121,7 @@ export class LocalStorageCommerceRepository {
     const stored = this.loadPartners();
     if (stored) {
       try {
-        const { partners, needsSave } = migrateStoredPartners(stored);
+        const { partners, needsSave } = normalizePartners(stored);
         if (needsSave) {
           this.savePartners(partners);
         }
