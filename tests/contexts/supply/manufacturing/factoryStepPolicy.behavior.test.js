@@ -13,7 +13,7 @@ import {
   computeTransformAmount,
   effectiveFactoryStorage,
 } from '../../../../src/contexts/supply/domain/manufacturing/FactoryTransformPolicy.js';
-import { PRODUCT_RECIPES } from '../../../../src/contexts/supply/domain/manufacturing/ProductRecipeCatalog.js';
+import { getFactoryCommodity } from '../../../../src/contexts/supply/domain/manufacturing/ProductRecipeCatalog.js';
 
 describe('Supply — factory manufacturing policies', () => {
   test('collect step on first tick', () => {
@@ -50,8 +50,9 @@ describe('Supply — factory manufacturing policies', () => {
   });
 
   test('canProduceFromRecipe checks recipe inputs', () => {
-    expect(canProduceFromRecipe(PRODUCT_RECIPES.furniture, { logs: 4 })).toBe(true);
-    expect(canProduceFromRecipe(PRODUCT_RECIPES.furniture, { logs: 2 })).toBe(false);
+    const furnitureRecipe = getFactoryCommodity('furniture')?.recipe;
+    expect(canProduceFromRecipe(furnitureRecipe, { logs: 4 })).toBe(true);
+    expect(canProduceFromRecipe(furnitureRecipe, { logs: 2 })).toBe(false);
   });
 
   test('computeTransformAmount caps by workers, storage, and stock', () => {

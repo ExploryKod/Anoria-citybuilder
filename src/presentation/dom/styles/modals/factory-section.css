@@ -173,6 +173,23 @@
     margin-bottom: 0;
 }
 
+.factory-commodity-group--disabled {
+    opacity: 0.65;
+}
+
+.factory-commodity-active-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85em;
+    color: #495057;
+    cursor: pointer;
+}
+
+.factory-destination-row--disabled {
+    opacity: 0.5;
+}
+
 .factory-commodity-summary {
     border-bottom: 1px dashed #e9ecef;
     margin-bottom: 4px;
@@ -482,10 +499,7 @@
     border-left: 4px solid #ff9800;
 }
 
-.factory-recruit-section {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+.factory-line-workers {
     margin-top: 8px;
     padding-top: 8px;
     border-top: 1px solid #f0f0f0;
@@ -497,25 +511,10 @@
     font-weight: 500;
 }
 
-.factory-recruit-btn {
-    padding: 6px 12px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 600;
-    transition: background-color 0.2s ease, opacity 0.2s ease;
-}
-
-.factory-recruit-btn:hover:not(:disabled) {
-    background: #0056b3;
-}
-
-.factory-recruit-btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
+.factory-worker-max {
+    font-size: 11px;
+    color: #888;
+    margin-left: 4px;
 }
 
 .factory-step-message {

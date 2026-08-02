@@ -335,17 +335,36 @@ Exemple : quota 25, carré = 5 → **5 carrés** ; 3 unités vendues → **0 car
 | Policy | Rôle |
 |--------|------|
 | `FactorySupplyFlowPolicy` | `supplyFlow: 'city' \| 'commerce'` ; filtre collecte / transform / production par bâtiment. |
-| `FactoryLineAllocationPolicy` | Par matière première : % **vente directe** (grange ou distribution ville) vs **fabrication** (bûches → meubles). |
+| `ProductRecipeCatalog` | Catalogue canonique des biens usine : `kind`, `lineDestinations`, stock, ouvriers, recettes. |
+| `FactoryLineAllocationPolicy` | Par matière première : caps **vente directe** vs **fabrication**. Les `lineDestinations` du catalogue déterminent les lignes disponibles. |
+| `FactoryProductWorkerDistributionPolicy` | Besoin ouvriers/ligne dérivé des caps ; besoin total usine (max 18) ; répartition des ouvriers ville par demande. |
+| `FactoryCommodityProductionPolicy` | Toggle **production active** par usine et par bien (style César III) — indépendant du split direct/fabrication. Désactivé ⇒ 0 ouvrier, libération MO. |
 
-**Exemple commerce — bois**
+**Activation par bien**
+
+Chaque matière première / produit fini a une case **Production active** (persistée dans `commodityProductionEnabled`).  
+Les caps direct / fabrication restent un vase communicant entre destinations **du même bien actif** — mettre un cap à 0 ne désactive plus la ligne.
+
+**Frontières BC (emploi ↔ supply)**
+
+| Étape | Owner | Effet emploi |
+|-------|-------|--------------|
+| `supply.syncFactoryWorkerDemand` | Supply | Met à jour `employees.worker_need` depuis les caps → alimente `totalNeed`, `lack`, `understaffedBuildingIds` |
+| `employment.redistribute` | Employment | Alloue le pool ville par priorité secteur (Winery = secteur 3) |
+| `supply.allocateFactoryWorkers` | Supply | Répartit `employees.worker` sur `productWorkerDistribution` (production, pas emploi ville) |
+| `applyFactoryLineCapChanges` (composition) | Composition | Enchaîne les 3 étapes après edit caps admin |
+
+Chômage : `unemployed = laborPool − totalAssigned` (via `computePopulationBreakdown`) — si caps baissent le besoin usine, moins de MO requis → chômage peut baisser après redistribution.
+
+**Exemple commerce — bois (caps joueur, vase communicant)**
 
 ```
-Collecte 10 bois
-  ├─ 60 % direct  → stock usine (futur transfert grange)
-  └─ 40 % fab     → transform → logs → meubles
+Capacité ligne bois = 10
+  ├─ max direct = 6  → transfert grange (TransferFactoryToBarn)
+  └─ max fabrication = 4  → transform → bûches → meubles
 ```
 
-Défaut MVP commerce : 100 % direct (bois brut vers grange, sans menuiserie).
+Sans caps configurés : défaut = 100 % direct (bois brut vers grange, sans menuiserie).
 
 ### 12.3 Fichiers
 
@@ -353,6 +372,7 @@ Défaut MVP commerce : 100 % direct (bois brut vers grange, sans menuiserie).
 |---------|-------------|
 | `SupplyFlow.js` | `supply/domain/manufacturing/` |
 | `FactorySupplyFlowPolicy.js` | `supply/domain/manufacturing/` |
+| `ProductRecipeCatalog.js` | `supply/domain/manufacturing/` |
 | `FactoryLineAllocationPolicy.js` | `supply/domain/manufacturing/` |
 
 ### 12.4 Roadmap (suite)
@@ -369,5 +389,5 @@ Défaut MVP commerce : 100 % direct (bois brut vers grange, sans menuiserie).
 
 - Captures César III : voir `docs/assets/` *(gitignored — copies locales)*.  
 - Simplification récente : routes permanentes, prix partenaire, quotas annuels (`feature/gameplay-salaries`).  
-- Supply factory : `ProductRecipeCatalog.js` — `furniture: { logs: 4 }`.  
+- Supply factory : `ProductRecipeCatalog.js` — catalogue unique (`FACTORY_COMMODITIES`).  
 - Accounting : `import_*`, `export_*`, `commercial_route` dans le README accounting.

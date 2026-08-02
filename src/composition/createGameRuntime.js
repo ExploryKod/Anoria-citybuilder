@@ -6,6 +6,10 @@ import { createHousingPopulationGrowthSystem } from '../contexts/housing/infrast
 import { createHousingEvolutionSystem } from '../contexts/housing/infrastructure/runtime/housingEvolutionSystem.js';
 import { createEmploymentRedistributeSystem } from '../contexts/employment/infrastructure/runtime/employmentRedistributeSystem.js';
 import { createFactoryProductionSystem } from '../contexts/supply/infrastructure/runtime/supplyFactoryProductionSystem.js';
+import {
+  createSupplySyncFactoryWorkerDemandSystem,
+  createSupplyAllocateFactoryWorkersSystem,
+} from '../contexts/supply/infrastructure/runtime/supplyFactoryWorkerPlanSystems.js';
 import { createSupplyMonthlyCommerceSystem } from '../contexts/supply/infrastructure/runtime/supplyMonthlyCommerceSystem.js';
 import { createCommerceTurnSystem } from '../contexts/commerce/infrastructure/runtime/commerceTurnSystem.js';
 import { createRandomEventsSystem } from '../contexts/gameplay/infrastructure/runtime/randomEventsSystem.js';
@@ -84,6 +88,8 @@ export function createGameRuntime({
     employment,
     getSectorPriorities,
   });
+  const supplySyncFactoryWorkerDemand = createSupplySyncFactoryWorkerDemandSystem({ supply });
+  const supplyAllocateFactoryWorkers = createSupplyAllocateFactoryWorkersSystem({ supply });
   const supplyFactoryProduction = createFactoryProductionSystem({ supply });
   const supplyMonthlyCommerce = createSupplyMonthlyCommerceSystem({
     supply,
@@ -96,7 +102,9 @@ export function createGameRuntime({
     .register('supply.monthlyFood', supplyMonthlyFood)
     .register('housing.populationGrowth', housingPopulationGrowth)
     .register('housing.evolution', housingEvolution)
+    .register('supply.syncFactoryWorkerDemand', supplySyncFactoryWorkerDemand)
     .register('employment.redistribute', employmentRedistribute)
+    .register('supply.allocateFactoryWorkers', supplyAllocateFactoryWorkers)
     .register('supply.factoryProduction', supplyFactoryProduction)
     .register('supply.monthlyCommerce', supplyMonthlyCommerce)
     .register('commerce.turn', createCommerceTurnSystem({ commerce }))

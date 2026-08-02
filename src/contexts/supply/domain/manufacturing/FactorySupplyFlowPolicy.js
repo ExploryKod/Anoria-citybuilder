@@ -1,21 +1,26 @@
 import { SUPPLY_FLOW, getBuildingSupplyFlow } from './SupplyFlow.js';
-import { FACTORY_RESOURCE_TYPES } from './ProductRecipeCatalog.js';
+import {
+  listFinishedFactoryCommodities,
+  listRawFactoryCommodities,
+} from './ProductRecipeCatalog.js';
+
+const RAW_MATERIAL_IDS = Object.freeze(
+  listRawFactoryCommodities().map((commodity) => commodity.id)
+);
+const FINISHED_PRODUCT_IDS = Object.freeze(
+  listFinishedFactoryCommodities().map((commodity) => commodity.id)
+);
 
 /** Collect / transform worker keys allowed per dedicated flow (MVP). */
 export const FACTORY_RESOURCE_LINES_BY_FLOW = Object.freeze({
   [SUPPLY_FLOW.COMMERCE]: Object.freeze(['wood']),
-  [SUPPLY_FLOW.CITY]: Object.freeze([...FACTORY_RESOURCE_TYPES]),
+  [SUPPLY_FLOW.CITY]: RAW_MATERIAL_IDS,
 });
 
 /** Finished goods worker keys allowed per dedicated flow (MVP). */
 export const FACTORY_PRODUCT_LINES_BY_FLOW = Object.freeze({
   [SUPPLY_FLOW.COMMERCE]: Object.freeze(['furniture']),
-  [SUPPLY_FLOW.CITY]: Object.freeze([
-    'furniture',
-    'weapons',
-    'pottery',
-    'jewelry',
-  ]),
+  [SUPPLY_FLOW.CITY]: FINISHED_PRODUCT_IDS,
 });
 
 /**
