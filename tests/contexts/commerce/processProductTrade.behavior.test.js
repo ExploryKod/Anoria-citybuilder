@@ -13,11 +13,13 @@ function createSimulationStub(overrides = {}) {
     recordExportIncome: jest.fn(async () => {}),
     getProductConfig: jest.fn((productId) => ({
       id: productId,
-      buyingPrice: 12,
-      sellingPrice: 20,
-      stockpiling: false,
       buyingMax: 100,
       sellingMax: 100,
+    })),
+    getPartner: jest.fn(() => ({
+      name: 'Olivea',
+      sellsToUs: [{ productId: 'figs', pricePerUnit: 14 }],
+      buysFromUs: [{ productId: 'wood', pricePerUnit: 25 }],
     })),
     canTradeWithPartner: jest.fn(() => true),
     getPartnerTradeLimit: jest.fn(() => ({ maxPerTurn: 2 })),
@@ -25,9 +27,8 @@ function createSimulationStub(overrides = {}) {
     canExportProduct: jest.fn(() => true),
     updatePartnerTrade: jest.fn(),
     isStockable: jest.fn(() => true),
-    getPartner: jest.fn(() => ({ name: 'Deserta' })),
-    windmillStock: {
-      addToStock: jest.fn(async () => ({ windmillId: 'w1', addedQuantity: 1 })),
+    commerceHubStock: {
+      addToStock: jest.fn(async () => ({ hubId: 'barn1', addedQuantity: 1 })),
       getTotalStock: jest.fn(async () => 5),
       reduceStock: jest.fn(async () => true),
     },
@@ -41,22 +42,22 @@ describe('ProcessProductImport', () => {
     const command = new ProcessProductImport(simulation);
 
     const result = await command.execute({
-      productId: 'dattes',
+      productId: 'figs',
       time: 0,
       quantity: 1,
-      partnerId: 'deserta',
+      partnerId: 'olivea',
     });
 
     expect(result).toMatchObject({
-      productId: 'dattes',
+      productId: 'figs',
       quantity: 1,
-      totalCost: 12,
+      totalCost: 14,
       stockAdded: true,
     });
     expect(simulation.recordImportExpense).toHaveBeenCalled();
-    expect(simulation.updatePartnerTrade).toHaveBeenCalledWith('deserta', 'dattes', 'import');
+    expect(simulation.updatePartnerTrade).toHaveBeenCalledWith('olivea', 'figs', 'import');
     expect(simulation.commerceRepository.updateProductStats).toHaveBeenCalledWith(
-      'dattes',
+      'figs',
       { imports: 1 }
     );
   });
@@ -68,7 +69,7 @@ describe('ProcessProductImport', () => {
     const command = new ProcessProductImport(simulation);
 
     expect(
-      await command.execute({ productId: 'dattes', time: 0, quantity: 1 })
+      await command.execute({ productId: 'figs', time: 0, quantity: 1 })
     ).toBeNull();
   });
 });
@@ -79,19 +80,19 @@ describe('ProcessProductExport', () => {
     const command = new ProcessProductExport(simulation);
 
     const result = await command.execute({
-      productId: 'carrot',
+      productId: 'wood',
       time: 7,
       quantity: 1,
-      partnerId: 'deserta',
+      partnerId: 'olivea',
     });
 
     expect(result).toMatchObject({
-      productId: 'carrot',
+      productId: 'wood',
       quantity: 1,
-      totalRevenue: 20,
+      totalRevenue: 25,
       remainingStock: 4,
     });
     expect(simulation.recordExportIncome).toHaveBeenCalled();
-    expect(simulation.windmillStock.reduceStock).toHaveBeenCalledWith('carrot', 1, 'deserta');
+    expect(simulation.commerceHubStock.reduceStock).toHaveBeenCalledWith('wood', 1, 'olivea');
   });
 });

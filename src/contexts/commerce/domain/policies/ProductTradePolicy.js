@@ -20,10 +20,6 @@ export function canImportProduct({
     return false;
   }
 
-  if (productConfig.stockpiling) {
-    return false;
-  }
-
   const buyingMax = productConfig.buyingMax || 0;
   if (currentYearlyTotal + quantity > buyingMax) {
     return false;
@@ -50,10 +46,6 @@ export function canExportProduct({
   conditions = null,
 }) {
   if (!productConfig) {
-    return false;
-  }
-
-  if (productConfig.stockpiling) {
     return false;
   }
 
