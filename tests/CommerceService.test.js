@@ -183,12 +183,13 @@ describe('CommerceService - Partenaires', () => {
             {
                 id: 'deserta',
                 name: 'Deserta',
+                isActive: true,
                 imports: [
                     {
                         productId: 'carrot',
                         months: [7, 8, 11],
                         maxOccurrences: 9,
-                        currentOccurrences: 9  // Limite atteinte
+                        currentYearly: 9
                     }
                 ],
                 exports: []
@@ -202,7 +203,7 @@ describe('CommerceService - Partenaires', () => {
         expect(canTrade).toBe(false);
     });
 
-    test('met à jour le compteur d\'occurrences après un trade', () => {
+    test('met à jour le compteur annuel après un trade', () => {
         const mockPartners = [
             {
                 id: 'deserta',
@@ -211,7 +212,6 @@ describe('CommerceService - Partenaires', () => {
                     {
                         productId: 'carrot',
                         maxOccurrences: 9,
-                        currentOccurrences: 0,
                         currentYearly: 0
                     }
                 ],
@@ -224,7 +224,6 @@ describe('CommerceService - Partenaires', () => {
         const success = commerceService.updatePartnerTrade('deserta', 'carrot', 'export');
 
         expect(success).toBe(true);
-        expect(mockPartners[0].imports[0].currentOccurrences).toBe(1);
         expect(mockPartners[0].imports[0].currentYearly).toBe(1);
     });
 
@@ -238,7 +237,7 @@ describe('CommerceService - Partenaires', () => {
                         productId: 'carrot',
                         maxPerTurn: 8,
                         maxOccurrences: 9,
-                        currentOccurrences: 2
+                        currentYearly: 2
                     }
                 ],
                 exports: []
@@ -251,8 +250,8 @@ describe('CommerceService - Partenaires', () => {
 
         expect(limit).toBeDefined();
         expect(limit.maxPerTurn).toBe(8);
-        expect(limit.maxOccurrences).toBe(9);
-        expect(limit.currentOccurrences).toBe(2);
+        expect(limit.yearlyQuota).toBe(9);
+        expect(limit.currentYearly).toBe(2);
     });
 
     test('traite un import depuis un partenaire', async () => {
@@ -267,7 +266,8 @@ describe('CommerceService - Partenaires', () => {
                         productId: 'dattes',
                         months: [0, 2],
                         maxOccurrences: 2,
-                        currentOccurrences: 0
+                        currentYearly: 0,
+                        pricePerUnit: 12,
                     }
                 ]
             }
@@ -275,14 +275,11 @@ describe('CommerceService - Partenaires', () => {
 
         commerceService.partnersData = mockPartners;
 
-        // Mock config
         const mockConfig = [
             {
                 id: 'dattes',
                 name: 'Dattes',
-                buyingPrice: 12,
                 buyingMax: 200,
-                stockpiling: false
             }
         ];
         global.localStorage.setItem('commerce_config', JSON.stringify(mockConfig));

@@ -8,9 +8,6 @@ import { CommerceSimulationService } from '../contexts/commerce/application/serv
 /** @type {ReturnType<typeof createCommerceContext>|null} */
 let sharedCommerce = null;
 
-/** @type {((payload: object) => void)|null} */
-let partnerContractFinishedHandler = null;
-
 /**
  * @returns {Promise<object[]>}
  */
@@ -24,7 +21,6 @@ async function listCommercializableWindmills() {
 /**
  * @param {object} [deps]
  * @param {LocalStorageCommerceRepository} [deps.commerceRepository]
- * @param {((payload: object) => void)|null} [deps.onPartnerContractFinished]
  * @param {(turn: number) => object} [deps.getTimeInfo]
  */
 export function createCommerceContext(deps = {}) {
@@ -45,10 +41,6 @@ export function createCommerceContext(deps = {}) {
     listWindmillSupplyViews: () => getOrCreateSupplyContext().listWindmillSupplyViews(),
     getTimeInfo,
     instanceIdFromHouseRow,
-    onPartnerContractFinished:
-      deps.onPartnerContractFinished ??
-      partnerContractFinishedHandler ??
-      null,
   };
 
   const simulation = new CommerceSimulationService(simulationDeps);
@@ -71,16 +63,7 @@ export function getOrCreateCommerceContext(deps = {}) {
   return sharedCommerce;
 }
 
-/** @param {(payload: object) => void|null} handler */
-export function setCommercePartnerContractFinishedHandler(handler) {
-  partnerContractFinishedHandler = handler;
-  if (sharedCommerce?.simulation) {
-    sharedCommerce.simulation.onPartnerContractFinished = handler;
-  }
-}
-
 /** @internal Tests only */
 export function resetCommerceContextForTests() {
   sharedCommerce = null;
-  partnerContractFinishedHandler = null;
 }

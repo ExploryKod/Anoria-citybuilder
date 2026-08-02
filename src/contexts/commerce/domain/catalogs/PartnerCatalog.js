@@ -1,8 +1,30 @@
+import { getDefaultTradePrice } from './ProductCatalog.js';
+
 /** Default commerce partner seed data. */
 const DEPRECATED_ACTIVATION_CONDITION = 'funds_min_3000_deficit';
 
+/**
+ * @param {Array<object>} partners
+ * @returns {Array<object>}
+ */
+function applyPartnerTradePrices(partners) {
+  return partners.map((partner) => ({
+    ...partner,
+    imports: partner.imports.map((trade) => ({
+      ...trade,
+      pricePerUnit:
+        trade.pricePerUnit ?? getDefaultTradePrice(trade.productId, 'export') ?? 0,
+    })),
+    exports: partner.exports.map((trade) => ({
+      ...trade,
+      pricePerUnit:
+        trade.pricePerUnit ?? getDefaultTradePrice(trade.productId, 'import') ?? 0,
+    })),
+  }));
+}
+
 export function createDefaultPartners() {
-  return [
+  return applyPartnerTradePrices([
     {
       id: 'deserta',
       name: 'Deserta',
@@ -304,7 +326,7 @@ export function createDefaultPartners() {
         },
       ],
     },
-  ];
+  ]);
 }
 
 /**
@@ -322,6 +344,28 @@ export function migrateStoredPartners(partners) {
         needsSave = true;
       }
     }
+
+    partner.imports?.forEach((trade) => {
+      if (trade.pricePerUnit == null) {
+        trade.pricePerUnit = getDefaultTradePrice(trade.productId, 'export') ?? 0;
+        needsSave = true;
+      }
+      if (trade.currentYearly == null) {
+        trade.currentYearly = trade.currentOccurrences || 0;
+        needsSave = true;
+      }
+    });
+
+    partner.exports?.forEach((trade) => {
+      if (trade.pricePerUnit == null) {
+        trade.pricePerUnit = getDefaultTradePrice(trade.productId, 'import') ?? 0;
+        needsSave = true;
+      }
+      if (trade.currentYearly == null) {
+        trade.currentYearly = trade.currentOccurrences || 0;
+        needsSave = true;
+      }
+    });
   });
 
   return { partners, needsSave };

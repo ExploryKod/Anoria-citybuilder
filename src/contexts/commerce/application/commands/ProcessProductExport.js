@@ -1,6 +1,9 @@
 /**
  * Command — process a commerce product export (partner or internal limits).
  */
+import { getPartnerTradePrice } from '../../domain/policies/PartnerTradePolicy.js';
+import { getDefaultTradePrice } from '../../domain/catalogs/ProductCatalog.js';
+
 export class ProcessProductExport {
   /** @param {import('../services/CommerceSimulationService.js').CommerceSimulationService} simulation */
   constructor(simulation) {
@@ -39,7 +42,12 @@ export class ProcessProductExport {
       return null;
     }
 
-    const pricePerUnit = config.sellingPrice || 15;
+    const partner = partnerId ? simulation.getPartner(partnerId) : null;
+    const partnerName = partner ? partner.name : null;
+    const pricePerUnit =
+      getPartnerTradePrice(partner, productId, 'export')
+      ?? getDefaultTradePrice(productId, 'export')
+      ?? 15;
     const totalRevenue = quantity * pricePerUnit;
 
     if (simulation.isStockable(productId)) {
@@ -50,8 +58,6 @@ export class ProcessProductExport {
       }
     }
 
-    const partner = partnerId ? simulation.getPartner(partnerId) : null;
-    const partnerName = partner ? partner.name : null;
     const remainingStock = simulation.isStockable(productId) ? availableStock - quantity : 0;
 
     let description = `Export ${productId}`;

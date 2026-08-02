@@ -30,6 +30,27 @@ export const PRODUCT_DISPLAY_NAMES = Object.freeze({
   dattes: 'Dattes',
 });
 
+/** Fixed partner trade prices (Caesar-style — set by trade city, not the player). */
+export const DEFAULT_PRODUCT_PRICES = Object.freeze({
+  wheat: Object.freeze({ import: 5, export: 15 }),
+  carrot: Object.freeze({ import: 15, export: 18 }),
+  cabbage: Object.freeze({ import: 17, export: 20 }),
+  wood: Object.freeze({ import: 20, export: 25 }),
+  dattes: Object.freeze({ import: 12, export: 22 }),
+});
+
+/**
+ * @param {string} productId
+ * @param {'import'|'export'} operation City perspective (import = buy, export = sell)
+ */
+export function getDefaultTradePrice(productId, operation) {
+  const prices = DEFAULT_PRODUCT_PRICES[productId];
+  if (!prices) {
+    return null;
+  }
+  return operation === 'import' ? prices.import : prices.export;
+}
+
 const DEFAULT_CONDITIONS = Object.freeze({
   import: Object.freeze({ requiresStock: false, requiresWindmill: false }),
   export: Object.freeze({ requiresStock: true, requiresWindmill: false }),

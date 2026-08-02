@@ -5,10 +5,10 @@ import {
 } from '../../../src/contexts/commerce/domain/policies/ProductTradePolicy.js';
 
 describe('ProductTradePolicy', () => {
-  test('canImportProduct respects yearly max and stockpiling flag', () => {
+  test('canImportProduct respects yearly max', () => {
     expect(
       canImportProduct({
-        productConfig: { buyingMax: 10, stockpiling: false },
+        productConfig: { buyingMax: 10 },
         quantity: 3,
         currentYearlyTotal: 5,
       })
@@ -16,17 +16,9 @@ describe('ProductTradePolicy', () => {
 
     expect(
       canImportProduct({
-        productConfig: { buyingMax: 10, stockpiling: false },
+        productConfig: { buyingMax: 10 },
         quantity: 6,
         currentYearlyTotal: 5,
-      })
-    ).toBe(false);
-
-    expect(
-      canImportProduct({
-        productConfig: { buyingMax: 10, stockpiling: true },
-        quantity: 1,
-        currentYearlyTotal: 0,
       })
     ).toBe(false);
   });
@@ -34,7 +26,7 @@ describe('ProductTradePolicy', () => {
   test('canExportProduct respects stock and yearly max', () => {
     expect(
       canExportProduct({
-        productConfig: { sellingMax: 10, stockpiling: false },
+        productConfig: { sellingMax: 10 },
         quantity: 2,
         currentYearlyTotal: 0,
         availableStock: 5,
@@ -44,7 +36,7 @@ describe('ProductTradePolicy', () => {
 
     expect(
       canExportProduct({
-        productConfig: { sellingMax: 10, stockpiling: false },
+        productConfig: { sellingMax: 10 },
         quantity: 2,
         currentYearlyTotal: 0,
         availableStock: 1,

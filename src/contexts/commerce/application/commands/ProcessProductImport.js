@@ -1,6 +1,9 @@
 /**
  * Command — process a commerce product import (partner or internal limits).
  */
+import { getPartnerTradePrice } from '../../domain/policies/PartnerTradePolicy.js';
+import { getDefaultTradePrice } from '../../domain/catalogs/ProductCatalog.js';
+
 export class ProcessProductImport {
   /** @param {import('../services/CommerceSimulationService.js').CommerceSimulationService} simulation */
   constructor(simulation) {
@@ -37,11 +40,13 @@ export class ProcessProductImport {
       return null;
     }
 
-    const pricePerUnit = config.buyingPrice || 5;
-    const totalCost = quantity * pricePerUnit;
-
     const partner = partnerId ? simulation.getPartner(partnerId) : null;
     const partnerName = partner ? partner.name : null;
+    const pricePerUnit =
+      getPartnerTradePrice(partner, productId, 'import')
+      ?? getDefaultTradePrice(productId, 'import')
+      ?? 5;
+    const totalCost = quantity * pricePerUnit;
 
     let description = `Import ${productId}`;
     if (partnerName) {

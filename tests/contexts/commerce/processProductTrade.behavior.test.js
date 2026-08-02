@@ -13,11 +13,13 @@ function createSimulationStub(overrides = {}) {
     recordExportIncome: jest.fn(async () => {}),
     getProductConfig: jest.fn((productId) => ({
       id: productId,
-      buyingPrice: 12,
-      sellingPrice: 20,
-      stockpiling: false,
       buyingMax: 100,
       sellingMax: 100,
+    })),
+    getPartner: jest.fn(() => ({
+      name: 'Deserta',
+      exports: [{ productId: 'dattes', pricePerUnit: 12 }],
+      imports: [{ productId: 'carrot', pricePerUnit: 18 }],
     })),
     canTradeWithPartner: jest.fn(() => true),
     getPartnerTradeLimit: jest.fn(() => ({ maxPerTurn: 2 })),
@@ -25,7 +27,6 @@ function createSimulationStub(overrides = {}) {
     canExportProduct: jest.fn(() => true),
     updatePartnerTrade: jest.fn(),
     isStockable: jest.fn(() => true),
-    getPartner: jest.fn(() => ({ name: 'Deserta' })),
     windmillStock: {
       addToStock: jest.fn(async () => ({ windmillId: 'w1', addedQuantity: 1 })),
       getTotalStock: jest.fn(async () => 5),
@@ -88,7 +89,7 @@ describe('ProcessProductExport', () => {
     expect(result).toMatchObject({
       productId: 'carrot',
       quantity: 1,
-      totalRevenue: 20,
+      totalRevenue: 18,
       remainingStock: 4,
     });
     expect(simulation.recordExportIncome).toHaveBeenCalled();

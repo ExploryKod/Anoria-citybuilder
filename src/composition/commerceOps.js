@@ -7,14 +7,16 @@ export {
   createCommerceContext,
   getOrCreateCommerceContext,
   resetCommerceContextForTests,
-  setCommercePartnerContractFinishedHandler,
 } from './createCommerceContext.js';
 
 export {
-  getPriceStatus,
-} from '../contexts/commerce/domain/policies/PriceStatusPolicy.js';
+  getPartnerTradePrice,
+} from '../contexts/commerce/domain/policies/PartnerTradePolicy.js';
 
 export {
+  hasRemainingYearlyQuota,
+  isYearlyQuotaExhausted,
+  getPartnerQuotaStatus,
   hasActiveContract,
   isContractFinished,
   getContractStatus,

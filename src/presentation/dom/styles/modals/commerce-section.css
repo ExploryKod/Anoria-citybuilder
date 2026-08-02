@@ -797,7 +797,8 @@
     background: #fff5f5;
 }
 
-.partner-trade-item.contract-finished {
+.partner-trade-item.contract-finished,
+.partner-trade-item.quota-reached {
     border-left-color: #17a2b8;
     background: #d1ecf1;
     opacity: 0.8;
