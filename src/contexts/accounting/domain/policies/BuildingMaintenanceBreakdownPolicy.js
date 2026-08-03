@@ -1,11 +1,11 @@
 const DEFAULT_MAINTENANCE_COSTS = Object.freeze({
-  roads: 2,
-  'House-Blue': 3,
-  'House-Red': 3,
-  'House-Purple': 3,
-  'House-2Story': 3,
-  Farm: 1,
-  Market: 1,
+  roads: 4,
+  'House-Blue': 6,
+  'House-Red': 6,
+  'House-Purple': 6,
+  'House-2Story': 6,
+  Farm: 2,
+  Market: 2,
 });
 
 export { DEFAULT_MAINTENANCE_COSTS };
