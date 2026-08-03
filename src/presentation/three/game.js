@@ -45,6 +45,8 @@ import {
   stonePathOrientationLabel,
   stonePathTypeForIndex,
 } from '../../contexts/construction/domain/policies/StonePathOrientationPolicy.js';
+import { assetsPrices } from '../../shared/building-catalog/index.js';
+import { createPlacementGhostSession } from './placementGhostSession.js';
 
 ensureGameRuntimeBootstrapped();
 
@@ -128,6 +130,15 @@ export function createGame(gameStore, assetManager, citySize = null) {
     popupManager,
   });
   const city = createCity(resolveSelectedCitySize(citySize));
+
+  const placementGhostSession = createPlacementGhostSession({
+    getGhost: () => scene.placementGhost,
+    getCity: () => city,
+    getActiveToolId: () => activeToolId,
+    getEffectiveAssetId: () => getEffectiveBuildingToolId(),
+    assetCatalog: assetsPrices,
+    getFocusedObject: () => scene.focusedObject,
+  });
 
   bindGameUIDeps({ getScene: () => scene });
 
@@ -418,6 +429,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       await runSimulationPass(time);
       await syncEmploymentAfterBuildingChange(scene, city, activeToolId);
       await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+      placementGhostSession.sync(selectedObject);
       const multiplayerManager = getMultiplayerManager();
       if (multiplayerManager?.isMultiplayer) {
         try {
@@ -442,10 +454,15 @@ export function createGame(gameStore, assetManager, citySize = null) {
       return;
     }
     await paintRoadToward(x, y);
+    placementGhostSession.sync(focusedObject);
   };
 
   scene.onRoadPaintEnd = async () => {
     await finalizeRoadPaintSession();
+  };
+
+  scene.onPlacementHover = (focusedObject) => {
+    placementGhostSession.sync(focusedObject);
   };
 
   /**
@@ -458,19 +475,30 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
     stonePathOrientation = cycleStonePathOrientationIndex(stonePathOrientation);
     updateStonePathToolHint();
+    placementGhostSession.sync();
     return true;
   };
 
-  window.addEventListener('mouseup', () => {
+  window.addEventListener('mouseup', (event) => {
+    // Release may happen outside the canvas — still end camera drag / road paint
+    scene.onMouseUp?.(event);
     if (roadPaint.active) {
       void finalizeRoadPaintSession();
     }
   });
 
+  window.addEventListener('blur', () => {
+    scene.camera?.releaseAllMouseButtons?.();
+  });
+
   const canvasEl = scene.domElement || document.querySelector('canvas');
   if (canvasEl) {
+    canvasEl.addEventListener('contextmenu', (event) => {
+      event.preventDefault();
+      // Ensure right-drag ends even if the browser eats mouseup for the menu
+      scene.camera?.onMouseUp?.({ button: 2 });
+    });
     canvasEl.addEventListener('mousedown', scene.onMouseDown.bind(scene), false);
-    canvasEl.addEventListener('mouseup', scene.onMouseUp.bind(scene), false);
     canvasEl.addEventListener('mousemove', scene.onMouseMove.bind(scene), false);
     canvasEl.addEventListener('wheel', scene.onMouseWheel.bind(scene), { passive: false });
     canvasEl.addEventListener('touchstart', scene.onTouchStart.bind(scene), { passive: false });
@@ -480,7 +508,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
     document.addEventListener('keyup', scene.onKeyBoardUp.bind(scene), false);
   } else {
     document.addEventListener('mousedown', scene.onMouseDown.bind(scene), false);
-    document.addEventListener('mouseup', scene.onMouseUp.bind(scene), false);
     document.addEventListener('mousemove', scene.onMouseMove.bind(scene), false);
     document.addEventListener('wheel', scene.onMouseWheel.bind(scene), { passive: false });
     document.addEventListener('touchstart', scene.onTouchStart.bind(scene), { passive: false });
@@ -607,6 +634,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
         }
         updateStonePathToolHint();
       }
+      placementGhostSession.onToolChanged();
       if (!isRoadBuildingType(toolId) && roadPaint.active) {
         void finalizeRoadPaintSession();
       }

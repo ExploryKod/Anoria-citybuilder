@@ -1,8 +1,7 @@
 import { createBuildingInstanceId } from '../../../../shared/building-identity/index.js';
 import {
-  isAreaAvailableForBuilding,
+  canPlaceBuildingAtTile,
   isRoadBuildingType,
-  resolveGridSize,
   stampBuildingFootprint,
 } from '../../domain/policies/FootprintAvailabilityPolicy.js';
 
@@ -57,15 +56,26 @@ export class PlaceBuildingAtTile {
    * }>}
    */
   async execute({ city, x, y, buildingType, gameTurn }) {
-    const gridSize = resolveGridSize(this.assetCatalog, buildingType);
+    const placement = canPlaceBuildingAtTile({
+      city,
+      x,
+      y,
+      buildingType,
+      assetCatalog: this.assetCatalog,
+    });
+    if (!placement.ok) {
+      return {
+        success: false,
+        reason: placement.reason || 'area_not_available',
+        buildingType,
+      };
+    }
+
+    const { gridSize } = placement;
     const tile = city.tiles?.[x]?.[y];
     const isRoadTool = isRoadBuildingType(buildingType);
-    const isTargetRoad = isRoadBuildingType(tile?.buildingId);
-    const canPlaceRoad = isRoadTool && (!tile?.buildingId || isTargetRoad);
-
-    if (!canPlaceRoad && !isAreaAvailableForBuilding(city, x, y, gridSize)) {
-      return { success: false, reason: 'area_not_available', buildingType };
-    }
+    const canPlaceRoad =
+      isRoadTool && (!tile?.buildingId || isRoadBuildingType(tile?.buildingId));
 
     const placementKey = `${x}-${y}`;
     if (this.pendingPlacements.has(placementKey)) {
