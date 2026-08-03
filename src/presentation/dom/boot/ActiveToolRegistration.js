@@ -18,7 +18,11 @@ export function registerActiveToolHandler(deps) {
 
   registerAppFunction('setActiveTool', (e) => {
     getButtonsUnactive(e);
-    if (e.target.classList.contains('panel-btn')) {
+
+    const toolEl = e.target?.closest?.('[data-toolid]') || e.currentTarget;
+    const toolId = toolEl?.dataset?.toolid;
+
+    if (e.target.classList.contains('panel-btn') || e.target.closest?.('.panel-btn')) {
       getButtonsDisabled();
       closeModal();
 
@@ -31,12 +35,14 @@ export function registerActiveToolHandler(deps) {
       }
 
       popupManager?.forceClosePopup('panel-layout');
-    } else if (!e.target.dataset.toolid) {
+    } else if (!toolId) {
       toggleModal(e);
     }
 
     selectedControl = e.currentTarget;
-    selectedControl.classList.add('selected');
-    getGame()?.setActiveToolId(e.target.dataset.toolid);
+    selectedControl?.classList?.add('selected');
+    if (toolId) {
+      getGame()?.setActiveToolId(toolId);
+    }
   });
 }

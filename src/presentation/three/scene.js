@@ -38,6 +38,7 @@ import {
   getSessionService,
   getSessionGameUI,
 } from '../../composition/sessionRuntime.js';
+import { createPlacementGhostController } from './placementGhost.js';
 
 const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
 
@@ -78,6 +79,8 @@ export function createScene(_gameStore, assetManager, deps) {
     const scene = new THREE.Scene();
     // Subtle atmospheric fog to blend far terrain and sky (tuned to match background)
     try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
+
+    const placementGhost = createPlacementGhostController({ scene, assetManager });
     
     // Initialize managers
     const lightingManager = new LightingManager(scene);
@@ -1839,8 +1842,13 @@ export function createScene(_gameStore, assetManager, deps) {
         if (event.button === 0) {
             isLeftPointerDown = true;
         }
-        
+
         camera.onMouseDown(event);
+
+        // Placement / selection: left click only (right = camera orbit)
+        if (event.button !== 0) {
+            return;
+        }
         
         // Use focusedObject if available (from per-frame updates), otherwise raycast
         let objectToSelect = focusedObject;
@@ -1862,36 +1870,23 @@ export function createScene(_gameStore, assetManager, deps) {
     }
 
     function onMouseUp(event){
-        // Block interaction if a popup is open or info modal is open
-        if (popupManager?.getActivePopups?.()?.length > 0) {
-            if (event.button === 0) {
-                isLeftPointerDown = false;
-            }
-            return;
-        }
-        if (isInfoModalOpen()) {
-            if (event.button === 0) {
-                isLeftPointerDown = false;
-            }
-            return;
-        }
-        if (performance.now() < suppressInputUntilMs) {
-            if (event.button === 0) {
-                isLeftPointerDown = false;
-            }
-            return;
-        }
+        // Always clear camera drag flags first (even if UI blocks the rest),
+        // otherwise right-pan stays stuck after release.
+        camera.onMouseUp(event);
 
         if (event.button === 0) {
             isLeftPointerDown = false;
-            if (typeof this.onRoadPaintEnd === 'function') {
+            if (
+                typeof this.onRoadPaintEnd === 'function'
+                && !(popupManager?.getActivePopups?.()?.length > 0)
+                && !isInfoModalOpen()
+                && performance.now() >= suppressInputUntilMs
+            ) {
                 Promise.resolve(this.onRoadPaintEnd()).catch((error) => {
                     console.error('[scene.js] onRoadPaintEnd failed:', error);
                 });
             }
         }
-        
-        camera.onMouseUp(event);
     }
 
 function onMouseMove(event) {
@@ -1928,6 +1923,10 @@ function onMouseMove(event) {
     } else {
         focusedObject = null;
         hoveredObjectName = '';
+    }
+
+    if (typeof this.onPlacementHover === 'function') {
+        this.onPlacementHover(focusedObject);
     }
 
     // Cesar III style road paint: while LMB held, paint each hovered tile
@@ -2218,6 +2217,8 @@ function onTouchEnd(event) {
         onRoadPaintEnd: undefined,
         /** @type {((event?: KeyboardEvent) => boolean) | undefined} */
         onRotateBuildingTool: undefined,
+        /** @type {((focused: object | null) => void) | undefined} */
+        onPlacementHover: undefined,
         // Expose focused/selected for external access if needed
         get focusedObject() { return focusedObject; },
         get selectedObject() { return selectedObject; },
@@ -2233,6 +2234,8 @@ function onTouchEnd(event) {
         pauseCitizen,
         resumeCitizen,
         refreshEmploymentPresentation,
+        /** Semi-transparent placement preview (StonePath trial). */
+        placementGhost,
         /** Live mesh grid for turn-budget maintenance input. */
         get buildings() { return buildings; },
         setTileGridVisible(visible) {
