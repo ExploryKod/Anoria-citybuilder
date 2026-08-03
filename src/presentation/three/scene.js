@@ -31,6 +31,10 @@ import gameUIDefault from '../dom/shell/GameUI.js';
 import { CitizenManager } from './managers/CitizenManager.js';
 import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
 import { TileGridOverlay } from './managers/TileGridOverlay.js';
+import {
+  MapOverlayVisibility,
+  PRODUCTION_STATUS_SPRITE_NAMES,
+} from './managers/MapOverlayVisibility.js';
 import { syncTileNeighborsPass } from './sync/syncTileNeighborsPass.js';
 import { cleanupOrphanedBuildings } from './sync/cleanupOrphanedBuildings.js';
 import { registerAppService } from '../../composition/appServices.js';
@@ -88,7 +92,36 @@ export function createScene(_gameStore, assetManager, deps) {
     const decorativeVillageManager = new DecorativeVillageManager(scene, assetManager);
     const citizenManager = new CitizenManager(scene, assetManager);
     const tileGridOverlay = new TileGridOverlay();
+    const mapOverlayVisibility = new MapOverlayVisibility();
     const syncRoadAccess = setupRoadAccessIcons(parcels, { assetManager, textures });
+
+    /**
+     * Gate supply-chain status sprites by the Production filter.
+     * @param {boolean} condition
+     * @returns {boolean}
+     */
+    function productionSpriteVisible(condition) {
+      return Boolean(condition) && mapOverlayVisibility.isProductionIconsVisible();
+    }
+
+    /** Immediately hide production sprites (toggle off) without waiting for scene.update. */
+    function hideProductionSpritesNow() {
+      if (!buildings) return;
+      const names = new Set(PRODUCTION_STATUS_SPRITE_NAMES);
+      for (let x = 0; x < buildings.length; x++) {
+        const row = buildings[x];
+        if (!row) continue;
+        for (let y = 0; y < row.length; y++) {
+          const mesh = row[y];
+          if (!mesh?.children) continue;
+          for (const child of mesh.children) {
+            if (child?.type === 'Sprite' && names.has(child.name)) {
+              child.visible = false;
+            }
+          }
+        }
+      }
+    }
 
     // Use simple scene background with sky texture - this ensures sky covers everything
     // The backdrop (distant ground) will be positioned to match World platform exactly
@@ -234,6 +267,7 @@ export function createScene(_gameStore, assetManager, deps) {
     let loadingPromises = [];
     let currentCitySize = 16; // Store current city size for citizen pathfinding
     let currentCity = null; // Store current city object for citizen updates
+    let lastSceneUpdateTime = 0;
     
     // Note: per-turn budget orchestration lives in ProcessTurnBudget (accounting BC) via scene.update
     // Note: Citizen-related variables and CitizenData class moved to CitizenManager
@@ -479,6 +513,7 @@ export function createScene(_gameStore, assetManager, deps) {
     }
 
     async function runUpdate(city, time = 0, _options = {}) {
+        lastSceneUpdateTime = time;
 
         /**
          * Housing ECS may rename persisted id/type (Blue→Red, etc.) while the mesh
@@ -1093,7 +1128,7 @@ export function createScene(_gameStore, assetManager, deps) {
                                     'isBuying',
                                     buyingMeta.scale,
                                     buyingMeta.position,
-                                    true,
+                                    productionSpriteVisible(true),
                                     buyingMeta.spriteColor,
                                     buyingMeta.backgroundColor
                                 );
@@ -1104,7 +1139,7 @@ export function createScene(_gameStore, assetManager, deps) {
                                     'isBuying',
                                     buyingMeta.scale,
                                     buyingMeta.position,
-                                    true,
+                                    productionSpriteVisible(true),
                                     0xFF6600,
                                     0xFFCCCC
                                 );
@@ -1135,7 +1170,7 @@ export function createScene(_gameStore, assetManager, deps) {
                             'no-food',
                             statutsIconsMeta['no-food'].scale,
                             statutsIconsMeta['no-food'].position,
-                            !hasFoodBaskets
+                            productionSpriteVisible(!hasFoodBaskets)
                         );
                     }
 
@@ -1183,7 +1218,7 @@ export function createScene(_gameStore, assetManager, deps) {
                                 'isCollecting',
                                 collectingMeta.scale,
                                 collectingMeta.position,
-                                true,
+                                productionSpriteVisible(true),
                                 collectingMeta.spriteColor,
                                 collectingMeta.backgroundColor
                             );
@@ -1280,9 +1315,9 @@ export function createScene(_gameStore, assetManager, deps) {
                             spriteName,
                             spriteScale,
                             spritePosition,
-                            true, // Always show sprite (season-specific)
-                            spriteColor, // Color (red for winter, null for others to keep original colors)
-                            backgroundColor // Pastel colored circular background for season sprites (null for winter)
+                            productionSpriteVisible(true),
+                            spriteColor,
+                            backgroundColor
                         );
                     }
                     
@@ -1306,7 +1341,7 @@ export function createScene(_gameStore, assetManager, deps) {
                                 'sold-to-windmill',
                                 windmillSaleMeta.scale,
                                 windmillSaleMeta.position,
-                                true,
+                                productionSpriteVisible(true),
                                 windmillSaleMeta.spriteColor,
                                 windmillSaleMeta.backgroundColor
                             );
@@ -1385,7 +1420,7 @@ export function createScene(_gameStore, assetManager, deps) {
                             'no-food',
                             statutsIconsMeta.food.scale,
                             statutsIconsMeta.food.position,
-                            showNoFoodIcon
+                            productionSpriteVisible(showNoFoodIcon)
                         );
                     }
                     
@@ -1578,7 +1613,7 @@ export function createScene(_gameStore, assetManager, deps) {
                         'no-work',
                         scale,
                         position,
-                        true,
+                        productionSpriteVisible(true),
                         noWorkSpriteColor,
                         noWorkBackgroundColor
                     );
@@ -2243,6 +2278,20 @@ function onTouchEnd(event) {
         },
         isTileGridVisible() {
             return tileGridOverlay.isVisible();
+        },
+        setProductionIconsVisible(visible) {
+            mapOverlayVisibility.setProductionIconsVisible(visible);
+            if (!mapOverlayVisibility.isProductionIconsVisible()) {
+                hideProductionSpritesNow();
+                return;
+            }
+            if (currentCity) {
+                void refreshEmploymentPresentation(currentCity);
+                void update(currentCity, lastSceneUpdateTime);
+            }
+        },
+        isProductionIconsVisible() {
+            return mapOverlayVisibility.isProductionIconsVisible();
         },
     }
 
