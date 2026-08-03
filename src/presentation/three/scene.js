@@ -1870,36 +1870,23 @@ export function createScene(_gameStore, assetManager, deps) {
     }
 
     function onMouseUp(event){
-        // Block interaction if a popup is open or info modal is open
-        if (popupManager?.getActivePopups?.()?.length > 0) {
-            if (event.button === 0) {
-                isLeftPointerDown = false;
-            }
-            return;
-        }
-        if (isInfoModalOpen()) {
-            if (event.button === 0) {
-                isLeftPointerDown = false;
-            }
-            return;
-        }
-        if (performance.now() < suppressInputUntilMs) {
-            if (event.button === 0) {
-                isLeftPointerDown = false;
-            }
-            return;
-        }
+        // Always clear camera drag flags first (even if UI blocks the rest),
+        // otherwise right-pan stays stuck after release.
+        camera.onMouseUp(event);
 
         if (event.button === 0) {
             isLeftPointerDown = false;
-            if (typeof this.onRoadPaintEnd === 'function') {
+            if (
+                typeof this.onRoadPaintEnd === 'function'
+                && !(popupManager?.getActivePopups?.()?.length > 0)
+                && !isInfoModalOpen()
+                && performance.now() >= suppressInputUntilMs
+            ) {
                 Promise.resolve(this.onRoadPaintEnd()).catch((error) => {
                     console.error('[scene.js] onRoadPaintEnd failed:', error);
                 });
             }
         }
-        
-        camera.onMouseUp(event);
     }
 
 function onMouseMove(event) {
