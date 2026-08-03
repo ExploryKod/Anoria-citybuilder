@@ -176,6 +176,12 @@ operation = export  → playerConfig.exportEnabled[productId]
 | Séparation interne | Le moulin / marchés **ne** voient **pas** le stock barn. |
 | Capacité | Source : `BARN_UNITS_PER_WORKER` (10) et `BARN_MAX_TOTAL_CAPACITY` (60) ; max ouvriers et stock dérivés par calcul |
 | Transfert factory → barn | Commande supply mensuelle : déplace `wood` / `furniture` de la factory vers la barn si capacité. |
+| `HubStorageOrdersPolicy` | Ordres : **Accepter / Refuser / Amener** + plafond **%**. Espace libre **premier arrivé** si les plafonds se chevauchent (César III). |
+
+### UI entrepôt (grange / moulin)
+
+Modal info élargie (520×620) : grille emoji + quantités, camembert d’occupation réelle, bouton **Ordres** : mode (Accepter → Refuser → Amener) et plafond % (+/− de 10).
+Persisté dans `hubStorageOrders` sur le bâtiment.
 
 ### 4.6 `CaravanVisitPolicy` *(phase caravane)*
 

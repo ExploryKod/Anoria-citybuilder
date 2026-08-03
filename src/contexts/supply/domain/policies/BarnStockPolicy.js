@@ -6,6 +6,15 @@ import {
   getBarnMaxWorkers,
   getBarnCapacityForWorkerCount,
 } from '../catalogs/BarnCommerceCatalog.js';
+import {
+  HUB_KIND,
+  listHubProducts,
+} from '../catalogs/HubStorageCatalog.js';
+import {
+  canCreditHubProduct,
+  getHubProductRemainingInbound,
+  normalizeHubStorageOrders,
+} from './HubStorageOrdersPolicy.js';
 
 /**
  * @param {object|null|undefined} barnRow
@@ -68,7 +77,18 @@ export function getBarnProductStock(stocks, productId) {
  */
 export function canCreditBarnStock(barnRow, stocks, productId, quantity) {
   if (quantity <= 0) return false;
-  return quantity <= getBarnRemainingCapacity(barnRow, stocks);
+  const normalized = createEmptyCommerceStocks(stocks);
+  const productIds = listHubProducts(HUB_KIND.BARN);
+  const orders = normalizeHubStorageOrders(barnRow?.hubStorageOrders, productIds);
+  const totalCapacity = getBarnTotalCapacity(barnRow);
+  return canCreditHubProduct({
+    productId,
+    productIds,
+    orders,
+    stocks: normalized,
+    totalCapacity,
+    quantity,
+  });
 }
 
 /**
@@ -88,11 +108,22 @@ export function canDebitBarnStock(stocks, productId, quantity) {
  * @param {number} quantity
  */
 export function creditBarnStock(barnRow, stocks, productId, quantity) {
-  if (!canCreditBarnStock(barnRow, stocks, productId, quantity)) {
-    return null;
-  }
+  const normalized = createEmptyCommerceStocks(stocks);
+  const productIds = listHubProducts(HUB_KIND.BARN);
+  const orders = normalizeHubStorageOrders(barnRow?.hubStorageOrders, productIds);
+  const totalCapacity = getBarnTotalCapacity(barnRow);
+  const allowed = getHubProductRemainingInbound({
+    productId,
+    productIds,
+    orders,
+    stocks: normalized,
+    totalCapacity,
+  });
+  const toCredit = Math.min(Math.max(0, Math.floor(Number(quantity) || 0)), allowed);
+  if (toCredit <= 0) return null;
+
   const next = createEmptyCommerceStocks(stocks);
-  next[productId] = (next[productId] ?? 0) + quantity;
+  next[productId] = (next[productId] ?? 0) + toCredit;
   return next;
 }
 

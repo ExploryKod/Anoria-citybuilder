@@ -63,6 +63,11 @@ describe('TransferFactoryToBarn', () => {
         isActive: true,
         employees: { worker: 2, worker_need: 1 },
         commerceStocks: { wood: 0, furniture: 0, figs: 0 },
+        hubStorageOrders: {
+          wood: { mode: 'accept', maxPercent: 100 },
+          furniture: { mode: 'accept', maxPercent: 100 },
+          figs: { mode: 'accept', maxPercent: 100 },
+        },
       },
     ]);
 
