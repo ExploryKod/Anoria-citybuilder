@@ -1482,6 +1482,312 @@ footer .footer-links a:hover {
     pointer-events: auto;
 }
 
+/* Hub storage panel (barn / windmill — Cesar III inspired) */
+.info-building-overlay--hub-barn,
+.info-building-overlay--hub-windmill {
+    width: 520px;
+    max-height: 620px;
+}
+
+.hub-info-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hub-info-summary {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.hub-info-workers {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.hub-info-status {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: #495057;
+}
+
+.hub-stock-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.hub-stock-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 72px;
+    padding: 8px 6px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background: #fff;
+    text-align: center;
+}
+
+.hub-stock-item--empty {
+    opacity: 0.55;
+}
+
+.hub-stock-item--refused {
+    border-color: #ffc9c9;
+    background: #fff5f5;
+}
+
+.hub-stock-emoji {
+    font-size: 22px;
+    line-height: 1.1;
+}
+
+.hub-stock-qty {
+    font-weight: 700;
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.hub-stock-label {
+    font-size: 11px;
+    color: #6c757d;
+    margin-top: 2px;
+}
+
+.hub-info-actions {
+    display: flex;
+    justify-content: center;
+}
+
+.hub-orders-panel {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: #fafafa;
+}
+
+.hub-orders-panel.hidden {
+    display: none;
+}
+
+.hub-orders-title {
+    margin: 0 0 6px;
+    font-size: 15px;
+}
+
+.hub-orders-help {
+    margin: 0 0 10px;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.hub-orders-toggle-btn {
+    background: linear-gradient(135deg, #ff9800, #ffb74d);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 18px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.hub-orders-c3-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.hub-order-c3-row {
+    display: grid;
+    grid-template-columns: 28px 1fr minmax(88px, auto) minmax(96px, auto);
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 13px;
+}
+
+.hub-order-c3-icon {
+    font-size: 18px;
+    text-align: center;
+}
+
+.hub-order-c3-label {
+    font-weight: 600;
+    color: #343a40;
+}
+
+.hub-order-mode-btn {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 5px 8px;
+    background: #f8f9fa;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+}
+
+.hub-order-mode-btn--accept {
+    background: #e8f5e9;
+    border-color: #a5d6a7;
+    color: #2e7d32;
+}
+
+.hub-order-mode-btn--refuse {
+    background: #ffebee;
+    border-color: #ef9a9a;
+    color: #c62828;
+}
+
+.hub-order-mode-btn--fetch {
+    background: #e3f2fd;
+    border-color: #90caf9;
+    color: #1565c0;
+}
+
+.hub-order-share-control {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+.hub-order-share-btn {
+    width: 26px;
+    height: 26px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.hub-order-share-display {
+    min-width: 36px;
+    text-align: center;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.hub-stock-item--fetch {
+    border-color: #90caf9;
+    background: #f3f9ff;
+}
+
+.hub-storage-chart-section {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px;
+    background: #fff;
+}
+
+.hub-storage-chart-title {
+    margin: 0 0 10px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.hub-pie-chart {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.hub-pie-svg {
+    width: 200px;
+    height: 200px;
+    display: block;
+}
+
+.hub-pie-label {
+    font-size: 16px;
+    pointer-events: none;
+}
+
+.hub-pie-qty {
+    font-size: 11px;
+    font-weight: 700;
+    fill: #212529;
+    pointer-events: none;
+}
+
+.hub-pie-legend {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hub-pie-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.hub-pie-legend-item--over {
+    color: #c62828;
+    font-weight: 600;
+}
+
+.hub-pie-legend-swatch {
+    display: inline-flex;
+    width: 28px;
+    height: 10px;
+    border-radius: 3px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.hub-pie-legend-swatch-dark,
+.hub-pie-legend-swatch-pale {
+    flex: 1;
+    height: 100%;
+}
+
+.hub-pie-legend-emoji {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.hub-pie-caption {
+    margin: 0;
+    font-size: 11px;
+    color: #6c757d;
+    text-align: center;
+    line-height: 1.4;
+}
+
+.hub-orders-warning {
+    margin: 0 0 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: #fff3cd;
+    border: 1px solid #ffecb5;
+    color: #856404;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.hub-order-c3-row--overflow {
+    border-color: #ffc9c9;
+    background: #fff5f5;
+}
+
 /* Close button inside header */
 .info-building-overlay .panel-close-btn {
     background: rgba(255,255,255,0.2);
