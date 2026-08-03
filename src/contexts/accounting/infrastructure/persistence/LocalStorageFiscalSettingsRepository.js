@@ -11,10 +11,10 @@ export const FISCAL_STORAGE_KEYS = Object.freeze({
 });
 
 export const DEFAULT_FISCAL_SETTINGS = Object.freeze({
-  citizenTaxPerCapita: 100,
+  citizenTaxPerCapita: 25,
   salaryPerMonth: 100,
-  salaryTaxRate: 0.2,
-  unemploymentBenefitRate: 0.5,
+  salaryTaxRate: 0.1,
+  unemploymentBenefitRate: 0.7,
 });
 
 export class LocalStorageFiscalSettingsRepository {

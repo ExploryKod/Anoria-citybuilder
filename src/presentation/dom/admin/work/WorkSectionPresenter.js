@@ -11,11 +11,11 @@ export class WorkSectionPresenter {
         const settings = this.accounting?.getSalarySettings?.() ?? {
           salaryPerMonth: 0,
           salaryTaxRate: 0,
-          unemploymentBenefitRate: 0.5,
+          unemploymentBenefitRate: 0.7,
         };
         this.salary = settings.salaryPerMonth;
         this.salaryTaxRate = settings.salaryTaxRate;
-        this.unemploymentBenefitRate = settings.unemploymentBenefitRate ?? 0.5;
+        this.unemploymentBenefitRate = settings.unemploymentBenefitRate ?? 0.7;
         this.lastKnownPopulation = 0;
         this.workData = null;
     }
