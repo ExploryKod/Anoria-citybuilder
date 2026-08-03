@@ -1842,8 +1842,13 @@ export function createScene(_gameStore, assetManager, deps) {
         if (event.button === 0) {
             isLeftPointerDown = true;
         }
-        
+
         camera.onMouseDown(event);
+
+        // Placement / selection: left click only (right = camera orbit)
+        if (event.button !== 0) {
+            return;
+        }
         
         // Use focusedObject if available (from per-frame updates), otherwise raycast
         let objectToSelect = focusedObject;

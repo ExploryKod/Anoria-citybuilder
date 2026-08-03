@@ -1,16 +1,15 @@
 import * as THREE from 'three';
-import { isRoadBuildingType } from '../../contexts/construction/domain/policies/FootprintAvailabilityPolicy.js';
 
 /**
  * Semi-transparent placement preview (ghost) that follows the cursor tile.
- * Does not write to city.tiles / Dexie — visual only.
+ * Visual only — no city / Dexie / placement rules.
  */
 
 const GHOST_VALID = new THREE.Color(0x2ecc71);
 const GHOST_INVALID = new THREE.Color(0xe74c3c);
 
 /**
- * Flat tinted materials (no texture map) so valid/invalid is obvious on GLTF roads.
+ * Flat tinted materials (no texture map) so valid/invalid is obvious on GLTF meshes.
  * @param {boolean} valid
  * @returns {THREE.MeshBasicMaterial}
  */
@@ -20,7 +19,6 @@ function createGhostMaterial(valid) {
     transparent: true,
     opacity: valid ? 0.55 : 0.65,
     depthWrite: false,
-    // Slight lift over terrain so the tint reads clearly
     polygonOffset: true,
     polygonOffsetFactor: -1,
     polygonOffsetUnits: -1,
@@ -87,7 +85,6 @@ export function createPlacementGhostController({ scene, assetManager }) {
 
   function setTilePosition(mesh, x, y) {
     const worldPlatformHeight = 0.2;
-    // Slightly above real roads so tint isn't lost to z-fighting
     mesh.position.set(x, worldPlatformHeight + 0.04, y);
     if (mesh.userData) {
       mesh.userData.x = x;
@@ -114,7 +111,6 @@ export function createPlacementGhostController({ scene, assetManager }) {
   }
 
   /**
-   * Show or refresh ghost for a tool + tile.
    * @param {string} assetId
    * @param {number} x
    * @param {number} y
@@ -129,7 +125,6 @@ export function createPlacementGhostController({ scene, assetManager }) {
       return;
     }
 
-    // Validity or orientation change → recreate (materials / rotation)
     if (!ghost || currentAssetId !== assetId || lastValid !== valid) {
       spawn(assetId, x, y, valid);
       return;
@@ -151,7 +146,6 @@ export function createPlacementGhostController({ scene, assetManager }) {
   }
 
   /**
-   * Swap orientation / asset while keeping tile.
    * @param {string} assetId
    * @param {boolean} [valid]
    */
@@ -171,23 +165,11 @@ export function createPlacementGhostController({ scene, assetManager }) {
     lastValid = true;
   }
 
-  /**
-   * @param {object|null|undefined} city
-   * @param {number} x
-   * @param {number} y
-   */
-  function isValidRoadPlacement(city, x, y) {
-    const tile = city?.tiles?.[x]?.[y];
-    if (!tile) return false;
-    return !tile.buildingId || isRoadBuildingType(tile.buildingId);
-  }
-
   return {
     show,
     move,
     setAsset,
     clear,
-    isValidRoadPlacement,
     get active() {
       return Boolean(ghost);
     },

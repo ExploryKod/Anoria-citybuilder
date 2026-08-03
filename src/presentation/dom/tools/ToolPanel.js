@@ -534,10 +534,10 @@ function makeNewButton(buttonInfo, svg="") {
     button.innerHTML = svg;
 
     button.addEventListener('click', (e) => {
-        // Check if button is disabled before allowing click
-        if (deps?.buttonStateManager && deps.buttonStateManager.isEnabled(buttonInfo.tool)) {
-            deps.invokeSetActiveTool?.(e);
+        if (deps?.buttonStateManager && !deps.buttonStateManager.isEnabled(buttonInfo.tool)) {
+            return;
         }
+        deps.invokeSetActiveTool?.(e);
     });
 
     panelLayoutInner.appendChild(button);

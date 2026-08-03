@@ -106,6 +106,42 @@ export function resolveGridSize(assetCatalog, buildingType) {
 }
 
 /**
+ * Pure placement gate (footprint / road overwrite). Shared by PlaceBuildingAtTile and ghost preview.
+ * Does not check funds or Dexie.
+ *
+ * @param {object} params
+ * @param {{ size: number, tiles: object[][] }} params.city
+ * @param {number} params.x
+ * @param {number} params.y
+ * @param {string} params.buildingType
+ * @param {Record<string, { gridSize?: number }>} params.assetCatalog
+ * @returns {{ ok: boolean, reason?: string, gridSize: number }}
+ */
+export function canPlaceBuildingAtTile({ city, x, y, buildingType, assetCatalog }) {
+  const gridSize = resolveGridSize(assetCatalog, buildingType);
+  const tile = city?.tiles?.[x]?.[y];
+  if (!tile) {
+    return { ok: false, reason: 'out_of_bounds', gridSize };
+  }
+
+  if (isRoadBuildingType(buildingType)) {
+    const ok = !tile.buildingId || isRoadBuildingType(tile.buildingId);
+    return {
+      ok,
+      reason: ok ? undefined : 'area_not_available',
+      gridSize,
+    };
+  }
+
+  const ok = isAreaAvailableForBuilding(city, x, y, gridSize);
+  return {
+    ok,
+    reason: ok ? undefined : 'area_not_available',
+    gridSize,
+  };
+}
+
+/**
  * Resolve the NW/min footprint anchor for a multi-tile building from any occupied tile.
  * Falls back to (x, y) when instanceId is missing or not found on the grid.
  *
