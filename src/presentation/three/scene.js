@@ -38,6 +38,7 @@ import {
   getSessionService,
   getSessionGameUI,
 } from '../../composition/sessionRuntime.js';
+import { createPlacementGhostController } from './placementGhost.js';
 
 const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
 
@@ -78,6 +79,8 @@ export function createScene(_gameStore, assetManager, deps) {
     const scene = new THREE.Scene();
     // Subtle atmospheric fog to blend far terrain and sky (tuned to match background)
     try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
+
+    const placementGhost = createPlacementGhostController({ scene, assetManager });
     
     // Initialize managers
     const lightingManager = new LightingManager(scene);
@@ -1930,6 +1933,10 @@ function onMouseMove(event) {
         hoveredObjectName = '';
     }
 
+    if (typeof this.onPlacementHover === 'function') {
+        this.onPlacementHover(focusedObject);
+    }
+
     // Cesar III style road paint: while LMB held, paint each hovered tile
     if (
         isLeftPointerDown
@@ -2218,6 +2225,8 @@ function onTouchEnd(event) {
         onRoadPaintEnd: undefined,
         /** @type {((event?: KeyboardEvent) => boolean) | undefined} */
         onRotateBuildingTool: undefined,
+        /** @type {((focused: object | null) => void) | undefined} */
+        onPlacementHover: undefined,
         // Expose focused/selected for external access if needed
         get focusedObject() { return focusedObject; },
         get selectedObject() { return selectedObject; },
@@ -2233,6 +2242,8 @@ function onTouchEnd(event) {
         pauseCitizen,
         resumeCitizen,
         refreshEmploymentPresentation,
+        /** Semi-transparent placement preview (StonePath trial). */
+        placementGhost,
         /** Live mesh grid for turn-budget maintenance input. */
         get buildings() { return buildings; },
         setTileGridVisible(visible) {

@@ -86,6 +86,30 @@ export function createGame(gameStore, assetManager, citySize = null) {
     btn.dataset.orientation = String(stonePathOrientation);
   }
 
+  /**
+   * StonePath placement ghost: follows hovered tile, tinted by validity.
+   * @param {object | null} [focused]
+   */
+  function syncStonePathGhost(focused = scene.focusedObject) {
+    const ghost = scene.placementGhost;
+    if (!ghost) return;
+
+    if (!isStonePathTool(activeToolId)) {
+      ghost.clear();
+      return;
+    }
+
+    const x = focused?.userData?.x;
+    const y = focused?.userData?.y;
+    if (typeof x !== 'number' || typeof y !== 'number') {
+      return;
+    }
+
+    const assetId = getEffectiveBuildingToolId();
+    const valid = ghost.isValidRoadPlacement(city, x, y);
+    ghost.show(assetId, x, y, valid);
+  }
+
   function getTickIntervalMs() {
     return Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed'), 10) || 4000));
   }
@@ -442,10 +466,15 @@ export function createGame(gameStore, assetManager, citySize = null) {
       return;
     }
     await paintRoadToward(x, y);
+    syncStonePathGhost(focusedObject);
   };
 
   scene.onRoadPaintEnd = async () => {
     await finalizeRoadPaintSession();
+  };
+
+  scene.onPlacementHover = (focusedObject) => {
+    syncStonePathGhost(focusedObject);
   };
 
   /**
@@ -458,6 +487,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
     stonePathOrientation = cycleStonePathOrientationIndex(stonePathOrientation);
     updateStonePathToolHint();
+    syncStonePathGhost();
     return true;
   };
 
@@ -606,6 +636,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
           gameUI.activeToolId = 'StonePath-001';
         }
         updateStonePathToolHint();
+        syncStonePathGhost();
+      } else {
+        scene.placementGhost?.clear();
       }
       if (!isRoadBuildingType(toolId) && roadPaint.active) {
         void finalizeRoadPaintSession();
