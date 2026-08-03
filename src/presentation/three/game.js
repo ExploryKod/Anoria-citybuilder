@@ -479,16 +479,26 @@ export function createGame(gameStore, assetManager, citySize = null) {
     return true;
   };
 
-  window.addEventListener('mouseup', () => {
+  window.addEventListener('mouseup', (event) => {
+    // Release may happen outside the canvas — still end camera drag / road paint
+    scene.onMouseUp?.(event);
     if (roadPaint.active) {
       void finalizeRoadPaintSession();
     }
   });
 
+  window.addEventListener('blur', () => {
+    scene.camera?.releaseAllMouseButtons?.();
+  });
+
   const canvasEl = scene.domElement || document.querySelector('canvas');
   if (canvasEl) {
+    canvasEl.addEventListener('contextmenu', (event) => {
+      event.preventDefault();
+      // Ensure right-drag ends even if the browser eats mouseup for the menu
+      scene.camera?.onMouseUp?.({ button: 2 });
+    });
     canvasEl.addEventListener('mousedown', scene.onMouseDown.bind(scene), false);
-    canvasEl.addEventListener('mouseup', scene.onMouseUp.bind(scene), false);
     canvasEl.addEventListener('mousemove', scene.onMouseMove.bind(scene), false);
     canvasEl.addEventListener('wheel', scene.onMouseWheel.bind(scene), { passive: false });
     canvasEl.addEventListener('touchstart', scene.onTouchStart.bind(scene), { passive: false });
@@ -498,7 +508,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
     document.addEventListener('keyup', scene.onKeyBoardUp.bind(scene), false);
   } else {
     document.addEventListener('mousedown', scene.onMouseDown.bind(scene), false);
-    document.addEventListener('mouseup', scene.onMouseUp.bind(scene), false);
     document.addEventListener('mousemove', scene.onMouseMove.bind(scene), false);
     document.addEventListener('wheel', scene.onMouseWheel.bind(scene), { passive: false });
     document.addEventListener('touchstart', scene.onTouchStart.bind(scene), { passive: false });
