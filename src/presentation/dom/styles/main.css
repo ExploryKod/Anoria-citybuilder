@@ -693,8 +693,39 @@ canvas.pointer-events-disabled {
     font-size: 18px;
     font-weight: 600;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: all 0.3s ease-in-out;
     white-space: nowrap;
+}
+
+.panel-tool-hint {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin: 0 0 8px;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.35;
+    color: #495057;
+    background: #f1f3f5;
+    border-radius: var(--border-radius-small);
+    box-shadow: rgba(0, 0, 0, 0.08) 0px 1px 2px;
+}
+
+.panel-tool-hint kbd {
+    display: inline-block;
+    min-width: 1.4em;
+    padding: 1px 6px;
+    margin-right: 2px;
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    background: #fff;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    color: #212529;
 }
 
 .panel-layout .panel-btn svg {

@@ -507,36 +507,18 @@ class AssetManager extends MeshLoader {
                     this.#createBuilding(x, y, z, size, toolId, this.#getModelsObj(propertyKey));
             });
             
-            // Special handling: Create road variants (Right, Left, Cross) that use StonePath-001 mesh
-            // These are virtual assets that reuse the same mesh with different rotations
+            // Orientation variants reuse StonePath-001 mesh (kept for saves / R-cycle placement).
+            // UI only exposes StonePath-001; R toggles horizontal ↔ vertical.
             if (propertyKey === 'infrastructure' && this.toolIds[propertyKey].includes('StonePath-001')) {
                 const size = this.assetSizeOverrides?.['StonePath-001'] ?? this.modelMetas[propertyKey].size;
                 const modelsObj = this.#getModelsObj(propertyKey);
-                
-                // Create variants that will use StonePath-001 mesh but with different rotations
+
                 this.#assets['StonePath-Right-001'] = (x, y, z = 0) =>
                     this.#createBuilding(x, y, z, size, 'StonePath-Right-001', modelsObj);
                 this.#assets['StonePath-Left-001'] = (x, y, z = 0) =>
                     this.#createBuilding(x, y, z, size, 'StonePath-Left-001', modelsObj);
                 this.#assets['StonePath-Cross-001'] = (x, y, z = 0) =>
                     this.#createBuilding(x, y, z, size, 'StonePath-Cross-001', modelsObj);
-                
-                // Add button data for road variants
-                this.buttonData.push({
-                    text: 'StonePath Right',
-                    tool: 'StonePath-Right-001',
-                    group: 'StonePath'
-                });
-                this.buttonData.push({
-                    text: 'StonePath Left',
-                    tool: 'StonePath-Left-001',
-                    group: 'StonePath'
-                });
-                this.buttonData.push({
-                    text: 'StonePath Cross',
-                    tool: 'StonePath-Cross-001',
-                    group: 'StonePath'
-                });
             }
             
             // Check if all loading is complete asynchronously (fires after all promises resolve)

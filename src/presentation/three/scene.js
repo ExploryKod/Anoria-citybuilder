@@ -1822,6 +1822,7 @@ export function createScene(_gameStore, assetManager, deps) {
     let hoveredObject = null
     let hoveredObjectName = null
     const objectsNames = ['grass', 'roads', 'House-Red', 'House-Purple', 'House-Blue', 'Market-Stall']
+    let isLeftPointerDown = false;
 
     function onMouseDown(event){
         // Block interaction if a popup is open or info modal is open
@@ -1833,6 +1834,10 @@ export function createScene(_gameStore, assetManager, deps) {
         }
         if (performance.now() < suppressInputUntilMs) {
             return;
+        }
+
+        if (event.button === 0) {
+            isLeftPointerDown = true;
         }
         
         camera.onMouseDown(event);
@@ -1859,13 +1864,31 @@ export function createScene(_gameStore, assetManager, deps) {
     function onMouseUp(event){
         // Block interaction if a popup is open or info modal is open
         if (popupManager?.getActivePopups?.()?.length > 0) {
+            if (event.button === 0) {
+                isLeftPointerDown = false;
+            }
             return;
         }
         if (isInfoModalOpen()) {
+            if (event.button === 0) {
+                isLeftPointerDown = false;
+            }
             return;
         }
         if (performance.now() < suppressInputUntilMs) {
+            if (event.button === 0) {
+                isLeftPointerDown = false;
+            }
             return;
+        }
+
+        if (event.button === 0) {
+            isLeftPointerDown = false;
+            if (typeof this.onRoadPaintEnd === 'function') {
+                Promise.resolve(this.onRoadPaintEnd()).catch((error) => {
+                    console.error('[scene.js] onRoadPaintEnd failed:', error);
+                });
+            }
         }
         
         camera.onMouseUp(event);
@@ -1881,6 +1904,7 @@ function onMouseMove(event) {
         camera.onMouseUp({ button: 0 }); // Reset left mouse
         camera.onMouseUp({ button: 1 }); // Reset middle mouse
         camera.onMouseUp({ button: 2 }); // Reset right mouse
+        isLeftPointerDown = false;
         return;
     }
     if (performance.now() < suppressInputUntilMs) {
@@ -1899,8 +1923,23 @@ function onMouseMove(event) {
     const intersections = raycaster.intersectObjects(getInteractiveObjects(), false);
 
     if(intersections.length) {
-        // Mouse move intersection
+        focusedObject = intersections[0].object;
         hoveredObjectName = intersections[0]?.object?.name || ""
+    } else {
+        focusedObject = null;
+        hoveredObjectName = '';
+    }
+
+    // Cesar III style road paint: while LMB held, paint each hovered tile
+    if (
+        isLeftPointerDown
+        && (event.buttons & 1) === 1
+        && focusedObject
+        && typeof this.onRoadPaintMove === 'function'
+    ) {
+        Promise.resolve(this.onRoadPaintMove(focusedObject)).catch((error) => {
+            console.error('[scene.js] onRoadPaintMove failed:', error);
+        });
     }
 }
 
@@ -2076,6 +2115,21 @@ function onTouchEnd(event) {
 
 
     function onKeyBoardDown(event){
+        // StonePath tool: R rotates path orientation (Cesar-style), not the camera
+        if (
+            event.key
+            && event.key.toLowerCase() === 'r'
+            && !event.ctrlKey
+            && !event.altKey
+            && !event.metaKey
+            && typeof this.onRotateBuildingTool === 'function'
+        ) {
+            const handled = this.onRotateBuildingTool(event);
+            if (handled) {
+                event.preventDefault?.();
+                return;
+            }
+        }
 
         camera.onKeyBoardDown(event);
         // Raycasting need y and x axis as + on the terrain (plan) (y-1,y1,x1,x-1)
@@ -2158,9 +2212,16 @@ function onTouchEnd(event) {
         onTouchMove,
         onTouchEnd,
         delay,
+        /** @type {((object: object) => void | Promise<void>) | undefined} */
+        onRoadPaintMove: undefined,
+        /** @type {(() => void | Promise<void>) | undefined} */
+        onRoadPaintEnd: undefined,
+        /** @type {((event?: KeyboardEvent) => boolean) | undefined} */
+        onRotateBuildingTool: undefined,
         // Expose focused/selected for external access if needed
         get focusedObject() { return focusedObject; },
         get selectedObject() { return selectedObject; },
+        get isLeftPointerDown() { return isLeftPointerDown; },
         // Expose controls to enable/disable OrbitControls when modal opens/closes
         get controls() { return controls; },
         // Expose canvas element to attach precise listeners

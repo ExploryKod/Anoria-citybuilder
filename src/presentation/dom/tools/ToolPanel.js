@@ -410,14 +410,15 @@ function createRoadsButtons(buttonData) {
     panelLayoutInner.innerHTML = '';
     const infrastructureToolIDs = toolIds.infrastructure || [];
 
-    // Different SVG icons for different road types
-    const svgRoadStraight = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="8" y1="8" x2="8" y2="10"/><line x1="16" y1="8" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="16"/><line x1="16" y1="14" x2="16" y2="16"/></svg>`;
-    const svgRoadRight = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L12 12 L22 12"/><line x1="8" y1="8" x2="8" y2="10"/><line x1="14" y1="16" x2="16" y2="16"/></svg>`;
-    const svgRoadLeft = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L12 12 L2 12"/><line x1="16" y1="8" x2="16" y2="10"/><line x1="8" y1="16" x2="6" y2="16"/></svg>`;
-    const svgRoadCross = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>`;
     const svgModernRoad = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="8" rx="1"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="10" x2="9" y2="14"/><line x1="15" y1="10" x2="15" y2="14"/></svg>`;
+    const svgStonePath = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="8" y1="8" x2="8" y2="10"/><line x1="16" y1="8" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="16"/><line x1="16" y1="14" x2="16" y2="16"/></svg>`;
 
-    // Add roads button first (modern road using texture material)
+    const hint = document.createElement('p');
+    hint.className = 'panel-tool-hint';
+    hint.innerHTML = '<kbd>R</kbd> = rotation du chemin';
+    panelLayoutInner.appendChild(hint);
+
+    // Modern textured road (no rotation)
     if (infrastructureToolIDs.includes('roads')) {
         makeNewButton({
             text: 'Modern Road',
@@ -426,24 +427,21 @@ function createRoadsButtons(buttonData) {
         }, svgModernRoad);
     }
 
-    let buttonsDuplicate = [];
-    buttonData.filter(buttonInfo => infrastructureToolIDs.includes(buttonInfo.tool) && buttonInfo.tool.startsWith('StonePath-')).forEach(buttonInfo => {
-        if (!buttonsDuplicate.includes(buttonInfo.tool)) {
-            buttonsDuplicate.push(buttonInfo.tool);
-            
-            // Choose appropriate icon based on road type
-            let svg = svgRoadStraight;
-            if (buttonInfo.tool === 'StonePath-Right-001') {
-                svg = svgRoadRight;
-            } else if (buttonInfo.tool === 'StonePath-Left-001') {
-                svg = svgRoadLeft;
-            } else if (buttonInfo.tool === 'StonePath-Cross-001') {
-                svg = svgRoadCross;
-            }
-            
-            makeNewButton(buttonInfo, svg);
+    // Single StonePath tool — press R to toggle horizontal / vertical
+    if (infrastructureToolIDs.includes('StonePath-001')) {
+        const fromData = buttonData.find((b) => b.tool === 'StonePath-001');
+        const btn = makeNewButton(
+            fromData || { text: 'Stone Path', tool: 'StonePath-001', group: 'StonePath' },
+            svgStonePath
+        );
+        if (btn) {
+            btn.title = 'Chemin de pierre — touche R pour tourner';
+            btn.dataset.stonePathTool = '1';
         }
-    });
+    }
+
+    panelLayoutInner.classList.remove('loading-objects');
+    loaderButton.classList.remove('active');
 }
 
 function createPublicButtons(buttonData) {
@@ -550,4 +548,6 @@ function makeNewButton(buttonInfo, svg="") {
     if (deps?.buttonStateManager) {
         deps.buttonStateManager.registerButton(buttonInfo.tool, button);
     }
+
+    return button;
 }
