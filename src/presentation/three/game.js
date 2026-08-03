@@ -45,6 +45,8 @@ import {
   stonePathOrientationLabel,
   stonePathTypeForIndex,
 } from '../../contexts/construction/domain/policies/StonePathOrientationPolicy.js';
+import { assetsPrices } from '../../shared/building-catalog/index.js';
+import { createPlacementGhostSession } from './placementGhostSession.js';
 
 ensureGameRuntimeBootstrapped();
 
@@ -84,30 +86,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
     const label = stonePathOrientationLabel(stonePathOrientation);
     btn.title = `Chemin de pierre (${label}) — touche R pour tourner`;
     btn.dataset.orientation = String(stonePathOrientation);
-  }
-
-  /**
-   * StonePath placement ghost: follows hovered tile, tinted by validity.
-   * @param {object | null} [focused]
-   */
-  function syncStonePathGhost(focused = scene.focusedObject) {
-    const ghost = scene.placementGhost;
-    if (!ghost) return;
-
-    if (!isStonePathTool(activeToolId)) {
-      ghost.clear();
-      return;
-    }
-
-    const x = focused?.userData?.x;
-    const y = focused?.userData?.y;
-    if (typeof x !== 'number' || typeof y !== 'number') {
-      return;
-    }
-
-    const assetId = getEffectiveBuildingToolId();
-    const valid = ghost.isValidRoadPlacement(city, x, y);
-    ghost.show(assetId, x, y, valid);
   }
 
   function getTickIntervalMs() {
@@ -152,6 +130,15 @@ export function createGame(gameStore, assetManager, citySize = null) {
     popupManager,
   });
   const city = createCity(resolveSelectedCitySize(citySize));
+
+  const placementGhostSession = createPlacementGhostSession({
+    getGhost: () => scene.placementGhost,
+    getCity: () => city,
+    getActiveToolId: () => activeToolId,
+    getEffectiveAssetId: () => getEffectiveBuildingToolId(),
+    assetCatalog: assetsPrices,
+    getFocusedObject: () => scene.focusedObject,
+  });
 
   bindGameUIDeps({ getScene: () => scene });
 
@@ -442,6 +429,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       await runSimulationPass(time);
       await syncEmploymentAfterBuildingChange(scene, city, activeToolId);
       await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+      placementGhostSession.sync(selectedObject);
       const multiplayerManager = getMultiplayerManager();
       if (multiplayerManager?.isMultiplayer) {
         try {
@@ -466,7 +454,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       return;
     }
     await paintRoadToward(x, y);
-    syncStonePathGhost(focusedObject);
+    placementGhostSession.sync(focusedObject);
   };
 
   scene.onRoadPaintEnd = async () => {
@@ -474,7 +462,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
   };
 
   scene.onPlacementHover = (focusedObject) => {
-    syncStonePathGhost(focusedObject);
+    placementGhostSession.sync(focusedObject);
   };
 
   /**
@@ -487,7 +475,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
     stonePathOrientation = cycleStonePathOrientationIndex(stonePathOrientation);
     updateStonePathToolHint();
-    syncStonePathGhost();
+    placementGhostSession.sync();
     return true;
   };
 
@@ -636,10 +624,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
           gameUI.activeToolId = 'StonePath-001';
         }
         updateStonePathToolHint();
-        syncStonePathGhost();
-      } else {
-        scene.placementGhost?.clear();
       }
+      placementGhostSession.onToolChanged();
       if (!isRoadBuildingType(toolId) && roadPaint.active) {
         void finalizeRoadPaintSession();
       }
