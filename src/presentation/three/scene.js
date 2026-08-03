@@ -792,6 +792,47 @@ export function createScene(_gameStore, assetManager, deps) {
                     continue;
                 }
 
+                // Bulldozed / ghost road: tile cleared but mesh or terrain material still present.
+                // Must run even without instanceId (otherwise roads look uneraseable).
+                {
+                    const ghostMesh = buildings[x]?.[y];
+                    const ghostType =
+                        ghostMesh?.userData?.type
+                        || ghostMesh?.userData?.id
+                        || currentBuildingId;
+                    const ghostIsRoad =
+                        Boolean(ghostMesh?.userData?.isRoad)
+                        || ghostType === 'roads'
+                        || ghostType === 'Road'
+                        || (typeof ghostType === 'string' && ghostType.startsWith('StonePath-'))
+                        || (
+                            !tileBuildingId
+                            && terrain[x]?.[y]
+                            && (terrain[x][y].userData?.isRoad || terrain[x][y].name === 'roads')
+                        );
+                    if (!tileBuildingId && ghostIsRoad) {
+                        if (terrain[x] && terrain[x][y]) {
+                            const terrainMesh = terrain[x][y];
+                            const sharedMaterials = assetManager.getSharedTerrainMaterials();
+                            if (sharedMaterials?.['grass'] && terrainMesh.material) {
+                                terrainMesh.material = sharedMaterials['grass'];
+                                terrainMesh.name = 'grass';
+                                terrainMesh.userData.id = 'grass';
+                                terrainMesh.userData.type = 'grass';
+                                terrainMesh.userData.isRoad = false;
+                                terrainMesh.userData.x = x;
+                                terrainMesh.userData.y = y;
+                                delete terrainMesh.userData.instanceId;
+                            }
+                        }
+                        if (ghostMesh && ghostMesh !== terrain[x]?.[y]) {
+                            removeInteractiveObject(ghostMesh);
+                        }
+                        buildings[x][y] = undefined;
+                        continue;
+                    }
+                }
+
                 if (!currentInstanceId) {
                     continue;
                 }
@@ -815,19 +856,30 @@ export function createScene(_gameStore, assetManager, deps) {
                 // Vérifier si le bâtiment existe encore dans la base de données
                 // Si non, le supprimer de la scène (cas des événements aléatoires, etc.)
                 // IMPORTANT: Ne pas supprimer si un nouveau bâtiment est en cours de création (newBuildingId existe)
-                const isRoad = buildings[x][y]?.userData?.isRoad || (currentBuildingId && currentBuildingId.startsWith('StonePath-'));
+                const meshTypeForRoad =
+                    buildings[x][y]?.userData?.type
+                    || buildings[x][y]?.userData?.id
+                    || currentBuildingId;
+                const isRoad =
+                    Boolean(buildings[x][y]?.userData?.isRoad)
+                    || meshTypeForRoad === 'roads'
+                    || meshTypeForRoad === 'Road'
+                    || (typeof meshTypeForRoad === 'string' && meshTypeForRoad.startsWith('StonePath-'));
                 const hasNewBuilding = needsMeshPlacement;
                 
-                // FIX BUG 1: For roads, use city.tiles as source of truth
-                // If city.tiles doesn't have a road but terrain shows road material, restore to grass
-                // This prevents "ghost" roads from terrain material when payment failed
+                // city.tiles is SoT for roads: clear terrain material + StonePath mesh when tile empty
+                // (bulldoze / failed payment). Previously only cleared buildings[] when it === terrain,
+                // so StonePath meshes were left behind and looked "uneraseable".
                 if (isRoad) {
-                    const tileHasRoad = city.tiles[x][y]?.buildingId && 
-                                       (city.tiles[x][y].buildingId.startsWith('StonePath-') || 
-                                        city.tiles[x][y].buildingId === 'roads');
+                    const tileBuilding = city.tiles[x][y]?.buildingId;
+                    const tileHasRoad =
+                        Boolean(tileBuilding)
+                        && (
+                            tileBuilding === 'roads'
+                            || tileBuilding === 'Road'
+                            || tileBuilding.startsWith('StonePath-')
+                        );
                     if (!tileHasRoad) {
-                        // Terrain shows road but city.tiles doesn't - this means payment failed or road was removed
-                        // Restore terrain to grass
                         if (terrain[x] && terrain[x][y]) {
                             const terrainMesh = terrain[x][y];
                             const sharedMaterials = assetManager.getSharedTerrainMaterials();
@@ -836,16 +888,18 @@ export function createScene(_gameStore, assetManager, deps) {
                                 terrainMesh.name = 'grass';
                                 terrainMesh.userData.id = 'grass';
                                 terrainMesh.userData.type = 'grass';
-                                terrainMesh.userData.isRoad = false; // Clear road flag
+                                terrainMesh.userData.isRoad = false;
                                 terrainMesh.userData.x = x;
                                 terrainMesh.userData.y = y;
+                                delete terrainMesh.userData.instanceId;
                             }
                         }
-                        // Remove from buildings array
-                        if (buildings[x][y] === terrain[x][y]) {
-                            buildings[x][y] = undefined;
+                        const roadMesh = buildings[x][y];
+                        if (roadMesh && roadMesh !== terrain[x]?.[y]) {
+                            removeInteractiveObject(roadMesh);
                         }
-                        continue; // Skip further processing for this tile
+                        buildings[x][y] = undefined;
+                        continue;
                     }
                 }
                 
@@ -937,14 +991,17 @@ export function createScene(_gameStore, assetManager, deps) {
                             });
                         }
                         
-                        // Handle geometry-based roads ('roads') - restore terrain to grass
-                        if (currentBuildingId === 'roads') {
+                        // Handle geometry-based roads ('roads') and StonePath meshes
+                        if (
+                            currentBuildingId === 'roads'
+                            || currentBuildingId === 'Road'
+                            || currentBuildingId.startsWith('StonePath-')
+                        ) {
                             try {
                                 await parcels.syncRemovedBuilding({ instanceId: currentInstanceId });
                             } catch (err) {
                                 console.warn('[Scene] Failed parcels remove for road', currentInstanceId, err);
                             }
-                            // Restore terrain mesh to grass
                             if (terrain[x] && terrain[x][y]) {
                                 const terrainMesh = terrain[x][y];
                                 const sharedMaterials = assetManager.getSharedTerrainMaterials();
@@ -956,13 +1013,13 @@ export function createScene(_gameStore, assetManager, deps) {
                                     terrainMesh.userData.isRoad = false;
                                     terrainMesh.userData.x = x;
                                     terrainMesh.userData.y = y;
+                                    delete terrainMesh.userData.instanceId;
                                 }
                             }
-                            // Clear from buildings array
-                            if (buildings[x][y] === terrain[x][y]) {
-                                buildings[x][y] = undefined;
+                            if (buildings[x][y] && buildings[x][y] !== terrain[x]?.[y]) {
+                                removeInteractiveObject(buildings[x][y]);
                             }
-                            // Clear buildingId from city.tiles
+                            buildings[x][y] = undefined;
                             if (city.tiles[x] && city.tiles[x][y]) {
                                 city.tiles[x][y].buildingId = undefined;
                                 city.tiles[x][y].instanceId = undefined;
