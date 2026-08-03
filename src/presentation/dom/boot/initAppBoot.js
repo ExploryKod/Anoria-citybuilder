@@ -21,6 +21,7 @@ import { bindPopupManagerDeps, popupManager } from '../shell/PopupManager.js';
 import { buttonStateManager } from '../shell/ButtonStateManager.js';
 import '../shell/EventBlocker.js';
 import { initParametersPanel } from '../parametres/ParametersPanel.js';
+import { initMapFiltersPanel } from '../filters/MapFiltersPanel.js';
 import { loadBudgetStates } from '../compta/compte-de-resultat/CompteDeResultatPanel.js';
 
 export async function initAppBoot() {
@@ -66,4 +67,7 @@ export async function initAppBoot() {
     loadBudgetStates(period, showLoading)
   );
   await bootstrapGameSession(assetManager);
+  initMapFiltersPanel({
+    getScene: getSessionScene,
+  });
 }

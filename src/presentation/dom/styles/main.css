@@ -439,6 +439,17 @@ canvas.pointer-events-disabled {
     opacity: 0.9;
 }
 
+/* Map filter toggles (Filtres tab) — active = overlay visible */
+.toolbar .toolbar-btn.filter-toggle.active {
+    background-color: var(--lightgreen);
+    border-color: var(--lightgreen);
+    color: #fff;
+}
+
+.toolbar .toolbar-btn.filter-toggle:not(.active) {
+    opacity: 0.55;
+}
+
 
 /* two toolbar-btn container */
 .toolbar .toolbar__container {
