@@ -67,10 +67,13 @@ export class BarnStockOperations {
       const nextStocks = creditBarnStock(barn, currentStocks, stockKey, toAdd);
       if (!nextStocks) continue;
 
+      const added = (nextStocks[stockKey] ?? 0) - (currentStocks[stockKey] ?? 0);
+      if (added <= 0) continue;
+
       await this.repository.saveCommerceStocks(id, nextStocks);
       barn.commerceStocks = nextStocks;
-      remaining -= toAdd;
-      credited += toAdd;
+      remaining -= added;
+      credited += added;
       barnId = id;
     }
 
@@ -143,15 +146,13 @@ export class BarnStockOperations {
     if (!isOperationalCommerceBarn(barn)) return 0;
 
     const currentStocks = createEmptyCommerceStocks(barn.commerceStocks);
-    if (!canCreditBarnStock(barn, currentStocks, stockKey, quantity)) {
-      quantity = getBarnRemainingCapacity(barn, currentStocks);
-      if (quantity <= 0) return 0;
-    }
-
     const nextStocks = creditBarnStock(barn, currentStocks, stockKey, quantity);
     if (!nextStocks) return 0;
 
+    const credited = (nextStocks[stockKey] ?? 0) - (currentStocks[stockKey] ?? 0);
+    if (credited <= 0) return 0;
+
     await this.repository.saveCommerceStocks(barnId, nextStocks);
-    return quantity;
+    return credited;
   }
 }

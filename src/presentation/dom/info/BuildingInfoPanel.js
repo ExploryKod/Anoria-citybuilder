@@ -15,13 +15,9 @@ import {
   makeInfoSection,
 } from './buildingInfoDom.js';
 import {
-  getBarnCapacitySummary,
-} from '../../../contexts/supply/domain/policies/BarnStockPolicy.js';
-import {
-  BARN_COMMERCE_PRODUCTS,
-  BARN_COMMERCE_PRODUCT_LABELS,
-  createEmptyCommerceStocks,
-} from '../../../contexts/supply/domain/catalogs/BarnCommerceCatalog.js';
+  renderHubStorageInfoPanel,
+  clearHubInfoOverlayMode,
+} from './hubStorageInfoPanel.js';
 
 /**
  * @param {ReadonlyArray<[number, number]> | null | undefined} tiles
@@ -123,6 +119,7 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
 
             // Reset content first
             makeInfoBuildingText("", true);
+            clearHubInfoOverlayMode();
 
             if(buildingsObjects.includes(selectedObject.userData.id)) {
                 shouldOpenInfo = true;
@@ -460,90 +457,19 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                     }, employment);
                 }
 
-                // Display windmill food stocks (collected from all farms in December)
-                if(supplyView?.kind === 'windmill' && Object.hasOwn(houseStocks || {}, 'food')) {
-                    const hasRoadAccess = roadAccess.hasAccess;
-                    const isCollecting = supplyView.isCollecting === true;
-                    const lastCollection = supplyView.lastCollection;
-                    const lastImport = supplyView.lastImport;
-                    const lastImportDetails = supplyView.lastImportDetails;
-                    const maxStock = supplyView.maxStock || 1000;
-                    
-                    makeInfoSection('Stock moulin');
-                    
-                    const wheatCollectionAmount = lastCollection?.wheat || 0;
-                    const wheatCollectionText = `+${wheatCollectionAmount} dernière collecte`;
-                    const wheatImportAmount = lastImport?.wheat !== undefined ? lastImport.wheat : 0;
-                    const wheatImportText = `+${wheatImportAmount} paniers importés`;
-                    const wheatSubtext = `${wheatCollectionText}, ${wheatImportText}`;
-
-                    const cabbageCollectionAmount = lastCollection?.cabbage || 0;
-                    const cabbageCollectionText = `+${cabbageCollectionAmount} dernière collecte`;
-                    const cabbageImportAmount = lastImport?.cabbage !== undefined ? lastImport.cabbage : 0;
-                    const cabbageImportText = `+${cabbageImportAmount} paniers importés`;
-                    const cabbageSubtext = `${cabbageCollectionText}, ${cabbageImportText}`;
-
-                    const carrotCollectionAmount = lastCollection?.carrot || 0;
-                    const carrotCollectionText = `+${carrotCollectionAmount} dernière collecte`;
-                    const carrotImportAmount = lastImport?.carrot !== undefined ? lastImport.carrot : 0;
-                    const carrotImportText = `+${carrotImportAmount} paniers importés`;
-                    const carrotSubtext = `${carrotCollectionText}, ${carrotImportText}`;
-
-                    const dattesCollectionAmount = lastCollection?.dattes || 0;
-                    const dattesCollectionText = `+${dattesCollectionAmount} dernière collecte`;
-                    const dattesImportAmount = lastImport?.dattes !== undefined ? lastImport.dattes : 0;
-                    const dattesImportText = `+${dattesImportAmount} paniers importés`;
-                    const dattesSubtext = `${dattesCollectionText}, ${dattesImportText}`;
-
-                    const totalCollectionAmount = lastCollection?.total || 0;
-                    const totalCollectionText = `+${totalCollectionAmount} dernière collecte`;
-                    const totalImportAmount = lastImport?.total !== undefined ? lastImport.total : 0;
-                    const totalImportText = `+${totalImportAmount} paniers importés`;
-                    const totalSubtext = `${totalCollectionText}, ${totalImportText}`;
-
-                    makeInfoKeyValue('Blé', `${houseStocks.wheat || 0}/${maxStock} paniers`, wheatSubtext);
-                    makeInfoKeyValue('Chou', `${houseStocks.cabbage || 0}/${maxStock} paniers`, cabbageSubtext);
-                    makeInfoKeyValue('Carotte', `${houseStocks.carrot || 0}/${maxStock} paniers`, carrotSubtext);
-                    makeInfoKeyValue('Dattes', `${houseStocks.dattes || 0}/${maxStock} paniers`, dattesSubtext);
-                    makeInfoKeyValue('Bois', `${houseStocks.wood || 0}/${maxStock} paniers`);
-                    makeInfoKeyValue('Total', `${houseStocks.food || 0}/${maxStock} paniers collectés`, totalSubtext);
-
-                    if (lastImportDetails && Object.keys(lastImportDetails).length > 0) {
-                        makeInfoSection('Imports par partenaire');
-
-                        const productNames = { wheat: 'Blé', carrot: 'Carotte', cabbage: 'Chou', dattes: 'Dattes', wood: 'Bois' };
-
-                        for (const [productId, partners] of Object.entries(lastImportDetails)) {
-                            if (partners && partners.length > 0) {
-                                const productName = productNames[productId] || productId;
-                                partners.forEach(partnerInfo => {
-                                    makeInfoKeyValue(
-                                        `${productName}`,
-                                        `${partnerInfo.quantity} paniers`,
-                                        `depuis ${partnerInfo.partnerName}`
-                                    );
-                                });
-                            }
-                        }
-                    }
-
-                    makeInfoSection('Approvisionnement');
-                    if (hasRoadAccess) {
-                        makeInfoKeyValue('Routes', '✅ Accès routier');
-                    } else {
-                        makeInfoKeyValue('Routes', '❌ Pas d\'accès routier');
-                    }
-                    makeInfoKeyValue('Source', 'Toutes les fermes du jeu');
-                    if (isCollecting) {
-                        makeInfoKeyValue('État', '🟢 En collecte (décembre)');
-                    } else {
-                        makeInfoKeyValue('État', '⏸️ En attente (collecte en décembre)');
-                    }
-                    
-                    if (!hasRoadAccess) {
-                        makeInfoBuildingText('⚠️ Sans route le moulin ne peut stocker', false, 'warning-message');
-                    }
-                    
+                // Display windmill hub panel (Cesar III inspired)
+                if (supplyView?.kind === 'windmill' && Object.hasOwn(houseStocks || {}, 'food')) {
+                    const hubView = supply.getHubStorageInfoView('windmill', buildingRow, {
+                        stocks: houseStocks,
+                        maxStock: supplyView.maxStock,
+                    });
+                    await renderHubStorageInfoPanel({
+                        view: hubView,
+                        buildingId: uniqueId,
+                        supply,
+                        buildingRow,
+                        supplyView,
+                    });
                     renderWorkplaceEmployeesInfo(buildingRow, {
                         fullyStaffed: '✅ Le moulin tourne à plein régime',
                         noWorkers: '❌ Le moulin manque de bras, il ne peut fonctionner',
@@ -552,47 +478,13 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                 }
 
                 if (buildingRow?.type?.includes('Barn')) {
-                    const commerceStocks = createEmptyCommerceStocks(
-                        buildingRow.commerceStocks
-                            ?? (await construction.getBuildingField(uniqueId, 'commerceStocks'))
-                            ?? {}
-                    );
-                    const capacity = getBarnCapacitySummary(buildingRow, commerceStocks);
-                    const hasRoadAccess = (buildingRow.roads ?? 0) > 0;
-
-                    makeInfoSection('Entrepôt commerce');
-                    makeInfoKeyValue(
-                        'Capacité',
-                        `${capacity.currentTotal}/${capacity.maxTotal} unités`,
-                        `${capacity.workers}/${capacity.maxWorkers} ouvrier(s) × ${capacity.unitsPerWorker} (max ${capacity.maxGoods})`
-                    );
-
-                    for (const productId of BARN_COMMERCE_PRODUCTS) {
-                        const label = BARN_COMMERCE_PRODUCT_LABELS[productId] ?? productId;
-                        makeInfoKeyValue(label, `${commerceStocks[productId] ?? 0} unité(s)`);
-                    }
-
-                    makeInfoSection('Approvisionnement');
-                    if (hasRoadAccess) {
-                        makeInfoKeyValue('Routes', '✅ Accès routier');
-                    } else {
-                        makeInfoKeyValue('Routes', '❌ Pas d\'accès routier');
-                    }
-
-                    if (capacity.workers <= 0) {
-                        makeInfoBuildingText(
-                            '❌ Sans ouvrier, la grange ne peut pas stocker de marchandises',
-                            false,
-                            'error-message'
-                        );
-                    } else if (capacity.currentTotal >= capacity.maxTotal) {
-                        makeInfoBuildingText(
-                            '⚠️ Entrepôt plein — embauchez plus d\'ouvriers ou libérez du stock',
-                            false,
-                            'warning-message'
-                        );
-                    }
-
+                    const hubView = supply.getHubStorageInfoView('barn', buildingRow);
+                    await renderHubStorageInfoPanel({
+                        view: hubView,
+                        buildingId: uniqueId,
+                        supply,
+                        buildingRow,
+                    });
                     renderWorkplaceEmployeesInfo(buildingRow, {
                         fullyStaffed: '✅ La grange peut stocker jusqu\'à sa capacité',
                         noWorkers: '❌ Aucun magasinier — stockage impossible',
