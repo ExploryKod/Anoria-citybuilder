@@ -25,15 +25,31 @@ const barnWithTwoWorkers = {
   employees: { worker: 2, worker_need: 1 },
 };
 
+/** Each product may use the full barn capacity (C3-style max percent). */
+const fullShareHubOrders = {
+  wood: { mode: 'accept', maxPercent: 100 },
+  furniture: { mode: 'accept', maxPercent: 100 },
+  figs: { mode: 'accept', maxPercent: 100 },
+};
+
 describe('BarnStockPolicy', () => {
   test('capacity scales with workers (10 units per worker, all goods combined)', () => {
-    expect(getBarnTotalCapacity(barnWithTwoWorkers)).toBe(20);
+    const barn = { ...barnWithTwoWorkers, hubStorageOrders: fullShareHubOrders };
+    expect(getBarnTotalCapacity(barn)).toBe(20);
 
     const stocks = { wood: 8, furniture: 4, figs: 0 };
     expect(getBarnTotalStock(stocks)).toBe(12);
-    expect(getBarnRemainingCapacity(barnWithTwoWorkers, stocks)).toBe(8);
+    expect(getBarnRemainingCapacity(barn, stocks)).toBe(8);
+    expect(canCreditBarnStock(barn, stocks, 'wood', 8)).toBe(true);
+    expect(canCreditBarnStock(barn, stocks, 'wood', 9)).toBe(false);
+  });
+
+  test('default uses shared free space up to full capacity per product', () => {
+    const stocks = { wood: 8, furniture: 4, figs: 0 };
     expect(canCreditBarnStock(barnWithTwoWorkers, stocks, 'wood', 8)).toBe(true);
     expect(canCreditBarnStock(barnWithTwoWorkers, stocks, 'wood', 9)).toBe(false);
+    expect(canCreditBarnStock(barnWithTwoWorkers, stocks, 'figs', 8)).toBe(true);
+    expect(canCreditBarnStock(barnWithTwoWorkers, stocks, 'figs', 9)).toBe(false);
   });
 
   test('hard cap at max goods even with max workers', () => {
@@ -55,7 +71,11 @@ describe('BarnStockPolicy', () => {
   });
 
   test('credit and debit barn commerce stocks', () => {
-    const barn = { ...barnWithTwoWorkers, employees: { worker: 1 } };
+    const barn = {
+      ...barnWithTwoWorkers,
+      employees: { worker: 1 },
+      hubStorageOrders: fullShareHubOrders,
+    };
     const stocks = { wood: 6, furniture: 0, figs: 0 };
 
     expect(getBarnRemainingCapacity(barn, stocks)).toBe(4);

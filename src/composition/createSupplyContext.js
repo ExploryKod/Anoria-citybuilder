@@ -38,6 +38,19 @@ import { RunMonthlyCommerceSupplyCycle } from '../contexts/supply/application/wo
 import { UpdateFactoryWorkerDemandFromCaps } from '../contexts/supply/application/commands/manufacturing/UpdateFactoryWorkerDemandFromCaps.js';
 import { AllocateFactoryWorkersToCommodityLines } from '../contexts/supply/application/commands/manufacturing/AllocateFactoryWorkersToCommodityLines.js';
 import { GetFactoryWorkerPlanView } from '../contexts/supply/application/queries/GetFactoryWorkerPlanView.js';
+import { GetHubStorageInfoView } from '../contexts/supply/application/queries/GetHubStorageInfoView.js';
+import { ExecuteHubFetchOrders } from '../contexts/supply/application/commands/commerce/ExecuteHubFetchOrders.js';
+import {
+  cycleHubStorageMode,
+  normalizeHubStorageOrders,
+  tryAdjustHubStoragePercent,
+} from '../contexts/supply/domain/policies/HubStorageOrdersPolicy.js';
+import { HUB_KIND, listHubProducts } from '../contexts/supply/domain/catalogs/HubStorageCatalog.js';
+import { createEmptyCommerceStocks } from '../contexts/supply/domain/catalogs/BarnCommerceCatalog.js';
+import {
+  getBarnProductStock,
+  getBarnTotalCapacity,
+} from '../contexts/supply/domain/policies/BarnStockPolicy.js';
 
 /**
  * Composition root — Supply bounded context.
@@ -187,6 +200,11 @@ export function createSupplyContext({
     factoryBuildingRepositoryImpl
   );
   const getFactoryWorkerPlanView = new GetFactoryWorkerPlanView();
+  const getHubStorageInfoView = new GetHubStorageInfoView();
+  const executeHubFetchOrders = new ExecuteHubFetchOrders(
+    supplyBuildingRepositoryImpl,
+    factoryBuildingRepositoryImpl
+  );
 
   return {
     supplyBuildingRepository: supplyBuildingRepositoryImpl,
@@ -326,6 +344,68 @@ export function createSupplyContext({
 
     getFactoryWorkerPlanView(factory, options = {}) {
       return getFactoryWorkerPlanView.execute({ factory, ...options });
+    },
+
+    getHubStorageInfoView(hubKind, buildingRow, options = {}) {
+      return getHubStorageInfoView.execute({ hubKind, buildingRow, ...options });
+    },
+
+    async updateHubStorageOrderMode(hubKind, buildingId, productId) {
+      const row = await supplyBuildingRepositoryImpl.findRowById(buildingId);
+      const productIds = listHubProducts(hubKind);
+      const orders = normalizeHubStorageOrders(row?.hubStorageOrders, productIds);
+      orders[productId] = {
+        ...orders[productId],
+        mode: cycleHubStorageMode(orders[productId].mode),
+      };
+      await supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, {
+        hubStorageOrders: orders,
+      });
+      if (hubKind === HUB_KIND.BARN && orders[productId].mode === 'fetch') {
+        await executeHubFetchOrders.execute({ hubKind, buildingId });
+      }
+      return orders;
+    },
+
+    async adjustHubStorageOrderShare(hubKind, buildingId, productId, delta) {
+      const row = await supplyBuildingRepositoryImpl.findRowById(buildingId);
+      const productIds = listHubProducts(hubKind);
+      const orders = normalizeHubStorageOrders(row?.hubStorageOrders, productIds);
+      const stocks =
+        hubKind === HUB_KIND.BARN
+          ? createEmptyCommerceStocks(row?.commerceStocks)
+          : row?.stocks ?? {};
+      const totalCapacity =
+        hubKind === HUB_KIND.BARN ? getBarnTotalCapacity(row) : row?.maxStock ?? 1000;
+
+      const currentAmount =
+        hubKind === HUB_KIND.BARN
+          ? getBarnProductStock(stocks, productId)
+          : Math.max(0, Math.floor(Number(stocks[productId]) || 0));
+
+      const attempt = tryAdjustHubStoragePercent({
+        order: orders[productId],
+        deltaSteps: delta,
+        currentAmount,
+        totalCapacity,
+      });
+
+      if (!attempt.ok) {
+        return attempt;
+      }
+
+      orders[productId] = attempt.order;
+      await supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, {
+        hubStorageOrders: orders,
+      });
+      if (hubKind === HUB_KIND.BARN && orders[productId].mode === 'fetch') {
+        await executeHubFetchOrders.execute({ hubKind, buildingId });
+      }
+      return { ok: true, orders };
+    },
+
+    async executeHubFetchOrders(hubKind, buildingId) {
+      return executeHubFetchOrders.execute({ hubKind, buildingId });
     },
 
     async getCommerceHubStocks() {

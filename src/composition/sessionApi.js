@@ -153,6 +153,7 @@ export function createSupplySessionApi(supply) {
     },
     getCommerceHubStocks: () => supply.getCommerceHubStocks(),
     updateSupplyBuildingFields: (id, fields) => supply.updateSupplyBuildingFields(id, fields),
+    getSupplyBuildingRow: (id) => supply.getSupplyBuildingRow(id),
     listProductionJournalEntries: (factoryId = null, turn = null) =>
       supply.listProductionJournalEntries(factoryId, turn),
     getFactoryProductionJournalEntries: (factoryId) =>
@@ -164,6 +165,14 @@ export function createSupplySessionApi(supply) {
     getFactoryEmployeeRoleType: (...args) => getFactoryEmployeeRoleType(...args),
     getFactoryWorkerPlanView: (factory, options = {}) =>
       supply.getFactoryWorkerPlanView(factory, options),
+    getHubStorageInfoView: (hubKind, buildingRow, options = {}) =>
+      supply.getHubStorageInfoView(hubKind, buildingRow, options),
+    updateHubStorageOrderMode: (hubKind, buildingId, productId) =>
+      supply.updateHubStorageOrderMode(hubKind, buildingId, productId),
+    adjustHubStorageOrderShare: (hubKind, buildingId, productId, delta) =>
+      supply.adjustHubStorageOrderShare(hubKind, buildingId, productId, delta),
+    executeHubFetchOrders: (hubKind, buildingId) =>
+      supply.executeHubFetchOrders(hubKind, buildingId),
     applyFactoryLineCapChanges: () => applyFactoryLineCapChanges(),
   });
 }

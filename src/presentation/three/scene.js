@@ -1142,6 +1142,24 @@ export function createScene(_gameStore, assetManager, deps) {
                     }
                 }
 
+                // Accès routier grange (BC Parcels + icône no-road, même mécanisme que maisons / moulin)
+                if (
+                    (currentBuildingId.includes('Barn') || currentBuildingId === 'Barn-001')
+                    && buildings[x][y]
+                ) {
+                    const barnRoadScale = {
+                        x: statutsIconsMeta.road.scale.x * 0.714,
+                        y: statutsIconsMeta.road.scale.y * 0.714,
+                        z: statutsIconsMeta.road.scale.z * 0.714,
+                    };
+                    await syncRoadAccess({
+                        instanceId: currentInstanceId,
+                        mesh: buildings[x][y],
+                        position: statutsIconsMeta.road.position,
+                        scale: barnRoadScale,
+                    });
+                }
+
                 // Process farms: season-specific sprites (harvest stocks → Supply BC)
                 if(farms.includes(currentBuildingId) && buildings[x][y]) {
                     // First, clean up ALL possible farm sprites to prevent any leftover sprites
@@ -1340,22 +1358,33 @@ export function createScene(_gameStore, assetManager, deps) {
           updateBuildingFields,
         });
 
-        // Sync residential meshes + road icons after neighbors (evolution may have run in ECS)
+        // Sync residential + barn road icons after neighbors (evolution may have run in ECS)
         for (let nx = 0; nx < city.size; nx++) {
             for (let ny = 0; ny < city.size; ny++) {
                 const tileType = city.tiles[nx]?.[ny]?.buildingId;
                 const instanceId = city.tiles[nx]?.[ny]?.instanceId;
                 if (!instanceId || !tileType) continue;
-                if (!houses.includes(tileType) && !palaces.includes(tileType)) continue;
-                const meshType = buildings[nx]?.[ny]?.userData?.type || buildings[nx]?.[ny]?.userData?.id;
-                await syncResidentialHouseMeshFromDb(nx, ny, meshType || tileType);
+                const isResidential = houses.includes(tileType) || palaces.includes(tileType);
+                const isBarn = tileType.includes('Barn') || tileType === 'Barn-001';
+                if (!isResidential && !isBarn) continue;
+                if (isResidential) {
+                    const meshType = buildings[nx]?.[ny]?.userData?.type || buildings[nx]?.[ny]?.userData?.id;
+                    await syncResidentialHouseMeshFromDb(nx, ny, meshType || tileType);
+                }
                 const mesh = buildings[nx]?.[ny];
                 if (!mesh?.userData) continue;
+                const roadScale = isBarn
+                    ? {
+                        x: statutsIconsMeta.road.scale.x * 0.714,
+                        y: statutsIconsMeta.road.scale.y * 0.714,
+                        z: statutsIconsMeta.road.scale.z * 0.714,
+                      }
+                    : statutsIconsMeta.road.scale;
                 await syncRoadAccess({
                     instanceId,
                     mesh,
                     position: statutsIconsMeta.road.position,
-                    scale: statutsIconsMeta.road.scale,
+                    scale: roadScale,
                 });
             }
         }
