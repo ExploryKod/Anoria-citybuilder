@@ -105,10 +105,10 @@ export class SupplyFoodTraceability {
         y: houseData.y,
         type: houseData.type,
       };
-      const crops = entry.crops || {};
+      const crops = entry.crops || entry.consumedByCategory || {};
 
-      for (const crop of ['wheat', 'carrot', 'cabbage']) {
-        const amount = crops[crop] || 0;
+      for (const foodType of ['fruit', 'game', 'wheat', 'carrot', 'cabbage']) {
+        const amount = crops[foodType] || 0;
         if (amount <= 0) continue;
 
         await this.foodTraceabilityRepository.recordHouseConsumption(
@@ -116,7 +116,7 @@ export class SupplyFoodTraceability {
           timeInfo.monthIndex,
           timeInfo.year || 0,
           houseRef,
-          crop,
+          foodType,
           amount,
           entry.pop
         );

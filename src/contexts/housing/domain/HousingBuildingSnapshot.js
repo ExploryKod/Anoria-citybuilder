@@ -48,6 +48,8 @@ export function createHousingBuildingSnapshot({
       wheat: stocks.wheat ?? 0,
       carrot: stocks.carrot ?? 0,
       cabbage: stocks.cabbage ?? 0,
+      fruit: stocks.fruit ?? 0,
+      game: stocks.game ?? 0,
     },
     price: price ?? 0,
     neighbors: neighbors ?? [],

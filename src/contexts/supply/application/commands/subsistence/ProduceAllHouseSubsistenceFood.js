@@ -1,6 +1,5 @@
 /**
- * Orchestration: monthly subsistence food production for every level 1
- * (autarky) house in the city.
+ * Orchestration: monthly gathering/hunting production for every inhabited house.
  */
 export class ProduceAllHouseSubsistenceFood {
   /**

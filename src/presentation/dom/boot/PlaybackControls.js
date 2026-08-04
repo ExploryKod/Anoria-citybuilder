@@ -7,6 +7,7 @@ import {
   replayButton,
   resetButton,
 } from '../shell/nodes.js';
+import { closeBuildingInfoOverlay } from '../info/layout/buildingInfoLayout.js';
 import { initResetGameFlow } from './ResetGameFlow.js';
 
 /**
@@ -29,7 +30,7 @@ export function initPlaybackControls(controlDeps = {}) {
 
   infoObjectCloseBtn.addEventListener('click', () => {
     if (infoObjectOverlay.classList.contains('active')) {
-      infoObjectOverlay.classList.remove('active');
+      closeBuildingInfoOverlay(infoObjectOverlay);
 
       const canvas = document.querySelector('canvas');
       if (canvas) {

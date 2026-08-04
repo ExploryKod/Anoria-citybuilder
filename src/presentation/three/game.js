@@ -23,6 +23,7 @@ import {
   infoObjectOverlay,
   infoObjectCloseBtn,
 } from '../dom/shell/nodes.js';
+import { closeBuildingInfoOverlay } from '../dom/info/layout/buildingInfoLayout.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
 import objectivesTracker, {
   bindObjectivesTrackerDeps,
@@ -36,7 +37,7 @@ import {
   showInsufficientFundsNotification,
   showGenericErrorNotification,
 } from '../dom/shell/BuildingNotifications.js';
-import { presentBuildingInfoSelection } from '../dom/info/BuildingInfoPanel.js';
+import { presentBuildingInfoSelection } from '../dom/info/presenters/useBuildingInfoSelection.js';
 import { assetsPrices } from '../../shared/building-catalog/index.js';
 import { createPlacementGhostSession } from './placementGhostSession.js';
 
@@ -371,7 +372,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       });
     } else if (isRoadBuildingType(activeToolId)) {
       if (infoObjectOverlay.classList.contains('active')) {
-        infoObjectOverlay.classList.remove('active');
+        closeBuildingInfoOverlay(infoObjectOverlay);
         const canvas = document.querySelector('canvas');
         if (canvas) {
           canvas.classList.remove('pointer-events-disabled');
@@ -397,7 +398,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       }
     } else if (!tile.buildingId) {
       if (infoObjectOverlay.classList.contains('active')) {
-        infoObjectOverlay.classList.remove('active');
+        closeBuildingInfoOverlay(infoObjectOverlay);
         const canvas = document.querySelector('canvas');
         if (canvas) {
           canvas.classList.remove('pointer-events-disabled');
@@ -522,7 +523,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
   infoObjectCloseBtn.addEventListener('click', () => {
     if (infoObjectOverlay.classList.contains('active')) {
-      infoObjectOverlay.classList.remove('active');
+      closeBuildingInfoOverlay(infoObjectOverlay);
     }
     const canvas = document.querySelector('canvas');
     if (canvas) {

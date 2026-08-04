@@ -2,11 +2,10 @@
  * DOM helpers for hub storage info overlay extensions.
  */
 
+import { getBuildingInfoBody, setBuildingInfoTitle as setLayoutTitle } from '../../layout/buildingInfoLayout.js';
+
 export function setInfoBuildingTitle(title) {
-  const heading = document.querySelector('.info-building-overlay .info-building__header h2');
-  if (heading) {
-    heading.textContent = title;
-  }
+  setLayoutTitle(title);
 }
 
 /**
@@ -29,5 +28,5 @@ export function clearHubInfoOverlayMode() {
 
 /** @returns {HTMLElement|null} */
 export function getInfoBuildingBody() {
-  return document.querySelector('.info-building__body');
+  return getBuildingInfoBody();
 }
