@@ -31,6 +31,7 @@ export class GrowHousePopulation {
 
     const outcome = computePopulationAfterGrowth({
       type: house.type,
+      level: house.level,
       currentPop: house.pop,
       roadCount: house.roadCount,
       monthIndex,

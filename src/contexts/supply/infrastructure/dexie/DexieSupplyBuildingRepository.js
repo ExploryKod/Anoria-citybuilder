@@ -30,7 +30,9 @@ export class DexieSupplyBuildingRepository {
       neighbors: house.neighbors || [],
       lastProductionYear: house.lastProductionYear ?? null,
       lastConsumptionMonth: house.lastConsumptionMonth ?? null,
+      lastSubsistenceMonth: house.lastSubsistenceMonth ?? null,
       pop: house.pop ?? 0,
+      level: house.level ?? 1,
     });
   }
 
@@ -125,6 +127,11 @@ export class DexieSupplyBuildingRepository {
   async saveConsumptionMetadata(buildingId, { lastConsumptionMonth }) {
     if (lastConsumptionMonth === undefined || lastConsumptionMonth === null) return;
     await this.#putFields(buildingId, { lastConsumptionMonth });
+  }
+
+  async saveSubsistenceMetadata(buildingId, { lastSubsistenceMonth }) {
+    if (lastSubsistenceMonth === undefined || lastSubsistenceMonth === null) return;
+    await this.#putFields(buildingId, { lastSubsistenceMonth });
   }
 
   async saveWindmillLastCollection(windmillId, lastCollection) {

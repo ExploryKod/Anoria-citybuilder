@@ -15,6 +15,7 @@ import { runGameTick } from '../../composition/runGameTick.js';
 import { bindSessionRuntime } from '../../composition/sessionRuntime.js';
 import { syncSessionHud } from '../../composition/syncSessionHud.js';
 import { notifyBudgetCleanupIfNeeded } from '../dom/compta/tresorerie/CleanupNotificationPresenter.js';
+import { refreshResidentialGroupGating } from '../dom/shell/ResidentialGroupGating.js';
 import { DEFAULT_TICK_MS } from '../../shared/gameplay/SimulationDefaults.js';
 import { GameLoop } from '../../engine/loop/GameLoop.js';
 import {
@@ -36,15 +37,6 @@ import {
   showGenericErrorNotification,
 } from '../dom/shell/BuildingNotifications.js';
 import { presentBuildingInfoSelection } from '../dom/info/BuildingInfoPanel.js';
-import { isRoadBuildingType } from '../../contexts/construction/domain/policies/FootprintAvailabilityPolicy.js';
-import { listRoadPaintCells } from '../../contexts/construction/domain/policies/RoadPaintPolicy.js';
-import {
-  cycleStonePathOrientationIndex,
-  isStonePathTool,
-  stonePathOrientationIndex,
-  stonePathOrientationLabel,
-  stonePathTypeForIndex,
-} from '../../contexts/construction/domain/policies/StonePathOrientationPolicy.js';
 import { assetsPrices } from '../../shared/building-catalog/index.js';
 import { createPlacementGhostSession } from './placementGhostSession.js';
 
@@ -73,21 +65,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
   /** 0 = horizontal (StonePath-001), 1 = vertical (StonePath-Right-001). */
   let stonePathOrientation = 0;
 
-  function getEffectiveBuildingToolId() {
-    if (isStonePathTool(activeToolId)) {
-      return stonePathTypeForIndex(stonePathOrientation);
-    }
-    return activeToolId;
-  }
-
-  function updateStonePathToolHint() {
-    const btn = document.querySelector('[data-stone-path-tool="1"]');
-    if (!btn) return;
-    const label = stonePathOrientationLabel(stonePathOrientation);
-    btn.title = `Chemin de pierre (${label}) — touche R pour tourner`;
-    btn.dataset.orientation = String(stonePathOrientation);
-  }
-
   function getTickIntervalMs() {
     return Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed'), 10) || 4000));
   }
@@ -111,6 +88,31 @@ export function createGame(gameStore, assetManager, citySize = null) {
     runtime,
   } = bootGameContexts();
   const { construction: constructionApi } = sessionApi;
+  const {
+    isRoadBuildingType,
+    listRoadPaintCells,
+    isStonePathTool,
+    stonePathTypeForIndex,
+    stonePathOrientationLabel,
+    cycleStonePathOrientationIndex,
+    stonePathOrientationIndex,
+    canPlaceBuildingAtTile,
+  } = constructionApi;
+
+  function getEffectiveBuildingToolId() {
+    if (isStonePathTool(activeToolId)) {
+      return stonePathTypeForIndex(stonePathOrientation);
+    }
+    return activeToolId;
+  }
+
+  function updateStonePathToolHint() {
+    const btn = document.querySelector('[data-stone-path-tool="1"]');
+    if (!btn) return;
+    const label = stonePathOrientationLabel(stonePathOrientation);
+    btn.title = `Chemin de pierre (${label}) — touche R pour tourner`;
+    btn.dataset.orientation = String(stonePathOrientation);
+  }
 
   bindObjectivesTrackerDeps({
     accounting: sessionApi.accounting,
@@ -138,6 +140,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     getEffectiveAssetId: () => getEffectiveBuildingToolId(),
     assetCatalog: assetsPrices,
     getFocusedObject: () => scene.focusedObject,
+    canPlaceBuildingAtTile,
   });
 
   bindGameUIDeps({ getScene: () => scene });
@@ -553,6 +556,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
         refreshEmploymentPresentation: refreshEmploymentPresentationForCity,
         objectivesTracker,
         notifyBudgetCleanup: notifyBudgetCleanupIfNeeded,
+        refreshResidentialGroupGating: ({ housing: housingCtx }) =>
+          refreshResidentialGroupGating({
+            housing: housingCtx,
+            buttonStateManager: getButtonStateManager(),
+          }),
       });
     },
 

@@ -9,6 +9,7 @@ import { GetFamishedPopulation } from '../contexts/housing/application/queries/G
 import { GetResidentialHouseAtTile } from '../contexts/housing/application/queries/GetResidentialHouseAtTile.js';
 import { EvaluateHouseFoodAffluence } from '../contexts/housing/application/queries/EvaluateHouseFoodAffluence.js';
 import { PreviewHouseEvolution } from '../contexts/housing/application/queries/PreviewHouseEvolution.js';
+import { evaluateResidentialGroupUnlock } from '../contexts/housing/domain/policies/ResidentialGroupUnlockPolicy.js';
 
 /**
  * Composition root — Housing bounded context.
@@ -102,6 +103,12 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
         buildingType,
         hasRoadAccess,
       });
+    },
+
+    /** @returns {Promise<{ unlocked: boolean, redLevel2Count: number, threshold: number }>} */
+    async getResidentialGroupUnlockStatus() {
+      const houses = await housingBuildingRepositoryImpl.findResidentialHouses();
+      return evaluateResidentialGroupUnlock(houses);
     },
   };
 }

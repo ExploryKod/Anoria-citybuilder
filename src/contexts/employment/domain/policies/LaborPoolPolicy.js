@@ -54,11 +54,19 @@ export function elitePopFromHouse(type, pop) {
 
 /**
  * Citizens (non-élite residents); eligible for worker jobs.
+ *
+ * Level 1 (autarky / hunter-gatherer) houses are outside the labor market by
+ * design — 0 regardless of `pop`. Level defaults to 2 for backward
+ * compatibility with callers that don't track it yet (e.g. Palace, which has
+ * no level concept and always contributes its citizens).
+ *
  * @param {string} type
  * @param {number} pop
+ * @param {1 | 2} [level=2]
  * @returns {number}
  */
-export function citizenPopFromHouse(type, pop) {
+export function citizenPopFromHouse(type, pop, level = 2) {
+  if (level === 1) return 0;
   const p = clampPop(pop);
   return p - elitePopFromHouse(type, p);
 }
@@ -67,10 +75,11 @@ export function citizenPopFromHouse(type, pop) {
  * Worker pool contribution from a house (citizens only — élites excluded).
  * @param {string} type
  * @param {number} pop
+ * @param {1 | 2} [level=2]
  * @returns {number}
  */
-export function workerPopFromHouse(type, pop) {
-  return citizenPopFromHouse(type, pop);
+export function workerPopFromHouse(type, pop, level = 2) {
+  return citizenPopFromHouse(type, pop, level);
 }
 
 /**

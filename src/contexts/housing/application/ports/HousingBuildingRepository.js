@@ -22,6 +22,11 @@ export class HousingBuildingRepository {
     throw new Error('HousingBuildingRepository: port not implemented');
   }
 
+  /** Persist a level change (1 <-> 2) — house `type`/color never changes here. */
+  async applyLevelChange(_payload) {
+    throw new Error('HousingBuildingRepository: port not implemented');
+  }
+
   async listAllResidentialSnapshots() {
     throw new Error('HousingBuildingRepository: port not implemented');
   }

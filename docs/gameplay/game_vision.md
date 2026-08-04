@@ -39,7 +39,7 @@ Quand le nombre de jours d’un mois est atteint (souvent **1 tour = 1 mois**), 
 7. Événements aléatoires (si activés)
 8. **Budget du mois** : maintenance, salaires, indemnités chômage, impôt sur les salaires
 
-Une fois par **an** (mois de **novembre**, index 10) : **impôt citoyen** (25 € par habitant des maisons bleues, rouges et violettes).
+Une fois par **an** (mois de **novembre**, index 10) : **impôt citoyen** (25 € par habitant des maisons bleues, rouges et violettes de **niveau 2** — le niveau 1 autarcique est exonéré).
 
 ---
 
@@ -62,7 +62,8 @@ Une fois par **an** (mois de **novembre**, index 10) : **impôt citoyen** (25 �
 
 | Bâtiment | Route pour fonctionner ? | Route pour peupler / embaucher ? |
 |----------|--------------------------|----------------------------------|
-| **Maison** | Oui (sinon population = 0) | Oui |
+| **Maison (Bleue/Rouge/Violette)** | Non — niveau 1 autarcique sans route | Route requise seulement pour passer au niveau 2 (métier + emploi) |
+| **Palais (House-2Story)** | Oui (sinon population = 0) | Oui |
 | **Ferme** | Non pour embaucher ; oui pour récolte / opérations | Embauche sans route possible |
 | **Marché, moulin, grange, chai** | Oui | Oui (emploi) |
 
@@ -72,37 +73,44 @@ Les icônes sur la carte (pas de route, pas de bouffe, pas de travail) peuvent �
 
 ## 4. Habitations
 
-### Types
+### Groupes sociaux (couleur = identité permanente)
 
-| Maison | Coût | Capacité |
-|--------|------|----------|
-| Bleue | 10 € | 6 habitants |
-| Rouge | 10 € | 6 |
-| Violette | 10 € | 6 |
-| Palais (House-2Story) | 20 € | 7 (6 citoyens + 1 slot élite) |
+Depuis la refonte « groupes sociaux », la **couleur** d’une maison est un **groupe social permanent** : elle ne change plus jamais après la pose (fini l’échelle Bleue → Rouge → Violette). Chaque groupe est **essentiel**, sans hiérarchie entre eux, et donne accès à des métiers différents :
 
-**Maintenance** : 6 € / maison / mois.
+| Couleur | Groupe social | Secteurs d’emploi accessibles (niveau 2) |
+|---------|----------------|-------------------------------------------|
+| Rouge | Artisans-ouvriers | Alimentation (fermes), Industrie, Stockage (moulin/grange) |
+| Bleue | Commerçants | Commerce (marchés) |
+| Violette | Savants | Services publics (chapelle, librairie) |
+
+Le **Palais** (House-2Story) reste à part : c’est toujours l’ancien mécanisme d’élites (nourriture abondante + variété), débranché du nouveau système de groupes en attendant une passe dédiée.
+
+### Niveaux (progression par instance)
+
+Chaque maison Bleue/Rouge/Violette progresse **indépendamment de sa couleur** entre deux niveaux :
+
+| Niveau | Nom | Route requise ? | Capacité max | Salaire / impôt |
+|--------|-----|------------------|---------------|------------------|
+| 1 | Chasseurs-cueilleurs (autarcie) | Non | 6 habitants | Aucun salaire, aucun impôt citoyen |
+| 2 | Métier du groupe (spécialisé) | Oui | 12 habitants | Salaire + impôt citoyen normaux |
+
+- **Niveau 1 → 2** : dès que la maison a une **route** et **au moins 1 habitant**.
+- **Niveau 2 → 1** : si la route est **perdue**, la maison redescend en autarcie (population plafonnée à 6, jamais remise à zéro).
+- Le niveau 1 ne dépend d’aucune ferme/marché : la maison **se nourrit elle-même** chaque mois (production de subsistance, voir §5).
+
+**Maintenance** : 6 € / maison / mois, quel que soit le niveau.
 
 ### Croissance
 
-- **+1 habitant par mois** par maison, jusqu’à la capacité max.
-- **Condition** : la maison doit être **connectée à une route**.
-- La nourriture **ne bloque pas** la croissance (mais l’évolution oui).
+- **+1 habitant par mois**, jusqu’à la capacité du niveau courant (6 en niveau 1, 12 en niveau 2).
+- Le niveau 1 grandit **sans route** (autarcie) ; la route ne conditionne que le passage au niveau 2.
+- Le **Palais** garde son ancienne règle : sans route, sa population retombe à 0.
 
-### Évolution (automatique)
+### Déblocage dans la barre d’outils
 
-| De → Vers | Conditions |
-|-----------|------------|
-| Bleue → Rouge | Au moins 1 habitant |
-| Rouge → Bleue | 0 habitant |
-| Rouge → Violette | Plus de 5 hab., route, nourriture ≥ population (pas affamés) |
-| Violette → Rouge | Conditions violettes plus remplies |
-| Violette → **Palais** | Nourriture > 2× population **et** au moins **2 types de récoltes** en stock |
-| Palais → (descente) | Perte du surplus alimentaire ; rétrogradation selon population |
-
-### Objectif financier (soft)
-
-Atteindre **5 000 €** de trésorerie **débloque le placement direct** de maisons violettes dans la barre d’outils (en plus de l’évolution naturelle).
+- Au démarrage, seule la maison **Rouge** (artisans-ouvriers) est plaçable ; **Bleue** et **Violette** sont visibles mais grisées.
+- Elles se débloquent dès que **2 maisons Rouge** ont atteint le **niveau 2** (constante ajustable — `RESIDENTIAL_UNLOCK_RED_LEVEL2_THRESHOLD`).
+- La Violette peut aussi se débloquer via l’ancien objectif financier (**5 000 €** de trésorerie) — les deux conditions se cumulent en « ou ».
 
 ---
 
@@ -150,6 +158,8 @@ Maisons consomment 1 panier / habitant / mois
 
 Le panneau **Administrateur → Traçabilité alimentaire** permet de suivre l’historique de consommation.
 
+**Maisons de niveau 1 (autarcie)** : elles ne participent pas à cette chaîne — chaque mois, elles produisent directement leur propre nourriture (subsistance de chasse/cueillette) et ne consomment ni blé, ni carotte, ni chou du circuit fermes/marché.
+
 ---
 
 ## 6. Industrie et commerce extérieur
@@ -187,18 +197,21 @@ Activation d’une route commerciale : **500 €** (unique).
 ## 7. Emploi
 
 - Chaque bâtiment productif demande des **ouvriers** (et parfois des **élites**).
-- La ville affecte les habitants **par secteur**, avec priorités (production alimentaire en premier, etc.).
-- **Chômeurs** : indemnités payées par la ville (**70 %** du salaire de référence par chômeur / mois) — **coût majeur** en early game.
+- Seuls les habitants des maisons **niveau 2** entrent dans les bassins de travailleurs (le niveau 1, autarcique, n’a ni salaire ni emploi).
+- Depuis la refonte « groupes sociaux », l’affectation se fait **par groupe** : chaque groupe (artisans-ouvriers, commerçants, savants) a son **propre bassin de main-d’œuvre** et ne peut travailler que dans **ses** secteurs éligibles — un groupe en surplus ne peut jamais combler le manque d’un autre.
+- **Chômeurs** : indemnités payées par la ville (**70 %** du salaire de référence par chômeur / mois) — **coût majeur** en early game. Le chiffre de chômage **global** reste affiché (détail par groupe disponible pour un futur tooltip).
 - **Règle d’or** : construire les **emplois avant les maisons**, sinon la trésorerie s’effondre.
 
-Secteurs (simplifié) :
+Secteurs et groupe éligible :
 
-| Secteur | Exemples |
-|---------|----------|
-| Production alimentaire | Fermes |
-| Commerces | Marchés |
-| Industries | Moulin, grange, chai |
-| Infrastructure | Routes (0 ouvrier) |
+| Secteur | Exemples | Groupe |
+|---------|----------|--------|
+| 1 — Production alimentaire | Fermes | Artisans-ouvriers (Rouge) |
+| 2 — Commerces | Marchés | Commerçants (Bleue) |
+| 3 — Industries | Chai, usines | Artisans-ouvriers (Rouge) |
+| 4 — Stockage | Moulin, grange | Artisans-ouvriers (Rouge) |
+| 5 — Infrastructure | Routes (0 ouvrier) | Ouvert à tous |
+| 6 — Services publics | Chapelle, librairie | Savants (Violette) |
 
 ---
 
@@ -217,7 +230,7 @@ Secteurs (simplifié) :
 
 | Poste | Quand |
 |-------|--------|
-| **Impôt citoyen** | **Novembre** : 25 € × habitants (maisons bleue / rouge / violette ; palais exclu du calcul affiché) |
+| **Impôt citoyen** | **Novembre** : 25 € × habitants des maisons **niveau 2 uniquement** (bleue / rouge / violette ; le niveau 1 autarcique est exonéré, et le palais reste exclu du calcul affiché) |
 | **Commerce** | Import / export via partenaires |
 | **Prêts** | Emprunt possible (taux 5–14 % selon santé financière) |
 
@@ -255,7 +268,7 @@ Le **journal** est la meilleure façon de comprendre pourquoi la ville gagne ou 
 | Groupe | Contenu (modal ou direct) |
 |--------|---------------------------|
 | **Outils** | Bulldozer, Sélection |
-| **Habitations** | Maisons bleue / rouge / violette (+ générique) |
+| **Habitations** | Maisons bleue / rouge / violette (+ générique) — bleue et violette grisées au démarrage, voir §4 |
 | **Palais** | Maison à étages |
 | **Agriculture** | Fermes, foin, charrettes… |
 | **Industrie** | Moulin, grange, caisses, silos, chai |

@@ -10,6 +10,7 @@ export class RunMonthlyFoodSupplyCycle {
    * @param {import('../commands/surplus/RunWindmillSurplusCycle.js').RunWindmillSurplusCycle} runWindmillSurplusCycle
    * @param {import('../commands/consumption/ConsumeAllHouseFood.js').ConsumeAllHouseFood} consumeAllHouseFood
    * @param {import('../../infrastructure/presentation/SupplyFoodTraceability.js').SupplyFoodTraceability} traceability
+   * @param {import('../commands/subsistence/ProduceAllHouseSubsistenceFood.js').ProduceAllHouseSubsistenceFood} [produceAllHouseSubsistenceFood]
    */
   constructor(
     harvestAllFarmCrops,
@@ -18,7 +19,8 @@ export class RunMonthlyFoodSupplyCycle {
     updateHousesMarketReach,
     runWindmillSurplusCycle,
     consumeAllHouseFood,
-    traceability
+    traceability,
+    produceAllHouseSubsistenceFood
   ) {
     this.harvestAllFarmCrops = harvestAllFarmCrops;
     this.markMarketBuyingSeason = markMarketBuyingSeason;
@@ -27,6 +29,7 @@ export class RunMonthlyFoodSupplyCycle {
     this.runWindmillSurplusCycle = runWindmillSurplusCycle;
     this.consumeAllHouseFood = consumeAllHouseFood;
     this.traceability = traceability;
+    this.produceAllHouseSubsistenceFood = produceAllHouseSubsistenceFood;
   }
 
   /**
@@ -64,6 +67,12 @@ export class RunMonthlyFoodSupplyCycle {
       dayInMonth: timeInfo.dayInMonth ?? 1,
       year: timeInfo.year ?? 0,
     });
+
+    if (this.produceAllHouseSubsistenceFood) {
+      await this.produceAllHouseSubsistenceFood.execute({
+        monthIndex: timeInfo.monthIndex,
+      });
+    }
 
     const consumeOutcome = await this.consumeAllHouseFood.execute({
       monthIndex: timeInfo.monthIndex,

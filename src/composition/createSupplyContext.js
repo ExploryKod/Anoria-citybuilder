@@ -13,6 +13,8 @@ import { HarvestFarmCrop } from '../contexts/supply/application/commands/harvest
 import { HarvestAllFarmCrops } from '../contexts/supply/application/commands/harvest/HarvestAllFarmCrops.js';
 import { ConsumeHouseFood } from '../contexts/supply/application/commands/consumption/ConsumeHouseFood.js';
 import { ConsumeAllHouseFood } from '../contexts/supply/application/commands/consumption/ConsumeAllHouseFood.js';
+import { ProduceHouseSubsistenceFood } from '../contexts/supply/application/commands/subsistence/ProduceHouseSubsistenceFood.js';
+import { ProduceAllHouseSubsistenceFood } from '../contexts/supply/application/commands/subsistence/ProduceAllHouseSubsistenceFood.js';
 import { ProcessWindmillCollection } from '../contexts/supply/application/commands/surplus/ProcessWindmillCollection.js';
 import { RunWindmillSurplusCycle } from '../contexts/supply/application/commands/surplus/RunWindmillSurplusCycle.js';
 import { RunCityMarketFoodCycle } from '../contexts/supply/application/commands/procurement/RunCityMarketFoodCycle.js';
@@ -115,6 +117,13 @@ export function createSupplyContext({
     supplyBuildingRepositoryImpl,
     consumeHouseFood
   );
+  const produceHouseSubsistenceFood = new ProduceHouseSubsistenceFood(
+    supplyBuildingRepositoryImpl
+  );
+  const produceAllHouseSubsistenceFood = new ProduceAllHouseSubsistenceFood(
+    supplyBuildingRepositoryImpl,
+    produceHouseSubsistenceFood
+  );
   const processWindmillCollection = new ProcessWindmillCollection(
     supplyBuildingRepositoryImpl,
     windmillCollectsFromAllFarms,
@@ -145,7 +154,8 @@ export function createSupplyContext({
     updateHousesMarketReach,
     runWindmillSurplusCycle,
     consumeAllHouseFood,
-    traceability
+    traceability,
+    produceAllHouseSubsistenceFood
   );
   const collectFactoryResources = new CollectFactoryResources(
     factoryBuildingRepositoryImpl,
@@ -222,6 +232,8 @@ export function createSupplyContext({
     harvestAllFarmCrops,
     consumeHouseFood,
     consumeAllHouseFood,
+    produceHouseSubsistenceFood,
+    produceAllHouseSubsistenceFood,
     processWindmillCollection,
     runWindmillSurplusCycle,
     runCityMarketFoodCycle,
@@ -306,6 +318,14 @@ export function createSupplyContext({
 
     async consumeAllHouseFood({ monthIndex }) {
       return consumeAllHouseFood.execute({ monthIndex });
+    },
+
+    async produceHouseSubsistenceFood(houseId, monthIndex) {
+      return produceHouseSubsistenceFood.execute({ houseId, monthIndex });
+    },
+
+    async produceAllHouseSubsistenceFood({ monthIndex }) {
+      return produceAllHouseSubsistenceFood.execute({ monthIndex });
     },
 
     async runWindmillSurplusCycle({ month, monthIndex, dayInMonth, year }) {

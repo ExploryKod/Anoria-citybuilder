@@ -3,23 +3,6 @@ import {
     instanceIdFromHouseRow,
     displayLabelFromHouseRow,
 } from '../../../../shared/building-identity/index.js';
-import {
-    getBuildingSupplyFlow,
-    SUPPLY_FLOW,
-} from '../../../../contexts/supply/domain/manufacturing/SupplyFlow.js';
-import {
-    canFactoryCollectResource,
-    canFactoryProduceProduct,
-    getSupplyFlowLabel,
-} from '../../../../contexts/supply/domain/manufacturing/FactorySupplyFlowPolicy.js';
-import {
-    factoryLineDestinationKey,
-    getFactoryLineMaxCapDisplayValue,
-    getFactoryLineMaxCapsPair,
-    rebalanceFactoryLineMaxCaps,
-    stockForDestinationCap,
-    getFactoryLineDestinationsForCommodity,
-} from '../../../../contexts/supply/domain/manufacturing/FactoryLineAllocationPolicy.js';
 
 function factoryInstanceId(factory) {
     return instanceIdFromHouseRow(factory);
@@ -29,9 +12,9 @@ function factoryDisplayLabel(factory) {
     return displayLabelFromHouseRow(factory);
 }
 
-function computeDestinationLineRealized(factoryData, productId, destination, currentStock, productionMax) {
+function computeDestinationLineRealized(supply, factoryData, productId, destination, currentStock, productionMax) {
     const ceiling = Math.max(0, Math.floor(Number(productionMax) || 0));
-    const pair = getFactoryLineMaxCapsPair(factoryData, productId, ceiling);
+    const pair = supply.getFactoryLineMaxCapsPair(factoryData, productId, ceiling);
     const stock = Math.max(0, Math.floor(Number(currentStock) || 0));
 
     if (destination === 'direct') {
@@ -39,16 +22,17 @@ function computeDestinationLineRealized(factoryData, productId, destination, cur
     if (pair.manufacturing <= 0) {
         return Math.min(stock, pair.direct);
     }
-        return stockForDestinationCap(stock, pair.direct, pair.manufacturing);
+        return supply.stockForDestinationCap(stock, pair.direct, pair.manufacturing);
     }
 
     if (pair.manufacturing <= 0) {
         return 0;
     }
-    return stockForDestinationCap(stock, pair.manufacturing, pair.direct);
+    return supply.stockForDestinationCap(stock, pair.manufacturing, pair.direct);
 }
 
 function renderFactoryDestinationRows(
+    supply,
     factoryData,
     productId,
     commodityName,
@@ -58,12 +42,13 @@ function renderFactoryDestinationRows(
     productionEnabled = true
 ) {
     const ceiling = Math.max(0, Math.floor(Number(productionMax) || 0));
-    const capsPair = getFactoryLineMaxCapsPair(factoryData, productId, ceiling);
+    const capsPair = supply.getFactoryLineMaxCapsPair(factoryData, productId, ceiling);
     const rowDisabled = !productionEnabled || ceiling <= 0;
 
-    return getFactoryLineDestinationsForCommodity(productId).map(({ id, label }) => {
+    return supply.getFactoryLineDestinationsForCommodity(productId).map(({ id, label }) => {
         const maxValue = id === 'direct' ? capsPair.direct : capsPair.manufacturing;
         const realized = computeDestinationLineRealized(
+            supply,
             factoryData,
             productId,
             id,
@@ -134,7 +119,7 @@ function formatFactoryLineWorkersLabel(supply, factoryData, commodityId) {
     );
 }
 
-function buildPreviewFactoryFromCard(card, factoryData) {
+function buildPreviewFactoryFromCard(supply, card, factoryData) {
     const lineMaxCaps = { ...(factoryData?.lineMaxCaps || {}) };
     const commodityProductionEnabled = { ...(factoryData?.commodityProductionEnabled || {}) };
 
@@ -150,7 +135,7 @@ function buildPreviewFactoryFromCard(card, factoryData) {
         group.querySelectorAll('.factory-line-max-input').forEach((input) => {
             const destination = input.dataset.destination;
             if (!destination) return;
-            lineMaxCaps[factoryLineDestinationKey(productId, destination)] = Math.max(
+            lineMaxCaps[supply.factoryLineDestinationKey(productId, destination)] = Math.max(
                 0,
                 Math.floor(Number(input.value) || 0)
             );
@@ -167,7 +152,7 @@ function buildPreviewFactoryFromCard(card, factoryData) {
 function updateFactoryWorkerDemandPreview(supply, card, factoryData) {
     if (!card) return;
 
-    const previewFactory = buildPreviewFactoryFromCard(card, factoryData);
+    const previewFactory = buildPreviewFactoryFromCard(supply, card, factoryData);
     const plan = supply.getFactoryWorkerPlanView(previewFactory);
 
     card.querySelectorAll('.factory-commodity-group').forEach((group) => {
@@ -542,7 +527,7 @@ export class FactorySectionPresenter {
         const productWorkerDistribution = factoryData.productWorkerDistribution || {};
         // Pourcentages de production par produit (stockés dans IndexedDB)
         const productProductionPercentages = factoryData.productProductionPercentages || {};
-        const supplyFlow = getBuildingSupplyFlow(factoryData);
+        const supplyFlow = this.supply.getBuildingSupplyFlow(factoryData);
         // Stock de matériaux raffinés
         const logs = factoryData.logs || 0;
         const refinedGold = factoryData.refinedGold || 0;
@@ -733,7 +718,7 @@ export class FactorySectionPresenter {
             <div class="factory-header">
                 <div class="factory-id">
                     <strong>Usine:</strong> ${factoryDisplayLabel(factoryData)}
-                    <span class="factory-flow-badge factory-flow-badge--${supplyFlow}">${getSupplyFlowLabel(supplyFlow)}</span>
+                    <span class="factory-flow-badge factory-flow-badge--${supplyFlow}">${this.supply.getSupplyFlowLabel(supplyFlow)}</span>
                 </div>
                 <div class="factory-location">
                     Position: x: ${factoryData.x || 0} | y: ${factoryData.y || 0}
@@ -745,15 +730,15 @@ export class FactorySectionPresenter {
                         class="factory-supply-flow-select"
                         data-factory="${factoryInstanceId(factoryData)}"
                     >
-                        <option value="${SUPPLY_FLOW.CITY}" ${supplyFlow === SUPPLY_FLOW.CITY ? 'selected' : ''}>Ville (approvisionnement interne)</option>
-                        <option value="${SUPPLY_FLOW.COMMERCE}" ${supplyFlow === SUPPLY_FLOW.COMMERCE ? 'selected' : ''}>Commerce (grange / export)</option>
+                        <option value="${this.supply.SUPPLY_FLOW.CITY}" ${supplyFlow === this.supply.SUPPLY_FLOW.CITY ? 'selected' : ''}>Ville (approvisionnement interne)</option>
+                        <option value="${this.supply.SUPPLY_FLOW.COMMERCE}" ${supplyFlow === this.supply.SUPPLY_FLOW.COMMERCE ? 'selected' : ''}>Commerce (grange / export)</option>
                     </select>
                 </div>
             </div>
 
             <div class="factory-raw-materials">
                 <h4 class="factory-subtitle">Matières Premières</h4>
-                ${Object.entries(rawMaterialNames).filter(([key]) => canFactoryCollectResource(factoryData, key)).map(([key, name]) => {
+                ${Object.entries(rawMaterialNames).filter(([key]) => this.supply.canFactoryCollectResource(factoryData, key)).map(([key, name]) => {
                     const status = getProductionStatus(key, false);
                     const statusClass = status.status === 'full' ? 'factory-status-full' : 
                                       status.status === 'no-workers' ? 'factory-status-no-workers' : 
@@ -801,6 +786,7 @@ export class FactorySectionPresenter {
                         </div>
                     </div>
                     ${renderFactoryDestinationRows(
+                        this.supply,
                         factoryData,
                         key,
                         name,
@@ -860,7 +846,7 @@ export class FactorySectionPresenter {
 
             <div class="factory-products">
                 <h4 class="factory-subtitle">Produits Finis</h4>
-                ${Object.entries(productNames).filter(([key]) => canFactoryProduceProduct(factoryData, key)).map(([key, name]) => {
+                ${Object.entries(productNames).filter(([key]) => this.supply.canFactoryProduceProduct(factoryData, key)).map(([key, name]) => {
                     const status = getProductionStatus(key, true);
                     const statusClass = status.status === 'full' ? 'factory-status-full' : 
                                       status.status === 'no-workers' ? 'factory-status-no-workers' : 
@@ -936,6 +922,7 @@ export class FactorySectionPresenter {
                         </div>
                     </div>
                     ${renderFactoryDestinationRows(
+                        this.supply,
                         factoryData,
                         key,
                         name,
@@ -1113,7 +1100,7 @@ export class FactorySectionPresenter {
 
         if (!freshFactory) return;
 
-        input.value = getFactoryLineMaxCapDisplayValue(
+        input.value = this.supply.getFactoryLineMaxCapDisplayValue(
             freshFactory,
             productId,
             destination,
@@ -1130,15 +1117,15 @@ export class FactorySectionPresenter {
         const destination = changedInput.dataset.destination;
         const productId = changedInput.dataset.product;
         const currentStock = Number(group.dataset.currentStock) || 0;
-        const rebalanced = rebalanceFactoryLineMaxCaps(
+        const rebalanced = this.supply.rebalanceFactoryLineMaxCaps(
             productId,
             destination,
             changedInput.value,
             productionMax
         );
 
-        const directKey = factoryLineDestinationKey(productId, 'direct');
-        const manufacturingKey = factoryLineDestinationKey(productId, 'manufacturing');
+        const directKey = this.supply.factoryLineDestinationKey(productId, 'direct');
+        const manufacturingKey = this.supply.factoryLineDestinationKey(productId, 'manufacturing');
         const tempFactory = {
             ...factoryData,
             lineMaxCaps: {
@@ -1154,7 +1141,7 @@ export class FactorySectionPresenter {
             if (!rowInput) return;
 
             const rowDestination = rowInput.dataset.destination;
-            const rowKey = factoryLineDestinationKey(productId, rowDestination);
+            const rowKey = this.supply.factoryLineDestinationKey(productId, rowDestination);
             const newMax = rebalanced[rowKey];
 
             if (document.activeElement !== rowInput) {
@@ -1165,6 +1152,7 @@ export class FactorySectionPresenter {
             }
             if (updateRealized && realizedDisplay) {
                 realizedDisplay.textContent = computeDestinationLineRealized(
+                    this.supply,
                     tempFactory,
                     productId,
                     rowDestination,
@@ -1182,7 +1170,7 @@ export class FactorySectionPresenter {
         try {
             const factoryData = await this.supply.getFactoryById(factoryId);
             const currentLineMaxCaps = factoryData?.lineMaxCaps || {};
-            const rebalanced = rebalanceFactoryLineMaxCaps(
+            const rebalanced = this.supply.rebalanceFactoryLineMaxCaps(
                 productId,
                 destination,
                 value,

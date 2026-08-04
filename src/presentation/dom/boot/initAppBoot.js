@@ -11,6 +11,7 @@ import {
 import { getSessionGame, getSessionScene } from '../../../composition/sessionRuntime.js';
 import { registerActiveToolHandler } from './ActiveToolRegistration.js';
 import { loadGameAssets, initButtonStateRegistry } from './AssetLoader.js';
+import { disableGatedHouseButtons } from '../shell/ResidentialGroupGating.js';
 import { bootstrapGameSession } from './GameSessionBootstrap.js';
 import { initPlaybackControls } from './PlaybackControls.js';
 import { initSpeedControls } from './SpeedControls.js';
@@ -36,6 +37,7 @@ export async function initAppBoot() {
   });
   await loadGameAssets(assetManager);
   initButtonStateRegistry(buttonStateManager);
+  disableGatedHouseButtons(buttonStateManager);
   bindToolPanelDeps({
     popupManager,
     buttonStateManager,

@@ -23,6 +23,9 @@ import { syncSessionHud } from './syncSessionHud.js';
  * @param {() => Promise<void>} params.refreshEmploymentPresentation
  * @param {{ enabled?: boolean, checkObjectives: Function }} params.objectivesTracker
  * @param {(cleanupResult?: { deleted?: number, deletedTurns?: number[] }) => void | Promise<void>} [params.notifyBudgetCleanup]
+ * @param {(params: { housing: object }) => void | Promise<void>} [params.refreshResidentialGroupGating]
+ *   Presentation-owned callback (tool-panel gating) injected at the edge —
+ *   composition must not import presentation directly.
  */
 export async function runGameTick({
   time,
@@ -37,6 +40,7 @@ export async function runGameTick({
   refreshEmploymentPresentation,
   objectivesTracker,
   notifyBudgetCleanup,
+  refreshResidentialGroupGating,
 }) {
   if (shouldAbort()) {
     return;
@@ -89,5 +93,9 @@ export async function runGameTick({
 
   if (objectivesTracker.enabled) {
     await objectivesTracker.checkObjectives(time);
+  }
+
+  if (refreshResidentialGroupGating) {
+    await refreshResidentialGroupGating({ housing });
   }
 }

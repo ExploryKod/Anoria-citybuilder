@@ -16,7 +16,9 @@ export function createSupplyBuildingSnapshot({
   neighbors = [],
   lastProductionYear = null,
   lastConsumptionMonth = null,
+  lastSubsistenceMonth = null,
   pop = 0,
+  level = 1,
 } = {}) {
   if (!id || typeof id !== 'string') {
     throw new Error('SupplyBuildingSnapshot: id is required');
@@ -45,6 +47,14 @@ export function createSupplyBuildingSnapshot({
         : Number.isFinite(lastConsumptionMonth)
           ? Math.floor(lastConsumptionMonth)
           : null,
+    lastSubsistenceMonth:
+      lastSubsistenceMonth === null || lastSubsistenceMonth === undefined
+        ? null
+        : Number.isFinite(lastSubsistenceMonth)
+          ? Math.floor(lastSubsistenceMonth)
+          : null,
     pop: Number.isFinite(pop) ? Math.max(0, Math.floor(pop)) : 0,
+    // Houses only (1 = autarky). Unused by non-residential buildings.
+    level: level === 2 ? 2 : 1,
   });
 }

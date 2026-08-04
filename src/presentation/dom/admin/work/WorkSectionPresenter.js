@@ -1,5 +1,3 @@
-import { computeReferenceSalaryPayrollBreakdown } from '../../../../contexts/accounting/domain/policies/ReferenceSalaryPayrollPolicy.js';
-
 export class WorkSectionPresenter {
     /**
      * @param {{ accounting: object, employment: object, housing: object }} deps
@@ -264,7 +262,7 @@ export class WorkSectionPresenter {
     }
 
     #buildPayrollPreview(population, unemployed, eliteCount = 0) {
-        return computeReferenceSalaryPayrollBreakdown({
+        return this.accounting.computeReferenceSalaryPayrollBreakdown({
             population,
             unemployed,
             eliteCount,
