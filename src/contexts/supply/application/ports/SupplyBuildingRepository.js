@@ -30,6 +30,11 @@ export class SupplyBuildingRepository {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
+  /** Persist level-1 subsistence food timing (`lastSubsistenceMonth`). */
+  async saveSubsistenceMetadata(_buildingId, _metadata) {
+    throw new Error('SupplyBuildingRepository: port not implemented');
+  }
+
   async saveWindmillLastCollection(_buildingId, _lastCollection) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }

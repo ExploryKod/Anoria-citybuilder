@@ -1,4 +1,5 @@
 import { resolveStartingFunds } from '../../../domain/policies/TreasuryInitializationPolicy.js';
+import { DEFAULT_INITIAL_FUNDS } from '../../../domain/catalogs/TreasuryCatalog.js';
 
 /**
  * Initialize treasury row and capital_funds journal entry if needed.
@@ -11,13 +12,15 @@ export class InitializeTreasury {
    * @param {import('../../../infrastructure/adapters/persistence/dexie/DexieTreasuryRepository.js').DexieTreasuryRepository} treasuryRepository
    * @param {import('../../../application/ports/JournalRepository.js').JournalRepository} journalRepository
    * @param {{ execute: Function }} recordCapitalFundsIncome
-   * @param {number} [defaultInitialFunds=200]
+   * @param {number} [defaultInitialFunds] Falls back to the canonical
+   *   TreasuryCatalog default — callers going through createAccountingContext
+   *   always pass the resolved (env-aware) value explicitly.
    */
   constructor(
     treasuryRepository,
     journalRepository,
     recordCapitalFundsIncome,
-    defaultInitialFunds = 200
+    defaultInitialFunds = DEFAULT_INITIAL_FUNDS
   ) {
     this.treasuryRepository = treasuryRepository;
     this.journalRepository = journalRepository;

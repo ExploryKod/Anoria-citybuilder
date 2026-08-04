@@ -22,10 +22,13 @@
  * (this file) while preserving bounded-context intent and boundaries.
  *
  * Section ownership:
- *   displayName  → presentation (toasts, tooltips, UI labels)
- *   construction → construction BC + presentation (cost, UI category, footprint)
- *   employment   → employment BC (sector, worker/elite requirements)
- *   accounting   → accounting BC (recurring maintenance cost)
+ *   displayName      → presentation (toasts, tooltips, UI labels)
+ *   construction     → construction BC + presentation (cost, UI category, footprint)
+ *   employment       → employment BC (sector, worker/elite requirements)
+ *   accounting       → accounting BC (recurring maintenance cost)
+ *   residentialGroup → permanent social group tied to a house color (Housing +
+ *     Employment). Never changes after placement — unlike `level`, which is
+ *     mutable per-instance state persisted on the house row, not a catalog fact.
  *
  * @typedef {Object} BuildingConstructionFacts
  * @property {number} price
@@ -41,11 +44,14 @@
  * @typedef {Object} BuildingAccountingFacts
  * @property {number} maintenance
  *
+ * @typedef {'artisans-ouvriers' | 'commercants' | 'savants'} ResidentialGroup
+ *
  * @typedef {Object} BuildingDefinition
  * @property {string} [displayName]
  * @property {BuildingConstructionFacts} construction
  * @property {BuildingEmploymentFacts} [employment]
  * @property {BuildingAccountingFacts} [accounting]
+ * @property {ResidentialGroup} [residentialGroup]
  */
 
 /** @param {any} value */
@@ -87,21 +93,26 @@ const RAW_CATALOG = {
     construction: { price: 5, category: 'infrastructure', gridSize: 1 },
   },
 
-  // Houses
+  // Houses — color = permanent social group (never changes after placement).
+  // Mutable progression (autarky vs specialized profession) lives in `level`,
+  // a per-instance house row field owned by Housing — not a catalog fact.
   'House-Blue': {
     displayName: 'Maison bleue',
     construction: { price: 10, category: 'houses', gridSize: 1 },
     accounting: { maintenance: 6 },
+    residentialGroup: 'commercants',
   },
   'House-Red': {
     displayName: 'Maison rouge',
     construction: { price: 10, category: 'houses', gridSize: 1 },
     accounting: { maintenance: 6 },
+    residentialGroup: 'artisans-ouvriers',
   },
   'House-Purple': {
     displayName: 'Maison violette',
     construction: { price: 10, category: 'houses', gridSize: 1 },
     accounting: { maintenance: 6 },
+    residentialGroup: 'savants',
   },
 
   // Palaces
@@ -194,8 +205,17 @@ const RAW_CATALOG = {
   'Sphere-002': { displayName: 'Sphère sombre', construction: { price: 5, category: 'infrastructure', gridSize: 1 } },
 
   // Public (Chapel only — Church-002 mesh discarded as broken duplicate)
-  Chapel: { displayName: 'Chapelle', construction: { price: 60, category: 'public', gridSize: 1 } },
-  'BookShop-001': { displayName: 'Librairie', construction: { price: 60, category: 'public', gridSize: 1 } },
+  // Sector 6 (Services Publics) — savants' workplaces.
+  Chapel: {
+    displayName: 'Chapelle',
+    construction: { price: 60, category: 'public', gridSize: 1 },
+    employment: { sector: 6, workerNeed: 2, eliteNeed: 0 },
+  },
+  'BookShop-001': {
+    displayName: 'Librairie',
+    construction: { price: 60, category: 'public', gridSize: 1 },
+    employment: { sector: 6, workerNeed: 2, eliteNeed: 0 },
+  },
   // Legacy save alias — same building as Chapel, kept for old saves
   'Church-002': { displayName: 'Chapelle', construction: { price: 60, category: 'public', gridSize: 1 } },
 

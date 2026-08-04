@@ -14,6 +14,11 @@ import {
 } from '../../../src/contexts/employment/domain/policies/LaborPoolPolicy.js';
 import { computeCityEmploymentSummary } from '../../../src/contexts/employment/domain/computeCityEmploymentSummary.js';
 import { GetCityEmploymentSummary } from '../../../src/contexts/employment/application/queries/GetCityEmploymentSummary.js';
+import {
+  allSocialGroups,
+  eligibleSectorsForGroup,
+  residentialGroupForType,
+} from '../../../src/contexts/employment/domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
 
 class InMemoryEmploymentBuildingRepository {
   constructor(buildings = []) {
@@ -67,6 +72,37 @@ describe('Employment — GetCityEmploymentSummary', () => {
     test('palace max total pop is 7 at this stage', () => {
       expect(maxTotalPopForHouse('House-2Story')).toBe(7);
       expect(maxTotalPopForHouse('House-Blue')).toBe(6);
+    });
+
+    test('level 1 (autarkic) houses contribute zero workers/citizens regardless of pop', () => {
+      expect(citizenPopFromHouse('House-Red', 6, 1)).toBe(0);
+      expect(workerPopFromHouse('House-Red', 6, 1)).toBe(0);
+    });
+
+    test('level 2 (or unspecified, for backward compatibility) contributes full pop as citizens', () => {
+      expect(citizenPopFromHouse('House-Red', 6, 2)).toBe(6);
+      expect(workerPopFromHouse('House-Red', 6)).toBe(6);
+    });
+  });
+
+  describe('HouseGroupSectorEligibilityPolicy', () => {
+    test('maps each house color to its permanent social group', () => {
+      expect(residentialGroupForType('House-Blue')).toBe('commercants');
+      expect(residentialGroupForType('House-Red')).toBe('artisans-ouvriers');
+      expect(residentialGroupForType('House-Purple')).toBe('savants');
+      expect(residentialGroupForType('House-2Story')).toBeNull();
+      expect(residentialGroupForType('Farm-Wheat')).toBeNull();
+    });
+
+    test('maps each social group to its eligible employment sectors', () => {
+      expect(eligibleSectorsForGroup('artisans-ouvriers')).toEqual([1, 3, 4]);
+      expect(eligibleSectorsForGroup('commercants')).toEqual([2]);
+      expect(eligibleSectorsForGroup('savants')).toEqual([6]);
+      expect(eligibleSectorsForGroup('unknown-group')).toEqual([]);
+    });
+
+    test('exposes all three groups', () => {
+      expect(allSocialGroups().sort()).toEqual(['artisans-ouvriers', 'commercants', 'savants']);
     });
   });
 
@@ -153,6 +189,55 @@ describe('Employment — GetCityEmploymentSummary', () => {
 
       expect(summary.bySector[1]).toEqual({ workerNeed: 3, workers: 1, need: 2 });
       expect(summary.bySector[2]).toBeUndefined();
+    });
+
+    test('byGroup breaks the pool/assignment down per social group (global aggregate unchanged)', () => {
+      const summary = computeCityEmploymentSummary([
+        house('red-house', 5, 1, 'House-Red'), // artisans-ouvriers
+        house('blue-house', 3, 1, 'House-Blue'), // commerçants
+        workplace('farm', { workerNeed: 3, sector: 1, worker: 3 }), // artisans-ouvriers sector
+        workplace('market', { workerNeed: 2, sector: 2, worker: 1, type: 'Market-Stall' }), // commerçants sector
+      ]);
+
+      expect(summary.byGroup['artisans-ouvriers']).toEqual({
+        workerPool: 5,
+        assigned: 3,
+        unemployed: 2,
+      });
+      expect(summary.byGroup.commercants).toEqual({
+        workerPool: 3,
+        assigned: 1,
+        unemployed: 2,
+      });
+      expect(summary.byGroup.savants).toEqual({
+        workerPool: 0,
+        assigned: 0,
+        unemployed: 0,
+      });
+
+      // Global aggregate stays the flat sum, semantics untouched by the breakdown.
+      expect(summary.workerPool).toBe(8);
+      expect(summary.totalAssigned).toBe(4);
+    });
+
+    test('level 1 (autarkic) houses are excluded from their group pool', () => {
+      const summary = computeCityEmploymentSummary([
+        createEmploymentBuildingSnapshot({
+          id: 'red-house',
+          type: 'House-Red',
+          pop: 5,
+          roadCount: 1,
+          level: 1,
+        }),
+        workplace('farm', { workerNeed: 3, sector: 1 }),
+      ]);
+
+      expect(summary.byGroup['artisans-ouvriers']).toEqual({
+        workerPool: 0,
+        assigned: 0,
+        unemployed: 0,
+      });
+      expect(summary.workerPool).toBe(0);
     });
   });
 

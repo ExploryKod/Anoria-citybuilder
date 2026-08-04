@@ -18,6 +18,10 @@ import {
   renderHubStorageInfoPanel,
   clearHubInfoOverlayMode,
 } from './hubStorageInfoPanel.js';
+import {
+  residentialGroupForType,
+  getResidentialGroupLabel,
+} from '../shell/ResidentialGroupLabels.js';
 
 /**
  * @param {ReadonlyArray<[number, number]> | null | undefined} tiles
@@ -265,82 +269,39 @@ export async function presentBuildingInfoSelection(selectedObject, ctx) {
                     makeInfoKeyValue('Autres légumes', `${houseStocks.carrot || 0} paniers`);
                     makeInfoKeyValue('Total', `${houseStocks.food || 0} paniers`);
                     
-                    // Evolution section - show conditions for next evolution step
+                    // Evolution section — group + level (see HouseLevelPolicy)
                     const buildingType = selectedObject.userData.id;
                     const hasRoadAccess = roadAccess.hasAccess;
-                    const { totalFood, meetsFoodGoal } = housing.evaluateHouseFoodAffluence({
-                        stocks: houseStocks || {},
-                        population: buildingPop || 0,
-                    });
-                    const evolutionPreview = housing.previewHouseEvolution({
-                        stocks: houseStocks || {},
-                        population: buildingPop || 0,
-                        buildingType,
-                        hasRoadAccess,
-                    });
-                    
+
                     makeInfoSection('Évolution');
-                    
-                    // House-Blue: Show conditions to become House-Red
-                    if (buildingType === 'House-Blue') {
-                        makeInfoKeyValue('→ Maison Rouge', '');
-                        const isInhabited = (buildingPop || 0) > 0;
-                        const roadStatus = hasRoadAccess ? '✅' : '❌';
-                        const popStatus = isInhabited ? '✅' : '❌';
-                        makeInfoKeyValue('  • Accès routier', `${roadStatus} ${hasRoadAccess ? 'Oui' : 'Non'}`);
-                        makeInfoKeyValue('  • Habitée', `${popStatus} ${isInhabited ? 'Oui' : 'Non'}`);
-                        makeInfoKeyValue('  • Nourriture de base', `${totalFood > 0 ? '✅' : '❌'} ${totalFood} panier${totalFood !== 1 ? 's' : ''}`);
-                    }
-                    
-                    // House-Red: Show conditions to become House-Purple (only Purple-specific conditions)
-                    else if (buildingType === 'House-Red') {
-                        makeInfoKeyValue('→ Maison Violette', '');
-                        const purpleCheck = evolutionPreview.toPurple;
-                        // Show Purple-specific conditions
-                        makeInfoKeyValue('  • Population > 5', `${(buildingPop || 0) > 5 ? '✅' : '❌'} ${buildingPop || 0}`);
-                        const foodStatus = totalFood >= (buildingPop || 0) ? '✅' : '❌';
-                        makeInfoKeyValue('  • Nourriture ≥ Population', `${foodStatus} ${totalFood}/${buildingPop || 0}`);
-                        
-                        if (!purpleCheck.canEvolve) {
-                            if (purpleCheck.reason === 'hunger_present') {
-                                const needed = Math.max(0, (buildingPop || 0) - totalFood);
-                                makeInfoKeyValue('  • Manque', `${needed} panier${needed > 1 ? 's' : ''}`);
-                            } else if (purpleCheck.reason === 'population_too_low') {
-                                const needed = Math.max(0, 6 - (buildingPop || 0));
-                                makeInfoKeyValue('  • Manque', `${needed} habitant${needed > 1 ? 's' : ''}`);
+
+                    const residentialGroup = residentialGroupForType(buildingType);
+                    if (residentialGroup) {
+                        const houseLevel = buildingRow?.level === 2 ? 2 : 1;
+                        const groupLabel = getResidentialGroupLabel(residentialGroup);
+                        makeInfoKeyValue('Groupe social', groupLabel);
+
+                        if (houseLevel === 1) {
+                            const isInhabited = (buildingPop || 0) > 0;
+                            const roadStatus = hasRoadAccess ? '✅' : '❌';
+                            const popStatus = isInhabited ? '✅' : '❌';
+                            makeInfoKeyValue('Niveau', '1 — Chasseurs-cueilleurs (autarcie)');
+                            makeInfoKeyValue(`→ Niveau 2 (${groupLabel})`, '');
+                            makeInfoKeyValue('  • Accès routier', `${roadStatus} ${hasRoadAccess ? 'Oui' : 'Non'}`);
+                            makeInfoKeyValue('  • Habitée', `${popStatus} ${isInhabited ? 'Oui' : 'Non'}`);
+                        } else {
+                            makeInfoKeyValue('Niveau', `2 — Métier ${groupLabel.toLowerCase()} (route requise)`);
+                            if (!hasRoadAccess) {
+                                makeInfoBuildingText(
+                                    '🚧 Route perdue : régression au niveau 1 imminente',
+                                    false,
+                                    'warning-message'
+                                );
                             }
                         }
                     }
-                    
-                    // House-Purple: Show conditions to become Palace (only Palace-specific conditions)
-                    else if (buildingType === 'House-Purple') {
-                        makeInfoKeyValue('→ Palais', '');
-                        const palaceCheck = evolutionPreview.toPalace;
-                        
-                        // Palace-specific conditions (food goal, not basic conditions)
-                        const foodGoalStatus = meetsFoodGoal ? '✅' : '❌';
-                        const foodGoalText = meetsFoodGoal 
-                            ? `Oui (${totalFood} > ${(buildingPop || 0) * 2})`
-                            : `Non (${totalFood} ≤ ${(buildingPop || 0) * 2})`;
-                        
-                        // Check food variety (at least 2 types of food)
-                        const foodTypes = {
-                            wheat: (houseStocks?.wheat || 0) > 0,
-                            carrot: (houseStocks?.carrot || 0) > 0,
-                            cabbage: (houseStocks?.cabbage || 0) > 0,
-                        };
-                        const availableFoodTypesCount = evolutionPreview.availableCropTypesCount;
-                        const foodVarietyStatus = availableFoodTypesCount >= 2 ? '✅' : '❌';
-                        const foodVarietyText = availableFoodTypesCount >= 2 
-                            ? `Oui (${availableFoodTypesCount} types: ${Object.entries(foodTypes).filter(([_, available]) => available).map(([type]) => type).join(', ')})`
-                            : `Non (${availableFoodTypesCount} type${availableFoodTypesCount !== 1 ? 's' : ''} disponible)`;
-                        
-                        makeInfoKeyValue('  • Population > 5', `${(buildingPop || 0) > 5 ? '✅' : '❌'} ${buildingPop || 0}`);
-                        makeInfoKeyValue('  • Nourriture > Pop × 2', `${foodGoalStatus} ${foodGoalText}`);
-                        makeInfoKeyValue('  • 2 types de nourriture', `${foodVarietyStatus} ${foodVarietyText}`);
-                    }
-                    
-                    // Palace: No further evolution
+
+                    // Palace: no further evolution (frozen legacy path, see EvolveHouseBuilding)
                     else if (buildingType === 'House-2Story') {
                         makeInfoKeyValue('→ Palais', '✅ Niveau maximum atteint');
                     }

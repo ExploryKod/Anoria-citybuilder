@@ -1,6 +1,11 @@
+import { isPalaceHouseType } from '../../domain/policies/HouseCapacityPolicy.js';
+
 /**
- * Command: zero out population on residential houses without road access.
- * Legacy safety net — ECS growth also enforces no-road → pop 0.
+ * Command: zero out population on Palace houses without road access.
+ * Legacy safety net for the frozen Palace path (`HouseEvolutionPolicy`) only
+ * — Blue/Red/Purple houses are level-based now: level 1 is autarkic by
+ * design (no road needed) and level 2's road loss is handled by
+ * `HouseLevelPolicy` (demotion + population clamp, not a hard reset to 0).
  */
 export class ClearPopulationWithoutRoadAccess {
   /**
@@ -24,6 +29,8 @@ export class ClearPopulationWithoutRoadAccess {
     let housesAffected = 0;
 
     for (const house of houses) {
+      if (!isPalaceHouseType(house.type)) continue;
+
       const hasRoadAccess = (house.roadCount ?? 0) > 0;
       const currentPop = house.pop || 0;
 

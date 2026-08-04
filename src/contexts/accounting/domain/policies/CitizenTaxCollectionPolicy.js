@@ -1,7 +1,12 @@
 const RESIDENTIAL_HOUSE_MARKERS = ['House-Blue', 'House-Red', 'House-Purple'];
 
 /**
- * @param {Array<{ type?: string, pop?: number }>} houses
+ * Level 1 (autarky / hunter-gatherer) houses are self-sufficient and pay no
+ * citizen tax — only level 2 (group profession, road-connected) houses do.
+ * Missing `level` defaults to 1 (matches Housing's own default for
+ * un-migrated / freshly-placed rows), so it's exempt until promoted.
+ *
+ * @param {Array<{ type?: string, pop?: number, level?: number }>} houses
  * @param {number} taxPerCapita
  */
 export function computeCitizenTaxBreakdown(houses, taxPerCapita) {
@@ -15,6 +20,10 @@ export function computeCitizenTaxBreakdown(houses, taxPerCapita) {
 
   for (const house of houses) {
     if (!house.type || !RESIDENTIAL_HOUSE_MARKERS.some((marker) => house.type.includes(marker))) {
+      continue;
+    }
+
+    if ((house.level ?? 1) !== 2) {
       continue;
     }
 

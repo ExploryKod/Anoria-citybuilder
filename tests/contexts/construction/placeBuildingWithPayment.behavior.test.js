@@ -15,6 +15,7 @@ import {
 import { initializeTreasury, resetAccountingContextForTests } from '../../../src/composition/accountingOps.js';
 import { resetSessionLedgerBufferForTests } from '../../../src/composition/accountingSessionJournal.js';
 import { makeHouseRecord } from '../../fixtures/buildingRecord.js';
+import { DEFAULT_INITIAL_FUNDS } from '../../../src/contexts/accounting/domain/catalogs/TreasuryCatalog.js';
 
 async function clearTables() {
   await db.open();
@@ -65,8 +66,8 @@ describe('Construction — placement with payment (step 2)', () => {
     expect(row?.type).toBe('Farm-Wheat');
 
     const budget = await db.budget.get('budget_current');
-    // BudgetManager default initialFunds (config) minus construction price
-    expect(budget.funds).toBe(150);
+    // Real configured default initial funds (TreasuryCatalog) minus construction price
+    expect(budget.funds).toBe(DEFAULT_INITIAL_FUNDS - 50);
   });
 
   test('placeBuildingWithPayment rejects duplicate instanceId', async () => {
@@ -180,6 +181,7 @@ describe('Construction — placement with payment (step 2)', () => {
     expect(result.reason).toBe('database_error');
 
     const budget = await db.budget.get('budget_current');
-    expect(budget.funds).toBe(200);
+    // Debit + refund cancel out — funds must return to the real configured default.
+    expect(budget.funds).toBe(DEFAULT_INITIAL_FUNDS);
   });
 });

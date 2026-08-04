@@ -4,6 +4,9 @@ import {
 
 /**
  * Command: house consumes food baskets for its population (once per month).
+ *
+ * Level 1 (autarky) houses are fed directly via `ProduceHouseSubsistenceFood`
+ * (bypasses farms/markets) and never participate in basket accounting here.
  */
 export class ConsumeHouseFood {
   /**
@@ -31,6 +34,10 @@ export class ConsumeHouseFood {
     const house = await this.supplyBuildingRepository.findById(houseId);
     if (!house) {
       return { consumed: false, reason: 'house_not_found' };
+    }
+
+    if ((house.level ?? 1) === 1) {
+      return { consumed: false, reason: 'autarkic_level_1' };
     }
 
     const month = Number.isFinite(monthIndex) ? Math.floor(monthIndex) : 0;

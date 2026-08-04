@@ -66,6 +66,10 @@ function house(id, extras = {}) {
     type: 'House-Blue',
     roadCount: 1,
     pop: 3,
+    // level 2 (group profession) — the market/farm-fed cycle this file
+    // exercises only applies past autarky; see `HouseSubsistencePolicy` for
+    // level 1's bypass mechanism.
+    level: 2,
     stocks: { wheat: 0, carrot: 0, cabbage: 0, food: 0 },
     ...extras,
   });
@@ -163,6 +167,18 @@ describe('Supply — house consumption', () => {
       const outcome = await useCase.execute({ houseId: 'House-Blue-1-2', monthIndex: 1 });
       expect(outcome.consumed).toBe(false);
       expect(outcome.reason).toBe('no_population');
+      expect((await repo.findById('House-Blue-1-2')).stocks.wheat).toBe(5);
+    });
+
+    test('skips level 1 (autarkic) houses — they self-produce via HouseSubsistencePolicy instead', async () => {
+      repo = new InMemorySupplyBuildingRepository([
+        house('House-Blue-1-2', { pop: 4, level: 1, stocks: { wheat: 5, food: 5 } }),
+      ]);
+      useCase = new ConsumeHouseFood(repo);
+
+      const outcome = await useCase.execute({ houseId: 'House-Blue-1-2', monthIndex: 1 });
+      expect(outcome.consumed).toBe(false);
+      expect(outcome.reason).toBe('autarkic_level_1');
       expect((await repo.findById('House-Blue-1-2')).stocks.wheat).toBe(5);
     });
   });
