@@ -2,79 +2,25 @@
  * Construction / WebGL toast notifications (DOM).
  */
 
-const BUILDING_TRANSLATIONS = {
-    grass: 'Herbe',
-    roads: 'Route',
+import { buildingCatalog } from '../../../shared/building-catalog/buildingCatalog.js';
+
+/**
+ * Legacy aliases that aren't a real building type id in `buildingCatalog`
+ * (e.g. capitalized "Road" used by some older call sites) — kept local
+ * since they don't correspond to an actual placeable building.
+ */
+const EXTRA_TRANSLATIONS = {
     Road: 'Route',
-    'StonePath-001': 'Chemin de pierre',
-    'StonePath-Right-001': 'Chemin de pierre',
-    'StonePath-Left-001': 'Chemin de pierre',
-    'StonePath-Cross-001': 'Chemin de pierre',
+};
 
-    'House-Blue': 'Maison bleue',
-    'House-Red': 'Maison rouge',
-    'House-Purple': 'Maison violette',
-    'House-2Story': 'Palais',
-
-    'Tombstone-1': 'Pierre tombale',
-    'Tombstone-2': 'Pierre tombale',
-    'Tombstone-3': 'Pierre tombale',
-    'Grave-1': 'Tombe',
-    'Grave-2': 'Tombe',
-    Tomb: 'Tombeau',
-    Coffin: 'Cercueil',
-
-    'Farm-Wheat': 'Champ de blé',
-    'Farm-Carrot': 'Champ de carottes',
-    'Farm-Cabbage': 'Champ de choux',
-    'Hay-Bale': 'Botte de foin',
-    'Hay-Cart': 'Chariot de foin',
-    'Hay-Pile': 'Meule de foin',
-
-    'Windmill-001': 'Moulin',
-    'Barn-001': 'Grange',
-    'Crate-001': 'Caisse',
-    'Winery-001': 'Chai',
-    Cylinder: 'Silo à blé',
-
-    'Market-Stall': 'Étal',
-    'Market-Stall-Blue': 'Étal bleu',
-    'Market-Stall-Red': 'Étal rouge',
-
-    'Well-001': 'Puits',
-    'Fountain-001': 'Fontaine',
-    'Streetlight-001': 'Réverbère',
-    'Fence-001': 'Clôture',
-    'Pond-001': 'Étang',
-    'Plane-001': 'Dalle petite',
-    'Plane-004': 'Dalle moyenne',
-    'Plane-007': 'Dalle grande',
-    Cube: 'Bloc',
-    'Sphere-001': 'Sphère',
-    'Sphere-002': 'Sphère sombre',
-
-    Chapel: 'Chapelle',
-    'Church-002': 'Chapelle',
-    'BookShop-001': 'Librairie',
-
-    'Tree-Pine-001': 'Sapin',
-    'Tree-Square-001': 'Arbuste',
-    'Tree-Tall-001': 'Chêne',
-    'Tree-Sapin': 'Sapin',
-    'Tree-Arbuste': 'Arbuste',
-    'Tree-Chene': 'Chêne',
-    'Boulder-001': 'Rocher',
-
-    Bench: 'Banc',
-    'Picnic-Table': 'Table de pique-nique',
-    'Potted-Bush': 'Buisson en pot',
-    Daisy: 'Marguerite',
-    Shroom: 'Champignon',
-    Arch: 'Arche',
-    Obelisk: 'Obélisque',
-    Pillar: 'Pilier',
-    Garland: 'Guirlande',
-    Barrell: 'Tonneau',
+/** Derived from `buildingCatalog` (single source of truth for display names). */
+const BUILDING_TRANSLATIONS = {
+    ...Object.fromEntries(
+        Object.entries(buildingCatalog)
+            .filter(([, def]) => def.displayName)
+            .map(([id, def]) => [id, def.displayName])
+    ),
+    ...EXTRA_TRANSLATIONS,
 };
 
 export function getBuildingDisplayName(buildingId) {
