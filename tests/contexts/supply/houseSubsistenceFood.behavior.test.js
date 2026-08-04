@@ -1,15 +1,18 @@
 /**
- * Behavior tests — Supply: level 1 (autarky) house subsistence food.
+ * Behavior tests — Supply: monthly house gathering (fruit + game).
  *
- * Level 1 houses feed themselves directly — bypassing farms/markets — via
- * `HouseSubsistencePolicy` + `ProduceHouseSubsistenceFood`. See
- * `ConsumeHouseFood` for the complementary level-1 skip on the demand side.
+ * Every inhabited house gains foraged fruit and hunted game each month,
+ * independent from farms and markets. Level 2 houses still consume farm
+ * crops via `ConsumeHouseFood`.
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
-import { computeSubsistenceFoodCredit } from '../../../src/contexts/supply/domain/policies/HouseSubsistencePolicy.js';
+import {
+  computeMonthlyGatheringCredit,
+  computeSubsistenceFoodCredit,
+} from '../../../src/contexts/supply/domain/policies/HouseSubsistencePolicy.js';
 import { ProduceHouseSubsistenceFood } from '../../../src/contexts/supply/application/commands/subsistence/ProduceHouseSubsistenceFood.js';
 import { ProduceAllHouseSubsistenceFood } from '../../../src/contexts/supply/application/commands/subsistence/ProduceAllHouseSubsistenceFood.js';
 
@@ -58,37 +61,45 @@ function house(id, extras = {}) {
     roadCount: 0,
     pop: 3,
     level: 1,
-    stocks: { wheat: 0, carrot: 0, cabbage: 0, food: 0 },
+    stocks: { wheat: 0, carrot: 0, cabbage: 0, fruit: 0, game: 0, food: 0 },
     ...extras,
   });
 }
 
-describe('Supply — house subsistence food (level 1)', () => {
-  describe('HouseSubsistencePolicy.computeSubsistenceFoodCredit', () => {
-    test('tops food up to the monthly need when short', () => {
-      const result = computeSubsistenceFoodCredit({
+describe('Supply — house gathering (fruit & game)', () => {
+  describe('HouseSubsistencePolicy.computeMonthlyGatheringCredit', () => {
+    test('adds fruit and game baskets per inhabitant each month', () => {
+      const result = computeMonthlyGatheringCredit({
         pop: 4,
-        stocks: { food: 1, wheat: 1, carrot: 0, cabbage: 0 },
+        stocks: { food: 1, wheat: 1, fruit: 2, game: 1 },
       });
-      expect(result.credited).toBe(3);
-      expect(result.nextStock.food).toBe(4);
-      // Crops themselves are untouched — only the aggregate `food` is credited.
+
+      expect(result.credited).toEqual({ fruit: 4, game: 4 });
+      expect(result.nextStock.fruit).toBe(6);
+      expect(result.nextStock.game).toBe(5);
       expect(result.nextStock.wheat).toBe(1);
+      expect(result.nextStock.food).toBe(12);
     });
 
-    test('never reduces stock when already sufficient', () => {
-      const result = computeSubsistenceFoodCredit({
-        pop: 2,
-        stocks: { food: 10 },
-      });
-      expect(result.credited).toBe(0);
-      expect(result.nextStock.food).toBe(10);
+    test('accumulates on top of existing gathering stocks', () => {
+      const first = computeMonthlyGatheringCredit({ pop: 2, stocks: { fruit: 0, game: 0 } });
+      const second = computeMonthlyGatheringCredit({ pop: 2, stocks: first.nextStock });
+
+      expect(second.nextStock.fruit).toBe(4);
+      expect(second.nextStock.game).toBe(4);
     });
 
     test('zero population credits nothing', () => {
-      const result = computeSubsistenceFoodCredit({ pop: 0, stocks: { food: 0 } });
-      expect(result.credited).toBe(0);
+      const result = computeMonthlyGatheringCredit({ pop: 0, stocks: { food: 0 } });
+      expect(result.credited).toEqual({ fruit: 0, game: 0 });
       expect(result.nextStock.food).toBe(0);
+    });
+
+    test('legacy computeSubsistenceFoodCredit sums fruit + game credited', () => {
+      const result = computeSubsistenceFoodCredit({ pop: 3, stocks: { food: 0 } });
+      expect(result.credited).toBe(6);
+      expect(result.nextStock.fruit).toBe(3);
+      expect(result.nextStock.game).toBe(3);
     });
   });
 
@@ -103,15 +114,17 @@ describe('Supply — house subsistence food (level 1)', () => {
       useCase = new ProduceHouseSubsistenceFood(repo);
     });
 
-    test('credits food for a level 1 house and marks the month', async () => {
+    test('credits fruit and game for an inhabited house and marks the month', async () => {
       const outcome = await useCase.execute({ houseId: 'House-Blue-1-2', monthIndex: 4 });
 
       expect(outcome.produced).toBe(true);
-      expect(outcome.credited).toBe(3);
-      expect(outcome.food).toBe(3);
+      expect(outcome.credited).toEqual({ fruit: 3, game: 3 });
+      expect(outcome.food).toBe(6);
 
       const updated = await repo.findById('House-Blue-1-2');
-      expect(updated.stocks.food).toBe(3);
+      expect(updated.stocks.fruit).toBe(3);
+      expect(updated.stocks.game).toBe(3);
+      expect(updated.stocks.food).toBe(6);
       expect(updated.lastSubsistenceMonth).toBe(4);
     });
 
@@ -123,15 +136,15 @@ describe('Supply — house subsistence food (level 1)', () => {
       expect(second.reason).toBe('already_produced_this_month');
     });
 
-    test('skips level 2 (specialized) houses — they use the market/farm cycle instead', async () => {
+    test('also produces for level 2 houses — gathering is independent from the market cycle', async () => {
       repo = new InMemorySupplyBuildingRepository([
         house('House-Blue-1-2', { pop: 3, level: 2, stocks: { food: 0 } }),
       ]);
       useCase = new ProduceHouseSubsistenceFood(repo);
 
       const outcome = await useCase.execute({ houseId: 'House-Blue-1-2', monthIndex: 4 });
-      expect(outcome.produced).toBe(false);
-      expect(outcome.reason).toBe('not_autarkic');
+      expect(outcome.produced).toBe(true);
+      expect(outcome.credited).toEqual({ fruit: 3, game: 3 });
     });
 
     test('skips houses with zero population', async () => {
@@ -147,7 +160,7 @@ describe('Supply — house subsistence food (level 1)', () => {
   });
 
   describe('ProduceAllHouseSubsistenceFood', () => {
-    test('produces for every level 1 house, skips level 2 and uninhabited ones', async () => {
+    test('produces for every inhabited house, skips uninhabited ones', async () => {
       const repo = new InMemorySupplyBuildingRepository([
         house('House-Blue-1-2', { pop: 2, stocks: { food: 0 } }),
         house('House-Purple-3-4', { type: 'House-Purple', pop: 1, stocks: { food: 0 } }),
@@ -159,10 +172,10 @@ describe('Supply — house subsistence food (level 1)', () => {
 
       const outcome = await produceAll.execute({ monthIndex: 2 });
 
-      expect(outcome.producedCount).toBe(2);
-      expect((await repo.findById('House-Blue-1-2')).stocks.food).toBe(2);
-      expect((await repo.findById('House-Purple-3-4')).stocks.food).toBe(1);
-      expect((await repo.findById('House-Red-5-6')).stocks.food).toBe(0);
+      expect(outcome.producedCount).toBe(3);
+      expect((await repo.findById('House-Blue-1-2')).stocks).toMatchObject({ fruit: 2, game: 2 });
+      expect((await repo.findById('House-Purple-3-4')).stocks).toMatchObject({ fruit: 1, game: 1 });
+      expect((await repo.findById('House-Red-5-6')).stocks).toMatchObject({ fruit: 3, game: 3 });
       expect((await repo.findById('House-Blue-7-8')).stocks.food).toBe(0);
     });
   });

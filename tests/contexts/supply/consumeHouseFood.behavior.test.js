@@ -77,18 +77,53 @@ function house(id, extras = {}) {
 
 describe('Supply — house consumption', () => {
   describe('domain policy', () => {
-    test('consumption order is wheat then carrot then cabbage', () => {
-      expect(HOUSE_FOOD_CONSUMPTION_ORDER).toEqual(['wheat', 'carrot', 'cabbage']);
+    test('consumption order is gathering then market crops', () => {
+      expect(HOUSE_FOOD_CONSUMPTION_ORDER).toEqual([
+        'fruit',
+        'game',
+        'wheat',
+        'carrot',
+        'cabbage',
+      ]);
       expect(basketsPerCitizenPerMonth()).toBe(1);
     });
 
-    test('applyHouseFoodConsumption prioritizes wheat', () => {
+    test('applyHouseFoodConsumption prioritizes gathering before wheat', () => {
+      const result = applyHouseFoodConsumption(
+        createFoodStock({ fruit: 1, game: 1, wheat: 2, carrot: 5, cabbage: 5, food: 14 }),
+        4
+      );
+
+      expect(result.consumed).toEqual({
+        fruit: 1,
+        game: 1,
+        wheat: 2,
+        carrot: 0,
+        cabbage: 0,
+      });
+      expect(result.demand).toBe(4);
+      expect(result.unfed).toBe(0);
+      expect(result.nextStock.fruit).toBe(0);
+      expect(result.nextStock.game).toBe(0);
+      expect(result.nextStock.wheat).toBe(0);
+      expect(result.nextStock.carrot).toBe(5);
+      expect(result.nextStock.cabbage).toBe(5);
+      expect(result.nextStock.food).toBe(10);
+    });
+
+    test('applyHouseFoodConsumption prioritizes wheat after gathering is exhausted', () => {
       const result = applyHouseFoodConsumption(
         createFoodStock({ wheat: 2, carrot: 5, cabbage: 5, food: 12 }),
         4
       );
 
-      expect(result.consumed).toEqual({ wheat: 2, carrot: 2, cabbage: 0 });
+      expect(result.consumed).toEqual({
+        fruit: 0,
+        game: 0,
+        wheat: 2,
+        carrot: 2,
+        cabbage: 0,
+      });
       expect(result.demand).toBe(4);
       expect(result.unfed).toBe(0);
       expect(result.nextStock.wheat).toBe(0);
@@ -103,7 +138,13 @@ describe('Supply — house consumption', () => {
         3
       );
 
-      expect(result.consumed).toEqual({ wheat: 1, carrot: 0, cabbage: 0 });
+      expect(result.consumed).toEqual({
+        fruit: 0,
+        game: 0,
+        wheat: 1,
+        carrot: 0,
+        cabbage: 0,
+      });
       expect(result.unfed).toBe(2);
     });
   });
@@ -130,7 +171,13 @@ describe('Supply — house consumption', () => {
 
       expect(outcome.consumed).toBe(true);
       expect(outcome.pop).toBe(4);
-      expect(outcome.crops).toEqual({ wheat: 2, carrot: 2, cabbage: 0 });
+      expect(outcome.crops).toEqual({
+        fruit: 0,
+        game: 0,
+        wheat: 2,
+        carrot: 2,
+        cabbage: 0,
+      });
       expect(outcome.unfed).toBe(0);
 
       const updated = await repo.findById('House-Blue-1-2');
@@ -170,16 +217,26 @@ describe('Supply — house consumption', () => {
       expect((await repo.findById('House-Blue-1-2')).stocks.wheat).toBe(5);
     });
 
-    test('skips level 1 (autarkic) houses — they self-produce via HouseSubsistencePolicy instead', async () => {
+    test('level 1 houses consume gathering stocks after monthly production', async () => {
       repo = new InMemorySupplyBuildingRepository([
-        house('House-Blue-1-2', { pop: 4, level: 1, stocks: { wheat: 5, food: 5 } }),
+        house('House-Blue-1-2', {
+          pop: 2,
+          level: 1,
+          stocks: { fruit: 2, game: 2, food: 4 },
+        }),
       ]);
       useCase = new ConsumeHouseFood(repo);
 
       const outcome = await useCase.execute({ houseId: 'House-Blue-1-2', monthIndex: 1 });
-      expect(outcome.consumed).toBe(false);
-      expect(outcome.reason).toBe('autarkic_level_1');
-      expect((await repo.findById('House-Blue-1-2')).stocks.wheat).toBe(5);
+      expect(outcome.consumed).toBe(true);
+      expect(outcome.crops).toEqual({
+        fruit: 2,
+        game: 0,
+        wheat: 0,
+        carrot: 0,
+        cabbage: 0,
+      });
+      expect((await repo.findById('House-Blue-1-2')).stocks.food).toBe(2);
     });
   });
 

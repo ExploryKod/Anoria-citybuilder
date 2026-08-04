@@ -1,8 +1,8 @@
-import { computeSubsistenceFoodCredit } from '../../../domain/policies/HouseSubsistencePolicy.js';
+import { computeMonthlyGatheringCredit } from '../../../domain/policies/HouseSubsistencePolicy.js';
 
 /**
- * Command: level 1 (autarky) house produces its own subsistence food for the
- * month — bypasses farms/markets entirely (see `HouseSubsistencePolicy`).
+ * Command: inhabited house gains monthly foraged fruit and hunted game —
+ * bypasses farms/markets entirely (see `HouseSubsistencePolicy`).
  */
 export class ProduceHouseSubsistenceFood {
   /**
@@ -21,7 +21,7 @@ export class ProduceHouseSubsistenceFood {
    *   reason?: string,
    *   houseId?: string,
    *   pop?: number,
-   *   credited?: number,
+   *   credited?: { fruit: number, game: number },
    *   food?: number,
    * }>}
    */
@@ -29,10 +29,6 @@ export class ProduceHouseSubsistenceFood {
     const house = await this.supplyBuildingRepository.findById(houseId);
     if (!house) {
       return { produced: false, reason: 'house_not_found' };
-    }
-
-    if ((house.level ?? 1) !== 1) {
-      return { produced: false, reason: 'not_autarkic' };
     }
 
     const month = Number.isFinite(monthIndex) ? Math.floor(monthIndex) : 0;
@@ -45,7 +41,7 @@ export class ProduceHouseSubsistenceFood {
       return { produced: false, reason: 'no_population' };
     }
 
-    const { nextStock, credited } = computeSubsistenceFoodCredit({
+    const { nextStock, credited } = computeMonthlyGatheringCredit({
       pop,
       stocks: house.stocks,
     });

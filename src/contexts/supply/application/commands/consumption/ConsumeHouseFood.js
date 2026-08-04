@@ -5,8 +5,9 @@ import {
 /**
  * Command: house consumes food baskets for its population (once per month).
  *
- * Level 1 (autarky) houses are fed directly via `ProduceHouseSubsistenceFood`
- * (bypasses farms/markets) and never participate in basket accounting here.
+ * Consumption draws from gathering stocks (fruit, game) first, then market
+ * crops (wheat, carrot, cabbage). Gathering is credited earlier in the
+ * monthly cycle via `ProduceHouseSubsistenceFood`.
  */
 export class ConsumeHouseFood {
   /**
@@ -27,6 +28,7 @@ export class ConsumeHouseFood {
    *   pop?: number,
    *   demand?: number,
    *   unfed?: number,
+   *   consumedByCategory?: Record<string, number>,
    *   crops?: Record<string, number>,
    * }>}
    */
@@ -34,10 +36,6 @@ export class ConsumeHouseFood {
     const house = await this.supplyBuildingRepository.findById(houseId);
     if (!house) {
       return { consumed: false, reason: 'house_not_found' };
-    }
-
-    if ((house.level ?? 1) === 1) {
-      return { consumed: false, reason: 'autarkic_level_1' };
     }
 
     const month = Number.isFinite(monthIndex) ? Math.floor(monthIndex) : 0;
@@ -50,7 +48,7 @@ export class ConsumeHouseFood {
       return { consumed: false, reason: 'no_population' };
     }
 
-    const { nextStock, consumed, demand, unfed } = applyHouseFoodConsumption(
+    const { nextStock, consumed: consumedByCategory, demand, unfed } = applyHouseFoodConsumption(
       house.stocks,
       pop
     );
@@ -66,7 +64,8 @@ export class ConsumeHouseFood {
       pop,
       demand,
       unfed,
-      crops: consumed,
+      consumedByCategory,
+      crops: { ...consumedByCategory },
     };
   }
 }

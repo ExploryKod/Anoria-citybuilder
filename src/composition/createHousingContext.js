@@ -6,6 +6,7 @@ import { EvolveHouseBuilding } from '../contexts/housing/application/commands/ev
 import { EvolveAllHouseBuildings } from '../contexts/housing/application/commands/evolution/EvolveAllHouseBuildings.js';
 import { GetCityPopulationSummary } from '../contexts/housing/application/queries/GetCityPopulationSummary.js';
 import { GetFamishedPopulation } from '../contexts/housing/application/queries/GetFamishedPopulation.js';
+import { GetCityFoodSupply } from '../contexts/housing/application/queries/GetCityFoodSupply.js';
 import { GetResidentialHouseAtTile } from '../contexts/housing/application/queries/GetResidentialHouseAtTile.js';
 import { EvaluateHouseFoodAffluence } from '../contexts/housing/application/queries/EvaluateHouseFoodAffluence.js';
 import { PreviewHouseEvolution } from '../contexts/housing/application/queries/PreviewHouseEvolution.js';
@@ -43,6 +44,9 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
   const getFamishedPopulationQuery = new GetFamishedPopulation(
     housingBuildingRepositoryImpl
   );
+  const getCityFoodSupplyQuery = new GetCityFoodSupply(
+    housingBuildingRepositoryImpl
+  );
   const evaluateHouseFoodAffluenceQuery = new EvaluateHouseFoodAffluence();
   const previewHouseEvolutionQuery = new PreviewHouseEvolution();
 
@@ -55,6 +59,7 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
     getCityPopulationSummaryQuery,
     getResidentialHouseAtTileQuery,
     getFamishedPopulationQuery,
+    getCityFoodSupplyQuery,
     evaluateHouseFoodAffluenceQuery,
     previewHouseEvolutionQuery,
 
@@ -86,6 +91,10 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
 
     async getFamishedPopulation() {
       return getFamishedPopulationQuery.execute();
+    },
+
+    async getCityFoodSupply() {
+      return getCityFoodSupplyQuery.execute();
     },
 
     async clearPopulationWithoutRoadAccess() {

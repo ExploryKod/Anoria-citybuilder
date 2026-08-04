@@ -1,31 +1,57 @@
-import { basketsPerCitizenPerMonth } from './HouseConsumptionPolicy.js';
 import { createFoodStock } from '../value-objects/FoodStock.js';
 
+/** Baskets of foraged fruit credited per inhabitant each month. */
+export function fruitBasketsPerCitizenPerMonth() {
+  return 1;
+}
+
+/** Baskets of hunted game credited per inhabitant each month. */
+export function gameBasketsPerCitizenPerMonth() {
+  return 1;
+}
+
 /**
- * Level 1 (autarky / hunter-gatherer) houses feed themselves directly —
- * bypassing farms/markets entirely. Each month, `stocks.food` is topped up
- * (never reduced) to at least that month's need, so famished-population and
- * affluence reads (which use raw `stocks.food`) never report hunger for
- * these houses. No new crop type / basket accounting: crops (wheat, carrot,
- * cabbage) are intentionally left untouched — see `CropType.js`/`FoodStock.js`.
+ * Monthly cueillette & chasse — independent from farms and markets.
+ * Each inhabited house gains fruit and game baskets for every resident.
  *
  * @param {object} params
  * @param {number} params.pop
- * @param {import('../value-objects/FoodStocks.js').FoodStocks | null | undefined} params.stocks
+ * @param {import('../value-objects/FoodStock.js').ReturnType<typeof createFoodStock> | null | undefined} params.stocks
  * @returns {{
  *   nextStock: ReturnType<typeof createFoodStock>,
- *   credited: number,
+ *   credited: { fruit: number, game: number },
  * }}
  */
-export function computeSubsistenceFoodCredit({ pop, stocks }) {
+export function computeMonthlyGatheringCredit({ pop, stocks }) {
   const population = Number.isFinite(pop) ? Math.max(0, Math.floor(pop)) : 0;
-  const needed = population * basketsPerCitizenPerMonth();
   const current = createFoodStock(stocks);
 
-  if (needed <= current.food) {
-    return { nextStock: current, credited: 0 };
+  if (population <= 0) {
+    return { nextStock: current, credited: { fruit: 0, game: 0 } };
   }
 
-  const nextStock = createFoodStock({ ...current, food: needed });
-  return { nextStock, credited: needed - current.food };
+  const fruitAdded = population * fruitBasketsPerCitizenPerMonth();
+  const gameAdded = population * gameBasketsPerCitizenPerMonth();
+
+  const nextStock = createFoodStock({
+    wheat: current.wheat,
+    carrot: current.carrot,
+    cabbage: current.cabbage,
+    fruit: current.fruit + fruitAdded,
+    game: current.game + gameAdded,
+  });
+
+  return {
+    nextStock,
+    credited: { fruit: fruitAdded, game: gameAdded },
+  };
+}
+
+/** @deprecated Use computeMonthlyGatheringCredit */
+export function computeSubsistenceFoodCredit({ pop, stocks }) {
+  const { nextStock, credited } = computeMonthlyGatheringCredit({ pop, stocks });
+  return {
+    nextStock,
+    credited: credited.fruit + credited.game,
+  };
 }

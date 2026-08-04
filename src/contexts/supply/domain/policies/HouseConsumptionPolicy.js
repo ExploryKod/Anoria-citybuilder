@@ -1,17 +1,20 @@
 import { CROPS } from '../value-objects/CropType.js';
 import {
   createFoodStock,
-  getCropAmount,
-  takeCrop,
+  getFoodCategoryAmount,
+  takeFoodCategory,
 } from '../value-objects/FoodStock.js';
 
-/** @typedef {'wheat' | 'carrot' | 'cabbage'} Crop */
+/** @typedef {import('../value-objects/FoodStock.js').FoodCategory} FoodCategory */
 
-/** Priority order when a house consumes food baskets. */
+/**
+ * Priority when a house consumes food baskets:
+ * gathering (fruit, game) first, then market crops.
+ */
 export const HOUSE_FOOD_CONSUMPTION_ORDER = Object.freeze([
-  'wheat',
-  'carrot',
-  'cabbage',
+  'fruit',
+  'game',
+  ...CROPS,
 ]);
 
 /** One basket per citizen per month. */
@@ -24,7 +27,7 @@ export function basketsPerCitizenPerMonth() {
  * @param {number} population
  * @returns {{
  *   nextStock: ReturnType<typeof createFoodStock>,
- *   consumed: Record<Crop, number>,
+ *   consumed: Record<FoodCategory, number>,
  *   demand: number,
  *   unfed: number,
  * }}
@@ -34,16 +37,22 @@ export function applyHouseFoodConsumption(stock, population) {
   const demand = pop * basketsPerCitizenPerMonth();
   let remaining = demand;
   let nextStock = createFoodStock(stock);
-  /** @type {Record<Crop, number>} */
-  const consumed = { wheat: 0, carrot: 0, cabbage: 0 };
+  /** @type {Record<FoodCategory, number>} */
+  const consumed = {
+    fruit: 0,
+    game: 0,
+    wheat: 0,
+    carrot: 0,
+    cabbage: 0,
+  };
 
-  for (const crop of HOUSE_FOOD_CONSUMPTION_ORDER) {
+  for (const category of HOUSE_FOOD_CONSUMPTION_ORDER) {
     if (remaining <= 0) break;
-    const available = getCropAmount(nextStock, crop);
+    const available = getFoodCategoryAmount(nextStock, category);
     const taken = Math.min(remaining, available);
     if (taken <= 0) continue;
-    consumed[crop] = taken;
-    nextStock = takeCrop(nextStock, crop, taken);
+    consumed[category] = taken;
+    nextStock = takeFoodCategory(nextStock, category, taken);
     remaining -= taken;
   }
 
@@ -55,7 +64,10 @@ export function applyHouseFoodConsumption(stock, population) {
   };
 }
 
-/** @param {Record<Crop, number>} consumed */
+/** @param {Record<FoodCategory, number>} consumed */
 export function totalConsumedBaskets(consumed) {
-  return CROPS.reduce((sum, crop) => sum + (consumed[crop] || 0), 0);
+  return HOUSE_FOOD_CONSUMPTION_ORDER.reduce(
+    (sum, category) => sum + (consumed[category] || 0),
+    0,
+  );
 }

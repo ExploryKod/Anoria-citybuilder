@@ -19,6 +19,12 @@ const GROUP_LABELS = {
     savants: 'Savants',
 };
 
+const GROUP_TITLES = {
+    'artisans-ouvriers': 'Groupe des artisans',
+    commercants: 'Groupe des commerçants',
+    savants: 'Groupe des savants',
+};
+
 const LEVEL_1_LABEL = 'Chasseurs-cueilleurs';
 
 /**
@@ -33,6 +39,11 @@ export function residentialGroupForType(buildingType) {
         buildingType.startsWith(key)
     );
     return matchKey ? RESIDENTIAL_GROUP_BY_TYPE[matchKey] : null;
+}
+
+/** @param {string} group @returns {string} */
+export function getResidentialGroupTitle(group) {
+    return GROUP_TITLES[group] || `Groupe des ${getResidentialGroupLabel(group).toLowerCase()}`;
 }
 
 /** @param {string} group @returns {string} */

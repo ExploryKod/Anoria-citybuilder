@@ -10,8 +10,9 @@ describe('EvaluateHouseFoodAffluence', () => {
   const query = new EvaluateHouseFoodAffluence();
 
   describe('total food', () => {
-    test('sums all crop types', () => {
+    test('sums gathering and market crop types', () => {
       expect(query.execute({ stocks: { wheat: 2, carrot: 3, cabbage: 1 }, population: 0 }).totalFood).toBe(6);
+      expect(query.execute({ stocks: { fruit: 2, game: 3 }, population: 0 }).totalFood).toBe(5);
     });
 
     test('partial stocks', () => {
