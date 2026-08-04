@@ -392,6 +392,14 @@ canvas.pointer-events-disabled {
     pointer-events: none;
 }
 
+.toolbar .toolbar-btn .tool-emoji,
+.panel-layout .panel-btn .tool-emoji {
+    font-size: 1.25rem;
+    line-height: 1;
+    display: inline-block;
+    pointer-events: none;
+}
+
 .toolbar-btn:active {
    box-shadow: 0 0 10px #000235;
 }

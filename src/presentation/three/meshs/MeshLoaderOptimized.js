@@ -29,14 +29,61 @@ class MeshLoaderOptimized {
     toolIds = {
         zones: ['grass'],
         houses: ['House-Blue', 'House-Red', 'House-Purple'],
-        tombs: ['Tombstone-1', 'Tombstone-2', 'Tombstone-3'],
-        farms: ['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage'],
-        industry: ['Windmill-001', 'Barn-001', 'Crate-001', 'Winery-001'],
-        markets: ['Market-Stall'],
-        infrastructure: ['Well-001', 'Fountain-001', 'Streetlight-001', 'roads', 'StonePath-001', 'StonePath-Right-001', 'StonePath-Left-001', 'StonePath-Cross-001'],
-        public: ['Church-002'],
+        tombs: ['Tombstone-1', 'Tombstone-2', 'Tombstone-3', 'Grave-1', 'Grave-2', 'Tomb', 'Coffin'],
+        farms: [
+            'Farm-Wheat',
+            'Farm-Carrot',
+            'Farm-Cabbage',
+            'Hay-Bale',
+            'Hay-Cart',
+            'Hay-Pile',
+        ],
+        industry: [
+            'Windmill-001',
+            'Barn-001',
+            'Crate-001',
+            'Winery-001',
+            'Cylinder',
+        ],
+        markets: ['Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red'],
+        infrastructure: [
+            'Well-001',
+            'Fountain-001',
+            'Streetlight-001',
+            'roads',
+            'StonePath-001',
+            'StonePath-Right-001',
+            'StonePath-Left-001',
+            'StonePath-Cross-001',
+            'Fence-001',
+            'Pond-001',
+            'Plane-001',
+            'Plane-004',
+            'Plane-007',
+            'Cube',
+            'Sphere-001',
+            'Sphere-002',
+        ],
+        public: ['Chapel', 'BookShop-001'],
         palaces: ['House-2Story'],
-        nature: ['Tree-Pine-001', 'Tree-Square-001', 'Tree-Tall-001', 'Tree-Sapin', 'Tree-Arbuste', 'Tree-Chene', 'Boulder-001']
+        nature: [
+            'Tree-Pine-001',
+            'Tree-Square-001',
+            'Tree-Tall-001',
+            'Boulder-001',
+        ],
+        decoration: [
+            'Bench',
+            'Picnic-Table',
+            'Potted-Bush',
+            'Daisy',
+            'Shroom',
+            'Arch',
+            'Obelisk',
+            'Pillar',
+            'Garland',
+            'Barrell',
+        ],
     }
 
     allAssetsNames = [
@@ -48,40 +95,45 @@ class MeshLoaderOptimized {
         { infrastructure: [] },
         { public: [] },
         { palaces: [] },
-        { other: [] }
+        { tombs: [] },
+        { decoration: [] },
+        { other: [] },
     ];
 
     buttonData = [];
     modelsObj = {
-        'houses': {},
-        'tombs': {},
-        'farms': {},
-        'industry': {},
-        'markets': {},
-        'infrastructure': {},
-        'public': {},
-        'palaces': {},
-        'nature': {}
+        houses: {},
+        tombs: {},
+        farms: {},
+        industry: {},
+        markets: {},
+        infrastructure: {},
+        public: {},
+        palaces: {},
+        nature: {},
+        decoration: {},
     }
 
     modelMetas = {
-        'houses': { size: 0.5 },
-        'tombs': { size: 0.5 },
-        'farms': { size: 1 },
-        'industry': { size: 0.5 },
-        'markets': { size: 0.7 },
-        'infrastructure': { size: 0.8 },
-        'public': { size: 0.8 },
-        'palaces': { size: 0.5 },
-        'nature': { size: 0.5 }
+        houses: { size: 0.5 },
+        tombs: { size: 0.5 },
+        farms: { size: 1 },
+        industry: { size: 0.5 },
+        markets: { size: 0.7 },
+        infrastructure: { size: 0.8 },
+        public: { size: 0.8 },
+        palaces: { size: 0.5 },
+        nature: { size: 0.5 },
+        decoration: { size: 0.5 },
     }
 
     // Per-asset size overrides (for assets that need different size than their category)
     assetSizeOverrides = {
-        'Windmill-001': 0.5,  // Windmills should match one case size like houses
-        'Church-002': 0.2,
+        'Windmill-001': 0.5, // Windmills should match one case size like houses
+        // Wheat silo: industry default 0.5 × 10
+        Cylinder: 5,
         'Winery-001': 0.009,
-        'BookShop-001': 0.002
+        'BookShop-001': 0.002,
     }
 
     assetNames = [];
@@ -100,7 +152,8 @@ class MeshLoaderOptimized {
             infrastructure: new Set(),
             public: new Set(),
             palaces: new Set(),
-            nature: new Set()
+            nature: new Set(),
+            decoration: new Set(),
         };
     }
 
@@ -130,14 +183,15 @@ class MeshLoaderOptimized {
             infrastructure: new Set(),
             public: new Set(),
             palaces: new Set(),
-            nature: new Set()
+            nature: new Set(),
+            decoration: new Set(),
         };
 
         // Build catalog mappings
         // Map JSON categories to our internal categories
         const categoryMapping = {
-            'vegetation': 'nature',  // Map vegetation to nature
-            'decoration': 'nature'   // Map decoration (boulders, benches) to nature
+            vegetation: 'nature',
+            tombstones: 'tombs',
         };
         
         Object.entries(assetCatalog.assets).forEach(([jsonCategory, data]) => {
@@ -145,14 +199,18 @@ class MeshLoaderOptimized {
             const internalCategory = categoryMapping[jsonCategory] || jsonCategory;
             
             data.mesh_names?.forEach(meshName => {
+                // Parse mesh name to tool name (null = discarded mesh)
+                const toolName = this._parseMeshNameToToolName(meshName);
+                if (!toolName) {
+                    return;
+                }
+
                 this.validMeshNames.add(meshName);
                 // Add to the internal category set
                 if (this.categoryMeshSets[internalCategory]) {
                     this.categoryMeshSets[internalCategory].add(meshName);
                 }
                 
-                // Parse mesh name to tool name
-                const toolName = this._parseMeshNameToToolName(meshName);
                 this.meshToToolName.set(meshName, toolName);
                 
                 // Special handling: StonePath meshes should be in 'infrastructure' category
@@ -164,23 +222,39 @@ class MeshLoaderOptimized {
                 if (toolName === 'Boulder-001' && this.categoryMeshSets['nature']) {
                     this.categoryMeshSets['nature'].add(meshName);
                 }
-                
-                // Track which category this tool belongs to (use internal category)
-                if (this.toolIds[internalCategory]?.includes(toolName)) {
-                    this.toolToCategory.set(toolName, internalCategory);
+
+                // Crate lives under industry tools (also listed in JSON decoration)
+                if (toolName === 'Crate-001' && this.categoryMeshSets['industry']) {
+                    this.categoryMeshSets['industry'].add(meshName);
+                }
+
+                // Wheat silos: Cylinder* → single industry tool (JSON lists them under infrastructure)
+                if (toolName === 'Cylinder' && this.categoryMeshSets['industry']) {
+                    this.categoryMeshSets['industry'].add(meshName);
                 }
                 
-                // Also track if it belongs to 'infrastructure' category
-                if (this.toolIds['infrastructure']?.includes(toolName)) {
-                    this.toolToCategory.set(toolName, 'infrastructure');
-                }
-                
-                // Also track if it belongs to 'nature' category
-                if (this.toolIds['nature']?.includes(toolName)) {
-                    this.toolToCategory.set(toolName, 'nature');
+                // Track which category this tool belongs to (use toolIds, not JSON folder)
+                for (const [cat, ids] of Object.entries(this.toolIds)) {
+                    if (ids.includes(toolName)) {
+                        this.toolToCategory.set(toolName, cat);
+                    }
                 }
             });
         });
+    }
+
+    /** Prefer canonical colored house meshes over numbered variants. */
+    _houseMeshPriority(meshName, toolName) {
+        const base = meshName.split('_Material')[0];
+        const canonical = {
+            'House-Blue': 'House_Blue',
+            'House-Red': 'House_Red',
+            'House-Purple': 'House_Purple',
+        };
+        const preferred = canonical[toolName];
+        if (!preferred) return 0;
+        if (base === preferred) return 2;
+        return 0;
     }
 
     /**
@@ -189,7 +263,19 @@ class MeshLoaderOptimized {
     _parseMeshNameToToolName(meshName) {
         // Remove _MaterialXXX_X suffix
         const baseName = meshName.split('_Material')[0];
-        
+
+        // Discard broken Church002 mesh (duplicate of Chapel, wrong scale)
+        if (baseName === 'Church002' || baseName === 'Church_002') {
+            return null;
+        }
+
+        // Numbered primitives: Plane/Sphere keep index; Cube + Cylinder pool to one tool
+        const numberedPrim = baseName.match(/^(Plane|Cylinder|Sphere|Cube)(\d+)$/);
+        if (numberedPrim) {
+            if (numberedPrim[1] === 'Cube') return 'Cube';
+            if (numberedPrim[1] === 'Cylinder') return 'Cylinder';
+            return `${numberedPrim[1]}-${numberedPrim[2].padStart(3, '0')}`;
+        }
         // Check if base name or any variant needs special mapping (check BEFORE standard parsing)
         // Sort mappings by length (descending) to check most specific first
         const sortedMappings = Object.entries(meshNameMapping).sort((a, b) => b[0].length - a[0].length);
@@ -200,8 +286,12 @@ class MeshLoaderOptimized {
                 return mappedName;
             }
             // Check if it starts with variant (for numbered variants like House_2Story_Purple001)
-            if (baseName.startsWith(variant)) {
-                return mappedName;
+            // Avoid short prefixes that collide (e.g. Tomb vs Tombstone)
+            if (variant.length >= 4 && baseName.startsWith(variant)) {
+                const next = baseName[variant.length];
+                if (!next || /\d/.test(next) || next === '_') {
+                    return mappedName;
+                }
             }
         }
         
@@ -209,6 +299,17 @@ class MeshLoaderOptimized {
         if (baseName === 'Tree-Sapin') return 'Tree-Pine-001';
         if (baseName === 'Tree-Arbuste') return 'Tree-Square-001';
         if (baseName === 'Tree-Chene') return 'Tree-Tall-001';
+
+        // House.003 is a Y-up stray duplicate (height along local Y). Canonical
+        // House_Blue / House_Red / House_Purple are Z-up like World — discard this mesh.
+        if (baseName === 'House003' || baseName === 'House.003') {
+            return null;
+        }
+
+        // Bare "House" without color suffix only
+        if (baseName === 'House') {
+            return 'House-Blue';
+        }
         
         // Standard parsing for objects like Farm_Wheat, House_Blue, etc.
         const normalized = baseName.replace(/[.\s]/g, '_');
@@ -227,6 +328,10 @@ class MeshLoaderOptimized {
             if (cleanType === 'Arbuste') return 'Tree-Square-001';
             if (cleanType === 'Chene') return 'Tree-Tall-001';
         }
+
+        // TreeSquare005 / TreeTall001 (no underscore)
+        if (/^TreeSquare\d*$/.test(baseName)) return 'Tree-Square-001';
+        if (/^TreeTall\d*$/.test(baseName)) return 'Tree-Tall-001';
         
         // Special handling for Crate (all variants map to Crate-001)
         if (parts[0] === 'Crate') {
@@ -242,8 +347,27 @@ class MeshLoaderOptimized {
         if (parts[0] === 'StonePath') {
             return 'StonePath-001';
         }
+
+        // Market_Stall_Blue / Market_Stall_Red
+        if (parts[0] === 'Market' && parts[1] === 'Stall') {
+            const color = (parts[2] || '').replace(/\d+$/, '');
+            if (color === 'Blue') return 'Market-Stall-Blue';
+            if (color === 'Red') return 'Market-Stall-Red';
+            return 'Market-Stall';
+        }
+
+        // Grave_1 / Tombstone_1
+        if (parts[0] === 'Grave') {
+            const n = (parts[1] || '').replace(/0+\d*$/, (s) => s[0]) || parts[1];
+            const idx = String(parts[1] || '').match(/^(\d)/);
+            return idx ? `Grave-${idx[1]}` : 'Grave-1';
+        }
+        if (parts[0] === 'Tombstone') {
+            const idx = String(parts[1] || '').match(/^(\d)/);
+            return idx ? `Tombstone-${idx[1]}` : 'Tombstone-1';
+        }
         
-        let toolName = `${parts[0]}-${parts[1] || ''}`;
+        let toolName = `${parts[0]}-${parts[1] || ''}`.replace(/-$/, '');
         
         // Apply mapping if needed
         if (meshNameMapping[toolName]) {
@@ -323,13 +447,14 @@ class MeshLoaderOptimized {
                             return;
                         }
 
-                        // Check if this tool is in our toolIds
-                        if (!toolIds[category]?.includes(toolName)) {
+                        // Prefer the category where this tool is registered in toolIds
+                        const toolCategory = this.toolToCategory.get(toolName) || category;
+                        if (!toolIds[toolCategory]?.includes(toolName)) {
                             return;
                         }
 
                         // Only process if it matches the requested category
-                        if (category !== propertyKey) {
+                        if (toolCategory !== propertyKey) {
                             return;
                         }
                         
@@ -341,16 +466,30 @@ class MeshLoaderOptimized {
                         const secondNamePart = normalized.split('_')[1] || '';
 
 
-                        // Store mesh
-                        modelsObj[propertyKey][toolName] = child;
-                        assetNames.push(toolName);
+                        // Store mesh (prefer canonical House_Blue / House_Red / House_Purple)
+                        const existingMesh = modelsObj[propertyKey][toolName];
+                        if (existingMesh) {
+                            const curPri = this._houseMeshPriority(existingMesh.name, toolName);
+                            const newPri = this._houseMeshPriority(meshName, toolName);
+                            if (newPri <= curPri) {
+                                return;
+                            }
+                        }
 
-                        // Add to button data
-                        buttonData.push({
-                            text: `${firstNamePart} ${secondNamePart}`,
-                            tool: toolName,
-                            group: firstNamePart
-                        });
+                        modelsObj[propertyKey][toolName] = child;
+                        const isNewTool = !assetNames.includes(toolName);
+                        if (isNewTool) {
+                            assetNames.push(toolName);
+                        }
+
+                        // Add to button data (once per tool)
+                        if (isNewTool) {
+                            buttonData.push({
+                                text: `${firstNamePart} ${secondNamePart}`,
+                                tool: toolName,
+                                group: firstNamePart
+                            });
+                        }
 
                         // Add to asset array
                         const assetArray = allAssetsNames.find(a => a[propertyKey]);
