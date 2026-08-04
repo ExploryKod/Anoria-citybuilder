@@ -3,26 +3,78 @@
  */
 
 const BUILDING_TRANSLATIONS = {
-    'grass': 'Herbe',
-    'roads': 'Route',
-    'Road': 'Route',
-    'House-Blue': 'Maison Bleue',
-    'House-Red': 'Maison Rouge',
-    'House-Purple': 'Maison Violette',
+    grass: 'Herbe',
+    roads: 'Route',
+    Road: 'Route',
+    'StonePath-001': 'Chemin de pierre',
+    'StonePath-Right-001': 'Chemin de pierre',
+    'StonePath-Left-001': 'Chemin de pierre',
+    'StonePath-Cross-001': 'Chemin de pierre',
+
+    'House-Blue': 'Maison bleue',
+    'House-Red': 'Maison rouge',
+    'House-Purple': 'Maison violette',
     'House-2Story': 'Palais',
-    'Tombstone-1': 'Tombe',
-    'Tombstone-2': 'Tombe',
-    'Tombstone-3': 'Tombe',
-    'Farm-Wheat': 'Ferme',
-    'Farm-Carrot': 'Ferme',
-    'Farm-Cabbage': 'Ferme',
+
+    'Tombstone-1': 'Pierre tombale',
+    'Tombstone-2': 'Pierre tombale',
+    'Tombstone-3': 'Pierre tombale',
+    'Grave-1': 'Tombe',
+    'Grave-2': 'Tombe',
+    Tomb: 'Tombeau',
+    Coffin: 'Cercueil',
+
+    'Farm-Wheat': 'Champ de blé',
+    'Farm-Carrot': 'Champ de carottes',
+    'Farm-Cabbage': 'Champ de choux',
+    'Hay-Bale': 'Botte de foin',
+    'Hay-Cart': 'Chariot de foin',
+    'Hay-Pile': 'Meule de foin',
+
     'Windmill-001': 'Moulin',
     'Barn-001': 'Grange',
-    'Market-Stall': 'Marché',
+    'Crate-001': 'Caisse',
+    'Winery-001': 'Chai',
+    Cylinder: 'Silo à blé',
+
+    'Market-Stall': 'Étal',
+    'Market-Stall-Blue': 'Étal bleu',
+    'Market-Stall-Red': 'Étal rouge',
+
     'Well-001': 'Puits',
     'Fountain-001': 'Fontaine',
     'Streetlight-001': 'Réverbère',
-    'Church-002': 'Église',
+    'Fence-001': 'Clôture',
+    'Pond-001': 'Étang',
+    'Plane-001': 'Dalle petite',
+    'Plane-004': 'Dalle moyenne',
+    'Plane-007': 'Dalle grande',
+    Cube: 'Bloc',
+    'Sphere-001': 'Sphère',
+    'Sphere-002': 'Sphère sombre',
+
+    Chapel: 'Chapelle',
+    'Church-002': 'Chapelle',
+    'BookShop-001': 'Librairie',
+
+    'Tree-Pine-001': 'Sapin',
+    'Tree-Square-001': 'Arbuste',
+    'Tree-Tall-001': 'Chêne',
+    'Tree-Sapin': 'Sapin',
+    'Tree-Arbuste': 'Arbuste',
+    'Tree-Chene': 'Chêne',
+    'Boulder-001': 'Rocher',
+
+    Bench: 'Banc',
+    'Picnic-Table': 'Table de pique-nique',
+    'Potted-Bush': 'Buisson en pot',
+    Daisy: 'Marguerite',
+    Shroom: 'Champignon',
+    Arch: 'Arche',
+    Obelisk: 'Obélisque',
+    Pillar: 'Pilier',
+    Garland: 'Guirlande',
+    Barrell: 'Tonneau',
 };
 
 export function getBuildingDisplayName(buildingId) {
@@ -35,7 +87,9 @@ export function getBuildingDisplayName(buildingId) {
             return value;
         }
     }
-    return buildingId;
+    return String(buildingId)
+        .replace(/-\d+$/g, '')
+        .replace(/-/g, ' ');
 }
 
 function translateErrorReason(reason) {

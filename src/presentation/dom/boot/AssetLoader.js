@@ -23,8 +23,14 @@ export async function loadGameAssets(assetManager) {
       assetManager.initializeBuildings('infrastructure'),
       assetManager.initializeBuildings('public'),
       assetManager.initializeBuildings('nature'),
+      assetManager.initializeBuildings('decoration'),
+      assetManager.initializeBuildings('tombs'),
       assetManager.initializeBuildings('workshop'),
-    ]).catch(() => {});
+    ])
+      .then(() => {
+        setToolPanelAssets(assetManager.getButtonData(), assetManager.getToolIds());
+      })
+      .catch(() => {});
   };
 
   if (typeof requestIdleCallback !== 'undefined') {
