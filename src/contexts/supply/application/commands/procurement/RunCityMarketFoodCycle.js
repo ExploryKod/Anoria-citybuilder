@@ -1,42 +1,42 @@
 import { isOperational } from '../../../domain/policies/OperationalGatePolicy.js';
 import {
   findHousesInMarketRange,
-  isFarmNeighborRef,
 } from '../../../domain/policies/MarketRangePolicy.js';
 
 /**
- * Orchestration: procurement + distribution for every market in the city.
+ * Orchestration: windmill procurement + distribution for every market in the city.
  */
 export class RunCityMarketFoodCycle {
   /**
    * @param {import('../../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
-   * @param {import('./MarketBuysFromNearbyFarms.js').MarketBuysFromNearbyFarms} marketBuysFromNearbyFarms
+   * @param {import('./MarketBuysFromAssignedWindmill.js').MarketBuysFromAssignedWindmill} marketBuysFromAssignedWindmill
    * @param {import('../distribution/DistributeFoodFromMarketToHouses.js').DistributeFoodFromMarketToHouses} distributeFoodFromMarketToHouses
-   * @param {import('./UpdateMarketFarmProximity.js').UpdateMarketFarmProximity} updateMarketFarmProximity
+   * @param {import('./UpdateMarketWindmillLink.js').UpdateMarketWindmillLink} updateMarketWindmillLink
    * @param {import('../../../infrastructure/presentation/SupplyFoodTraceability.js').SupplyFoodTraceability} traceability
    */
   constructor(
     supplyBuildingRepository,
-    marketBuysFromNearbyFarms,
+    marketBuysFromAssignedWindmill,
     distributeFoodFromMarketToHouses,
-    updateMarketFarmProximity,
+    updateMarketWindmillLink,
     traceability
   ) {
     this.supplyBuildingRepository = supplyBuildingRepository;
-    this.marketBuysFromNearbyFarms = marketBuysFromNearbyFarms;
+    this.marketBuysFromAssignedWindmill = marketBuysFromAssignedWindmill;
     this.distributeFoodFromMarketToHouses = distributeFoodFromMarketToHouses;
-    this.updateMarketFarmProximity = updateMarketFarmProximity;
+    this.updateMarketWindmillLink = updateMarketWindmillLink;
     this.traceability = traceability;
   }
 
   /**
    * @param {object} params
    * @param {string | null} params.season
+   * @param {string | null} [params.month]
    * @param {object} params.timeInfo
    * @param {number} params.maxDistance
    * @returns {Promise<{ marketsProcessed: number }>}
    */
-  async execute({ season, timeInfo, maxDistance = 5 }) {
+  async execute({ season, month = null, timeInfo, maxDistance = 5 }) {
     const markets = await this.supplyBuildingRepository.findMarkets();
     const allBuildings = await this.supplyBuildingRepository.listAllBuildingRows();
     let marketsProcessed = 0;
@@ -46,6 +46,7 @@ export class RunCityMarketFoodCycle {
         market,
         allBuildings,
         season,
+        month,
         timeInfo,
         maxDistance,
       });
@@ -55,7 +56,7 @@ export class RunCityMarketFoodCycle {
     return { marketsProcessed };
   }
 
-  async #processMarket({ market, allBuildings, season, timeInfo, maxDistance }) {
+  async #processMarket({ market, allBuildings, season, month, timeInfo, maxDistance }) {
     const marketRow = await this.supplyBuildingRepository.findBuildingRow(market.id);
     if (!marketRow) return false;
 
@@ -69,43 +70,22 @@ export class RunCityMarketFoodCycle {
       return false;
     }
 
-    const neighbors = marketRow.neighbors || [];
-    const farmsNearby = neighbors.filter(isFarmNeighborRef);
-    const hasFarmsNearby = farmsNearby.length > 0;
-
-    await this.updateMarketFarmProximity.execute({
+    await this.updateMarketWindmillLink.execute({
       marketId: market.id,
-      hasFarmsNearby,
+      hasWindmillLink: Boolean(market.supplyWindmillId),
     });
 
-    if (hasFarmsNearby) {
-      const buyOutcome = await this.marketBuysFromNearbyFarms.execute({
-        marketId: market.id,
-        farmRefs: farmsNearby,
-        season,
-      });
+    const buyOutcome = await this.marketBuysFromAssignedWindmill.execute({
+      marketId: market.id,
+      month,
+    });
 
-      if (buyOutcome.bought) {
-        for (const transfer of buyOutcome.transfers) {
-          await this.supplyBuildingRepository.recordFarmSaleToMarket(
-            transfer.farmId,
-            {
-              year: timeInfo.year ?? 0,
-              month: timeInfo.monthIndex ?? 0,
-              monthName: timeInfo.month || '',
-              turn: timeInfo.turn ?? 0,
-              productType: transfer.crop,
-              quantity: transfer.amount,
-              marketId: market.id,
-            }
-          );
-        }
-        await this.traceability.recordFarmToMarketTransfers(
-          timeInfo,
-          market.id,
-          buyOutcome.transfers
-        );
-      }
+    if (buyOutcome.bought) {
+      await this.traceability.recordWindmillToMarketTransfers(
+        timeInfo,
+        market.id,
+        buyOutcome.transfers
+      );
     }
 
     const housesInRange = findHousesInMarketRange(marketRow, allBuildings, maxDistance);

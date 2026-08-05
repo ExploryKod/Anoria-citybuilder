@@ -1,7 +1,14 @@
 import { resolveHouseEvolution } from '../../../domain/policies/HouseEvolutionPolicy.js';
+import { resolveHouseLevel } from '../../../domain/policies/HouseLevelPolicy.js';
+import { isPalaceHouseType } from '../../../domain/policies/HouseCapacityPolicy.js';
 
 /**
- * Command: evaluate and persist house type evolution for one residential building.
+ * Command: evaluate and persist house progression for one residential building.
+ *
+ * - Palace (`House-2Story`): frozen legacy path — `resolveHouseEvolution`
+ *   (color ladder), unchanged. // TODO(elites)
+ * - Blue/Red/Purple: `HouseLevelPolicy` — color is permanent, only `level`
+ *   (1 <-> 2) evolves.
  */
 export class EvolveHouseBuilding {
   /**
@@ -20,6 +27,8 @@ export class EvolveHouseBuilding {
    *   previousId?: string,
    *   previousType?: string,
    *   targetType?: string,
+   *   previousLevel?: 1 | 2,
+   *   targetLevel?: 1 | 2,
    *   previousPop?: number,
    *   targetPop?: number,
    *   reason?: string,
@@ -31,6 +40,15 @@ export class EvolveHouseBuilding {
       return { changed: false, reason: 'house_not_found' };
     }
 
+    if (isPalaceHouseType(house.type)) {
+      return this.#executePalaceEvolution(house);
+    }
+
+    return this.#executeLevelResolution(house);
+  }
+
+  /** @param {import('../../../domain/HousingBuildingSnapshot.js').HousingBuildingSnapshot} house */
+  async #executePalaceEvolution(house) {
     const resolution = resolveHouseEvolution({
       type: house.type,
       pop: house.pop,
@@ -41,7 +59,7 @@ export class EvolveHouseBuilding {
     if (!resolution.changed) {
       return {
         changed: false,
-        houseId,
+        houseId: house.id,
         previousType: resolution.previousType,
         targetType: resolution.targetType,
         previousPop: resolution.previousPop,
@@ -62,6 +80,48 @@ export class EvolveHouseBuilding {
       previousId,
       previousType: resolution.previousType,
       targetType: resolution.targetType,
+      previousPop: resolution.previousPop,
+      targetPop: resolution.targetPop,
+      reason: resolution.reason,
+    };
+  }
+
+  /** @param {import('../../../domain/HousingBuildingSnapshot.js').HousingBuildingSnapshot} house */
+  async #executeLevelResolution(house) {
+    const resolution = resolveHouseLevel({
+      level: house.level,
+      pop: house.pop,
+      roadCount: house.roadCount,
+    });
+
+    if (!resolution.changed) {
+      return {
+        changed: false,
+        houseId: house.id,
+        previousType: house.type,
+        targetType: house.type,
+        previousLevel: resolution.previousLevel,
+        targetLevel: resolution.targetLevel,
+        previousPop: resolution.previousPop,
+        targetPop: resolution.targetPop,
+        reason: resolution.reason,
+      };
+    }
+
+    await this.repository.applyLevelChange({
+      houseId: house.id,
+      targetLevel: resolution.targetLevel,
+      targetPop: resolution.targetPop,
+    });
+
+    return {
+      changed: true,
+      houseId: house.id,
+      previousId: house.id,
+      previousType: house.type,
+      targetType: house.type,
+      previousLevel: resolution.previousLevel,
+      targetLevel: resolution.targetLevel,
       previousPop: resolution.previousPop,
       targetPop: resolution.targetPop,
       reason: resolution.reason,

@@ -1,14 +1,20 @@
+import { buildingCatalog } from '../../../shared/building-catalog/buildingCatalog.js';
+
 export const HOUSE_TYPE_BLUE = 'House-Blue';
 export const HOUSE_TYPE_RED = 'House-Red';
 export const HOUSE_TYPE_PURPLE = 'House-Purple';
 export const HOUSE_TYPE_PALACE = 'House-2Story';
 
-/** @type {Readonly<Record<string, number>>} */
+/**
+ * @type {Readonly<Record<string, number>>}
+ * Derived from `buildingCatalog` — previously duplicated the price already
+ * declared in `shared/building-catalog/assetsPrices.js`, which could drift.
+ */
 export const RESIDENTIAL_HOUSE_PRICES = Object.freeze({
-  [HOUSE_TYPE_BLUE]: 10,
-  [HOUSE_TYPE_RED]: 10,
-  [HOUSE_TYPE_PURPLE]: 10,
-  [HOUSE_TYPE_PALACE]: 20,
+  [HOUSE_TYPE_BLUE]: buildingCatalog[HOUSE_TYPE_BLUE].construction.price,
+  [HOUSE_TYPE_RED]: buildingCatalog[HOUSE_TYPE_RED].construction.price,
+  [HOUSE_TYPE_PURPLE]: buildingCatalog[HOUSE_TYPE_PURPLE].construction.price,
+  [HOUSE_TYPE_PALACE]: buildingCatalog[HOUSE_TYPE_PALACE].construction.price,
 });
 
 /**

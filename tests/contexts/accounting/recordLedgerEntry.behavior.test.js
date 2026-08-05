@@ -603,19 +603,32 @@ describe('Accounting — RecordLedgerEntry (citizen_tax slice)', () => {
       gameTimePort: new FixedGameTimePort(),
     });
 
+    // Force a fixed 100€/capita rate so this test's hardcoded expectation
+    // (7 habitants × 100€ = 700€) stays meaningful, independent of the real
+    // default (25€, see LocalStorageFiscalSettingsRepository). `addTaxes`
+    // builds a fresh accounting context per call (see accountingOps.js
+    // collectCitizenTaxes), so the rate must be forced at the localStorage
+    // source of truth rather than injected via context deps.
+    localStorage.setItem('citizen_tax_amount', '100');
+
+    // level: 2 — level 1 (autarkic) houses are tax-exempt, see CitizenTaxCollectionPolicy.
     await testDb.houses.bulkPut([
-      { name: 'House-Blue-0-0', type: 'House-Blue', pop: 3 },
-      { name: 'House-Red-1-1', type: 'House-Red', pop: 4 },
+      { name: 'House-Blue-0-0', type: 'House-Blue', pop: 3, level: 2 },
+      { name: 'House-Red-1-1', type: 'House-Red', pop: 4, level: 2 },
     ]);
 
-    const budget = await budgetManager.addTaxes(10);
+    try {
+      const budget = await budgetManager.addTaxes(10);
 
-    expect(budget.totalTaxes).toBe(700);
-    expect(budget.funds).toBe(900);
-    expect(budget.lastTaxYear).toBe(0);
+      expect(budget.totalTaxes).toBe(700);
+      expect(budget.funds).toBe(900);
+      expect(budget.lastTaxYear).toBe(0);
 
-    const entries = await journalManager.getJournalEntries();
-    expect(entries.filter((entry) => entry.type === 'citizen_tax')).toHaveLength(1);
+      const entries = await journalManager.getJournalEntries();
+      expect(entries.filter((entry) => entry.type === 'citizen_tax')).toHaveLength(1);
+    } finally {
+      localStorage.removeItem('citizen_tax_amount');
+    }
   });
 });
 

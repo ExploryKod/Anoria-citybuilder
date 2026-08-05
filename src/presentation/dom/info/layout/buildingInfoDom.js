@@ -1,12 +1,18 @@
 /**
- * DOM helpers for the building info overlay (.info-building__body).
+ * DOM helpers for the building info overlay (foyer / workplace tab panel).
  */
 
+import { getBuildingInfoBody } from './buildingInfoLayout.js';
+
+function getTargetContainer() {
+  return getBuildingInfoBody();
+}
+
 export function makeInfoBuildingText(textContent, isHTMLReset = true, customClass = null) {
-  const infoObjectContent = document.querySelector('.info-building__body');
+  const infoObjectContent = getTargetContainer();
 
   if (!infoObjectContent) {
-    console.warn('there is no info objects content wrapper div with class info-building__body');
+    console.warn('there is no info objects content wrapper div');
     return false;
   }
 
@@ -29,7 +35,7 @@ export function makeInfoBuildingText(textContent, isHTMLReset = true, customClas
  * @param {string} [subtext]
  */
 export function makeInfoKeyValue(label, value, subtext = null) {
-  const infoObjectContent = document.querySelector('.info-building__body');
+  const infoObjectContent = getTargetContainer();
   if (!infoObjectContent) return false;
   const row = document.createElement('div');
   row.className = 'kv-row';
@@ -56,7 +62,7 @@ export function makeInfoKeyValue(label, value, subtext = null) {
 
 /** @param {string} title */
 export function makeInfoSection(title) {
-  const infoObjectContent = document.querySelector('.info-building__body');
+  const infoObjectContent = getTargetContainer();
   if (!infoObjectContent) return false;
   const h = document.createElement('h3');
   h.className = 'info-section-title';

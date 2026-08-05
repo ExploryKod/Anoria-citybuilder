@@ -1,11 +1,18 @@
+import { buildingCatalog } from '../../../../shared/building-catalog/buildingCatalog.js';
+
+/**
+ * Per-building-type maintenance costs derived from `buildingCatalog` where a
+ * real building id exists. `Farm` and `Market` are category-level defaults
+ * (no single building type owns them), so they stay declared locally.
+ */
 const DEFAULT_MAINTENANCE_COSTS = Object.freeze({
-  roads: 2,
-  'House-Blue': 3,
-  'House-Red': 3,
-  'House-Purple': 3,
-  'House-2Story': 3,
-  Farm: 1,
-  Market: 1,
+  roads: buildingCatalog.roads.accounting.maintenance,
+  'House-Blue': buildingCatalog['House-Blue'].accounting.maintenance,
+  'House-Red': buildingCatalog['House-Red'].accounting.maintenance,
+  'House-Purple': buildingCatalog['House-Purple'].accounting.maintenance,
+  'House-2Story': buildingCatalog['House-2Story'].accounting.maintenance,
+  Farm: 2,
+  Market: 2,
 });
 
 export { DEFAULT_MAINTENANCE_COSTS };

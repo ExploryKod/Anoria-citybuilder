@@ -69,3 +69,61 @@ export function isFarmNeighborRef(neighbor) {
     name.includes('Cabbage')
   );
 }
+
+/**
+ * @param {object} neighbor
+ */
+export function isWindmillNeighborRef(neighbor) {
+  const name = neighbor.type || neighbor.name || '';
+  const type = neighbor.type || '';
+  return (
+    name.includes('Windmill') ||
+    name.includes('windmill') ||
+    type.includes('Windmill') ||
+    type.includes('windmill')
+  );
+}
+
+/**
+ * @param {object} neighbor
+ */
+export function isMarketNeighborRef(neighbor) {
+  const name = neighbor.type || neighbor.name || '';
+  const type = neighbor.type || '';
+  return name.includes('Market') || type.includes('Market');
+}
+
+/**
+ * Windmills within Manhattan range of a market with road access.
+ *
+ * @param {{ x?: number, y?: number }} market
+ * @param {object[]} buildings
+ * @param {number} maxDistance
+ * @returns {object[]}
+ */
+export function findWindmillsInMarketRange(market, buildings, maxDistance = 5) {
+  if (!market || market.x == null || market.y == null) {
+    return [];
+  }
+
+  return buildings.filter((windmill) => {
+    const windmillType = windmill.type || '';
+    if (!windmillType.includes('Windmill') && !windmillType.includes('windmill')) {
+      return false;
+    }
+    if (windmill.x == null || windmill.y == null) {
+      return false;
+    }
+    if (
+      !isWithinMarketRange(
+        { x: market.x, y: market.y },
+        { x: windmill.x, y: windmill.y },
+        maxDistance
+      )
+    ) {
+      return false;
+    }
+    const roadCount = windmill.roads ?? windmill.roadCount ?? 0;
+    return roadCount > 0;
+  });
+}

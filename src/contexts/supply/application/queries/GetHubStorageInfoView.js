@@ -92,6 +92,16 @@ export class GetHubStorageInfoView {
         lines,
         totalCapacity,
       }),
+      linkedMarkets: Object.freeze(
+        (buildingRow.linkedMarkets ?? []).map((entry) =>
+          Object.freeze({
+            marketId: entry.marketId,
+            x: entry.x,
+            y: entry.y,
+            allocatedStocks: Object.freeze({ ...entry.allocatedStocks }),
+          })
+        )
+      ),
     });
   }
 }

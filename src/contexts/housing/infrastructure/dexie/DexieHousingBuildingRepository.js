@@ -22,6 +22,7 @@ export class DexieHousingBuildingRepository {
       y: house.y ?? null,
       roadCount: house.roads ?? 0,
       pop: house.pop ?? 0,
+      level: house.level ?? 1,
       lastPopulationGrowthMonth: house.lastPopulationGrowthMonth ?? null,
       stocks: house.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 },
       price: house.price ?? 0,
@@ -109,5 +110,22 @@ export class DexieHousingBuildingRepository {
     });
 
     return { newId: instanceId, previousId: instanceId };
+  }
+
+  /**
+   * Persist a level change (1 <-> 2) for a Blue/Red/Purple house. Unlike
+   * `applyEvolution`, the house `type` (color) never changes here — only
+   * `level` and `pop` (see `HouseLevelPolicy`).
+   *
+   * @param {object} params
+   * @param {string} params.houseId
+   * @param {1 | 2} params.targetLevel
+   * @param {number} params.targetPop
+   */
+  async applyLevelChange({ houseId, targetLevel, targetPop }) {
+    await this.#putFields(houseId, {
+      level: targetLevel,
+      pop: targetPop,
+    });
   }
 }

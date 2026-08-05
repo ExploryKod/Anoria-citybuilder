@@ -15,6 +15,7 @@ import {
     getOrCreateAccountingContext,
     resetAccountingContextForTests,
 } from '../src/composition/createAccountingContext.js';
+import { DEFAULT_INITIAL_FUNDS } from '../src/contexts/accounting/domain/catalogs/TreasuryCatalog.js';
 import { composeLegacyConfigMirror } from '../src/composition/gameConfig.js';
 import appRegistry from '../src/composition/AppRegistry.js';
 import { TimeManager } from '../src/shared/time/TimeManager.js';
@@ -112,14 +113,17 @@ describe('BudgetManager', () => {
             });
         });
 
-        test('crée un budget initial avec les fonds par défaut (200€)', async () => {
+        test('crée un budget initial avec les fonds par défaut (config TreasuryCatalog)', async () => {
             await budgetManager.initialize();
             
             const budget = await budgetManager.getCurrentBudget();
             
-            expect(budget.funds).toBe(200);
-            expect(budget.initialFunds).toBe(200);
-            expect(budget.income).toBe(200);
+            // No explicit startingFunds — falls back to the real configured
+            // default (DEFAULT_INITIAL_FUNDS / VITE_INITIAL_FUNDS), not a
+            // hardcoded literal, so this test tracks the actual config.
+            expect(budget.funds).toBe(DEFAULT_INITIAL_FUNDS);
+            expect(budget.initialFunds).toBe(DEFAULT_INITIAL_FUNDS);
+            expect(budget.income).toBe(DEFAULT_INITIAL_FUNDS);
             expect(budget.turn).toBe(0);
         });
 
@@ -138,18 +142,21 @@ describe('BudgetManager', () => {
         test('ne downgrade pas la trésorerie au-delà du capital initial (config mismatch)', async () => {
             await budgetManager.initialize(5000);
 
+            // Simule une ligne obsolète (session/config précédente avec un
+            // capital plus élevé) : initialFunds ne correspond plus au
+            // défaut courant, mais funds (trésorerie réelle) doit être préservé.
             const budgetData = await testDb.budget.toArray();
             budgetData[0].initialFunds = 5000;
             budgetData[0].income = 0;
             budgetData[0].funds = 5000;
             await testDb.budget.put(budgetData[0]);
 
-            budgetManager.config = { budget: { initialFunds: 200 } };
-
             const budget = await budgetManager.getCurrentBudget();
 
+            // normalizeTreasuryBudgetRow recale initialFunds sur le défaut
+            // courant (DEFAULT_INITIAL_FUNDS) sans jamais toucher à funds.
             expect(budget.funds).toBe(5000);
-            expect(budget.initialFunds).toBe(200);
+            expect(budget.initialFunds).toBe(DEFAULT_INITIAL_FUNDS);
         });
 
         test('réinitialise le budget (efface les données existantes)', async () => {
@@ -431,19 +438,33 @@ describe('BudgetManager', () => {
     describe('addTaxes', () => {
         
         beforeEach(async () => {
+            // Force a fixed 100€/capita rate so this suite's hardcoded
+            // expectations (7 habitants × 100€ = 700€) stay meaningful,
+            // independent of the real default (25€, see
+            // LocalStorageFiscalSettingsRepository). `addTaxes` builds a
+            // fresh accounting context per call (see accountingOps.js
+            // collectCitizenTaxes), so the rate must be forced at the
+            // localStorage source of truth rather than injected via context deps.
+            localStorage.setItem('citizen_tax_amount', '100');
+
             await budgetManager.initialize(200);
             
             // Créer des maisons avec population pour les tests
+            // level: 2 — citizen tax only applies to specialized (non-autarkic)
+            // houses; level 1 (hunter-gatherer) is tax-exempt (see
+            // CitizenTaxCollectionPolicy).
             await testDb.houses.bulkPut([
                 {
                     name: 'House-Blue-0-0',
                     type: 'House-Blue',
-                    pop: 3
+                    pop: 3,
+                    level: 2
                 },
                 {
                     name: 'House-Red-1-1',
                     type: 'House-Red',
-                    pop: 4
+                    pop: 4,
+                    level: 2
                 }
             ]);
         });
@@ -521,6 +542,10 @@ describe('BudgetManager', () => {
             const budget = await budgetManager.getCurrentBudget();
             
             expect(budget.totalTaxes).toBe(0);
+        });
+
+        afterEach(() => {
+            localStorage.removeItem('citizen_tax_amount');
         });
     });
 

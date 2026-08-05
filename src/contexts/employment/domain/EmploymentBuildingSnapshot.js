@@ -8,6 +8,7 @@ export function createEmploymentBuildingSnapshot({
   y = null,
   roadCount = 0,
   pop = 0,
+  level = 2,
   worker = 0,
   workerNeed = 0,
   sector = 0,
@@ -23,6 +24,9 @@ export function createEmploymentBuildingSnapshot({
     y: typeof y === 'number' ? y : null,
     roadCount: Number.isInteger(roadCount) ? roadCount : 0,
     pop: Number.isFinite(pop) ? Math.max(0, Math.floor(pop)) : 0,
+    // Houses only (level 1 = autarky, outside the labor pool). Defaults to 2
+    // so non-house workplaces / Palace (no level concept) keep prior behavior.
+    level: level === 1 ? 1 : 2,
     worker: Number.isFinite(worker) ? Math.max(0, Math.floor(worker)) : 0,
     workerNeed: Number.isFinite(workerNeed) ? Math.max(0, Math.floor(workerNeed)) : 0,
     sector: Number.isFinite(sector) ? Math.floor(sector) : 0,

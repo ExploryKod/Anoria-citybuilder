@@ -1,3 +1,4 @@
+export { buildingCatalog, getBuildingDefinition } from './buildingCatalog.js';
 export { assetsPrices } from './assetsPrices.js';
 export {
   houses,

@@ -60,8 +60,8 @@ function farm(id, type, stocks, roadCount = 1) {
 
 describe('Supply — market buying', () => {
   describe('domain policies', () => {
-    test('buying season is autumn only', () => {
-      expect(canMarketBuyFromFarms('autumn')).toBe(true);
+    test('markets no longer buy directly from farms', () => {
+      expect(canMarketBuyFromFarms('autumn')).toBe(false);
       expect(canMarketBuyFromFarms('winter')).toBe(false);
       expect(toSupplySeason('Automne')).toBe('autumn');
       expect(toSupplySeason('Hiver')).toBe('winter');
@@ -105,33 +105,18 @@ describe('Supply — market buying', () => {
       useCase = new MarketBuysFromNearbyFarms(repo);
     });
 
-    test('buys available crops from nearby farms in autumn', async () => {
+    test('no longer buys from farms directly', async () => {
       const outcome = await useCase.execute({
         marketId,
         season: 'autumn',
         farmRefs: [{ instanceId: wheatFarmId }, { instanceId: carrotFarmId }],
       });
 
-      expect(outcome.bought).toBe(true);
-      expect(outcome.totalBaskets).toBe(15);
-      expect(outcome.transfers).toEqual(
-        expect.arrayContaining([
-          { farmId: wheatFarmId, crop: 'wheat', amount: 10 },
-          { farmId: carrotFarmId, crop: 'carrot', amount: 5 },
-        ])
-      );
-
-      const m = await repo.findById(marketId);
-      expect(m.stocks.wheat).toBe(10);
-      expect(m.stocks.carrot).toBe(5);
-      expect(m.stocks.food).toBe(15);
-
-      const wheatFarm = await repo.findById(wheatFarmId);
-      expect(wheatFarm.stocks.wheat).toBe(0);
-      expect(wheatFarm.stocks.food).toBe(0);
+      expect(outcome.bought).toBe(false);
+      expect(outcome.reason).toBe('not_buying_season');
     });
 
-    test('refuses outside autumn', async () => {
+    test('refuses outside autumn as well', async () => {
       const outcome = await useCase.execute({
         marketId,
         season: 'summer',
@@ -158,7 +143,7 @@ describe('Supply — market buying', () => {
       expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(10);
     });
 
-    test('respects market capacity', async () => {
+    test('does not buy when direct farm procurement is disabled', async () => {
       repo = new InMemorySupplyBuildingRepository([
         market(
           marketId,
@@ -175,9 +160,10 @@ describe('Supply — market buying', () => {
         farmRefs: [{ instanceId: wheatFarmId }],
       });
 
-      expect(outcome.totalBaskets).toBe(2);
-      expect((await repo.findById(marketId)).stocks.food).toBe(500);
-      expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(8);
+      expect(outcome.bought).toBe(false);
+      expect(outcome.totalBaskets).toBe(0);
+      expect((await repo.findById(marketId)).stocks.food).toBe(498);
+      expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(10);
     });
 
     test('ignore farm refs without UUID', async () => {

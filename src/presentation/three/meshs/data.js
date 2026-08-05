@@ -80,8 +80,9 @@ export const meshNameMapping = {
     'Streetlight016': 'Streetlight-001',
     'Streetlight017': 'Streetlight-001',
     
-    // Church
-    'Church002': 'Church-002',
+    // Church002 discarded (broken duplicate of Chapel)
+
+    // House.003 discarded (Y-up stray; use House_Blue / House_Red / House_Purple)
     
     // House 2 Story variants
     'House_2Story': 'House-2Story',
@@ -240,5 +241,66 @@ export const meshNameMapping = {
     'StonePath006': 'StonePath-001',
     'StonePath007': 'StonePath-001',
     'StonePath008': 'StonePath-001',
-    'StonePath009': 'StonePath-001'
+    'StonePath009': 'StonePath-001',
+
+    // Markets by color
+    'Market_Stall_Blue': 'Market-Stall-Blue',
+    'Market_Stall_Red': 'Market-Stall-Red',
+
+    // Public
+    'Chapel': 'Chapel',
+    // Church002 intentionally omitted — broken duplicate of Chapel
+
+    // Farm props
+    'Hay_Bale': 'Hay-Bale',
+    'Hay_Cart': 'Hay-Cart',
+    'Hay_Pile': 'Hay-Pile',
+
+    // Infra surfaces / props
+    'Fence': 'Fence-001',
+    'Pond': 'Pond-001',
+    'Plane001': 'Plane-001',
+    'Plane004': 'Plane-004',
+    'Plane007': 'Plane-007',
+    'Well': 'Well-001',
+    'Fountain': 'Fountain-001',
+    'Streetlight': 'Streetlight-001',
+
+    // Wheat silos (all Cylinder* → one tool)
+    'Cylinder007': 'Cylinder',
+    'Cylinder008': 'Cylinder',
+    'Cylinder009': 'Cylinder',
+    'Cylinder011': 'Cylinder',
+    'Cylinder012': 'Cylinder',
+    'Cylinder013': 'Cylinder',
+
+    // Cube / Sphere (Cube* → single Cube tool)
+    'Cube': 'Cube',
+    'Sphere001': 'Sphere-001',
+    'Sphere002': 'Sphere-002',
+
+    // Decoration
+    'Bench': 'Bench',
+    'Picnic_Table': 'Picnic-Table',
+    'Potted_Bush': 'Potted-Bush',
+    'Daisy': 'Daisy',
+    'Shroom': 'Shroom',
+    'Arch': 'Arch',
+    'Obelisk': 'Obelisk',
+    'Pillar': 'Pillar',
+    'Garland': 'Garland',
+    'Barrell': 'Barrell',
+
+    // Cemetery
+    'Grave_1': 'Grave-1',
+    'Grave_2': 'Grave-2',
+    'Tombstone_1': 'Tombstone-1',
+    'Tombstone_2': 'Tombstone-2',
+    'Tombstone_3': 'Tombstone-3',
+    'Tomb': 'Tomb',
+    'Coffin': 'Coffin',
+
+    // Industry
+    'Barn': 'Barn-001',
+    'Windmill': 'Windmill-001',
 };
