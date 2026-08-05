@@ -74,11 +74,6 @@
         <link rel="stylesheet" href="./src/presentation/dom/styles/multiplayer.css">
     </noscript>
 
-    <!-- Tarteaucitron.js - Cookie consent management -->
-    <!-- OPTIMIZATION: Load tarteaucitron after page content to prevent render blocking -->
-    <!-- Moved to end of body to ensure it doesn't block initial render -->
-
-
     <!-- ios support -->
     <link rel="apple-touch-icon" href="public/icons/icon-512x512.png" />
     <meta name="apple-mobile-web-app-status-bar" content="#db4938" />
@@ -3228,99 +3223,6 @@
 <script type="module" src="/src/main.js"></script>
 <script type="module" src="/src/presentation/three/game.js"></script>
 <script type="module" src="/src/presentation/dom/buttons.js"></script>
-
-<!-- Tarteaucitron.js - Cookie consent management -->
-<!-- OPTIMIZATION: Load tarteaucitron after page is interactive to reduce TBT -->
-<!-- Uses requestIdleCallback to defer loading until browser is idle (saves ~410ms TBT) -->
-<script>
-// Defer tarteaucitron loading until page is interactive and browser is idle
-(function() {
-    function loadTarteaucitron() {
-        var script = document.createElement('script');
-        script.src = '/tarteaucitron/tarteaucitron.min.js';
-        script.async = true;
-        script.onload = function() {
-            // Initialize tarteaucitron after script loads
-            if (typeof tarteaucitron !== 'undefined') {
-                // Define test service - According to npm documentation
-                tarteaucitron.services.testcookie = {
-                    "key": "testcookie",
-                    "type": "other",
-                    "name": "Cookie de test",
-                    "needConsent": true,
-                    "cookies": ['test_cookie_anoria'],
-                    "js": function () {
-                        "use strict";
-                        var expiryDate = new Date();
-                        expiryDate.setTime(expiryDate.getTime() + (365 * 24 * 60 * 60 * 1000));
-                        document.cookie = "test_cookie_anoria=test_value; expires=" + expiryDate.toUTCString() + "; path=/";
-                    },
-                    "fallback": function () {
-                        "use strict";
-                    }
-                };
-
-                tarteaucitron.init({
-                    "privacyUrl": "https://github.com/ExploryKod/Anoria-citybuilder/blob/main/src/politique-de-confidentialite.md",
-                    "bodyPosition": "top",
-                    "hashtag": "#tarteaucitron",
-                    "cookieName": "tarteaucitron",
-                    "orientation": "popup",
-                    "groupServices": false,
-                    "showDetailsOnClick": true,
-                    "serviceDefaultState": "wait",
-                    "showAlertSmall": false,
-                    "cookieslist": false,
-                    "cookieslistEmbed": false,
-                    "showIcon": true,
-                    "iconPosition": "BottomRight",
-                    "adblocker": false,
-                    "DenyAllCta" : true,
-                    "AcceptAllCta" : true,
-                    "highPrivacy": true,
-                    "alwaysNeedConsent": false,
-                    "handleBrowserDNTRequest": false,
-                    "removeCredit": false,
-                    "moreInfoLink": true,
-                    "useExternalCss": false,
-                    "useExternalJs": false,
-                    "readmoreLink": "",
-                    "mandatory": true,
-                    "mandatoryCta": true,
-                    "googleConsentMode": true,
-                    "bingConsentMode": true,
-                    "softConsentMode": false,
-                    "dataLayer": false,
-                    "serverSide": false,
-                    "partnersList": false
-                });
-
-                tarteaucitron.user.testcookie = true;
-            }
-        };
-        document.head.appendChild(script);
-    }
-    
-    // Wait for page to be interactive, then use requestIdleCallback
-    if (document.readyState === 'complete') {
-        // Page already loaded, use requestIdleCallback immediately
-        if (typeof requestIdleCallback !== 'undefined') {
-            requestIdleCallback(loadTarteaucitron, { timeout: 3000 });
-        } else {
-            setTimeout(loadTarteaucitron, 2000);
-        }
-    } else {
-        // Wait for page to be interactive first
-        window.addEventListener('load', function() {
-            if (typeof requestIdleCallback !== 'undefined') {
-                requestIdleCallback(loadTarteaucitron, { timeout: 3000 });
-            } else {
-                setTimeout(loadTarteaucitron, 2000);
-            }
-        });
-    }
-})();
-</script>
 
 </body>
 </html>

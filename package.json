@@ -9,15 +9,13 @@
     "preview": "vite preview",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
-    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
-    "copy:tarteaucitron": "mkdir -p public/tarteaucitron && cp node_modules/tarteaucitronjs/tarteaucitron.min.js public/tarteaucitron/ && cp node_modules/tarteaucitronjs/tarteaucitron.services.min.js public/tarteaucitron/ && cp -r node_modules/tarteaucitronjs/lang public/tarteaucitron/ && cp -r node_modules/tarteaucitronjs/css public/tarteaucitron/ && echo '✅ Tarteaucitron files copied successfully'"
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
   },
   "dependencies": {
     "dexie": "^4.0.11",
     "gsap": "^3.13.0",
     "js-toast-notifier": "^1.0.14",
     "stats.js": "^0.17.0",
-    "tarteaucitronjs": "^1.26.0",
     "three": "^0.162.0",
     "uuid": "^14.0.1"
   },
