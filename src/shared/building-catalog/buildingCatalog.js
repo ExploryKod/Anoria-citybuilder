@@ -100,7 +100,7 @@ const RAW_CATALOG = {
     displayName: 'Maison bleue',
     construction: { price: 10, category: 'houses', gridSize: 1 },
     accounting: { maintenance: 6 },
-    residentialGroup: 'commercants',
+    residentialGroup: 'commerçants',
   },
   'House-Red': {
     displayName: 'Maison rouge',

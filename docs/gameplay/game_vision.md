@@ -106,11 +106,10 @@ Chaque maison Bleue/Rouge/Violette progresse **indépendamment de sa couleur** e
 - Le niveau 1 grandit **sans route** (autarcie) ; la route ne conditionne que le passage au niveau 2.
 - Le **Palais** garde son ancienne règle : sans route, sa population retombe à 0.
 
-### Déblocage dans la barre d’outils
+### Barre d’outils — maisons résidentielles
 
-- Au démarrage, seule la maison **Rouge** (artisans-ouvriers) est plaçable ; **Bleue** et **Violette** sont visibles mais grisées.
-- Elles se débloquent dès que **2 maisons Rouge** ont atteint le **niveau 2** (constante ajustable — `RESIDENTIAL_UNLOCK_RED_LEVEL2_THRESHOLD`).
-- La Violette peut aussi se débloquer via l’ancien objectif financier (**5 000 €** de trésorerie) — les deux conditions se cumulent en « ou ».
+- Dès le démarrage, les trois maisons (**Rouge**, **Bleue**, **Violette**) sont **toutes plaçables**.
+- Chaque couleur correspond à un groupe social permanent (artisans, commerçants, savants) ; pas de hiérarchie entre eux.
 
 ---
 

@@ -65,9 +65,9 @@ import {
   evaluatePartnerActivationConditions,
 } from '../contexts/commerce/domain/policies/PartnerActivationPolicy.js';
 import {
-  canPlaceBuildingAtTile,
-  isRoadBuildingType,
-} from '../contexts/construction/domain/policies/FootprintAvailabilityPolicy.js';
+  canPlaceBuildingAtTileWithSupplyRules,
+} from './canPlaceBuildingAtTileWithSupplyRules.js';
+import { isRoadBuildingType } from '../contexts/construction/domain/policies/FootprintAvailabilityPolicy.js';
 import { listRoadPaintCells } from '../contexts/construction/domain/policies/RoadPaintPolicy.js';
 import {
   cycleStonePathOrientationIndex,
@@ -100,7 +100,7 @@ export function createConstructionSessionApi(construction) {
     ensureBuildingEmployeesSchema: (instanceId, buildingType) =>
       construction.ensureBuildingEmployeesSchema(instanceId, buildingType),
 
-    canPlaceBuildingAtTile: (params) => canPlaceBuildingAtTile(params),
+    canPlaceBuildingAtTile: (params) => canPlaceBuildingAtTileWithSupplyRules(params),
     isRoadBuildingType: (buildingType) => isRoadBuildingType(buildingType),
     listRoadPaintCells: (...args) => listRoadPaintCells(...args),
     isStonePathTool: (buildingType) => isStonePathTool(buildingType),

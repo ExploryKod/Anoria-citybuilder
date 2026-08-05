@@ -10,7 +10,16 @@ import { GetCityFoodSupply } from '../contexts/housing/application/queries/GetCi
 import { GetResidentialHouseAtTile } from '../contexts/housing/application/queries/GetResidentialHouseAtTile.js';
 import { EvaluateHouseFoodAffluence } from '../contexts/housing/application/queries/EvaluateHouseFoodAffluence.js';
 import { PreviewHouseEvolution } from '../contexts/housing/application/queries/PreviewHouseEvolution.js';
-import { evaluateResidentialGroupUnlock } from '../contexts/housing/domain/policies/ResidentialGroupUnlockPolicy.js';
+import {
+  evaluateGroupLevel2UnlockStatus,
+  residentialGroupForHouseType,
+  unlockGroupForBuilding,
+} from '../contexts/housing/domain/policies/GroupLevel2PlacementUnlockPolicy.js';
+import {
+  getCitizenSkillsForHouse,
+  houseCitizenHasSkill,
+} from '../contexts/housing/domain/policies/GroupLevel2SkillPolicy.js';
+import { computeHouseCitizenComposition } from '../contexts/housing/domain/policies/HouseCitizenCompositionPolicy.js';
 
 /**
  * Composition root — Housing bounded context.
@@ -114,10 +123,50 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
       });
     },
 
-    /** @returns {Promise<{ unlocked: boolean, redLevel2Count: number, threshold: number }>} */
-    async getResidentialGroupUnlockStatus() {
+    /** @returns {Promise<Readonly<Record<string, boolean>>>} */
+    async getGroupLevel2UnlockStatus() {
       const houses = await housingBuildingRepositoryImpl.findResidentialHouses();
-      return evaluateResidentialGroupUnlock(houses);
+      return evaluateGroupLevel2UnlockStatus(houses);
+    },
+
+    /**
+     * @param {string} buildingId
+     * @returns {string | null}
+     */
+    getPlacementUnlockGroupForBuilding(buildingId) {
+      return unlockGroupForBuilding(buildingId);
+    },
+
+    /**
+     * @param {{ type?: string, level?: number }} house
+     * @returns {ReadonlyArray<string>}
+     */
+    getCitizenSkillsForLaborSource(house) {
+      const level = house.level === 1 ? 1 : 2;
+      return getCitizenSkillsForHouse({
+        level,
+        residentialGroup: residentialGroupForHouseType(house.type),
+      });
+    },
+
+    /**
+     * @param {{ type?: string, level?: number }} house
+     * @param {string} skillKey
+     * @returns {boolean}
+     */
+    citizenProvidesSkill(house, skillKey) {
+      const level = house.level === 1 ? 1 : 2;
+      return houseCitizenHasSkill(
+        { level, residentialGroup: residentialGroupForHouseType(house.type) },
+        skillKey,
+      );
+    },
+
+    /**
+     * @param {{ level: 1 | 2, pop: number, buildingType: string, residentialGroup: string | null }} params
+     */
+    getHouseCitizenComposition(params) {
+      return computeHouseCitizenComposition(params);
     },
   };
 }

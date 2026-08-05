@@ -168,8 +168,8 @@ class GameUI {
     }
 
     /**
-     * Population totale + population active (citoyens actifs, élites, fonctionnaires).
-     * total = activePopulation + chômeurs
+     * Population totale résidentielle (Housing) + détail actifs (Employment).
+     * `totalPopulation` = tous les habitants des maisons (cabanes incluses).
      * @param {number} totalPopulation
      * @param {number} activeCitizenCount
      * @param {number} elitePopulation

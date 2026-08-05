@@ -12,7 +12,7 @@ Cela implique un changement déjà profond
 ----> Le premier niveau : chasseur-cueilleur 
 ----> Nous devons diviser la population en groupes (division social du travail > Durkheim). 
 
-Au début ne sont seulement accessible que les maisons d'artisans-ouvriers dans le panneau des tools : les autres boutons sont présents mais grisés. 
+On peux les mettre toutes au début du jeu (rouge, bleue et violette sélectionnables dès le panneau des outils).
 
 Les artisans-ouvriers 
 niveau 1: pas besoin de route, max x personnes / maison

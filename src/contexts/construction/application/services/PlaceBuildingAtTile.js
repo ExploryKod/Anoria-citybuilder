@@ -19,6 +19,7 @@ export class PlaceBuildingAtTile {
    * @param {() => Promise<{ funds?: number }>} deps.getTreasurySnapshot
    * @param {Record<string, { price?: number, gridSize?: number }>} deps.assetCatalog
    * @param {(buildingId: string, catalog: object) => number | null | undefined} deps.getAssetPrice
+   * @param {(params: { city: object, x: number, y: number, buildingType: string, assetCatalog: object }) => { ok: boolean, reason?: string }} [deps.validatePlacement]
    */
   constructor({
     placeBuildingWithPayment,
@@ -28,6 +29,7 @@ export class PlaceBuildingAtTile {
     getTreasurySnapshot,
     assetCatalog,
     getAssetPrice,
+    validatePlacement = null,
   }) {
     this.placeBuildingWithPayment = placeBuildingWithPayment;
     this.reclaimStaleBuildingRecords = reclaimStaleBuildingRecords;
@@ -36,6 +38,7 @@ export class PlaceBuildingAtTile {
     this.getTreasurySnapshot = getTreasurySnapshot;
     this.assetCatalog = assetCatalog;
     this.getAssetPrice = getAssetPrice;
+    this.validatePlacement = validatePlacement;
     this.pendingPlacements = new Set();
   }
 
@@ -69,6 +72,23 @@ export class PlaceBuildingAtTile {
         reason: placement.reason || 'area_not_available',
         buildingType,
       };
+    }
+
+    if (this.validatePlacement) {
+      const extra = this.validatePlacement({
+        city,
+        x,
+        y,
+        buildingType,
+        assetCatalog: this.assetCatalog,
+      });
+      if (!extra.ok) {
+        return {
+          success: false,
+          reason: extra.reason || 'placement_not_allowed',
+          buildingType,
+        };
+      }
     }
 
     const { gridSize } = placement;

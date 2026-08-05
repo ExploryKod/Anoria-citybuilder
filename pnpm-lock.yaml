@@ -19,6 +19,9 @@ importers:
       gsap:
         specifier: ^3.13.0
         version: 3.13.0
+      js-toast-notifier:
+        specifier: ^1.0.14
+        version: 1.0.14
       stats.js:
         specifier: ^0.17.0
         version: 0.17.0
@@ -2362,6 +2365,9 @@ packages:
   jiti@1.21.7:
     resolution: {integrity: sha512-/imKNG4EbWNrVjoNC/1H5/9GFy+tqjGBHCaSsN+P2RnPqjsLmv6UD3Ej+Kj8nBWaRAwyk7kK5ZUc+OEatnTR3A==}
     hasBin: true
+
+  js-toast-notifier@1.0.14:
+    resolution: {integrity: sha512-Nxam37blJxD9pxOHQqQV2AskRD58s3VrYcGcC6TJD7ZyODFRDQHSrPSZx9+7nbKXjyyYaQjYvOMLJGRiORuRSQ==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -6011,6 +6017,8 @@ snapshots:
       - ts-node
 
   jiti@1.21.7: {}
+
+  js-toast-notifier@1.0.14: {}
 
   js-tokens@4.0.0: {}
 

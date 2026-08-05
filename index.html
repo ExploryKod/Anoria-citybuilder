@@ -202,12 +202,14 @@
                 </header>
                 <div class="info-building__tabs" role="tablist" aria-label="Sections du bâtiment">
                     <button type="button" role="tab" id="tab-foyer" data-tab="foyer" aria-controls="panel-foyer" aria-selected="true" tabindex="0">🏠 Foyer</button>
+                    <button type="button" role="tab" id="tab-diet" data-tab="diet" aria-controls="panel-diet" aria-selected="false" tabindex="-1">🍽️ Régime</button>
                     <button type="button" role="tab" id="tab-services" data-tab="services" aria-controls="panel-services" aria-selected="false" tabindex="-1">🔧 Services</button>
                     <button type="button" role="tab" id="tab-neighbors" data-tab="neighbors" aria-controls="panel-neighbors" aria-selected="false" tabindex="-1">🏘️ Voisins</button>
                     <button type="button" role="tab" id="tab-messages" data-tab="messages" aria-controls="panel-messages" aria-selected="false" tabindex="-1">💬 Messages</button>
                 </div>
                 <div class="info-building__body">
                     <div id="panel-foyer" role="tabpanel" class="info-building__tabpanel is-active" aria-labelledby="tab-foyer" tabindex="0"></div>
+                    <div id="panel-diet" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-diet" tabindex="0" hidden></div>
                     <div id="panel-services" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-services" tabindex="0" hidden></div>
                     <div id="panel-neighbors" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-neighbors" tabindex="0" hidden></div>
                     <div id="panel-messages" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-messages" tabindex="0" hidden></div>

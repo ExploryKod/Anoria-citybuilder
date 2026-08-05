@@ -4,6 +4,7 @@
 
 export const BUILDING_INFO_TABS = Object.freeze({
   foyer: 'foyer',
+  diet: 'diet',
   services: 'services',
   neighbors: 'neighbors',
   messages: 'messages',
@@ -11,6 +12,7 @@ export const BUILDING_INFO_TABS = Object.freeze({
 
 const TAB_LABELS = Object.freeze({
   foyer: '🏠 Foyer',
+  diet: '🍽️ Régime',
   services: '🔧 Services',
   neighbors: '🏘️ Voisins',
   messages: '💬 Messages',
@@ -198,31 +200,57 @@ export function appendIconStatRow(container, items) {
 
 /**
  * @param {HTMLElement} container
- * @param {{ hunters: number, artisans: number }} composition
+ * @param {ReadonlyArray<{ emoji: string, value: number, label: string, ariaLabel: string }>} profiles
  */
-export function appendHouseholdComposition(container, composition) {
+export function appendHouseholdProfiles(container, profiles) {
+  if (!profiles?.length) return null;
+
   const wrap = document.createElement('div');
   wrap.className = 'building-info-household';
 
   const title = document.createElement('h3');
   title.className = 'building-info-section-label';
-  title.textContent = 'Composition du foyer';
+  title.textContent = 'Profils du foyer';
   wrap.appendChild(title);
 
-  appendIconStatRow(wrap, [
-    {
-      emoji: '🏹',
-      value: composition.hunters,
-      label: 'chasseurs',
-      ariaLabel: `${composition.hunters} chasseur${composition.hunters > 1 ? 's' : ''}-cueilleur${composition.hunters > 1 ? 's' : ''} — autarciques, hors impôts et salaires`,
-    },
-    {
-      emoji: '🔨',
-      value: composition.artisans,
-      label: 'artisans',
-      ariaLabel: `${composition.artisans} artisan${composition.artisans > 1 ? 's' : ''} — actifs sur le marché du travail`,
-    },
-  ]);
+  appendIconStatRow(
+    wrap,
+    profiles.map((profile) => ({
+      emoji: profile.emoji,
+      value: profile.count,
+      label: profile.label,
+      ariaLabel: profile.ariaLabel,
+    })),
+  );
+
+  container.appendChild(wrap);
+  return wrap;
+}
+
+/**
+ * @param {HTMLElement} container
+ * @param {ReadonlyArray<{ emoji: string, count: number, label: string, ariaLabel: string }>} skills
+ */
+export function appendHouseholdSkills(container, skills) {
+  if (!skills?.length) return null;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'building-info-skills';
+
+  const title = document.createElement('h3');
+  title.className = 'building-info-section-label';
+  title.textContent = 'Compétences';
+  wrap.appendChild(title);
+
+  appendIconStatRow(
+    wrap,
+    skills.map((skill) => ({
+      emoji: skill.emoji,
+      value: skill.count,
+      label: skill.label,
+      ariaLabel: skill.ariaLabel,
+    })),
+  );
 
   container.appendChild(wrap);
   return wrap;
@@ -260,7 +288,7 @@ export function appendGroupedStockSections(container, groups, options = {}) {
 
   const showSubsistence = groups.showSubsistence !== false && groups.subsistence?.length;
   if (showSubsistence) {
-    groupsRow.appendChild(buildStockGroup('Pastoralisme', groups.subsistence));
+    groupsRow.appendChild(buildStockGroup('Chasse-cueillette', groups.subsistence));
   }
 
   if (groups.farms?.length) {

@@ -91,14 +91,14 @@ describe('Supply — market distribution to houses', () => {
     expect(h1.stocks.food + h2.stocks.food).toBe(6);
   });
 
-  test('refuses in autumn', async () => {
+  test('distributes in autumn as well', async () => {
     const outcome = await useCase.execute({
       marketId,
       season: 'autumn',
       houseRefs: [{ instanceId: house1Id }],
     });
-    expect(outcome.distributed).toBe(false);
-    expect(outcome.reason).toBe('not_distribution_season');
+    expect(outcome.distributed).toBe(true);
+    expect(outcome.totalBaskets).toBe(6);
   });
 
   test('skips houses without road access', async () => {

@@ -4,7 +4,6 @@
 export class RunMonthlyFoodSupplyCycle {
   /**
    * @param {import('../commands/harvest/HarvestAllFarmCrops.js').HarvestAllFarmCrops} harvestAllFarmCrops
-   * @param {import('../commands/procurement/MarkMarketBuyingSeason.js').MarkMarketBuyingSeason} markMarketBuyingSeason
    * @param {import('../commands/procurement/RunCityMarketFoodCycle.js').RunCityMarketFoodCycle} runCityMarketFoodCycle
    * @param {import('../commands/distribution/UpdateHousesMarketReach.js').UpdateHousesMarketReach} updateHousesMarketReach
    * @param {import('../commands/surplus/RunWindmillSurplusCycle.js').RunWindmillSurplusCycle} runWindmillSurplusCycle
@@ -14,7 +13,6 @@ export class RunMonthlyFoodSupplyCycle {
    */
   constructor(
     harvestAllFarmCrops,
-    markMarketBuyingSeason,
     runCityMarketFoodCycle,
     updateHousesMarketReach,
     runWindmillSurplusCycle,
@@ -23,7 +21,6 @@ export class RunMonthlyFoodSupplyCycle {
     produceAllHouseSubsistenceFood
   ) {
     this.harvestAllFarmCrops = harvestAllFarmCrops;
-    this.markMarketBuyingSeason = markMarketBuyingSeason;
     this.runCityMarketFoodCycle = runCityMarketFoodCycle;
     this.updateHousesMarketReach = updateHousesMarketReach;
     this.runWindmillSurplusCycle = runWindmillSurplusCycle;
@@ -49,24 +46,21 @@ export class RunMonthlyFoodSupplyCycle {
       });
     }
 
-    if (season) {
-      await this.markMarketBuyingSeason.execute(season);
-    }
-
-    await this.runCityMarketFoodCycle.execute({
-      season,
-      timeInfo,
-      maxDistance,
-    });
-
-    await this.updateHousesMarketReach.execute({ maxDistance });
-
     await this.runWindmillSurplusCycle.execute({
       month,
       monthIndex: timeInfo.monthIndex,
       dayInMonth: timeInfo.dayInMonth ?? 1,
       year: timeInfo.year ?? 0,
     });
+
+    await this.runCityMarketFoodCycle.execute({
+      season,
+      month,
+      timeInfo,
+      maxDistance,
+    });
+
+    await this.updateHousesMarketReach.execute({ maxDistance });
 
     if (this.produceAllHouseSubsistenceFood) {
       await this.produceAllHouseSubsistenceFood.execute({

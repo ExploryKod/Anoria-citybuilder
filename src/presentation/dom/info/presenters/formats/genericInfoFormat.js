@@ -11,7 +11,7 @@ export function formatGenericLayoutHeader(vm) {
   const def = getBuildingDefinition(vm.buildingType);
   return {
     title: def?.displayName ?? vm.buildingType,
-    meta: `📍 (${vm.anchorX}, ${vm.anchorY}) · 👥 ${vm.buildingPop}`,
+    meta: `📍 (${vm.anchorX}, ${vm.anchorY}) · <span aria-label="${vm.buildingPop} habitants">${vm.buildingPop} hab.</span>`,
     accent: null,
   };
 }

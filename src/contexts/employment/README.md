@@ -66,6 +66,7 @@ sync demand → redistribute → allocate lines.
 - **Housing** (upstream): reads persisted `type` + `pop`; owns `LaborPoolPolicy` locally — see [`docs/boundaries.md`](docs/boundaries.md)
 - **Parcels**: road access via persisted `roadCount` (no Parcels domain import)
 - **Supply**: reads staffing (`worker` / `workerNeed`) from persistence for operational gates — no Employment→Supply coupling
+- **Shared Kernel: Population**: consumes `CitizenStatusCatalog` for labor eligibility rules (`shared/population/`)
 - **ACL**: `src/js/acl/employment.js`
 - **Composition**: `createEmploymentContext.js`, `createGameRuntime.js`
 

@@ -4,16 +4,26 @@
 
 import {
   appendGroupedStockSections,
-  appendHouseholdComposition,
+  appendHouseholdProfiles,
+  appendHouseholdSkills,
   appendLocationFootnote,
   appendStatusMessage,
 } from '../layout/buildingInfoLayout.js';
 
 /**
+ * @typedef {object} HousePopulationDisplayItem
+ * @property {string} emoji
+ * @property {number} count
+ * @property {string} label
+ * @property {string} ariaLabel
+ */
+
+/**
  * @typedef {object} HouseFoyerViewModel
  * @property {string} statusMessage
  * @property {'neutral'|'success'|'warning'|'error'} statusVariant
- * @property {{ hunters: number, artisans: number }} composition
+ * @property {ReadonlyArray<HousePopulationDisplayItem>} profiles
+ * @property {ReadonlyArray<HousePopulationDisplayItem>} skills
  * @property {number} anchorX
  * @property {number} anchorY
  * @property {{
@@ -31,7 +41,8 @@ export function renderHouseFoyerView(container, model) {
   container.innerHTML = '';
 
   appendStatusMessage(container, model.statusMessage, model.statusVariant);
-  appendHouseholdComposition(container, model.composition);
+  appendHouseholdProfiles(container, model.profiles);
+  appendHouseholdSkills(container, model.skills);
 
   if (model.stockGroups) {
     appendGroupedStockSections(container, model.stockGroups);

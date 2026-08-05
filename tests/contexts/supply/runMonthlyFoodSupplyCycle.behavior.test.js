@@ -38,50 +38,7 @@ describe('Supply — RunMonthlyFoodSupplyCycle', () => {
     });
   }
 
-  test('sets isBuying true in autumn', async () => {
-    await seedBuilding(
-      makeHouseRecord({
-        instanceId: marketId,
-        type: 'Market-Stall',
-        x: 5,
-        y: 5,
-        extra: {
-          roads: 1,
-          neighbors: [{ name: 'roads', isRoad: true }],
-          employees: { worker: 2, worker_need: 2 },
-        },
-      })
-    );
-
-    await runAtTime(8);
-
-    const marketData = await getBuildingRow(marketId);
-    expect(marketData.isBuying).toBe(true);
-  });
-
-  test('sets isBuying false outside autumn', async () => {
-    await seedBuilding(
-      makeHouseRecord({
-        instanceId: marketId,
-        type: 'Market-Stall',
-        x: 5,
-        y: 5,
-        extra: {
-          roads: 1,
-          neighbors: [{ name: 'roads', isRoad: true }],
-          employees: { worker: 2, worker_need: 2 },
-          isBuying: true,
-        },
-      })
-    );
-
-    await runAtTime(6);
-
-    const marketData = await getBuildingRow(marketId);
-    expect(marketData.isBuying).toBe(false);
-  });
-
-  test('updates noFarmsNearby on markets', async () => {
+  test('marks marketTooFar when no windmill link exists', async () => {
     await seedBuilding(
       makeHouseRecord({
         instanceId: marketId,
@@ -98,7 +55,28 @@ describe('Supply — RunMonthlyFoodSupplyCycle', () => {
 
     await runAtTime(6);
 
-    expect((await getBuildingRow(marketId)).noFarmsNearby).toBe(true);
+    const marketData = await getBuildingRow(marketId);
+    expect(marketData.marketTooFar).toBe(true);
+  });
+
+  test('clears noFarmsNearby flag on markets', async () => {
+    await seedBuilding(
+      makeHouseRecord({
+        instanceId: marketId,
+        type: 'Market-Stall',
+        x: 5,
+        y: 5,
+        extra: {
+          roads: 1,
+          neighbors: [{ name: 'roads', isRoad: true }],
+          employees: { worker: 2, worker_need: 2 },
+        },
+      })
+    );
+
+    await runAtTime(6);
+
+    expect((await getBuildingRow(marketId)).noFarmsNearby).toBe(false);
 
     const farmNeighborId = createBuildingInstanceId();
     await updateBuildingFields(marketId, {
