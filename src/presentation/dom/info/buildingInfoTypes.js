@@ -63,6 +63,7 @@
  * @property {object | null} supplyView
  * @property {object | null} stocks
  * @property {1 | 2} houseLevel
+ * @property {object | null} lastConsumption
  * @property {object} employment
  * @property {object} supply
  * @property {object} accounting
@@ -118,6 +119,7 @@ export function createBuildingInfoViewModel(params) {
     supplyView,
     stocks,
     houseLevel: buildingRow?.level === 2 ? 2 : 1,
+    lastConsumption: buildingRow?.lastConsumption ?? null,
     employment,
     supply,
     accounting,

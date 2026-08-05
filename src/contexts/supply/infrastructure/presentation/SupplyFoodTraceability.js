@@ -17,6 +17,44 @@ export class SupplyFoodTraceability {
    * @param {string} marketId
    * @param {object[]} transfers
    */
+  async recordWindmillToMarketTransfers(timeInfo, marketId, transfers = []) {
+    if (transfers.length === 0) return;
+
+    const marketData = await this.supplyBuildingRepository.findRowById(marketId);
+    if (!marketData) return;
+
+    for (const transfer of transfers) {
+      const windmillData = await this.supplyBuildingRepository.findRowById(transfer.windmillId);
+      if (!windmillData) continue;
+
+      await this.foodTraceabilityRepository.recordFarmToMarket(
+        timeInfo.turn || 0,
+        timeInfo.monthIndex || 0,
+        timeInfo.year || 0,
+        {
+          id: transfer.windmillId,
+          x: windmillData.x,
+          y: windmillData.y,
+          type: windmillData.type,
+        },
+        {
+          id: marketId,
+          x: marketData.x,
+          y: marketData.y,
+          type: marketData.type,
+        },
+        transfer.crop,
+        transfer.amount,
+        1
+      );
+    }
+  }
+
+  /**
+   * @param {object} timeInfo
+   * @param {string} marketId
+   * @param {object[]} transfers
+   */
   async recordFarmToMarketTransfers(timeInfo, marketId, transfers = []) {
     if (transfers.length === 0) return;
 

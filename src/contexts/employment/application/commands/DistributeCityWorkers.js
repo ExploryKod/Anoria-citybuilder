@@ -8,29 +8,28 @@ import {
   allocateWorkers,
   orderWorkplacesByPriority,
 } from '../../domain/policies/WorkerAllocationPolicy.js';
+import { residentialGroupForType } from '../../domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
 import {
-  allSocialGroups,
-  eligibleSectorsForGroup,
-  residentialGroupForType,
-} from '../../domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
+  allWorkplaceEmploymentSkills,
+  getRequiredSkillForBuilding,
+  residentialGroupForSkill,
+} from '../../domain/policies/WorkplaceSkillRequirementPolicy.js';
 
 /**
  * Command: monthly city-wide worker redistribution.
  *
- * Each social group (artisans-ouvriers / commerçants / savants) runs its own
- * allocation pass over its own labor pool and eligible workplaces (sectors),
- * instead of one flat city-wide pool — groups never compete with each other
- * for jobs.
- *
- * Sector priorities are supplied by the caller (localStorage / config stay outside the BC).
- * Factory productWorkerDistribution sync stays in the legacy facade.
+ * Skill-based recruitment: each pass staffs workplaces that require a given
+ * skill using citizens from the matching social group (via injected Housing port).
  */
 export class DistributeCityWorkers {
   /**
    * @param {import('../ports/EmploymentBuildingRepository.js').EmploymentBuildingRepository} employmentBuildingRepository
+   * @param {object} [deps]
+   * @param {(house: { type?: string, level?: number }, skillKey: string) => boolean} [deps.citizenProvidesSkill]
    */
-  constructor(employmentBuildingRepository) {
+  constructor(employmentBuildingRepository, deps = {}) {
     this.employmentBuildingRepository = employmentBuildingRepository;
+    this.citizenProvidesSkill = deps.citizenProvidesSkill ?? (() => false);
   }
 
   /**
@@ -46,34 +45,36 @@ export class DistributeCityWorkers {
 
     const laborSources = await this.employmentBuildingRepository.listLaborSources();
     const workplaces = (await this.employmentBuildingRepository.listWorkplaces()).filter(
-      (b) => isEligibleWorkplace(b)
+      (b) => isEligibleWorkplace(b),
     );
 
-    // After reset, workers are 0. Tracked locally so a later group's pass
-    // sees the workplaces already filled by an earlier group this tick.
     const workerCountById = new Map(workplaces.map((w) => [w.id, 0]));
     const allAssignments = [];
     let totalAvailableWorkers = 0;
 
-    for (const group of allSocialGroups()) {
-      const eligibleSectors = new Set(eligibleSectorsForGroup(group));
+    for (const skillKey of allWorkplaceEmploymentSkills()) {
+      const group = residentialGroupForSkill(skillKey);
+      if (!group) continue;
 
-      const groupWorkers = laborSources
-        .filter(
-          (b) =>
-            isLaborSource(b) && hasRoadAccess(b) && residentialGroupForType(b.type) === group
-        )
-        .reduce((sum, b) => sum + workerPopFromHouse(b.type, b.pop, b.level), 0);
+      const skillWorkers = laborSources
+        .filter((building) => {
+          if (!isLaborSource(building) || !hasRoadAccess(building)) return false;
+          if (residentialGroupForType(building.type) !== group) return false;
+          return this.citizenProvidesSkill(building, skillKey);
+        })
+        .reduce((sum, building) => sum + workerPopFromHouse(building.type, building.pop, building.level), 0);
 
-      totalAvailableWorkers += groupWorkers;
-      if (groupWorkers <= 0) continue;
+      totalAvailableWorkers += skillWorkers;
+      if (skillWorkers <= 0) continue;
 
-      const groupWorkplaces = workplaces
-        .filter((w) => eligibleSectors.has(w.sector))
-        .map((w) => ({ ...w, worker: workerCountById.get(w.id) ?? 0 }));
+      const skillWorkplaces = workplaces
+        .filter((workplace) => getRequiredSkillForBuilding(workplace.type) === skillKey)
+        .map((workplace) => ({ ...workplace, worker: workerCountById.get(workplace.id) ?? 0 }));
 
-      const ordered = orderWorkplacesByPriority(groupWorkplaces, sectorPriorities);
-      const { assignments } = allocateWorkers(groupWorkers, ordered);
+      if (skillWorkplaces.length === 0) continue;
+
+      const ordered = orderWorkplacesByPriority(skillWorkplaces, sectorPriorities);
+      const { assignments } = allocateWorkers(skillWorkers, ordered);
 
       for (const { buildingId, workers } of assignments) {
         workerCountById.set(buildingId, (workerCountById.get(buildingId) ?? 0) + workers);

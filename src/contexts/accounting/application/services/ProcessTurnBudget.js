@@ -113,16 +113,18 @@ export class ProcessTurnBudget {
 
         const { salaryPerMonth, salaryTaxRate, unemploymentBenefitRate } =
           this.deps.getSalarySettings();
-        const totalPopulation = await this.deps.getCityTotalPopulation();
         const employmentSummary = await this.deps.getCityEmploymentSummary();
+        const payrollPopulation = employmentSummary?.totalPopulation ?? 0;
         const unemployed = employmentSummary?.unemployed ?? 0;
         const eliteCount = employmentSummary?.elitePool ?? 0;
 
-        if (totalPopulation > 0 && salaryPerMonth > 0) {
+        // Payroll uses Employment's labor-pool population (level-2+ workers + élites),
+        // not raw housing headcount — level-1 hunter-gatherers have no salary assiette.
+        if (payrollPopulation > 0 && salaryPerMonth > 0) {
           const yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
           const monthName = timeInfo.month || 'Mois';
           const payroll = computeReferenceSalaryPayrollBreakdown({
-            population: totalPopulation,
+            population: payrollPopulation,
             unemployed,
             eliteCount,
             referenceSalaryPerMonth: salaryPerMonth,

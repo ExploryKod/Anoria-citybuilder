@@ -7,6 +7,8 @@ import { registerAppService, getMultiplayerManager, invokeStartTutorial, getObje
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
 import { syncEmploymentAfterBuildingChange } from '../../composition/syncEmploymentAfterBuildingChange.js';
+import { syncSupplyLinksAfterBuildingChange } from '../../composition/syncSupplyLinksAfterBuildingChange.js';
+import { refreshSupplyPlacementIndex } from '../../contexts/supply/infrastructure/presentation/SupplyPlacementIndex.js';
 import { ensureGameRuntimeBootstrapped } from '../../composition/ensureGameRuntimeBootstrapped.js';
 import { bootGameContexts } from '../../composition/bootGameContexts.js';
 import { bootTreasuryHud } from '../../composition/bootTreasuryHud.js';
@@ -15,7 +17,10 @@ import { runGameTick } from '../../composition/runGameTick.js';
 import { bindSessionRuntime } from '../../composition/sessionRuntime.js';
 import { syncSessionHud } from '../../composition/syncSessionHud.js';
 import { notifyBudgetCleanupIfNeeded } from '../dom/compta/tresorerie/CleanupNotificationPresenter.js';
-import { refreshResidentialGroupGating } from '../dom/shell/ResidentialGroupGating.js';
+import {
+  disableGatedPlacementTools,
+  refreshSkillPlacementGating,
+} from '../dom/shell/SkillPlacementGating.js';
 import { DEFAULT_TICK_MS } from '../../shared/gameplay/SimulationDefaults.js';
 import { GameLoop } from '../../engine/loop/GameLoop.js';
 import {
@@ -36,9 +41,11 @@ import { popupManager } from '../dom/shell/PopupManager.js';
 import {
   showInsufficientFundsNotification,
   showGenericErrorNotification,
+  showWindmillCascadeNotification,
 } from '../dom/shell/BuildingNotifications.js';
 import { presentBuildingInfoSelection } from '../dom/info/presenters/useBuildingInfoSelection.js';
 import { assetsPrices } from '../../shared/building-catalog/index.js';
+import { isWindmillBuildingType, isMarketBuildingType } from '../../shared/building-catalog/BuildingSupplyTypes.js';
 import { createPlacementGhostSession } from './placementGhostSession.js';
 
 ensureGameRuntimeBootstrapped();
@@ -144,6 +151,17 @@ export function createGame(gameStore, assetManager, citySize = null) {
     canPlaceBuildingAtTile,
   });
 
+  disableGatedPlacementTools(getButtonStateManager());
+
+  async function refreshPlacementPresentation() {
+    const rows = await constructionApi.listAllBuildingRows();
+    refreshSupplyPlacementIndex(rows);
+    await refreshSkillPlacementGating({
+      housing,
+      buttonStateManager: getButtonStateManager(),
+    });
+  }
+
   bindGameUIDeps({ getScene: () => scene });
 
   bindSessionRuntime({
@@ -160,7 +178,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
     sessionApi,
   });
 
-  scene.initialize(city).then(() => {
+  scene.initialize(city).then(async () => {
+    await refreshPlacementPresentation();
     loaderManager.hide(500);
     setTimeout(() => {
       invokeStartTutorial();
@@ -347,14 +366,49 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
 
     if (activeToolId === 'bulldoze') {
+      const removedInstanceId = selectedObject.userData?.instanceId ?? tile.instanceId ?? null;
+      const isWindmill = isWindmillBuildingType(tile.buildingId);
+      const isMarket = isMarketBuildingType(tile.buildingId);
+
+      let cascadeOutcome = null;
+      if (isWindmill && removedInstanceId) {
+        cascadeOutcome = await syncSupplyLinksAfterBuildingChange({
+          supply,
+          construction: constructionApi,
+          city,
+          event: 'bulldozed',
+          buildingType: tile.buildingId,
+          instanceId: removedInstanceId,
+          x,
+          y,
+        });
+      } else if (isMarket && removedInstanceId) {
+        await syncSupplyLinksAfterBuildingChange({
+          supply,
+          construction: constructionApi,
+          city,
+          event: 'bulldozed',
+          buildingType: tile.buildingId,
+          instanceId: removedInstanceId,
+          x,
+          y,
+        });
+      }
+
       const { buildingId } = await constructionApi.bulldozeBuildingAtTile({
         city,
         x,
         y,
-        meshInstanceId: selectedObject.userData?.instanceId ?? null,
+        meshInstanceId: removedInstanceId,
       });
+
+      if (isWindmill && cascadeOutcome?.destroyed?.length) {
+        showWindmillCascadeNotification(cascadeOutcome.destroyed);
+      }
+
       await scene.update(city, time);
       await syncEmploymentAfterBuildingChange(scene, city, buildingId);
+      await refreshPlacementPresentation();
       await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
     } else if (activeToolId === 'select-object') {
       await presentBuildingInfoSelection(selectedObject, {
@@ -432,6 +486,17 @@ export function createGame(gameStore, assetManager, citySize = null) {
       await scene.update(city, time);
       await runSimulationPass(time);
       await syncEmploymentAfterBuildingChange(scene, city, activeToolId);
+      await syncSupplyLinksAfterBuildingChange({
+        supply,
+        construction: constructionApi,
+        city,
+        event: 'placed',
+        buildingType: activeToolId,
+        instanceId: result.instanceId,
+        x: placeX,
+        y: placeY,
+      });
+      await refreshPlacementPresentation();
       await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
       placementGhostSession.sync(selectedObject);
       const multiplayerManager = getMultiplayerManager();
@@ -557,8 +622,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
         refreshEmploymentPresentation: refreshEmploymentPresentationForCity,
         objectivesTracker,
         notifyBudgetCleanup: notifyBudgetCleanupIfNeeded,
-        refreshResidentialGroupGating: ({ housing: housingCtx }) =>
-          refreshResidentialGroupGating({
+        refreshPlacementToolGating: ({ housing: housingCtx }) =>
+          refreshSkillPlacementGating({
             housing: housingCtx,
             buttonStateManager: getButtonStateManager(),
           }),

@@ -9,6 +9,7 @@ import { SceneBuildingInventoryAdapter } from '../contexts/construction/infrastr
 import { getDefaultEmployees } from '../contexts/employment/domain/policies/BuildingEmploymentDefaults.js';
 import { assetsPrices } from '../shared/building-catalog/index.js';
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
+import { canPlaceBuildingAtTileWithSupplyRules } from './canPlaceBuildingAtTileWithSupplyRules.js';
 import {
   recordConstructionExpense,
   recordConstructionRefund,
@@ -67,6 +68,7 @@ export function createConstructionContext({
       ?? (() => getOrCreateAccountingContext().getTreasurySnapshot()),
     assetCatalog: catalog,
     getAssetPrice: (buildingId, prices) => prices?.[buildingId]?.price,
+    validatePlacement: canPlaceBuildingAtTileWithSupplyRules,
   });
   const bulldozeBuildingAtTile = new BulldozeBuildingAtTile({
     syncRemovedBuilding:

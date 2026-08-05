@@ -48,24 +48,35 @@ export class ConsumeHouseFood {
       return { consumed: false, reason: 'no_population' };
     }
 
-    const { nextStock, consumed: consumedByCategory, demand, unfed } = applyHouseFoodConsumption(
-      house.stocks,
-      pop
-    );
+    const level = house.level ?? 1;
+    const { nextStock, consumed, demanded, unfed, totalUnfed } = applyHouseFoodConsumption({
+      stock: house.stocks,
+      population: pop,
+      level,
+    });
 
     await this.supplyBuildingRepository.saveStocks(houseId, nextStock);
     await this.supplyBuildingRepository.saveConsumptionMetadata(houseId, {
       lastConsumptionMonth: month,
     });
 
+    // Save detailed consumption record
+    await this.supplyBuildingRepository.saveConsumptionRecord(houseId, {
+      month: monthIndex,
+      consumed,
+      demanded,
+      unfed,
+      totalUnfed,
+    });
+
     return {
       consumed: true,
       houseId,
       pop,
-      demand,
-      unfed,
-      consumedByCategory,
-      crops: { ...consumedByCategory },
+      demand: Object.values(demanded).reduce((sum, qty) => sum + qty, 0),
+      unfed: totalUnfed,
+      consumedByCategory: consumed,
+      crops: { ...consumed },
     };
   }
 }

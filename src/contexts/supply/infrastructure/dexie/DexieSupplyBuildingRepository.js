@@ -31,8 +31,11 @@ export class DexieSupplyBuildingRepository {
       lastProductionYear: house.lastProductionYear ?? null,
       lastConsumptionMonth: house.lastConsumptionMonth ?? null,
       lastSubsistenceMonth: house.lastSubsistenceMonth ?? null,
+      lastConsumption: house.lastConsumption ?? null,
       pop: house.pop ?? 0,
       level: house.level ?? 1,
+      supplyWindmillId: house.supplyWindmillId ?? null,
+      linkedMarkets: house.linkedMarkets ?? [],
     });
   }
 
@@ -60,6 +63,8 @@ export class DexieSupplyBuildingRepository {
       salesToWindmill: house.salesToWindmill || [],
       isActive: house.isActive !== false,
       commercializeEnabled: house.commercializeEnabled !== false,
+      supplyWindmillId: house.supplyWindmillId ?? null,
+      linkedMarkets: house.linkedMarkets ?? [],
     });
   }
 
@@ -104,6 +109,8 @@ export class DexieSupplyBuildingRepository {
     const normalized = createFoodStock(stocks);
     await this.#putFields(buildingId, {
       stocks: {
+        fruit: normalized.fruit,
+        game: normalized.game,
         wheat: normalized.wheat,
         carrot: normalized.carrot,
         cabbage: normalized.cabbage,
@@ -127,6 +134,19 @@ export class DexieSupplyBuildingRepository {
   async saveConsumptionMetadata(buildingId, { lastConsumptionMonth }) {
     if (lastConsumptionMonth === undefined || lastConsumptionMonth === null) return;
     await this.#putFields(buildingId, { lastConsumptionMonth });
+  }
+
+  async saveConsumptionRecord(buildingId, consumptionRecord) {
+    if (!consumptionRecord) return;
+    await this.#putFields(buildingId, {
+      lastConsumption: {
+        month: consumptionRecord.month,
+        consumed: { ...consumptionRecord.consumed },
+        demanded: { ...consumptionRecord.demanded },
+        unfed: { ...consumptionRecord.unfed },
+        totalUnfed: consumptionRecord.totalUnfed,
+      },
+    });
   }
 
   async saveSubsistenceMetadata(buildingId, { lastSubsistenceMonth }) {
@@ -201,6 +221,29 @@ export class DexieSupplyBuildingRepository {
 
   async saveMarketFlags(buildingId, flags) {
     await this.#putFields(buildingId, flags);
+  }
+
+  async saveSupplyWindmillId(marketId, windmillId) {
+    await this.#putFields(marketId, {
+      supplyWindmillId: windmillId || null,
+    });
+  }
+
+  async saveLinkedMarkets(windmillId, linkedMarkets) {
+    await this.#putFields(windmillId, {
+      linkedMarkets: Array.isArray(linkedMarkets)
+        ? linkedMarkets.map((entry) => ({
+            marketId: entry.marketId,
+            x: entry.x,
+            y: entry.y,
+            allocatedStocks: {
+              wheat: Math.max(0, Math.floor(entry.allocatedStocks?.wheat ?? 0)),
+              carrot: Math.max(0, Math.floor(entry.allocatedStocks?.carrot ?? 0)),
+              cabbage: Math.max(0, Math.floor(entry.allocatedStocks?.cabbage ?? 0)),
+            },
+          }))
+        : [],
+    });
   }
 
   async findRowById(buildingId) {

@@ -1,3 +1,8 @@
+import {
+  resolveCitizenStatusFromLevel,
+  getCitizenStatusProfile,
+} from '../../../../shared/population/CitizenStatusCatalog.js';
+
 const RESIDENTIAL_HOUSE_MARKERS = ['House-Blue', 'House-Red', 'House-Purple'];
 
 /**
@@ -5,6 +10,8 @@ const RESIDENTIAL_HOUSE_MARKERS = ['House-Blue', 'House-Red', 'House-Purple'];
  * citizen tax — only level 2 (group profession, road-connected) houses do.
  * Missing `level` defaults to 1 (matches Housing's own default for
  * un-migrated / freshly-placed rows), so it's exempt until promoted.
+ *
+ * Tax eligibility is determined by the shared population catalog.
  *
  * @param {Array<{ type?: string, pop?: number, level?: number }>} houses
  * @param {number} taxPerCapita
@@ -23,7 +30,10 @@ export function computeCitizenTaxBreakdown(houses, taxPerCapita) {
       continue;
     }
 
-    if ((house.level ?? 1) !== 2) {
+    const statusKey = resolveCitizenStatusFromLevel(house.level ?? 1);
+    const profile = getCitizenStatusProfile(statusKey);
+
+    if (!profile.accounting.paysCitizenTax) {
       continue;
     }
 

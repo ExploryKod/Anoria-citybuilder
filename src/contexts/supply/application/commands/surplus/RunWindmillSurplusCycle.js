@@ -7,17 +7,20 @@ export class RunWindmillSurplusCycle {
    * @param {import('./MarkWindmillCollectingSeason.js').MarkWindmillCollectingSeason} markWindmillCollectingSeason
    * @param {import('./ResetFarmsSoldToWindmill.js').ResetFarmsSoldToWindmill} resetFarmsSoldToWindmill
    * @param {import('./ProcessWindmillCollection.js').ProcessWindmillCollection} processWindmillCollection
+   * @param {import('../links/RebalanceWindmillMarketAllocations.js').RebalanceWindmillMarketAllocations} [rebalanceWindmillMarketAllocations]
    */
   constructor(
     supplyBuildingRepository,
     markWindmillCollectingSeason,
     resetFarmsSoldToWindmill,
-    processWindmillCollection
+    processWindmillCollection,
+    rebalanceWindmillMarketAllocations = null
   ) {
     this.supplyBuildingRepository = supplyBuildingRepository;
     this.markWindmillCollectingSeason = markWindmillCollectingSeason;
     this.resetFarmsSoldToWindmill = resetFarmsSoldToWindmill;
     this.processWindmillCollection = processWindmillCollection;
+    this.rebalanceWindmillMarketAllocations = rebalanceWindmillMarketAllocations;
   }
 
   /**
@@ -66,6 +69,10 @@ export class RunWindmillSurplusCycle {
         year,
       });
       windmillResults.push(outcome);
+
+      if (outcome.collected && this.rebalanceWindmillMarketAllocations) {
+        await this.rebalanceWindmillMarketAllocations.execute({ windmillId: windmill.id });
+      }
     }
 
     return { ranCollection: true, windmills: windmillResults };

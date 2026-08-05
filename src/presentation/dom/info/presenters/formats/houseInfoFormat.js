@@ -2,30 +2,50 @@
  * House — pure format (VM → display models).
  */
 
+import {
+  getHouseDwellingLevelAriaLabel,
+  getHouseDwellingLevelLabel,
+  maxPopulationForLevel,
+  resolveHouseDwellingStatusMessage,
+} from '../../../../../contexts/housing/application/queries/HouseDwellingLevelPresentation.js';
 import { getBuildingDefinition } from '../../../../../shared/building-catalog/index.js';
 import {
   getResidentialGroupTitle,
   residentialGroupForType,
 } from '../../../shell/ResidentialGroupLabels.js';
+import { getHouseFoodRequirements } from '../../../../../contexts/supply/domain/policies/HouseFoodRequirementsPolicy.js';
+import { computeHouseCitizenComposition } from '../../../../../contexts/housing/domain/policies/HouseCitizenCompositionPolicy.js';
+import { formatHousePopulationPresentation } from '../../population/formatHousePopulationPresentation.js';
 
-const LEVEL_MAX_POP = Object.freeze({ 1: 6, 2: 12 });
-
-function resolveHouseStatusMessage(level, pop, hasRoadAccess) {
-  if (level === 1) {
-    if (pop <= 0) return 'Maison vide. Des habitants s\'y installeront avec le temps.';
-    if (!hasRoadAccess) {
-      return 'Cette maison vit en autarcie. Une route et des habitants permettront le passage au niveau 2.';
-    }
-    return 'Les conditions sont réunies : la maison peut devenir spécialisée.';
-  }
-  if (!hasRoadAccess) return 'Route coupée : la maison risque de redescendre au niveau 1.';
-  return 'Foyer intégré à l\'économie de la ville.';
+/**
+ * @param {1 | 2} level
+ * @returns {string[]}
+ */
+function foodTypesForLevel(level) {
+  const requirements = getHouseFoodRequirements(level);
+  return [...requirements.essential, ...requirements.desired];
 }
 
-function resolveHouseholdComposition(level, pop) {
-  const safePop = Math.max(0, Math.floor(pop) || 0);
-  if (level === 1) return { hunters: safePop, artisans: 0 };
-  return { hunters: 0, artisans: safePop };
+/**
+ * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
+ * @returns {{ unfed: Record<string, number>, totalUnfed: number, month: number | null }}
+ */
+function resolveHouseDietShortages(vm) {
+  const types = foodTypesForLevel(vm.houseLevel);
+  /** @type {Record<string, number>} */
+  const unfed = Object.fromEntries(types.map((type) => [type, 0]));
+
+  if (vm.lastConsumption?.unfed) {
+    for (const type of types) {
+      unfed[type] = vm.lastConsumption.unfed[type] ?? 0;
+    }
+  }
+
+  return {
+    unfed,
+    totalUnfed: vm.lastConsumption?.totalUnfed ?? 0,
+    month: vm.lastConsumption?.month ?? null,
+  };
 }
 
 function resolveStockGroups(stocks) {
@@ -55,9 +75,10 @@ export function formatHouseLayoutHeader(vm) {
   const group = residentialGroupForType(vm.buildingType);
   const title = group ? getResidentialGroupTitle(group) : (getBuildingDefinition(vm.buildingType)?.displayName ?? vm.buildingType);
 
-  const maxPop = LEVEL_MAX_POP[vm.houseLevel] ?? LEVEL_MAX_POP[1];
-  const levelBadge = vm.houseLevel === 2 ? '②' : '①';
-  const meta = `Niveau <span aria-label="Niveau ${vm.houseLevel}">${levelBadge}</span> · <span aria-label="${vm.buildingPop} habitants sur ${maxPop}">${vm.buildingPop}/${maxPop} 👥</span>`;
+  const maxPop = maxPopulationForLevel(vm.houseLevel);
+  const dwellingLabel = getHouseDwellingLevelLabel(vm.houseLevel);
+  const dwellingAria = getHouseDwellingLevelAriaLabel(vm.houseLevel);
+  const meta = `<span aria-label="${dwellingAria}">${dwellingLabel}</span> · <span aria-label="${vm.buildingPop} habitants sur ${maxPop}">${vm.buildingPop}/${maxPop} hab.</span>`;
 
   return { title, meta, accent: group };
 }
@@ -77,24 +98,65 @@ export function formatHouseFoyerModel(vm) {
   const hasRoadAccess = vm.roadAccess.hasAccess;
   const variant = vm.houseLevel === 2 && !hasRoadAccess ? 'warning' : 'neutral';
 
+  const residentialGroup = residentialGroupForType(vm.buildingType);
+  const composition = computeHouseCitizenComposition({
+    level: vm.houseLevel,
+    pop: vm.buildingPop,
+    buildingType: vm.buildingType,
+    residentialGroup,
+  });
+  const { profiles, skills } = formatHousePopulationPresentation(composition, residentialGroup);
+
   const model = {
-    statusMessage: resolveHouseStatusMessage(vm.houseLevel, vm.buildingPop, hasRoadAccess),
+    statusMessage: resolveHouseDwellingStatusMessage(vm.houseLevel, vm.buildingPop, hasRoadAccess),
     statusVariant: variant,
-    composition: resolveHouseholdComposition(vm.houseLevel, vm.buildingPop),
+    profiles,
+    skills,
     anchorX: vm.anchorX,
     anchorY: vm.anchorY,
-    stocks: null,
-    stockGroups: null,
   };
 
+  return model;
+}
+
+/**
+ * Diet (régime) tab model — food stocks, consumption, production details.
+ * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
+ */
+export function formatHouseDietModel(vm) {
+  const model = {
+    stockGroups: null,
+    shortages: resolveHouseDietShortages(vm),
+    lastConsumption: null,
+  };
+
+  // Stocks actuels (déplacé depuis foyer)
   if (vm.stocks && Object.hasOwn(vm.stocks, 'food')) {
     const groups = resolveStockGroups(vm.stocks);
     model.stockGroups = {
       subsistence: groups.subsistence,
       farms: groups.farms,
-      showSubsistence: true,
+    };
+  }
+
+  // Consommation du mois dernier (si disponible)
+  if (vm.lastConsumption) {
+    model.lastConsumption = {
+      month: vm.lastConsumption.month,
+      consumed: normalizeFoodRecord(vm.lastConsumption.consumed, vm.houseLevel),
+      totalUnfed: vm.lastConsumption.totalUnfed || 0,
     };
   }
 
   return model;
+}
+
+/**
+ * @param {Record<string, number> | null | undefined} record
+ * @param {1 | 2} level
+ * @returns {Record<string, number>}
+ */
+function normalizeFoodRecord(record, level) {
+  const types = foodTypesForLevel(level);
+  return Object.fromEntries(types.map((type) => [type, record?.[type] ?? 0]));
 }

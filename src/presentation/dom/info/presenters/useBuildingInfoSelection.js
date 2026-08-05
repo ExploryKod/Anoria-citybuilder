@@ -162,6 +162,15 @@ export async function useBuildingInfoSelection(selectedObject, ctx) {
       await groupDef.renderFoyer(foyerContainer, foyerModel);
     }
 
+    // Diet tab (only for houses)
+    if (groupDef.formatDiet && groupDef.renderDiet) {
+      const dietModel = groupDef.formatDiet(vm);
+      const dietContainer = getBuildingInfoTabPanel(BUILDING_INFO_TABS.diet);
+      if (dietContainer && dietModel != null) {
+        groupDef.renderDiet(dietContainer, dietModel);
+      }
+    }
+
     renderNeighborsTab(
       getBuildingInfoTabPanel(BUILDING_INFO_TABS.neighbors),
       vm.neighborRows

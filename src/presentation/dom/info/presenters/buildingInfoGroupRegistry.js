@@ -15,6 +15,7 @@ import {
 } from './formats/genericInfoFormat.js';
 import {
   formatHouseFoyerModel,
+  formatHouseDietModel,
   formatHouseLayoutHeader,
   formatHouseLayoutOptions,
 } from './formats/houseInfoFormat.js';
@@ -35,6 +36,7 @@ import {
   formatNatureLayoutOptions,
 } from './formats/natureInfoFormat.js';
 import { renderHouseFoyerView } from '../views/houseInfoView.js';
+import { renderDietTab } from '../views/dietInfoView.js';
 import { renderHubStorageFoyerView } from '../views/hub/hubStorageFoyerView.js';
 import { renderKvPanelView } from '../views/kvPanelView.js';
 
@@ -47,6 +49,8 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
     formatLayoutHeader: formatHouseLayoutHeader,
     formatFoyer: formatHouseFoyerModel,
     renderFoyer: (container, model) => renderHouseFoyerView(container, model),
+    formatDiet: formatHouseDietModel,
+    renderDiet: (container, model) => renderDietTab(container, model),
   },
   [BUILDING_INFO_GROUPS.nature]: {
     formatLayoutOptions: formatNatureLayoutOptions,
