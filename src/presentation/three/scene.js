@@ -1549,6 +1549,13 @@ export function createScene(_gameStore, assetManager, deps) {
         let understaffedBuildingIds = [];
 
         try {
+            const popSummary = await housing.getCityPopulationSummary();
+            totalPopulation = popSummary.totalPop ?? 0;
+        } catch (error) {
+            console.warn('[scene.js] Error reading city population summary:', error);
+        }
+
+        try {
             const summary = await employment.getCityEmploymentSummary();
             unemployedCount = summary.unemployed;
             unemploymentPercentage = summary.unemploymentPercentage;
@@ -1557,7 +1564,6 @@ export function createScene(_gameStore, assetManager, deps) {
             elitePopulation = summary.elitePool;
             civilServantCount = summary.civilServantCount;
             activePopulationCount = summary.activePopulationCount;
-            totalPopulation = summary.totalPopulation;
             understaffedBuildingIds = summary.understaffedBuildingIds;
         } catch (error) {
             console.warn('[scene.js] Error calculating employment summary:', error);

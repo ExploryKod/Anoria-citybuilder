@@ -1,6 +1,7 @@
 import db from '../../../../../../core/persistence/dexie/db.js';
 import { TreasuryRepository } from '../../../../application/ports/TreasuryRepository.js';
 import { normalizeTreasuryBudgetRow } from './normalizeTreasuryBudgetRow.js';
+import { DEFAULT_INITIAL_FUNDS } from '../../../../domain/catalogs/TreasuryCatalog.js';
 
 export const CURRENT_BUDGET_NAME = 'budget_current';
 
@@ -16,7 +17,9 @@ export class DexieTreasuryRepository extends TreasuryRepository {
   constructor(deps = {}) {
     super();
     this.db = deps.db ?? db;
-    this.expectedInitialFunds = deps.expectedInitialFunds ?? 200;
+    // Falls back to the canonical default (TreasuryCatalog) — callers going
+    // through createAccountingContext always pass the resolved value explicitly.
+    this.expectedInitialFunds = deps.expectedInitialFunds ?? DEFAULT_INITIAL_FUNDS;
   }
 
   /** @returns {Promise<number>} */

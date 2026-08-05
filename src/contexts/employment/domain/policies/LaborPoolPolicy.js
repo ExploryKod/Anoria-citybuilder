@@ -4,7 +4,15 @@
  * - Regular house: pop = citizens only (max 6).
  * - Palace: up to 6 citizens + élites beyond citizen cap (pop 7 → 6 citizens + 1 élite).
  * - workerPop excludes élites; food consumes full pop (élites eat).
+ *
+ * Employment eligibility rules are defined in the shared population catalog
+ * (shared/population/CitizenStatusCatalog.js).
  */
+
+import {
+  resolveCitizenStatusFromLevel,
+  getCitizenStatusProfile,
+} from '../../../../shared/population/CitizenStatusCatalog.js';
 
 /** Max citizen slots per house (regular or palace). */
 export const HOUSE_CITIZEN_CAP = 6;
@@ -54,11 +62,25 @@ export function elitePopFromHouse(type, pop) {
 
 /**
  * Citizens (non-élite residents); eligible for worker jobs.
+ *
+ * Level 1 (autarky / hunter-gatherer) houses are outside the labor market by
+ * design — 0 regardless of `pop`. Level defaults to 2 for backward
+ * compatibility with callers that don't track it yet (e.g. Palace, which has
+ * no level concept and always contributes its citizens).
+ *
+ * Uses shared population catalog to determine labor pool eligibility.
+ *
  * @param {string} type
  * @param {number} pop
+ * @param {1 | 2} [level=2]
  * @returns {number}
  */
-export function citizenPopFromHouse(type, pop) {
+export function citizenPopFromHouse(type, pop, level = 2) {
+  const statusKey = resolveCitizenStatusFromLevel(level);
+  const profile = getCitizenStatusProfile(statusKey);
+
+  if (!profile.employment.countsInLaborPool) return 0;
+
   const p = clampPop(pop);
   return p - elitePopFromHouse(type, p);
 }
@@ -67,10 +89,11 @@ export function citizenPopFromHouse(type, pop) {
  * Worker pool contribution from a house (citizens only — élites excluded).
  * @param {string} type
  * @param {number} pop
+ * @param {1 | 2} [level=2]
  * @returns {number}
  */
-export function workerPopFromHouse(type, pop) {
-  return citizenPopFromHouse(type, pop);
+export function workerPopFromHouse(type, pop, level = 2) {
+  return citizenPopFromHouse(type, pop, level);
 }
 
 /**

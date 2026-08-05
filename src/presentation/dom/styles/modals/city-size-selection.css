@@ -22,14 +22,11 @@
 }
 
 .city-size-selection-content {
-    background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+    background: #ffffff;
     border-radius: var(--border-radius);
-    padding: 40px;
-    max-width: 600px;
+    padding: 28px 32px;
+    max-width: 340px;
     width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     text-align: center;
     animation: modalSlideIn 0.4s ease-out;
 }
@@ -37,180 +34,82 @@
 @keyframes modalSlideIn {
     from {
         opacity: 0;
-        transform: translateY(-30px) scale(0.95);
+        transform: translateY(-20px);
     }
     to {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
     }
 }
 
 .city-size-selection-icon {
-    font-size: 64px;
-    margin-bottom: 20px;
+    font-size: 40px;
+    margin-bottom: 12px;
+    line-height: 1;
 }
 
 .city-size-selection-title {
-    font-size: 28px;
-    font-weight: 700;
+    font-size: 20px;
+    font-weight: 600;
     color: #2c3e50;
-    margin-bottom: 12px;
+    margin-bottom: 20px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .city-size-selection-message {
-    font-size: 16px;
+    font-size: 13px;
     color: #666;
-    margin-bottom: 30px;
-    line-height: 1.6;
+    margin-bottom: 16px;
+    line-height: 1.5;
 }
 
 .city-size-options {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 16px;
-    margin-top: 30px;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
 }
 
 .city-size-option {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: #f8f9fa;
     border: 2px solid #dee2e6;
     border-radius: var(--border-radius-medium);
-    padding: 20px 16px;
+    padding: 14px 12px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
     text-align: center;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.city-size-option:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    border-color: #007bff;
-    background: linear-gradient(135deg, #ffffff 0%, #f0f8ff 100%);
+.city-size-option:hover:not(:disabled):not(.selected) {
+    background: #e8f4ff;
+    border-color: #90c8f5;
 }
 
-.city-size-option:active {
-    transform: translateY(-2px);
-}
-
-.city-size-label {
-    font-size: 18px;
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 8px;
+.city-size-option:active:not(:disabled) {
+    transform: none;
 }
 
 .city-size-value {
-    font-size: 24px;
-    font-weight: 700;
-    color: #007bff;
-    margin-bottom: 4px;
-}
-
-.city-size-description {
-    font-size: 12px;
-    color: #888;
-    margin-top: 4px;
-}
-
-.city-size-option.selected {
-    border-color: #007bff;
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
-}
-
-.city-size-option.selected .city-size-label,
-.city-size-option.selected .city-size-value,
-.city-size-option.selected .city-size-description {
-    color: white;
-}
-
-.city-size-custom {
-    margin-top: 30px;
-    padding-top: 30px;
-    border-top: 2px solid #e9ecef;
-}
-
-.city-size-multiplayer {
-    margin-top: 30px;
-    padding-top: 30px;
-    border-top: 2px solid #e9ecef;
-}
-
-.multiplayer-toggle-label {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    user-select: none;
-    gap: 12px;
-}
-
-.multiplayer-toggle-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-
-.multiplayer-toggle {
-    width: 50px;
-    height: 28px;
-    appearance: none;
-    background: #dee2e6;
-    border-radius: var(--border-radius-small);
-    position: relative;
-    cursor: pointer;
-    transition: background 0.3s ease;
-    outline: none;
-    margin: 0;
-}
-
-.multiplayer-toggle:checked {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-}
-
-.multiplayer-toggle::before {
-    content: '';
-    position: absolute;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: white;
-    top: 3px;
-    left: 3px;
-    transition: transform 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.multiplayer-toggle:checked::before {
-    transform: translateX(22px);
-}
-
-.multiplayer-toggle-text {
     font-size: 18px;
     font-weight: 600;
     color: #2c3e50;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: color 0.3s ease;
 }
 
-.multiplayer-toggle:checked ~ .multiplayer-toggle-content .multiplayer-toggle-text {
-    color: #28a745;
+.city-size-option.selected {
+    border-color: #0056b3;
+    background: #0056b3;
 }
 
-.multiplayer-toggle-description {
-    font-size: 13px;
-    color: #666;
-    text-align: center;
-    max-width: 300px;
+.city-size-option.selected .city-size-value {
+    color: #ffffff;
 }
 
-/* Styles pour la section multijoueur complète */
+.city-size-option:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* Multijoueur (caché — logique conservée côté JS) */
 .city-size-multiplayer-section .multiplayer-pseudo-container {
     margin-top: 0;
     padding-top: 0;
@@ -232,12 +131,6 @@
     align-items: center;
 }
 
-.multiplayer-pseudo-label {
-    font-size: 14px;
-    font-weight: 600;
-    color: #2c3e50;
-}
-
 .multiplayer-pseudo-input {
     padding: 10px 16px;
     border: 2px solid #dee2e6;
@@ -246,55 +139,8 @@
     text-align: center;
     font-weight: 500;
     color: #2c3e50;
-    transition: border-color 0.3s ease;
     width: 100%;
     max-width: 250px;
-}
-
-.multiplayer-pseudo-input:focus {
-    outline: none;
-    border-color: #28a745;
-    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
-}
-
-.multiplayer-pseudo-hint {
-    font-size: 11px;
-    color: #888;
-    text-align: center;
-    font-style: italic;
-}
-
-/* Section Multijoueur */
-.city-size-multiplayer-section {
-    margin-top: 24px;
-    padding-top: 24px;
-    border-top: 2px solid rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.city-size-multiplayer-section .multiplayer-pseudo-container {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: none;
-    margin-bottom: 0;
-}
-
-.multiplayer-room-name-container {
-    margin-top: 0;
-    margin-bottom: 0;
-    width: 100%;
-}
-
-.multiplayer-room-name-label {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 8px;
 }
 
 .multiplayer-room-name-input {
@@ -303,169 +149,8 @@
     border: 2px solid #dee2e6;
     border-radius: var(--border-radius-small);
     font-size: 14px;
-    transition: border-color 0.3s ease;
     max-width: 100%;
     box-sizing: border-box;
-}
-
-.multiplayer-room-name-input:focus {
-    outline: none;
-    border-color: #28a745;
-    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
-}
-
-.multiplayer-room-name-hint {
-    font-size: 11px;
-    color: #888;
-    text-align: center;
-    font-style: italic;
-    margin-top: 4px;
-}
-
-.multiplayer-create-room-section {
-    margin-top: 0;
-    margin-bottom: 0;
-    width: 100%;
-}
-
-.city-size-multiplayer-section .multiplayer-create-room-section {
-    margin-top: 8px;
-    margin-bottom: 8px;
-}
-
-.multiplayer-create-room-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 12px;
-    text-align: center;
-}
-
-/* Multiplayer Rooms Container */
-.multiplayer-rooms-container {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
-    width: 100%;
-}
-
-.city-size-multiplayer-section .multiplayer-rooms-container {
-    margin-top: 8px;
-    padding-top: 16px;
-}
-
-.multiplayer-rooms-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 12px;
-}
-
-.multiplayer-rooms-list {
-    max-height: 200px;
-    overflow-y: auto;
-    margin-bottom: 12px;
-}
-
-.multiplayer-room-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px;
-    margin-bottom: 8px;
-    background: #f5f5f5;
-    border-radius: var(--border-radius-small);
-    border: 2px solid transparent;
-    transition: all 0.2s ease;
-}
-
-.multiplayer-room-item.room-incompatible {
-    opacity: 0.5;
-    background: #f0f0f0;
-    border-color: #ff9800;
-}
-
-.multiplayer-room-item.room-full {
-    opacity: 0.6;
-    background: #e0e0e0;
-}
-
-.room-info {
-    flex: 1;
-}
-
-.room-name {
-    font-weight: 600;
-    font-size: 15px;
-    color: #333;
-    margin-bottom: 6px;
-}
-
-.room-details {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
-
-.room-size {
-    font-weight: 500;
-    font-size: 13px;
-    color: #555;
-}
-
-.room-players {
-    font-size: 12px;
-    color: #666;
-}
-
-.room-warning {
-    font-size: 11px;
-    color: #ff9800;
-    margin-right: 8px;
-}
-
-.room-status {
-    font-size: 12px;
-    color: #999;
-    font-style: italic;
-}
-
-.room-join-btn {
-    padding: 6px 16px;
-    background: #4caf50;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
-
-.room-join-btn:hover {
-    background: #45a049;
-}
-
-.multiplayer-rooms-loading,
-.multiplayer-rooms-empty,
-.multiplayer-rooms-error {
-    padding: 12px;
-    text-align: center;
-    font-size: 13px;
-    color: #666;
-}
-
-.multiplayer-rooms-error {
-    color: #d32f2f;
-}
-
-.multiplayer-create-room-hint {
-    font-size: 11px;
-    color: #999;
-    text-align: center;
-    font-style: italic;
-    margin-top: 8px;
-    margin-bottom: 12px;
 }
 
 .multiplayer-create-room-options {
@@ -485,200 +170,48 @@
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
     min-width: 60px;
 }
 
-.multiplayer-create-room-btn:hover {
-    background: #45a049;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+.multiplayer-rooms-list {
+    max-height: 200px;
+    overflow-y: auto;
 }
 
-.multiplayer-create-room-btn:active {
-    transform: translateY(0);
-}
-
-.city-size-options.disabled {
-    opacity: 0.4;
-    pointer-events: none;
-}
-
-.city-size-custom.disabled {
-    opacity: 0.4;
-    pointer-events: none;
-}
-
-.custom-size-label {
-    display: block;
-    font-size: 16px;
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 12px;
-}
-
-.custom-size-input-group {
+.multiplayer-room-item {
     display: flex;
-    gap: 12px;
     align-items: center;
-    justify-content: center;
-    max-width: 400px;
-    margin: 0 auto;
-}
-
-.custom-size-input {
-    flex: 1;
-    padding: 12px 16px;
-    border: 2px solid #dee2e6;
+    justify-content: space-between;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: #f5f5f5;
     border-radius: var(--border-radius-small);
-    font-size: 16px;
-    text-align: center;
-    font-weight: 600;
-    color: #2c3e50;
-    transition: border-color 0.3s ease;
+    border: 2px solid transparent;
 }
 
-.custom-size-input:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-}
-
-.custom-size-button {
-    padding: 12px 24px;
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+.room-join-btn {
+    padding: 6px 16px;
+    background: #4caf50;
     color: white;
     border: none;
-    border-radius: var(--border-radius-small);
-    font-size: 16px;
+    border-radius: 6px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
 }
 
-.custom-size-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
-}
-
-.custom-size-button:active {
-    transform: translateY(0);
-}
-
-/* Mobile responsive */
-@media (max-width: 768px) {
-    .city-size-selection-content {
-        padding: 30px 20px;
-        max-width: 95%;
-    }
-    
-    .city-size-options {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-    }
-    
-    .city-size-option {
-        padding: 16px 12px;
-    }
-    
-    .city-size-label {
-        font-size: 16px;
-    }
-    
-    .city-size-value {
-        font-size: 20px;
-    }
-    
-    .custom-size-input-group {
-        flex-direction: column;
-        max-width: 100%;
-    }
-    
-    .custom-size-input {
-        width: 100%;
-    }
-    
-    .custom-size-button {
-        width: 100%;
-    }
-    
-    /* Hide city size options 20 and 24 on mobile - only show 12 and 16 */
-    .city-size-option[data-size="20"],
-    .city-size-option[data-size="24"] {
-        display: none;
-    }
-    
-    /* Hide custom size input on mobile */
-    .city-size-custom {
-        display: none;
-    }
-}
-
-/* Mobile landscape view */
-@media (max-width: 1024px) and (orientation: landscape) {
-    .city-size-selection-content {
-        padding: 20px 15px;
-        max-width: 90%;
-        max-height: 95vh;
-    }
-    
-    .city-size-selection-icon {
-        font-size: 48px;
-        margin-bottom: 15px;
-    }
-    
-    .city-size-selection-title {
-        font-size: 22px;
-        margin-bottom: 8px;
-    }
-    
-    .city-size-selection-message {
-        font-size: 14px;
-        margin-bottom: 20px;
-        line-height: 1.4;
-    }
-    
-    .city-size-options {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-        margin-top: 20px;
-    }
-    
-    .city-size-option {
-        padding: 12px 10px;
-    }
-    
-    .city-size-label {
-        font-size: 14px;
-        margin-bottom: 4px;
-    }
-    
-    .city-size-value {
-        font-size: 18px;
-        margin-bottom: 2px;
-    }
-    
-    .city-size-description {
-        font-size: 10px;
-    }
-    
-    /* Hide city size options 20 and 24 on mobile landscape - only show 12 and 16 */
-    .city-size-option[data-size="20"],
-    .city-size-option[data-size="24"] {
-        display: none;
-    }
-    
-    /* Hide custom size input on mobile landscape */
-    .city-size-custom {
-        display: none;
-    }
+.multiplayer-rooms-loading,
+.multiplayer-rooms-empty {
+    padding: 12px;
+    text-align: center;
+    font-size: 13px;
+    color: #666;
 }
 
 /* Legal Links and Credits Footer */
 .city-size-legal-footer {
-    margin-top: 30px;
-    padding-top: 20px;
+    margin-top: 20px;
+    padding-top: 16px;
     border-top: 1px solid #e9ecef;
     text-align: center;
 }
@@ -689,7 +222,7 @@
     justify-content: center;
     flex-wrap: wrap;
     gap: 8px;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .legal-links a {
@@ -709,13 +242,17 @@
 }
 
 @media (max-width: 768px) {
+    .city-size-selection-content {
+        padding: 24px 20px;
+        max-width: 95%;
+    }
+
+    .city-size-value {
+        font-size: 16px;
+    }
+
     .legal-links {
-        font-size: 12px;
+        font-size: 11px;
         gap: 6px;
     }
-    
-    .legal-links .separator {
-        margin: 0 2px;
-    }
 }
-

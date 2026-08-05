@@ -31,6 +31,8 @@ class InstancingManager {
             'House-Purple',
             'House-2Story',
             'Market-Stall',
+            'Market-Stall-Blue',
+            'Market-Stall-Red',
             'Farm-Wheat',
             'Farm-Carrot',
             'Farm-Cabbage',

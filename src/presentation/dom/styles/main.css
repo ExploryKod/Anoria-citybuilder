@@ -392,6 +392,14 @@ canvas.pointer-events-disabled {
     pointer-events: none;
 }
 
+.toolbar .toolbar-btn .tool-emoji,
+.panel-layout .panel-btn .tool-emoji {
+    font-size: 1.25rem;
+    line-height: 1;
+    display: inline-block;
+    pointer-events: none;
+}
+
 .toolbar-btn:active {
    box-shadow: 0 0 10px #000235;
 }
@@ -1428,107 +1436,502 @@ footer .footer-links a:hover {
     display: none;
 }
 
-/* INFORMATION ABOUT THE BUILDING */
+/* INFORMATION ABOUT THE BUILDING — centered modal (César III inspired) */
 
 .info-building-overlay {
-    padding: 14px;
+    position: fixed;
+    inset: 0;
     z-index: -1;
-    width: 420px;
-    max-height: 460px;
-    position: absolute;
-    right: 0;
-    top: 140px;
-    bottom: auto;
-    /* GSAP will handle all animations - no CSS transitions needed */
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    justify-content: flex-start;
-    align-items: stretch;
-    border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
-    background: #fff;
-    color: #1b1b1b;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.25);
-    pointer-events: none;
-}
-
-.info-building-overlay .info-building__header {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 8px;
-    background: linear-gradient(135deg, #ff9800, #ffb74d);
-    color: #fff;
-    border-radius: var(--border-radius-small);
-}
-
-.info-building-overlay .info-building__header > div:nth-of-type(1) {
-    height: 50px;
-    flex-grow: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-.info-building-overlay .info-building__header > div:nth-of-type(1) h2 {
-    color: #fff;
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: 0.2px;
-    margin: 0;
-}
-
-/* It contain the dynamic text content about the building */
-.info-building-overlay .info-building__body {
-    width: 100%;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 4px 6px 8px 6px;
-    overflow: auto;
-    /* Firefox scrollbar styling */
-    scrollbar-width: thin; /* auto | thin | none */
-    scrollbar-color: #ff9800 rgba(0,0,0,0.08); /* thumb | track */
-}
-
-/* smoother scrollbar for the modal content */
-.info-building-overlay .info-building__body::-webkit-scrollbar {
-    width: 8px;
-}
-.info-building-overlay .info-building__body::-webkit-scrollbar-thumb {
-    background: #ff9800;
-    border-radius: var(--border-radius-small);
-    border: 2px solid #fff; /* creates a gap and improves contrast on white bg */
-}
-.info-building-overlay .info-building__body::-webkit-scrollbar-track {
-    background: rgba(0,0,0,0.05);
-    border-radius: var(--border-radius-small);
-}
-.info-building-overlay .info-building__body::-webkit-scrollbar-thumb:hover {
-    background: #fb8c00; /* slightly darker on hover */
-}
-.info-building-overlay .info-building__body::-webkit-scrollbar-corner {
+    padding: 24px 16px;
+    pointer-events: none;
     background: transparent;
 }
 
-.info-building-overlay.active {
-    /* GSAP handles all animations - this class is just for state management */
-    pointer-events: auto;
+.info-building-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 18, 22, 0.45);
+    opacity: 0;
+    transition: opacity 180ms ease;
+}
+
+.info-building-panel {
+    position: relative;
+    z-index: 1;
+    width: min(960px, 92vw);
+    min-width: 800px;
+    max-height: min(72vh, 720px);
+    display: flex;
+    flex-direction: column;
     background: #fff;
-    /* z-index and visibility are handled by GSAP */
+    color: #1b1b1b;
+    border-radius: var(--border-radius-medium);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
+    overflow: hidden;
+    transform: translateY(8px);
+    opacity: 0;
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.info-building-overlay.active {
+    pointer-events: auto;
+    z-index: 1200;
+}
+
+.info-building-overlay.active .info-building-backdrop {
+    opacity: 1;
+}
+
+.info-building-overlay.active .info-building-panel {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .info-building-overlay.active button {
     pointer-events: auto;
 }
 
-/* Hub storage panel (barn / windmill — Cesar III inspired) */
-.info-building-overlay--hub-barn,
-.info-building-overlay--hub-windmill {
-    width: 520px;
-    max-height: 620px;
+.info-building__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 20px 14px;
+    background: linear-gradient(135deg, #ff9800, #ffb74d);
+    color: #fff;
+}
+
+.info-building__title-block {
+    flex: 1;
+    min-width: 0;
+}
+
+.info-building__title-block h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    color: #fff;
+    line-height: 1.25;
+}
+
+.info-building__meta {
+    margin: 6px 0 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.4;
+}
+
+.info-building-panel--commercants .info-building__header {
+    background: linear-gradient(135deg, #1565c0, #42a5f5);
+}
+
+.info-building-panel--artisans-ouvriers .info-building__header {
+    background: linear-gradient(135deg, #c62828, #ef5350);
+}
+
+.info-building-panel--savants .info-building__header {
+    background: linear-gradient(135deg, #6a1b9a, #ab47bc);
+}
+
+.info-building__tabs {
+    display: flex;
+    gap: 0;
+    padding: 0 20px;
+    background: #fff;
+    border-bottom: 1px solid #eceff1;
+}
+
+.info-building__tabs [role="tab"] {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: #5f6368;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 18px;
+    margin-bottom: -1px;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: color 120ms ease, border-color 120ms ease;
+}
+
+.info-building__tabs [role="tab"]:hover {
+    color: #1b1b1b;
+}
+
+.info-building__tabs [role="tab"][aria-selected="true"] {
+    color: #e65100;
+    border-bottom-color: #ff9800;
+}
+
+.info-building__body {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.info-building__tabpanel {
+    display: none;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 20px 24px 24px;
+    scrollbar-width: thin;
+    scrollbar-color: #ff9800 rgba(0, 0, 0, 0.08);
+}
+
+.info-building__tabpanel.is-active {
+    display: block;
+}
+
+.info-building__tabpanel::-webkit-scrollbar {
+    width: 8px;
+}
+
+.info-building__tabpanel::-webkit-scrollbar-thumb {
+    background: #ff9800;
+    border-radius: var(--border-radius-small);
+    border: 2px solid #fff;
+}
+
+.building-info-status {
+    margin: 0 0 20px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: #37474f;
+}
+
+.building-info-status--warning {
+    color: #e65100;
+}
+
+.building-info-status--error {
+    color: #c62828;
+}
+
+.building-info-section-label {
+    margin: 0 0 10px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #78909c;
+    text-align: center;
+}
+
+.building-info-icon-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+    margin-bottom: 20px;
+}
+
+.building-info-icon-row--centered {
+    justify-content: center;
+}
+
+.building-info-icon-row--compact {
+    gap: 12px 20px;
+    margin-bottom: 0;
+}
+
+.building-info-icon-chip {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 56px;
+    text-align: center;
+    cursor: default;
+}
+
+.building-info-icon-chip__emoji {
+    font-size: 28px;
+    line-height: 1;
+}
+
+.building-info-icon-chip__value {
+    margin-top: 4px;
+    font-size: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: #1b1b1b;
+}
+
+.building-info-icon-chip__label {
+    margin-top: 2px;
+    font-size: 11px;
+    color: #78909c;
+    text-transform: lowercase;
+}
+
+.building-info-icon-chip--compact .building-info-icon-chip__emoji {
+    font-size: 24px;
+}
+
+.building-info-icon-chip--compact .building-info-icon-chip__value {
+    font-size: 16px;
+}
+
+.building-info-household,
+.building-info-skills,
+.building-info-stocks {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.building-info-stock-groups {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 28px;
+}
+
+.building-info-stock-group {
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+.building-info-stock-group-label {
+    margin: 0 0 8px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: #90a4ae;
+    text-transform: lowercase;
+}
+
+@media (max-width: 768px) {
+    .building-info-stock-groups {
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+    }
+}
+
+.building-info-footnote {
+    margin: 0;
+    font-size: 12px;
+    color: #90a4ae;
+}
+
+.building-info-footnote--location {
+    margin-top: 8px;
+}
+
+.building-info-services {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.building-info-services-row {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 28px 40px;
+}
+
+.building-info-service-item {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 64px;
+    text-align: center;
+}
+
+.building-info-service-item__emoji {
+    font-size: 28px;
+    line-height: 1;
+}
+
+.building-info-service-item__value {
+    margin-top: 6px;
+    font-size: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: #1b1b1b;
+    min-height: 24px;
+    line-height: 24px;
+}
+
+.building-info-service-item__denied {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 6px;
+    width: 24px;
+    height: 24px;
+    color: #c62828;
+}
+
+.building-info-service-item__denied svg {
+    width: 24px;
+    height: 24px;
+}
+
+.building-info-service-item--off .building-info-service-item__value {
+    color: #b0bec5;
+}
+
+.building-info-service-item__label {
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: #90a4ae;
+    text-transform: lowercase;
+}
+
+/* Diet (Régime) tab styles */
+.building-info-diet {
+    padding: 0 12px;
+}
+
+.building-info-diet__section {
+    margin-bottom: 24px;
+}
+
+.building-info-diet__heading {
+    font-size: 14px;
+    font-weight: 700;
+    color: #455a64;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.building-info-diet__category-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #78909c;
+    margin-bottom: 8px;
+    margin-top: 12px;
+}
+
+.building-info-diet__category-label--warning {
+    color: #f57c00;
+}
+
+.building-info-diet__stock-row,
+.building-info-diet__consumption-row,
+.building-info-diet__shortage-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.building-info-diet__stock-item,
+.building-info-diet__consumption-item,
+.building-info-diet__shortage-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.building-info-diet__stock-emoji {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.building-info-diet__stock-value {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: #2e7d32;
+}
+
+.building-info-diet__consumption-item {
+    background: #e8f5e9;
+}
+
+.building-info-diet__shortage-item {
+    background: #fff3e0;
+}
+
+.building-info-diet__shortage-item--neutral {
+    background: #f5f5f5;
+}
+
+.building-info-diet__shortage-value {
+    font-weight: 700;
+    color: #e65100;
+}
+
+.building-info-diet__shortage-item--neutral .building-info-diet__shortage-value {
+    color: #546e7a;
+}
+
+.building-info-diet__item-label {
+    font-size: 11px;
+    color: #78909c;
+}
+
+.building-info-diet__total-unfed {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #ffebee;
+    border-left: 3px solid #c62828;
+    font-size: 13px;
+    font-weight: 600;
+    color: #b71c1c;
+    border-radius: 4px;
+}
+
+.building-info-diet__total-unfed--neutral {
+    background: #f5f5f5;
+    border-left-color: #b0bec5;
+    color: #546e7a;
+    font-weight: 500;
+}
+
+.building-info-neighbors-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.building-info-neighbors-table th,
+.building-info-neighbors-table td {
+    text-align: left;
+    padding: 10px 8px;
+    border-bottom: 1px solid #eceff1;
+}
+
+.building-info-neighbors-table th {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #78909c;
+}
+
+.building-info-messages-empty {
+    margin: 0;
+    font-size: 14px;
+    color: #78909c;
+    font-style: italic;
+}
+
+.building-info-messages-list {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+}
+
+/* Hub storage panel (barn / windmill) */
+.info-building-overlay--hub-barn .info-building-panel,
+.info-building-overlay--hub-windmill .info-building-panel {
+    max-height: min(78vh, 780px);
 }
 
 .hub-info-panel {
@@ -1832,27 +2235,40 @@ footer .footer-links a:hover {
 
 /* Close button inside header */
 .info-building-overlay .panel-close-btn {
-    background: rgba(255,255,255,0.2);
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
     color: #fff;
-    border: 1px solid rgba(255,255,255,0.35);
     border-radius: var(--border-radius-small);
-    padding: 4px 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    transition: background 160ms ease, transform 120ms ease, box-shadow 140ms ease, opacity 120ms ease;
+    transition: background 140ms ease, color 140ms ease;
 }
+
+.info-building-overlay .panel-close-btn svg {
+    width: 22px;
+    height: 22px;
+}
+
 .info-building-overlay .panel-close-btn:hover {
     background: #ffffff;
-    color: #ff9800;
-    border-color: #ffffff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.18), 0 0 0 2px rgba(255,152,0,0.45) inset;
+    color: #e65100;
 }
+
 .info-building-overlay .panel-close-btn:active {
-    transform: scale(0.96);
-    background: #fff3e0; /* very light orange */
+    background: rgba(255, 255, 255, 0.9);
+    color: #bf360c;
 }
+
 .info-building-overlay .panel-close-btn:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(255,255,255,0.6), 0 0 0 5px rgba(255,152,0,0.7);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
 }
 .info-building-overlay .panel-close-btn:disabled,
 .info-building-overlay .panel-close-btn[aria-disabled="true"] {
@@ -2314,11 +2730,16 @@ button#pwa-refresh:hover {
         font-size: 12px;
     }
 
-    /* Ajuster les overlays d'information */
-    .info-building-overlay {
-        width: clamp(300px, 50vw, 100%);
-        max-height: 80vh;
-        top: 10px;
+    /* Building info modal — mobile */
+    .info-building-panel {
+        min-width: 0;
+        width: min(100%, 96vw);
+        max-height: 85vh;
+    }
+
+    .info-building__tabs [role="tab"] {
+        padding: 10px 12px;
+        font-size: 13px;
     }
 
     /* Améliorer la scrollabilité de la toolbar */
@@ -2354,14 +2775,15 @@ button#pwa-refresh:hover {
 }
 
 @media (max-width: 560px) {
-    .info-building-overlay {
-        width: 95vw;
-        right: 0;
-        transform: translateX(50%) scale(0.98);
+    .info-building-panel {
+        width: 96vw;
+        min-width: 0;
     }
+
     .info-building-overlay.active {
-        transform: translateX(50%) scale(1);
+        transform: none;
     }
+
     .kv-row {
         grid-template-columns: 1fr;
     }

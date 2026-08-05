@@ -1,5 +1,3 @@
-import { canPlaceBuildingAtTile } from '../../contexts/construction/domain/policies/FootprintAvailabilityPolicy.js';
-
 /** Tools that must never drive a placement ghost (UI / zones / non-mesh). */
 const NON_PLACEABLE_TOOL_IDS = new Set([
   'bulldoze',
@@ -52,6 +50,7 @@ export function isPlaceableBuildingTool(toolId, assetCatalog) {
  * @param {() => string} deps.getEffectiveAssetId
  * @param {Record<string, { gridSize?: number, price?: number, category?: string }>} deps.assetCatalog
  * @param {(toolId: string) => boolean} [deps.isPlaceableTool]
+ * @param {(params: object) => { ok: boolean, reason?: string, gridSize: number }} deps.canPlaceBuildingAtTile
  * @param {() => object | null | undefined} [deps.getFocusedObject]
  */
 export function createPlacementGhostSession({
@@ -61,6 +60,7 @@ export function createPlacementGhostSession({
   getEffectiveAssetId,
   assetCatalog,
   isPlaceableTool = (toolId) => isPlaceableBuildingTool(toolId, assetCatalog),
+  canPlaceBuildingAtTile,
   getFocusedObject = () => null,
 }) {
   /** @type {object | null} */

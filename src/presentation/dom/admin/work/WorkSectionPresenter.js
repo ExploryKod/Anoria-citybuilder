@@ -1,5 +1,3 @@
-import { computeReferenceSalaryPayrollBreakdown } from '../../../../contexts/accounting/domain/policies/ReferenceSalaryPayrollPolicy.js';
-
 export class WorkSectionPresenter {
     /**
      * @param {{ accounting: object, employment: object, housing: object }} deps
@@ -11,11 +9,11 @@ export class WorkSectionPresenter {
         const settings = this.accounting?.getSalarySettings?.() ?? {
           salaryPerMonth: 0,
           salaryTaxRate: 0,
-          unemploymentBenefitRate: 0.5,
+          unemploymentBenefitRate: 0.7,
         };
         this.salary = settings.salaryPerMonth;
         this.salaryTaxRate = settings.salaryTaxRate;
-        this.unemploymentBenefitRate = settings.unemploymentBenefitRate ?? 0.5;
+        this.unemploymentBenefitRate = settings.unemploymentBenefitRate ?? 0.7;
         this.lastKnownPopulation = 0;
         this.workData = null;
     }
@@ -156,6 +154,7 @@ export class WorkSectionPresenter {
             this.workData.totalNeed = summary.totalNeed;
             this.workData.totalAvailableWorkers = summary.workerPool;
             this.workData.totalAvailableElites = summary.elitePool;
+            this.workData.payrollEligiblePopulation = summary.totalPopulation;
 
         } catch (error) {
             console.error('[WorkSection] Error updating employee statistics:', error);
@@ -263,9 +262,13 @@ export class WorkSectionPresenter {
         }
     }
 
-    #buildPayrollPreview(population, unemployed, eliteCount = 0) {
-        return computeReferenceSalaryPayrollBreakdown({
-            population,
+    #payrollEligiblePopulation() {
+        return this.workData?.payrollEligiblePopulation ?? 0;
+    }
+
+    #buildPayrollPreview(unemployed, eliteCount = 0) {
+        return this.accounting.computeReferenceSalaryPayrollBreakdown({
+            population: this.#payrollEligiblePopulation(),
             unemployed,
             eliteCount,
             referenceSalaryPerMonth: this.salary,
@@ -309,17 +312,16 @@ export class WorkSectionPresenter {
 
         if (annualBillDisplay) {
             const payroll = this.#buildPayrollPreview(
-              totalPopulation,
               this.workData?.totalUnemployed ?? 0,
               this.workData?.totalAvailableElites ?? 0
             );
             annualBillDisplay.textContent = Math.round(payroll.cityExpenseTotal * 12);
         }
         
-        this.updateSalaryTaxDisplay(totalPopulation);
+        this.updateSalaryTaxDisplay();
     }
 
-    async updateSalaryTaxDisplay(totalPopulation = null) {
+    async updateSalaryTaxDisplay() {
         const salaryTaxRateDisplay = document.getElementById('salary-tax-rate-display');
         const salaryTaxAmountDisplay = document.getElementById('salary-tax-amount-display');
         const salaryTaxAnnualDisplay = document.getElementById('salary-tax-annual-display');
@@ -328,18 +330,7 @@ export class WorkSectionPresenter {
             salaryTaxRateDisplay.textContent = Math.round(this.salaryTaxRate * 100);
         }
 
-        let population = totalPopulation;
-        if (population == null) {
-            try {
-                population = await this.housing.getCityTotalPopulation();
-            } catch (error) {
-                console.warn('[WorkSection] Error getting population for salary tax display:', error);
-                population = 0;
-            }
-        }
-
         const payroll = this.#buildPayrollPreview(
-          population,
           this.workData?.totalUnemployed ?? 0,
           this.workData?.totalAvailableElites ?? 0
         );
@@ -363,9 +354,7 @@ export class WorkSectionPresenter {
         }
 
         const unemployed = this.workData?.totalUnemployed ?? 0;
-        const population = this.lastKnownPopulation;
         const payroll = this.#buildPayrollPreview(
-            population,
             unemployed,
             this.workData?.totalAvailableElites ?? 0
         );
