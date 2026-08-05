@@ -25,7 +25,7 @@ Lors de votre visite sur le Site, certaines données peuvent être collectées a
 
 ### 2.2. Données collectées avec votre consentement
 
-Certains services tiers peuvent collecter des données avec votre consentement explicite via notre système de gestion des cookies (tarteaucitron.js).
+Le Site ne déploie actuellement aucun service tiers de mesure d'audience ou de publicité nécessitant un consentement cookie dédié.
 
 ## 3. Finalités du traitement
 
@@ -40,7 +40,6 @@ Vos données personnelles sont collectées et traitées pour les finalités suiv
 
 Le traitement de vos données personnelles est fondé sur :
 
-- **Votre consentement** : pour les cookies non essentiels et les services tiers
 - **L'exécution d'un contrat** : pour permettre le fonctionnement du jeu
 - **L'intérêt légitime** : pour améliorer le Site et assurer sa sécurité
 - **L'obligation légale** : pour respecter nos obligations réglementaires
@@ -61,13 +60,12 @@ Conformément au Règlement Général sur la Protection des Données (RGPD), vou
 - **Droit à la limitation** : vous pouvez demander la limitation du traitement
 - **Droit à la portabilité** : vous pouvez demander la récupération de vos données
 - **Droit d'opposition** : vous pouvez vous opposer au traitement de vos données
-- **Droit de retirer votre consentement** : à tout moment pour les cookies non essentiels
 
 Pour exercer ces droits, vous pouvez nous contacter à l'adresse suivante : ** eklati@protonmail.com**
 
 ## 7. Cookies et technologies similaires
 
-Le Site utilise des cookies et technologies similaires pour améliorer votre expérience. Nous utilisons tarteaucitron.js pour gérer votre consentement aux cookies.
+Le Site utilise uniquement des cookies et stockages locaux nécessaires au fonctionnement du jeu (sauvegarde de progression, préférences d'interface).
 
 ### 7.1. Cookies essentiels
 
@@ -75,15 +73,11 @@ Ces cookies sont nécessaires au fonctionnement du Site et ne peuvent pas être 
 
 - Cookies de session pour le fonctionnement du jeu
 - Cookies de préférences utilisateur
+- Données de sauvegarde locales (IndexedDB, localStorage)
 
 ### 7.2. Cookies non essentiels
 
-Ces cookies nécessitent votre consentement et peuvent être gérés via le panneau de gestion des cookies (icône en bas à droite) :
-
-- Cookies analytiques (si activés)
-- Cookies de réseaux sociaux (si activés)
-
-Vous pouvez modifier vos préférences de cookies à tout moment en cliquant sur l'icône de gestion des cookies présente sur le Site.
+Le Site n'utilise pas de cookies analytiques, publicitaires ou de réseaux sociaux.
 
 ## 8. Partage des données
 
