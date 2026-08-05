@@ -8,7 +8,7 @@ import {
   resetButton,
 } from '../shell/nodes.js';
 import { closeBuildingInfoOverlay } from '../info/layout/buildingInfoLayout.js';
-import { initResetGameFlow } from './ResetGameFlow.js';
+import { initResetGameFlow, openResetConfirmPanel } from './ResetGameFlow.js';
 
 /**
  * @param {{
@@ -65,7 +65,9 @@ export function initPlaybackControls(controlDeps = {}) {
     replayGame();
   });
 
+  initResetGameFlow();
+
   resetButton.addEventListener('click', () => {
-    initResetGameFlow();
+    openResetConfirmPanel();
   });
 }

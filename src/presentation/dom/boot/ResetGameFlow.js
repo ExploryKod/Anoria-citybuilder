@@ -41,6 +41,27 @@ async function performReset() {
   }
 }
 
+/** @param {HTMLElement} modal */
+function hideResetConfirmPanel(modal) {
+  modal.classList.remove('visible');
+  modal.setAttribute('hidden', '');
+}
+
+/** @param {HTMLElement} modal */
+function showResetConfirmPanel(modal) {
+  modal.removeAttribute('hidden');
+  modal.classList.add('visible');
+}
+
+export function openResetConfirmPanel() {
+  const modal = document.getElementById('reset-confirm-panel');
+  if (!modal) {
+    console.error('Reset confirm panel not found');
+    return;
+  }
+  showResetConfirmPanel(modal);
+}
+
 export function initResetGameFlow() {
   const modal = document.getElementById('reset-confirm-panel');
   if (!modal) {
@@ -48,29 +69,28 @@ export function initResetGameFlow() {
     return;
   }
 
-  if (modal.classList.contains('listeners-attached')) {
-    modal.classList.add('visible');
+  if (modal.dataset.listenersAttached === 'true') {
     return;
   }
+  modal.dataset.listenersAttached = 'true';
 
-  modal.classList.add('visible');
-  modal.classList.add('listeners-attached');
+  hideResetConfirmPanel(modal);
 
   const cancelBtn = modal.querySelector('.reset-confirm-cancel-btn');
   const resetBtn = modal.querySelector('.reset-confirm-reset-btn');
 
   cancelBtn.addEventListener('click', () => {
-    modal.classList.remove('visible');
+    hideResetConfirmPanel(modal);
   });
 
   resetBtn.addEventListener('click', async () => {
-    modal.classList.remove('visible');
+    hideResetConfirmPanel(modal);
     await performReset();
   });
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && modal.classList.contains('visible')) {
-      modal.classList.remove('visible');
+      hideResetConfirmPanel(modal);
     }
   });
 }
