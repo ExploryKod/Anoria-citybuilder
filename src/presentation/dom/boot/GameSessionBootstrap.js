@@ -20,7 +20,16 @@ import {
 } from '../../../composition/sessionRuntime.js';
 import { waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
 import { createGame } from '../../three/game.js';
-import { showCitySizeSelection } from './CitySizeSelectionModal.js';
+import { DEFAULT_CITY_SIZE } from '../../../shared/gameplay/SimulationDefaults.js';
+import {
+  clearBootMode,
+  clearMissionId,
+  clearProfileName,
+  getBootMode,
+  getMissionId,
+  getProfileName,
+} from '../../pages/site/bootSession.js';
+import { getMissionById } from '../../pages/missions/missionCatalog.js';
 import {
   initTresoreriePopup,
 } from '../compta/tresorerie/TresoreriePanel.js';
@@ -47,10 +56,74 @@ import { bindObjectivesHistoryDeps } from '../onboarding/objectives-history.js';
 import { initObjectivesPanel } from '../onboarding/ObjectivesPanel.js';
 import { initTutorialPanel } from '../onboarding/TutorialPanel.js';
 
+function showChronosLoader() {
+  const chronosLoader = document.getElementById('chronos-loader-modal');
+  if (chronosLoader) {
+    chronosLoader.removeAttribute('hidden');
+    chronosLoader.classList.remove('hidden');
+    chronosLoader.classList.add('opaque');
+  }
+}
+
+function persistCitySize(size) {
+  try {
+    localStorage.setItem('selectedCitySize', String(size));
+    localStorage.setItem('multiplayer-enabled', 'false');
+  } catch {
+    /* ignore */
+  }
+}
+
+function resolveBootSelection(bootMode) {
+  if (bootMode === 'tutorial') {
+    try {
+      sessionStorage.setItem('anoria.startTutorial', '1');
+    } catch {
+      /* ignore */
+    }
+    return {
+      size: DEFAULT_CITY_SIZE,
+      multiplayer: false,
+      pseudo: null,
+      roomId: null,
+      action: 'tutorial',
+    };
+  }
+
+  if (bootMode === 'mission') {
+    const mission = getMissionById(getMissionId() ?? '');
+    const profileName = getProfileName();
+    clearMissionId();
+    clearProfileName();
+    return {
+      size: mission.citySize,
+      multiplayer: false,
+      pseudo: profileName || null,
+      roomId: null,
+      action: 'mission',
+      missionId: mission.id,
+    };
+  }
+
+  return {
+    size: DEFAULT_CITY_SIZE,
+    multiplayer: false,
+    pseudo: null,
+    roomId: null,
+    action: 'solo',
+  };
+}
+
 export async function bootstrapGameSession(assetManager) {
   await waitForDatabaseReady();
 
-  const selectionResult = await showCitySizeSelection();
+  showChronosLoader();
+
+  const bootMode = getBootMode();
+  const selectionResult = resolveBootSelection(bootMode);
+  persistCitySize(selectionResult.size);
+
+  clearBootMode();
   const selectedCitySize = selectionResult.size || selectionResult;
   const multiplayerEnabled = selectionResult.multiplayer || false;
   const playerPseudo = selectionResult.pseudo || null;

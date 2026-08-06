@@ -21,6 +21,7 @@ import {
   recordConstructionRefund,
 } from '../../src/composition/budgetOps.js';
 import * as accountingGame from '../../src/composition/accountingGameOps.js';
+import { computeReferenceSalaryPayrollBreakdown } from '../../src/contexts/accounting/domain/policies/ReferenceSalaryPayrollPolicy.js';
 
 /** @deprecated Tests only — use acl/accounting.js in production. */
 export class TestBudgetFacade {
@@ -137,7 +138,14 @@ export class TestBudgetFacade {
   }
 
   async addSalaries(salaryPerMonth, population, description = null, turn = null) {
-    return accountingGame.recordSalaries(salaryPerMonth, population, description, turn);
+    const amount = computeReferenceSalaryPayrollBreakdown({
+      population,
+      unemployed: 0,
+      referenceSalaryPerMonth: salaryPerMonth,
+      unemploymentBenefitRate: 0,
+      salaryTaxRate: 0,
+    }).civilServantExpense;
+    return accountingGame.recordSalaries(amount, description, turn);
   }
 
   async addSalaryTax(salaryAmount, taxRate, description = null, turn = null) {

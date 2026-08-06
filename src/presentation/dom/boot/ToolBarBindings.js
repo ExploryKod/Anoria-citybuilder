@@ -34,11 +34,11 @@ export function initToolBarBindings(bindingDeps = {}) {
   });
 
   roadButton?.addEventListener('click', (e) => {
-    invokeSetActiveTool(e);
+    toggleModal(e);
   });
 
   housesButton.addEventListener('click', (e) => {
-    invokeSetActiveTool(e);
+    toggleModal(e);
   });
 
   palacesButton.addEventListener('click', (e) => {
@@ -50,10 +50,9 @@ export function initToolBarBindings(bindingDeps = {}) {
 
   farmsButton.addEventListener('click', toggleModal);
   industryButton.addEventListener('click', toggleModal);
+  workshopButton?.addEventListener('click', toggleModal);
 
-  marketButton.addEventListener('click', (e) => {
-    invokeSetActiveTool(e);
-  });
+  marketButton.addEventListener('click', toggleModal);
 
   infrastructureButton.addEventListener('click', (e) => {
     if (buttonStateManager && !buttonStateManager.isEnabled('infrastructure-btn')) {
@@ -62,14 +61,12 @@ export function initToolBarBindings(bindingDeps = {}) {
     toggleModal(e);
   });
 
-  document.getElementById('bookshop-btn')?.addEventListener('click', (e) => {
-    invokeSetActiveTool(e);
-  });
-
-  workshopButton?.addEventListener('click', (e) => {
-    invokeSetActiveTool(e);
-  });
-
+  document.getElementById('public-btn')?.addEventListener('click', toggleModal);
   document.getElementById('nature-btn')?.addEventListener('click', toggleModal);
+  document.getElementById('decoration-btn')?.addEventListener('click', toggleModal);
+  document.getElementById('tombs-btn')?.addEventListener('click', toggleModal);
+  document.getElementById('legend-toolbar-btn')?.addEventListener('click', toggleModal);
+  document.getElementById('finance-legend-btn')?.addEventListener('click', toggleModal);
+
   panelLayoutCloseBtn.addEventListener('click', closeModal);
 }

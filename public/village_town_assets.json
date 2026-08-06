@@ -595,8 +595,7 @@
     "public": {
       "description": "Public buildings",
       "mesh_names": [
-        "Chapel_Material005_0",
-        "Church002_Material005_0"
+        "Chapel_Material005_0"
       ]
     }
   }

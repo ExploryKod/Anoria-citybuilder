@@ -2,12 +2,13 @@
 export function journalEntryTypeLabel(entry) {
   const typeLabels = {
     citizen_tax: 'Impôt Citoyen',
-    payroll_tax: 'Impôt sur les salaires',
+    payroll_tax: 'Impôt sur les salaires (assiette citoyens)',
     capital_funds: 'Capital',
     loan_capital: 'Capital Prêt',
     construction: 'Construction',
     maintenance: 'Maintenance',
-    salary: 'Salaires',
+    salary: 'Salaires fonctionnaires',
+    unemployment_benefit: 'Salaires chômeurs',
     exceptional_expenses: 'Réparation',
     import_wheat: 'Import Blé',
     import_carrot: 'Import Carotte',

@@ -36,9 +36,9 @@ function residential(id, type, extras = {}) {
 
 describe('Housing — famished population', () => {
   describe('FamishedPopulationPolicy', () => {
-    test('fed population is min(pop, stocks.food)', () => {
-      expect(fedPopulationAtHouse(6, { food: 3 })).toBe(3);
-      expect(famishedPopulationAtHouse(6, { food: 3 })).toBe(3);
+    test('fed population uses all edible baskets (gathering + market)', () => {
+      expect(fedPopulationAtHouse(6, { fruit: 2, game: 1, wheat: 0 })).toBe(3);
+      expect(famishedPopulationAtHouse(6, { fruit: 2, game: 1 })).toBe(3);
     });
 
     test('no famished when food covers pop', () => {

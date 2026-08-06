@@ -14,8 +14,8 @@ import {
   BUILDING_EMPLOYEE_NEEDS,
 } from '../contexts/employment/domain/catalogs/EmploymentSectorCatalog.js';
 import {
-  FACTORY_MAX_STORAGE,
-  FACTORY_EMPLOYEE_NEEDS,
+  buildFactoryEmployeeNeedsConfig,
+  buildFactoryMaxStorageConfig,
 } from '../contexts/supply/domain/manufacturing/ProductRecipeCatalog.js';
 import { DEFAULT_FOOD_DISTRIBUTION_DISTANCE } from '../contexts/supply/domain/catalogs/SupplySimulationCatalog.js';
 import {
@@ -41,8 +41,8 @@ export function getLegacyEmploymentConfigSection() {
     defaultPriorities: DEFAULT_SECTOR_PRIORITIES,
     buildingSectorMap: BUILDING_SECTOR_MAP,
     buildingNeeds: BUILDING_EMPLOYEE_NEEDS,
-    factoryEmployeeNeeds: FACTORY_EMPLOYEE_NEEDS,
-    factoryMaxStorage: FACTORY_MAX_STORAGE,
+    factoryEmployeeNeeds: buildFactoryEmployeeNeedsConfig(),
+    factoryMaxStorage: buildFactoryMaxStorageConfig(),
   };
 }
 

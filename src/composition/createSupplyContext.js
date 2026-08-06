@@ -1,9 +1,13 @@
 import { DexieSupplyBuildingRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyBuildingRepository.js';
-import { MarketBuysFromNearbyFarms } from '../contexts/supply/application/commands/procurement/MarketBuysFromNearbyFarms.js';
-import { MarkMarketBuyingSeason } from '../contexts/supply/application/commands/procurement/MarkMarketBuyingSeason.js';
+import { MarketBuysFromAssignedWindmill } from '../contexts/supply/application/commands/procurement/MarketBuysFromAssignedWindmill.js';
 import { DistributeFoodFromMarketToHouses } from '../contexts/supply/application/commands/distribution/DistributeFoodFromMarketToHouses.js';
 import { WindmillCollectsFromAllFarms } from '../contexts/supply/application/commands/surplus/WindmillCollectsFromAllFarms.js';
 import { UpdateHousesMarketReach } from '../contexts/supply/application/commands/distribution/UpdateHousesMarketReach.js';
+import { UpdateMarketWindmillLink } from '../contexts/supply/application/commands/procurement/UpdateMarketWindmillLink.js';
+import { RebalanceWindmillMarketAllocations } from '../contexts/supply/application/commands/links/RebalanceWindmillMarketAllocations.js';
+import { AssignMarketToWindmill } from '../contexts/supply/application/commands/links/AssignMarketToWindmill.js';
+import { DetachMarketFromWindmill } from '../contexts/supply/application/commands/links/DetachMarketFromWindmill.js';
+import { CascadeDestroyWindmillMarkets } from '../contexts/supply/application/commands/links/CascadeDestroyWindmillMarkets.js';
 import { UpdateMarketFarmProximity } from '../contexts/supply/application/commands/procurement/UpdateMarketFarmProximity.js';
 import { MarkWindmillCollectingSeason } from '../contexts/supply/application/commands/surplus/MarkWindmillCollectingSeason.js';
 import { ResetFarmsSoldToWindmill } from '../contexts/supply/application/commands/surplus/ResetFarmsSoldToWindmill.js';
@@ -13,6 +17,8 @@ import { HarvestFarmCrop } from '../contexts/supply/application/commands/harvest
 import { HarvestAllFarmCrops } from '../contexts/supply/application/commands/harvest/HarvestAllFarmCrops.js';
 import { ConsumeHouseFood } from '../contexts/supply/application/commands/consumption/ConsumeHouseFood.js';
 import { ConsumeAllHouseFood } from '../contexts/supply/application/commands/consumption/ConsumeAllHouseFood.js';
+import { ProduceHouseSubsistenceFood } from '../contexts/supply/application/commands/subsistence/ProduceHouseSubsistenceFood.js';
+import { ProduceAllHouseSubsistenceFood } from '../contexts/supply/application/commands/subsistence/ProduceAllHouseSubsistenceFood.js';
 import { ProcessWindmillCollection } from '../contexts/supply/application/commands/surplus/ProcessWindmillCollection.js';
 import { RunWindmillSurplusCycle } from '../contexts/supply/application/commands/surplus/RunWindmillSurplusCycle.js';
 import { RunCityMarketFoodCycle } from '../contexts/supply/application/commands/procurement/RunCityMarketFoodCycle.js';
@@ -32,6 +38,25 @@ import { GetBuildingSupplyView } from '../contexts/supply/application/queries/Ge
 import { ListSupplyMapBuildings } from '../contexts/supply/application/queries/ListSupplyMapBuildings.js';
 import { ListWindmillSupplyViews } from '../contexts/supply/application/queries/ListWindmillSupplyViews.js';
 import { ListSupplyStockSnapshots } from '../contexts/supply/application/queries/ListSupplyStockSnapshots.js';
+import { BarnStockOperations } from '../contexts/supply/application/services/BarnStockOperations.js';
+import { TransferFactoryToBarn } from '../contexts/supply/application/commands/commerce/TransferFactoryToBarn.js';
+import { RunMonthlyCommerceSupplyCycle } from '../contexts/supply/application/workflows/RunMonthlyCommerceSupplyCycle.js';
+import { UpdateFactoryWorkerDemandFromCaps } from '../contexts/supply/application/commands/manufacturing/UpdateFactoryWorkerDemandFromCaps.js';
+import { AllocateFactoryWorkersToCommodityLines } from '../contexts/supply/application/commands/manufacturing/AllocateFactoryWorkersToCommodityLines.js';
+import { GetFactoryWorkerPlanView } from '../contexts/supply/application/queries/GetFactoryWorkerPlanView.js';
+import { GetHubStorageInfoView } from '../contexts/supply/application/queries/GetHubStorageInfoView.js';
+import { ExecuteHubFetchOrders } from '../contexts/supply/application/commands/commerce/ExecuteHubFetchOrders.js';
+import {
+  cycleHubStorageMode,
+  normalizeHubStorageOrders,
+  tryAdjustHubStoragePercent,
+} from '../contexts/supply/domain/policies/HubStorageOrdersPolicy.js';
+import { HUB_KIND, listHubProducts } from '../contexts/supply/domain/catalogs/HubStorageCatalog.js';
+import { createEmptyCommerceStocks } from '../contexts/supply/domain/catalogs/BarnCommerceCatalog.js';
+import {
+  getBarnProductStock,
+  getBarnTotalCapacity,
+} from '../contexts/supply/domain/policies/BarnStockPolicy.js';
 
 /**
  * Composition root — Supply bounded context.
@@ -58,10 +83,24 @@ export function createSupplyContext({
   const productionJournal = new SupplyProductionJournal({
     resolveTimeInfo: (turn) => getTimeInfo(turn) ?? null,
   });
-  const marketBuysFromNearbyFarms = new MarketBuysFromNearbyFarms(
+  const marketBuysFromAssignedWindmill = new MarketBuysFromAssignedWindmill(
     supplyBuildingRepositoryImpl
   );
-  const markMarketBuyingSeason = new MarkMarketBuyingSeason(supplyBuildingRepositoryImpl);
+  const rebalanceWindmillMarketAllocations = new RebalanceWindmillMarketAllocations(
+    supplyBuildingRepositoryImpl
+  );
+  const assignMarketToWindmill = new AssignMarketToWindmill(
+    supplyBuildingRepositoryImpl,
+    rebalanceWindmillMarketAllocations
+  );
+  const detachMarketFromWindmill = new DetachMarketFromWindmill(
+    supplyBuildingRepositoryImpl,
+    rebalanceWindmillMarketAllocations
+  );
+  const cascadeDestroyWindmillMarkets = new CascadeDestroyWindmillMarkets(
+    supplyBuildingRepositoryImpl,
+    detachMarketFromWindmill
+  );
   const distributeFoodFromMarketToHouses = new DistributeFoodFromMarketToHouses(
     supplyBuildingRepositoryImpl
   );
@@ -71,7 +110,7 @@ export function createSupplyContext({
   const updateHousesMarketReach = new UpdateHousesMarketReach(
     supplyBuildingRepositoryImpl
   );
-  const updateMarketFarmProximity = new UpdateMarketFarmProximity(
+  const updateMarketWindmillLink = new UpdateMarketWindmillLink(
     supplyBuildingRepositoryImpl
   );
   const markWindmillCollectingSeason = new MarkWindmillCollectingSeason(
@@ -96,6 +135,13 @@ export function createSupplyContext({
     supplyBuildingRepositoryImpl,
     consumeHouseFood
   );
+  const produceHouseSubsistenceFood = new ProduceHouseSubsistenceFood(
+    supplyBuildingRepositoryImpl
+  );
+  const produceAllHouseSubsistenceFood = new ProduceAllHouseSubsistenceFood(
+    supplyBuildingRepositoryImpl,
+    produceHouseSubsistenceFood
+  );
   const processWindmillCollection = new ProcessWindmillCollection(
     supplyBuildingRepositoryImpl,
     windmillCollectsFromAllFarms,
@@ -106,7 +152,8 @@ export function createSupplyContext({
     supplyBuildingRepositoryImpl,
     markWindmillCollectingSeason,
     resetFarmsSoldToWindmill,
-    processWindmillCollection
+    processWindmillCollection,
+    rebalanceWindmillMarketAllocations
   );
   const traceability = new SupplyFoodTraceability({
     foodTraceabilityRepository: foodTraceabilityRepositoryImpl,
@@ -114,19 +161,19 @@ export function createSupplyContext({
   });
   const runCityMarketFoodCycle = new RunCityMarketFoodCycle(
     supplyBuildingRepositoryImpl,
-    marketBuysFromNearbyFarms,
+    marketBuysFromAssignedWindmill,
     distributeFoodFromMarketToHouses,
-    updateMarketFarmProximity,
+    updateMarketWindmillLink,
     traceability
   );
   const runMonthlyFoodSupplyCycle = new RunMonthlyFoodSupplyCycle(
     harvestAllFarmCrops,
-    markMarketBuyingSeason,
     runCityMarketFoodCycle,
     updateHousesMarketReach,
     runWindmillSurplusCycle,
     consumeAllHouseFood,
-    traceability
+    traceability,
+    produceAllHouseSubsistenceFood
   );
   const collectFactoryResources = new CollectFactoryResources(
     factoryBuildingRepositoryImpl,
@@ -165,15 +212,39 @@ export function createSupplyContext({
   const listSupplyStockSnapshotsQuery = new ListSupplyStockSnapshots(
     supplyBuildingRepositoryImpl
   );
+  const barnStockOperations = new BarnStockOperations(supplyBuildingRepositoryImpl);
+  const transferFactoryToBarn = new TransferFactoryToBarn(
+    factoryBuildingRepositoryImpl,
+    supplyBuildingRepositoryImpl,
+    barnStockOperations
+  );
+  const runMonthlyCommerceSupplyCycle = new RunMonthlyCommerceSupplyCycle(
+    transferFactoryToBarn
+  );
+  const updateFactoryWorkerDemandFromCaps = new UpdateFactoryWorkerDemandFromCaps(
+    factoryBuildingRepositoryImpl
+  );
+  const allocateFactoryWorkersToCommodityLines = new AllocateFactoryWorkersToCommodityLines(
+    factoryBuildingRepositoryImpl
+  );
+  const getFactoryWorkerPlanView = new GetFactoryWorkerPlanView();
+  const getHubStorageInfoView = new GetHubStorageInfoView();
+  const executeHubFetchOrders = new ExecuteHubFetchOrders(
+    supplyBuildingRepositoryImpl,
+    factoryBuildingRepositoryImpl
+  );
 
   return {
     supplyBuildingRepository: supplyBuildingRepositoryImpl,
-    marketBuysFromNearbyFarms,
-    markMarketBuyingSeason,
+    marketBuysFromAssignedWindmill,
+    assignMarketToWindmill,
+    detachMarketFromWindmill,
+    cascadeDestroyWindmillMarkets,
+    rebalanceWindmillMarketAllocations,
     distributeFoodFromMarketToHouses,
     windmillCollectsFromAllFarms,
     updateHousesMarketReach,
-    updateMarketFarmProximity,
+    updateMarketWindmillLink,
     markWindmillCollectingSeason,
     resetFarmsSoldToWindmill,
     setWindmillCollectingFlag,
@@ -182,6 +253,8 @@ export function createSupplyContext({
     harvestAllFarmCrops,
     consumeHouseFood,
     consumeAllHouseFood,
+    produceHouseSubsistenceFood,
+    produceAllHouseSubsistenceFood,
     processWindmillCollection,
     runWindmillSurplusCycle,
     runCityMarketFoodCycle,
@@ -197,13 +270,41 @@ export function createSupplyContext({
     listSupplyMapBuildingsQuery,
     listWindmillSupplyViewsQuery,
     listSupplyStockSnapshotsQuery,
+    barnStockOperations,
+    transferFactoryToBarn,
+    runMonthlyCommerceSupplyCycle,
+    updateFactoryWorkerDemandFromCaps,
+    allocateFactoryWorkersToCommodityLines,
+    getFactoryWorkerPlanView,
 
-    async buyFromNearbyFarms(marketId, farmRefs, season) {
-      return marketBuysFromNearbyFarms.execute({ marketId, farmRefs, season });
+    async buyFromAssignedWindmill(marketId, month = null) {
+      return marketBuysFromAssignedWindmill.execute({ marketId, month });
     },
 
-    async markBuyingSeason(season) {
-      return markMarketBuyingSeason.execute(season);
+    async assignMarketToWindmill(params) {
+      return assignMarketToWindmill.execute(params);
+    },
+
+    async detachMarketFromWindmill(params) {
+      return detachMarketFromWindmill.execute(params);
+    },
+
+    async cascadeDestroyWindmillMarkets(params) {
+      return cascadeDestroyWindmillMarkets.execute(params);
+    },
+
+    async rebalanceWindmillAllocations(windmillId) {
+      return rebalanceWindmillMarketAllocations.execute({ windmillId });
+    },
+
+    async initializeWindmillLinks({ windmillId }) {
+      await supplyBuildingRepositoryImpl.saveLinkedMarkets(windmillId, []);
+      return { initialized: true, windmillId };
+    },
+
+    async hasOperationalWindmill() {
+      const windmills = await supplyBuildingRepositoryImpl.findWindmills();
+      return windmills.length > 0;
     },
 
     async distributeToHouses(marketId, houseRefs, season) {
@@ -226,8 +327,8 @@ export function createSupplyContext({
       return updateHousesMarketReach.execute({ maxDistance });
     },
 
-    async updateFarmProximity(marketId, hasFarmsNearby) {
-      return updateMarketFarmProximity.execute({ marketId, hasFarmsNearby });
+    async updateWindmillLink(marketId, hasWindmillLink) {
+      return updateMarketWindmillLink.execute({ marketId, hasWindmillLink });
     },
 
     async markCollectingSeason(month) {
@@ -262,6 +363,14 @@ export function createSupplyContext({
       return consumeAllHouseFood.execute({ monthIndex });
     },
 
+    async produceHouseSubsistenceFood(houseId, monthIndex) {
+      return produceHouseSubsistenceFood.execute({ houseId, monthIndex });
+    },
+
+    async produceAllHouseSubsistenceFood({ monthIndex }) {
+      return produceAllHouseSubsistenceFood.execute({ monthIndex });
+    },
+
     async runWindmillSurplusCycle({ month, monthIndex, dayInMonth, year }) {
       return runWindmillSurplusCycle.execute({
         month,
@@ -282,6 +391,88 @@ export function createSupplyContext({
 
     async runCityFactoryProductionCycle({ city, time = 0 }) {
       return runCityFactoryProductionCycle.execute({ city, time });
+    },
+
+    async runMonthlyCommerceSupplyCycle({ monthIndex, time = 0 }) {
+      return runMonthlyCommerceSupplyCycle.execute({ monthIndex, time });
+    },
+
+    async syncFactoryWorkerDemandFromCaps() {
+      return updateFactoryWorkerDemandFromCaps.execute();
+    },
+
+    async allocateFactoryWorkersToCommodityLines() {
+      return allocateFactoryWorkersToCommodityLines.execute();
+    },
+
+    getFactoryWorkerPlanView(factory, options = {}) {
+      return getFactoryWorkerPlanView.execute({ factory, ...options });
+    },
+
+    getHubStorageInfoView(hubKind, buildingRow, options = {}) {
+      return getHubStorageInfoView.execute({ hubKind, buildingRow, ...options });
+    },
+
+    async updateHubStorageOrderMode(hubKind, buildingId, productId) {
+      const row = await supplyBuildingRepositoryImpl.findRowById(buildingId);
+      const productIds = listHubProducts(hubKind);
+      const orders = normalizeHubStorageOrders(row?.hubStorageOrders, productIds);
+      orders[productId] = {
+        ...orders[productId],
+        mode: cycleHubStorageMode(orders[productId].mode),
+      };
+      await supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, {
+        hubStorageOrders: orders,
+      });
+      if (hubKind === HUB_KIND.BARN && orders[productId].mode === 'fetch') {
+        await executeHubFetchOrders.execute({ hubKind, buildingId });
+      }
+      return orders;
+    },
+
+    async adjustHubStorageOrderShare(hubKind, buildingId, productId, delta) {
+      const row = await supplyBuildingRepositoryImpl.findRowById(buildingId);
+      const productIds = listHubProducts(hubKind);
+      const orders = normalizeHubStorageOrders(row?.hubStorageOrders, productIds);
+      const stocks =
+        hubKind === HUB_KIND.BARN
+          ? createEmptyCommerceStocks(row?.commerceStocks)
+          : row?.stocks ?? {};
+      const totalCapacity =
+        hubKind === HUB_KIND.BARN ? getBarnTotalCapacity(row) : row?.maxStock ?? 1000;
+
+      const currentAmount =
+        hubKind === HUB_KIND.BARN
+          ? getBarnProductStock(stocks, productId)
+          : Math.max(0, Math.floor(Number(stocks[productId]) || 0));
+
+      const attempt = tryAdjustHubStoragePercent({
+        order: orders[productId],
+        deltaSteps: delta,
+        currentAmount,
+        totalCapacity,
+      });
+
+      if (!attempt.ok) {
+        return attempt;
+      }
+
+      orders[productId] = attempt.order;
+      await supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, {
+        hubStorageOrders: orders,
+      });
+      if (hubKind === HUB_KIND.BARN && orders[productId].mode === 'fetch') {
+        await executeHubFetchOrders.execute({ hubKind, buildingId });
+      }
+      return { ok: true, orders };
+    },
+
+    async executeHubFetchOrders(hubKind, buildingId) {
+      return executeHubFetchOrders.execute({ hubKind, buildingId });
+    },
+
+    async getCommerceHubStocks() {
+      return barnStockOperations.getAllCommerceStocks();
     },
 
     async getCityFactoryResources(city) {

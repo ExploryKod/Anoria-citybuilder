@@ -27,7 +27,8 @@
  * @property {number} incomeTotal
  * @property {number} expensesTotal
  * @property {number} netFlow
- * @property {number} displayBalance
+ * @property {boolean} isCurrentYear
+ * @property {number|null} treasuryBalance Trésorerie actuelle (année en cours uniquement)
  * @property {GeneralLedgerMonth[]} months
  *
  * @typedef {object} GeneralLedgerView

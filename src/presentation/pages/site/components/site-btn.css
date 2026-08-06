@@ -1,0 +1,83 @@
+/**
+ * Composant BEM : site-btn
+ * Bloc — site-btn
+ * Modificateurs — --primary, --inline, --beta, --disabled
+ */
+
+.site-btn {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--site-btn-border);
+  border-radius: var(--border-radius-medium);
+  background: var(--site-btn-bg);
+  color: var(--site-btn-text);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: none;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease,
+    opacity 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.site-btn:hover:not(:disabled):not(.site-btn--disabled) {
+  border-color: var(--cta);
+  background: var(--site-btn-bg-hover);
+  color: var(--site-btn-text);
+}
+
+/* Modificateur : primaire (blanc sur orange) */
+.site-btn--primary {
+  border-color: var(--site-btn-bg-primary);
+  background: var(--site-btn-bg-primary);
+  color: var(--site-btn-text-primary);
+  box-shadow: var(--site-btn-shadow-primary);
+}
+
+.site-btn--primary:hover:not(:disabled):not(.site-btn--disabled) {
+  border-color: var(--site-btn-bg-primary-hover);
+  background: var(--site-btn-bg-primary-hover);
+  color: var(--site-btn-text-primary);
+}
+
+/* Modificateur : largeur contextuelle (barre d’actions, modales) */
+.site-btn--inline {
+  width: auto;
+}
+
+/* Modificateur : état désactivé (gris + opacité + curseur interdit) */
+.site-btn:is(:disabled, .site-btn--disabled) {
+  cursor: not-allowed;
+  background: var(--site-btn-bg-disabled);
+  border-color: var(--site-btn-border-disabled);
+  color: var(--site-btn-text-disabled);
+  opacity: var(--site-btn-opacity-disabled);
+  box-shadow: none;
+  font-weight: 500;
+}
+
+.site-btn--primary:is(:disabled, .site-btn--disabled) {
+  background: var(--site-btn-bg-disabled);
+  border-color: var(--site-btn-border-disabled);
+  color: var(--site-btn-text-disabled);
+}
+
+/* Modificateur : libellé bêta */
+.site-btn--beta::after {
+  content: ' (bêta)';
+  font-size: 0.75em;
+  font-weight: 500;
+  color: var(--site-text-muted);
+}
+
+.site-btn--beta:is(:disabled, .site-btn--disabled)::after {
+  color: inherit;
+}

@@ -7,7 +7,8 @@ import {
   replayButton,
   resetButton,
 } from '../shell/nodes.js';
-import { initResetGameFlow } from './ResetGameFlow.js';
+import { closeBuildingInfoOverlay } from '../info/layout/buildingInfoLayout.js';
+import { initResetGameFlow, openResetConfirmPanel } from './ResetGameFlow.js';
 
 /**
  * @param {{
@@ -29,7 +30,7 @@ export function initPlaybackControls(controlDeps = {}) {
 
   infoObjectCloseBtn.addEventListener('click', () => {
     if (infoObjectOverlay.classList.contains('active')) {
-      infoObjectOverlay.classList.remove('active');
+      closeBuildingInfoOverlay(infoObjectOverlay);
 
       const canvas = document.querySelector('canvas');
       if (canvas) {
@@ -64,7 +65,9 @@ export function initPlaybackControls(controlDeps = {}) {
     replayGame();
   });
 
+  initResetGameFlow();
+
   resetButton.addEventListener('click', () => {
-    initResetGameFlow();
+    openResetConfirmPanel();
   });
 }

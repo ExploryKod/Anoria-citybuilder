@@ -29,6 +29,8 @@ Housing speaks of **residents** and **total `pop`**. Same numbers, different con
 
 `workerPopFromHouse`, `elitePopFromHouse`, `citizenPopFromHouse` remain Employment domain policies.
 
+Labor eligibility rules (e.g., level 1 houses contribute 0 workers) are defined in the **Shared Kernel: Population** (`shared/population/CitizenStatusCatalog.js`). Employment consumes this catalog to determine if a house's population counts toward the labor pool.
+
 Palace `pop + 1` on evolution is a **Housing** mutation (`HouseEvolutionPolicy`). Employment reads the resulting `pop` on the next redistribution tick.
 
 ## Optional alignment test

@@ -178,15 +178,17 @@ describe('ACL cross-context reads (formerly HousesStore facades)', () => {
     expect(byType['Farm-Wheat']).toBe(20);
   });
 
-  test('clearPopulationWithoutRoadAccess zeros pop without roads', async () => {
+  test('clearPopulationWithoutRoadAccess zeros pop without roads (Palace only — legacy safety net)', async () => {
+    // Blue/Red/Purple are level-based now (see HouseLevelPolicy): losing a
+    // road demotes level + clamps pop, it never hard-resets to 0 anymore.
     const isolated = makeHouseRecord({
-      type: 'House-Blue',
+      type: 'House-2Story',
       x: 1,
       y: 1,
       extra: { pop: 3, roads: 0 },
     });
     const connected = makeHouseRecord({
-      type: 'House-Blue',
+      type: 'House-2Story',
       x: 2,
       y: 2,
       extra: { pop: 3, roads: 1 },
@@ -198,5 +200,19 @@ describe('ACL cross-context reads (formerly HousesStore facades)', () => {
     expect(result.totalPopulationLost).toBe(3);
     expect((await getBuildingRow(isolated.instanceId)).pop).toBe(0);
     expect((await getBuildingRow(connected.instanceId)).pop).toBe(3);
+  });
+
+  test('clearPopulationWithoutRoadAccess leaves Blue/Red/Purple houses untouched (handled by HouseLevelPolicy instead)', async () => {
+    const isolated = makeHouseRecord({
+      type: 'House-Blue',
+      x: 1,
+      y: 1,
+      extra: { pop: 3, roads: 0 },
+    });
+    await seedBuilding(isolated);
+
+    const result = await clearPopulationWithoutRoadAccess();
+    expect(result.totalPopulationLost).toBe(0);
+    expect((await getBuildingRow(isolated.instanceId)).pop).toBe(3);
   });
 });

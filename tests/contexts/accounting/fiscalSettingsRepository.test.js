@@ -29,6 +29,7 @@ describe('LocalStorageFiscalSettingsRepository', () => {
     expect(repo.getSalarySettings()).toEqual({
       salaryPerMonth: DEFAULT_FISCAL_SETTINGS.salaryPerMonth,
       salaryTaxRate: DEFAULT_FISCAL_SETTINGS.salaryTaxRate,
+      unemploymentBenefitRate: DEFAULT_FISCAL_SETTINGS.unemploymentBenefitRate,
     });
   });
 
@@ -36,8 +37,16 @@ describe('LocalStorageFiscalSettingsRepository', () => {
     expect(repo.setCitizenTaxPerCapita(150)).toBe(150);
     expect(repo.getCitizenTaxPerCapita()).toBe(150);
 
-    const salary = repo.setSalarySettings({ salaryPerMonth: 120, salaryTaxRate: 0.25 });
-    expect(salary).toEqual({ salaryPerMonth: 120, salaryTaxRate: 0.25 });
+    const salary = repo.setSalarySettings({
+      salaryPerMonth: 120,
+      salaryTaxRate: 0.25,
+      unemploymentBenefitRate: 0.4,
+    });
+    expect(salary).toEqual({
+      salaryPerMonth: 120,
+      salaryTaxRate: 0.25,
+      unemploymentBenefitRate: 0.4,
+    });
     expect(repo.getSalarySettings()).toEqual(salary);
   });
 
@@ -45,5 +54,8 @@ describe('LocalStorageFiscalSettingsRepository', () => {
     expect(repo.setCitizenTaxPerCapita(9999)).toBe(1000);
     expect(repo.setSalarySettings({ salaryPerMonth: 1 }).salaryPerMonth).toBe(10);
     expect(repo.setSalarySettings({ salaryTaxRate: 2 }).salaryTaxRate).toBe(1);
+    expect(repo.setSalarySettings({ unemploymentBenefitRate: 2 }).unemploymentBenefitRate).toBe(
+      1
+    );
   });
 });

@@ -1,66 +1,144 @@
-/** Manufactured goods recipes (refined inputs → product unit). */
-export const PRODUCT_RECIPES = Object.freeze({
-  furniture: { logs: 4 },
-  weapons: { refinedIron: 4 },
-  pottery: { refinedClay: 4 },
-  jewelry: { refinedGold: 4 },
+/** @typedef {'raw_material'|'finished_product'} FactoryCommodityKind */
+/** @typedef {'direct'|'manufacturing'} FactoryLineDestination */
+
+export const FACTORY_COMMODITY_KIND = Object.freeze({
+  RAW_MATERIAL: 'raw_material',
+  FINISHED_PRODUCT: 'finished_product',
 });
 
-/** Production delay in turns after transformation. */
-export const PRODUCT_PRODUCTION_TURNS = Object.freeze({
-  furniture: 1,
-  weapons: 1,
-  pottery: 1,
-  jewelry: 1,
+const RAW = FACTORY_COMMODITY_KIND.RAW_MATERIAL;
+const FINISHED = FACTORY_COMMODITY_KIND.FINISHED_PRODUCT;
+const DIRECT = 'direct';
+const BOTH = Object.freeze([DIRECT, 'manufacturing']);
+const DIRECT_ONLY = Object.freeze([DIRECT]);
+
+/**
+ * Canonical factory commodity definitions (single source of truth).
+ *
+ * @type {Readonly<Record<string, Readonly<{
+ *   id: string,
+ *   kind: FactoryCommodityKind,
+ *   lineDestinations: readonly FactoryLineDestination[],
+ *   maxStorage: number,
+ *   workerNeed: number,
+ *   employeeRole: string,
+ *   recipe?: Readonly<Record<string, number>>,
+ *   productionTurns?: number,
+ *   hasTransformation?: boolean,
+ * }>>>}
+ */
+export const FACTORY_COMMODITIES = Object.freeze({
+  wood: Object.freeze({
+    id: 'wood',
+    kind: RAW,
+    lineDestinations: BOTH,
+    maxStorage: 200,
+    workerNeed: 2,
+    employeeRole: 'bucheron',
+  }),
+  rock: Object.freeze({
+    id: 'rock',
+    kind: RAW,
+    lineDestinations: BOTH,
+    maxStorage: 200,
+    workerNeed: 2,
+    employeeRole: 'mineur',
+  }),
+  clay: Object.freeze({
+    id: 'clay',
+    kind: RAW,
+    lineDestinations: BOTH,
+    maxStorage: 200,
+    workerNeed: 2,
+    employeeRole: 'creuseur',
+  }),
+  iron: Object.freeze({
+    id: 'iron',
+    kind: RAW,
+    lineDestinations: BOTH,
+    maxStorage: 200,
+    workerNeed: 2,
+    employeeRole: 'mineur',
+  }),
+  gold: Object.freeze({
+    id: 'gold',
+    kind: RAW,
+    lineDestinations: BOTH,
+    maxStorage: 200,
+    workerNeed: 2,
+    employeeRole: 'mineur',
+  }),
+  furniture: Object.freeze({
+    id: 'furniture',
+    kind: FINISHED,
+    lineDestinations: DIRECT_ONLY,
+    maxStorage: 100,
+    workerNeed: 2,
+    employeeRole: 'menuisier',
+    recipe: Object.freeze({ logs: 4 }),
+    productionTurns: 1,
+    hasTransformation: true,
+  }),
+  weapons: Object.freeze({
+    id: 'weapons',
+    kind: FINISHED,
+    lineDestinations: DIRECT_ONLY,
+    maxStorage: 100,
+    workerNeed: 2,
+    employeeRole: 'armurier',
+    recipe: Object.freeze({ refinedIron: 4 }),
+    productionTurns: 1,
+    hasTransformation: true,
+  }),
+  pottery: Object.freeze({
+    id: 'pottery',
+    kind: FINISHED,
+    lineDestinations: DIRECT_ONLY,
+    maxStorage: 100,
+    workerNeed: 2,
+    employeeRole: 'potier',
+    recipe: Object.freeze({ refinedClay: 4 }),
+    productionTurns: 1,
+    hasTransformation: true,
+  }),
+  jewelry: Object.freeze({
+    id: 'jewelry',
+    kind: FINISHED,
+    lineDestinations: DIRECT_ONLY,
+    maxStorage: 100,
+    workerNeed: 2,
+    employeeRole: 'bijoutier',
+    recipe: Object.freeze({ refinedGold: 4 }),
+    productionTurns: 1,
+    hasTransformation: true,
+  }),
 });
 
-export const PRODUCTS_WITH_TRANSFORMATION = Object.freeze([
-  'furniture',
-  'jewelry',
-  'pottery',
-  'weapons',
-]);
+/**
+ * @param {string} commodityId
+ */
+export function getFactoryCommodity(commodityId) {
+  return FACTORY_COMMODITIES[commodityId] ?? null;
+}
 
-export const FACTORY_RESOURCE_TYPES = Object.freeze([
-  'wood',
-  'rock',
-  'clay',
-  'iron',
-  'gold',
-]);
+export function listFactoryCommodities() {
+  return Object.values(FACTORY_COMMODITIES);
+}
 
-/** Max storage per resource/product (canonical game rules). */
-export const FACTORY_MAX_STORAGE = Object.freeze({
-  wood: 200,
-  rock: 200,
-  clay: 200,
-  iron: 200,
-  gold: 200,
-  furniture: 100,
-  weapons: 100,
-  pottery: 100,
-  jewelry: 100,
-});
+export function listRawFactoryCommodities() {
+  return listFactoryCommodities().filter((commodity) => commodity.kind === RAW);
+}
 
-/** Workers required per factory resource/product line. */
-export const FACTORY_EMPLOYEE_NEEDS = Object.freeze({
-  wood: { worker_need: 2, type: 'bucheron' },
-  rock: { worker_need: 2, type: 'mineur' },
-  clay: { worker_need: 2, type: 'creuseur' },
-  iron: { worker_need: 2, type: 'mineur' },
-  gold: { worker_need: 2, type: 'mineur' },
-  furniture: { worker_need: 2, type: 'menuisier' },
-  weapons: { worker_need: 2, type: 'armurier' },
-  pottery: { worker_need: 2, type: 'potier' },
-  jewelry: { worker_need: 2, type: 'bijoutier' },
-});
+export function listFinishedFactoryCommodities() {
+  return listFactoryCommodities().filter((commodity) => commodity.kind === FINISHED);
+}
 
 /**
  * @param {string} resourceType
  * @returns {number}
  */
 export function getFactoryMaxStorage(resourceType) {
-  return FACTORY_MAX_STORAGE[resourceType] ?? 200;
+  return getFactoryCommodity(resourceType)?.maxStorage ?? 200;
 }
 
 /**
@@ -68,7 +146,7 @@ export function getFactoryMaxStorage(resourceType) {
  * @returns {number}
  */
 export function getFactoryWorkerNeed(resourceType) {
-  return FACTORY_EMPLOYEE_NEEDS[resourceType]?.worker_need ?? 2;
+  return getFactoryCommodity(resourceType)?.workerNeed ?? 2;
 }
 
 /**
@@ -76,5 +154,33 @@ export function getFactoryWorkerNeed(resourceType) {
  * @returns {string}
  */
 export function getFactoryEmployeeRoleType(resourceType) {
-  return FACTORY_EMPLOYEE_NEEDS[resourceType]?.type ?? 'worker';
+  return getFactoryCommodity(resourceType)?.employeeRole ?? 'worker';
+}
+
+/**
+ * Config mirror for employment UI — derived from FACTORY_COMMODITIES.
+ */
+export function buildFactoryEmployeeNeedsConfig() {
+  return Object.freeze(
+    Object.fromEntries(
+      listFactoryCommodities().map((commodity) => [
+        commodity.id,
+        Object.freeze({
+          worker_need: commodity.workerNeed,
+          type: commodity.employeeRole,
+        }),
+      ])
+    )
+  );
+}
+
+/**
+ * Config mirror for factory storage UI — derived from FACTORY_COMMODITIES.
+ */
+export function buildFactoryMaxStorageConfig() {
+  return Object.freeze(
+    Object.fromEntries(
+      listFactoryCommodities().map((commodity) => [commodity.id, commodity.maxStorage])
+    )
+  );
 }

@@ -31,6 +31,10 @@ import gameUIDefault from '../dom/shell/GameUI.js';
 import { CitizenManager } from './managers/CitizenManager.js';
 import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
 import { TileGridOverlay } from './managers/TileGridOverlay.js';
+import {
+  MapOverlayVisibility,
+  PRODUCTION_STATUS_SPRITE_NAMES,
+} from './managers/MapOverlayVisibility.js';
 import { syncTileNeighborsPass } from './sync/syncTileNeighborsPass.js';
 import { cleanupOrphanedBuildings } from './sync/cleanupOrphanedBuildings.js';
 import { registerAppService } from '../../composition/appServices.js';
@@ -38,6 +42,7 @@ import {
   getSessionService,
   getSessionGameUI,
 } from '../../composition/sessionRuntime.js';
+import { createPlacementGhostController } from './placementGhost.js';
 
 const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
 
@@ -78,6 +83,8 @@ export function createScene(_gameStore, assetManager, deps) {
     const scene = new THREE.Scene();
     // Subtle atmospheric fog to blend far terrain and sky (tuned to match background)
     try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
+
+    const placementGhost = createPlacementGhostController({ scene, assetManager });
     
     // Initialize managers
     const lightingManager = new LightingManager(scene);
@@ -85,7 +92,36 @@ export function createScene(_gameStore, assetManager, deps) {
     const decorativeVillageManager = new DecorativeVillageManager(scene, assetManager);
     const citizenManager = new CitizenManager(scene, assetManager);
     const tileGridOverlay = new TileGridOverlay();
+    const mapOverlayVisibility = new MapOverlayVisibility();
     const syncRoadAccess = setupRoadAccessIcons(parcels, { assetManager, textures });
+
+    /**
+     * Gate supply-chain status sprites by the Production filter.
+     * @param {boolean} condition
+     * @returns {boolean}
+     */
+    function productionSpriteVisible(condition) {
+      return Boolean(condition) && mapOverlayVisibility.isProductionIconsVisible();
+    }
+
+    /** Immediately hide production sprites (toggle off) without waiting for scene.update. */
+    function hideProductionSpritesNow() {
+      if (!buildings) return;
+      const names = new Set(PRODUCTION_STATUS_SPRITE_NAMES);
+      for (let x = 0; x < buildings.length; x++) {
+        const row = buildings[x];
+        if (!row) continue;
+        for (let y = 0; y < row.length; y++) {
+          const mesh = row[y];
+          if (!mesh?.children) continue;
+          for (const child of mesh.children) {
+            if (child?.type === 'Sprite' && names.has(child.name)) {
+              child.visible = false;
+            }
+          }
+        }
+      }
+    }
 
     // Use simple scene background with sky texture - this ensures sky covers everything
     // The backdrop (distant ground) will be positioned to match World platform exactly
@@ -231,6 +267,7 @@ export function createScene(_gameStore, assetManager, deps) {
     let loadingPromises = [];
     let currentCitySize = 16; // Store current city size for citizen pathfinding
     let currentCity = null; // Store current city object for citizen updates
+    let lastSceneUpdateTime = 0;
     
     // Note: per-turn budget orchestration lives in ProcessTurnBudget (accounting BC) via scene.update
     // Note: Citizen-related variables and CitizenData class moved to CitizenManager
@@ -476,6 +513,7 @@ export function createScene(_gameStore, assetManager, deps) {
     }
 
     async function runUpdate(city, time = 0, _options = {}) {
+        lastSceneUpdateTime = time;
 
         /**
          * Housing ECS may rename persisted id/type (Blue→Red, etc.) while the mesh
@@ -792,6 +830,47 @@ export function createScene(_gameStore, assetManager, deps) {
                     continue;
                 }
 
+                // Bulldozed / ghost road: tile cleared but mesh or terrain material still present.
+                // Must run even without instanceId (otherwise roads look uneraseable).
+                {
+                    const ghostMesh = buildings[x]?.[y];
+                    const ghostType =
+                        ghostMesh?.userData?.type
+                        || ghostMesh?.userData?.id
+                        || currentBuildingId;
+                    const ghostIsRoad =
+                        Boolean(ghostMesh?.userData?.isRoad)
+                        || ghostType === 'roads'
+                        || ghostType === 'Road'
+                        || (typeof ghostType === 'string' && ghostType.startsWith('StonePath-'))
+                        || (
+                            !tileBuildingId
+                            && terrain[x]?.[y]
+                            && (terrain[x][y].userData?.isRoad || terrain[x][y].name === 'roads')
+                        );
+                    if (!tileBuildingId && ghostIsRoad) {
+                        if (terrain[x] && terrain[x][y]) {
+                            const terrainMesh = terrain[x][y];
+                            const sharedMaterials = assetManager.getSharedTerrainMaterials();
+                            if (sharedMaterials?.['grass'] && terrainMesh.material) {
+                                terrainMesh.material = sharedMaterials['grass'];
+                                terrainMesh.name = 'grass';
+                                terrainMesh.userData.id = 'grass';
+                                terrainMesh.userData.type = 'grass';
+                                terrainMesh.userData.isRoad = false;
+                                terrainMesh.userData.x = x;
+                                terrainMesh.userData.y = y;
+                                delete terrainMesh.userData.instanceId;
+                            }
+                        }
+                        if (ghostMesh && ghostMesh !== terrain[x]?.[y]) {
+                            removeInteractiveObject(ghostMesh);
+                        }
+                        buildings[x][y] = undefined;
+                        continue;
+                    }
+                }
+
                 if (!currentInstanceId) {
                     continue;
                 }
@@ -815,19 +894,30 @@ export function createScene(_gameStore, assetManager, deps) {
                 // Vérifier si le bâtiment existe encore dans la base de données
                 // Si non, le supprimer de la scène (cas des événements aléatoires, etc.)
                 // IMPORTANT: Ne pas supprimer si un nouveau bâtiment est en cours de création (newBuildingId existe)
-                const isRoad = buildings[x][y]?.userData?.isRoad || (currentBuildingId && currentBuildingId.startsWith('StonePath-'));
+                const meshTypeForRoad =
+                    buildings[x][y]?.userData?.type
+                    || buildings[x][y]?.userData?.id
+                    || currentBuildingId;
+                const isRoad =
+                    Boolean(buildings[x][y]?.userData?.isRoad)
+                    || meshTypeForRoad === 'roads'
+                    || meshTypeForRoad === 'Road'
+                    || (typeof meshTypeForRoad === 'string' && meshTypeForRoad.startsWith('StonePath-'));
                 const hasNewBuilding = needsMeshPlacement;
                 
-                // FIX BUG 1: For roads, use city.tiles as source of truth
-                // If city.tiles doesn't have a road but terrain shows road material, restore to grass
-                // This prevents "ghost" roads from terrain material when payment failed
+                // city.tiles is SoT for roads: clear terrain material + StonePath mesh when tile empty
+                // (bulldoze / failed payment). Previously only cleared buildings[] when it === terrain,
+                // so StonePath meshes were left behind and looked "uneraseable".
                 if (isRoad) {
-                    const tileHasRoad = city.tiles[x][y]?.buildingId && 
-                                       (city.tiles[x][y].buildingId.startsWith('StonePath-') || 
-                                        city.tiles[x][y].buildingId === 'roads');
+                    const tileBuilding = city.tiles[x][y]?.buildingId;
+                    const tileHasRoad =
+                        Boolean(tileBuilding)
+                        && (
+                            tileBuilding === 'roads'
+                            || tileBuilding === 'Road'
+                            || tileBuilding.startsWith('StonePath-')
+                        );
                     if (!tileHasRoad) {
-                        // Terrain shows road but city.tiles doesn't - this means payment failed or road was removed
-                        // Restore terrain to grass
                         if (terrain[x] && terrain[x][y]) {
                             const terrainMesh = terrain[x][y];
                             const sharedMaterials = assetManager.getSharedTerrainMaterials();
@@ -836,16 +926,18 @@ export function createScene(_gameStore, assetManager, deps) {
                                 terrainMesh.name = 'grass';
                                 terrainMesh.userData.id = 'grass';
                                 terrainMesh.userData.type = 'grass';
-                                terrainMesh.userData.isRoad = false; // Clear road flag
+                                terrainMesh.userData.isRoad = false;
                                 terrainMesh.userData.x = x;
                                 terrainMesh.userData.y = y;
+                                delete terrainMesh.userData.instanceId;
                             }
                         }
-                        // Remove from buildings array
-                        if (buildings[x][y] === terrain[x][y]) {
-                            buildings[x][y] = undefined;
+                        const roadMesh = buildings[x][y];
+                        if (roadMesh && roadMesh !== terrain[x]?.[y]) {
+                            removeInteractiveObject(roadMesh);
                         }
-                        continue; // Skip further processing for this tile
+                        buildings[x][y] = undefined;
+                        continue;
                     }
                 }
                 
@@ -937,14 +1029,17 @@ export function createScene(_gameStore, assetManager, deps) {
                             });
                         }
                         
-                        // Handle geometry-based roads ('roads') - restore terrain to grass
-                        if (currentBuildingId === 'roads') {
+                        // Handle geometry-based roads ('roads') and StonePath meshes
+                        if (
+                            currentBuildingId === 'roads'
+                            || currentBuildingId === 'Road'
+                            || currentBuildingId.startsWith('StonePath-')
+                        ) {
                             try {
                                 await parcels.syncRemovedBuilding({ instanceId: currentInstanceId });
                             } catch (err) {
                                 console.warn('[Scene] Failed parcels remove for road', currentInstanceId, err);
                             }
-                            // Restore terrain mesh to grass
                             if (terrain[x] && terrain[x][y]) {
                                 const terrainMesh = terrain[x][y];
                                 const sharedMaterials = assetManager.getSharedTerrainMaterials();
@@ -956,13 +1051,13 @@ export function createScene(_gameStore, assetManager, deps) {
                                     terrainMesh.userData.isRoad = false;
                                     terrainMesh.userData.x = x;
                                     terrainMesh.userData.y = y;
+                                    delete terrainMesh.userData.instanceId;
                                 }
                             }
-                            // Clear from buildings array
-                            if (buildings[x][y] === terrain[x][y]) {
-                                buildings[x][y] = undefined;
+                            if (buildings[x][y] && buildings[x][y] !== terrain[x]?.[y]) {
+                                removeInteractiveObject(buildings[x][y]);
                             }
-                            // Clear buildingId from city.tiles
+                            buildings[x][y] = undefined;
                             if (city.tiles[x] && city.tiles[x][y]) {
                                 city.tiles[x][y].buildingId = undefined;
                                 city.tiles[x][y].instanceId = undefined;
@@ -1033,7 +1128,7 @@ export function createScene(_gameStore, assetManager, deps) {
                                     'isBuying',
                                     buyingMeta.scale,
                                     buyingMeta.position,
-                                    true,
+                                    productionSpriteVisible(true),
                                     buyingMeta.spriteColor,
                                     buyingMeta.backgroundColor
                                 );
@@ -1044,7 +1139,7 @@ export function createScene(_gameStore, assetManager, deps) {
                                     'isBuying',
                                     buyingMeta.scale,
                                     buyingMeta.position,
-                                    true,
+                                    productionSpriteVisible(true),
                                     0xFF6600,
                                     0xFFCCCC
                                 );
@@ -1075,7 +1170,7 @@ export function createScene(_gameStore, assetManager, deps) {
                             'no-food',
                             statutsIconsMeta['no-food'].scale,
                             statutsIconsMeta['no-food'].position,
-                            !hasFoodBaskets
+                            productionSpriteVisible(!hasFoodBaskets)
                         );
                     }
 
@@ -1123,7 +1218,7 @@ export function createScene(_gameStore, assetManager, deps) {
                                 'isCollecting',
                                 collectingMeta.scale,
                                 collectingMeta.position,
-                                true,
+                                productionSpriteVisible(true),
                                 collectingMeta.spriteColor,
                                 collectingMeta.backgroundColor
                             );
@@ -1140,6 +1235,24 @@ export function createScene(_gameStore, assetManager, deps) {
                             );
                         }
                     }
+                }
+
+                // Accès routier grange (BC Parcels + icône no-road, même mécanisme que maisons / moulin)
+                if (
+                    (currentBuildingId.includes('Barn') || currentBuildingId === 'Barn-001')
+                    && buildings[x][y]
+                ) {
+                    const barnRoadScale = {
+                        x: statutsIconsMeta.road.scale.x * 0.714,
+                        y: statutsIconsMeta.road.scale.y * 0.714,
+                        z: statutsIconsMeta.road.scale.z * 0.714,
+                    };
+                    await syncRoadAccess({
+                        instanceId: currentInstanceId,
+                        mesh: buildings[x][y],
+                        position: statutsIconsMeta.road.position,
+                        scale: barnRoadScale,
+                    });
                 }
 
                 // Process farms: season-specific sprites (harvest stocks → Supply BC)
@@ -1202,9 +1315,9 @@ export function createScene(_gameStore, assetManager, deps) {
                             spriteName,
                             spriteScale,
                             spritePosition,
-                            true, // Always show sprite (season-specific)
-                            spriteColor, // Color (red for winter, null for others to keep original colors)
-                            backgroundColor // Pastel colored circular background for season sprites (null for winter)
+                            productionSpriteVisible(true),
+                            spriteColor,
+                            backgroundColor
                         );
                     }
                     
@@ -1228,7 +1341,7 @@ export function createScene(_gameStore, assetManager, deps) {
                                 'sold-to-windmill',
                                 windmillSaleMeta.scale,
                                 windmillSaleMeta.position,
-                                true,
+                                productionSpriteVisible(true),
                                 windmillSaleMeta.spriteColor,
                                 windmillSaleMeta.backgroundColor
                             );
@@ -1307,7 +1420,7 @@ export function createScene(_gameStore, assetManager, deps) {
                             'no-food',
                             statutsIconsMeta.food.scale,
                             statutsIconsMeta.food.position,
-                            showNoFoodIcon
+                            productionSpriteVisible(showNoFoodIcon)
                         );
                     }
                     
@@ -1340,22 +1453,33 @@ export function createScene(_gameStore, assetManager, deps) {
           updateBuildingFields,
         });
 
-        // Sync residential meshes + road icons after neighbors (evolution may have run in ECS)
+        // Sync residential + barn road icons after neighbors (evolution may have run in ECS)
         for (let nx = 0; nx < city.size; nx++) {
             for (let ny = 0; ny < city.size; ny++) {
                 const tileType = city.tiles[nx]?.[ny]?.buildingId;
                 const instanceId = city.tiles[nx]?.[ny]?.instanceId;
                 if (!instanceId || !tileType) continue;
-                if (!houses.includes(tileType) && !palaces.includes(tileType)) continue;
-                const meshType = buildings[nx]?.[ny]?.userData?.type || buildings[nx]?.[ny]?.userData?.id;
-                await syncResidentialHouseMeshFromDb(nx, ny, meshType || tileType);
+                const isResidential = houses.includes(tileType) || palaces.includes(tileType);
+                const isBarn = tileType.includes('Barn') || tileType === 'Barn-001';
+                if (!isResidential && !isBarn) continue;
+                if (isResidential) {
+                    const meshType = buildings[nx]?.[ny]?.userData?.type || buildings[nx]?.[ny]?.userData?.id;
+                    await syncResidentialHouseMeshFromDb(nx, ny, meshType || tileType);
+                }
                 const mesh = buildings[nx]?.[ny];
                 if (!mesh?.userData) continue;
+                const roadScale = isBarn
+                    ? {
+                        x: statutsIconsMeta.road.scale.x * 0.714,
+                        y: statutsIconsMeta.road.scale.y * 0.714,
+                        z: statutsIconsMeta.road.scale.z * 0.714,
+                      }
+                    : statutsIconsMeta.road.scale;
                 await syncRoadAccess({
                     instanceId,
                     mesh,
                     position: statutsIconsMeta.road.position,
-                    scale: statutsIconsMeta.road.scale,
+                    scale: roadScale,
                 });
             }
         }
@@ -1416,27 +1540,41 @@ export function createScene(_gameStore, assetManager, deps) {
         let unemployedCount = 0;
         let unemploymentPercentage = 0;
         let employmentLack = 0;
-        let citizenPopulation = 0;
+        let activeCitizenCount = 0;
         let elitePopulation = 0;
+        let civilServantCount = 0;
+        let activePopulationCount = 0;
+        let totalPopulation = 0;
         /** @type {string[]} */
         let understaffedBuildingIds = [];
+
+        try {
+            const popSummary = await housing.getCityPopulationSummary();
+            totalPopulation = popSummary.totalPop ?? 0;
+        } catch (error) {
+            console.warn('[scene.js] Error reading city population summary:', error);
+        }
 
         try {
             const summary = await employment.getCityEmploymentSummary();
             unemployedCount = summary.unemployed;
             unemploymentPercentage = summary.unemploymentPercentage;
             employmentLack = summary.lack;
-            citizenPopulation = summary.workerPool;
+            activeCitizenCount = summary.activeCitizenCount;
             elitePopulation = summary.elitePool;
+            civilServantCount = summary.civilServantCount;
+            activePopulationCount = summary.activePopulationCount;
             understaffedBuildingIds = summary.understaffedBuildingIds;
         } catch (error) {
             console.warn('[scene.js] Error calculating employment summary:', error);
         }
 
         gameUI.updatePopulationBreakdown(
-            citizenPopulation + elitePopulation,
-            citizenPopulation,
-            elitePopulation
+            totalPopulation,
+            activeCitizenCount,
+            elitePopulation,
+            civilServantCount,
+            activePopulationCount
         );
         gameUI.updateUnemployedPopulation(unemployedCount, unemploymentPercentage);
         gameUI.updateWorkerLack(employmentLack);
@@ -1481,7 +1619,7 @@ export function createScene(_gameStore, assetManager, deps) {
                         'no-work',
                         scale,
                         position,
-                        true,
+                        productionSpriteVisible(true),
                         noWorkSpriteColor,
                         noWorkBackgroundColor
                     );
@@ -1728,6 +1866,7 @@ export function createScene(_gameStore, assetManager, deps) {
     let hoveredObject = null
     let hoveredObjectName = null
     const objectsNames = ['grass', 'roads', 'House-Red', 'House-Purple', 'House-Blue', 'Market-Stall']
+    let isLeftPointerDown = false;
 
     function onMouseDown(event){
         // Block interaction if a popup is open or info modal is open
@@ -1740,8 +1879,17 @@ export function createScene(_gameStore, assetManager, deps) {
         if (performance.now() < suppressInputUntilMs) {
             return;
         }
-        
+
+        if (event.button === 0) {
+            isLeftPointerDown = true;
+        }
+
         camera.onMouseDown(event);
+
+        // Placement / selection: left click only (right = camera orbit)
+        if (event.button !== 0) {
+            return;
+        }
         
         // Use focusedObject if available (from per-frame updates), otherwise raycast
         let objectToSelect = focusedObject;
@@ -1763,18 +1911,23 @@ export function createScene(_gameStore, assetManager, deps) {
     }
 
     function onMouseUp(event){
-        // Block interaction if a popup is open or info modal is open
-        if (popupManager?.getActivePopups?.()?.length > 0) {
-            return;
-        }
-        if (isInfoModalOpen()) {
-            return;
-        }
-        if (performance.now() < suppressInputUntilMs) {
-            return;
-        }
-        
+        // Always clear camera drag flags first (even if UI blocks the rest),
+        // otherwise right-pan stays stuck after release.
         camera.onMouseUp(event);
+
+        if (event.button === 0) {
+            isLeftPointerDown = false;
+            if (
+                typeof this.onRoadPaintEnd === 'function'
+                && !(popupManager?.getActivePopups?.()?.length > 0)
+                && !isInfoModalOpen()
+                && performance.now() >= suppressInputUntilMs
+            ) {
+                Promise.resolve(this.onRoadPaintEnd()).catch((error) => {
+                    console.error('[scene.js] onRoadPaintEnd failed:', error);
+                });
+            }
+        }
     }
 
 function onMouseMove(event) {
@@ -1787,6 +1940,7 @@ function onMouseMove(event) {
         camera.onMouseUp({ button: 0 }); // Reset left mouse
         camera.onMouseUp({ button: 1 }); // Reset middle mouse
         camera.onMouseUp({ button: 2 }); // Reset right mouse
+        isLeftPointerDown = false;
         return;
     }
     if (performance.now() < suppressInputUntilMs) {
@@ -1805,8 +1959,27 @@ function onMouseMove(event) {
     const intersections = raycaster.intersectObjects(getInteractiveObjects(), false);
 
     if(intersections.length) {
-        // Mouse move intersection
+        focusedObject = intersections[0].object;
         hoveredObjectName = intersections[0]?.object?.name || ""
+    } else {
+        focusedObject = null;
+        hoveredObjectName = '';
+    }
+
+    if (typeof this.onPlacementHover === 'function') {
+        this.onPlacementHover(focusedObject);
+    }
+
+    // Cesar III style road paint: while LMB held, paint each hovered tile
+    if (
+        isLeftPointerDown
+        && (event.buttons & 1) === 1
+        && focusedObject
+        && typeof this.onRoadPaintMove === 'function'
+    ) {
+        Promise.resolve(this.onRoadPaintMove(focusedObject)).catch((error) => {
+            console.error('[scene.js] onRoadPaintMove failed:', error);
+        });
     }
 }
 
@@ -1982,6 +2155,21 @@ function onTouchEnd(event) {
 
 
     function onKeyBoardDown(event){
+        // StonePath tool: R rotates path orientation (Cesar-style), not the camera
+        if (
+            event.key
+            && event.key.toLowerCase() === 'r'
+            && !event.ctrlKey
+            && !event.altKey
+            && !event.metaKey
+            && typeof this.onRotateBuildingTool === 'function'
+        ) {
+            const handled = this.onRotateBuildingTool(event);
+            if (handled) {
+                event.preventDefault?.();
+                return;
+            }
+        }
 
         camera.onKeyBoardDown(event);
         // Raycasting need y and x axis as + on the terrain (plan) (y-1,y1,x1,x-1)
@@ -2064,9 +2252,18 @@ function onTouchEnd(event) {
         onTouchMove,
         onTouchEnd,
         delay,
+        /** @type {((object: object) => void | Promise<void>) | undefined} */
+        onRoadPaintMove: undefined,
+        /** @type {(() => void | Promise<void>) | undefined} */
+        onRoadPaintEnd: undefined,
+        /** @type {((event?: KeyboardEvent) => boolean) | undefined} */
+        onRotateBuildingTool: undefined,
+        /** @type {((focused: object | null) => void) | undefined} */
+        onPlacementHover: undefined,
         // Expose focused/selected for external access if needed
         get focusedObject() { return focusedObject; },
         get selectedObject() { return selectedObject; },
+        get isLeftPointerDown() { return isLeftPointerDown; },
         // Expose controls to enable/disable OrbitControls when modal opens/closes
         get controls() { return controls; },
         // Expose canvas element to attach precise listeners
@@ -2078,6 +2275,8 @@ function onTouchEnd(event) {
         pauseCitizen,
         resumeCitizen,
         refreshEmploymentPresentation,
+        /** Semi-transparent placement preview (StonePath trial). */
+        placementGhost,
         /** Live mesh grid for turn-budget maintenance input. */
         get buildings() { return buildings; },
         setTileGridVisible(visible) {
@@ -2085,6 +2284,20 @@ function onTouchEnd(event) {
         },
         isTileGridVisible() {
             return tileGridOverlay.isVisible();
+        },
+        setProductionIconsVisible(visible) {
+            mapOverlayVisibility.setProductionIconsVisible(visible);
+            if (!mapOverlayVisibility.isProductionIconsVisible()) {
+                hideProductionSpritesNow();
+                return;
+            }
+            if (currentCity) {
+                void refreshEmploymentPresentation(currentCity);
+                void update(currentCity, lastSceneUpdateTime);
+            }
+        },
+        isProductionIconsVisible() {
+            return mapOverlayVisibility.isProductionIconsVisible();
         },
     }
 

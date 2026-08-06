@@ -21,6 +21,7 @@ export class DexieEmploymentBuildingRepository {
       y: house.y ?? null,
       roadCount: house.roads ?? 0,
       pop: house.pop ?? 0,
+      level: house.level ?? 1,
       worker: employees.worker ?? 0,
       workerNeed: employees.worker_need ?? 0,
       sector: employees.sector ?? 0,

@@ -234,7 +234,32 @@ export function createCamera(gameWindow) {
         }
     }
 
+    /**
+     * Keep drag flags aligned with the real pressed buttons.
+     * Prevents stuck pan/orbit when mouseup is missed (outside canvas, early returns, etc.).
+     * @param {MouseEvent} event
+     */
+    function syncButtonsFromEvent(event) {
+        if (typeof event.buttons !== 'number') {
+            return;
+        }
+        const left = (event.buttons & 1) !== 0;
+        const right = (event.buttons & 2) !== 0;
+        const middle = (event.buttons & 4) !== 0;
+        isLeftMouseDown = left;
+        isRightMouseDown = right;
+        isMiddleMouseDown = middle || (left && (event.altKey || event.ctrlKey));
+    }
+
+    /** Force-clear all mouse drag modes (e.g. blur / contextmenu). */
+    function releaseAllMouseButtons() {
+        isLeftMouseDown = false;
+        isRightMouseDown = false;
+        isMiddleMouseDown = false;
+    }
+
     function onMouseMove(event){
+        syncButtonsFromEvent(event);
 
         const deltaY = event.clientY - prevMouseY;
         const deltaX = event.clientX - prevMouseX;
@@ -470,6 +495,7 @@ export function createCamera(gameWindow) {
         onMouseDown,
         onMouseMove,
         onMouseUp,
+        releaseAllMouseButtons,
         onKeyBoardDown,
         onKeyBoardUp,
         onWheel,

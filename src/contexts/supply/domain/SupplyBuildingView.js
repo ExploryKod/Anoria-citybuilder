@@ -27,6 +27,8 @@ export function createSupplyBuildingView({
   isActive = true,
   /** @deprecated until Commerce BC — windmill export UI flags */
   commercializeEnabled = true,
+  supplyWindmillId = null,
+  linkedMarkets = [],
 } = {}) {
   if (!id || typeof id !== 'string') {
     throw new Error('SupplyBuildingView: id is required');
@@ -73,6 +75,22 @@ export function createSupplyBuildingView({
     ),
     isActive: isActive !== false,
     commercializeEnabled: commercializeEnabled !== false,
+    supplyWindmillId:
+      typeof supplyWindmillId === 'string' && supplyWindmillId.length > 0
+        ? supplyWindmillId
+        : null,
+    linkedMarkets: Object.freeze(
+      Array.isArray(linkedMarkets)
+        ? linkedMarkets.map((entry) =>
+            Object.freeze({
+              marketId: entry.marketId,
+              x: entry.x,
+              y: entry.y,
+              allocatedStocks: Object.freeze({ ...entry.allocatedStocks }),
+            })
+          )
+        : []
+    ),
   });
 }
 

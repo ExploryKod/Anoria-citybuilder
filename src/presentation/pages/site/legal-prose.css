@@ -1,0 +1,119 @@
+@import './site.css';
+
+/* Contenu légal — pleine largeur du site-page, aligné avec le header */
+.legal-prose {
+  width: 100%;
+}
+
+.legal-intro {
+  margin: 0 0 1.25rem;
+  line-height: 1.5;
+}
+
+.legal-meta {
+  margin: 0 0 1.5rem;
+  font-size: 0.85rem;
+  color: var(--site-text-muted);
+  line-height: 1.5;
+}
+
+.legal-notice {
+  margin: 0 0 1.5rem;
+  padding: 12px 14px;
+  border: 1px solid var(--site-border-light);
+  border-radius: var(--border-radius-small);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.legal-notice__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.legal-notice ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  line-height: 1.5;
+}
+
+.legal-notice li {
+  margin-bottom: 0.35rem;
+}
+
+.legal-notice li:last-child {
+  margin-bottom: 0;
+}
+
+.legal-prose section {
+  margin-bottom: 1.25rem;
+}
+
+.legal-prose section:last-of-type {
+  margin-bottom: 0;
+}
+
+.legal-prose h2 {
+  margin: 0 0 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.legal-prose h3 {
+  margin: 0.75rem 0 0.3rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.legal-prose p {
+  margin: 0 0 0.5rem;
+  line-height: 1.5;
+}
+
+.legal-prose p:last-child {
+  margin-bottom: 0;
+}
+
+.legal-prose ul {
+  margin: 0 0 0.5rem;
+  padding-left: 1.2rem;
+  line-height: 1.5;
+}
+
+.legal-prose li {
+  margin-bottom: 0.2rem;
+}
+
+.legal-prose li:last-child {
+  margin-bottom: 0;
+}
+
+.legal-prose code {
+  font-size: 0.9em;
+  padding: 0.05em 0.3em;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.legal-prose a:hover {
+  text-decoration: underline;
+}
+
+.legal-address {
+  margin: 0 0 0.5rem;
+  line-height: 1.5;
+}
+
+.legal-footer {
+  margin-top: 1.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--site-border-light);
+  text-align: center;
+  color: var(--site-text-muted);
+  font-size: 0.8rem;
+}
+
+.privacy-page,
+.terms-page {
+  padding-bottom: 32px;
+}

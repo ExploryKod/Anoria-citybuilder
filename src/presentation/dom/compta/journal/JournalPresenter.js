@@ -6,6 +6,115 @@ import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import { formatJournalEntryDetails } from './formatJournalEntryDescription.js';
 
 /**
+ * @param {number} amount
+ * @returns {string}
+ */
+function formatSignedEuro(amount) {
+  return `${amount >= 0 ? '+' : ''}${amount}€`;
+}
+
+/**
+ * @param {string} sign
+ * @param {number} amount
+ * @returns {string}
+ */
+function formatPrefixedEuro(sign, amount) {
+  return `${sign}${amount}€`;
+}
+
+/**
+ * @param {{ label: string, amountHtml: string, className: string, tooltip: string }} params
+ * @returns {string}
+ */
+function renderSummaryItem({ label, amountHtml, className, tooltip }) {
+  return `
+    <div class="journal-summary-item ${className}" title="${tooltip}">
+        <span class="label">
+            ${label}
+            <span class="journal-summary-help" aria-hidden="true">ⓘ</span>
+        </span>
+        <span class="amount">${amountHtml}</span>
+    </div>`;
+}
+
+/**
+ * @param {import('../../../../contexts/accounting/domain/read-models/GeneralLedgerView.js').GeneralLedgerYear} yearData
+ * @returns {string}
+ */
+function renderYearSummary(yearData) {
+  const netClass = yearData.netFlow >= 0 ? 'positive' : 'negative';
+  const resultTooltip =
+    `Résultat net de l'année : revenus (+${yearData.incomeTotal} €) − dépenses (−${yearData.expensesTotal} €) = ${formatSignedEuro(yearData.netFlow)}. ` +
+    'Ne comprend pas le capital de départ ni les soldes des années précédentes.';
+
+  let html = renderSummaryItem({
+    label: 'Revenus:',
+    amountHtml: formatPrefixedEuro('+', yearData.incomeTotal),
+    className: 'income',
+    tooltip: 'Total des entrées comptables de l’année (impôts, exports, capital prêt, etc.).',
+  });
+  html += renderSummaryItem({
+    label: 'Dépenses:',
+    amountHtml: formatPrefixedEuro('-', yearData.expensesTotal),
+    className: 'expenses',
+    tooltip: 'Total des sorties comptables de l’année (salaires, maintenance, imports, intérêts, etc.).',
+  });
+  html += renderSummaryItem({
+    label: 'Résultat:',
+    amountHtml: formatSignedEuro(yearData.netFlow),
+    className: `netflow ${netClass}`,
+    tooltip: resultTooltip,
+  });
+
+  if (yearData.isCurrentYear && yearData.treasuryBalance != null) {
+    const treasuryClass = yearData.treasuryBalance >= 0 ? 'positive' : 'negative';
+    const treasuryTooltip =
+      `Trésorerie actuelle en caisse : ${formatSignedEuro(yearData.treasuryBalance)}. ` +
+      'Cumul depuis le début de la partie (capital initial + résultats de toutes les années jouées). ' +
+      `Diffère du résultat de l'année (${formatSignedEuro(yearData.netFlow)}) si des années antérieures ont dégagé un excédent ou un déficit.`;
+    html += renderSummaryItem({
+      label: 'Trésorerie:',
+      amountHtml: formatSignedEuro(yearData.treasuryBalance),
+      className: `treasury ${treasuryClass}`,
+      tooltip: treasuryTooltip,
+    });
+  }
+
+  return html;
+}
+
+/**
+ * @param {import('../../../../contexts/accounting/domain/read-models/GeneralLedgerView.js').GeneralLedgerMonth} monthData
+ * @returns {string}
+ */
+function renderMonthSummary(monthData) {
+  const monthNetClass = monthData.netFlow >= 0 ? 'positive' : 'negative';
+  const monthTooltip =
+    `Résultat net du mois : revenus (+${monthData.incomeTotal} €) − dépenses (−${monthData.expensesTotal} €) = ${formatSignedEuro(monthData.netFlow)}.`;
+
+  return (
+    renderSummaryItem({
+      label: 'Revenus:',
+      amountHtml: formatPrefixedEuro('+', monthData.incomeTotal),
+      className: 'income',
+      tooltip: 'Entrées comptables du mois.',
+    }) +
+    renderSummaryItem({
+      label: 'Dépenses:',
+      amountHtml: formatPrefixedEuro('-', monthData.expensesTotal),
+      className: 'expenses',
+      tooltip: 'Sorties comptables du mois.',
+    }) +
+    renderSummaryItem({
+      label: 'Résultat:',
+      amountHtml: formatSignedEuro(monthData.netFlow),
+      className: `netflow ${monthNetClass}`,
+      tooltip: monthTooltip,
+    })
+  );
+}
+
+/**
  * @param {import('../../../../contexts/accounting/domain/read-models/GeneralLedgerView.js').GeneralLedgerView} ledger
  * @param {{
  *   INFO_JOURNAL_TYPE_LABELS: Record<string, string>,
@@ -24,26 +133,13 @@ export function renderJournalList(ledger, accounting) {
     ledger.years
       .map((yearData) => {
         const yearDisplay = yearData.year === 0 ? '0 JC' : `${yearData.year} ap JC`;
-        const displayBalance = yearData.displayBalance;
-        const balanceClass = displayBalance >= 0 ? 'positive' : 'negative';
 
         return `
             <div class="journal-year-group">
                 <div class="journal-year-header">
                     <h3>Année ${yearDisplay}</h3>
                     <div class="journal-year-summary">
-                        <div class="journal-summary-item income">
-                            <span class="label">Revenus:</span>
-                            <span class="amount">+${yearData.incomeTotal}€</span>
-                        </div>
-                        <div class="journal-summary-item expenses">
-                            <span class="label">Dépenses:</span>
-                            <span class="amount">-${yearData.expensesTotal}€</span>
-                        </div>
-                        <div class="journal-summary-item netflow ${balanceClass}">
-                            <span class="label">Solde:</span>
-                            <span class="amount">${displayBalance >= 0 ? '+' : ''}${displayBalance}€</span>
-                        </div>
+                        ${renderYearSummary(yearData)}
                     </div>
                 </div>
 
@@ -51,25 +147,13 @@ export function renderJournalList(ledger, accounting) {
                   .map((monthData) => {
                     const yearDisplayMonth =
                       monthData.year === 0 ? '0 JC' : `${monthData.year} ap JC`;
-                    const monthNetClass = monthData.netFlow >= 0 ? 'positive' : 'negative';
 
                     return `
                         <div class="journal-month-group">
                             <div class="journal-month-header">
                                 <h4>${monthData.monthName} ${yearDisplayMonth}</h4>
                                 <div class="journal-month-summary">
-                                    <div class="journal-summary-item income">
-                                        <span class="label">Revenus:</span>
-                                        <span class="amount">+${monthData.incomeTotal}€</span>
-                                    </div>
-                                    <div class="journal-summary-item expenses">
-                                        <span class="label">Dépenses:</span>
-                                        <span class="amount">-${monthData.expensesTotal}€</span>
-                                    </div>
-                                    <div class="journal-summary-item netflow ${monthNetClass}">
-                                        <span class="label">Solde:</span>
-                                        <span class="amount">${monthData.netFlow >= 0 ? '+' : ''}${monthData.netFlow}€</span>
-                                    </div>
+                                    ${renderMonthSummary(monthData)}
                                 </div>
                             </div>
                             <div class="journal-month-entries">
@@ -160,23 +244,28 @@ function createJournalEntryHTML(entry, accounting) {
 
   const typeLabels = {
     citizen_tax: 'Impôt Citoyen',
-    payroll_tax: 'Impôt sur les salaires',
+    payroll_tax: 'Impôt sur les salaires (assiette citoyens)',
     capital_funds: 'Capital de départ',
     carry_forward: 'Report à nouveau',
     construction: 'Construction',
     construction_refund: 'Remboursement construction',
     exceptional_expenses: 'Réparation',
     maintenance: 'Maintenance mensuelle',
-    salary: 'Salaires',
+    salary: 'Salaires fonctionnaires',
+    unemployment_benefit: 'Salaires chômeurs',
+    import_wood: 'Import Bois',
+    import_furniture: 'Import Meubles',
+    import_figs: 'Import Figues',
+    export_wood: 'Export Bois',
+    export_furniture: 'Export Meubles',
+    export_figs: 'Export Figues',
     import_wheat: 'Import Blé',
     import_carrot: 'Import Carotte',
     import_cabbage: 'Import Chou',
-    import_wood: 'Import Bois',
     import_dattes: 'Import Dattes',
     export_wheat: 'Export Blé',
     export_carrot: 'Export Carotte',
     export_cabbage: 'Export Chou',
-    export_wood: 'Export Bois',
     export_dattes: 'Export Dattes',
     commercial_route: 'Commission Négociants',
     loan_capital: 'Capital Prêt',
@@ -187,7 +276,7 @@ function createJournalEntryHTML(entry, accounting) {
     loan_default_repayment: labelForInfoJournalType('info_loan_repayment'),
     cumul_maintenance: 'Cumul Maintenance',
     cumul_construction: 'Cumul Construction',
-    cumul_salary: 'Cumul Salaires',
+    cumul_salary: 'Cumul salaires fonctionnaires',
     cumul_exceptional_expenses: 'Cumul Réparations',
     cumul_loan_interest: 'Cumul Intérêts Prêt',
     cumul_loan_repayment: 'Cumul Remboursement Prêt',

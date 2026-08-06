@@ -1,12 +1,10 @@
-import {
-  PRODUCT_RECIPES,
-  PRODUCT_PRODUCTION_TURNS,
-  PRODUCTS_WITH_TRANSFORMATION,
-} from '../../../domain/manufacturing/ProductRecipeCatalog.js';
+import { listFinishedFactoryCommodities, getFactoryCommodity } from '../../../domain/manufacturing/ProductRecipeCatalog.js';
 import {
   factoryMaxStorage,
   canProduceFromRecipe,
 } from '../../../domain/manufacturing/FactoryStoragePolicy.js';
+import { canFactoryProduceProduct } from '../../../domain/manufacturing/FactorySupplyFlowPolicy.js';
+import { isFactoryCommodityProductionEnabled } from '../../../domain/manufacturing/FactoryCommodityProductionPolicy.js';
 
 /**
  * Command: produce finished goods from refined materials at a factory.
@@ -50,7 +48,18 @@ export class ProduceFactoryGoods {
       refinedIron,
     };
 
-    for (const [productType, recipe] of Object.entries(PRODUCT_RECIPES)) {
+    for (const commodity of listFinishedFactoryCommodities()) {
+      const productType = commodity.id;
+      const recipe = commodity.recipe;
+      if (!recipe) continue;
+
+      if (!canFactoryProduceProduct(factoryData, productType)) {
+        continue;
+      }
+      if (!isFactoryCommodityProductionEnabled(factoryData, productType)) {
+        continue;
+      }
+
       const allocatedWorkers = productWorkerDistribution[productType] || 0;
       if (allocatedWorkers === 0) {
         if (currentProducts[productType] && currentProducts[productType] > 0) {
@@ -60,12 +69,12 @@ export class ProduceFactoryGoods {
         continue;
       }
 
-      const productionTurns = PRODUCT_PRODUCTION_TURNS[productType] || 1;
+      const productionTurns = commodity.productionTurns ?? 1;
       let turnsSinceProduction;
 
       if (
         lastTransformTurn !== null &&
-        PRODUCTS_WITH_TRANSFORMATION.includes(productType)
+        commodity.hasTransformation
       ) {
         turnsSinceProduction = time - lastTransformTurn;
       } else {
@@ -130,7 +139,7 @@ export class ProduceFactoryGoods {
       });
 
       if (
-        PRODUCTS_WITH_TRANSFORMATION.includes(productType) &&
+        getFactoryCommodity(productType)?.hasTransformation &&
         quantityToProduce > 0
       ) {
         await this.#journalProduction({
@@ -298,7 +307,7 @@ export class ProduceFactoryGoods {
 
       let productionTurns = null;
       if (lastTransformTurn !== null && lastTransformTurn !== undefined) {
-        const productionTurnsCount = PRODUCT_PRODUCTION_TURNS[productType] || 1;
+        const productionTurnsCount = getFactoryCommodity(productType)?.productionTurns ?? 1;
         productionTurns = [];
         for (let i = 1; i <= productionTurnsCount; i++) {
           productionTurns.push(lastTransformTurn + i);

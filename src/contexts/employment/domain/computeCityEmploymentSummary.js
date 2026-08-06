@@ -7,6 +7,12 @@ import {
   elitePopFromHouse,
   workerPopFromHouse,
 } from './policies/LaborPoolPolicy.js';
+import { computePopulationBreakdown } from '../../../shared/population/computePopulationBreakdown.js';
+import {
+  allSocialGroups,
+  eligibleSectorsForGroup,
+  residentialGroupForType,
+} from './catalogs/HouseGroupSectorEligibilityPolicy.js';
 
 /**
  * Pure read model: city-wide employment summary from building snapshots.
@@ -16,6 +22,10 @@ import {
  *   workerPool: number,
  *   elitePool: number,
  *   totalPopulation: number,
+ *   civilServantCount: number,
+ *   laborPool: number,
+ *   activeCitizenCount: number,
+ *   activePopulationCount: number,
  *   totalAssigned: number,
  *   totalNeed: number,
  *   unemployed: number,
@@ -23,6 +33,7 @@ import {
  *   lack: number,
  *   understaffedBuildingIds: ReadonlyArray<string>,
  *   bySector: Readonly<Record<number, { workerNeed: number, workers: number, need: number }>>,
+ *   byGroup: Readonly<Record<string, { workerPool: number, assigned: number, unemployed: number }>>,
  * }}
  */
 export function computeCityEmploymentSummary(buildings) {
@@ -38,7 +49,7 @@ export function computeCityEmploymentSummary(buildings) {
 
   for (const building of buildings) {
     if (isLaborSource(building) && hasRoadAccess(building)) {
-      workerPool += workerPopFromHouse(building.type, building.pop);
+      workerPool += workerPopFromHouse(building.type, building.pop, building.level);
       elitePool += elitePopFromHouse(building.type, building.pop);
     }
 
@@ -66,20 +77,70 @@ export function computeCityEmploymentSummary(buildings) {
     bySector[sector].need = Math.max(0, bySector[sector].workerNeed - bySector[sector].workers);
   }
 
-  const unemployed = Math.max(0, workerPool - totalAssigned);
-  const unemploymentPercentage =
-    workerPool > 0 ? Math.round((unemployed / workerPool) * 100) : 0;
+  const population = computePopulationBreakdown({
+    workerPool,
+    elitePool,
+    totalAssigned,
+  });
+
+  const byGroup = computeEmploymentByGroup(buildings);
 
   return Object.freeze({
     workerPool,
     elitePool,
-    totalPopulation: workerPool + elitePool,
+    totalPopulation: population.totalPopulation,
+    civilServantCount: population.civilServantCount,
+    laborPool: population.laborPool,
+    activeCitizenCount: population.activeCitizenCount,
+    activePopulationCount: population.activePopulationCount,
     totalAssigned,
     totalNeed,
-    unemployed,
-    unemploymentPercentage,
+    unemployed: population.unemployed,
+    unemploymentPercentage: population.unemploymentPercentage,
     lack,
     understaffedBuildingIds: Object.freeze([...understaffedBuildingIds]),
     bySector: Object.freeze(bySector),
+    byGroup,
   });
+}
+
+/**
+ * Per-group breakdown (pool / assigned / unemployed), additive to the global
+ * aggregate above — the global formula/semantics stay unchanged.
+ *
+ * @param {ReadonlyArray<import('./EmploymentBuildingSnapshot.js').EmploymentBuildingSnapshot>} buildings
+ * @returns {Readonly<Record<string, { workerPool: number, assigned: number, unemployed: number }>>}
+ */
+function computeEmploymentByGroup(buildings) {
+  /** @type {Record<string, { workerPool: number, assigned: number, unemployed: number }>} */
+  const byGroup = {};
+
+  for (const group of allSocialGroups()) {
+    const eligibleSectors = new Set(eligibleSectorsForGroup(group));
+
+    let groupWorkerPool = 0;
+    let groupAssigned = 0;
+
+    for (const building of buildings) {
+      if (
+        isLaborSource(building) &&
+        hasRoadAccess(building) &&
+        residentialGroupForType(building.type) === group
+      ) {
+        groupWorkerPool += workerPopFromHouse(building.type, building.pop, building.level);
+      }
+
+      if (isEligibleWorkplace(building) && eligibleSectors.has(building.sector || 0)) {
+        groupAssigned += building.worker || 0;
+      }
+    }
+
+    byGroup[group] = {
+      workerPool: groupWorkerPool,
+      assigned: groupAssigned,
+      unemployed: Math.max(0, groupWorkerPool - groupAssigned),
+    };
+  }
+
+  return Object.freeze(byGroup);
 }

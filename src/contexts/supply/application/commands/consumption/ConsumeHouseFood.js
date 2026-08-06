@@ -4,6 +4,10 @@ import {
 
 /**
  * Command: house consumes food baskets for its population (once per month).
+ *
+ * Consumption draws from gathering stocks (fruit, game) first, then market
+ * crops (wheat, carrot, cabbage). Gathering is credited earlier in the
+ * monthly cycle via `ProduceHouseSubsistenceFood`.
  */
 export class ConsumeHouseFood {
   /**
@@ -24,6 +28,7 @@ export class ConsumeHouseFood {
    *   pop?: number,
    *   demand?: number,
    *   unfed?: number,
+   *   consumedByCategory?: Record<string, number>,
    *   crops?: Record<string, number>,
    * }>}
    */
@@ -43,23 +48,35 @@ export class ConsumeHouseFood {
       return { consumed: false, reason: 'no_population' };
     }
 
-    const { nextStock, consumed, demand, unfed } = applyHouseFoodConsumption(
-      house.stocks,
-      pop
-    );
+    const level = house.level ?? 1;
+    const { nextStock, consumed, demanded, unfed, totalUnfed } = applyHouseFoodConsumption({
+      stock: house.stocks,
+      population: pop,
+      level,
+    });
 
     await this.supplyBuildingRepository.saveStocks(houseId, nextStock);
     await this.supplyBuildingRepository.saveConsumptionMetadata(houseId, {
       lastConsumptionMonth: month,
     });
 
+    // Save detailed consumption record
+    await this.supplyBuildingRepository.saveConsumptionRecord(houseId, {
+      month: monthIndex,
+      consumed,
+      demanded,
+      unfed,
+      totalUnfed,
+    });
+
     return {
       consumed: true,
       houseId,
       pop,
-      demand,
-      unfed,
-      crops: consumed,
+      demand: Object.values(demanded).reduce((sum, qty) => sum + qty, 0),
+      unfed: totalUnfed,
+      consumedByCategory: consumed,
+      crops: { ...consumed },
     };
   }
 }

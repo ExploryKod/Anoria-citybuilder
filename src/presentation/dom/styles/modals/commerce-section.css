@@ -37,12 +37,215 @@
     height: 16px;
 }
 
-.commerce-board {
-    background: #fafafa;
-    border-radius: var(--border-radius-small);
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+/* Commerce goods list (admin section) */
+
+.commerce-section-toolbar {
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.commerce-section-title-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.commerce-open-map-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--cta, #e67e22);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.commerce-open-map-btn:hover {
+    background: var(--lightgreen, #27ae60);
+}
+
+.commerce-open-map-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.commerce-goods-table {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.commerce-goods-table-head,
+.commerce-good-row {
+    display: grid;
+    grid-template-columns: 1.4fr 0.6fr 0.9fr 0.9fr 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    font-size: 14px;
+}
+
+.commerce-goods-table-head {
+    font-size: 13px;
+    font-weight: 500;
+    color: #888;
+}
+
+.commerce-good-row {
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+    width: 100%;
+    border: none;
+    background: none;
+    padding: 8px 0;
     text-align: left;
+    cursor: pointer;
+    font: inherit;
+}
+
+.commerce-good-row:hover .commerce-good-row-name {
+    color: var(--cta);
+}
+
+.commerce-good-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 19000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.commerce-good-modal {
+    background: white;
+    border-radius: 8px;
+    width: min(360px, calc(100% - 32px));
+    padding: 16px 20px 20px;
+}
+
+.commerce-good-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.commerce-good-modal-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.commerce-good-modal-close {
+    border: none;
+    background: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #888;
+    padding: 4px;
+    line-height: 1;
+}
+
+.commerce-good-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.commerce-good-modal-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.commerce-good-modal-row.disabled {
+    opacity: 0.45;
+}
+
+.commerce-good-modal-label {
+    font-size: 14px;
+    color: var(--primary);
+}
+
+.commerce-good-modal-threshold {
+    width: 72px;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    text-align: right;
+}
+
+.commerce-good-modal-industry-btn {
+    padding: 6px 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #f5f5f5;
+    color: #666;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.commerce-good-modal-industry-btn.active {
+    background: var(--cta);
+    border-color: var(--cta);
+    color: white;
+}
+
+.commerce-good-modal-stock {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #888;
+}
+
+.commerce-good-row-name {
+    font-weight: 500;
+}
+
+.commerce-good-row .muted {
+    color: #bbb;
+}
+
+.commerce-good-row-status {
+    color: #888;
+}
+
+.commerce-goods-empty {
+    margin: 0;
+    padding: 8px 0;
+    color: #888;
+}
+
+@media screen and (max-width: 768px) {
+    .commerce-goods-table-head {
+        display: none;
+    }
+
+    .commerce-good-row {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto auto;
+        padding: 10px 0;
+    }
+
+    .commerce-good-row-name {
+        grid-column: 1 / -1;
+    }
+
+    .commerce-good-row-status {
+        grid-column: 1 / -1;
+    }
 }
 
 .commerce-header {
@@ -797,7 +1000,8 @@
     background: #fff5f5;
 }
 
-.partner-trade-item.contract-finished {
+.partner-trade-item.contract-finished,
+.partner-trade-item.quota-reached {
     border-left-color: #17a2b8;
     background: #d1ecf1;
     opacity: 0.8;

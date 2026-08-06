@@ -6,7 +6,10 @@ import { getOrCreateAccountingContext } from './createAccountingContext.js';
 
 /**
  * @param {object} params
- * @param {{ getFamishedPopulation: () => Promise<{ famishedPopulation?: number }> }} params.housing
+ * @param {{
+ *   getFamishedPopulation: () => Promise<{ famishedPopulation?: number }>,
+ *   getCityPopulationSummary?: () => Promise<{ totalPop?: number }>,
+ * }} params.housing
  * @param {{ getCityEmploymentSummary?: () => Promise<object> }} [params.employment]
  * @param {{
  *   updateFamishedPopulation: (n: number) => void,
@@ -44,13 +47,16 @@ export async function syncSessionHud({
   }
 
   try {
-    const summary = await employment.getCityEmploymentSummary();
-    const citizenPopulation = summary.workerPool ?? 0;
-    const elitePopulation = summary.elitePool ?? 0;
+    const [summary, popSummary] = await Promise.all([
+      employment.getCityEmploymentSummary(),
+      housing.getCityPopulationSummary?.() ?? Promise.resolve({ totalPop: 0 }),
+    ]);
     gameUI.updatePopulationBreakdown?.(
-      citizenPopulation + elitePopulation,
-      citizenPopulation,
-      elitePopulation
+      popSummary.totalPop ?? 0,
+      summary.activeCitizenCount ?? 0,
+      summary.elitePool ?? 0,
+      summary.civilServantCount ?? 0,
+      summary.activePopulationCount ?? 0
     );
     gameUI.updateUnemployedPopulation?.(
       summary.unemployed ?? 0,

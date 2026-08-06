@@ -11,7 +11,7 @@ export class ApplyTreasuryMovement {
 
   /**
    * @param {object} params
-   * @param {'maintenance' | 'construction' | 'construction_refund' | 'salary' | 'payroll_tax' | 'citizen_tax' | 'loan_capital' | 'loan_interest' | 'loan_repayment' | 'commerce_import' | 'commerce_export' | 'exceptional_expense' | 'commercial_route' | 'capital_funds'} params.category
+   * @param {'maintenance' | 'construction' | 'construction_refund' | 'salary' | 'unemployment_benefit' | 'payroll_tax' | 'citizen_tax' | 'loan_capital' | 'loan_interest' | 'loan_repayment' | 'commerce_import' | 'commerce_export' | 'exceptional_expense' | 'commercial_route' | 'capital_funds'} params.category
    * @param {number} params.amount
    * @param {object|null} [params.maintenanceBreakdown]
    * @param {string} [params.description]
@@ -34,6 +34,10 @@ export class ApplyTreasuryMovement {
 
     if (category === 'salary') {
       return this.treasuryWritePort.applySalaryDebit(amount);
+    }
+
+    if (category === 'unemployment_benefit') {
+      return this.treasuryWritePort.applyUnemploymentBenefitDebit(amount);
     }
 
     if (category === 'payroll_tax') {

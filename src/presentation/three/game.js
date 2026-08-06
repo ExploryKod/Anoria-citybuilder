@@ -7,6 +7,8 @@ import { registerAppService, getMultiplayerManager, invokeStartTutorial, getObje
 import { createScene } from './scene.js';
 import { createCity } from './city.js';
 import { syncEmploymentAfterBuildingChange } from '../../composition/syncEmploymentAfterBuildingChange.js';
+import { syncSupplyLinksAfterBuildingChange } from '../../composition/syncSupplyLinksAfterBuildingChange.js';
+import { refreshSupplyPlacementIndex } from '../../contexts/supply/infrastructure/presentation/SupplyPlacementIndex.js';
 import { ensureGameRuntimeBootstrapped } from '../../composition/ensureGameRuntimeBootstrapped.js';
 import { bootGameContexts } from '../../composition/bootGameContexts.js';
 import { bootTreasuryHud } from '../../composition/bootTreasuryHud.js';
@@ -15,6 +17,10 @@ import { runGameTick } from '../../composition/runGameTick.js';
 import { bindSessionRuntime } from '../../composition/sessionRuntime.js';
 import { syncSessionHud } from '../../composition/syncSessionHud.js';
 import { notifyBudgetCleanupIfNeeded } from '../dom/compta/tresorerie/CleanupNotificationPresenter.js';
+import {
+  disableGatedPlacementTools,
+  refreshSkillPlacementGating,
+} from '../dom/shell/SkillPlacementGating.js';
 import { DEFAULT_TICK_MS } from '../../shared/gameplay/SimulationDefaults.js';
 import { GameLoop } from '../../engine/loop/GameLoop.js';
 import {
@@ -22,6 +28,7 @@ import {
   infoObjectOverlay,
   infoObjectCloseBtn,
 } from '../dom/shell/nodes.js';
+import { closeBuildingInfoOverlay } from '../dom/info/layout/buildingInfoLayout.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
 import objectivesTracker, {
   bindObjectivesTrackerDeps,
@@ -34,8 +41,12 @@ import { popupManager } from '../dom/shell/PopupManager.js';
 import {
   showInsufficientFundsNotification,
   showGenericErrorNotification,
+  showWindmillCascadeNotification,
 } from '../dom/shell/BuildingNotifications.js';
-import { presentBuildingInfoSelection } from '../dom/info/BuildingInfoPanel.js';
+import { presentBuildingInfoSelection } from '../dom/info/presenters/useBuildingInfoSelection.js';
+import { assetsPrices } from '../../shared/building-catalog/index.js';
+import { isWindmillBuildingType, isMarketBuildingType } from '../../shared/building-catalog/BuildingSupplyTypes.js';
+import { createPlacementGhostSession } from './placementGhostSession.js';
 
 ensureGameRuntimeBootstrapped();
 
@@ -49,6 +60,18 @@ export function createGame(gameStore, assetManager, citySize = null) {
   let gameLoop = null;
   /** @type {ReturnType<typeof createGame> extends infer T ? T : never} */
   let game;
+
+  /** Cesar III road paint session (click + hold). */
+  let roadPaint = {
+    active: false,
+    lastX: null,
+    lastY: null,
+    placedCount: 0,
+    busy: false,
+  };
+
+  /** 0 = horizontal (StonePath-001), 1 = vertical (StonePath-Right-001). */
+  let stonePathOrientation = 0;
 
   function getTickIntervalMs() {
     return Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed'), 10) || 4000));
@@ -73,6 +96,31 @@ export function createGame(gameStore, assetManager, citySize = null) {
     runtime,
   } = bootGameContexts();
   const { construction: constructionApi } = sessionApi;
+  const {
+    isRoadBuildingType,
+    listRoadPaintCells,
+    isStonePathTool,
+    stonePathTypeForIndex,
+    stonePathOrientationLabel,
+    cycleStonePathOrientationIndex,
+    stonePathOrientationIndex,
+    canPlaceBuildingAtTile,
+  } = constructionApi;
+
+  function getEffectiveBuildingToolId() {
+    if (isStonePathTool(activeToolId)) {
+      return stonePathTypeForIndex(stonePathOrientation);
+    }
+    return activeToolId;
+  }
+
+  function updateStonePathToolHint() {
+    const btn = document.querySelector('[data-stone-path-tool="1"]');
+    if (!btn) return;
+    const label = stonePathOrientationLabel(stonePathOrientation);
+    btn.title = `Chemin de pierre (${label}) — touche R pour tourner`;
+    btn.dataset.orientation = String(stonePathOrientation);
+  }
 
   bindObjectivesTrackerDeps({
     accounting: sessionApi.accounting,
@@ -93,6 +141,27 @@ export function createGame(gameStore, assetManager, citySize = null) {
   });
   const city = createCity(resolveSelectedCitySize(citySize));
 
+  const placementGhostSession = createPlacementGhostSession({
+    getGhost: () => scene.placementGhost,
+    getCity: () => city,
+    getActiveToolId: () => activeToolId,
+    getEffectiveAssetId: () => getEffectiveBuildingToolId(),
+    assetCatalog: assetsPrices,
+    getFocusedObject: () => scene.focusedObject,
+    canPlaceBuildingAtTile,
+  });
+
+  disableGatedPlacementTools(getButtonStateManager());
+
+  async function refreshPlacementPresentation() {
+    const rows = await constructionApi.listAllBuildingRows();
+    refreshSupplyPlacementIndex(rows);
+    await refreshSkillPlacementGating({
+      housing,
+      buttonStateManager: getButtonStateManager(),
+    });
+  }
+
   bindGameUIDeps({ getScene: () => scene });
 
   bindSessionRuntime({
@@ -109,11 +178,15 @@ export function createGame(gameStore, assetManager, citySize = null) {
     sessionApi,
   });
 
-  scene.initialize(city).then(() => {
+  scene.initialize(city).then(async () => {
+    await refreshPlacementPresentation();
     loaderManager.hide(500);
-    setTimeout(() => {
-      invokeStartTutorial();
-    }, 800);
+    if (sessionStorage.getItem('anoria.startTutorial') === '1') {
+      sessionStorage.removeItem('anoria.startTutorial');
+      setTimeout(() => {
+        invokeStartTutorial();
+      }, 800);
+    }
   });
 
   async function refreshEmploymentPresentationForCity() {
@@ -147,6 +220,131 @@ export function createGame(gameStore, assetManager, citySize = null) {
     await refreshEmploymentPresentationForCity();
   }
 
+  /**
+   * Place one road tile. Visual update only; heavy sync happens when paint ends.
+   * @returns {Promise<'placed'|'skip'|'fail'>}
+   */
+  async function placeRoadTile(x, y) {
+    if (!isRoadBuildingType(activeToolId)) {
+      return 'skip';
+    }
+    if (!city?.tiles?.[x]?.[y]) {
+      return 'skip';
+    }
+
+    const buildingType = getEffectiveBuildingToolId();
+    const tile = city.tiles[x][y];
+    const canOverwriteRoad = !tile.buildingId || isRoadBuildingType(tile.buildingId);
+    if (!canOverwriteRoad) {
+      return 'skip';
+    }
+
+    const result = await constructionApi.placeBuildingAtTile({
+      city,
+      x,
+      y,
+      buildingType,
+      gameTurn: time,
+    });
+
+    if (!result.success) {
+      if (result.reason === 'in_progress' || result.reason === 'building_already_exists') {
+        return 'skip';
+      }
+      if (result.reason === 'insufficient_funds') {
+        showInsufficientFundsNotification(buildingType, result.price || 0);
+        return 'fail';
+      }
+      if (result.reason) {
+        showGenericErrorNotification(buildingType, result.reason);
+      }
+      return 'fail';
+    }
+
+    roadPaint.placedCount += 1;
+    roadPaint.lastX = x;
+    roadPaint.lastY = y;
+
+    const multiplayerManager = getMultiplayerManager();
+    if (multiplayerManager?.isMultiplayer) {
+      try {
+        await multiplayerManager.placeBuilding(buildingType, x, y);
+      } catch (error) {
+        console.warn('[Multiplayer] Erreur envoi route:', error);
+      }
+    }
+
+    return 'placed';
+  }
+
+  async function finalizeRoadPaintSession() {
+    if (!roadPaint.active && roadPaint.placedCount === 0) {
+      return;
+    }
+    const placed = roadPaint.placedCount;
+    roadPaint.active = false;
+    roadPaint.lastX = null;
+    roadPaint.lastY = null;
+    roadPaint.placedCount = 0;
+    roadPaint.busy = false;
+
+    if (placed <= 0) {
+      return;
+    }
+
+    await scene.update(city, time);
+    await runSimulationPass(time);
+    await syncEmploymentAfterBuildingChange(scene, city, activeToolId);
+    await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+    if (game?.play) {
+      game.play();
+    }
+  }
+
+  /**
+   * Paint roads from last painted cell to (x,y), filling gaps (Cesar III drag).
+   */
+  async function paintRoadToward(x, y) {
+    if (!roadPaint.active || roadPaint.busy || !isRoadBuildingType(activeToolId)) {
+      return;
+    }
+    if (roadPaint.lastX === x && roadPaint.lastY === y) {
+      return;
+    }
+
+    roadPaint.busy = true;
+    try {
+      const cells =
+        roadPaint.lastX == null || roadPaint.lastY == null
+          ? [{ x, y }]
+          : listRoadPaintCells(roadPaint.lastX, roadPaint.lastY, x, y);
+
+      let placedAny = false;
+      for (const cell of cells) {
+        if (cell.x < 0 || cell.y < 0 || cell.x >= city.size || cell.y >= city.size) {
+          continue;
+        }
+        const outcome = await placeRoadTile(cell.x, cell.y);
+        if (outcome === 'fail') {
+          await finalizeRoadPaintSession();
+          return;
+        }
+        if (outcome === 'placed') {
+          placedAny = true;
+        } else {
+          roadPaint.lastX = cell.x;
+          roadPaint.lastY = cell.y;
+        }
+      }
+
+      if (placedAny) {
+        await scene.update(city, time);
+      }
+    } finally {
+      roadPaint.busy = false;
+    }
+  }
+
   scene.onObjectSelected = async (selectedObject) => {
     selectedObject.info = '';
     selectedObject.name = activeToolId !== 'select-object' ? activeToolId : selectedObject.name;
@@ -171,14 +369,49 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
 
     if (activeToolId === 'bulldoze') {
+      const removedInstanceId = selectedObject.userData?.instanceId ?? tile.instanceId ?? null;
+      const isWindmill = isWindmillBuildingType(tile.buildingId);
+      const isMarket = isMarketBuildingType(tile.buildingId);
+
+      let cascadeOutcome = null;
+      if (isWindmill && removedInstanceId) {
+        cascadeOutcome = await syncSupplyLinksAfterBuildingChange({
+          supply,
+          construction: constructionApi,
+          city,
+          event: 'bulldozed',
+          buildingType: tile.buildingId,
+          instanceId: removedInstanceId,
+          x,
+          y,
+        });
+      } else if (isMarket && removedInstanceId) {
+        await syncSupplyLinksAfterBuildingChange({
+          supply,
+          construction: constructionApi,
+          city,
+          event: 'bulldozed',
+          buildingType: tile.buildingId,
+          instanceId: removedInstanceId,
+          x,
+          y,
+        });
+      }
+
       const { buildingId } = await constructionApi.bulldozeBuildingAtTile({
         city,
         x,
         y,
-        meshInstanceId: selectedObject.userData?.instanceId ?? null,
+        meshInstanceId: removedInstanceId,
       });
+
+      if (isWindmill && cascadeOutcome?.destroyed?.length) {
+        showWindmillCascadeNotification(cascadeOutcome.destroyed);
+      }
+
       await scene.update(city, time);
       await syncEmploymentAfterBuildingChange(scene, city, buildingId);
+      await refreshPlacementPresentation();
       await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
     } else if (activeToolId === 'select-object') {
       await presentBuildingInfoSelection(selectedObject, {
@@ -194,20 +427,35 @@ export function createGame(gameStore, assetManager, citySize = null) {
         employment: sessionApi.employment,
         accounting: sessionApi.accounting,
       });
-    } else if (
-      !tile.buildingId
-      || (
-        activeToolId
-        && (activeToolId === 'roads' || activeToolId === 'Road' || activeToolId.startsWith('StonePath-'))
-        && (
-          tile.buildingId === 'roads'
-          || tile.buildingId === 'Road'
-          || (tile.buildingId && tile.buildingId.startsWith('StonePath-'))
-        )
-      )
-    ) {
+    } else if (isRoadBuildingType(activeToolId)) {
       if (infoObjectOverlay.classList.contains('active')) {
-        infoObjectOverlay.classList.remove('active');
+        closeBuildingInfoOverlay(infoObjectOverlay);
+        const canvas = document.querySelector('canvas');
+        if (canvas) {
+          canvas.classList.remove('pointer-events-disabled');
+        }
+        if (game && typeof game.play === 'function') {
+          game.play();
+        }
+      }
+
+      // Cesar III: first click anchors, hold+drag paints further tiles
+      roadPaint.active = true;
+      roadPaint.placedCount = 0;
+      const outcome = await placeRoadTile(x, y);
+      if (outcome === 'fail') {
+        roadPaint.active = false;
+        return;
+      }
+      if (outcome === 'placed') {
+        await scene.update(city, time);
+      } else {
+        roadPaint.lastX = x;
+        roadPaint.lastY = y;
+      }
+    } else if (!tile.buildingId) {
+      if (infoObjectOverlay.classList.contains('active')) {
+        closeBuildingInfoOverlay(infoObjectOverlay);
         const canvas = document.querySelector('canvas');
         if (canvas) {
           canvas.classList.remove('pointer-events-disabled');
@@ -241,7 +489,19 @@ export function createGame(gameStore, assetManager, citySize = null) {
       await scene.update(city, time);
       await runSimulationPass(time);
       await syncEmploymentAfterBuildingChange(scene, city, activeToolId);
+      await syncSupplyLinksAfterBuildingChange({
+        supply,
+        construction: constructionApi,
+        city,
+        event: 'placed',
+        buildingType: activeToolId,
+        instanceId: result.instanceId,
+        x: placeX,
+        y: placeY,
+      });
+      await refreshPlacementPresentation();
       await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+      placementGhostSession.sync(selectedObject);
       const multiplayerManager = getMultiplayerManager();
       if (multiplayerManager?.isMultiplayer) {
         try {
@@ -256,10 +516,61 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
   };
 
+  scene.onRoadPaintMove = async (focusedObject) => {
+    if (!roadPaint.active || !isRoadBuildingType(activeToolId)) {
+      return;
+    }
+    const x = focusedObject?.userData?.x;
+    const y = focusedObject?.userData?.y;
+    if (typeof x !== 'number' || typeof y !== 'number') {
+      return;
+    }
+    await paintRoadToward(x, y);
+    placementGhostSession.sync(focusedObject);
+  };
+
+  scene.onRoadPaintEnd = async () => {
+    await finalizeRoadPaintSession();
+  };
+
+  scene.onPlacementHover = (focusedObject) => {
+    placementGhostSession.sync(focusedObject);
+  };
+
+  /**
+   * R while StonePath tool is active: toggle H/V (does not rotate camera).
+   * @returns {boolean} true if handled
+   */
+  scene.onRotateBuildingTool = () => {
+    if (!isStonePathTool(activeToolId)) {
+      return false;
+    }
+    stonePathOrientation = cycleStonePathOrientationIndex(stonePathOrientation);
+    updateStonePathToolHint();
+    placementGhostSession.sync();
+    return true;
+  };
+
+  window.addEventListener('mouseup', (event) => {
+    // Release may happen outside the canvas — still end camera drag / road paint
+    scene.onMouseUp?.(event);
+    if (roadPaint.active) {
+      void finalizeRoadPaintSession();
+    }
+  });
+
+  window.addEventListener('blur', () => {
+    scene.camera?.releaseAllMouseButtons?.();
+  });
+
   const canvasEl = scene.domElement || document.querySelector('canvas');
   if (canvasEl) {
+    canvasEl.addEventListener('contextmenu', (event) => {
+      event.preventDefault();
+      // Ensure right-drag ends even if the browser eats mouseup for the menu
+      scene.camera?.onMouseUp?.({ button: 2 });
+    });
     canvasEl.addEventListener('mousedown', scene.onMouseDown.bind(scene), false);
-    canvasEl.addEventListener('mouseup', scene.onMouseUp.bind(scene), false);
     canvasEl.addEventListener('mousemove', scene.onMouseMove.bind(scene), false);
     canvasEl.addEventListener('wheel', scene.onMouseWheel.bind(scene), { passive: false });
     canvasEl.addEventListener('touchstart', scene.onTouchStart.bind(scene), { passive: false });
@@ -269,7 +580,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
     document.addEventListener('keyup', scene.onKeyBoardUp.bind(scene), false);
   } else {
     document.addEventListener('mousedown', scene.onMouseDown.bind(scene), false);
-    document.addEventListener('mouseup', scene.onMouseUp.bind(scene), false);
     document.addEventListener('mousemove', scene.onMouseMove.bind(scene), false);
     document.addEventListener('wheel', scene.onMouseWheel.bind(scene), { passive: false });
     document.addEventListener('touchstart', scene.onTouchStart.bind(scene), { passive: false });
@@ -281,7 +591,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
   infoObjectCloseBtn.addEventListener('click', () => {
     if (infoObjectOverlay.classList.contains('active')) {
-      infoObjectOverlay.classList.remove('active');
+      closeBuildingInfoOverlay(infoObjectOverlay);
     }
     const canvas = document.querySelector('canvas');
     if (canvas) {
@@ -315,6 +625,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
         refreshEmploymentPresentation: refreshEmploymentPresentationForCity,
         objectivesTracker,
         notifyBudgetCleanup: notifyBudgetCleanupIfNeeded,
+        refreshPlacementToolGating: ({ housing: housingCtx }) =>
+          refreshSkillPlacementGating({
+            housing: housingCtx,
+            buttonStateManager: getButtonStateManager(),
+          }),
       });
     },
 
@@ -386,6 +701,20 @@ export function createGame(gameStore, assetManager, citySize = null) {
     setActiveToolId(toolId) {
       activeToolId = toolId;
       gameUI.activeToolId = toolId;
+      if (isStonePathTool(toolId)) {
+        // Selecting the single StonePath button keeps current orientation;
+        // legacy Left/Right ids normalize to the matching index.
+        if (toolId !== 'StonePath-001') {
+          stonePathOrientation = stonePathOrientationIndex(toolId);
+          activeToolId = 'StonePath-001';
+          gameUI.activeToolId = 'StonePath-001';
+        }
+        updateStonePathToolHint();
+      }
+      placementGhostSession.onToolChanged();
+      if (!isRoadBuildingType(toolId) && roadPaint.active) {
+        void finalizeRoadPaintSession();
+      }
     },
 
     startInterval() {
