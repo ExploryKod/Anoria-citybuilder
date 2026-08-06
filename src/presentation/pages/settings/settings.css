@@ -1,0 +1,17 @@
+@import '../site/site.css';
+
+.settings-content {
+  width: min(100%, 480px);
+  margin: 0 auto;
+}
+
+.settings-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.settings-actions .site-btn--inline {
+  min-width: 140px;
+}

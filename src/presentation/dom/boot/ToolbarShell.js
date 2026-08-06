@@ -145,6 +145,16 @@ export function initMobileToolbar() {
 
   const toolbarTabs = document.querySelectorAll('.toolbar-tab');
   const toolbarSections = document.querySelectorAll('.toolbar-section');
+  const legendDropdown = document.getElementById('legend-dropdown');
+  const financeDropdown = document.getElementById('finance-dropdown');
+  const commandDropdown = document.getElementById('command-dropdown');
+
+  const closeLegendDropdowns = () => {
+    legendDropdown?.classList.add('hidden');
+    financeDropdown?.classList.add('hidden');
+    commandDropdown?.classList.add('hidden');
+  };
+
   if (toolbarTabs.length > 0 && toolbarSections.length > 0) {
     toolbarTabs.forEach((tab) => {
       tab.addEventListener('click', (e) => {
@@ -155,6 +165,9 @@ export function initMobileToolbar() {
         toolbarSections.forEach((section) => {
           section.classList.toggle('active', section.getAttribute('data-section') === targetSection);
         });
+        if (targetSection !== 'legends') {
+          closeLegendDropdowns();
+        }
       });
     });
   }
