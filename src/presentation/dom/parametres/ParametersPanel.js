@@ -73,6 +73,7 @@ class ParametersPanel {
         this.openButton.addEventListener('click', (event) => {
             event.preventDefault();
             event.stopPropagation();
+            event.stopImmediatePropagation();
             this.show();
         }, true);
 
@@ -239,7 +240,15 @@ class ParametersPanel {
     handleOutsideClick(event) {
         if (!this.isVisible) return;
 
-        if (!this.panel.contains(event.target) && event.target !== this.openButton) {
+        const target = event.target;
+        if (
+            target === this.openButton
+            || (this.openButton && this.openButton.contains(target))
+        ) {
+            return;
+        }
+
+        if (!this.panel.contains(event.target)) {
             event.preventDefault();
             event.stopPropagation();
             this.hide();

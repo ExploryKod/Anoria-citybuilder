@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#fb8122" />
+    <title>Eraanurbs — Paramètres</title>
+    <link rel="stylesheet" href="/src/presentation/pages/settings/settings.css">
+</head>
+<body>
+    <main class="site-page">
+        <header class="site-header">
+            <a href="/" class="site-back">← Menu principal</a>
+            <h1>Paramètres généraux</h1>
+        </header>
+
+        <div class="settings-content site-panel">
+            <section>
+                <h2 class="site-section-title">Évènements</h2>
+                <div class="site-field">
+                    <label for="settings-events-enabled">Évènements possibles</label>
+                    <input type="checkbox" id="settings-events-enabled" class="site-switch" checked>
+                </div>
+                <div class="site-field">
+                    <label for="settings-event-probability">Probabilité / 100</label>
+                    <input type="number" id="settings-event-probability" min="0" max="100" value="5">
+                </div>
+            </section>
+
+            <section>
+                <h2 class="site-section-title">Temps</h2>
+                <div class="site-field">
+                    <label for="settings-days-per-month">Tours (jours) par mois</label>
+                    <input type="number" id="settings-days-per-month" min="1" max="30" value="1">
+                </div>
+            </section>
+
+            <section>
+                <h2 class="site-section-title">Affichage</h2>
+                <div class="site-field">
+                    <label for="settings-tile-grid">Grille du terrain (défaut au chargement)</label>
+                    <input type="checkbox" id="settings-tile-grid" class="site-switch">
+                </div>
+            </section>
+
+            <div class="settings-actions">
+                <button type="button" id="settings-save-btn" class="site-btn site-btn--primary site-btn--inline">
+                    Enregistrer
+                </button>
+            </div>
+        </div>
+
+        <p class="site-footer">Ces paramètres s’appliquent aux nouvelles sessions de jeu.</p>
+    </main>
+
+    <script type="module" src="/src/presentation/pages/settings/main.js"></script>
+</body>
+</html>

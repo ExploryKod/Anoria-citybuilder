@@ -1,5 +1,7 @@
 # Politique de Confidentialité
 
+> Version publiée sur le site : [/privacy](/privacy) (slug anglais, contenu en français).
+
 La présente politique de confidentialité décrit la manière dont **Eraanurbs** (ci-après "nous", "notre" ou "le Site") collecte, utilise et protège vos informations personnelles lorsque vous utilisez notre site web de jeu de construction de ville.
 
 > **Dernière mise à jour :** 11 novembre 2025  

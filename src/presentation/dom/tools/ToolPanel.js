@@ -4,6 +4,10 @@ import {
   panelLayoutInner,
   toolBarButtons,
 } from '../shell/nodes.js';
+import {
+  buildFinanceLegendPanelHtml,
+  buildToolbarLegendPanelHtml,
+} from '../help/legendHelpContent.js';
 import { getBuildingDisplayName } from '../shell/BuildingNotifications.js';
 
 /** @type {{
@@ -122,6 +126,8 @@ const GROUP_CREATORS = {
   decoration: () => fillPanelFromToolIds('decoration'),
   tombs: () => fillPanelFromToolIds('tombs'),
   roads: () => createRoadsButtons(),
+  legendToolbar: () => fillLegendPanel(buildToolbarLegendPanelHtml()),
+  legendFinance: () => fillLegendPanel(buildFinanceLegendPanelHtml()),
 };
 
 export function getButtonsUnactive() {
@@ -193,11 +199,19 @@ export function toggleModal(e) {
   }
 }
 
+function fillLegendPanel(html) {
+  panelLayoutInner.className = 'panel-inner panel-inner--legend-list';
+  panelLayoutInner.innerHTML = html;
+  panelLayoutInner.classList.remove('loading-objects');
+  loaderButton.classList.remove('active');
+}
+
 /**
  * @param {string} category
  * @param {{ exclude?: string[] }} [opts]
  */
 function fillPanelFromToolIds(category, opts = {}) {
+  panelLayoutInner.className = 'panel-inner';
   panelLayoutInner.innerHTML = '';
   const exclude = new Set(opts.exclude || []);
   const ids = (toolIds[category] || []).filter((id) => !exclude.has(id));
@@ -229,6 +243,7 @@ function fillPanelFromToolIds(category, opts = {}) {
 }
 
 function createRoadsButtons() {
+  panelLayoutInner.className = 'panel-inner';
   panelLayoutInner.innerHTML = '';
   const infrastructureToolIDs = toolIds.infrastructure || [];
 

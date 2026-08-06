@@ -1,5 +1,5 @@
 
-/* Legend buttons container - positioned at bottom for all screen sizes */
+/* Legend buttons container — mobile shortcuts (toolbar / caméra) */
 .legend-btns-container {
   display: none;
   z-index: var(--z-index-legend);
@@ -19,6 +19,51 @@
   min-width: 0; /* Allow shrinking */
   padding: 0 10px; /* Add some padding to prevent buttons from touching edges */
   box-sizing: border-box;
+}
+
+@media (min-width: 769px) {
+  .legend-btns-container--mobile {
+    display: none !important;
+  }
+}
+
+/* Aide & légendes — toolbar tab */
+.toolbar-section-legends .toolbar__buttons--legends {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+}
+
+.toolbar-section-legends .legend-btns {
+  width: 100%;
+}
+
+.toolbar-section-legends .legend-toggle-btn,
+.toolbar-section-legends .finance-toggle-btn,
+.toolbar-section-legends .command-toggle-btn {
+  max-width: none;
+  width: 100%;
+  flex: none;
+  height: auto;
+  min-height: 40px;
+}
+
+.toolbar-section-legends .legend-dropdown,
+.toolbar-section-legends .finance-dropdown,
+.toolbar-section-legends .command-dropdown {
+  top: 0;
+  bottom: auto;
+  left: 100%;
+  margin-left: 8px;
+  margin-bottom: 0;
+  transform: translateX(-10px);
+}
+
+.toolbar-section-legends .legend-dropdown:not(.hidden),
+.toolbar-section-legends .finance-dropdown:not(.hidden),
+.toolbar-section-legends .command-dropdown:not(.hidden) {
+  transform: translateX(0);
 }
 
 /* Legend buttons - common styles for all legend buttons */
