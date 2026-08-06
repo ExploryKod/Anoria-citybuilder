@@ -33,8 +33,10 @@ export function mountSiteLegalFooter() {
     a.className = 'site-legal-footer__link';
     a.href = link.href;
     a.textContent = link.label;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
+    if (/^https?:\/\//i.test(link.href)) {
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+    }
     nav.appendChild(a);
   });
 

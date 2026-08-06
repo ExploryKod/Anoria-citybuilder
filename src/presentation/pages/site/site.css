@@ -1,6 +1,7 @@
 @import './tokens.css';
 @import './components/site-btn.css';
 @import './components/site-legal-footer.css';
+@import './cookie-consent-fab.css';
 
 *,
 *::before,

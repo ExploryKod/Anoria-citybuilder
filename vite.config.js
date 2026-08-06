@@ -6,6 +6,8 @@ const cleanRoutes = [
   { path: '/game', file: '/game.html' },
   { path: '/missions', file: '/missions.html' },
   { path: '/settings', file: '/settings.html' },
+  { path: '/privacy', file: '/privacy.html' },
+  { path: '/terms', file: '/terms.html' },
 ]
 
 // https://vitejs.dev/config/
@@ -23,6 +25,8 @@ export default defineConfig({
         game: resolve(__dirname, 'game.html'),
         missions: resolve(__dirname, 'missions.html'),
         settings: resolve(__dirname, 'settings.html'),
+        privacy: resolve(__dirname, 'privacy.html'),
+        terms: resolve(__dirname, 'terms.html'),
       },
     },
   },
@@ -69,7 +73,7 @@ export default defineConfig({
       clientsClaim: true,
       maximumFileSizeToCacheInBytes: 6000000,
       navigateFallback: '/index.html',
-      navigateFallbackDenylist: [/^\/assets\//, /^\/game/],
+      navigateFallbackDenylist: [/^\/assets\//, /^\/game/, /^\/privacy/, /^\/terms/],
     },
 
     devOptions: {

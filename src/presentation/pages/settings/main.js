@@ -1,7 +1,9 @@
 import * as eventsConfig from '../../../config/events.js';
 import { mountSiteLegalFooter } from '../site/mountSiteLegalFooter.js';
+import { mountCookieConsent } from '../site/mountCookieBanner.js';
 
 mountSiteLegalFooter();
+mountCookieConsent();
 
 const TILE_GRID_KEY = 'anoria.tileGridVisible';
 

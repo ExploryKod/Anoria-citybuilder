@@ -25,6 +25,7 @@ import '../shell/EventBlocker.js';
 import { initParametersPanel } from '../parametres/ParametersPanel.js';
 import { initMapFiltersPanel } from '../filters/MapFiltersPanel.js';
 import { loadBudgetStates } from '../compta/compte-de-resultat/CompteDeResultatPanel.js';
+import { mountCookieConsent } from '../../pages/site/mountCookieBanner.js';
 
 export async function initAppBoot() {
   const assetManager = new AssetManager();
@@ -74,4 +75,5 @@ export async function initAppBoot() {
   });
   initMissingTooltips();
   observeMissingTooltips();
+  mountCookieConsent();
 }
