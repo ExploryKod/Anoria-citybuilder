@@ -6,8 +6,10 @@ import {
   setProfileName,
 } from '../site/bootSession.js';
 import { mountSiteLegalFooter } from '../site/mountSiteLegalFooter.js';
+import { mountCookieConsent } from '../site/mountCookieBanner.js';
 
 mountSiteLegalFooter();
+mountCookieConsent();
 
 const listEl = document.getElementById('missions-list');
 const detailEl = document.getElementById('mission-detail');
