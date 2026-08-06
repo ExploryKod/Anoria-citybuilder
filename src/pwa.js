@@ -1,103 +1,102 @@
 import { registerSW } from 'virtual:pwa-register'
+import { showInfoToast, showSuccessToast } from './presentation/dom/shell/ToastNotifier.js'
 
-/**@param app {HTMLDivElement}*/
-export function initPWA(app) {
-    /**@type {HTMLDivElement}*/
-    const pwaToast = app.querySelector('#pwa-toast')
-    /**@type {HTMLDivElement}*/
-    const pwaToastMessage = pwaToast.querySelector('.message #toast-message')
-    /**@type {HTMLButtonElement}*/
-    const pwaCloseBtn = pwaToast.querySelector('#pwa-close')
-    /**@type {HTMLButtonElement}*/
-    const pwaRefreshBtn = pwaToast.querySelector('#pwa-refresh')
+const UPDATE_TOAST_TIMEOUT = 3500
 
-    /**@type {(reloadPage?: boolean) => Promise<void>}*/
-    let refreshSW
+/** Évite un double enregistrement si initPWA est appelé plusieurs fois. */
+let pwaInitialized = false
 
-    const refreshCallback = () => refreshSW?.(true)
+/**
+ * Enregistre le service worker (mode autoUpdate) et affiche un toast informatif
+ * limité dans le temps — sans demander de confirmation à l'utilisateur.
+ *
+ * Note : avec `registerType: 'autoUpdate'`, le callback `onNeedRefresh` n'est
+ * jamais appelé par vite-plugin-pwa. On écoute donc `updatefound` sur la
+ * registration pour prévenir avant le reload automatique.
+ */
+export function initPWA() {
+  if (pwaInitialized) return
+  pwaInitialized = true
 
-    /**@param raf {boolean}*/
-    function hidePwaToast (raf) {
-        if (raf) {
-            requestAnimationFrame(() => hidePwaToast(false))
-            return
+  // Vérifie les mises à jour toutes les heures
+  const period = 60 * 60 * 1000
+
+  const start = () => {
+    registerSW({
+      immediate: true,
+      onOfflineReady() {
+        showInfoToast("📱 L'app est disponible hors ligne.", {
+          timeout: UPDATE_TOAST_TIMEOUT,
+        })
+      },
+      onRegisteredSW(swUrl, registration) {
+        if (!registration) return
+
+        // Prévenir (toast auto-dismiss) quand une nouvelle version est détectée.
+        // Le reload est ensuite déclenché automatiquement par vite-plugin-pwa
+        // (événement `activated` + isUpdate) — pas de bouton « Recharger ».
+        registration.addEventListener('updatefound', () => {
+          const installing = registration.installing
+          if (!installing) return
+
+          installing.addEventListener('statechange', () => {
+            // Une mise à jour (pas la 1ʳᵉ install) : un controller existe déjà.
+            if (
+              installing.state === 'installed' &&
+              navigator.serviceWorker.controller
+            ) {
+              showSuccessToast(
+                '🆕 Nouvelle version installée, mise à jour en cours…',
+                { timeout: UPDATE_TOAST_TIMEOUT }
+              )
+            }
+          })
+        })
+
+        if (period <= 0) return
+        if (registration.active?.state === 'activated') {
+          registerPeriodicSync(period, swUrl, registration)
+        } else if (registration.installing) {
+          registration.installing.addEventListener('statechange', (e) => {
+            /** @type {ServiceWorker} */
+            const sw = e.target
+            if (sw.state === 'activated') {
+              registerPeriodicSync(period, swUrl, registration)
+            }
+          })
         }
-        if (pwaToast.classList.contains('refresh'))
-            pwaRefreshBtn.removeEventListener('click', refreshCallback)
-
-        pwaToast.classList.remove('show', 'refresh')
-    }
-    /**@param offline {boolean}*/
-    function showPwaToast(offline) {
-        if (!offline)
-            pwaRefreshBtn.addEventListener('click', refreshCallback)
-        requestAnimationFrame(() => {
-            hidePwaToast(false)
-            if (!offline)
-                pwaToast.classList.add('refresh')
-            pwaToast.classList.add('show')
-        })
-    }
-
-    let swActivated = false
-    // check for updates every hour
-    const period = 60 * 60 * 1000
-
-    window.addEventListener('load', () => {
-        pwaCloseBtn.addEventListener('click', () => hidePwaToast(true))
-        refreshSW = registerSW({
-            immediate: true,
-            onOfflineReady() {
-                pwaToastMessage.innerHTML = '📱 Pour télécharger l\'app : cliquez sur l\'icône d\'ordinateur dans la barre d\'adresse du navigateur (en haut à droite). Elle fonctionnera ensuite hors ligne !'
-                showPwaToast(true)
-            },
-            onNeedRefresh() {
-                pwaToastMessage.innerHTML = '🆕 Une nouvelle version est disponible ! Cliquez sur "Recharger" pour obtenir les dernières améliorations.'
-                showPwaToast(false)
-            },
-            onRegisteredSW(swUrl, r) {
-                if (period <= 0) return
-                if (r?.active?.state === 'activated') {
-                    swActivated = true
-                    registerPeriodicSync(period, swUrl, r)
-                }
-                else if (r?.installing) {
-                    r.installing.addEventListener('statechange', (e) => {
-                        /**@type {ServiceWorker}*/
-                        const sw = e.target
-                        swActivated = sw.state === 'activated'
-                        if (swActivated)
-                            registerPeriodicSync(period, swUrl, r)
-                    })
-                }
-            },
-        })
+      },
     })
+  }
+
+  if (document.readyState === 'complete') {
+    start()
+  } else {
+    window.addEventListener('load', start, { once: true })
+  }
 }
 
 /**
- * This function will register a periodic sync check every hour, you can modify the interval as needed.
- *
- * @param period {number}
- * @param swUrl {string}
- * @param r {ServiceWorkerRegistration}
+ * @param {number} period
+ * @param {string} swUrl
+ * @param {ServiceWorkerRegistration} registration
  */
-function registerPeriodicSync(period, swUrl, r) {
-    if (period <= 0) return
+function registerPeriodicSync(period, swUrl, registration) {
+  if (period <= 0) return
 
-    setInterval(async () => {
-        if ('onLine' in navigator && !navigator.onLine)
-            return
+  setInterval(async () => {
+    if ('onLine' in navigator && !navigator.onLine) return
 
-        const resp = await fetch(swUrl, {
-            cache: 'no-store',
-            headers: {
-                'cache': 'no-store',
-                'cache-control': 'no-cache',
-            },
-        })
+    const resp = await fetch(swUrl, {
+      cache: 'no-store',
+      headers: {
+        cache: 'no-store',
+        'cache-control': 'no-cache',
+      },
+    })
 
-        if (resp?.status === 200)
-            await r.update()
-    }, period)
+    if (resp?.status === 200) {
+      await registration.update()
+    }
+  }, period)
 }

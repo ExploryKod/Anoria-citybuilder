@@ -1,9 +1,7 @@
 import { setBootMode } from '../site/bootSession.js';
-import { mountSiteLegalFooter } from '../site/mountSiteLegalFooter.js';
-import { mountCookieConsent } from '../site/mountCookieBanner.js';
+import { bootSiteChrome } from '../site/bootSiteChrome.js';
 
-mountSiteLegalFooter();
-mountCookieConsent({ autoOpen: true });
+bootSiteChrome({ cookieAutoOpen: true });
 
 document.querySelectorAll('[data-boot-mode]').forEach((el) => {
   el.addEventListener('click', () => {

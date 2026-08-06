@@ -5,11 +5,9 @@ import {
   setMissionId,
   setProfileName,
 } from '../site/bootSession.js';
-import { mountSiteLegalFooter } from '../site/mountSiteLegalFooter.js';
-import { mountCookieConsent } from '../site/mountCookieBanner.js';
+import { bootSiteChrome } from '../site/bootSiteChrome.js';
 
-mountSiteLegalFooter();
-mountCookieConsent();
+bootSiteChrome();
 
 const listEl = document.getElementById('missions-list');
 const detailEl = document.getElementById('mission-detail');
