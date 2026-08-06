@@ -1,5 +1,3 @@
-import { mountSiteLegalFooter } from '../site/mountSiteLegalFooter.js';
-import { mountCookieConsent } from '../site/mountCookieBanner.js';
+import { bootSiteChrome } from '../site/bootSiteChrome.js';
 
-mountSiteLegalFooter();
-mountCookieConsent();
+bootSiteChrome();

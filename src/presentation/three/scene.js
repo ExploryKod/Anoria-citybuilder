@@ -43,8 +43,18 @@ import {
   getSessionGameUI,
 } from '../../composition/sessionRuntime.js';
 import { createPlacementGhostController } from './placementGhost.js';
+import loaderManager from '../dom/shell/LoaderManager.js';
+import { showWarningToast, showInfoToast } from '../dom/shell/ToastNotifier.js';
 
 const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
+
+/** Terminaux tactiles / petits écrans — GPU plus souvent limité (mémoire, contexte WebGL). */
+function isMobileDevice() {
+    const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches ?? false;
+    const smallViewport = window.matchMedia?.('(max-width: 1024px)').matches ?? false;
+    const mobileUA = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+    return coarsePointer || smallViewport || mobileUA;
+}
 
 /**
  * @param {*} _gameStore
@@ -135,8 +145,23 @@ export function createScene(_gameStore, assetManager, deps) {
     let citizenPathfinding = null;
 
     const camera = createCamera(gameWindow);
-    const renderer = new THREE.WebGLRenderer();
+    const runningOnMobile = isMobileDevice();
+    const renderer = new THREE.WebGLRenderer({
+        // Sur mobile, on désactive l'antialiasing (coûteux en mémoire GPU) et on
+        // évite que le navigateur refuse purement et simplement le contexte WebGL
+        // sur un GPU jugé "faible" (failIfMajorPerformanceCaveat bloquerait sinon
+        // la création du renderer sur pas mal de terminaux Android d'entrée de gamme).
+        antialias: !runningOnMobile,
+        powerPreference: 'default',
+        failIfMajorPerformanceCaveat: false,
+        preserveDrawingBuffer: false,
+    });
     renderer.setSize(gameWindow.offsetWidth, gameWindow.offsetHeight);
+    if (runningOnMobile) {
+        // Cap le pixel ratio sur mobile pour limiter la pression mémoire GPU
+        // (une des causes les plus fréquentes de perte de contexte WebGL).
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    }
 
     // Overlay perf : FPS + MS + MB, net, ~20% largeur, bas-droite
     // (stats.js en CSS scale était flou et ne montrait qu'un panneau)
@@ -147,51 +172,50 @@ export function createScene(_gameStore, assetManager, deps) {
     
     // Add WebGL error handling
     const canvas = renderer.domElement;
-    
-    // Handle WebGL context lost (indicates insufficient GPU resources)
-    /*
+    let webglContextLost = false;
+
+    // Handle WebGL context lost — fréquent sur mobile (GPU/mémoire limités).
+    // preventDefault() est indispensable : sans lui, le navigateur ne tente
+    // jamais de restaurer le contexte et ne déclenche pas 'webglcontextrestored'.
     canvas.addEventListener('webglcontextlost', (event) => {
         event.preventDefault();
-        console.error('[WebGL] Context lost - this may indicate insufficient GPU resources');
-        // Show error notification
-        const notification = document.createElement('div');
-        notification.className = 'building-notification webgl-error';
-        notification.innerHTML = `
-            <div class="notification-content">
-                <div class="notification-icon">🔴</div>
-                <div class="notification-text">
-                    <div class="notification-title">Erreur WebGL</div>
-                    <div class="notification-message">Le contexte WebGL a été perdu. Cela indique que votre système manque de ressources GPU. Veuillez réduire la taille de la ville ou fermer d'autres applications.</div>
-                </div>
-            </div>
-        `;
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
-            color: white;
-            padding: 15px 25px;
-            border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(211, 47, 47, 0.3);
-            z-index: 10002;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 14px;
-            font-weight: 500;
-            max-width: 500px;
-            animation: slideDown 0.3s ease-out;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        `;
-        document.body.appendChild(notification);
+        webglContextLost = true;
+        console.error('[WebGL] Context lost — ressources GPU insuffisantes (fréquent sur mobile).');
+
+        // Le loader "Chronos" peut être affiché au moment de la perte de contexte
+        // (pendant scene.initialize) : on le masque pour éviter qu'il reste bloqué
+        // indéfiniment, l'utilisateur reçoit le toast d'erreur à la place.
+        loaderManager.hide(0);
+
+        showWarningToast(
+            "Le rendu 3D a rencontré un problème (ressources graphiques insuffisantes). Tentative de récupération automatique…",
+            { timeout: 6000 }
+        );
     });
-    
-    // Handle WebGL context restored
-    canvas.addEventListener('webglcontextrestored', () => {
+
+    // Handle WebGL context restored — reconstruit la scène car toutes les
+    // ressources GPU (textures, géométries) ont été perdues avec le contexte.
+    canvas.addEventListener('webglcontextrestored', async () => {
+        console.warn('[WebGL] Context restored, reconstruction de la scène…');
+        webglContextLost = false;
+        try {
+            if (currentCity) {
+                await initialize(currentCity);
+            }
+            showInfoToast('Affichage 3D restauré.', { timeout: 3000 });
+        } catch (error) {
+            console.error('[WebGL] Échec de la reconstruction après restauration du contexte:', error);
+            showWarningToast(
+                'Impossible de restaurer complètement l\'affichage. Merci de recharger la page.',
+                { timeout: 8000 }
+            );
+        }
     });
-    */
+
     renderer.setClearColor(0x000000, 0);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    if (!runningOnMobile) {
+        renderer.setPixelRatio(window.devicePixelRatio);
+    }
     
     // Ensure canvas allows touch events on mobile
     renderer.domElement.style.touchAction = 'none';
@@ -1815,6 +1839,12 @@ export function createScene(_gameStore, assetManager, deps) {
     // Note: updateCitizen() moved to CitizenManager.updateAllCitizens()
     
     function draw() {
+        // Contexte WebGL perdu (mobile) : on suspend le travail (culling, citoyens,
+        // pathfinding) le temps que 'webglcontextrestored' reconstruise la scène.
+        if (webglContextLost) {
+            return;
+        }
+
         stats.begin();
 
         // Calculate delta time for animations (in seconds)

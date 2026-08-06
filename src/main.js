@@ -8,7 +8,7 @@ import './presentation/dom/shell/OrientationToast.js'
 
 const app = document.querySelector('#game-window')
 
-initPWA(app)
+initPWA()
 
 /**
  * Positions the legend buttons container based on the toolbar width

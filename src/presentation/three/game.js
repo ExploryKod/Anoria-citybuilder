@@ -43,6 +43,7 @@ import {
   showGenericErrorNotification,
   showWindmillCascadeNotification,
 } from '../dom/shell/BuildingNotifications.js';
+import { showErrorToast } from '../dom/shell/ToastNotifier.js';
 import { presentBuildingInfoSelection } from '../dom/info/presenters/useBuildingInfoSelection.js';
 import { assetsPrices } from '../../shared/building-catalog/index.js';
 import { isWindmillBuildingType, isMarketBuildingType } from '../../shared/building-catalog/BuildingSupplyTypes.js';
@@ -187,6 +188,16 @@ export function createGame(gameStore, assetManager, citySize = null) {
         invokeStartTutorial();
       }, 800);
     }
+  }).catch((error) => {
+    // Sans ce filet, une erreur ici (asset manquant, réseau mobile instable,
+    // perte de contexte WebGL...) laissait le loader "Chronos crée le temps"
+    // bloqué indéfiniment, sans aucun message pour le joueur.
+    console.error('[game.js] scene.initialize failed:', error);
+    loaderManager.hide(0);
+    showErrorToast(
+      "Le chargement de la ville a rencontré un problème. Merci de recharger la page.",
+      { timeout: 8000 }
+    );
   });
 
   async function refreshEmploymentPresentationForCity() {
