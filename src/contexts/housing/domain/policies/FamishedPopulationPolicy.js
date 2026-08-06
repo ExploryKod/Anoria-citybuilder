@@ -15,15 +15,16 @@ function clampPop(pop) {
   return Number.isFinite(pop) ? Math.max(0, Math.floor(pop)) : 0;
 }
 
+import { totalFoodFromStocks } from '../value-objects/FoodStocks.js';
+
 /**
  * Food baskets available at the house for famished calculation.
- * Uses persisted `stocks.food` (kept in sync by Supply on write).
  *
  * @param {import('../value-objects/FoodStocks.js').FoodStocks | null | undefined} stocks
  * @returns {number}
  */
 export function homeFoodBasketsForFamished(stocks) {
-  return Math.max(0, stocks?.food ?? 0);
+  return totalFoodFromStocks(stocks);
 }
 
 /**

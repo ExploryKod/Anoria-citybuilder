@@ -98,6 +98,23 @@ describe('Accounting — city ledger (Phase 1)', () => {
       expect(lines.totalExpenses).toBe(45);
       expect(lines.balance).toBe(220);
     });
+
+    test('aggregates unemployment benefits into city-ledger year lines', () => {
+      const summary = yearSummary(
+        1,
+        [{ type: 'citizen_tax', amount: 50 }],
+        [
+          { type: 'salary', amount: 100 },
+          { type: 'unemployment_benefit', amount: 40 },
+        ]
+      );
+
+      const lines = cityLedgerYearLinesFromJournalSummary(summary, 10);
+
+      expect(lines.salary).toBe(100);
+      expect(lines.unemploymentBenefit).toBe(40);
+      expect(lines.totalExpenses).toBe(140);
+    });
   });
 
   describe('CityLedgerFinancialStatusPolicy', () => {

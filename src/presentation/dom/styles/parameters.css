@@ -3,7 +3,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -55%) scale(0.98);
-    width: min(520px, 92vw);
+    width: min(680px, 94vw);
     max-height: 82vh;
     background: #fafafa;
     border: 3px solid var(--cta);
@@ -206,6 +206,53 @@
 
 .parameters-number-input:hover {
     border-color: var(--cta-05);
+}
+
+.parameters-shortcuts {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.parameters-shortcut-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: var(--border-radius-small);
+    background: rgba(251, 129, 24, 0.06);
+    transition: background 0.2s ease;
+}
+
+.parameters-shortcut-item:hover {
+    background: rgba(251, 129, 24, 0.12);
+}
+
+.parameters-shortcut-item kbd {
+    background: var(--cta);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    min-width: 24px;
+    text-align: center;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.parameters-shortcut-item kbd + kbd {
+    margin-left: 4px;
+}
+
+.parameters-shortcut-label {
+    color: var(--primary);
+    font-size: 0.9rem;
+    flex: 1;
+    line-height: 1.35;
 }
 
 .parameters-buttons {

@@ -8,19 +8,28 @@ import {
   allocateWorkers,
   orderWorkplacesByPriority,
 } from '../../domain/policies/WorkerAllocationPolicy.js';
+import { residentialGroupForType } from '../../domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
+import {
+  allWorkplaceEmploymentSkills,
+  getRequiredSkillForBuilding,
+  residentialGroupForSkill,
+} from '../../domain/policies/WorkplaceSkillRequirementPolicy.js';
 
 /**
  * Command: monthly city-wide worker redistribution.
  *
- * Sector priorities are supplied by the caller (localStorage / config stay outside the BC).
- * Factory productWorkerDistribution sync stays in the legacy facade.
+ * Skill-based recruitment: each pass staffs workplaces that require a given
+ * skill using citizens from the matching social group (via injected Housing port).
  */
 export class DistributeCityWorkers {
   /**
    * @param {import('../ports/EmploymentBuildingRepository.js').EmploymentBuildingRepository} employmentBuildingRepository
+   * @param {object} [deps]
+   * @param {(house: { type?: string, level?: number }, skillKey: string) => boolean} [deps.citizenProvidesSkill]
    */
-  constructor(employmentBuildingRepository) {
+  constructor(employmentBuildingRepository, deps = {}) {
     this.employmentBuildingRepository = employmentBuildingRepository;
+    this.citizenProvidesSkill = deps.citizenProvidesSkill ?? (() => false);
   }
 
   /**
@@ -35,29 +44,50 @@ export class DistributeCityWorkers {
     await this.employmentBuildingRepository.resetWorkplaceWorkers();
 
     const laborSources = await this.employmentBuildingRepository.listLaborSources();
-    const availableWorkers = laborSources
-      .filter((b) => isLaborSource(b) && hasRoadAccess(b))
-      .reduce((sum, b) => sum + workerPopFromHouse(b.type, b.pop), 0);
-
-    if (availableWorkers <= 0) {
-      return { availableWorkers: 0, assignments: [] };
-    }
-
     const workplaces = (await this.employmentBuildingRepository.listWorkplaces()).filter(
-      (b) => isEligibleWorkplace(b)
+      (b) => isEligibleWorkplace(b),
     );
 
-    // After reset, workers are 0 — re-read via listWorkplaces which should reflect reset.
-    // Defensive: treat worker as 0 for deficit calculation after reset.
-    const workplacesAfterReset = workplaces.map((w) => ({ ...w, worker: 0 }));
+    const workerCountById = new Map(workplaces.map((w) => [w.id, 0]));
+    const allAssignments = [];
+    let totalAvailableWorkers = 0;
 
-    const ordered = orderWorkplacesByPriority(workplacesAfterReset, sectorPriorities);
-    const { assignments } = allocateWorkers(availableWorkers, ordered);
+    for (const skillKey of allWorkplaceEmploymentSkills()) {
+      const group = residentialGroupForSkill(skillKey);
+      if (!group) continue;
 
-    for (const { buildingId, workers } of assignments) {
-      await this.employmentBuildingRepository.saveWorkers(buildingId, workers);
+      const skillWorkers = laborSources
+        .filter((building) => {
+          if (!isLaborSource(building) || !hasRoadAccess(building)) return false;
+          if (residentialGroupForType(building.type) !== group) return false;
+          return this.citizenProvidesSkill(building, skillKey);
+        })
+        .reduce((sum, building) => sum + workerPopFromHouse(building.type, building.pop, building.level), 0);
+
+      totalAvailableWorkers += skillWorkers;
+      if (skillWorkers <= 0) continue;
+
+      const skillWorkplaces = workplaces
+        .filter((workplace) => getRequiredSkillForBuilding(workplace.type) === skillKey)
+        .map((workplace) => ({ ...workplace, worker: workerCountById.get(workplace.id) ?? 0 }));
+
+      if (skillWorkplaces.length === 0) continue;
+
+      const ordered = orderWorkplacesByPriority(skillWorkplaces, sectorPriorities);
+      const { assignments } = allocateWorkers(skillWorkers, ordered);
+
+      for (const { buildingId, workers } of assignments) {
+        workerCountById.set(buildingId, (workerCountById.get(buildingId) ?? 0) + workers);
+      }
+      allAssignments.push(...assignments);
     }
 
-    return { availableWorkers, assignments };
+    for (const [buildingId, workers] of workerCountById) {
+      if (workers > 0) {
+        await this.employmentBuildingRepository.saveWorkers(buildingId, workers);
+      }
+    }
+
+    return { availableWorkers: totalAvailableWorkers, assignments: allAssignments };
   }
 }

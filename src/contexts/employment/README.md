@@ -45,8 +45,13 @@ See [`docs/presentation.md`](docs/presentation.md).
 
 ## ECS
 
-- `employment.redistribute` — worker allocation each simulation tick (after `housing.evolution`, before `supply.factoryProduction`)
-- `infrastructure/runtime/synchronizeFactoryWorkerDistribution.js` — Winery productWorkerDistribution sync after allocation
+- `supply.syncFactoryWorkerDemand` — publishes `employees.worker_need` from factory line caps (before employment)
+- `employment.redistribute` — city-wide worker allocation by sector priority
+- `supply.allocateFactoryWorkers` — splits assigned factory workers across commodity lines (after employment)
+- `supply.factoryProduction` — monthly factory production cycle
+
+Factory line-cap edits from admin UI go through composition `applyFactoryLineCapChanges()`:
+sync demand → redistribute → allocate lines.
 
 ## Ports
 
@@ -61,6 +66,7 @@ See [`docs/presentation.md`](docs/presentation.md).
 - **Housing** (upstream): reads persisted `type` + `pop`; owns `LaborPoolPolicy` locally — see [`docs/boundaries.md`](docs/boundaries.md)
 - **Parcels**: road access via persisted `roadCount` (no Parcels domain import)
 - **Supply**: reads staffing (`worker` / `workerNeed`) from persistence for operational gates — no Employment→Supply coupling
+- **Shared Kernel: Population**: consumes `CitizenStatusCatalog` for labor eligibility rules (`shared/population/`)
 - **ACL**: `src/js/acl/employment.js`
 - **Composition**: `createEmploymentContext.js`, `createGameRuntime.js`
 

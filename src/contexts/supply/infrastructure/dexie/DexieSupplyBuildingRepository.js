@@ -30,7 +30,12 @@ export class DexieSupplyBuildingRepository {
       neighbors: house.neighbors || [],
       lastProductionYear: house.lastProductionYear ?? null,
       lastConsumptionMonth: house.lastConsumptionMonth ?? null,
+      lastSubsistenceMonth: house.lastSubsistenceMonth ?? null,
+      lastConsumption: house.lastConsumption ?? null,
       pop: house.pop ?? 0,
+      level: house.level ?? 1,
+      supplyWindmillId: house.supplyWindmillId ?? null,
+      linkedMarkets: house.linkedMarkets ?? [],
     });
   }
 
@@ -58,6 +63,8 @@ export class DexieSupplyBuildingRepository {
       salesToWindmill: house.salesToWindmill || [],
       isActive: house.isActive !== false,
       commercializeEnabled: house.commercializeEnabled !== false,
+      supplyWindmillId: house.supplyWindmillId ?? null,
+      linkedMarkets: house.linkedMarkets ?? [],
     });
   }
 
@@ -102,6 +109,8 @@ export class DexieSupplyBuildingRepository {
     const normalized = createFoodStock(stocks);
     await this.#putFields(buildingId, {
       stocks: {
+        fruit: normalized.fruit,
+        game: normalized.game,
         wheat: normalized.wheat,
         carrot: normalized.carrot,
         cabbage: normalized.cabbage,
@@ -125,6 +134,24 @@ export class DexieSupplyBuildingRepository {
   async saveConsumptionMetadata(buildingId, { lastConsumptionMonth }) {
     if (lastConsumptionMonth === undefined || lastConsumptionMonth === null) return;
     await this.#putFields(buildingId, { lastConsumptionMonth });
+  }
+
+  async saveConsumptionRecord(buildingId, consumptionRecord) {
+    if (!consumptionRecord) return;
+    await this.#putFields(buildingId, {
+      lastConsumption: {
+        month: consumptionRecord.month,
+        consumed: { ...consumptionRecord.consumed },
+        demanded: { ...consumptionRecord.demanded },
+        unfed: { ...consumptionRecord.unfed },
+        totalUnfed: consumptionRecord.totalUnfed,
+      },
+    });
+  }
+
+  async saveSubsistenceMetadata(buildingId, { lastSubsistenceMonth }) {
+    if (lastSubsistenceMonth === undefined || lastSubsistenceMonth === null) return;
+    await this.#putFields(buildingId, { lastSubsistenceMonth });
   }
 
   async saveWindmillLastCollection(windmillId, lastCollection) {
@@ -196,6 +223,29 @@ export class DexieSupplyBuildingRepository {
     await this.#putFields(buildingId, flags);
   }
 
+  async saveSupplyWindmillId(marketId, windmillId) {
+    await this.#putFields(marketId, {
+      supplyWindmillId: windmillId || null,
+    });
+  }
+
+  async saveLinkedMarkets(windmillId, linkedMarkets) {
+    await this.#putFields(windmillId, {
+      linkedMarkets: Array.isArray(linkedMarkets)
+        ? linkedMarkets.map((entry) => ({
+            marketId: entry.marketId,
+            x: entry.x,
+            y: entry.y,
+            allocatedStocks: {
+              wheat: Math.max(0, Math.floor(entry.allocatedStocks?.wheat ?? 0)),
+              carrot: Math.max(0, Math.floor(entry.allocatedStocks?.carrot ?? 0)),
+              cabbage: Math.max(0, Math.floor(entry.allocatedStocks?.cabbage ?? 0)),
+            },
+          }))
+        : [],
+    });
+  }
+
   async findRowById(buildingId) {
     if (!buildingId) return null;
     return db.houses.get(buildingId);
@@ -233,6 +283,22 @@ export class DexieSupplyBuildingRepository {
         return type.includes('Windmill') || type.includes('windmill');
       })
       .map((row) => this.#toSnapshot(row));
+  }
+
+  async findCommerceBarns() {
+    const rows = await db.houses.toArray();
+    return rows.filter((row) => {
+      const type = row.type || '';
+      return type.includes('Barn');
+    });
+  }
+
+  async saveCommerceStocks(buildingId, commerceStocks) {
+    await this.#putFields(buildingId, { commerceStocks });
+  }
+
+  async findCommerceBarnRows() {
+    return this.findCommerceBarns();
   }
 
   async findFarms() {

@@ -15,14 +15,16 @@ import { getEmploymentSectorName } from '../contexts/employment/domain/catalogs/
  *
  * @param {object} [deps]
  * @param {import('../contexts/employment/application/ports/EmploymentBuildingRepository.js').EmploymentBuildingRepository} [deps.employmentBuildingRepository]
+ * @param {(house: { type?: string, level?: number }, skillKey: string) => boolean} [deps.citizenProvidesSkill]
  */
-export function createEmploymentContext({ employmentBuildingRepository } = {}) {
+export function createEmploymentContext({ employmentBuildingRepository, citizenProvidesSkill } = {}) {
   const employmentBuildingRepositoryImpl =
     employmentBuildingRepository ?? new DexieEmploymentBuildingRepository();
   const sectorPriorityRepository =
     new LocalStorageSectorPriorityRepository();
   const distributeCityWorkersCommand = new DistributeCityWorkers(
-    employmentBuildingRepositoryImpl
+    employmentBuildingRepositoryImpl,
+    { citizenProvidesSkill },
   );
   const getCityEmploymentSummaryQuery = new GetCityEmploymentSummary(
     employmentBuildingRepositoryImpl
@@ -80,9 +82,13 @@ export function createEmploymentContext({ employmentBuildingRepository } = {}) {
 /** @type {ReturnType<typeof createEmploymentContext> | null} */
 let sharedEmployment = null;
 
-export function getOrCreateEmploymentContext() {
+/**
+ * @param {object} [deps]
+ * @param {(house: { type?: string, level?: number }, skillKey: string) => boolean} [deps.citizenProvidesSkill]
+ */
+export function getOrCreateEmploymentContext(deps = {}) {
   if (!sharedEmployment) {
-    sharedEmployment = createEmploymentContext();
+    sharedEmployment = createEmploymentContext(deps);
   }
   return sharedEmployment;
 }

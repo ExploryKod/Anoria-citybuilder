@@ -27,10 +27,24 @@ export const infoPanelNoClockIcon = document.querySelector('.info-panel svg.luci
 export const delayBox = document.querySelector('.info-panel .delay-box');
 // scene.js
 export const gameWindow = document.getElementById('game-window');
-export const displayPop = document.querySelector('.info-panel .display-pop');
+// HUD population — barre principale + barre détail (sibling sous .info-panel-wrapper)
+const popHudRoot = '.info-panel-wrapper';
+
+export const displayPop = document.querySelector(`${popHudRoot} .pop-breakdown`);
+export const displayPopTotal = document.querySelector(`${popHudRoot} .pop-box--total-only .pop-total`);
+export const displayPopActiveTotal = document.querySelector(`${popHudRoot} .pop-active-total`);
+export const displayPopCitizens = document.querySelector(
+    `${popHudRoot} .pop-segment--citizen .pop-segment-value`
+);
+export const displayPopElites = document.querySelector(
+    `${popHudRoot} .pop-segment--elite .pop-segment-value`
+);
+export const displayPopServants = document.querySelector(
+    `${popHudRoot} .pop-segment--servant .pop-segment-value`
+);
 export const displayHungerPop = document.querySelector('.info-panel .display-hunger-pop');
-export const displayUnemployedPop = document.querySelector('.info-panel .display-unemployed-pop');
-export const displayWorkerLack = document.querySelector('.info-panel .display-worker-lack');
+export const displayUnemployedPop = document.querySelector(`${popHudRoot} .display-unemployed-pop`);
+export const displayWorkerLack = document.querySelector(`${popHudRoot} .display-worker-lack`);
 export const displayDelay = document.querySelector('.info-panel .display-delay');
 export const displayDelayUI = document.querySelector('.delay-ui');
 export const bulldozeSelected = document.querySelector('.bulldoze-btn');

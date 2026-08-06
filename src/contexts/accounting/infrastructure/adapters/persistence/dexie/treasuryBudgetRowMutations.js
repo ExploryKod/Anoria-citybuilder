@@ -54,6 +54,25 @@ export function applyConstructionDebitMutation(budget, amount, description) {
 }
 
 /** @param {object} budget @param {number} amount */
+export function applyUnemploymentBenefitDebitMutation(budget, amount) {
+  const roundedAmount = roundAmount(amount);
+  if (!roundedAmount) return budget;
+
+  budget.funds = Math.round(budget.funds - roundedAmount);
+  budget.expenses = Math.round(budget.expenses + roundedAmount);
+  budget.dailyExpenses = Math.round(budget.dailyExpenses + roundedAmount);
+
+  if (!budget.totalUnemploymentBenefits) {
+    budget.totalUnemploymentBenefits = 0;
+  }
+  budget.totalUnemploymentBenefits = Math.round(
+    budget.totalUnemploymentBenefits + roundedAmount
+  );
+  budget.netFlow = Math.round(budget.income - budget.expenses);
+  return budget;
+}
+
+/** @param {object} budget @param {number} amount */
 export function applySalaryDebitMutation(budget, amount) {
   const roundedAmount = roundAmount(amount);
   if (!roundedAmount) return budget;

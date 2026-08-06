@@ -109,10 +109,45 @@ describe('Housing — population growth', () => {
       });
     });
 
-    test('zeros population without road access', () => {
+    test('Blue/Red/Purple keep growing toward their level cap without road access (level 1 is autarkic by design)', () => {
       expect(
         computePopulationAfterGrowth({
           type: 'House-Red',
+          level: 1,
+          currentPop: 4,
+          roadCount: 0,
+          monthIndex: 4,
+        })
+      ).toEqual({
+        pop: 5,
+        changed: true,
+        lastPopulationGrowthMonth: 4,
+        reason: 'monthly_growth',
+      });
+    });
+
+    test('level 2 grows toward the doubled cap (12) regardless of road param (road loss is handled by HouseLevelPolicy)', () => {
+      expect(
+        computePopulationAfterGrowth({
+          type: 'House-Red',
+          level: 2,
+          currentPop: 10,
+          roadCount: 1,
+          monthIndex: 4,
+          lastPopulationGrowthMonth: 3,
+        })
+      ).toEqual({
+        pop: 11,
+        changed: true,
+        lastPopulationGrowthMonth: 4,
+        reason: 'monthly_growth',
+      });
+    });
+
+    test('Palace (frozen legacy path) still hard-resets to 0 without road access', () => {
+      expect(
+        computePopulationAfterGrowth({
+          type: 'House-2Story',
           currentPop: 4,
           roadCount: 0,
           monthIndex: 4,
@@ -148,7 +183,7 @@ describe('Housing — population growth', () => {
   });
 
   describe('GrowAllHousePopulation command', () => {
-    test('processes every residential house', async () => {
+    test('processes every residential house — level 1 grows even without a road (autarky)', async () => {
       const repo = new InMemoryHousingBuildingRepository([
         house('h1', 'House-Red', { pop: 0, roadCount: 1 }),
         house('h2', 'House-Blue', { pop: 0, roadCount: 0 }),
@@ -160,8 +195,8 @@ describe('Housing — population growth', () => {
       const result = await growAll.execute({ monthIndex: 1 });
 
       expect(result.housesProcessed).toBe(2);
-      expect(result.housesChanged).toBe(1);
-      expect(result.changes[0].houseId).toBe('h1');
+      expect(result.housesChanged).toBe(2);
+      expect(result.changes.map((c) => c.houseId).sort()).toEqual(['h1', 'h2']);
     });
   });
 

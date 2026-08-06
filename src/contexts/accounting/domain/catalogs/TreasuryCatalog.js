@@ -1,6 +1,6 @@
 /** Canonical treasury rules (accounting BC). */
 
-export const DEFAULT_INITIAL_FUNDS = 200;
+export const DEFAULT_INITIAL_FUNDS = 150;
 
 export const COMMERCIAL_ROUTE_FEE = 500;
 

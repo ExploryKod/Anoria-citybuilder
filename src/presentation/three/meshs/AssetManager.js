@@ -22,6 +22,38 @@ function getAssetBaseUrl() {
     }
 }
 
+/**
+ * Detect meshes authored with height along local Y (Three/Y-up), vs the village GLB
+ * convention where building height is along local Z (parent node held -90°X in file).
+ * Leaf meshes are cloned without that parent transform, so Z-up needs scene (90,180,*).
+ *
+ * @param {THREE.Object3D} root
+ * @returns {boolean}
+ */
+function isLocalYUpMesh(root) {
+    const box = new THREE.Box3();
+    let found = false;
+    root.traverse((child) => {
+        if (!(child instanceof THREE.Mesh) || !child.geometry) return;
+        child.geometry.computeBoundingBox();
+        const bb = child.geometry.boundingBox;
+        if (!bb) return;
+        if (!found) {
+            box.copy(bb);
+            found = true;
+        } else {
+            box.union(bb);
+        }
+    });
+    if (!found) return false;
+
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const yIsHeight = Math.abs(box.min.y) <= 0.05 && size.y >= size.z * 0.85;
+    const zIsHeight = Math.abs(box.min.z) <= 0.05 && size.z >= size.y * 0.85;
+    return yIsHeight && !zIsHeight;
+}
+
 class AssetManager extends MeshLoader {
     #geometry = new THREE.BoxGeometry(1, 1, 1);
     #assets = {};
@@ -217,6 +249,10 @@ class AssetManager extends MeshLoader {
         }
         
         const sourceObject = objectsData[sourceMeshName];
+        if (!sourceObject) {
+            console.warn(`[AssetManager] Missing mesh for tool "${meshName}" (source "${sourceMeshName}")`);
+            return null;
+        }
         
         // Clone the object
         const object3D = sourceObject.clone();
@@ -266,13 +302,21 @@ class AssetManager extends MeshLoader {
         object3D.position.set(placerPos.x, yOffset, placerPos.y);
         object3D.scale.set(size, size, size);
         
-        // Apply different rotations for road variants and special buildings
-        if (meshName === 'BookShop-001') {
-            // BookShop needs to be vertical/straight on its foundations
+        // Placement rotation depends on the *local* authorship frame of the cloned mesh,
+        // not on the tool id. Village GLB meshes are usually Z-up (height along local Z,
+        // parent node held -90°X in the file). We detach the leaf mesh, so we must apply
+        // scene rotation (90, 180, Z) to match World / Blue / Red / Purple.
+        // A few assets are authored Y-up already (BookShop separate GLB, Chapel exception,
+        // and the stray House.003 mesh) — those need (0, 180, 0) or they tip into the ground.
+        const usesUprightRotation =
+            meshName === 'BookShop-001' ||
+            meshName === 'Chapel' ||
+            isLocalYUpMesh(sourceObject);
+        if (usesUprightRotation) {
             object3D.rotation.set(
-                THREE.MathUtils.degToRad(0),    // X: no rotation (vertical)
-                THREE.MathUtils.degToRad(180), // Y: 180 degrees
-                THREE.MathUtils.degToRad(0)     // Z: no rotation
+                THREE.MathUtils.degToRad(0),
+                THREE.MathUtils.degToRad(180),
+                THREE.MathUtils.degToRad(0)
             );
         } else {
             // Apply different rotations for road variants
@@ -287,7 +331,7 @@ class AssetManager extends MeshLoader {
             }
             
             object3D.rotation.set(
-                THREE.MathUtils.degToRad(90),  // X: keeps road horizontal
+                THREE.MathUtils.degToRad(90),  // X: tip Z-up mesh into scene Y-up
                 THREE.MathUtils.degToRad(180), // Y: base orientation
                 THREE.MathUtils.degToRad(rotationZ) // Z: rotation for turns (keeps road flat)
             );
@@ -453,6 +497,10 @@ class AssetManager extends MeshLoader {
                 return this.modelsObj['palaces'];
             case 'nature':
                 return this.modelsObj['nature'];
+            case 'tombs':
+                return this.modelsObj['tombs'];
+            case 'decoration':
+                return this.modelsObj['decoration'];
             default:
                 throw new Error(`Unknown model type: ${type}`);
         }
@@ -470,11 +518,15 @@ class AssetManager extends MeshLoader {
 
         if(Object.hasOwn(this.modelMetas, propertyKey) && Object.hasOwn(this.toolIds, propertyKey)) {
             if (propertyKey === 'public') {
-                // Public category has Church-002 from main GLB and BookShop-001 as standalone (autonomous button)
-                // Load main GLB assets first (Church-002)
+                // Public category has Chapel from main GLB and BookShop-001 as standalone
                 const loadMainPromise = this.loadAssets(this.assetFullName, propertyKey, this.modelsObj, this.allAssetsNames, this.assetNames, this.toolIds, this.buttonData);
                 this.#loadingPromises.push(loadMainPromise);
                 await loadMainPromise;
+
+                // Legacy Church-002 saves → reuse Chapel mesh
+                if (this.modelsObj.public.Chapel && !this.modelsObj.public['Church-002']) {
+                    this.modelsObj.public['Church-002'] = this.modelsObj.public.Chapel;
+                }
                 
                 // Then load BookShop-001 as standalone for autonomous button
                 const loadBookShopPromise = this.#loadStandaloneGLB('bookshop');
@@ -506,37 +558,43 @@ class AssetManager extends MeshLoader {
                 this.#assets[toolId] = (x, y, z = 0) =>
                     this.#createBuilding(x, y, z, size, toolId, this.#getModelsObj(propertyKey));
             });
-            
-            // Special handling: Create road variants (Right, Left, Cross) that use StonePath-001 mesh
-            // These are virtual assets that reuse the same mesh with different rotations
+
+            // Legacy Market-Stall id → blue stall mesh
+            if (propertyKey === 'markets' && this.modelsObj.markets['Market-Stall-Blue']) {
+                this.modelsObj.markets['Market-Stall'] = this.modelsObj.markets['Market-Stall-Blue'];
+                const size = this.modelMetas.markets.size;
+                this.#assets['Market-Stall'] = (x, y, z = 0) =>
+                    this.#createBuilding(x, y, z, size, 'Market-Stall', this.modelsObj.markets);
+            }
+            // Legacy silo ids → single Cylinder mesh
+            if (propertyKey === 'industry' && this.modelsObj.industry.Cylinder) {
+                for (const legacyId of [
+                    'Cylinder-007',
+                    'Cylinder-008',
+                    'Cylinder-009',
+                    'Cylinder-011',
+                    'Cylinder-012',
+                    'Cylinder-013',
+                ]) {
+                    this.modelsObj.industry[legacyId] = this.modelsObj.industry.Cylinder;
+                    const size = this.assetSizeOverrides?.Cylinder ?? this.modelMetas.industry.size;
+                    this.#assets[legacyId] = (x, y, z = 0) =>
+                        this.#createBuilding(x, y, z, size, 'Cylinder', this.modelsObj.industry);
+                }
+            }
+
+            // Orientation variants reuse StonePath-001 mesh (kept for saves / R-cycle placement).
+            // UI only exposes StonePath-001; R toggles horizontal ↔ vertical.
             if (propertyKey === 'infrastructure' && this.toolIds[propertyKey].includes('StonePath-001')) {
                 const size = this.assetSizeOverrides?.['StonePath-001'] ?? this.modelMetas[propertyKey].size;
                 const modelsObj = this.#getModelsObj(propertyKey);
-                
-                // Create variants that will use StonePath-001 mesh but with different rotations
+
                 this.#assets['StonePath-Right-001'] = (x, y, z = 0) =>
                     this.#createBuilding(x, y, z, size, 'StonePath-Right-001', modelsObj);
                 this.#assets['StonePath-Left-001'] = (x, y, z = 0) =>
                     this.#createBuilding(x, y, z, size, 'StonePath-Left-001', modelsObj);
                 this.#assets['StonePath-Cross-001'] = (x, y, z = 0) =>
                     this.#createBuilding(x, y, z, size, 'StonePath-Cross-001', modelsObj);
-                
-                // Add button data for road variants
-                this.buttonData.push({
-                    text: 'StonePath Right',
-                    tool: 'StonePath-Right-001',
-                    group: 'StonePath'
-                });
-                this.buttonData.push({
-                    text: 'StonePath Left',
-                    tool: 'StonePath-Left-001',
-                    group: 'StonePath'
-                });
-                this.buttonData.push({
-                    text: 'StonePath Cross',
-                    tool: 'StonePath-Cross-001',
-                    group: 'StonePath'
-                });
             }
             
             // Check if all loading is complete asynchronously (fires after all promises resolve)

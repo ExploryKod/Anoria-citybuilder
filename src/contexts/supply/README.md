@@ -92,6 +92,13 @@ isCollecting: operational && view.isCollecting
 → `scene.update` reads these flags for market/mill sprites without checking `employees.worker` directly.  
 Employment icons (`no-work`) : Employment BC via `refreshEmploymentPresentation` — see [`employment/docs/presentation.md`](../employment/docs/presentation.md).
 
+### Manufacturing (factory)
+- `UpdateFactoryWorkerDemandFromCaps` — publish `employees.worker_need` from player line caps (before Employment)
+- `AllocateFactoryWorkersToCommodityLines` — split assigned workers across commodity lines (after Employment)
+- `GetFactoryWorkerPlanView` — read model for factory admin UI (demand / allocation preview)
+
+Domain: `FactoryCommodityProductionPolicy` — per-factory `commodityProductionEnabled` toggle (Cesar III style), independent of destination cap split.
+
 ### Planned
 - Generic `ProductStock` + market distribution of manufactured goods
 - ECS pipeline systems `supply.*`

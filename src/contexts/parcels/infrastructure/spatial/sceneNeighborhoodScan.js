@@ -85,12 +85,19 @@ export function getBuildingsNamesInZone(
 
   if (targets.buildingTarget !== '' && targets.zones.length > 0) {
     return zoneBuildings.filter(
-      (entry) => entry.type === targets.buildingTarget && targets.zones.includes(entry.zone)
+      (entry) =>
+        (entry.type === targets.buildingTarget ||
+          entry.type.startsWith(`${targets.buildingTarget}-`)) &&
+        targets.zones.includes(entry.zone)
     );
   }
 
   if (targets.buildingTarget !== '') {
-    return zoneBuildings.filter((entry) => entry.type === targets.buildingTarget);
+    return zoneBuildings.filter(
+      (entry) =>
+        entry.type === targets.buildingTarget ||
+        entry.type.startsWith(`${targets.buildingTarget}-`)
+    );
   }
 
   if (targets.zones.length > 0) {

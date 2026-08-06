@@ -1,8 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import {
-  evaluateDefaultActivationConditions,
-  evaluatePartnerActivationConditions,
-} from '../../../src/contexts/commerce/domain/policies/PartnerActivationPolicy.js';
+import { evaluatePartnerActivationConditions } from '../../../src/contexts/commerce/domain/policies/PartnerActivationPolicy.js';
 
 describe('PartnerActivationPolicy', () => {
   const metricsOk = {
@@ -14,31 +11,36 @@ describe('PartnerActivationPolicy', () => {
   const metricsKo = {
     population: 3,
     unemployment: 15,
-    stocksCheck: { hasStocks: false, missingProducts: ['Blé (stock: 0)'] },
+    stocksCheck: { hasStocks: false, missingProducts: ['Bois (stock: 0)'] },
   };
 
-  test('evaluateDefaultActivationConditions', () => {
-    expect(
-      evaluateDefaultActivationConditions({ partner: { id: 'deserta' }, metrics: metricsOk }).canActivate
-    ).toBe(true);
+  const oliveaConditions = [
+    'population_min_5',
+    'unemployment_max_10',
+  ];
 
-    const result = evaluateDefaultActivationConditions({ partner: { id: 'deserta' }, metrics: metricsKo });
-    expect(result.canActivate).toBe(false);
-    expect(result.unmetConditions).toHaveLength(3);
-  });
-
-  test('evaluatePartnerActivationConditions uses deserta defaults when no conditions', () => {
+  test('evaluatePartnerActivationConditions with olivea default conditions', () => {
     expect(
       evaluatePartnerActivationConditions({
-        partner: { id: 'deserta' },
-        activationConditions: [],
+        partner: { id: 'olivea' },
+        activationConditions: oliveaConditions,
         metrics: metricsOk,
       }).canActivate
     ).toBe(true);
 
+    const result = evaluatePartnerActivationConditions({
+      partner: { id: 'olivea' },
+      activationConditions: oliveaConditions,
+      metrics: metricsKo,
+    });
+    expect(result.canActivate).toBe(false);
+    expect(result.unmetConditions).toHaveLength(2);
+  });
+
+  test('evaluatePartnerActivationConditions allows partners without conditions', () => {
     expect(
       evaluatePartnerActivationConditions({
-        partner: { id: 'tropicala' },
+        partner: { id: 'silvania' },
         activationConditions: [],
         metrics: metricsKo,
       }).canActivate
@@ -47,7 +49,7 @@ describe('PartnerActivationPolicy', () => {
 
   test('evaluatePartnerActivationConditions checks explicit conditions', () => {
     const result = evaluatePartnerActivationConditions({
-      partner: { id: 'deserta' },
+      partner: { id: 'olivea' },
       activationConditions: ['population_min_5', 'unemployment_max_10'],
       metrics: metricsKo,
     });

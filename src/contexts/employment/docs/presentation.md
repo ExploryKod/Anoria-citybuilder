@@ -24,12 +24,16 @@ Implémentation : `computeCityEmploymentSummary.js` → query `GetCityEmployment
 
 ```javascript
 {
-  workerPool,           // citoyens ouvriers (maisons routées)
+  workerPool,           // citoyens ouvriers bruts (maisons routées)
   elitePool,            // élites palais (affichage)
   totalPopulation,      // workerPool + elitePool
+  civilServantCount,    // floor(totalPopulation / 12)
+  laborPool,            // workerPool − civilServantCount
+  activeCitizenCount,   // citoyens actifs (employés, hors chômeurs/élites/fonct.)
+  activePopulationCount,// activeCitizenCount + elitePool + civilServantCount
   totalAssigned,        // Σ employees.worker (postes routés)
   totalNeed,            // Σ workerNeed (postes routés)
-  unemployed,           // max(0, workerPool − totalAssigned)
+  unemployed,           // max(0, laborPool − totalAssigned)
   unemploymentPercentage,
   lack,                 // Σ max(0, workerNeed − worker) — déficit postes
   understaffedBuildingIds,  // instanceId où worker === 0 && need > 0 && route
@@ -112,11 +116,16 @@ city.update()
 2. supply.monthlyFood
 3. housing.populationGrowth
 4. housing.evolution
-5. employment.redistribute      ← reset worker=0 puis allocation
-6. supply.factoryProduction
+5. supply.syncFactoryWorkerDemand  ← publie employees.worker_need depuis les caps usine
+6. employment.redistribute         ← reset worker=0 puis allocation par priorité secteur
+7. supply.allocateFactoryWorkers   ← répartit employees.worker sur les lignes de denrées
+8. supply.factoryProduction
+9. supply.monthlyCommerce
+10. commerce.turn
 ```
 
-`employment.redistribute` appelle `DistributeCityWorkers` puis `synchronizeFactoryWorkerDistribution` (Winery).
+`employment.redistribute` appelle uniquement `DistributeCityWorkers`.  
+La demande usine (`worker_need`) et la répartition par ligne (`productWorkerDistribution`) sont owned par **Supply** ; composition enchaîne les deux côtés du tick et lors des edits caps admin (`applyFactoryLineCapChanges`).
 
 Priorités secteur : `getAllSectorPriorities()` (localStorage + défauts `config.employment.defaultPriorities`).
 

@@ -1,8 +1,7 @@
 import { createBuildingInstanceId } from '../../../../shared/building-identity/index.js';
 import {
-  isAreaAvailableForBuilding,
+  canPlaceBuildingAtTile,
   isRoadBuildingType,
-  resolveGridSize,
   stampBuildingFootprint,
 } from '../../domain/policies/FootprintAvailabilityPolicy.js';
 
@@ -20,6 +19,7 @@ export class PlaceBuildingAtTile {
    * @param {() => Promise<{ funds?: number }>} deps.getTreasurySnapshot
    * @param {Record<string, { price?: number, gridSize?: number }>} deps.assetCatalog
    * @param {(buildingId: string, catalog: object) => number | null | undefined} deps.getAssetPrice
+   * @param {(params: { city: object, x: number, y: number, buildingType: string, assetCatalog: object }) => { ok: boolean, reason?: string }} [deps.validatePlacement]
    */
   constructor({
     placeBuildingWithPayment,
@@ -29,6 +29,7 @@ export class PlaceBuildingAtTile {
     getTreasurySnapshot,
     assetCatalog,
     getAssetPrice,
+    validatePlacement = null,
   }) {
     this.placeBuildingWithPayment = placeBuildingWithPayment;
     this.reclaimStaleBuildingRecords = reclaimStaleBuildingRecords;
@@ -37,6 +38,7 @@ export class PlaceBuildingAtTile {
     this.getTreasurySnapshot = getTreasurySnapshot;
     this.assetCatalog = assetCatalog;
     this.getAssetPrice = getAssetPrice;
+    this.validatePlacement = validatePlacement;
     this.pendingPlacements = new Set();
   }
 
@@ -57,15 +59,43 @@ export class PlaceBuildingAtTile {
    * }>}
    */
   async execute({ city, x, y, buildingType, gameTurn }) {
-    const gridSize = resolveGridSize(this.assetCatalog, buildingType);
+    const placement = canPlaceBuildingAtTile({
+      city,
+      x,
+      y,
+      buildingType,
+      assetCatalog: this.assetCatalog,
+    });
+    if (!placement.ok) {
+      return {
+        success: false,
+        reason: placement.reason || 'area_not_available',
+        buildingType,
+      };
+    }
+
+    if (this.validatePlacement) {
+      const extra = this.validatePlacement({
+        city,
+        x,
+        y,
+        buildingType,
+        assetCatalog: this.assetCatalog,
+      });
+      if (!extra.ok) {
+        return {
+          success: false,
+          reason: extra.reason || 'placement_not_allowed',
+          buildingType,
+        };
+      }
+    }
+
+    const { gridSize } = placement;
     const tile = city.tiles?.[x]?.[y];
     const isRoadTool = isRoadBuildingType(buildingType);
-    const isTargetRoad = isRoadBuildingType(tile?.buildingId);
-    const canPlaceRoad = isRoadTool && (!tile?.buildingId || isTargetRoad);
-
-    if (!canPlaceRoad && !isAreaAvailableForBuilding(city, x, y, gridSize)) {
-      return { success: false, reason: 'area_not_available', buildingType };
-    }
+    const canPlaceRoad =
+      isRoadTool && (!tile?.buildingId || isRoadBuildingType(tile?.buildingId));
 
     const placementKey = `${x}-${y}`;
     if (this.pendingPlacements.has(placementKey)) {

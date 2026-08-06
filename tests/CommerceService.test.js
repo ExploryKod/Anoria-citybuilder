@@ -8,21 +8,17 @@ import { createCommerceContext } from '../src/composition/createCommerceContext.
 import { BudgetManager } from './helpers/testBudgetFacade.js';
 import { JournalManager } from '../src/composition/accountingSessionJournal.js';
 import {
-  loadOrSeedCommerceConfig,
-  loadOrSeedCommercePartners,
+  createDefaultPartners,
+  normalizePartners,
 } from '../src/composition/commerceOps.js';
 import db from '../src/core/persistence/dexie/db.js';
 import { resetSupplyContextForTests } from '../src/composition/createSupplyContext.js';
 import { resetCommerceContextForTests } from '../src/composition/createCommerceContext.js';
 import { resetAccountingContextForTests } from '../src/composition/accountingOps.js';
 import { resetSessionLedgerBufferForTests } from '../src/composition/accountingSessionJournal.js';
-import { makeHouseRecord, createBuildingInstanceId } from './fixtures/buildingRecord.js';
 import appRegistry from '../src/composition/AppRegistry.js';
 import { TimeManager } from '../src/shared/time/TimeManager.js';
 
-// ============================================================================
-// Setup : Créer une base de données de test isolée
-// ============================================================================
 function createTestDb() {
     const db = new Dexie('testCommerceDb');
     db.version(1).stores({
@@ -34,9 +30,6 @@ function createTestDb() {
     return db;
 }
 
-// ============================================================================
-// Tests pour CommerceService - Partenaires
-// ============================================================================
 describe('CommerceService - Partenaires', () => {
     let commerceService;
     let testDb;
@@ -46,14 +39,11 @@ describe('CommerceService - Partenaires', () => {
         resetSessionLedgerBufferForTests();
         resetAccountingContextForTests();
         resetCommerceContextForTests();
-        // Créer une nouvelle base de données pour chaque test
         testDb = createTestDb();
         await testDb.open();
 
-        // Nettoyer localStorage (déjà mocké dans setup.js)
         global.localStorage.clear();
 
-        // Mock TimeManager
         appRegistry.register('timeManager', {
             getTimeInfo: (turn) => {
                 const year = Math.floor(turn / 12);
@@ -69,7 +59,6 @@ describe('CommerceService - Partenaires', () => {
             }
         });
 
-        // Créer BudgetManager
         budgetManager = new BudgetManager();
         budgetManager.db = testDb;
 
@@ -78,10 +67,8 @@ describe('CommerceService - Partenaires', () => {
         budgetManager.journalManager = journalManager;
         budgetManager.wireAccountingContext();
 
-        // Commerce simulation (BC)
         commerceService = createCommerceContext().simulation;
 
-        // Initialiser le budget
         await budgetManager.initialize(1000);
     });
 
@@ -99,9 +86,27 @@ describe('CommerceService - Partenaires', () => {
         global.localStorage.clear();
     });
 
+    test('seed MVP contient olivea et silvania', () => {
+        const partners = createDefaultPartners();
+        expect(partners).toHaveLength(2);
+        expect(partners.map((p) => p.id).sort()).toEqual(['olivea', 'silvania']);
+    });
+
+    test('normalizePartners remplace un catalogue non-MVP', () => {
+        const stale = [
+            { id: 'deserta', name: 'Deserta', buysFromUs: [], sellsToUs: [] },
+            { id: 'tropicala', name: 'Tropicala', buysFromUs: [], sellsToUs: [] },
+        ];
+        const { partners, needsSave } = normalizePartners(stale);
+        expect(needsSave).toBe(true);
+        expect(partners).toHaveLength(2);
+        expect(partners[0].id).toBe('olivea');
+    });
+
     test('charge les partenaires depuis le store', () => {
         const mockPartners = [
-            { id: 'deserta', name: 'Deserta', imports: [], exports: [] }
+            { id: 'olivea', name: 'Olivea', buysFromUs: [], sellsToUs: [] },
+            { id: 'silvania', name: 'Silvania', buysFromUs: [], sellsToUs: [] },
         ];
 
         global.localStorage.setItem('commerce_partners', JSON.stringify(mockPartners));
@@ -109,165 +114,58 @@ describe('CommerceService - Partenaires', () => {
         const partners = commerceService.loadPartners();
 
         expect(partners).toBeDefined();
-        expect(partners).toHaveLength(1);
-        expect(partners[0].id).toBe('deserta');
+        expect(partners).toHaveLength(2);
+        expect(partners[0].id).toBe('olivea');
     });
 
     test('récupère un partenaire par son ID', () => {
-        const mockPartners = [
-            { id: 'deserta', name: 'Deserta', imports: [], exports: [] },
-            { id: 'tropicala', name: 'Tropicala', imports: [], exports: [] }
-        ];
-
+        const mockPartners = createDefaultPartners();
         commerceService.partnersData = mockPartners;
 
-        const partner = commerceService.getPartner('tropicala');
+        const partner = commerceService.getPartner('silvania');
 
         expect(partner).toBeDefined();
-        expect(partner.name).toBe('Tropicala');
+        expect(partner.name).toBe('Silvania');
     });
 
     test('vérifie si on peut trader avec un partenaire (mois correct)', () => {
         const mockPartners = [
             {
-                id: 'deserta',
-                name: 'Deserta',
+                id: 'olivea',
+                name: 'Olivea',
                 isActive: true,
-                imports: [
+                buysFromUs: [
                     {
-                        productId: 'carrot',
-                        months: [7, 8, 11],
-                        maxOccurrences: 9,
-                        currentOccurrences: 0
+                        productId: 'wood',
+                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                        yearlyQuota: 25,
+                        currentYearly: 0
                     }
                 ],
-                exports: []
+                sellsToUs: []
             }
         ];
 
         commerceService.partnersData = mockPartners;
 
-        // Tour 7 = mois index 7 (Août)
-        const canTrade = commerceService.canTradeWithPartner('deserta', 'carrot', 'export', 7);
+        const canTrade = commerceService.canTradeWithPartner('olivea', 'wood', 'export', 7);
 
         expect(canTrade).toBe(true);
     });
 
-    test('refuse le trade avec un partenaire (mois incorrect)', () => {
+    test('refuse le trade avec un partenaire (mois incorrect pour figues)', () => {
         const mockPartners = [
             {
-                id: 'deserta',
-                name: 'Deserta',
-                imports: [
-                    {
-                        productId: 'carrot',
-                        months: [7, 8, 11],
-                        maxOccurrences: 9,
-                        currentOccurrences: 0
-                    }
-                ],
-                exports: []
-            }
-        ];
-
-        commerceService.partnersData = mockPartners;
-
-        // Tour 5 = mois index 5 (Juin) - pas dans la liste des mois
-        const canTrade = commerceService.canTradeWithPartner('deserta', 'carrot', 'export', 5);
-
-        expect(canTrade).toBe(false);
-    });
-
-    test('refuse le trade avec un partenaire (limite atteinte)', () => {
-        const mockPartners = [
-            {
-                id: 'deserta',
-                name: 'Deserta',
-                imports: [
-                    {
-                        productId: 'carrot',
-                        months: [7, 8, 11],
-                        maxOccurrences: 9,
-                        currentOccurrences: 9  // Limite atteinte
-                    }
-                ],
-                exports: []
-            }
-        ];
-
-        commerceService.partnersData = mockPartners;
-
-        const canTrade = commerceService.canTradeWithPartner('deserta', 'carrot', 'export', 7);
-
-        expect(canTrade).toBe(false);
-    });
-
-    test('met à jour le compteur d\'occurrences après un trade', () => {
-        const mockPartners = [
-            {
-                id: 'deserta',
-                name: 'Deserta',
-                imports: [
-                    {
-                        productId: 'carrot',
-                        maxOccurrences: 9,
-                        currentOccurrences: 0,
-                        currentYearly: 0
-                    }
-                ],
-                exports: []
-            }
-        ];
-
-        commerceService.partnersData = mockPartners;
-
-        const success = commerceService.updatePartnerTrade('deserta', 'carrot', 'export');
-
-        expect(success).toBe(true);
-        expect(mockPartners[0].imports[0].currentOccurrences).toBe(1);
-        expect(mockPartners[0].imports[0].currentYearly).toBe(1);
-    });
-
-    test('récupère les limites d\'un partenaire pour un produit', () => {
-        const mockPartners = [
-            {
-                id: 'deserta',
-                name: 'Deserta',
-                imports: [
-                    {
-                        productId: 'carrot',
-                        maxPerTurn: 8,
-                        maxOccurrences: 9,
-                        currentOccurrences: 2
-                    }
-                ],
-                exports: []
-            }
-        ];
-
-        commerceService.partnersData = mockPartners;
-
-        const limit = commerceService.getPartnerTradeLimit('deserta', 'carrot', 'export');
-
-        expect(limit).toBeDefined();
-        expect(limit.maxPerTurn).toBe(8);
-        expect(limit.maxOccurrences).toBe(9);
-        expect(limit.currentOccurrences).toBe(2);
-    });
-
-    test('traite un import depuis un partenaire', async () => {
-        const mockPartners = [
-            {
-                id: 'deserta',
-                name: 'Deserta',
+                id: 'olivea',
+                name: 'Olivea',
                 isActive: true,
-                imports: [],
-                exports: [
+                buysFromUs: [],
+                sellsToUs: [
                     {
-                        productId: 'dattes',
-                        months: [0, 2],
-                        maxOccurrences: 2,
-                        currentOccurrences: 0
+                        productId: 'figs',
+                        months: [6, 7, 8, 9, 10],
+                        yearlyQuota: 10,
+                        currentYearly: 0
                     }
                 ]
             }
@@ -275,46 +173,130 @@ describe('CommerceService - Partenaires', () => {
 
         commerceService.partnersData = mockPartners;
 
-        // Mock config
+        const canTrade = commerceService.canTradeWithPartner('olivea', 'figs', 'import', 0);
+
+        expect(canTrade).toBe(false);
+    });
+
+    test('refuse le trade avec un partenaire (limite atteinte)', () => {
+        const mockPartners = [
+            {
+                id: 'olivea',
+                name: 'Olivea',
+                isActive: true,
+                buysFromUs: [
+                    {
+                        productId: 'wood',
+                        months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                        yearlyQuota: 25,
+                        currentYearly: 25
+                    }
+                ],
+                sellsToUs: []
+            }
+        ];
+
+        commerceService.partnersData = mockPartners;
+
+        const canTrade = commerceService.canTradeWithPartner('olivea', 'wood', 'export', 7);
+
+        expect(canTrade).toBe(false);
+    });
+
+    test('met à jour le compteur annuel après un trade', () => {
+        const mockPartners = [
+            {
+                id: 'olivea',
+                name: 'Olivea',
+                buysFromUs: [
+                    {
+                        productId: 'wood',
+                        yearlyQuota: 25,
+                        currentYearly: 0
+                    }
+                ],
+                sellsToUs: []
+            }
+        ];
+
+        commerceService.partnersData = mockPartners;
+
+        const success = commerceService.updatePartnerTrade('olivea', 'wood', 'export');
+
+        expect(success).toBe(true);
+        expect(mockPartners[0].buysFromUs[0].currentYearly).toBe(1);
+    });
+
+    test('récupère les limites d\'un partenaire pour un produit', () => {
+        const mockPartners = [
+            {
+                id: 'olivea',
+                name: 'Olivea',
+                buysFromUs: [
+                    {
+                        productId: 'wood',
+                        maxPerTurn: 1,
+                        yearlyQuota: 25,
+                        currentYearly: 2
+                    }
+                ],
+                sellsToUs: []
+            }
+        ];
+
+        commerceService.partnersData = mockPartners;
+
+        const limit = commerceService.getPartnerTradeLimit('olivea', 'wood', 'export');
+
+        expect(limit).toBeDefined();
+        expect(limit.maxPerTurn).toBe(1);
+        expect(limit.yearlyQuota).toBe(25);
+        expect(limit.currentYearly).toBe(2);
+    });
+
+    test('traite un import depuis un partenaire', async () => {
+        const mockPartners = [
+            {
+                id: 'olivea',
+                name: 'Olivea',
+                isActive: true,
+                buysFromUs: [],
+                sellsToUs: [
+                    {
+                        productId: 'figs',
+                        months: [6, 7, 8, 9, 10],
+                        yearlyQuota: 10,
+                        currentYearly: 0,
+                        pricePerUnit: 14,
+                    }
+                ]
+            }
+        ];
+
+        commerceService.partnersData = mockPartners;
+
         const mockConfig = [
             {
-                id: 'dattes',
-                name: 'Dattes',
-                buyingPrice: 12,
-                buyingMax: 200,
-                stockpiling: false
+                id: 'figs',
+                name: 'Figues',
+                buyingMax: 10,
             }
         ];
         global.localStorage.setItem('commerce_config', JSON.stringify(mockConfig));
 
         await db.open();
         await db.houses.clear();
-        const windmillId = createBuildingInstanceId();
-        await db.houses.add(
-            makeHouseRecord({
-                type: 'Windmill-001',
-                x: 1,
-                y: 1,
-                instanceId: windmillId,
-                extra: {
-                    isActive: true,
-                    commercializeEnabled: true,
-                    stocks: { wheat: 0, carrot: 0, cabbage: 0, dattes: 0, food: 0 },
-                    lastImport: { wheat: 0, carrot: 0, cabbage: 0, dattes: 0, total: 0 },
-                },
-            })
-        );
 
         const result = await commerceService.processProductImport({
-            productId: 'dattes',
-            time: 0,
+            productId: 'figs',
+            time: 6,
             quantity: 1,
-            partnerId: 'deserta',
+            partnerId: 'olivea',
         });
 
         expect(result).toBeDefined();
-        expect(result.productId).toBe('dattes');
+        expect(result.productId).toBe('figs');
         expect(result.quantity).toBe(1);
-        expect(result.totalCost).toBe(12);
+        expect(result.totalCost).toBe(14);
     });
 });

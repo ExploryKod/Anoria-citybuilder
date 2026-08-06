@@ -4,29 +4,29 @@
 export class RunMonthlyFoodSupplyCycle {
   /**
    * @param {import('../commands/harvest/HarvestAllFarmCrops.js').HarvestAllFarmCrops} harvestAllFarmCrops
-   * @param {import('../commands/procurement/MarkMarketBuyingSeason.js').MarkMarketBuyingSeason} markMarketBuyingSeason
    * @param {import('../commands/procurement/RunCityMarketFoodCycle.js').RunCityMarketFoodCycle} runCityMarketFoodCycle
    * @param {import('../commands/distribution/UpdateHousesMarketReach.js').UpdateHousesMarketReach} updateHousesMarketReach
    * @param {import('../commands/surplus/RunWindmillSurplusCycle.js').RunWindmillSurplusCycle} runWindmillSurplusCycle
    * @param {import('../commands/consumption/ConsumeAllHouseFood.js').ConsumeAllHouseFood} consumeAllHouseFood
    * @param {import('../../infrastructure/presentation/SupplyFoodTraceability.js').SupplyFoodTraceability} traceability
+   * @param {import('../commands/subsistence/ProduceAllHouseSubsistenceFood.js').ProduceAllHouseSubsistenceFood} [produceAllHouseSubsistenceFood]
    */
   constructor(
     harvestAllFarmCrops,
-    markMarketBuyingSeason,
     runCityMarketFoodCycle,
     updateHousesMarketReach,
     runWindmillSurplusCycle,
     consumeAllHouseFood,
-    traceability
+    traceability,
+    produceAllHouseSubsistenceFood
   ) {
     this.harvestAllFarmCrops = harvestAllFarmCrops;
-    this.markMarketBuyingSeason = markMarketBuyingSeason;
     this.runCityMarketFoodCycle = runCityMarketFoodCycle;
     this.updateHousesMarketReach = updateHousesMarketReach;
     this.runWindmillSurplusCycle = runWindmillSurplusCycle;
     this.consumeAllHouseFood = consumeAllHouseFood;
     this.traceability = traceability;
+    this.produceAllHouseSubsistenceFood = produceAllHouseSubsistenceFood;
   }
 
   /**
@@ -46,24 +46,27 @@ export class RunMonthlyFoodSupplyCycle {
       });
     }
 
-    if (season) {
-      await this.markMarketBuyingSeason.execute(season);
-    }
-
-    await this.runCityMarketFoodCycle.execute({
-      season,
-      timeInfo,
-      maxDistance,
-    });
-
-    await this.updateHousesMarketReach.execute({ maxDistance });
-
     await this.runWindmillSurplusCycle.execute({
       month,
       monthIndex: timeInfo.monthIndex,
       dayInMonth: timeInfo.dayInMonth ?? 1,
       year: timeInfo.year ?? 0,
     });
+
+    await this.runCityMarketFoodCycle.execute({
+      season,
+      month,
+      timeInfo,
+      maxDistance,
+    });
+
+    await this.updateHousesMarketReach.execute({ maxDistance });
+
+    if (this.produceAllHouseSubsistenceFood) {
+      await this.produceAllHouseSubsistenceFood.execute({
+        monthIndex: timeInfo.monthIndex,
+      });
+    }
 
     const consumeOutcome = await this.consumeAllHouseFood.execute({
       monthIndex: timeInfo.monthIndex,

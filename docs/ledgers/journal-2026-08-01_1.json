@@ -1,0 +1,456 @@
+{
+  "exportDate": "2026-08-01T23:23:35.034Z",
+  "entries": [
+    {
+      "turn": 23,
+      "date": "2026-08-01T23:21:42.569Z",
+      "type": "balance",
+      "amount": 4071,
+      "description": "Solde"
+    },
+    {
+      "turn": 22,
+      "date": "2026-08-01T23:21:41.071Z",
+      "type": "balance",
+      "amount": 4071,
+      "description": "Solde"
+    },
+    {
+      "turn": 21,
+      "date": "2026-08-01T23:21:39.572Z",
+      "type": "balance",
+      "amount": 4071,
+      "description": "Solde"
+    },
+    {
+      "id": 35,
+      "turn": 20,
+      "date": "2026-08-01T23:21:38.375Z",
+      "type": "maintenance",
+      "amount": 14,
+      "description": "Maintenance mensuelle - Mai 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":4,\"unitCost\":3,\"total\":12},{\"label\":\"Fermes\",\"count\":1,\"unitCost\":1,\"total\":1},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 33,
+      "turn": 20,
+      "date": "2026-08-01T23:21:38.374Z",
+      "type": "unemployment_benefit",
+      "amount": 550,
+      "description": "Salaires chômeurs - Mai 0 JC (11 chôm. × 100€ × 50%)"
+    },
+    {
+      "id": 34,
+      "turn": 20,
+      "date": "2026-08-01T23:21:38.374Z",
+      "type": "payroll_tax",
+      "amount": 230,
+      "description": "Impôt sur les salaires - Mai 0 JC (20%, assiette 1150€ : 1 fonct.×100€ + 5 citoy.×100€ + 11 chôm.×100€×50%)"
+    },
+    {
+      "id": 32,
+      "turn": 20,
+      "date": "2026-08-01T23:21:38.372Z",
+      "type": "salary",
+      "amount": 100,
+      "description": "Salaires fonctionnaires - Mai 0 JC (1 fonct. × 100€)"
+    },
+    {
+      "turn": 20,
+      "date": "2026-08-01T23:21:38.070Z",
+      "type": "balance",
+      "amount": 4505,
+      "description": "Solde"
+    },
+    {
+      "turn": 19,
+      "date": "2026-08-01T23:21:30.526Z",
+      "type": "balance",
+      "amount": 4505,
+      "description": "Solde"
+    },
+    {
+      "turn": 18,
+      "date": "2026-08-01T23:21:26.527Z",
+      "type": "balance",
+      "amount": 4505,
+      "description": "Solde"
+    },
+    {
+      "turn": 17,
+      "date": "2026-08-01T23:21:22.529Z",
+      "type": "balance",
+      "amount": 4505,
+      "description": "Solde"
+    },
+    {
+      "turn": 16,
+      "date": "2026-08-01T23:21:18.527Z",
+      "type": "balance",
+      "amount": 4505,
+      "description": "Solde"
+    },
+    {
+      "id": 31,
+      "turn": 15,
+      "date": "2026-08-01T23:21:14.926Z",
+      "type": "maintenance",
+      "amount": 14,
+      "description": "Maintenance mensuelle - Avril 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":4,\"unitCost\":3,\"total\":12},{\"label\":\"Fermes\",\"count\":1,\"unitCost\":1,\"total\":1},{\"label\":\"Marchés\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 29,
+      "turn": 15,
+      "date": "2026-08-01T23:21:14.920Z",
+      "type": "unemployment_benefit",
+      "amount": 150,
+      "description": "Salaires chômeurs - Avril 0 JC (3 chôm. × 100€ × 50%)"
+    },
+    {
+      "id": 30,
+      "turn": 15,
+      "date": "2026-08-01T23:21:14.920Z",
+      "type": "payroll_tax",
+      "amount": 230,
+      "description": "Impôt sur les salaires - Avril 0 JC (20%, assiette 1150€ : 1 fonct.×100€ + 9 citoy.×100€ + 3 chôm.×100€×50%)"
+    },
+    {
+      "id": 28,
+      "turn": 15,
+      "date": "2026-08-01T23:21:14.918Z",
+      "type": "salary",
+      "amount": 100,
+      "description": "Salaires fonctionnaires - Avril 0 JC (1 fonct. × 100€)"
+    },
+    {
+      "turn": 15,
+      "date": "2026-08-01T23:21:14.528Z",
+      "type": "balance",
+      "amount": 4539,
+      "description": "Solde"
+    },
+    {
+      "turn": 14,
+      "date": "2026-08-01T23:21:10.547Z",
+      "type": "balance",
+      "amount": 4539,
+      "description": "Solde"
+    },
+    {
+      "id": 27,
+      "turn": 13,
+      "date": "2026-08-01T23:21:07.684Z",
+      "type": "construction",
+      "amount": 50,
+      "description": "Building: Windmill-001"
+    },
+    {
+      "turn": 13,
+      "date": "2026-08-01T23:21:02.532Z",
+      "type": "balance",
+      "amount": 4589,
+      "description": "Solde"
+    },
+    {
+      "turn": 12,
+      "date": "2026-08-01T23:20:58.525Z",
+      "type": "balance",
+      "amount": 4589,
+      "description": "Solde"
+    },
+    {
+      "turn": 11,
+      "date": "2026-08-01T23:20:54.524Z",
+      "type": "balance",
+      "amount": 4589,
+      "description": "Solde"
+    },
+    {
+      "id": 26,
+      "turn": 10,
+      "date": "2026-08-01T23:20:52.075Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: Market-Stall"
+    },
+    {
+      "id": 25,
+      "turn": 10,
+      "date": "2026-08-01T23:20:50.857Z",
+      "type": "maintenance",
+      "amount": 13,
+      "description": "Maintenance mensuelle - Mars 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":4,\"unitCost\":3,\"total\":12},{\"label\":\"Fermes\",\"count\":1,\"unitCost\":1,\"total\":1}]|BREAKDOWN|"
+    },
+    {
+      "id": 24,
+      "turn": 10,
+      "date": "2026-08-01T23:20:50.855Z",
+      "type": "payroll_tax",
+      "amount": 120,
+      "description": "Impôt sur les salaires - Mars 0 JC (20%, assiette 600€ : 3 citoy.×100€ + 6 chôm.×100€×50%)"
+    },
+    {
+      "id": 23,
+      "turn": 10,
+      "date": "2026-08-01T23:20:50.854Z",
+      "type": "unemployment_benefit",
+      "amount": 300,
+      "description": "Salaires chômeurs - Mars 0 JC (6 chôm. × 100€ × 50%)"
+    },
+    {
+      "turn": 10,
+      "date": "2026-08-01T23:20:50.525Z",
+      "type": "balance",
+      "amount": 4792,
+      "description": "Solde"
+    },
+    {
+      "id": 22,
+      "turn": 9,
+      "date": "2026-08-01T23:20:47.106Z",
+      "type": "construction",
+      "amount": 20,
+      "description": "Building: Farm-Carrot"
+    },
+    {
+      "turn": 9,
+      "date": "2026-08-01T23:20:46.524Z",
+      "type": "balance",
+      "amount": 4812,
+      "description": "Solde"
+    },
+    {
+      "turn": 8,
+      "date": "2026-08-01T23:20:42.524Z",
+      "type": "balance",
+      "amount": 4812,
+      "description": "Solde"
+    },
+    {
+      "id": 21,
+      "turn": 7,
+      "date": "2026-08-01T23:20:39.874Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "turn": 7,
+      "date": "2026-08-01T23:20:38.524Z",
+      "type": "balance",
+      "amount": 4822,
+      "description": "Solde"
+    },
+    {
+      "id": 20,
+      "turn": 6,
+      "date": "2026-08-01T23:20:36.990Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "turn": 6,
+      "date": "2026-08-01T23:20:34.889Z",
+      "type": "balance",
+      "amount": 4832,
+      "description": "Solde"
+    },
+    {
+      "id": 19,
+      "turn": 5,
+      "date": "2026-08-01T23:20:33.179Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "id": 18,
+      "turn": 5,
+      "date": "2026-08-01T23:20:30.877Z",
+      "type": "maintenance",
+      "amount": 3,
+      "description": "Maintenance mensuelle - Février 1 |BREAKDOWN|[{\"label\":\"Maisons\",\"count\":1,\"unitCost\":3,\"total\":3}]|BREAKDOWN|"
+    },
+    {
+      "id": 17,
+      "turn": 5,
+      "date": "2026-08-01T23:20:30.865Z",
+      "type": "payroll_tax",
+      "amount": 20,
+      "description": "Impôt sur les salaires - Février 0 JC (20%, assiette 100€ : 2 chôm.×100€×50%)"
+    },
+    {
+      "id": 16,
+      "turn": 5,
+      "date": "2026-08-01T23:20:30.862Z",
+      "type": "unemployment_benefit",
+      "amount": 100,
+      "description": "Salaires chômeurs - Février 0 JC (2 chôm. × 100€ × 50%)"
+    },
+    {
+      "turn": 5,
+      "date": "2026-08-01T23:20:30.596Z",
+      "type": "balance",
+      "amount": 4925,
+      "description": "Solde"
+    },
+    {
+      "id": 15,
+      "turn": 4,
+      "date": "2026-08-01T23:20:29.267Z",
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue"
+    },
+    {
+      "turn": 4,
+      "date": "2026-08-01T23:20:26.530Z",
+      "type": "balance",
+      "amount": 4935,
+      "description": "Solde"
+    },
+    {
+      "id": 14,
+      "turn": 3,
+      "date": "2026-08-01T23:20:25.581Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Cross-001"
+    },
+    {
+      "id": 13,
+      "turn": 3,
+      "date": "2026-08-01T23:20:25.132Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Cross-001"
+    },
+    {
+      "id": 12,
+      "turn": 3,
+      "date": "2026-08-01T23:20:24.615Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Cross-001"
+    },
+    {
+      "id": 11,
+      "turn": 3,
+      "date": "2026-08-01T23:20:24.085Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Cross-001"
+    },
+    {
+      "id": 10,
+      "turn": 3,
+      "date": "2026-08-01T23:20:23.485Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Cross-001"
+    },
+    {
+      "id": 9,
+      "turn": 3,
+      "date": "2026-08-01T23:20:23.113Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Cross-001"
+    },
+    {
+      "id": 8,
+      "turn": 3,
+      "date": "2026-08-01T23:20:22.762Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Cross-001"
+    },
+    {
+      "turn": 3,
+      "date": "2026-08-01T23:20:22.526Z",
+      "type": "balance",
+      "amount": 4970,
+      "description": "Solde"
+    },
+    {
+      "id": 7,
+      "turn": 2,
+      "date": "2026-08-01T23:20:22.415Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Cross-001"
+    },
+    {
+      "id": 6,
+      "turn": 2,
+      "date": "2026-08-01T23:20:22.015Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Cross-001"
+    },
+    {
+      "id": 5,
+      "turn": 2,
+      "date": "2026-08-01T23:20:21.038Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Cross-001"
+    },
+    {
+      "id": 4,
+      "turn": 2,
+      "date": "2026-08-01T23:20:20.497Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Cross-001"
+    },
+    {
+      "id": 3,
+      "turn": 2,
+      "date": "2026-08-01T23:20:20.067Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Cross-001"
+    },
+    {
+      "turn": 2,
+      "date": "2026-08-01T23:20:18.530Z",
+      "type": "balance",
+      "amount": 4995,
+      "description": "Solde"
+    },
+    {
+      "id": 2,
+      "turn": 1,
+      "date": "2026-08-01T23:20:17.258Z",
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Cross-001"
+    },
+    {
+      "turn": 1,
+      "date": "2026-08-01T23:20:14.526Z",
+      "type": "balance",
+      "amount": 5000,
+      "description": "Solde"
+    },
+    {
+      "id": 1,
+      "turn": 0,
+      "date": "2026-08-01T23:20:11.355Z",
+      "type": "capital_funds",
+      "amount": 5000,
+      "description": "Capital de départ: 5000€"
+    }
+  ],
+  "yearlySummary": [
+    {
+      "year": 0,
+      "income": 5600,
+      "expenses": 1529,
+      "netFlow": 4071,
+      "monthCount": 5
+    }
+  ],
+  "yearEndBalances": []
+}

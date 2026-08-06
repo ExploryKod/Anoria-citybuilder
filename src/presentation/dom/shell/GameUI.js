@@ -10,6 +10,11 @@ import {
     infoPanelNoClockIcon,
     gameWindow as gameWindowElement,
     displayPop,
+    displayPopTotal,
+    displayPopActiveTotal,
+    displayPopCitizens,
+    displayPopElites,
+    displayPopServants,
     displayHungerPop,
     displayUnemployedPop,
     displayWorkerLack,
@@ -163,17 +168,48 @@ class GameUI {
     }
 
     /**
-     * Population totale avec détail (citoyens, élites).
+     * Population totale résidentielle (Housing) + détail actifs (Employment).
+     * `totalPopulation` = tous les habitants des maisons (cabanes incluses).
      * @param {number} totalPopulation
-     * @param {number} citizenPopulation
+     * @param {number} activeCitizenCount
      * @param {number} elitePopulation
+     * @param {number} [civilServantCount=0]
+     * @param {number} [activePopulationCount] — si omis : actifs + élites + fonctionnaires
      */
-    updatePopulationBreakdown(totalPopulation, citizenPopulation, elitePopulation) {
-        if (displayPop) {
-            const total = Math.max(0, Math.floor(totalPopulation) || 0);
-            const citizens = Math.max(0, Math.floor(citizenPopulation) || 0);
-            const elites = Math.max(0, Math.floor(elitePopulation) || 0);
-            displayPop.textContent = `${total} (${citizens}, ${elites})`;
+    updatePopulationBreakdown(
+        totalPopulation,
+        activeCitizenCount,
+        elitePopulation,
+        civilServantCount = 0,
+        activePopulationCount = null
+    ) {
+        const total = Math.max(0, Math.floor(totalPopulation) || 0);
+        const activeCitizens = Math.max(0, Math.floor(activeCitizenCount) || 0);
+        const elites = Math.max(0, Math.floor(elitePopulation) || 0);
+        const servants = Math.max(0, Math.floor(civilServantCount) || 0);
+        const activeTotal = activePopulationCount != null
+            ? Math.max(0, Math.floor(activePopulationCount) || 0)
+            : activeCitizens + elites + servants;
+
+        if (displayPopTotal) {
+            displayPopTotal.textContent = String(total);
+        }
+        if (displayPopActiveTotal) {
+            displayPopActiveTotal.textContent = String(activeTotal);
+        }
+        if (displayPopCitizens) {
+            displayPopCitizens.textContent = String(activeCitizens);
+        }
+        if (displayPopElites) {
+            displayPopElites.textContent = String(elites);
+        }
+        if (displayPopServants) {
+            displayPopServants.textContent = String(servants);
+        }
+
+        // Fallback if markup is missing (e.g. tests)
+        if (displayPop && !displayPopTotal) {
+            displayPop.textContent = `${total} | ${activeTotal} (${activeCitizens}, ${elites}, ${servants})`;
         }
     }
 
@@ -240,9 +276,7 @@ class GameUI {
 
     /** Initial HUD placeholders at city load (owned by GameUI, not scene). */
     resetInitialHud() {
-        if (displayPop) {
-            displayPop.textContent = '0 (0, 0)';
-        }
+        this.updatePopulationBreakdown(0, 0, 0, 0);
         if (displayFunds) {
             displayFunds.textContent = '0';
         }

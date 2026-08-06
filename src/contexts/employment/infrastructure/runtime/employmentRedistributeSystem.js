@@ -1,8 +1,6 @@
-import { synchronizeFactoryWorkerDistribution } from './synchronizeFactoryWorkerDistribution.js';
-
 /**
- * Thin ECS adapter — monthly worker redistribution via Employment BC.
- * Runs after housing.evolution so labor pools reflect latest pop/type.
+ * Thin ECS adapter — monthly worker redistribution via Employment BC only.
+ * Factory worker demand/allocation is handled by Supply systems (see pipeline order).
  */
 export function createEmploymentRedistributeSystem({
   employment,
@@ -12,6 +10,5 @@ export function createEmploymentRedistributeSystem({
     await employment.distributeCityWorkers({
       sectorPriorities: getSectorPriorities(),
     });
-    await synchronizeFactoryWorkerDistribution();
   };
 }

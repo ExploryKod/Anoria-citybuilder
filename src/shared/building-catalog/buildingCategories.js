@@ -12,7 +12,11 @@ export const palaces = Object.freeze(['House-2Story']);
 
 export const farms = Object.freeze(['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage']);
 
-export const commerce = Object.freeze(['Market-Stall']);
+export const commerce = Object.freeze([
+  'Market-Stall',
+  'Market-Stall-Blue',
+  'Market-Stall-Red',
+]);
 
 export const factories = Object.freeze(['Winery-001']);
 
@@ -30,6 +34,8 @@ export const buildingsObjects = Object.freeze([
   'House-Purple',
   'House-Blue',
   'Market-Stall',
+  'Market-Stall-Blue',
+  'Market-Stall-Red',
   'Tombstone-1',
   'Farm-Carrot',
   'Farm-Wheat',

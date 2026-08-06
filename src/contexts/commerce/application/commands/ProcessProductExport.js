@@ -1,6 +1,10 @@
 /**
  * Command — process a commerce product export (partner or internal limits).
  */
+import { getPartnerTradePrice } from '../../domain/policies/PartnerTradePolicy.js';
+import { getDefaultTradePrice } from '../../domain/catalogs/ProductCatalog.js';
+import { canExecuteTrade, mergeProductTradeToggles } from '../../domain/policies/PlayerTradeTogglePolicy.js';
+
 export class ProcessProductExport {
   /** @param {import('../services/CommerceSimulationService.js').CommerceSimulationService} simulation */
   constructor(simulation) {
@@ -33,25 +37,35 @@ export class ProcessProductExport {
       }
     }
 
-    const availableStock = await simulation.windmillStock.getTotalStock(productId);
+    const availableStock = await simulation.commerceHubStock.getTotalStock(productId);
+
+    if (!mergeProductTradeToggles(config).industryActive) {
+      return null;
+    }
+
+    if (!canExecuteTrade({ operation: 'export', productConfig: config, stock: availableStock })) {
+      return null;
+    }
 
     if (!simulation.canExportProduct(productId, quantity, availableStock, conditions)) {
       return null;
     }
 
-    const pricePerUnit = config.sellingPrice || 15;
+    const partner = partnerId ? simulation.getPartner(partnerId) : null;
+    const partnerName = partner ? partner.name : null;
+    const pricePerUnit =
+      getPartnerTradePrice(partner, productId, 'export')
+      ?? getDefaultTradePrice(productId, 'export')
+      ?? 15;
     const totalRevenue = quantity * pricePerUnit;
 
     if (simulation.isStockable(productId)) {
-      const stockReduced = await simulation.windmillStock.reduceStock(productId, quantity, partnerId);
+      const stockReduced = await simulation.commerceHubStock.reduceStock(productId, quantity, partnerId);
       if (!stockReduced) {
-        console.warn(`[CommerceService] Failed to reduce windmill stock for ${productId}`);
         return null;
       }
     }
 
-    const partner = partnerId ? simulation.getPartner(partnerId) : null;
-    const partnerName = partner ? partner.name : null;
     const remainingStock = simulation.isStockable(productId) ? availableStock - quantity : 0;
 
     let description = `Export ${productId}`;

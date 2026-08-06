@@ -1,34 +1,37 @@
-export const STOCKABLE_PRODUCTS = Object.freeze([
-  'wheat',
-  'carrot',
-  'cabbage',
-  'wood',
-  'dattes',
-]);
+export const STOCKABLE_PRODUCTS = Object.freeze(['wood', 'furniture', 'figs']);
 
-export const ALL_COMMERCE_PRODUCTS = Object.freeze([
-  'wheat',
-  'carrot',
-  'cabbage',
-  'wood',
-  'dattes',
-]);
+export const ALL_COMMERCE_PRODUCTS = Object.freeze(['wood', 'furniture', 'figs']);
 
 export const PRODUCT_STOCK_KEYS = Object.freeze({
-  wheat: 'wheat',
-  carrot: 'carrot',
-  cabbage: 'cabbage',
   wood: 'wood',
-  dattes: 'dattes',
+  furniture: 'furniture',
+  figs: 'figs',
 });
 
 export const PRODUCT_DISPLAY_NAMES = Object.freeze({
-  wheat: 'Blé',
-  carrot: 'Carotte',
-  cabbage: 'Chou',
-  wood: 'Bois',
-  dattes: 'Dattes',
+  wood: 'Bois brut',
+  furniture: 'Meubles',
+  figs: 'Figues',
 });
+
+/** Fixed partner trade prices (Caesar-style — set by trade city, not the player). */
+export const DEFAULT_PRODUCT_PRICES = Object.freeze({
+  wood: Object.freeze({ import: 20, export: 25 }),
+  furniture: Object.freeze({ import: 35, export: 45 }),
+  figs: Object.freeze({ import: 14, export: 0 }),
+});
+
+/**
+ * @param {string} productId
+ * @param {'import'|'export'} operation City perspective (import = buy, export = sell)
+ */
+export function getDefaultTradePrice(productId, operation) {
+  const prices = DEFAULT_PRODUCT_PRICES[productId];
+  if (!prices) {
+    return null;
+  }
+  return operation === 'import' ? prices.import : prices.export;
+}
 
 const DEFAULT_CONDITIONS = Object.freeze({
   import: Object.freeze({ requiresStock: false, requiresWindmill: false }),
@@ -36,25 +39,17 @@ const DEFAULT_CONDITIONS = Object.freeze({
 });
 
 export const PRODUCT_TRADE_CONDITIONS = Object.freeze({
-  wheat: {
-    import: Object.freeze({ requiresStock: false, requiresWindmill: false }),
-    export: Object.freeze({ requiresStock: true, requiresWindmill: true }),
-  },
-  carrot: {
-    import: Object.freeze({ requiresStock: false, requiresWindmill: false }),
-    export: Object.freeze({ requiresStock: true, requiresWindmill: true }),
-  },
-  cabbage: {
-    import: Object.freeze({ requiresStock: false, requiresWindmill: false }),
-    export: Object.freeze({ requiresStock: true, requiresWindmill: true }),
-  },
   wood: {
-    import: Object.freeze({ requiresStock: false, requiresWindmill: true }),
-    export: Object.freeze({ requiresStock: false, requiresWindmill: false }),
-  },
-  dattes: {
     import: Object.freeze({ requiresStock: false, requiresWindmill: false }),
-    export: Object.freeze({ requiresStock: true, requiresWindmill: true }),
+    export: Object.freeze({ requiresStock: true, requiresWindmill: false }),
+  },
+  furniture: {
+    import: Object.freeze({ requiresStock: false, requiresWindmill: false }),
+    export: Object.freeze({ requiresStock: true, requiresWindmill: false }),
+  },
+  figs: {
+    import: Object.freeze({ requiresStock: false, requiresWindmill: false }),
+    export: Object.freeze({ requiresStock: false, requiresWindmill: false }),
   },
 });
 
