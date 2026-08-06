@@ -10,8 +10,7 @@ export function resolveSelectedCitySize(citySize = null) {
   let selectedCitySize =
     citySize
     || parseInt(localStorage.getItem('selectedCitySize'), 10)
-    || DEFAULT_CITY_SIZE
-    || 16;
+    || DEFAULT_CITY_SIZE;
 
   // Enforce maximum size of 18 to prevent WebGL shader compilation errors.
   // In test mode, allow larger sizes to test detection.
