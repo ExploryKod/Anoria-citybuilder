@@ -50,8 +50,10 @@ export default defineConfig({
       },
     },
     VitePWA({
-    registerType: 'prompt',
-    injectRegister: true,
+    registerType: 'autoUpdate',
+    // Enregistrement manuel via src/pwa.js (toast js-toast-notifier) —
+    // évite un double register sur /game.
+    injectRegister: false,
 
     pwaAssets: {
       disabled: false,
@@ -68,12 +70,46 @@ export default defineConfig({
     },
 
     workbox: {
-      globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+      globPatterns: ['**/*.{js,css,html,ico}'],
       cleanupOutdatedCaches: true,
+      skipWaiting: true,
       clientsClaim: true,
       maximumFileSizeToCacheInBytes: 6000000,
       navigateFallback: '/index.html',
       navigateFallbackDenylist: [/^\/assets\//, /^\/game/, /^\/privacy/, /^\/terms/],
+      // Modèles 3D (.glb/.gltf/.fbx), leurs textures/JSON associés et les sprites de statut
+      // pèsent plusieurs dizaines de Mo au total (village_town_assets_v2.glb, citizenCool...).
+      // Les précacher bloquerait l'installation du SW ; on les met en cache à l'exécution
+      // (CacheFirst) après le premier chargement, ce qui rend les visites suivantes rapides
+      // et robustes aux réseaux mobiles instables — sans télécharger 150 Mo dès l'install.
+      runtimeCaching: [
+        {
+          urlPattern: ({ url }) =>
+            /^\/(resources|citizen02|citizenCool)\//.test(url.pathname) ||
+            url.pathname === '/village_town_assets.json',
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'anoria-game-assets',
+            expiration: {
+              maxEntries: 500,
+              maxAgeSeconds: 60 * 60 * 24 * 60, // 60 jours
+            },
+            cacheableResponse: { statuses: [0, 200] },
+          },
+        },
+        {
+          urlPattern: ({ url }) => /\.(png|jpg|jpeg|webp|svg|ico)$/i.test(url.pathname),
+          handler: 'StaleWhileRevalidate',
+          options: {
+            cacheName: 'anoria-images',
+            expiration: {
+              maxEntries: 200,
+              maxAgeSeconds: 60 * 60 * 24 * 30, // 30 jours
+            },
+            cacheableResponse: { statuses: [0, 200] },
+          },
+        },
+      ],
     },
 
     devOptions: {
