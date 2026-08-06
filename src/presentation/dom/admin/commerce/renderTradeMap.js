@@ -110,6 +110,7 @@ export function renderPartnerMarkers(partners, selectedPartnerId) {
             class="trade-map-city trade-map-city--partner ${routeClass}${isSelected ? ' selected' : ''}"
             style="left:${pos.left};top:${pos.top}"
             data-partner-id="${partner.id}"
+            title="${partner.name}"
             aria-label="${partner.name}"
             aria-pressed="${isSelected}">
       <span class="trade-map-city-icon">${pos.icon}</span>
@@ -147,7 +148,7 @@ export function renderTradeMapOverlay(partners, selectedPartnerId) {
       <div class="trade-map-toolbar">
         <span class="trade-map-toolbar-title">Empire — Routes commerciales</span>
         <span class="trade-map-toolbar-stats">${openRoutes}/${partners.length} routes ouvertes</span>
-        <button type="button" class="trade-map-close-btn" id="trade-map-close-btn" aria-label="Fermer la carte">✕</button>
+        <button type="button" class="trade-map-close-btn" id="trade-map-close-btn" title="Fermer la carte" aria-label="Fermer la carte">✕</button>
       </div>
       <div class="trade-map-canvas" id="trade-map-canvas">
         <div class="trade-map-terrain"></div>

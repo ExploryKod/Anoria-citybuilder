@@ -65,6 +65,8 @@ export function initToolBarBindings(bindingDeps = {}) {
   document.getElementById('nature-btn')?.addEventListener('click', toggleModal);
   document.getElementById('decoration-btn')?.addEventListener('click', toggleModal);
   document.getElementById('tombs-btn')?.addEventListener('click', toggleModal);
+  document.getElementById('legend-toolbar-btn')?.addEventListener('click', toggleModal);
+  document.getElementById('finance-legend-btn')?.addEventListener('click', toggleModal);
 
   panelLayoutCloseBtn.addEventListener('click', closeModal);
 }
