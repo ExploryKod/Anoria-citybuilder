@@ -189,11 +189,19 @@ const ANIMATION_PRESETS = {
   }
 };
 
+function isMobileLegendViewport() {
+  return window.matchMedia('(max-width: 768px)').matches;
+}
+
 /**
  * Shows the legend buttons with GSAP staggered animation after scene loads
  * @param {string} animationType - Type of animation to use (default: 'slideBounce')
  */
 function showLegendButtons(animationType = 'slideBounce') {
+  if (!isMobileLegendViewport()) {
+    return;
+  }
+
   const legendContainer = document.querySelector('.legend-btns-container');
   if (!legendContainer) {
     return;
@@ -239,7 +247,7 @@ function initializeLegendButtons() {
     mutations.forEach((mutation) => {
       if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
         const isHidden = loaderModal.classList.contains('hidden');
-        if (isHidden && !legendContainer.classList.contains('visible')) {
+        if (isHidden && !legendContainer.classList.contains('visible') && isMobileLegendViewport()) {
           // Loader is now hidden, show buttons after the fade-out transition completes
           // The loader has a 0.5s opacity transition, wait for it to complete
           setTimeout(() => {

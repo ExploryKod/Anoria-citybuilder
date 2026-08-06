@@ -181,9 +181,12 @@ export function createGame(gameStore, assetManager, citySize = null) {
   scene.initialize(city).then(async () => {
     await refreshPlacementPresentation();
     loaderManager.hide(500);
-    setTimeout(() => {
-      invokeStartTutorial();
-    }, 800);
+    if (sessionStorage.getItem('anoria.startTutorial') === '1') {
+      sessionStorage.removeItem('anoria.startTutorial');
+      setTimeout(() => {
+        invokeStartTutorial();
+      }, 800);
+    }
   });
 
   async function refreshEmploymentPresentationForCity() {
