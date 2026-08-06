@@ -47,7 +47,7 @@ describe('config.simulation', () => {
     });
 
     test('définit la taille de la ville', () => {
-        expect(config.simulation.citySize).toBe(16);
+        expect(config.simulation.citySize).toBe(12);
     });
 
     test('définit la distance de distribution de nourriture', () => {

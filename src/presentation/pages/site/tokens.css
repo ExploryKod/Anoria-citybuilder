@@ -1,0 +1,37 @@
+/* Tokens site — alignés modales Anoria (fafafa, bordure orange, texte --primary) */
+:root {
+  --primary: #1d2228;
+  --primary-05: rgba(29, 34, 40, 0.5);
+  --cta: #fb8122;
+  --cta-05: rgba(251, 129, 34, 0.5);
+  --cta-tint: #fff6f0;
+  --grey: #e1e2e2;
+  --darkblue: #000235;
+  --border-radius: 15px;
+  --border-radius-small: 10px;
+  --border-radius-medium: 12px;
+  --text-xs-size: 14px;
+
+  --site-bg: #f5f6f8;
+  --site-surface: #fafafa;
+  --site-surface-header: #fff6f0;
+  --site-text: var(--primary);
+  --site-text-muted: #5c6570;
+  --site-border: var(--cta);
+  --site-border-light: #dee2e6;
+  --site-input-bg: #ffffff;
+
+  /* site-btn */
+  --site-btn-bg: #f8f9fa;
+  --site-btn-bg-hover: var(--cta-tint);
+  --site-btn-border: var(--site-border-light);
+  --site-btn-text: var(--site-text);
+  --site-btn-bg-primary: var(--cta);
+  --site-btn-bg-primary-hover: #e86f10;
+  --site-btn-text-primary: #fff;
+  --site-btn-shadow-primary: 0 1px 2px rgba(251, 129, 34, 0.25);
+  --site-btn-bg-disabled: #e9ecef;
+  --site-btn-border-disabled: #c8cdd3;
+  --site-btn-text-disabled: #8b949e;
+  --site-btn-opacity-disabled: 0.55;
+}

@@ -1,60 +1,3 @@
-export function initToolbarDropdowns() {
-  const legendToggle = document.getElementById('legend-toggle');
-  const legendDropdown = document.getElementById('legend-dropdown');
-  const commandToggle = document.getElementById('command-toggle');
-  const commandDropdown = document.getElementById('command-dropdown');
-  const financeToggle = document.getElementById('finance-toggle');
-  const financeDropdown = document.getElementById('finance-dropdown');
-
-  if (legendToggle && legendDropdown) {
-    legendToggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const isCurrentlyHidden = legendDropdown.classList.contains('hidden');
-      commandDropdown?.classList.add('hidden');
-      financeDropdown?.classList.add('hidden');
-      legendDropdown.classList.toggle('hidden', !isCurrentlyHidden);
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.legend-dropdown-container')) {
-        legendDropdown.classList.add('hidden');
-      }
-    });
-  }
-
-  if (financeToggle && financeDropdown) {
-    financeToggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const isCurrentlyHidden = financeDropdown.classList.contains('hidden');
-      legendDropdown?.classList.add('hidden');
-      commandDropdown?.classList.add('hidden');
-      financeDropdown.classList.toggle('hidden', !isCurrentlyHidden);
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.finance-dropdown-container')) {
-        financeDropdown.classList.add('hidden');
-      }
-    });
-  }
-
-  if (commandToggle && commandDropdown) {
-    commandToggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const isCurrentlyHidden = commandDropdown.classList.contains('hidden');
-      legendDropdown?.classList.add('hidden');
-      financeDropdown?.classList.add('hidden');
-      commandDropdown.classList.toggle('hidden', !isCurrentlyHidden);
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.command-dropdown-container')) {
-        commandDropdown.classList.add('hidden');
-      }
-    });
-  }
-}
-
 export function initMobileToolbar() {
   const toolbarMobileToggle = document.getElementById('toolbar-mobile-toggle');
   const mobileControlsToggle = document.getElementById('mobile-controls-toggle');
@@ -145,6 +88,7 @@ export function initMobileToolbar() {
 
   const toolbarTabs = document.querySelectorAll('.toolbar-tab');
   const toolbarSections = document.querySelectorAll('.toolbar-section');
+
   if (toolbarTabs.length > 0 && toolbarSections.length > 0) {
     toolbarTabs.forEach((tab) => {
       tab.addEventListener('click', (e) => {

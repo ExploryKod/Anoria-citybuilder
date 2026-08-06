@@ -2,6 +2,11 @@
   "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
   "installCommand": "npx pnpm@11.17.0 install --frozen-lockfile",
+  "rewrites": [
+    { "source": "/game", "destination": "/game.html" },
+    { "source": "/missions", "destination": "/missions.html" },
+    { "source": "/settings", "destination": "/settings.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

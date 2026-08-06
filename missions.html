@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#fb8122" />
+    <title>Eraanurbs — Choisir une mission</title>
+    <link rel="stylesheet" href="/src/presentation/pages/missions/missions.css">
+</head>
+<body>
+    <main class="site-page missions-page">
+        <header class="site-header">
+            <a href="/" class="site-back">← Menu principal</a>
+            <h1>Choisir une mission</h1>
+        </header>
+
+        <div class="missions-layout">
+            <aside class="missions-list-col" aria-label="Liste des missions">
+                <ul id="missions-list" class="missions-list"></ul>
+            </aside>
+
+            <section id="mission-detail" class="missions-detail" aria-live="polite"></section>
+        </div>
+
+        <footer class="missions-actions">
+            <button type="button" id="mission-start-btn" class="site-btn site-btn--primary site-btn--inline" disabled>
+                Commencer la mission
+            </button>
+        </footer>
+    </main>
+
+    <div id="profile-modal" class="mission-modal" hidden role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+        <div class="mission-modal-panel">
+            <h2 id="profile-modal-title">Profils existants</h2>
+            <ul id="profile-modal-list" class="mission-modal-list"></ul>
+            <div class="mission-modal-actions">
+                <button type="button" id="profile-modal-close" class="site-btn site-btn--inline">Fermer</button>
+                <button type="button" id="profile-modal-confirm" class="site-btn site-btn--primary site-btn--inline">Confirmer</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/presentation/pages/missions/main.js"></script>
+</body>
+</html>
