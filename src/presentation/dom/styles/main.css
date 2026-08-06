@@ -697,6 +697,50 @@ canvas.pointer-events-disabled {
     gap: 20px;
 }
 
+.game-window .panel-layout .panel-inner.panel-inner--legend-list {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    max-width: min(520px, 90vw);
+    padding: 24px 28px;
+}
+
+.panel-inner--legend-list .panel-legend-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary);
+    text-align: center;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--cta);
+}
+
+.panel-inner--legend-list .panel-legend-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+}
+
+.panel-inner--legend-list .legend-item {
+    border-radius: var(--border-radius-small);
+    color: var(--primary);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.panel-inner--legend-list .legend-item:hover {
+    background-color: rgba(251, 129, 24, 0.08);
+}
+
+.panel-inner--legend-list .legend-item.item-disabled {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.panel-inner--legend-list .legend-item span {
+    color: var(--primary);
+}
+
 /* Empty rule removed - was causing linting warning */
 
 .panel-layout .panel-btn {

@@ -1,18 +1,55 @@
+import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+const cleanRoutes = [
+  { path: '/game', file: '/game.html' },
+  { path: '/missions', file: '/missions.html' },
+  { path: '/settings', file: '/settings.html' },
+  { path: '/privacy', file: '/privacy.html' },
+  { path: '/terms', file: '/terms.html' },
+]
+
 // https://vitejs.dev/config/
 export default defineConfig({
-  base:'/', // Use relative paths for assets
+  base: '/',
 
   build: {
-    outDir: 'dist', // Default output directory
+    outDir: 'dist',
     emptyOutDir: true,
-    assetsDir: 'assets', // Directory for built assets
-    chunkSizeWarningLimit: 1600, // Three.js game main bundle is intentionally large
+    assetsDir: 'assets',
+    chunkSizeWarningLimit: 1600,
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        game: resolve(__dirname, 'game.html'),
+        missions: resolve(__dirname, 'missions.html'),
+        settings: resolve(__dirname, 'settings.html'),
+        privacy: resolve(__dirname, 'privacy.html'),
+        terms: resolve(__dirname, 'terms.html'),
+      },
+    },
   },
 
-  plugins: [VitePWA({
+  plugins: [
+    {
+      name: 'rewrite-clean-routes',
+      configureServer(server) {
+        server.middlewares.use((req, _res, next) => {
+          if (!req.url) {
+            next();
+            return;
+          }
+          const pathname = req.url.split('?')[0];
+          const match = cleanRoutes.find((r) => pathname === r.path || pathname === `${r.path}/`);
+          if (match) {
+            req.url = match.file;
+          }
+          next();
+        });
+      },
+    },
+    VitePWA({
     registerType: 'prompt',
     injectRegister: true,
 
@@ -24,24 +61,28 @@ export default defineConfig({
     manifest: {
       name: 'anoria',
       short_name: 'anoria',
-      description: 'A 3D game with thee js',
-      theme_color: '#ffffff',
+      description: 'A 3D city builder game',
+      theme_color: '#db4938',
+      start_url: '/',
+      scope: '/',
     },
 
     workbox: {
       globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
       cleanupOutdatedCaches: true,
       clientsClaim: true,
-      maximumFileSizeToCacheInBytes: 6000000
+      maximumFileSizeToCacheInBytes: 6000000,
+      navigateFallback: '/index.html',
+      navigateFallbackDenylist: [/^\/assets\//, /^\/game/, /^\/privacy/, /^\/terms/],
     },
 
     devOptions: {
       enabled: true,
-      navigateFallback: 'index.html',
+      navigateFallback: '/index.html',
       suppressWarnings: true,
       type: 'module',
-      // Supprimer les avertissements Workbox en développement
       disableDevLogs: true,
     },
-  })],
+    }),
+  ],
 })
