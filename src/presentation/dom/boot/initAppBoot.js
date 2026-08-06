@@ -16,7 +16,8 @@ import { bootstrapGameSession } from './GameSessionBootstrap.js';
 import { initPlaybackControls } from './PlaybackControls.js';
 import { initSpeedControls } from './SpeedControls.js';
 import { initToolBarBindings } from './ToolBarBindings.js';
-import { initMobileToolbar, initToolbarDropdowns } from './ToolbarShell.js';
+import { initMobileToolbar } from './ToolbarShell.js';
+import { initMissingTooltips, observeMissingTooltips } from './TooltipTitles.js';
 import { bindToolPanelDeps } from '../tools/ToolPanel.js';
 import { bindPopupManagerDeps, popupManager } from '../shell/PopupManager.js';
 import { buttonStateManager } from '../shell/ButtonStateManager.js';
@@ -56,7 +57,6 @@ export async function initAppBoot() {
     buttonStateManager,
     invokeSetActiveTool,
   });
-  initToolbarDropdowns();
   initMobileToolbar();
   initParametersPanel({
     pauseGame,
@@ -72,4 +72,6 @@ export async function initAppBoot() {
   initMapFiltersPanel({
     getScene: getSessionScene,
   });
+  initMissingTooltips();
+  observeMissingTooltips();
 }

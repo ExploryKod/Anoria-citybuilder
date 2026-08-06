@@ -5,6 +5,9 @@ import {
   setMissionId,
   setProfileName,
 } from '../site/bootSession.js';
+import { mountSiteLegalFooter } from '../site/mountSiteLegalFooter.js';
+
+mountSiteLegalFooter();
 
 const listEl = document.getElementById('missions-list');
 const detailEl = document.getElementById('mission-detail');

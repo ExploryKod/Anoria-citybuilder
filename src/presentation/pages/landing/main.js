@@ -1,4 +1,7 @@
 import { setBootMode } from '../site/bootSession.js';
+import { mountSiteLegalFooter } from '../site/mountSiteLegalFooter.js';
+
+mountSiteLegalFooter();
 
 document.querySelectorAll('[data-boot-mode]').forEach((el) => {
   el.addEventListener('click', () => {

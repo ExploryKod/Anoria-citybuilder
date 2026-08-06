@@ -33,7 +33,7 @@ export function renderCommerceGoodModal(good) {
       <div class="commerce-good-modal">
         <div class="commerce-good-modal-header">
           <h3 class="commerce-good-modal-title">${icon} ${good.name}</h3>
-          <button type="button" class="commerce-good-modal-close" id="commerce-good-modal-close" aria-label="Fermer">✕</button>
+          <button type="button" class="commerce-good-modal-close" id="commerce-good-modal-close" title="Fermer" aria-label="Fermer">✕</button>
         </div>
         <div class="commerce-good-modal-body">
           ${renderToggleRow({
@@ -102,7 +102,7 @@ function renderGoodRow(good) {
       : '—';
 
   return `
-    <button type="button" class="commerce-good-row" data-product-id="${good.id}">
+    <button type="button" class="commerce-good-row" data-product-id="${good.id}" title="${good.name}" aria-label="${good.name}">
       <span class="commerce-good-row-name">${icon} ${good.name}</span>
       <span>${good.stock}</span>
       <span class="${good.exportCap > 0 ? '' : 'muted'}">${exportCell}</span>

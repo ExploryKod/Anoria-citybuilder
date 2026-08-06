@@ -1,4 +1,7 @@
 import * as eventsConfig from '../../../config/events.js';
+import { mountSiteLegalFooter } from '../site/mountSiteLegalFooter.js';
+
+mountSiteLegalFooter();
 
 const TILE_GRID_KEY = 'anoria.tileGridVisible';
 

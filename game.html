@@ -131,7 +131,7 @@
         <div id='loader' class="loader"></div>
 
         <div id="pause-overlay" class="pause-overlay">
-            <button type="button" class="play-btn" id="play-btn" data-action="play" class="toolbar-btn">
+            <button type="button" class="play-btn" id="play-btn" data-action="play" class="toolbar-btn" title="Reprendre" aria-label="Reprendre le jeu">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play">
                     <polygon points="6 3 20 12 6 21 6 3"/>
                 </svg>
@@ -146,7 +146,7 @@
                         <h2 id="info-building-title">Informations</h2>
                         <p id="info-building-meta" class="info-building__meta" hidden></p>
                     </div>
-                    <button type="button" class="panel-close-btn" aria-label="Fermer le panneau d'information">
+                    <button type="button" class="panel-close-btn" title="Fermer" aria-label="Fermer le panneau d'information">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x" aria-hidden="true">
                             <circle cx="12" cy="12" r="10"/>
                             <path d="m15 9-6 6"/>
@@ -177,7 +177,7 @@
                 <p>En effet, vous avez laissé vos citoyens mourir de faim ! Des poursuites ont été engagé contre vous par la cour internationale de justice.</p>
                 <p> Certes, en tant que dictateur cela ne vous touche pas beaucoup mais sachez aussi : vous êtes ruiné !</p>
             </div>
-            <button type="button" id="play-again-btn" data-action="play-again" class="toolbar-btn bubbly-button">
+            <button type="button" id="play-again-btn" data-action="play-again" class="toolbar-btn bubbly-button" title="Rejouer" aria-label="Rejouer">
                Rejouer
             </button>
         </div>
@@ -209,13 +209,6 @@
                                 <circle cx="12" cy="12" r="3"/>
                             </svg>
                         </button>
-                        <button type="button" class="toolbar-btn toolbar-tab" data-tab="legends" title="Aide & légendes">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-help">
-                                <circle cx="12" cy="12" r="10"/>
-                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                                <path d="M12 17h.01"/>
-                            </svg>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -226,13 +219,13 @@
                     <div class="toolbar__sub-container">
                         <div class="toolbar__label">Outils</div>
                         <div class="toolbar__buttons">
-                            <button type="button" id="bulldoze-btn" data-toolid="bulldoze" class="toolbar-btn bulldoze-btn">
+                            <button type="button" id="bulldoze-btn" data-toolid="bulldoze" class="toolbar-btn bulldoze-btn" title="Démolir" aria-label="Démolir">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eraser">
                                     <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/>
                                     <path d="M22 21H7"/><path d="m5 11 9 9"/>
                                 </svg>
                             </button>
-                            <button type="button" id="select-btn" data-toolid="select-object" class="toolbar-btn selected">
+                            <button type="button" id="select-btn" data-toolid="select-object" class="toolbar-btn selected" title="Sélectionner" aria-label="Sélectionner">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-mouse-pointer">
                                     <path d="M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/>
                                     <path d="m12 12 4 10 1.7-4.3L22 16Z"/>
@@ -250,7 +243,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house-plus-icon lucide-house-plus"><path d="M12.35 21H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 .71-1.53l7-6a2 2 0 0 1 2.58 0l7 6A2 2 0 0 1 21 10v2.35"/><path d="M14.8 12.4A1 1 0 0 0 14 12h-4a1 1 0 0 0-1 1v8"/><path d="M15 18h6"/><path d="M18 15v6"/>
                         </svg>
                     </button>
-                    <button type="button" id="palace-btn" class="toolbar-btn" data-group="palaces">
+                    <button type="button" id="palace-btn" class="toolbar-btn" data-group="palaces" title="Palais" aria-label="Palais">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-castle-icon lucide-castle"><path d="M10 5V3"/><path d="M14 5V3"/><path d="M15 21v-3a3 3 0 0 0-6 0v3"/><path d="M18 3v8"/><path d="M18 5H6"/><path d="M22 11H2"/><path d="M22 9v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9"/><path d="M6 3v8"/></svg>
                     </button>
                   
@@ -262,7 +255,7 @@
             <div class="toolbar__sub-container">
                 <div class="toolbar__label">Agriculture</div>
                 <div class="toolbar__buttons">
-                    <button type="button" id="farm-btn" class="toolbar-btn" data-group="farms">
+                    <button type="button" id="farm-btn" class="toolbar-btn" data-group="farms" title="Agriculture" aria-label="Agriculture">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wheat">
                             <path d="M2 22 16 8"/><path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
                             <path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 15l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
@@ -273,13 +266,13 @@
                             <path d="M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
                         </svg>
                     </button>
-                    <button type="button" id="industry-btn" data-toolid="industry" data-group="industry" class="toolbar-btn">
+                    <button type="button" id="industry-btn" data-toolid="industry" data-group="industry" class="toolbar-btn" title="Entrepôts et stockage" aria-label="Entrepôts et stockage">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                              stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse">
                             <path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/>
                             <path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="12" x="6" y="10"/></svg>
                     </button>
-                    <button type="button" id="workshop-btn" class="toolbar-btn" data-group="industry" title="Industrie (incl. winery)">
+                    <button type="button" id="workshop-btn" class="toolbar-btn" data-group="industry" title="Industrie (incl. winery)" aria-label="Industrie (incl. winery)">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wine"><path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z"/></svg>
                     </button>
                 </div>
@@ -290,10 +283,10 @@
             <div class="toolbar__sub-container">
                 <div class="toolbar__label">Infrastructure</div>
                 <div class="toolbar__buttons">
-                    <button type="button" id="infrastructure-btn" class="toolbar-btn" data-group="infrastructure">
+                    <button type="button" id="infrastructure-btn" class="toolbar-btn" data-group="infrastructure" title="Infrastructure" aria-label="Infrastructure">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-utility-pole-icon lucide-utility-pole"><path d="M12 2v20"/><path d="M2 5h20"/><path d="M3 3v2"/><path d="M7 3v2"/><path d="M17 3v2"/><path d="M21 3v2"/><path d="m19 5-7 7-7-7"/></svg>
                     </button>
-                    <button type="button" id="roads-btn" class="toolbar-btn" data-group="roads">
+                    <button type="button" id="roads-btn" class="toolbar-btn" data-group="roads" title="Routes et chemins" aria-label="Routes et chemins">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-route">
                             <circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/>
                             <circle cx="18" cy="5" r="3"/>
@@ -380,11 +373,11 @@
                     <div class="toolbar__sub-container">
                         <div class="toolbar__label">Vitesse</div>
                         <div class="toolbar__buttons">
-                            <button type="button" id="faster-btn" class="toolbar-btn">
+                            <button type="button" id="faster-btn" class="toolbar-btn" title="Accélérer" aria-label="Accélérer la vitesse">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rabbit"><path d="M13 16a3 3 0 0 1 2.24 5"/><path d="M18 12h.01"/><path d="M18 21h-8a4 4 0 0 1-4-4 7 7 0 0 1 7-7h.2L9.6 6.4a1 1 0 1 1 2.8-2.8L15.8 7h.2c3.3 0 6 2.7 6 6v1a2 2 0 0 1-2 2h-1a3 3 0 0 0-3 3"/>
                                     <path d="M20 8.54V4a2 2 0 1 0-4 0v3"/><path d="M7.612 12.524a3 3 0 1 0-1.6 4.3"/></svg>
                             </button>
-                            <button type="button" id="slower-btn" class="toolbar-btn">
+                            <button type="button" id="slower-btn" class="toolbar-btn" title="Ralentir" aria-label="Ralentir la vitesse">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-snail"><path d="M2 13a6 6 0 1 0 12 0 4 4 0 1 0-8 0 2 2 0 0 0 4 0"/>
                                     <circle cx="10" cy="13" r="8"/><path d="M2 21h12c4.4 0 8-3.6 8-8V7a2 2 0 1 0-4 0v6"/><path d="M18 3 19.1 5.2"/><path d="M22 3 20.9 5.2"/></svg>
                             </button>
@@ -405,7 +398,7 @@
                                     <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>
                                 </svg>
                             </button>
-                            <button type="button" id="loans-btn" data-toolid="loans" class="toolbar-btn">
+                            <button type="button" id="loans-btn" data-toolid="loans" class="toolbar-btn" title="Prêts bancaires" aria-label="Ouvrir les prêts bancaires">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-hand-coins">
                                     <path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/>
                                     <path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/>
@@ -424,6 +417,27 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open">
                                     <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
                                     <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="toolbar__container">
+                    <div class="toolbar__sub-container">
+                        <div class="toolbar__label">Légendes</div>
+                        <div class="toolbar__buttons">
+                            <button type="button" id="legend-toolbar-btn" class="toolbar-btn" data-group="legendToolbar" title="Légende des boutons de la barre d'outils" aria-label="Légende des boutons de la barre d'outils">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M12 16v-4"/>
+                                    <path d="M12 8h.01"/>
+                                </svg>
+                            </button>
+                            <button type="button" id="finance-legend-btn" class="toolbar-btn" data-group="legendFinance" title="Légende des boutons finances" aria-label="Légende des boutons finances">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet">
+                                    <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
+                                    <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
                                 </svg>
                             </button>
                         </div>
@@ -464,219 +478,6 @@
                 </div>
             </div>
             <!-- End Settings section -->
-
-            <!-- Aide & légendes -->
-            <div class="toolbar-section toolbar-section-legends" data-section="legends">
-                <div class="toolbar__container">
-                    <div class="toolbar__sub-container">
-                        <div class="toolbar__label">Légende des boutons</div>
-                        <div class="toolbar__buttons toolbar__buttons--legends">
-                            <div class="legend-btns legend-dropdown-container">
-                                <button id="legend-toggle" class="legend-toggle-btn" title="Légende des boutons de la barre d'outils" type="button">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <path d="M12 16v-4"/>
-                                    <path d="M12 8h.01"/>
-                                  </svg>
-                                  <span>Afficher la légende</span>
-                                </button>
-                                <div id="legend-dropdown" class="legend-dropdown hidden">
-                                  <div class="legend-item">
-                                    <div class="legend-icon-wrapper">
-                                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home">
-                                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                                        <polyline points="9 22 9 12 15 12 15 22"/>
-                                      </svg>
-                                    </div>
-                                    <span>Bouton actif</span>
-                                  </div>
-                                  <div class="legend-item item-disabled">
-                                    <div class="legend-icon-wrapper disabled-icon">
-                                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home">
-                                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                                        <polyline points="9 22 9 12 15 12 15 22"/>
-                                      </svg>
-                                    </div>
-                                    <span>Pas encore disponible</span>
-                                  </div>
-                                  <div class="legend-item selected-house">
-                                    <div class="legend-icon-wrapper selected-icon">
-                                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home">
-                                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                                        <polyline points="9 22 9 12 15 12 15 22"/>
-                                      </svg>
-                                    </div>
-                                    <span>Bâtiment sélectionné</span>
-                                  </div>
-                                  <div class="legend-item toolbar-selected">
-                                    <div class="legend-icon-wrapper toolbar-selected-icon">
-                                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-mouse-pointer">
-                                        <path d="M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/>
-                                        <path d="m12 12 4 10 1.7-4.3L22 16Z"/>
-                                      </svg>
-                                    </div>
-                                    <span>Outil actif (sélection)</span>
-                                  </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="toolbar__container">
-                    <div class="toolbar__sub-container">
-                        <div class="toolbar__label">Légende des finances</div>
-                        <div class="toolbar__buttons toolbar__buttons--legends">
-                            <div class="legend-btns finance-dropdown-container">
-                                <button id="finance-toggle" class="finance-toggle-btn" title="Légende des boutons finances" type="button">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet">
-                                    <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
-                                    <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
-                                    </svg>
-                                    <span>Afficher les finances</span>
-                                </button>
-                                <div id="finance-dropdown" class="finance-dropdown hidden">
-                                    <div class="legend-item">
-                                    <div class="legend-icon-wrapper">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-3">
-                                        <path d="M3 3v18h18"/>
-                                        <path d="M18 17V9"/>
-                                        <path d="M13 17V5"/>
-                                        <path d="M8 17v-3"/>
-                                        </svg>
-                                    </div>
-                                    <span>Budget temps réel</span>
-                                    </div>
-                                    <div class="legend-item">
-                                    <div class="legend-icon-wrapper">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-scale">
-                                        <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
-                                        <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
-                                        <path d="M7 21h10"/>
-                                        <path d="M12 3v18"/>
-                                        <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>
-                                        </svg>
-                                    </div>
-                                    <span>Bilan comptable</span>
-                                    </div>
-                                    <div class="legend-item">
-                                    <div class="legend-icon-wrapper">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M3 3v18h18"/>
-                                        <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
-                                        </svg>
-                                    </div>
-                                    <span>Compte de résultat</span>
-                                    </div>
-                                    <div class="legend-item">
-                                    <div class="legend-icon-wrapper">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-hand-coins">
-                                        <path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/>
-                                        <path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/>
-                                        <path d="m2 16 6 6"/>
-                                        <circle cx="16" cy="9" r="2.9"/>
-                                        <circle cx="6" cy="5" r="3"/>
-                                        </svg>
-                                    </div>
-                                    <span>Prêts bancaires</span>
-                                    </div>
-                                    <div class="legend-item">
-                                    <div class="legend-icon-wrapper">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open">
-                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-                                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-                                        </svg>
-                                    </div>
-                                    <span>Journal financier</span>
-                                    </div>
-                                    <div class="legend-item">
-                                    <div class="legend-icon-wrapper">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-icon lucide-map"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg>
-                                    </div>
-                                    <span>Plan 2D de la ville</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="toolbar__container">
-                    <div class="toolbar__sub-container">
-                        <div class="toolbar__label">Raccourcis clavier</div>
-                        <div class="toolbar__buttons toolbar__buttons--legends">
-                            <div class="legend-btns command-dropdown-container">
-                                <button id="command-toggle" class="command-toggle-btn" title="Raccourcis clavier" type="button">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-keyboard">
-                                    <rect width="20" height="16" x="2" y="4" rx="2"/>
-                                    <path d="M6 8h.01"/>
-                                    <path d="M10 8h.01"/>
-                                    <path d="M14 8h.01"/>
-                                    <path d="M18 8h.01"/>
-                                    <path d="M8 12h.01"/>
-                                    <path d="M12 12h.01"/>
-                                    <path d="M16 12h.01"/>
-                                    <path d="M7 16h10"/>
-                                  </svg>
-                                  <span>Afficher les commandes</span>
-                                </button>
-                                <div id="command-dropdown" class="command-dropdown hidden">
-                                  <div class="command-title">
-                                    <h4>⌨️ Raccourcis clavier</h4>
-                                  </div>
-                                  <div class="command-items">
-                                    <div class="command-item">
-                                      <kbd>I</kbd>
-                                      <span class="command-label">Basculer vue isométrique/perspective</span>
-                                    </div>
-                                    <div class="command-item">
-                                      <kbd>R</kbd> / <kbd>T</kbd>
-                                      <span class="command-label">Rotation gauche/droite</span>
-                                    </div>
-                                    <div class="command-item">
-                                      <kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd>
-                                      <span class="command-label">Rotation gauche/droite</span>
-                                    </div>
-                                    <div class="command-item">
-                                      <kbd>Clic gauche</kbd> + <kbd>Glisser</kbd>
-                                      <span class="command-label">Rotation libre (vue perspective)</span>
-                                    </div>
-                                    <div class="command-item">
-                                      <kbd>V</kbd>
-                                      <span class="command-label">Activer effet dolly zoom</span>
-                                    </div>
-                                    <div class="command-item">
-                                      <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
-                                      <span class="command-label">Déplacer la caméra</span>
-                                    </div>
-                                    <div class="command-item">
-                                      <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd>
-                                      <span class="command-label">Déplacer la caméra (AZERTY)</span>
-                                    </div>
-                                    <div class="command-item">
-                                      <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd>
-                                      <span class="command-label">Déplacer la caméra</span>
-                                    </div>
-                                    <div class="command-item">
-                                      <kbd>Molette</kbd>
-                                      <span class="command-label">Zoomer/Dézoomer</span>
-                                    </div>
-                                    <div class="command-item">
-                                      <kbd>Ctrl</kbd> + <kbd>Molette</kbd>
-                                      <span class="command-label">Zoomer (trackpad)</span>
-                                    </div>
-                                    <div class="command-item">
-                                      <kbd>Clic droit</kbd> / <kbd>Clic molette</kbd>
-                                      <span class="command-label">Déplacer la caméra</span>
-                                    </div>
-                                  </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- End Legends section -->
 
       </section>
 
@@ -788,7 +589,7 @@
 
             <div class="info-panel">
                 <section class="info-box infos-time">
-                    <article class="clock-box">
+                    <article class="clock-box" title="Date et heure en jeu">
                         <span class="clock-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock-4"><circle cx="12" cy="12" r="10"/>
                                 <polyline points="12 6 12 12 16 14"/>
@@ -799,7 +600,7 @@
                         </span>
                         <div class="display-time"></div>
                     </article>
-                    <article class="speed-box">
+                    <article class="speed-box" title="Vitesse de simulation">
                         <span class="speed-icon">   
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
                             class="lucide lucide-rabbit"><path d="M13 16a3 3 0 0 1 2.24 5"/><path d="M18 12h.01"/><path d="M18 21h-8a4 4 0 0 1-4-4 7 7 0 0 1 7-7h.2L9.6 6.4a1 1 0 1 1 2.8-2.8L15.8 7h.2c3.3 0 6 2.7 6 6v1a2 2 0 0 1-2 2h-1a3 3 0 0 0-3 3"/>
@@ -821,7 +622,7 @@
                             </span>
                             <span class="pop-total">0</span>
                         </article>
-                        <article class="pop-box">
+                        <article class="pop-box" title="Citoyens affamés">
                             <span class="info-box pop-icon">
                                 <img src="/resources/textures/status/nofood.png" alt="Famished" class="famished-icon" style="width: 24px; height: 24px; object-fit: contain;">
                             </span>
@@ -830,7 +631,7 @@
                     </section>
 
                     <section class="info-box infos-budget">
-                        <article class="budget-box">
+                        <article class="budget-box" title="Fonds disponibles">
                             <span class="budget-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-euro">
                                 <path d="M4 10h12"/><path d="M4 14h9"/>
@@ -843,7 +644,7 @@
                 </div>
 
                 <section class="info-box-stats">
-                    <div class="info-box realtime-budget-box stats-buttons"  id="realtime-budget-btn" >
+                    <div class="info-box realtime-budget-box stats-buttons" id="realtime-budget-btn" title="Budget en temps réel" aria-label="Ouvrir le budget en temps réel" role="button" tabindex="0">
                         <article class="budget-box">
                             <span class="budget-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-3">
@@ -865,7 +666,7 @@
                             </span>
                         </article>
                     </div>
-                    <div class="info-box city-map-box stats-buttons" id="city-map-btn">
+                    <div class="info-box city-map-box stats-buttons" id="city-map-btn" title="Plan 2D de la ville" aria-label="Ouvrir le plan 2D de la ville" role="button" tabindex="0">
                         <article class="budget-box">
                             <span class="budget-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-icon lucide-map"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg>
@@ -873,7 +674,7 @@
                         </article>
                     </div>
                     <!-- Game controls (pause/reset) -->
-                    <div class="info-box game-control-box stats-buttons" id="pause-btn" data-action="pause" title="Pause" role="button" tabindex="0">
+                    <div class="info-box game-control-box stats-buttons" id="pause-btn" data-action="pause" title="Pause / Reprendre" aria-label="Pause ou reprendre le jeu" role="button" tabindex="0">
                         <article class="budget-box">
                             <span class="budget-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause">
@@ -883,7 +684,7 @@
                             </span>
                         </article>
                     </div>
-                    <div class="info-box game-control-box stats-buttons" id="replay-btn" data-action="replay" title="Reset" role="button" tabindex="0">
+                    <div class="info-box game-control-box stats-buttons" id="replay-btn" data-action="replay" title="Réinitialiser" aria-label="Réinitialiser la ville" role="button" tabindex="0">
                         <article class="budget-box">
                             <span class="budget-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" 
@@ -939,7 +740,7 @@
         <div id="panel-layout" class="panel-layout">
 
             <div class="panel-inner-wrapper">
-                <div class="panel-close-btn">
+                <div class="panel-close-btn" title="Fermer" aria-label="Fermer le panneau">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
                         <circle cx="12" cy="12" r="10"/>
                         <path d="m15 9-6 6"/>
@@ -952,24 +753,13 @@
 
     </div>
 </div>
-<footer>
-    <div class="footer-content">
-        <span>Projet de Amaury Franssen - 2024 &copy; Tout droit réservé </span>
-        <div class="footer-links">
-            <a href="https://github.com/ExploryKod/Anoria-citybuilder" target="_blank" rel="noopener noreferrer">GitHub</a>
-            <a href="https://github.com/ExploryKod/Anoria-citybuilder/blob/main/src/mentions-legales.md" target="_blank" rel="noopener noreferrer">Mentions légales</a>
-            <a href="https://github.com/ExploryKod/Anoria-citybuilder/blob/main/src/politique-de-confidentialite.md" target="_blank" rel="noopener noreferrer">Politique de confidentialité</a>
-            <a href="https://github.com/ExploryKod/Anoria-citybuilder/blob/main/src/credits.md" target="_blank" rel="noopener noreferrer">Crédits</a>
-        </div>
-    </div>
-</footer>
 
 <!-- Real-time Budget Popup -->
 <div id="realtime-budget-panel" class="realtime-budget-panel">
     <div class="realtime-budget-wrapper">
         <div class="realtime-budget-header">
             <h3>💰 Budget en Temps Réel</h3>
-            <div class="realtime-budget-close-btn">
+            <div class="realtime-budget-close-btn" title="Fermer" aria-label="Fermer le budget en temps réel">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
                     <path d="m18 6-12 12"/>
                     <path d="m6 6 12 12"/>
@@ -1096,7 +886,7 @@
                 <div class="bilan-panel-title-container">
                     <h2>💰 Bilan Comptable</h2>
                 </div>
-                <div class="bilan-panel-close-btn">
+                <div class="bilan-panel-close-btn" title="Fermer" aria-label="Fermer le bilan comptable">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
                         <circle cx="12" cy="12" r="10"/>
                         <path d="m15 9-6 6"/>
@@ -1549,7 +1339,7 @@
                 <div class="loans-health-indicator" id="loans-health-indicator">
                     <span class="health-status">Finance saine</span>
                 </div>
-                <div class="loans-panel-close-btn">
+                <div class="loans-panel-close-btn" title="Fermer" aria-label="Fermer les prêts bancaires">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
                         <circle cx="12" cy="12" r="10"/>
                         <path d="m15 9-6 6"/>
@@ -1693,7 +1483,7 @@
                         Panneau Administrateur
                     </h2>
                 </div>
-                <div class="administrator-panel-close-btn" id="administrator-panel-close-btn" aria-label="Fermer le panneau administrateur">
+                <div class="administrator-panel-close-btn" id="administrator-panel-close-btn" title="Fermer" aria-label="Fermer le panneau administrateur">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
                         <circle cx="12" cy="12" r="10"/>
                         <path d="m15 9-6 6"/>
@@ -2221,7 +2011,7 @@
                             </svg>
                             Commerce
                         </span>
-                        <button type="button" class="commerce-open-map-btn" id="commerce-open-map-btn">
+                        <button type="button" class="commerce-open-map-btn" id="commerce-open-map-btn" title="Ouvrir la carte commerciale" aria-label="Ouvrir la carte commerciale">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M14.106 5.553a2 2 0 0 0-1.788 0l-7 3.5a2 2 0 0 0-1.106 1.789V19a2 2 0 0 0 1.106 1.789l7 3.5a2 2 0 0 0 1.788 0l7-3.5A2 2 0 0 0 22 19V10.842a2 2 0 0 0-1.106-1.789z"/>
                                 <path d="M15 21.764V15a2 2 0 0 0-2-2H5"/>
@@ -2706,7 +2496,7 @@
             <div class="compte-de-resultat-title-container">
                 <h3>Compte de Résultat</h3>
             </div>
-            <div class="compte-de-resultat-close-btn">
+            <div class="compte-de-resultat-close-btn" title="Fermer" aria-label="Fermer le compte de résultat">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
                     <circle cx="12" cy="12" r="10"/>
                     <path d="m15 9-6 6"/>
@@ -2726,7 +2516,7 @@
             
             <!-- Global refresh button -->
             <div class="compte-de-resultat-refresh-section">
-                <button type="button" class="budget-global-refresh-btn">
+                <button type="button" class="budget-global-refresh-btn" title="Actualiser les données" aria-label="Actualiser les données">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
                         <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
                         <path d="M21 3v5h-5"/>
@@ -2803,7 +2593,7 @@
                     </div>
                 </div>
             </div>
-            <div class="journal-close-btn">
+            <div class="journal-close-btn" title="Fermer" aria-label="Fermer le journal">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
                     <path d="M18 6L6 18"/>
                     <path d="M6 6l12 12"/>
@@ -2866,7 +2656,7 @@
     <div class="food-traceability-wrapper">
         <div class="food-traceability-header">
             <h3>🌾 Traçabilité Alimentaire</h3>
-            <div class="food-traceability-close-btn">
+            <div class="food-traceability-close-btn" title="Fermer" aria-label="Fermer la traçabilité alimentaire">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
                     <path d="M18 6L6 18"/>
                     <path d="M6 6l12 12"/>
@@ -2942,7 +2732,7 @@
     <div class="city-map-wrapper">
         <div class="city-map-header">
             <h3>🗺️ Carte de la Ville</h3>
-            <div class="city-map-close-btn">
+            <div class="city-map-close-btn" title="Fermer" aria-label="Fermer le plan de la ville">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
                     <path d="M18 6L6 18"/>
                     <path d="M6 6l12 12"/>
@@ -3193,6 +2983,56 @@
                             <span class="parameters-control-text">Grille du terrain</span>
                             <input type="checkbox" id="tile-grid-toggle" class="parameters-switch">
                         </label>
+                    </div>
+                </div>
+
+                <div class="parameters-section">
+                    <h4 class="parameters-section-title">Raccourcis clavier</h4>
+                    <div class="parameters-shortcuts">
+                        <div class="parameters-shortcut-item">
+                            <kbd>I</kbd>
+                            <span class="parameters-shortcut-label">Basculer vue isométrique/perspective</span>
+                        </div>
+                        <div class="parameters-shortcut-item">
+                            <kbd>R</kbd><kbd>T</kbd>
+                            <span class="parameters-shortcut-label">Rotation gauche/droite</span>
+                        </div>
+                        <div class="parameters-shortcut-item">
+                            <kbd>Shift</kbd><kbd>←</kbd><kbd>→</kbd>
+                            <span class="parameters-shortcut-label">Rotation gauche/droite</span>
+                        </div>
+                        <div class="parameters-shortcut-item">
+                            <kbd>Clic gauche</kbd><kbd>Glisser</kbd>
+                            <span class="parameters-shortcut-label">Rotation libre (vue perspective)</span>
+                        </div>
+                        <div class="parameters-shortcut-item">
+                            <kbd>V</kbd>
+                            <span class="parameters-shortcut-label">Activer effet dolly zoom</span>
+                        </div>
+                        <div class="parameters-shortcut-item">
+                            <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+                            <span class="parameters-shortcut-label">Déplacer la caméra</span>
+                        </div>
+                        <div class="parameters-shortcut-item">
+                            <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd>
+                            <span class="parameters-shortcut-label">Déplacer la caméra (AZERTY)</span>
+                        </div>
+                        <div class="parameters-shortcut-item">
+                            <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd>
+                            <span class="parameters-shortcut-label">Déplacer la caméra</span>
+                        </div>
+                        <div class="parameters-shortcut-item">
+                            <kbd>Molette</kbd>
+                            <span class="parameters-shortcut-label">Zoomer/Dézoomer</span>
+                        </div>
+                        <div class="parameters-shortcut-item">
+                            <kbd>Ctrl</kbd><kbd>Molette</kbd>
+                            <span class="parameters-shortcut-label">Zoomer (trackpad)</span>
+                        </div>
+                        <div class="parameters-shortcut-item">
+                            <kbd>Clic droit</kbd><kbd>Clic molette</kbd>
+                            <span class="parameters-shortcut-label">Déplacer la caméra</span>
+                        </div>
                     </div>
                 </div>
             </div>
