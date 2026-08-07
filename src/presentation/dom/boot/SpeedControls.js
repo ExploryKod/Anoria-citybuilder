@@ -22,7 +22,7 @@ export function updateSpeedDisplay(changeDirection = '') {
 export function initSpeedControls(speedDeps = {}) {
   const { getGame = () => null } = speedDeps;
 
-  fasterButton.addEventListener('click', () => {
+  fasterButton?.addEventListener('click', () => {
     let speed = parseInt(localStorage.getItem('speed'), 10) || DEFAULT_TICK_MS;
     const previousSpeed = speed;
     speed = Math.max(TICK_MS_MIN, speed - 500);
@@ -37,7 +37,7 @@ export function initSpeedControls(speedDeps = {}) {
     }
   });
 
-  slowerButton.addEventListener('click', () => {
+  slowerButton?.addEventListener('click', () => {
     let speed = parseInt(localStorage.getItem('speed'), 10) || DEFAULT_TICK_MS;
     const previousSpeed = speed;
     speed = Math.min(TICK_MS_MAX, speed + 500);

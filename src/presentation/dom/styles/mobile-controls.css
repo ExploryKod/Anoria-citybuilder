@@ -1,7 +1,7 @@
 /* Mobile Camera Controls - Only visible on mobile/tablet devices */
 .mobile-camera-controls {
     position: fixed;
-    bottom: 20px;
+    bottom: calc(var(--hud-bottom-height, 56px) + 12px + env(safe-area-inset-bottom, 0px));
     right: 20px;
     z-index: var(--z-index-toolbar);
     display: none; /* Hidden by default */
@@ -30,8 +30,8 @@
     }
     
     .mobile-camera-controls.mobile-visible {
-        bottom: 50%;
-        transform: translateY(50%);
+        bottom: calc(var(--hud-bottom-height, 56px) + 12px + env(safe-area-inset-bottom, 0px));
+        transform: none;
         display: flex;
     }
 }
@@ -154,7 +154,7 @@
 /* Adjust for smaller mobile screens */
 @media screen and (max-width: 768px) {
     .mobile-camera-controls {
-        bottom: 15px;
+        bottom: calc(var(--hud-bottom-height, 56px) + 10px + env(safe-area-inset-bottom, 0px));
         right: 15px;
         padding: 10px;
         gap: 10px;
@@ -178,7 +178,7 @@
 /* Landscape mobile adjustments */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
     .mobile-camera-controls {
-        bottom: 10px;
+        bottom: calc(var(--hud-bottom-height, 56px) + 8px + env(safe-area-inset-bottom, 0px));
         right: 10px;
         padding: 8px;
         gap: 8px;
