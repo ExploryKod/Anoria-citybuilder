@@ -27,8 +27,8 @@ export const infoPanelNoClockIcon = document.querySelector('.info-panel svg.luci
 export const delayBox = document.querySelector('.info-panel .delay-box');
 // scene.js
 export const gameWindow = document.getElementById('game-window');
-// HUD population — status strip + pop detail under .info-panel-wrapper
-const popHudRoot = '.info-panel-wrapper';
+// HUD population — left vertical rail
+const popHudRoot = '#hud-pop-rail';
 
 export const displayPop = document.querySelector(`${popHudRoot} .pop-breakdown`);
 export const displayPopTotal = document.querySelector(`${popHudRoot} .pop-total`);
@@ -44,6 +44,7 @@ export const displayPopServants = document.querySelector(
 );
 export const displayHungerPop = document.querySelector(`${popHudRoot} .display-hunger-pop`);
 export const displayUnemployedPop = document.querySelector(`${popHudRoot} .display-unemployed-pop`);
+export const displayUnemployedPct = document.querySelector(`${popHudRoot} .display-unemployed-pct`);
 export const displayWorkerLack = document.querySelector(`${popHudRoot} .display-worker-lack`);
 export const displayDelay = document.querySelector('.info-panel .display-delay');
 export const displayDelayUI = document.querySelector('.delay-ui');

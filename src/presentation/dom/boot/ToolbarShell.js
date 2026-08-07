@@ -148,6 +148,16 @@ export function initMobileToolbar() {
     });
   }
 
+  const popRailElement = document.getElementById('hud-pop-rail');
+  const popRailDragHandle = document.getElementById('hud-pop-rail-drag');
+  if (popRailElement && popRailDragHandle) {
+    dragElement(popRailElement, popRailDragHandle, {
+      handleOnly: true,
+      applyScrollBounds: false,
+      draggedClass: 'hud-pop-rail--dragged',
+    });
+  }
+
   const toolbarTabs = document.querySelectorAll('.toolbar-tab');
   const toolbarSections = document.querySelectorAll('.toolbar-section');
 
@@ -225,7 +235,7 @@ function resetFloatingPanelDragStyles(elmnt) {
   elmnt.style.right = '';
   elmnt.style.bottom = '';
   elmnt.style.transform = '';
-  elmnt.classList.remove('mobile-camera-controls--dragged', 'toolbar-is-dragged');
+  elmnt.classList.remove('mobile-camera-controls--dragged', 'toolbar-is-dragged', 'hud-pop-rail--dragged');
 }
 
 /** After drag, keep a viewport-bounded height so overflow-y scroll still works. */

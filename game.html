@@ -543,6 +543,63 @@
 
         </div>
 
+        <aside id="hud-pop-rail" class="info-panel-pop-detail hud-pop-detail hud-pop-rail" aria-label="Population">
+            <button type="button" id="hud-pop-rail-drag" class="hud-pop-rail__drag" title="Déplacer" aria-label="Déplacer le panneau population">✋</button>
+            <section class="info-box infos-pop-detail">
+                <div class="pop-detail-metric pop-detail-total" title="Population totale (active + chômeurs)">
+                    <span class="pop-detail-icon pop-detail-icon--users" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                    </span>
+                    <span class="pop-detail-value pop-total">0</span>
+                </div>
+                <div class="pop-detail-sep" role="separator" aria-hidden="true"></div>
+                <div class="pop-detail-metric pop-detail-hunger" title="Citoyens affamés">
+                    <span class="pop-detail-icon">
+                        <img src="/resources/textures/status/nofood.png" alt="" class="famished-icon">
+                    </span>
+                    <span class="pop-detail-value display-hunger-pop">0</span>
+                </div>
+                <div class="pop-detail-sep" role="separator" aria-hidden="true"></div>
+                <div class="pop-detail-active" title="Population active (citoyens actifs, élites, fonctionnaires)">
+                    <span class="pop-detail-metric pop-active-head">
+                        <span class="pop-detail-emoji pop-active-emoji" aria-hidden="true">👷</span>
+                        <span class="pop-detail-value pop-active-total">0</span>
+                    </span>
+                    <span class="pop-breakdown" aria-label="Détail population active">
+                        <span class="pop-detail-metric pop-segment pop-segment--citizen" title="Citoyens actifs (ni chômeur, ni élite, ni fonctionnaire)">
+                            <span class="pop-detail-emoji pop-segment-emoji" aria-hidden="true">🔨</span>
+                            <span class="pop-detail-value pop-segment-value">0</span>
+                        </span>
+                        <span class="pop-detail-metric pop-segment pop-segment--elite" title="Élites">
+                            <span class="pop-detail-emoji pop-segment-emoji" aria-hidden="true">👑</span>
+                            <span class="pop-detail-value pop-segment-value">0</span>
+                        </span>
+                        <span class="pop-detail-metric pop-segment pop-segment--servant" title="Fonctionnaires">
+                            <span class="pop-detail-emoji pop-segment-emoji" aria-hidden="true">🏛</span>
+                            <span class="pop-detail-value pop-segment-value">0</span>
+                        </span>
+                    </span>
+                </div>
+                <div class="pop-detail-sep" role="separator" aria-hidden="true"></div>
+                <div class="pop-detail-metric pop-detail-unemployed" title="Chômeurs (hors fonctionnaires)">
+                    <span class="pop-detail-unemployed-head">
+                        <span class="pop-detail-icon">
+                            <img src="/resources/textures/status/no-work_colored.png" alt="Chômeurs" class="unemployed-icon">
+                        </span>
+                        <span class="pop-detail-value display-unemployed-pop">0</span>
+                    </span>
+                    <span class="pop-detail-value display-unemployed-pct">0%</span>
+                </div>
+                <div class="pop-detail-sep" role="separator" aria-hidden="true"></div>
+                <div class="pop-detail-metric pop-detail-lack worker-lack-box" title="Manque global de main-d'œuvre">
+                    <span class="pop-detail-emoji pop-lack-emoji" aria-hidden="true">⚠️</span>
+                    <span class="pop-detail-value display-worker-lack">0</span>
+                </div>
+            </section>
+        </aside>
 
         <section class="info-panel-wrapper hud" aria-label="Informations de jeu">
             <div class="hud-status">
@@ -577,56 +634,6 @@
                             <div class="display-funds"></div>
                         </article>
                     </section>
-                </div>
-
-                <div class="info-panel-pop-detail hud-pop-detail hud-vitals__row hud-vitals__row--pop">
-                <section class="info-box infos-pop-detail" aria-label="Population">
-                    <div class="pop-detail-metric pop-detail-total" title="Population totale (active + chômeurs)">
-                        <span class="pop-detail-icon pop-detail-icon--users" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                            </svg>
-                        </span>
-                        <span class="pop-detail-value pop-total">0</span>
-                    </div>
-                    <div class="pop-detail-metric pop-detail-hunger" title="Citoyens affamés">
-                        <span class="pop-detail-icon">
-                            <img src="/resources/textures/status/nofood.png" alt="" class="famished-icon">
-                        </span>
-                        <span class="pop-detail-value display-hunger-pop">0</span>
-                    </div>
-                    <div class="pop-detail-active" title="Population active (citoyens actifs, élites, fonctionnaires)">
-                        <span class="pop-detail-metric pop-active-head">
-                            <span class="pop-detail-emoji pop-active-emoji" aria-hidden="true">👷</span>
-                            <span class="pop-detail-value pop-active-total">0</span>
-                        </span>
-                        <span class="pop-breakdown" aria-label="Détail population active">
-                            <span class="pop-detail-metric pop-segment pop-segment--citizen" title="Citoyens actifs (ni chômeur, ni élite, ni fonctionnaire)">
-                                <span class="pop-detail-emoji pop-segment-emoji" aria-hidden="true">🔨</span>
-                                <span class="pop-detail-value pop-segment-value">0</span>
-                            </span>
-                            <span class="pop-detail-metric pop-segment pop-segment--elite" title="Élites">
-                                <span class="pop-detail-emoji pop-segment-emoji" aria-hidden="true">👑</span>
-                                <span class="pop-detail-value pop-segment-value">0</span>
-                            </span>
-                            <span class="pop-detail-metric pop-segment pop-segment--servant" title="Fonctionnaires">
-                                <span class="pop-detail-emoji pop-segment-emoji" aria-hidden="true">🏛</span>
-                                <span class="pop-detail-value pop-segment-value">0</span>
-                            </span>
-                        </span>
-                    </div>
-                    <div class="pop-detail-metric pop-detail-unemployed" title="Chômeurs (hors fonctionnaires)">
-                        <span class="pop-detail-icon">
-                            <img src="/resources/textures/status/no-work_colored.png" alt="Chômeurs" class="unemployed-icon">
-                        </span>
-                        <span class="pop-detail-value display-unemployed-pop">0 (0%)</span>
-                    </div>
-                    <div class="pop-detail-metric pop-detail-lack worker-lack-box" title="Manque global de main-d'œuvre">
-                        <span class="pop-detail-emoji pop-lack-emoji" aria-hidden="true">⚠️</span>
-                        <span class="pop-detail-value display-worker-lack">0</span>
-                    </div>
-                </section>
                 </div>
                 </div>
             </div>
@@ -710,8 +717,8 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-snail"><path d="M2 13a6 6 0 1 0 12 0 4 4 0 1 0-8 0 2 2 0 0 0 4 0"/>
                                 <circle cx="10" cy="13" r="8"/><path d="M2 21h12c4.4 0 8-3.6 8-8V7a2 2 0 1 0-4 0v6"/><path d="M18 3 19.1 5.2"/><path d="M22 3 20.9 5.2"/></svg>
                         </button>
-                        <div class="hud-speed-display" title="Vitesse de simulation">
-                            <span class="display-speed">4000</span>
+                        <div class="hud-speed-display" title="Vitesse 5 / 9">
+                            <span class="display-speed">5</span>
                             <span class="speed-change-indicator" aria-hidden="true"></span>
                         </div>
                         <button type="button" id="faster-btn" class="hud-action-btn hud-action-btn--speed" title="Accélérer" aria-label="Accélérer la vitesse">

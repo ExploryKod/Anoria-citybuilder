@@ -17,6 +17,7 @@ import {
     displayPopServants,
     displayHungerPop,
     displayUnemployedPop,
+    displayUnemployedPct,
     displayWorkerLack,
     displayFunds,
     infoObjectOverlay,
@@ -26,6 +27,7 @@ import {
     bulldozeSelected
 } from './nodes.js';
 import { TimeManager } from '../../../shared/time/TimeManager.js';
+import { msToSpeedLevel, SPEED_LEVEL_MAX } from '../../../shared/gameplay/SimulationDefaults.js';
 
 /** @type {{ getScene?: () => { controls?: { enabled: boolean } } | null } | null} */
 let deps = null;
@@ -98,12 +100,15 @@ class GameUI {
 
     /**
      * Updates the game speed display
-     * @param {number} speed - Speed value in milliseconds
+     * @param {number} speedOrLevel - Speed level (1..N) or legacy tick interval in ms
      */
-    updateSpeedDisplay(speed) {
-        if (displaySpeed) {
-            displaySpeed.textContent = speed.toString();
-        }
+    updateSpeedDisplay(speedOrLevel) {
+        if (!displaySpeed) return;
+        const level =
+            Number.isInteger(speedOrLevel) && speedOrLevel >= 1 && speedOrLevel <= SPEED_LEVEL_MAX
+                ? speedOrLevel
+                : msToSpeedLevel(speedOrLevel);
+        displaySpeed.textContent = String(level);
     }
 
     /**
@@ -254,13 +259,18 @@ class GameUI {
      * @param {number} unemploymentPercentage - Unemployment percentage (optional)
      */
     updateUnemployedPopulation(unemployedPopulation, unemploymentPercentage = null) {
+        const count = unemployedPopulation || 0;
         if (displayUnemployedPop) {
-            if (unemploymentPercentage !== null && unemploymentPercentage !== undefined) {
-                displayUnemployedPop.textContent = `${unemployedPopulation || 0} (${unemploymentPercentage}%)`;
-            } else {
-                displayUnemployedPop.textContent = (unemployedPopulation || 0).toString();
-            }
+            displayUnemployedPop.textContent = String(count);
             displayUnemployedPop.style.color = '';
+        }
+        if (displayUnemployedPct) {
+            if (unemploymentPercentage !== null && unemploymentPercentage !== undefined) {
+                displayUnemployedPct.textContent = `${unemploymentPercentage}%`;
+                displayUnemployedPct.hidden = false;
+            } else {
+                displayUnemployedPct.hidden = true;
+            }
         }
     }
 

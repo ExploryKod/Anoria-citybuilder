@@ -55,6 +55,10 @@
     --z-index-notification: 10040; /* Highest - for notifications that must appear above everything */
     /* Reserved bottom chrome: command bar (~56px) — used by legends / mobile offsets */
     --hud-bottom-height: 56px;
+    /* Bottom-right FAB stack (perf + cookies) — above command bar on mobile */
+    --fab-stack-right: 14px;
+    --fab-stack-gap: 8px;
+    --fab-stack-perf-size: 40px;
     --hud-chip-height: 40px;
     --footer-height: var(--hud-bottom-height); /* legacy alias */
 
@@ -241,6 +245,35 @@ canvas {
     .perf-hud__fab {
         width: 36px;
         height: 36px;
+    }
+
+    :root {
+        --fab-stack-perf-size: 36px;
+    }
+}
+
+/* Bottom-right FAB stack — perf + cookie above command bar (game mobile) */
+@media (max-width: 1024px) {
+    #stats-js.perf-hud {
+        right: var(--fab-stack-right) !important;
+        bottom: calc(
+            var(--hud-bottom-height, 56px)
+            + env(safe-area-inset-bottom, 0px)
+            + var(--fab-stack-gap)
+            + var(--mobile-build-bar-offset, 0px)
+        ) !important;
+    }
+
+    #cookieConsentFab.cookie-consent-fab {
+        right: var(--fab-stack-right);
+        bottom: calc(
+            var(--hud-bottom-height, 56px)
+            + env(safe-area-inset-bottom, 0px)
+            + var(--fab-stack-gap)
+            + var(--mobile-build-bar-offset, 0px)
+            + var(--fab-stack-perf-size)
+            + var(--fab-stack-gap)
+        );
     }
 }
 
