@@ -4,6 +4,34 @@ export const MONTHS_PER_SEASON = 3;
 /** @readonly */
 export const SEASONS = Object.freeze(['Printemps', 'Été', 'Automne', 'Hiver']);
 
+/** Emoji affiché dans le HUD pour chaque saison */
+export const SEASON_EMOJI = Object.freeze({
+  Printemps: '🌸',
+  Été: '☀️',
+  Automne: '🍂',
+  Hiver: '❄️',
+});
+
+/** Clé CSS stable pour chaque saison (ordre = SEASONS) */
+export const SEASON_KEYS = Object.freeze(['printemps', 'ete', 'automne', 'hiver']);
+
+/**
+ * @param {string} [season]
+ * @returns {{ season: string, seasonKey: string, emoji: string, title: string, ariaLabel: string }}
+ */
+export function getSeasonDisplay(season) {
+  const index = SEASONS.indexOf(season);
+  const safeIndex = index >= 0 ? index : 0;
+  const label = SEASONS[safeIndex];
+  return {
+    season: label,
+    seasonKey: SEASON_KEYS[safeIndex],
+    emoji: SEASON_EMOJI[label] ?? '🌸',
+    title: label,
+    ariaLabel: `Saison : ${label}`,
+  };
+}
+
 /** @readonly */
 export const MONTHS = Object.freeze([
   'Janvier',
@@ -107,7 +135,7 @@ export function formatTime(days, daysPerMonth) {
     ? `${timeInfo.dayInMonth} ${timeInfo.month}`
     : `${timeInfo.month}`;
 
-  return `${dateLabel} | ${timeInfo.season} | ${yearDisplay}`;
+  return `${dateLabel} | ${yearDisplay}`;
 }
 
 /** @param {number} days @param {number} daysPerMonth */

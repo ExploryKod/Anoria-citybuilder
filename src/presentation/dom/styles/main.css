@@ -53,7 +53,20 @@
     --z-index-info-panel: 10020;
     --z-index-modal: 10030; /* Maximum z-index for modals */
     --z-index-notification: 10040; /* Highest - for notifications that must appear above everything */
-    --footer-height: 40px;
+    /* Reserved bottom chrome: command bar (~56px) — used by legends / mobile offsets */
+    --hud-bottom-height: 56px;
+    /* Bottom-right FAB stack (perf + cookies) — above command bar on mobile */
+    --fab-stack-right: 14px;
+    --fab-stack-gap: 8px;
+    --fab-stack-perf-size: 40px;
+    --hud-chip-height: 40px;
+    --footer-height: var(--hud-bottom-height); /* legacy alias */
+
+    /* Left toolbar rail — keep in sync with .game-window .toolbar width */
+    --toolbar-padding: 14px;
+    --toolbar-width: 110px;
+    --toolbar-width-max: 140px;
+    --hud-gutter: 12px; /* gap between toolbar and HUD */
 
     /* Border radius */
     --border-radius: 15px;
@@ -142,11 +155,76 @@ canvas {
     z-index: var(--z-index-canvas);
 }
 
-/* Perf HUD : annule le canvas 100vw/100vh (tailles posées en inline !important) */
-#stats-js {
+/* Perf HUD — collapsible panel + discrete FAB */
+#stats-js.perf-hud {
     width: auto !important;
     height: auto !important;
     pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0;
+}
+
+.perf-hud__panel {
+    position: relative;
+    opacity: 0.95;
+}
+
+.perf-hud__panel[hidden] {
+    display: none !important;
+}
+
+.perf-hud__collapse {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    z-index: 2;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 50%;
+    background: rgba(29, 34, 40, 0.85);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.perf-hud__collapse:hover {
+    transform: scale(1.08);
+    background: rgba(29, 34, 40, 1);
+}
+
+.perf-hud__fab {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 2px solid rgba(29, 34, 40, 0.12);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--primary, #1d2228);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease;
+}
+
+.perf-hud__fab:hover {
+    transform: scale(1.06);
+}
+
+.perf-hud__fab:focus-visible {
+    outline: 2px solid var(--cta, #fb8122);
+    outline-offset: 2px;
+}
+
+.perf-hud__fab[hidden] {
+    display: none !important;
 }
 
 #stats-js canvas.perf-hud-canvas {
@@ -156,13 +234,51 @@ canvas {
     position: static !important;
     top: auto !important;
     left: auto !important;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+@media (max-width: 600px) {
+    .perf-hud__fab {
+        width: 36px;
+        height: 36px;
+    }
+
+    :root {
+        --fab-stack-perf-size: 36px;
+    }
+}
+
+/* Bottom-right FAB stack — perf + cookie above command bar (game mobile) */
+@media (max-width: 1024px) {
+    #stats-js.perf-hud {
+        right: var(--fab-stack-right) !important;
+        bottom: calc(
+            var(--hud-bottom-height, 56px)
+            + env(safe-area-inset-bottom, 0px)
+            + var(--fab-stack-gap)
+            + var(--mobile-build-bar-offset, 0px)
+        ) !important;
+    }
+
+    #cookieConsentFab.cookie-consent-fab {
+        right: var(--fab-stack-right);
+        bottom: calc(
+            var(--hud-bottom-height, 56px)
+            + env(safe-area-inset-bottom, 0px)
+            + var(--fab-stack-gap)
+            + var(--mobile-build-bar-offset, 0px)
+            + var(--fab-stack-perf-size)
+            + var(--fab-stack-gap)
+        );
+    }
 }
 
 /* Ajuster le canvas pour mobile paysage */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
     canvas {
-        height: 100vh;
-        top: 80px;
+        height: 100vh !important;
+        top: 0;
     }
 }
 
@@ -171,15 +287,10 @@ canvas.pointer-events-disabled {
     pointer-events: none;
 }
 
-/* Désactiver les événements du canvas en mode mobile paysage pour éviter les conflits avec le carousel */
+/* Canvas stays interactive in landscape (docked toolbar on the left) */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
     canvas {
-        pointer-events: none; /* Désactiver les clics sur le canvas */
-    }
-    
-    /* Réactiver les événements seulement sur la zone du canvas visible */
-    canvas.canvas-interactive {
-        pointer-events: auto;
+        pointer-events: auto !important;
     }
 }
 
@@ -209,12 +320,16 @@ canvas.pointer-events-disabled {
     scrollbar-color: var(--cta) #fafafa;
 
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     position: absolute;
     top: 0;
     left: 0;
     bottom: 0;
+    width: min(var(--toolbar-width), var(--toolbar-width-max));
+    box-sizing: border-box;
     background-color: var(--toolbar-bg-color);
-    padding: 10px;
+    padding: var(--toolbar-padding);
     padding-top: 60px; /* Space for drag handle */
     display: flex;
     flex-direction: column;
@@ -223,7 +338,7 @@ canvas.pointer-events-disabled {
     gap: 20px;
 }
 
-/* Game controls (pause/reset) are now in info-box-stats with lightgreen background */
+/* Game HUD controls live in hud.css (.hud-actions) */
 
 /* Toolbar sections */
 .toolbar-section {
@@ -253,13 +368,70 @@ canvas.pointer-events-disabled {
 .toolbar-toggle-btn.active {
     background: var(--cta);
     color: #fff;
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
 }
 
 
 
+/* Mobile landscape — primary play mode: docked left toolbar, interactive canvas */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
-    .game-window .toolbar {
+    canvas {
+        height: 100vh !important;
+        top: 0;
+        pointer-events: auto !important;
+    }
+
+    .game-window .toolbar.toolbar-landscape-docked {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        transform: none;
+        width: min(var(--toolbar-width), var(--toolbar-width-max));
+        max-width: var(--toolbar-width-max);
+        max-height: none;
+        height: auto;
+        padding: var(--toolbar-padding);
+        padding-top: 48px;
+        border-radius: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        display: flex !important;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 12px;
+        z-index: var(--z-index-toolbar);
+    }
+
+    .game-window .toolbar.toolbar-landscape-docked.mobile-hidden {
+        display: flex !important;
+    }
+
+    .game-window .toolbar.toolbar-landscape-docked .toolbar-section.active {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+    }
+
+    .game-window .toolbar.toolbar-landscape-docked .toolbar-tabs-container {
+        width: 100%;
+    }
+
+    .game-window .toolbar.toolbar-landscape-docked {
+        cursor: default;
+    }
+
+    .game-window .toolbar.toolbar-is-dragged {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Portrait / overlay toolbar — toggle to show (unchanged) */
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    .game-window .toolbar:not(.toolbar-landscape-docked) {
         position: fixed;
         top: 70px;
         left: 50%;
@@ -270,17 +442,16 @@ canvas.pointer-events-disabled {
         height: auto;
         padding: 16px;
         border-radius: var(--border-radius);
-        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.35);
         overflow-y: auto;
         background-color: var(--toolbar-bg-color);
         z-index: var(--z-index-toolbar);
     }
 
-    .game-window .toolbar.mobile-hidden {
+    .game-window .toolbar:not(.toolbar-landscape-docked).mobile-hidden {
         display: none !important;
     }
 
-    .game-window .toolbar.mobile-visible {
+    .game-window .toolbar:not(.toolbar-landscape-docked).mobile-visible {
         display: flex !important;
         flex-direction: row;
         flex-wrap: wrap;
@@ -341,7 +512,7 @@ canvas.pointer-events-disabled {
     pointer-events: auto;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1024px) and (orientation: portrait) {
     .game-window .toolbar {
         position: fixed;
         top: 70px;
@@ -351,7 +522,6 @@ canvas.pointer-events-disabled {
         width: calc(100% - 24px);
         padding: 16px;
         border-radius: var(--border-radius);
-        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.35);
         overflow-y: auto;
         background-color: var(--toolbar-bg-color);
         z-index: var(--z-index-toolbar);
@@ -549,12 +719,8 @@ canvas.pointer-events-disabled {
     background-color: var(--toolbar-btn-color) !important;
 }
 
-#faster-btn:active {
-    background:  var(--lightgreen);
-}
-
-#slower-btn:active {
-    background:  var(--lightgreen);
+.hud-action-btn--speed:active {
+    background: var(--lightgreen);
 }
 
 /* Panel layout to select object as house etc.. */
@@ -896,13 +1062,11 @@ canvas.pointer-events-disabled {
   align-items: center;
   justify-content: center;
   color: #666;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .legend-toggle-btn:hover {
   background: rgba(255, 255, 255, 1);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   color: #333;
 }
 
@@ -913,7 +1077,6 @@ canvas.pointer-events-disabled {
   margin-left: 8px;
   background: #2d2d2d;
   border-radius: var(--border-radius-small);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   min-width: 240px;
   overflow: hidden;
   opacity: 0;
@@ -1071,322 +1234,7 @@ canvas.pointer-events-disabled {
   pointer-events: none;
 }
 
-/* INFO PANEL */
-
-.info-panel-wrapper {
-    z-index: 998;
-    position: absolute;
-    top: 0;
-    left: auto;
-    right: 0;
-    background-color: transparent;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    border-radius: 0 0 0 10px;
-}
-
-/* Barre de progrés au dessus des informations */
-.delay-ui-wrapper {
-    padding: 2px 40px;
-    height: var(--progress-bar-h);
-    background-color: transparent;
-    width: auto;
-    display: flex;
-}
-
-.delay-ui {
-    flex-grow: 0;
-    color: var(--lightgreen);
-    background: var(--lightgreen);
-    height: 100%;
-    width: auto;
-    transition: all 0.5s ease-in;
-    border-radius: var(--border-radius-small);
-}
-
-
-/* Information panel : layout des cards information */
-.info-panel {
-    margin: 0;
-    padding: 5px calc(var(--progress-bar-h) + 4px) 20px;
-    height: auto;
-    width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    align-items: center;
-    column-gap: 20px;
-    row-gap: 10px;
-}
-
-
-.info-box-stats, .info-box-global-numbers {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-
-
-.info-panel > .info-box, .info-box-stats > .info-box, .info-box-global-numbers > .info-box {
-    height: 40px;
-    border-radius: var(--border-radius-small);
-    padding: 10px;
-    background-color: var(--cta);
-    border-right: 1px solid var(--primary);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease-in-out;
-
-    svg {
-     height: 16px;
-     width: 16px;
-    }
-
-    svg.lucide-alarm-clock-off {
-        display: none;
-    }
-
-    > article {
-        display: flex;
-        column-gap: 5px;
-    }
-}
-
-/* Game control buttons keep lightgreen color */
-.info-box-stats > .info-box.game-control-box {
-    background-color: #009999;
-}
-
-.info-box-stats > .info-box.game-control-box:hover {
-    opacity: 0.8;
-}
-
-.info-box-stats > .info-box.game-control-box:active,
-.info-box-stats > .info-box.game-control-box:focus {
-    box-shadow: 0 0 10px #000235;
-    outline: none;
-}
-
-.info-box-stats > .info-box.game-control-box.active {
-    background-color: var(--cta);
-}
-
-.info-panel .info-box-global-numbers > .info-box.infos-pop {
-    background-color: #fff !important;
-    min-width: auto;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 5px;
-}
-
-/* Population totale seule (barre principale) */
-.info-panel .pop-box--total-only {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 6px;
-    border: 2px solid var(--primary);
-    border-radius: var(--border-radius-small);
-    padding: 4px 10px;
-    white-space: nowrap;
-}
-
-.info-panel .pop-box--total-only .pop-total {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--primary);
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-}
-
-/* Barre de détail population (sous la barre principale) */
-.info-panel-pop-detail {
-    display: flex;
-    justify-content: flex-end;
-    padding: 0 calc(var(--progress-bar-h) + 4px) 8px;
-    width: 100%;
-}
-
-.info-panel-pop-detail .infos-pop-detail {
-    display: flex;
-    align-items: center;
-    gap: 28px;
-    min-height: 34px;
-    padding: 6px 14px;
-    background-color: #fff !important;
-    border: none;
-    border-radius: var(--border-radius-small);
-    flex-wrap: nowrap;
-    box-shadow: 0 1px 3px rgba(29, 34, 40, 0.08);
-    cursor: default;
-    height: auto;
-}
-
-/* Métrique unifiée : icône/emoji + chiffre sur une même ligne */
-.info-panel-pop-detail .pop-detail-metric {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    flex-shrink: 0;
-    height: 20px;
-    line-height: 20px;
-}
-
-.info-panel-pop-detail .pop-detail-emoji,
-.info-panel-pop-detail .pop-detail-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-    line-height: 1;
-}
-
-.info-panel-pop-detail .pop-detail-emoji {
-    font-size: 16px;
-    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
-}
-
-.info-panel-pop-detail .pop-detail-icon .unemployed-icon {
-    width: 18px;
-    height: 18px;
-    object-fit: contain;
-    display: block;
-}
-
-.info-panel-pop-detail .pop-detail-value {
-    font-size: 14px;
-    font-weight: 700;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-    color: var(--primary);
-}
-
-.info-panel-pop-detail .pop-detail-active {
-    display: flex;
-    align-items: center;
-    gap: 28px;
-    flex-wrap: nowrap;
-    flex-shrink: 0;
-}
-
-.info-panel-pop-detail .pop-breakdown {
-    display: inline-flex;
-    align-items: center;
-    gap: 20px;
-    flex-wrap: nowrap;
-}
-
-.info-panel-pop-detail .display-unemployed-pop {
-    color: var(--primary);
-    white-space: nowrap;
-}
-
-.info-panel-pop-detail .display-worker-lack {
-    color: #cc0000;
-}
-
-/* Unemployed icon styling (barre principale famished / legacy) */
-.info-panel .pop-icon .unemployed-icon {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    display: block;
-}
-
-/* Famished icon styling */
-.info-panel .pop-icon .famished-icon {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    display: block;
-}
-
-.display-hunger-pop {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-
-
-.info-panel > .info-box.infos-time {
-   min-width: 500px;
-   justify-content: center;
-   gap: 20px;
-
-   svg.lucide-rabbit {
-    height: 20px;
-    width: 20px;
-   }
-}
-
-.info-panel > .info-box.infos-budget {
-    min-width: 150px;
-}
-
-.info-panel > .info-box.infos-pop {
-    min-width: 150px;
-}
-
-.info-panel p {
-    color: white;
-    font-size: 16px;
-    font-weight: 700;
-}
-
-/* Speed change indicator badge */
-.speed-box {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.speed-change-indicator {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background-color: white;
-    color: var(--cta);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: bold;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease-in-out;
-    z-index: 100;
-}
-
-.speed-change-indicator.active {
-    opacity: 1;
-    visibility: visible;
-    animation: popOut 0.3s ease-out;
-}
-
-@keyframes popOut {
-    0% {
-        transform: scale(0);
-        opacity: 0;
-    }
-    50% {
-        transform: scale(1.2);
-    }
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
+/* INFO PANEL styles moved to hud.css */
 
 @keyframes glowing {
     0% {
@@ -2417,61 +2265,6 @@ footer .footer-links a:hover {
         width: 100%;
         border-radius: 0;
     }
-    /* ================================ INFO PANEL (PORTRAIT) ================================ */
-    
-    .info-panel {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        grid-template-rows: auto;
-        gap: 10px;
-    }
-
-    .info-panel .info-box-stats {
-        grid-column: 2;
-        grid-row: 2;
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        grid-template-rows: repeat(2, 1fr);
-        gap: 5px;
-    }
-
-    .info-box-stats > .info-box:nth-child(odd) {
-        grid-column: auto;
-        grid-row: 1;
-    }
-
-    .info-box-stats > .info-box:nth-child(even) {
-        grid-column: auto;
-        grid-row: 2;
-    }
-
-    .info-panel-wrapper .info-panel .info-box.infos-time {
-        display: flex;
-        flex-direction: column;
-        min-width: 90vw;
-        justify-content: space-between;
-        gap: 10px;
-        grid-column: 1 / span 2;
-        grid-row: 1;
-        min-height: 70px;
-    }
-
-    .info-panel-wrapper .info-box-global-numbers {
-        grid-column: 1;
-        grid-row: 2;
-        flex-direction: column;
-        align-items: start;
-        justify-content: center;
-        gap: 10px;
-    }
-
-    .info-panel-wrapper .info-panel .info-box.infos-budget {
-        min-width: 100px;
-    }
-    
-    .info-panel-wrapper .info-panel .info-box.infos-pop {
-        min-width: 100px;
-    }
 
 }
 
@@ -2527,133 +2320,7 @@ footer .footer-links a:hover {
         height: 40px;
     }
 
-    /* Ajuster le panel d'informations pour être en haut en pleine largeur */
-    .info-panel-wrapper {
-        top: 0;
-        left: 0;
-        right: 0;
-        background-color: transparent;
-        padding: 0 10px;
-        max-width: 600px;
-        width: 100%;
-        border-radius: 0;
-        height: auto;
-        min-height: 65px;
-    }
-
-    .delay-ui-wrapper {
-        padding: 1px 20px;
-        height: 15px;
-    }
-
-    .info-panel {
-        flex-direction: column;
-        gap: 8px;
-        padding: 5px;
-        justify-content: flex-start;
-        flex-wrap: wrap;
-        height: auto;
-        min-height: 50px;
-        align-items: flex-start;
-    }
-
-    .info-panel > .info-box {
-        padding: 5px;
-        font-size: 10px;
-        flex: 0 0 auto;
-        text-align: center;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 6px;
-        min-width: auto;
-        height: auto;
-    }
-
-    /* Boutons carrés pour les éléments interactifs uniquement */
-    .info-panel > .info-box.realtime-budget-box,
-    .info-panel > .info-box.administrator-box,
-    .info-panel > .info-box.city-map-box,
-    .info-panel > .info-box.game-control-box {
-        width: 40px;
-        height: 40px;
-    }
-
-
-    .info-panel-wrapper .info-box-global-numbers {
-        flex-direction: row;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 5px;
-    }
-
-    /* Éléments informatifs s'adaptent au contenu */
-    .info-panel > .info-box:not(.realtime-budget-box):not(.compte-de-resultat-box):not(.journal-box):not(.city-map-box):not(.game-control-box) {
-        width: auto;
-        height: auto;
-        min-width: fit-content;
-        padding: 8px 12px;
-    }
-
-    /* Centrer verticalement les éléments avec des chiffres */
-    .info-panel .clock-box,
-    .info-panel .speed-box,
-    .info-panel .pop-box,
-    .info-panel .budget-box {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 5px;
-    }
-
-    /* Centrer les éléments de texte dans les articles */
-    .info-panel .clock-box > div,
-    .info-panel .speed-box > div,
-    .info-panel .pop-box > div,
-    .info-panel .budget-box > div {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* Centrer spécifiquement les éléments de données */
-    .info-panel .display-time,
-    .info-panel .display-speed,
-    .info-panel .pop-box--total-only,
-    .info-panel-pop-detail .pop-detail-metric,
-    .info-panel-pop-detail .pop-detail-active,
-    .info-panel-pop-detail .pop-breakdown,
-    .info-panel .display-hunger-pop,
-    .info-panel .display-funds {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        line-height: 1;
-    }
-
-    .info-panel .budget-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
-    }
-
-    .info-panel p {
-        font-size: 12px;
-        margin: 0;
-    }
-
-    /* Taille de police spécifique pour les éléments informatifs */
-    .info-panel > .info-box:not(.realtime-budget-box):not(.administrator-box):not(.city-map-box):not(.game-control-box) p {
-        font-size: 14px;
-        font-weight: 700;
-    }
-
-    .info-panel svg {
-        height: 20px;
-        width: 20px;
-    }
+    /* HUD layout overrides live in hud.css */
 
     /* Ajuster les modales pour mobile */
     .bilan-panel,

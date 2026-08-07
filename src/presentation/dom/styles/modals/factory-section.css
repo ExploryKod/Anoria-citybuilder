@@ -6,8 +6,6 @@
     background: white;
     border-radius: 8px;
     padding: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    border-left: 4px solid #28a745;
     margin-bottom: 20px;
 }
 
@@ -118,8 +116,6 @@
     background: white;
     border-radius: 8px;
     padding: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    border-left: 4px solid #007bff;
     --factory-dest-label-width: 240px;
     --factory-dest-input-width: 52px;
     --factory-dest-save-width: 40px;

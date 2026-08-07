@@ -2,23 +2,18 @@
  * Building info overlay layout — modal frame (index.html), tabs, open/close.
  */
 
-export const BUILDING_INFO_TABS = Object.freeze({
-  foyer: 'foyer',
-  diet: 'diet',
-  services: 'services',
-  neighbors: 'neighbors',
-  messages: 'messages',
-});
+import {
+  BUILDING_INFO_TAB_IDS,
+  BUILDING_INFO_TAB_ORDER,
+  resolveBuildingInfoTabLabel,
+} from '../buildingInfoTabCatalog.js';
 
-const TAB_LABELS = Object.freeze({
-  foyer: '🏠 Foyer',
-  diet: '🍽️ Régime',
-  services: '🔧 Services',
-  neighbors: '🏘️ Voisins',
-  messages: '💬 Messages',
-});
+/** @deprecated Prefer BUILDING_INFO_TAB_IDS — kept for existing imports */
+export const BUILDING_INFO_TABS = BUILDING_INFO_TAB_IDS;
 
 let tabsInitialized = false;
+/** @type {ReadonlyArray<string>} */
+let visibleTabIds = [...BUILDING_INFO_TAB_ORDER];
 
 function getOverlay() {
   return document.querySelector('.info-building-overlay');
@@ -32,7 +27,7 @@ export function getBuildingInfoTabPanel(tabId) {
 /** Active tab panel (foyer by default). */
 export function getBuildingInfoBody() {
   return (
-    getBuildingInfoTabPanel(BUILDING_INFO_TABS.foyer)
+    getBuildingInfoTabPanel(BUILDING_INFO_TAB_IDS.foyer)
     ?? document.querySelector('.info-building__body')
   );
 }
@@ -77,23 +72,70 @@ export function activateBuildingInfoTab(tabId) {
   const overlay = getOverlay();
   if (!overlay) return;
 
-  for (const id of Object.values(BUILDING_INFO_TABS)) {
+  const targetId = visibleTabIds.includes(tabId) ? tabId : visibleTabIds[0];
+  if (!targetId) return;
+
+  for (const id of BUILDING_INFO_TAB_ORDER) {
     const tab = overlay.querySelector(`[role="tab"][data-tab="${id}"]`);
     const panel = getBuildingInfoTabPanel(id);
-    const isActive = id === tabId;
+    const isVisible = visibleTabIds.includes(id);
+    const isActive = id === targetId;
     if (tab) {
+      tab.hidden = !isVisible;
       tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
       tab.tabIndex = isActive ? 0 : -1;
     }
     if (panel) {
       panel.classList.toggle('is-active', isActive);
       panel.hidden = !isActive;
+      if (!isVisible) {
+        panel.hidden = true;
+        panel.classList.remove('is-active');
+      }
     }
   }
 }
 
+/**
+ * Show only the tabs declared by the current building group.
+ *
+ * @param {ReadonlyArray<{ id: string, label?: string }>} tabSpecs
+ */
+export function syncBuildingInfoTabs(tabSpecs) {
+  ensureBuildingInfoTabs();
+  const overlay = getOverlay();
+  if (!overlay) return;
+
+  const specs = Array.isArray(tabSpecs) ? tabSpecs : [];
+  visibleTabIds = specs
+    .map((spec) => spec?.id)
+    .filter((id) => BUILDING_INFO_TAB_ORDER.includes(id));
+
+  if (visibleTabIds.length === 0) {
+    visibleTabIds = [BUILDING_INFO_TAB_IDS.foyer];
+  }
+
+  const labelById = new Map(
+    specs
+      .filter((spec) => spec?.id)
+      .map((spec) => [spec.id, resolveBuildingInfoTabLabel(spec.id, spec.label)])
+  );
+
+  for (const id of BUILDING_INFO_TAB_ORDER) {
+    const tab = overlay.querySelector(`[role="tab"][data-tab="${id}"]`);
+    if (!tab) continue;
+    const isVisible = visibleTabIds.includes(id);
+    tab.hidden = !isVisible;
+    if (isVisible) {
+      tab.textContent = labelById.get(id) ?? resolveBuildingInfoTabLabel(id);
+    }
+  }
+
+  activateBuildingInfoTab(visibleTabIds[0]);
+}
+
 function handleTabKeydown(event) {
-  const tabs = [...document.querySelectorAll('.info-building__tabs [role="tab"]')];
+  const tabs = [...document.querySelectorAll('.info-building__tabs [role="tab"]:not([hidden])')];
   const currentIndex = tabs.findIndex((t) => t.getAttribute('aria-selected') === 'true');
   if (currentIndex < 0) return;
 
@@ -132,9 +174,9 @@ export function resetBuildingInfoLayout() {
   setBuildingInfoMeta('');
   setBuildingInfoGroupAccent(null);
   applyInfoPanelLayoutOptions({ layout: 'centered', hubOverlayMode: null });
-  activateBuildingInfoTab(BUILDING_INFO_TABS.foyer);
+  syncBuildingInfoTabs([{ id: BUILDING_INFO_TAB_IDS.foyer }]);
 
-  for (const id of Object.values(BUILDING_INFO_TABS)) {
+  for (const id of BUILDING_INFO_TAB_ORDER) {
     const panel = getBuildingInfoTabPanel(id);
     if (panel) panel.innerHTML = '';
   }
@@ -387,13 +429,6 @@ export function renderMessagesTab(container) {
       <ul class="building-info-messages-list" aria-label="Messages du bâtiment"></ul>
     </div>
   `;
-}
-
-export function setFoyerTabLabel(isHouse) {
-  const tab = document.querySelector('.info-building__tabs [data-tab="foyer"]');
-  if (tab) {
-    tab.textContent = isHouse ? '🏠 Foyer' : '🏠 Bâtiment';
-  }
 }
 
 export function setBuildingInfoAriaHidden(hidden) {

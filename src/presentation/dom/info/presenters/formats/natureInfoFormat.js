@@ -14,7 +14,7 @@ export function formatNatureLayoutHeader(vm) {
 }
 
 export function formatNatureLayoutOptions() {
-  return { layout: 'centered', foyerTabLabel: 'building', hubOverlayMode: null };
+  return { layout: 'centered', hubOverlayMode: null };
 }
 
 /**

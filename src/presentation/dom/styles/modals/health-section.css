@@ -4,7 +4,6 @@
     background: #fafafa;
     border-radius: var(--border-radius-small);
     padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     text-align: left;
 }
 
@@ -13,8 +12,6 @@
     align-items: center;
     gap: 12px;
     margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid var(--cta);
 }
 
 .health-header-icon {
@@ -48,7 +45,6 @@
     background: white;
     border-radius: var(--border-radius-small);
     padding: 18px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .health-section-title {
@@ -57,8 +53,6 @@
     color: var(--primary);
     margin-bottom: 15px;
     text-align: left;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .health-items {
@@ -75,7 +69,6 @@
     padding: 10px;
     background: #f9f9f9;
     border-radius: var(--border-radius-small);
-    border-left: 4px solid transparent;
 }
 
 .health-item-label {
@@ -119,15 +112,15 @@
 }
 
 .health-item.low-risk {
-    border-left-color: var(--success);
+    background: rgba(40, 167, 69, 0.06);
 }
 
 .health-item.medium-risk {
-    border-left-color: var(--warning);
+    background: rgba(255, 193, 7, 0.08);
 }
 
 .health-item.high-risk {
-    border-left-color: var(--danger);
+    background: rgba(156, 41, 57, 0.06);
 }
 
 .health-coverage-bar {

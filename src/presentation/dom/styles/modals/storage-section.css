@@ -4,7 +4,6 @@
     background: #fafafa;
     border-radius: var(--border-radius-small);
     padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     text-align: left;
 }
 
@@ -13,8 +12,6 @@
     align-items: center;
     gap: 12px;
     margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid var(--cta);
 }
 
 .storage-header-icon {
@@ -48,14 +45,11 @@
     background: white;
     border-radius: var(--border-radius-small);
     padding: 20px;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease;
 }
 
 .storage-windmill-card:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-color: var(--cta);
+    background: rgba(251, 129, 34, 0.04);
 }
 
 .storage-windmill-header {
@@ -63,8 +57,6 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .storage-windmill-id {

@@ -6,9 +6,10 @@
   position: absolute;
   top: auto;
   /* Account for PWA safe area on mobile devices (Samsung, iPhone, etc.) */
-  bottom: calc(var(--footer-height) + 10px + env(safe-area-inset-bottom, 0px));
-  left: 50%; /* Center horizontally - same as footer */
-  transform: translateX(-50%); /* Center the container - same as footer */
+  bottom: calc(var(--hud-bottom-height, var(--footer-height)) + 10px + env(safe-area-inset-bottom, 0px));
+  /* Keep mobile shortcuts above the bottom command bar */
+  left: 50%; /* Center horizontally */
+  transform: translateX(-50%); /* Center the container */
   display: flex;
   flex-direction: row; /* Horizontal layout */
   gap: 8px;
@@ -21,8 +22,19 @@
   box-sizing: border-box;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 1025px) {
   .legend-btns-container--mobile {
+    display: none !important;
+  }
+}
+
+/* Landscape mobile: camera toggle only (toolbar is docked on the left) */
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+  .legend-btns-container--mobile {
+    display: flex !important;
+  }
+
+  .toolbar-mobile-toggle-btn {
     display: none !important;
   }
 }
@@ -90,8 +102,7 @@
   align-items: center;
   justify-content: flex-start;
   column-gap: 8px;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
   flex: 1 1 0; /* Equal flex distribution, allow shrinking */
   min-width: 0; /* Allow flex items to shrink below content size */
   max-width: 145px; /* Max width per button: (600px - 20px padding - 24px gaps) / 4 ≈ 145px */
@@ -107,7 +118,6 @@
   background: var(--lightgreen);
   border-color: var(--lightgreen);
   color: #fff;  
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
    
   svg {
     stroke: #fff;
@@ -119,7 +129,6 @@
 .command-toggle-btn:hover,
 .toolbar-toggle-btn:hover,
 .parameters-toggle-btn:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   color: #333;
 }
 
@@ -175,7 +184,6 @@
   margin-bottom: 8px;
   background: #2d2d2d;
   border-radius: var(--border-radius-small);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   min-width: 240px;
   overflow: hidden;
   opacity: 0;
@@ -292,7 +300,6 @@
   margin-bottom: 8px;
   background: #2d2d2d;
   border-radius: var(--border-radius-small);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   min-width: 340px;
   overflow: hidden;
   opacity: 0;
@@ -348,7 +355,6 @@
   font-family: 'Courier New', monospace;
   font-size: 0.85rem;
   font-weight: 700;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   min-width: 28px;
   text-align: center;
   display: inline-block;
@@ -378,7 +384,6 @@
   margin-bottom: 8px;
   background: #2d2d2d;
   border-radius: var(--border-radius-small);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   min-width: 240px;
   overflow: hidden;
   opacity: 0;

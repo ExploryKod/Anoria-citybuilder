@@ -1,12 +1,13 @@
 // game.js
 export const displayTime = document.querySelector('.info-panel .display-time');
-export const displaySpeed = document.querySelector('.info-panel .display-speed');
+export const displaySeason = document.querySelector('.info-panel .hud-season');
+export const displaySpeed = document.querySelector('.hud-actions .display-speed');
 
 // Initialiser l'affichage du temps avec "Chargement..." si l'élément existe
 if (displayTime) {
     displayTime.textContent = 'Chargement...';
 }
-export const speedChangeIndicator = document.querySelector('.speed-change-indicator');
+export const speedChangeIndicator = document.querySelector('.hud-actions .speed-change-indicator');
 export const overOverlay = document.querySelector('#over-overlay');
 export const overOverlayMessage = document.querySelector('#over-overlay .over-overlay__text');
 export const infoObjectOverlay = document.querySelector('.info-building-overlay');
@@ -27,11 +28,11 @@ export const infoPanelNoClockIcon = document.querySelector('.info-panel svg.luci
 export const delayBox = document.querySelector('.info-panel .delay-box');
 // scene.js
 export const gameWindow = document.getElementById('game-window');
-// HUD population — barre principale + barre détail (sibling sous .info-panel-wrapper)
-const popHudRoot = '.info-panel-wrapper';
+// HUD population — left vertical rail
+const popHudRoot = '#hud-pop-rail';
 
 export const displayPop = document.querySelector(`${popHudRoot} .pop-breakdown`);
-export const displayPopTotal = document.querySelector(`${popHudRoot} .pop-box--total-only .pop-total`);
+export const displayPopTotal = document.querySelector(`${popHudRoot} .pop-total`);
 export const displayPopActiveTotal = document.querySelector(`${popHudRoot} .pop-active-total`);
 export const displayPopCitizens = document.querySelector(
     `${popHudRoot} .pop-segment--citizen .pop-segment-value`
@@ -42,8 +43,9 @@ export const displayPopElites = document.querySelector(
 export const displayPopServants = document.querySelector(
     `${popHudRoot} .pop-segment--servant .pop-segment-value`
 );
-export const displayHungerPop = document.querySelector('.info-panel .display-hunger-pop');
+export const displayHungerPop = document.querySelector(`${popHudRoot} .display-hunger-pop`);
 export const displayUnemployedPop = document.querySelector(`${popHudRoot} .display-unemployed-pop`);
+export const displayUnemployedPct = document.querySelector(`${popHudRoot} .display-unemployed-pct`);
 export const displayWorkerLack = document.querySelector(`${popHudRoot} .display-worker-lack`);
 export const displayDelay = document.querySelector('.info-panel .display-delay');
 export const displayDelayUI = document.querySelector('.delay-ui');
