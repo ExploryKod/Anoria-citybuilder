@@ -1,0 +1,590 @@
+/**
+ * Game HUD — status (top-right), pop detail (secondary), actions dock (bottom-right).
+ * Role-split layout; keeps legacy class names used by nodes.js.
+ */
+
+/* -------------------------------------------------------------------------
+   Shell
+   ------------------------------------------------------------------------- */
+
+.info-panel-wrapper.hud {
+  z-index: var(--z-index-info-panel, 10020);
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: auto;
+  bottom: auto;
+  width: auto;
+  max-width: min(100%, 920px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 4px 10px 0;
+  pointer-events: none;
+  background: transparent;
+  border-radius: 0;
+}
+
+.info-panel-wrapper.hud > * {
+  pointer-events: auto;
+}
+
+/* -------------------------------------------------------------------------
+   Status strip (date / speed / pop / funds)
+   ------------------------------------------------------------------------- */
+
+.hud-status {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: max-content;
+  max-width: 100%;
+}
+
+.delay-ui-wrapper {
+  padding: 2px 8px;
+  height: var(--progress-bar-h);
+  background: transparent;
+  width: 100%;
+  display: flex;
+}
+
+.delay-ui {
+  flex-grow: 0;
+  color: var(--lightgreen);
+  background: var(--lightgreen);
+  height: 100%;
+  width: auto;
+  min-width: 0;
+  transition: all 0.5s ease-in;
+  border-radius: var(--border-radius-small);
+}
+
+.info-panel {
+  margin: 0;
+  padding: 4px 0 0;
+  height: auto;
+  width: 100%;
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-box-global-numbers {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.info-panel > .info-box,
+.info-box-global-numbers > .info-box {
+  height: 40px;
+  border-radius: var(--border-radius-small);
+  padding: 8px 12px;
+  background-color: var(--cta);
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+  flex-shrink: 0;
+}
+
+.info-panel > .info-box svg,
+.info-box-global-numbers > .info-box svg {
+  height: 16px;
+  width: 16px;
+}
+
+.info-panel > .info-box svg.lucide-alarm-clock-off {
+  display: none;
+}
+
+.info-panel > .info-box > article,
+.info-box-global-numbers > .info-box > article {
+  display: flex;
+  align-items: center;
+  column-gap: 5px;
+}
+
+.info-panel .info-box-global-numbers > .info-box.infos-pop {
+  background-color: #fff;
+  min-width: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 5px;
+}
+
+.info-panel .pop-box--total-only {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  border: 2px solid var(--primary);
+  border-radius: var(--border-radius-small);
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.info-panel .pop-box--total-only .pop-total {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.info-panel > .info-box.infos-time {
+  min-width: 0;
+  justify-content: center;
+  gap: 16px;
+  color: #fff;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.info-panel > .info-box.infos-time svg.lucide-rabbit {
+  height: 20px;
+  width: 20px;
+}
+
+.info-panel > .info-box.infos-budget,
+.info-panel > .info-box.infos-pop {
+  min-width: 0;
+}
+
+.info-panel > .info-box.infos-budget {
+  color: #fff;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.info-panel p {
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.info-panel .pop-icon .unemployed-icon,
+.info-panel .pop-icon .famished-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  display: block;
+}
+
+.display-hunger-pop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.speed-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.speed-change-indicator {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: white;
+  color: var(--cta);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease-in-out;
+  z-index: 100;
+}
+
+.speed-change-indicator.active {
+  opacity: 1;
+  visibility: visible;
+  animation: hud-pop-out 0.3s ease-out;
+}
+
+@keyframes hud-pop-out {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Pop detail (secondary strip under status)
+   ------------------------------------------------------------------------- */
+
+.info-panel-pop-detail.hud-pop-detail {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.info-panel-pop-detail .infos-pop-detail {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 34px;
+  padding: 6px 14px;
+  background-color: #fff;
+  border: none;
+  border-radius: var(--border-radius-small);
+  flex-wrap: nowrap;
+  box-shadow: 0 1px 3px rgba(29, 34, 40, 0.08);
+  cursor: default;
+  height: auto;
+}
+
+.info-panel-pop-detail .pop-detail-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  height: 20px;
+  line-height: 20px;
+}
+
+.info-panel-pop-detail .pop-detail-emoji,
+.info-panel-pop-detail .pop-detail-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.info-panel-pop-detail .pop-detail-emoji {
+  font-size: 16px;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+}
+
+.info-panel-pop-detail .pop-detail-icon .unemployed-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  display: block;
+}
+
+.info-panel-pop-detail .pop-detail-value {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--primary);
+}
+
+.info-panel-pop-detail .pop-detail-active {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+.info-panel-pop-detail .pop-breakdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: nowrap;
+}
+
+.info-panel-pop-detail .display-unemployed-pop {
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.info-panel-pop-detail .display-worker-lack {
+  color: #cc0000;
+}
+
+/* -------------------------------------------------------------------------
+   Actions bar — bottom slot (same place as the former game footer)
+   ------------------------------------------------------------------------- */
+
+.hud-actions.info-box-stats {
+  position: fixed;
+  left: 50%;
+  right: auto;
+  bottom: env(safe-area-inset-bottom, 0px);
+  top: auto;
+  transform: translateX(-50%);
+  z-index: calc(var(--z-index-legend, 1000) + 2);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: min(100%, 600px);
+  min-height: var(--footer-height, 40px);
+  padding: 6px 12px;
+  margin: 0;
+  box-sizing: border-box;
+  background: #fff;
+  border-radius: var(--border-radius-small) var(--border-radius-small) 0 0;
+  box-shadow: 0 -2px 10px rgba(29, 34, 40, 0.1);
+  backdrop-filter: none;
+}
+
+.hud-actions .info-box.stats-buttons {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--border-radius-small);
+  border: 2px solid #fff;
+  background: var(--cta);
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.hud-actions .info-box.stats-buttons:hover {
+  transform: translateY(-2px);
+  background: #fff;
+}
+
+.hud-actions .info-box.stats-buttons.active {
+  transform: none;
+  background: #fff;
+}
+
+.hud-actions .info-box.stats-buttons .budget-box,
+.hud-actions .info-box.stats-buttons .budget-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.hud-actions .info-box.stats-buttons svg {
+  width: 20px;
+  height: 20px;
+}
+
+.hud-actions .info-box.game-control-box {
+  background-color: #009999;
+}
+
+.hud-actions .info-box.game-control-box:hover {
+  opacity: 0.9;
+  background-color: #009999;
+}
+
+.hud-actions .info-box.game-control-box:active,
+.hud-actions .info-box.game-control-box:focus {
+  box-shadow: 0 0 8px rgba(0, 2, 53, 0.35);
+  outline: none;
+}
+
+.hud-actions .info-box.game-control-box.active {
+  background-color: var(--cta);
+}
+
+/* -------------------------------------------------------------------------
+   Portrait (phones / narrow tablets)
+   ------------------------------------------------------------------------- */
+
+@media screen and (max-width: 1024px) and (orientation: portrait) {
+  .info-panel-wrapper.hud {
+    left: 0;
+    right: 0;
+    max-width: none;
+    width: 100%;
+    align-items: stretch;
+    padding: 4px 8px 0;
+  }
+
+  .hud-status {
+    width: 100%;
+    max-width: none;
+  }
+
+  .info-panel {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .info-panel > .info-box.infos-time {
+    flex: 1 1 100%;
+    min-width: 0;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .info-box-global-numbers {
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+  }
+
+  .info-panel-pop-detail.hud-pop-detail {
+    justify-content: flex-start;
+  }
+
+  .info-panel-pop-detail .infos-pop-detail {
+    gap: 14px;
+    width: max-content;
+    max-width: none;
+  }
+
+  .hud-actions.info-box-stats {
+    left: 50%;
+    right: auto;
+    bottom: env(safe-area-inset-bottom, 0px);
+    transform: translateX(-50%);
+    width: min(100%, 600px);
+    gap: 8px;
+    padding: 6px 10px;
+  }
+
+  .hud-actions .info-box.stats-buttons {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Landscape (phones / tablets)
+   ------------------------------------------------------------------------- */
+
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+  .info-panel-wrapper.hud {
+    top: 0;
+    right: 0;
+    left: auto;
+    max-width: min(72vw, 640px);
+    width: auto;
+    padding: 2px 8px 0;
+  }
+
+  .delay-ui-wrapper {
+    padding: 1px 4px;
+    height: 12px;
+  }
+
+  .info-panel {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .info-panel > .info-box,
+  .info-box-global-numbers > .info-box {
+    height: 34px;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+
+  .info-panel > .info-box.infos-time {
+    min-width: 0;
+    flex: 1 1 auto;
+    gap: 10px;
+  }
+
+  .info-panel .pop-box--total-only .pop-total {
+    font-size: 14px;
+  }
+
+  .info-panel .clock-box,
+  .info-panel .speed-box,
+  .info-panel .pop-box,
+  .info-panel .budget-box {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .info-panel p {
+    font-size: 12px;
+    margin: 0;
+  }
+
+  .info-panel svg {
+    height: 16px;
+    width: 16px;
+  }
+
+  .info-panel-pop-detail .infos-pop-detail {
+    gap: 12px;
+    padding: 4px 10px;
+    min-height: 28px;
+  }
+
+  .info-panel-pop-detail .pop-detail-value {
+    font-size: 12px;
+  }
+
+  .hud-actions.info-box-stats {
+    left: 50%;
+    right: auto;
+    bottom: env(safe-area-inset-bottom, 0px);
+    transform: translateX(-50%);
+    width: min(100%, 600px);
+    gap: 8px;
+    padding: 4px 10px;
+  }
+
+  .hud-actions .info-box.stats-buttons {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+  }
+
+  .hud-actions .info-box.stats-buttons svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Very narrow screens
+   ------------------------------------------------------------------------- */
+
+@media screen and (max-width: 480px) {
+  .info-panel > .info-box.infos-time .clock-icon {
+    display: none;
+  }
+
+  .info-panel-pop-detail .pop-breakdown {
+    gap: 10px;
+  }
+
+  .info-panel-pop-detail .pop-detail-active {
+    gap: 12px;
+  }
+}

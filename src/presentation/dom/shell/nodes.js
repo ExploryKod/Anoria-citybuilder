@@ -27,7 +27,7 @@ export const infoPanelNoClockIcon = document.querySelector('.info-panel svg.luci
 export const delayBox = document.querySelector('.info-panel .delay-box');
 // scene.js
 export const gameWindow = document.getElementById('game-window');
-// HUD population — barre principale + barre détail (sibling sous .info-panel-wrapper)
+// HUD population — status strip + pop detail under .info-panel-wrapper
 const popHudRoot = '.info-panel-wrapper';
 
 export const displayPop = document.querySelector(`${popHudRoot} .pop-breakdown`);
