@@ -552,7 +552,7 @@
 @media screen and (max-width: 1024px) and (orientation: landscape) {
   .info-panel-wrapper.hud {
     top: 0;
-    left: var(--hud-gutter);
+    left: calc(min(var(--toolbar-width), var(--toolbar-width-max)) + var(--hud-gutter));
     right: var(--hud-gutter);
     max-width: none;
     width: auto;

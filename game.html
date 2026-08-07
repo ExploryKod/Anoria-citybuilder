@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/global.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/loader-modal.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/mobile-controls.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/mobile-compact-toolbar.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/realtime-budget.css">
     
     <!-- OPTIMIZATION: Load non-critical modal CSS asynchronously using media="print" trick -->
@@ -445,6 +446,7 @@
 
       <!-- Mobile Camera Controls - Only visible on mobile/tablet -->
       <div id="mobile-camera-controls" class="mobile-camera-controls mobile-hidden">
+          <div id="mobile-camera-drag-handle" class="mobile-camera-controls__drag-handle" title="Déplacer" aria-label="Déplacer le panneau caméra">✋</div>
           <div class="mobile-controls-group">
               <div class="mobile-controls-label">Caméra</div>
               <!-- Camera Pan Controls (D-pad) -->
@@ -628,6 +630,24 @@
                 </div>
                 </div>
             </div>
+
+            <section id="mobile-build-bar" class="mobile-build-bar" hidden aria-label="Barre de construction">
+                <header class="mobile-build-bar__header">
+                    <span class="mobile-build-bar__title">Construction</span>
+                    <button type="button" id="mobile-build-bar-close" class="mobile-build-bar__close" title="Fermer" aria-label="Fermer la barre de construction">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m18 6-12 12"/>
+                            <path d="m6 6 12 12"/>
+                        </svg>
+                    </button>
+                </header>
+                <nav class="mobile-build-bar__pills" role="tablist" aria-label="Catégories"></nav>
+                <div class="mobile-build-bar__carousel splide" role="group" aria-label="Outils">
+                    <div class="splide__track">
+                        <ul class="splide__list"></ul>
+                    </div>
+                </div>
+            </section>
 
             <nav class="hud-actions info-box-stats" aria-label="Barre de commandes">
                 <div class="hud-actions__group hud-actions__group--utilities" role="group" aria-label="Utilitaires">

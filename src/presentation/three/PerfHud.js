@@ -1,7 +1,19 @@
 /**
  * Overlay perf net — format colonnes (comme stats.js multi-panels).
  * FPS | MS | MB | draw-calls (jaune)
+ * Collapsible: expanded panel OR discrete FAB icon (like cookie consent).
  */
+
+const STORAGE_KEY = 'show-stats-js';
+
+function activityIconSvg() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg>`;
+}
+
+function closeIconSvg() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 6-12 12"/><path d="m6 6 12 12"/></svg>`;
+}
+
 export function createPerfHud({
   widthRatio = 0.28,
   minWidth = 320,
@@ -11,6 +23,7 @@ export function createPerfHud({
 } = {}) {
   const root = document.createElement('div');
   root.id = 'stats-js';
+  root.className = 'perf-hud';
   Object.assign(root.style, {
     position: 'fixed',
     top: 'auto',
@@ -18,19 +31,39 @@ export function createPerfHud({
     right: `${right}px`,
     bottom: `${bottom}px`,
     zIndex: '99999',
-    opacity: '0.95',
-    cursor: 'default',
     pointerEvents: 'auto',
   });
 
+  const panel = document.createElement('div');
+  panel.className = 'perf-hud__panel';
+
+  const collapseBtn = document.createElement('button');
+  collapseBtn.type = 'button';
+  collapseBtn.className = 'perf-hud__collapse';
+  collapseBtn.title = 'Réduire les stats';
+  collapseBtn.setAttribute('aria-label', 'Réduire les stats de performance');
+  collapseBtn.innerHTML = closeIconSvg();
+
   const canvas = document.createElement('canvas');
   canvas.className = 'perf-hud-canvas';
-  root.appendChild(canvas);
+  panel.appendChild(collapseBtn);
+  panel.appendChild(canvas);
+
+  const fab = document.createElement('button');
+  fab.type = 'button';
+  fab.className = 'perf-hud__fab';
+  fab.title = 'Stats de performance';
+  fab.setAttribute('aria-label', 'Afficher les stats de performance');
+  fab.innerHTML = activityIconSvg();
+
+  root.appendChild(panel);
+  root.appendChild(fab);
 
   const ctx = canvas.getContext('2d');
   let displayW = 0;
   let displayH = 0;
   let dpr = 1;
+  let expanded = localStorage.getItem(STORAGE_KEY) !== 'false';
 
   let frameCount = 0;
   let fps = 0;
@@ -56,7 +89,29 @@ export function createPerfHud({
   let historyIndex = 0;
   const memorySupported = performance.memory != null;
 
+  function applyExpandedState() {
+    root.classList.toggle('perf-hud--expanded', expanded);
+    root.classList.toggle('perf-hud--collapsed', !expanded);
+    panel.hidden = !expanded;
+    fab.hidden = expanded;
+    localStorage.setItem(STORAGE_KEY, expanded ? 'true' : 'false');
+    if (expanded) {
+      resize();
+    }
+  }
+
+  function setExpanded(next) {
+    expanded = Boolean(next);
+    applyExpandedState();
+    return expanded;
+  }
+
+  function toggle() {
+    return setExpanded(!expanded);
+  }
+
   function resize() {
+    if (!expanded) return;
     displayW = Math.round(
       Math.min(maxWidth, Math.max(minWidth, window.innerWidth * widthRatio))
     );
@@ -73,6 +128,7 @@ export function createPerfHud({
   }
 
   function paint() {
+    if (!expanded) return;
     const w = displayW;
     const h = displayH;
     if (!w || !h) return;
@@ -214,6 +270,16 @@ export function createPerfHud({
     }
   }
 
+  collapseBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setExpanded(false);
+  });
+  fab.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setExpanded(true);
+  });
+
+  applyExpandedState();
   resize();
   window.addEventListener('resize', resize);
 
@@ -221,6 +287,11 @@ export function createPerfHud({
     dom: root,
     begin,
     end,
+    setExpanded,
+    toggle,
+    get expanded() {
+      return expanded;
+    },
     dispose() {
       window.removeEventListener('resize', resize);
       root.remove();
