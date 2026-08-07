@@ -6,10 +6,10 @@
   position: absolute;
   top: auto;
   /* Account for PWA safe area on mobile devices (Samsung, iPhone, etc.) */
-  bottom: calc(var(--footer-height) + 10px + env(safe-area-inset-bottom, 0px));
-  /* Keep mobile shortcuts above the bottom HUD actions bar */
+  bottom: calc(var(--hud-bottom-height, var(--footer-height)) + 10px + env(safe-area-inset-bottom, 0px));
+  /* Keep mobile shortcuts above the bottom command bar */
   left: 50%; /* Center horizontally */
-  transform: translateX(-50%); /* Center the container - same as footer */
+  transform: translateX(-50%); /* Center the container */
   display: flex;
   flex-direction: row; /* Horizontal layout */
   gap: 8px;

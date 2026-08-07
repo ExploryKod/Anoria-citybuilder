@@ -53,7 +53,16 @@
     --z-index-info-panel: 10020;
     --z-index-modal: 10030; /* Maximum z-index for modals */
     --z-index-notification: 10040; /* Highest - for notifications that must appear above everything */
-    --footer-height: 40px;
+    /* Reserved bottom chrome: command bar (~56px) — used by legends / mobile offsets */
+    --hud-bottom-height: 56px;
+    --hud-chip-height: 40px;
+    --footer-height: var(--hud-bottom-height); /* legacy alias */
+
+    /* Left toolbar rail — keep in sync with .game-window .toolbar width */
+    --toolbar-padding: 14px;
+    --toolbar-width: 110px;
+    --toolbar-width-max: 140px;
+    --hud-gutter: 12px; /* gap between toolbar and HUD */
 
     /* Border radius */
     --border-radius: 15px;
@@ -213,8 +222,10 @@ canvas.pointer-events-disabled {
     top: 0;
     left: 0;
     bottom: 0;
+    width: min(var(--toolbar-width), var(--toolbar-width-max));
+    box-sizing: border-box;
     background-color: var(--toolbar-bg-color);
-    padding: 10px;
+    padding: var(--toolbar-padding);
     padding-top: 60px; /* Space for drag handle */
     display: flex;
     flex-direction: column;
@@ -549,12 +560,8 @@ canvas.pointer-events-disabled {
     background-color: var(--toolbar-btn-color) !important;
 }
 
-#faster-btn:active {
-    background:  var(--lightgreen);
-}
-
-#slower-btn:active {
-    background:  var(--lightgreen);
+.hud-action-btn--speed:active {
+    background: var(--lightgreen);
 }
 
 /* Panel layout to select object as house etc.. */

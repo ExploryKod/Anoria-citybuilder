@@ -349,22 +349,6 @@
             <div class="toolbar-section toolbar-section-settings" data-section="settings">
                 <div class="toolbar__container">
                     <div class="toolbar__sub-container">
-                        <div class="toolbar__label">Vitesse</div>
-                        <div class="toolbar__buttons">
-                            <button type="button" id="faster-btn" class="toolbar-btn" title="Accélérer" aria-label="Accélérer la vitesse">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rabbit"><path d="M13 16a3 3 0 0 1 2.24 5"/><path d="M18 12h.01"/><path d="M18 21h-8a4 4 0 0 1-4-4 7 7 0 0 1 7-7h.2L9.6 6.4a1 1 0 1 1 2.8-2.8L15.8 7h.2c3.3 0 6 2.7 6 6v1a2 2 0 0 1-2 2h-1a3 3 0 0 0-3 3"/>
-                                    <path d="M20 8.54V4a2 2 0 1 0-4 0v3"/><path d="M7.612 12.524a3 3 0 1 0-1.6 4.3"/></svg>
-                            </button>
-                            <button type="button" id="slower-btn" class="toolbar-btn" title="Ralentir" aria-label="Ralentir la vitesse">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-snail"><path d="M2 13a6 6 0 1 0 12 0 4 4 0 1 0-8 0 2 2 0 0 0 4 0"/>
-                                    <circle cx="10" cy="13" r="8"/><path d="M2 21h12c4.4 0 8-3.6 8-8V7a2 2 0 1 0-4 0v6"/><path d="M18 3 19.1 5.2"/><path d="M22 3 20.9 5.2"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="toolbar__container">
-                    <div class="toolbar__sub-container">
                         <div class="manager-label">Gestion</div>
                         <div class="toolbar__buttons">
                             <button type="button" id="bilan-btn" data-toolid="bilan" class="toolbar-btn" title="Bilan comptable" aria-label="Ouvrir le bilan comptable">
@@ -564,7 +548,9 @@
                     <div class="delay-ui"></div>
                 </div>
 
-                <div class="info-panel">
+                <div class="hud-vitals">
+                <!-- Invisible top row: time + budget -->
+                <div class="info-panel hud-vitals__row hud-vitals__row--status">
                     <section class="info-box infos-time">
                         <article class="clock-box" title="Date et heure en jeu">
                             <span class="clock-icon">
@@ -577,53 +563,37 @@
                             </span>
                             <div class="display-time"></div>
                         </article>
-                        <article class="speed-box" title="Vitesse de simulation">
-                            <span class="speed-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                class="lucide lucide-rabbit"><path d="M13 16a3 3 0 0 1 2.24 5"/><path d="M18 12h.01"/><path d="M18 21h-8a4 4 0 0 1-4-4 7 7 0 0 1 7-7h.2L9.6 6.4a1 1 0 1 1 2.8-2.8L15.8 7h.2c3.3 0 6 2.7 6 6v1a2 2 0 0 1-2 2h-1a3 3 0 0 0-3 3"/>
-                                    <path d="M20 8.54V4a2 2 0 1 0-4 0v3"/><path d="M7.612 12.524a3 3 0 1 0-1.6 4.3"/></svg>
+                    </section>
+                    <section class="info-box infos-budget">
+                        <article class="budget-box" title="Fonds disponibles">
+                            <span class="budget-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-euro">
+                                <path d="M4 10h12"/><path d="M4 14h9"/>
+                                <path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/>
+                                </svg>
                             </span>
-                            <div class="display-speed"></div>
-                            <div class="speed-change-indicator"></div>
+                            <div class="display-funds"></div>
                         </article>
                     </section>
-
-                    <div class="info-box-global-numbers">
-                        <section class="info-box infos-pop">
-                            <article class="pop-box pop-box--total-only" title="Population totale (active + chômeurs)">
-                                <span class="info-box pop-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
-                                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                                    </svg>
-                                </span>
-                                <span class="pop-total">0</span>
-                            </article>
-                            <article class="pop-box" title="Citoyens affamés">
-                                <span class="info-box pop-icon">
-                                    <img src="/resources/textures/status/nofood.png" alt="Famished" class="famished-icon" style="width: 24px; height: 24px; object-fit: contain;">
-                                </span>
-                                <div class="display-hunger-pop">0</div>
-                            </article>
-                        </section>
-
-                        <section class="info-box infos-budget">
-                            <article class="budget-box" title="Fonds disponibles">
-                                <span class="budget-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-euro">
-                                    <path d="M4 10h12"/><path d="M4 14h9"/>
-                                    <path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/>
-                                    </svg>
-                                </span>
-                                <div class="display-funds"></div>
-                            </article>
-                        </section>
-                    </div>
                 </div>
-            </div>
 
-            <div class="info-panel-pop-detail hud-pop-detail">
-                <section class="info-box infos-pop-detail" aria-label="Détail population active">
+                <div class="info-panel-pop-detail hud-pop-detail hud-vitals__row hud-vitals__row--pop">
+                <section class="info-box infos-pop-detail" aria-label="Population">
+                    <div class="pop-detail-metric pop-detail-total" title="Population totale (active + chômeurs)">
+                        <span class="pop-detail-icon pop-detail-icon--users" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                        </span>
+                        <span class="pop-detail-value pop-total">0</span>
+                    </div>
+                    <div class="pop-detail-metric pop-detail-hunger" title="Citoyens affamés">
+                        <span class="pop-detail-icon">
+                            <img src="/resources/textures/status/nofood.png" alt="" class="famished-icon">
+                        </span>
+                        <span class="pop-detail-value display-hunger-pop">0</span>
+                    </div>
                     <div class="pop-detail-active" title="Population active (citoyens actifs, élites, fonctionnaires)">
                         <span class="pop-detail-metric pop-active-head">
                             <span class="pop-detail-emoji pop-active-emoji" aria-hidden="true">👷</span>
@@ -655,59 +625,80 @@
                         <span class="pop-detail-value display-worker-lack">0</span>
                     </div>
                 </section>
+                </div>
+                </div>
             </div>
 
-            <nav class="hud-actions info-box-stats" aria-label="Contrôles de jeu">
-                <div class="info-box realtime-budget-box stats-buttons" id="realtime-budget-btn" title="Budget en temps réel" aria-label="Ouvrir le budget en temps réel" role="button" tabindex="0">
-                    <article class="budget-box">
-                        <span class="budget-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-3">
-                                <path d="M3 3v18h18"/>
-                                <path d="M18 17V9"/>
-                                <path d="M13 17V5"/>
-                                <path d="M8 17v-3"/>
-                            </svg>
-                        </span>
-                    </article>
+            <nav class="hud-actions info-box-stats" aria-label="Barre de commandes">
+                <div class="hud-actions__group hud-actions__group--utilities" role="group" aria-label="Utilitaires">
+                    <div class="info-box realtime-budget-box stats-buttons" id="realtime-budget-btn" title="Budget en temps réel" aria-label="Ouvrir le budget en temps réel" role="button" tabindex="0">
+                        <article class="budget-box">
+                            <span class="budget-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-3">
+                                    <path d="M3 3v18h18"/>
+                                    <path d="M18 17V9"/>
+                                    <path d="M13 17V5"/>
+                                    <path d="M8 17v-3"/>
+                                </svg>
+                            </span>
+                        </article>
+                    </div>
+                    <div class="info-box administrator-box stats-buttons" id="administrator-btn" title="Panneau Administrateur" aria-label="Ouvrir le panneau administrateur" role="button" tabindex="0">
+                        <article class="budget-box">
+                            <span class="budget-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+                                    <path d="m9 12 2 2 4-4"/>
+                                </svg>
+                            </span>
+                        </article>
+                    </div>
+                    <div class="info-box city-map-box stats-buttons" id="city-map-btn" title="Plan 2D de la ville" aria-label="Ouvrir le plan 2D de la ville" role="button" tabindex="0">
+                        <article class="budget-box">
+                            <span class="budget-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-icon lucide-map"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg>
+                            </span>
+                        </article>
+                    </div>
                 </div>
-                <div class="info-box administrator-box stats-buttons" id="administrator-btn" title="Panneau Administrateur" aria-label="Ouvrir le panneau administrateur">
-                    <article class="budget-box">
-                        <span class="budget-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check">
-                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
-                                <path d="m9 12 2 2 4-4"/>
-                            </svg>
-                        </span>
-                    </article>
-                </div>
-                <div class="info-box city-map-box stats-buttons" id="city-map-btn" title="Plan 2D de la ville" aria-label="Ouvrir le plan 2D de la ville" role="button" tabindex="0">
-                    <article class="budget-box">
-                        <span class="budget-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-icon lucide-map"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg>
-                        </span>
-                    </article>
-                </div>
-                <div class="info-box game-control-box stats-buttons" id="pause-btn" data-action="pause" title="Pause / Reprendre" aria-label="Pause ou reprendre le jeu" role="button" tabindex="0">
-                    <article class="budget-box">
-                        <span class="budget-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause">
-                                <rect x="14" y="4" width="4" height="16" rx="1"/>
-                                <rect x="6" y="4" width="4" height="16" rx="1"/>
-                            </svg>
-                        </span>
-                    </article>
-                </div>
-                <div class="info-box game-control-box stats-buttons" id="replay-btn" data-action="replay" title="Replay" aria-label="Replay" role="button" tabindex="0">
-                    <article class="budget-box">
-                        <span class="budget-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            class="lucide lucide-rotate-ccw-icon lucide-rotate-ccw">
-                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                            <path d="M3 3v5h5"/>
-                            </svg>
-                        </span>
-                    </article>
+                <div class="hud-actions__sep" aria-hidden="true"></div>
+                <div class="hud-actions__group hud-actions__group--session" role="group" aria-label="Session">
+                    <div class="info-box game-control-box stats-buttons" id="pause-btn" data-action="pause" title="Pause / Reprendre" aria-label="Pause ou reprendre le jeu" role="button" tabindex="0">
+                        <article class="budget-box">
+                            <span class="budget-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause">
+                                    <rect x="14" y="4" width="4" height="16" rx="1"/>
+                                    <rect x="6" y="4" width="4" height="16" rx="1"/>
+                                </svg>
+                            </span>
+                        </article>
+                    </div>
+                    <div class="info-box game-control-box stats-buttons" id="replay-btn" data-action="replay" title="Replay" aria-label="Replay" role="button" tabindex="0">
+                        <article class="budget-box">
+                            <span class="budget-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                class="lucide lucide-rotate-ccw-icon lucide-rotate-ccw">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                <path d="M3 3v5h5"/>
+                                </svg>
+                            </span>
+                        </article>
+                    </div>
+                    <div class="hud-actions__speed" role="group" aria-label="Vitesse de simulation">
+                        <button type="button" id="slower-btn" class="hud-action-btn hud-action-btn--speed" title="Ralentir" aria-label="Ralentir la vitesse">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-snail"><path d="M2 13a6 6 0 1 0 12 0 4 4 0 1 0-8 0 2 2 0 0 0 4 0"/>
+                                <circle cx="10" cy="13" r="8"/><path d="M2 21h12c4.4 0 8-3.6 8-8V7a2 2 0 1 0-4 0v6"/><path d="M18 3 19.1 5.2"/><path d="M22 3 20.9 5.2"/></svg>
+                        </button>
+                        <div class="hud-speed-display" title="Vitesse de simulation">
+                            <span class="display-speed">4000</span>
+                            <span class="speed-change-indicator" aria-hidden="true"></span>
+                        </div>
+                        <button type="button" id="faster-btn" class="hud-action-btn hud-action-btn--speed" title="Accélérer" aria-label="Accélérer la vitesse">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rabbit"><path d="M13 16a3 3 0 0 1 2.24 5"/><path d="M18 12h.01"/><path d="M18 21h-8a4 4 0 0 1-4-4 7 7 0 0 1 7-7h.2L9.6 6.4a1 1 0 1 1 2.8-2.8L15.8 7h.2c3.3 0 6 2.7 6 6v1a2 2 0 0 1-2 2h-1a3 3 0 0 0-3 3"/>
+                                <path d="M20 8.54V4a2 2 0 1 0-4 0v3"/><path d="M7.612 12.524a3 3 0 1 0-1.6 4.3"/></svg>
+                        </button>
+                    </div>
                 </div>
             </nav>
         </section>

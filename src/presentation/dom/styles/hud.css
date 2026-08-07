@@ -11,19 +11,22 @@
   z-index: var(--z-index-info-panel, 10020);
   position: absolute;
   top: 0;
-  right: 0;
-  left: auto;
+  /* Fill game-window minus left toolbar + gutters — no hardcoded px width */
+  left: calc(min(var(--toolbar-width), var(--toolbar-width-max)) + var(--hud-gutter));
+  right: var(--hud-gutter);
   bottom: auto;
-  width: auto;
-  max-width: min(100%, 920px);
+  width: auto; /* stretches between left and right */
+  max-width: none;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 6px;
-  padding: 4px 10px 0;
+  padding: 4px 0 0;
   pointer-events: none;
   background: transparent;
   border-radius: 0;
+  box-sizing: border-box;
 }
 
 .info-panel-wrapper.hud > * {
@@ -39,6 +42,15 @@
   flex-direction: column;
   align-items: stretch;
   width: max-content;
+  max-width: 100%;
+}
+
+/* Bento: 2 rows of equal width = max(content top, content bottom) */
+.hud-vitals {
+  display: inline-grid;
+  justify-items: stretch;
+  align-content: start;
+  gap: 6px;
   max-width: 100%;
 }
 
@@ -61,161 +73,103 @@
   border-radius: var(--border-radius-small);
 }
 
-.info-panel {
+/* Invisible top container: holds time + budget chips */
+.info-panel.hud-vitals__row--status {
   margin: 0;
-  padding: 4px 0 0;
+  padding: 0;
   height: auto;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-wrap: nowrap;
-  justify-content: flex-end;
-  align-items: center;
+  justify-content: flex-start;
+  align-items: stretch;
   gap: 8px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
-.info-box-global-numbers {
+/* Shared chip metrics — same height/padding, colors stay per-bar */
+.info-panel > .info-box,
+.info-panel-pop-detail .infos-pop-detail {
+  box-sizing: border-box;
+  height: var(--hud-chip-height, 40px);
+  min-height: var(--hud-chip-height, 40px);
+  border-radius: var(--border-radius-small);
+  padding: 0 12px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-shrink: 0;
+  line-height: 1;
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
-.info-panel > .info-box,
-.info-box-global-numbers > .info-box {
-  height: 40px;
-  border-radius: var(--border-radius-small);
-  padding: 8px 12px;
+.info-panel > .info-box {
   background-color: var(--cta);
   border: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
   cursor: default;
   transition: background-color 0.2s ease, opacity 0.2s ease;
-  flex-shrink: 0;
 }
 
-.info-panel > .info-box svg,
-.info-box-global-numbers > .info-box svg {
+.info-panel > .info-box svg {
   height: 16px;
   width: 16px;
+  flex-shrink: 0;
 }
 
 .info-panel > .info-box svg.lucide-alarm-clock-off {
   display: none;
 }
 
-.info-panel > .info-box > article,
-.info-box-global-numbers > .info-box > article {
+.info-panel > .info-box > article {
   display: flex;
   align-items: center;
-  column-gap: 5px;
-}
-
-.info-panel .info-box-global-numbers > .info-box.infos-pop {
-  background-color: #fff;
-  min-width: auto;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 5px;
-}
-
-.info-panel .pop-box--total-only {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 6px;
-  border: 2px solid var(--primary);
-  border-radius: var(--border-radius-small);
-  padding: 4px 10px;
-  white-space: nowrap;
-}
-
-.info-panel .pop-box--total-only .pop-total {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--primary);
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
+  column-gap: 6px;
+  height: 100%;
 }
 
 .info-panel > .info-box.infos-time {
+  flex: 1 1 auto;
   min-width: 0;
   justify-content: center;
   gap: 16px;
   color: #fff;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
 }
 
 .info-panel > .info-box.infos-time svg.lucide-rabbit {
-  height: 20px;
-  width: 20px;
-}
-
-.info-panel > .info-box.infos-budget,
-.info-panel > .info-box.infos-pop {
-  min-width: 0;
+  height: 18px;
+  width: 18px;
 }
 
 .info-panel > .info-box.infos-budget {
+  flex: 0 0 auto;
+  min-width: 0;
   color: #fff;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
 }
 
 .info-panel p {
   color: white;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
+  margin: 0;
+  line-height: 1;
 }
 
-.info-panel .pop-icon .unemployed-icon,
-.info-panel .pop-icon .famished-icon {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-  display: block;
-}
-
-.display-hunger-pop {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-variant-numeric: tabular-nums;
-}
-
-.speed-box {
-  position: relative;
+.display-time,
+.display-funds {
   display: flex;
   align-items: center;
-  gap: 5px;
+  line-height: 1;
 }
 
-.speed-change-indicator {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background-color: white;
-  color: var(--cta);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  font-weight: bold;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s ease-in-out;
-  z-index: 100;
-}
-
-.speed-change-indicator.active {
-  opacity: 1;
-  visibility: visible;
-  animation: hud-pop-out 0.3s ease-out;
+.hud-actions .display-speed {
+  display: inline;
+  line-height: 1;
 }
 
 @keyframes hud-pop-out {
@@ -238,27 +192,29 @@
 
 .info-panel-pop-detail.hud-pop-detail {
   display: flex;
-  justify-content: flex-end;
+  justify-content: stretch;
   padding: 0;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   max-width: 100%;
+  box-sizing: border-box;
   overflow-x: auto;
   scrollbar-width: thin;
 }
 
 .info-panel-pop-detail .infos-pop-detail {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  min-height: 34px;
-  padding: 6px 14px;
+  gap: 16px;
+  width: max-content;
+  min-width: 100%;
+  box-sizing: border-box;
+  justify-content: space-between;
   background-color: #fff;
   border: none;
-  border-radius: var(--border-radius-small);
   flex-wrap: nowrap;
   box-shadow: 0 1px 3px rgba(29, 34, 40, 0.08);
   cursor: default;
-  height: auto;
+  color: var(--primary);
+  flex-shrink: 0;
 }
 
 .info-panel-pop-detail .pop-detail-metric {
@@ -266,8 +222,8 @@
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
-  height: 20px;
-  line-height: 20px;
+  height: 18px;
+  line-height: 1;
 }
 
 .info-panel-pop-detail .pop-detail-emoji,
@@ -286,11 +242,26 @@
   font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
 }
 
-.info-panel-pop-detail .pop-detail-icon .unemployed-icon {
+.info-panel-pop-detail .pop-detail-icon .unemployed-icon,
+.info-panel-pop-detail .pop-detail-icon .famished-icon {
   width: 18px;
   height: 18px;
   object-fit: contain;
   display: block;
+}
+
+.info-panel-pop-detail .pop-detail-icon--users {
+  color: var(--primary);
+}
+
+.info-panel-pop-detail .pop-detail-icon--users svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.info-panel-pop-detail .pop-detail-total .pop-total {
+  font-weight: 700;
 }
 
 .info-panel-pop-detail .pop-detail-value {
@@ -326,7 +297,7 @@
 }
 
 /* -------------------------------------------------------------------------
-   Actions bar — bottom slot (same place as the former game footer)
+   Command bar — utilities (left) | session (right)
    ------------------------------------------------------------------------- */
 
 .hud-actions.info-box-stats {
@@ -342,43 +313,68 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  width: min(100%, 600px);
-  min-height: var(--footer-height, 40px);
-  padding: 6px 12px;
+  width: auto;
+  max-width: min(100%, 520px);
+  min-height: var(--hud-bottom-height, 56px);
+  padding: 8px 12px;
   margin: 0;
   box-sizing: border-box;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-bottom: none;
   border-radius: var(--border-radius-small) var(--border-radius-small) 0 0;
-  box-shadow: 0 -2px 10px rgba(29, 34, 40, 0.1);
-  backdrop-filter: none;
+  box-shadow: 0 -2px 12px rgba(29, 34, 40, 0.08);
+  backdrop-filter: blur(10px);
 }
 
-.hud-actions .info-box.stats-buttons {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
+.hud-actions__group {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+.hud-actions__sep {
+  width: 1px;
+  align-self: stretch;
+  min-height: 28px;
+  margin: 0 4px;
+  background: rgba(29, 34, 40, 0.12);
+  flex-shrink: 0;
+}
+
+.hud-actions .info-box.stats-buttons,
+.hud-actions .hud-action-btn {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
   padding: 0;
   margin: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--border-radius-small);
-  border: 2px solid #fff;
+  border: none;
   background: var(--cta);
+  color: #fff;
   cursor: pointer;
-  transition: transform 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
+  transition: transform 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
   overflow: hidden;
   position: relative;
 }
 
-.hud-actions .info-box.stats-buttons:hover {
-  transform: translateY(-2px);
+.hud-actions .info-box.stats-buttons:hover,
+.hud-actions .hud-action-btn:hover {
+  transform: translateY(-1px);
   background: #fff;
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(29, 34, 40, 0.1);
 }
 
 .hud-actions .info-box.stats-buttons.active {
-  transform: none;
   background: #fff;
+  color: var(--primary);
+  box-shadow: inset 0 0 0 2px var(--cta);
 }
 
 .hud-actions .info-box.stats-buttons .budget-box,
@@ -390,7 +386,8 @@
   height: 100%;
 }
 
-.hud-actions .info-box.stats-buttons svg {
+.hud-actions .info-box.stats-buttons svg,
+.hud-actions .hud-action-btn svg {
   width: 20px;
   height: 20px;
 }
@@ -400,18 +397,80 @@
 }
 
 .hud-actions .info-box.game-control-box:hover {
-  opacity: 0.9;
-  background-color: #009999;
+  background-color: #fff;
+  color: #009999;
 }
 
 .hud-actions .info-box.game-control-box:active,
 .hud-actions .info-box.game-control-box:focus {
-  box-shadow: 0 0 8px rgba(0, 2, 53, 0.35);
   outline: none;
 }
 
 .hud-actions .info-box.game-control-box.active {
   background-color: var(--cta);
+  color: #fff;
+}
+
+/* Speed cluster — after replay */
+.hud-actions__speed {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 2px;
+}
+
+.hud-speed-display {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 40px;
+  padding: 0 8px;
+  border-radius: var(--border-radius-small);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 0 0 1px rgba(29, 34, 40, 0.08);
+}
+
+.hud-actions .speed-change-indicator {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: var(--cta);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.hud-actions .speed-change-indicator.active {
+  opacity: 1;
+  visibility: visible;
+  animation: hud-pop-out 0.3s ease-out;
+}
+
+.hud-action-btn--speed {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--primary);
+  box-shadow: inset 0 0 0 1px rgba(29, 34, 40, 0.1);
+}
+
+.hud-action-btn--speed:hover {
+  background: var(--cta);
+  color: #fff;
+  box-shadow: none;
 }
 
 /* -------------------------------------------------------------------------
@@ -420,12 +479,12 @@
 
 @media screen and (max-width: 1024px) and (orientation: portrait) {
   .info-panel-wrapper.hud {
-    left: 0;
-    right: 0;
+    left: var(--hud-gutter);
+    right: var(--hud-gutter);
     max-width: none;
-    width: 100%;
+    width: auto;
     align-items: stretch;
-    padding: 4px 8px 0;
+    padding: 4px 0 0;
   }
 
   .hud-status {
@@ -433,32 +492,36 @@
     max-width: none;
   }
 
+  .hud-vitals {
+    width: 100%;
+    max-width: 100%;
+  }
+
   .info-panel {
     flex-wrap: wrap;
     justify-content: flex-start;
     gap: 6px;
+    width: 100%;
+    min-width: 0;
   }
 
   .info-panel > .info-box.infos-time {
-    flex: 1 1 100%;
+    flex: 1 1 auto;
     min-width: 0;
     justify-content: space-between;
     gap: 10px;
   }
 
-  .info-box-global-numbers {
-    flex: 1 1 auto;
-    flex-wrap: wrap;
+  .info-panel > .info-box.infos-budget {
+    flex: 0 0 auto;
   }
 
   .info-panel-pop-detail.hud-pop-detail {
-    justify-content: flex-start;
+    justify-content: stretch;
   }
 
   .info-panel-pop-detail .infos-pop-detail {
     gap: 14px;
-    width: max-content;
-    max-width: none;
   }
 
   .hud-actions.info-box-stats {
@@ -466,9 +529,13 @@
     right: auto;
     bottom: env(safe-area-inset-bottom, 0px);
     transform: translateX(-50%);
-    width: min(100%, 600px);
-    gap: 8px;
+    width: min(100%, 420px);
+    gap: 0;
     padding: 6px 10px;
+  }
+
+  .hud-actions__sep {
+    margin: 0 8px;
   }
 
   .hud-actions .info-box.stats-buttons {
@@ -485,11 +552,11 @@
 @media screen and (max-width: 1024px) and (orientation: landscape) {
   .info-panel-wrapper.hud {
     top: 0;
-    right: 0;
-    left: auto;
-    max-width: min(72vw, 640px);
+    left: var(--hud-gutter);
+    right: var(--hud-gutter);
+    max-width: none;
     width: auto;
-    padding: 2px 8px 0;
+    padding: 2px 0 0;
   }
 
   .delay-ui-wrapper {
@@ -504,9 +571,10 @@
   }
 
   .info-panel > .info-box,
-  .info-box-global-numbers > .info-box {
+  .info-panel-pop-detail .infos-pop-detail {
     height: 34px;
-    padding: 4px 8px;
+    min-height: 34px;
+    padding: 0 10px;
     font-size: 12px;
   }
 
@@ -516,17 +584,12 @@
     gap: 10px;
   }
 
-  .info-panel .pop-box--total-only .pop-total {
-    font-size: 14px;
-  }
-
   .info-panel .clock-box,
-  .info-panel .speed-box,
-  .info-panel .pop-box,
   .info-panel .budget-box {
     display: flex;
     align-items: center;
     gap: 4px;
+    height: 100%;
   }
 
   .info-panel p {
@@ -541,8 +604,6 @@
 
   .info-panel-pop-detail .infos-pop-detail {
     gap: 12px;
-    padding: 4px 10px;
-    min-height: 28px;
   }
 
   .info-panel-pop-detail .pop-detail-value {
@@ -554,15 +615,27 @@
     right: auto;
     bottom: env(safe-area-inset-bottom, 0px);
     transform: translateX(-50%);
-    width: min(100%, 600px);
-    gap: 8px;
-    padding: 4px 10px;
+    max-width: min(100%, 520px);
+    gap: 6px;
+    padding: 6px 10px;
   }
 
-  .hud-actions .info-box.stats-buttons {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
+  .hud-actions__speed {
+    gap: 2px;
+  }
+
+  .hud-speed-display {
+    min-width: 38px;
+    height: 36px;
+    font-size: 12px;
+    padding: 0 6px;
+  }
+
+  .hud-actions .info-box.stats-buttons,
+  .hud-actions .hud-action-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
   }
 
   .hud-actions .info-box.stats-buttons svg {
