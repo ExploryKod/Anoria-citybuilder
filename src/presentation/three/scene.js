@@ -571,16 +571,24 @@ export function createScene(_gameStore, assetManager, deps) {
 
             if (nextType !== meshBuildingId) {
                 removeInteractiveObject(buildings[x][y]);
-                buildings[x][y] = assetManager.createAsset(nextType, x, y);
+                const nextMesh = assetManager.createAsset(nextType, x, y);
+                if (!nextMesh) {
+                    return {
+                        buildingId: meshBuildingId,
+                        instanceId,
+                        synced: false,
+                    };
+                }
+                buildings[x][y] = nextMesh;
                 scene.userData.requestShadowRefresh?.();
                 const zoneX = Math.floor(x / ZONE_SIZE);
                 const zoneY = Math.floor(y / ZONE_SIZE);
                 const citySize = city.size || 16;
                 const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
                 if (zoneGroups[zoneIndex]) {
-                    zoneGroups[zoneIndex].add(buildings[x][y]);
+                    zoneGroups[zoneIndex].add(nextMesh);
                 } else {
-                    scene.add(buildings[x][y]);
+                    scene.add(nextMesh);
                 }
             }
 
@@ -661,13 +669,19 @@ export function createScene(_gameStore, assetManager, deps) {
             const assetId = newBuildingId === 'roads' ? 'StonePath-001' : newBuildingId;
 
             if (isOriginTile) {
+                const mesh = assetManager.createAsset(assetId, x, y);
+                // Asset pas encore chargé / id inconnu : ne pas écraser ni .add(undefined)
+                // (sinon spam THREE à chaque tick via needsMeshPlacement).
+                if (!mesh) {
+                    return;
+                }
                 removeInteractiveObject(buildings[x][y]);
-                buildings[x][y] = assetManager.createAsset(assetId, x, y);
+                buildings[x][y] = mesh;
                 // Center multi-tile meshes on their footprint (anchor is NW corner).
-                if (gridSize > 1 && buildings[x][y]) {
+                if (gridSize > 1) {
                     const centerOffset = (gridSize - 1) / 2;
-                    buildings[x][y].position.x += centerOffset;
-                    buildings[x][y].position.z += centerOffset;
+                    mesh.position.x += centerOffset;
+                    mesh.position.z += centerOffset;
                 }
                 scene.userData.requestShadowRefresh?.();
                 const zoneX = Math.floor(x / ZONE_SIZE);
@@ -675,13 +689,13 @@ export function createScene(_gameStore, assetManager, deps) {
                 const citySize = city.size || 16;
                 const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
                 if (zoneGroups[zoneIndex]) {
-                    zoneGroups[zoneIndex].add(buildings[x][y]);
+                    zoneGroups[zoneIndex].add(mesh);
                 } else {
-                    scene.add(buildings[x][y]);
+                    scene.add(mesh);
                 }
 
-                if (placedInstanceId && buildings[x][y]) {
-                    buildings[x][y].userData.instanceId = placedInstanceId;
+                if (placedInstanceId) {
+                    mesh.userData.instanceId = placedInstanceId;
                 }
 
                 if (placedInstanceId) {
