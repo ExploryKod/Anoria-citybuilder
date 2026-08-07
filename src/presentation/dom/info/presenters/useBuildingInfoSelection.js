@@ -2,8 +2,11 @@
  * Building info presenter — équivalent Anoria de `use-order-page`.
  *
  * Vanilla DOM (pas Next.js) : pas de composant page séparé, le layout HTML
- * existe déjà dans index.html. Ce fichier fait I/O via ports injectés,
+ * existe déjà dans game.html. Ce fichier fait I/O via ports injectés,
  * appelle les formats purs, puis les vues DOM.
+ *
+ * Tabs: each group declares thematic tabs in the registry; shared tabs
+ * (services / neighbors / messages) resolve via buildingInfoSharedTabs.
  */
 
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
@@ -14,22 +17,19 @@ import { createBuildingInfoViewModel } from '../buildingInfoTypes.js';
 import { resolveBuildingInfoGroup, BUILDING_INFO_GROUPS } from '../resolveBuildingInfoGroup.js';
 import { resolveTerrainDisplay } from '../shared/buildingInfoTerrain.js';
 import { getBuildingInfoGroupDef } from './buildingInfoGroupRegistry.js';
-import { formatServicesModel } from './formats/servicesInfoFormat.js';
+import { resolveBuildingInfoTabHandler } from '../buildingInfoSharedTabs.js';
+import { BUILDING_INFO_TAB_IDS } from '../buildingInfoTabCatalog.js';
 import {
-  BUILDING_INFO_TABS,
   applyInfoPanelLayoutOptions,
   closeBuildingInfoOverlay,
   getBuildingInfoTabPanel,
   openBuildingInfoOverlay,
-  renderMessagesTab,
-  renderNeighborsTab,
   resetBuildingInfoLayout,
   setBuildingInfoGroupAccent,
   setBuildingInfoMeta,
   setBuildingInfoTitle,
-  setFoyerTabLabel,
+  syncBuildingInfoTabs,
 } from '../layout/buildingInfoLayout.js';
-import { renderServicesTab } from '../views/servicesInfoView.js';
 
 /**
  * @param {import('../buildingInfoTypes.js').BuildingInfoGroupId} groupId
@@ -76,6 +76,31 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
 
   if (Object.keys(extra).length === 0) return vm;
   return { ...vm, ...extra };
+}
+
+/**
+ * @param {import('../buildingInfoTypes.js').BuildingInfoGroupDefinition} groupDef
+ * @param {import('../buildingInfoTypes.js').BuildingInfoViewModel} vm
+ */
+async function renderGroupTabs(groupDef, vm) {
+  const tabs = groupDef.tabs ?? [];
+  syncBuildingInfoTabs(tabs);
+
+  for (const tabSpec of tabs) {
+    const handler = resolveBuildingInfoTabHandler(tabSpec);
+    if (!handler?.render) continue;
+
+    const panel = getBuildingInfoTabPanel(tabSpec.id);
+    if (!panel) continue;
+
+    const model = typeof handler.format === 'function' ? handler.format(vm) : null;
+    const alwaysRender = handler.alwaysRender === true
+      || tabSpec.id === BUILDING_INFO_TAB_IDS.messages
+      || tabSpec.id === BUILDING_INFO_TAB_IDS.neighbors;
+
+    if (model == null && !alwaysRender) continue;
+    await handler.render(panel, model);
+  }
 }
 
 /**
@@ -150,36 +175,12 @@ export async function useBuildingInfoSelection(selectedObject, ctx) {
       ...layoutOptions,
       accent: layoutHeader?.accent ?? layoutOptions.accent ?? null,
     });
-    setFoyerTabLabel(layoutOptions.foyerTabLabel === 'foyer');
 
     if (layoutHeader?.title) setBuildingInfoTitle(layoutHeader.title);
     if (layoutHeader?.meta) setBuildingInfoMeta(layoutHeader.meta);
     setBuildingInfoGroupAccent(layoutHeader?.accent ?? null);
 
-    const foyerModel = groupDef.formatFoyer(vm);
-    const foyerContainer = getBuildingInfoTabPanel(BUILDING_INFO_TABS.foyer);
-    if (foyerContainer && foyerModel != null) {
-      await groupDef.renderFoyer(foyerContainer, foyerModel);
-    }
-
-    // Diet tab (only for houses)
-    if (groupDef.formatDiet && groupDef.renderDiet) {
-      const dietModel = groupDef.formatDiet(vm);
-      const dietContainer = getBuildingInfoTabPanel(BUILDING_INFO_TABS.diet);
-      if (dietContainer && dietModel != null) {
-        groupDef.renderDiet(dietContainer, dietModel);
-      }
-    }
-
-    renderNeighborsTab(
-      getBuildingInfoTabPanel(BUILDING_INFO_TABS.neighbors),
-      vm.neighborRows
-    );
-    renderServicesTab(
-      getBuildingInfoTabPanel(BUILDING_INFO_TABS.services),
-      formatServicesModel(vm),
-    );
-    renderMessagesTab(getBuildingInfoTabPanel(BUILDING_INFO_TABS.messages));
+    await renderGroupTabs(groupDef, vm);
   }
 
   if (infoObjectOverlay.classList.contains('active')) {

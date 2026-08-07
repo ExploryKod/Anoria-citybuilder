@@ -21,7 +21,7 @@ import {
   disableGatedPlacementTools,
   refreshSkillPlacementGating,
 } from '../dom/shell/SkillPlacementGating.js';
-import { DEFAULT_TICK_MS } from '../../shared/gameplay/SimulationDefaults.js';
+import { DEFAULT_TICK_MS, snapTickMs } from '../../shared/gameplay/SimulationDefaults.js';
 import { GameLoop } from '../../engine/loop/GameLoop.js';
 import {
   overOverlay,
@@ -29,6 +29,7 @@ import {
   infoObjectCloseBtn,
 } from '../dom/shell/nodes.js';
 import { closeBuildingInfoOverlay } from '../dom/info/layout/buildingInfoLayout.js';
+import { activateSelectToolButton } from '../dom/tools/ToolPanel.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
 import objectivesTracker, {
   bindObjectivesTrackerDeps,
@@ -75,7 +76,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
   let stonePathOrientation = 0;
 
   function getTickIntervalMs() {
-    return Math.max(500, Math.min(20000, parseInt(localStorage.getItem('speed'), 10) || 4000));
+    const raw = parseInt(localStorage.getItem('speed'), 10);
+    return snapTickMs(Number.isFinite(raw) ? raw : DEFAULT_TICK_MS);
   }
 
   localStorage.setItem('speed', String(DEFAULT_TICK_MS));
@@ -355,6 +357,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
       roadPaint.busy = false;
     }
   }
+
+  scene.onEnterSelectMode = () => {
+    activateSelectToolButton();
+    game.setActiveToolId('select-object');
+  };
 
   scene.onObjectSelected = async (selectedObject) => {
     selectedObject.info = '';

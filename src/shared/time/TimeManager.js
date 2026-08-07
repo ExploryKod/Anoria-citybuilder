@@ -101,7 +101,16 @@ export class TimeManager {
 
   static MONTHS_PER_SEASON = TimeCalendar.MONTHS_PER_SEASON;
   static SEASONS = TimeCalendar.SEASONS;
+  static SEASON_EMOJI = TimeCalendar.SEASON_EMOJI;
   static MONTHS = TimeCalendar.MONTHS;
+
+  static getSeasonDisplay(season) {
+    return TimeCalendar.getSeasonDisplay(season);
+  }
+
+  static getSeasonDisplayForDays(days) {
+    return TimeCalendar.getSeasonDisplay(this.getTimeInfo(days).season);
+  }
 
   static getTimeInfo(days, daysPerMonth = null) {
     return TimeCalendar.getTimeInfo(

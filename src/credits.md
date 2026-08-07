@@ -1,5 +1,7 @@
 ## Crédits
 
+> **Page site :** [/credits](https://anoria.vercel.app/credits) — contact : eklati@protonmail.com
+
 
 #### Les assets utilisées pour le village proviennent de cette source Creative Commons :
   

@@ -4,7 +4,6 @@
     background: #fafafa;
     border-radius: var(--border-radius-small);
     padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     text-align: left;
 }
 
@@ -14,7 +13,6 @@
     padding: 12px;
     background: rgba(251, 129, 34, 0.1);
     border-radius: var(--border-radius-small);
-    border-left: 4px solid var(--cta);
 }
 
 .finances-debt-text {

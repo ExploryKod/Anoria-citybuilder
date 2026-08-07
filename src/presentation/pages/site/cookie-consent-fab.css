@@ -13,19 +13,17 @@
   border: 2px solid var(--site-border, #c9c4b8);
   border-radius: 50%;
   background: var(--site-surface, #fff);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   font-size: 1.35rem;
   line-height: 1;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease;
 }
 
 .cookie-consent-fab:hover {
   transform: scale(1.06);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .cookie-consent-fab:focus-visible {

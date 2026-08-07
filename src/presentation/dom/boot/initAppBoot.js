@@ -17,6 +17,7 @@ import { initPlaybackControls } from './PlaybackControls.js';
 import { initSpeedControls } from './SpeedControls.js';
 import { initToolBarBindings } from './ToolBarBindings.js';
 import { initMobileToolbar } from './ToolbarShell.js';
+import { initMobileCompactToolbar } from '../tools/MobileCompactToolbar.js';
 import { initMissingTooltips, observeMissingTooltips } from './TooltipTitles.js';
 import { bindToolPanelDeps } from '../tools/ToolPanel.js';
 import { bindPopupManagerDeps, popupManager } from '../shell/PopupManager.js';
@@ -57,6 +58,10 @@ export async function initAppBoot() {
   initToolBarBindings({
     buttonStateManager,
     invokeSetActiveTool,
+  });
+  initMobileCompactToolbar({
+    invokeSetActiveTool,
+    buttonStateManager,
   });
   initMobileToolbar();
   initParametersPanel({

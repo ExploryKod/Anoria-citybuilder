@@ -86,7 +86,6 @@ export function formatHouseLayoutHeader(vm) {
 export function formatHouseLayoutOptions() {
   return {
     layout: 'centered',
-    foyerTabLabel: 'foyer',
     hubOverlayMode: null,
   };
 }

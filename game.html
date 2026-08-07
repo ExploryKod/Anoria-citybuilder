@@ -15,11 +15,13 @@
     <link rel="stylesheet" href="./src/presentation/dom/styles/tutorial.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/parameters.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/legends.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/hud.css">
     
     <!-- Modal Styles -->
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/global.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/loader-modal.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/mobile-controls.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/mobile-compact-toolbar.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/realtime-budget.css">
     
     <!-- OPTIMIZATION: Load non-critical modal CSS asynchronously using media="print" trick -->
@@ -44,6 +46,7 @@
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/commerce-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/trade-map.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/health-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/administrator-panel-flat.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/multiplayer.css" media="print" onload="this.media='all'">
     <noscript>
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/compte-de-resultat-panel.css">
@@ -65,6 +68,7 @@
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/commerce-section.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/trade-map.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/health-section.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/administrator-panel-flat.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/multiplayer.css">
     </noscript>
 
@@ -132,15 +136,21 @@
                     </button>
                 </header>
                 <div class="info-building__tabs" role="tablist" aria-label="Sections du bâtiment">
-                    <button type="button" role="tab" id="tab-foyer" data-tab="foyer" aria-controls="panel-foyer" aria-selected="true" tabindex="0">🏠 Foyer</button>
-                    <button type="button" role="tab" id="tab-diet" data-tab="diet" aria-controls="panel-diet" aria-selected="false" tabindex="-1">🍽️ Régime</button>
-                    <button type="button" role="tab" id="tab-services" data-tab="services" aria-controls="panel-services" aria-selected="false" tabindex="-1">🔧 Services</button>
-                    <button type="button" role="tab" id="tab-neighbors" data-tab="neighbors" aria-controls="panel-neighbors" aria-selected="false" tabindex="-1">🏘️ Voisins</button>
-                    <button type="button" role="tab" id="tab-messages" data-tab="messages" aria-controls="panel-messages" aria-selected="false" tabindex="-1">💬 Messages</button>
+                    <button type="button" role="tab" id="tab-foyer" data-tab="foyer" aria-controls="panel-foyer" aria-selected="true" tabindex="0">🏠 Bâtiment</button>
+                    <button type="button" role="tab" id="tab-diet" data-tab="diet" aria-controls="panel-diet" aria-selected="false" tabindex="-1" hidden>🍽️ Régime</button>
+                    <button type="button" role="tab" id="tab-stocks" data-tab="stocks" aria-controls="panel-stocks" aria-selected="false" tabindex="-1" hidden>📦 Stocks</button>
+                    <button type="button" role="tab" id="tab-trade" data-tab="trade" aria-controls="panel-trade" aria-selected="false" tabindex="-1" hidden>💰 Ventes</button>
+                    <button type="button" role="tab" id="tab-staff" data-tab="staff" aria-controls="panel-staff" aria-selected="false" tabindex="-1" hidden>👷 Personnel</button>
+                    <button type="button" role="tab" id="tab-services" data-tab="services" aria-controls="panel-services" aria-selected="false" tabindex="-1" hidden>🔧 Services</button>
+                    <button type="button" role="tab" id="tab-neighbors" data-tab="neighbors" aria-controls="panel-neighbors" aria-selected="false" tabindex="-1" hidden>🏘️ Voisins</button>
+                    <button type="button" role="tab" id="tab-messages" data-tab="messages" aria-controls="panel-messages" aria-selected="false" tabindex="-1" hidden>💬 Messages</button>
                 </div>
                 <div class="info-building__body">
                     <div id="panel-foyer" role="tabpanel" class="info-building__tabpanel is-active" aria-labelledby="tab-foyer" tabindex="0"></div>
                     <div id="panel-diet" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-diet" tabindex="0" hidden></div>
+                    <div id="panel-stocks" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-stocks" tabindex="0" hidden></div>
+                    <div id="panel-trade" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-trade" tabindex="0" hidden></div>
+                    <div id="panel-staff" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-staff" tabindex="0" hidden></div>
                     <div id="panel-services" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-services" tabindex="0" hidden></div>
                     <div id="panel-neighbors" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-neighbors" tabindex="0" hidden></div>
                     <div id="panel-messages" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-messages" tabindex="0" hidden></div>
@@ -202,7 +212,7 @@
                                     <path d="M22 21H7"/><path d="m5 11 9 9"/>
                                 </svg>
                             </button>
-                            <button type="button" id="select-btn" data-toolid="select-object" class="toolbar-btn selected" title="Sélectionner" aria-label="Sélectionner">
+                            <button type="button" id="select-btn" data-toolid="select-object" class="toolbar-btn selected" title="Sélectionner (clic droit sur un bâtiment)" aria-label="Sélectionner">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-mouse-pointer">
                                     <path d="M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/>
                                     <path d="m12 12 4 10 1.7-4.3L22 16Z"/>
@@ -348,22 +358,6 @@
             <div class="toolbar-section toolbar-section-settings" data-section="settings">
                 <div class="toolbar__container">
                     <div class="toolbar__sub-container">
-                        <div class="toolbar__label">Vitesse</div>
-                        <div class="toolbar__buttons">
-                            <button type="button" id="faster-btn" class="toolbar-btn" title="Accélérer" aria-label="Accélérer la vitesse">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rabbit"><path d="M13 16a3 3 0 0 1 2.24 5"/><path d="M18 12h.01"/><path d="M18 21h-8a4 4 0 0 1-4-4 7 7 0 0 1 7-7h.2L9.6 6.4a1 1 0 1 1 2.8-2.8L15.8 7h.2c3.3 0 6 2.7 6 6v1a2 2 0 0 1-2 2h-1a3 3 0 0 0-3 3"/>
-                                    <path d="M20 8.54V4a2 2 0 1 0-4 0v3"/><path d="M7.612 12.524a3 3 0 1 0-1.6 4.3"/></svg>
-                            </button>
-                            <button type="button" id="slower-btn" class="toolbar-btn" title="Ralentir" aria-label="Ralentir la vitesse">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-snail"><path d="M2 13a6 6 0 1 0 12 0 4 4 0 1 0-8 0 2 2 0 0 0 4 0"/>
-                                    <circle cx="10" cy="13" r="8"/><path d="M2 21h12c4.4 0 8-3.6 8-8V7a2 2 0 1 0-4 0v6"/><path d="M18 3 19.1 5.2"/><path d="M22 3 20.9 5.2"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="toolbar__container">
-                    <div class="toolbar__sub-container">
                         <div class="manager-label">Gestion</div>
                         <div class="toolbar__buttons">
                             <button type="button" id="bilan-btn" data-toolid="bilan" class="toolbar-btn" title="Bilan comptable" aria-label="Ouvrir le bilan comptable">
@@ -460,6 +454,7 @@
 
       <!-- Mobile Camera Controls - Only visible on mobile/tablet -->
       <div id="mobile-camera-controls" class="mobile-camera-controls mobile-hidden">
+          <div id="mobile-camera-drag-handle" class="mobile-camera-controls__drag-handle" title="Déplacer" aria-label="Déplacer le panneau caméra">✋</div>
           <div class="mobile-controls-group">
               <div class="mobile-controls-label">Caméra</div>
               <!-- Camera Pan Controls (D-pad) -->
@@ -556,57 +551,87 @@
 
         </div>
 
-
-        <section class="info-panel-wrapper">
-            <div class="delay-ui-wrapper">
-                <div class="delay-ui"></div>
-            </div>
-
-        
-
-            <div class="info-panel">
-                <section class="info-box infos-time">
-                    <article class="clock-box" title="Date et heure en jeu">
-                        <span class="clock-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock-4"><circle cx="12" cy="12" r="10"/>
-                                <polyline points="12 6 12 12 16 14"/>
-                            </svg>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alarm-clock-off">
-                                <path d="M6.87 6.87a8 8 0 1 0 11.26 11.26"/><path d="M19.9 14.25a8 8 0 0 0-9.15-9.15"/><path d="m22 6-3-3"/><path d="M6.26 18.67 4 21"/><path d="m2 2 20 20"/><path d="M4 4 2 6"/>
-                            </svg>
+        <aside id="hud-pop-rail" class="info-panel-pop-detail hud-pop-detail hud-pop-rail" aria-label="Population">
+            <button type="button" id="hud-pop-rail-drag" class="hud-pop-rail__drag" title="Déplacer" aria-label="Déplacer le panneau population">✋</button>
+            <section class="info-box infos-pop-detail">
+                <div class="pop-detail-metric pop-detail-total" title="Population totale (active + chômeurs)">
+                    <span class="pop-detail-icon pop-detail-icon--users" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                    </span>
+                    <span class="pop-detail-value pop-total">0</span>
+                </div>
+                <div class="pop-detail-sep" role="separator" aria-hidden="true"></div>
+                <div class="pop-detail-metric pop-detail-hunger" title="Citoyens affamés">
+                    <span class="pop-detail-icon">
+                        <img src="/resources/textures/status/nofood.png" alt="" class="famished-icon">
+                    </span>
+                    <span class="pop-detail-value display-hunger-pop">0</span>
+                </div>
+                <div class="pop-detail-sep" role="separator" aria-hidden="true"></div>
+                <div class="pop-detail-active" title="Population active (citoyens actifs, élites, fonctionnaires)">
+                    <span class="pop-detail-metric pop-active-head">
+                        <span class="pop-detail-emoji pop-active-emoji" aria-hidden="true">👷</span>
+                        <span class="pop-detail-value pop-active-total">0</span>
+                    </span>
+                    <span class="pop-breakdown" aria-label="Détail population active">
+                        <span class="pop-detail-metric pop-segment pop-segment--citizen" title="Citoyens actifs (ni chômeur, ni élite, ni fonctionnaire)">
+                            <span class="pop-detail-emoji pop-segment-emoji" aria-hidden="true">🔨</span>
+                            <span class="pop-detail-value pop-segment-value">0</span>
                         </span>
-                        <div class="display-time"></div>
-                    </article>
-                    <article class="speed-box" title="Vitesse de simulation">
-                        <span class="speed-icon">   
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
-                            class="lucide lucide-rabbit"><path d="M13 16a3 3 0 0 1 2.24 5"/><path d="M18 12h.01"/><path d="M18 21h-8a4 4 0 0 1-4-4 7 7 0 0 1 7-7h.2L9.6 6.4a1 1 0 1 1 2.8-2.8L15.8 7h.2c3.3 0 6 2.7 6 6v1a2 2 0 0 1-2 2h-1a3 3 0 0 0-3 3"/>
-                                <path d="M20 8.54V4a2 2 0 1 0-4 0v3"/><path d="M7.612 12.524a3 3 0 1 0-1.6 4.3"/></svg>
+                        <span class="pop-detail-metric pop-segment pop-segment--elite" title="Élites">
+                            <span class="pop-detail-emoji pop-segment-emoji" aria-hidden="true">👑</span>
+                            <span class="pop-detail-value pop-segment-value">0</span>
                         </span>
-                        <div class="display-speed"></div>
-                        <div class="speed-change-indicator"></div>
-                    </article>
-                </section>
+                        <span class="pop-detail-metric pop-segment pop-segment--servant" title="Fonctionnaires">
+                            <span class="pop-detail-emoji pop-segment-emoji" aria-hidden="true">🏛</span>
+                            <span class="pop-detail-value pop-segment-value">0</span>
+                        </span>
+                    </span>
+                </div>
+                <div class="pop-detail-sep" role="separator" aria-hidden="true"></div>
+                <div class="pop-detail-metric pop-detail-unemployed" title="Chômeurs (hors fonctionnaires)">
+                    <span class="pop-detail-unemployed-head">
+                        <span class="pop-detail-icon">
+                            <img src="/resources/textures/status/no-work_colored.png" alt="Chômeurs" class="unemployed-icon">
+                        </span>
+                        <span class="pop-detail-value display-unemployed-pop">0</span>
+                    </span>
+                    <span class="pop-detail-value display-unemployed-pct">0%</span>
+                </div>
+                <div class="pop-detail-sep" role="separator" aria-hidden="true"></div>
+                <div class="pop-detail-metric pop-detail-lack worker-lack-box" title="Manque global de main-d'œuvre">
+                    <span class="pop-detail-emoji pop-lack-emoji" aria-hidden="true">⚠️</span>
+                    <span class="pop-detail-value display-worker-lack">0</span>
+                </div>
+            </section>
+        </aside>
 
-                <div class="info-box-global-numbers">
-                    <section class="info-box infos-pop">
-                        <article class="pop-box pop-box--total-only" title="Population totale (active + chômeurs)">
-                            <span class="info-box pop-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
-                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        <section class="info-panel-wrapper hud" aria-label="Informations de jeu">
+            <div class="hud-status">
+                <div class="delay-ui-wrapper">
+                    <div class="delay-ui"></div>
+                </div>
+
+                <div class="hud-vitals">
+                <!-- Invisible top row: time + budget -->
+                <div class="info-panel hud-vitals__row hud-vitals__row--status">
+                    <section class="info-box infos-time">
+                        <span class="hud-season hud-season--loading" role="img" aria-label="Saison : chargement…" title="Saison">…</span>
+                        <article class="clock-box" title="Date en jeu">
+                            <span class="clock-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock-4"><circle cx="12" cy="12" r="10"/>
+                                    <polyline points="12 6 12 12 16 14"/>
+                                </svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alarm-clock-off">
+                                    <path d="M6.87 6.87a8 8 0 1 0 11.26 11.26"/><path d="M19.9 14.25a8 8 0 0 0-9.15-9.15"/><path d="m22 6-3-3"/><path d="M6.26 18.67 4 21"/><path d="m2 2 20 20"/><path d="M4 4 2 6"/>
                                 </svg>
                             </span>
-                            <span class="pop-total">0</span>
-                        </article>
-                        <article class="pop-box" title="Citoyens affamés">
-                            <span class="info-box pop-icon">
-                                <img src="/resources/textures/status/nofood.png" alt="Famished" class="famished-icon" style="width: 24px; height: 24px; object-fit: contain;">
-                            </span>
-                            <div class="display-hunger-pop">0</div>
+                            <div class="display-time"></div>
                         </article>
                     </section>
-
                     <section class="info-box infos-budget">
                         <article class="budget-box" title="Fonds disponibles">
                             <span class="budget-icon">
@@ -619,8 +644,29 @@
                         </article>
                     </section>
                 </div>
+                </div>
+            </div>
 
-                <section class="info-box-stats">
+            <section id="mobile-build-bar" class="mobile-build-bar" hidden aria-label="Barre de construction">
+                <header class="mobile-build-bar__header">
+                    <span class="mobile-build-bar__title">Construction</span>
+                    <button type="button" id="mobile-build-bar-close" class="mobile-build-bar__close" title="Fermer" aria-label="Fermer la barre de construction">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m18 6-12 12"/>
+                            <path d="m6 6 12 12"/>
+                        </svg>
+                    </button>
+                </header>
+                <nav class="mobile-build-bar__pills" role="tablist" aria-label="Catégories"></nav>
+                <div class="mobile-build-bar__carousel splide" role="group" aria-label="Outils">
+                    <div class="splide__track">
+                        <ul class="splide__list"></ul>
+                    </div>
+                </div>
+            </section>
+
+            <nav class="hud-actions info-box-stats" aria-label="Barre de commandes">
+                <div class="hud-actions__group hud-actions__group--utilities" role="group" aria-label="Utilitaires">
                     <div class="info-box realtime-budget-box stats-buttons" id="realtime-budget-btn" title="Budget en temps réel" aria-label="Ouvrir le budget en temps réel" role="button" tabindex="0">
                         <article class="budget-box">
                             <span class="budget-icon">
@@ -633,7 +679,7 @@
                             </span>
                         </article>
                     </div>
-                    <div class="info-box administrator-box stats-buttons" id="administrator-btn" title="Panneau Administrateur" aria-label="Ouvrir le panneau administrateur">
+                    <div class="info-box administrator-box stats-buttons" id="administrator-btn" title="Panneau Administrateur" aria-label="Ouvrir le panneau administrateur" role="button" tabindex="0">
                         <article class="budget-box">
                             <span class="budget-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check">
@@ -650,7 +696,9 @@
                             </span>
                         </article>
                     </div>
-                    <!-- Game controls (pause/reset) -->
+                </div>
+                <div class="hud-actions__sep" aria-hidden="true"></div>
+                <div class="hud-actions__group hud-actions__group--session" role="group" aria-label="Session">
                     <div class="info-box game-control-box stats-buttons" id="pause-btn" data-action="pause" title="Pause / Reprendre" aria-label="Pause ou reprendre le jeu" role="button" tabindex="0">
                         <article class="budget-box">
                             <span class="budget-icon">
@@ -664,8 +712,8 @@
                     <div class="info-box game-control-box stats-buttons" id="replay-btn" data-action="replay" title="Replay" aria-label="Replay" role="button" tabindex="0">
                         <article class="budget-box">
                             <span class="budget-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" 
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                                 class="lucide lucide-rotate-ccw-icon lucide-rotate-ccw">
                                 <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                                 <path d="M3 3v5h5"/>
@@ -673,43 +721,22 @@
                             </span>
                         </article>
                     </div>
-                </section>
-            </div>
-
-            <div class="info-panel-pop-detail">
-                <section class="info-box infos-pop-detail" aria-label="Détail population active">
-                    <div class="pop-detail-active" title="Population active (citoyens actifs, élites, fonctionnaires)">
-                        <span class="pop-detail-metric pop-active-head">
-                            <span class="pop-detail-emoji pop-active-emoji" aria-hidden="true">👷</span>
-                            <span class="pop-detail-value pop-active-total">0</span>
-                        </span>
-                        <span class="pop-breakdown" aria-label="Détail population active">
-                            <span class="pop-detail-metric pop-segment pop-segment--citizen" title="Citoyens actifs (ni chômeur, ni élite, ni fonctionnaire)">
-                                <span class="pop-detail-emoji pop-segment-emoji" aria-hidden="true">🔨</span>
-                                <span class="pop-detail-value pop-segment-value">0</span>
-                            </span>
-                            <span class="pop-detail-metric pop-segment pop-segment--elite" title="Élites">
-                                <span class="pop-detail-emoji pop-segment-emoji" aria-hidden="true">👑</span>
-                                <span class="pop-detail-value pop-segment-value">0</span>
-                            </span>
-                            <span class="pop-detail-metric pop-segment pop-segment--servant" title="Fonctionnaires">
-                                <span class="pop-detail-emoji pop-segment-emoji" aria-hidden="true">🏛</span>
-                                <span class="pop-detail-value pop-segment-value">0</span>
-                            </span>
-                        </span>
+                    <div class="hud-actions__speed" role="group" aria-label="Vitesse de simulation">
+                        <button type="button" id="slower-btn" class="hud-action-btn hud-action-btn--speed" title="Ralentir" aria-label="Ralentir la vitesse">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-snail"><path d="M2 13a6 6 0 1 0 12 0 4 4 0 1 0-8 0 2 2 0 0 0 4 0"/>
+                                <circle cx="10" cy="13" r="8"/><path d="M2 21h12c4.4 0 8-3.6 8-8V7a2 2 0 1 0-4 0v6"/><path d="M18 3 19.1 5.2"/><path d="M22 3 20.9 5.2"/></svg>
+                        </button>
+                        <div class="hud-speed-display" title="Vitesse 5 / 9">
+                            <span class="display-speed">5</span>
+                            <span class="speed-change-indicator" aria-hidden="true"></span>
+                        </div>
+                        <button type="button" id="faster-btn" class="hud-action-btn hud-action-btn--speed" title="Accélérer" aria-label="Accélérer la vitesse">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rabbit"><path d="M13 16a3 3 0 0 1 2.24 5"/><path d="M18 12h.01"/><path d="M18 21h-8a4 4 0 0 1-4-4 7 7 0 0 1 7-7h.2L9.6 6.4a1 1 0 1 1 2.8-2.8L15.8 7h.2c3.3 0 6 2.7 6 6v1a2 2 0 0 1-2 2h-1a3 3 0 0 0-3 3"/>
+                                <path d="M20 8.54V4a2 2 0 1 0-4 0v3"/><path d="M7.612 12.524a3 3 0 1 0-1.6 4.3"/></svg>
+                        </button>
                     </div>
-                    <div class="pop-detail-metric pop-detail-unemployed" title="Chômeurs (hors fonctionnaires)">
-                        <span class="pop-detail-icon">
-                            <img src="/resources/textures/status/no-work_colored.png" alt="Chômeurs" class="unemployed-icon">
-                        </span>
-                        <span class="pop-detail-value display-unemployed-pop">0 (0%)</span>
-                    </div>
-                    <div class="pop-detail-metric pop-detail-lack worker-lack-box" title="Manque global de main-d'œuvre">
-                        <span class="pop-detail-emoji pop-lack-emoji" aria-hidden="true">⚠️</span>
-                        <span class="pop-detail-value display-worker-lack">0</span>
-                    </div>
-                </section>
-            </div>
+                </div>
+            </nav>
         </section>
 
 

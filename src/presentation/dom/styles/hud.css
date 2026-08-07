@@ -1,0 +1,812 @@
+/**
+ * Game HUD — status (top-right), pop detail (secondary), actions dock (bottom-right).
+ * Role-split layout; keeps legacy class names used by nodes.js.
+ */
+
+/* -------------------------------------------------------------------------
+   Shell
+   ------------------------------------------------------------------------- */
+
+.info-panel-wrapper.hud {
+  z-index: var(--z-index-info-panel, 10020);
+  position: absolute;
+  top: 0;
+  /* Fill game-window minus left toolbar + gutters — no hardcoded px width */
+  left: calc(min(var(--toolbar-width), var(--toolbar-width-max)) + var(--hud-gutter));
+  right: var(--hud-gutter);
+  bottom: auto;
+  width: auto; /* stretches between left and right */
+  max-width: none;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 4px 0 0;
+  pointer-events: none;
+  background: transparent;
+  border-radius: 0;
+  box-sizing: border-box;
+}
+
+.info-panel-wrapper.hud > * {
+  pointer-events: auto;
+}
+
+/* -------------------------------------------------------------------------
+   Status strip (date / speed / pop / funds)
+   ------------------------------------------------------------------------- */
+
+.hud-status {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: max-content;
+  max-width: 100%;
+}
+
+/* Bento: 2 rows of equal width = max(content top, content bottom) */
+.hud-vitals {
+  display: inline-grid;
+  justify-items: stretch;
+  align-content: start;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.delay-ui-wrapper {
+  padding: 2px 8px;
+  height: var(--progress-bar-h);
+  background: transparent;
+  width: 100%;
+  display: flex;
+}
+
+.delay-ui {
+  flex-grow: 0;
+  color: var(--lightgreen);
+  background: var(--lightgreen);
+  height: 100%;
+  width: auto;
+  min-width: 0;
+  transition: all 0.5s ease-in;
+  border-radius: var(--border-radius-small);
+}
+
+/* Invisible top container: holds time + budget chips */
+.info-panel.hud-vitals__row--status {
+  margin: 0;
+  padding: 0;
+  height: auto;
+  width: max-content;
+  min-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* Shared chip metrics — time / budget status strip */
+.info-panel > .info-box {
+  box-sizing: border-box;
+  height: var(--hud-chip-height, 40px);
+  min-height: var(--hud-chip-height, 40px);
+  border-radius: var(--border-radius-small);
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  line-height: 1;
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background-color: var(--cta);
+  border: none;
+  cursor: default;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.info-panel > .info-box svg {
+  height: 16px;
+  width: 16px;
+  flex-shrink: 0;
+}
+
+.info-panel > .info-box svg.lucide-alarm-clock-off {
+  display: none;
+}
+
+.info-panel > .info-box > article {
+  display: flex;
+  align-items: center;
+  column-gap: 6px;
+  height: 100%;
+}
+
+.info-panel > .info-box.infos-time {
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: flex-start;
+  gap: 10px;
+  color: #fff;
+}
+
+.hud-season {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  font-size: 17px;
+  line-height: 1;
+  cursor: default;
+  user-select: none;
+  border: none;
+  border-radius: 8px;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+}
+
+.hud-season--loading {
+  background: rgba(255, 255, 255, 0.88);
+  color: rgba(29, 34, 40, 0.45);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.hud-season--printemps {
+  background: #e8f5e9;
+}
+
+.hud-season--ete {
+  background: #fff8e1;
+}
+
+.hud-season--automne {
+  background: #fbe9e7;
+}
+
+.hud-season--hiver {
+  background: #e3f2fd;
+}
+
+.info-panel > .info-box.infos-time .clock-box {
+  display: flex;
+  align-items: center;
+  column-gap: 6px;
+  height: 100%;
+  min-width: 0;
+}
+
+.info-panel > .info-box.infos-time svg.lucide-rabbit {
+  height: 18px;
+  width: 18px;
+}
+
+.info-panel > .info-box.infos-budget {
+  flex: 0 0 auto;
+  min-width: 0;
+  color: #fff;
+}
+
+.info-panel p {
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1;
+}
+
+.display-time,
+.display-funds {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.hud-actions .display-speed {
+  display: inline;
+  line-height: 1;
+}
+
+@keyframes hud-pop-out {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Pop rail — vertical white panel (left, clear of toolbar)
+   ------------------------------------------------------------------------- */
+
+.hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
+  position: absolute;
+  z-index: calc(var(--z-index-info-panel, 10020) - 1);
+  top: 50%;
+  left: calc(min(var(--toolbar-width), var(--toolbar-width-max)) + var(--hud-gutter));
+  right: auto;
+  bottom: auto;
+  transform: translateY(-50%);
+  display: block;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+.hud-pop-rail.hud-pop-rail--dragged {
+  transform: none;
+}
+
+.hud-pop-rail__drag {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  background: rgba(29, 34, 40, 0.85);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.hud-pop-rail__drag:hover {
+  transform: scale(1.08);
+  background: rgba(29, 34, 40, 1);
+}
+
+.hud-pop-rail__drag:active {
+  cursor: grabbing;
+}
+
+.hud-pop-rail .infos-pop-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  gap: 0;
+  width: auto;
+  min-width: 72px;
+  max-width: 120px;
+  height: auto;
+  min-height: 0;
+  padding: 12px 10px;
+  background-color: #fff;
+  border: none;
+  border-radius: var(--border-radius-small);
+  color: var(--primary);
+  cursor: default;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.hud-pop-rail .pop-detail-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  height: auto;
+  min-height: 20px;
+  line-height: 1;
+  width: 100%;
+}
+
+.hud-pop-rail .pop-detail-sep {
+  width: 100%;
+  height: 1px;
+  margin: 8px 0;
+  padding: 0;
+  border: none;
+  background: rgba(29, 34, 40, 0.12);
+  flex-shrink: 0;
+}
+
+.hud-pop-rail .pop-detail-emoji,
+.hud-pop-rail .pop-detail-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.hud-pop-rail .pop-detail-emoji {
+  font-size: 16px;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+}
+
+.hud-pop-rail .pop-detail-icon .unemployed-icon,
+.hud-pop-rail .pop-detail-icon .famished-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  display: block;
+}
+
+.hud-pop-rail .pop-detail-icon--users {
+  color: var(--primary);
+}
+
+.hud-pop-rail .pop-detail-icon--users svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.hud-pop-rail .pop-detail-total .pop-total {
+  font-weight: 700;
+}
+
+.hud-pop-rail .pop-detail-value {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--primary);
+}
+
+.hud-pop-rail .pop-detail-active {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.hud-pop-rail .pop-breakdown {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+.hud-pop-rail .pop-detail-unemployed {
+  flex-wrap: wrap;
+}
+
+.hud-pop-rail .pop-detail-unemployed-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.hud-pop-rail .display-unemployed-pop {
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.hud-pop-rail .display-unemployed-pct::before {
+  content: ' (';
+}
+
+.hud-pop-rail .display-unemployed-pct::after {
+  content: ')';
+}
+
+.hud-pop-rail .display-worker-lack {
+  color: #cc0000;
+}
+
+/* Mobile — chômage : % sous icône + effectif */
+@media (max-width: 1024px) {
+  .hud-pop-rail .pop-detail-unemployed {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .hud-pop-rail .display-unemployed-pct {
+    padding-left: 24px;
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.85;
+  }
+
+  .hud-pop-rail .display-unemployed-pct::before,
+  .hud-pop-rail .display-unemployed-pct::after {
+    content: none;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Command bar — utilities (left) | session (right)
+   ------------------------------------------------------------------------- */
+
+.hud-actions.info-box-stats {
+  position: fixed;
+  left: 50%;
+  right: auto;
+  bottom: env(safe-area-inset-bottom, 0px);
+  top: auto;
+  transform: translateX(-50%);
+  z-index: calc(var(--z-index-legend, 1000) + 2);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: auto;
+  max-width: min(100%, 520px);
+  min-height: var(--hud-bottom-height, 56px);
+  padding: 8px 12px;
+  margin: 0;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-bottom: none;
+  border-radius: var(--border-radius-small) var(--border-radius-small) 0 0;
+  backdrop-filter: blur(10px);
+}
+
+.hud-actions__group {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+.hud-actions__sep {
+  width: 1px;
+  align-self: stretch;
+  min-height: 28px;
+  margin: 0 4px;
+  background: rgba(29, 34, 40, 0.12);
+  flex-shrink: 0;
+}
+
+.hud-actions .info-box.stats-buttons,
+.hud-actions .hud-action-btn {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--border-radius-small);
+  border: none;
+  background: var(--cta);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.hud-actions .info-box.stats-buttons:hover,
+.hud-actions .hud-action-btn:hover {
+  transform: translateY(-1px);
+  background: #fff;
+  color: var(--primary);
+}
+
+.hud-actions .info-box.stats-buttons.active {
+  background: #fff;
+  color: var(--primary);
+  border: 2px solid var(--cta);
+}
+
+.hud-actions .info-box.stats-buttons .budget-box,
+.hud-actions .info-box.stats-buttons .budget-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.hud-actions .info-box.stats-buttons svg,
+.hud-actions .hud-action-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.hud-actions .info-box.game-control-box {
+  background-color: #009999;
+}
+
+.hud-actions .info-box.game-control-box:hover {
+  background-color: #fff;
+  color: #009999;
+}
+
+.hud-actions .info-box.game-control-box:active,
+.hud-actions .info-box.game-control-box:focus {
+  outline: none;
+}
+
+.hud-actions .info-box.game-control-box.active {
+  background-color: var(--cta);
+  color: #fff;
+}
+
+/* Speed cluster — after replay */
+.hud-actions__speed {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 2px;
+}
+
+.hud-speed-display {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 40px;
+  padding: 0 8px;
+  border-radius: var(--border-radius-small);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(29, 34, 40, 0.08);
+  color: var(--primary);
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-actions .speed-change-indicator {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: var(--cta);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.hud-actions .speed-change-indicator.active {
+  opacity: 1;
+  visibility: visible;
+  animation: hud-pop-out 0.3s ease-out;
+}
+
+.hud-action-btn--speed {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--primary);
+  border: 1px solid rgba(29, 34, 40, 0.1);
+}
+
+.hud-action-btn--speed:hover {
+  background: var(--cta);
+  color: #fff;
+  border-color: var(--cta);
+}
+
+/* -------------------------------------------------------------------------
+   Portrait (phones / narrow tablets)
+   ------------------------------------------------------------------------- */
+
+@media screen and (max-width: 1024px) and (orientation: portrait) {
+  .info-panel-wrapper.hud {
+    left: var(--hud-gutter);
+    right: var(--hud-gutter);
+    max-width: none;
+    width: auto;
+    align-items: stretch;
+    padding: 4px 0 0;
+  }
+
+  .hud-status {
+    width: 100%;
+    max-width: none;
+  }
+
+  .hud-vitals {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .info-panel {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .info-panel > .info-box.infos-time {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .info-panel > .info-box.infos-budget {
+    flex: 0 0 auto;
+  }
+
+  .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
+    left: max(var(--hud-gutter), env(safe-area-inset-left, 0px));
+  }
+
+  .hud-actions.info-box-stats {
+    left: 50%;
+    right: auto;
+    bottom: env(safe-area-inset-bottom, 0px);
+    transform: translateX(-50%);
+    width: min(100%, 420px);
+    gap: 0;
+    padding: 6px 10px;
+  }
+
+  .hud-actions__sep {
+    margin: 0 8px;
+  }
+
+  .hud-actions .info-box.stats-buttons {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Landscape (phones / tablets)
+   ------------------------------------------------------------------------- */
+
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+  .info-panel-wrapper.hud {
+    top: 0;
+    left: calc(min(var(--toolbar-width), var(--toolbar-width-max)) + var(--hud-gutter));
+    right: var(--hud-gutter);
+    max-width: none;
+    width: auto;
+    padding: 2px 0 0;
+  }
+
+  .delay-ui-wrapper {
+    padding: 1px 4px;
+    height: 12px;
+  }
+
+  .info-panel {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .info-panel > .info-box {
+    height: 34px;
+    min-height: 34px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .info-panel > .info-box.infos-time {
+    min-width: 0;
+    flex: 1 1 auto;
+    gap: 10px;
+  }
+
+  .info-panel .clock-box,
+  .info-panel .budget-box {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 100%;
+  }
+
+  .info-panel p {
+    font-size: 12px;
+    margin: 0;
+  }
+
+  .info-panel svg {
+    height: 16px;
+    width: 16px;
+  }
+
+  .hud-pop-rail .pop-detail-value {
+    font-size: 12px;
+  }
+
+  .hud-actions.info-box-stats {
+    left: 50%;
+    right: auto;
+    bottom: env(safe-area-inset-bottom, 0px);
+    transform: translateX(-50%);
+    max-width: min(100%, 520px);
+    gap: 6px;
+    padding: 6px 10px;
+  }
+
+  .hud-actions__speed {
+    gap: 2px;
+  }
+
+  .hud-speed-display {
+    min-width: 32px;
+    height: 36px;
+    font-size: 14px;
+    padding: 0 6px;
+  }
+
+  .hud-actions .info-box.stats-buttons,
+  .hud-actions .hud-action-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+  }
+
+  .hud-actions .info-box.stats-buttons svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Very narrow screens
+   ------------------------------------------------------------------------- */
+
+@media screen and (max-width: 480px) {
+  .info-panel > .info-box.infos-time .clock-icon {
+    display: none;
+  }
+
+  .hud-pop-rail .infos-pop-detail {
+    min-width: 64px;
+    max-width: 108px;
+    padding: 10px 8px;
+  }
+
+  .hud-pop-rail .pop-detail-sep {
+    margin: 6px 0;
+  }
+
+  .hud-pop-rail .pop-breakdown {
+    gap: 5px;
+  }
+
+  .hud-pop-rail .pop-detail-active {
+    gap: 6px;
+  }
+}
