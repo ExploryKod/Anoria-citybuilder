@@ -288,15 +288,104 @@ function resolveIcon(toolId) {
   return '📦';
 }
 
-function makeNewButton(buttonInfo, icon = '') {
+const CATEGORY_EXCLUDES = {
+  markets: ['Market-Stall'],
+  infrastructure: [
+    'roads',
+    'StonePath-001',
+    'StonePath-Right-001',
+    'StonePath-Left-001',
+    'StonePath-Cross-001',
+  ],
+};
+
+/**
+ * @param {string} categoryKey
+ * @returns {string[]}
+ */
+export function getToolIdsForCategory(categoryKey) {
+  const exclude = new Set(CATEGORY_EXCLUDES[categoryKey] || []);
+  return (toolIds[categoryKey] || []).filter((id) => !exclude.has(id));
+}
+
+/**
+ * @param {string} categoryKey
+ * @returns {{ text: string, tool: string, group: string, title?: string, stonePathTool?: boolean }[]}
+ */
+export function getToolButtonInfosForCategory(categoryKey) {
+  if (categoryKey === 'tools') {
+    return [
+      { text: 'Démolir', tool: 'bulldoze', group: 'tools' },
+      { text: 'Sélectionner', tool: 'select-object', group: 'tools' },
+    ];
+  }
+
+  if (categoryKey === 'roads') {
+    const infos = [];
+    const infrastructureToolIDs = toolIds.infrastructure || [];
+    if (infrastructureToolIDs.includes('roads')) {
+      infos.push({ text: 'Route moderne', tool: 'roads', group: 'Road' });
+    }
+    if (infrastructureToolIDs.includes('StonePath-001')) {
+      const fromData = buttonData.find((b) => b.tool === 'StonePath-001');
+      infos.push(
+        fromData || { text: 'Chemin de pierre', tool: 'StonePath-001', group: 'StonePath' },
+      );
+      const stonePathInfo = infos[infos.length - 1];
+      stonePathInfo.title = 'Chemin de pierre — touche R pour tourner';
+      stonePathInfo.stonePathTool = true;
+    }
+    return infos;
+  }
+
+  const ids = getToolIdsForCategory(categoryKey);
+  const seen = new Set();
+  /** @type {{ text: string, tool: string, group: string }[]} */
+  const infos = [];
+
+  for (const toolId of ids) {
+    if (seen.has(toolId)) continue;
+    seen.add(toolId);
+    const fromData = buttonData.find((b) => b.tool === toolId);
+    infos.push(
+      fromData || {
+        text: toolId,
+        tool: toolId,
+        group: categoryKey,
+      },
+    );
+  }
+
+  buttonData
+    .filter((b) => ids.includes(b.tool) && !seen.has(b.tool))
+    .forEach((b) => {
+      seen.add(b.tool);
+      infos.push(b);
+    });
+
+  return infos;
+}
+
+export { resolveIcon };
+
+/**
+ * @param {{ text: string, tool: string, group: string, title?: string, stonePathTool?: boolean }} buttonInfo
+ * @param {string} icon
+ * @param {{ container?: HTMLElement, extraClass?: string, onClick?: (e: Event) => void }} [options]
+ */
+export function createToolButton(buttonInfo, icon = '', options = {}) {
+  const { container, extraClass = 'panel-btn', onClick } = options;
   const button = document.createElement('button');
   button.type = 'button';
-  button.id = buttonInfo.tool;
+  button.id = extraClass === 'mobile-tool-btn' ? `mobile-tool-${buttonInfo.tool}` : buttonInfo.tool;
   button.dataset.toolid = buttonInfo.tool;
-  button.title = getBuildingDisplayName(buttonInfo.tool);
-  button.setAttribute('aria-label', button.title);
+  const label = buttonInfo.title || getBuildingDisplayName(buttonInfo.tool);
+  button.title = label;
+  button.setAttribute('aria-label', label);
   button.classList.add('toolbar-btn');
-  button.classList.add('panel-btn');
+  if (extraClass) {
+    button.classList.add(extraClass);
+  }
 
   const isEmoji = typeof icon === 'string' && icon.length <= 4 && !icon.includes('<');
   if (isEmoji) {
@@ -305,21 +394,35 @@ function makeNewButton(buttonInfo, icon = '') {
     button.innerHTML = icon;
   }
 
+  if (buttonInfo.stonePathTool) {
+    button.dataset.stonePathTool = '1';
+  }
+
   button.addEventListener('click', (e) => {
     if (deps?.buttonStateManager && !deps.buttonStateManager.isEnabled(buttonInfo.tool)) {
       return;
     }
-    deps.invokeSetActiveTool?.(e);
+    if (onClick) {
+      onClick(e);
+    } else {
+      deps.invokeSetActiveTool?.(e);
+    }
   });
 
-  panelLayoutInner.appendChild(button);
-  panelLayoutInner.classList.remove('loading-objects');
-  loaderButton.classList.remove('active');
+  const target = container || panelLayoutInner;
+  target.appendChild(button);
 
   if (deps?.buttonStateManager) {
     deps.buttonStateManager.registerButton(buttonInfo.tool, button);
   }
 
+  return button;
+}
+
+function makeNewButton(buttonInfo, icon = '') {
+  const button = createToolButton(buttonInfo, icon, { extraClass: 'panel-btn' });
+  panelLayoutInner.classList.remove('loading-objects');
+  loaderButton.classList.remove('active');
   return button;
 }
 

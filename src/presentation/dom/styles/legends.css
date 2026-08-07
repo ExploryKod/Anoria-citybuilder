@@ -22,8 +22,19 @@
   box-sizing: border-box;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 1025px) {
   .legend-btns-container--mobile {
+    display: none !important;
+  }
+}
+
+/* Landscape mobile: camera toggle only (toolbar is docked on the left) */
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+  .legend-btns-container--mobile {
+    display: flex !important;
+  }
+
+  .toolbar-mobile-toggle-btn {
     display: none !important;
   }
 }

@@ -1,0 +1,176 @@
+/* Mobile compact build bar — portrait only, above bottom command bar */
+
+:root {
+  --mobile-build-bar-offset: 0px;
+}
+
+.mobile-build-bar {
+  display: none;
+}
+
+@media screen and (max-width: 1024px) and (orientation: portrait) {
+  .mobile-build-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(var(--hud-bottom-height, 56px) + env(safe-area-inset-bottom, 0px) + 8px);
+    z-index: calc(var(--z-index-legend, 1000) + 3);
+    padding: 10px 12px 12px;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: var(--border-radius-small);
+    box-shadow: 0 -2px 16px rgba(29, 34, 40, 0.12);
+    backdrop-filter: blur(10px);
+    transform: translateY(8px);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+
+  .mobile-build-bar[hidden] {
+    display: none !important;
+  }
+
+  .mobile-build-bar.mobile-build-bar--open {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mobile-build-bar__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 24px;
+  }
+
+  .mobile-build-bar__title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    letter-spacing: 0.02em;
+  }
+
+  .mobile-build-bar__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(29, 34, 40, 0.06);
+    color: var(--primary);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.15s ease;
+  }
+
+  .mobile-build-bar__close:hover,
+  .mobile-build-bar__close:active {
+    background: rgba(29, 34, 40, 0.12);
+  }
+
+  .mobile-build-bar__pills {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .mobile-build-bar__pills::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-build-bar__pill {
+    flex: 0 0 auto;
+    height: 32px;
+    padding: 0 12px;
+    border: 1px solid rgba(29, 34, 40, 0.12);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .mobile-build-bar__pill--active {
+    background: var(--cta);
+    border-color: var(--cta);
+    color: #fff;
+  }
+
+  .mobile-build-bar__carousel {
+    width: 100%;
+    min-height: 52px;
+  }
+
+  .mobile-build-bar__carousel .splide__track {
+    overflow: visible;
+  }
+
+  .mobile-build-bar__slide {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-build-bar .mobile-tool-btn {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--cta);
+    border-radius: var(--border-radius-small);
+    background: var(--cta);
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+  }
+
+  .mobile-build-bar .mobile-tool-btn svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .mobile-build-bar .mobile-tool-btn .tool-emoji {
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .mobile-build-bar .mobile-tool-btn.selected {
+    background: #fff;
+    color: var(--primary);
+  }
+
+  .mobile-build-bar .mobile-tool-btn:active {
+    transform: scale(0.95);
+  }
+
+  /* Lift FAB when compact bar is open */
+  .legend-btns-container--mobile.mobile-build-bar-visible {
+    bottom: calc(
+      var(--hud-bottom-height, 56px)
+      + env(safe-area-inset-bottom, 0px)
+      + var(--mobile-build-bar-offset, 140px)
+      + 10px
+    );
+  }
+}

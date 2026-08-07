@@ -151,11 +151,79 @@ canvas {
     z-index: var(--z-index-canvas);
 }
 
-/* Perf HUD : annule le canvas 100vw/100vh (tailles posées en inline !important) */
-#stats-js {
+/* Perf HUD — collapsible panel + discrete FAB */
+#stats-js.perf-hud {
     width: auto !important;
     height: auto !important;
     pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0;
+}
+
+.perf-hud__panel {
+    position: relative;
+    opacity: 0.95;
+}
+
+.perf-hud__panel[hidden] {
+    display: none !important;
+}
+
+.perf-hud__collapse {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    z-index: 2;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 50%;
+    background: rgba(29, 34, 40, 0.85);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.perf-hud__collapse:hover {
+    transform: scale(1.08);
+    background: rgba(29, 34, 40, 1);
+}
+
+.perf-hud__fab {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 2px solid rgba(29, 34, 40, 0.12);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--primary, #1d2228);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.perf-hud__fab:hover {
+    transform: scale(1.06);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.perf-hud__fab:focus-visible {
+    outline: 2px solid var(--cta, #fb8122);
+    outline-offset: 2px;
+}
+
+.perf-hud__fab[hidden] {
+    display: none !important;
 }
 
 #stats-js canvas.perf-hud-canvas {
@@ -165,13 +233,22 @@ canvas {
     position: static !important;
     top: auto !important;
     left: auto !important;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+@media (max-width: 600px) {
+    .perf-hud__fab {
+        width: 36px;
+        height: 36px;
+    }
 }
 
 /* Ajuster le canvas pour mobile paysage */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
     canvas {
-        height: 100vh;
-        top: 80px;
+        height: 100vh !important;
+        top: 0;
     }
 }
 
@@ -180,15 +257,10 @@ canvas.pointer-events-disabled {
     pointer-events: none;
 }
 
-/* Désactiver les événements du canvas en mode mobile paysage pour éviter les conflits avec le carousel */
+/* Canvas stays interactive in landscape (docked toolbar on the left) */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
     canvas {
-        pointer-events: none; /* Désactiver les clics sur le canvas */
-    }
-    
-    /* Réactiver les événements seulement sur la zone du canvas visible */
-    canvas.canvas-interactive {
-        pointer-events: auto;
+        pointer-events: auto !important;
     }
 }
 
@@ -218,6 +290,8 @@ canvas.pointer-events-disabled {
     scrollbar-color: var(--cta) #fafafa;
 
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     position: absolute;
     top: 0;
     left: 0;
@@ -269,8 +343,67 @@ canvas.pointer-events-disabled {
 
 
 
+/* Mobile landscape — primary play mode: docked left toolbar, interactive canvas */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
-    .game-window .toolbar {
+    canvas {
+        height: 100vh !important;
+        top: 0;
+        pointer-events: auto !important;
+    }
+
+    .game-window .toolbar.toolbar-landscape-docked {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        transform: none;
+        width: min(var(--toolbar-width), var(--toolbar-width-max));
+        max-width: var(--toolbar-width-max);
+        max-height: none;
+        height: auto;
+        padding: var(--toolbar-padding);
+        padding-top: 48px;
+        border-radius: 0;
+        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.2);
+        overflow-x: hidden;
+        overflow-y: auto;
+        display: flex !important;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 12px;
+        z-index: var(--z-index-toolbar);
+    }
+
+    .game-window .toolbar.toolbar-landscape-docked.mobile-hidden {
+        display: flex !important;
+    }
+
+    .game-window .toolbar.toolbar-landscape-docked .toolbar-section.active {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+    }
+
+    .game-window .toolbar.toolbar-landscape-docked .toolbar-tabs-container {
+        width: 100%;
+    }
+
+    .game-window .toolbar.toolbar-landscape-docked {
+        cursor: default;
+    }
+
+    .game-window .toolbar.toolbar-is-dragged {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Portrait / overlay toolbar — toggle to show (unchanged) */
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    .game-window .toolbar:not(.toolbar-landscape-docked) {
         position: fixed;
         top: 70px;
         left: 50%;
@@ -287,11 +420,11 @@ canvas.pointer-events-disabled {
         z-index: var(--z-index-toolbar);
     }
 
-    .game-window .toolbar.mobile-hidden {
+    .game-window .toolbar:not(.toolbar-landscape-docked).mobile-hidden {
         display: none !important;
     }
 
-    .game-window .toolbar.mobile-visible {
+    .game-window .toolbar:not(.toolbar-landscape-docked).mobile-visible {
         display: flex !important;
         flex-direction: row;
         flex-wrap: wrap;
@@ -352,7 +485,7 @@ canvas.pointer-events-disabled {
     pointer-events: auto;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1024px) and (orientation: portrait) {
     .game-window .toolbar {
         position: fixed;
         top: 70px;

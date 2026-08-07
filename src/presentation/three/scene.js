@@ -167,8 +167,6 @@ export function createScene(_gameStore, assetManager, deps) {
     // Overlay perf : FPS + MS + MB, net, ~20% largeur, bas-droite
     // (stats.js en CSS scale était flou et ne montrait qu'un panneau)
     const stats = createPerfHud({ widthRatio: 0.2, bottom: 96, right: 16 });
-    const statsVisible = localStorage.getItem('show-stats-js') !== 'false';
-    stats.dom.style.display = statsVisible ? 'block' : 'none';
     document.body.appendChild(stats.dom);
     
     // Add WebGL error handling
@@ -1842,10 +1840,7 @@ export function createScene(_gameStore, assetManager, deps) {
     });
 
     registerAppService('toggleStatsJs', function() {
-        const next = stats.dom.style.display === 'none';
-        stats.dom.style.display = next ? 'block' : 'none';
-        localStorage.setItem('show-stats-js', next ? 'true' : 'false');
-        return next;
+        return stats.toggle();
     });
     
     // Store last frame time for animation delta calculation
