@@ -14,6 +14,7 @@ import {
 } from '../dom/shell/nodes.js';
 import {
     assetsPrices,
+    buildingsObjects,
     commerce,
     factories,
     farms,
@@ -1911,6 +1912,26 @@ export function createScene(_gameStore, assetManager, deps) {
     let hoveredObjectName = null
     const objectsNames = ['grass', 'roads', 'House-Red', 'House-Purple', 'House-Blue', 'Market-Stall']
     let isLeftPointerDown = false;
+    let rightPointerDownPos = null;
+    let rightPointerHasMoved = false;
+
+    function resolveInteractiveObjectAtEvent(event) {
+        let objectToSelect = focusedObject;
+        if (!objectToSelect) {
+            const p = getPointerClientXY(event);
+            mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
+            mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera.camera);
+            const intersections = raycaster.intersectObjects(getInteractiveObjects(), false);
+            objectToSelect = intersections.length > 0 ? intersections[0].object : null;
+        }
+        return objectToSelect;
+    }
+
+    function isInspectableBuilding(object) {
+        const buildingId = object?.userData?.id;
+        return Boolean(buildingId && buildingsObjects.includes(buildingId));
+    }
 
     function onMouseDown(event){
         // Block interaction if a popup is open or info modal is open
@@ -1928,26 +1949,21 @@ export function createScene(_gameStore, assetManager, deps) {
             isLeftPointerDown = true;
         }
 
+        if (event.button === 2) {
+            rightPointerDownPos = getPointerClientXY(event);
+            rightPointerHasMoved = false;
+        }
+
         camera.onMouseDown(event);
 
-        // Placement / selection: left click only (right = camera orbit)
+        // Placement / selection: left click only
+        // Right-click: camera pan on drag; short click inspects buildings (see onMouseUp)
         if (event.button !== 0) {
             return;
         }
-        
-        // Use focusedObject if available (from per-frame updates), otherwise raycast
-        let objectToSelect = focusedObject;
-        
-        // Fallback: perform raycast if focusedObject not available
-        if (!objectToSelect) {
-            const p = getPointerClientXY(event);
-            mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
-            mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
-            raycaster.setFromCamera(mouse, camera.camera);
-            const intersections = raycaster.intersectObjects(getInteractiveObjects(), false);
-            objectToSelect = intersections.length > 0 ? intersections[0].object : null;
-        }
-        
+
+        const objectToSelect = resolveInteractiveObjectAtEvent(event);
+
         // Update selected object using unified method
         if (objectToSelect) {
             updateSelectedObject.call(this, objectToSelect);
@@ -1972,6 +1988,28 @@ export function createScene(_gameStore, assetManager, deps) {
                 });
             }
         }
+
+        if (event.button === 2) {
+            const wasRightTap = Boolean(rightPointerDownPos) && !rightPointerHasMoved;
+            rightPointerDownPos = null;
+            rightPointerHasMoved = false;
+
+            if (
+                wasRightTap
+                && !(popupManager?.getActivePopups?.()?.length > 0)
+                && !isInfoModalOpen()
+                && performance.now() >= suppressInputUntilMs
+            ) {
+                const objectToInspect = resolveInteractiveObjectAtEvent(event);
+                if (isInspectableBuilding(objectToInspect)) {
+                    // Switch to select tool (toolbar highlight) then open building info
+                    if (typeof this.onEnterSelectMode === 'function') {
+                        this.onEnterSelectMode();
+                    }
+                    updateSelectedObject.call(this, objectToInspect);
+                }
+            }
+        }
     }
 
 function onMouseMove(event) {
@@ -1992,6 +2030,16 @@ function onMouseMove(event) {
     }
     
     camera.onMouseMove(event);
+
+    // Track right-drag vs short right-click (inspect)
+    if (rightPointerDownPos && (event.buttons & 4) === 4) {
+        const p = getPointerClientXY(event);
+        const deltaX = Math.abs(p.x - rightPointerDownPos.x);
+        const deltaY = Math.abs(p.y - rightPointerDownPos.y);
+        if (Math.sqrt(deltaX * deltaX + deltaY * deltaY) > TAP_THRESHOLD) {
+            rightPointerHasMoved = true;
+        }
+    }
 
     // Update the mouse coordinates for raycasting
     const p = getPointerClientXY(event);
@@ -2304,6 +2352,12 @@ function onTouchEnd(event) {
         onRotateBuildingTool: undefined,
         /** @type {((focused: object | null) => void) | undefined} */
         onPlacementHover: undefined,
+        /**
+         * Called before a right-click inspect selects a building.
+         * Should switch the active tool to select-object and update toolbar UI.
+         * @type {(() => void) | undefined}
+         */
+        onEnterSelectMode: undefined,
         // Expose focused/selected for external access if needed
         get focusedObject() { return focusedObject; },
         get selectedObject() { return selectedObject; },
