@@ -1,5 +1,7 @@
 # Mentions Légales
 
+> **Page site :** [/legal](https://anoria.vercel.app/legal) — contact : eklati@protonmail.com
+
 ## 1. Informations sur l'éditeur
 
 Le site web **Eraanurbs** (ci-après "le Site") est édité par :
@@ -7,13 +9,13 @@ Le site web **Eraanurbs** (ci-après "le Site") est édité par :
 **Eraanurbs**  
 Site web de jeu de construction de ville  
 URL du site : [https://anoria.vercel.app/](https://anoria.vercel.app/)  
-**Contact :** contact@amaury-franssen-dev.com
+**Contact :** eklati@protonmail.com
 
 ## 2. Directeur de publication
 
 Le directeur de publication est **Amaury Franssen**.
 
-**Contact :** contact@amaury-franssen-dev.com
+**Contact :** eklati@protonmail.com
 
 ## 3. Hébergement du Site (Frontend)
 
@@ -53,9 +55,9 @@ Les présentes mentions légales sont régies par le droit français. En cas de 
 
 Pour toute question relative aux présentes mentions légales, vous pouvez nous contacter à l'adresse suivante :
 
-**Email :** contact@amaury-franssen-dev.com
+**Email :** eklati@protonmail.com
 
 ---
 
-*Dernière mise à jour : 11 novembre 2025*
+*Dernière mise à jour : 7 août 2026*
 

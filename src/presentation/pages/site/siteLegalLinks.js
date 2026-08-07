@@ -5,6 +5,12 @@ export const PRIVACY_POLICY_URL = '/privacy';
 /** URL des conditions générales d'utilisation (slug anglais). */
 export const TERMS_URL = '/terms';
 
+/** URL des mentions légales. */
+export const LEGAL_URL = '/legal';
+
+/** URL des crédits (assets, licences). */
+export const CREDITS_URL = '/credits';
+
 export const SITE_LEGAL_LINKS = [
   {
     label: 'GitHub',
@@ -12,7 +18,7 @@ export const SITE_LEGAL_LINKS = [
   },
   {
     label: 'Mentions légales',
-    href: 'https://github.com/ExploryKod/Anoria-citybuilder/blob/main/src/mentions-legales.md',
+    href: LEGAL_URL,
   },
   {
     label: 'CGU',
@@ -24,6 +30,6 @@ export const SITE_LEGAL_LINKS = [
   },
   {
     label: 'Crédits',
-    href: 'https://github.com/ExploryKod/Anoria-citybuilder/blob/main/src/credits.md',
+    href: CREDITS_URL,
   },
 ];
