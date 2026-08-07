@@ -4,7 +4,6 @@
     background: #fafafa;
     border-radius: var(--border-radius-small);
     padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     text-align: left;
 }
 
@@ -13,8 +12,6 @@
     align-items: center;
     gap: 12px;
     margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid var(--info);
 }
 
 .report-header-icon {
@@ -42,7 +39,6 @@
     padding: 10px 12px;
     background: rgba(23, 162, 184, 0.1);
     border-radius: var(--border-radius-small);
-    border-left: 4px solid var(--info);
     font-size: 13px;
     color: var(--primary);
     text-align: left;
@@ -62,8 +58,7 @@
     padding: 12px;
     background: white;
     border-radius: var(--border-radius-small);
-    border-left: 4px solid transparent;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease;
 }
 
 .report-item:hover {
@@ -121,22 +116,19 @@
 }
 
 .report-item.danger {
-    border-left-color: var(--danger);
     background: rgba(156, 41, 57, 0.05);
 }
 
 .report-item.warning {
-    border-left-color: var(--warning);
     background: rgba(255, 193, 7, 0.05);
 }
 
 .report-item.positive {
-    border-left-color: var(--success);
     background: rgba(40, 167, 69, 0.05);
 }
 
 .report-item.normal {
-    border-left-color: #ccc;
+    background: white;
 }
 
 /* Mobile Responsive */

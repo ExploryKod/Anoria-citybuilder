@@ -16,7 +16,6 @@
     background: rgba(29, 34, 40, 0.9);
     backdrop-filter: blur(10px);
     border-radius: var(--border-radius-medium);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     border: 2px solid var(--cta);
     cursor: default;
     max-height: calc(100vh - 24px);
@@ -164,7 +163,6 @@
     background-color: #fff;
     border-color: #fff;
     transform: scale(0.95);
-    box-shadow: 0 0 10px rgba(251, 129, 34, 0.5);
 }
 
 .mobile-control-btn svg {

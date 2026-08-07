@@ -5,6 +5,7 @@
 
 import {
     displayTime,
+    displaySeason,
     displaySpeed,
     infoPanelClockIcon,
     infoPanelNoClockIcon,
@@ -27,6 +28,7 @@ import {
     bulldozeSelected
 } from './nodes.js';
 import { TimeManager } from '../../../shared/time/TimeManager.js';
+import { SEASON_KEYS } from '../../../shared/time/TimeCalendar.js';
 import { msToSpeedLevel, SPEED_LEVEL_MAX } from '../../../shared/gameplay/SimulationDefaults.js';
 
 /** @type {{ getScene?: () => { controls?: { enabled: boolean } } | null } | null} */
@@ -38,6 +40,11 @@ let deps = null;
 export function bindGameUIDeps(uiDeps) {
     deps = uiDeps;
 }
+
+const HUD_SEASON_MODIFIER_CLASSES = [
+    ...SEASON_KEYS.map((key) => `hud-season--${key}`),
+    'hud-season--loading',
+];
 
 class GameUI {
     /**
@@ -73,6 +80,27 @@ class GameUI {
     }
 
     /**
+     * Updates season emoji in the time bar (before date).
+     * @param {number} days
+     */
+    updateSeasonDisplay(days) {
+        if (!displaySeason) return;
+        displaySeason.classList.remove(...HUD_SEASON_MODIFIER_CLASSES);
+        if (typeof days !== 'number' || Number.isNaN(days) || days < 0) {
+            displaySeason.textContent = '…';
+            displaySeason.title = 'Saison';
+            displaySeason.setAttribute('aria-label', 'Saison : chargement…');
+            displaySeason.classList.add('hud-season--loading');
+            return;
+        }
+        const { emoji, title, ariaLabel, seasonKey } = TimeManager.getSeasonDisplayForDays(days);
+        displaySeason.textContent = emoji;
+        displaySeason.title = title;
+        displaySeason.setAttribute('aria-label', ariaLabel);
+        displaySeason.classList.add(`hud-season--${seasonKey}`);
+    }
+
+    /**
      * Updates the time display
      * @param {number|string|undefined} time - Time value to display (number of days)
      * @param {string} unit - Optional unit (ignored if time is number, uses TimeManager)
@@ -83,7 +111,8 @@ class GameUI {
             if (typeof time === 'number' && !isNaN(time) && time >= 0) {
                 // Stocker le temps actuel pour pouvoir le réafficher même en pause
                 this.currentTime = time;
-                // Utiliser le TimeManager pour formater le temps avec jours, mois et saisons
+                this.updateSeasonDisplay(time);
+                // Utiliser le TimeManager pour formater la date (sans la saison)
                 const formattedTime = TimeManager.formatTime(time);
                 // S'assurer que le formatage n'a pas retourné undefined
                 if (formattedTime && formattedTime !== 'undefined') {
@@ -92,6 +121,7 @@ class GameUI {
                     displayTime.textContent = 'Chargement...';
                 }
             } else {
+                this.updateSeasonDisplay(NaN);
                 // Si le temps n'est pas encore défini ou invalide, afficher "Chargement..."
                 displayTime.textContent = 'Chargement...';
             }
@@ -149,6 +179,7 @@ class GameUI {
         
         // Réafficher le temps stocké si disponible (pour s'assurer qu'il est toujours affiché)
         if (this.currentTime !== null && displayTime) {
+            this.updateSeasonDisplay(this.currentTime);
             displayTime.textContent = TimeManager.formatTime(this.currentTime);
         }
     }
