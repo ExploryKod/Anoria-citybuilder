@@ -91,9 +91,8 @@
   box-shadow: none;
 }
 
-/* Shared chip metrics — same height/padding, colors stay per-bar */
-.info-panel > .info-box,
-.info-panel-pop-detail .infos-pop-detail {
+/* Shared chip metrics — time / budget status strip */
+.info-panel > .info-box {
   box-sizing: border-box;
   height: var(--hud-chip-height, 40px);
   min-height: var(--hud-chip-height, 40px);
@@ -107,9 +106,6 @@
   font-size: 14px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-}
-
-.info-panel > .info-box {
   background-color: var(--cta);
   border: none;
   cursor: default;
@@ -187,47 +183,112 @@
 }
 
 /* -------------------------------------------------------------------------
-   Pop detail (secondary strip under status)
+   Pop rail — vertical white panel (left, clear of toolbar)
    ------------------------------------------------------------------------- */
 
-.info-panel-pop-detail.hud-pop-detail {
-  display: flex;
-  justify-content: stretch;
+.hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
+  position: absolute;
+  z-index: calc(var(--z-index-info-panel, 10020) - 1);
+  top: 50%;
+  left: calc(min(var(--toolbar-width), var(--toolbar-width-max)) + var(--hud-gutter));
+  right: auto;
+  bottom: auto;
+  transform: translateY(-50%);
+  display: block;
+  width: auto;
+  min-width: 0;
+  max-width: none;
   padding: 0;
-  width: max-content;
-  min-width: 100%;
-  max-width: 100%;
+  margin: 0;
+  overflow: visible;
+  pointer-events: auto;
   box-sizing: border-box;
-  overflow-x: auto;
-  scrollbar-width: thin;
 }
 
-.info-panel-pop-detail .infos-pop-detail {
-  gap: 16px;
-  width: max-content;
-  min-width: 100%;
-  box-sizing: border-box;
-  justify-content: space-between;
+.hud-pop-rail.hud-pop-rail--dragged {
+  transform: none;
+}
+
+.hud-pop-rail__drag {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  background: rgba(29, 34, 40, 0.85);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.hud-pop-rail__drag:hover {
+  transform: scale(1.08);
+  background: rgba(29, 34, 40, 1);
+}
+
+.hud-pop-rail__drag:active {
+  cursor: grabbing;
+}
+
+.hud-pop-rail .infos-pop-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  gap: 0;
+  width: auto;
+  min-width: 72px;
+  max-width: 120px;
+  height: auto;
+  min-height: 0;
+  padding: 12px 10px;
   background-color: #fff;
   border: none;
-  flex-wrap: nowrap;
+  border-radius: var(--border-radius-small);
   box-shadow: 0 1px 3px rgba(29, 34, 40, 0.08);
-  cursor: default;
   color: var(--primary);
+  cursor: default;
+  box-sizing: border-box;
   flex-shrink: 0;
 }
 
-.info-panel-pop-detail .pop-detail-metric {
+.hud-pop-rail .pop-detail-metric {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   flex-shrink: 0;
-  height: 18px;
+  height: auto;
+  min-height: 20px;
   line-height: 1;
+  width: 100%;
 }
 
-.info-panel-pop-detail .pop-detail-emoji,
-.info-panel-pop-detail .pop-detail-icon {
+.hud-pop-rail .pop-detail-sep {
+  width: 100%;
+  height: 1px;
+  margin: 8px 0;
+  padding: 0;
+  border: none;
+  background: rgba(29, 34, 40, 0.12);
+  flex-shrink: 0;
+}
+
+.hud-pop-rail .pop-detail-emoji,
+.hud-pop-rail .pop-detail-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -237,34 +298,34 @@
   line-height: 1;
 }
 
-.info-panel-pop-detail .pop-detail-emoji {
+.hud-pop-rail .pop-detail-emoji {
   font-size: 16px;
   font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
 }
 
-.info-panel-pop-detail .pop-detail-icon .unemployed-icon,
-.info-panel-pop-detail .pop-detail-icon .famished-icon {
+.hud-pop-rail .pop-detail-icon .unemployed-icon,
+.hud-pop-rail .pop-detail-icon .famished-icon {
   width: 18px;
   height: 18px;
   object-fit: contain;
   display: block;
 }
 
-.info-panel-pop-detail .pop-detail-icon--users {
+.hud-pop-rail .pop-detail-icon--users {
   color: var(--primary);
 }
 
-.info-panel-pop-detail .pop-detail-icon--users svg {
+.hud-pop-rail .pop-detail-icon--users svg {
   width: 18px;
   height: 18px;
   display: block;
 }
 
-.info-panel-pop-detail .pop-detail-total .pop-total {
+.hud-pop-rail .pop-detail-total .pop-total {
   font-weight: 700;
 }
 
-.info-panel-pop-detail .pop-detail-value {
+.hud-pop-rail .pop-detail-value {
   font-size: 14px;
   font-weight: 700;
   line-height: 1;
@@ -272,28 +333,72 @@
   color: var(--primary);
 }
 
-.info-panel-pop-detail .pop-detail-active {
+.hud-pop-rail .pop-detail-active {
   display: flex;
-  align-items: center;
-  gap: 20px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
   flex-wrap: nowrap;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.hud-pop-rail .pop-breakdown {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+.hud-pop-rail .pop-detail-unemployed {
+  flex-wrap: wrap;
+}
+
+.hud-pop-rail .pop-detail-unemployed-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   flex-shrink: 0;
 }
 
-.info-panel-pop-detail .pop-breakdown {
-  display: inline-flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: nowrap;
-}
-
-.info-panel-pop-detail .display-unemployed-pop {
+.hud-pop-rail .display-unemployed-pop {
   color: var(--primary);
   white-space: nowrap;
 }
 
-.info-panel-pop-detail .display-worker-lack {
+.hud-pop-rail .display-unemployed-pct::before {
+  content: ' (';
+}
+
+.hud-pop-rail .display-unemployed-pct::after {
+  content: ')';
+}
+
+.hud-pop-rail .display-worker-lack {
   color: #cc0000;
+}
+
+/* Mobile — chômage : % sous icône + effectif */
+@media (max-width: 1024px) {
+  .hud-pop-rail .pop-detail-unemployed {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .hud-pop-rail .display-unemployed-pct {
+    padding-left: 24px;
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.85;
+  }
+
+  .hud-pop-rail .display-unemployed-pct::before,
+  .hud-pop-rail .display-unemployed-pct::after {
+    content: none;
+  }
 }
 
 /* -------------------------------------------------------------------------
@@ -419,18 +524,18 @@
   margin-left: 2px;
 }
 
-.hud-speed-display {
+  .hud-speed-display {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 44px;
+  min-width: 36px;
   height: 40px;
   padding: 0 8px;
   border-radius: var(--border-radius-small);
   background: rgba(255, 255, 255, 0.9);
   color: var(--primary);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   box-shadow: inset 0 0 0 1px rgba(29, 34, 40, 0.08);
@@ -516,12 +621,8 @@
     flex: 0 0 auto;
   }
 
-  .info-panel-pop-detail.hud-pop-detail {
-    justify-content: stretch;
-  }
-
-  .info-panel-pop-detail .infos-pop-detail {
-    gap: 14px;
+  .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
+    left: max(var(--hud-gutter), env(safe-area-inset-left, 0px));
   }
 
   .hud-actions.info-box-stats {
@@ -570,8 +671,7 @@
     gap: 6px;
   }
 
-  .info-panel > .info-box,
-  .info-panel-pop-detail .infos-pop-detail {
+  .info-panel > .info-box {
     height: 34px;
     min-height: 34px;
     padding: 0 10px;
@@ -602,11 +702,7 @@
     width: 16px;
   }
 
-  .info-panel-pop-detail .infos-pop-detail {
-    gap: 12px;
-  }
-
-  .info-panel-pop-detail .pop-detail-value {
+  .hud-pop-rail .pop-detail-value {
     font-size: 12px;
   }
 
@@ -625,9 +721,9 @@
   }
 
   .hud-speed-display {
-    min-width: 38px;
+    min-width: 32px;
     height: 36px;
-    font-size: 12px;
+    font-size: 14px;
     padding: 0 6px;
   }
 
@@ -653,11 +749,21 @@
     display: none;
   }
 
-  .info-panel-pop-detail .pop-breakdown {
-    gap: 10px;
+  .hud-pop-rail .infos-pop-detail {
+    min-width: 64px;
+    max-width: 108px;
+    padding: 10px 8px;
   }
 
-  .info-panel-pop-detail .pop-detail-active {
-    gap: 12px;
+  .hud-pop-rail .pop-detail-sep {
+    margin: 6px 0;
+  }
+
+  .hud-pop-rail .pop-breakdown {
+    gap: 5px;
+  }
+
+  .hud-pop-rail .pop-detail-active {
+    gap: 6px;
   }
 }

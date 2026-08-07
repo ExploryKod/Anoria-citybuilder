@@ -1,14 +1,47 @@
 import { displaySpeed, speedChangeIndicator, fasterButton, slowerButton } from '../shell/nodes.js';
 import {
   DEFAULT_TICK_MS,
-  TICK_MS_MAX,
-  TICK_MS_MIN,
+  DEFAULT_SPEED_LEVEL,
+  SPEED_LEVEL_MAX,
+  SPEED_LEVEL_MIN,
+  msToSpeedLevel,
+  snapTickMs,
+  speedLevelToMs,
 } from '../../../shared/gameplay/SimulationDefaults.js';
 
+function readStoredTickMs() {
+  const raw = parseInt(localStorage.getItem('speed'), 10);
+  if (!Number.isFinite(raw)) {
+    return DEFAULT_TICK_MS;
+  }
+  return snapTickMs(raw);
+}
+
+function readSpeedLevel() {
+  return msToSpeedLevel(readStoredTickMs());
+}
+
+function writeSpeedLevel(level) {
+  const ms = speedLevelToMs(level);
+  localStorage.setItem('speed', String(ms));
+  return ms;
+}
+
+function formatSpeedLevel(level) {
+  return String(level);
+}
+
+/**
+ * @param {string} [changeDirection]
+ */
 export function updateSpeedDisplay(changeDirection = '') {
-  const speed = parseInt(localStorage.getItem('speed'), 10) || DEFAULT_TICK_MS;
+  const level = readSpeedLevel();
   if (displaySpeed) {
-    displaySpeed.textContent = speed.toString();
+    displaySpeed.textContent = formatSpeedLevel(level);
+    const parent = displaySpeed.closest('.hud-speed-display');
+    if (parent) {
+      parent.title = `Vitesse ${level} / ${SPEED_LEVEL_MAX}`;
+    }
   }
   if (changeDirection && speedChangeIndicator) {
     speedChangeIndicator.textContent = changeDirection;
@@ -22,33 +55,37 @@ export function updateSpeedDisplay(changeDirection = '') {
 export function initSpeedControls(speedDeps = {}) {
   const { getGame = () => null } = speedDeps;
 
+  // Normalize legacy ms values onto the ladder on boot
+  writeSpeedLevel(readSpeedLevel());
+  updateSpeedDisplay();
+
   fasterButton?.addEventListener('click', () => {
-    let speed = parseInt(localStorage.getItem('speed'), 10) || DEFAULT_TICK_MS;
-    const previousSpeed = speed;
-    speed = Math.max(TICK_MS_MIN, speed - 500);
-    localStorage.setItem('speed', speed.toString());
+    const previous = readSpeedLevel();
+    const next = Math.min(SPEED_LEVEL_MAX, previous + 1);
+    writeSpeedLevel(next);
     getGame()?.startInterval?.();
-    const changeDirection = speed !== previousSpeed ? '+' : '';
+    const changeDirection = next !== previous ? '+' : '';
     updateSpeedDisplay(changeDirection);
     if (changeDirection) {
       setTimeout(() => {
-        speedChangeIndicator.classList.remove('active');
+        speedChangeIndicator?.classList.remove('active');
       }, 1000);
     }
   });
 
   slowerButton?.addEventListener('click', () => {
-    let speed = parseInt(localStorage.getItem('speed'), 10) || DEFAULT_TICK_MS;
-    const previousSpeed = speed;
-    speed = Math.min(TICK_MS_MAX, speed + 500);
-    localStorage.setItem('speed', speed.toString());
+    const previous = readSpeedLevel();
+    const next = Math.max(SPEED_LEVEL_MIN, previous - 1);
+    writeSpeedLevel(next);
     getGame()?.startInterval?.();
-    const changeDirection = speed !== previousSpeed ? '−' : '';
+    const changeDirection = next !== previous ? '−' : '';
     updateSpeedDisplay(changeDirection);
     if (changeDirection) {
       setTimeout(() => {
-        speedChangeIndicator.classList.remove('active');
+        speedChangeIndicator?.classList.remove('active');
       }, 1000);
     }
   });
 }
+
+export { DEFAULT_SPEED_LEVEL, formatSpeedLevel, readSpeedLevel, readStoredTickMs };
