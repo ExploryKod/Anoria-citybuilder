@@ -1,33 +1,23 @@
 /**
- * OrientationToast - Displays a toast message when mobile is in portrait mode
- * Shows "Mode paysage requis - Tournez votre téléphone pour jouer"
+ * OrientationToast — mode portrait mobile/tablette (via js-toast-notifier).
  */
+
+import { showWarningToast } from './ToastNotifier.js';
 
 class OrientationToast {
   constructor() {
-    this.toast = document.getElementById('orientation-toast');
-    this.isVisible = false;
-    this.hideTimeout = null;
-    
-    if (!this.toast) {
-      console.warn('Orientation toast element not found');
-      return;
-    }
-    
+    /** @type {boolean} */
+    this.wasPortrait = false;
     this.init();
   }
 
   init() {
-    // Check initial orientation
     this.checkOrientation();
-    
-    // Listen for orientation changes
+
     window.addEventListener('orientationchange', () => {
-      // Small delay to ensure orientation has changed
       setTimeout(() => this.checkOrientation(), 100);
     });
-    
-    // Also listen for resize events (for devices that support it)
+
     window.addEventListener('resize', () => {
       this.checkOrientation();
     });
@@ -37,44 +27,20 @@ class OrientationToast {
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
     const isTablet = window.matchMedia('(max-width: 1024px) and (min-width: 769px)').matches;
     const isPortrait = window.innerHeight > window.innerWidth;
-    
-    // Show toast only on mobile/tablet in portrait mode
-    if ((isMobile || isTablet) && isPortrait) {
-      this.show();
-    } else {
-      this.hide();
-    }
-  }
+    const shouldWarn = (isMobile || isTablet) && isPortrait;
 
-  show() {
-    if (!this.toast) return;
-    
-    this.toast.classList.add('show');
-    this.isVisible = true;
-    
-    // Automatically hide after a short delay to avoid blocking interaction
-    if (this.hideTimeout) {
-      clearTimeout(this.hideTimeout);
+    // Une seule annonce à l'entrée en portrait (évite le spam au resize).
+    if (shouldWarn && !this.wasPortrait) {
+      showWarningToast(
+        'Mode paysage requis — Tournez votre téléphone pour jouer',
+        { timeout: 3500 }
+      );
     }
-    this.hideTimeout = setTimeout(() => {
-      this.hide();
-    }, 3000);
-  }
 
-  hide() {
-    if (!this.toast || !this.isVisible) return;
-    
-    if (this.hideTimeout) {
-      clearTimeout(this.hideTimeout);
-      this.hideTimeout = null;
-    }
-    
-    this.toast.classList.remove('show');
-    this.isVisible = false;
+    this.wasPortrait = shouldWarn;
   }
 }
 
-// Initialize when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     new OrientationToast();
@@ -84,4 +50,3 @@ if (document.readyState === 'loading') {
 }
 
 export default OrientationToast;
-

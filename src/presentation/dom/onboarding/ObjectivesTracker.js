@@ -7,6 +7,7 @@ import {
   OBJECTIVE_CATALOG,
   isObjectiveRequirementMet,
 } from '../../../composition/accountingObjectivesCatalog.js';
+import { showSuccessToast } from '../shell/ToastNotifier.js';
 
 const BUDGET_CHALLENGE_OBJECTIVE_ID = 'budget_challenge_5000';
 const budgetChallengeDefinition = OBJECTIVE_CATALOG[BUDGET_CHALLENGE_OBJECTIVE_ID];
@@ -252,28 +253,9 @@ class ObjectivesTracker {
      * Affiche un message de succès du rééchelonnement
      */
     showRescheduleSuccess() {
-        const notification = document.createElement('div');
-        notification.className = 'objective-reschedule-success';
-        notification.innerHTML = `
-            <div style="padding: 8px 12px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border-radius: 8px; border: 2px solid rgba(255, 255, 255, 0.2);">
-                <strong>✓</strong> Objectif rééchelonné - Nouvelle tentative en cours
-            </div>
-        `;
-        
-        notification.style.cssText = `
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            z-index: 10002;
-            animation: slideInRight 0.3s ease-out;
-        `;
-        
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.style.animation = 'slideOutRight 0.3s ease-out';
-            setTimeout(() => notification.remove(), 300);
-        }, 3000);
+        showSuccessToast('Objectif rééchelonné — nouvelle tentative en cours', {
+            timeout: 3000,
+        });
     }
 
     /**
@@ -351,79 +333,10 @@ class ObjectivesTracker {
         }
         
         // Créer une notification
-        const notification = document.createElement('div');
-        notification.className = 'objective-completion-notification';
-        notification.innerHTML = `
-            <div class="notification-content">
-                <div class="notification-icon">🎉</div>
-                <div class="notification-text">
-                    <div class="notification-title">Objectif Réussi !</div>
-                    <div class="notification-message">${objective.title}</div>
-                    <div class="unlock-message" style="margin-top: 10px; font-size: 12px; font-weight: 600; color: #ffd700; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">🏰 Maison Violette déverrouillée !</div>
-                </div>
-            </div>
-        `;
-        
-        // Styles inline pour la notification
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-            padding: 20px 25px;
-            border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
-            z-index: 10001;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 14px;
-            font-weight: 500;
-            max-width: 350px;
-            animation: slideInRight 0.3s ease-out;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-        `;
-        
-        // Ajouter animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideInRight {
-                from {
-                    opacity: 0;
-                    transform: translateX(100%);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateX(0);
-                }
-            }
-            @keyframes slideOutRight {
-                from {
-                    opacity: 1;
-                    transform: translateX(0);
-                }
-                to {
-                    opacity: 0;
-                    transform: translateX(100%);
-                }
-            }
-        `;
-        
-        if (!document.querySelector('#objective-notification-styles')) {
-            style.id = 'objective-notification-styles';
-            document.head.appendChild(style);
-        }
-        
-        document.body.appendChild(notification);
-        
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            notification.style.animation = 'slideOutRight 0.3s ease-out';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
-        }, 5000);
+        showSuccessToast(
+          `🎉 Objectif réussi ! ${objective.title} — 🏰 Maison Violette déverrouillée`,
+          { timeout: 5000 }
+        );
     }
 
     /**

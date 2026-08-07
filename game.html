@@ -15,7 +15,6 @@
     <link rel="stylesheet" href="./src/presentation/dom/styles/tutorial.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/parameters.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/legends.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/orientation-toast.css">
     
     <!-- Modal Styles -->
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/global.css">
@@ -32,12 +31,10 @@
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/bilan-panel-content.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/compte-de-resultat-panel-content.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/balance-sheet.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/cleanup-notification.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/city-map.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/journal.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/food-traceability.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/objectives.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/reset-confirm.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/administrator-panel.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/finances-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/report-section.css" media="print" onload="this.media='all'">
@@ -55,12 +52,10 @@
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/bilan-panel-content.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/compte-de-resultat-panel-content.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/balance-sheet.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/cleanup-notification.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/city-map.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/journal.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/food-traceability.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/objectives.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/reset-confirm.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/administrator-panel.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/finances-section.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/report-section.css">
@@ -666,7 +661,7 @@
                             </span>
                         </article>
                     </div>
-                    <div class="info-box game-control-box stats-buttons" id="replay-btn" data-action="replay" title="Réinitialiser" aria-label="Réinitialiser la ville" role="button" tabindex="0">
+                    <div class="info-box game-control-box stats-buttons" id="replay-btn" data-action="replay" title="Replay" aria-label="Replay" role="button" tabindex="0">
                         <article class="budget-box">
                             <span class="budget-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" 
@@ -2840,43 +2835,6 @@
                     <button class="tutorial-next-btn">Suivant</button>
                     <button class="tutorial-close-btn">Fermer</button>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Reset Confirmation Modal -->
-<div id="reset-confirm-panel" class="reset-confirm-panel" hidden>
-    <div class="reset-confirm-panel-wrapper">
-        <div class="reset-confirm-panel-header">
-            <h3>⚠️ Reset Complet</h3>
-        </div>
-        <div class="reset-confirm-panel-content">
-            <div class="reset-confirm-info">
-                <p class="reset-confirm-description">
-                    Cette action va <strong>effacer toutes vos données de jeu</strong> et recharger l'application.
-                </p>
-                <div class="reset-confirm-list">
-                    <div class="reset-confirm-item">
-                        <span class="reset-confirm-icon">🗑️</span>
-                        <span class="reset-confirm-text">Toutes les données seront supprimées (maisons, population, finances)</span>
-                    </div>
-                    <div class="reset-confirm-item">
-                        <span class="reset-confirm-icon">🔄</span>
-                        <span class="reset-confirm-text">Le cache et les service workers seront vidés</span>
-                    </div>
-                    <div class="reset-confirm-item">
-                        <span class="reset-confirm-icon">🆕</span>
-                        <span class="reset-confirm-text">Une nouvelle partie va démarrer</span>
-                    </div>
-                </div>
-                <p class="reset-confirm-warning">
-                    ⚠️ Cette action est <strong>irréversible</strong> !
-                </p>
-            </div>
-            <div class="reset-confirm-buttons">
-                <button class="reset-confirm-cancel-btn">Annuler</button>
-                <button class="reset-confirm-reset-btn">Oui, Reset Complet</button>
             </div>
         </div>
     </div>

@@ -2662,8 +2662,7 @@ footer .footer-links a:hover {
     .loans-panel,
     .journal-panel,
     .tutorial-panel,
-    .objectives-panel,
-    .reset-confirm-panel {
+    .objectives-panel {
         overflow-y: auto;
     }
 

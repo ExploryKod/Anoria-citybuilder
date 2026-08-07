@@ -4,7 +4,8 @@
  */
 
 import { WebSocketClient } from './WebSocketClient.js';
-import { getGame, getGameCity, getPopupManager } from '../../composition/sessionShell.js';
+import { getGame, getGameCity } from '../../composition/sessionShell.js';
+import { showToast, showWarningToast } from '../../presentation/dom/shell/ToastNotifier.js';
 
 export class MultiplayerManager {
     constructor(game, scene) {
@@ -701,66 +702,16 @@ export class MultiplayerManager {
      * Affiche une alerte de déconnexion
      */
     showDisconnectionAlert(playerPseudo) {
-        const alert = document.createElement('div');
-        alert.className = 'multiplayer-disconnect-alert';
-        alert.innerHTML = `
-            <div class="alert-content">
-                <div class="alert-icon">⚠️</div>
-                <div class="alert-text">
-                    <div class="alert-title">Joueur déconnecté</div>
-                    <div class="alert-message">${playerPseudo} s'est déconnecté</div>
-                </div>
-            </div>
-        `;
-        
-        // Les styles sont maintenant dans multiplayer.css
-        
-        document.body.appendChild(alert);
-        
-        // Auto-remove après 5 secondes
-        setTimeout(() => {
-            alert.style.animation = 'slideOutRight 0.4s ease-out';
-            setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.parentNode.removeChild(alert);
-                }
-            }, 400);
-        }, 5000);
+        showWarningToast(`Joueur déconnecté — ${playerPseudo} s'est déconnecté`, {
+            timeout: 5000,
+        });
     }
 
     /**
      * Affiche une notification
      */
     showNotification(message, type = 'info') {
-        // Utiliser votre système de notification existant
-        if (getPopupManager()) {
-            // Exemple avec popupManager si disponible
-            console.log(`[Multiplayer] ${type}: ${message}`);
-        } else {
-            // Notification simple
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 80px;
-                right: 20px;
-                background: ${type === 'error' ? '#d32f2f' : type === 'success' ? '#2e7d32' : '#1976d2'};
-                color: white;
-                padding: 12px 20px;
-                border-radius: 8px;
-                z-index: 10000;
-                font-family: sans-serif;
-                font-size: 14px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            `;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                notification.style.transition = 'opacity 0.3s';
-                setTimeout(() => notification.remove(), 300);
-            }, 3000);
-        }
+        showToast(type, message, { timeout: 3500 });
     }
 
     /**
