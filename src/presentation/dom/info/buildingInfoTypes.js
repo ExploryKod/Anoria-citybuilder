@@ -5,6 +5,8 @@
  * - `useBuildingInfoSelection` : presenter (I/O ports + orchestration)
  * - `formats/*` : VM → modèle d'affichage, sans DOM
  * - `views/*` + `layout/` : DOM (cadre modal + briques)
+ * - `buildingInfoGroupRegistry` : chaque ensemble déclare ses `tabs[]`
+ * - `buildingInfoSharedTabs` : handlers communs (services / voisins / messages)
  */
 
 /**
@@ -19,7 +21,6 @@
  * @typedef {object} BuildingInfoLayoutOptions
  * @property {BuildingInfoPanelLayoutMode} [layout]
  * @property {string | null} [accent]
- * @property {'foyer' | 'building'} [foyerTabLabel]
  * @property {'barn' | 'windmill' | null} [hubOverlayMode]
  */
 
@@ -46,6 +47,15 @@
 /**
  * @typedef {object} InfoKvPanelModel
  * @property {ReadonlyArray<InfoKvSection>} sections
+ */
+
+/**
+ * @typedef {object} BuildingInfoTabSpec
+ * @property {string} id
+ * @property {string} [label]
+ * @property {(vm: BuildingInfoViewModel) => unknown} [format]
+ * @property {(container: HTMLElement, model: unknown) => void | Promise<void>} [render]
+ * @property {boolean} [alwaysRender]
  */
 
 /**
@@ -77,8 +87,7 @@
  * @typedef {object} BuildingInfoGroupDefinition
  * @property {(vm: BuildingInfoViewModel) => BuildingInfoLayoutOptions} formatLayoutOptions
  * @property {(vm: BuildingInfoViewModel) => { title?: string, meta?: string, accent?: string | null } | null} formatLayoutHeader
- * @property {(vm: BuildingInfoViewModel) => unknown} formatFoyer
- * @property {(container: HTMLElement, model: unknown) => void | Promise<void>} renderFoyer
+ * @property {ReadonlyArray<BuildingInfoTabSpec>} tabs
  */
 
 /**
