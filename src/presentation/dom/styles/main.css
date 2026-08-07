@@ -191,7 +191,6 @@ canvas {
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
     transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
@@ -208,17 +207,15 @@ canvas {
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.92);
     color: var(--primary, #1d2228);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: transform 0.15s ease;
 }
 
 .perf-hud__fab:hover {
     transform: scale(1.06);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .perf-hud__fab:focus-visible {
@@ -371,7 +368,6 @@ canvas.pointer-events-disabled {
 .toolbar-toggle-btn.active {
     background: var(--cta);
     color: #fff;
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
 }
 
 
@@ -397,7 +393,6 @@ canvas.pointer-events-disabled {
         padding: var(--toolbar-padding);
         padding-top: 48px;
         border-radius: 0;
-        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.2);
         overflow-x: hidden;
         overflow-y: auto;
         display: flex !important;
@@ -447,7 +442,6 @@ canvas.pointer-events-disabled {
         height: auto;
         padding: 16px;
         border-radius: var(--border-radius);
-        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.35);
         overflow-y: auto;
         background-color: var(--toolbar-bg-color);
         z-index: var(--z-index-toolbar);
@@ -528,7 +522,6 @@ canvas.pointer-events-disabled {
         width: calc(100% - 24px);
         padding: 16px;
         border-radius: var(--border-radius);
-        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.35);
         overflow-y: auto;
         background-color: var(--toolbar-bg-color);
         z-index: var(--z-index-toolbar);
@@ -1069,13 +1062,11 @@ canvas.pointer-events-disabled {
   align-items: center;
   justify-content: center;
   color: #666;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .legend-toggle-btn:hover {
   background: rgba(255, 255, 255, 1);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   color: #333;
 }
 
@@ -1086,7 +1077,6 @@ canvas.pointer-events-disabled {
   margin-left: 8px;
   background: #2d2d2d;
   border-radius: var(--border-radius-small);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   min-width: 240px;
   overflow: hidden;
   opacity: 0;

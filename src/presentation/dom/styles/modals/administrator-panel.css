@@ -20,7 +20,6 @@
     background: #fafafa;
     color: var(--primary);
     border-radius: var(--border-radius);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
     width: 90%;
     max-width: 1200px;
     max-height: 85vh;
@@ -33,7 +32,6 @@
 .administrator-panel-header {
     background: linear-gradient(135deg, #fff6f0, #fff);
     padding: 20px 24px;
-    border-bottom: 3px solid var(--cta);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -70,8 +68,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease-in-out;
-    border: 3px solid var(--cta);
+    transition: background-color 0.2s ease, color 0.2s ease;
     flex-shrink: 0;
     min-width: 40px;
 }
@@ -87,7 +84,6 @@
     gap: 12px;
     padding: 16px 24px;
     background: #fff;
-    border-bottom: 2px solid var(--cta);
     justify-content: flex-start;
     align-items: center;
     flex-wrap: wrap;
@@ -98,15 +94,14 @@
     width: 64px;
     height: 64px;
     border-radius: var(--border-radius-small);
-    border: 3px solid var(--cta);
+    border: none;
     background-color: #fafafa;
     color: var(--cta);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease-in-out;
-    box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
 }
 
 .administrator-nav-btn svg {
@@ -119,20 +114,16 @@
 .administrator-nav-btn:hover {
     background-color: var(--cta);
     color: white;
-    box-shadow: none;
     transform: translateY(-2px);
 }
 
 .administrator-nav-btn:active {
     transform: translateY(0);
-    box-shadow: 0 0 10px var(--cta);
 }
 
 .administrator-nav-btn.selected {
     background-color: var(--lightgreen);
-    border-color: var(--lightgreen);
     color: white;
-    box-shadow: 0 4px 12px rgba(0, 153, 153, 0.3);
 }
 
 .administrator-nav-btn.selected:hover {
@@ -142,7 +133,6 @@
 
 /* Special color for Report button */
 .administrator-nav-btn.report-btn {
-    border-color: var(--info);
     color: var(--info);
 }
 
@@ -153,9 +143,7 @@
 
 .administrator-nav-btn.report-btn.selected {
     background-color: var(--info);
-    border-color: var(--info);
     color: white;
-    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
 }
 
 .administrator-nav-btn.report-btn.selected:hover {
@@ -207,8 +195,6 @@
     font-weight: 600;
     color: var(--primary);
     margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid var(--cta);
     display: flex;
     align-items: center;
     gap: 10px;

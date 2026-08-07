@@ -4,7 +4,6 @@
     background: #fafafa;
     border-radius: var(--border-radius-small);
     padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     text-align: left;
 }
 
@@ -13,8 +12,6 @@
     align-items: center;
     gap: 12px;
     margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid var(--cta);
 }
 
 .work-header-icon {

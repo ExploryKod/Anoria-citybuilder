@@ -46,6 +46,7 @@
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/commerce-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/trade-map.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/health-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/administrator-panel-flat.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/multiplayer.css" media="print" onload="this.media='all'">
     <noscript>
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/compte-de-resultat-panel.css">
@@ -67,6 +68,7 @@
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/commerce-section.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/trade-map.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/health-section.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/administrator-panel-flat.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/multiplayer.css">
     </noscript>
 
@@ -611,7 +613,8 @@
                 <!-- Invisible top row: time + budget -->
                 <div class="info-panel hud-vitals__row hud-vitals__row--status">
                     <section class="info-box infos-time">
-                        <article class="clock-box" title="Date et heure en jeu">
+                        <span class="hud-season hud-season--loading" role="img" aria-label="Saison : chargement…" title="Saison">…</span>
+                        <article class="clock-box" title="Date en jeu">
                             <span class="clock-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock-4"><circle cx="12" cy="12" r="10"/>
                                     <polyline points="12 6 12 12 16 14"/>

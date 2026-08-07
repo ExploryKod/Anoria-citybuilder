@@ -1,0 +1,246 @@
+/**
+ * Flat administrator UI — grouping via spacing, not borders or shadows.
+ * Loaded after section styles; scoped to .administrator-panel only.
+ */
+
+.administrator-panel .administrator-panel-wrapper {
+  box-shadow: none;
+}
+
+.administrator-panel .administrator-panel-header,
+.administrator-panel .administrator-nav-buttons {
+  border-bottom: none;
+}
+
+.administrator-panel .administrator-panel-close-btn {
+  border: none;
+}
+
+.administrator-panel .administrator-nav-btn,
+.administrator-panel .administrator-nav-btn:hover,
+.administrator-panel .administrator-nav-btn:active,
+.administrator-panel .administrator-nav-btn.selected,
+.administrator-panel .administrator-nav-btn.report-btn,
+.administrator-panel .administrator-nav-btn.report-btn:hover,
+.administrator-panel .administrator-nav-btn.report-btn.selected {
+  border: none;
+  box-shadow: none;
+}
+
+.administrator-panel .administrator-section-title {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 16px;
+}
+
+/* Main section boards */
+.administrator-panel :is(
+  .work-board,
+  .finances-board,
+  .health-board,
+  .storage-board,
+  .report-board
+) {
+  box-shadow: none;
+}
+
+/* Inner section headers */
+.administrator-panel :is(
+  .work-header,
+  .health-header,
+  .storage-header,
+  .report-header,
+  .commerce-header
+) {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 16px;
+}
+
+.administrator-panel :is(
+  .health-section-title,
+  .storage-windmill-header,
+  .storage-crop-section-title,
+  .factory-header,
+  .factory-card-header,
+  .factory-production-header,
+  .factory-natural-resources-title
+) {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* Cards, callouts, list items */
+.administrator-panel :is(
+  .health-section,
+  .storage-windmill-card,
+  .factory-natural-resources,
+  .factory-card,
+  .factory-stats-card,
+  .factory-history-card,
+  .commerce-good-item,
+  .finances-debt-info,
+  .finances-tax-controls,
+  .finances-warning-box,
+  .finances-alert-box,
+  .finances-summary-box,
+  .report-period-info,
+  .report-item,
+  .health-item,
+  .health-alert-box,
+  .health-summary-box,
+  .work-summary-box,
+  .work-sector-summary,
+  .food-traceability-month-group,
+  .food-traceability-building-section,
+  .food-traceability-entry,
+  .food-traceability-entry-details,
+  .food-chart-summary-card,
+  .food-chart-card,
+  .food-chart-legend-item
+) {
+  box-shadow: none;
+  border: none;
+}
+
+.administrator-panel .storage-windmill-card:hover,
+.administrator-panel .commerce-good-item:hover,
+.administrator-panel .commerce-good-item.active,
+.administrator-panel .commerce-good-item.dominant,
+.administrator-panel .commerce-good-item.normal,
+.administrator-panel .commerce-good-item.few,
+.administrator-panel .commerce-good-item.inferior {
+  box-shadow: none;
+  border: none;
+}
+
+/* Semantic status — background tint only, no accent borders */
+.administrator-panel :is(
+  .report-item,
+  .report-item.critical,
+  .report-item.warning,
+  .report-item.success,
+  .report-item.info,
+  .health-item,
+  .health-item.good,
+  .health-item.warning,
+  .health-item.critical,
+  .finances-debt-info,
+  .finances-warning-box,
+  .finances-alert-box
+) {
+  border-left: none;
+}
+
+/* Tables */
+.administrator-panel .work-table th,
+.administrator-panel .work-table td,
+.administrator-panel .finances-table th,
+.administrator-panel .finances-table td {
+  border: none;
+}
+
+.administrator-panel .work-table tbody tr,
+.administrator-panel .finances-table tbody tr,
+.administrator-panel .finances-table tfoot tr {
+  border: none;
+}
+
+.administrator-panel .finances-section-header td {
+  border: none;
+}
+
+.administrator-panel :is(
+  .storage-windmill-crop-row,
+  .storage-allocation-row,
+  .storage-summary-row,
+  .factory-dest-row,
+  .factory-production-row,
+  .factory-resource-row,
+  .commerce-good-row
+) {
+  border: none;
+}
+
+/* Tabs & filters — no underline chrome */
+.administrator-panel :is(
+  .food-traceability-tab,
+  .factory-tab,
+  .commerce-tab-btn
+) {
+  border: none;
+  border-bottom: none;
+}
+
+.administrator-panel .food-traceability-filter-btn {
+  border: none;
+}
+
+.administrator-panel .food-traceability-filter-btn.active {
+  border: none;
+}
+
+/* Small controls: flat, background-only states */
+.administrator-panel .finances-tax-btn,
+.administrator-panel .work-priority-btn {
+  border: none;
+  box-shadow: none;
+}
+
+.administrator-panel .finances-tax-btn:focus,
+.administrator-panel .work-priority-btn:focus,
+.administrator-panel .work-priority-input:focus {
+  box-shadow: none;
+  outline: 2px solid var(--cta);
+  outline-offset: 2px;
+}
+
+.administrator-panel .commerce-good-modal-threshold,
+.administrator-panel .commerce-good-modal-industry-btn,
+.administrator-panel .storage-crop-input,
+.administrator-panel .storage-allocation-input,
+.administrator-panel .factory-dest-input {
+  border: 1px solid rgba(29, 34, 40, 0.15);
+  box-shadow: none;
+}
+
+/* Food traceability (embedded in administrator panel) */
+.administrator-panel .food-traceability-content {
+  padding: 0;
+}
+
+.administrator-panel .food-traceability-list {
+  background: transparent;
+  border-radius: 0;
+}
+
+.administrator-panel .food-traceability-tab-content {
+  padding-top: 8px;
+}
+
+.administrator-panel .food-traceability-charts-container {
+  box-shadow: none;
+  border: none;
+}
+
+.administrator-panel .food-traceability-chart-wrapper {
+  box-shadow: none;
+  border: none;
+}
+
+.administrator-panel .food-traceability-chart-header {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.administrator-panel .food-traceability-event-row {
+  border-bottom: none;
+}
+
+.administrator-panel .food-traceability-event-row:last-child {
+  border-bottom: none;
+}
+
+.administrator-panel .commerce-good-modal-industry-btn.active {
+  box-shadow: none;
+}

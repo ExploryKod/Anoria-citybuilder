@@ -1,5 +1,6 @@
 // game.js
 export const displayTime = document.querySelector('.info-panel .display-time');
+export const displaySeason = document.querySelector('.info-panel .hud-season');
 export const displaySpeed = document.querySelector('.hud-actions .display-speed');
 
 // Initialiser l'affichage du temps avec "Chargement..." si l'élément existe
