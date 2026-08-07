@@ -29,6 +29,7 @@ import {
   infoObjectCloseBtn,
 } from '../dom/shell/nodes.js';
 import { closeBuildingInfoOverlay } from '../dom/info/layout/buildingInfoLayout.js';
+import { activateSelectToolButton } from '../dom/tools/ToolPanel.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
 import objectivesTracker, {
   bindObjectivesTrackerDeps,
@@ -355,6 +356,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
       roadPaint.busy = false;
     }
   }
+
+  scene.onEnterSelectMode = () => {
+    activateSelectToolButton();
+    game.setActiveToolId('select-object');
+  };
 
   scene.onObjectSelected = async (selectedObject) => {
     selectedObject.info = '';

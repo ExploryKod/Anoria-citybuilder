@@ -136,6 +136,16 @@ export function getButtonsUnactive() {
   });
 }
 
+/**
+ * Activate the select-object tool in the left toolbar (visual only).
+ * Pair with game.setActiveToolId('select-object').
+ */
+export function activateSelectToolButton() {
+  getButtonsUnactive();
+  const selectBtn = document.getElementById('select-btn');
+  selectBtn?.classList.add('selected');
+}
+
 export function getButtonsDisabled() {
   toolBarButtons.forEach((button) => {
     if (button.classList.contains('disabled')) {
