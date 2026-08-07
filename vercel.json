@@ -5,7 +5,11 @@
   "rewrites": [
     { "source": "/game", "destination": "/game.html" },
     { "source": "/missions", "destination": "/missions.html" },
-    { "source": "/settings", "destination": "/settings.html" }
+    { "source": "/settings", "destination": "/settings.html" },
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/terms", "destination": "/terms.html" },
+    { "source": "/legal", "destination": "/legal.html" },
+    { "source": "/credits", "destination": "/credits.html" }
   ],
   "headers": [
     {

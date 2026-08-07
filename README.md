@@ -39,7 +39,7 @@ Ce que j'ai appris :
 - Travailler mes objets 3D
 - Usage de Blender pour quelques ajustements et le format fbx > glb
 
-J'utilise les librairies lowpoly gratuite de sketchFab. Les crédits détaillés sont disponibles dans [`src/credits.md`](./src/credits.md).
+J'utilise les librairies lowpoly gratuite de sketchFab. Les crédits détaillés sont disponibles sur la page [`/credits`](./credits.html) (et dans [`src/credits.md`](./src/credits.md)).
 
 ### Gameplay 
 
