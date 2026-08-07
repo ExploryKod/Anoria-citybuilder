@@ -17,7 +17,7 @@ export function formatGenericLayoutHeader(vm) {
 }
 
 export function formatGenericLayoutOptions() {
-  return { layout: 'centered', foyerTabLabel: 'building', hubOverlayMode: null };
+  return { layout: 'centered', hubOverlayMode: null };
 }
 
 /**

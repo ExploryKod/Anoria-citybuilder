@@ -14,18 +14,17 @@ export function formatHubStorageLayoutHeader() {
 export function formatHubStorageLayoutOptions(vm) {
   return {
     layout: 'centered',
-    foyerTabLabel: 'building',
     hubOverlayMode: vm.hubKind ?? null,
   };
 }
 
 /**
- * Employee panel appended after hub interactive view.
+ * Staff tab — employees for barn / windmill.
  *
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel | null}
  */
-export function formatHubStorageEmployeesModel(vm) {
+export function formatHubStorageStaffModel(vm) {
   const { hubKind, buildingRow, employment } = vm;
   if (!hubKind) return null;
 
@@ -44,7 +43,12 @@ export function formatHubStorageEmployeesModel(vm) {
   return formatWorkplaceEmployeesPanel(buildingRow, messages, employment);
 }
 
+/** @deprecated Prefer formatHubStorageStaffModel */
+export const formatHubStorageEmployeesModel = formatHubStorageStaffModel;
+
 /**
+ * Foyer tab — interactive hub storage params for the hub panel view.
+ *
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  */
 export function formatHubStorageRenderParams(vm) {
