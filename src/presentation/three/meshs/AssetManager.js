@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { textures } from './data.js';
+import { textures, meshNameMapping } from './data.js';
 import MeshLoader from "./MeshLoaderOptimized.js";
 import { assetsConfig } from '../presentationConfig.js';
 import instancingManager from './InstancingManager.js';
@@ -890,12 +890,17 @@ class AssetManager extends MeshLoader {
     }
 
     createAsset(assetId, x, y) {
+        // city.tiles / Dexie stockent parfois un id logique (Tree-Sapin, Boulder…)
+        // alors que le factory est enregistré sous le nom de mesh GLB (Tree-Pine-001).
+        const resolvedId = meshNameMapping[assetId] ?? assetId;
+        if (resolvedId in this.#assets) {
+            return this.#assets[resolvedId](x, y);
+        }
         if (assetId in this.#assets) {
             return this.#assets[assetId](x, y);
-        } else {
-            console.warn(`[AssetManager] Asset ${assetId} does not exist`);
-            return undefined;
         }
+        console.warn(`[AssetManager] Asset ${assetId} (resolved: ${resolvedId}) does not exist`);
+        return undefined;
     }
 
     /**

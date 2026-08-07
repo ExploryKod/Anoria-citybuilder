@@ -37,11 +37,6 @@
     scrollbar-color: var(--cta) transparent;
 }
 
-/* Hidden until `.visible` — prevents FOUC while async modal CSS loads */
-.reset-confirm-panel:not(.visible) {
-    display: none;
-}
-
 /* Common modal animations */
 @keyframes slideInRight {
     from {

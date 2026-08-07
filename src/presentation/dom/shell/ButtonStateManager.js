@@ -207,11 +207,9 @@ class ButtonStateManager {
             this.#tryRegisterExistingButton(buttonId);
             
             // If still not registered after trying, the button doesn't exist yet
+            // (tool panels create buttons lazily). Store desired state silently —
+            // registerButton / #applyState will pick it up when the DOM node appears.
             if (!this.stateMap.has(buttonId)) {
-                console.warn(`ButtonStateManager: Cannot set state for unregistered button: ${buttonId}`);
-                console.warn(`ButtonStateManager: Button will be ${enabled ? 'enabled' : 'disabled'} when it's created in the DOM.`);
-                
-                // Store the desired state for later when button is created
                 this.stateMap.set(buttonId, enabled);
                 return true;
             }
