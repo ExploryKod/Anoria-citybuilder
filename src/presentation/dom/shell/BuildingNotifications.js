@@ -1,5 +1,5 @@
 /**
- * Construction / WebGL toast notifications (DOM).
+ * Construction / WebGL toast notifications (via js-toast-notifier).
  */
 
 import { buildingCatalog } from '../../../shared/building-catalog/buildingCatalog.js';
@@ -86,78 +86,26 @@ export function showWindmillCascadeNotification(destroyedMarkets = []) {
   );
 }
 
-function ensureBuildingNotificationStyles() {
-  if (document.querySelector('#building-notification-styles')) return;
-  const style = document.createElement('style');
-  style.id = 'building-notification-styles';
-  style.textContent = `
-    @keyframes slideDown {
-      from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-      to { opacity: 1; transform: translateX(-50%) translateY(0); }
-    }
-    @keyframes slideUp {
-      from { opacity: 1; transform: translateX(-50%) translateY(0); }
-      to { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-function dismissNotification(notification, delayMs) {
-  setTimeout(() => {
-    notification.style.animation = 'slideUp 0.3s ease-out';
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
-      }
-    }, 300);
-  }, delayMs);
-}
-
 /**
  * @param {object} _capabilities
  * @param {number} requestedSize
  * @param {number} maxSafeSize
  */
 export function showWebGLResourceWarning(_capabilities, requestedSize, maxSafeSize) {
-  ensureBuildingNotificationStyles();
   const warningKey = `webgl-warning-dismissed-${maxSafeSize}`;
   if (localStorage.getItem(warningKey) === 'true') {
     return;
   }
 
-  const notification = document.createElement('div');
-  notification.className = 'building-notification webgl-resource-warning';
+  const simpleMessage =
+    requestedSize > maxSafeSize
+      ? `Taille réduite à ${maxSafeSize}×${maxSafeSize} (limite système)`
+      : `Taille maximale recommandée : ${maxSafeSize}×${maxSafeSize}`;
 
-  const simpleMessage = requestedSize > maxSafeSize
-    ? `Taille réduite à ${maxSafeSize}×${maxSafeSize} (limite système)`
-    : `Taille maximale recommandée: ${maxSafeSize}×${maxSafeSize}`;
-
-  notification.innerHTML = `
-    <div class="notification-content" style="display: flex; align-items: flex-start; gap: 12px; position: relative; padding-right: 30px;">
-      <div class="notification-icon" style="font-size: 24px; flex-shrink: 0; margin-top: 2px;">⚠️</div>
-      <div class="notification-text" style="flex: 1;">
-        <div class="notification-message" style="color: #000; font-size: 14px; line-height: 1.4;">${simpleMessage}</div>
-      </div>
-      <button type="button" class="notification-close" style="
-        position: absolute; top: 4px; right: 4px; background: none; border: none;
-        color: #666; font-size: 22px; line-height: 1; cursor: pointer; padding: 0;
-        width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
-        opacity: 0.6; transition: opacity 0.2s;
-      "
-      onmouseover="this.style.opacity='1'"
-      onmouseout="this.style.opacity='0.6'"
-      onclick="this.closest('.webgl-resource-warning').remove(); localStorage.setItem('${warningKey}', 'true');">×</button>
-    </div>
-  `;
-  notification.style.cssText = `
-    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-    background: #ffffff; color: #000000; padding: 16px 20px; border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); z-index: 10001;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 14px; max-width: 400px; animation: slideDown 0.3s ease-out;
-    border: 2px solid #ff9800;
-  `;
-  document.body.appendChild(notification);
-  dismissNotification(notification, 6000);
+  showWarningToast(simpleMessage, { timeout: 6000 });
+  try {
+    localStorage.setItem(warningKey, 'true');
+  } catch {
+    /* ignore */
+  }
 }

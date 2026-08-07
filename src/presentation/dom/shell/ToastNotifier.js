@@ -43,18 +43,40 @@ export function showWarningToast(message, options = {}) {
 
 /**
  * @param {string} message
- * @param {{ timeout?: number, timeout?: number }} [options]
+ * @param {{ timeout?: number }} [options]
  */
 export function showErrorToast(message, options = {}) {
   getToast().error(message, options);
 }
 
 /**
+ * @param {'info' | 'success' | 'warning' | 'error'} type
+ * @param {string} message
+ * @param {{ timeout?: number }} [options]
+ */
+export function showToast(type, message, options = {}) {
+  switch (type) {
+    case 'success':
+      showSuccessToast(message, options);
+      break;
+    case 'warning':
+      showWarningToast(message, options);
+      break;
+    case 'error':
+      showErrorToast(message, options);
+      break;
+    default:
+      showInfoToast(message, options);
+  }
+}
+
+/**
  * @param {string} title
  * @param {string} message
+ * @param {{ timeout?: number }} [options]
  */
-export function showWarningNotification(title, message) {
-  showWarningToast(`${title} — ${message}`, { timeout: 5500 });
+export function showWarningNotification(title, message, options = {}) {
+  showWarningToast(`${title} — ${message}`, { timeout: 5500, ...options });
 }
 
 /** @internal Tests only */

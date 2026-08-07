@@ -4,15 +4,13 @@ import { updateSpeedDisplay } from './SpeedControls.js';
 export async function loadGameAssets(assetManager) {
   await assetManager.initializeTerrains();
 
-  const loadHouses = async () => {
-    await assetManager.initializeBuildings('houses');
-  };
-
-  if (typeof requestIdleCallback !== 'undefined') {
-    requestIdleCallback(loadHouses, { timeout: 500 });
-  } else {
-    setTimeout(loadHouses, 0);
-  }
+  // Houses + nature are needed before scene.initialize / ResourceManager
+  // (trees write Tree-Sapin etc. into city.tiles; meshes must exist or every
+  // game tick retries createAsset(undefined) → THREE.Object3D.add spam).
+  await Promise.all([
+    assetManager.initializeBuildings('houses'),
+    assetManager.initializeBuildings('nature'),
+  ]);
 
   const loadNonCriticalAssets = () => {
     Promise.all([
@@ -22,10 +20,8 @@ export async function loadGameAssets(assetManager) {
       assetManager.initializeBuildings('industry'),
       assetManager.initializeBuildings('infrastructure'),
       assetManager.initializeBuildings('public'),
-      assetManager.initializeBuildings('nature'),
       assetManager.initializeBuildings('decoration'),
       assetManager.initializeBuildings('tombs'),
-      assetManager.initializeBuildings('workshop'),
     ])
       .then(() => {
         setToolPanelAssets(assetManager.getButtonData(), assetManager.getToolIds());

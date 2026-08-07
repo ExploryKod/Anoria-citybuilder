@@ -15,7 +15,6 @@ This directory contains modularized CSS files for all modal components in the ap
 - `bilan-panel-content.css` - Bilan panel content styles
 - `compte-de-resultat-panel-content.css` - Compte de résultat content styles
 - `balance-sheet.css` - Balance sheet styles
-- `cleanup-notification.css` - Cleanup notification styles
 
 ## Usage
 
@@ -33,7 +32,6 @@ Each modal file should be imported in the main HTML file or through a CSS bundle
 <link rel="stylesheet" href="./src/presentation/dom/styles/modals/bilan-panel-content.css">
 <link rel="stylesheet" href="./src/presentation/dom/styles/modals/compte-de-resultat-panel-content.css">
 <link rel="stylesheet" href="./src/presentation/dom/styles/modals/balance-sheet.css">
-<link rel="stylesheet" href="./src/presentation/dom/styles/modals/cleanup-notification.css">
 ```
 
 ## Global Styles

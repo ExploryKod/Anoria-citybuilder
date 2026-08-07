@@ -24,52 +24,6 @@
     background-color: rgba(33, 150, 243, 0.25);
 }
 
-/* Multiplayer Disconnect Alert */
-.multiplayer-disconnect-alert {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-    color: white;
-    padding: 20px 25px;
-    border-radius: var(--border-radius-medium);
-    box-shadow: 0 8px 25px rgba(255, 152, 0, 0.4);
-    z-index: 10003;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    min-width: 280px;
-    max-width: 350px;
-    animation: slideInRight 0.4s ease-out;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-}
-
-.multiplayer-disconnect-alert .alert-content {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.multiplayer-disconnect-alert .alert-icon {
-    font-size: 32px;
-    flex-shrink: 0;
-}
-
-.multiplayer-disconnect-alert .alert-text {
-    flex: 1;
-}
-
-.multiplayer-disconnect-alert .alert-title {
-    font-weight: 700;
-    font-size: 16px;
-    margin-bottom: 4px;
-}
-
-.multiplayer-disconnect-alert .alert-message {
-    font-size: 13px;
-    opacity: 0.95;
-}
-
 /* Animations */
 @keyframes slideInRight {
     from {
@@ -161,14 +115,6 @@
         max-width: none;
         min-width: auto;
         padding: 12px;
-    }
-    
-    .multiplayer-disconnect-alert {
-        top: 10px;
-        right: 10px;
-        left: 10px;
-        min-width: auto;
-        max-width: none;
     }
     
     .waiting-message-content {
