@@ -29,6 +29,7 @@ import { DecorativeVillageManager } from './managers/DecorativeVillageManager.js
 import { ResourceManager } from './managers/ResourceManager.js';
 import { PerformanceManager } from './managers/PerformanceManager.js';
 import gameUIDefault from '../dom/shell/GameUI.js';
+import { getCumulativeDeaths } from '../../composition/gameplayMortalityState.js';
 import { CitizenManager } from './managers/CitizenManager.js';
 import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
 import { TileGridOverlay } from './managers/TileGridOverlay.js';
@@ -181,7 +182,7 @@ export function createScene(_gameStore, assetManager, deps) {
         webglContextLost = true;
         console.error('[WebGL] Context lost — ressources GPU insuffisantes (fréquent sur mobile).');
 
-        // Le loader "Chronos" peut être affiché au moment de la perte de contexte
+        // Le loader peut encore être visible au moment de la perte de contexte
         // (pendant scene.initialize) : on le masque pour éviter qu'il reste bloqué
         // indéfiniment, l'utilisateur reçoit le toast d'erreur à la place.
         loaderManager.hide(0);
@@ -1562,8 +1563,9 @@ export function createScene(_gameStore, assetManager, deps) {
             );
         }
         
-        // Famished icon count only — funds/employment HUD owned by syncSessionHud / tick
+        // Famished / deaths counters — funds/employment HUD owned by syncSessionHud / tick
         gameUI.updateFamishedPopulation(famishedPopulation || 0);
+        gameUI.updateDeaths?.(getCumulativeDeaths());
 
     }
 

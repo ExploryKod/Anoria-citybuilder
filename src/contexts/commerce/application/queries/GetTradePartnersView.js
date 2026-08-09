@@ -101,6 +101,7 @@ export function buildTradePartnersView({
       name: partner.name,
       description: partner.description,
       isActive: Boolean(partner.isActive),
+      cityCategory: partner.cityCategory ?? null,
       canActivate: activation.canActivate,
       unmetConditions: activation.unmetConditions,
       buysFromUs: partner.buysFromUs.map((trade) =>

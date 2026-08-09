@@ -6,6 +6,7 @@
 import { getOrCreateCityAssetsContext } from './createCityAssetsContext.js';
 import { getOrCreateAccountingContext } from './createAccountingContext.js';
 import { getOrCreateConstructionContext } from './createConstructionContext.js';
+import { getCumulativeDeaths } from './gameplayMortalityState.js';
 
 /**
  * @param {object} params
@@ -25,7 +26,7 @@ export async function persistGameplayTurn({ gameStore, housing, time }) {
     turn: time,
     population: totalPop,
     maxPop: 5000,
-    deads: 0,
+    deads: getCumulativeDeaths(),
     foodAvailable: 0,
     foodNeeded: 0,
     salaries: 0,

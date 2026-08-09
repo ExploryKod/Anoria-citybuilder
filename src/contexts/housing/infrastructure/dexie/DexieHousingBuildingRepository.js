@@ -24,6 +24,8 @@ export class DexieHousingBuildingRepository {
       pop: house.pop ?? 0,
       level: house.level ?? 1,
       lastPopulationGrowthMonth: house.lastPopulationGrowthMonth ?? null,
+      lastFamineDeathMonth: house.lastFamineDeathMonth ?? null,
+      lastConsumption: house.lastConsumption ?? null,
       stocks: house.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 },
       price: house.price ?? 0,
       neighbors: house.neighbors || [],
@@ -86,6 +88,9 @@ export class DexieHousingBuildingRepository {
     const fields = { pop: payload.pop };
     if (payload.lastPopulationGrowthMonth !== undefined) {
       fields.lastPopulationGrowthMonth = payload.lastPopulationGrowthMonth;
+    }
+    if (payload.lastFamineDeathMonth !== undefined) {
+      fields.lastFamineDeathMonth = payload.lastFamineDeathMonth;
     }
     await this.#putFields(instanceId, fields);
   }

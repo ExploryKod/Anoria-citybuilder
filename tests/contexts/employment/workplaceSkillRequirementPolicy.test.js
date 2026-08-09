@@ -15,9 +15,9 @@ describe('Employment — WorkplaceSkillRequirementPolicy', () => {
   });
 
   test('skill keys resolve back to residential groups', () => {
-    expect(residentialGroupForSkill('fermier')).toBe('artisans-ouvriers');
-    expect(residentialGroupForSkill('vente-alimentaire')).toBe('commercants');
-    expect(residentialGroupForSkill('stockage-alimentaire')).toBe('savants');
+    expect(residentialGroupForSkill('fermier')).toBe('artisans');
+    expect(residentialGroupForSkill('vente-alimentaire')).toBe('merchants');
+    expect(residentialGroupForSkill('stockage-alimentaire')).toBe('scholars');
   });
 
   test('workplace skills use Housing profession skill vocabulary (contract)', () => {

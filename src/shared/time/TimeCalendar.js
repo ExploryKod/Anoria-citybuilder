@@ -138,6 +138,19 @@ export function formatTime(days, daysPerMonth) {
   return `${dateLabel} | ${yearDisplay}`;
 }
 
+/**
+ * Worst-case HUD date label (longest month + day + year) for stable chip width.
+ * @param {number} [maxDaysPerMonth=30]
+ */
+export function getHudTimeBarLabelMaxSample(maxDaysPerMonth = 30) {
+  const longestMonth = MONTHS.reduce((best, month) => (month.length > best.length ? month : best));
+  const dayPrefix = maxDaysPerMonth > 1 ? `${maxDaysPerMonth} ` : '';
+  return `${dayPrefix}${longestMonth} | 9999 ap JC`;
+}
+
+/** @readonly */
+export const HUD_TIME_BAR_LABEL_MAX = getHudTimeBarLabelMaxSample(30);
+
 /** @param {number} days @param {number} daysPerMonth */
 export function formatTimeShort(days, daysPerMonth) {
   const timeInfo = getTimeInfo(days, daysPerMonth);

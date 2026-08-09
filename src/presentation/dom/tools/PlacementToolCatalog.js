@@ -8,6 +8,10 @@ import { houses } from '../../../shared/building-catalog/buildingCategories.js';
 export const ALWAYS_ENABLED_PLACEMENT_TOOLS = Object.freeze([
   ...houses,
   'roads',
+  'StonePath-001',
+  'StonePath-Right-001',
+  'StonePath-Left-001',
+  'StonePath-Cross-001',
 ]);
 
 /** @returns {ReadonlyArray<string>} */

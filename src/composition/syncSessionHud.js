@@ -3,6 +3,7 @@
  */
 
 import { getOrCreateAccountingContext } from './createAccountingContext.js';
+import { getCumulativeDeaths } from './gameplayMortalityState.js';
 
 /**
  * @param {object} params
@@ -13,6 +14,7 @@ import { getOrCreateAccountingContext } from './createAccountingContext.js';
  * @param {{ getCityEmploymentSummary?: () => Promise<object> }} [params.employment]
  * @param {{
  *   updateFamishedPopulation: (n: number) => void,
+ *   updateDeaths?: (n: number) => void,
  *   updateFunds: (n: number) => void,
  *   updatePopulationBreakdown?: Function,
  *   updateUnemployedPopulation?: Function,
@@ -33,6 +35,12 @@ export async function syncSessionHud({
     gameUI.updateFamishedPopulation(famishedPopulation || 0);
   } catch (err) {
     console.warn('[syncSessionHud] famished population:', err);
+  }
+
+  try {
+    gameUI.updateDeaths?.(getCumulativeDeaths());
+  } catch (err) {
+    console.warn('[syncSessionHud] deaths:', err);
   }
 
   try {
