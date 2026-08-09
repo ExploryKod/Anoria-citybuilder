@@ -1,119 +1,52 @@
-/* Chronos Loader Modal Styles */
-.chronos-loader-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: var(--z-index-loader);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: opacity 0.5s ease-in-out;
-    backdrop-filter: blur(10px);
-    opacity: 1;
+/* Discrete game loader — no full-screen overlay */
+
+.game-loader {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: var(--z-index-loader);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
 }
 
-/* Semi-transparent background */
-.chronos-loader-modal.semi-transparent {
-    background: rgba(0, 2, 53, 0.7);
+.game-loader.hidden {
+  opacity: 0;
+  visibility: hidden;
 }
 
-/* Fully opaque background */
-.chronos-loader-modal.opaque {
-    background: rgba(0, 2, 53, 0.95);
+.game-loader__track {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: var(--game-chrome-radius);
+  background: var(--game-chrome-bg);
+  border: 1px solid var(--game-chrome-border);
+  box-shadow: var(--game-chrome-shadow);
+  backdrop-filter: var(--game-chrome-blur);
+  box-sizing: border-box;
 }
 
-/* Hidden state */
-.chronos-loader-modal.hidden {
-    opacity: 0;
-    pointer-events: none;
+.game-loader__spinner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba(251, 129, 34, 0.22);
+  border-top-color: var(--cta);
+  border-radius: 50%;
+  animation: game-loader-spin 0.75s linear infinite;
+  box-sizing: border-box;
 }
 
-.chronos-loader-content {
-    background: #fafafa;
-    border: 3px solid var(--cta);
-    border-radius: var(--border-radius-small);
-    padding: 50px 60px;
-    text-align: center;
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
-    max-width: 450px;
-    min-width: 350px;
-}
-
-/* Icon animation */
-.chronos-loader-icon {
-    font-size: 50px;
-    margin-bottom: 20px;
-    display: block;
-    animation: rotate 3s linear infinite;
-}
-
-@keyframes rotate {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* Title */
-.chronos-loader-title {
-    font-size: 24px;
-    font-weight: 600;
-    color: var(--cta);
-    margin-bottom: 15px;
-}
-
-/* Message */
-.chronos-loader-message {
-    font-size: 16px;
-    color: var(--primary);
-    margin-bottom: 25px;
-    line-height: 1.5;
-}
-
-/* Spinner */
-.chronos-loader-spinner {
-    width: 40px;
-    height: 40px;
-    margin: 0 auto;
-    border: 3px solid rgba(251, 129, 34, 0.2);
-    border-top-color: var(--cta);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* Small screens */
-@media (max-width: 768px) {
-    .chronos-loader-content {
-        padding: 40px 30px;
-        min-width: 280px;
-        margin: 20px;
-    }
-    
-    .chronos-loader-icon {
-        font-size: 45px;
-        margin-bottom: 15px;
-    }
-    
-    .chronos-loader-title {
-        font-size: 20px;
-    }
-    
-    .chronos-loader-message {
-        font-size: 14px;
-    }
-    
-    .chronos-loader-spinner {
-        width: 35px;
-        height: 35px;
-    }
+@keyframes game-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

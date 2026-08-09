@@ -1,11 +1,15 @@
 /**
- * Famished population — residents not covered by food stored at home.
+ * Famished population — residents not fed.
  *
- * Housing owns this **read metric**. Supply owns stock **writes** (`stocks.food`
- * on the shared Dexie row). Housing reads `pop` + `stocks` without importing Supply domain.
+ * Primary signal: `lastConsumption.totalUnfed` (same as house Régime tab).
+ * Fallback: pantry coverage (`stocks` edible baskets vs pop) when no
+ * consumption record exists yet.
  *
- * @see ../docs/famished-population.md
+ * Housing owns this **read metric**. Supply owns stock / consumption writes.
  */
+
+import { edibleBasketsFromCategories, totalFoodFromStocks } from '../value-objects/FoodStocks.js';
+import { unfedFromLastConsumption } from './FamineConsequencesPolicy.js';
 
 /**
  * @param {number} pop
@@ -15,20 +19,21 @@ function clampPop(pop) {
   return Number.isFinite(pop) ? Math.max(0, Math.floor(pop)) : 0;
 }
 
-import { totalFoodFromStocks } from '../value-objects/FoodStocks.js';
-
 /**
- * Food baskets available at the house for famished calculation.
+ * Food baskets available at the house for pantry fallback.
+ * Prefer category sum (Régime shelves); fall back to `food` aggregate.
  *
  * @param {import('../value-objects/FoodStocks.js').FoodStocks | null | undefined} stocks
  * @returns {number}
  */
 export function homeFoodBasketsForFamished(stocks) {
+  const fromCategories = edibleBasketsFromCategories(stocks);
+  if (fromCategories > 0) return fromCategories;
   return totalFoodFromStocks(stocks);
 }
 
 /**
- * Fed residents at one house: min(pop, home food baskets).
+ * Fed residents at one house (pantry fallback): min(pop, home food baskets).
  *
  * @param {number} pop
  * @param {import('../value-objects/FoodStocks.js').FoodStocks | null | undefined} stocks
@@ -41,19 +46,30 @@ export function fedPopulationAtHouse(pop, stocks) {
 }
 
 /**
+ * Unfed residents at one house.
+ * Prefers last consumption outcome (aligned with Régime tab).
+ *
  * @param {number} pop
  * @param {import('../value-objects/FoodStocks.js').FoodStocks | null | undefined} stocks
+ * @param {{ totalUnfed?: number } | null | undefined} [lastConsumption]
  * @returns {number}
  */
-export function famishedPopulationAtHouse(pop, stocks) {
+export function famishedPopulationAtHouse(pop, stocks, lastConsumption = null) {
   const p = clampPop(pop);
+  if (lastConsumption != null && Object.hasOwn(lastConsumption, 'totalUnfed')) {
+    return Math.min(p, unfedFromLastConsumption(lastConsumption));
+  }
   return Math.max(0, p - fedPopulationAtHouse(p, stocks));
 }
 
 /**
  * City-wide famished count from residential house snapshots.
  *
- * @param {ReadonlyArray<{ pop?: number, stocks?: import('../value-objects/FoodStocks.js').FoodStocks }>} residentialHouses
+ * @param {ReadonlyArray<{
+ *   pop?: number,
+ *   stocks?: import('../value-objects/FoodStocks.js').FoodStocks,
+ *   lastConsumption?: { totalUnfed?: number } | null,
+ * }>} residentialHouses
  * @returns {{
  *   totalPopulation: number,
  *   fedPopulation: number,
@@ -62,17 +78,21 @@ export function famishedPopulationAtHouse(pop, stocks) {
  */
 export function computeCityFamishedPopulation(residentialHouses) {
   let totalPopulation = 0;
-  let fedPopulation = 0;
+  let famishedPopulation = 0;
 
   for (const house of residentialHouses) {
     const pop = clampPop(house.pop);
     totalPopulation += pop;
-    fedPopulation += fedPopulationAtHouse(pop, house.stocks);
+    famishedPopulation += famishedPopulationAtHouse(
+      pop,
+      house.stocks,
+      house.lastConsumption,
+    );
   }
 
   return {
     totalPopulation,
-    fedPopulation,
-    famishedPopulation: Math.max(0, totalPopulation - fedPopulation),
+    fedPopulation: Math.max(0, totalPopulation - famishedPopulation),
+    famishedPopulation,
   };
 }

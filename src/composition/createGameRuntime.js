@@ -14,6 +14,8 @@ import { createSupplyMonthlyCommerceSystem } from '../contexts/supply/infrastruc
 import { createCommerceTurnSystem } from '../contexts/commerce/infrastructure/runtime/commerceTurnSystem.js';
 import { createRandomEventsSystem } from '../contexts/gameplay/infrastructure/runtime/randomEventsSystem.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
+import { isLoseMode } from '../config/loseMode.js';
+import { recordDeaths } from './gameplayMortalityState.js';
 
 /**
  * Composition root du runtime ECS (engine + systèmes minces).
@@ -82,6 +84,8 @@ export function createGameRuntime({
   const housingPopulationGrowth = createHousingPopulationGrowthSystem({
     housing,
     getTimeInfo,
+    areFamineLimitsEnabled: isLoseMode,
+    onFamineDeaths: recordDeaths,
   });
   const housingEvolution = createHousingEvolutionSystem({ housing });
   const employmentRedistribute = createEmploymentRedistributeSystem({

@@ -2,7 +2,6 @@
 
 /** @type {MobileToolbarCategory[]} */
 export const MOBILE_TOOLBAR_CATEGORIES = [
-  { id: 'tools', label: 'Outils' },
   { id: 'houses', label: 'Habitations' },
   { id: 'palaces', label: 'Palais', gateKey: 'palace-btn' },
   { id: 'farms', label: 'Agriculture' },

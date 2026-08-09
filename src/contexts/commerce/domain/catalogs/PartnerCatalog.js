@@ -29,6 +29,7 @@ function createMvpPartnerSeed() {
     {
       id: 'olivea',
       name: 'Olivea',
+      cityCategory: 'near-commercial',
       description: 'Cité méditerranéenne — achète bois et meubles, vend des figues',
       isActive: false,
       activationConditions: [
@@ -66,6 +67,7 @@ function createMvpPartnerSeed() {
     {
       id: 'silvania',
       name: 'Silvania',
+      cityCategory: 'far-commercial',
       description: 'Région forestière — achète des meubles',
       isActive: false,
       activationConditions: [],
@@ -126,6 +128,15 @@ export function normalizePartners(partners) {
         needsSave = true;
       }
     });
+
+    if (!partner.cityCategory) {
+      const defaults = createMvpPartnerSeed();
+      const seed = defaults.find((item) => item.id === partner.id);
+      if (seed?.cityCategory) {
+        partner.cityCategory = seed.cityCategory;
+        needsSave = true;
+      }
+    }
   }
 
   const validation = validatePartnerCatalog(partners);

@@ -7,9 +7,9 @@
 
 /** @type {Readonly<Record<string, string>>} */
 export const GROUP_LEVEL2_SKILL = Object.freeze({
-  'artisans-ouvriers': 'fermier',
-  commercants: 'vente-alimentaire',
-  savants: 'stockage-alimentaire',
+  'artisans': 'fermier',
+  merchants: 'vente-alimentaire',
+  scholars: 'stockage-alimentaire',
 });
 
 /**
