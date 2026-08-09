@@ -74,12 +74,16 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
 
     clearPopulationWithoutRoadAccess,
 
-    async growHousePopulation(houseId, monthIndex) {
-      return growHousePopulation.execute({ houseId, monthIndex });
+    async growHousePopulation(houseId, monthIndex, options = {}) {
+      return growHousePopulation.execute({
+        houseId,
+        monthIndex,
+        applyFamineLimits: options.applyFamineLimits === true,
+      });
     },
 
-    async growAllHousePopulation({ monthIndex }) {
-      return growAllHousePopulation.execute({ monthIndex });
+    async growAllHousePopulation({ monthIndex, applyFamineLimits = false }) {
+      return growAllHousePopulation.execute({ monthIndex, applyFamineLimits });
     },
 
     async evolveHouseBuilding(houseId) {

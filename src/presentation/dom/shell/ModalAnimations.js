@@ -16,7 +16,6 @@ class ModalAnimations {
     const modalIds = [
       'bilan-panel',
       'loans-panel',
-      'realtime-budget-panel',
       'compte-de-resultat-panel',
       'journal-panel',
       'city-map-panel',
@@ -38,8 +37,6 @@ class ModalAnimations {
     const wrapper = modal.querySelector(`
       .bilan-panel-wrapper, 
       .loans-panel-wrapper, 
-      .realtime-budget-wrapper, 
-      .realtime-budget-panel-wrapper,
       .compte-de-resultat-wrapper,
       .compte-de-resultat-panel-wrapper,
       .journal-wrapper,
@@ -53,8 +50,6 @@ class ModalAnimations {
     const header = wrapper?.querySelector(`
       .bilan-panel-header, 
       .loans-panel-header, 
-      .realtime-budget-header,
-      .realtime-budget-panel-header,
       .compte-de-resultat-header,
       .compte-de-resultat-panel-header,
       .journal-header,
@@ -68,8 +63,6 @@ class ModalAnimations {
     const content = wrapper?.querySelector(`
       .bilan-panel-content, 
       .loans-panel-content, 
-      .realtime-budget-content,
-      .realtime-budget-panel-content,
       .compte-de-resultat-content,
       .compte-de-resultat-panel-content,
       .journal-content,

@@ -10,15 +10,15 @@
 
 import { buildingCatalog } from '../../../../shared/building-catalog/buildingCatalog.js';
 
-export const SOCIAL_GROUP_ARTISANS_OUVRIERS = 'artisans-ouvriers';
-export const SOCIAL_GROUP_COMMERCANTS = 'commercants';
-export const SOCIAL_GROUP_SAVANTS = 'savants';
+export const SOCIAL_GROUP_ARTISANS = 'artisans';
+export const SOCIAL_GROUP_MERCHANTS = 'merchants';
+export const SOCIAL_GROUP_SCHOLARS = 'scholars';
 
 /** @type {Readonly<Record<string, ReadonlyArray<number>>>} */
 export const GROUP_ELIGIBLE_SECTORS = Object.freeze({
-  [SOCIAL_GROUP_ARTISANS_OUVRIERS]: Object.freeze([1, 3, 4]),
-  [SOCIAL_GROUP_COMMERCANTS]: Object.freeze([2]),
-  [SOCIAL_GROUP_SAVANTS]: Object.freeze([6]),
+  [SOCIAL_GROUP_ARTISANS]: Object.freeze([1, 3, 4]),
+  [SOCIAL_GROUP_MERCHANTS]: Object.freeze([2]),
+  [SOCIAL_GROUP_SCHOLARS]: Object.freeze([6]),
 });
 
 /**

@@ -20,19 +20,19 @@ export const STATUS_PRESENTATION = Object.freeze({
 
 /** @type {Readonly<Record<string, { label: string, emoji: string, singular: string, plural: string }>>} */
 export const GROUP_CITIZEN_PRESENTATION = Object.freeze({
-  'artisans-ouvriers': Object.freeze({
+  'artisans': Object.freeze({
     label: 'Citoyens artisans',
     emoji: '🔨',
     singular: 'citoyen artisan',
     plural: 'citoyens artisans',
   }),
-  commercants: Object.freeze({
+  merchants: Object.freeze({
     label: 'Citoyens commerçants',
     emoji: '🛒',
     singular: 'citoyen commerçant',
     plural: 'citoyens commerçants',
   }),
-  savants: Object.freeze({
+  scholars: Object.freeze({
     label: 'Citoyens savants',
     emoji: '📚',
     singular: 'citoyen savant',
@@ -52,7 +52,7 @@ export const SKILL_PRESENTATION = Object.freeze({
   learning: Object.freeze({ label: 'Apprentissage', emoji: '📚' }),
 });
 
-export const DEFAULT_RESIDENTIAL_GROUP = 'artisans-ouvriers';
+export const DEFAULT_RESIDENTIAL_GROUP = 'artisans';
 
 export const PROFILE_DISPLAY_ORDER = Object.freeze([
   'hunter-gatherer',

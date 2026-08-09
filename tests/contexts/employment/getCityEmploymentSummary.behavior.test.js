@@ -87,22 +87,22 @@ describe('Employment — GetCityEmploymentSummary', () => {
 
   describe('HouseGroupSectorEligibilityPolicy', () => {
     test('maps each house color to its permanent social group', () => {
-      expect(residentialGroupForType('House-Blue')).toBe('commercants');
-      expect(residentialGroupForType('House-Red')).toBe('artisans-ouvriers');
-      expect(residentialGroupForType('House-Purple')).toBe('savants');
+      expect(residentialGroupForType('House-Blue')).toBe('merchants');
+      expect(residentialGroupForType('House-Red')).toBe('artisans');
+      expect(residentialGroupForType('House-Purple')).toBe('scholars');
       expect(residentialGroupForType('House-2Story')).toBeNull();
       expect(residentialGroupForType('Farm-Wheat')).toBeNull();
     });
 
     test('maps each social group to its eligible employment sectors', () => {
-      expect(eligibleSectorsForGroup('artisans-ouvriers')).toEqual([1, 3, 4]);
-      expect(eligibleSectorsForGroup('commercants')).toEqual([2]);
-      expect(eligibleSectorsForGroup('savants')).toEqual([6]);
+      expect(eligibleSectorsForGroup('artisans')).toEqual([1, 3, 4]);
+      expect(eligibleSectorsForGroup('merchants')).toEqual([2]);
+      expect(eligibleSectorsForGroup('scholars')).toEqual([6]);
       expect(eligibleSectorsForGroup('unknown-group')).toEqual([]);
     });
 
     test('exposes all three groups', () => {
-      expect(allSocialGroups().sort()).toEqual(['artisans-ouvriers', 'commercants', 'savants']);
+      expect(allSocialGroups().sort()).toEqual(['artisans', 'merchants', 'scholars']);
     });
   });
 
@@ -193,23 +193,23 @@ describe('Employment — GetCityEmploymentSummary', () => {
 
     test('byGroup breaks the pool/assignment down per social group (global aggregate unchanged)', () => {
       const summary = computeCityEmploymentSummary([
-        house('red-house', 5, 1, 'House-Red'), // artisans-ouvriers
+        house('red-house', 5, 1, 'House-Red'), // artisans
         house('blue-house', 3, 1, 'House-Blue'), // commerçants
-        workplace('farm', { workerNeed: 3, sector: 1, worker: 3 }), // artisans-ouvriers sector
+        workplace('farm', { workerNeed: 3, sector: 1, worker: 3 }), // artisans sector
         workplace('market', { workerNeed: 2, sector: 2, worker: 1, type: 'Market-Stall' }), // commerçants sector
       ]);
 
-      expect(summary.byGroup['artisans-ouvriers']).toEqual({
+      expect(summary.byGroup['artisans']).toEqual({
         workerPool: 5,
         assigned: 3,
         unemployed: 2,
       });
-      expect(summary.byGroup.commercants).toEqual({
+      expect(summary.byGroup.merchants).toEqual({
         workerPool: 3,
         assigned: 1,
         unemployed: 2,
       });
-      expect(summary.byGroup.savants).toEqual({
+      expect(summary.byGroup.scholars).toEqual({
         workerPool: 0,
         assigned: 0,
         unemployed: 0,
@@ -232,7 +232,7 @@ describe('Employment — GetCityEmploymentSummary', () => {
         workplace('farm', { workerNeed: 3, sector: 1 }),
       ]);
 
-      expect(summary.byGroup['artisans-ouvriers']).toEqual({
+      expect(summary.byGroup['artisans']).toEqual({
         workerPool: 0,
         assigned: 0,
         unemployed: 0,

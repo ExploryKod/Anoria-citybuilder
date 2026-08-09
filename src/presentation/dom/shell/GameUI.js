@@ -17,6 +17,7 @@ import {
     displayPopElites,
     displayPopServants,
     displayHungerPop,
+    displayDeathsPop,
     displayUnemployedPop,
     displayUnemployedPct,
     displayWorkerLack,
@@ -271,6 +272,16 @@ class GameUI {
     updateFamishedPopulation(famishedPopulation) {
         if (displayHungerPop) {
             displayHungerPop.textContent = (famishedPopulation || 0).toString();
+        }
+    }
+
+    /**
+     * Updates cumulative deaths since game start (famine mortality).
+     * @param {number} deaths
+     */
+    updateDeaths(deaths) {
+        if (displayDeathsPop) {
+            displayDeathsPop.textContent = String(Math.max(0, Math.floor(deaths) || 0));
         }
     }
 

@@ -8,12 +8,12 @@ describe('formatHousePopulationPresentation', () => {
       level: 2,
       pop: 12,
       buildingType: 'House-Red',
-      residentialGroup: 'artisans-ouvriers',
+      residentialGroup: 'artisans',
     });
 
     const { profiles, skills } = formatHousePopulationPresentation(
       composition,
-      'artisans-ouvriers',
+      'artisans',
     );
 
     expect(profiles).toEqual([

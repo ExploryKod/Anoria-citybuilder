@@ -9,9 +9,9 @@ import { GROUP_LEVEL2_SKILL } from './GroupLevel2SkillPolicy.js';
  * @type {Readonly<Record<string, ReadonlyArray<string>>>}
  */
 export const GROUP_LEVEL2_UNLOCKED_BUILDINGS = Object.freeze({
-  'artisans-ouvriers': Object.freeze(['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage']),
-  commercants: Object.freeze(['Market-Stall-Red']),
-  savants: Object.freeze(['Windmill-001']),
+  'artisans': Object.freeze(['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage']),
+  merchants: Object.freeze(['Market-Stall-Red', 'Market-Stall-Blue', 'Market-Stall']),
+  scholars: Object.freeze(['Windmill-001']),
 });
 
 /**
