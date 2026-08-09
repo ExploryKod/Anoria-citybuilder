@@ -44,6 +44,7 @@ export const displayPopServants = document.querySelector(
     `${popHudRoot} .pop-segment--servant .pop-segment-value`
 );
 export const displayHungerPop = document.querySelector(`${popHudRoot} .display-hunger-pop`);
+export const displayDeathsPop = document.querySelector(`${popHudRoot} .display-deaths-pop`);
 export const displayUnemployedPop = document.querySelector(`${popHudRoot} .display-unemployed-pop`);
 export const displayUnemployedPct = document.querySelector(`${popHudRoot} .display-unemployed-pct`);
 export const displayWorkerLack = document.querySelector(`${popHudRoot} .display-worker-lack`);

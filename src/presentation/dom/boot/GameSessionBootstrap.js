@@ -31,9 +31,6 @@ import {
 } from '../../pages/site/bootSession.js';
 import { getMissionById } from '../../pages/missions/missionCatalog.js';
 import {
-  initTresoreriePopup,
-} from '../compta/tresorerie/TresoreriePanel.js';
-import {
   initBudgetStatesPopup,
   refreshBudgetStatesModal,
 } from '../compta/compte-de-resultat/CompteDeResultatPanel.js';
@@ -54,16 +51,8 @@ import { initFoodTraceabilityPopup } from '../admin/food-traceability/FoodTracea
 import { initAdminSections } from '../admin/initAdminSections.js';
 import { bindObjectivesHistoryDeps } from '../onboarding/objectives-history.js';
 import { initObjectivesPanel } from '../onboarding/ObjectivesPanel.js';
+import loaderManager from '../shell/LoaderManager.js';
 import { initTutorialPanel } from '../onboarding/TutorialPanel.js';
-
-function showChronosLoader() {
-  const chronosLoader = document.getElementById('chronos-loader-modal');
-  if (chronosLoader) {
-    chronosLoader.removeAttribute('hidden');
-    chronosLoader.classList.remove('hidden');
-    chronosLoader.classList.add('opaque');
-  }
-}
 
 function persistCitySize(size) {
   try {
@@ -117,7 +106,7 @@ function resolveBootSelection(bootMode) {
 export async function bootstrapGameSession(assetManager) {
   await waitForDatabaseReady();
 
-  showChronosLoader();
+  loaderManager.show();
 
   const bootMode = getBootMode();
   const selectionResult = resolveBootSelection(bootMode);
@@ -180,7 +169,6 @@ export async function bootstrapGameSession(assetManager) {
     getCity: () => game.city ?? null,
   };
 
-  initTresoreriePopup(panelDeps);
   initBilanPopup(panelDeps);
   initBudgetStatesPopup(panelDeps);
   initJournalPopup(panelDeps);

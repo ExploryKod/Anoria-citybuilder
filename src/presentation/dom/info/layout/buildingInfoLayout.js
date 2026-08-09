@@ -52,15 +52,15 @@ export function setBuildingInfoMeta(html) {
 
 /**
  * @param {string} tabId
- * @param {string} [groupClass] e.g. `commercants` for header accent
+ * @param {string} [groupClass] e.g. `merchants` for header accent
  */
 export function setBuildingInfoGroupAccent(groupClass) {
   const panel = getOverlay()?.querySelector('.info-building-panel');
   if (!panel) return;
   panel.classList.remove(
-    'info-building-panel--commercants',
-    'info-building-panel--artisans-ouvriers',
-    'info-building-panel--savants'
+    'info-building-panel--merchants',
+    'info-building-panel--artisans',
+    'info-building-panel--scholars'
   );
   if (groupClass) {
     panel.classList.add(`info-building-panel--${groupClass}`);

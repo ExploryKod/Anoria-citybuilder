@@ -17,7 +17,9 @@ import { initPlaybackControls } from './PlaybackControls.js';
 import { initSpeedControls } from './SpeedControls.js';
 import { initToolBarBindings } from './ToolBarBindings.js';
 import { initMobileToolbar } from './ToolbarShell.js';
+import { initHudTimeBarMinWidth } from '../shell/hudTimeBarSizing.js';
 import { initMobileCompactToolbar } from '../tools/MobileCompactToolbar.js';
+import { initMobileClickStateFab } from '../tools/MobileClickStateFab.js';
 import { initMissingTooltips, observeMissingTooltips } from './TooltipTitles.js';
 import { bindToolPanelDeps } from '../tools/ToolPanel.js';
 import { bindPopupManagerDeps, popupManager } from '../shell/PopupManager.js';
@@ -63,6 +65,8 @@ export async function initAppBoot() {
     invokeSetActiveTool,
     buttonStateManager,
   });
+  initMobileClickStateFab({ invokeSetActiveTool });
+  initHudTimeBarMinWidth();
   initMobileToolbar();
   initParametersPanel({
     pauseGame,

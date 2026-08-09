@@ -9,6 +9,7 @@ import {
   buildToolbarLegendPanelHtml,
 } from '../help/legendHelpContent.js';
 import { getBuildingDisplayName } from '../shell/BuildingNotifications.js';
+import { syncMobileClickStateFab } from './MobileClickStateFab.js';
 
 /** @type {{
  *   popupManager?: object | null,
@@ -63,6 +64,9 @@ const TOOL_SVG = {
   Chapel: castleSvg(),
   roads: modernRoadSvg(),
   'StonePath-001': stonePathSvg(),
+  'Market-Stall': marketStallSvg('#3b82f6'),
+  'Market-Stall-Blue': marketStallSvg('#3b82f6'),
+  'Market-Stall-Red': marketStallSvg('#dc2626'),
 };
 
 /** Emoji fallback when no distinctive SVG */
@@ -72,9 +76,6 @@ const TOOL_EMOJI = {
   'Hay-Pile': '📦',
   'Winery-001': '🍷',
   Cylinder: '🛑',
-  'Market-Stall': '🏪',
-  'Market-Stall-Blue': '🔵',
-  'Market-Stall-Red': '🔴',
   Chapel: '🛕',
   'BookShop-001': '📚',
   'Fence-001': '🧱',
@@ -134,6 +135,10 @@ export function getButtonsUnactive() {
   toolBarButtons.forEach((button) => {
     button.classList.remove('selected');
   });
+  document.querySelectorAll('.mobile-click-state-btn').forEach((button) => {
+    button.classList.remove('active');
+    button.setAttribute('aria-pressed', 'false');
+  });
 }
 
 /**
@@ -144,6 +149,7 @@ export function activateSelectToolButton() {
   getButtonsUnactive();
   const selectBtn = document.getElementById('select-btn');
   selectBtn?.classList.add('selected');
+  syncMobileClickStateFab('select-object');
 }
 
 export function getButtonsDisabled() {
@@ -470,4 +476,7 @@ function modernRoadSvg() {
 }
 function stonePathSvg() {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="8" y1="8" x2="8" y2="10"/><line x1="16" y1="8" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="16"/><line x1="16" y1="14" x2="16" y2="16"/></svg>`;
+}
+function marketStallSvg(stroke = 'currentColor') {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/></svg>`;
 }

@@ -2,7 +2,7 @@
  * CompteDeResultatPresenter — rendu HTML du compte de résultat (données déjà chargées).
  */
 
-import { getHealthStatusText } from '../tresorerie/TresoreriePanel.js';
+import { financialHealthStatusLabel } from '../../../../contexts/accounting/presentation/index.js';
 
 function productAmount(bundle, label) {
   return bundle.incomeStatement.products.find((p) => p.label === label)?.amount ?? 0;
@@ -140,7 +140,7 @@ export function renderFinancialStatementsBundles(bundles, container) {
                 <div class="info-item">
                     <span class="info-label">Santé financière</span>
                     <span class="info-value" style="color: ${getHealthStatusColor(healthStatus)}">
-                        ${getHealthStatusText(healthStatus)}
+                        ${financialHealthStatusLabel(healthStatus)}
                     </span>
                 </div>
                 <div class="info-item">

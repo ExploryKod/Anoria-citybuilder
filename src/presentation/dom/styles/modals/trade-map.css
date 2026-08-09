@@ -1,13 +1,24 @@
-/* Full-screen trade map (Caesar III style, CSS terrain) */
+/* Trade map — épuré, couleurs Anoria */
 
 .trade-map-overlay {
+    --trade-map-bg: #1d2228;
+    --trade-map-surface: #2a3038;
+    --trade-map-border: rgba(255, 255, 255, 0.08);
+    --trade-map-text: #f4f5f6;
+    --trade-map-muted: rgba(244, 245, 246, 0.65);
+    --trade-map-cta: #fb8122;
+    --trade-map-cta-soft: rgba(251, 129, 22, 0.35);
+    --trade-map-danger: #e85d4c;
+    --trade-map-success: #3dba7a;
+    --trade-map-stage-max: 1200px;
+
     position: fixed;
     inset: 0;
     z-index: 20000;
     display: flex;
     flex-direction: column;
-    background: #1a1208;
-    color: #f5e6c8;
+    background: var(--trade-map-bg);
+    color: var(--trade-map-text);
     font-family: var(--font-family, system-ui, sans-serif);
 }
 
@@ -15,40 +26,43 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 10px 16px;
-    background: linear-gradient(180deg, #3d2b14 0%, #2a1d0e 100%);
-    border-bottom: 2px solid #8b6914;
+    padding: 12px 20px;
+    background: var(--trade-map-surface);
+    border-bottom: 1px solid var(--trade-map-border);
     flex-shrink: 0;
 }
 
 .trade-map-toolbar-title {
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     flex: 1;
 }
 
 .trade-map-toolbar-stats {
     font-size: 13px;
-    opacity: 0.85;
+    color: var(--trade-map-muted);
+    font-variant-numeric: tabular-nums;
 }
 
 .trade-map-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 36px;
     height: 36px;
-    border: 2px solid #8b6914;
-    border-radius: 4px;
-    background: #5c3d1e;
-    color: #f5e6c8;
-    font-size: 18px;
+    border: 1px solid var(--trade-map-border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--trade-map-text);
     cursor: pointer;
-    line-height: 1;
-    transition: background 0.15s ease;
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .trade-map-close-btn:hover {
-    background: #7a5028;
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--trade-map-cta);
+    color: var(--trade-map-cta);
 }
 
 .trade-map-canvas {
@@ -56,134 +70,368 @@
     flex: 1;
     overflow: hidden;
     min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    background: #b8a88c;
+    container-type: size;
 }
 
-.trade-map-terrain {
+.trade-map-stage {
+    position: relative;
+    flex: 0 0 auto;
+    aspect-ratio: 1 / 1;
+    width: min(100cqw, 100cqh, var(--trade-map-stage-max));
+}
+
+/* Plan cartographique plat — parchemin, pas de relief ni mer */
+.trade-map-world {
     position: absolute;
     inset: 0;
-    background:
-        radial-gradient(ellipse 80% 60% at 50% 55%, #6b8f3a 0%, #4a6b28 40%, transparent 70%),
-        radial-gradient(ellipse 50% 40% at 20% 70%, #5a7a32 0%, transparent 60%),
-        radial-gradient(ellipse 45% 35% at 80% 65%, #52702e 0%, transparent 55%),
-        linear-gradient(180deg, #3d6b8a 0%, #2a5570 18%, #4a7a38 18%, #3d6628 100%);
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+    border: 3px solid #4a3c2a;
+    border-radius: 4px;
+    box-shadow:
+        inset 0 0 0 1px #f5efe3,
+        0 2px 10px rgba(0, 0, 0, 0.15);
+    background: #e8dcc4;
 }
 
-.trade-map-coast {
+.trade-map-sheet {
     position: absolute;
-    top: 0;
-    bottom: 18%;
-    width: 22%;
+    inset: 0;
+    background: #e8dcc4;
+}
+
+.trade-map-grid-lines {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.35;
+    background-image:
+        linear-gradient(rgba(74, 58, 42, 0.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(74, 58, 42, 0.12) 1px, transparent 1px);
+    background-size: 10% 10%;
+}
+
+.trade-map-compass {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.trade-map-compass-rose {
+    position: relative;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border: 2px solid #4a3c2a;
+    border-radius: 50%;
+    background:
+        linear-gradient(0deg, transparent 47%, rgba(74, 58, 42, 0.2) 48%, transparent 53%),
+        linear-gradient(90deg, transparent 47%, rgba(74, 58, 42, 0.2) 48%, transparent 53%),
+        #e8dcc4;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.trade-map-compass-rose::before {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 8px solid var(--trade-map-cta);
+}
+
+.trade-map-compass-n {
+    position: relative;
+    flex-shrink: 0;
+    font-family: Georgia, serif;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    color: #2a2218;
+    background: #fff;
+    border: 2px solid #4a3c2a;
+    padding: 2px 6px;
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.trade-map-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
     pointer-events: none;
 }
 
-.trade-map-coast--west {
-    left: 0;
-    background: linear-gradient(90deg, rgba(42, 85, 112, 0.9) 0%, transparent 100%);
+.trade-map-layer .trade-map-city--settlement {
+    pointer-events: auto;
 }
 
-.trade-map-coast--east {
-    right: 0;
-    background: linear-gradient(270deg, rgba(42, 85, 112, 0.85) 0%, transparent 100%);
+.trade-map-layer .trade-map-city--player {
+    pointer-events: auto;
 }
 
-.trade-map-roads {
+.trade-map-links {
     position: absolute;
     inset: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
-    background:
-        linear-gradient(135deg, transparent 48%, rgba(90, 70, 40, 0.35) 49%, rgba(90, 70, 40, 0.35) 51%, transparent 52%),
-        linear-gradient(45deg, transparent 48%, rgba(90, 70, 40, 0.25) 49%, rgba(90, 70, 40, 0.25) 51%, transparent 52%);
-    background-size: 100% 100%;
-    opacity: 0.6;
+    z-index: 0;
+}
+
+.trade-map-link {
+    fill: none;
+    stroke-width: 0.55;
+    stroke: #8b7355;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: stroke 0.2s ease, stroke-width 0.2s ease;
+}
+
+.trade-map-link--trade-route.trade-map-link--active {
+    stroke: #c45c1a;
+    stroke-width: 0.75;
+}
+
+.trade-map-link--trade-route:not(.trade-map-link--active) {
+    stroke: #9a8468;
+    stroke-width: 0.5;
+    stroke-dasharray: 1.4 0.9;
+}
+
+.trade-map-link--inter-city.trade-map-link--active {
+    stroke: #a86a2a;
+    stroke-width: 0.55;
+    stroke-dasharray: none;
+}
+
+.trade-map-link--inter-city:not(.trade-map-link--active) {
+    stroke: #a89880;
+    stroke-dasharray: 0.9 0.7;
+}
+
+.trade-map-link--potential {
+    stroke: #9a9080;
+    stroke-width: 0.45;
+    stroke-dasharray: 0.7 0.7;
 }
 
 .trade-map-city {
     position: absolute;
     transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
+    width: 0;
+    height: 0;
     border: none;
     background: none;
     padding: 0;
-    cursor: default;
     z-index: 2;
+    pointer-events: none;
+    isolation: isolate;
 }
 
 .trade-map-city--player {
-    pointer-events: none;
+    pointer-events: auto;
+    cursor: default;
 }
 
-.trade-map-city--partner {
+.trade-map-city--settlement {
     cursor: pointer;
-    transition: transform 0.15s ease, filter 0.15s ease;
+    transition: transform 0.15s ease;
 }
 
-.trade-map-city--partner:hover {
-    transform: translate(-50%, -50%) scale(1.08);
-    filter: drop-shadow(0 0 8px rgba(255, 220, 120, 0.6));
+.trade-map-city--settlement:hover {
+    transform: translate(-50%, -50%) scale(1.04);
 }
 
-.trade-map-city--partner.selected .trade-map-city-icon {
-    box-shadow: 0 0 0 3px #ffd700, 0 4px 12px rgba(0, 0, 0, 0.4);
+.trade-map-city--settlement.selected .trade-map-city-node {
+    box-shadow:
+        0 0 0 2px #fff,
+        0 0 0 4px var(--trade-map-cta);
 }
 
-.trade-map-city--partner.route-open .trade-map-city-icon {
-    border-color: #4caf50;
-}
-
-.trade-map-city--partner.route-closed .trade-map-city-icon {
-    border-color: #c0392b;
-    opacity: 0.9;
-}
-
-.trade-map-city-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 52px;
-    height: 52px;
-    font-size: 28px;
-    background: radial-gradient(circle at 30% 30%, #f5e6c8, #c4a574);
-    border: 3px solid #8b6914;
+.trade-map-city-node {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translate(-50%, -50%);
+    display: block;
     border-radius: 50%;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 1px 4px rgba(45, 35, 25, 0.35);
+    transition: box-shadow 0.15s ease;
+    z-index: 2;
 }
 
-.trade-map-city--player .trade-map-city-icon {
-    width: 64px;
-    height: 64px;
-    font-size: 32px;
-    border-color: #ffd700;
-    box-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+.trade-map-city--player .trade-map-city-node {
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border: 3px solid var(--trade-map-cta);
+    box-shadow:
+        0 0 0 2px #4a3c2a,
+        0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
-.trade-map-city-name {
-    font-size: 12px;
+.trade-map-city--settlement .trade-map-city-node {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #4a3c2a;
+    background: #f5efe3;
+}
+
+.trade-map-city--cat-near-commercial .trade-map-city-node {
+    background: var(--trade-map-cta);
+    border-color: #4a3c2a;
+}
+
+.trade-map-city--cat-far-commercial .trade-map-city-node {
+    background: #c96a1a;
+    border-color: #4a3c2a;
+}
+
+.trade-map-city--cat-non-commercial .trade-map-city-node {
+    background: #f5efe3;
+    border-color: #6b5344;
+}
+
+.trade-map-city--cat-enemy .trade-map-city-node {
+    background: #f5efe3;
+    border-color: var(--trade-map-danger);
+    border-width: 2px;
+}
+
+.trade-map-city--cat-anoria-owned-near-commercial .trade-map-city-node {
+    background: var(--trade-map-cta);
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #4a3c2a;
+}
+
+.trade-map-city--settlement.route-closed .trade-map-city-node {
+    opacity: 0.8;
+}
+
+.trade-map-city--settlement.route-none .trade-map-city-node {
+    opacity: 1;
+}
+
+.trade-map-city-label {
+    position: absolute;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 10px;
     font-weight: 700;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #3d3228;
+    background: rgba(245, 239, 227, 0.97);
+    border: 1px solid #6b5344;
+    padding: 2px 7px;
+    border-radius: 2px;
+    line-height: 1.2;
     white-space: nowrap;
-    padding: 2px 8px;
-    background: rgba(0, 0, 0, 0.45);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    z-index: 2;
+    margin: 0;
+}
+
+.trade-map-city-label--left {
+    right: 14px;
+    top: 0;
+    transform: translateY(-50%);
+}
+
+.trade-map-city-label--right {
+    left: 14px;
+    top: 0;
+    transform: translateY(-50%);
+}
+
+.trade-map-city-label--top {
+    bottom: 14px;
+    left: 0;
+    transform: translateX(-50%);
+}
+
+.trade-map-city-label--bottom {
+    top: 14px;
+    left: 0;
+    transform: translateX(-50%);
+}
+
+.trade-map-city--player .trade-map-city-label--top {
+    bottom: 16px;
+}
+
+.trade-map-city--player .trade-map-city-label {
+    font-size: 11px;
+    border-color: var(--trade-map-cta);
+    color: #2a2218;
+}
+
+.trade-map-city--settlement.selected .trade-map-city-label {
+    border-color: var(--trade-map-cta);
+    background: #fff;
+}
+
+.trade-map-city-tooltip {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    padding: 5px 8px;
     border-radius: 4px;
+    background: #f5efe3;
+    border: 1px solid #6b5344;
+    color: #3d3228;
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1.35;
+    white-space: nowrap;
+    max-width: 280px;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+    z-index: 4;
+}
+
+.trade-map-city:hover .trade-map-city-tooltip,
+.trade-map-city:focus-visible .trade-map-city-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
 }
 
 /* Bottom panel */
 .trade-map-panel {
     flex-shrink: 0;
-    min-height: 180px;
-    max-height: 38vh;
+    min-height: 160px;
+    max-height: 34vh;
     overflow-y: auto;
-    background: linear-gradient(180deg, #4a3520 0%, #2a1d0e 100%);
-    border-top: 3px solid #8b6914;
-    padding: 16px 20px;
+    background: var(--trade-map-surface);
+    border-top: 1px solid var(--trade-map-border);
+    padding: 16px 24px;
 }
 
 .trade-map-panel-empty {
     text-align: center;
     padding: 24px;
-    opacity: 0.7;
+    color: var(--trade-map-muted);
     font-style: italic;
 }
 
@@ -194,49 +442,92 @@
 
 .trade-map-panel-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+}
+
+.trade-map-panel-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
 }
 
 .trade-map-panel-city {
     margin: 0;
-    font-size: 20px;
-    font-weight: 700;
-    color: #ffd700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--trade-map-text);
+}
+
+.trade-map-panel-category {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--trade-map-muted);
+    border: 1px solid var(--trade-map-border);
+}
+
+.trade-map-panel-category--near-commercial,
+.trade-map-panel-category--anoria-owned-near-commercial {
+    border-color: var(--trade-map-cta-soft);
+    color: var(--trade-map-cta);
+}
+
+.trade-map-panel-category--enemy {
+    border-color: rgba(232, 93, 76, 0.35);
+    color: var(--trade-map-danger);
 }
 
 .trade-map-panel-route {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     padding: 4px 10px;
-    border-radius: 4px;
+    border-radius: 6px;
+    flex-shrink: 0;
 }
 
 .trade-map-panel-route.open {
-    background: rgba(76, 175, 80, 0.25);
-    color: #81c784;
+    background: rgba(61, 186, 122, 0.15);
+    color: var(--trade-map-success);
 }
 
 .trade-map-panel-route.closed {
-    background: rgba(192, 57, 43, 0.25);
-    color: #e57373;
+    background: rgba(232, 93, 76, 0.12);
+    color: var(--trade-map-danger);
+}
+
+.trade-map-panel-route.hostile {
+    background: rgba(232, 93, 76, 0.1);
+    color: var(--trade-map-danger);
+}
+
+.trade-map-panel-route.potential {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--trade-map-muted);
+}
+
+.trade-map-panel-route.capital {
+    background: var(--trade-map-cta-soft);
+    color: var(--trade-map-cta);
 }
 
 .trade-map-panel-desc {
     margin: 0 0 12px;
     font-size: 13px;
-    opacity: 0.85;
-    font-style: italic;
+    color: var(--trade-map-muted);
+    line-height: 1.45;
 }
 
 .trade-map-panel-trades {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     margin-bottom: 12px;
 }
 
@@ -245,19 +536,21 @@
     grid-template-columns: 64px 1fr auto auto;
     align-items: center;
     gap: 10px;
-    padding: 6px 10px;
+    padding: 8px 12px;
     background: rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
+    border-radius: 6px;
     font-size: 13px;
+    border: 1px solid var(--trade-map-border);
 }
 
 .trade-map-trade-row.unavailable {
-    opacity: 0.55;
+    opacity: 0.5;
 }
 
 .trade-map-trade-label {
     font-weight: 600;
-    color: #c4a574;
+    color: var(--trade-map-cta);
+    font-size: 12px;
 }
 
 .trade-map-trade-product {
@@ -266,7 +559,8 @@
 
 .trade-map-trade-count {
     font-variant-numeric: tabular-nums;
-    opacity: 0.9;
+    color: var(--trade-map-muted);
+    font-size: 12px;
 }
 
 .trade-map-quota-bar {
@@ -275,46 +569,52 @@
 }
 
 .trade-map-quota-square {
-    width: 14px;
-    height: 14px;
-    border: 1px solid #8b6914;
+    width: 12px;
+    height: 12px;
+    border: 1px solid var(--trade-map-border);
     border-radius: 2px;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.25);
 }
 
 .trade-map-quota-square--full {
-    background: #ffd700;
+    background: var(--trade-map-cta);
+    border-color: var(--trade-map-cta);
 }
 
 .trade-map-quota-square--partial {
-    background: linear-gradient(90deg, #ffd700 50%, rgba(0, 0, 0, 0.3) 50%);
+    background: linear-gradient(90deg, var(--trade-map-cta) 50%, rgba(0, 0, 0, 0.25) 50%);
 }
 
 .trade-map-panel-conditions {
     margin: 0 0 10px;
     font-size: 12px;
-    color: #e57373;
+    color: var(--trade-map-danger);
 }
 
 .trade-map-panel-active-note {
     margin: 0;
     font-size: 12px;
-    color: #81c784;
-    font-style: italic;
+    color: var(--trade-map-muted);
 }
 
 .trade-map-panel-no-trades {
     margin: 0;
-    opacity: 0.6;
+    color: var(--trade-map-muted);
     font-style: italic;
+    font-size: 13px;
 }
 
 .trade-map-open-route-btn {
     width: 100%;
     max-width: 320px;
+    margin-top: 4px;
 }
 
 @media screen and (max-width: 768px) {
+    .trade-map-canvas {
+        padding: 8px;
+    }
+
     .trade-map-trade-row {
         grid-template-columns: 1fr 1fr;
         grid-template-rows: auto auto;
@@ -325,7 +625,17 @@
     }
 
     .trade-map-panel {
-        min-height: 200px;
-        max-height: 45vh;
+        min-height: 180px;
+        max-height: 42vh;
+    }
+}
+
+@media screen and (min-width: 1440px) {
+    .trade-map-overlay {
+        --trade-map-stage-max: 1200px;
+    }
+
+    .trade-map-panel-inner {
+        max-width: var(--trade-map-stage-max);
     }
 }

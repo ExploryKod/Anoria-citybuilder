@@ -14,21 +14,27 @@ export class GrowAllHousePopulation {
   /**
    * @param {object} params
    * @param {number} params.monthIndex
+   * @param {boolean} [params.applyFamineLimits=false]
    * @returns {Promise<{
    *   housesProcessed: number,
    *   housesChanged: number,
-   *   changes: Array<{ houseId: string, pop: number, previousPop: number, reason?: string }>,
+   *   deaths: number,
+   *   changes: Array<{ houseId: string, pop: number, previousPop: number, reason?: string, deaths?: number }>,
    * }>}
    */
-  async execute({ monthIndex }) {
+  async execute({ monthIndex, applyFamineLimits = false }) {
     const houses = await this.repository.findResidentialHouses();
     const changes = [];
+    let deaths = 0;
 
     for (const house of houses) {
       const result = await this.growHousePopulation.execute({
         houseId: house.id,
         monthIndex,
+        applyFamineLimits,
       });
+
+      deaths += result.deaths ?? 0;
 
       if (result.changed) {
         changes.push({
@@ -36,6 +42,7 @@ export class GrowAllHousePopulation {
           pop: result.pop,
           previousPop: result.previousPop,
           reason: result.reason,
+          deaths: result.deaths ?? 0,
         });
       }
     }
@@ -43,6 +50,7 @@ export class GrowAllHousePopulation {
     return {
       housesProcessed: houses.length,
       housesChanged: changes.length,
+      deaths,
       changes,
     };
   }

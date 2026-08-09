@@ -16,6 +16,7 @@ import { resolveSelectedCitySize } from '../../composition/resolveCitySize.js';
 import { runGameTick } from '../../composition/runGameTick.js';
 import { bindSessionRuntime } from '../../composition/sessionRuntime.js';
 import { syncSessionHud } from '../../composition/syncSessionHud.js';
+import { resetCumulativeDeaths } from '../../composition/gameplayMortalityState.js';
 import { notifyBudgetCleanupIfNeeded } from '../dom/compta/tresorerie/CleanupNotificationPresenter.js';
 import {
   disableGatedPlacementTools,
@@ -53,6 +54,8 @@ import { createPlacementGhostSession } from './placementGhostSession.js';
 ensureGameRuntimeBootstrapped();
 
 export function createGame(gameStore, assetManager, citySize = null) {
+  resetCumulativeDeaths();
+
   let activeToolId = '';
   let time = 0;
   let isPause;
@@ -192,7 +195,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
   }).catch((error) => {
     // Sans ce filet, une erreur ici (asset manquant, réseau mobile instable,
-    // perte de contexte WebGL...) laissait le loader "Chronos crée le temps"
+    // perte de contexte WebGL...) laissait le loader bloqué
     // bloqué indéfiniment, sans aucun message pour le joueur.
     console.error('[game.js] scene.initialize failed:', error);
     loaderManager.hide(0);
@@ -648,6 +651,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
             housing: housingCtx,
             buttonStateManager: getButtonStateManager(),
           }),
+        onGameOver: () => {
+          isOver = true;
+        },
       });
     },
 
@@ -677,6 +683,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     replay() {
       isOver = false;
       overOverlay.classList.remove('active');
+      resetCumulativeDeaths();
 
       try {
         sessionApi.commerce.clearCommercePersistence();

@@ -235,7 +235,7 @@ const DEFAULT_ANIMATION = 'scaleBlur';
 
 // Watch for loader to be hidden, then show buttons
 function initializeLegendButtons() {
-  const loaderModal = document.getElementById('chronos-loader-modal');
+  const loaderModal = document.getElementById('game-loader');
   const legendContainer = document.querySelector('.legend-btns-container');
   
   if (!loaderModal || !legendContainer) {

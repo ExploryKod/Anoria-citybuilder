@@ -1,8 +1,9 @@
 /**
  * Display labels for the permanent social groups (house color) and their
  * per-instance level (1 = autarky, 2 = specialized group profession).
- * Derived from `residentialGroup` in the shared building catalog — the
- * single source of truth for this static fact.
+ *
+ * Domain keys are English (`artisans` | `merchants` | `scholars`).
+ * UI copy is French (with accents).
  */
 
 import { buildingCatalog } from '../../../shared/building-catalog/buildingCatalog.js';
@@ -13,23 +14,25 @@ const RESIDENTIAL_GROUP_BY_TYPE = Object.fromEntries(
         .map(([id, def]) => [id, def.residentialGroup])
 );
 
-const GROUP_LABELS = {
-    'artisans-ouvriers': 'Artisans-ouvriers',
-    commercants: 'Commerçants',
-    savants: 'Savants',
-};
+/** @type {Readonly<Record<string, string>>} */
+const GROUP_LABELS = Object.freeze({
+    artisans: 'Artisans-ouvriers',
+    merchants: 'Commerçants',
+    scholars: 'Savants',
+});
 
-const GROUP_TITLES = {
-    'artisans-ouvriers': 'Groupe des artisans',
-    commercants: 'Groupe des commerçants',
-    savants: 'Groupe des savants',
-};
+/** @type {Readonly<Record<string, string>>} */
+const GROUP_TITLES = Object.freeze({
+    artisans: 'Groupe des artisans',
+    merchants: 'Groupe des commerçants',
+    scholars: 'Groupe des savants',
+});
 
 const LEVEL_1_LABEL = 'Chasseurs-cueilleurs';
 
 /**
  * @param {string} buildingType
- * @returns {string | null} The group id (e.g. `'commercants'`), or null if
+ * @returns {string | null} The group id (e.g. `'merchants'`), or null if
  *   `buildingType` isn't a grouped residential house.
  */
 export function residentialGroupForType(buildingType) {
