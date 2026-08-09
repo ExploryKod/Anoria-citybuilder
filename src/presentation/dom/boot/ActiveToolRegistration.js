@@ -4,6 +4,7 @@ import {
   closeModal,
   toggleModal,
 } from '../tools/ToolPanel.js';
+import { syncMobileClickStateFab } from '../tools/MobileClickStateFab.js';
 
 /**
  * @param {{
@@ -40,7 +41,11 @@ export function registerActiveToolHandler(deps) {
     }
 
     selectedControl = e.currentTarget;
-    selectedControl?.classList?.add('selected');
+    if (toolId === 'bulldoze' || toolId === 'select-object') {
+      syncMobileClickStateFab(toolId);
+    } else {
+      selectedControl?.classList?.add('selected');
+    }
     if (toolId) {
       getGame()?.setActiveToolId(toolId);
     }

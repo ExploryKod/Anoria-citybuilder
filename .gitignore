@@ -18,6 +18,11 @@ dev-dist
 *.local
 models
 
+# Environment
+.env
+.env.*
+!.env.example
+
 /public/ios
 /public/windows11
 

@@ -1,8 +1,11 @@
 import {
   close as closeMobileBuildBar,
   isOpenState as isMobileBuildBarOpen,
-  toggle as toggleMobileBuildBar,
+  open as openMobileBuildBar,
 } from '../tools/MobileCompactToolbar.js';
+
+/** Blocks toolbar auto-close while dragging or right after release. */
+let toolbarDragLockUntil = 0;
 
 export function initMobileToolbar() {
   const toolbarMobileToggle = document.getElementById('toolbar-mobile-toggle');
@@ -15,11 +18,13 @@ export function initMobileToolbar() {
 
   const closeMobileToolbar = () => {
     if (!toolbarElement) return;
-    toolbarElement.classList.remove('mobile-visible');
+    toolbarElement.classList.remove('mobile-visible', 'toolbar--enter');
     toolbarElement.classList.add('mobile-hidden');
+    delete toolbarElement.dataset.enterPlayed;
     if (toolbarMobileToggle) {
       toolbarMobileToggle.classList.remove('active');
       toolbarMobileToggle.setAttribute('aria-pressed', 'false');
+      toolbarMobileToggle.setAttribute('aria-expanded', 'false');
     }
   };
 
@@ -38,20 +43,47 @@ export function initMobileToolbar() {
   const isPortraitMobile = () => portraitToolbarQuery.matches;
   const isMobileViewport = () => narrowToolbarQuery.matches || landscapeToolbarQuery.matches || isPortraitMobile();
 
+  const isFloatingToolbarPanel = () => {
+    if (!toolbarElement) return false;
+    return !toolbarElement.classList.contains('mobile-hidden');
+  };
+
+  const playToolbarEnterAnimation = () => {
+    if (!toolbarElement || !isFloatingToolbarPanel()) return;
+    if (toolbarElement.dataset.enterPlayed === '1') return;
+    toolbarElement.dataset.enterPlayed = '1';
+    toolbarElement.classList.remove('toolbar--enter');
+    requestAnimationFrame(() => {
+      toolbarElement.classList.add('toolbar--enter');
+    });
+  };
+
+  const bindToolbarEnterAnimation = () => {
+    if (!toolbarElement) return;
+    toolbarElement.addEventListener('animationend', (event) => {
+      if (event.animationName === 'toolbar-panel-slide-in') {
+        toolbarElement.classList.remove('toolbar--enter');
+      }
+    });
+  };
+
   const applyToolbarResponsiveState = () => {
     if (!toolbarElement) return;
     if (isLandscapeMobile()) {
       resetToolbarDragStyles(toolbarElement);
       toolbarElement.classList.remove('mobile-hidden');
       toolbarElement.classList.add('mobile-visible', 'toolbar-landscape-docked');
+      playToolbarEnterAnimation();
       closeMobileBuildBar();
       if (toolbarMobileToggle) {
         toolbarMobileToggle.classList.remove('active');
         toolbarMobileToggle.setAttribute('aria-pressed', 'false');
+        toolbarMobileToggle.setAttribute('aria-expanded', 'false');
       }
     } else if (isPortraitMobile()) {
-      toolbarElement.classList.remove('toolbar-landscape-docked', 'mobile-visible');
+      toolbarElement.classList.remove('toolbar-landscape-docked', 'mobile-visible', 'toolbar--enter');
       toolbarElement.classList.add('mobile-hidden');
+      delete toolbarElement.dataset.enterPlayed;
       if (!isMobileBuildBarOpen()) {
         closeMobileBuildBar();
       }
@@ -60,14 +92,20 @@ export function initMobileToolbar() {
       closeMobileBuildBar();
       if (!toolbarElement.classList.contains('mobile-visible')) {
         toolbarElement.classList.add('mobile-hidden');
+        delete toolbarElement.dataset.enterPlayed;
+      } else {
+        playToolbarEnterAnimation();
       }
     } else {
       resetToolbarDragStyles(toolbarElement);
-      toolbarElement.classList.remove('mobile-hidden', 'mobile-visible', 'toolbar-landscape-docked');
+      toolbarElement.classList.remove('mobile-visible', 'toolbar-landscape-docked');
+      toolbarElement.classList.remove('mobile-hidden');
+      playToolbarEnterAnimation();
       closeMobileBuildBar();
       if (toolbarMobileToggle) {
         toolbarMobileToggle.classList.remove('active');
         toolbarMobileToggle.setAttribute('aria-pressed', 'false');
+        toolbarMobileToggle.setAttribute('aria-expanded', 'false');
       }
     }
   };
@@ -78,7 +116,6 @@ export function initMobileToolbar() {
       if (!mobileControlsElement.classList.contains('mobile-visible')) {
         mobileControlsElement.classList.add('mobile-hidden');
       } else {
-        // Re-anchor to center-left after orientation change
         resetFloatingPanelDragStyles(mobileControlsElement);
       }
     } else {
@@ -97,9 +134,9 @@ export function initMobileToolbar() {
       if (!isMobileViewport()) return;
 
       if (isPortraitMobile()) {
-        const willShow = toggleMobileBuildBar();
-        toolbarMobileToggle.classList.toggle('active', willShow);
-        toolbarMobileToggle.setAttribute('aria-pressed', willShow ? 'true' : 'false');
+        if (!isMobileBuildBarOpen()) {
+          openMobileBuildBar();
+        }
         return;
       }
 
@@ -107,8 +144,10 @@ export function initMobileToolbar() {
 
       const willShow = !toolbarElement.classList.contains('mobile-visible');
       if (willShow) {
-        toolbarElement.classList.add('mobile-visible');
         toolbarElement.classList.remove('mobile-hidden');
+        toolbarElement.classList.add('mobile-visible');
+        delete toolbarElement.dataset.enterPlayed;
+        playToolbarEnterAnimation();
       } else {
         closeMobileToolbar();
       }
@@ -118,12 +157,12 @@ export function initMobileToolbar() {
   }
 
   document.addEventListener('click', (e) => {
+    if (Date.now() < toolbarDragLockUntil) return;
+
     if (isPortraitMobile()) {
       if (!isMobileBuildBarOpen()) return;
-      if (!e.target.closest('#mobile-build-bar') && !e.target.closest('#toolbar-mobile-toggle')) {
+      if (!e.target.closest('#mobile-build-bar')) {
         closeMobileBuildBar();
-        toolbarMobileToggle?.classList.remove('active');
-        toolbarMobileToggle?.setAttribute('aria-pressed', 'false');
       }
       return;
     }
@@ -136,7 +175,18 @@ export function initMobileToolbar() {
 
   const toolbarDragHeader = document.getElementById('toolbarheader');
   if (toolbarDragHeader && toolbarElement) {
-    dragElement(toolbarElement, toolbarDragHeader);
+    dragElement(toolbarElement, toolbarDragHeader, {
+      handleOnly: true,
+      onDragStart: () => {
+        toolbarDragLockUntil = Date.now() + 500;
+        toolbarElement.classList.add('toolbar-is-dragging');
+        toolbarElement.classList.remove('toolbar--enter');
+      },
+      onDragEnd: () => {
+        toolbarElement.classList.remove('toolbar-is-dragging');
+        toolbarDragLockUntil = Date.now() + 400;
+      },
+    });
   }
 
   const cameraDragHeader = document.getElementById('mobile-camera-drag-handle');
@@ -202,7 +252,10 @@ export function initMobileToolbar() {
   const handleResponsiveChange = () => {
     applyToolbarResponsiveState();
     applyMobileControlsResponsiveState();
+    resetPopRailDefaultPosition();
   };
+
+  bindToolbarEnterAnimation();
 
   [narrowToolbarQuery, landscapeToolbarQuery, portraitToolbarQuery].forEach((mq) => {
     if (mq.addEventListener) {
@@ -214,9 +267,22 @@ export function initMobileToolbar() {
   handleResponsiveChange();
 }
 
-/** Clear inline drag offsets and restore docked scroll bounds. */
+/** Clear inline drag offsets and restore floating panel position. */
 function resetToolbarDragStyles(elmnt) {
   if (!elmnt) return;
+  elmnt.classList.remove('toolbar-is-dragged', 'toolbar-is-dragging');
+
+  if (elmnt.id === 'toolbar' && !elmnt.classList.contains('mobile-hidden')) {
+    elmnt.style.top = '';
+    elmnt.style.left = '';
+    elmnt.style.right = 'auto';
+    elmnt.style.bottom = 'auto';
+    elmnt.style.transform = '';
+    elmnt.style.maxHeight = '';
+    elmnt.style.overflowY = '';
+    return;
+  }
+
   elmnt.style.top = '';
   elmnt.style.left = '';
   elmnt.style.right = '';
@@ -224,7 +290,17 @@ function resetToolbarDragStyles(elmnt) {
   elmnt.style.bottom = '';
   elmnt.style.maxHeight = '';
   elmnt.style.overflowY = '';
-  elmnt.classList.remove('toolbar-is-dragged');
+}
+
+/** Restore pop rail default anchor unless user has dragged it. */
+function resetPopRailDefaultPosition() {
+  const popRail = document.getElementById('hud-pop-rail');
+  if (!popRail || popRail.classList.contains('hud-pop-rail--dragged')) return;
+  popRail.style.top = '';
+  popRail.style.left = '';
+  popRail.style.right = '';
+  popRail.style.bottom = '';
+  popRail.style.transform = '';
 }
 
 /** Reset floating panel (camera) to CSS default position (center-left). */
@@ -235,17 +311,27 @@ function resetFloatingPanelDragStyles(elmnt) {
   elmnt.style.right = '';
   elmnt.style.bottom = '';
   elmnt.style.transform = '';
-  elmnt.classList.remove('mobile-camera-controls--dragged', 'toolbar-is-dragged', 'hud-pop-rail--dragged');
+  elmnt.classList.remove('mobile-camera-controls--dragged', 'toolbar-is-dragged', 'toolbar-is-dragging', 'hud-pop-rail--dragged');
 }
 
-/** After drag, keep a viewport-bounded height so overflow-y scroll still works. */
-function applyDraggedToolbarScrollBounds(elmnt) {
-  if (!elmnt) return;
+/** Keep toolbar inside the viewport after drag. */
+function clampToolbarToViewport(elmnt) {
+  const margin = 8;
   const rect = elmnt.getBoundingClientRect();
-  const top = Math.max(0, rect.top);
-  const maxHeight = window.innerHeight - top;
-  elmnt.style.maxHeight = `${Math.max(160, maxHeight)}px`;
-  elmnt.style.overflowY = 'auto';
+  const maxTop = window.innerHeight - rect.height - margin;
+  const maxLeft = window.innerWidth - rect.width - margin;
+  const top = Math.max(margin, Math.min(rect.top, maxTop));
+  const left = Math.max(margin, Math.min(rect.left, maxLeft));
+  elmnt.style.top = `${top}px`;
+  elmnt.style.left = `${left}px`;
+  elmnt.style.right = 'auto';
+  elmnt.style.bottom = 'auto';
+  elmnt.style.transform = 'none';
+}
+
+/** After drag, clamp toolbar inside viewport (no internal scroll). */
+function applyDraggedToolbarScrollBounds(elmnt) {
+  clampToolbarToViewport(elmnt);
   elmnt.classList.add('toolbar-is-dragged');
 }
 
@@ -256,6 +342,8 @@ function applyDraggedToolbarScrollBounds(elmnt) {
  *   handleOnly?: boolean,
  *   applyScrollBounds?: boolean,
  *   draggedClass?: string,
+ *   onDragStart?: () => void,
+ *   onDragEnd?: () => void,
  * }} [options]
  */
 function dragElement(elmnt, dragHeader, options = {}) {
@@ -263,14 +351,15 @@ function dragElement(elmnt, dragHeader, options = {}) {
     handleOnly = false,
     applyScrollBounds = true,
     draggedClass = 'toolbar-is-dragged',
+    onDragStart = () => {},
+    onDragEnd = () => {},
   } = options;
 
   let pos1 = 0;
   let pos2 = 0;
   let pos3 = 0;
   let pos4 = 0;
-
-  const isDockedLandscape = () => elmnt.classList.contains('toolbar-landscape-docked');
+  let dragMoved = false;
 
   function isInteractiveElement(target) {
     if (!target) return false;
@@ -285,6 +374,7 @@ function dragElement(elmnt, dragHeader, options = {}) {
   }
 
   function applyDragPosition(deltaX, deltaY) {
+    dragMoved = true;
     const rect = elmnt.getBoundingClientRect();
     elmnt.style.top = `${rect.top - deltaY}px`;
     elmnt.style.left = `${rect.left - deltaX}px`;
@@ -292,6 +382,9 @@ function dragElement(elmnt, dragHeader, options = {}) {
     elmnt.style.bottom = 'auto';
     elmnt.style.transform = 'none';
     elmnt.classList.add(draggedClass);
+    if (elmnt.id === 'toolbar') {
+      clampToolbarToViewport(elmnt);
+    }
     if (applyScrollBounds) {
       applyDraggedToolbarScrollBounds(elmnt);
     }
@@ -300,20 +393,23 @@ function dragElement(elmnt, dragHeader, options = {}) {
   dragHeader.onmousedown = dragMouseDown;
   dragHeader.ontouchstart = dragTouchStart;
 
-  // Body drag: disabled when handleOnly or docked landscape
-  elmnt.addEventListener('mousedown', (e) => {
-    if (handleOnly || isDockedLandscape() || isInteractiveElement(e.target)) return;
-    dragMouseDown(e);
-  });
+  if (!handleOnly) {
+    elmnt.addEventListener('mousedown', (e) => {
+      if (isInteractiveElement(e.target)) return;
+      dragMouseDown(e);
+    });
 
-  elmnt.addEventListener('touchstart', (e) => {
-    if (handleOnly || isDockedLandscape() || isInteractiveElement(e.target)) return;
-    dragTouchStart(e);
-  }, { passive: false });
+    elmnt.addEventListener('touchstart', (e) => {
+      if (isInteractiveElement(e.target)) return;
+      dragTouchStart(e);
+    }, { passive: false });
+  }
 
   function dragMouseDown(e) {
     e.preventDefault();
     e.stopPropagation();
+    dragMoved = false;
+    onDragStart();
     pos3 = e.clientX;
     pos4 = e.clientY;
     document.onmouseup = closeDragElement;
@@ -323,6 +419,8 @@ function dragElement(elmnt, dragHeader, options = {}) {
   function dragTouchStart(e) {
     e.preventDefault();
     e.stopPropagation();
+    dragMoved = false;
+    onDragStart();
     const touch = e.touches[0];
     pos3 = touch.clientX;
     pos4 = touch.clientY;
@@ -354,8 +452,9 @@ function dragElement(elmnt, dragHeader, options = {}) {
     document.onmousemove = null;
     document.ontouchend = null;
     document.ontouchmove = null;
-    if (applyScrollBounds) {
+    if (applyScrollBounds && dragMoved) {
       applyDraggedToolbarScrollBounds(elmnt);
     }
+    onDragEnd();
   }
 }

@@ -16,13 +16,13 @@
     <link rel="stylesheet" href="./src/presentation/dom/styles/parameters.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/legends.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/hud.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/toolbar-panel.css">
     
     <!-- Modal Styles -->
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/global.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/loader-modal.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/mobile-controls.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/mobile-compact-toolbar.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/realtime-budget.css">
     
     <!-- OPTIMIZATION: Load non-critical modal CSS asynchronously using media="print" trick -->
     <!-- These modals are not visible on initial load, so they can load non-blocking -->
@@ -86,29 +86,13 @@
 </div>
 <div id="root-window" class="root-window">
     <div id="game-window" class="game-window">
-        <!-- Chronos Loader Modal -->
-        <div id="chronos-loader-modal" class="chronos-loader-modal opaque hidden">
-            <div class="chronos-loader-content">
-                <div class="chronos-loader-icon">⏳</div>
-                <div class="chronos-loader-title">Chronos crée le temps</div>
-                <div class="chronos-loader-message">
-                    Votre monde est bientôt prêt...
-                </div>
-                <div class="chronos-loader-spinner"></div>
+        <div id="game-loader" class="game-loader" role="status" aria-live="polite" aria-busy="true">
+            <div class="game-loader__track">
+                <span class="game-loader__spinner" aria-hidden="true"></span>
             </div>
+            <span class="sr-only">Chargement</span>
         </div>
-        
-        <script>
-        (function () {
-            var chronos = document.getElementById('chronos-loader-modal');
-            if (chronos) {
-                chronos.removeAttribute('hidden');
-                chronos.classList.remove('hidden');
-                chronos.classList.add('opaque');
-            }
-        })();
-        </script>
-        
+
         <div id='loader' class="loader"></div>
 
         <div id="pause-overlay" class="pause-overlay">
@@ -172,7 +156,8 @@
         <!-- Toolbar with tabs -->
         <section id="toolbar" class="toolbar mobile-hidden">
             <!-- Draggable handle -->
-            <div id="toolbarheader" class="toolbar-drag-handle">✋</div>
+            <button type="button" id="toolbarheader" class="toolbar-drag-handle hud-pop-rail__drag" title="Déplacer" aria-label="Déplacer la barre de construction">✋</button>
+            <div class="toolbar-panel__body">
 
             <!-- Tab buttons -->
             <div class="toolbar__container toolbar-tabs-container">
@@ -449,7 +434,7 @@
                 </div>
             </div>
             <!-- End Settings section -->
-
+            </div>
       </section>
 
       <!-- Mobile Camera Controls - Only visible on mobile/tablet -->
@@ -483,35 +468,20 @@
                   </button>
               </div>
           </div>
-          
-          <div class="mobile-controls-group">
-              <div class="mobile-controls-label">Rotation</div>
-              <div class="mobile-controls-row">
-                  <button type="button" class="mobile-control-btn mobile-rotate-left" data-action="rotate-left" aria-label="Rotation gauche">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-ccw-square-icon lucide-rotate-ccw-square"><path d="M20 9V7a2 2 0 0 0-2-2h-6"/><path d="m15 2-3 3 3 3"/>
-                        <path d="M20 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/>
-                    </svg>
-                  </button>
-                  <button type="button" class="mobile-control-btn mobile-rotate-right" data-action="rotate-right" aria-label="Rotation droite">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-cw-square-icon lucide-rotate-cw-square"><path d="M12 5H6a2 2 0 0 0-2 2v3"/><path d="m9 8 3-3-3-3"/>
-                        <path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-                    </svg>
-                  </button>
-              </div>
-          </div>
-               
-          <div class="mobile-controls-group">
-            <div class="mobile-controls-label">Vues 3D</div>
-              <button type="button" class="mobile-control-btn mobile-toggle-view" data-action="toggle-isometric" aria-label="Basculer vue isométrique">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-land-plot-icon lucide-land-plot"><path d="m12 8 6-3-6-3v10"/><path d="m8 11.99-5.5 3.14a1 1 0 0 0 0 1.74l8.5 4.86a2 2 0 0 0 2 0l8.5-4.86a1 1 0 0 0 0-1.74L16 12"/>
-                    <path d="m6.49 12.85 11.02 6.3"/><path d="M17.51 12.85 6.5 19.15"/></svg>
-              </button>
-          </div>
       </div>
 
         <div class="legend-btns-container legend-btns-container--mobile">
               <div class="legend-btns toolbar-mobile-toggle-btn">
-                <button id="toolbar-mobile-toggle" class="toolbar-toggle-btn" title="Afficher/masquer la barre d'outils" aria-pressed="false">
+                <button
+                  type="button"
+                  id="toolbar-mobile-toggle"
+                  class="toolbar-toggle-btn toolbar-open-construction-btn"
+                  title="Ouvrir la construction"
+                  aria-label="Ouvrir la barre de construction"
+                  aria-controls="mobile-build-bar"
+                  aria-expanded="false"
+                  aria-haspopup="dialog"
+                >
                   <span class="toolbar-toggle-icon toolbar-toggle-icon--open" aria-hidden="true">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" 
                     stroke-linecap="round" stroke-linejoin="round" 
@@ -526,7 +496,45 @@
                       <path d="m6 6 12 12"/>
                     </svg>
                   </span>
-                  <span class="sr-only">Basculer la barre d'outils</span>
+                  <span class="sr-only">Ouvrir la barre de construction</span>
+                </button>
+              </div>
+
+              <div class="legend-btns mobile-click-state-fab mobile-click-state-fab--bulldoze">
+                <button
+                  type="button"
+                  id="mobile-portrait-bulldoze-btn"
+                  class="toolbar-toggle-btn mobile-click-state-btn"
+                  data-toolid="bulldoze"
+                  title="Démolir"
+                  aria-label="Démolir"
+                  aria-pressed="false"
+                >
+                  <span class="toolbar-toggle-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eraser">
+                      <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/>
+                      <path d="M22 21H7"/><path d="m5 11 9 9"/>
+                    </svg>
+                  </span>
+                </button>
+              </div>
+
+              <div class="legend-btns mobile-click-state-fab mobile-click-state-fab--select">
+                <button
+                  type="button"
+                  id="mobile-portrait-select-btn"
+                  class="toolbar-toggle-btn mobile-click-state-btn active"
+                  data-toolid="select-object"
+                  title="Sélectionner (clic sur un bâtiment)"
+                  aria-label="Sélectionner"
+                  aria-pressed="true"
+                >
+                  <span class="toolbar-toggle-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-mouse-pointer">
+                      <path d="M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/>
+                      <path d="m12 12 4 10 1.7-4.3L22 16Z"/>
+                    </svg>
+                  </span>
                 </button>
               </div>
 
@@ -570,6 +578,14 @@
                     </span>
                     <span class="pop-detail-value display-hunger-pop">0</span>
                 </div>
+                <div class="pop-detail-metric pop-detail-deaths" title="Morts depuis le début de la partie">
+                    <span class="pop-detail-icon pop-detail-icon--deaths" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10 5v3"/><path d="M14 5v3"/><path d="M10 19v-6a2 2 0 0 1 2-2v0a2 2 0 0 1 2 2v6"/><path d="M6 19v-6a6 6 0 0 1 12 0v6"/><path d="M18 19v2"/><path d="M6 19v2"/>
+                        </svg>
+                    </span>
+                    <span class="pop-detail-value display-deaths-pop">0</span>
+                </div>
                 <div class="pop-detail-sep" role="separator" aria-hidden="true"></div>
                 <div class="pop-detail-active" title="Population active (citoyens actifs, élites, fonctionnaires)">
                     <span class="pop-detail-metric pop-active-head">
@@ -609,6 +625,26 @@
             </section>
         </aside>
 
+        <nav class="hud-side-actions info-box-stats" aria-label="Outils rapides">
+            <div class="info-box administrator-box stats-buttons" id="administrator-btn" title="Panneau Administrateur" aria-label="Ouvrir le panneau administrateur" role="button" tabindex="0">
+                <article class="budget-box">
+                    <span class="budget-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+                            <path d="m9 12 2 2 4-4"/>
+                        </svg>
+                    </span>
+                </article>
+            </div>
+            <div class="info-box city-map-box stats-buttons" id="city-map-btn" title="Plan 2D de la ville" aria-label="Ouvrir le plan 2D de la ville" role="button" tabindex="0">
+                <article class="budget-box">
+                    <span class="budget-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-icon lucide-map"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg>
+                    </span>
+                </article>
+            </div>
+        </nav>
+
         <section class="info-panel-wrapper hud" aria-label="Informations de jeu">
             <div class="hud-status">
                 <div class="delay-ui-wrapper">
@@ -644,10 +680,60 @@
                         </article>
                     </section>
                 </div>
+
+                <div
+                    id="hud-camera-rotate"
+                    class="hud-vitals__row hud-vitals__row--camera"
+                    role="group"
+                    aria-label="Vue 3D et rotation"
+                >
+                    <div class="hud-camera-rotate-group" role="group" aria-label="Rotation">
+                    <button
+                        type="button"
+                        class="hud-camera-rotate-btn mobile-rotate-left"
+                        data-action="rotate-left"
+                        aria-label="Rotation gauche"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-ccw-square" aria-hidden="true">
+                            <path d="M20 9V7a2 2 0 0 0-2-2h-6"/><path d="m15 2-3 3 3 3"/>
+                            <path d="M20 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/>
+                        </svg>
+                    </button>
+                    <button
+                        type="button"
+                        class="hud-camera-rotate-btn mobile-rotate-right"
+                        data-action="rotate-right"
+                        aria-label="Rotation droite"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-cw-square" aria-hidden="true">
+                            <path d="M12 5H6a2 2 0 0 0-2 2v3"/><path d="m9 8 3-3-3-3"/>
+                            <path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                        </svg>
+                    </button>
+                    </div>
+                    <button
+                        type="button"
+                        class="hud-camera-rotate-btn hud-camera-view-btn"
+                        data-action="toggle-isometric"
+                        aria-label="Basculer vue isométrique"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-land-plot" aria-hidden="true">
+                            <path d="m12 8 6-3-6-3v10"/><path d="m8 11.99-5.5 3.14a1 1 0 0 0 0 1.74l8.5 4.86a2 2 0 0 0 2 0l8.5-4.86a1 1 0 0 0 0-1.74L16 12"/>
+                            <path d="m6.49 12.85 11.02 6.3"/><path d="M17.51 12.85 6.5 19.15"/>
+                        </svg>
+                    </button>
+                </div>
                 </div>
             </div>
 
-            <section id="mobile-build-bar" class="mobile-build-bar" hidden aria-label="Barre de construction">
+            <section
+                id="mobile-build-bar"
+                class="mobile-build-bar"
+                hidden
+                role="dialog"
+                aria-modal="true"
+                aria-label="Construction"
+            >
                 <header class="mobile-build-bar__header">
                     <span class="mobile-build-bar__title">Construction</span>
                     <button type="button" id="mobile-build-bar-close" class="mobile-build-bar__close" title="Fermer" aria-label="Fermer la barre de construction">
@@ -666,38 +752,6 @@
             </section>
 
             <nav class="hud-actions info-box-stats" aria-label="Barre de commandes">
-                <div class="hud-actions__group hud-actions__group--utilities" role="group" aria-label="Utilitaires">
-                    <div class="info-box realtime-budget-box stats-buttons" id="realtime-budget-btn" title="Budget en temps réel" aria-label="Ouvrir le budget en temps réel" role="button" tabindex="0">
-                        <article class="budget-box">
-                            <span class="budget-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-3">
-                                    <path d="M3 3v18h18"/>
-                                    <path d="M18 17V9"/>
-                                    <path d="M13 17V5"/>
-                                    <path d="M8 17v-3"/>
-                                </svg>
-                            </span>
-                        </article>
-                    </div>
-                    <div class="info-box administrator-box stats-buttons" id="administrator-btn" title="Panneau Administrateur" aria-label="Ouvrir le panneau administrateur" role="button" tabindex="0">
-                        <article class="budget-box">
-                            <span class="budget-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check">
-                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
-                                    <path d="m9 12 2 2 4-4"/>
-                                </svg>
-                            </span>
-                        </article>
-                    </div>
-                    <div class="info-box city-map-box stats-buttons" id="city-map-btn" title="Plan 2D de la ville" aria-label="Ouvrir le plan 2D de la ville" role="button" tabindex="0">
-                        <article class="budget-box">
-                            <span class="budget-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-icon lucide-map"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg>
-                            </span>
-                        </article>
-                    </div>
-                </div>
-                <div class="hud-actions__sep" aria-hidden="true"></div>
                 <div class="hud-actions__group hud-actions__group--session" role="group" aria-label="Session">
                     <div class="info-box game-control-box stats-buttons" id="pause-btn" data-action="pause" title="Pause / Reprendre" aria-label="Pause ou reprendre le jeu" role="button" tabindex="0">
                         <article class="budget-box">
@@ -757,128 +811,6 @@
 
     </div>
 </div>
-
-<!-- Real-time Budget Popup -->
-<div id="realtime-budget-panel" class="realtime-budget-panel">
-    <div class="realtime-budget-wrapper">
-        <div class="realtime-budget-header">
-            <h3>💰 Budget en Temps Réel</h3>
-            <div class="realtime-budget-close-btn" title="Fermer" aria-label="Fermer le budget en temps réel">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
-                    <path d="m18 6-12 12"/>
-                    <path d="m6 6 12 12"/>
-                </svg>
-            </div>
-        </div>
-        <div class="realtime-budget-content">
-            <!-- Fonds principaux -->
-            <div class="realtime-funds-display">
-                <div class="realtime-funds-label">Fonds Disponibles</div>
-                <div class="realtime-funds-amount" id="realtime-funds">0€</div>
-            </div>
-
-            <!-- Santé financière -->
-            <div class="realtime-health-section">
-                <div class="realtime-health-label">État Financier</div>
-                <div class="realtime-health-status" id="realtime-health-status">En cours...</div>
-                <div class="realtime-health-message" id="realtime-health-message">Analyse en cours...</div>
-            </div>
-
-            <!-- Détails financiers -->
-            <!-- Informations générales -->
-            <div class="realtime-info-section">
-                <div class="realtime-info-grid">
-                    <div class="realtime-info-item">
-                        <div class="realtime-info-label">Tour Actuel</div>
-                        <div class="realtime-info-value" id="realtime-turn"><span>0</span></div>
-                    </div>
-                    <div class="realtime-info-item">
-                        <div class="realtime-info-label">Population</div>
-                        <div class="realtime-info-value" id="realtime-population"><span>0</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Détail des finances -->
-            <div class="realtime-details-section">
-                <div class="realtime-details-grid">
-                    <div class="realtime-detail-item">
-                        <div class="realtime-detail-label">Revenus Totaux</div>
-                        <div class="realtime-detail-value" id="realtime-income">0€</div>
-                    </div>
-                    <div class="realtime-detail-item">
-                        <div class="realtime-detail-label">Dépenses Totales</div>
-                        <div class="realtime-detail-value" id="realtime-expenses">0€</div>
-                    </div>
-                    <div class="realtime-detail-item">
-                        <div class="realtime-detail-label">Flux Net</div>
-                        <div class="realtime-detail-value" id="realtime-netflow">0€</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Détail des revenus -->
-            <div class="realtime-revenue-section">
-                <div class="realtime-revenue-label">Détail des Revenus</div>
-                <div class="realtime-revenue-grid">
-                    <div class="realtime-revenue-item">
-                        <div class="realtime-revenue-source">🏛️ Impôt Citoyen</div>
-                        <div class="realtime-revenue-amount" id="realtime-taxes">0€</div>
-                    </div>
-                    <div class="realtime-revenue-item">
-                        <div class="realtime-revenue-source">💰 Autres revenus</div>
-                        <div class="realtime-revenue-amount" id="realtime-other-income">0€</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Détail des dépenses -->
-            <div class="realtime-expense-section">
-                <div class="realtime-expense-label">Détail des Dépenses</div>
-                <div class="realtime-expense-grid">
-                    <div class="realtime-expense-item">
-                        <div class="realtime-expense-source">🏗️ Maintenance bâtiments</div>
-                        <div class="realtime-expense-amount" id="realtime-building-maintenance">0€</div>
-                    </div>
-                    <div class="realtime-expense-item">
-                        <div class="realtime-expense-source">💰 Intérêts dettes</div>
-                        <div class="realtime-expense-amount" id="realtime-loan-interest">0€</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Détail du calcul des intérêts des dettes -->
-            <div class="realtime-loan-interest-detail-section">
-                <div class="realtime-loan-interest-detail-label">Calcul des Intérêts des Dettes</div>
-                <div class="realtime-loan-interest-detail-content" id="realtime-loan-interest-detail">
-                    <div class="no-loans-message">
-                        <span class="no-loans-icon">📭</span>
-                        <span class="no-loans-text">Aucun prêt actif</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Investissements -->
-            <div class="realtime-investment-section">
-                <div class="realtime-investment-label">Investissements</div>
-                <div class="realtime-investment-grid">
-                    <div class="realtime-investment-item">
-                        <div class="realtime-investment-source">🏠 Immobilisations corporelles</div>
-                        <div class="realtime-investment-amount" id="realtime-investments">0€</div>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="realtime-update-info">
-                <small>Mise à jour en temps réel</small>
-            </div>
-            
-            <!-- Starvation alerts removed -->
-        </div>
-    </div>
-    </div>
-
 
     <!-- Budget Panel -->
     <div id="bilan-panel" class="bilan-panel">

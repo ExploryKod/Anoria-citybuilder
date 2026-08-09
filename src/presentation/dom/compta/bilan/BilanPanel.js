@@ -1,5 +1,4 @@
 import { renderBilan } from './BilanPresenter.js';
-import { updateTresorerie } from '../tresorerie/TresoreriePanel.js';
 
 /**
  * @type {{
@@ -97,7 +96,6 @@ export async function updateBudgetDisplay() {
       }
     }
 
-    updateTresorerie();
   } catch (error) {
     console.error('Error updating budget display:', error);
   }
