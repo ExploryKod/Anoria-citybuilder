@@ -1,0 +1,133 @@
+/**
+ * Toolbar — floating vertical chrome panel (desktop + mobile landscape).
+ * No internal scroll: panel grows with content.
+ */
+
+@keyframes toolbar-panel-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(calc(-100% - 12px));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Desktop + any visible toolbar (incl. mobile landscape docked) */
+.game-window .toolbar:not(.mobile-hidden) {
+  position: fixed;
+  top: var(--hud-floating-panel-top);
+  bottom: auto;
+  left: max(var(--hud-gutter), env(safe-area-inset-left, 0px));
+  right: auto;
+  transform: none;
+  width: min(var(--toolbar-width), var(--toolbar-width-max));
+  max-width: var(--toolbar-width-max);
+  height: auto;
+  max-height: none;
+  padding: 12px 10px 10px;
+  box-sizing: border-box;
+  display: flex !important;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
+  overflow: visible;
+  background: var(--game-chrome-bg);
+  border: 1px solid var(--game-chrome-border);
+  border-radius: var(--game-chrome-radius);
+  box-shadow: var(--game-chrome-shadow);
+  backdrop-filter: var(--game-chrome-blur);
+  z-index: var(--z-index-toolbar);
+  cursor: default;
+}
+
+.game-window .toolbar:not(.mobile-hidden) .toolbar-panel__body {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  overflow: visible;
+}
+
+.game-window .toolbar:not(.mobile-hidden).toolbar-is-dragged,
+.game-window .toolbar:not(.mobile-hidden).toolbar-is-dragging {
+  cursor: grabbing;
+}
+
+.game-window .toolbar.mobile-hidden {
+  display: none !important;
+}
+
+.game-window .toolbar.toolbar--enter:not(.mobile-hidden) {
+  animation: toolbar-panel-slide-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.game-window .toolbar.toolbar-is-dragged,
+.game-window .toolbar.toolbar-is-dragging {
+  animation: none;
+}
+
+.game-window .toolbar:not(.mobile-hidden) .toolbar-section.active {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.game-window .toolbar:not(.mobile-hidden) .toolbar-tabs-container {
+  width: 100%;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--game-chrome-border);
+}
+
+/* RGAA: dark labels on light chrome */
+.game-window .toolbar:not(.mobile-hidden) .toolbar__label,
+.game-window .toolbar:not(.mobile-hidden) .manager-label {
+  color: var(--primary);
+}
+
+/* Drag handle — same look/placement as population rail (hud-pop-rail__drag) */
+.game-window .toolbar .toolbar-drag-handle.hud-pop-rail__drag {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  z-index: 3;
+}
+
+@media screen and (max-width: 1024px) {
+  .toolbar-section.active {
+    display: contents;
+  }
+
+  .toolbar-tabs-container {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .game-window .toolbar:not(.mobile-hidden) .toolbar-section.active {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .game-window .toolbar:not(.mobile-hidden) .toolbar-tabs-container {
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--game-chrome-border);
+  }
+}
+
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+  canvas {
+    height: 100vh !important;
+    top: 0;
+    pointer-events: auto !important;
+  }
+}

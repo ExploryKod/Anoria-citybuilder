@@ -2,8 +2,8 @@ import { buildTradePartnersView } from '../../../../contexts/commerce/applicatio
 import { buildTradeGoodsView } from '../../../../contexts/commerce/application/queries/GetTradeGoodsView.js';
 import {
   renderTradeMapOverlay,
-  renderTradeMapBottomPanel,
-  renderPartnerMarkers,
+  renderTradeMapPanelForCity,
+  renderTradeMapStageContent,
 } from './renderTradeMap.js';
 import { renderCommerceGoodsList, renderCommerceGoodModal } from './renderCommerceGoods.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
@@ -28,7 +28,7 @@ export class CommerceSectionPresenter {
     this.updateDisplayedFunds = deps.updateDisplayedFunds ?? (() => {});
     this.partnersData = null;
     this.partnersViewModel = null;
-    this.selectedPartnerId = null;
+    this.selectedCityId = 'anoria';
     this.clickHandler = null;
     this.mapClickHandler = null;
     this.escapeHandler = null;
@@ -208,9 +208,6 @@ export class CommerceSectionPresenter {
 
   async refreshViewModel() {
     this.partnersViewModel = await this.buildPartnersViewModel();
-    if (this.selectedPartnerId && !this.partnersViewModel.some((p) => p.id === this.selectedPartnerId)) {
-      this.selectedPartnerId = this.partnersViewModel[0]?.id ?? null;
-    }
     return this.partnersViewModel;
   }
 
@@ -359,14 +356,14 @@ export class CommerceSectionPresenter {
 
   async openTradeMap() {
     const viewModel = await this.refreshViewModel();
-    if (!this.selectedPartnerId) {
-      this.selectedPartnerId = viewModel[0]?.id ?? null;
+    if (!this.selectedCityId) {
+      this.selectedCityId = 'olivea';
     }
 
     this.closeTradeMap();
 
     const container = document.createElement('div');
-    container.innerHTML = renderTradeMapOverlay(viewModel, this.selectedPartnerId);
+    container.innerHTML = renderTradeMapOverlay(viewModel, this.selectedCityId);
     const overlay = container.firstElementChild;
     document.body.appendChild(overlay);
 
@@ -389,29 +386,27 @@ export class CommerceSectionPresenter {
     document.body.style.overflow = '';
   }
 
-  updateMapMarkers(viewModel) {
+  updateMapCanvas(viewModel) {
     const overlay = document.getElementById('trade-map-overlay');
     if (!overlay) return;
 
-    overlay.querySelectorAll('.trade-map-city--partner').forEach((el) => el.remove());
     const canvas = overlay.querySelector('#trade-map-canvas');
     if (canvas) {
-      canvas.insertAdjacentHTML('beforeend', renderPartnerMarkers(viewModel, this.selectedPartnerId));
+      canvas.innerHTML = renderTradeMapStageContent(viewModel, this.selectedCityId);
     }
   }
 
-  async selectPartnerOnMap(partnerId) {
-    this.selectedPartnerId = partnerId;
+  async selectCityOnMap(cityId) {
+    this.selectedCityId = cityId;
     const viewModel = await this.refreshViewModel();
     const overlay = document.getElementById('trade-map-overlay');
     if (!overlay) return;
 
-    this.updateMapMarkers(viewModel);
+    this.updateMapCanvas(viewModel);
 
-    const selected = viewModel.find((p) => p.id === partnerId) ?? null;
     const panel = overlay.querySelector('#trade-map-panel');
-    if (panel && selected) {
-      panel.innerHTML = renderTradeMapBottomPanel(selected);
+    if (panel) {
+      panel.innerHTML = renderTradeMapPanelForCity(cityId, viewModel);
     }
   }
 
@@ -431,12 +426,11 @@ export class CommerceSectionPresenter {
       statsEl.textContent = `${openRoutes}/${viewModel.length} routes ouvertes`;
     }
 
-    this.updateMapMarkers(viewModel);
+    this.updateMapCanvas(viewModel);
 
-    const selected = viewModel.find((p) => p.id === this.selectedPartnerId) ?? viewModel[0] ?? null;
     const panel = overlay.querySelector('#trade-map-panel');
-    if (panel && selected) {
-      panel.innerHTML = renderTradeMapBottomPanel(selected);
+    if (panel) {
+      panel.innerHTML = renderTradeMapPanelForCity(this.selectedCityId, viewModel);
     }
 
     await this.renderAdminEntry();
@@ -452,10 +446,10 @@ export class CommerceSectionPresenter {
         return;
       }
 
-      const cityBtn = event.target.closest('.trade-map-city--partner');
-      if (cityBtn) {
+      const cityBtn = event.target.closest('.trade-map-city--settlement');
+      if (cityBtn?.dataset.cityId) {
         event.preventDefault();
-        await this.selectPartnerOnMap(cityBtn.dataset.partnerId);
+        await this.selectCityOnMap(cityBtn.dataset.cityId);
         return;
       }
 

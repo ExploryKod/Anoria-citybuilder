@@ -44,7 +44,7 @@
  * @typedef {Object} BuildingAccountingFacts
  * @property {number} maintenance
  *
- * @typedef {'artisans-ouvriers' | 'commercants' | 'savants'} ResidentialGroup
+ * @typedef {'artisans' | 'merchants' | 'scholars'} ResidentialGroup
  *
  * @typedef {Object} BuildingDefinition
  * @property {string} [displayName]
@@ -100,19 +100,19 @@ const RAW_CATALOG = {
     displayName: 'Maison bleue',
     construction: { price: 10, category: 'houses', gridSize: 1 },
     accounting: { maintenance: 6 },
-    residentialGroup: 'commerçants',
+    residentialGroup: 'merchants',
   },
   'House-Red': {
     displayName: 'Maison rouge',
     construction: { price: 10, category: 'houses', gridSize: 1 },
     accounting: { maintenance: 6 },
-    residentialGroup: 'artisans-ouvriers',
+    residentialGroup: 'artisans',
   },
   'House-Purple': {
     displayName: 'Maison violette',
     construction: { price: 10, category: 'houses', gridSize: 1 },
     accounting: { maintenance: 6 },
-    residentialGroup: 'savants',
+    residentialGroup: 'scholars',
   },
 
   // Palaces
@@ -205,7 +205,7 @@ const RAW_CATALOG = {
   'Sphere-002': { displayName: 'Sphère sombre', construction: { price: 5, category: 'infrastructure', gridSize: 1 } },
 
   // Public (Chapel only — Church-002 mesh discarded as broken duplicate)
-  // Sector 6 (Services Publics) — savants' workplaces.
+  // Sector 6 (Services Publics) — scholars' workplaces.
   Chapel: {
     displayName: 'Chapelle',
     construction: { price: 60, category: 'public', gridSize: 1 },

@@ -22,7 +22,7 @@ let pillsEl = null;
 let carouselEl = null;
 let listEl = null;
 let closeBtn = null;
-let activeCategoryId = 'tools';
+let activeCategoryId = 'houses';
 let isOpen = false;
 
 const portraitQuery = window.matchMedia('(max-width: 1024px) and (orientation: portrait)');
@@ -76,6 +76,7 @@ export function open() {
   buildBarEl.hidden = false;
   buildBarEl.classList.add('mobile-build-bar--open');
   document.querySelector('.legend-btns-container--mobile')?.classList.add('mobile-build-bar-visible');
+  syncConstructionOpenButton();
   requestAnimationFrame(() => {
     document.documentElement.style.setProperty('--mobile-build-bar-offset', `${buildBarEl.offsetHeight}px`);
   });
@@ -88,10 +89,15 @@ export function close() {
   buildBarEl.classList.remove('mobile-build-bar--open');
   document.documentElement.style.setProperty('--mobile-build-bar-offset', '0px');
   document.querySelector('.legend-btns-container--mobile')?.classList.remove('mobile-build-bar-visible');
+  syncConstructionOpenButton();
+}
 
+function syncConstructionOpenButton() {
   const toggle = document.getElementById('toolbar-mobile-toggle');
-  toggle?.classList.remove('active');
-  toggle?.setAttribute('aria-pressed', 'false');
+  if (!toggle) return;
+  toggle.classList.remove('active');
+  toggle.setAttribute('aria-pressed', 'false');
+  toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 }
 
 export function toggle() {

@@ -20,9 +20,9 @@ export const WORKPLACE_REQUIRED_SKILL = Object.freeze({
  * @type {Readonly<Record<string, string>>}
  */
 export const SKILL_TO_RESIDENTIAL_GROUP = Object.freeze({
-  fermier: 'artisans-ouvriers',
-  'vente-alimentaire': 'commercants',
-  'stockage-alimentaire': 'savants',
+  fermier: 'artisans',
+  'vente-alimentaire': 'merchants',
+  'stockage-alimentaire': 'scholars',
 });
 
 /**

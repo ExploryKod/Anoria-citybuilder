@@ -8,6 +8,27 @@
   display: none;
 }
 
+/* Portrait-only FABs for click modes (bulldoze / select) */
+.mobile-click-state-fab {
+  display: none;
+}
+
+@media screen and (max-width: 1024px) and (orientation: portrait) {
+  .mobile-click-state-fab {
+    display: block;
+  }
+
+  .mobile-click-state-btn.toolbar-toggle-btn.active {
+    background: var(--lightgreen);
+    border-color: var(--lightgreen);
+    color: #fff;
+  }
+
+  .mobile-click-state-btn.toolbar-toggle-btn.active svg {
+    stroke: #fff;
+  }
+}
+
 @media screen and (max-width: 1024px) and (orientation: portrait) {
   .mobile-build-bar {
     display: flex;
@@ -163,7 +184,30 @@
     transform: scale(0.95);
   }
 
-  /* Lift FAB when compact bar is open */
+  /* Portrait: construction opener is open-only (never shows a close state) */
+  .toolbar-open-construction-btn .toolbar-toggle-icon--close {
+    display: none !important;
+  }
+
+  .toolbar-open-construction-btn.active .toolbar-toggle-icon--open {
+    display: flex !important;
+  }
+
+  .toolbar-open-construction-btn.active {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: inherit;
+  }
+
+  .toolbar-open-construction-btn.active svg {
+    stroke: currentColor;
+  }
+
+  /* Lift camera FAB; hide construction opener (close is on the bar itself) */
+  .legend-btns-container--mobile.mobile-build-bar-visible .toolbar-mobile-toggle-btn {
+    display: none !important;
+  }
+
   .legend-btns-container--mobile.mobile-build-bar-visible {
     bottom: calc(
       var(--hud-bottom-height, 56px)

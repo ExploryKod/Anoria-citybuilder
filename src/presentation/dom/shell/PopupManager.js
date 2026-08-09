@@ -40,15 +40,6 @@ class PopupManager {
             onClose: () => {}
         });
 
-        this.popupConfigs.set('realtime-budget-panel', {
-            shouldBlockEvents: true,
-            shouldPauseGame: false, // Le budget peut rester ouvert pendant le jeu
-            eventsToBlock: ['mousedown', 'mouseup', 'mousemove'],
-            canvasSelectors: ['canvas'],
-            onOpen: () => {},
-            onClose: () => {}
-        });
-
         this.popupConfigs.set('compte-de-resultat-panel', {
             shouldBlockEvents: true,
             shouldPauseGame: true,

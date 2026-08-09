@@ -33,6 +33,19 @@ export function marketBasketsFromStocks(stocks) {
 }
 
 /**
+ * Sum of visible edible categories (what the Régime tab shows).
+ *
+ * @param {FoodStocks | null | undefined} stocks
+ * @returns {number}
+ */
+export function edibleBasketsFromCategories(stocks) {
+  if (!stocks) return 0;
+  return gatheringBasketsFromStocks(stocks) + marketBasketsFromStocks(stocks);
+}
+
+/**
+ * Total food for affluence / evolution — prefers persisted `food` aggregate.
+ *
  * @param {FoodStocks | null | undefined} stocks
  * @returns {number}
  */
@@ -41,5 +54,5 @@ export function totalFoodFromStocks(stocks) {
   if (stocks.food !== undefined && stocks.food !== null) {
     return stocks.food;
   }
-  return gatheringBasketsFromStocks(stocks) + marketBasketsFromStocks(stocks);
+  return edibleBasketsFromCategories(stocks);
 }
