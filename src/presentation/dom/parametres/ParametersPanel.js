@@ -2,6 +2,7 @@ import EventBlocker from '../shell/EventBlocker.js';
 import * as eventsConfig from '../../../config/events.js';
 import { isTouchModeEnabled, setTouchModeEnabled } from '../../../config/touchMode.js';
 import { readStoredTileGridVisibility } from '../../three/managers/TileGridOverlay.js';
+import { getLastPwaUpdateAt, installLatestPwaUpdate } from '../../../pwa.js';
 
 /** @type {{
  *   pauseGame?: () => void,
@@ -31,6 +32,8 @@ class ParametersPanel {
         this.daysPerMonthInput = null;
         this.tileGridToggle = null;
         this.touchModeToggle = null;
+        this.pwaUpdateInstallBtn = null;
+        this.pwaUpdateStatus = null;
 
         this.handleDocumentKeyDown = this.handleDocumentKeyDown.bind(this);
         this.handleOutsideClick = this.handleOutsideClick.bind(this);
@@ -63,9 +66,12 @@ class ParametersPanel {
         this.daysPerMonthInput = this.panel.querySelector('#days-per-month-input');
         this.tileGridToggle = this.panel.querySelector('#tile-grid-toggle');
         this.touchModeToggle = this.panel.querySelector('#touch-mode-toggle');
+        this.pwaUpdateInstallBtn = this.panel.querySelector('#pwa-update-install-btn');
+        this.pwaUpdateStatus = this.panel.querySelector('#pwa-update-status');
 
         this.setupEventListeners();
         this.loadValues();
+        this.refreshPwaUpdateStatus();
     }
 
     setupEventListeners() {
@@ -152,6 +158,14 @@ class ParametersPanel {
                 this.handleTouchModeChange(e.target.checked);
             });
         }
+
+        if (this.pwaUpdateInstallBtn) {
+            this.pwaUpdateInstallBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                void this.handlePwaUpdateInstall();
+            });
+        }
     }
 
     async loadValues() {
@@ -187,6 +201,42 @@ class ParametersPanel {
             setTouchModeEnabled(enabled);
         } catch (error) {
             console.error('[ParametersPanel] Error toggling touch mode:', error);
+        }
+    }
+
+    refreshPwaUpdateStatus() {
+        if (!this.pwaUpdateStatus) return;
+        const iso = getLastPwaUpdateAt();
+        if (!iso) {
+            this.pwaUpdateStatus.hidden = true;
+            this.pwaUpdateStatus.textContent = '';
+            return;
+        }
+        try {
+            const formatted = new Date(iso).toLocaleString('fr-FR', {
+                dateStyle: 'short',
+                timeStyle: 'short',
+            });
+            this.pwaUpdateStatus.hidden = false;
+            this.pwaUpdateStatus.textContent = `Dernière installation : ${formatted}`;
+        } catch {
+            this.pwaUpdateStatus.hidden = true;
+        }
+    }
+
+    async handlePwaUpdateInstall() {
+        if (!this.pwaUpdateInstallBtn) return;
+        const btn = this.pwaUpdateInstallBtn;
+        const previousLabel = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Installation…';
+        try {
+            await installLatestPwaUpdate();
+            this.refreshPwaUpdateStatus();
+        } finally {
+            // Reload usually follows; restore UI if it did not.
+            btn.disabled = false;
+            btn.textContent = previousLabel || 'Installer';
         }
     }
 
@@ -302,6 +352,7 @@ class ParametersPanel {
         this.lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
         this.loadValues();
+        this.refreshPwaUpdateStatus();
 
         this.panel.classList.add('visible');
         this.panel.setAttribute('aria-hidden', 'false');
