@@ -49,7 +49,14 @@ import { showErrorToast } from '../dom/shell/ToastNotifier.js';
 import { presentBuildingInfoSelection } from '../dom/info/presenters/useBuildingInfoSelection.js';
 import { assetsPrices } from '../../shared/building-catalog/index.js';
 import { isWindmillBuildingType, isMarketBuildingType } from '../../shared/building-catalog/BuildingSupplyTypes.js';
-import { createPlacementGhostSession } from './placementGhostSession.js';
+import {
+  createPlacementGhostSession,
+  isPlaceableBuildingTool,
+  resolveGhostVisualAssetId,
+} from './placementGhostSession.js';
+import { prefersTouchPlacementFlow } from './touchPlacementInput.js';
+import { canPlaceBuildingAtTileWithSupplyRules } from '../../composition/canPlaceBuildingAtTileWithSupplyRules.js';
+import { createPlacementRotationHud } from './placementRotationHud.js';
 
 ensureGameRuntimeBootstrapped();
 
@@ -77,6 +84,112 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
   /** 0 = horizontal (StonePath-001), 1 = vertical (StonePath-Right-001). */
   let stonePathOrientation = 0;
+
+  /** Touch/tablet: anchor ghost + rotation HUD before confirming placement. */
+  let touchPendingPlacement = null;
+
+  function usesTouchPlacementRotationFlow(toolId) {
+    return prefersTouchPlacementFlow()
+      && isPlaceableBuildingTool(toolId, assetsPrices);
+  }
+
+  /** Touch placement always uses base mesh + placementRotationStep (roads included). */
+  function resolveTouchPlacementBuildingType(toolId) {
+    if (isStonePathTool(toolId)) {
+      return 'StonePath-001';
+    }
+    return toolId;
+  }
+
+  /** @type {ReturnType<typeof createPlacementRotationHud> | null} */
+  let placementRotationHud = null;
+
+  function cancelTouchPendingPlacement() {
+    if (!touchPendingPlacement) {
+      return;
+    }
+    touchPendingPlacement = null;
+    scene.placementGhost.clear();
+    placementRotationHud?.hide();
+  }
+
+  /** Drop a pending rotate-confirm if Mode tactile was turned off mid-flow. */
+  function discardTouchPendingIfDisabled() {
+    if (touchPendingPlacement && !prefersTouchPlacementFlow()) {
+      cancelTouchPendingPlacement();
+    }
+  }
+
+  function beginTouchPendingPlacement(placeX, placeY, toolId) {
+    const buildingType = resolveTouchPlacementBuildingType(toolId);
+    const gridSize = assetsPrices[toolId]?.gridSize ?? assetsPrices[buildingType]?.gridSize ?? 1;
+    const visualAssetId = resolveGhostVisualAssetId(buildingType);
+    touchPendingPlacement = {
+      x: placeX,
+      y: placeY,
+      buildingType,
+      toolId,
+      rotationStep: 0,
+      gridSize,
+    };
+    scene.placementGhost.anchor(visualAssetId, placeX, placeY, true, gridSize);
+    placementRotationHud?.show({
+      x: placeX,
+      y: placeY,
+      gridSize,
+    });
+  }
+
+  async function finalizeBuildingPlacement(placeX, placeY, buildingType, rotationStep = 0) {
+    const result = await constructionApi.placeBuildingAtTile({
+      city,
+      x: placeX,
+      y: placeY,
+      buildingType,
+      gameTurn: time,
+      placementRotationStep: rotationStep,
+    });
+
+    if (!result.success) {
+      if (result.reason === 'in_progress') {
+        return false;
+      }
+      if (result.reason === 'insufficient_funds') {
+        showInsufficientFundsNotification(buildingType, result.price || 0);
+      } else if (result.reason) {
+        showGenericErrorNotification(buildingType, result.reason);
+      }
+      return false;
+    }
+
+    await scene.update(city, time);
+    await runSimulationPass(time);
+    await syncEmploymentAfterBuildingChange(scene, city, buildingType);
+    await syncSupplyLinksAfterBuildingChange({
+      supply,
+      construction: constructionApi,
+      city,
+      event: 'placed',
+      buildingType,
+      instanceId: result.instanceId,
+      x: placeX,
+      y: placeY,
+    });
+    await refreshPlacementPresentation();
+    await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+    const multiplayerManager = getMultiplayerManager();
+    if (multiplayerManager?.isMultiplayer) {
+      try {
+        await multiplayerManager.placeBuilding(buildingType, placeX, placeY);
+      } catch (error) {
+        console.warn('[Multiplayer] Erreur envoi bâtiment:', error);
+      }
+    }
+    if (game) {
+      game.play();
+    }
+    return true;
+  }
 
   function getTickIntervalMs() {
     const raw = parseInt(localStorage.getItem('speed'), 10);
@@ -147,11 +260,43 @@ export function createGame(gameStore, assetManager, citySize = null) {
   });
   const city = createCity(resolveSelectedCitySize(citySize));
 
+  placementRotationHud = createPlacementRotationHud({
+    getCamera: () => scene.camera?.camera ?? null,
+    getCanvas: () => scene.domElement ?? document.querySelector('canvas'),
+    onRotate: () => {
+      if (!touchPendingPlacement) {
+        return;
+      }
+      scene.placementGhost.rotateStep();
+      touchPendingPlacement.rotationStep = scene.placementGhost.rotationStep;
+    },
+    onConfirm: async () => {
+      if (!touchPendingPlacement) {
+        return;
+      }
+      const { x, y, buildingType, rotationStep, gridSize } = touchPendingPlacement;
+      touchPendingPlacement = null;
+      placementRotationHud?.hide();
+      scene.placementGhost.clear();
+      const placed = await finalizeBuildingPlacement(x, y, buildingType, rotationStep);
+      if (placed) {
+        placementGhostSession.suppressGhostAtFootprint(x, y, gridSize);
+      } else {
+        placementGhostSession.sync(scene.focusedObject);
+      }
+    },
+  });
+
   const placementGhostSession = createPlacementGhostSession({
     getGhost: () => scene.placementGhost,
     getCity: () => city,
     getActiveToolId: () => activeToolId,
-    getEffectiveAssetId: () => getEffectiveBuildingToolId(),
+    getEffectiveAssetId: () => {
+      if (prefersTouchPlacementFlow() && isStonePathTool(activeToolId)) {
+        return 'StonePath-001';
+      }
+      return getEffectiveBuildingToolId();
+    },
     assetCatalog: assetsPrices,
     getFocusedObject: () => scene.focusedObject,
     canPlaceBuildingAtTile,
@@ -460,7 +605,37 @@ export function createGame(gameStore, assetManager, citySize = null) {
         }
       }
 
-      // Cesar III: first click anchors, hold+drag paints further tiles
+      discardTouchPendingIfDisabled();
+      if (touchPendingPlacement) {
+        return;
+      }
+
+      if (usesTouchPlacementRotationFlow(activeToolId)) {
+        const tile = city.tiles[x][y];
+        const canOverwriteRoad = !tile?.buildingId || isRoadBuildingType(tile.buildingId);
+        if (!canOverwriteRoad) {
+          showGenericErrorNotification(activeToolId, 'area_not_available');
+          return;
+        }
+
+        const placementCheck = canPlaceBuildingAtTileWithSupplyRules({
+          city,
+          x,
+          y,
+          buildingType: activeToolId,
+          assetCatalog: assetsPrices,
+        });
+        if (!placementCheck.ok) {
+          if (placementCheck.reason) {
+            showGenericErrorNotification(activeToolId, placementCheck.reason);
+          }
+          return;
+        }
+        beginTouchPendingPlacement(x, y, activeToolId);
+        return;
+      }
+
+      // Desktop: Cesar III — first click anchors, hold+drag paints further tiles
       roadPaint.active = true;
       roadPaint.placedCount = 0;
       const outcome = await placeRoadTile(x, y);
@@ -487,52 +662,38 @@ export function createGame(gameStore, assetManager, citySize = null) {
       }
 
       const { x: placeX, y: placeY } = selectedObject.userData;
-      const result = await constructionApi.placeBuildingAtTile({
-        city,
-        x: placeX,
-        y: placeY,
-        buildingType: activeToolId,
-        gameTurn: time,
-      });
 
-      if (!result.success) {
-        if (result.reason === 'in_progress') {
-          return;
-        }
-        if (result.reason === 'insufficient_funds') {
-          showInsufficientFundsNotification(activeToolId, result.price || 0);
-        } else if (result.reason) {
-          showGenericErrorNotification(activeToolId, result.reason);
-        }
+      discardTouchPendingIfDisabled();
+      if (touchPendingPlacement) {
         return;
       }
 
-      await scene.update(city, time);
-      await runSimulationPass(time);
-      await syncEmploymentAfterBuildingChange(scene, city, activeToolId);
-      await syncSupplyLinksAfterBuildingChange({
-        supply,
-        construction: constructionApi,
-        city,
-        event: 'placed',
-        buildingType: activeToolId,
-        instanceId: result.instanceId,
-        x: placeX,
-        y: placeY,
-      });
-      await refreshPlacementPresentation();
-      await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
-      placementGhostSession.sync(selectedObject);
-      const multiplayerManager = getMultiplayerManager();
-      if (multiplayerManager?.isMultiplayer) {
-        try {
-          await multiplayerManager.placeBuilding(activeToolId, placeX, placeY);
-        } catch (error) {
-          console.warn('[Multiplayer] Erreur envoi bâtiment:', error);
+      if (usesTouchPlacementRotationFlow(activeToolId)) {
+        const placementCheck = canPlaceBuildingAtTileWithSupplyRules({
+          city,
+          x: placeX,
+          y: placeY,
+          buildingType: activeToolId,
+          assetCatalog: assetsPrices,
+        });
+        if (!placementCheck.ok) {
+          if (placementCheck.reason) {
+            showGenericErrorNotification(activeToolId, placementCheck.reason);
+          }
+          return;
         }
+        beginTouchPendingPlacement(placeX, placeY, activeToolId);
+        return;
       }
-      if (game) {
-        game.play();
+
+      const placed = await finalizeBuildingPlacement(placeX, placeY, activeToolId, 0);
+      if (placed) {
+        const effectiveType = getEffectiveBuildingToolId();
+        const gridSize =
+          assetsPrices[activeToolId]?.gridSize ?? assetsPrices[effectiveType]?.gridSize ?? 1;
+        placementGhostSession.suppressGhostAtFootprint(placeX, placeY, gridSize);
+      } else {
+        placementGhostSession.sync(selectedObject);
       }
     }
   };
@@ -555,7 +716,19 @@ export function createGame(gameStore, assetManager, citySize = null) {
   };
 
   scene.onPlacementHover = (focusedObject) => {
+    discardTouchPendingIfDisabled();
+    if (touchPendingPlacement) {
+      return;
+    }
     placementGhostSession.sync(focusedObject);
+  };
+
+  // Build tool + 1 finger: green/red ghost follows the finger (2 fingers still pan/zoom).
+  scene.preferPlacementTouchDrag = () => {
+    if (touchPendingPlacement) {
+      return false;
+    }
+    return isPlaceableBuildingTool(activeToolId, assetsPrices);
   };
 
   /**
@@ -724,6 +897,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     },
 
     setActiveToolId(toolId) {
+      cancelTouchPendingPlacement();
       activeToolId = toolId;
       gameUI.activeToolId = toolId;
       if (isStonePathTool(toolId)) {

@@ -608,6 +608,7 @@ export function createScene(_gameStore, assetManager, deps) {
             }
             const newBuildingId = tileBuildingId;
             if (newBuildingId === 'roads') {
+                const placementRotationStep = city.tiles[x]?.[y]?.placementRotationStep ?? 0;
                 if (terrain[x] && terrain[x][y]) {
                     const terrainMesh = terrain[x][y];
                     const sharedMaterials = assetManager.getSharedTerrainMaterials();
@@ -619,6 +620,7 @@ export function createScene(_gameStore, assetManager, deps) {
                         terrainMesh.userData.isRoad = true;
                         terrainMesh.userData.x = x;
                         terrainMesh.userData.y = y;
+                        terrainMesh.rotation.y = placementRotationStep * (Math.PI / 2);
                         terrainMesh.updateMatrixWorld(true);
                     }
                 }
@@ -667,9 +669,12 @@ export function createScene(_gameStore, assetManager, deps) {
             }
 
             const assetId = newBuildingId === 'roads' ? 'StonePath-001' : newBuildingId;
+            const placementRotationStep = city.tiles[x]?.[y]?.placementRotationStep ?? 0;
 
             if (isOriginTile) {
-                const mesh = assetManager.createAsset(assetId, x, y);
+                const mesh = assetManager.createAsset(assetId, x, y, {
+                    rotationStep: placementRotationStep,
+                });
                 // Asset pas encore chargé / id inconnu : ne pas écraser ni .add(undefined)
                 // (sinon spam THREE à chaque tick via needsMeshPlacement).
                 if (!mesh) {
@@ -827,6 +832,7 @@ export function createScene(_gameStore, assetManager, deps) {
                           terrainMesh.userData.id = 'grass';
                           terrainMesh.userData.type = 'grass';
                           terrainMesh.userData.isRoad = false;
+                          terrainMesh.rotation.y = 0;
                       }
                   }
               }
@@ -896,6 +902,7 @@ export function createScene(_gameStore, assetManager, deps) {
                                 terrainMesh.userData.id = 'grass';
                                 terrainMesh.userData.type = 'grass';
                                 terrainMesh.userData.isRoad = false;
+                                terrainMesh.rotation.y = 0;
                                 terrainMesh.userData.x = x;
                                 terrainMesh.userData.y = y;
                                 delete terrainMesh.userData.instanceId;
@@ -965,6 +972,7 @@ export function createScene(_gameStore, assetManager, deps) {
                                 terrainMesh.userData.id = 'grass';
                                 terrainMesh.userData.type = 'grass';
                                 terrainMesh.userData.isRoad = false;
+                                terrainMesh.rotation.y = 0;
                                 terrainMesh.userData.x = x;
                                 terrainMesh.userData.y = y;
                                 delete terrainMesh.userData.instanceId;
@@ -1087,6 +1095,7 @@ export function createScene(_gameStore, assetManager, deps) {
                                     terrainMesh.userData.id = 'grass';
                                     terrainMesh.userData.type = 'grass';
                                     terrainMesh.userData.isRoad = false;
+                                terrainMesh.rotation.y = 0;
                                     terrainMesh.userData.x = x;
                                     terrainMesh.userData.y = y;
                                     delete terrainMesh.userData.instanceId;
@@ -2073,6 +2082,27 @@ function onMouseMove(event) {
 }
 
 
+function prefersPlacementTouchDrag() {
+    return typeof this.preferPlacementTouchDrag === 'function'
+        && this.preferPlacementTouchDrag();
+}
+
+function raycastTouchClient(clientX, clientY) {
+    mouse.x = (clientX / renderer.domElement.clientWidth) * 2 - 1;
+    mouse.y = -(clientY / renderer.domElement.clientHeight) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera.camera);
+    const intersections = raycaster.intersectObjects(getInteractiveObjects(), false);
+    return intersections.length > 0 ? intersections[0].object : null;
+}
+
+function emitPlacementHoverFromTouch(object) {
+    focusedObject = object;
+    hoveredObjectName = object?.name || '';
+    if (typeof this.onPlacementHover === 'function') {
+        this.onPlacementHover(focusedObject);
+    }
+}
+
 function onTouchStart(event) {
     // If canvas has pointer-events-disabled, touch events won't reach us at all
     // But if they do, we should still check for blocking popups
@@ -2103,12 +2133,12 @@ function onTouchStart(event) {
     if (event.touches.length === 1) {
         const touch = event.touches[0];
         touchStartPos = { x: touch.clientX, y: touch.clientY };
-        const p = { x: touch.clientX, y: touch.clientY };
-        mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
-        mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
-        raycaster.setFromCamera(mouse, camera.camera);
-        const intersections = raycaster.intersectObjects(getInteractiveObjects(), false);
-        touchStartObject = intersections.length > 0 ? intersections[0].object : null;
+        touchStartObject = raycastTouchClient(touch.clientX, touch.clientY);
+
+        // Placement tool: show green/red ghost immediately under the finger.
+        if (prefersPlacementTouchDrag.call(this)) {
+            emitPlacementHoverFromTouch.call(this, touchStartObject);
+        }
         
         // Don't update selection yet - wait for touchEnd to determine if it was a tap
         
@@ -2144,6 +2174,18 @@ function onTouchMove(event) {
         const deltaX = Math.abs(touch.clientX - touchStartPos.x);
         const deltaY = Math.abs(touch.clientY - touchStartPos.y);
         const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+        // Build tool active: 1-finger drag drives placement ghost (not camera).
+        // Pan / zoom remains available with 2 fingers.
+        if (prefersPlacementTouchDrag.call(this)) {
+            event.preventDefault();
+            if (distance > TAP_THRESHOLD) {
+                touchHasMoved = true;
+            }
+            const object = raycastTouchClient(touch.clientX, touch.clientY);
+            emitPlacementHoverFromTouch.call(this, object);
+            return;
+        }
         
         if (distance > TAP_THRESHOLD) {
             touchHasMoved = true;
@@ -2179,24 +2221,30 @@ function onTouchEnd(event) {
     if (performance.now() < suppressInputUntilMs) {
         return;
     }
+
+    const placementDrag = prefersPlacementTouchDrag.call(this);
     
-    // Check if this was a tap (no significant movement)
-    if (!touchHasMoved && event.changedTouches && event.changedTouches.length > 0) {
-        // Re-raycast at the touch end position to get the current object
-        // This ensures we get the correct object even if camera moved slightly
+    // Tap (no pan) — or placement drag release: place / anchor at finger tile.
+    if (
+        event.changedTouches
+        && event.changedTouches.length > 0
+        && (placementDrag || !touchHasMoved)
+    ) {
         const touch = event.changedTouches[0];
-        const p = { x: touch.clientX, y: touch.clientY };
-        mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
-        mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
-        raycaster.setFromCamera(mouse, camera.camera);
-        const intersections = raycaster.intersectObjects(getInteractiveObjects(), false);
-        const objectToSelect = intersections.length > 0 ? intersections[0].object : null;
+        const objectToSelect = raycastTouchClient(touch.clientX, touch.clientY)
+            || (placementDrag ? focusedObject : null);
         
         if (objectToSelect) {
-            // This was a tap - trigger building placement
             updateSelectedObject.call(this, objectToSelect);
-            // Prevent default behavior for taps
             event.preventDefault();
+            // Touch has no mouseup paint trail — close Cesar road-paint session after each gesture.
+            if (placementDrag && typeof this.onRoadPaintEnd === 'function') {
+                Promise.resolve(this.onRoadPaintEnd()).catch((error) => {
+                    console.error('[scene.js] onRoadPaintEnd (touch) failed:', error);
+                });
+            }
+        } else if (placementDrag) {
+            emitPlacementHoverFromTouch.call(this, null);
         }
     }
     
@@ -2349,6 +2397,11 @@ function onTouchEnd(event) {
         onRotateBuildingTool: undefined,
         /** @type {((focused: object | null) => void) | undefined} */
         onPlacementHover: undefined,
+        /**
+         * When true, single-finger drag updates the placement ghost instead of panning.
+         * @type {(() => boolean) | undefined}
+         */
+        preferPlacementTouchDrag: undefined,
         /**
          * Called before a right-click inspect selects a building.
          * Should switch the active tool to select-object and update toolbar UI.

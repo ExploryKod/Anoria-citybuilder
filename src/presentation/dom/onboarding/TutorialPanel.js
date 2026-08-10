@@ -168,6 +168,8 @@ class TutorialPanel {
 
         this.currentStep = 0;
         this.updateDisplay();
+        this.panel.hidden = false;
+        this.panel.setAttribute('aria-hidden', 'false');
         this.panel.classList.add('visible');
         this.isVisible = true;
         
@@ -184,6 +186,8 @@ class TutorialPanel {
      */
     hideTutorial() {
         this.panel.classList.remove('visible');
+        this.panel.hidden = true;
+        this.panel.setAttribute('aria-hidden', 'true');
         this.isVisible = false;
         
         // Réactiver les événements Three.js
