@@ -20,6 +20,10 @@
     text-align: left;
 }
 
+.tutorial-panel[hidden] {
+    display: none !important;
+}
+
 .tutorial-panel.visible {
     opacity: 1;
     transform: translate(-50%, -50%) translateX(0);

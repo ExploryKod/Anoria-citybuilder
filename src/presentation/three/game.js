@@ -152,14 +152,14 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
     if (!result.success) {
       if (result.reason === 'in_progress') {
-        return;
+        return false;
       }
       if (result.reason === 'insufficient_funds') {
         showInsufficientFundsNotification(buildingType, result.price || 0);
       } else if (result.reason) {
         showGenericErrorNotification(buildingType, result.reason);
       }
-      return;
+      return false;
     }
 
     await scene.update(city, time);
@@ -188,6 +188,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     if (game) {
       game.play();
     }
+    return true;
   }
 
   function getTickIntervalMs() {
@@ -273,12 +274,16 @@ export function createGame(gameStore, assetManager, citySize = null) {
       if (!touchPendingPlacement) {
         return;
       }
-      const { x, y, buildingType, rotationStep } = touchPendingPlacement;
+      const { x, y, buildingType, rotationStep, gridSize } = touchPendingPlacement;
       touchPendingPlacement = null;
       placementRotationHud?.hide();
       scene.placementGhost.clear();
-      await finalizeBuildingPlacement(x, y, buildingType, rotationStep);
-      placementGhostSession.sync(scene.focusedObject);
+      const placed = await finalizeBuildingPlacement(x, y, buildingType, rotationStep);
+      if (placed) {
+        placementGhostSession.suppressGhostAtFootprint(x, y, gridSize);
+      } else {
+        placementGhostSession.sync(scene.focusedObject);
+      }
     },
   });
 
@@ -681,8 +686,15 @@ export function createGame(gameStore, assetManager, citySize = null) {
         return;
       }
 
-      await finalizeBuildingPlacement(placeX, placeY, activeToolId, 0);
-      placementGhostSession.sync(selectedObject);
+      const placed = await finalizeBuildingPlacement(placeX, placeY, activeToolId, 0);
+      if (placed) {
+        const effectiveType = getEffectiveBuildingToolId();
+        const gridSize =
+          assetsPrices[activeToolId]?.gridSize ?? assetsPrices[effectiveType]?.gridSize ?? 1;
+        placementGhostSession.suppressGhostAtFootprint(placeX, placeY, gridSize);
+      } else {
+        placementGhostSession.sync(selectedObject);
+      }
     }
   };
 
@@ -709,6 +721,14 @@ export function createGame(gameStore, assetManager, citySize = null) {
       return;
     }
     placementGhostSession.sync(focusedObject);
+  };
+
+  // Build tool + 1 finger: green/red ghost follows the finger (2 fingers still pan/zoom).
+  scene.preferPlacementTouchDrag = () => {
+    if (touchPendingPlacement) {
+      return false;
+    }
+    return isPlaceableBuildingTool(activeToolId, assetsPrices);
   };
 
   /**

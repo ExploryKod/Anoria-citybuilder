@@ -19,6 +19,11 @@
     flex-direction: column;
 }
 
+/* Keep [hidden] authoritative — base display:flex must not override it */
+.objectives-panel[hidden] {
+    display: none !important;
+}
+
 .objectives-panel.visible {
     opacity: 1;
     transform: translate(-50%, -50%) translateX(0);
