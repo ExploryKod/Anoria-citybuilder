@@ -1,0 +1,11 @@
+/**
+ * js-toast-notifier defaults (container 1000 / toast 10000) sit under game HUD
+ * and modals (info-panel 10020, modal 10030). Keep toasts above chrome.
+ */
+.droplet-toast-container {
+  z-index: var(--z-index-notification, 10040);
+}
+
+.toast {
+  z-index: var(--z-index-notification, 10040);
+}
