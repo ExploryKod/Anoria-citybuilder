@@ -1,7 +1,9 @@
 @import '../site/site.css';
 
 .settings-content {
-  width: min(100%, 480px);
+  width: 100%;
+  max-width: var(--site-panel-max-width);
+  min-width: min(var(--site-panel-min-width), 100%);
   margin: 0 auto;
 }
 
