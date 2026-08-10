@@ -49,6 +49,7 @@ export class PlaceBuildingAtTile {
    * @param {number} params.y
    * @param {string} params.buildingType
    * @param {number} params.gameTurn
+   * @param {number} [params.placementRotationStep]
    * @returns {Promise<{
    *   success: boolean,
    *   reason?: string,
@@ -58,7 +59,8 @@ export class PlaceBuildingAtTile {
    *   gridSize?: number,
    * }>}
    */
-  async execute({ city, x, y, buildingType, gameTurn }) {
+  async execute({ city, x, y, buildingType, gameTurn, placementRotationStep = 0 }) {
+    const normalizedRotationStep = ((placementRotationStep % 4) + 4) % 4;
     const placement = canPlaceBuildingAtTile({
       city,
       x,
@@ -155,6 +157,7 @@ export class PlaceBuildingAtTile {
         gridSize,
         footprintWidth: gridSize,
         footprintHeight: gridSize,
+        placementRotationStep: normalizedRotationStep,
         employees: this.getDefaultEmployees(buildingType),
       };
 
@@ -174,7 +177,9 @@ export class PlaceBuildingAtTile {
       }
 
       const placedInstanceId = paymentResult.instanceId ?? instanceId;
-      stampBuildingFootprint(city, x, y, gridSize, buildingType, placedInstanceId);
+      stampBuildingFootprint(city, x, y, gridSize, buildingType, placedInstanceId, {
+        placementRotationStep: normalizedRotationStep,
+      });
 
       return {
         success: true,

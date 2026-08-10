@@ -667,9 +667,12 @@ export function createScene(_gameStore, assetManager, deps) {
             }
 
             const assetId = newBuildingId === 'roads' ? 'StonePath-001' : newBuildingId;
+            const placementRotationStep = city.tiles[x]?.[y]?.placementRotationStep ?? 0;
 
             if (isOriginTile) {
-                const mesh = assetManager.createAsset(assetId, x, y);
+                const mesh = assetManager.createAsset(assetId, x, y, {
+                    rotationStep: placementRotationStep,
+                });
                 // Asset pas encore chargé / id inconnu : ne pas écraser ni .add(undefined)
                 // (sinon spam THREE à chaque tick via needsMeshPlacement).
                 if (!mesh) {

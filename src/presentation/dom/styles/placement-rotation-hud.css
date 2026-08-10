@@ -1,0 +1,81 @@
+/* In-scene placement rotation controls (touch / tablet) */
+
+.placement-rotation-hud {
+  position: fixed;
+  z-index: calc(var(--z-index-legend, 1000) + 5);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: var(--game-chrome-radius, var(--border-radius-small));
+  background: var(--game-chrome-bg, rgba(255, 255, 255, 0.92));
+  border: 1px solid var(--game-chrome-border, rgba(29, 34, 40, 0.12));
+  box-shadow: var(--game-chrome-shadow, 0 4px 16px rgba(29, 34, 40, 0.12));
+  backdrop-filter: var(--game-chrome-blur, blur(10px));
+  pointer-events: auto;
+  transform: translate(-50%, -100%);
+  transition: opacity 0.15s ease;
+}
+
+.placement-rotation-hud.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.placement-rotation-hud__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 2px solid var(--site-btn-border, #dee2e6);
+  border-radius: 50%;
+  background: var(--site-btn-bg, #f8f9fa);
+  color: var(--site-text, var(--primary));
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.1s ease;
+}
+
+.placement-rotation-hud__btn:hover,
+.placement-rotation-hud__btn:focus-visible {
+  border-color: var(--cta);
+  background: var(--cta-tint, #fff6f0);
+  outline: none;
+}
+
+.placement-rotation-hud__btn:active {
+  transform: scale(0.94);
+}
+
+.placement-rotation-hud__btn svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+}
+
+.placement-rotation-hud__btn--confirm {
+  border-color: var(--cta);
+  background: var(--cta);
+  color: #fff;
+}
+
+.placement-rotation-hud__btn--confirm:hover,
+.placement-rotation-hud__btn--confirm:focus-visible {
+  border-color: var(--site-btn-bg-primary-hover, #e86f10);
+  background: var(--site-btn-bg-primary-hover, #e86f10);
+  color: #fff;
+}
+
+@media (max-width: 1024px) {
+  .placement-rotation-hud__btn {
+    width: 48px;
+    height: 48px;
+  }
+}
