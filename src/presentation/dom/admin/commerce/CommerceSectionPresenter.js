@@ -9,24 +9,24 @@ import { renderCommerceGoodsList, renderCommerceGoodModal } from './renderCommer
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
 
 export class CommerceSectionPresenter {
-  /**
-   * @param {{
-   *   accounting: object,
-   *   commerce: object,
-   *   employment: object,
-   *   housing: object,
-   *   supply: object,
-   *   updateDisplayedFunds?: (funds: number) => void,
-   * }} deps
-   */
-  constructor(deps = {}) {
-    this.accounting = deps.accounting;
-    this.commerce = deps.commerce;
-    this.employment = deps.employment;
-    this.housing = deps.housing;
-    this.supply = deps.supply;
-    this.updateDisplayedFunds = deps.updateDisplayedFunds ?? (() => {});
-    this.partnersData = null;
+    /**
+     * @param {{
+     *   accounting: object,
+     *   commerce: object,
+     *   employment: object,
+     *   housing: object,
+     *   supply: object,
+     *   updateDisplayedFunds?: (funds: number) => void,
+     * }} deps
+     */
+    constructor(deps = {}) {
+        this.accounting = deps.accounting;
+        this.commerce = deps.commerce;
+        this.employment = deps.employment;
+        this.housing = deps.housing;
+        this.supply = deps.supply;
+        this.updateDisplayedFunds = deps.updateDisplayedFunds ?? (() => {});
+        this.partnersData = null;
     this.partnersViewModel = null;
     this.selectedCityId = 'anoria';
     this.clickHandler = null;
@@ -36,31 +36,31 @@ export class CommerceSectionPresenter {
     this.openGoodProductId = null;
     this.goodModalHandler = null;
     this.goodModalEscapeHandler = null;
-  }
+    }
 
-  async init() {
-    this.setupEventListeners();
-    this.loadPartnersData();
+    async init() {
+        this.setupEventListeners();
+        this.loadPartnersData();
     await this.renderAdminEntry();
-  }
+    }
 
-  loadPartnersData() {
-    this.partnersData = this.commerce.loadOrSeedCommercePartners();
-  }
+    loadPartnersData() {
+        this.partnersData = this.commerce.loadOrSeedCommercePartners();
+    }
 
   savePartnersData() {
     this.commerce.saveCommercePartners(this.partnersData);
   }
 
-  async checkPartnerActivationConditions(partner) {
+    async checkPartnerActivationConditions(partner) {
     const [population, unemployment] = await Promise.all([
       this.housing.getCityTotalPopulation(),
       this.employment.getCityEmploymentSummary().then((summary) => summary.unemploymentPercentage),
-    ]);
+        ]);
 
-    return this.commerce.evaluatePartnerActivationConditions({
-      partner,
-      activationConditions: partner.activationConditions,
+        return this.commerce.evaluatePartnerActivationConditions({
+            partner,
+            activationConditions: partner.activationConditions,
       metrics: {
         population,
         unemployment,
@@ -69,18 +69,18 @@ export class CommerceSectionPresenter {
     });
   }
 
-  async activatePartner(partnerId) {
+    async activatePartner(partnerId) {
     const partner = this.partnersData.find((item) => item.id === partnerId);
-    if (!partner) {
-      return { success: false, newStatus: null, message: 'Partenaire non trouvé' };
-    }
+        if (!partner) {
+            return { success: false, newStatus: null, message: 'Partenaire non trouvé' };
+        }
 
-    if (partner.isActive) {
+        if (partner.isActive) {
       return { success: false, newStatus: true, message: 'La route est déjà ouverte' };
-    }
+        }
 
-    const conditionCheck = await this.checkPartnerActivationConditions(partner);
-    if (!conditionCheck.canActivate) {
+        const conditionCheck = await this.checkPartnerActivationConditions(partner);
+        if (!conditionCheck.canActivate) {
       return {
         success: false,
         newStatus: false,
@@ -88,105 +88,105 @@ export class CommerceSectionPresenter {
       };
     }
 
-    const commercialRouteFee = this.accounting.getCommercialRouteFee();
-    try {
-      const currentBudget = await this.accounting.getTreasurySnapshot();
+        const commercialRouteFee = this.accounting.getCommercialRouteFee();
+        try {
+            const currentBudget = await this.accounting.getTreasurySnapshot();
       const timeInfo = currentBudget?.turn !== undefined
         ? TimeManager.getTimeInfo(currentBudget.turn)
         : null;
-      const yearDisplay = timeInfo && timeInfo.year === 0 ? '0 JC' : timeInfo ? `${timeInfo.year} ap JC` : '';
-      const monthName = timeInfo ? timeInfo.month || 'Mois' : 'Mois';
-      const dateDisplay = `${monthName} ${yearDisplay}`;
+            const yearDisplay = timeInfo && timeInfo.year === 0 ? '0 JC' : timeInfo ? `${timeInfo.year} ap JC` : '';
+            const monthName = timeInfo ? timeInfo.month || 'Mois' : 'Mois';
+            const dateDisplay = `${monthName} ${yearDisplay}`;
 
-      const breakdown = [{
-        label: partner.name,
-        quantity: 1,
-        unitCost: commercialRouteFee,
+            const breakdown = [{
+                label: partner.name,
+                quantity: 1,
+                unitCost: commercialRouteFee,
         total: commercialRouteFee,
-      }];
-      const description = `Route commerciale - ${dateDisplay} |BREAKDOWN|${JSON.stringify(breakdown)}|BREAKDOWN|`;
+            }];
+            const description = `Route commerciale - ${dateDisplay} |BREAKDOWN|${JSON.stringify(breakdown)}|BREAKDOWN|`;
 
-      const feeResult = await this.accounting.recordCommercialRouteFee(
-        commercialRouteFee,
-        description,
-        partnerId
-      );
+            const feeResult = await this.accounting.recordCommercialRouteFee(
+                commercialRouteFee,
+                description,
+                partnerId
+            );
 
-      if (feeResult.skipped && feeResult.reason === 'duplicate_business_key') {
+                if (feeResult.skipped && feeResult.reason === 'duplicate_business_key') {
         partner.isActive = true;
         this.savePartnersData();
-        return {
+                    return {
           success: true,
           newStatus: true,
           message: 'Route commerciale déjà payée — route réactivée.',
         };
       }
 
-      this.updateDisplayedFunds(feeResult.budget.funds);
-    } catch (error) {
-      console.error('[CommerceSectionPresenter] Error paying commercial route fee:', error);
-      return {
-        success: false,
-        newStatus: false,
+                this.updateDisplayedFunds(feeResult.budget.funds);
+            } catch (error) {
+                console.error('[CommerceSectionPresenter] Error paying commercial route fee:', error);
+                return {
+                    success: false,
+                    newStatus: false,
         message: 'Erreur lors du paiement de la route commerciale',
-      };
-    }
+                };
+            }
 
-    partner.isActive = true;
-    this.savePartnersData();
-    return {
-      success: true,
-      newStatus: true,
+        partner.isActive = true;
+        this.savePartnersData();
+        return { 
+            success: true, 
+            newStatus: true, 
       message: `Route ouverte avec ${partner.name} (${commercialRouteFee} €). Les échanges sont automatiques selon les saisons.`,
     };
   }
 
-  showPartnerMessage(message, type = 'info') {
-    let messageContainer = document.getElementById('commerce-partner-message');
-    if (!messageContainer) {
-      messageContainer = document.createElement('div');
-      messageContainer.id = 'commerce-partner-message';
-      messageContainer.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    showPartnerMessage(message, type = 'info') {
+        let messageContainer = document.getElementById('commerce-partner-message');
+        if (!messageContainer) {
+            messageContainer = document.createElement('div');
+            messageContainer.id = 'commerce-partner-message';
+            messageContainer.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         z-index: 21000;
-        max-width: 400px;
-        font-size: 14px;
-        font-weight: 500;
-      `;
-      document.body.appendChild(messageContainer);
-    }
+                max-width: 400px;
+                font-size: 14px;
+                font-weight: 500;
+            `;
+            document.body.appendChild(messageContainer);
+        }
 
-    messageContainer.textContent = message;
-    if (type === 'success') {
-      messageContainer.style.background = '#d4edda';
-      messageContainer.style.color = '#155724';
-      messageContainer.style.borderLeft = '4px solid #28a745';
-    } else if (type === 'error') {
-      messageContainer.style.background = '#f8d7da';
-      messageContainer.style.color = '#721c24';
-      messageContainer.style.borderLeft = '4px solid #dc3545';
-    } else {
-      messageContainer.style.background = '#d1ecf1';
-      messageContainer.style.color = '#0c5460';
-      messageContainer.style.borderLeft = '4px solid #17a2b8';
-    }
+        messageContainer.textContent = message;
+        if (type === 'success') {
+            messageContainer.style.background = '#d4edda';
+            messageContainer.style.color = '#155724';
+            messageContainer.style.borderLeft = '4px solid #28a745';
+        } else if (type === 'error') {
+            messageContainer.style.background = '#f8d7da';
+            messageContainer.style.color = '#721c24';
+            messageContainer.style.borderLeft = '4px solid #dc3545';
+        } else {
+            messageContainer.style.background = '#d1ecf1';
+            messageContainer.style.color = '#0c5460';
+            messageContainer.style.borderLeft = '4px solid #17a2b8';
+        }
 
-    messageContainer.style.display = 'block';
-    setTimeout(() => {
-      if (messageContainer) {
-        messageContainer.style.display = 'none';
-      }
-    }, 5000);
-  }
+        messageContainer.style.display = 'block';
+                setTimeout(() => {
+                    if (messageContainer) {
+                        messageContainer.style.display = 'none';
+            }
+        }, 5000);
+    }
 
   async buildPartnersViewModel() {
-    this.loadPartnersData();
-    const stats = this.commerce.loadCommerceStats();
+        this.loadPartnersData();
+        const stats = this.commerce.loadCommerceStats();
     const productConfig = this.commerce.loadOrSeedCommerceConfig();
     const activationByPartnerId = {};
 
@@ -241,11 +241,11 @@ export class CommerceSectionPresenter {
         const good = goods.find((item) => item.id === this.openGoodProductId);
         if (good) {
           this.renderGoodModal(good);
-        } else {
+                    } else {
           this.closeGoodModal();
-        }
-      }
-    } catch (error) {
+                    }
+                    }
+                } catch (error) {
       console.error('[CommerceSectionPresenter] Error rendering goods list:', error);
       goodsList.innerHTML = renderCommerceGoodsList([]);
     }
@@ -301,13 +301,13 @@ export class CommerceSectionPresenter {
         const field = toggle.dataset.field;
         this.updateProductTradeSettings(productId, { [field]: toggle.checked });
         await this.renderAdminEntry();
-        return;
-      }
+                return;
+            }
 
       const thresholdInput = event.target.closest('.commerce-good-modal-threshold');
       if (thresholdInput && thresholdInput === document.activeElement) {
-        return;
-      }
+                return;
+            }
 
       const industryBtn = event.target.closest('.commerce-good-modal-industry-btn');
       if (industryBtn) {
@@ -470,7 +470,7 @@ export class CommerceSectionPresenter {
           this.showPartnerMessage(result.message, result.success ? 'success' : 'error');
           if (result.success) {
             await this.refreshTradeMap();
-          } else {
+            } else {
             activationBtn.disabled = false;
             activationBtn.textContent = 'Ouvrir la route (500 €)';
           }
@@ -518,5 +518,5 @@ export class CommerceSectionPresenter {
     };
 
     commerceBoard.addEventListener('click', this.clickHandler);
-  }
+    }
 }
