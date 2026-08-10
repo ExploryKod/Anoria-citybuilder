@@ -311,7 +311,7 @@ canvas.pointer-events-disabled {
     pointer-events: none;
 }
 
-/* Canvas stays interactive in landscape (docked toolbar on the left) */
+/* Canvas stays interactive on mobile / tablet */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
     canvas {
         pointer-events: auto !important;
