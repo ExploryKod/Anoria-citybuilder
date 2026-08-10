@@ -90,10 +90,19 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
   function usesTouchPlacementRotationFlow(toolId) {
     return prefersTouchPlacementFlow()
-      && isPlaceableBuildingTool(toolId, assetsPrices)
-      && !isRoadBuildingType(toolId)
-      && !isStonePathTool(toolId);
+      && isPlaceableBuildingTool(toolId, assetsPrices);
   }
+
+  /** Touch placement always uses base mesh + placementRotationStep (roads included). */
+  function resolveTouchPlacementBuildingType(toolId) {
+    if (isStonePathTool(toolId)) {
+      return 'StonePath-001';
+    }
+    return toolId;
+  }
+
+  /** @type {ReturnType<typeof createPlacementRotationHud> | null} */
+  let placementRotationHud = null;
 
   function cancelTouchPendingPlacement() {
     if (!touchPendingPlacement) {
@@ -101,46 +110,33 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
     touchPendingPlacement = null;
     scene.placementGhost.clear();
-    placementRotationHud.hide();
+    placementRotationHud?.hide();
   }
 
-  const placementRotationHud = createPlacementRotationHud({
-    onRotate: () => {
-      if (!touchPendingPlacement) {
-        return;
-      }
-      scene.placementGhost.rotateStep();
-      touchPendingPlacement.rotationStep = scene.placementGhost.rotationStep;
-    },
-    onConfirm: async () => {
-      if (!touchPendingPlacement) {
-        return;
-      }
-      const { x, y, buildingType, rotationStep } = touchPendingPlacement;
-      touchPendingPlacement = null;
-      placementRotationHud.hide();
-      scene.placementGhost.clear();
-      await finalizeBuildingPlacement(x, y, buildingType, rotationStep);
-      placementGhostSession.sync(scene.focusedObject);
-    },
-  });
+  /** Drop a pending rotate-confirm if Mode tactile was turned off mid-flow. */
+  function discardTouchPendingIfDisabled() {
+    if (touchPendingPlacement && !prefersTouchPlacementFlow()) {
+      cancelTouchPendingPlacement();
+    }
+  }
 
-  function beginTouchPendingPlacement(placeX, placeY, buildingType) {
-    const gridSize = assetsPrices[buildingType]?.gridSize ?? 1;
+  function beginTouchPendingPlacement(placeX, placeY, toolId) {
+    const buildingType = resolveTouchPlacementBuildingType(toolId);
+    const gridSize = assetsPrices[toolId]?.gridSize ?? assetsPrices[buildingType]?.gridSize ?? 1;
     const visualAssetId = resolveGhostVisualAssetId(buildingType);
     touchPendingPlacement = {
       x: placeX,
       y: placeY,
       buildingType,
+      toolId,
       rotationStep: 0,
       gridSize,
     };
     scene.placementGhost.anchor(visualAssetId, placeX, placeY, true, gridSize);
-    placementRotationHud.show({
+    placementRotationHud?.show({
       x: placeX,
       y: placeY,
       gridSize,
-      camera: scene.camera?.camera,
     });
   }
 
@@ -263,11 +259,39 @@ export function createGame(gameStore, assetManager, citySize = null) {
   });
   const city = createCity(resolveSelectedCitySize(citySize));
 
+  placementRotationHud = createPlacementRotationHud({
+    getCamera: () => scene.camera?.camera ?? null,
+    getCanvas: () => scene.domElement ?? document.querySelector('canvas'),
+    onRotate: () => {
+      if (!touchPendingPlacement) {
+        return;
+      }
+      scene.placementGhost.rotateStep();
+      touchPendingPlacement.rotationStep = scene.placementGhost.rotationStep;
+    },
+    onConfirm: async () => {
+      if (!touchPendingPlacement) {
+        return;
+      }
+      const { x, y, buildingType, rotationStep } = touchPendingPlacement;
+      touchPendingPlacement = null;
+      placementRotationHud?.hide();
+      scene.placementGhost.clear();
+      await finalizeBuildingPlacement(x, y, buildingType, rotationStep);
+      placementGhostSession.sync(scene.focusedObject);
+    },
+  });
+
   const placementGhostSession = createPlacementGhostSession({
     getGhost: () => scene.placementGhost,
     getCity: () => city,
     getActiveToolId: () => activeToolId,
-    getEffectiveAssetId: () => getEffectiveBuildingToolId(),
+    getEffectiveAssetId: () => {
+      if (prefersTouchPlacementFlow() && isStonePathTool(activeToolId)) {
+        return 'StonePath-001';
+      }
+      return getEffectiveBuildingToolId();
+    },
     assetCatalog: assetsPrices,
     getFocusedObject: () => scene.focusedObject,
     canPlaceBuildingAtTile,
@@ -576,7 +600,37 @@ export function createGame(gameStore, assetManager, citySize = null) {
         }
       }
 
-      // Cesar III: first click anchors, hold+drag paints further tiles
+      discardTouchPendingIfDisabled();
+      if (touchPendingPlacement) {
+        return;
+      }
+
+      if (usesTouchPlacementRotationFlow(activeToolId)) {
+        const tile = city.tiles[x][y];
+        const canOverwriteRoad = !tile?.buildingId || isRoadBuildingType(tile.buildingId);
+        if (!canOverwriteRoad) {
+          showGenericErrorNotification(activeToolId, 'area_not_available');
+          return;
+        }
+
+        const placementCheck = canPlaceBuildingAtTileWithSupplyRules({
+          city,
+          x,
+          y,
+          buildingType: activeToolId,
+          assetCatalog: assetsPrices,
+        });
+        if (!placementCheck.ok) {
+          if (placementCheck.reason) {
+            showGenericErrorNotification(activeToolId, placementCheck.reason);
+          }
+          return;
+        }
+        beginTouchPendingPlacement(x, y, activeToolId);
+        return;
+      }
+
+      // Desktop: Cesar III — first click anchors, hold+drag paints further tiles
       roadPaint.active = true;
       roadPaint.placedCount = 0;
       const outcome = await placeRoadTile(x, y);
@@ -604,6 +658,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
       const { x: placeX, y: placeY } = selectedObject.userData;
 
+      discardTouchPendingIfDisabled();
       if (touchPendingPlacement) {
         return;
       }
@@ -649,6 +704,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
   };
 
   scene.onPlacementHover = (focusedObject) => {
+    discardTouchPendingIfDisabled();
     if (touchPendingPlacement) {
       return;
     }

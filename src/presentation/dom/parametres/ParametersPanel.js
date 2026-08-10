@@ -1,5 +1,6 @@
 import EventBlocker from '../shell/EventBlocker.js';
 import * as eventsConfig from '../../../config/events.js';
+import { isTouchModeEnabled, setTouchModeEnabled } from '../../../config/touchMode.js';
 import { readStoredTileGridVisibility } from '../../three/managers/TileGridOverlay.js';
 
 /** @type {{
@@ -29,6 +30,7 @@ class ParametersPanel {
         this.eventProbabilityInput = null;
         this.daysPerMonthInput = null;
         this.tileGridToggle = null;
+        this.touchModeToggle = null;
 
         this.handleDocumentKeyDown = this.handleDocumentKeyDown.bind(this);
         this.handleOutsideClick = this.handleOutsideClick.bind(this);
@@ -60,6 +62,7 @@ class ParametersPanel {
         this.eventProbabilityInput = this.panel.querySelector('#event-probability-input');
         this.daysPerMonthInput = this.panel.querySelector('#days-per-month-input');
         this.tileGridToggle = this.panel.querySelector('#tile-grid-toggle');
+        this.touchModeToggle = this.panel.querySelector('#touch-mode-toggle');
 
         this.setupEventListeners();
         this.loadValues();
@@ -143,6 +146,12 @@ class ParametersPanel {
                 this.handleTileGridChange(e.target.checked);
             });
         }
+
+        if (this.touchModeToggle) {
+            this.touchModeToggle.addEventListener('change', (e) => {
+                this.handleTouchModeChange(e.target.checked);
+            });
+        }
     }
 
     async loadValues() {
@@ -164,8 +173,20 @@ class ParametersPanel {
                 this.tileGridToggle.checked =
                     scene?.isTileGridVisible?.() ?? readStoredTileGridVisibility();
             }
+
+            if (this.touchModeToggle) {
+                this.touchModeToggle.checked = isTouchModeEnabled();
+            }
         } catch (error) {
             console.error('[ParametersPanel] Error loading values:', error);
+        }
+    }
+
+    handleTouchModeChange(enabled) {
+        try {
+            setTouchModeEnabled(enabled);
+        } catch (error) {
+            console.error('[ParametersPanel] Error toggling touch mode:', error);
         }
     }
 

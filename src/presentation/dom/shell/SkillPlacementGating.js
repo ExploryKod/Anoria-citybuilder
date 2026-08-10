@@ -1,17 +1,37 @@
 /**
  * Presentation — tool-panel gating driven by Housing level-2 unlock queries.
+ * Skipped entirely when VITE_IS_EVOL_MODE is false (all buildings unlocked).
  */
 
+import { isEvolMode } from '../../../config/evolMode.js';
 import {
   allGatedPlacementTools,
   ALWAYS_ENABLED_PLACEMENT_TOOLS,
 } from '../tools/PlacementToolCatalog.js';
 
 /**
- * @param {{ disable: (buttonId: string) => boolean } | null | undefined} buttonStateManager
+ * @param {{
+ *   enable?: (buttonId: string) => boolean,
+ *   disable?: (buttonId: string) => boolean,
+ * } | null | undefined} buttonStateManager
+ */
+function enableAllPlacementTools(buttonStateManager) {
+  if (!buttonStateManager?.enable) return;
+  allGatedPlacementTools().forEach((buttonId) => buttonStateManager.enable(buttonId));
+  ALWAYS_ENABLED_PLACEMENT_TOOLS.forEach((buttonId) => buttonStateManager.enable(buttonId));
+}
+
+/**
+ * @param {{ disable: (buttonId: string) => boolean, enable?: (buttonId: string) => boolean } | null | undefined} buttonStateManager
  */
 export function disableGatedPlacementTools(buttonStateManager) {
   if (!buttonStateManager) return;
+
+  if (!isEvolMode()) {
+    enableAllPlacementTools(buttonStateManager);
+    return;
+  }
+
   allGatedPlacementTools().forEach((buttonId) => buttonStateManager.disable(buttonId));
   ALWAYS_ENABLED_PLACEMENT_TOOLS.forEach((buttonId) => buttonStateManager.enable(buttonId));
 }
@@ -25,7 +45,14 @@ export function disableGatedPlacementTools(buttonStateManager) {
  * @param {{ enable: (buttonId: string) => boolean, disable: (buttonId: string) => boolean } | null | undefined} params.buttonStateManager
  */
 export async function refreshSkillPlacementGating({ housing, buttonStateManager }) {
-  if (!housing?.getGroupLevel2UnlockStatus || !buttonStateManager) return;
+  if (!buttonStateManager) return;
+
+  if (!isEvolMode()) {
+    enableAllPlacementTools(buttonStateManager);
+    return;
+  }
+
+  if (!housing?.getGroupLevel2UnlockStatus) return;
 
   const unlockStatus = await housing.getGroupLevel2UnlockStatus();
 
