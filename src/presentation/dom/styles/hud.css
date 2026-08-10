@@ -350,15 +350,11 @@
   }
 }
 
-/* Coupled with left floating toolbar (mobile / tablet landscape) */
+/* Mobile / tablet landscape — toolbar is hidden; pop rail uses standard gutter */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
   .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
     top: var(--hud-floating-panel-top);
-    left: calc(
-      max(var(--hud-gutter), env(safe-area-inset-left, 0px))
-      + min(var(--toolbar-width), var(--toolbar-width-max))
-      + var(--hud-gutter)
-    );
+    left: max(var(--hud-gutter), env(safe-area-inset-left, 0px));
   }
 }
 
@@ -852,7 +848,7 @@
 @media screen and (max-width: 1024px) and (orientation: landscape) {
   .info-panel-wrapper.hud {
     top: 0;
-    left: calc(min(var(--toolbar-width), var(--toolbar-width-max)) + var(--hud-gutter));
+    left: var(--hud-gutter);
     right: var(--hud-gutter);
     max-width: none;
     width: auto;

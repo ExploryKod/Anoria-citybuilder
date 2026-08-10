@@ -1,4 +1,4 @@
-/* Mobile compact build bar — portrait only, above bottom command bar */
+/* Mobile compact build bar — above bottom command bar (portrait + landscape) */
 
 :root {
   --mobile-build-bar-offset: 0px;
@@ -8,12 +8,12 @@
   display: none;
 }
 
-/* Portrait-only FABs for click modes (bulldoze / select) */
+/* FABs for click modes (bulldoze / select) — mobile / tablet only */
 .mobile-click-state-fab {
   display: none;
 }
 
-@media screen and (max-width: 1024px) and (orientation: portrait) {
+@media screen and (max-width: 1024px) {
   .mobile-click-state-fab {
     display: block;
   }
@@ -27,9 +27,7 @@
   .mobile-click-state-btn.toolbar-toggle-btn.active svg {
     stroke: #fff;
   }
-}
 
-@media screen and (max-width: 1024px) and (orientation: portrait) {
   .mobile-build-bar {
     display: flex;
     flex-direction: column;
@@ -38,7 +36,7 @@
     left: 12px;
     right: 12px;
     bottom: calc(var(--hud-bottom-height, 56px) + env(safe-area-inset-bottom, 0px) + 8px);
-    z-index: calc(var(--z-index-legend, 1000) + 3);
+    z-index: calc(var(--z-index-legend, 1000) + 6);
     padding: 10px 12px 12px;
     box-sizing: border-box;
     background: rgba(255, 255, 255, 0.88);
@@ -184,7 +182,7 @@
     transform: scale(0.95);
   }
 
-  /* Portrait: construction opener is open-only (never shows a close state) */
+  /* Construction opener is open-only (never shows a close state) */
   .toolbar-open-construction-btn .toolbar-toggle-icon--close {
     display: none !important;
   }
@@ -203,7 +201,7 @@
     stroke: currentColor;
   }
 
-  /* Hide entire bottom shortcut row while construction modal is open */
+  /* Hide shortcut FABs while construction modal is open (close lives on the bar) */
   .legend-btns-container--mobile.mobile-build-bar-visible {
     display: none !important;
   }
