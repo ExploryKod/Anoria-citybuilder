@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { setPlacementRotationStep } from './placementRotation.js';
+import { getPlacementYawAngle, setPlacementRotationStep } from './placementRotation.js';
 
 /**
  * Semi-transparent placement preview (ghost) that follows the cursor tile.
@@ -77,7 +77,8 @@ export function createPlacementGhostController({ scene, assetManager }) {
   let lastValid = true;
   let lastGridSize = 1;
   let isAnchored = false;
-  let baseRotationY = 0;
+  /** Authored yaw on the correct Euler axis (Y upright / Z tipped). */
+  let baseYawAngle = 0;
   let rotationStep = 0;
   let ghostMode = 'hover';
 
@@ -93,7 +94,7 @@ export function createPlacementGhostController({ scene, assetManager }) {
     ghost = null;
     currentAssetId = null;
     isAnchored = false;
-    baseRotationY = 0;
+    baseYawAngle = 0;
     rotationStep = 0;
     ghostMode = 'hover';
   }
@@ -128,7 +129,7 @@ export function createPlacementGhostController({ scene, assetManager }) {
     lastGridSize = gridSize;
     isAnchored = mode === 'anchored';
     ghostMode = mode;
-    baseRotationY = mesh.rotation.y;
+    baseYawAngle = getPlacementYawAngle(mesh);
     rotationStep = 0;
   }
 
@@ -187,7 +188,7 @@ export function createPlacementGhostController({ scene, assetManager }) {
   function setRotationStep(step) {
     if (!ghost) return;
     rotationStep = ((step % 4) + 4) % 4;
-    setPlacementRotationStep(ghost, baseRotationY, rotationStep);
+    setPlacementRotationStep(ghost, baseYawAngle, rotationStep);
   }
 
   function rotateStep() {

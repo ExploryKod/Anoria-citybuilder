@@ -2,7 +2,9 @@
 
 .placement-rotation-hud {
   position: fixed;
-  z-index: calc(var(--z-index-legend, 1000) + 5);
+  left: 50%;
+  top: 42%;
+  z-index: 12050;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -14,13 +16,15 @@
   backdrop-filter: var(--game-chrome-blur, blur(10px));
   pointer-events: auto;
   transform: translate(-50%, -100%);
-  transition: opacity 0.15s ease;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
 }
 
 .placement-rotation-hud.hidden {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 .placement-rotation-hud__btn {

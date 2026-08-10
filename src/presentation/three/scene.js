@@ -608,6 +608,7 @@ export function createScene(_gameStore, assetManager, deps) {
             }
             const newBuildingId = tileBuildingId;
             if (newBuildingId === 'roads') {
+                const placementRotationStep = city.tiles[x]?.[y]?.placementRotationStep ?? 0;
                 if (terrain[x] && terrain[x][y]) {
                     const terrainMesh = terrain[x][y];
                     const sharedMaterials = assetManager.getSharedTerrainMaterials();
@@ -619,6 +620,7 @@ export function createScene(_gameStore, assetManager, deps) {
                         terrainMesh.userData.isRoad = true;
                         terrainMesh.userData.x = x;
                         terrainMesh.userData.y = y;
+                        terrainMesh.rotation.y = placementRotationStep * (Math.PI / 2);
                         terrainMesh.updateMatrixWorld(true);
                     }
                 }
@@ -830,6 +832,7 @@ export function createScene(_gameStore, assetManager, deps) {
                           terrainMesh.userData.id = 'grass';
                           terrainMesh.userData.type = 'grass';
                           terrainMesh.userData.isRoad = false;
+                          terrainMesh.rotation.y = 0;
                       }
                   }
               }
@@ -899,6 +902,7 @@ export function createScene(_gameStore, assetManager, deps) {
                                 terrainMesh.userData.id = 'grass';
                                 terrainMesh.userData.type = 'grass';
                                 terrainMesh.userData.isRoad = false;
+                                terrainMesh.rotation.y = 0;
                                 terrainMesh.userData.x = x;
                                 terrainMesh.userData.y = y;
                                 delete terrainMesh.userData.instanceId;
@@ -968,6 +972,7 @@ export function createScene(_gameStore, assetManager, deps) {
                                 terrainMesh.userData.id = 'grass';
                                 terrainMesh.userData.type = 'grass';
                                 terrainMesh.userData.isRoad = false;
+                                terrainMesh.rotation.y = 0;
                                 terrainMesh.userData.x = x;
                                 terrainMesh.userData.y = y;
                                 delete terrainMesh.userData.instanceId;
@@ -1090,6 +1095,7 @@ export function createScene(_gameStore, assetManager, deps) {
                                     terrainMesh.userData.id = 'grass';
                                     terrainMesh.userData.type = 'grass';
                                     terrainMesh.userData.isRoad = false;
+                                terrainMesh.rotation.y = 0;
                                     terrainMesh.userData.x = x;
                                     terrainMesh.userData.y = y;
                                     delete terrainMesh.userData.instanceId;
