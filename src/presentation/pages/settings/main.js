@@ -1,4 +1,5 @@
 import * as eventsConfig from '../../../config/events.js';
+import { isTouchModeEnabled, setTouchModeEnabled } from '../../../config/touchMode.js';
 import { bootSiteChrome } from '../site/bootSiteChrome.js';
 
 bootSiteChrome();
@@ -17,6 +18,7 @@ const eventsToggle = document.getElementById('settings-events-enabled');
 const probabilityInput = document.getElementById('settings-event-probability');
 const daysPerMonthInput = document.getElementById('settings-days-per-month');
 const tileGridToggle = document.getElementById('settings-tile-grid');
+const touchModeToggle = document.getElementById('settings-touch-mode');
 const saveBtn = document.getElementById('settings-save-btn');
 
 function loadValues() {
@@ -31,6 +33,9 @@ function loadValues() {
   }
   if (tileGridToggle) {
     tileGridToggle.checked = readStoredTileGridVisibility();
+  }
+  if (touchModeToggle) {
+    touchModeToggle.checked = isTouchModeEnabled();
   }
 }
 
@@ -50,6 +55,9 @@ function saveValues() {
     } catch {
       /* ignore */
     }
+  }
+  if (touchModeToggle) {
+    setTouchModeEnabled(touchModeToggle.checked);
   }
 }
 

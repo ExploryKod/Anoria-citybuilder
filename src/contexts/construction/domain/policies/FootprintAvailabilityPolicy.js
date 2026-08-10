@@ -65,6 +65,7 @@ export function clearBuildingFootprint(city, x, y, gridSize) {
         if (tile) {
           tile.buildingId = undefined;
           tile.instanceId = undefined;
+          delete tile.placementRotationStep;
         }
       }
     }
@@ -80,8 +81,10 @@ export function clearBuildingFootprint(city, x, y, gridSize) {
  * @param {number} gridSize
  * @param {string} buildingType
  * @param {string} instanceId
+ * @param {{ placementRotationStep?: number }} [options]
  */
-export function stampBuildingFootprint(city, x, y, gridSize, buildingType, instanceId) {
+export function stampBuildingFootprint(city, x, y, gridSize, buildingType, instanceId, options = {}) {
+  const placementRotationStep = options.placementRotationStep ?? 0;
   for (let dx = 0; dx < gridSize; dx++) {
     for (let dy = 0; dy < gridSize; dy++) {
       const tileX = x + dx;
@@ -90,6 +93,11 @@ export function stampBuildingFootprint(city, x, y, gridSize, buildingType, insta
       if (tile) {
         tile.buildingId = buildingType;
         tile.instanceId = instanceId;
+        if (dx === 0 && dy === 0 && placementRotationStep > 0) {
+          tile.placementRotationStep = placementRotationStep;
+        } else if (dx === 0 && dy === 0) {
+          delete tile.placementRotationStep;
+        }
       }
     }
   }

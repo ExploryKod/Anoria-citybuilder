@@ -1,0 +1,10 @@
+# Variables d'environnement pour Anoria City Builder
+# Ce fichier est ignoré par git (.gitignore)
+
+# Activer/désactiver les objectifs du jeu
+# true = activés (défaut), false = désactivés
+VITE_IS_GOAL=false
+VITE_IS_EVENTS_TEST=false
+VITE_IS_EVENTS=false
+VITE_DAYS_PER_MONTH=5
+VITE_IS_LOSE_MODE=false
