@@ -18,6 +18,7 @@ import { initSpeedControls } from './SpeedControls.js';
 import { initToolBarBindings } from './ToolBarBindings.js';
 import { initMobileToolbar } from './ToolbarShell.js';
 import { initHudTimeBarMinWidth } from '../shell/hudTimeBarSizing.js';
+import { initHudShellMenus } from '../shell/HudShellMenus.js';
 import { initMobileCompactToolbar } from '../tools/MobileCompactToolbar.js';
 import { initMobileClickStateFab } from '../tools/MobileClickStateFab.js';
 import { initMissingTooltips, observeMissingTooltips } from './TooltipTitles.js';
@@ -75,6 +76,8 @@ export async function initAppBoot() {
     getTimeManager,
     getScene: getSessionScene,
   });
+  // After ParametersPanel (it rebinds #parameters-btn).
+  initHudShellMenus();
   registerAppFunction('loadBudgetStates', (period = '3', showLoading = true) =>
     loadBudgetStates(period, showLoading)
   );

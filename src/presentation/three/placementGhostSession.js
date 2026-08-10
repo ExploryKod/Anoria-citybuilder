@@ -53,6 +53,17 @@ export function isPlaceableBuildingTool(toolId, assetCatalog) {
  * @param {(params: object) => { ok: boolean, reason?: string, gridSize: number }} deps.canPlaceBuildingAtTile
  * @param {() => object | null | undefined} [deps.getFocusedObject]
  */
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {{ x: number, y: number, gridSize: number } | null} footprint
+ */
+function isTileInFootprint(x, y, footprint) {
+  if (!footprint) return false;
+  const size = footprint.gridSize ?? 1;
+  return x >= footprint.x && x < footprint.x + size && y >= footprint.y && y < footprint.y + size;
+}
+
 export function createPlacementGhostSession({
   getGhost,
   getCity,
@@ -65,8 +76,22 @@ export function createPlacementGhostSession({
 }) {
   /** @type {object | null} */
   let lastFocused = null;
+  /** Footprint hidden until hover leaves the tile(s) just placed. */
+  let suppressFootprint = null;
 
   function clear() {
+    suppressFootprint = null;
+    getGhost()?.clear();
+  }
+
+  /**
+   * Hide preview on tiles where a building was just placed (avoids red ghost on success).
+   * @param {number} x
+   * @param {number} y
+   * @param {number} [gridSize]
+   */
+  function suppressGhostAtFootprint(x, y, gridSize = 1) {
+    suppressFootprint = { x, y, gridSize: Math.max(1, gridSize) };
     getGhost()?.clear();
   }
 
@@ -95,7 +120,17 @@ export function createPlacementGhostSession({
     const x = resolved?.userData?.x;
     const y = resolved?.userData?.y;
     if (typeof x !== 'number' || typeof y !== 'number') {
+      // No tile under pointer/finger — clear hover ghost (desktop leave / touch lift off-map).
+      ghost.clear();
       return;
+    }
+
+    if (suppressFootprint) {
+      if (isTileInFootprint(x, y, suppressFootprint)) {
+        ghost.clear();
+        return;
+      }
+      suppressFootprint = null;
     }
 
     const city = getCity();
@@ -126,6 +161,7 @@ export function createPlacementGhostSession({
   return {
     sync,
     clear,
+    suppressGhostAtFootprint,
     onToolChanged,
   };
 }
