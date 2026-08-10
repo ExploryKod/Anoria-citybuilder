@@ -1,5 +1,6 @@
 import ToastNotifier from 'js-toast-notifier';
 import 'js-toast-notifier/dist/toast.css';
+import '../styles/toast-notifier.css';
 
 let toastInstance = null;
 

@@ -215,6 +215,8 @@ class ObjectivesPanel {
 
         this.currentStep = 0;
         await this.updateDisplay();
+        this.panel.hidden = false;
+        this.panel.setAttribute('aria-hidden', 'false');
         this.panel.classList.add('visible');
         this.isVisible = true;
         
@@ -230,6 +232,8 @@ class ObjectivesPanel {
      */
     hideObjectives() {
         this.panel.classList.remove('visible');
+        this.panel.hidden = true;
+        this.panel.setAttribute('aria-hidden', 'true');
         this.isVisible = false;
         
         // Réactiver les événements Three.js

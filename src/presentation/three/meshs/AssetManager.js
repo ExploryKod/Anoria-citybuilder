@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { applyPlacementRotationStep } from '../placementRotation.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { textures, meshNameMapping } from './data.js';
@@ -889,18 +890,25 @@ class AssetManager extends MeshLoader {
         }
     }
 
-    createAsset(assetId, x, y) {
+    createAsset(assetId, x, y, options = null) {
         // city.tiles / Dexie stockent parfois un id logique (Tree-Sapin, Boulder…)
         // alors que le factory est enregistré sous le nom de mesh GLB (Tree-Pine-001).
         const resolvedId = meshNameMapping[assetId] ?? assetId;
+        let mesh;
         if (resolvedId in this.#assets) {
-            return this.#assets[resolvedId](x, y);
+            mesh = this.#assets[resolvedId](x, y);
+        } else if (assetId in this.#assets) {
+            mesh = this.#assets[assetId](x, y);
+        } else {
+            console.warn(`[AssetManager] Asset ${assetId} (resolved: ${resolvedId}) does not exist`);
+            return undefined;
         }
-        if (assetId in this.#assets) {
-            return this.#assets[assetId](x, y);
+
+        const rotationStep = options?.rotationStep ?? options?.placementRotationStep ?? 0;
+        if (mesh && rotationStep) {
+            applyPlacementRotationStep(mesh, rotationStep);
         }
-        console.warn(`[AssetManager] Asset ${assetId} (resolved: ${resolvedId}) does not exist`);
-        return undefined;
+        return mesh;
     }
 
     /**
