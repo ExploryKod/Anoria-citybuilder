@@ -203,17 +203,8 @@
     stroke: currentColor;
   }
 
-  /* Lift camera FAB; hide construction opener (close is on the bar itself) */
-  .legend-btns-container--mobile.mobile-build-bar-visible .toolbar-mobile-toggle-btn {
-    display: none !important;
-  }
-
+  /* Hide entire bottom shortcut row while construction modal is open */
   .legend-btns-container--mobile.mobile-build-bar-visible {
-    bottom: calc(
-      var(--hud-bottom-height, 56px)
-      + env(safe-area-inset-bottom, 0px)
-      + var(--mobile-build-bar-offset, 140px)
-      + 10px
-    );
+    display: none !important;
   }
 }

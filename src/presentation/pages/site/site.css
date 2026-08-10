@@ -36,9 +36,38 @@ a {
   width: 100%;
   display: flex;
   flex-direction: column;
-  padding: 16px;
+  padding:
+    16px
+    max(var(--site-page-gutter), env(safe-area-inset-right, 0px))
+    16px
+    max(var(--site-page-gutter), env(safe-area-inset-left, 0px));
   max-width: 1100px;
   margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.site-home-panel {
+  width: 100%;
+  max-width: var(--site-panel-max-width);
+  min-width: min(var(--site-panel-min-width), 100%);
+  margin: 0 auto;
+  padding: 24px 28px;
+  background: var(--site-surface);
+  border: 3px solid var(--site-border);
+  border-radius: var(--border-radius);
+  box-sizing: border-box;
+}
+
+.site-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
 }
 
 .site-header {
@@ -68,21 +97,13 @@ a {
   color: var(--cta);
 }
 
-.site-menu {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: min(100%, 400px);
-  margin: 0 auto;
-  padding: 24px 28px;
-  background: var(--site-surface);
-  border: 3px solid var(--site-border);
-  border-radius: var(--border-radius);
-}
-
 .site-menu-title {
   text-align: center;
   margin: 0 0 20px;
+}
+
+.site-home-panel .site-menu-title {
+  margin-bottom: 16px;
 }
 
 .site-menu-title h1 {
@@ -112,6 +133,11 @@ a {
   background: var(--site-surface);
   padding: 20px;
   color: var(--site-text);
+  width: 100%;
+  max-width: var(--site-panel-max-width);
+  min-width: min(var(--site-panel-min-width), 100%);
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .site-section-title {
@@ -163,5 +189,6 @@ a {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 24px 0;
+  padding-top: 24px;
+  padding-bottom: 24px;
 }

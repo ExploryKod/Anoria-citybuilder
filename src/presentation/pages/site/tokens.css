@@ -34,4 +34,30 @@
   --site-btn-border-disabled: #c8cdd3;
   --site-btn-text-disabled: #8b949e;
   --site-btn-opacity-disabled: 0.55;
+
+  /* Layout panneaux site (accueil, paramètres…) */
+  --site-page-gutter: 20px;
+  --site-panel-min-width: 280px;
+  --site-panel-max-width: 400px;
+}
+
+@media (min-width: 480px) {
+  :root {
+    --site-page-gutter: 24px;
+    --site-panel-min-width: 300px;
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --site-page-gutter: 32px;
+    --site-panel-min-width: 320px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --site-page-gutter: 40px;
+    --site-panel-min-width: 340px;
+  }
 }
