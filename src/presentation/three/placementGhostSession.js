@@ -74,6 +74,10 @@ export function createPlacementGhostSession({
    * @param {object | null} [focused]
    */
   function sync(focused) {
+    if (getGhost()?.anchored) {
+      return;
+    }
+
     const resolved = focused === undefined ? (lastFocused ?? getFocusedObject()) : focused;
     if (focused !== undefined) {
       lastFocused = focused;
@@ -101,7 +105,7 @@ export function createPlacementGhostSession({
       return;
     }
 
-    const { ok } = canPlaceBuildingAtTile({
+    const placement = canPlaceBuildingAtTile({
       city,
       x,
       y,
@@ -109,7 +113,9 @@ export function createPlacementGhostSession({
       assetCatalog,
     });
 
-    ghost.show(resolveGhostVisualAssetId(assetId), x, y, ok);
+    ghost.show(resolveGhostVisualAssetId(assetId), x, y, placement.ok, {
+      gridSize: placement.gridSize ?? assetCatalog?.[assetId]?.gridSize ?? 1,
+    });
   }
 
   function onToolChanged() {
