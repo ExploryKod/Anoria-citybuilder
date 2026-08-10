@@ -69,21 +69,17 @@ export function initMobileToolbar() {
 
   const applyToolbarResponsiveState = () => {
     if (!toolbarElement) return;
-    if (isLandscapeMobile()) {
+    if (isLandscapeMobile() || isPortraitMobile()) {
+      // Mobile: left toolbar stays hidden; build tools use bottom FABs + compact bar.
       resetToolbarDragStyles(toolbarElement);
-      toolbarElement.classList.remove('mobile-hidden');
-      toolbarElement.classList.add('mobile-visible', 'toolbar-landscape-docked');
-      playToolbarEnterAnimation();
-      closeMobileBuildBar();
-      if (toolbarMobileToggle) {
-        toolbarMobileToggle.classList.remove('active');
-        toolbarMobileToggle.setAttribute('aria-pressed', 'false');
-        toolbarMobileToggle.setAttribute('aria-expanded', 'false');
-      }
-    } else if (isPortraitMobile()) {
       toolbarElement.classList.remove('toolbar-landscape-docked', 'mobile-visible', 'toolbar--enter');
       toolbarElement.classList.add('mobile-hidden');
       delete toolbarElement.dataset.enterPlayed;
+      if (toolbarMobileToggle) {
+        toolbarMobileToggle.classList.remove('active');
+        toolbarMobileToggle.setAttribute('aria-pressed', 'false');
+        toolbarMobileToggle.setAttribute('aria-expanded', isMobileBuildBarOpen() ? 'true' : 'false');
+      }
       if (!isMobileBuildBarOpen()) {
         closeMobileBuildBar();
       }
@@ -133,14 +129,13 @@ export function initMobileToolbar() {
       e.stopPropagation();
       if (!isMobileViewport()) return;
 
-      if (isPortraitMobile()) {
+      // Portrait + landscape mobile: open compact construction bar (toolbar stays hidden).
+      if (isPortraitMobile() || isLandscapeMobile()) {
         if (!isMobileBuildBarOpen()) {
           openMobileBuildBar();
         }
         return;
       }
-
-      if (isLandscapeMobile()) return;
 
       const willShow = !toolbarElement.classList.contains('mobile-visible');
       if (willShow) {
@@ -159,14 +154,13 @@ export function initMobileToolbar() {
   document.addEventListener('click', (e) => {
     if (Date.now() < toolbarDragLockUntil) return;
 
-    if (isPortraitMobile()) {
+    if (isPortraitMobile() || isLandscapeMobile()) {
       if (!isMobileBuildBarOpen()) return;
       if (!e.target.closest('#mobile-build-bar')) {
         closeMobileBuildBar();
       }
       return;
     }
-    if (isLandscapeMobile()) return;
     if (!toolbarElement?.classList.contains('mobile-visible') || !isMobileViewport()) return;
     if (!e.target.closest('#toolbar') && !e.target.closest('#toolbar-mobile-toggle')) {
       closeMobileToolbar();

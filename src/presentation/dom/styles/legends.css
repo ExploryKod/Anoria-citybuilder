@@ -28,14 +28,27 @@
   }
 }
 
-/* Landscape mobile: camera toggle only (toolbar is docked on the left) */
-@media screen and (max-width: 1024px) and (orientation: landscape) {
+/* Mobile / tablet: fixed FABs above the bottom command bar (portrait + landscape) */
+@media screen and (max-width: 1024px) {
   .legend-btns-container--mobile {
     display: flex !important;
+    position: fixed;
+    left: 50%;
+    right: auto;
+    bottom: calc(
+      var(--hud-bottom-height, 56px)
+      + env(safe-area-inset-bottom, 0px)
+      + 10px
+    );
+    transform: translateX(-50%);
+    /* Above hud-actions (legend+2) so FABs never sit behind the command bar */
+    z-index: calc(var(--z-index-legend, 1000) + 5);
+    pointer-events: auto;
   }
 
-  .toolbar-mobile-toggle-btn {
-    display: none !important;
+  .toolbar-mobile-toggle-btn,
+  .toolbar-mobile-controls-toggle-btn {
+    display: block !important;
   }
 }
 
@@ -404,12 +417,12 @@
 
 /* Tablet and Mobile responsive */
 @media (max-width: 1024px) {
-  /* Hide text, show only icons on mobile/tablet */
-  .legend-toggle-btn span,
-  .finance-toggle-btn span,
-  .command-toggle-btn span,
-  .toolbar-toggle-btn span,
-  .parameters-toggle-btn span {
+  /* Hide text labels only — keep icon wrappers visible on mobile FABs */
+  .legend-toggle-btn > span:not(.toolbar-toggle-icon):not(.sr-only),
+  .finance-toggle-btn > span:not(.toolbar-toggle-icon):not(.sr-only),
+  .command-toggle-btn > span:not(.toolbar-toggle-icon):not(.sr-only),
+  .toolbar-toggle-btn > span:not(.toolbar-toggle-icon):not(.sr-only),
+  .parameters-toggle-btn > span:not(.toolbar-toggle-icon):not(.sr-only) {
     display: none;
   }
   
