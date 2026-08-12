@@ -131,6 +131,15 @@ class PopupManager {
             onClose: () => {}
         });
 
+        this.popupConfigs.set('news-event-modal', {
+            shouldBlockEvents: true,
+            shouldPauseGame: true,
+            eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
+            canvasSelectors: ['canvas'],
+            onOpen: () => {},
+            onClose: () => {}
+        });
+
     }
 
     /**
