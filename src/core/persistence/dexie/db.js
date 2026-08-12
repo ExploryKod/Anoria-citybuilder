@@ -23,6 +23,9 @@ const stores = {
 const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
 
 db.version(1).stores(stores);
+db.version(2).stores({
+  newsItems: 'id, turn, lifecycle, sourceId, revelation, [turn+sourceId]',
+});
 
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;

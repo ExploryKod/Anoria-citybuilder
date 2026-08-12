@@ -10,6 +10,7 @@ import {
 import { syncSessionHud } from './syncSessionHud.js';
 import { isLoseMode } from '../config/loseMode.js';
 import { isDeathGameOverReached } from './gameplayMortalityState.js';
+import { presentIncomingNewsEvents } from '../presentation/dom/intelligence/NewsEventModal.js';
 
 /**
  * @param {object} params
@@ -99,6 +100,16 @@ export async function runGameTick({
 
   if (refreshPlacementToolGating) {
     await refreshPlacementToolGating({ housing });
+  }
+
+  if (shouldAbort()) {
+    return;
+  }
+
+  try {
+    await presentIncomingNewsEvents();
+  } catch (err) {
+    console.error('[Game] News event presentation error:', err?.message || err);
   }
 
   if (isLoseMode() && isDeathGameOverReached()) {

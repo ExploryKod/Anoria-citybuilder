@@ -13,6 +13,7 @@ import {
 import { createSupplyMonthlyCommerceSystem } from '../contexts/supply/infrastructure/runtime/supplyMonthlyCommerceSystem.js';
 import { createCommerceTurnSystem } from '../contexts/commerce/infrastructure/runtime/commerceTurnSystem.js';
 import { createRandomEventsSystem } from '../contexts/gameplay/infrastructure/runtime/randomEventsSystem.js';
+import { createIntelligenceMonthlyNewsSystem } from '../contexts/intelligence/infrastructure/runtime/intelligenceMonthlyNewsSystem.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { isLoseMode } from '../config/loseMode.js';
 import { recordDeaths } from './gameplayMortalityState.js';
@@ -28,6 +29,7 @@ import { recordDeaths } from './gameplayMortalityState.js';
  * @param {ReturnType<import('./createEmploymentContext.js').createEmploymentContext>} deps.employment
  * @param {ReturnType<import('./createCommerceContext.js').createCommerceContext>} deps.commerce
  * @param {ReturnType<import('./createGameplayContext.js').createGameplayContext>} deps.gameplay
+ * @param {ReturnType<import('./createIntelligenceContext.js').createIntelligenceContext>} deps.intelligence
  * @param {(time: number) => object} [deps.getTimeInfo]
  * @param {Function} deps.toSupplySeason
  * @param {Function} deps.toSupplyMonth
@@ -41,6 +43,7 @@ export function createGameRuntime({
   employment,
   commerce,
   gameplay,
+  intelligence,
   getTimeInfo: getTimeInfoDep,
   toSupplySeason,
   toSupplyMonth,
@@ -64,6 +67,9 @@ export function createGameRuntime({
   }
   if (!gameplay) {
     throw new Error('createGameRuntime: gameplay context required');
+  }
+  if (!intelligence) {
+    throw new Error('createGameRuntime: intelligence context required');
   }
   if (typeof getSectorPriorities !== 'function') {
     throw new Error('createGameRuntime: getSectorPriorities required');
@@ -112,7 +118,11 @@ export function createGameRuntime({
     .register('supply.factoryProduction', supplyFactoryProduction)
     .register('supply.monthlyCommerce', supplyMonthlyCommerce)
     .register('commerce.turn', createCommerceTurnSystem({ commerce }))
-    .register('gameplay.randomEvents', createRandomEventsSystem({ gameplay }));
+    .register('gameplay.randomEvents', createRandomEventsSystem({ gameplay }))
+    .register(
+      'intelligence.monthlyNews',
+      createIntelligenceMonthlyNewsSystem({ intelligence, getTimeInfo })
+    );
 
   return {
     world,

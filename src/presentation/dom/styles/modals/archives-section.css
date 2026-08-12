@@ -1,0 +1,95 @@
+/* Admin — Archives des dépêches */
+
+.archives-board {
+  background: #fafafa;
+  border-radius: var(--border-radius-small);
+  padding: 16px 20px;
+  text-align: left;
+}
+
+.archives-intro {
+  margin: 0 0 16px;
+  opacity: 0.8;
+  font-size: 0.95rem;
+}
+
+.archives-news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.archives-empty {
+  margin: 0;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: var(--border-radius-small);
+}
+
+.archives-news-item {
+  padding: 12px 14px;
+  border-left: 3px solid var(--cta);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.archives-news-item-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.archives-news-item-heading {
+  min-width: 0;
+  flex: 1;
+}
+
+.archives-news-item-meta {
+  display: block;
+  font-size: 0.8rem;
+  opacity: 0.7;
+  margin-bottom: 4px;
+}
+
+.archives-news-item-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.archives-news-delete-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--border-radius-small);
+  background: transparent;
+  color: var(--primary);
+  opacity: 0.55;
+  cursor: pointer;
+}
+
+.archives-news-delete-btn:hover,
+.archives-news-delete-btn:focus-visible {
+  opacity: 1;
+  color: #b42318;
+  border-color: rgba(180, 35, 24, 0.25);
+  background: rgba(180, 35, 24, 0.06);
+  outline: none;
+}
+
+.archives-news-delete-btn:disabled {
+  opacity: 0.35;
+  cursor: wait;
+}
+
+.archives-news-item-body {
+  margin: 0;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}

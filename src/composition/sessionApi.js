@@ -301,6 +301,7 @@ export function createParcelsSessionApi(_parcels = null) {
  *   housing?: object,
  *   commerce?: object,
  *   parcels?: object,
+ *   intelligence?: object,
  * }} contexts
  */
 export function assembleSessionApi({
@@ -312,6 +313,7 @@ export function assembleSessionApi({
   housing = null,
   commerce = null,
   parcels = null,
+  intelligence = null,
 }) {
   const api = {
     construction: createConstructionSessionApi(construction),
@@ -333,6 +335,15 @@ export function assembleSessionApi({
   }
   if (parcels) {
     api.parcels = createParcelsSessionApi(parcels);
+  }
+  if (intelligence) {
+    api.intelligence = Object.freeze({
+      listIncomingNews: () => intelligence.listIncomingNews(),
+      listArchivedNews: () => intelligence.listArchivedNews(),
+      archiveNewsItem: (params) => intelligence.archiveNewsItem(params),
+      deleteNewsItem: (params) => intelligence.deleteNewsItem(params),
+      generateMonthlyCityNews: (params) => intelligence.generateMonthlyCityNews(params),
+    });
   }
   return Object.freeze(api);
 }

@@ -49,6 +49,7 @@ import {
 import { initJournalPopup } from '../compta/journal/JournalPanel.js';
 import { initFoodTraceabilityPopup } from '../admin/food-traceability/FoodTraceabilityPanel.js';
 import { initAdminSections } from '../admin/initAdminSections.js';
+import { initNewsEventModal } from '../intelligence/NewsEventModal.js';
 import { bindObjectivesHistoryDeps } from '../onboarding/objectives-history.js';
 import { initObjectivesPanel } from '../onboarding/ObjectivesPanel.js';
 import loaderManager from '../shell/LoaderManager.js';
@@ -184,10 +185,19 @@ export async function bootstrapGameSession(assetManager) {
   });
   initFoodTraceabilityPopup({ supply: sessionApi.supply });
 
+  if (sessionApi.intelligence) {
+    initNewsEventModal({
+      intelligence: sessionApi.intelligence,
+      getGameTime,
+      registerAppService,
+    });
+  }
+
   await initAdminSections({
     ...panelDeps,
     commerce: sessionApi.commerce,
     employment: sessionApi.employment,
+    intelligence: sessionApi.intelligence,
     registerAppService,
     registerAppFunction,
     updateDisplayedFunds,

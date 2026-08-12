@@ -48,6 +48,8 @@
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/commerce-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/trade-map.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/health-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/archives-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/news-event-modal.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/administrator-panel-flat.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/multiplayer.css" media="print" onload="this.media='all'">
     <noscript>
@@ -69,6 +71,8 @@
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/commerce-section.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/trade-map.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/health-section.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/archives-section.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/news-event-modal.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/administrator-panel-flat.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/multiplayer.css">
     </noscript>
@@ -1610,6 +1614,20 @@
                 </button>
                 
                 <button 
+                    class="administrator-nav-btn" 
+                    id="admin-nav-archives"
+                    data-section="archives"
+                    title="Archives"
+                    aria-label="Ouvrir la section Archives">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-archive">
+                        <rect width="20" height="5" x="2" y="3" rx="1"/>
+                        <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/>
+                        <path d="M10 12h4"/>
+                    </svg>
+                    <span class="sr-only">Archives</span>
+                </button>
+
+                <button 
                     class="administrator-nav-btn report-btn" 
                     id="admin-nav-report"
                     data-section="report"
@@ -2361,6 +2379,24 @@
                 </div>
             </div>
             
+            <!-- Archives Section -->
+            <div class="administrator-section" id="admin-section-archives">
+                <div class="administrator-section-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-archive">
+                        <rect width="20" height="5" x="2" y="3" rx="1"/>
+                        <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/>
+                        <path d="M10 12h4"/>
+                    </svg>
+                    Archives
+                </div>
+                <div class="administrator-section-content">
+                    <div class="archives-board" id="archives-board">
+                        <p class="archives-intro">Dépêches déjà lues, classées par date d’événement.</p>
+                        <div class="archives-news-list" id="archives-news-list"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Report Section -->
             <div class="administrator-section" id="admin-section-report">
                     <div class="administrator-section-title">
@@ -2872,6 +2908,36 @@
                     <button class="tutorial-close-btn">Fermer</button>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- News event modal (blocking queue) -->
+<div
+    id="news-event-modal"
+    class="news-event-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="news-event-title"
+    aria-hidden="true"
+>
+    <div class="news-event-modal-card">
+        <div class="news-event-modal-header">
+            <h3 id="news-event-title">Dépêche</h3>
+            <p class="news-event-modal-meta" id="news-event-meta"></p>
+        </div>
+        <div class="news-event-modal-content">
+            <p class="news-event-modal-body" id="news-event-body"></p>
+            <div class="news-event-paywall" id="news-event-paywall" hidden>
+                <div class="news-event-paywall-actions">
+                    <button type="button" class="modal-btn modal-btn-primary" id="news-event-pay-btn" disabled>Payer</button>
+                    <button type="button" class="modal-btn" id="news-event-skip-btn">Lire d’autres nouvelles</button>
+                </div>
+                <p class="news-event-funds-hint" id="news-event-funds-hint"></p>
+            </div>
+        </div>
+        <div class="news-event-modal-footer">
+            <button type="button" class="modal-btn modal-btn-primary" id="news-event-next-btn">Lire le suivant</button>
         </div>
     </div>
 </div>
