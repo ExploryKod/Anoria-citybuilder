@@ -13,6 +13,11 @@
   transition: opacity 0.25s ease;
 }
 
+/* Keep [hidden] authoritative — base display:flex must not override it */
+.news-event-modal[hidden] {
+  display: none !important;
+}
+
 .news-event-modal.active,
 .news-event-modal.visible {
   opacity: 1;

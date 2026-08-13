@@ -1,5 +1,5 @@
 
-/* Legend buttons container — mobile shortcuts (toolbar / caméra) */
+/* Legend buttons container — construction FABs above bottom command bar (all breakpoints) */
 .legend-btns-container {
   display: none;
   z-index: var(--z-index-legend);
@@ -22,34 +22,38 @@
   box-sizing: border-box;
 }
 
-@media (min-width: 1025px) {
-  .legend-btns-container--mobile {
-    display: none !important;
-  }
+.legend-btns-container--mobile {
+  display: flex !important;
+  position: fixed;
+  left: 50%;
+  right: auto;
+  bottom: calc(
+    var(--hud-bottom-height, 56px)
+    + env(safe-area-inset-bottom, 0px)
+    + 10px
+  );
+  transform: translateX(-50%);
+  /* Above hud-actions (legend+2) so FABs never sit behind the command bar */
+  z-index: calc(var(--z-index-legend, 1000) + 5);
+  pointer-events: auto;
 }
 
-/* Mobile / tablet: fixed FABs above the bottom command bar (portrait + landscape) */
-@media screen and (max-width: 1024px) {
-  .legend-btns-container--mobile {
-    display: flex !important;
-    position: fixed;
-    left: 50%;
-    right: auto;
-    bottom: calc(
-      var(--hud-bottom-height, 56px)
-      + env(safe-area-inset-bottom, 0px)
-      + 10px
-    );
-    transform: translateX(-50%);
-    /* Above hud-actions (legend+2) so FABs never sit behind the command bar */
-    z-index: calc(var(--z-index-legend, 1000) + 5);
-    pointer-events: auto;
-  }
+.toolbar-mobile-toggle-btn {
+  display: block !important;
+}
 
-  .toolbar-mobile-toggle-btn,
-  .toolbar-mobile-controls-toggle-btn {
-    display: block !important;
-  }
+/* Circular construction FABs at all breakpoints */
+.legend-btns-container--mobile .toolbar-toggle-btn {
+  min-width: 48px;
+  width: 48px;
+  height: 48px;
+  padding: 8px;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.legend-btns-container--mobile .toolbar-toggle-btn > span:not(.toolbar-toggle-icon):not(.sr-only) {
+  display: none;
 }
 
 /* Aide & légendes — toolbar tab */

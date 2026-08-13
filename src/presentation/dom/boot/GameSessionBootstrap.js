@@ -189,6 +189,7 @@ export async function bootstrapGameSession(assetManager) {
     initNewsEventModal({
       intelligence: sessionApi.intelligence,
       getGameTime,
+      popupManager,
       registerAppService,
     });
   }

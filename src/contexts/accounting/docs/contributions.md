@@ -1,6 +1,6 @@
 # Contributions (poste budgétaire) — lien Accounting ↔ Intelligence
 
-**Statut** : note Phase 0 — **pas encore de type journal implémenté**.
+**Statut** : type journal **implémenté** (`RecordContributionExpense` / `settleContribution`).
 
 Les **contributions** sont des **charges ponctuelles** payées pour **révéler une dépêche** (ex. nouvelles de caravane).  
 Ce n’est **pas** un abonnement mensuel.

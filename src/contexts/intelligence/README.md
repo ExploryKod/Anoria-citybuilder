@@ -47,7 +47,7 @@ Il **ne possède pas** la comptabilité des paiements : le poste budgétaire **C
 | Phase | Statut |
 |-------|--------|
 | 0 — Spec | Fait |
-| 1 — Modale event + news ville + onglet Archives admin | **En cours** |
-| 2 — Caravane + payer / delete | Non démarré |
+| 1 — Modale event + news ville + onglet Archives admin | Fait |
+| 2 — Caravane + payer / delete | **En cours** |
 | 3 — Conseillers | Non démarré |
 | 4+ — Espions / innovations | Reporté |

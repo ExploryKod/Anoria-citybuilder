@@ -1,6 +1,7 @@
 import EventBlocker from '../shell/EventBlocker.js';
 import * as eventsConfig from '../../../config/events.js';
 import { isTouchModeEnabled, setTouchModeEnabled } from '../../../config/touchMode.js';
+import { isCameraDpadEnabled, setCameraDpadEnabled } from '../../../config/cameraDpad.js';
 import { readStoredTileGridVisibility } from '../../three/managers/TileGridOverlay.js';
 import { getLastPwaUpdateAt, installLatestPwaUpdate } from '../../../pwa.js';
 
@@ -32,6 +33,7 @@ class ParametersPanel {
         this.daysPerMonthInput = null;
         this.tileGridToggle = null;
         this.touchModeToggle = null;
+        this.cameraDpadToggle = null;
         this.pwaUpdateInstallBtn = null;
         this.pwaUpdateStatus = null;
 
@@ -66,6 +68,7 @@ class ParametersPanel {
         this.daysPerMonthInput = this.panel.querySelector('#days-per-month-input');
         this.tileGridToggle = this.panel.querySelector('#tile-grid-toggle');
         this.touchModeToggle = this.panel.querySelector('#touch-mode-toggle');
+        this.cameraDpadToggle = this.panel.querySelector('#camera-dpad-toggle');
         this.pwaUpdateInstallBtn = this.panel.querySelector('#pwa-update-install-btn');
         this.pwaUpdateStatus = this.panel.querySelector('#pwa-update-status');
 
@@ -159,6 +162,12 @@ class ParametersPanel {
             });
         }
 
+        if (this.cameraDpadToggle) {
+            this.cameraDpadToggle.addEventListener('change', (e) => {
+                this.handleCameraDpadChange(e.target.checked);
+            });
+        }
+
         if (this.pwaUpdateInstallBtn) {
             this.pwaUpdateInstallBtn.addEventListener('click', (event) => {
                 event.preventDefault();
@@ -191,6 +200,10 @@ class ParametersPanel {
             if (this.touchModeToggle) {
                 this.touchModeToggle.checked = isTouchModeEnabled();
             }
+
+            if (this.cameraDpadToggle) {
+                this.cameraDpadToggle.checked = isCameraDpadEnabled();
+            }
         } catch (error) {
             console.error('[ParametersPanel] Error loading values:', error);
         }
@@ -201,6 +214,14 @@ class ParametersPanel {
             setTouchModeEnabled(enabled);
         } catch (error) {
             console.error('[ParametersPanel] Error toggling touch mode:', error);
+        }
+    }
+
+    handleCameraDpadChange(enabled) {
+        try {
+            setCameraDpadEnabled(enabled);
+        } catch (error) {
+            console.error('[ParametersPanel] Error toggling camera D-pad:', error);
         }
     }
 

@@ -16,11 +16,10 @@ export async function presentIncomingNewsEvents() {
 }
 
 /**
- * Modale event-message (file incoming uniquement).
- *
  * @param {object} deps
  * @param {object} deps.intelligence
  * @param {() => number} [deps.getGameTime]
+ * @param {object} [deps.popupManager]
  * @param {(name: string, instance: *) => void} [deps.registerAppService]
  */
 export function initNewsEventModal(deps) {
@@ -28,6 +27,13 @@ export function initNewsEventModal(deps) {
 
   const modal = document.getElementById('news-event-modal');
   if (!modal) return;
+
+  // Reset boot state — avoids FOUC leftover / stuck canvas block
+  modal.hidden = true;
+  modal.setAttribute('aria-hidden', 'true');
+  modal.classList.remove('active', 'visible', 'show');
+  deps.popupManager?.closePopup?.('news-event-modal');
+  deps.popupManager?.ensureEventsUnblocked?.();
 
   const titleEl = document.getElementById('news-event-title');
   const metaEl = document.getElementById('news-event-meta');
@@ -57,13 +63,17 @@ export function initNewsEventModal(deps) {
   }
 
   function closeModal() {
-    modal.classList.remove('active', 'visible');
+    modal.classList.remove('active', 'visible', 'show');
+    modal.hidden = true;
+    modal.setAttribute('aria-hidden', 'true');
+    deps.popupManager?.closePopup?.('news-event-modal');
+    deps.popupManager?.ensureEventsUnblocked?.();
     queue = [];
     index = 0;
     bodyRevealed = false;
   }
 
-  function render() {
+  async function render() {
     const item = currentItem();
     if (!item) {
       closeModal();
@@ -72,25 +82,23 @@ export function initNewsEventModal(deps) {
 
     const needsPay = item.revelation === 'unpaid' && !bodyRevealed;
     const showBody = item.revelation === 'free' || item.revelation === 'revealed' || bodyRevealed;
+    const price = item.access?.price ?? 10;
 
     if (titleEl) titleEl.textContent = item.title;
     if (metaEl) {
       metaEl.textContent = `${labelForNewsSource(item.sourceId)} · ${labelForNewsCategory(item.categoryId)} · ${formatTurnLabel(item.turn)}`;
     }
     if (bodyEl) {
-      bodyEl.textContent = showBody ? item.body : item.teaser || 'Une dépêche est disponible contre contribution.';
+      bodyEl.textContent = showBody
+        ? item.body
+        : item.teaser || 'Une dépêche est disponible contre contribution.';
     }
 
     if (paywallEl) {
       paywallEl.hidden = !needsPay;
     }
-    if (fundsHintEl) {
-      fundsHintEl.textContent = '';
-    }
     if (payBtn) {
-      const price = item.access?.price ?? 10;
       payBtn.textContent = `Payer ${price} €`;
-      payBtn.disabled = true; // Phase 2 : activer via canAfford
       payBtn.hidden = !needsPay;
     }
     if (skipBtn) {
@@ -99,6 +107,21 @@ export function initNewsEventModal(deps) {
     if (nextBtn) {
       nextBtn.hidden = needsPay;
       nextBtn.textContent = 'Lire le suivant';
+    }
+
+    if (needsPay) {
+      let canPay = false;
+      try {
+        canPay = (await deps.intelligence.canAffordContribution?.(price)) === true;
+      } catch {
+        canPay = false;
+      }
+      if (payBtn) payBtn.disabled = !canPay;
+      if (fundsHintEl) {
+        fundsHintEl.textContent = canPay ? 'Vous avez les fonds' : 'Fonds insuffisants';
+      }
+    } else if (fundsHintEl) {
+      fundsHintEl.textContent = '';
     }
   }
 
@@ -116,7 +139,7 @@ export function initNewsEventModal(deps) {
       closeModal();
       return;
     }
-    render();
+    await render();
   }
 
   async function skipUnpaidAndAdvance() {
@@ -132,7 +155,34 @@ export function initNewsEventModal(deps) {
       closeModal();
       return;
     }
-    render();
+    await render();
+  }
+
+  async function payCurrent() {
+    const item = currentItem();
+    if (!item || item.revelation !== 'unpaid' || bodyRevealed) return;
+
+    const turn = deps.getGameTime?.() ?? item.turn;
+    if (payBtn) payBtn.disabled = true;
+    const result = await deps.intelligence.payForNewsItem({
+      newsItemId: item.id,
+      turn,
+    });
+
+    if (!result?.ok) {
+      if (fundsHintEl) {
+        fundsHintEl.textContent =
+          result?.reason === 'insufficient_funds'
+            ? 'Fonds insuffisants'
+            : 'Paiement impossible';
+      }
+      await render();
+      return;
+    }
+
+    queue[index] = result.item;
+    bodyRevealed = true;
+    await render();
   }
 
   nextBtn?.addEventListener('click', () => {
@@ -141,18 +191,25 @@ export function initNewsEventModal(deps) {
   skipBtn?.addEventListener('click', () => {
     void skipUnpaidAndAdvance();
   });
-  // Phase 2 : payBtn settle + reveal
+  payBtn?.addEventListener('click', () => {
+    void payCurrent();
+  });
 
   presentIncomingHandler = async () => {
-    if (modal.classList.contains('active') || modal.classList.contains('visible')) {
+    if (
+      !modal.hidden &&
+      (modal.classList.contains('active') || modal.classList.contains('visible'))
+    ) {
       return;
     }
     queue = await deps.intelligence.listIncomingNews();
     if (!queue.length) return;
     index = 0;
     bodyRevealed = false;
+    modal.hidden = false;
+    modal.setAttribute('aria-hidden', 'false');
     modal.classList.add('active', 'visible');
-    render();
+    await render();
   };
 
   deps.registerAppService?.('newsEventModal', {

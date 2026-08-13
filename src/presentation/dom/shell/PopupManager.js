@@ -193,8 +193,12 @@ class PopupManager {
 
     /**
      * Vérifie si une popup est ouverte
+     * `[hidden]` gagne toujours : une modale masquée ne doit ni bloquer le canvas ni pauser.
      */
     isPopupOpen(element) {
+        if (!element || element.hidden) {
+            return false;
+        }
         return element.classList.contains('active') || 
                element.classList.contains('visible') ||
                element.classList.contains('show');
@@ -206,7 +210,10 @@ class PopupManager {
     openPopup(popupId) {
         // Vérifier l'état réel du DOM plutôt que juste notre Set interne
         const element = document.getElementById(popupId);
-        const isActuallyActive = element && element.classList.contains('active');
+        if (element?.hidden) {
+            return;
+        }
+        const isActuallyActive = element && this.isPopupOpen(element);
         
         if (this.activePopups.has(popupId) && isActuallyActive) {
             return;

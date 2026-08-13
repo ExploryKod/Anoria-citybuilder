@@ -419,7 +419,8 @@ Les fichiers `CivilServantSalaryPolicy.js` et `UnemploymentBenefitPolicy.js` con
 | `import_{productId}` | Import commerce | Charge | `BudgetManager.addImportExpense()` → **`RecordCommerceImportExpense`** (Phase 3½) |
 | `exceptional_expenses` | Réparation (événement) | Charge | `BudgetManager.addExceptionalExpense()` → **`RecordExceptionalExpense`** (Phase 3½) |
 | `commercial_route` | Commission négociants | Charge | `BudgetManager.addCommercialRouteFee()` → **`RecordCommercialRouteExpense`** (Phase 3½) |
-| `contribution` | **(cible)** Contribution pour révéler une dépêche (ex. caravane) | Charge | **Non implémenté** — `businessKey: contribution:news:{id}` ; voir [`docs/contributions.md`](docs/contributions.md) |
+| `contribution` | Contribution pour révéler une dépêche | Charge | **`RecordContributionExpense` / `settleContribution`** (`businessKey: contribution:news:{id}`) |
+
 | `carry_forward` | Report à nouveau | Revenu ou charge (signe) | **`SyncTurnInformativeEntries`** → `RecordCarryForwardEntry` (Phase 4 slice 6) |
 | `balance` | Snapshot trésorerie / tour | Informatif (session) | **`SyncTurnInformativeEntries`** → `RecordBalanceSnapshot` |
 | `cumul_*` | Totaux annuels | Informatif | **`SyncTurnInformativeEntries`** → `RecordYearCumulEntries` |

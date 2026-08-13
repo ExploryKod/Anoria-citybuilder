@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="./src/presentation/dom/styles/tooltip.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/tutorial.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/objectives.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/news-event-modal.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/parameters.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/legends.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/hud.css">
@@ -49,7 +50,6 @@
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/trade-map.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/health-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/archives-section.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/news-event-modal.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/administrator-panel-flat.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/multiplayer.css" media="print" onload="this.media='all'">
     <noscript>
@@ -189,51 +189,21 @@
             </button>
         </div>
 
-        <!-- Toolbar with tabs -->
-        <section id="toolbar" class="toolbar mobile-hidden">
-            <!-- Draggable handle -->
-            <button type="button" id="toolbarheader" class="toolbar-drag-handle hud-pop-rail__drag" title="Déplacer" aria-label="Déplacer la barre de construction">✋</button>
+        <!-- Hidden toolbar stubs — gating / MobileClickStateFab sync (visible UI = build bar + right rail) -->
+        <section id="toolbar" class="toolbar mobile-hidden toolbar--stubs" hidden aria-hidden="true">
+            <button type="button" id="toolbarheader" class="toolbar-drag-handle" tabindex="-1" aria-hidden="true"></button>
             <div class="toolbar-panel__body">
-
-            <!-- Tab buttons -->
-            <div class="toolbar__container toolbar-tabs-container">
-                <div class="toolbar__sub-container">
-                    <div class="toolbar__label">Onglets</div>
-                    <div class="toolbar__buttons">
-                        <button type="button" class="toolbar-btn toolbar-tab active" data-tab="building" title="Bâtiments">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home">
-                                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                                <polyline points="9 22 9 12 15 12 15 22"/>
-                            </svg>
-                        </button>
-                        <button type="button" class="toolbar-btn toolbar-tab" data-tab="filters" title="Filtres">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-funnel">
-                                <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/>
-                            </svg>
-                        </button>
-                        <button type="button" class="toolbar-btn toolbar-tab" data-tab="settings" title="Paramètres">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings">
-                                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-                                <circle cx="12" cy="12" r="3"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Building section (default active) -->
             <div class="toolbar-section toolbar-section-building active" data-section="building">
                 <div class="toolbar__container">
                     <div class="toolbar__sub-container">
-                        <div class="toolbar__label">Outils</div>
                         <div class="toolbar__buttons">
-                            <button type="button" id="bulldoze-btn" data-toolid="bulldoze" class="toolbar-btn bulldoze-btn" title="Démolir" aria-label="Démolir">
+                            <button type="button" id="bulldoze-btn" data-toolid="bulldoze" class="toolbar-btn bulldoze-btn" title="Démolir" aria-label="Démolir" tabindex="-1">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eraser">
                                     <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/>
                                     <path d="M22 21H7"/><path d="m5 11 9 9"/>
                                 </svg>
                             </button>
-                            <button type="button" id="select-btn" data-toolid="select-object" class="toolbar-btn selected" title="Sélectionner (clic droit sur un bâtiment)" aria-label="Sélectionner">
+                            <button type="button" id="select-btn" data-toolid="select-object" class="toolbar-btn selected" title="Sélectionner" aria-label="Sélectionner" tabindex="-1">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-mouse-pointer">
                                     <path d="M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/>
                                     <path d="m12 12 4 10 1.7-4.3L22 16Z"/>
@@ -342,87 +312,14 @@
                 </div>
 
             </div>
-            <!-- End Building section -->
+            <!-- End Building section stubs -->
 
-            <!-- Filters section (map overlay toggles) -->
-            <div class="toolbar-section toolbar-section-filters" data-section="filters">
-                <div class="toolbar__container">
-                    <div class="toolbar__sub-container">
-                        <div class="toolbar__label">Production</div>
-                        <div class="toolbar__buttons">
-                            <button
-                                type="button"
-                                id="filter-production-btn"
-                                class="toolbar-btn filter-toggle active"
-                                title="Icônes de production (chaîne alimentaire)"
-                                aria-label="Afficher ou masquer les icônes de production"
-                                aria-pressed="true"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wheat">
-                                    <path d="M2 22 16 8"/>
-                                    <path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                                    <path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 15l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                                    <path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 11l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                                    <path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/>
-                                    <path d="M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                                    <path d="M15.47 13.47 17 15l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                                    <path d="M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- End Filters section -->
-
-            <!-- Settings section — gestion moved to HUD rail; paramètres via FAB bas -->
-            <div class="toolbar-section toolbar-section-settings" data-section="settings">
-                <div class="toolbar__container">
-                    <div class="toolbar__sub-container">
-                        <div class="toolbar__label">Légendes</div>
-                        <div class="toolbar__buttons">
-                            <button type="button" id="legend-toolbar-btn" class="toolbar-btn" data-group="legendToolbar" title="Légende des boutons de la barre d'outils" aria-label="Légende des boutons de la barre d'outils">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <path d="M12 16v-4"/>
-                                    <path d="M12 8h.01"/>
-                                </svg>
-                            </button>
-                            <button type="button" id="finance-legend-btn" class="toolbar-btn" data-group="legendFinance" title="Légende des boutons finances" aria-label="Légende des boutons finances">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet">
-                                    <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
-                                    <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="toolbar__container">
-                    <div class="toolbar__sub-container">
-                        <div class="manager-label">Jeu</div>
-                        <div class="toolbar__buttons">
-                            <button type="button" id="tutorial-btn" data-toolid="tutorial" class="toolbar-btn" title="Démarrer le tutoriel" aria-label="Démarrer le tutoriel">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open">
-                                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-                                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-                                </svg>
-                            </button>
-                            <button type="button" id="objectives-btn" data-toolid="objectives" class="toolbar-btn" title="Démarrer les objectifs" aria-label="Démarrer les objectifs">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-target">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <circle cx="12" cy="12" r="6"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- End Settings section -->
+            <!-- Stubs kept for legend finance modal opener -->
+            <button type="button" id="finance-legend-btn" class="toolbar-btn" data-group="legendFinance" title="Légende finances" aria-label="Légende finances" tabindex="-1" hidden></button>
             </div>
       </section>
 
-      <!-- Mobile Camera Controls - Only visible on mobile/tablet -->
+      <!-- Mobile Camera Controls — shown when Paramètres « Contrôles caméra » is ON -->
       <div id="mobile-camera-controls" class="mobile-camera-controls mobile-hidden">
           <div id="mobile-camera-drag-handle" class="mobile-camera-controls__drag-handle" title="Déplacer" aria-label="Déplacer le panneau caméra">✋</div>
           <div class="mobile-controls-group">
@@ -522,26 +419,28 @@
                   </span>
                 </button>
               </div>
+        </div>
 
-              <div class="legend-btns toolbar-mobile-controls-toggle-btn">
-                <button id="mobile-controls-toggle" class="toolbar-toggle-btn" title="Afficher/masquer les contrôles caméra" aria-pressed="false">
-                  <span class="toolbar-toggle-icon toolbar-toggle-icon--open" aria-hidden="true">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-crosshair">
-                      <circle cx="12" cy="12" r="10"/>
-                      <line x1="12" y1="1" x2="12" y2="23"/>
-                      <line x1="1" y1="12" x2="23" y2="12"/>
-                    </svg>
-                  </span>
-                  <span class="toolbar-toggle-icon toolbar-toggle-icon--close" aria-hidden="true">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
-                      <path d="m18 6-12 12"/>
-                      <path d="m6 6 12 12"/>
-                    </svg>
-                  </span>
-                  <span class="sr-only">Basculer les contrôles caméra</span>
-                </button>
-              </div>
-
+        <!-- Camera D-pad FAB — visibility gated by Paramètres (anoria.cameraDpad) -->
+        <div id="camera-dpad-fab" class="camera-dpad-fab" hidden aria-hidden="true">
+          <div class="legend-btns toolbar-mobile-controls-toggle-btn">
+            <button id="mobile-controls-toggle" class="toolbar-toggle-btn" title="Afficher/masquer les contrôles caméra" aria-pressed="false">
+              <span class="toolbar-toggle-icon toolbar-toggle-icon--open" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-crosshair">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="1" x2="12" y2="23"/>
+                  <line x1="1" y1="12" x2="23" y2="12"/>
+                </svg>
+              </span>
+              <span class="toolbar-toggle-icon toolbar-toggle-icon--close" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
+                  <path d="m18 6-12 12"/>
+                  <path d="m6 6 12 12"/>
+                </svg>
+              </span>
+              <span class="sr-only">Basculer les contrôles caméra</span>
+            </button>
+          </div>
         </div>
 
         <aside id="hud-pop-rail" class="info-panel-pop-detail hud-pop-detail hud-pop-rail" aria-label="Population">
@@ -650,6 +549,81 @@
                     </span>
                 </article>
             </div>
+            <button
+                type="button"
+                id="filter-production-btn"
+                class="info-box filter-production-box stats-buttons filter-toggle active"
+                title="Icônes de production (chaîne alimentaire)"
+                aria-label="Afficher ou masquer les icônes de production"
+                aria-pressed="true"
+            >
+                <article class="budget-box">
+                    <span class="budget-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wheat">
+                            <path d="M2 22 16 8"/>
+                            <path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                            <path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 15l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                            <path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 11l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                            <path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/>
+                            <path d="M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
+                            <path d="M15.47 13.47 17 15l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
+                            <path d="M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
+                        </svg>
+                    </span>
+                </article>
+            </button>
+            <button
+                type="button"
+                id="legend-toolbar-btn"
+                class="info-box legend-toolbar-box stats-buttons"
+                data-group="legendToolbar"
+                title="Légende des boutons de la barre d'outils"
+                aria-label="Légende des boutons de la barre d'outils"
+            >
+                <article class="budget-box">
+                    <span class="budget-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 16v-4"/>
+                            <path d="M12 8h.01"/>
+                        </svg>
+                    </span>
+                </article>
+            </button>
+            <button
+                type="button"
+                id="tutorial-btn"
+                data-toolid="tutorial"
+                class="info-box tutorial-box stats-buttons"
+                title="Démarrer le tutoriel"
+                aria-label="Démarrer le tutoriel"
+            >
+                <article class="budget-box">
+                    <span class="budget-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                        </svg>
+                    </span>
+                </article>
+            </button>
+            <button
+                type="button"
+                id="objectives-btn"
+                data-toolid="objectives"
+                class="info-box objectives-box stats-buttons"
+                title="Démarrer les objectifs"
+                aria-label="Démarrer les objectifs"
+            >
+                <article class="budget-box">
+                    <span class="budget-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-target">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="6"/>
+                        </svg>
+                    </span>
+                </article>
+            </button>
         </nav>
 
         <aside
@@ -803,8 +777,32 @@
                         </svg>
                     </button>
                 </header>
-                <nav class="mobile-build-bar__pills" role="tablist" aria-label="Catégories"></nav>
-                <div class="mobile-build-bar__carousel splide" role="group" aria-label="Outils">
+                <div class="mobile-build-bar__pills-row">
+                    <button type="button" id="mobile-build-bar-pills-prev" class="mobile-build-bar__arrow mobile-build-bar__pills-arrow" aria-label="Catégories précédentes">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m15 18-6-6 6-6"/>
+                        </svg>
+                    </button>
+                    <nav class="mobile-build-bar__pills" role="tablist" aria-label="Catégories"></nav>
+                    <button type="button" id="mobile-build-bar-pills-next" class="mobile-build-bar__arrow mobile-build-bar__pills-arrow" aria-label="Catégories suivantes">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m9 18 6-6-6-6"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="mobile-build-bar__carousel splide" id="mobile-build-bar-tools" role="tabpanel" aria-label="Outils">
+                    <div class="splide__arrows mobile-build-bar__arrows">
+                        <button type="button" class="splide__arrow splide__arrow--prev mobile-build-bar__arrow" aria-label="Outils précédents">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="m15 18-6-6 6-6"/>
+                            </svg>
+                        </button>
+                        <button type="button" class="splide__arrow splide__arrow--next mobile-build-bar__arrow" aria-label="Outils suivants">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="m9 18 6-6-6-6"/>
+                            </svg>
+                        </button>
+                    </div>
                     <div class="splide__track">
                         <ul class="splide__list"></ul>
                     </div>
@@ -2912,7 +2910,7 @@
     </div>
 </div>
 
-<!-- News event modal (blocking queue) -->
+<!-- News event modal (hidden until opened — avoids FOUC before CSS) -->
 <div
     id="news-event-modal"
     class="news-event-modal"
@@ -2920,6 +2918,7 @@
     aria-modal="true"
     aria-labelledby="news-event-title"
     aria-hidden="true"
+    hidden
 >
     <div class="news-event-modal-card">
         <div class="news-event-modal-header">
@@ -3050,6 +3049,20 @@
                         </label>
                         <p id="touch-mode-hint" class="parameters-shortcut-label" style="margin: 6px 0 0; padding-left: 0;">
                             Pose en deux temps : ancrage du bâtiment, rotation, puis validation.
+                        </p>
+                    </div>
+                    <div class="parameters-control-group" style="margin-top: 12px;">
+                        <label class="parameters-control-label" for="camera-dpad-toggle">
+                            <span class="parameters-control-text">Contrôles caméra (D-pad)</span>
+                            <input
+                                type="checkbox"
+                                id="camera-dpad-toggle"
+                                class="parameters-switch"
+                                aria-describedby="camera-dpad-hint"
+                            >
+                        </label>
+                        <p id="camera-dpad-hint" class="parameters-shortcut-label" style="margin: 6px 0 0; padding-left: 0;">
+                            Affiche un bouton flottant pour ouvrir le D-pad de déplacement de la caméra.
                         </p>
                     </div>
                 </div>

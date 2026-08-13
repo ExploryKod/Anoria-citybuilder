@@ -1,5 +1,6 @@
 import * as eventsConfig from '../../../config/events.js';
 import { isTouchModeEnabled, setTouchModeEnabled } from '../../../config/touchMode.js';
+import { isCameraDpadEnabled, setCameraDpadEnabled } from '../../../config/cameraDpad.js';
 import { bootSiteChrome } from '../site/bootSiteChrome.js';
 import { getLastPwaUpdateAt, installLatestPwaUpdate } from '../../../pwa.js';
 
@@ -20,6 +21,7 @@ const probabilityInput = document.getElementById('settings-event-probability');
 const daysPerMonthInput = document.getElementById('settings-days-per-month');
 const tileGridToggle = document.getElementById('settings-tile-grid');
 const touchModeToggle = document.getElementById('settings-touch-mode');
+const cameraDpadToggle = document.getElementById('settings-camera-dpad');
 const saveBtn = document.getElementById('settings-save-btn');
 const pwaUpdateBtn = document.getElementById('settings-pwa-update-btn');
 const pwaUpdateStatus = document.getElementById('settings-pwa-update-status');
@@ -60,6 +62,9 @@ function loadValues() {
   if (touchModeToggle) {
     touchModeToggle.checked = isTouchModeEnabled();
   }
+  if (cameraDpadToggle) {
+    cameraDpadToggle.checked = isCameraDpadEnabled();
+  }
   refreshPwaUpdateStatus();
 }
 
@@ -82,6 +87,9 @@ function saveValues() {
   }
   if (touchModeToggle) {
     setTouchModeEnabled(touchModeToggle.checked);
+  }
+  if (cameraDpadToggle) {
+    setCameraDpadEnabled(cameraDpadToggle.checked);
   }
 }
 

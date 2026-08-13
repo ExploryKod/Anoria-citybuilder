@@ -105,7 +105,7 @@ function fakeIntelligence() {
   let newsCalls = 0;
   return {
     newsCalls: () => newsCalls,
-    generateMonthlyCityNews: async () => {
+    generateMonthlyNews: async () => {
       newsCalls += 1;
       return [];
     },

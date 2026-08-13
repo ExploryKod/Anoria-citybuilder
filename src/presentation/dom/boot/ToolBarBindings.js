@@ -1,19 +1,14 @@
 import {
   bullDozeButton,
-  farmsButton,
-  housesButton,
-  industryButton,
-  infrastructureButton,
-  marketButton,
-  palacesButton,
   panelLayoutCloseBtn,
-  roadButton,
   selectButton,
-  workshopButton,
 } from '../shell/nodes.js';
 import { closeModal, toggleModal } from '../tools/ToolPanel.js';
 
 /**
+ * Wire tools that still live as DOM stubs / right-rail actions.
+ * Category construction opens via MobileCompactToolbar → ToolPanel (no left toolbar modals).
+ *
  * @param {{
  *   buttonStateManager?: { isEnabled?: (id: string) => boolean } | null,
  *   invokeSetActiveTool?: (e: Event) => void,
@@ -21,52 +16,19 @@ import { closeModal, toggleModal } from '../tools/ToolPanel.js';
  */
 export function initToolBarBindings(bindingDeps = {}) {
   const {
-    buttonStateManager = null,
     invokeSetActiveTool = () => {},
   } = bindingDeps;
 
-  bullDozeButton.addEventListener('click', (e) => {
+  bullDozeButton?.addEventListener('click', (e) => {
     invokeSetActiveTool(e);
   });
 
-  selectButton.addEventListener('click', (e) => {
+  selectButton?.addEventListener('click', (e) => {
     invokeSetActiveTool(e);
   });
 
-  roadButton?.addEventListener('click', (e) => {
-    toggleModal(e);
-  });
-
-  housesButton.addEventListener('click', (e) => {
-    toggleModal(e);
-  });
-
-  palacesButton.addEventListener('click', (e) => {
-    if (buttonStateManager && !buttonStateManager.isEnabled('palace-btn')) {
-      return;
-    }
-    toggleModal(e);
-  });
-
-  farmsButton.addEventListener('click', toggleModal);
-  industryButton.addEventListener('click', toggleModal);
-  workshopButton?.addEventListener('click', toggleModal);
-
-  marketButton.addEventListener('click', toggleModal);
-
-  infrastructureButton.addEventListener('click', (e) => {
-    if (buttonStateManager && !buttonStateManager.isEnabled('infrastructure-btn')) {
-      return;
-    }
-    toggleModal(e);
-  });
-
-  document.getElementById('public-btn')?.addEventListener('click', toggleModal);
-  document.getElementById('nature-btn')?.addEventListener('click', toggleModal);
-  document.getElementById('decoration-btn')?.addEventListener('click', toggleModal);
-  document.getElementById('tombs-btn')?.addEventListener('click', toggleModal);
   document.getElementById('legend-toolbar-btn')?.addEventListener('click', toggleModal);
   document.getElementById('finance-legend-btn')?.addEventListener('click', toggleModal);
 
-  panelLayoutCloseBtn.addEventListener('click', closeModal);
+  panelLayoutCloseBtn?.addEventListener('click', closeModal);
 }
