@@ -175,6 +175,8 @@ export function closeModal() {
   });
   if (panelLayout.classList.contains('active')) {
     panelLayout.classList.remove('active');
+    panelLayout.setAttribute('inert', '');
+    panelLayout.setAttribute('aria-hidden', 'true');
 
     const canvas = document.querySelector('canvas');
     if (canvas) {
@@ -195,6 +197,8 @@ export function toggleModal(e) {
   if (!creator) {
     button.classList.toggle('selected');
     panelLayout.classList.remove('active');
+    panelLayout.setAttribute('inert', '');
+    panelLayout.setAttribute('aria-hidden', 'true');
     return;
   }
 
@@ -209,6 +213,8 @@ export function toggleModal(e) {
   if (!panelLayout.classList.contains('active')) {
     loaderButton.classList.add('active');
     panelLayout.classList.add('active');
+    panelLayout.removeAttribute('inert');
+    panelLayout.setAttribute('aria-hidden', 'false');
     button.classList.toggle('selected');
     creator();
     deps?.popupManager?.forceOpenPopup('panel-layout');

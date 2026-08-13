@@ -924,6 +924,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
     replay() {
       isOver = false;
       overOverlay.classList.remove('active');
+      overOverlay.setAttribute('inert', '');
+      overOverlay.setAttribute('aria-hidden', 'true');
+      document.getElementById('play-again-btn')?.setAttribute('tabindex', '-1');
       resetCumulativeDeaths();
 
       try {

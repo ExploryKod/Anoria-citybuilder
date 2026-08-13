@@ -16,10 +16,22 @@ export function initMobileToolbar() {
   const mobileControlsElement = document.getElementById('mobile-camera-controls');
   const cameraDpadFab = document.getElementById('camera-dpad-fab');
 
+  const setMobileControlsInert = (inert) => {
+    if (!mobileControlsElement) return;
+    if (inert) {
+      mobileControlsElement.setAttribute('inert', '');
+      mobileControlsElement.setAttribute('aria-hidden', 'true');
+    } else {
+      mobileControlsElement.removeAttribute('inert');
+      mobileControlsElement.setAttribute('aria-hidden', 'false');
+    }
+  };
+
   const closeMobileControls = () => {
     if (!mobileControlsElement) return;
     mobileControlsElement.classList.remove('mobile-visible');
     mobileControlsElement.classList.add('mobile-hidden');
+    setMobileControlsInert(true);
     resetFloatingPanelDragStyles(mobileControlsElement);
     if (mobileControlsToggle) {
       mobileControlsToggle.classList.remove('active');
@@ -55,6 +67,7 @@ export function initMobileToolbar() {
     if (!isCameraDpadEnabled()) {
       mobileControlsElement.classList.remove('mobile-visible');
       mobileControlsElement.classList.add('mobile-hidden');
+      setMobileControlsInert(true);
       resetFloatingPanelDragStyles(mobileControlsElement);
       if (mobileControlsToggle) {
         mobileControlsToggle.classList.remove('active');
@@ -64,7 +77,9 @@ export function initMobileToolbar() {
     }
     if (!mobileControlsElement.classList.contains('mobile-visible')) {
       mobileControlsElement.classList.add('mobile-hidden');
+      setMobileControlsInert(true);
     } else {
+      setMobileControlsInert(false);
       resetFloatingPanelDragStyles(mobileControlsElement);
     }
   };
@@ -121,6 +136,7 @@ export function initMobileToolbar() {
         resetFloatingPanelDragStyles(mobileControlsElement);
         mobileControlsElement.classList.remove('mobile-hidden');
         mobileControlsElement.classList.add('mobile-visible');
+        setMobileControlsInert(false);
         mobileControlsToggle.classList.add('active');
         mobileControlsToggle.setAttribute('aria-pressed', 'true');
       }

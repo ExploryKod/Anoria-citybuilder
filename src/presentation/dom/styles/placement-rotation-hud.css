@@ -21,7 +21,10 @@
   transition: opacity 0.15s ease, visibility 0.15s ease;
 }
 
-.placement-rotation-hud.hidden {
+.placement-rotation-hud.hidden,
+.placement-rotation-hud[hidden] {
+  /* display:none — visibility:hidden alone still leaves controls in the Tab order */
+  display: none !important;
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;

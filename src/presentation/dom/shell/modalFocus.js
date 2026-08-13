@@ -20,9 +20,21 @@ export function getFocusableElements(panel) {
   if (!panel) return [];
   return [...panel.querySelectorAll(FOCUSABLE_SELECTOR)].filter((el) => {
     if (!(el instanceof HTMLElement)) return false;
+    // Respect roving tabindex (inactive tabs, etc.)
+    if (el.tabIndex < 0) return false;
     if (el.closest('[hidden]')) return false;
-    const style = window.getComputedStyle(el);
-    return style.display !== 'none' && style.visibility !== 'hidden';
+    if (el.closest('[inert]')) return false;
+    // Walk ancestors: a visible child inside display:none is still not focusable.
+    let node = /** @type {Element | null} */ (el);
+    while (node && node instanceof Element) {
+      const style = window.getComputedStyle(node);
+      if (style.display === 'none' || style.visibility === 'hidden') {
+        return false;
+      }
+      if (node === panel) break;
+      node = node.parentElement;
+    }
+    return true;
   });
 }
 
@@ -62,6 +74,9 @@ function resolveInitialFocus(panel, initialFocus) {
 
 /**
  * Activate keyboard modal behaviour on a panel. Call `release()` on close.
+ *
+ * Tab is fully trapped (capture + preventDefault) so focus cannot reach the game HUD
+ * behind the overlay — EventBlocker must not swallow Tab/Escape (see EventBlocker).
  *
  * @param {ModalFocusSessionOptions} options
  * @returns {ModalFocusSession}
@@ -119,8 +134,10 @@ export function createModalFocusSession(options) {
     if (event.key !== 'Tab') return;
 
     const focusables = getFocusableElements(panel);
+    event.preventDefault();
+    event.stopPropagation();
+
     if (focusables.length === 0) {
-      event.preventDefault();
       panel.focus();
       return;
     }
@@ -128,22 +145,27 @@ export function createModalFocusSession(options) {
     const first = focusables[0];
     const last = focusables[focusables.length - 1];
     const focused = document.activeElement;
+    const currentIndex =
+      focused instanceof HTMLElement ? focusables.indexOf(focused) : -1;
 
     if (event.shiftKey) {
-      if (focused === first || !panel.contains(focused)) {
-        event.preventDefault();
+      if (currentIndex <= 0) {
         last.focus();
+      } else {
+        focusables[currentIndex - 1].focus();
       }
       return;
     }
 
-    if (focused === last || !panel.contains(focused)) {
-      event.preventDefault();
+    if (currentIndex === -1 || currentIndex >= focusables.length - 1) {
       first.focus();
+    } else {
+      focusables[currentIndex + 1].focus();
     }
   }
 
-  document.addEventListener('keydown', handleDocumentKeyDown);
+  // Capture: run even when other document listeners exist; Tab is not blocked by EventBlocker.
+  document.addEventListener('keydown', handleDocumentKeyDown, true);
 
   requestAnimationFrame(() => {
     if (!active) return;
@@ -154,14 +176,19 @@ export function createModalFocusSession(options) {
     release({ restoreFocus = true } = {}) {
       if (!active) return;
       active = false;
-      document.removeEventListener('keydown', handleDocumentKeyDown);
+      document.removeEventListener('keydown', handleDocumentKeyDown, true);
       panel.setAttribute('aria-hidden', 'true');
       if (restoreFocus && lastFocused && typeof lastFocused.focus === 'function') {
-        try {
-          lastFocused.focus();
-        } catch {
-          /* element may have been removed */
-        }
+        // Defer: callers often clear `inert` on #game-window in the same turn after release.
+        requestAnimationFrame(() => {
+          try {
+            if (lastFocused.isConnected) {
+              lastFocused.focus();
+            }
+          } catch {
+            /* element may have been removed */
+          }
+        });
       }
     },
     isActive() {

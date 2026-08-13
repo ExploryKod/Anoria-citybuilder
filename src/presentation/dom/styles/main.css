@@ -635,6 +635,19 @@ canvas.pointer-events-disabled {
     transition: opacity 0.3s ease-in;
 }
 
+/* Opacity alone does not remove focusables from the Tab order */
+.game-window .panel-layout:not(.active),
+.game-window .pause-overlay:not(.active),
+.game-window .over-overlay:not(.active) {
+    visibility: hidden;
+}
+
+.game-window .panel-layout.active,
+.game-window .pause-overlay.active,
+.game-window .over-overlay.active {
+    visibility: visible;
+}
+
 .game-window .panel-layout {
     min-height: 100vh;
     display: flex;

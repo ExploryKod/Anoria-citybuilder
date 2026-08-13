@@ -433,6 +433,10 @@ class GameUI {
     showGameOver(message = null) {
         if (overOverlay) {
             overOverlay.classList.add('active');
+            overOverlay.removeAttribute('inert');
+            overOverlay.setAttribute('aria-hidden', 'false');
+            const playAgain = overOverlay.querySelector('#play-again-btn');
+            playAgain?.removeAttribute('tabindex');
             if (message && overOverlayMessage) {
                 overOverlayMessage.textContent = message;
             }
@@ -445,6 +449,10 @@ class GameUI {
     hideGameOver() {
         if (overOverlay) {
             overOverlay.classList.remove('active');
+            overOverlay.setAttribute('inert', '');
+            overOverlay.setAttribute('aria-hidden', 'true');
+            const playAgain = overOverlay.querySelector('#play-again-btn');
+            playAgain?.setAttribute('tabindex', '-1');
         }
     }
 

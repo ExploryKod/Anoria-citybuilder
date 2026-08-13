@@ -443,6 +443,7 @@ export function setBuildingInfoAriaHidden(hidden) {
 export function openBuildingInfoOverlay(overlay = getOverlay()) {
   if (!overlay) return;
   overlay.classList.add('active');
+  overlay.removeAttribute('inert');
   setBuildingInfoAriaHidden(false);
   buildingInfoFocusSession?.release({ restoreFocus: false });
   buildingInfoFocusSession = createModalFocusSession({
@@ -458,5 +459,6 @@ export function closeBuildingInfoOverlay(overlay = getOverlay()) {
   buildingInfoFocusSession?.release();
   buildingInfoFocusSession = null;
   overlay.classList.remove('active');
+  overlay.setAttribute('inert', '');
   setBuildingInfoAriaHidden(true);
 }

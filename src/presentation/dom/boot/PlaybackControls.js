@@ -51,12 +51,16 @@ export function initPlaybackControls(controlDeps = {}) {
 
   playButton.addEventListener('click', () => {
     pauseOverlay.classList.remove('active');
+    pauseOverlay.setAttribute('inert', '');
+    pauseOverlay.setAttribute('aria-hidden', 'true');
     popupManager?.forceClosePopup?.('pause-overlay');
     playGame();
   });
 
   pauseButton.addEventListener('click', () => {
     pauseOverlay.classList.add('active');
+    pauseOverlay.removeAttribute('inert');
+    pauseOverlay.setAttribute('aria-hidden', 'false');
     popupManager?.forceOpenPopup?.('pause-overlay');
     pauseGame();
   });

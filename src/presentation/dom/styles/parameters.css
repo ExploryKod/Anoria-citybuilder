@@ -11,8 +11,9 @@
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
     z-index: var(--z-index-modal);
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.25s ease, transform 0.25s ease;
+    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
     display: flex;
     flex-direction: column;
     color: var(--primary);
@@ -20,6 +21,7 @@
 
 .parameters-panel.visible {
     opacity: 1;
+    visibility: visible;
     transform: translate(-50%, -50%) scale(1);
     pointer-events: auto;
 }
