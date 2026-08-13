@@ -54,6 +54,11 @@ import {
   isPlaceableBuildingTool,
   resolveGhostVisualAssetId,
 } from './placementGhostSession.js';
+import {
+  isPlacementNudgeArrowKey,
+  gridDeltaForArrowKey,
+  clampGridTile,
+} from './placementKeyboardNudge.js';
 import { prefersTouchPlacementFlow } from './touchPlacementInput.js';
 import { canPlaceBuildingAtTileWithSupplyRules } from '../../composition/canPlaceBuildingAtTileWithSupplyRules.js';
 import { createPlacementRotationHud } from './placementRotationHud.js';
@@ -742,6 +747,69 @@ export function createGame(gameStore, assetManager, citySize = null) {
     stonePathOrientation = cycleStonePathOrientationIndex(stonePathOrientation);
     updateStonePathToolHint();
     placementGhostSession.sync();
+    return true;
+  };
+
+  /**
+   * Keyboard autonomy while a placeable tool is active:
+   * - Arrows nudge the ghost one tile (screen-relative to camera; WASD still pans).
+   * - Enter places at the current ghost tile.
+   * @param {KeyboardEvent} event
+   * @returns {boolean}
+   */
+  scene.onPlacementKeyboard = (event) => {
+    if (!isPlaceableBuildingTool(activeToolId, assetsPrices)) {
+      return false;
+    }
+    if (touchPendingPlacement || scene.placementGhost?.anchored) {
+      return false;
+    }
+    if (event.ctrlKey || event.altKey || event.metaKey) {
+      return false;
+    }
+
+    if (event.key === 'Enter') {
+      const tile = scene.placementGhost?.tile;
+      if (!tile) {
+        return false;
+      }
+      void scene.onObjectSelected?.({
+        userData: { x: tile.x, y: tile.y },
+        info: '',
+        name: activeToolId,
+      });
+      return true;
+    }
+
+    if (!isPlacementNudgeArrowKey(event)) {
+      return false;
+    }
+
+    if (!city || typeof city.size !== 'number') {
+      return false;
+    }
+
+    const cam = scene.camera;
+    const azimuth = typeof cam?.azimuth === 'number' ? cam.azimuth : 0;
+    const { dx, dy } = gridDeltaForArrowKey(event.key, azimuth);
+
+    const current = scene.placementGhost?.tile;
+    let x;
+    let y;
+    if (current) {
+      x = current.x + dx;
+      y = current.y + dy;
+    } else {
+      const origin = cam?.origin;
+      const seedX = typeof origin?.x === 'number' ? origin.x : city.size / 2;
+      const seedY = typeof origin?.z === 'number' ? origin.z : city.size / 2;
+      const seeded = clampGridTile(seedX, seedY, city.size);
+      x = seeded.x + dx;
+      y = seeded.y + dy;
+    }
+
+    const next = clampGridTile(x, y, city.size);
+    placementGhostSession.sync({ userData: { x: next.x, y: next.y } });
     return true;
   };
 

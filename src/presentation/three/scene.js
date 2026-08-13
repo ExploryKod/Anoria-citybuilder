@@ -2331,6 +2331,15 @@ function onTouchEnd(event) {
             }
         }
 
+        // Placeable tool: arrows nudge the ghost; Enter confirms placement (keyboard autonomy).
+        if (typeof this.onPlacementKeyboard === 'function') {
+            const handled = this.onPlacementKeyboard(event);
+            if (handled) {
+                event.preventDefault?.();
+                return;
+            }
+        }
+
         camera.onKeyBoardDown(event);
         // Raycasting need y and x axis as + on the terrain (plan) (y-1,y1,x1,x-1)
         // (number btw 0 and 1) * 2 - 1 > to get the value between -1 and 1
@@ -2424,6 +2433,11 @@ function onTouchEnd(event) {
         onRoadPaintEnd: undefined,
         /** @type {((event?: KeyboardEvent) => boolean) | undefined} */
         onRotateBuildingTool: undefined,
+        /**
+         * Keyboard placement while a build tool is active (arrows nudge, Enter places).
+         * @type {((event: KeyboardEvent) => boolean) | undefined}
+         */
+        onPlacementKeyboard: undefined,
         /** @type {((focused: object | null) => void) | undefined} */
         onPlacementHover: undefined,
         /**
