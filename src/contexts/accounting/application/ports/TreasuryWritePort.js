@@ -104,6 +104,14 @@ export class TreasuryWritePort {
   }
 
   /**
+   * @param {number} _amount
+   * @returns {Promise<object>} Updated budget row
+   */
+  async applyContributionDebit(_amount) {
+    throw new Error('TreasuryWritePort: port not implemented');
+  }
+
+  /**
    * Initial capital — income aggregate only (funds pre-seeded at initialize).
    * @param {number} _amount
    * @returns {Promise<object>} Updated budget row

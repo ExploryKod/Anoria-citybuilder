@@ -83,6 +83,18 @@ export function buildCommercialRouteBusinessKey(partnerId) {
   return `commercial_route:${partnerId}`;
 }
 
+/**
+ * Idempotence key for one contribution payment per news item.
+ * @param {string} newsItemId
+ * @returns {string | null}
+ */
+export function buildContributionBusinessKey(newsItemId) {
+  if (!newsItemId) {
+    return null;
+  }
+  return `contribution:news:${newsItemId}`;
+}
+
 /** @param {number} year */
 export function buildCarryForwardBusinessKey(year) {
   if (typeof year !== 'number' || Number.isNaN(year)) {

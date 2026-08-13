@@ -252,6 +252,17 @@ export function createScene(_gameStore, assetManager, deps) {
         return infoOverlay && infoOverlay.classList.contains('active');
     }
 
+    function isMobileBuildBarOpen() {
+        return document.documentElement.classList.contains('mobile-build-bar-open');
+    }
+
+    function resetCameraDragState() {
+        camera.onMouseUp({ button: 0 });
+        camera.onMouseUp({ button: 1 });
+        camera.onMouseUp({ button: 2 });
+        isLeftPointerDown = false;
+    }
+
     // Selections d'un objet
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
@@ -1947,6 +1958,9 @@ export function createScene(_gameStore, assetManager, deps) {
         if (isInfoModalOpen()) {
             return;
         }
+        if (isMobileBuildBarOpen()) {
+            return;
+        }
         if (performance.now() < suppressInputUntilMs) {
             return;
         }
@@ -2024,11 +2038,11 @@ function onMouseMove(event) {
         return;
     }
     if (isInfoModalOpen()) {
-        // Reset mouse button states in camera to prevent dragging when modal closes
-        camera.onMouseUp({ button: 0 }); // Reset left mouse
-        camera.onMouseUp({ button: 1 }); // Reset middle mouse
-        camera.onMouseUp({ button: 2 }); // Reset right mouse
-        isLeftPointerDown = false;
+        resetCameraDragState();
+        return;
+    }
+    if (isMobileBuildBarOpen()) {
+        resetCameraDragState();
         return;
     }
     if (performance.now() < suppressInputUntilMs) {
@@ -2119,6 +2133,9 @@ function onTouchStart(event) {
     if (isInfoModalOpen()) {
         return;
     }
+    if (isMobileBuildBarOpen()) {
+        return;
+    }
     if (performance.now() < suppressInputUntilMs) {
         return;
     }
@@ -2162,6 +2179,9 @@ function onTouchMove(event) {
         return;
     }
     if (isInfoModalOpen()) {
+        return;
+    }
+    if (isMobileBuildBarOpen()) {
         return;
     }
     if (performance.now() < suppressInputUntilMs) {
@@ -2292,6 +2312,9 @@ function onTouchEnd(event) {
 
 
     function onKeyBoardDown(event){
+        if (isMobileBuildBarOpen()) {
+            return;
+        }
         // StonePath tool: R rotates path orientation (Cesar-style), not the camera
         if (
             event.key
@@ -2336,6 +2359,9 @@ function onTouchEnd(event) {
     }
 
     function onKeyBoardUp(event){
+        if (isMobileBuildBarOpen()) {
+            return;
+        }
         camera.onKeyBoardUp(event);
     }
 
@@ -2345,6 +2371,9 @@ function onTouchEnd(event) {
             return;
         }
         if (isInfoModalOpen()) {
+            return;
+        }
+        if (isMobileBuildBarOpen()) {
             return;
         }
         if (performance.now() < suppressInputUntilMs) {

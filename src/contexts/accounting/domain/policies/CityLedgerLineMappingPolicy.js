@@ -54,6 +54,7 @@ export function cityLedgerYearLinesFromJournalSummary(
     expenseEntries,
     (e) => e.type === 'commercial_route'
   );
+  const contributions = sumByType(expenseEntries, (e) => e.type === 'contribution');
   const imports = sumByType(
     expenseEntries,
     (e) => e.type && e.type.startsWith('import_')
@@ -77,6 +78,7 @@ export function cityLedgerYearLinesFromJournalSummary(
     unemploymentBenefit +
     repairs +
     commercialRoutes +
+    contributions +
     imports +
     loanInterest +
     loanRepayment;
@@ -96,6 +98,7 @@ export function cityLedgerYearLinesFromJournalSummary(
     unemploymentBenefit: Math.round(unemploymentBenefit),
     repairs: Math.round(repairs),
     commercialRoutes: Math.round(commercialRoutes),
+    contributions: Math.round(contributions),
     imports: Math.round(imports),
     loanInterest: Math.round(loanInterest),
     loanRepayment: Math.round(loanRepayment),

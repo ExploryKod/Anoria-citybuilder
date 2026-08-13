@@ -1,208 +1,392 @@
-/* Mobile compact build bar — above bottom command bar (portrait + landscape) */
+/* Construction FABs + compact build bar — all breakpoints */
 
 :root {
   --mobile-build-bar-offset: 0px;
+  /* Fallback: command bar + FAB row + gap (overridden by JS from FAB container) */
+  --mobile-build-bar-bottom: calc(
+    var(--hud-bottom-height, 56px)
+    + env(safe-area-inset-bottom, 0px)
+    + 10px
+    + 48px
+    + 8px
+  );
+  --mobile-build-bar-center-x: 50%;
+  --mobile-build-bar-width: min(720px, calc(100vw - 24px));
+}
+
+.mobile-click-state-fab {
+  display: block;
+}
+
+.mobile-click-state-btn.toolbar-toggle-btn.active {
+  background: var(--lightgreen);
+  border-color: var(--lightgreen);
+  color: #fff;
+}
+
+.mobile-click-state-btn.toolbar-toggle-btn.active svg {
+  stroke: #fff;
 }
 
 .mobile-build-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: fixed;
+  left: var(--mobile-build-bar-center-x);
+  right: auto;
+  bottom: var(--mobile-build-bar-bottom);
+  width: var(--mobile-build-bar-width);
+  max-width: calc(100vw - 24px);
+  z-index: calc(var(--z-index-legend, 1000) + 6);
+  padding: 10px 12px 12px;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: var(--border-radius-small);
+  backdrop-filter: blur(10px);
+  transform: translateX(-50%) translateY(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  overflow: hidden;
+}
+
+.mobile-build-bar[hidden] {
+  display: none !important;
+}
+
+.mobile-build-bar.mobile-build-bar--open {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mobile-build-bar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 24px;
+}
+
+.mobile-build-bar__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.02em;
+}
+
+.mobile-build-bar__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(29, 34, 40, 0.06);
+  color: var(--primary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease;
+}
+
+.mobile-build-bar__close:hover,
+.mobile-build-bar__close:active {
+  background: rgba(29, 34, 40, 0.12);
+}
+
+.mobile-build-bar__pills-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+}
+
+.mobile-build-bar__pills {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.mobile-build-bar__pills::-webkit-scrollbar {
   display: none;
 }
 
-/* FABs for click modes (bulldoze / select) — mobile / tablet only */
-.mobile-click-state-fab {
-  display: none;
+.mobile-build-bar__pills-arrow {
+  position: static;
+  flex-shrink: 0;
+  transform: none;
 }
 
-@media screen and (max-width: 1024px) {
-  .mobile-click-state-fab {
-    display: block;
-  }
+.mobile-build-bar__pill {
+  flex: 0 0 auto;
+  height: 32px;
+  padding: 0 10px 0 8px;
+  border: 1px solid rgba(29, 34, 40, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
 
-  .mobile-click-state-btn.toolbar-toggle-btn.active {
-    background: var(--lightgreen);
-    border-color: var(--lightgreen);
-    color: #fff;
-  }
+.mobile-build-bar__pill-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  line-height: 1;
+}
 
-  .mobile-click-state-btn.toolbar-toggle-btn.active svg {
-    stroke: #fff;
-  }
+.mobile-build-bar__pill-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+}
 
-  .mobile-build-bar {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    position: fixed;
-    left: 12px;
-    right: 12px;
-    bottom: calc(var(--hud-bottom-height, 56px) + env(safe-area-inset-bottom, 0px) + 8px);
-    z-index: calc(var(--z-index-legend, 1000) + 6);
-    padding: 10px 12px 12px;
-    box-sizing: border-box;
-    background: rgba(255, 255, 255, 0.88);
-    border: 1px solid rgba(255, 255, 255, 0.9);
-    border-radius: var(--border-radius-small);
-    backdrop-filter: blur(10px);
-    transform: translateY(8px);
-    opacity: 0;
-    pointer-events: none;
-    transition: transform 0.2s ease, opacity 0.2s ease;
-  }
+.mobile-build-bar__pill-icon .tool-emoji {
+  font-size: 14px;
+  line-height: 1;
+}
 
-  .mobile-build-bar[hidden] {
-    display: none !important;
-  }
+.mobile-build-bar__pill-label {
+  line-height: 1;
+}
 
-  .mobile-build-bar.mobile-build-bar--open {
-    transform: translateY(0);
-    opacity: 1;
-    pointer-events: auto;
-  }
+.mobile-build-bar__pill--active {
+  background: var(--cta);
+  border-color: var(--cta);
+  color: #fff;
+}
 
-  .mobile-build-bar__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    min-height: 24px;
-  }
-
-  .mobile-build-bar__title {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--primary);
-    letter-spacing: 0.02em;
-  }
-
-  .mobile-build-bar__close {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
+/* Desktop: icon-only pills; label remains available via title tooltip */
+@media screen and (min-width: 1025px) {
+  .mobile-build-bar__pill {
+    width: 36px;
+    height: 36px;
     padding: 0;
-    border: none;
-    border-radius: 50%;
-    background: rgba(29, 34, 40, 0.06);
-    color: var(--primary);
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: background-color 0.15s ease;
+    justify-content: center;
+    gap: 0;
   }
 
-  .mobile-build-bar__close:hover,
-  .mobile-build-bar__close:active {
-    background: rgba(29, 34, 40, 0.12);
-  }
-
-  .mobile-build-bar__pills {
-    display: flex;
-    flex-direction: row;
-    gap: 6px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    padding-bottom: 2px;
-  }
-
-  .mobile-build-bar__pills::-webkit-scrollbar {
+  .mobile-build-bar__pill-label {
     display: none;
   }
 
-  .mobile-build-bar__pill {
-    flex: 0 0 auto;
-    height: 32px;
-    padding: 0 12px;
-    border: 1px solid rgba(29, 34, 40, 0.12);
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.95);
-    color: var(--primary);
-    font-size: 12px;
-    font-weight: 600;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  .mobile-build-bar__pill-icon {
+    width: 18px;
+    height: 18px;
   }
 
-  .mobile-build-bar__pill--active {
-    background: var(--cta);
-    border-color: var(--cta);
-    color: #fff;
+  .mobile-build-bar__pill-icon svg {
+    width: 18px;
+    height: 18px;
   }
 
-  .mobile-build-bar__carousel {
-    width: 100%;
-    min-height: 52px;
+  .mobile-build-bar__pill-icon .tool-emoji {
+    font-size: 16px;
   }
+}
 
-  .mobile-build-bar__carousel .splide__track {
-    overflow: visible;
-  }
+.mobile-build-bar__carousel {
+  position: relative;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 36px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
 
-  .mobile-build-bar__slide {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+.mobile-build-bar__carousel .splide__track {
+  overflow: hidden;
+}
 
-  .mobile-build-bar .mobile-tool-btn {
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid var(--cta);
-    border-radius: var(--border-radius-small);
-    background: var(--cta);
-    color: #fff;
-    cursor: pointer;
-    transition: transform 0.15s ease, background-color 0.15s ease;
-  }
+.mobile-build-bar__carousel .splide__list {
+  display: flex;
+  align-items: center;
+}
 
-  .mobile-build-bar .mobile-tool-btn svg {
-    width: 22px;
-    height: 22px;
-  }
+.mobile-build-bar__slide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  .mobile-build-bar .mobile-tool-btn .tool-emoji {
-    font-size: 22px;
-    line-height: 1;
-  }
+.mobile-build-bar__arrows {
+  position: static;
+}
 
-  .mobile-build-bar .mobile-tool-btn.selected {
-    background: #fff;
-    color: var(--primary);
-  }
+.mobile-build-bar__arrow.splide__arrow,
+.mobile-build-bar__pills-arrow.mobile-build-bar__arrow {
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  margin: 0;
+  border: 1px solid rgba(29, 34, 40, 0.12);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--primary);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(29, 34, 40, 0.12);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
 
-  .mobile-build-bar .mobile-tool-btn:active {
-    transform: scale(0.95);
-  }
+.mobile-build-bar__arrow.splide__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
 
-  /* Construction opener is open-only (never shows a close state) */
-  .toolbar-open-construction-btn .toolbar-toggle-icon--close {
-    display: none !important;
-  }
+.mobile-build-bar__arrow.splide__arrow svg,
+.mobile-build-bar__pills-arrow.mobile-build-bar__arrow svg {
+  width: 16px;
+  height: 16px;
+}
 
-  .toolbar-open-construction-btn.active .toolbar-toggle-icon--open {
-    display: flex !important;
-  }
+.mobile-build-bar__arrow.splide__arrow--prev {
+  left: 0;
+}
 
-  .toolbar-open-construction-btn.active {
-    background: rgba(255, 255, 255, 0.9);
-    border-color: rgba(0, 0, 0, 0.1);
-    color: inherit;
-  }
+.mobile-build-bar__arrow.splide__arrow--next {
+  right: 0;
+}
 
-  .toolbar-open-construction-btn.active svg {
-    stroke: currentColor;
-  }
+.mobile-build-bar__arrow.splide__arrow:hover:not(:disabled),
+.mobile-build-bar__arrow.splide__arrow:focus-visible:not(:disabled),
+.mobile-build-bar__pills-arrow.mobile-build-bar__arrow:hover:not(:disabled),
+.mobile-build-bar__pills-arrow.mobile-build-bar__arrow:focus-visible:not(:disabled) {
+  background: var(--lightgreen, #4caf73);
+  border-color: var(--lightgreen, #4caf73);
+  color: #fff;
+  outline: none;
+}
 
-  /* Hide shortcut FABs while construction modal is open (close lives on the bar) */
-  .legend-btns-container--mobile.mobile-build-bar-visible {
-    display: none !important;
-  }
+.mobile-build-bar__arrow.splide__arrow:disabled,
+.mobile-build-bar__pills-arrow.mobile-build-bar__arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.mobile-build-bar .mobile-tool-btn {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--cta);
+  border-radius: var(--border-radius-small);
+  background: var(--cta);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.mobile-build-bar .mobile-tool-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+.mobile-build-bar .mobile-tool-btn .tool-emoji {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.mobile-build-bar .mobile-tool-btn.selected {
+  background: #fff;
+  color: var(--primary);
+}
+
+.mobile-build-bar .mobile-tool-btn:focus-visible,
+.mobile-build-bar__pill:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.mobile-build-bar .mobile-tool-btn:active {
+  transform: scale(0.95);
+}
+
+/* Construction opener is open-only (never shows a close state) */
+.toolbar-open-construction-btn .toolbar-toggle-icon--close {
+  display: none !important;
+}
+
+.toolbar-open-construction-btn.active .toolbar-toggle-icon--open {
+  display: flex !important;
+}
+
+.toolbar-open-construction-btn.active {
+  background: var(--cta);
+  border-color: var(--cta);
+  color: #fff;
+}
+
+.toolbar-open-construction-btn.active svg {
+  stroke: #fff;
+}
+
+/* Floating camera D-pad FAB (shown only when Paramètres toggle is ON) */
+.camera-dpad-fab {
+  display: none;
+  position: fixed;
+  left: calc(12px + env(safe-area-inset-left, 0px));
+  bottom: calc(
+    var(--hud-bottom-height, 56px)
+    + env(safe-area-inset-bottom, 0px)
+    + 10px
+  );
+  z-index: calc(var(--z-index-legend, 1000) + 5);
+  pointer-events: auto;
+}
+
+.camera-dpad-fab.camera-dpad-fab--visible {
+  display: block;
+}
+
+.camera-dpad-fab .toolbar-toggle-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  justify-content: center;
+  padding: 0;
+}
+
+.camera-dpad-fab .toolbar-mobile-controls-toggle-btn {
+  display: block !important;
+}
+
+/* Permanently hide left toolbar stubs (gating IDs only) */
+.game-window .toolbar.toolbar--stubs,
+.game-window .toolbar.mobile-hidden.toolbar--stubs,
+#toolbar.toolbar--stubs {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }

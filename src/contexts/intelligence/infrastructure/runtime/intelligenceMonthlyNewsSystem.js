@@ -1,9 +1,9 @@
 /**
- * Thin ECS adapter — génération **mensuelle** des dépêches ville
+ * Thin ECS adapter — génération **mensuelle** des dépêches (ville + caravane)
  * (1er jour du mois calendaire jeu uniquement).
  *
  * @param {object} deps
- * @param {{ generateMonthlyCityNews: Function }} deps.intelligence
+ * @param {{ generateMonthlyNews?: Function, generateMonthlyCityNews?: Function }} deps.intelligence
  * @param {(time: number) => { dayInMonth: number }} deps.getTimeInfo
  */
 export function createIntelligenceMonthlyNewsSystem({ intelligence, getTimeInfo }) {
@@ -13,6 +13,10 @@ export function createIntelligenceMonthlyNewsSystem({ intelligence, getTimeInfo 
     if ((timeInfo?.dayInMonth ?? 1) !== 1) {
       return;
     }
-    await intelligence.generateMonthlyCityNews({ turn: time });
+    if (typeof intelligence.generateMonthlyNews === 'function') {
+      await intelligence.generateMonthlyNews({ turn: time });
+      return;
+    }
+    await intelligence.generateMonthlyCityNews?.({ turn: time });
   };
 }

@@ -186,7 +186,9 @@ export function closeModal() {
 }
 
 export function toggleModal(e) {
-  const button = e.target.closest('.toolbar-btn') || e.target;
+  const button = e.target.closest('[data-group]')
+    || e.target.closest('.toolbar-btn')
+    || e.target;
   const group = button.dataset.group;
   const creator = GROUP_CREATORS[group];
 
