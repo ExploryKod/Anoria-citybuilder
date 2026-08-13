@@ -54,11 +54,24 @@
     border-radius: var(--border-radius-small);
     transition: all 0.2s ease;
     color: #ffffff;
+    border: none;
+    background: transparent;
+    appearance: none;
+    -webkit-appearance: none;
+    font: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .city-map-close-btn:hover {
     background-color: rgba(255, 255, 255, 0.25);
     color: #ffffff;
+}
+
+.city-map-close-btn:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
 }
 
 .city-map-content {

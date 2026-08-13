@@ -1,9 +1,13 @@
 import { labelForNewsSource } from '../../../contexts/intelligence/domain/catalogs/NewsSourceCatalog.js';
 import { labelForNewsCategory } from '../../../contexts/intelligence/domain/catalogs/NewsCategoryCatalog.js';
 import { TimeManager } from '../../../shared/time/TimeManager.js';
+import { createModalFocusSession } from '../shell/modalFocus.js';
 
 /** @type {null | (() => Promise<void>)} */
 let presentIncomingHandler = null;
+
+/** @type {ReturnType<typeof createModalFocusSession> | null} */
+let newsFocusSession = null;
 
 /**
  * Ouvre la file des dépêches incoming après un tick (si non vide).
@@ -63,6 +67,8 @@ export function initNewsEventModal(deps) {
   }
 
   function closeModal() {
+    newsFocusSession?.release();
+    newsFocusSession = null;
     modal.classList.remove('active', 'visible', 'show');
     modal.hidden = true;
     modal.setAttribute('aria-hidden', 'true');
@@ -123,6 +129,19 @@ export function initNewsEventModal(deps) {
     } else if (fundsHintEl) {
       fundsHintEl.textContent = '';
     }
+
+    if (newsFocusSession?.isActive()) {
+      requestAnimationFrame(() => {
+        focusNewsPrimaryAction()?.focus?.();
+      });
+    }
+  }
+
+  function focusNewsPrimaryAction() {
+    if (nextBtn instanceof HTMLElement && !nextBtn.hidden) return nextBtn;
+    if (payBtn instanceof HTMLElement && !payBtn.hidden && !payBtn.disabled) return payBtn;
+    if (skipBtn instanceof HTMLElement && !skipBtn.hidden) return skipBtn;
+    return nextBtn ?? payBtn ?? skipBtn ?? modal;
   }
 
   async function archiveCurrentAndAdvance() {
@@ -210,6 +229,13 @@ export function initNewsEventModal(deps) {
     modal.setAttribute('aria-hidden', 'false');
     modal.classList.add('active', 'visible');
     await render();
+    newsFocusSession?.release({ restoreFocus: false });
+    newsFocusSession = createModalFocusSession({
+      panel: modal,
+      onEscape: closeModal,
+      initialFocus: focusNewsPrimaryAction,
+      ensureDialogAttributes: false,
+    });
   };
 
   deps.registerAppService?.('newsEventModal', {

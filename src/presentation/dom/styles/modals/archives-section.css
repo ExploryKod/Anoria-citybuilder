@@ -80,7 +80,11 @@
   color: #b42318;
   border-color: rgba(180, 35, 24, 0.25);
   background: rgba(180, 35, 24, 0.06);
-  outline: none;
+}
+
+.archives-news-delete-btn:focus-visible {
+  outline: 2px solid #b42318;
+  outline-offset: 2px;
 }
 
 .archives-news-delete-btn:disabled {

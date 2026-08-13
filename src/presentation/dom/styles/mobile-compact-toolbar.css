@@ -282,7 +282,12 @@
   background: var(--lightgreen, #4caf73);
   border-color: var(--lightgreen, #4caf73);
   color: #fff;
-  outline: none;
+}
+
+.mobile-build-bar__arrow.splide__arrow:focus-visible:not(:disabled),
+.mobile-build-bar__pills-arrow.mobile-build-bar__arrow:focus-visible:not(:disabled) {
+  outline: var(--focus-ring-on-dark, 2px solid #fff);
+  outline-offset: 2px;
 }
 
 .mobile-build-bar__arrow.splide__arrow:disabled,

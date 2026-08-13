@@ -8,6 +8,7 @@ import {
   renderCityMapLoadingHtml,
   renderCityMapErrorHtml,
 } from './CarteVillePresenter.js';
+import { createModalFocusSession } from '../shell/modalFocus.js';
 
 /**
  * @type {{
@@ -21,6 +22,9 @@ let deps = null;
 
 let carteVilleFiltersInitialized = false;
 let carteVilleLegendInitialized = false;
+
+/** @type {ReturnType<typeof createModalFocusSession> | null} */
+let cityMapFocusSession = null;
 
 function applyCityMapFilter(filter) {
   const grid = document.getElementById('city-map-grid');
@@ -176,23 +180,34 @@ export function initCarteVillePopup(panelDeps) {
 
     if (cityMapPanel.classList.contains('active')) {
       popupManager?.forceOpenPopup('city-map-panel');
+      cityMapFocusSession?.release({ restoreFocus: false });
+      cityMapFocusSession = createModalFocusSession({
+        panel: cityMapPanel,
+        onEscape: closeCityMap,
+        initialFocus: '.city-map-close-btn',
+      });
       await generateCarteVille();
       setTimeout(initCollapsibleLegend, 100);
       initCarteVilleFilters();
     } else {
-      popupManager?.forceClosePopup('city-map-panel');
+      closeCityMap();
     }
   });
 
-  cityMapCloseBtn.addEventListener('click', () => {
+  function closeCityMap() {
+    cityMapFocusSession?.release();
+    cityMapFocusSession = null;
     cityMapPanel.classList.remove('active');
     popupManager?.forceClosePopup('city-map-panel');
+  }
+
+  cityMapCloseBtn.addEventListener('click', () => {
+    closeCityMap();
   });
 
   cityMapPanel.addEventListener('click', (e) => {
     if (e.target === cityMapPanel) {
-      cityMapPanel.classList.remove('active');
-      popupManager?.forceClosePopup('city-map-panel');
+      closeCityMap();
     }
   });
 }

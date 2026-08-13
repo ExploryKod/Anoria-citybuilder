@@ -23,12 +23,27 @@ export function initMapFiltersPanel(deps = {}) {
     return column.classList.contains('is-open');
   }
 
-  function setOpen(open) {
+  /**
+   * @param {boolean} open
+   * @param {{ restoreFocus?: boolean }} [options]
+   */
+  function setOpen(open, { restoreFocus = true } = {}) {
     column.hidden = !open;
     column.classList.toggle('is-open', open);
     column.setAttribute('aria-hidden', open ? 'false' : 'true');
     openBtn.classList.toggle('active', open);
     openBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+
+    if (open) {
+      requestAnimationFrame(() => {
+        productionBtn.focus();
+      });
+      return;
+    }
+
+    if (restoreFocus) {
+      openBtn.focus();
+    }
   }
 
   function syncProductionButton() {
@@ -46,7 +61,11 @@ export function initMapFiltersPanel(deps = {}) {
   openBtn.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopPropagation();
-    setOpen(!isOpen());
+    if (isOpen()) {
+      setOpen(false, { restoreFocus: false });
+    } else {
+      setOpen(true);
+    }
   });
 
   productionBtn.addEventListener('click', (event) => {

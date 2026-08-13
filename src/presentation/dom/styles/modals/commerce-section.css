@@ -414,9 +414,13 @@
 }
 
 .commerce-price-input:focus {
-    outline: none;
     border-color: var(--lightgreen);
     box-shadow: 0 0 0 2px rgba(0, 153, 153, 0.2);
+}
+
+.commerce-price-input:focus-visible {
+    outline: 2px solid var(--lightgreen);
+    outline-offset: 1px;
 }
 
 .commerce-price-input.selling.unacceptable {
@@ -661,9 +665,13 @@
 }
 
 .commerce-tax-input:focus {
-    outline: none;
     border-color: var(--lightgreen);
     box-shadow: 0 0 0 2px rgba(0, 153, 153, 0.2);
+}
+
+.commerce-tax-input:focus-visible {
+    outline: 2px solid var(--lightgreen);
+    outline-offset: 1px;
 }
 
 .commerce-consumption-indicator {

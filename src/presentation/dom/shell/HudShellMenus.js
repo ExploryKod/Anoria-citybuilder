@@ -22,12 +22,26 @@ export function initHudShellMenus() {
     return Boolean(gestionRail?.classList.contains('is-open'));
   }
 
-  function closeGestion() {
+  /**
+   * @param {{ restoreFocus?: boolean }} [options]
+   */
+  function closeGestion({ restoreFocus = true } = {}) {
     setOpenState(gestionRail, gestionBtn, false);
+    if (restoreFocus) {
+      gestionBtn?.focus();
+    }
   }
 
   function openGestion() {
     setOpenState(gestionRail, gestionBtn, true);
+    requestAnimationFrame(() => {
+      const firstAction = gestionRail?.querySelector('.gestion-rail__btn');
+      if (firstAction instanceof HTMLElement) {
+        firstAction.focus();
+        return;
+      }
+      gestionClose?.focus();
+    });
   }
 
   gestionBtn?.addEventListener('click', (e) => {
@@ -50,9 +64,10 @@ export function initHudShellMenus() {
   });
 
   // Choosing an action closes the host menu (delegation survives button rebinds).
+  // Do not restore focus on the toggle — the opened panel owns focus next.
   gestionRail?.addEventListener('click', (e) => {
     if (e.target instanceof Element && e.target.closest('.gestion-rail__btn')) {
-      requestAnimationFrame(() => closeGestion());
+      requestAnimationFrame(() => closeGestion({ restoreFocus: false }));
     }
   });
 
