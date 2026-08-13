@@ -138,19 +138,26 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px 20px;
-  margin-bottom: 12px;
+  margin-bottom: 6px;
 }
 
-.mission-profile-modes label {
+.mission-profile-mode {
   display: flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
   color: var(--site-text);
+  font-size: 0.95rem;
 }
 
-.mission-profile-modes input {
+.mission-profile-mode input {
   accent-color: var(--cta);
+}
+
+.mission-profile-modes-hint {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  color: var(--site-text-muted, #667);
 }
 
 .mission-profile-panel {

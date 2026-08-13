@@ -42,6 +42,10 @@
   display: block !important;
 }
 
+.game-exit-fab {
+  display: block !important;
+}
+
 /* Circular construction FABs at all breakpoints */
 .legend-btns-container--mobile .toolbar-toggle-btn {
   min-width: 48px;
@@ -50,6 +54,9 @@
   padding: 8px;
   justify-content: center;
   border-radius: 50%;
+  box-sizing: border-box;
+  text-decoration: none;
+  color: inherit;
 }
 
 .legend-btns-container--mobile .toolbar-toggle-btn > span:not(.toolbar-toggle-icon):not(.sr-only) {
