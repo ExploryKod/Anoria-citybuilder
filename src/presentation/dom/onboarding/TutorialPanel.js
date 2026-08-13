@@ -3,6 +3,15 @@
  */
 import EventBlocker from '../shell/EventBlocker.js';
 
+const FOCUSABLE_SELECTOR = [
+  'button:not([disabled])',
+  'a[href]',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(', ');
+
 class TutorialPanel {
     /**
      * @param {{
@@ -22,6 +31,9 @@ class TutorialPanel {
         this.isVisible = false;
         this.isInitialized = false;
         this.eventBlocker = new EventBlocker();
+        /** @type {HTMLElement | null} */
+        this.lastFocusedElement = null;
+        this.handleDocumentKeyDown = this.handleDocumentKeyDown.bind(this);
     }
 
     init() {
@@ -59,13 +71,64 @@ class TutorialPanel {
         if (closeBtn) {
             closeBtn.addEventListener('click', () => this.closeTutorial());
         }
+    }
 
-        // Fermer avec Escape
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.isVisible) {
-                this.closeTutorial();
-            }
+    /**
+     * @returns {HTMLElement[]}
+     */
+    getFocusableElements() {
+        if (!this.panel) return [];
+        return [...this.panel.querySelectorAll(FOCUSABLE_SELECTOR)].filter((el) => {
+            if (!(el instanceof HTMLElement)) return false;
+            if (el.closest('[hidden]')) return false;
+            const style = window.getComputedStyle(el);
+            return style.display !== 'none' && style.visibility !== 'hidden';
         });
+    }
+
+    focusPrimaryAction() {
+        const nextBtn = this.panel?.querySelector('.tutorial-next-btn');
+        const closeBtn = this.panel?.querySelector('.tutorial-close-btn');
+        const target = (nextBtn instanceof HTMLElement && nextBtn.offsetParent !== null)
+          ? nextBtn
+          : (closeBtn instanceof HTMLElement ? closeBtn : null);
+        target?.focus();
+    }
+
+    handleDocumentKeyDown(event) {
+        if (!this.isVisible || !this.panel) return;
+
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            this.closeTutorial();
+            return;
+        }
+
+        if (event.key !== 'Tab') return;
+
+        const focusables = this.getFocusableElements();
+        if (focusables.length === 0) {
+            event.preventDefault();
+            this.panel.focus();
+            return;
+        }
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement;
+
+        if (event.shiftKey) {
+            if (active === first || !this.panel.contains(active)) {
+                event.preventDefault();
+                last.focus();
+            }
+            return;
+        }
+
+        if (active === last || !this.panel.contains(active)) {
+            event.preventDefault();
+            first.focus();
+        }
     }
 
     /**
@@ -143,11 +206,17 @@ class TutorialPanel {
     }
 
     /**
-     * Désactive les événements Three.js
+     * Désactive les événements Three.js (clavier / souris jeu), pas ceux du dialogue.
      */
     disableThreeJSEvents() {
         this.eventBlocker.blockThreeJSEvents({
-            onBlock: (eventType, e) => {}
+            excludeSelectors: [
+                '#tutorial-panel',
+                '#tutorial-panel *',
+                '.tutorial-panel',
+                '.tutorial-panel *',
+            ],
+            onBlock: () => {},
         });
     }
 
@@ -168,6 +237,9 @@ class TutorialPanel {
 
         this.currentStep = 0;
         this.updateDisplay();
+        this.lastFocusedElement = document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
         this.panel.hidden = false;
         this.panel.setAttribute('aria-hidden', 'false');
         this.panel.classList.add('visible');
@@ -179,6 +251,10 @@ class TutorialPanel {
         // Mettre le jeu en pause
         this.deps.pauseGame?.();
 
+        document.addEventListener('keydown', this.handleDocumentKeyDown);
+        requestAnimationFrame(() => {
+            this.focusPrimaryAction();
+        });
     }
 
     /**
@@ -189,6 +265,8 @@ class TutorialPanel {
         this.panel.hidden = true;
         this.panel.setAttribute('aria-hidden', 'true');
         this.isVisible = false;
+
+        document.removeEventListener('keydown', this.handleDocumentKeyDown);
         
         // Réactiver les événements Three.js
         this.enableThreeJSEvents();
@@ -196,6 +274,10 @@ class TutorialPanel {
         // Reprendre le jeu
         this.deps.playGame?.();
 
+        if (this.lastFocusedElement && typeof this.lastFocusedElement.focus === 'function') {
+            this.lastFocusedElement.focus();
+        }
+        this.lastFocusedElement = null;
     }
 
     /**

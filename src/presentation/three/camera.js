@@ -585,6 +585,10 @@ export function createCamera(gameWindow) {
         setOnCameraChanged(callback) {
             onCameraChanged = callback;
         },
-        get isIsometric() { return isIsometricMode; }
+        get isIsometric() { return isIsometricMode; },
+        /** Look-at / pan target in world XZ (grid ≈ world). */
+        get origin() { return cameraOrigin; },
+        /** Degrees; same value used for WASD / arrow pan. */
+        get azimuth() { return cameraAzimuth; },
     }
 }

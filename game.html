@@ -2940,6 +2940,7 @@
     aria-modal="true"
     aria-label="Tutoriel"
     aria-hidden="true"
+    tabindex="-1"
     hidden
 >
     <div class="tutorial-panel-wrapper">
@@ -2950,9 +2951,9 @@
             <div class="tutorial-content"></div>
             <div class="tutorial-buttons">
                 <div class="tutorial-buttons-wrapper">
-                    <button class="tutorial-previous-btn">Précédent</button>
-                    <button class="tutorial-next-btn">Suivant</button>
-                    <button class="tutorial-close-btn">Fermer</button>
+                    <button type="button" class="tutorial-previous-btn">Précédent</button>
+                    <button type="button" class="tutorial-next-btn">Suivant</button>
+                    <button type="button" class="tutorial-close-btn">Fermer</button>
                 </div>
             </div>
         </div>
@@ -2998,6 +2999,7 @@
     aria-modal="true"
     aria-label="Objectifs"
     aria-hidden="true"
+    tabindex="-1"
     hidden
 >
     <div class="objectives-panel-wrapper">
@@ -3009,10 +3011,10 @@
             <div class="objectives-content"></div>
             <div class="objectives-buttons">
                 <div class="objectives-buttons-wrapper">
-                    <button class="objectives-previous-btn">Précédent</button>
-                    <button class="objectives-next-btn">Suivant</button>
-                    <button class="objectives-skip-btn">Passer</button>
-                    <button class="objectives-close-btn">Fermer</button>
+                    <button type="button" class="objectives-previous-btn">Précédent</button>
+                    <button type="button" class="objectives-next-btn">Suivant</button>
+                    <button type="button" class="objectives-skip-btn">Passer</button>
+                    <button type="button" class="objectives-close-btn">Fermer</button>
                 </div>
             </div>
         </div>
@@ -3170,7 +3172,11 @@
                         </div>
                         <div class="parameters-shortcut-item">
                             <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd>
-                            <span class="parameters-shortcut-label">Déplacer la caméra</span>
+                            <span class="parameters-shortcut-label">Déplacer la caméra (ou le fantôme en construction)</span>
+                        </div>
+                        <div class="parameters-shortcut-item">
+                            <kbd>Entrée</kbd>
+                            <span class="parameters-shortcut-label">Poser le bâtiment au fantôme (outil de construction)</span>
                         </div>
                         <div class="parameters-shortcut-item">
                             <kbd>Molette</kbd>
