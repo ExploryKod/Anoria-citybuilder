@@ -162,6 +162,7 @@ class PopupManager {
         }
 
         if (blockingIds.length === 0) {
+            this.syncBackgroundInert([]);
             return;
         }
 
@@ -170,6 +171,30 @@ class PopupManager {
             blockCanvas: false, // canvas déjà géré via pointer-events-disabled
             excludeSelectors,
         });
+        this.syncBackgroundInert(blockingIds);
+    }
+
+    /**
+     * When a blocking dialog lives outside #game-window, inert the HUD so Tab
+     * cannot reach controls behind the overlay (admin, bilan, carte, …).
+     * Dialogs inside #game-window (pause, info-bâtiment) keep the window interactive
+     * for their own controls; modalFocus traps Tab instead.
+     * @param {string[]} blockingIds
+     */
+    syncBackgroundInert(blockingIds) {
+        const gameWindow = document.getElementById('game-window');
+        if (!gameWindow) return;
+
+        const needsInert = blockingIds.some((id) => {
+            const el = document.getElementById(id);
+            return Boolean(el && !gameWindow.contains(el));
+        });
+
+        if (needsInert) {
+            gameWindow.setAttribute('inert', '');
+        } else {
+            gameWindow.removeAttribute('inert');
+        }
     }
 
     /**
@@ -350,6 +375,7 @@ class PopupManager {
         if (this.eventBlocker.isEventsBlocked()) {
             this.eventBlocker.unblockEvents();
         }
+        document.getElementById('game-window')?.removeAttribute('inert');
         const canvasElements = document.querySelectorAll('canvas');
         canvasElements.forEach((element) => {
             element.classList.remove('pointer-events-disabled');
@@ -363,6 +389,7 @@ class PopupManager {
         if (this.eventBlocker.isEventsBlocked()) {
             this.eventBlocker.unblockEvents();
         }
+        document.getElementById('game-window')?.removeAttribute('inert');
         const canvasElements = document.querySelectorAll('canvas.pointer-events-disabled');
         canvasElements.forEach((element) => {
             element.classList.remove('pointer-events-disabled');

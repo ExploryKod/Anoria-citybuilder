@@ -107,6 +107,7 @@ class ObjectivesPanel {
 
         if (event.key === 'Escape') {
             event.preventDefault();
+            event.stopPropagation();
             this.closeObjectives();
             return;
         }
@@ -114,8 +115,10 @@ class ObjectivesPanel {
         if (event.key !== 'Tab') return;
 
         const focusables = this.getFocusableElements();
+        event.preventDefault();
+        event.stopPropagation();
+
         if (focusables.length === 0) {
-            event.preventDefault();
             this.panel.focus();
             return;
         }
@@ -123,18 +126,22 @@ class ObjectivesPanel {
         const first = focusables[0];
         const last = focusables[focusables.length - 1];
         const active = document.activeElement;
+        const currentIndex =
+            active instanceof HTMLElement ? focusables.indexOf(active) : -1;
 
         if (event.shiftKey) {
-            if (active === first || !this.panel.contains(active)) {
-                event.preventDefault();
+            if (currentIndex <= 0) {
                 last.focus();
+            } else {
+                focusables[currentIndex - 1].focus();
             }
             return;
         }
 
-        if (active === last || !this.panel.contains(active)) {
-            event.preventDefault();
+        if (currentIndex === -1 || currentIndex >= focusables.length - 1) {
             first.focus();
+        } else {
+            focusables[currentIndex + 1].focus();
         }
     }
 
@@ -293,14 +300,44 @@ class ObjectivesPanel {
         
         // Désactiver les événements Three.js
         this.disableThreeJSEvents();
+        document.getElementById('game-window')?.setAttribute('inert', '');
         
         // Mettre le jeu en pause
         this.deps.pauseGame?.();
 
-        document.addEventListener('keydown', this.handleDocumentKeyDown);
+        document.addEventListener('keydown', this.handleDocumentKeyDown, true);
         requestAnimationFrame(() => {
             this.focusPrimaryAction();
         });
+    }
+
+    /**
+     * @param {HTMLElement | null | undefined} el
+     * @returns {boolean}
+     */
+    isPracticallyFocusable(el) {
+        if (!(el instanceof HTMLElement)) return false;
+        if (!document.contains(el)) return false;
+        if (el.closest('[inert]')) return false;
+        if (el.closest('[hidden]')) return false;
+        if (el.getAttribute('aria-hidden') === 'true') return false;
+        if (el.disabled) return false;
+        const rect = el.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+    }
+
+    restoreFocusAfterClose() {
+        const last = this.lastFocusedElement;
+        this.lastFocusedElement = null;
+        if (this.isPracticallyFocusable(last) && last !== this.panel) {
+            last.focus();
+            return;
+        }
+        const landing =
+            document.getElementById('objectives-btn')
+            || document.getElementById('game-exit-home-btn')
+            || document.getElementById('toolbar-mobile-toggle');
+        landing?.focus();
     }
 
     /**
@@ -312,18 +349,16 @@ class ObjectivesPanel {
         this.panel.setAttribute('aria-hidden', 'true');
         this.isVisible = false;
 
-        document.removeEventListener('keydown', this.handleDocumentKeyDown);
+        document.removeEventListener('keydown', this.handleDocumentKeyDown, true);
         
         // Réactiver les événements Three.js
         this.enableThreeJSEvents();
+        document.getElementById('game-window')?.removeAttribute('inert');
         
         // Reprendre le jeu
         this.deps.playGame?.();
 
-        if (this.lastFocusedElement && typeof this.lastFocusedElement.focus === 'function') {
-            this.lastFocusedElement.focus();
-        }
-        this.lastFocusedElement = null;
+        this.restoreFocusAfterClose();
     }
 
     /**

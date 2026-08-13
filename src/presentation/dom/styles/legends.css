@@ -59,6 +59,23 @@
   color: inherit;
 }
 
+/* High-contrast keyboard ring on light FAB chrome (RGAA 10.7) */
+.legend-btns-container--mobile .toolbar-toggle-btn:focus-visible,
+.game-exit-home-btn:focus-visible {
+  outline: 3px solid var(--cta);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 1px #fff,
+    0 0 0 6px rgba(251, 129, 24, 0.45);
+}
+
+.legend-btns-container--mobile .toolbar-toggle-btn.active:focus-visible {
+  outline-color: #fff;
+  box-shadow:
+    0 0 0 1px var(--primary),
+    0 0 0 6px rgba(255, 255, 255, 0.55);
+}
+
 .legend-btns-container--mobile .toolbar-toggle-btn > span:not(.toolbar-toggle-icon):not(.sr-only) {
   display: none;
 }

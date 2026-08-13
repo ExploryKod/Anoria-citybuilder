@@ -669,8 +669,11 @@
 .hud-side-actions .info-box.stats-buttons:focus-visible,
 .hud-actions .info-box.stats-buttons:focus-visible,
 .hud-actions .hud-action-btn:focus-visible {
-  outline: var(--focus-ring-on-dark, 2px solid #fff);
-  outline-offset: var(--focus-ring-offset, 2px);
+  outline: 3px solid var(--cta);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 1px #fff,
+    0 0 0 6px rgba(251, 129, 24, 0.45);
 }
 
 .hud-side-actions .info-box.stats-buttons.active,
@@ -712,8 +715,11 @@
 }
 
 .hud-actions .info-box.game-control-box:focus-visible {
-  outline: var(--focus-ring-on-dark, 2px solid #fff);
-  outline-offset: var(--focus-ring-offset, 2px);
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 1px var(--primary),
+    0 0 0 6px rgba(0, 153, 153, 0.55);
 }
 
 .hud-actions .info-box.game-control-box.active {

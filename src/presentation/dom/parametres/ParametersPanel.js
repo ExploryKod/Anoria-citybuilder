@@ -313,6 +313,7 @@ class ParametersPanel {
 
         if (event.key === 'Escape') {
             event.preventDefault();
+            event.stopPropagation();
             this.hide();
             return;
         }
@@ -320,8 +321,10 @@ class ParametersPanel {
         if (event.key !== 'Tab') return;
 
         const focusables = getFocusableElements(this.panel);
+        event.preventDefault();
+        event.stopPropagation();
+
         if (focusables.length === 0) {
-            event.preventDefault();
             this.panel.focus();
             return;
         }
@@ -329,18 +332,22 @@ class ParametersPanel {
         const first = focusables[0];
         const last = focusables[focusables.length - 1];
         const active = document.activeElement;
+        const currentIndex =
+            active instanceof HTMLElement ? focusables.indexOf(active) : -1;
 
         if (event.shiftKey) {
-            if (active === first || !this.panel.contains(active)) {
-                event.preventDefault();
+            if (currentIndex <= 0) {
                 last.focus();
+            } else {
+                focusables[currentIndex - 1].focus();
             }
             return;
         }
 
-        if (active === last || !this.panel.contains(active)) {
-            event.preventDefault();
+        if (currentIndex === -1 || currentIndex >= focusables.length - 1) {
             first.focus();
+        } else {
+            focusables[currentIndex + 1].focus();
         }
     }
 
@@ -391,16 +398,18 @@ class ParametersPanel {
         this.refreshPwaUpdateStatus();
 
         this.panel.classList.add('visible');
+        this.panel.removeAttribute('inert');
         this.panel.setAttribute('aria-hidden', 'false');
 
         requestAnimationFrame(() => {
             this.panel.focus();
         });
 
-        document.addEventListener('keydown', this.handleDocumentKeyDown);
+        document.addEventListener('keydown', this.handleDocumentKeyDown, true);
         document.addEventListener('click', this.handleOutsideClick, true);
 
         this.blockGameEvents();
+        document.getElementById('game-window')?.setAttribute('inert', '');
 
         deps?.pauseGame?.();
     }
@@ -410,12 +419,14 @@ class ParametersPanel {
 
         this.isVisible = false;
         this.panel.classList.remove('visible');
+        this.panel.setAttribute('inert', '');
         this.panel.setAttribute('aria-hidden', 'true');
 
-        document.removeEventListener('keydown', this.handleDocumentKeyDown);
+        document.removeEventListener('keydown', this.handleDocumentKeyDown, true);
         document.removeEventListener('click', this.handleOutsideClick, true);
 
         this.unblockGameEvents();
+        document.getElementById('game-window')?.removeAttribute('inert');
 
         deps?.playGame?.();
 

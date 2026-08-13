@@ -256,6 +256,21 @@ export function createScene(_gameStore, assetManager, deps) {
         return document.documentElement.classList.contains('mobile-build-bar-open');
     }
 
+    /**
+     * True while a dialog / overlay owns the UI — no camera pan, placement nudge, or scene keys.
+     * (EventBlocker lets keys through when focus is inside the modal so Tab/fields work;
+     * this guard freezes the game world separately.)
+     */
+    function isGameWorldInputLocked() {
+        if (isMobileBuildBarOpen()) return true;
+        if (isInfoModalOpen()) return true;
+        if ((popupManager?.getActivePopups?.() || []).length > 0) return true;
+        if (document.getElementById('parameters-panel')?.classList.contains('visible')) return true;
+        if (document.getElementById('tutorial-panel')?.classList.contains('visible')) return true;
+        if (document.getElementById('objectives-panel')?.classList.contains('visible')) return true;
+        return false;
+    }
+
     function resetCameraDragState() {
         camera.onMouseUp({ button: 0 });
         camera.onMouseUp({ button: 1 });
@@ -2312,7 +2327,7 @@ function onTouchEnd(event) {
 
 
     function onKeyBoardDown(event){
-        if (isMobileBuildBarOpen()) {
+        if (isGameWorldInputLocked()) {
             return;
         }
         // StonePath tool: R rotates path orientation (Cesar-style), not the camera
@@ -2368,9 +2383,7 @@ function onTouchEnd(event) {
     }
 
     function onKeyBoardUp(event){
-        if (isMobileBuildBarOpen()) {
-            return;
-        }
+        // Always clear zoom/pan key flags so a modal open mid-hold cannot stick the camera.
         camera.onKeyBoardUp(event);
     }
 
