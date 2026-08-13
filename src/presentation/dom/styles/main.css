@@ -16,6 +16,13 @@
 
     --red-300: #721f2b;
 
+    /* Keyboard focus (RGAA 10.7 / WCAG 2.4.7) — override only with an equivalent ring */
+    --focus-ring-color: var(--cta);
+    --focus-ring-width: 2px;
+    --focus-ring-offset: 2px;
+    --focus-ring: var(--focus-ring-width) solid var(--focus-ring-color);
+    --focus-ring-on-dark: 2px solid #ffffff;
+
 
     --toolbar-btn-color: var(--cta);
     --panel-btn-color: var(--cta);
@@ -113,6 +120,16 @@
     overflow: hidden;
     clip: rect(0, 0, 0, 0);
     border: 0;
+}
+
+/* Baseline keyboard focus — components may replace with an equivalent ring */
+:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
+}
+
+:focus:not(:focus-visible) {
+    outline: none;
 }
 
 *,

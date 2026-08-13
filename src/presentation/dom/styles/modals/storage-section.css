@@ -202,9 +202,14 @@
 }
 
 .storage-max-input:focus {
-    outline: none;
     border-color: var(--cta);
     background: white;
+}
+
+.storage-max-input:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: 1px;
+    box-shadow: 0 0 0 3px rgba(251, 129, 24, 0.2);
 }
 
 .storage-windmill-controls {
@@ -285,8 +290,13 @@
 }
 
 .storage-month-select:focus {
-    outline: none;
     border-color: var(--cta);
+}
+
+.storage-month-select:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: 1px;
+    box-shadow: 0 0 0 3px rgba(251, 129, 24, 0.2);
 }
 
 .storage-windmill-sell {
@@ -331,8 +341,13 @@
 }
 
 .storage-sell-input:focus {
-    outline: none;
     border-color: var(--cta);
+}
+
+.storage-sell-input:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: 1px;
+    box-shadow: 0 0 0 3px rgba(251, 129, 24, 0.2);
 }
 
 .storage-sell-input:disabled {

@@ -6,6 +6,7 @@ import {
   initializeFoodTraceabilityTabs,
   loadFoodTraceabilityEntries,
 } from './food-traceability/FoodTraceabilityPanel.js';
+import { createModalFocusSession } from '../shell/modalFocus.js';
 
 /**
  * @param {{
@@ -28,15 +29,26 @@ export function initAdministratorPanel(deps = {}) {
     return;
   }
 
+  /** @type {ReturnType<typeof createModalFocusSession> | null} */
+  let focusSession = null;
+
   function openPanel() {
     administratorPanel.classList.add('active');
     popupManager?.forceOpenPopup('administrator-panel');
     if (sections.length > 0) {
       showSection('finances');
     }
+    focusSession?.release({ restoreFocus: false });
+    focusSession = createModalFocusSession({
+      panel: administratorPanel,
+      onEscape: closePanel,
+      initialFocus: '#administrator-panel-close-btn',
+    });
   }
 
   function closePanel() {
+    focusSession?.release();
+    focusSession = null;
     administratorPanel.classList.remove('active');
     popupManager?.forceClosePopup('administrator-panel');
   }

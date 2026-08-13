@@ -553,23 +553,31 @@
                     </span>
                 </article>
             </div>
-            <div class="info-box administrator-box stats-buttons" id="administrator-btn" title="Panneau Administrateur" aria-label="Ouvrir le panneau administrateur" role="button" tabindex="0">
-                <article class="budget-box">
-                    <span class="budget-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
-                            <path d="m9 12 2 2 4-4"/>
-                        </svg>
-                    </span>
-                </article>
-            </div>
-            <div class="info-box city-map-box stats-buttons" id="city-map-btn" title="Plan 2D de la ville" aria-label="Ouvrir le plan 2D de la ville" role="button" tabindex="0">
-                <article class="budget-box">
-                    <span class="budget-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-icon lucide-map"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg>
-                    </span>
-                </article>
-            </div>
+            <button
+                type="button"
+                class="info-box administrator-box stats-buttons"
+                id="administrator-btn"
+                title="Panneau Administrateur"
+                aria-label="Ouvrir le panneau administrateur"
+            >
+                <span class="budget-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+                        <path d="m9 12 2 2 4-4"/>
+                    </svg>
+                </span>
+            </button>
+            <button
+                type="button"
+                class="info-box city-map-box stats-buttons"
+                id="city-map-btn"
+                title="Plan 2D de la ville"
+                aria-label="Ouvrir le plan 2D de la ville"
+            >
+                <span class="budget-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-icon lucide-map"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg>
+                </span>
+            </button>
             <button
                 type="button"
                 id="map-filters-btn"
@@ -815,6 +823,7 @@
                 hidden
                 role="dialog"
                 aria-modal="true"
+                aria-hidden="true"
                 aria-label="Construction"
             >
                 <header class="mobile-build-bar__header">
@@ -875,28 +884,38 @@
                             </svg>
                         </span>
                     </button>
-                    <div class="info-box game-control-box stats-buttons" id="pause-btn" data-action="pause" title="Pause / Reprendre" aria-label="Pause ou reprendre le jeu" role="button" tabindex="0">
-                        <article class="budget-box">
-                            <span class="budget-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause">
-                                    <rect x="14" y="4" width="4" height="16" rx="1"/>
-                                    <rect x="6" y="4" width="4" height="16" rx="1"/>
-                                </svg>
-                            </span>
-                        </article>
-                    </div>
-                    <div class="info-box game-control-box stats-buttons" id="replay-btn" data-action="replay" title="Replay" aria-label="Replay" role="button" tabindex="0">
-                        <article class="budget-box">
-                            <span class="budget-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                class="lucide lucide-rotate-ccw-icon lucide-rotate-ccw">
-                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                                <path d="M3 3v5h5"/>
-                                </svg>
-                            </span>
-                        </article>
-                    </div>
+                    <button
+                        type="button"
+                        class="info-box game-control-box stats-buttons"
+                        id="pause-btn"
+                        data-action="pause"
+                        title="Pause / Reprendre"
+                        aria-label="Pause ou reprendre le jeu"
+                    >
+                        <span class="budget-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause">
+                                <rect x="14" y="4" width="4" height="16" rx="1"/>
+                                <rect x="6" y="4" width="4" height="16" rx="1"/>
+                            </svg>
+                        </span>
+                    </button>
+                    <button
+                        type="button"
+                        class="info-box game-control-box stats-buttons"
+                        id="replay-btn"
+                        data-action="replay"
+                        title="Replay"
+                        aria-label="Replay"
+                    >
+                        <span class="budget-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-rotate-ccw-icon lucide-rotate-ccw">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                            <path d="M3 3v5h5"/>
+                            </svg>
+                        </span>
+                    </button>
                     <div class="hud-actions__speed" role="group" aria-label="Vitesse de simulation">
                         <button type="button" id="slower-btn" class="hud-action-btn hud-action-btn--speed" title="Ralentir" aria-label="Ralentir la vitesse">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-snail"><path d="M2 13a6 6 0 1 0 12 0 4 4 0 1 0-8 0 2 2 0 0 0 4 0"/>
@@ -933,7 +952,7 @@
 </div>
 
     <!-- Budget Panel -->
-    <div id="bilan-panel" class="bilan-panel">
+    <div id="bilan-panel" class="bilan-panel" role="dialog" aria-modal="true" aria-label="Bilan comptable" aria-hidden="true" tabindex="-1">
         <div class="bilan-panel-wrapper">
             <div class="bilan-panel-header">
                 <div class="bilan-health-indicator" id="bilan-health-indicator">
@@ -942,13 +961,13 @@
                 <div class="bilan-panel-title-container">
                     <h2>💰 Bilan Comptable</h2>
                 </div>
-                <div class="bilan-panel-close-btn" title="Fermer" aria-label="Fermer le bilan comptable">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
+                <button type="button" class="bilan-panel-close-btn" title="Fermer" aria-label="Fermer le bilan comptable">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x" aria-hidden="true">
                         <circle cx="12" cy="12" r="10"/>
                         <path d="m15 9-6 6"/>
                         <path d="m9 9 6 6"/>
                     </svg>
-                </div>
+                </button>
             </div>
             <div class="bilan-panel-content">
                 <!-- Bilan Comptable -->
@@ -1388,20 +1407,20 @@
     </div>
 
     <!-- Loans Panel -->
-    <div id="loans-panel" class="loans-panel">
+    <div id="loans-panel" class="loans-panel" role="dialog" aria-modal="true" aria-label="Prêts bancaires" aria-hidden="true" tabindex="-1">
         <div class="loans-panel-wrapper">
             <div class="loans-panel-header">
                 <h2>🏦 Prêts Bancaires</h2>
                 <div class="loans-health-indicator" id="loans-health-indicator">
                     <span class="health-status">Finance saine</span>
                 </div>
-                <div class="loans-panel-close-btn" title="Fermer" aria-label="Fermer les prêts bancaires">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
+                <button type="button" class="loans-panel-close-btn" title="Fermer" aria-label="Fermer les prêts bancaires">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x" aria-hidden="true">
                         <circle cx="12" cy="12" r="10"/>
                         <path d="m15 9-6 6"/>
                         <path d="m9 9 6 6"/>
                     </svg>
-                </div>
+                </button>
             </div>
             <div class="loans-panel-content">
                 <!-- Loan System -->
@@ -1527,7 +1546,7 @@
     </div>
 
     <!-- Administrator Panel -->
-    <div id="administrator-panel" class="administrator-panel">
+    <div id="administrator-panel" class="administrator-panel" role="dialog" aria-modal="true" aria-label="Panneau administrateur" aria-hidden="true" tabindex="-1">
         <div class="administrator-panel-wrapper">
             <div class="administrator-panel-header">
                 <div class="administrator-panel-title">
@@ -1539,13 +1558,13 @@
                         Panneau Administrateur
                     </h2>
                 </div>
-                <div class="administrator-panel-close-btn" id="administrator-panel-close-btn" title="Fermer" aria-label="Fermer le panneau administrateur">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
+                <button type="button" class="administrator-panel-close-btn" id="administrator-panel-close-btn" title="Fermer" aria-label="Fermer le panneau administrateur">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x" aria-hidden="true">
                         <circle cx="12" cy="12" r="10"/>
                         <path d="m15 9-6 6"/>
                         <path d="m9 9 6 6"/>
                     </svg>
-                </div>
+                </button>
             </div>
             
             <!-- Navigation Buttons -->
@@ -2578,19 +2597,19 @@
     </div>
 
     <!-- Budget States Popup -->
-<div id="compte-de-resultat-panel" class="compte-de-resultat-panel">
+<div id="compte-de-resultat-panel" class="compte-de-resultat-panel" role="dialog" aria-modal="true" aria-label="Compte de résultat" aria-hidden="true" tabindex="-1">
     <div class="compte-de-resultat-wrapper">
         <div class="compte-de-resultat-header">
             <div class="compte-de-resultat-title-container">
                 <h3>Compte de Résultat</h3>
             </div>
-            <div class="compte-de-resultat-close-btn" title="Fermer" aria-label="Fermer le compte de résultat">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
+            <button type="button" class="compte-de-resultat-close-btn" title="Fermer" aria-label="Fermer le compte de résultat">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x" aria-hidden="true">
                     <circle cx="12" cy="12" r="10"/>
                     <path d="m15 9-6 6"/>
                     <path d="m9 9 6 6"/>
                 </svg>
-            </div>
+            </button>
         </div>
         
         <div class="compte-de-resultat-content">
@@ -2635,7 +2654,7 @@
 </div>
 
 <!-- Journal des Écritures Panel -->
-<div id="journal-panel" class="journal-panel">
+<div id="journal-panel" class="journal-panel" role="dialog" aria-modal="true" aria-label="Journal comptable" aria-hidden="true" tabindex="-1">
     <div class="journal-wrapper">
         <div class="journal-header">
             <div class="journal-header-left">
@@ -2681,12 +2700,12 @@
                     </div>
                 </div>
             </div>
-            <div class="journal-close-btn" title="Fermer" aria-label="Fermer le journal">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
+            <button type="button" class="journal-close-btn" title="Fermer" aria-label="Fermer le journal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x" aria-hidden="true">
                     <path d="M18 6L6 18"/>
                     <path d="M6 6l12 12"/>
                 </svg>
-            </div>
+            </button>
         </div>
         
         <div class="journal-content">
@@ -2816,16 +2835,16 @@
 </div>
 
 <!-- City Map Popup -->
-<div id="city-map-panel" class="city-map-panel">
+<div id="city-map-panel" class="city-map-panel" role="dialog" aria-modal="true" aria-label="Carte de la ville" aria-hidden="true" tabindex="-1">
     <div class="city-map-wrapper">
         <div class="city-map-header">
             <h3>🗺️ Carte de la Ville</h3>
-            <div class="city-map-close-btn" title="Fermer" aria-label="Fermer le plan de la ville">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
+            <button type="button" class="city-map-close-btn" title="Fermer" aria-label="Fermer le plan de la ville">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x" aria-hidden="true">
                     <path d="M18 6L6 18"/>
                     <path d="M6 6l12 12"/>
                 </svg>
-            </div>
+            </button>
         </div>
         <div class="city-map-content">
             <div class="city-map-legend">

@@ -7,6 +7,7 @@ import {
   resolveIcon,
 } from './ToolPanel.js';
 import { MOBILE_TOOLBAR_CATEGORIES } from './mobileToolbarCategories.js';
+import { createModalFocusSession } from '../shell/modalFocus.js';
 
 /** Gap between build bar bottom edge and top of the round FAB container. */
 const BUILD_BAR_GAP_PX = 8;
@@ -39,6 +40,9 @@ let closeBtn = null;
 let activeCategoryId = 'houses';
 let isOpen = false;
 let keyboardHandlerBound = false;
+
+/** @type {ReturnType<typeof createModalFocusSession> | null} */
+let buildBarFocusSession = null;
 
 /**
  * @param {boolean} open
@@ -142,21 +146,38 @@ export function open() {
   isOpen = true;
   buildBarEl.hidden = false;
   buildBarEl.classList.add('mobile-build-bar--open');
+  buildBarEl.setAttribute('aria-hidden', 'false');
   setBuildBarDocumentState(true);
   syncConstructionOpenButton();
+  buildBarFocusSession?.release({ restoreFocus: false });
+  buildBarFocusSession = createModalFocusSession({
+    panel: buildBarEl,
+    onEscape: () => {
+      close();
+      document.getElementById('toolbar-mobile-toggle')?.focus();
+    },
+    initialFocus: () => {
+      const activePill = pillsEl?.querySelector('.mobile-build-bar__pill[aria-selected="true"]');
+      if (activePill instanceof HTMLElement) return activePill;
+      return closeBtn;
+    },
+    ensureDialogAttributes: false,
+  });
   requestAnimationFrame(() => {
     syncBuildBarAnchor();
     syncPillsArrowState();
     splideInstance?.refresh();
-    focusInitialBuildBarControl();
   });
 }
 
 export function close() {
   if (!buildBarEl) return;
   isOpen = false;
+  buildBarFocusSession?.release({ restoreFocus: false });
+  buildBarFocusSession = null;
   buildBarEl.hidden = true;
   buildBarEl.classList.remove('mobile-build-bar--open');
+  buildBarEl.setAttribute('aria-hidden', 'true');
   document.documentElement.style.setProperty('--mobile-build-bar-offset', '0px');
   setBuildBarDocumentState(false);
   syncConstructionOpenButton();
@@ -225,7 +246,29 @@ function navigateCarouselTools(direction) {
   const nextIndex = Math.max(0, Math.min(tools.length - 1, startIndex + direction));
 
   splideInstance?.go(nextIndex);
+  syncCarouselToolRovingTabIndex(nextIndex);
   tools[nextIndex]?.focus();
+}
+
+/**
+ * Roving tabindex for carousel tools (APG toolbar pattern).
+ * @param {number} [activeIndex]
+ * @returns {HTMLButtonElement | undefined}
+ */
+function syncCarouselToolRovingTabIndex(activeIndex = -1) {
+  const tools = getCarouselToolButtons();
+  if (!tools.length) return undefined;
+
+  let index = activeIndex;
+  if (index < 0 || index >= tools.length) {
+    const selectedIndex = tools.findIndex((tool) => tool.classList.contains('selected'));
+    index = selectedIndex >= 0 ? selectedIndex : 0;
+  }
+
+  tools.forEach((tool, i) => {
+    tool.tabIndex = i === index ? 0 : -1;
+  });
+  return tools[index];
 }
 
 function initBuildBarKeyboard() {
@@ -236,18 +279,37 @@ function initBuildBarKeyboard() {
 }
 
 /**
- * Capture arrow keys when the bar is open but focus left the dialog (e.g. after map click).
+ * Capture arrow keys only when focus left the UI for the canvas / document
+ * (e.g. after map click) — do not steal arrows from other HUD controls.
  * @param {KeyboardEvent} event
  */
 function handleBuildBarDocumentKeyDown(event) {
   if (!isOpen || !buildBarEl) return;
   if (buildBarEl.contains(event.target)) return;
+  if (!isFocusOnGameSurface(document.activeElement)) return;
 
   if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
     event.preventDefault();
     event.stopPropagation();
     navigateCarouselTools(event.key === 'ArrowLeft' ? -1 : 1);
   }
+}
+
+/**
+ * @param {EventTarget | null} el
+ * @returns {boolean}
+ */
+function isFocusOnGameSurface(el) {
+  if (!(el instanceof Element)) {
+    return true;
+  }
+  if (el === document.body || el === document.documentElement) {
+    return true;
+  }
+  if (el.tagName === 'CANVAS') {
+    return true;
+  }
+  return Boolean(el.closest?.('canvas'));
 }
 
 function focusInitialBuildBarControl() {
@@ -296,6 +358,7 @@ function focusCarouselTool(preferSelected = true) {
   }
 
   splideInstance?.go(index);
+  syncCarouselToolRovingTabIndex(index);
   tools[index]?.focus();
 }
 
@@ -596,11 +659,18 @@ function renderCarousel(categoryId) {
         getButtonsUnactive();
         e.currentTarget?.classList?.add('selected');
         deps?.invokeSetActiveTool?.(e);
+        const tools = getCarouselToolButtons();
+        const index = tools.indexOf(/** @type {HTMLButtonElement} */ (e.currentTarget));
+        if (index >= 0) {
+          syncCarouselToolRovingTabIndex(index);
+        }
       },
     });
 
     listEl.appendChild(slide);
   });
+
+  syncCarouselToolRovingTabIndex(0);
 
   if (splideInstance) {
     splideInstance.refresh();

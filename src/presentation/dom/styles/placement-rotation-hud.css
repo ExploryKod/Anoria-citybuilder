@@ -51,7 +51,11 @@
 .placement-rotation-hud__btn:focus-visible {
   border-color: var(--cta);
   background: var(--cta-tint, #fff6f0);
-  outline: none;
+}
+
+.placement-rotation-hud__btn:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .placement-rotation-hud__btn:active {
@@ -75,6 +79,11 @@
   border-color: var(--site-btn-bg-primary-hover, #e86f10);
   background: var(--site-btn-bg-primary-hover, #e86f10);
   color: #fff;
+}
+
+.placement-rotation-hud__btn--confirm:focus-visible {
+  outline: var(--focus-ring-on-dark, 2px solid #fff);
+  outline-offset: var(--focus-ring-offset);
 }
 
 @media (max-width: 1024px) {

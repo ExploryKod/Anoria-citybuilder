@@ -1,4 +1,5 @@
 import EventBlocker from '../shell/EventBlocker.js';
+import { getFocusableElements } from '../shell/modalFocus.js';
 import * as eventsConfig from '../../../config/events.js';
 import { isTouchModeEnabled, setTouchModeEnabled } from '../../../config/touchMode.js';
 import { isCameraDpadEnabled, setCameraDpadEnabled } from '../../../config/cameraDpad.js';
@@ -308,24 +309,38 @@ class ParametersPanel {
     }
 
     handleDocumentKeyDown(event) {
-        if (!this.isVisible) return;
-
-        const target = event.target;
-        if (target && (
-            target.tagName === 'INPUT' ||
-            target.tagName === 'TEXTAREA' ||
-            target.closest('#parameters-panel')
-        )) {
-            if (event.key === 'Escape') {
-                event.preventDefault();
-                this.hide();
-            }
-            return;
-        }
+        if (!this.isVisible || !this.panel) return;
 
         if (event.key === 'Escape') {
             event.preventDefault();
             this.hide();
+            return;
+        }
+
+        if (event.key !== 'Tab') return;
+
+        const focusables = getFocusableElements(this.panel);
+        if (focusables.length === 0) {
+            event.preventDefault();
+            this.panel.focus();
+            return;
+        }
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement;
+
+        if (event.shiftKey) {
+            if (active === first || !this.panel.contains(active)) {
+                event.preventDefault();
+                last.focus();
+            }
+            return;
+        }
+
+        if (active === last || !this.panel.contains(active)) {
+            event.preventDefault();
+            first.focus();
         }
     }
 

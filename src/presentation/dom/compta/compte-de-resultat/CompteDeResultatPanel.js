@@ -7,6 +7,7 @@ import {
   renderFinancialStatementsBundles,
   renderBudgetSummary,
 } from './CompteDeResultatPresenter.js';
+import { createModalFocusSession } from '../../shell/modalFocus.js';
 
 /**
  * @type {{
@@ -15,6 +16,9 @@ import {
  * } | null}
  */
 let deps = null;
+
+/** @type {ReturnType<typeof createModalFocusSession> | null} */
+let compteFocusSession = null;
 
 /**
  * @param {{
@@ -46,24 +50,35 @@ export function initBudgetStatesPopup(panelDeps) {
 
       if (compteDeResultatPanel.classList.contains('active')) {
         popupManager?.forceOpenPopup('compte-de-resultat-panel');
+        compteFocusSession?.release({ restoreFocus: false });
+        compteFocusSession = createModalFocusSession({
+          panel: compteDeResultatPanel,
+          onEscape: closeCompte,
+          initialFocus: '.compte-de-resultat-close-btn',
+        });
         await loadBudgetStates('3', true);
         await updateFilterButtonLabels();
       } else {
-        popupManager?.forceClosePopup('compte-de-resultat-panel');
+        closeCompte();
       }
     }
   });
 
-  compteDeResultatCloseBtn.addEventListener('click', () => {
+  function closeCompte() {
+    compteFocusSession?.release();
+    compteFocusSession = null;
     compteDeResultatPanel.classList.remove('active');
     compteDeResultatBtn.classList.remove('active');
     popupManager?.forceClosePopup('compte-de-resultat-panel');
+  }
+
+  compteDeResultatCloseBtn.addEventListener('click', () => {
+    closeCompte();
   });
 
   compteDeResultatPanel.addEventListener('click', (e) => {
     if (e.target === compteDeResultatPanel) {
-      compteDeResultatPanel.classList.remove('active');
-      compteDeResultatBtn.classList.remove('active');
+      closeCompte();
     }
   });
 

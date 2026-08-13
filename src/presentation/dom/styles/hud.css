@@ -666,6 +666,13 @@
   color: var(--primary);
 }
 
+.hud-side-actions .info-box.stats-buttons:focus-visible,
+.hud-actions .info-box.stats-buttons:focus-visible,
+.hud-actions .hud-action-btn:focus-visible {
+  outline: var(--focus-ring-on-dark, 2px solid #fff);
+  outline-offset: var(--focus-ring-offset, 2px);
+}
+
 .hud-side-actions .info-box.stats-buttons.active,
 .hud-actions .info-box.stats-buttons.active {
   background: #fff;
@@ -700,9 +707,13 @@
   color: #009999;
 }
 
-.hud-actions .info-box.game-control-box:active,
-.hud-actions .info-box.game-control-box:focus {
+.hud-actions .info-box.game-control-box:active {
   outline: none;
+}
+
+.hud-actions .info-box.game-control-box:focus-visible {
+  outline: var(--focus-ring-on-dark, 2px solid #fff);
+  outline-offset: var(--focus-ring-offset, 2px);
 }
 
 .hud-actions .info-box.game-control-box.active {

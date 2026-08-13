@@ -400,7 +400,7 @@ export function renderTradeMapOverlay(partners, selectedCityId) {
   const selected = selectedCityId ?? 'anoria';
 
   return `
-    <div class="trade-map-overlay" id="trade-map-overlay" role="dialog" aria-modal="true" aria-label="Carte commerciale">
+    <div class="trade-map-overlay" id="trade-map-overlay" role="dialog" aria-modal="true" aria-label="Carte commerciale" tabindex="-1">
       <div class="trade-map-toolbar">
         <span class="trade-map-toolbar-title">Routes commerciales</span>
         <span class="trade-map-toolbar-stats">${openRoutes}/${partners.length} routes ouvertes</span>

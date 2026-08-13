@@ -149,7 +149,11 @@
 .gestion-rail__close:hover,
 .gestion-rail__close:focus-visible {
   background: rgba(29, 34, 40, 0.12);
-  outline: none;
+}
+
+.gestion-rail__close:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .gestion-rail__buttons {
@@ -185,7 +189,11 @@
 .gestion-rail__btn:focus-visible {
   border-color: var(--cta);
   background: var(--cta-tint, #fff6f0);
-  outline: none;
+}
+
+.gestion-rail__btn:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 @media (max-width: 1024px) {

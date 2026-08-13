@@ -158,6 +158,12 @@
     padding: 0;
 }
 
+.parameters-switch:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
+    box-shadow: 0 0 0 3px rgba(251, 129, 24, 0.28);
+}
+
 .parameters-switch:checked {
     background: var(--cta);
 }
@@ -201,7 +207,11 @@
 .parameters-action-btn:focus-visible:not(:disabled) {
     background: var(--cta-05, #e86f10);
     border-color: var(--cta-05, #e86f10);
-    outline: none;
+}
+
+.parameters-action-btn:focus-visible:not(:disabled) {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
 }
 
 .parameters-action-btn:disabled {
@@ -225,9 +235,13 @@
 }
 
 .parameters-number-input:focus {
-    outline: none;
     border-color: var(--cta-05);
     box-shadow: 0 0 0 3px rgba(251, 129, 24, 0.1);
+}
+
+.parameters-number-input:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: 1px;
 }
 
 .parameters-number-input:hover {

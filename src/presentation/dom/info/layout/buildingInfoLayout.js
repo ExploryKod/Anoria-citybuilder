@@ -7,6 +7,7 @@ import {
   BUILDING_INFO_TAB_ORDER,
   resolveBuildingInfoTabLabel,
 } from '../buildingInfoTabCatalog.js';
+import { createModalFocusSession } from '../../shell/modalFocus.js';
 
 /** @deprecated Prefer BUILDING_INFO_TAB_IDS — kept for existing imports */
 export const BUILDING_INFO_TABS = BUILDING_INFO_TAB_IDS;
@@ -14,6 +15,9 @@ export const BUILDING_INFO_TABS = BUILDING_INFO_TAB_IDS;
 let tabsInitialized = false;
 /** @type {ReadonlyArray<string>} */
 let visibleTabIds = [...BUILDING_INFO_TAB_ORDER];
+
+/** @type {ReturnType<typeof createModalFocusSession> | null} */
+let buildingInfoFocusSession = null;
 
 function getOverlay() {
   return document.querySelector('.info-building-overlay');
@@ -440,10 +444,19 @@ export function openBuildingInfoOverlay(overlay = getOverlay()) {
   if (!overlay) return;
   overlay.classList.add('active');
   setBuildingInfoAriaHidden(false);
+  buildingInfoFocusSession?.release({ restoreFocus: false });
+  buildingInfoFocusSession = createModalFocusSession({
+    panel: overlay,
+    onEscape: () => closeBuildingInfoOverlay(overlay),
+    initialFocus: '.panel-close-btn',
+    ensureDialogAttributes: false,
+  });
 }
 
 export function closeBuildingInfoOverlay(overlay = getOverlay()) {
   if (!overlay) return;
+  buildingInfoFocusSession?.release();
+  buildingInfoFocusSession = null;
   overlay.classList.remove('active');
   setBuildingInfoAriaHidden(true);
 }
