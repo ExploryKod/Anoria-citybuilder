@@ -1,343 +1,230 @@
 # Constellation de hameaux — plan d’action
 
-Document de conception et feuille de route pour passer d’**une seule grille 3D** à un **pays de hameaux** (données à l’échelle du pays, rendu 3D d’un seul hameau à la fois).
+Document de conception et feuille de route pour **plusieurs hameaux jouables** avec **une seule grille 3D à la fois** — le jeu reste le même pour le joueur, seul le lieu visible change.
 
-**Statut :** conception validée — implémentation non démarrée  
-**Branche cible :** `feature/multiple-scenes` (ou dérivée)  
-**Références :** [`game_vision.md`](game_vision.md), [`commerce/docs/gameplay.plan.md`](../../src/contexts/commerce/docs/gameplay.plan.md), [`accessibility.md`](../accessibility.md)
+**Statut :** en cours — prototype voyage + persistance (phases 0–2 largement amorcées)  
+**Branche :** `feature/basic-gameplay` (ou dérivée)  
+**Références :** [`multiple_hamlet.md`](multiple_hamlet.md), [`game_vision.md`](game_vision.md), [`accessibility.md`](../accessibility.md)
 
 ---
 
-## 1. Vision & contraintes
+## 1. Vision (figée v1)
 
-### Objectif
+### Principe
 
-Offrir une expérience « empire / César III » (constellation de hameaux, population cumulée élevée) **sans augmenter le budget WebGL** : toujours **une grille 12–18**, toujours **un canvas Three.js**, scène **remplacée** au voyage (pas de scènes parallèles).
+> **Pour le joueur et pour les bounded contexts, c’est toujours « une ville ».**  
+> Seuls changent : la **couche Three.js** (swap de scène) et **IndexedDB** (`hamletId` sur les bâtiments pour recréer ce que le joueur a construit ailleurs).
 
-### Décisions produit (figées)
+- Gameplay 3D **inchangé** : construction, admin, pause, caméra, économie globale.
+- **Pas de carte pays** : voyage via le **carrousel de hameaux** (FAB bas, à côté de la construction).
+- **Pas d’API debug** (`switchHamlet('b')`) : le voyage se fait **dans le jeu**.
+- Les **BC métier** (construction, housing, supply, emploi, compta…) **ne bougent pas** ou très peu : filtre `hamletId` sur les adapters Dexie + session `activeHamletId`.
+- Budget WebGL **identique** : une grille 12–18, un canvas, scène **remplacée** au voyage.
 
-| Sujet | Choix |
-|-------|--------|
-| Nouveaux hameaux | **Oui** — fondation sur site vierge |
-| Trésorerie | **Les deux** — ledger pays unique + vue / enveloppe par hameau |
-| Migration | **Oui** — citoyens / travailleurs entre hameaux (data, pas agents 3D inter-map) |
-| Routes | **Deux niveaux** — voirie locale (tuiles) + **arêtes pays** (graphe 2D) |
-| Nombre de hameaux | **Dynamique** — pas de plafond métier fixe |
-| UI gameplay 3D | **Inchangée** (construction, admin, pause, caméra) |
-| Navigation pays | **Cartes 2D existantes** (carte ville, carte commerce) + loader voyage |
+### Non-objectifs v1
 
-### Non-objectifs (v1)
+| Exclu | Reporté / jamais v1 |
+|--------|---------------------|
+| Carte pays 2D | Tick abstrait hameaux lointains |
+| Graphe routes pays | Migration citoyens inter-hameaux |
+| Ledger / budget par hameau | Compta filtrée par hameau |
+| Monde 3D continu | Agents 3D inter-map |
 
-- Monde 3D continu scrollable
-- Plusieurs scènes Three.js simultanées
-- LOD / billboards des hameaux lointains dans la scène active
-- Agents 3D migrant d’un hameau à l’autre sur la carte
+*(Ces sujets peuvent revenir en « v2 empire » si besoin — hors scope actuel.)*
 
-### Principe technique
+### Architecture minimale
 
 ```text
-Pays (Dexie + RAM)     →  toujours
-Hameau actif (tiles)   →  1 seul en RAM
-Scène 3D               →  hydrate / unload / initialize
-Tick détaillé          →  hameau actif
-Tick abstrait          →  autres hameaux (mensuel)
+Session
+  └── activeHamletId  (RAM + localStorage)
+
+Dexie
+  ├── hamlets       { id, name, natureSeeded? }
+  └── houses        { …, hamletId, anchorX/Y, … }  ← vérité bâtiment
+
+RAM (hameau visible)
+  └── city.tiles    ← dérivé de houses filtré par activeHamletId
+
+Three.js
+  └── scene         ← initialize / clear / hydrate au voyage
 ```
+
+**Tick :** un seul hameau simulé en détail (celui chargé). Les autres existent **en data** (bâtiments Dexie) jusqu’au prochain voyage.
 
 ---
 
-## 2. Architecture cible
+## 2. UX voyage
 
-### Couches
+1. Joueur ouvre le **carrousel** (bouton charrette, barre du bas).
+2. Clic sur un hameau **inactif** → **loader** → swap scène.
+3. Hameau **actif** en vert ; flèches si la liste dépasse le viewport.
+4. Premier visit d’un site vierge : **nature aléatoire** (`seedNature`), puis construction normale.
+5. Retour au hameau précédent : **tout est retrouvé** (Dexie → hydratation tuiles → meshes).
+
+Pipeline technique :
 
 ```text
-Country
-  ├── id, name, activeHamletId
-  ├── treasury (solde global — source de vérité)
-  └── graph: hamlets + countryRoadEdges
-
-Hamlet
-  ├── id, name, gridSize, mapPosition {x,y}
-  ├── neighborHamletIds[] (via arêtes)
-  └── aggregates (pop, budget slice, lastAbstractTick)
-
-Building (Dexie houses + hamletId)
-  ├── instanceId, hamletId, anchorX/Y (locaux 0..size-1)
-  └── champs gameplay existants (stocks, pop, employees…)
-
-MigrationQueue (Dexie ou table dédiée)
-  └── fromHamletId, toHamletId, citizens, workers, etaTurn
+travelToHamlet(id)
+  → setActiveHamletId(id)
+  → clearCityTiles(city)
+  → hydrateCityTilesFromRows(houses filtrés)
+  → scene.initialize(city, { seedNature? })
+  → scene.update(city)
 ```
 
-### Invariants
-
-1. **`city.tiles`** = vérité placement **du hameau actif** en session.
-2. **Dexie `houses`** = vérité état bâtiment ; filtrée par **`hamletId`**.
-3. Coordonnées **locales par hameau** (pas de refonte des BC `[anchorX+anchorY]`).
-4. **Un seul `activeHamletId`** à la fois ; swap = persist → unload → hydrate → init scène.
-5. **Journal comptable unique** ; les écritures portent un **`hamletId` optionnel** (centre de coût).
-
-### Fichiers clés (état actuel)
-
-| Domaine | Fichiers |
-|---------|----------|
-| Grille | `src/presentation/three/city.js` |
-| Scène | `src/presentation/three/scene.js`, `game.js` |
-| Persistance | `src/core/persistence/dexie/db.js`, `BuildingRecord.js` |
-| Session | `GameSessionBootstrap.js`, `runGameTick.js` |
-| Carte 2D | `carte-ville/CarteVillePanel.js`, `admin/commerce/renderTradeMap.js` |
-| Décor (à retirer / adapter) | `DecorativeVillageManager.js` |
-
-### Lacune bloquante actuelle
-
-Aujourd’hui **`city.tiles` n’est pas rechargé depuis Dexie au boot** ; `cleanupOrphanedBuildings` peut supprimer des lignes incohérentes. **Phase 0 obligatoire** avant multi-hameaux.
+Fichiers : `game.js`, `hamletSession.js`, `HamletTravelMenu.js`, `HydrateCityTilesFromBuildings.js`.
 
 ---
 
-## 3. Stratégie de simulation
+## 3. HUD population — double lecture (global + hameau visible)
 
-| Hameau | Tick |
-|--------|------|
-| **Actif (chargé)** | Tick complet actuel (tuiles, supply, emploi, 3D) |
-| **Autres** | Tick **abstrait mensuel** : pop agrégée, stocks barn/marché simplifiés, budget, migrations en transit, flux sur arêtes |
+**Seul changement UI métier** demandé en v1 (hors carrousel voyage).
 
-Au **chargement** d’un hameau : hydrater `city.tiles` depuis Dexie ; optionnellement **réconcilier** agrégats abstraits → bâtiments.
+Le rail population (`#hud-pop-rail`) garde les **totaux pays** (partie entière). À côté de chaque métrique globale, afficher la **valeur du hameau actuellement visible** dans **une autre couleur** (ex. vert local vs neutre global).
 
----
+### Règles d’affichage
 
-## 4. UX voyage & fondation
+| Métrique | Layout |
+|----------|--------|
+| Pop totale, affamés, morts, pop active, segments (citoyen / élite / fonctionnaire), manque MO | `[icône] [global] [local]` sur **une ligne** |
+| **Chômage** | **2 lignes** : ligne 1 = global (effectif + %), ligne 2 = hameau visible (effectif + %) — le % ne tient pas côte à côte |
 
-### Voyage entre hameaux
-
-1. Joueur ouvre **carte pays** (évolution de carte ville ou couche dédiée).
-2. Clic hameau → confirmation → **écran charrette / loader**.
-3. Pipeline : `saveActiveHamlet()` → `unloadScene()` → `loadHamlet(id)` → `scene.initialize()`.
-4. HUD identique ; seul le contenu de la grille change.
-
-### Fondation (site vierge)
-
-1. Depuis carte pays : « Fonder un hameau » sur emplacement libre.
-2. Coût deniers + éventuelle **arête route** vers un hameau existant.
-3. Création `hamlet` + swap vers grille vide (`createCity(size)`).
-4. Construction normale (comme aujourd’hui).
-
-### Routes pays
-
-- **Graphe** : `{ fromHamletId, toHamletId, builtAt, maintenance? }`.
-- Affichage : **carte 2D** (commerce / pays), pas de mesh inter-scènes.
-- Débloque : voyage, migration, commerce interne (phase ultérieure).
-
----
-
-## 5. Plan d’action par phases
-
-Chaque phase a des **livrables**, des **critères de done** et des **dépendances**. Ne pas sauter Phase 0.
-
----
-
-### Phase 0 — Save/load mono-hameau (prérequis)
-
-**But :** une partie = reprise fidèle après refresh.
-
-| # | Tâche | Notes |
-|---|--------|--------|
-| 0.1 | Service `hydrateCityTilesFromDexie(hamletId?)` | `houses` → `stampBuildingFootprint` sur `city.tiles` |
-| 0.2 | Appeler hydratation au boot **avant** `scene.initialize` | `GameSessionBootstrap` |
-| 0.3 | Adoucir / ordonner `cleanupOrphanedBuildings` | Ne pas nuker après hydratation |
-| 0.4 | Persister tuiles ou garantir dérivation 100 % buildings | Choisir : derive-only v1 |
-| 0.5 | Test manuel + test auto : pose → refresh → même layout | |
-
-**Done quand :** refresh navigateur = même ville jouable.
-
----
-
-### Phase 1 — Modèle `hamletId` & session
-
-**But :** données prêtes pour N hameaux ; gameplay encore mono-hameau.
-
-| # | Tâche | Notes |
-|---|--------|--------|
-| 1.1 | Migration Dexie : table `hamlets`, champ `hamletId` sur `houses` | Default `"main"` pour saves existantes |
-| 1.2 | Table `countries` (ou row singleton) : `activeHamletId` | |
-| 1.3 | `HamletContext` / `session.activeHamletId` | Remplacer accès global implicite |
-| 1.4 | Repositories : `listByHamlet(hamletId)`, `place…(hamletId)` | Adapters construction / housing |
-| 1.5 | Seed : 1 hameau « Eraanurbs » à la création de partie | |
-
-**Done quand :** toutes les écritures Dexie portent `hamletId` ; comportement identique à avant.
-
----
-
-### Phase 2 — Swap de scène (2 hameaux de test)
-
-**But :** prouver unload/load sans fuite mémoire ni état fantôme.
-
-| # | Tâche | Notes |
-|---|--------|--------|
-| 2.1 | `saveActiveHamlet()` — flush tiles → Dexie si needed | |
-| 2.2 | `unloadHamletScene()` — dispose meshes, citizens, zones, décor | Inverse de `scene.initialize` |
-| 2.3 | `loadHamlet(hamletId)` — `createCity` + hydrate + initialize | |
-| 2.4 | API dev : bouton / console `switchHamlet('b')` | Debug only |
-| 2.5 | Vérifier : caméra, ghost placement, popupManager, `isGameWorldInputLocked` | a11y inchangée |
-| 2.6 | Seed dev : hameau B vide 12×12 + quelques bâtiments Dexie | |
-
-**Done quand :** A ↔ B en < 3 s, pas de doublons meshes, pop/compta cohérents.
-
----
-
-### Phase 3 — Carte pays & voyage joueur
-
-**But :** navigation sans commande dev ; loader charrette.
-
-| # | Tâche | Notes |
-|---|--------|--------|
-| 3.1 | Mode « pays » sur `CarteVillePanel` ou panneau dédié | Nœuds = hameaux |
-| 3.2 | Clic hameau → `TravelToHamlet` use-case | Pause + loader |
-| 3.3 | Écran transition (charrette / texte / barre) | Réutiliser `game-loader` |
-| 3.4 | Indicateurs : pop, famine, trésorerie slice par nœud | Données agrégées |
-| 3.5 | Raccourci HUD « Carte du pays » (si besoin) | Optionnel |
-
-**Done quand :** joueur voyage A → B uniquement via UI.
-
----
-
-### Phase 4 — Fondation site vierge
-
-**But :** créer un hameau dynamiquement.
-
-| # | Tâche | Notes |
-|---|--------|--------|
-| 4.1 | UI carte : « Fonder ici » (emplacements libres) | |
-| 4.2 | Coût + validation (trésorerie pays, max distance?) | |
-| 4.3 | Création `hamlet` + arête optionnelle vers voisin | |
-| 4.4 | Swap vers grille vierge ; nom du hameau | |
-| 4.5 | Retirer / désactiver `DecorativeVillageManager` fake hamlets | Éviter confusion visuelle |
-
-**Done quand :** 3ᵉ hameau fondé en partie, jouable, persisté.
-
----
-
-### Phase 5 — Graphe routes pays
-
-**But :** arêtes = voyage + prérequis migration/commerce interne.
-
-| # | Tâche | Notes |
-|---|--------|--------|
-| 5.1 | Table `countryRoads` | `{ id, from, to, builtAt }` |
-| 5.2 | UI : construire route entre deux hameaux (carte) | Coût one-shot |
-| 5.3 | Rendu arêtes sur carte pays (+ trade-map plus tard) | 2D only |
-| 5.4 | Règle : migration / voyage requiert chemin dans le graphe | BFS simple |
-
-**Done quand :** hameau isolé non joignable ; route débloque voyage.
-
----
-
-### Phase 6 — Compta pays + budget hameau
-
-**But :** une caisse, deux lectures.
-
-| # | Tâche | Notes |
-|---|--------|--------|
-| 6.1 | `hamletId` sur écritures journal (nullable = pays) | |
-| 6.2 | Agrégats par hameau : recettes, charges, solde slice | |
-| 6.3 | UI admin / bilan : filtre « Tout le pays / Hameau X » | Forme UI inchangée |
-| 6.4 | Transferts inter-hameaux = écritures explicites | Pas de double caisse |
-| 6.5 | Maintenance routes pays (si gameplay) | Optionnel v1 |
-
-**Done quand :** bilan consolidé = somme hameaux + écritures pays.
-
----
-
-### Phase 7 — Tick abstrait (hameaux non actifs)
-
-**But :** le pays vit quand le joueur n’est pas sur place.
-
-| # | Tâche | Notes |
-|---|--------|--------|
-| 7.1 | `AbstractHamletTick` policy (mensuel) | Pop, famine, stocks simplifiés |
-| 7.2 | Brancher dans `runGameTick` après tick actif | |
-| 7.3 | Snapshots agrégés par hameau (`hamlet_aggregates`) | Perf IDB |
-| 7.4 | Notifications / news si crise hameau lointain | Réutiliser intelligence |
-| 7.5 | Tests : 5 hameaux, 1 actif, pop totale stable | |
-
-**Done quand :** hameau non visité depuis 12 mois évolue (pop / stocks).
-
----
-
-### Phase 8 — Migration citoyens / travailleurs
-
-**But :** flux entre hameaux connectés.
-
-| # | Tâche | Notes |
-|---|--------|--------|
-| 8.1 | Table / queue `migrations` | from, to, payload, eta |
-| 8.2 | UI admin ou carte : ordonner migration | |
-| 8.3 | Départ : −pop maisons hameau A | |
-| 8.4 | Transit : N tours (charrette) | |
-| 8.5 | Arrivée : tick abstrait ou load place dans logement | |
-| 8.6 | Events news « caravane de colons » | Optionnel |
-
-**Done quand :** migration A→B visible en data + à l’arrivée en 3D.
-
----
-
-### Phase 9 — Robustesse & écologie
-
-| # | Tâche | Notes |
-|---|--------|--------|
-| 9.1 | Profiling swap (mémoire WebGL, listeners) | |
-| 9.2 | Migration Dexie v2→v3 documentée | |
-| 9.3 | Tests E2E : fondation → build → voyage → refresh | |
-| 9.4 | Doc joueur (`game_vision.md`) | Section pays / hameaux |
-| 9.5 | Cap soft perf : alerte si > N hameaux abstraits lents | |
-
----
-
-## 6. Ordre recommandé (résumé)
+Exemple pop totale :
 
 ```text
-Phase 0  Save/load mono-hameau     ████ BLOCKER
-Phase 1  hamletId + Dexie
-Phase 2  Swap scène (proto 2 hamlets)
-Phase 3  Carte pays + voyage
-Phase 4  Fondation site vierge
-Phase 5  Routes pays (graphe)
-Phase 6  Ledger dual-view
-Phase 7  Tick abstrait
-Phase 8  Migration
-Phase 9  Polish
+[👥]  142  38
+       ↑    ↑
+    global  hameau visible (couleur locale)
 ```
 
-**MVP jouable « constellation » :** Phases **0 → 4** (fonder, voyager, construire, sauvegarder).  
-**MVP « empire vivant » :** jusqu’à **Phase 7–8**.
+Exemple chômage :
+
+```text
+[😢]  12  (8%)     ← pays
+[😢]   3  (5%)     ← hameau visible (couleur locale)
+```
+
+### Implémentation (indicatif)
+
+- Agrégats **pays** : logique actuelle (tous les `houses` ou tick global inchangé).
+- Agrégats **hameau** : même requêtes / policies, filtre `hamletId === activeHamletId`.
+- Présentation : `GameUI` / sync HUD existant + classes CSS `.pop-detail-value--country` / `.pop-detail-value--hamlet`.
+- Accessibilité : `aria-label` explicite (« Population totale pays », « Population hameau visible »).
 
 ---
 
-## 7. Risques & mitigations
+## 4. Plan par phases (v1 simplifié)
 
-| Risque | Mitigation |
-|--------|------------|
-| Orphelins Dexie / tiles | Phase 0 ; tests refresh |
-| Fuite mémoire au swap | `unloadHamletScene` explicite ; profiling Phase 9 |
-| BCs supposent une ville globale | `hamletId` sur repos ; pas de coords globales v1 |
-| Compta double comptage | Ledger unique + tags ; tests consolidés |
-| Hameaux lointains « morts » | Tick abstrait Phase 7 |
-| UX carte surchargée | Zoom / clustering sur carte pays |
+### Phase 0 — Reprise fidèle (mono-hameau) — prérequis
 
----
+| # | Tâche | Statut |
+|---|--------|--------|
+| 0.1 | `hydrateCityTilesFromRows` | ✅ |
+| 0.2 | Hydratation au boot avant `scene.initialize` | ✅ |
+| 0.3 | `cleanupOrphanedBuildings` safe avec repos filtrés | ⚠️ |
+| 0.4 | Derive-only : tuiles ← `houses` | ✅ |
+| 0.5 | Test auto hydratation + test manuel refresh | ⚠️ partiel |
 
-## 8. Critères de succès globaux
-
-- [ ] Budget GPU **identique** à une partie mono-hameau (même taille grille).
-- [ ] Population pays **> 1 hameau** cumulée en data (objectif long terme 10 000+).
-- [ ] Voyage **< 5 s** sur machine cible.
-- [ ] Aucune régression a11y (modales, Tab, gel caméra sous overlay).
-- [ ] Save pays complet : tous hameaux + graphe + migrations + journal.
+**Done :** refresh = même layout jouable.
 
 ---
 
-## 9. Prochaine action immédiate
+### Phase 1 — `hamletId` en Dexie — prérequis multi
 
-**Démarrer Phase 0.1** : spécifier et implémenter `hydrateCityTilesFromDexie` + test refresh.
+| # | Tâche | Statut |
+|---|--------|--------|
+| 1.1 | Dexie v3 : `hamlets` + `hamletId` sur `houses` | ✅ |
+| 1.2 | Session `activeHamletId` | ✅ (localStorage, pas de table `countries` v1) |
+| 1.3 | Repos : filtre hameau actif à l’écriture / lecture | ✅ |
+| 1.4 | Catalogue proto hameaux (seed noms) | ✅ (10 sites de test) |
+
+**Done :** une partie peut stocker N hameaux en Dexie ; gameplay mono-hameau inchangé si un seul site utilisé.
+
+---
+
+### Phase 2 — Swap de scène + voyage in-game
+
+| # | Tâche | Statut |
+|---|--------|--------|
+| 2.1 | `travelToHamlet` + loader | ✅ |
+| 2.2 | Carrousel FAB (a11y clavier) | ✅ |
+| 2.3 | Nature vierge par hameau (`natureSeeded`) | ✅ |
+| 2.4 | Construire A → voyager B → construire → retour A | ⚠️ à valider |
+| 2.5 | Pas de régression caméra / ghost / modales | ⚠️ |
+
+**Done :** boucle joueur A ↔ B sans commande dev, sans carte pays.
+
+---
+
+### Phase 3 — HUD pop global + hameau visible
+
+| # | Tâche | Statut |
+|---|--------|--------|
+| 3.1 | Agrégats pays (Dexie tous hameaux) | ✅ |
+| 3.2 | Agrégats hameau actif (même métriques, filtre scope) | ✅ |
+| 3.3 | Markup + CSS double valeur (couleur locale) | ✅ |
+| 3.4 | Chômage : 2 rows (pays puis hameau) | ✅ |
+| 3.5 | Mise à jour au voyage / tick (`syncPopRailHud`) | ✅ |
+
+**Done :** rail pop lisible ; chaque chiffre global a son pendant hameau visible.
+
+---
+
+### Phase 4 — Finition v1
+
+| # | Tâche | Statut |
+|---|--------|--------|
+| 4.1 | Smoke : build → voyage → refresh → retrouver tout | ❌ |
+| 4.2 | Profiling swap WebGL (fuite meshes / listeners) | ❌ |
+| 4.3 | Doc joueur courte (`game_vision.md` ou `multiple_hamlet.md`) | ⚠️ |
+| 4.4 | Commit / revue branche | ❌ |
+
+**Done :** v1 jouable et stable pour testers.
+
+---
+
+## 5. Backlog v2 (hors scope actuel)
+
+À ne **pas** planifier tant que v1 n’est pas stable :
+
+- Carte pays, routes graphe, fondation depuis carte
+- Tick abstrait hameaux non visités
+- Migration citoyens / travailleurs
+- Compta et journal par centre de coût `hamletId`
+- Table `countries`, `countryRoads`, `migrations`
+
+---
+
+## 6. Fichiers touchés (v1)
+
+| Zone | Fichiers | Nature du changement |
+|------|----------|----------------------|
+| Persistance | `db.js`, `hamletSession.js` | Faible — schéma + session |
+| Adapters Dexie | `Dexie*Repository.js` | Faible — filtre `isActiveHamletRow` |
+| Three.js | `game.js`, `scene.js`, `city.js` | **Principal** — swap + hydrate |
+| UI voyage | `HamletTravelMenu.js`, `game.html`, CSS | Moyen — carrousel |
+| UI pop | `game.html`, `hud.css`, `GameUI.js`, sync HUD | Moyen — double colonne chiffres |
+| BC gameplay | `runGameTick`, policies… | **Minimal** — comportement « une ville » |
+
+---
+
+## 7. Critères de succès v1
+
+- [ ] Le jeu se comporte **comme avant** sur un seul hameau.
+- [ ] Voyage entre hameaux **via le carrousel** ; loader ; constructions persistées.
+- [ ] Refresh navigateur : hameau actif + tous les hameaux Dexie intacts.
+- [ ] Rail pop : **global + hameau visible** (chômage sur 2 lignes).
+- [ ] Budget GPU identique ; pas de régression a11y voyage / modales.
+- [ ] **Pas** de carte pays, **pas** d’API debug.
+
+---
+
+## 8. Prochaine action
+
+1. **Valider Phase 2** — smoke A ↔ B (10 hameaux proto).  
+2. **Implémenter Phase 3** — agrégats hameau + rail pop double colonne.  
+3. **Clore Phase 0** — test refresh signé.
 
 Owner : _à assigner_  
-Estimation Phase 0 : _1–2 jours_  
-Estimation MVP Phases 0–4 : _2–4 semaines_ (ordre de grandeur, selon couverture tests).
+Estimation Phase 3 (HUD pop) : _1–2 jours_  
+Estimation v1 complète (phases 0–4 restantes) : _~1 semaine_

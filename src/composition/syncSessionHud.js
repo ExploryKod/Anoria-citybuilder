@@ -4,43 +4,87 @@
 
 import { getOrCreateAccountingContext } from './createAccountingContext.js';
 import { getCumulativeDeaths } from './gameplayMortalityState.js';
+import { getHudPopulationScopeSnapshot } from './hudPopulationAggregates.js';
 
 /**
- * @param {object} params
+ * Sync population rail: country totals + active hamlet (dual column).
+ *
  * @param {{
- *   getFamishedPopulation: () => Promise<{ famishedPopulation?: number }>,
- *   getCityPopulationSummary?: () => Promise<{ totalPop?: number }>,
- * }} params.housing
- * @param {{ getCityEmploymentSummary?: () => Promise<object> }} [params.employment]
- * @param {{
- *   updateFamishedPopulation: (n: number) => void,
+ *   updateFamishedPopulation?: (country: number, hamlet?: number) => void,
  *   updateDeaths?: (n: number) => void,
- *   updateFunds: (n: number) => void,
  *   updatePopulationBreakdown?: Function,
  *   updateUnemployedPopulation?: Function,
  *   updateWorkerLack?: Function,
- * }} params.gameUI
+ * }} gameUI
+ */
+export async function syncPopRailHud(gameUI) {
+  if (!gameUI) return;
+
+  try {
+    const [country, hamlet] = await Promise.all([
+      getHudPopulationScopeSnapshot('country'),
+      getHudPopulationScopeSnapshot('active'),
+    ]);
+
+    gameUI.updateFamishedPopulation?.(
+      country.famishedPopulation || 0,
+      hamlet.famishedPopulation || 0
+    );
+
+    gameUI.updatePopulationBreakdown?.(
+      country.totalPop ?? 0,
+      country.employment.activeCitizenCount ?? 0,
+      country.employment.elitePool ?? 0,
+      country.employment.civilServantCount ?? 0,
+      country.employment.activePopulationCount ?? 0,
+      {
+        totalPop: hamlet.totalPop ?? 0,
+        activeCitizenCount: hamlet.employment.activeCitizenCount ?? 0,
+        elitePool: hamlet.employment.elitePool ?? 0,
+        civilServantCount: hamlet.employment.civilServantCount ?? 0,
+        activePopulationCount: hamlet.employment.activePopulationCount ?? 0,
+      }
+    );
+
+    gameUI.updateUnemployedPopulation?.(
+      country.employment.unemployed ?? 0,
+      country.employment.unemploymentPercentage ?? 0,
+      hamlet.employment.unemployed ?? 0,
+      hamlet.employment.unemploymentPercentage ?? 0
+    );
+
+    gameUI.updateWorkerLack?.(
+      country.employment.lack ?? 0,
+      hamlet.employment.lack ?? 0
+    );
+  } catch (err) {
+    console.warn('[syncPopRailHud] population:', err);
+  }
+
+  try {
+    gameUI.updateDeaths?.(getCumulativeDeaths());
+  } catch (err) {
+    console.warn('[syncPopRailHud] deaths:', err);
+  }
+}
+
+/**
+ * @param {object} params
+ * @param {object} params.housing — kept for API compat; pop rail uses Dexie aggregates
+ * @param {object} [params.employment]
+ * @param {object} params.gameUI
  * @param {boolean} [params.includeEmployment=false]
  */
 export async function syncSessionHud({
-  housing,
+  housing: _housing,
   employment,
   gameUI,
   includeEmployment = false,
 }) {
   if (!gameUI) return;
 
-  try {
-    const { famishedPopulation } = await housing.getFamishedPopulation();
-    gameUI.updateFamishedPopulation(famishedPopulation || 0);
-  } catch (err) {
-    console.warn('[syncSessionHud] famished population:', err);
-  }
-
-  try {
-    gameUI.updateDeaths?.(getCumulativeDeaths());
-  } catch (err) {
-    console.warn('[syncSessionHud] deaths:', err);
+  if (includeEmployment && employment?.getCityEmploymentSummary) {
+    await syncPopRailHud(gameUI);
   }
 
   try {
@@ -48,30 +92,5 @@ export async function syncSessionHud({
     gameUI.updateFunds(snapshot?.funds ?? 0);
   } catch (err) {
     console.warn('[syncSessionHud] treasury:', err);
-  }
-
-  if (!includeEmployment || !employment?.getCityEmploymentSummary) {
-    return;
-  }
-
-  try {
-    const [summary, popSummary] = await Promise.all([
-      employment.getCityEmploymentSummary(),
-      housing.getCityPopulationSummary?.() ?? Promise.resolve({ totalPop: 0 }),
-    ]);
-    gameUI.updatePopulationBreakdown?.(
-      popSummary.totalPop ?? 0,
-      summary.activeCitizenCount ?? 0,
-      summary.elitePool ?? 0,
-      summary.civilServantCount ?? 0,
-      summary.activePopulationCount ?? 0
-    );
-    gameUI.updateUnemployedPopulation?.(
-      summary.unemployed ?? 0,
-      summary.unemploymentPercentage ?? 0
-    );
-    gameUI.updateWorkerLack?.(summary.lack ?? 0);
-  } catch (err) {
-    console.warn('[syncSessionHud] employment:', err);
   }
 }

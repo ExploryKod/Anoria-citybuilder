@@ -462,8 +462,8 @@
   flex-wrap: nowrap;
   gap: 0;
   width: auto;
-  min-width: 72px;
-  max-width: 120px;
+  min-width: 88px;
+  max-width: 140px;
   height: auto;
   min-height: 0;
   padding: 12px 10px;
@@ -546,12 +546,28 @@
   font-weight: 700;
 }
 
+.hud-pop-rail .pop-detail-values {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
 .hud-pop-rail .pop-detail-value {
   font-size: 14px;
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
   color: var(--primary);
+}
+
+.hud-pop-rail .pop-detail-value--country {
+  color: var(--primary);
+}
+
+.hud-pop-rail .pop-detail-value--hamlet {
+  color: var(--hud-hamlet-accent, #2d7a4f);
 }
 
 .hud-pop-rail .pop-detail-active {
@@ -573,8 +589,21 @@
   width: 100%;
 }
 
+.hud-pop-rail .pop-detail-unemployed-block {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+}
+
 .hud-pop-rail .pop-detail-unemployed {
   flex-wrap: wrap;
+  width: 100%;
+}
+
+.hud-pop-rail .pop-detail-unemployed--hamlet .pop-detail-icon {
+  opacity: 0.85;
 }
 
 .hud-pop-rail .pop-detail-unemployed-head {
@@ -585,40 +614,46 @@
 }
 
 .hud-pop-rail .display-unemployed-pop {
-  color: var(--primary);
   white-space: nowrap;
 }
 
-.hud-pop-rail .display-unemployed-pct::before {
-  content: ' (';
+.hud-pop-rail .pop-detail-unemployed--country .display-unemployed-pop {
+  color: var(--primary);
 }
 
-.hud-pop-rail .display-unemployed-pct::after {
-  content: ')';
+.hud-pop-rail .pop-detail-unemployed--hamlet .display-unemployed-pop {
+  color: var(--hud-hamlet-accent, #2d7a4f);
+}
+
+.hud-pop-rail .display-unemployed-pct.pop-detail-value--country {
+  color: var(--primary);
+}
+
+.hud-pop-rail .display-unemployed-pct.pop-detail-value--hamlet {
+  color: var(--hud-hamlet-accent, #2d7a4f);
 }
 
 .hud-pop-rail .display-worker-lack {
   color: #cc0000;
 }
 
-/* Mobile — chômage : % sous icône + effectif */
+.hud-pop-rail .display-worker-lack--hamlet.pop-detail-value--hamlet {
+  color: #e05555;
+}
+
+/* Mobile — chômage : effectif + % sur la même ligne par row */
 @media (max-width: 1024px) {
   .hud-pop-rail .pop-detail-unemployed {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
   }
 
   .hud-pop-rail .display-unemployed-pct {
-    padding-left: 24px;
     font-size: 11px;
     font-weight: 600;
-    opacity: 0.85;
-  }
-
-  .hud-pop-rail .display-unemployed-pct::before,
-  .hud-pop-rail .display-unemployed-pct::after {
-    content: none;
+    opacity: 0.92;
   }
 }
 
