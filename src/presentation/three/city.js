@@ -1,3 +1,42 @@
+export function createTile(x, y) {
+    return {
+        x,
+        y,
+        terrainId: 'grass',
+        neighbors: [],
+        buildingId: undefined,
+        buildingCoord: undefined,
+        tileLeft: x - 1,
+        tileRight: x + 1,
+        tileTop: y + 1,
+        tileBottom: y - 1,
+        player: '',
+        update() {},
+    };
+}
+
+/**
+ * Reset every cell to empty grass (keeps the same city object / size).
+ * @param {{ size: number, tiles: object[][] }} city
+ */
+export function clearCityTiles(city) {
+    if (!city?.tiles) return;
+    for (let x = 0; x < city.size; x++) {
+        for (let y = 0; y < city.size; y++) {
+            const tile = city.tiles[x]?.[y];
+            if (!tile) {
+                city.tiles[x][y] = createTile(x, y);
+                continue;
+            }
+            tile.terrainId = 'grass';
+            tile.buildingId = undefined;
+            tile.instanceId = undefined;
+            tile.buildingCoord = undefined;
+            delete tile.placementRotationStep;
+        }
+    }
+}
+
 export function createCity(size) {
     const tiles = [];
     const neighbors = [];
@@ -30,32 +69,6 @@ export function createCity(size) {
     }
 }
 
-function createTile(x,y) {
-    return { 
-        x, 
-        y, 
-        terrainId: 'grass',
-        neighbors: [],
-        buildingId: undefined,
-        buildingCoord: undefined,
-        tileLeft: x-1,
-        tileRight: x+1,
-        tileTop: y+1,
-        tileBottom: y-1,
-        player: "",
-        update(){
-          //  const x = Math.random();
-          //
-          //  if(x) {
-          //  if(this.buildingId === 'House-Red') {
-          //       this.buildingId = 'House-Purple';
-          //   } else if(this.buildingId === 'House-Blue') {
-          //       this.buildingId = 'House-Red';
-          //   }
-          // }
-        }
-    };
-}
 
 function getTile(x, y, tiles, size) {
     if (x === undefined || y === undefined ||

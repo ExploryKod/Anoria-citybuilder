@@ -1,4 +1,5 @@
 import db from '../../../../core/persistence/dexie/db.js';
+import { isActiveHamletRow } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { createEmploymentBuildingSnapshot } from '../../domain/EmploymentBuildingSnapshot.js';
 import {
   isHouseType,
@@ -49,23 +50,24 @@ export class DexieEmploymentBuildingRepository {
   async listLaborSources() {
     const rows = await db.houses.toArray();
     return rows
-      .filter((row) => isHouseType(row.type || ''))
+      .filter((row) => isActiveHamletRow(row) && isHouseType(row.type || ''))
       .map((row) => this.#toSnapshot(row));
   }
 
   async listWorkplaces() {
     const rows = await db.houses.toArray();
-    return rows.map((row) => this.#toSnapshot(row)).filter((snapshot) => isWorkplace(snapshot));
+    return rows.filter(isActiveHamletRow).map((row) => this.#toSnapshot(row)).filter((snapshot) => isWorkplace(snapshot));
   }
 
   async listAllSnapshots() {
     const rows = await db.houses.toArray();
-    return rows.map((row) => this.#toSnapshot(row));
+    return rows.filter(isActiveHamletRow).map((row) => this.#toSnapshot(row));
   }
 
   async resetWorkplaceWorkers() {
     const rows = await db.houses.toArray();
     for (const house of rows) {
+      if (!isActiveHamletRow(house)) continue;
       const type = house.type || '';
       if (isHouseType(type) || isRoadType(type)) continue;
 

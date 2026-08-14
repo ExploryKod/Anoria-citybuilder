@@ -200,7 +200,8 @@ export function createScene(_gameStore, assetManager, deps) {
         webglContextLost = false;
         try {
             if (currentCity) {
-                await initialize(currentCity);
+                await initialize(currentCity, { seedNature: false });
+                await update(currentCity, lastSceneUpdateTime);
             }
             showInfoToast('Affichage 3D restauré.', { timeout: 3000 });
         } catch (error) {
@@ -268,6 +269,8 @@ export function createScene(_gameStore, assetManager, deps) {
         if (document.getElementById('parameters-panel')?.classList.contains('visible')) return true;
         if (document.getElementById('tutorial-panel')?.classList.contains('visible')) return true;
         if (document.getElementById('objectives-panel')?.classList.contains('visible')) return true;
+        if (document.getElementById('hamlet-travel-menu')?.classList.contains('is-open')) return true;
+        if (loaderManager.isShowing()) return true;
         return false;
     }
 
@@ -337,7 +340,9 @@ export function createScene(_gameStore, assetManager, deps) {
     // Variables de gameplay
     let delay = 0;
 
-    async function initialize(city) {
+    async function initialize(city, options = {}) {
+        const seedNature = options.seedNature === true;
+
         // Store world platform before clearing scene
         let worldPlatform = scene.getObjectByName('world-platform');
         
@@ -350,6 +355,8 @@ export function createScene(_gameStore, assetManager, deps) {
         }
         
         scene.clear();
+        zoneGroups.length = 0;
+        zoneGroupsInitialized = false;
         // Re-apply fog after clear
         try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
         
@@ -527,16 +534,19 @@ export function createScene(_gameStore, assetManager, deps) {
         // No backdrop needed - World platform provides sharp cutoff with sky background
         // addBackdrop(citySize); // Disabled to prevent visible edges at horizon
         
-        // Initialize resources (trees, boulders, clay, iron, gold) before decorative village
-        const resourceManager = new ResourceManager();
-        await resourceManager.initializeResources(
-          city,
-          assetManager,
-          buildings,
-          zoneGroups,
-          { placeBuildingRecord: (data) => construction.placeBuildingRecord(data) },
-          supply
-        );
+        // Initialize resources (trees, boulders) only on a virgin hamlet.
+        // Returning to a saved hamlet hydrates tiles from Dexie instead.
+        if (seedNature) {
+            const resourceManager = new ResourceManager();
+            await resourceManager.initializeResources(
+              city,
+              assetManager,
+              buildings,
+              zoneGroups,
+              { placeBuildingRecord: (data) => construction.placeBuildingRecord(data) },
+              supply
+            );
+        }
         
         // Create decorative village around the playable area
         decorativeVillageManager.createDecorativeVillage(citySize);
