@@ -12,15 +12,24 @@ import {
     gameWindow as gameWindowElement,
     displayPop,
     displayPopTotal,
+    displayPopTotalHamlet,
     displayPopActiveTotal,
+    displayPopActiveTotalHamlet,
     displayPopCitizens,
+    displayPopCitizensHamlet,
     displayPopElites,
+    displayPopElitesHamlet,
     displayPopServants,
+    displayPopServantsHamlet,
     displayHungerPop,
+    displayHungerPopHamlet,
     displayDeathsPop,
     displayUnemployedPop,
     displayUnemployedPct,
+    displayUnemployedPopHamlet,
+    displayUnemployedPctHamlet,
     displayWorkerLack,
+    displayWorkerLackHamlet,
     displayFunds,
     infoObjectOverlay,
     infoObjectCloseBtn,
@@ -46,6 +55,15 @@ const HUD_SEASON_MODIFIER_CLASSES = [
     ...SEASON_KEYS.map((key) => `hud-season--${key}`),
     'hud-season--loading',
 ];
+
+/**
+ * @param {HTMLElement | null} el
+ * @param {number} value
+ */
+function setHudCount(el, value) {
+    if (!el) return;
+    el.textContent = String(Math.max(0, Math.floor(value) || 0));
+}
 
 class GameUI {
     /**
@@ -212,13 +230,21 @@ class GameUI {
      * @param {number} elitePopulation
      * @param {number} [civilServantCount=0]
      * @param {number} [activePopulationCount] — si omis : actifs + élites + fonctionnaires
+     * @param {{
+     *   totalPop?: number,
+     *   activeCitizenCount?: number,
+     *   elitePool?: number,
+     *   civilServantCount?: number,
+     *   activePopulationCount?: number,
+     * } | null} [hamletBreakdown]
      */
     updatePopulationBreakdown(
         totalPopulation,
         activeCitizenCount,
         elitePopulation,
         civilServantCount = 0,
-        activePopulationCount = null
+        activePopulationCount = null,
+        hamletBreakdown = null
     ) {
         const total = Math.max(0, Math.floor(totalPopulation) || 0);
         const activeCitizens = Math.max(0, Math.floor(activeCitizenCount) || 0);
@@ -228,20 +254,26 @@ class GameUI {
             ? Math.max(0, Math.floor(activePopulationCount) || 0)
             : activeCitizens + elites + servants;
 
-        if (displayPopTotal) {
-            displayPopTotal.textContent = String(total);
-        }
-        if (displayPopActiveTotal) {
-            displayPopActiveTotal.textContent = String(activeTotal);
-        }
-        if (displayPopCitizens) {
-            displayPopCitizens.textContent = String(activeCitizens);
-        }
-        if (displayPopElites) {
-            displayPopElites.textContent = String(elites);
-        }
-        if (displayPopServants) {
-            displayPopServants.textContent = String(servants);
+        setHudCount(displayPopTotal, total);
+        setHudCount(displayPopActiveTotal, activeTotal);
+        setHudCount(displayPopCitizens, activeCitizens);
+        setHudCount(displayPopElites, elites);
+        setHudCount(displayPopServants, servants);
+
+        if (hamletBreakdown) {
+            const hTotal = Math.max(0, Math.floor(hamletBreakdown.totalPop) || 0);
+            const hCitizens = Math.max(0, Math.floor(hamletBreakdown.activeCitizenCount) || 0);
+            const hElites = Math.max(0, Math.floor(hamletBreakdown.elitePool) || 0);
+            const hServants = Math.max(0, Math.floor(hamletBreakdown.civilServantCount) || 0);
+            const hActiveTotal = hamletBreakdown.activePopulationCount != null
+                ? Math.max(0, Math.floor(hamletBreakdown.activePopulationCount) || 0)
+                : hCitizens + hElites + hServants;
+
+            setHudCount(displayPopTotalHamlet, hTotal);
+            setHudCount(displayPopActiveTotalHamlet, hActiveTotal);
+            setHudCount(displayPopCitizensHamlet, hCitizens);
+            setHudCount(displayPopElitesHamlet, hElites);
+            setHudCount(displayPopServantsHamlet, hServants);
         }
 
         // Fallback if markup is missing (e.g. tests)
@@ -267,11 +299,13 @@ class GameUI {
 
     /**
      * Updates famished (hungry) population display
-     * @param {number} famishedPopulation - Number of famished people
+     * @param {number} famishedPopulation - Country-wide famished count
+     * @param {number} [hamletFamishedPopulation] - Active hamlet famished count
      */
-    updateFamishedPopulation(famishedPopulation) {
-        if (displayHungerPop) {
-            displayHungerPop.textContent = (famishedPopulation || 0).toString();
+    updateFamishedPopulation(famishedPopulation, hamletFamishedPopulation = null) {
+        setHudCount(displayHungerPop, famishedPopulation || 0);
+        if (hamletFamishedPopulation != null) {
+            setHudCount(displayHungerPopHamlet, hamletFamishedPopulation || 0);
         }
     }
 
@@ -286,32 +320,50 @@ class GameUI {
     }
 
     /**
-     * Updates global worker shortage (lack) — standalone number, no icon, always red.
-     * @param {number} lack - Missing workers on road-eligible workplaces
+     * Updates global worker shortage (lack).
+     * @param {number} lack - Country-wide missing workers
+     * @param {number} [hamletLack] - Active hamlet missing workers
      */
-    updateWorkerLack(lack = 0) {
-        if (displayWorkerLack) {
-            displayWorkerLack.textContent = String(Math.max(0, Math.floor(lack) || 0));
+    updateWorkerLack(lack = 0, hamletLack = null) {
+        setHudCount(displayWorkerLack, lack);
+        if (hamletLack != null) {
+            setHudCount(displayWorkerLackHamlet, hamletLack);
         }
     }
 
     /**
-     * Updates unemployed population display (chômage — surplus labor, with icon).
-     * @param {number} unemployedPopulation - Number of unemployed people
-     * @param {number} unemploymentPercentage - Unemployment percentage (optional)
+     * Updates unemployed population (country row + hamlet row).
+     * @param {number} unemployedPopulation
+     * @param {number|null} unemploymentPercentage
+     * @param {number} [hamletUnemployedPopulation]
+     * @param {number|null} [hamletUnemploymentPercentage]
      */
-    updateUnemployedPopulation(unemployedPopulation, unemploymentPercentage = null) {
+    updateUnemployedPopulation(
+        unemployedPopulation,
+        unemploymentPercentage = null,
+        hamletUnemployedPopulation = null,
+        hamletUnemploymentPercentage = null
+    ) {
         const count = unemployedPopulation || 0;
-        if (displayUnemployedPop) {
-            displayUnemployedPop.textContent = String(count);
-            displayUnemployedPop.style.color = '';
-        }
+        setHudCount(displayUnemployedPop, count);
         if (displayUnemployedPct) {
             if (unemploymentPercentage !== null && unemploymentPercentage !== undefined) {
                 displayUnemployedPct.textContent = `${unemploymentPercentage}%`;
                 displayUnemployedPct.hidden = false;
             } else {
                 displayUnemployedPct.hidden = true;
+            }
+        }
+
+        if (hamletUnemployedPopulation != null) {
+            setHudCount(displayUnemployedPopHamlet, hamletUnemployedPopulation || 0);
+            if (displayUnemployedPctHamlet) {
+                if (hamletUnemploymentPercentage !== null && hamletUnemploymentPercentage !== undefined) {
+                    displayUnemployedPctHamlet.textContent = `${hamletUnemploymentPercentage}%`;
+                    displayUnemployedPctHamlet.hidden = false;
+                } else {
+                    displayUnemployedPctHamlet.hidden = true;
+                }
             }
         }
     }

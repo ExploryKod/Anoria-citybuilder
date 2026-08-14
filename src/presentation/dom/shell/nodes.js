@@ -32,22 +32,37 @@ export const gameWindow = document.getElementById('game-window');
 const popHudRoot = '#hud-pop-rail';
 
 export const displayPop = document.querySelector(`${popHudRoot} .pop-breakdown`);
-export const displayPopTotal = document.querySelector(`${popHudRoot} .pop-total`);
-export const displayPopActiveTotal = document.querySelector(`${popHudRoot} .pop-active-total`);
+export const displayPopTotal = document.querySelector(`${popHudRoot} .pop-total.pop-detail-value--country`);
+export const displayPopTotalHamlet = document.querySelector(`${popHudRoot} .pop-total--hamlet`);
+export const displayPopActiveTotal = document.querySelector(`${popHudRoot} .pop-active-total.pop-detail-value--country`);
+export const displayPopActiveTotalHamlet = document.querySelector(`${popHudRoot} .pop-active-total--hamlet`);
 export const displayPopCitizens = document.querySelector(
-    `${popHudRoot} .pop-segment--citizen .pop-segment-value`
+    `${popHudRoot} .pop-segment--citizen .pop-segment-value.pop-detail-value--country`
+);
+export const displayPopCitizensHamlet = document.querySelector(
+    `${popHudRoot} .pop-segment--citizen .pop-segment-value--hamlet`
 );
 export const displayPopElites = document.querySelector(
-    `${popHudRoot} .pop-segment--elite .pop-segment-value`
+    `${popHudRoot} .pop-segment--elite .pop-segment-value.pop-detail-value--country`
+);
+export const displayPopElitesHamlet = document.querySelector(
+    `${popHudRoot} .pop-segment--elite .pop-segment-value--hamlet`
 );
 export const displayPopServants = document.querySelector(
-    `${popHudRoot} .pop-segment--servant .pop-segment-value`
+    `${popHudRoot} .pop-segment--servant .pop-segment-value.pop-detail-value--country`
 );
-export const displayHungerPop = document.querySelector(`${popHudRoot} .display-hunger-pop`);
+export const displayPopServantsHamlet = document.querySelector(
+    `${popHudRoot} .pop-segment--servant .pop-segment-value--hamlet`
+);
+export const displayHungerPop = document.querySelector(`${popHudRoot} .display-hunger-pop.pop-detail-value--country`);
+export const displayHungerPopHamlet = document.querySelector(`${popHudRoot} .display-hunger-pop--hamlet`);
 export const displayDeathsPop = document.querySelector(`${popHudRoot} .display-deaths-pop`);
-export const displayUnemployedPop = document.querySelector(`${popHudRoot} .display-unemployed-pop`);
-export const displayUnemployedPct = document.querySelector(`${popHudRoot} .display-unemployed-pct`);
-export const displayWorkerLack = document.querySelector(`${popHudRoot} .display-worker-lack`);
+export const displayUnemployedPop = document.querySelector(`${popHudRoot} .pop-detail-unemployed--country .display-unemployed-pop`);
+export const displayUnemployedPct = document.querySelector(`${popHudRoot} .pop-detail-unemployed--country .display-unemployed-pct`);
+export const displayUnemployedPopHamlet = document.querySelector(`${popHudRoot} .pop-detail-unemployed--hamlet .display-unemployed-pop`);
+export const displayUnemployedPctHamlet = document.querySelector(`${popHudRoot} .pop-detail-unemployed--hamlet .display-unemployed-pct`);
+export const displayWorkerLack = document.querySelector(`${popHudRoot} .display-worker-lack.pop-detail-value--country`);
+export const displayWorkerLackHamlet = document.querySelector(`${popHudRoot} .display-worker-lack--hamlet`);
 export const displayDelay = document.querySelector('.info-panel .display-delay');
 export const displayDelayUI = document.querySelector('.delay-ui');
 export const bulldozeSelected = document.querySelector('.bulldoze-btn');

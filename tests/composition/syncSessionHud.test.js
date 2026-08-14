@@ -1,37 +1,77 @@
 import { describe, expect, test, jest } from '@jest/globals';
-import { syncSessionHud } from '../../src/composition/syncSessionHud.js';
+
+jest.unstable_mockModule('../../src/composition/hudPopulationAggregates.js', () => ({
+  getHudPopulationScopeSnapshot: jest.fn(async (scope) => {
+    if (scope === 'country') {
+      return {
+        totalPop: 10,
+        famishedPopulation: 2,
+        employment: {
+          activeCitizenCount: 4,
+          elitePool: 1,
+          civilServantCount: 0,
+          activePopulationCount: 5,
+          unemployed: 3,
+          unemploymentPercentage: 30,
+          lack: 1,
+        },
+      };
+    }
+    return {
+      totalPop: 4,
+      famishedPopulation: 1,
+      employment: {
+        activeCitizenCount: 2,
+        elitePool: 0,
+        civilServantCount: 0,
+        activePopulationCount: 2,
+        unemployed: 1,
+        unemploymentPercentage: 25,
+        lack: 0,
+      },
+    };
+  }),
+}));
+
+const { syncSessionHud } = await import('../../src/composition/syncSessionHud.js');
 
 describe('syncSessionHud', () => {
-  test('HUD total population uses Housing residents, not Employment labor pool', async () => {
+  test('pop rail uses country totals with active hamlet breakdown', async () => {
     const updatePopulationBreakdown = jest.fn();
+    const updateFamishedPopulation = jest.fn();
+    const updateUnemployedPopulation = jest.fn();
+    const updateWorkerLack = jest.fn();
 
     await syncSessionHud({
-      housing: {
-        getFamishedPopulation: async () => ({ famishedPopulation: 0 }),
-        getCityPopulationSummary: async () => ({ totalPop: 1 }),
-      },
-      employment: {
-        getCityEmploymentSummary: async () => ({
-          totalPopulation: 0,
-          activeCitizenCount: 0,
-          elitePool: 0,
-          civilServantCount: 0,
-          activePopulationCount: 0,
-          unemployed: 0,
-          unemploymentPercentage: 0,
-          lack: 0,
-        }),
-      },
+      housing: {},
+      employment: { getCityEmploymentSummary: async () => ({}) },
       gameUI: {
-        updateFamishedPopulation: () => {},
+        updateFamishedPopulation,
+        updateDeaths: () => {},
         updateFunds: () => {},
         updatePopulationBreakdown,
-        updateUnemployedPopulation: () => {},
-        updateWorkerLack: () => {},
+        updateUnemployedPopulation,
+        updateWorkerLack,
       },
       includeEmployment: true,
     });
 
-    expect(updatePopulationBreakdown).toHaveBeenCalledWith(1, 0, 0, 0, 0);
+    expect(updateFamishedPopulation).toHaveBeenCalledWith(2, 1);
+    expect(updatePopulationBreakdown).toHaveBeenCalledWith(
+      10,
+      4,
+      1,
+      0,
+      5,
+      {
+        totalPop: 4,
+        activeCitizenCount: 2,
+        elitePool: 0,
+        civilServantCount: 0,
+        activePopulationCount: 2,
+      }
+    );
+    expect(updateUnemployedPopulation).toHaveBeenCalledWith(3, 30, 1, 25);
+    expect(updateWorkerLack).toHaveBeenCalledWith(1, 0);
   });
 });
