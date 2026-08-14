@@ -155,4 +155,12 @@ export class BarnStockOperations {
     await this.repository.saveCommerceStocks(barnId, nextStocks);
     return credited;
   }
+
+  /**
+   * @returns {Promise<boolean>}
+   */
+  async hasOperationalCommerceBarn() {
+    const barns = await this.repository.findCommerceBarnRows();
+    return barns.some((barn) => isOperationalCommerceBarn(barn));
+  }
 }

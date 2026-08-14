@@ -10,6 +10,8 @@ export function journalEntryTypeLabel(entry) {
     salary: 'Salaires fonctionnaires',
     unemployment_benefit: 'Salaires chômeurs',
     exceptional_expenses: 'Réparation',
+    commercial_route: 'Commission Négociants',
+    contribution: 'Contribution',
     import_wheat: 'Import Blé',
     import_carrot: 'Import Carotte',
     import_cabbage: 'Import Chou',

@@ -11,8 +11,8 @@
   z-index: var(--z-index-info-panel, 10020);
   position: absolute;
   top: 0;
-  /* Fill game-window minus left toolbar + gutters — no hardcoded px width */
-  left: calc(min(var(--toolbar-width), var(--toolbar-width-max)) + var(--hud-gutter));
+  /* Fill game-window with gutters only (left toolbar retired) */
+  left: var(--hud-gutter);
   right: var(--hud-gutter);
   bottom: auto;
   width: auto; /* stretches between left and right */
@@ -338,19 +338,15 @@
   box-sizing: border-box;
 }
 
-/* Coupled with left floating toolbar (desktop) */
+/* Pop rail — gutter only (left toolbar retired) */
 @media screen and (min-width: 1025px) {
   .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
     top: var(--hud-floating-panel-top);
-    left: calc(
-      max(var(--hud-gutter), env(safe-area-inset-left, 0px))
-      + min(var(--toolbar-width), var(--toolbar-width-max))
-      + var(--hud-gutter)
-    );
+    left: max(var(--hud-gutter), env(safe-area-inset-left, 0px));
   }
 }
 
-/* Mobile / tablet landscape — toolbar is hidden; pop rail uses standard gutter */
+/* Mobile / tablet landscape — same gutter */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
   .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
     top: var(--hud-floating-panel-top);
@@ -578,7 +574,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   width: auto;
   max-width: none;
   min-height: 0;
@@ -587,6 +583,7 @@
   background: transparent;
   border: none;
   backdrop-filter: none;
+  max-height: calc(100vh - 120px);
 }
 
 /* -------------------------------------------------------------------------
@@ -655,6 +652,10 @@
   transition: transform 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
   overflow: hidden;
   position: relative;
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  color: #fff;
 }
 
 .hud-side-actions .info-box.stats-buttons:hover,
@@ -663,6 +664,16 @@
   transform: translateY(-1px);
   background: #fff;
   color: var(--primary);
+}
+
+.hud-side-actions .info-box.stats-buttons:focus-visible,
+.hud-actions .info-box.stats-buttons:focus-visible,
+.hud-actions .hud-action-btn:focus-visible {
+  outline: 3px solid var(--cta);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 1px #fff,
+    0 0 0 6px rgba(251, 129, 24, 0.45);
 }
 
 .hud-side-actions .info-box.stats-buttons.active,
@@ -699,9 +710,16 @@
   color: #009999;
 }
 
-.hud-actions .info-box.game-control-box:active,
-.hud-actions .info-box.game-control-box:focus {
+.hud-actions .info-box.game-control-box:active {
   outline: none;
+}
+
+.hud-actions .info-box.game-control-box:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 1px var(--primary),
+    0 0 0 6px rgba(0, 153, 153, 0.55);
 }
 
 .hud-actions .info-box.game-control-box.active {

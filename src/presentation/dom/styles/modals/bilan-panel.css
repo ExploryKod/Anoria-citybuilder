@@ -74,11 +74,20 @@
     border: 3px solid var(--cta);
     flex-shrink: 0;
     min-width: 40px;
+    appearance: none;
+    -webkit-appearance: none;
+    font: inherit;
+    padding: 0;
 }
 
 .bilan-panel-close-btn:hover {
     background: var(--cta);
     color: white;
+}
+
+.bilan-panel-close-btn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
 }
 
 /* Custom scrollbar for budget panel content */
@@ -472,9 +481,15 @@
 
 .loan-input-group input:focus,
 .loan-input-group select:focus {
-    outline: none;
     border-color: var(--cta);
     background: rgba(255, 255, 255, 0.15);
+}
+
+.loan-input-group input:focus-visible,
+.loan-input-group select:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: 1px;
+    box-shadow: 0 0 0 3px rgba(251, 129, 24, 0.25);
 }
 
 .loan-summary {

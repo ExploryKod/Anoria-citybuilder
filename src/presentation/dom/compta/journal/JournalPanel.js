@@ -4,6 +4,7 @@
  */
 
 import { renderJournalList } from './JournalPresenter.js';
+import { createModalFocusSession } from '../../shell/modalFocus.js';
 
 /**
  * @type {{
@@ -12,6 +13,9 @@ import { renderJournalList } from './JournalPresenter.js';
  * } | null}
  */
 let deps = null;
+
+/** @type {ReturnType<typeof createModalFocusSession> | null} */
+let journalFocusSession = null;
 
 /**
  * @param {{
@@ -35,20 +39,35 @@ export function initJournalPopup(panelDeps) {
   }
 
   journalBtn.addEventListener('click', () => {
+    openJournal();
+  });
+
+  function openJournal() {
     journalPanel.classList.add('active');
     popupManager?.forceOpenPopup('journal-panel');
     loadJournalEntries('all');
-  });
+    journalFocusSession?.release({ restoreFocus: false });
+    journalFocusSession = createModalFocusSession({
+      panel: journalPanel,
+      onEscape: closeJournal,
+      initialFocus: '.journal-close-btn',
+    });
+  }
 
-  journalCloseBtn.addEventListener('click', () => {
+  function closeJournal() {
+    journalFocusSession?.release();
+    journalFocusSession = null;
     journalPanel.classList.remove('active');
     popupManager?.forceClosePopup('journal-panel');
+  }
+
+  journalCloseBtn.addEventListener('click', () => {
+    closeJournal();
   });
 
   journalPanel.addEventListener('click', (e) => {
     if (e.target === journalPanel) {
-      journalPanel.classList.remove('active');
-      popupManager?.forceClosePopup('journal-panel');
+      closeJournal();
     }
   });
 

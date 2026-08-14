@@ -13,6 +13,7 @@ import { getOrCreateGameplayContext } from './createGameplayContext.js';
 import { getOrCreateConstructionContext } from './createConstructionContext.js';
 import { getOrCreateAccountingContext } from './createAccountingContext.js';
 import { getOrCreateCityAssetsContext } from './createCityAssetsContext.js';
+import { getOrCreateIntelligenceContext } from './createIntelligenceContext.js';
 import { toSupplySeason, toSupplyMonth } from './supplyTimeLabels.js';
 import { createGameRuntime } from './createGameRuntime.js';
 import { assembleSessionApi } from './sessionApi.js';
@@ -27,6 +28,7 @@ import { assembleSessionApi } from './sessionApi.js';
  *   gameplay: object,
  *   construction: object,
  *   accounting: object,
+ *   intelligence: object,
  *   sessionApi: ReturnType<typeof assembleSessionApi>,
  *   runtime: ReturnType<typeof createGameRuntime>,
  * }}
@@ -46,6 +48,7 @@ export function bootGameContexts() {
   const construction = getOrCreateConstructionContext();
   const cityAssets = getOrCreateCityAssetsContext();
   const accounting = getOrCreateAccountingContext({ cityAssets });
+  const intelligence = getOrCreateIntelligenceContext();
   const sessionApi = assembleSessionApi({
     construction,
     accounting,
@@ -55,6 +58,7 @@ export function bootGameContexts() {
     housing,
     commerce,
     parcels,
+    intelligence,
   });
   const runtime = createGameRuntime({
     parcels,
@@ -63,6 +67,7 @@ export function bootGameContexts() {
     employment,
     commerce,
     gameplay,
+    intelligence,
     getTimeInfo: (turn) => TimeManager.getTimeInfo(turn),
     toSupplySeason,
     toSupplyMonth,
@@ -79,6 +84,7 @@ export function bootGameContexts() {
     gameplay,
     construction,
     accounting,
+    intelligence,
     sessionApi,
     runtime,
   };
