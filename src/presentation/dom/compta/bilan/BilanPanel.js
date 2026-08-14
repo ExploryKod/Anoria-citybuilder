@@ -1,4 +1,5 @@
 import { renderBilan } from './BilanPresenter.js';
+import { createModalFocusSession } from '../../shell/modalFocus.js';
 
 /**
  * @type {{
@@ -10,6 +11,9 @@ import { renderBilan } from './BilanPresenter.js';
 let deps = null;
 
 let balanceSheetFiltersInitialized = false;
+
+/** @type {ReturnType<typeof createModalFocusSession> | null} */
+let bilanFocusSession = null;
 
 function initBilanFilters() {
   if (balanceSheetFiltersInitialized) return;
@@ -123,21 +127,36 @@ export function initBilanPopup(panelDeps) {
 
   initBilanFilters();
 
-  budgetBtn.addEventListener('click', () => {
+  function openBilan() {
     budgetPanel.classList.add('active');
     popupManager?.forceOpenPopup('bilan-panel');
     updateBudgetDisplay();
+    bilanFocusSession?.release({ restoreFocus: false });
+    bilanFocusSession = createModalFocusSession({
+      panel: budgetPanel,
+      onEscape: closeBilan,
+      initialFocus: '.bilan-panel-close-btn',
+    });
+  }
+
+  function closeBilan() {
+    bilanFocusSession?.release();
+    bilanFocusSession = null;
+    budgetPanel.classList.remove('active');
+    popupManager?.forceClosePopup('bilan-panel');
+  }
+
+  budgetBtn.addEventListener('click', () => {
+    openBilan();
   });
 
   budgetPanelCloseBtn.addEventListener('click', () => {
-    budgetPanel.classList.remove('active');
-    popupManager?.forceClosePopup('bilan-panel');
+    closeBilan();
   });
 
   budgetPanel.addEventListener('click', (e) => {
     if (e.target === budgetPanel) {
-      budgetPanel.classList.remove('active');
-      popupManager?.forceClosePopup('bilan-panel');
+      closeBilan();
     }
   });
 }

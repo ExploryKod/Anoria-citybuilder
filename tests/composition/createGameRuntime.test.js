@@ -101,6 +101,17 @@ function fakeGameplay() {
   };
 }
 
+function fakeIntelligence() {
+  let newsCalls = 0;
+  return {
+    newsCalls: () => newsCalls,
+    generateMonthlyNews: async () => {
+      newsCalls += 1;
+      return [];
+    },
+  };
+}
+
 function baseRuntimeDeps(overrides = {}) {
   return {
     parcels: fakeParcels(),
@@ -109,6 +120,7 @@ function baseRuntimeDeps(overrides = {}) {
     employment: fakeEmployment(),
     commerce: fakeCommerce(),
     gameplay: fakeGameplay(),
+    intelligence: fakeIntelligence(),
     getTimeInfo: (turn) => TimeManager.getTimeInfo(turn),
     toSupplySeason: () => 'summer',
     toSupplyMonth: () => 'july',
@@ -134,6 +146,7 @@ describe('createGameRuntime', () => {
       'supply.monthlyCommerce',
       'commerce.turn',
       'gameplay.randomEvents',
+      'intelligence.monthlyNews',
     ]);
     expect(runtime.world).toBeDefined();
   });
@@ -145,12 +158,23 @@ describe('createGameRuntime', () => {
     const employment = fakeEmployment();
     const commerce = fakeCommerce();
     const gameplay = fakeGameplay();
+    const intelligence = fakeIntelligence();
     const runtime = createGameRuntime(
-      baseRuntimeDeps({ parcels, supply, housing, employment, commerce, gameplay })
+      baseRuntimeDeps({
+        parcels,
+        supply,
+        housing,
+        employment,
+        commerce,
+        gameplay,
+        intelligence,
+        // Jour 1 du mois → déclenche la génération mensuelle intelligence
+        getTimeInfo: () => ({ dayInMonth: 1, monthIndex: 0 }),
+      })
     );
 
     await runtime.runSimulation({
-      time: 3,
+      time: 0,
       city: { size: 1, tiles: [[]] },
     });
 
@@ -165,6 +189,20 @@ describe('createGameRuntime', () => {
     expect(supply.commerceCalls()).toBe(1);
     expect(commerce.turnCalls()).toBe(1);
     expect(gameplay.eventCalls()).toBe(1);
+    expect(intelligence.newsCalls()).toBe(1);
+  });
+
+  test('intelligence.monthlyNews ne tourne pas hors 1er jour du mois', async () => {
+    const intelligence = fakeIntelligence();
+    const runtime = createGameRuntime(
+      baseRuntimeDeps({
+        intelligence,
+        getTimeInfo: () => ({ dayInMonth: 3, monthIndex: 0 }),
+      })
+    );
+
+    await runtime.runSimulation({ time: 2, city: { size: 1, tiles: [[]] } });
+    expect(intelligence.newsCalls()).toBe(0);
   });
 
   test('refuse un contexte invalide', () => {
@@ -197,5 +235,15 @@ describe('createGameRuntime', () => {
         commerce: fakeCommerce(),
       })
     ).toThrow(/gameplay/);
+    expect(() =>
+      createGameRuntime({
+        parcels: fakeParcels(),
+        supply: fakeSupply(),
+        housing: fakeHousing(),
+        employment: fakeEmployment(),
+        commerce: fakeCommerce(),
+        gameplay: fakeGameplay(),
+      })
+    ).toThrow(/intelligence/);
   });
 });

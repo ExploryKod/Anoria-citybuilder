@@ -10,6 +10,7 @@ import {
   renderActiveLoansHtml,
   renderActiveLoansErrorHtml,
 } from './PretsPresenter.js';
+import { createModalFocusSession } from '../../shell/modalFocus.js';
 
 /**
  * @type {{
@@ -19,6 +20,9 @@ import {
  * } | null}
  */
 let deps = null;
+
+/** @type {ReturnType<typeof createModalFocusSession> | null} */
+let loansFocusSession = null;
 
 /**
  * @param {{
@@ -50,20 +54,35 @@ export function initLoansPopup(panelDeps) {
   }
 
   loansBtn.addEventListener('click', () => {
+    openLoans();
+  });
+
+  function openLoans() {
     loansPanel.classList.add('active');
     popupManager?.forceOpenPopup('loans-panel');
     updateLoansDisplay();
-  });
+    loansFocusSession?.release({ restoreFocus: false });
+    loansFocusSession = createModalFocusSession({
+      panel: loansPanel,
+      onEscape: closeLoans,
+      initialFocus: '.loans-panel-close-btn',
+    });
+  }
 
-  loansCloseBtn.addEventListener('click', () => {
+  function closeLoans() {
+    loansFocusSession?.release();
+    loansFocusSession = null;
     loansPanel.classList.remove('active');
     popupManager?.forceClosePopup('loans-panel');
+  }
+
+  loansCloseBtn.addEventListener('click', () => {
+    closeLoans();
   });
 
   loansPanel.addEventListener('click', (e) => {
     if (e.target === loansPanel) {
-      loansPanel.classList.remove('active');
-      popupManager?.forceClosePopup('loans-panel');
+      closeLoans();
     }
   });
 

@@ -263,9 +263,14 @@
 }
 
 .factory-line-max-input:focus {
-    outline: none;
     border-color: #007bff;
     background: #fff;
+}
+
+.factory-line-max-input:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: 1px;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
 }
 
 .factory-line-max-input:disabled {
@@ -604,9 +609,13 @@
 }
 
 .factory-select:focus {
-    outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.factory-select:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: 1px;
 }
 
 /* Production Journal */

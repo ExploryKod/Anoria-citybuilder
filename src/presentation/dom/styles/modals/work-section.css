@@ -114,9 +114,13 @@
 }
 
 .work-priority-input:focus {
-    outline: none;
     border-color: var(--lightgreen);
     box-shadow: 0 0 0 2px rgba(0, 153, 153, 0.2);
+}
+
+.work-priority-input:focus-visible {
+    outline: 2px solid var(--lightgreen);
+    outline-offset: 1px;
 }
 
 .work-table td.sector-col {

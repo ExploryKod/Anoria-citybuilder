@@ -1,6 +1,8 @@
 import EventBlocker from '../shell/EventBlocker.js';
+import { getFocusableElements } from '../shell/modalFocus.js';
 import * as eventsConfig from '../../../config/events.js';
 import { isTouchModeEnabled, setTouchModeEnabled } from '../../../config/touchMode.js';
+import { isCameraDpadEnabled, setCameraDpadEnabled } from '../../../config/cameraDpad.js';
 import { readStoredTileGridVisibility } from '../../three/managers/TileGridOverlay.js';
 import { getLastPwaUpdateAt, installLatestPwaUpdate } from '../../../pwa.js';
 
@@ -32,6 +34,7 @@ class ParametersPanel {
         this.daysPerMonthInput = null;
         this.tileGridToggle = null;
         this.touchModeToggle = null;
+        this.cameraDpadToggle = null;
         this.pwaUpdateInstallBtn = null;
         this.pwaUpdateStatus = null;
 
@@ -66,6 +69,7 @@ class ParametersPanel {
         this.daysPerMonthInput = this.panel.querySelector('#days-per-month-input');
         this.tileGridToggle = this.panel.querySelector('#tile-grid-toggle');
         this.touchModeToggle = this.panel.querySelector('#touch-mode-toggle');
+        this.cameraDpadToggle = this.panel.querySelector('#camera-dpad-toggle');
         this.pwaUpdateInstallBtn = this.panel.querySelector('#pwa-update-install-btn');
         this.pwaUpdateStatus = this.panel.querySelector('#pwa-update-status');
 
@@ -159,6 +163,12 @@ class ParametersPanel {
             });
         }
 
+        if (this.cameraDpadToggle) {
+            this.cameraDpadToggle.addEventListener('change', (e) => {
+                this.handleCameraDpadChange(e.target.checked);
+            });
+        }
+
         if (this.pwaUpdateInstallBtn) {
             this.pwaUpdateInstallBtn.addEventListener('click', (event) => {
                 event.preventDefault();
@@ -191,6 +201,10 @@ class ParametersPanel {
             if (this.touchModeToggle) {
                 this.touchModeToggle.checked = isTouchModeEnabled();
             }
+
+            if (this.cameraDpadToggle) {
+                this.cameraDpadToggle.checked = isCameraDpadEnabled();
+            }
         } catch (error) {
             console.error('[ParametersPanel] Error loading values:', error);
         }
@@ -201,6 +215,14 @@ class ParametersPanel {
             setTouchModeEnabled(enabled);
         } catch (error) {
             console.error('[ParametersPanel] Error toggling touch mode:', error);
+        }
+    }
+
+    handleCameraDpadChange(enabled) {
+        try {
+            setCameraDpadEnabled(enabled);
+        } catch (error) {
+            console.error('[ParametersPanel] Error toggling camera D-pad:', error);
         }
     }
 
@@ -287,24 +309,45 @@ class ParametersPanel {
     }
 
     handleDocumentKeyDown(event) {
-        if (!this.isVisible) return;
+        if (!this.isVisible || !this.panel) return;
 
-        const target = event.target;
-        if (target && (
-            target.tagName === 'INPUT' ||
-            target.tagName === 'TEXTAREA' ||
-            target.closest('#parameters-panel')
-        )) {
-            if (event.key === 'Escape') {
-                event.preventDefault();
-                this.hide();
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            event.stopPropagation();
+            this.hide();
+            return;
+        }
+
+        if (event.key !== 'Tab') return;
+
+        const focusables = getFocusableElements(this.panel);
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (focusables.length === 0) {
+            this.panel.focus();
+            return;
+        }
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement;
+        const currentIndex =
+            active instanceof HTMLElement ? focusables.indexOf(active) : -1;
+
+        if (event.shiftKey) {
+            if (currentIndex <= 0) {
+                last.focus();
+            } else {
+                focusables[currentIndex - 1].focus();
             }
             return;
         }
 
-        if (event.key === 'Escape') {
-            event.preventDefault();
-            this.hide();
+        if (currentIndex === -1 || currentIndex >= focusables.length - 1) {
+            first.focus();
+        } else {
+            focusables[currentIndex + 1].focus();
         }
     }
 
@@ -355,16 +398,18 @@ class ParametersPanel {
         this.refreshPwaUpdateStatus();
 
         this.panel.classList.add('visible');
+        this.panel.removeAttribute('inert');
         this.panel.setAttribute('aria-hidden', 'false');
 
         requestAnimationFrame(() => {
             this.panel.focus();
         });
 
-        document.addEventListener('keydown', this.handleDocumentKeyDown);
+        document.addEventListener('keydown', this.handleDocumentKeyDown, true);
         document.addEventListener('click', this.handleOutsideClick, true);
 
         this.blockGameEvents();
+        document.getElementById('game-window')?.setAttribute('inert', '');
 
         deps?.pauseGame?.();
     }
@@ -374,12 +419,14 @@ class ParametersPanel {
 
         this.isVisible = false;
         this.panel.classList.remove('visible');
+        this.panel.setAttribute('inert', '');
         this.panel.setAttribute('aria-hidden', 'true');
 
-        document.removeEventListener('keydown', this.handleDocumentKeyDown);
+        document.removeEventListener('keydown', this.handleDocumentKeyDown, true);
         document.removeEventListener('click', this.handleOutsideClick, true);
 
         this.unblockGameEvents();
+        document.getElementById('game-window')?.removeAttribute('inert');
 
         deps?.playGame?.();
 

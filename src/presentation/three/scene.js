@@ -252,6 +252,32 @@ export function createScene(_gameStore, assetManager, deps) {
         return infoOverlay && infoOverlay.classList.contains('active');
     }
 
+    function isMobileBuildBarOpen() {
+        return document.documentElement.classList.contains('mobile-build-bar-open');
+    }
+
+    /**
+     * True while a dialog / overlay owns the UI — no camera pan, placement nudge, or scene keys.
+     * (EventBlocker lets keys through when focus is inside the modal so Tab/fields work;
+     * this guard freezes the game world separately.)
+     */
+    function isGameWorldInputLocked() {
+        if (isMobileBuildBarOpen()) return true;
+        if (isInfoModalOpen()) return true;
+        if ((popupManager?.getActivePopups?.() || []).length > 0) return true;
+        if (document.getElementById('parameters-panel')?.classList.contains('visible')) return true;
+        if (document.getElementById('tutorial-panel')?.classList.contains('visible')) return true;
+        if (document.getElementById('objectives-panel')?.classList.contains('visible')) return true;
+        return false;
+    }
+
+    function resetCameraDragState() {
+        camera.onMouseUp({ button: 0 });
+        camera.onMouseUp({ button: 1 });
+        camera.onMouseUp({ button: 2 });
+        isLeftPointerDown = false;
+    }
+
     // Selections d'un objet
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
@@ -1947,6 +1973,9 @@ export function createScene(_gameStore, assetManager, deps) {
         if (isInfoModalOpen()) {
             return;
         }
+        if (isMobileBuildBarOpen()) {
+            return;
+        }
         if (performance.now() < suppressInputUntilMs) {
             return;
         }
@@ -2024,11 +2053,11 @@ function onMouseMove(event) {
         return;
     }
     if (isInfoModalOpen()) {
-        // Reset mouse button states in camera to prevent dragging when modal closes
-        camera.onMouseUp({ button: 0 }); // Reset left mouse
-        camera.onMouseUp({ button: 1 }); // Reset middle mouse
-        camera.onMouseUp({ button: 2 }); // Reset right mouse
-        isLeftPointerDown = false;
+        resetCameraDragState();
+        return;
+    }
+    if (isMobileBuildBarOpen()) {
+        resetCameraDragState();
         return;
     }
     if (performance.now() < suppressInputUntilMs) {
@@ -2119,6 +2148,9 @@ function onTouchStart(event) {
     if (isInfoModalOpen()) {
         return;
     }
+    if (isMobileBuildBarOpen()) {
+        return;
+    }
     if (performance.now() < suppressInputUntilMs) {
         return;
     }
@@ -2162,6 +2194,9 @@ function onTouchMove(event) {
         return;
     }
     if (isInfoModalOpen()) {
+        return;
+    }
+    if (isMobileBuildBarOpen()) {
         return;
     }
     if (performance.now() < suppressInputUntilMs) {
@@ -2292,6 +2327,9 @@ function onTouchEnd(event) {
 
 
     function onKeyBoardDown(event){
+        if (isGameWorldInputLocked()) {
+            return;
+        }
         // StonePath tool: R rotates path orientation (Cesar-style), not the camera
         if (
             event.key
@@ -2302,6 +2340,15 @@ function onTouchEnd(event) {
             && typeof this.onRotateBuildingTool === 'function'
         ) {
             const handled = this.onRotateBuildingTool(event);
+            if (handled) {
+                event.preventDefault?.();
+                return;
+            }
+        }
+
+        // Placeable tool: arrows nudge the ghost; Enter confirms placement (keyboard autonomy).
+        if (typeof this.onPlacementKeyboard === 'function') {
+            const handled = this.onPlacementKeyboard(event);
             if (handled) {
                 event.preventDefault?.();
                 return;
@@ -2336,6 +2383,7 @@ function onTouchEnd(event) {
     }
 
     function onKeyBoardUp(event){
+        // Always clear zoom/pan key flags so a modal open mid-hold cannot stick the camera.
         camera.onKeyBoardUp(event);
     }
 
@@ -2345,6 +2393,9 @@ function onTouchEnd(event) {
             return;
         }
         if (isInfoModalOpen()) {
+            return;
+        }
+        if (isMobileBuildBarOpen()) {
             return;
         }
         if (performance.now() < suppressInputUntilMs) {
@@ -2395,6 +2446,11 @@ function onTouchEnd(event) {
         onRoadPaintEnd: undefined,
         /** @type {((event?: KeyboardEvent) => boolean) | undefined} */
         onRotateBuildingTool: undefined,
+        /**
+         * Keyboard placement while a build tool is active (arrows nudge, Enter places).
+         * @type {((event: KeyboardEvent) => boolean) | undefined}
+         */
+        onPlacementKeyboard: undefined,
         /** @type {((focused: object | null) => void) | undefined} */
         onPlacementHover: undefined,
         /**

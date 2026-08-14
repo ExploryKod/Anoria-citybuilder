@@ -1,4 +1,4 @@
-/* Mobile Camera Controls - Only visible on mobile/tablet devices */
+/* Camera D-pad panel — shown when toggled (.mobile-visible), any breakpoint */
 .mobile-camera-controls {
     position: fixed;
     /* Default: center-left of the viewport */
@@ -7,7 +7,7 @@
     right: auto;
     bottom: auto;
     transform: translateY(-50%);
-    z-index: var(--z-index-toolbar);
+    z-index: var(--z-index-legend, 1000);
     display: none; /* Hidden by default */
     flex-direction: column;
     gap: 12px;
@@ -31,6 +31,11 @@
 
 .mobile-camera-controls.mobile-visible {
     display: flex;
+    top: 50%;
+    left: max(12px, env(safe-area-inset-left, 0px));
+    right: auto;
+    bottom: auto;
+    transform: translateY(-50%);
 }
 
 .mobile-camera-controls.mobile-camera-controls--dragged {
@@ -68,26 +73,6 @@
 .mobile-camera-controls__drag-handle:active {
     cursor: grabbing;
     transform: scale(0.95);
-}
-
-/* Show on mobile/tablet devices */
-@media screen and (max-width: 1024px) {
-    .mobile-camera-controls {
-        display: none;
-    }
-
-    .mobile-camera-controls.mobile-visible {
-        display: flex;
-        top: 50%;
-        left: max(12px, env(safe-area-inset-left, 0px));
-        right: auto;
-        bottom: auto;
-        transform: translateY(-50%);
-    }
-
-    .mobile-camera-controls.mobile-visible.mobile-camera-controls--dragged {
-        transform: none;
-    }
 }
 
 .mobile-controls-group {
@@ -197,16 +182,9 @@
     height: 44px;
 }
 
-/* Hide on desktop */
-@media screen and (min-width: 1025px) {
-    .mobile-camera-controls {
-        display: none !important;
-    }
-}
-
 /* Adjust for smaller mobile screens */
 @media screen and (max-width: 768px) {
-    .mobile-camera-controls {
+    .mobile-camera-controls.mobile-visible {
         left: max(10px, env(safe-area-inset-left, 0px));
         padding: 10px;
         padding-top: 36px;
@@ -228,10 +206,10 @@
     }
 }
 
-/* Landscape mobile — keep center-left, clear of docked toolbar */
+/* Landscape — gutter only (left toolbar retired) */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
     .mobile-camera-controls.mobile-visible {
-        left: calc(min(var(--toolbar-width, 110px), var(--toolbar-width-max, 140px)) + 12px);
+        left: max(12px, env(safe-area-inset-left, 0px));
         padding: 8px;
         padding-top: 36px;
         gap: 8px;

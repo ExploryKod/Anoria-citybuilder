@@ -12,6 +12,7 @@ import {
   applyCommerceExportCreditMutation,
   applyExceptionalExpenseDebitMutation,
   applyCommercialRouteDebitMutation,
+  applyContributionDebitMutation,
   applyCapitalFundsIncomeCreditMutation,
   applyConstructionRefundCreditMutation,
   applyUnemploymentBenefitDebitMutation,
@@ -116,6 +117,13 @@ export class DexieTreasuryWriteAdapter extends TreasuryWritePort {
   async applyCommercialRouteDebit(amount) {
     return this.#loadAndSave((budget) =>
       applyCommercialRouteDebitMutation(budget, amount)
+    );
+  }
+
+  /** @inheritdoc */
+  async applyContributionDebit(amount) {
+    return this.#loadAndSave((budget) =>
+      applyContributionDebitMutation(budget, amount)
     );
   }
 
