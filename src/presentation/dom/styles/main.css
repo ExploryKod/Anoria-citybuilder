@@ -37,8 +37,10 @@
     --game-chrome-blur: blur(10px);
     --game-chrome-shadow: 0 4px 20px rgba(29, 34, 40, 0.1);
 
-    /* Top anchor shared by floating toolbar + pop rail when coupled (not portrait bottom-bar mode) */
-    --hud-floating-panel-top: max(12px, calc(env(safe-area-inset-top, 0px) + 8px));
+    /* Exit door (top-right) + pop rail stacked under it */
+    --game-exit-size: 48px;
+    --game-exit-top: var(--hud-floating-panel-top);
+    --game-exit-left: max(var(--hud-gutter), env(safe-area-inset-left, 0px));
 
     /* Portrait: pop rail below HUD time/budget strip + camera row (barre du bas) */
     --hud-pop-rail-top-portrait: calc(

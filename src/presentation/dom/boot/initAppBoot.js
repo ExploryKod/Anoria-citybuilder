@@ -19,6 +19,7 @@ import { initToolBarBindings } from './ToolBarBindings.js';
 import { initMobileToolbar } from './ToolbarShell.js';
 import { initHudTimeBarMinWidth } from '../shell/hudTimeBarSizing.js';
 import { initHudShellMenus } from '../shell/HudShellMenus.js';
+import { initHamletTravelMenu } from '../shell/HamletTravelMenu.js';
 import { initMobileCompactToolbar } from '../tools/MobileCompactToolbar.js';
 import { initMobileClickStateFab } from '../tools/MobileClickStateFab.js';
 import { initMissingTooltips, observeMissingTooltips } from './TooltipTitles.js';
@@ -82,6 +83,7 @@ export async function initAppBoot() {
     loadBudgetStates(period, showLoading)
   );
   await bootstrapGameSession(assetManager);
+  initHamletTravelMenu();
   initMapFiltersPanel({
     getScene: getSessionScene,
   });

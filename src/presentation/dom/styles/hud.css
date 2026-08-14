@@ -322,8 +322,8 @@
 .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
   position: fixed;
   z-index: calc(var(--z-index-info-panel, 10020) - 1);
-  top: max(12px, calc(env(safe-area-inset-top, 0px) + 8px));
-  left: max(var(--hud-gutter), env(safe-area-inset-left, 0px));
+  top: calc(var(--game-exit-top) + var(--game-exit-size) + 8px);
+  left: var(--game-exit-left);
   right: auto;
   bottom: auto;
   transform: none;
@@ -338,19 +338,19 @@
   box-sizing: border-box;
 }
 
-/* Pop rail — gutter only (left toolbar retired) */
 @media screen and (min-width: 1025px) {
   .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
-    top: var(--hud-floating-panel-top);
-    left: max(var(--hud-gutter), env(safe-area-inset-left, 0px));
+    top: calc(var(--game-exit-top) + var(--game-exit-size) + 8px);
+    left: var(--game-exit-left);
+    right: auto;
   }
 }
 
-/* Mobile / tablet landscape — same gutter */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
   .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
-    top: var(--hud-floating-panel-top);
-    left: max(var(--hud-gutter), env(safe-area-inset-left, 0px));
+    top: calc(var(--game-exit-top) + var(--game-exit-size) + 8px);
+    left: var(--game-exit-left);
+    right: auto;
   }
 }
 
@@ -362,6 +362,7 @@
   position: absolute;
   top: -8px;
   right: -8px;
+  left: auto;
   z-index: 2;
   width: 22px;
   height: 22px;
@@ -794,6 +795,12 @@
    ------------------------------------------------------------------------- */
 
 @media screen and (max-width: 1024px) and (orientation: portrait) {
+  .game-exit-home-btn {
+    top: var(--hud-pop-rail-top-portrait);
+    left: var(--game-exit-left);
+    right: auto;
+  }
+
   .info-panel-wrapper.hud {
     left: var(--hud-gutter);
     right: var(--hud-gutter);
@@ -833,8 +840,9 @@
   }
 
   .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
-    top: var(--hud-pop-rail-top-portrait);
-    left: max(var(--hud-gutter), env(safe-area-inset-left, 0px));
+    top: calc(var(--hud-pop-rail-top-portrait) + var(--game-exit-size) + 8px);
+    left: var(--game-exit-left);
+    right: auto;
   }
 
   .hud-actions.info-box-stats {
