@@ -37,22 +37,16 @@
     --game-chrome-blur: blur(10px);
     --game-chrome-shadow: 0 4px 20px rgba(29, 34, 40, 0.1);
 
-    /* Exit door (top-right) + pop rail stacked under it */
-    --game-exit-size: 48px;
-    --game-exit-top: var(--hud-floating-panel-top);
-    --game-exit-left: max(var(--hud-gutter), env(safe-area-inset-left, 0px));
-
-    /* Portrait: pop rail below HUD time/budget strip + camera row (barre du bas) */
-    --hud-pop-rail-top-portrait: calc(
-      env(safe-area-inset-top, 0px)
-      + 4px
-      + 4px
+    /* Pop rail starts just under the HUD status row (exit + time/budget) */
+    --hud-pop-rail-top: calc(
+      4px
       + var(--progress-bar-h)
-      + var(--hud-chip-height)
-      + var(--hud-vitals-row-gap)
       + var(--hud-chip-height)
       + 8px
     );
+
+    /* Portrait: same — under the door / time row (camera stays on the right) */
+    --hud-pop-rail-top-portrait: var(--hud-pop-rail-top);
 
     --house-red-color:var(--red-300);
     --house-purple-color: #a90aa9;

@@ -510,25 +510,6 @@
           </div>
         </div>
 
-        <a
-          href="/"
-          id="game-exit-home-btn"
-          class="toolbar-toggle-btn game-exit-home-btn"
-          title="Retour à l'accueil"
-          aria-label="Quitter la partie et retourner à l'accueil"
-        >
-          <span class="toolbar-toggle-icon" aria-hidden="true">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-door-open">
-              <path d="M11 20H2"/>
-              <path d="M11 4.562v16.157a1 1 0 0 0 1.242.97L19 20V5.562a2 2 0 0 0-1.515-1.94l-4-1A2 2 0 0 0 11 4.561z"/>
-              <path d="M11 4H8a2 2 0 0 0-2 2v14"/>
-              <path d="M14 12h.01"/>
-              <path d="M22 20h-3"/>
-            </svg>
-          </span>
-          <span class="sr-only">Retour à l'accueil</span>
-        </a>
-
         <aside id="hud-pop-rail" class="info-panel-pop-detail hud-pop-detail hud-pop-rail" aria-label="Population">
             <button type="button" id="hud-pop-rail-drag" class="hud-pop-rail__drag" title="Déplacer" aria-label="Déplacer le panneau population">✋</button>
             <section class="info-box infos-pop-detail">
@@ -807,78 +788,103 @@
                     <div class="delay-ui"></div>
                 </div>
 
-                <div class="hud-vitals">
-                <!-- Invisible top row: time + budget -->
-                <div class="info-panel hud-vitals__row hud-vitals__row--status">
-                    <section class="info-box infos-time">
-                        <span class="hud-season hud-season--loading" role="img" aria-label="Saison : chargement…" title="Saison">…</span>
-                        <article class="clock-box" title="Date en jeu">
-                            <span class="clock-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock-4"><circle cx="12" cy="12" r="10"/>
-                                    <polyline points="12 6 12 12 16 14"/>
+                <div class="hud-bar">
+                    <div class="hud-bar__start">
+                        <div class="hud-bar__row hud-bar__row--exit">
+                            <a
+                              href="/"
+                              id="game-exit-home-btn"
+                              class="game-exit-home-btn"
+                              title="Retour à l'accueil"
+                              aria-label="Quitter la partie et retourner à l'accueil"
+                            >
+                              <span class="toolbar-toggle-icon" aria-hidden="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-door-open">
+                                  <path d="M11 20H2"/>
+                                  <path d="M11 4.562v16.157a1 1 0 0 0 1.242.97L19 20V5.562a2 2 0 0 0-1.515-1.94l-4-1A2 2 0 0 0 11 4.561z"/>
+                                  <path d="M11 4H8a2 2 0 0 0-2 2v14"/>
+                                  <path d="M14 12h.01"/>
+                                  <path d="M22 20h-3"/>
                                 </svg>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alarm-clock-off">
-                                    <path d="M6.87 6.87a8 8 0 1 0 11.26 11.26"/><path d="M19.9 14.25a8 8 0 0 0-9.15-9.15"/><path d="m22 6-3-3"/><path d="M6.26 18.67 4 21"/><path d="m2 2 20 20"/><path d="M4 4 2 6"/>
-                                </svg>
-                            </span>
-                            <div class="display-time"></div>
-                        </article>
-                    </section>
-                    <section class="info-box infos-budget">
-                        <article class="budget-box" title="Fonds disponibles">
-                            <span class="budget-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-euro">
-                                <path d="M4 10h12"/><path d="M4 14h9"/>
-                                <path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/>
-                                </svg>
-                            </span>
-                            <div class="display-funds"></div>
-                        </article>
-                    </section>
-                </div>
-
-                <div
-                    id="hud-camera-rotate"
-                    class="hud-vitals__row hud-vitals__row--camera"
-                    role="group"
-                    aria-label="Vue 3D et rotation"
-                >
-                    <div class="hud-camera-rotate-group" role="group" aria-label="Rotation">
-                    <button
-                        type="button"
-                        class="hud-camera-rotate-btn mobile-rotate-left"
-                        data-action="rotate-left"
-                        aria-label="Rotation gauche"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-ccw-square" aria-hidden="true">
-                            <path d="M20 9V7a2 2 0 0 0-2-2h-6"/><path d="m15 2-3 3 3 3"/>
-                            <path d="M20 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/>
-                        </svg>
-                    </button>
-                    <button
-                        type="button"
-                        class="hud-camera-rotate-btn mobile-rotate-right"
-                        data-action="rotate-right"
-                        aria-label="Rotation droite"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-cw-square" aria-hidden="true">
-                            <path d="M12 5H6a2 2 0 0 0-2 2v3"/><path d="m9 8 3-3-3-3"/>
-                            <path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-                        </svg>
-                    </button>
+                              </span>
+                              <span class="sr-only">Retour à l'accueil</span>
+                            </a>
+                        </div>
+                        <div class="hud-bar__row hud-bar__row--slot" aria-hidden="true"></div>
                     </div>
-                    <button
-                        type="button"
-                        class="hud-camera-rotate-btn hud-camera-view-btn"
-                        data-action="toggle-isometric"
-                        aria-label="Basculer vue isométrique"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-land-plot" aria-hidden="true">
-                            <path d="m12 8 6-3-6-3v10"/><path d="m8 11.99-5.5 3.14a1 1 0 0 0 0 1.74l8.5 4.86a2 2 0 0 0 2 0l8.5-4.86a1 1 0 0 0 0-1.74L16 12"/>
-                            <path d="m6.49 12.85 11.02 6.3"/><path d="M17.51 12.85 6.5 19.15"/>
-                        </svg>
-                    </button>
-                </div>
+
+                    <div class="hud-bar__end">
+                        <div class="info-panel hud-bar__row hud-bar__row--status">
+                            <section class="info-box infos-time">
+                                <span class="hud-season hud-season--loading" role="img" aria-label="Saison : chargement…" title="Saison">…</span>
+                                <article class="clock-box" title="Date en jeu">
+                                    <span class="clock-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock-4"><circle cx="12" cy="12" r="10"/>
+                                            <polyline points="12 6 12 12 16 14"/>
+                                        </svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alarm-clock-off">
+                                            <path d="M6.87 6.87a8 8 0 1 0 11.26 11.26"/><path d="M19.9 14.25a8 8 0 0 0-9.15-9.15"/><path d="m22 6-3-3"/><path d="M6.26 18.67 4 21"/><path d="m2 2 20 20"/><path d="M4 4 2 6"/>
+                                        </svg>
+                                    </span>
+                                    <div class="display-time"></div>
+                                </article>
+                            </section>
+                            <section class="info-box infos-budget">
+                                <article class="budget-box" title="Fonds disponibles">
+                                    <span class="budget-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-euro">
+                                        <path d="M4 10h12"/><path d="M4 14h9"/>
+                                        <path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/>
+                                    </svg>
+                                    </span>
+                                    <div class="display-funds"></div>
+                                </article>
+                            </section>
+                        </div>
+
+                        <div
+                            id="hud-camera-rotate"
+                            class="hud-bar__row hud-vitals__row--camera"
+                            role="group"
+                            aria-label="Vue 3D et rotation"
+                        >
+                            <div class="hud-camera-rotate-group" role="group" aria-label="Rotation">
+                            <button
+                                type="button"
+                                class="hud-camera-rotate-btn mobile-rotate-left"
+                                data-action="rotate-left"
+                                aria-label="Rotation gauche"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-ccw-square" aria-hidden="true">
+                                    <path d="M20 9V7a2 2 0 0 0-2-2h-6"/><path d="m15 2-3 3 3 3"/>
+                                    <path d="M20 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/>
+                                </svg>
+                            </button>
+                            <button
+                                type="button"
+                                class="hud-camera-rotate-btn mobile-rotate-right"
+                                data-action="rotate-right"
+                                aria-label="Rotation droite"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-cw-square" aria-hidden="true">
+                                    <path d="M12 5H6a2 2 0 0 0-2 2v3"/><path d="m9 8 3-3-3-3"/>
+                                    <path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                                </svg>
+                            </button>
+                            </div>
+                            <button
+                                type="button"
+                                class="hud-camera-rotate-btn hud-camera-view-btn"
+                                data-action="toggle-isometric"
+                                aria-label="Basculer vue isométrique"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-land-plot" aria-hidden="true">
+                                    <path d="m12 8 6-3-6-3v10"/><path d="m8 11.99-5.5 3.14a1 1 0 0 0 0 1.74l8.5 4.86a2 2 0 0 0 2 0l8.5-4.86a1 1 0 0 0 0-1.74L16 12"/>
+                                    <path d="m6.49 12.85 11.02 6.3"/><path d="M17.51 12.85 6.5 19.15"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 

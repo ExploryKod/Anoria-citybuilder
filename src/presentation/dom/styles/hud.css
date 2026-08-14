@@ -11,16 +11,15 @@
   z-index: var(--z-index-info-panel, 10020);
   position: absolute;
   top: 0;
-  /* Fill game-window with gutters only (left toolbar retired) */
   left: var(--hud-gutter);
   right: var(--hud-gutter);
   bottom: auto;
-  width: auto; /* stretches between left and right */
+  width: auto;
   max-width: none;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: stretch;
   gap: 6px;
   padding: 4px 0 0;
   pointer-events: none;
@@ -41,17 +40,95 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  width: max-content;
+  width: 100%;
   max-width: 100%;
 }
 
-/* Bento: 2 rows of equal width = max(content top, content bottom) */
-.hud-vitals {
-  display: inline-grid;
-  justify-items: stretch;
-  align-content: start;
+/* Full-width row: left column (exit) + right column (time/budget, camera) */
+.hud-bar {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  column-gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.hud-bar__start,
+.hud-bar__end {
+  display: flex;
+  flex-direction: column;
   gap: var(--hud-vitals-row-gap, 10px);
-  max-width: 100%;
+  min-width: 0;
+}
+
+.hud-bar__start {
+  flex: 0 0 auto;
+  align-items: flex-start;
+}
+
+.hud-bar__end {
+  flex: 0 1 auto;
+  align-items: flex-end;
+}
+
+.hud-bar__row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.hud-bar__row--slot {
+  min-height: 0;
+}
+
+.hud-bar__row--status {
+  margin: 0;
+  padding: 0;
+  height: auto;
+  width: auto;
+  box-sizing: border-box;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  align-items: stretch;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.game-exit-home-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: var(--hud-chip-height, 40px);
+  min-width: var(--hud-chip-height, 40px);
+  height: var(--hud-chip-height, 40px);
+  min-height: var(--hud-chip-height, 40px);
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: var(--border-radius-small);
+  box-sizing: border-box;
+  background: var(--game-chrome-bg, rgba(247, 246, 244, 0.9));
+  box-shadow: var(--game-chrome-shadow);
+  color: var(--primary);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.game-exit-home-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+}
+
+.game-exit-home-btn:focus-visible {
+  outline: 3px solid var(--cta);
+  outline-offset: 3px;
 }
 
 .delay-ui-wrapper {
@@ -71,24 +148,6 @@
   min-width: 0;
   transition: all 0.5s ease-in;
   border-radius: var(--border-radius-small);
-}
-
-/* Invisible top container: holds time + budget chips */
-.info-panel.hud-vitals__row--status {
-  margin: 0;
-  padding: 0;
-  height: auto;
-  width: max-content;
-  min-width: 100%;
-  box-sizing: border-box;
-  display: flex;
-  flex-wrap: nowrap;
-  justify-content: flex-start;
-  align-items: stretch;
-  gap: 8px;
-  background: transparent;
-  border: none;
-  box-shadow: none;
 }
 
 /* Shared chip metrics — time / budget status strip */
@@ -208,8 +267,6 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  align-self: flex-end;
-  justify-self: end;
 }
 
 .hud-camera-rotate-group {
@@ -273,6 +330,11 @@
   .hud-vitals__row--camera {
     display: flex;
   }
+
+  .hud-bar__end .info-box.infos-time {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
 }
 
 .info-panel p {
@@ -322,8 +384,8 @@
 .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
   position: fixed;
   z-index: calc(var(--z-index-info-panel, 10020) - 1);
-  top: calc(var(--game-exit-top) + var(--game-exit-size) + 8px);
-  left: var(--game-exit-left);
+  top: var(--hud-pop-rail-top);
+  left: var(--hud-gutter);
   right: auto;
   bottom: auto;
   transform: none;
@@ -340,16 +402,16 @@
 
 @media screen and (min-width: 1025px) {
   .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
-    top: calc(var(--game-exit-top) + var(--game-exit-size) + 8px);
-    left: var(--game-exit-left);
+    top: var(--hud-pop-rail-top);
+    left: var(--hud-gutter);
     right: auto;
   }
 }
 
 @media screen and (max-width: 1024px) and (orientation: landscape) {
   .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
-    top: calc(var(--game-exit-top) + var(--game-exit-size) + 8px);
-    left: var(--game-exit-left);
+    top: var(--hud-pop-rail-top);
+    left: var(--hud-gutter);
     right: auto;
   }
 }
@@ -795,12 +857,6 @@
    ------------------------------------------------------------------------- */
 
 @media screen and (max-width: 1024px) and (orientation: portrait) {
-  .game-exit-home-btn {
-    top: var(--hud-pop-rail-top-portrait);
-    left: var(--game-exit-left);
-    right: auto;
-  }
-
   .info-panel-wrapper.hud {
     left: var(--hud-gutter);
     right: var(--hud-gutter);
@@ -810,17 +866,21 @@
     padding: 4px 0 0;
   }
 
-  .hud-status {
+  .hud-bar {
     width: 100%;
-    max-width: none;
   }
 
-  .hud-vitals {
-    width: 100%;
-    max-width: 100%;
+  .hud-bar__row--status {
+    flex-wrap: nowrap;
+    justify-content: flex-end;
   }
 
-  .info-panel {
+  .hud-bar__end .infos-time {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .info-panel:not(.hud-bar__row--status) {
     flex-wrap: wrap;
     justify-content: flex-start;
     gap: 6px;
@@ -828,20 +888,13 @@
     min-width: 0;
   }
 
-  .info-panel > .info-box.infos-time {
-    flex: 1 1 auto;
-    min-width: 0;
-    justify-content: flex-start;
-    gap: 0;
-  }
-
   .info-panel > .info-box.infos-budget {
     flex: 0 0 auto;
   }
 
   .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
-    top: calc(var(--hud-pop-rail-top-portrait) + var(--game-exit-size) + 8px);
-    left: var(--game-exit-left);
+    top: var(--hud-pop-rail-top-portrait);
+    left: var(--hud-gutter);
     right: auto;
   }
 
@@ -886,10 +939,26 @@
     height: 12px;
   }
 
-  .info-panel {
-    flex-wrap: wrap;
+  .hud-bar__row--status {
+    flex-wrap: nowrap;
     justify-content: flex-end;
-    gap: 6px;
+  }
+
+  .hud-bar__end .infos-time {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .game-exit-home-btn {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    min-height: 34px;
+  }
+
+  .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
+    top: calc(2px + 12px + 34px + 8px);
+    left: var(--hud-gutter);
   }
 
   .info-panel > .info-box {
@@ -904,6 +973,10 @@
     flex: 1 1 auto;
     gap: 0;
     padding: 0;
+  }
+
+  .hud-bar__end .info-box.infos-time {
+    flex: 0 1 auto;
   }
 
   .info-panel .clock-box,

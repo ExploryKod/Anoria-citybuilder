@@ -42,29 +42,6 @@
   display: block !important;
 }
 
-.game-exit-home-btn {
-  position: fixed;
-  top: var(--game-exit-top);
-  left: var(--game-exit-left);
-  right: auto;
-  z-index: calc(var(--z-index-legend, 1000) + 8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--game-exit-size);
-  min-width: var(--game-exit-size);
-  max-width: var(--game-exit-size);
-  height: var(--game-exit-size);
-  padding: 8px;
-  margin: 0;
-  flex: none;
-  border-radius: 50%;
-  box-sizing: border-box;
-  text-decoration: none;
-  color: inherit;
-  pointer-events: auto;
-}
-
 /* Circular construction FABs at all breakpoints */
 .legend-btns-container--mobile .toolbar-toggle-btn {
   min-width: 48px;

@@ -33,7 +33,7 @@ Références utiles : [RGAA 4](https://accessibilite.numerique.gouv.fr/) (critè
 
 Ordre typique après fermeture du tutoriel (focus sur la porte de sortie) :
 
-1. Quitter (`#game-exit-home-btn`) — coin haut droit
+1. Quitter (`#game-exit-home-btn`) — gauche de la barre HUD (même rangée que temps / budget)
 2. Rail population (sous la porte)
 3. Construction, voyage, démolir, sélectionner (FABs bas)
 4. Gestion, Admin, carte 2D, filtres, légende, tutoriel, objectifs…
