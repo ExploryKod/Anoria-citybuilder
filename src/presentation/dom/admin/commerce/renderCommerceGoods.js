@@ -29,7 +29,7 @@ export function renderCommerceGoodModal(good) {
   const icon = PRODUCT_ICONS[good.id] ?? '📦';
 
   return `
-    <div class="commerce-good-modal-overlay" id="commerce-good-modal" role="dialog" aria-modal="true" aria-label="${good.name}">
+    <div class="commerce-good-modal-overlay" id="commerce-good-modal" role="dialog" aria-modal="true" aria-label="${good.name}" tabindex="-1">
       <div class="commerce-good-modal">
         <div class="commerce-good-modal-header">
           <h3 class="commerce-good-modal-title">${icon} ${good.name}</h3>

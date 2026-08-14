@@ -128,17 +128,32 @@ function renderDetail(mission) {
       Bâtiments notables : ${mission.buildings.join(', ')}
     </p>
     <div class="mission-profile">
-      <p class="site-section-title">Profil</p>
-      <div class="mission-profile-modes">
-        <label>
-          <input type="radio" name="profile-mode" value="new" ${profileMode === 'new' ? 'checked' : ''}>
+      <p class="site-section-title" id="mission-profile-label">Profil</p>
+      <div
+        class="mission-profile-modes"
+        role="radiogroup"
+        aria-labelledby="mission-profile-label"
+      >
+        <label class="mission-profile-mode">
+          <input
+            type="radio"
+            name="profile-mode"
+            value="new"
+            ${profileMode === 'new' ? 'checked' : ''}
+          >
           Nouveau profil
         </label>
-        <label>
-          <input type="radio" name="profile-mode" value="existing" ${profileMode === 'existing' ? 'checked' : ''}>
+        <label class="mission-profile-mode">
+          <input
+            type="radio"
+            name="profile-mode"
+            value="existing"
+            ${profileMode === 'existing' ? 'checked' : ''}
+          >
           Profil existant
         </label>
       </div>
+      <p class="mission-profile-modes-hint">Utilisez les flèches du clavier pour changer d’option.</p>
       <div id="profile-new-panel" class="mission-profile-panel" ${profileMode !== 'new' ? 'hidden' : ''}>
         <input
           type="text"

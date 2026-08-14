@@ -9,6 +9,11 @@ export function createCamera(gameWindow) {
     const KEYBOARD_ZOOM_PLUS = '+';
     const KEYBOARD_ZOOM_MINUS = '-';
 
+    /** Construction bar open: block map pan so arrow keys stay on the carousel. */
+    function isBuildBarOpen() {
+        return document.documentElement.classList.contains('mobile-build-bar-open');
+    }
+
     // Camera constants for zooming in and out
     const MIN_CAMERA_RADIUS = 10;
     let MAX_CAMERA_RADIUS = 30; // Will be updated based on World platform size
@@ -86,6 +91,9 @@ export function createCamera(gameWindow) {
     }
 
     function onKeyBoardDown(event){
+        if (isBuildBarOpen()) {
+            return;
+        }
         // Toggle isometric/perspective camera mode (Pharaoh style)
         if (event.key.toLowerCase() === 'i' && !event.ctrlKey && !event.altKey && !event.shiftKey) {
             toggleIsometric();
@@ -261,6 +269,12 @@ export function createCamera(gameWindow) {
     function onMouseMove(event){
         syncButtonsFromEvent(event);
 
+        if (isBuildBarOpen()) {
+            prevMouseX = event.clientX;
+            prevMouseY = event.clientY;
+            return;
+        }
+
         const deltaY = event.clientY - prevMouseY;
         const deltaX = event.clientX - prevMouseX;
 
@@ -297,6 +311,9 @@ export function createCamera(gameWindow) {
     }
 
     function onWheel(event) {
+        if (isBuildBarOpen()) {
+            return;
+        }
         // Touchpad friendly: pinch-to-zoom often sets ctrlKey; otherwise use wheel for panning
         if (event.ctrlKey) {
             // Prevent browser zoom - only zoom camera, not the page
@@ -349,6 +366,9 @@ export function createCamera(gameWindow) {
     }
 
     function onTouchMove(event) {
+        if (isBuildBarOpen()) {
+            return;
+        }
         if (event.touches.length === 1 && isLeftMouseDown && !isPinching) {
             // Single touch drag: pan camera
             const touch = event.touches[0];
@@ -565,6 +585,10 @@ export function createCamera(gameWindow) {
         setOnCameraChanged(callback) {
             onCameraChanged = callback;
         },
-        get isIsometric() { return isIsometricMode; }
+        get isIsometric() { return isIsometricMode; },
+        /** Look-at / pan target in world XZ (grid ≈ world). */
+        get origin() { return cameraOrigin; },
+        /** Degrees; same value used for WASD / arrow pan. */
+        get azimuth() { return cameraAzimuth; },
     }
 }

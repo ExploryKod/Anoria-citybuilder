@@ -81,7 +81,11 @@ export function createPlacementRotationHud({
     anchor = { x, y, gridSize };
     isShown = true;
     root.classList.remove('hidden');
+    root.removeAttribute('hidden');
+    root.removeAttribute('inert');
     root.setAttribute('aria-hidden', 'false');
+    rotateBtn?.removeAttribute('tabindex');
+    confirmBtn?.removeAttribute('tabindex');
     updatePosition();
     track();
   }
@@ -92,7 +96,11 @@ export function createPlacementRotationHud({
     anchor = null;
     if (root) {
       root.classList.add('hidden');
+      root.setAttribute('hidden', '');
+      root.setAttribute('inert', '');
       root.setAttribute('aria-hidden', 'true');
+      rotateBtn?.setAttribute('tabindex', '-1');
+      confirmBtn?.setAttribute('tabindex', '-1');
     }
   }
 

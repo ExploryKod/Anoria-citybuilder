@@ -2,7 +2,9 @@ import {
   close as closeMobileBuildBar,
   isOpenState as isMobileBuildBarOpen,
   open as openMobileBuildBar,
+  toggle as toggleMobileBuildBar,
 } from '../tools/MobileCompactToolbar.js';
+import { isCameraDpadEnabled } from '../../../config/cameraDpad.js';
 
 /** Blocks toolbar auto-close while dragging or right after release. */
 let toolbarDragLockUntil = 0;
@@ -12,19 +14,16 @@ export function initMobileToolbar() {
   const mobileControlsToggle = document.getElementById('mobile-controls-toggle');
   const toolbarElement = document.getElementById('toolbar');
   const mobileControlsElement = document.getElementById('mobile-camera-controls');
-  const narrowToolbarQuery = window.matchMedia('(max-width: 768px)');
-  const landscapeToolbarQuery = window.matchMedia('(max-width: 1024px) and (orientation: landscape)');
-  const portraitToolbarQuery = window.matchMedia('(max-width: 1024px) and (orientation: portrait)');
+  const cameraDpadFab = document.getElementById('camera-dpad-fab');
 
-  const closeMobileToolbar = () => {
-    if (!toolbarElement) return;
-    toolbarElement.classList.remove('mobile-visible', 'toolbar--enter');
-    toolbarElement.classList.add('mobile-hidden');
-    delete toolbarElement.dataset.enterPlayed;
-    if (toolbarMobileToggle) {
-      toolbarMobileToggle.classList.remove('active');
-      toolbarMobileToggle.setAttribute('aria-pressed', 'false');
-      toolbarMobileToggle.setAttribute('aria-expanded', 'false');
+  const setMobileControlsInert = (inert) => {
+    if (!mobileControlsElement) return;
+    if (inert) {
+      mobileControlsElement.setAttribute('inert', '');
+      mobileControlsElement.setAttribute('aria-hidden', 'true');
+    } else {
+      mobileControlsElement.removeAttribute('inert');
+      mobileControlsElement.setAttribute('aria-hidden', 'false');
     }
   };
 
@@ -32,6 +31,7 @@ export function initMobileToolbar() {
     if (!mobileControlsElement) return;
     mobileControlsElement.classList.remove('mobile-visible');
     mobileControlsElement.classList.add('mobile-hidden');
+    setMobileControlsInert(true);
     resetFloatingPanelDragStyles(mobileControlsElement);
     if (mobileControlsToggle) {
       mobileControlsToggle.classList.remove('active');
@@ -39,149 +39,72 @@ export function initMobileToolbar() {
     }
   };
 
-  const isLandscapeMobile = () => landscapeToolbarQuery.matches;
-  const isPortraitMobile = () => portraitToolbarQuery.matches;
-  const isMobileViewport = () => narrowToolbarQuery.matches || landscapeToolbarQuery.matches || isPortraitMobile();
-
-  const isFloatingToolbarPanel = () => {
-    if (!toolbarElement) return false;
-    return !toolbarElement.classList.contains('mobile-hidden');
-  };
-
-  const playToolbarEnterAnimation = () => {
-    if (!toolbarElement || !isFloatingToolbarPanel()) return;
-    if (toolbarElement.dataset.enterPlayed === '1') return;
-    toolbarElement.dataset.enterPlayed = '1';
-    toolbarElement.classList.remove('toolbar--enter');
-    requestAnimationFrame(() => {
-      toolbarElement.classList.add('toolbar--enter');
-    });
-  };
-
-  const bindToolbarEnterAnimation = () => {
-    if (!toolbarElement) return;
-    toolbarElement.addEventListener('animationend', (event) => {
-      if (event.animationName === 'toolbar-panel-slide-in') {
-        toolbarElement.classList.remove('toolbar--enter');
-      }
-    });
-  };
-
+  /** Keep left toolbar stubs permanently hidden (construction uses build bar). */
   const applyToolbarResponsiveState = () => {
     if (!toolbarElement) return;
-    if (isLandscapeMobile() || isPortraitMobile()) {
-      // Mobile: left toolbar stays hidden; build tools use bottom FABs + compact bar.
-      resetToolbarDragStyles(toolbarElement);
-      toolbarElement.classList.remove('toolbar-landscape-docked', 'mobile-visible', 'toolbar--enter');
-      toolbarElement.classList.add('mobile-hidden');
-      delete toolbarElement.dataset.enterPlayed;
-      if (toolbarMobileToggle) {
-        toolbarMobileToggle.classList.remove('active');
-        toolbarMobileToggle.setAttribute('aria-pressed', 'false');
-        toolbarMobileToggle.setAttribute('aria-expanded', isMobileBuildBarOpen() ? 'true' : 'false');
-      }
-      if (!isMobileBuildBarOpen()) {
-        closeMobileBuildBar();
-      }
-    } else if (narrowToolbarQuery.matches) {
-      toolbarElement.classList.remove('toolbar-landscape-docked');
-      closeMobileBuildBar();
-      if (!toolbarElement.classList.contains('mobile-visible')) {
-        toolbarElement.classList.add('mobile-hidden');
-        delete toolbarElement.dataset.enterPlayed;
-      } else {
-        playToolbarEnterAnimation();
-      }
-    } else {
-      resetToolbarDragStyles(toolbarElement);
-      toolbarElement.classList.remove('mobile-visible', 'toolbar-landscape-docked');
-      toolbarElement.classList.remove('mobile-hidden');
-      playToolbarEnterAnimation();
-      closeMobileBuildBar();
-      if (toolbarMobileToggle) {
-        toolbarMobileToggle.classList.remove('active');
-        toolbarMobileToggle.setAttribute('aria-pressed', 'false');
-        toolbarMobileToggle.setAttribute('aria-expanded', 'false');
-      }
+    resetToolbarDragStyles(toolbarElement);
+    toolbarElement.classList.remove('toolbar-landscape-docked', 'mobile-visible', 'toolbar--enter');
+    toolbarElement.classList.add('mobile-hidden');
+    toolbarElement.setAttribute('hidden', '');
+    toolbarElement.setAttribute('aria-hidden', 'true');
+    delete toolbarElement.dataset.enterPlayed;
+  };
+
+  const applyCameraDpadVisibility = () => {
+    const enabled = isCameraDpadEnabled();
+    if (cameraDpadFab) {
+      cameraDpadFab.classList.toggle('camera-dpad-fab--visible', enabled);
+      cameraDpadFab.hidden = !enabled;
+      cameraDpadFab.setAttribute('aria-hidden', enabled ? 'false' : 'true');
+    }
+    if (!enabled) {
+      closeMobileControls();
     }
   };
 
   const applyMobileControlsResponsiveState = () => {
     if (!mobileControlsElement) return;
-    if (isMobileViewport()) {
-      if (!mobileControlsElement.classList.contains('mobile-visible')) {
-        mobileControlsElement.classList.add('mobile-hidden');
-      } else {
-        resetFloatingPanelDragStyles(mobileControlsElement);
-      }
-    } else {
-      mobileControlsElement.classList.remove('mobile-hidden', 'mobile-visible');
+    if (!isCameraDpadEnabled()) {
+      mobileControlsElement.classList.remove('mobile-visible');
+      mobileControlsElement.classList.add('mobile-hidden');
+      setMobileControlsInert(true);
       resetFloatingPanelDragStyles(mobileControlsElement);
       if (mobileControlsToggle) {
         mobileControlsToggle.classList.remove('active');
         mobileControlsToggle.setAttribute('aria-pressed', 'false');
       }
+      return;
+    }
+    if (!mobileControlsElement.classList.contains('mobile-visible')) {
+      mobileControlsElement.classList.add('mobile-hidden');
+      setMobileControlsInert(true);
+    } else {
+      setMobileControlsInert(false);
+      resetFloatingPanelDragStyles(mobileControlsElement);
     }
   };
 
-  if (toolbarMobileToggle && toolbarElement) {
+  if (toolbarMobileToggle) {
     toolbarMobileToggle.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isMobileViewport()) return;
-
-      // Portrait + landscape mobile: open compact construction bar (toolbar stays hidden).
-      if (isPortraitMobile() || isLandscapeMobile()) {
-        if (!isMobileBuildBarOpen()) {
-          openMobileBuildBar();
-        }
-        return;
+      // Always open compact construction bar (left toolbar is retired).
+      if (!isMobileBuildBarOpen()) {
+        openMobileBuildBar();
       }
-
-      const willShow = !toolbarElement.classList.contains('mobile-visible');
-      if (willShow) {
-        toolbarElement.classList.remove('mobile-hidden');
-        toolbarElement.classList.add('mobile-visible');
-        delete toolbarElement.dataset.enterPlayed;
-        playToolbarEnterAnimation();
-      } else {
-        closeMobileToolbar();
-      }
-      toolbarMobileToggle.classList.toggle('active', willShow);
-      toolbarMobileToggle.setAttribute('aria-pressed', willShow ? 'true' : 'false');
     });
   }
 
   document.addEventListener('click', (e) => {
     if (Date.now() < toolbarDragLockUntil) return;
-
-    if (isPortraitMobile() || isLandscapeMobile()) {
-      if (!isMobileBuildBarOpen()) return;
-      if (!e.target.closest('#mobile-build-bar')) {
-        closeMobileBuildBar();
-      }
-      return;
-    }
-    if (!toolbarElement?.classList.contains('mobile-visible') || !isMobileViewport()) return;
-    if (!e.target.closest('#toolbar') && !e.target.closest('#toolbar-mobile-toggle')) {
-      closeMobileToolbar();
+    if (!isMobileBuildBarOpen()) return;
+    // Keep FABs usable; only dismiss when clicking outside bar + construction FABs.
+    if (
+      !e.target.closest('#mobile-build-bar')
+      && !e.target.closest('.legend-btns-container--mobile')
+    ) {
+      closeMobileBuildBar();
     }
   });
-
-  const toolbarDragHeader = document.getElementById('toolbarheader');
-  if (toolbarDragHeader && toolbarElement) {
-    dragElement(toolbarElement, toolbarDragHeader, {
-      handleOnly: true,
-      onDragStart: () => {
-        toolbarDragLockUntil = Date.now() + 500;
-        toolbarElement.classList.add('toolbar-is-dragging');
-        toolbarElement.classList.remove('toolbar--enter');
-      },
-      onDragEnd: () => {
-        toolbarElement.classList.remove('toolbar-is-dragging');
-        toolbarDragLockUntil = Date.now() + 400;
-      },
-    });
-  }
 
   const cameraDragHeader = document.getElementById('mobile-camera-drag-handle');
   if (cameraDragHeader && mobileControlsElement) {
@@ -202,27 +125,10 @@ export function initMobileToolbar() {
     });
   }
 
-  const toolbarTabs = document.querySelectorAll('.toolbar-tab');
-  const toolbarSections = document.querySelectorAll('.toolbar-section');
-
-  if (toolbarTabs.length > 0 && toolbarSections.length > 0) {
-    toolbarTabs.forEach((tab) => {
-      tab.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const targetSection = tab.getAttribute('data-tab');
-        toolbarTabs.forEach((t) => t.classList.remove('active'));
-        tab.classList.add('active');
-        toolbarSections.forEach((section) => {
-          section.classList.toggle('active', section.getAttribute('data-section') === targetSection);
-        });
-      });
-    });
-  }
-
   if (mobileControlsToggle && mobileControlsElement) {
     mobileControlsToggle.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isMobileViewport()) return;
+      if (!isCameraDpadEnabled()) return;
       const isVisible = mobileControlsElement.classList.contains('mobile-visible');
       if (isVisible) {
         closeMobileControls();
@@ -230,6 +136,7 @@ export function initMobileToolbar() {
         resetFloatingPanelDragStyles(mobileControlsElement);
         mobileControlsElement.classList.remove('mobile-hidden');
         mobileControlsElement.classList.add('mobile-visible');
+        setMobileControlsInert(false);
         mobileControlsToggle.classList.add('active');
         mobileControlsToggle.setAttribute('aria-pressed', 'true');
       }
@@ -237,27 +144,25 @@ export function initMobileToolbar() {
   }
 
   document.addEventListener('click', (e) => {
-    if (!mobileControlsElement?.classList.contains('mobile-visible') || !isMobileViewport()) return;
+    if (!mobileControlsElement?.classList.contains('mobile-visible')) return;
+    if (!isCameraDpadEnabled()) return;
     if (!e.target.closest('#mobile-camera-controls') && !e.target.closest('#mobile-controls-toggle')) {
       closeMobileControls();
     }
   });
 
+  window.addEventListener('anoria:camera-dpad-change', () => {
+    applyCameraDpadVisibility();
+    applyMobileControlsResponsiveState();
+  });
+
   const handleResponsiveChange = () => {
     applyToolbarResponsiveState();
+    applyCameraDpadVisibility();
     applyMobileControlsResponsiveState();
     resetPopRailDefaultPosition();
   };
 
-  bindToolbarEnterAnimation();
-
-  [narrowToolbarQuery, landscapeToolbarQuery, portraitToolbarQuery].forEach((mq) => {
-    if (mq.addEventListener) {
-      mq.addEventListener('change', handleResponsiveChange);
-    } else if (mq.addListener) {
-      mq.addListener(handleResponsiveChange);
-    }
-  });
   handleResponsiveChange();
 }
 
@@ -265,18 +170,6 @@ export function initMobileToolbar() {
 function resetToolbarDragStyles(elmnt) {
   if (!elmnt) return;
   elmnt.classList.remove('toolbar-is-dragged', 'toolbar-is-dragging');
-
-  if (elmnt.id === 'toolbar' && !elmnt.classList.contains('mobile-hidden')) {
-    elmnt.style.top = '';
-    elmnt.style.left = '';
-    elmnt.style.right = 'auto';
-    elmnt.style.bottom = 'auto';
-    elmnt.style.transform = '';
-    elmnt.style.maxHeight = '';
-    elmnt.style.overflowY = '';
-    return;
-  }
-
   elmnt.style.top = '';
   elmnt.style.left = '';
   elmnt.style.right = '';
@@ -308,30 +201,10 @@ function resetFloatingPanelDragStyles(elmnt) {
   elmnt.classList.remove('mobile-camera-controls--dragged', 'toolbar-is-dragged', 'toolbar-is-dragging', 'hud-pop-rail--dragged');
 }
 
-/** Keep toolbar inside the viewport after drag. */
-function clampToolbarToViewport(elmnt) {
-  const margin = 8;
-  const rect = elmnt.getBoundingClientRect();
-  const maxTop = window.innerHeight - rect.height - margin;
-  const maxLeft = window.innerWidth - rect.width - margin;
-  const top = Math.max(margin, Math.min(rect.top, maxTop));
-  const left = Math.max(margin, Math.min(rect.left, maxLeft));
-  elmnt.style.top = `${top}px`;
-  elmnt.style.left = `${left}px`;
-  elmnt.style.right = 'auto';
-  elmnt.style.bottom = 'auto';
-  elmnt.style.transform = 'none';
-}
-
-/** After drag, clamp toolbar inside viewport (no internal scroll). */
-function applyDraggedToolbarScrollBounds(elmnt) {
-  clampToolbarToViewport(elmnt);
-  elmnt.classList.add('toolbar-is-dragged');
-}
-
 /**
+ * Make an element draggable (optional handle-only).
  * @param {HTMLElement} elmnt
- * @param {HTMLElement} dragHeader
+ * @param {HTMLElement} [header]
  * @param {{
  *   handleOnly?: boolean,
  *   applyScrollBounds?: boolean,
@@ -340,115 +213,84 @@ function applyDraggedToolbarScrollBounds(elmnt) {
  *   onDragEnd?: () => void,
  * }} [options]
  */
-function dragElement(elmnt, dragHeader, options = {}) {
+function dragElement(elmnt, header, options = {}) {
   const {
     handleOnly = false,
     applyScrollBounds = true,
     draggedClass = 'toolbar-is-dragged',
-    onDragStart = () => {},
-    onDragEnd = () => {},
+    onDragStart,
+    onDragEnd,
   } = options;
 
   let pos1 = 0;
   let pos2 = 0;
   let pos3 = 0;
   let pos4 = 0;
-  let dragMoved = false;
+  let activePointerId = null;
 
-  function isInteractiveElement(target) {
-    if (!target) return false;
-    return (
-      target.tagName === 'BUTTON' ||
-      target.tagName === 'A' ||
-      target.closest('.toolbar-btn') !== null ||
-      target.closest('.toolbar__buttons') !== null ||
-      target.closest('.toolbar__container') !== null ||
-      target.closest('.mobile-control-btn') !== null
-    );
-  }
+  const dragHandle = header || elmnt;
+  if (handleOnly && !header) return;
 
-  function applyDragPosition(deltaX, deltaY) {
-    dragMoved = true;
-    const rect = elmnt.getBoundingClientRect();
-    elmnt.style.top = `${rect.top - deltaY}px`;
-    elmnt.style.left = `${rect.left - deltaX}px`;
-    elmnt.style.right = 'auto';
-    elmnt.style.bottom = 'auto';
-    elmnt.style.transform = 'none';
-    elmnt.classList.add(draggedClass);
-    if (elmnt.id === 'toolbar') {
-      clampToolbarToViewport(elmnt);
-    }
-    if (applyScrollBounds) {
-      applyDraggedToolbarScrollBounds(elmnt);
-    }
-  }
-
-  dragHeader.onmousedown = dragMouseDown;
-  dragHeader.ontouchstart = dragTouchStart;
-
-  if (!handleOnly) {
-    elmnt.addEventListener('mousedown', (e) => {
-      if (isInteractiveElement(e.target)) return;
-      dragMouseDown(e);
-    });
-
-    elmnt.addEventListener('touchstart', (e) => {
-      if (isInteractiveElement(e.target)) return;
-      dragTouchStart(e);
-    }, { passive: false });
-  }
+  dragHandle.onpointerdown = dragMouseDown;
 
   function dragMouseDown(e) {
+    if (e.button !== undefined && e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
-    dragMoved = false;
-    onDragStart();
+    activePointerId = e.pointerId;
     pos3 = e.clientX;
     pos4 = e.clientY;
-    document.onmouseup = closeDragElement;
-    document.onmousemove = elementDrag;
-  }
-
-  function dragTouchStart(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    dragMoved = false;
-    onDragStart();
-    const touch = e.touches[0];
-    pos3 = touch.clientX;
-    pos4 = touch.clientY;
-    document.ontouchend = closeDragElement;
-    document.ontouchmove = elementDragTouch;
+    toolbarDragLockUntil = Date.now() + 500;
+    elmnt.classList.add(draggedClass);
+    onDragStart?.();
+    try {
+      dragHandle.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+    document.onpointerup = closeDragElement;
+    document.onpointercancel = closeDragElement;
+    document.onpointermove = elementDrag;
   }
 
   function elementDrag(e) {
+    if (activePointerId !== null && e.pointerId !== activePointerId) return;
     e.preventDefault();
     pos1 = pos3 - e.clientX;
     pos2 = pos4 - e.clientY;
     pos3 = e.clientX;
     pos4 = e.clientY;
-    applyDragPosition(pos1, pos2);
-  }
 
-  function elementDragTouch(e) {
-    e.preventDefault();
-    const touch = e.touches[0];
-    pos1 = pos3 - touch.clientX;
-    pos2 = pos4 - touch.clientY;
-    pos3 = touch.clientX;
-    pos4 = touch.clientY;
-    applyDragPosition(pos1, pos2);
-  }
+    const rect = elmnt.getBoundingClientRect();
+    let newTop = rect.top - pos2;
+    let newLeft = rect.left - pos1;
 
-  function closeDragElement() {
-    document.onmouseup = null;
-    document.onmousemove = null;
-    document.ontouchend = null;
-    document.ontouchmove = null;
-    if (applyScrollBounds && dragMoved) {
-      applyDraggedToolbarScrollBounds(elmnt);
+    if (applyScrollBounds) {
+      const margin = 8;
+      const maxTop = window.innerHeight - rect.height - margin;
+      const maxLeft = window.innerWidth - rect.width - margin;
+      newTop = Math.max(margin, Math.min(newTop, maxTop));
+      newLeft = Math.max(margin, Math.min(newLeft, maxLeft));
     }
-    onDragEnd();
+
+    elmnt.style.top = `${newTop}px`;
+    elmnt.style.left = `${newLeft}px`;
+    elmnt.style.right = 'auto';
+    elmnt.style.bottom = 'auto';
+    elmnt.style.transform = 'none';
+  }
+
+  function closeDragElement(e) {
+    if (activePointerId !== null && e?.pointerId !== undefined && e.pointerId !== activePointerId) {
+      return;
+    }
+    activePointerId = null;
+    document.onpointerup = null;
+    document.onpointercancel = null;
+    document.onpointermove = null;
+    toolbarDragLockUntil = Date.now() + 400;
+    onDragEnd?.();
   }
 }
+
+export { toggleMobileBuildBar };

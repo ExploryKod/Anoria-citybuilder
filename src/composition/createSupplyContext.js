@@ -271,6 +271,9 @@ export function createSupplyContext({
     listWindmillSupplyViewsQuery,
     listSupplyStockSnapshotsQuery,
     barnStockOperations,
+    async hasOperationalCommerceBarn() {
+      return barnStockOperations.hasOperationalCommerceBarn();
+    },
     transferFactoryToBarn,
     runMonthlyCommerceSupplyCycle,
     updateFactoryWorkerDemandFromCaps,

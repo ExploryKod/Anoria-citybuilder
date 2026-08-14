@@ -10,6 +10,7 @@ import { initStorageSection } from './storage/initStorageSection.js';
 import { initFactorySection } from './factory/initFactorySection.js';
 import { initCommerceSection } from './commerce/initCommerceSection.js';
 import { initReportSection } from './report/initReportSection.js';
+import { initArchivesSection } from './archives/initArchivesSection.js';
 
 /**
  * @param {object} deps
@@ -19,6 +20,7 @@ import { initReportSection } from './report/initReportSection.js';
  * @param {object} deps.housing
  * @param {object} deps.supply
  * @param {object} deps.construction
+ * @param {object} [deps.intelligence]
  * @param {object} [deps.popupManager]
  * @param {(name: string, instance: *) => void} [deps.registerAppService]
  * @param {(name: string, fn: Function) => void} [deps.registerAppFunction]
@@ -34,4 +36,5 @@ export async function initAdminSections(deps) {
   initFactorySection(deps);
   await initCommerceSection(deps);
   initReportSection(deps);
+  initArchivesSection(deps);
 }

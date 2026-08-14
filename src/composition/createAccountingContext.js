@@ -44,6 +44,7 @@ import { RecordCommerceExportIncome } from '../contexts/accounting/application/s
 import { RecordCapitalFundsIncome } from '../contexts/accounting/application/services/RecordCapitalFundsIncome.js';
 import { RecordExceptionalExpense } from '../contexts/accounting/application/services/RecordExceptionalExpense.js';
 import { RecordCommercialRouteExpense } from '../contexts/accounting/application/services/RecordCommercialRouteExpense.js';
+import { RecordContributionExpense } from '../contexts/accounting/application/services/RecordContributionExpense.js';
 import { RecordConstructionRefundIncome } from '../contexts/accounting/application/services/RecordConstructionRefundIncome.js';
 import { RecordBalanceSnapshot } from '../contexts/accounting/application/services/RecordBalanceSnapshot.js';
 import { RecordCarryForwardEntry } from '../contexts/accounting/application/services/RecordCarryForwardEntry.js';
@@ -251,6 +252,11 @@ export function createAccountingContext(deps = {}) {
   const getTreasurySnapshotQuery = new GetTreasurySnapshot(
     treasuryRepository,
     initializeTreasury
+  );
+  const recordContributionExpense = new RecordContributionExpense(
+    recordLedgerEntryCommand,
+    applyTreasuryMovementCommand,
+    getTreasurySnapshotQuery
   );
   const forceReinitializeTreasury = new ForceReinitializeTreasury(
     treasuryRepository,
@@ -462,6 +468,7 @@ export function createAccountingContext(deps = {}) {
     recordCapitalFundsIncome,
     recordExceptionalExpense,
     recordCommercialRouteExpense,
+    recordContributionExpense,
     recordConstructionRefundIncome,
     recordBalanceSnapshot,
     recordCarryForwardEntry,
@@ -679,6 +686,19 @@ export function createAccountingContext(deps = {}) {
     /** @param {Parameters<RecordCommercialRouteExpense['execute']>[0]} params */
     async recordCommercialRouteExpense(params) {
       return recordCommercialRouteExpense.execute(params);
+    },
+
+    /** @param {Parameters<RecordContributionExpense['execute']>[0]} params */
+    async recordContributionExpense(params) {
+      return recordContributionExpense.execute(params);
+    },
+
+    /**
+     * Settle a news contribution (Intelligence paywall).
+     * @param {{ newsItemId: string, amount: number, turn: number, description?: string, channelId?: string }} params
+     */
+    async settleContribution(params) {
+      return recordContributionExpense.execute(params);
     },
 
     /** @param {Parameters<RecordConstructionRefundIncome['execute']>[0]} params */

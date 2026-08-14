@@ -16,6 +16,19 @@ This directory contains modularized CSS files for all modal components in the ap
 - `compte-de-resultat-panel-content.css` - Compte de résultat content styles
 - `balance-sheet.css` - Balance sheet styles
 
+## Anti-FOUC / anti-blocage canvas (obligatoire)
+
+Erreurs récurrentes : flash de modale au boot, puis canvas / placement cliquables plus.
+
+Pour toute modale présente dans `game.html` au chargement (objectifs, news event, …) :
+
+1. Markup avec **`hidden`** + `aria-hidden="true"`.
+2. CSS **synchrone** dans le `<head>` (pas le `media="print"` async).
+3. Règle `.modal[hidden] { display: none !important; }`.
+4. Open/close : synchroniser `hidden` **et** classes `active`/`visible` ; au init, reset + `PopupManager.ensureEventsUnblocked()`.
+
+Détail agent : `.cursor/rules/modal-fouc-blocking.mdc`.
+
 ## Usage
 
 Each modal file should be imported in the main HTML file or through a CSS bundler:

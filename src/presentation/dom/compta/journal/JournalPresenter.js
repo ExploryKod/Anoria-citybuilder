@@ -268,6 +268,7 @@ function createJournalEntryHTML(entry, accounting) {
     export_cabbage: 'Export Chou',
     export_dattes: 'Export Dattes',
     commercial_route: 'Commission Négociants',
+    contribution: 'Contribution',
     loan_capital: 'Capital Prêt',
     loan_interest: 'Intérêts prêt',
     loan_repayment: 'Remboursement prêt',

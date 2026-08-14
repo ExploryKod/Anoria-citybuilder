@@ -1,8 +1,9 @@
 /**
  * PopupManager - Gestionnaire unifié pour toutes les popups
- * Utilise pointer-events CSS pour désactiver les interactions avec le canvas 3D
+ * Utilise pointer-events CSS + EventBlocker pour désactiver les interactions jeu / canvas 3D
  */
 import { registerAppService } from '../../../composition/appServices.js';
+import EventBlocker from './EventBlocker.js';
 
 /** @type {{ pauseGame?: () => void, playGame?: () => void } | null} */
 let deps = null;
@@ -14,14 +15,25 @@ export function bindPopupManagerDeps(panelDeps) {
     deps = panelDeps;
 }
 
+const DEFAULT_BLOCK_EVENTS = ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'];
+
+/**
+ * @param {string} popupId
+ * @returns {string[]}
+ */
+function excludeSelectorsForPopup(popupId) {
+    return [`#${popupId}`, `#${popupId} *`];
+}
+
 class PopupManager {
     constructor() {
         this.activePopups = new Set();
         this.popupConfigs = new Map();
-        
+        this.eventBlocker = new EventBlocker();
+
         this.setupPopupConfigs();
         this.setupGlobalEventListeners();
-        
+
         // S'assurer que les événements ne sont pas bloqués au démarrage
         this.ensureEventsUnblocked();
     }
@@ -30,107 +42,40 @@ class PopupManager {
      * Configure les paramètres pour chaque popup
      */
     setupPopupConfigs() {
-        // Popups qui nécessitent le blocage d'événements
-        this.popupConfigs.set('pause-overlay', {
+        const blocking = {
             shouldBlockEvents: true,
             shouldPauseGame: true,
-            eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
+            eventsToBlock: [...DEFAULT_BLOCK_EVENTS],
             canvasSelectors: ['canvas'],
             onOpen: () => {},
-            onClose: () => {}
-        });
+            onClose: () => {},
+        };
 
-        this.popupConfigs.set('compte-de-resultat-panel', {
-            shouldBlockEvents: true,
-            shouldPauseGame: true,
-            eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
-            canvasSelectors: ['canvas'],
-            onOpen: () => {},
-            onClose: () => {}
-        });
+        for (const id of [
+            'pause-overlay',
+            'compte-de-resultat-panel',
+            'info-building-overlay',
+            'over-overlay',
+            'loans-panel',
+            'bilan-panel',
+            'administrator-panel',
+            'city-map-panel',
+            'journal-panel',
+            'food-traceability-panel',
+            'news-event-modal',
+        ]) {
+            this.popupConfigs.set(id, { ...blocking });
+        }
 
-        this.popupConfigs.set('info-building-overlay', {
-            shouldBlockEvents: true,
-            shouldPauseGame: true,
-            eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
-            canvasSelectors: ['canvas'],
-            onOpen: () => {},
-            onClose: () => {}
-        });
-
-        this.popupConfigs.set('over-overlay', {
-            shouldBlockEvents: true,
-            shouldPauseGame: true,
-            eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
-            canvasSelectors: ['canvas'],
-            onOpen: () => {},
-            onClose: () => {}
-        });
-
-        // Popups de sélection d'objets (ne pas bloquer les événements)
+        // Popups de sélection d'objets (ne pas bloquer les événements clavier / souris jeu)
         this.popupConfigs.set('panel-layout', {
-            shouldBlockEvents: false, // Cette popup permet la sélection d'objets
+            shouldBlockEvents: false,
             shouldPauseGame: true,
             eventsToBlock: [],
             canvasSelectors: [],
             onOpen: () => {},
-            onClose: () => {}
+            onClose: () => {},
         });
-
-        this.popupConfigs.set('loans-panel', {
-            shouldBlockEvents: true,
-            shouldPauseGame: true,
-            eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
-            canvasSelectors: ['canvas'],
-            onOpen: () => {},
-            onClose: () => {}
-        });
-
-        this.popupConfigs.set('bilan-panel', {
-            shouldBlockEvents: true,
-            shouldPauseGame: true,
-            eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
-            canvasSelectors: ['canvas'],
-            onOpen: () => {},
-            onClose: () => {}
-        });
-
-        this.popupConfigs.set('administrator-panel', {
-            shouldBlockEvents: true,
-            shouldPauseGame: true,
-            eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
-            canvasSelectors: ['canvas'],
-            onOpen: () => {},
-            onClose: () => {}
-        });
-
-        this.popupConfigs.set('city-map-panel', {
-            shouldBlockEvents: true,
-            shouldPauseGame: true,
-            eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
-            canvasSelectors: ['canvas'],
-            onOpen: () => {},
-            onClose: () => {}
-        });
-
-        this.popupConfigs.set('journal-panel', {
-            shouldBlockEvents: true,
-            shouldPauseGame: true,
-            eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
-            canvasSelectors: ['canvas'],
-            onOpen: () => {},
-            onClose: () => {}
-        });
-
-        this.popupConfigs.set('food-traceability-panel', {
-            shouldBlockEvents: true,
-            shouldPauseGame: true,
-            eventsToBlock: ['mousedown', 'mouseup', 'mousemove', 'keydown', 'keyup'],
-            canvasSelectors: ['canvas'],
-            onOpen: () => {},
-            onClose: () => {}
-        });
-
     }
 
     /**
@@ -143,7 +88,7 @@ class PopupManager {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
                     const element = mutation.target;
                     const popupId = this.getPopupId(element);
-                    
+
                     if (popupId && this.popupConfigs.has(popupId)) {
                         if (this.isPopupOpen(element)) {
                             this.openPopup(popupId);
@@ -171,24 +116,107 @@ class PopupManager {
      */
     getPopupId(element) {
         if (!element || !element.id) return null;
-        
+
         // Vérifier si c'est un élément de popup connu
         for (const popupId of this.popupConfigs.keys()) {
             if (element.id === popupId || element.closest(`#${popupId}`)) {
                 return popupId;
             }
         }
-        
+
         return null;
     }
 
     /**
      * Vérifie si une popup est ouverte
+     * `[hidden]` gagne toujours : une modale masquée ne doit ni bloquer le canvas ni pauser.
      */
     isPopupOpen(element) {
-        return element.classList.contains('active') || 
+        if (!element || element.hidden) {
+            return false;
+        }
+        return element.classList.contains('active') ||
                element.classList.contains('visible') ||
                element.classList.contains('show');
+    }
+
+    /**
+     * Popups actives qui doivent bloquer le clavier / souris jeu.
+     * @returns {string[]}
+     */
+    getBlockingPopupIds() {
+        return Array.from(this.activePopups).filter((id) => {
+            const config = this.popupConfigs.get(id);
+            return Boolean(config?.shouldBlockEvents);
+        });
+    }
+
+    /**
+     * Synchronise EventBlocker avec l'ensemble des popups bloquantes ouvertes.
+     */
+    syncEventBlocker() {
+        const blockingIds = this.getBlockingPopupIds();
+
+        if (this.eventBlocker.isEventsBlocked()) {
+            this.eventBlocker.unblockEvents();
+        }
+
+        if (blockingIds.length === 0) {
+            this.syncBackgroundInert([]);
+            return;
+        }
+
+        const excludeSelectors = blockingIds.flatMap((id) => excludeSelectorsForPopup(id));
+        this.eventBlocker.blockThreeJSEvents({
+            blockCanvas: false, // canvas déjà géré via pointer-events-disabled
+            excludeSelectors,
+        });
+        this.syncBackgroundInert(blockingIds);
+    }
+
+    /**
+     * When a blocking dialog lives outside #game-window, inert the HUD so Tab
+     * cannot reach controls behind the overlay (admin, bilan, carte, …).
+     * Dialogs inside #game-window (pause, info-bâtiment) keep the window interactive
+     * for their own controls; modalFocus traps Tab instead.
+     * @param {string[]} blockingIds
+     */
+    syncBackgroundInert(blockingIds) {
+        const gameWindow = document.getElementById('game-window');
+        if (!gameWindow) return;
+
+        const needsInert = blockingIds.some((id) => {
+            const el = document.getElementById(id);
+            return Boolean(el && !gameWindow.contains(el));
+        });
+
+        if (needsInert) {
+            gameWindow.setAttribute('inert', '');
+        } else {
+            gameWindow.removeAttribute('inert');
+        }
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    anyActivePopupNeedsCanvasBlock() {
+        return Array.from(this.activePopups).some((id) => {
+            const config = this.popupConfigs.get(id);
+            return Boolean(config?.canvasSelectors?.length);
+        });
+    }
+
+    /**
+     * @param {string[]} selectors
+     * @param {boolean} disabled
+     */
+    setCanvasPointerEventsDisabled(selectors, disabled) {
+        selectors.forEach((selector) => {
+            document.querySelectorAll(selector).forEach((element) => {
+                element.classList.toggle('pointer-events-disabled', disabled);
+            });
+        });
     }
 
     /**
@@ -197,29 +225,24 @@ class PopupManager {
     openPopup(popupId) {
         // Vérifier l'état réel du DOM plutôt que juste notre Set interne
         const element = document.getElementById(popupId);
-        const isActuallyActive = element && element.classList.contains('active');
-        
-        if (this.activePopups.has(popupId) && isActuallyActive) {
+        if (element?.hidden) {
             return;
         }
-        
+        const isActuallyActive = element && this.isPopupOpen(element);
+
+        if (this.activePopups.has(popupId) && isActuallyActive) {
+            this.syncEventBlocker();
+            return;
+        }
+
         // Si le popup est actif dans le DOM mais pas dans notre Set, on le synchronise
         if (isActuallyActive && !this.activePopups.has(popupId)) {
             this.activePopups.add(popupId);
-            
-            // Appliquer la configuration du popup
+
             const config = this.popupConfigs.get(popupId);
             if (config) {
-                // Désactiver les pointer-events sur le canvas
                 if (config.canvasSelectors && config.canvasSelectors.length > 0) {
-                    config.canvasSelectors.forEach(selector => {
-                        const elements = document.querySelectorAll(selector);
-                        elements.forEach(element => {
-                            if (!element.classList.contains('pointer-events-disabled')) {
-                                element.classList.add('pointer-events-disabled');
-                            }
-                        });
-                    });
+                    this.setCanvasPointerEventsDisabled(config.canvasSelectors, true);
                 }
                 if (config.shouldPauseGame) {
                     deps?.pauseGame?.();
@@ -228,6 +251,7 @@ class PopupManager {
                     config.onOpen();
                 }
             }
+            this.syncEventBlocker();
             return;
         }
 
@@ -239,28 +263,19 @@ class PopupManager {
 
         this.activePopups.add(popupId);
 
-        // Désactiver les pointer-events sur le canvas
         if (config.canvasSelectors && config.canvasSelectors.length > 0) {
-            config.canvasSelectors.forEach(selector => {
-                const elements = document.querySelectorAll(selector);
-                elements.forEach(element => {
-                    if (!element.classList.contains('pointer-events-disabled')) {
-                        element.classList.add('pointer-events-disabled');
-                    }
-                });
-            });
+            this.setCanvasPointerEventsDisabled(config.canvasSelectors, true);
         }
 
-        // Mettre le jeu en pause si nécessaire
         if (config.shouldPauseGame) {
             deps?.pauseGame?.();
         }
 
-        // Callback d'ouverture
         if (config.onOpen) {
             config.onOpen();
         }
 
+        this.syncEventBlocker();
     }
 
     /**
@@ -274,22 +289,16 @@ class PopupManager {
 
         this.activePopups.delete(popupId);
 
-        // Réactiver les pointer-events sur le canvas
-        if (config.canvasSelectors && config.canvasSelectors.length > 0) {
-            config.canvasSelectors.forEach(selector => {
-                const elements = document.querySelectorAll(selector);
-                elements.forEach(element => {
-                    if (element.classList.contains('pointer-events-disabled')) {
-                        element.classList.remove('pointer-events-disabled');
-                    }
-                });
-            });
+        // Ne réactiver le canvas que si plus aucune popup ne le demande
+        if (!this.anyActivePopupNeedsCanvasBlock()) {
+            const selectors = config.canvasSelectors?.length
+                ? config.canvasSelectors
+                : ['canvas'];
+            this.setCanvasPointerEventsDisabled(selectors, false);
         }
 
-        // Reprendre le jeu si nécessaire
         if (config.shouldPauseGame) {
-            // Vérifier s'il y a d'autres popups actives qui nécessitent la pause
-            const hasOtherPausingPopups = Array.from(this.activePopups).some(id => {
+            const hasOtherPausingPopups = Array.from(this.activePopups).some((id) => {
                 const otherConfig = this.popupConfigs.get(id);
                 return otherConfig && otherConfig.shouldPauseGame;
             });
@@ -299,11 +308,11 @@ class PopupManager {
             }
         }
 
-        // Callback de fermeture
         if (config.onClose) {
             config.onClose();
         }
 
+        this.syncEventBlocker();
     }
 
     /**
@@ -325,7 +334,7 @@ class PopupManager {
      */
     closeAllPopups() {
         const activePopups = Array.from(this.activePopups);
-        activePopups.forEach(popupId => {
+        activePopups.forEach((popupId) => {
             this.closePopup(popupId);
         });
     }
@@ -363,12 +372,13 @@ class PopupManager {
      */
     cleanup() {
         this.closeAllPopups();
-        // Réactiver les pointer-events sur tous les canvas si nécessaire
+        if (this.eventBlocker.isEventsBlocked()) {
+            this.eventBlocker.unblockEvents();
+        }
+        document.getElementById('game-window')?.removeAttribute('inert');
         const canvasElements = document.querySelectorAll('canvas');
-        canvasElements.forEach(element => {
-            if (element.classList.contains('pointer-events-disabled')) {
-                element.classList.remove('pointer-events-disabled');
-            }
+        canvasElements.forEach((element) => {
+            element.classList.remove('pointer-events-disabled');
         });
     }
 
@@ -376,9 +386,12 @@ class PopupManager {
      * S'assurer que les événements ne sont pas bloqués au démarrage
      */
     ensureEventsUnblocked() {
-        // Vérifier et réactiver les pointer-events si nécessaire
+        if (this.eventBlocker.isEventsBlocked()) {
+            this.eventBlocker.unblockEvents();
+        }
+        document.getElementById('game-window')?.removeAttribute('inert');
         const canvasElements = document.querySelectorAll('canvas.pointer-events-disabled');
-        canvasElements.forEach(element => {
+        canvasElements.forEach((element) => {
             element.classList.remove('pointer-events-disabled');
         });
     }
@@ -404,5 +417,3 @@ window.addEventListener('error', (e) => {
 window.addEventListener('beforeunload', () => {
     popupManager.cleanup();
 });
-
-// PopupManager loaded
