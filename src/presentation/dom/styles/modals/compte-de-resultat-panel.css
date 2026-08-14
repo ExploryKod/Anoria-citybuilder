@@ -247,11 +247,20 @@
     justify-content: center;
     flex-shrink: 0;
     min-width: 40px;
+    appearance: none;
+    -webkit-appearance: none;
+    font: inherit;
+    padding: 0;
 }
 
 .compte-de-resultat-close-btn:hover {
     background: var(--cta);
     color: white;
+}
+
+.compte-de-resultat-close-btn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
 }
 
 .compte-de-resultat-content {

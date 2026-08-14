@@ -120,10 +120,21 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    border: none;
+    background: transparent;
+    appearance: none;
+    -webkit-appearance: none;
+    font: inherit;
+    color: inherit;
 }
 
 .journal-close-btn:hover {
     background: #f0f0f0;
+}
+
+.journal-close-btn:focus-visible {
+    outline: 2px solid var(--cta);
+    outline-offset: 2px;
 }
 
 .journal-close-btn svg {

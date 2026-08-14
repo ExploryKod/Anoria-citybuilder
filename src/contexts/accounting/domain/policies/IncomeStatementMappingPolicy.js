@@ -36,6 +36,7 @@ export function incomeStatementFromJournalPartition(labelYearOrTurn, partition, 
     imports: 0,
     exceptional: 0,
     commercialRoute: 0,
+    contributions: 0,
     other: 0,
   };
 
@@ -66,6 +67,8 @@ export function incomeStatementFromJournalPartition(labelYearOrTurn, partition, 
       addToBucket(amount, chargeBuckets, 'exceptional');
     } else if (entry.type === 'commercial_route') {
       addToBucket(amount, chargeBuckets, 'commercialRoute');
+    } else if (entry.type === 'contribution') {
+      addToBucket(amount, chargeBuckets, 'contributions');
     } else addToBucket(amount, chargeBuckets, 'other');
   }
 
@@ -88,6 +91,7 @@ export function incomeStatementFromJournalPartition(labelYearOrTurn, partition, 
     { label: 'Imports commerce', amount: chargeBuckets.imports },
     { label: 'Dépenses exceptionnelles', amount: chargeBuckets.exceptional },
     { label: 'Routes commerciales', amount: chargeBuckets.commercialRoute },
+    { label: 'Contributions', amount: chargeBuckets.contributions },
     { label: 'Autres charges', amount: chargeBuckets.other },
   ].filter((line) => line.amount > 0);
 

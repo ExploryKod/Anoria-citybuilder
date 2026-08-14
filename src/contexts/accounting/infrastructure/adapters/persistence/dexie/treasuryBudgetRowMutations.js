@@ -252,6 +252,17 @@ export function applyCommercialRouteDebitMutation(budget, amount) {
 }
 
 /** @param {object} budget @param {number} amount */
+export function applyContributionDebitMutation(budget, amount) {
+  const roundedAmount = roundAmount(amount);
+  if (!roundedAmount) return budget;
+
+  budget.funds = Math.round(budget.funds - roundedAmount);
+  budget.expenses = Math.round(budget.expenses + roundedAmount);
+  budget.netFlow = Math.round(budget.income - budget.expenses);
+  return budget;
+}
+
+/** @param {object} budget @param {number} amount */
 export function applyCapitalFundsIncomeCreditMutation(budget, amount) {
   const roundedAmount = roundAmount(amount);
   if (!roundedAmount) return budget;

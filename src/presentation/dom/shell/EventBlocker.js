@@ -10,6 +10,99 @@ class EventBlocker {
         this.blockedEvents = [];
         this.originalEventListeners = [];
         this.blockedElements = [];
+        this.excludeSelectors = [];
+    }
+
+    /**
+     * Keys owned by modal focus sessions / dialogs — never swallow them here.
+     * @param {Event} e
+     * @returns {boolean}
+     */
+    static isModalOwnedKey(e) {
+        if (e.type !== 'keydown' && e.type !== 'keyup') return false;
+        const key = /** @type {KeyboardEvent} */ (e).key;
+        return key === 'Tab' || key === 'Escape';
+    }
+
+    /**
+     * Camera / scene movement keys — must not reach the game while a modal is open,
+     * even when focus is inside the dialog (excludeSelectors).
+     * @param {Event} e
+     * @returns {boolean}
+     */
+    static isGameCameraKey(e) {
+        if (e.type !== 'keydown' && e.type !== 'keyup') return false;
+        const key = /** @type {KeyboardEvent} */ (e).key;
+        if (!key) return false;
+        if (key === 'ArrowUp' || key === 'ArrowDown' || key === 'ArrowLeft' || key === 'ArrowRight') {
+            return true;
+        }
+        const lower = key.toLowerCase();
+        return (
+            lower === 'w'
+            || lower === 'a'
+            || lower === 's'
+            || lower === 'd'
+            || lower === 'z'
+            || lower === 'q'
+            || lower === 'r'
+            || lower === 't'
+            || lower === 'v'
+            || lower === 'i'
+            || key === '+'
+            || key === '-'
+        );
+    }
+
+    /**
+     * Inside an excluded dialog, still allow keys the widget itself needs.
+     * @param {Event} e
+     * @returns {boolean}
+     */
+    static shouldAllowKeyInExcludedUi(e) {
+        if (EventBlocker.isModalOwnedKey(e)) return true;
+        if (!EventBlocker.isGameCameraKey(e)) return true;
+
+        const node =
+            e.target instanceof Element
+                ? e.target
+                : document.activeElement instanceof Element
+                  ? document.activeElement
+                  : null;
+        if (!node) return false;
+
+        // Caret / value controls
+        if (node.closest('input, textarea, select, [contenteditable="true"]')) {
+            return true;
+        }
+        // APG patterns that use arrows
+        if (node.closest('[role="tablist"], [role="listbox"], [role="menu"], [role="menubar"], [role="grid"], [role="tree"]')) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @param {Event} e
+     * @returns {boolean}
+     */
+    isExcludedEvent(e) {
+        if (!this.excludeSelectors?.length) return false;
+
+        const candidates = [e.target, document.activeElement];
+        for (const node of candidates) {
+            if (!(node instanceof Element)) continue;
+            for (const selector of this.excludeSelectors) {
+                try {
+                    if (node.matches?.(selector) || node.closest?.(selector)) {
+                        return true;
+                    }
+                } catch {
+                    // Ignore invalid selectors
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -40,23 +133,15 @@ class EventBlocker {
         // Bloquer les événements sur le document
         events.forEach(eventType => {
             const blocker = (e) => {
-                // Vérifier si l'élément cible est dans les exclusions
-                if (this.excludeSelectors && this.excludeSelectors.length > 0) {
-                    const target = e.target;
-                    if (target) {
-                        for (const selector of this.excludeSelectors) {
-                            try {
-                                if (target.matches && target.matches(selector)) {
-                                    return; // Ne pas bloquer cet événement
-                                }
-                                // Vérifier aussi si un parent correspond
-                                if (target.closest && target.closest(selector)) {
-                                    return; // Ne pas bloquer cet événement
-                                }
-                            } catch (err) {
-                                // Ignorer les erreurs de sélecteur invalide
-                            }
-                        }
+                // Tab / Escape : laissés aux sessions modalFocus (piège + fermeture)
+                if (EventBlocker.isModalOwnedKey(e)) {
+                    return;
+                }
+
+                if (this.isExcludedEvent(e)) {
+                    // Focus in dialog: allow UI keys, but still freeze camera/scene keys
+                    if (EventBlocker.shouldAllowKeyInExcludedUi(e)) {
+                        return;
                     }
                 }
                 
@@ -66,7 +151,6 @@ class EventBlocker {
                 
                 if (onBlock) {
                     onBlock(eventType, e);
-                } else {
                 }
                 
                 return false;

@@ -71,11 +71,20 @@
     transition: background-color 0.2s ease, color 0.2s ease;
     flex-shrink: 0;
     min-width: 40px;
+    appearance: none;
+    -webkit-appearance: none;
+    font: inherit;
+    padding: 0;
 }
 
 .administrator-panel-close-btn:hover {
     background: var(--cta);
     color: white;
+}
+
+.administrator-panel-close-btn:focus-visible {
+    outline: 2px solid var(--cta);
+    outline-offset: 2px;
 }
 
 /* Navigation Buttons Bar */

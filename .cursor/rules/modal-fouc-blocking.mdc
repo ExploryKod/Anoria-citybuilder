@@ -1,0 +1,53 @@
+---
+description: Anti-FOUC and canvas-blocking rules for game modals (objectives, news events, etc.)
+globs: src/presentation/dom/**/*.{js,css},game.html
+alwaysApply: false
+---
+
+# Modales jeu — FOUC & blocage canvas (erreurs récurrentes)
+
+## Symptômes déjà vus
+
+1. **Flash au chargement** : la modale apparaît une fraction de seconde puis disparaît.
+2. **Clics scène / placement impossibles** après coup (`maison`, canvas) alors que la modale semble fermée.
+3. Cause typique : overlay plein écran sans CSS synchrone, ou `PopupManager` qui laisse `canvas.pointer-events-disabled` / pause active.
+
+Références corrigées : `#objectives-panel`, `#news-event-modal`.
+
+## Checklist obligatoire pour toute nouvelle modale bloquante
+
+### HTML (`game.html`)
+
+- Attribut **`hidden`** dès le markup (avec `aria-hidden="true"`).
+- Ne pas compter sur `opacity: 0` seul pour masquer au boot.
+
+### CSS
+
+- Charger le CSS **en synchrone** dans le `<head>` (comme `objectives.css`), **pas** via `media="print" onload=…` si la modale est dans le DOM au boot.
+- Forcer :
+
+```css
+.my-modal[hidden] {
+  display: none !important;
+}
+```
+
+(`display: flex` / `grid` sur la base ne doit jamais gagner sur `[hidden]`.)
+
+### JS open / close
+
+- **Open** : `el.hidden = false` → `aria-hidden="false"` → puis classes `active` / `visible`.
+- **Close** : retirer `active` / `visible` / `show` → `el.hidden = true` → `aria-hidden="true"`.
+- Au **init** : forcer l’état fermé + `popupManager.closePopup(id)` + `ensureEventsUnblocked()` si la modale est dans `PopupManager`.
+
+### PopupManager
+
+- Une modale avec `[hidden]` **n’est pas ouverte** (ne doit ni bloquer le canvas ni pauser).
+- Classes `active` / `visible` / `show` ne suffisent pas si `hidden` est true.
+
+## À ne pas faire
+
+- CSS critique de modale boot en async « print trick ».
+- Overlay `position: fixed; inset: 0` sans `hidden` au premier paint.
+- Ouvrir via classes seules sans gérer `hidden`.
+- Fermer en ne faisant que `hidden = true` sans retirer les classes (le MutationObserver / Set interne peut rester incohérent).

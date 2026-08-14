@@ -3,6 +3,15 @@
  */
 import EventBlocker from '../shell/EventBlocker.js';
 
+const FOCUSABLE_SELECTOR = [
+  'button:not([disabled])',
+  'a[href]',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(', ');
+
 class ObjectivesPanel {
     /**
      * @param {{
@@ -25,6 +34,9 @@ class ObjectivesPanel {
         this.isVisible = false;
         this.isInitialized = false;
         this.eventBlocker = new EventBlocker();
+        /** @type {HTMLElement | null} */
+        this.lastFocusedElement = null;
+        this.handleDocumentKeyDown = this.handleDocumentKeyDown.bind(this);
     }
 
     async init() {
@@ -66,13 +78,71 @@ class ObjectivesPanel {
         if (closeBtn) {
             closeBtn.addEventListener('click', () => this.closeObjectives());
         }
+    }
 
-        // Fermer avec Escape
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.isVisible) {
-                this.closeObjectives();
-            }
+    /**
+     * @returns {HTMLElement[]}
+     */
+    getFocusableElements() {
+        if (!this.panel) return [];
+        return [...this.panel.querySelectorAll(FOCUSABLE_SELECTOR)].filter((el) => {
+            if (!(el instanceof HTMLElement)) return false;
+            if (el.closest('[hidden]')) return false;
+            const style = window.getComputedStyle(el);
+            return style.display !== 'none' && style.visibility !== 'hidden';
         });
+    }
+
+    focusPrimaryAction() {
+        const closeBtn = this.panel?.querySelector('.objectives-close-btn');
+        if (closeBtn instanceof HTMLElement) {
+            closeBtn.focus();
+            return;
+        }
+        this.panel?.focus();
+    }
+
+    handleDocumentKeyDown(event) {
+        if (!this.isVisible || !this.panel) return;
+
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            event.stopPropagation();
+            this.closeObjectives();
+            return;
+        }
+
+        if (event.key !== 'Tab') return;
+
+        const focusables = this.getFocusableElements();
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (focusables.length === 0) {
+            this.panel.focus();
+            return;
+        }
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement;
+        const currentIndex =
+            active instanceof HTMLElement ? focusables.indexOf(active) : -1;
+
+        if (event.shiftKey) {
+            if (currentIndex <= 0) {
+                last.focus();
+            } else {
+                focusables[currentIndex - 1].focus();
+            }
+            return;
+        }
+
+        if (currentIndex === -1 || currentIndex >= focusables.length - 1) {
+            first.focus();
+        } else {
+            focusables[currentIndex + 1].focus();
+        }
     }
 
     /**
@@ -186,12 +256,17 @@ class ObjectivesPanel {
     }
 
     /**
-     * Désactive les événements Three.js
+     * Désactive les événements Three.js (clavier / souris jeu), pas ceux du dialogue.
      */
     disableThreeJSEvents() {
         this.eventBlocker.blockThreeJSEvents({
-            onBlock: (eventType, e) => {
-            }
+            excludeSelectors: [
+                '#objectives-panel',
+                '#objectives-panel *',
+                '.objectives-panel',
+                '.objectives-panel *',
+            ],
+            onBlock: () => {},
         });
     }
 
@@ -215,6 +290,9 @@ class ObjectivesPanel {
 
         this.currentStep = 0;
         await this.updateDisplay();
+        this.lastFocusedElement = document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
         this.panel.hidden = false;
         this.panel.setAttribute('aria-hidden', 'false');
         this.panel.classList.add('visible');
@@ -222,9 +300,44 @@ class ObjectivesPanel {
         
         // Désactiver les événements Three.js
         this.disableThreeJSEvents();
+        document.getElementById('game-window')?.setAttribute('inert', '');
         
         // Mettre le jeu en pause
         this.deps.pauseGame?.();
+
+        document.addEventListener('keydown', this.handleDocumentKeyDown, true);
+        requestAnimationFrame(() => {
+            this.focusPrimaryAction();
+        });
+    }
+
+    /**
+     * @param {HTMLElement | null | undefined} el
+     * @returns {boolean}
+     */
+    isPracticallyFocusable(el) {
+        if (!(el instanceof HTMLElement)) return false;
+        if (!document.contains(el)) return false;
+        if (el.closest('[inert]')) return false;
+        if (el.closest('[hidden]')) return false;
+        if (el.getAttribute('aria-hidden') === 'true') return false;
+        if (el.disabled) return false;
+        const rect = el.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+    }
+
+    restoreFocusAfterClose() {
+        const last = this.lastFocusedElement;
+        this.lastFocusedElement = null;
+        if (this.isPracticallyFocusable(last) && last !== this.panel) {
+            last.focus();
+            return;
+        }
+        const landing =
+            document.getElementById('objectives-btn')
+            || document.getElementById('game-exit-home-btn')
+            || document.getElementById('toolbar-mobile-toggle');
+        landing?.focus();
     }
 
     /**
@@ -235,12 +348,17 @@ class ObjectivesPanel {
         this.panel.hidden = true;
         this.panel.setAttribute('aria-hidden', 'true');
         this.isVisible = false;
+
+        document.removeEventListener('keydown', this.handleDocumentKeyDown, true);
         
         // Réactiver les événements Three.js
         this.enableThreeJSEvents();
+        document.getElementById('game-window')?.removeAttribute('inert');
         
         // Reprendre le jeu
         this.deps.playGame?.();
+
+        this.restoreFocusAfterClose();
     }
 
     /**

@@ -11,8 +11,9 @@
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
     z-index: var(--z-index-modal);
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.25s ease, transform 0.25s ease;
+    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
     display: flex;
     flex-direction: column;
     color: var(--primary);
@@ -20,6 +21,7 @@
 
 .parameters-panel.visible {
     opacity: 1;
+    visibility: visible;
     transform: translate(-50%, -50%) scale(1);
     pointer-events: auto;
 }
@@ -158,6 +160,12 @@
     padding: 0;
 }
 
+.parameters-switch:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
+    box-shadow: 0 0 0 3px rgba(251, 129, 24, 0.28);
+}
+
 .parameters-switch:checked {
     background: var(--cta);
 }
@@ -201,7 +209,11 @@
 .parameters-action-btn:focus-visible:not(:disabled) {
     background: var(--cta-05, #e86f10);
     border-color: var(--cta-05, #e86f10);
-    outline: none;
+}
+
+.parameters-action-btn:focus-visible:not(:disabled) {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
 }
 
 .parameters-action-btn:disabled {
@@ -225,9 +237,13 @@
 }
 
 .parameters-number-input:focus {
-    outline: none;
     border-color: var(--cta-05);
     box-shadow: 0 0 0 3px rgba(251, 129, 24, 0.1);
+}
+
+.parameters-number-input:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: 1px;
 }
 
 .parameters-number-input:hover {

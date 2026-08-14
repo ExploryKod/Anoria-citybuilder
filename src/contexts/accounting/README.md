@@ -12,6 +12,7 @@ Phase 0 — spécification et cartographie. **Aucun refactor métier ici** : doc
    - **États annuels PCG** — compte de résultat (activité) + bilan (patrimoine), liés via le résultat net.
    - **Livret ville** (style César 3) — vue simplifiée pour non-comptables ; **hors chaîne PCG stricte**.
 4. Les bugs comptables métier seront traités **après** l’organisation du code (plus facile si les frontières sont claires).
+5. **Contributions** (paiement **à la dépêche** d’information) : futur type journal `contribution` — **Accounting possède l’écriture** ; **Intelligence** déclenche le settle au CTA « Payer ». Voir [`docs/contributions.md`](docs/contributions.md).
 
 ---
 
@@ -418,6 +419,8 @@ Les fichiers `CivilServantSalaryPolicy.js` et `UnemploymentBenefitPolicy.js` con
 | `import_{productId}` | Import commerce | Charge | `BudgetManager.addImportExpense()` → **`RecordCommerceImportExpense`** (Phase 3½) |
 | `exceptional_expenses` | Réparation (événement) | Charge | `BudgetManager.addExceptionalExpense()` → **`RecordExceptionalExpense`** (Phase 3½) |
 | `commercial_route` | Commission négociants | Charge | `BudgetManager.addCommercialRouteFee()` → **`RecordCommercialRouteExpense`** (Phase 3½) |
+| `contribution` | Contribution pour révéler une dépêche | Charge | **`RecordContributionExpense` / `settleContribution`** (`businessKey: contribution:news:{id}`) |
+
 | `carry_forward` | Report à nouveau | Revenu ou charge (signe) | **`SyncTurnInformativeEntries`** → `RecordCarryForwardEntry` (Phase 4 slice 6) |
 | `balance` | Snapshot trésorerie / tour | Informatif (session) | **`SyncTurnInformativeEntries`** → `RecordBalanceSnapshot` |
 | `cumul_*` | Totaux annuels | Informatif | **`SyncTurnInformativeEntries`** → `RecordYearCumulEntries` |
@@ -684,6 +687,7 @@ Journal non fiable comme SoT unique tant que tous les types opérationnels ne pa
 | **Commerce** | Customer | import/export → journal |
 | **Employment** | Customer | salaires / impôt payroll |
 | **Housing** | Customer | population pour taxes / salaires |
+| **Intelligence** | Customer (cible) | `SettleContribution` / lecture `wasPaid` — Accounting n’importe pas le domaine news ; voir [`docs/contributions.md`](docs/contributions.md) |
 | **Legacy game** | ACL | `BudgetProcessor` → `acl/accounting.js` ; UI → `window.budgetManager` (façade) |
 
 Façade actuelle : `src/js/acl/accounting.js` (+ `acl/budget.js` pour construction/valuation)  
@@ -715,5 +719,7 @@ Tests cibles (Phase 3+) :
 ## Hors scope (pour l’instant)
 
 - BC Commerce comptable complet
+- Implémentation runtime du type `contribution` (spec seule — [`docs/contributions.md`](docs/contributions.md))
 - Correction des bugs D1–D8 (documentés, traités après organisation)
 - FarmParcelPolicy, refactors Parcels/Housing/Supply en cours ailleurs
+- Contenu / modale des dépêches (BC **Intelligence**)

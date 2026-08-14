@@ -7,6 +7,7 @@ import {
 } from './renderTradeMap.js';
 import { renderCommerceGoodsList, renderCommerceGoodModal } from './renderCommerceGoods.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
+import { createModalFocusSession } from '../../shell/modalFocus.js';
 
 export class CommerceSectionPresenter {
     /**
@@ -36,6 +37,10 @@ export class CommerceSectionPresenter {
     this.openGoodProductId = null;
     this.goodModalHandler = null;
     this.goodModalEscapeHandler = null;
+    /** @type {ReturnType<typeof createModalFocusSession> | null} */
+    this.tradeMapFocusSession = null;
+    /** @type {ReturnType<typeof createModalFocusSession> | null} */
+    this.goodModalFocusSession = null;
     }
 
     async init() {
@@ -270,9 +275,18 @@ export class CommerceSectionPresenter {
     const modal = container.firstElementChild;
     document.body.appendChild(modal);
     this.setupGoodModalListeners(modal);
+    this.goodModalFocusSession?.release({ restoreFocus: false });
+    this.goodModalFocusSession = createModalFocusSession({
+      panel: modal,
+      onEscape: () => this.closeGoodModal(),
+      initialFocus: '#commerce-good-modal-close',
+      ensureDialogAttributes: false,
+    });
   }
 
   closeGoodModal(clearSelection = true) {
+    this.goodModalFocusSession?.release();
+    this.goodModalFocusSession = null;
     const modal = document.getElementById('commerce-good-modal');
     if (modal) {
       modal.remove();
@@ -344,7 +358,7 @@ export class CommerceSectionPresenter {
       await this.renderAdminEntry();
     });
 
-    document.addEventListener('keydown', this.goodModalEscapeHandler);
+    // Escape + Tab trap handled by goodModalFocusSession (createModalFocusSession).
   }
 
   async openGoodModal(productId) {
@@ -370,9 +384,21 @@ export class CommerceSectionPresenter {
     this.isMapOpen = true;
     document.body.style.overflow = 'hidden';
     this.setupMapEventListeners(overlay);
+    this.tradeMapFocusSession?.release({ restoreFocus: false });
+    this.tradeMapFocusSession = createModalFocusSession({
+      panel: overlay,
+      onEscape: () => {
+        this.closeTradeMap();
+        void this.renderAdminEntry();
+      },
+      initialFocus: '#trade-map-close-btn',
+      ensureDialogAttributes: false,
+    });
   }
 
   closeTradeMap() {
+    this.tradeMapFocusSession?.release();
+    this.tradeMapFocusSession = null;
     const overlay = document.getElementById('trade-map-overlay');
     if (overlay) {
       overlay.remove();
@@ -491,7 +517,7 @@ export class CommerceSectionPresenter {
     };
 
     overlay.addEventListener('click', this.mapClickHandler);
-    document.addEventListener('keydown', this.escapeHandler);
+    // Escape + Tab trap handled by tradeMapFocusSession (createModalFocusSession).
   }
 
   setupEventListeners() {
