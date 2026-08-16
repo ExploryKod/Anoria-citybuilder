@@ -510,24 +510,116 @@
           </div>
         </div>
 
-        <aside id="hud-pop-rail" class="info-panel-pop-detail hud-pop-detail hud-pop-rail" aria-label="Population">
-            <button type="button" id="hud-pop-rail-drag" class="hud-pop-rail__drag" title="Déplacer" aria-label="Déplacer le panneau population">✋</button>
-            <section class="info-box infos-pop-detail">
-                <div class="pop-detail-metric pop-detail-total" title="Population totale (pays · hameau visible)">
-                    <span class="pop-detail-icon pop-detail-icon--users" aria-hidden="true">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
+        <aside id="hud-pop-rail" class="info-panel-pop-detail hud-pop-detail hud-pop-rail" aria-label="Indicateurs">
+            <div class="hud-pop-rail__side">
+                <button type="button" id="hud-pop-rail-drag" class="hud-pop-rail__drag" title="Déplacer" aria-label="Déplacer le panneau">✋</button>
+                <button
+                    type="button"
+                    id="hud-pop-rail-collapse"
+                    class="hud-pop-rail__collapse"
+                    title="Réduire"
+                    aria-label="Réduire le panneau indicateurs"
+                    aria-expanded="true"
+                    aria-controls="hud-pop-rail-panels"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                    </svg>
+                </button>
+                <button
+                    type="button"
+                    id="hud-pop-rail-expand"
+                    class="hud-pop-rail__expand"
+                    title="Population"
+                    aria-label="Ouvrir le panneau indicateurs"
+                    aria-expanded="true"
+                    aria-controls="hud-pop-rail-panels"
+                    hidden
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </button>
+                <div class="hud-pop-rail__tabs" role="tablist" aria-orientation="vertical" aria-label="Vues du panneau">
+                    <button
+                        type="button"
+                        class="hud-pop-rail__tab hud-pop-rail__tab--details"
+                        id="hud-pop-tab-details"
+                        role="tab"
+                        aria-selected="true"
+                        aria-controls="hud-pop-panel-details"
+                        data-tab="pop-details"
+                        title="Population"
+                        aria-label="Population"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
                             <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                         </svg>
-                    </span>
-                    <span class="pop-detail-values" aria-label="Population totale">
-                        <span class="pop-detail-value pop-total pop-detail-value--country">0</span>
-                        <span class="pop-detail-value pop-total--hamlet pop-detail-value--hamlet">0</span>
-                    </span>
+                    </button>
+                    <button
+                        type="button"
+                        class="hud-pop-rail__tab hud-pop-rail__tab--ressources"
+                        id="hud-pop-tab-ressources"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="hud-pop-panel-ressources"
+                        data-tab="pop-ressources"
+                        tabindex="-1"
+                        title="Ressources"
+                        aria-label="Ressources"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/>
+                            <path d="M12 22V12"/>
+                            <polyline points="3.29 7 12 12 20.71 7"/>
+                            <path d="m7.5 4.27 9 5.15"/>
+                        </svg>
+                    </button>
                 </div>
-                <div class="pop-detail-sep" role="separator" aria-hidden="true"></div>
-                <div class="pop-detail-metric pop-detail-hunger" title="Citoyens affamés (pays · hameau visible)">
-                    <span class="pop-detail-icon">
+            </div>
+            <div id="hud-pop-rail-panels" class="hud-pop-rail__panels">
+            <section id="hud-pop-panel-details" class="info-box infos-pop-detail hud-pop-rail__panel" role="tabpanel" aria-labelledby="hud-pop-tab-details">
+                <div class="pop-detail-block">
+                    <div class="pop-detail-metric pop-detail-total">
+                        <span class="pop-detail-icon pop-detail-icon--users" title="Population" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                        </span>
+                        <span class="pop-detail-values" aria-label="Population totale">
+                            <span class="pop-detail-value pop-total pop-detail-value--country">0</span>
+                            <span class="pop-detail-value pop-total--hamlet pop-detail-value--hamlet">0</span>
+                        </span>
+                    </div>
+                    <div class="pop-detail-groups" aria-label="Population par groupe social">
+                        <div class="pop-detail-metric pop-group-row" data-metric="pop" data-social-group="artisans">
+                            <span class="pop-detail-emoji" title="Artisans" aria-hidden="true">🔨</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-group-row" data-metric="pop" data-social-group="merchants">
+                            <span class="pop-detail-emoji" title="Commerçants" aria-hidden="true">🛒</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-group-row" data-metric="pop" data-social-group="scholars">
+                            <span class="pop-detail-emoji" title="Savants" aria-hidden="true">📚</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="pop-detail-metric pop-detail-hunger">
+                    <span class="pop-detail-icon" title="Faim">
                         <img src="/resources/textures/status/nofood.png" alt="" class="famished-icon">
                     </span>
                     <span class="pop-detail-values" aria-label="Citoyens affamés">
@@ -535,77 +627,179 @@
                         <span class="pop-detail-value display-hunger-pop--hamlet pop-detail-value--hamlet">0</span>
                     </span>
                 </div>
-                <div class="pop-detail-metric pop-detail-deaths" title="Morts depuis le début de la partie">
-                    <span class="pop-detail-icon pop-detail-icon--deaths" aria-hidden="true">
+                <div class="pop-detail-metric pop-detail-deaths">
+                    <span class="pop-detail-icon pop-detail-icon--deaths" title="Morts" aria-hidden="true">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M10 5v3"/><path d="M14 5v3"/><path d="M10 19v-6a2 2 0 0 1 2-2v0a2 2 0 0 1 2 2v6"/><path d="M6 19v-6a6 6 0 0 1 12 0v6"/><path d="M18 19v2"/><path d="M6 19v2"/>
                         </svg>
                     </span>
                     <span class="pop-detail-value display-deaths-pop">0</span>
                 </div>
-                <div class="pop-detail-sep" role="separator" aria-hidden="true"></div>
-                <div class="pop-detail-active" title="Population active (pays · hameau visible)">
-                    <span class="pop-detail-metric pop-active-head">
-                        <span class="pop-detail-emoji pop-active-emoji" aria-hidden="true">👷</span>
+                <div class="pop-detail-block">
+                    <div class="pop-detail-metric pop-active-head">
+                        <span class="pop-detail-emoji pop-active-emoji" title="Travailleurs" aria-hidden="true">👷</span>
                         <span class="pop-detail-values" aria-label="Population active totale">
                             <span class="pop-detail-value pop-active-total pop-detail-value--country">0</span>
                             <span class="pop-detail-value pop-active-total--hamlet pop-detail-value--hamlet">0</span>
                         </span>
-                    </span>
-                    <span class="pop-breakdown" aria-label="Détail population active">
-                        <span class="pop-detail-metric pop-segment pop-segment--citizen" title="Citoyens actifs (pays · hameau visible)">
-                            <span class="pop-detail-emoji pop-segment-emoji" aria-hidden="true">🔨</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-segment-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-segment-value--hamlet pop-detail-value--hamlet">0</span>
-                            </span>
-                        </span>
-                        <span class="pop-detail-metric pop-segment pop-segment--elite" title="Élites (pays · hameau visible)">
-                            <span class="pop-detail-emoji pop-segment-emoji" aria-hidden="true">👑</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-segment-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-segment-value--hamlet pop-detail-value--hamlet">0</span>
-                            </span>
-                        </span>
-                        <span class="pop-detail-metric pop-segment pop-segment--servant" title="Fonctionnaires (pays · hameau visible)">
-                            <span class="pop-detail-emoji pop-segment-emoji" aria-hidden="true">🏛</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-segment-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-segment-value--hamlet pop-detail-value--hamlet">0</span>
-                            </span>
-                        </span>
-                    </span>
-                </div>
-                <div class="pop-detail-sep" role="separator" aria-hidden="true"></div>
-                <div class="pop-detail-unemployed-block" aria-label="Chômage">
-                    <div class="pop-detail-metric pop-detail-unemployed pop-detail-unemployed--country" title="Chômage — tout le pays">
-                        <span class="pop-detail-unemployed-head">
-                            <span class="pop-detail-icon">
-                                <img src="/resources/textures/status/no-work_colored.png" alt="" class="unemployed-icon">
-                            </span>
-                            <span class="pop-detail-value display-unemployed-pop pop-detail-value--country">0</span>
-                        </span>
-                        <span class="pop-detail-value display-unemployed-pct pop-detail-value--country">0%</span>
                     </div>
-                    <div class="pop-detail-metric pop-detail-unemployed pop-detail-unemployed--hamlet" title="Chômage — hameau visible">
-                        <span class="pop-detail-unemployed-head">
-                            <span class="pop-detail-icon" aria-hidden="true">
-                                <img src="/resources/textures/status/no-work_colored.png" alt="" class="unemployed-icon">
+                    <div class="pop-detail-groups" aria-label="Travailleurs par groupe social">
+                        <div class="pop-detail-metric pop-group-row" data-metric="workers" data-social-group="artisans">
+                            <span class="pop-detail-emoji" title="Artisans" aria-hidden="true">🔨</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
                             </span>
-                            <span class="pop-detail-value display-unemployed-pop pop-detail-value--hamlet">0</span>
-                        </span>
-                        <span class="pop-detail-value display-unemployed-pct pop-detail-value--hamlet">0%</span>
+                        </div>
+                        <div class="pop-detail-metric pop-group-row" data-metric="workers" data-social-group="merchants">
+                            <span class="pop-detail-emoji" title="Commerçants" aria-hidden="true">🛒</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-group-row" data-metric="workers" data-social-group="scholars">
+                            <span class="pop-detail-emoji" title="Savants" aria-hidden="true">📚</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
                 <div class="pop-detail-sep" role="separator" aria-hidden="true"></div>
-                <div class="pop-detail-metric pop-detail-lack worker-lack-box" title="Manque de main-d'œuvre (pays · hameau visible)">
-                    <span class="pop-detail-emoji pop-lack-emoji" aria-hidden="true">⚠️</span>
-                    <span class="pop-detail-values" aria-label="Manque de main-d'œuvre">
-                        <span class="pop-detail-value display-worker-lack pop-detail-value--country">0</span>
-                        <span class="pop-detail-value display-worker-lack--hamlet pop-detail-value--hamlet">0</span>
-                    </span>
+                <div class="pop-detail-block pop-breakdown" aria-label="Détail population active">
+                        <span class="pop-detail-metric pop-segment pop-segment--citizen">
+                            <span class="pop-detail-emoji pop-segment-emoji" title="Citoyens" aria-hidden="true">🔨</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-segment-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-segment-value--hamlet pop-detail-value--hamlet">0</span>
+                            </span>
+                        </span>
+                        <span class="pop-detail-metric pop-segment pop-segment--elite">
+                            <span class="pop-detail-emoji pop-segment-emoji" title="Élites" aria-hidden="true">👑</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-segment-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-segment-value--hamlet pop-detail-value--hamlet">0</span>
+                            </span>
+                        </span>
+                        <span class="pop-detail-metric pop-segment pop-segment--servant">
+                            <span class="pop-detail-emoji pop-segment-emoji" title="Fonctionnaires" aria-hidden="true">🏛</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-segment-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-segment-value--hamlet pop-detail-value--hamlet">0</span>
+                            </span>
+                        </span>
+                </div>
+                <div class="pop-detail-block pop-detail-labor">
+                    <div class="pop-detail-metric pop-detail-labor-head">
+                        <span class="pop-detail-labor-icon" title="Travail">
+                            <img src="/resources/textures/status/no-work_colored.png" alt="" class="unemployed-icon">
+                        </span>
+                        <span class="pop-detail-values" aria-label="Marché du travail">
+                            <span class="pop-detail-value pop-labor-value--country pop-detail-value--country">0%</span>
+                            <span class="pop-detail-value pop-labor-value--hamlet pop-detail-value--hamlet">0%</span>
+                        </span>
+                    </div>
+                    <div class="pop-detail-groups" aria-label="Marché du travail par groupe social">
+                        <div class="pop-detail-metric pop-group-row" data-metric="labor" data-social-group="artisans">
+                            <span class="pop-detail-emoji" title="Artisans" aria-hidden="true">🔨</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0%</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0%</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-group-row" data-metric="labor" data-social-group="merchants">
+                            <span class="pop-detail-emoji" title="Commerçants" aria-hidden="true">🛒</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0%</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0%</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-group-row" data-metric="labor" data-social-group="scholars">
+                            <span class="pop-detail-emoji" title="Savants" aria-hidden="true">📚</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0%</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0%</span>
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </section>
+            <section
+                id="hud-pop-panel-ressources"
+                class="info-box infos-pop-ressources hud-pop-rail__panel"
+                role="tabpanel"
+                aria-labelledby="hud-pop-tab-ressources"
+                hidden
+            >
+                <div class="pop-detail-block pop-resource-dest" data-destination="city">
+                    <div class="pop-detail-metric pop-resource-dest-head">
+                        <span class="pop-detail-emoji" title="Ville" aria-hidden="true">🏙</span>
+                        <span class="pop-detail-values" aria-label="Stocks ville (moulins et granges ville)">
+                            <span class="pop-detail-value pop-resource-total--city pop-detail-value--country">0</span>
+                            <span class="pop-detail-value pop-resource-total--city--hamlet pop-detail-value--hamlet">0</span>
+                        </span>
+                    </div>
+                    <div class="pop-detail-groups" aria-label="Ressources pour la ville">
+                        <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="city" data-product="wheat">
+                            <span class="pop-detail-emoji" title="Blé" aria-hidden="true">🌾</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="city" data-product="cabbage">
+                            <span class="pop-detail-emoji" title="Choux" aria-hidden="true">🥬</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="city" data-product="carrot">
+                            <span class="pop-detail-emoji" title="Carottes" aria-hidden="true">🥕</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="pop-detail-sep" role="separator" aria-hidden="true"></div>
+                <div class="pop-detail-block pop-resource-dest" data-destination="commerce">
+                    <div class="pop-detail-metric pop-resource-dest-head">
+                        <span class="pop-detail-emoji" title="Commerce" aria-hidden="true">📦</span>
+                        <span class="pop-detail-values" aria-label="Stocks commerce (granges commerce)">
+                            <span class="pop-detail-value pop-resource-total--commerce pop-detail-value--country">0</span>
+                            <span class="pop-detail-value pop-resource-total--commerce--hamlet pop-detail-value--hamlet">0</span>
+                        </span>
+                    </div>
+                    <div class="pop-detail-groups" aria-label="Ressources pour le commerce">
+                        <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="commerce" data-product="wood">
+                            <span class="pop-detail-emoji" title="Bois" aria-hidden="true">🪵</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="commerce" data-product="furniture">
+                            <span class="pop-detail-emoji" title="Meubles" aria-hidden="true">🪑</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="commerce" data-product="figs">
+                            <span class="pop-detail-emoji" title="Figues" aria-hidden="true">🍇</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            </div>
         </aside>
 
         <nav class="hud-side-actions info-box-stats" aria-label="Outils rapides">
@@ -850,7 +1044,7 @@
                             <section class="info-box infos-time">
                                 <span class="hud-season hud-season--loading" role="img" aria-label="Saison : chargement…" title="Saison">…</span>
                                 <article class="clock-box" title="Date en jeu">
-                                    <span class="clock-icon">
+                                    <span class="clock-icon" aria-hidden="true">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock-4"><circle cx="12" cy="12" r="10"/>
                                             <polyline points="12 6 12 12 16 14"/>
                                         </svg>
@@ -858,7 +1052,10 @@
                                             <path d="M6.87 6.87a8 8 0 1 0 11.26 11.26"/><path d="M19.9 14.25a8 8 0 0 0-9.15-9.15"/><path d="m22 6-3-3"/><path d="M6.26 18.67 4 21"/><path d="m2 2 20 20"/><path d="M4 4 2 6"/>
                                         </svg>
                                     </span>
-                                    <div class="display-time"></div>
+                                    <div class="display-time">
+                                        <span class="display-time__visual" aria-hidden="true"></span>
+                                        <span class="display-time__sr sr-only"></span>
+                                    </div>
                                 </article>
                             </section>
                             <section class="info-box infos-budget">
@@ -1035,6 +1232,9 @@
                     </div>
                 </div>
             </nav>
+
+            <aside id="hud-fab-dock" class="hud-fab-dock" aria-label="Outils">
+            </aside>
         </section>
 
         <div id="panel-layout" class="panel-layout" aria-hidden="true" inert>

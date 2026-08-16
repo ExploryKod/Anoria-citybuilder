@@ -104,6 +104,15 @@ describe('BarnStockPolicy', () => {
     expect(
       isOperationalCommerceBarn({ type: 'Windmill-001', roads: 1, isActive: true, employees: { worker: 1 } })
     ).toBe(false);
+    expect(
+      isOperationalCommerceBarn({
+        type: 'Barn-001',
+        supplyFlow: 'city',
+        roads: 1,
+        isActive: true,
+        employees: { worker: 2 },
+      })
+    ).toBe(false);
   });
 
   test('getBarnCapacitySummary for info panel', () => {

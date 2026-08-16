@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {createCamera} from './camera.js';
 import { createPerfHud } from './PerfHud.js';
+import { adoptHudFabDockChildren } from '../dom/shell/hudFabDock.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { AnimationMixer } from 'three';
@@ -167,6 +168,7 @@ export function createScene(_gameStore, assetManager, deps) {
     // (stats.js en CSS scale était flou et ne montrait qu'un panneau)
     const stats = createPerfHud({ widthRatio: 0.2, bottom: 96, right: 16 });
     document.body.appendChild(stats.dom);
+    adoptHudFabDockChildren();
     
     // Add WebGL error handling
     const canvas = renderer.domElement;

@@ -2,6 +2,9 @@ import { describe, test, expect } from '@jest/globals';
 import {
   normalizeSupplyFlow,
   getBuildingSupplyFlow,
+  getBarnSupplyFlow,
+  isCommerceBarn,
+  isCityBarn,
   SUPPLY_FLOW,
 } from '../../../../src/contexts/supply/domain/manufacturing/SupplyFlow.js';
 import {
@@ -25,6 +28,13 @@ describe('SupplyFlow', () => {
   test('normalizeSupplyFlow defaults to city', () => {
     expect(normalizeSupplyFlow(undefined)).toBe(SUPPLY_FLOW.CITY);
     expect(normalizeSupplyFlow('commerce')).toBe(SUPPLY_FLOW.COMMERCE);
+  });
+
+  test('getBarnSupplyFlow defaults missing barns to commerce hubs', () => {
+    expect(getBarnSupplyFlow({})).toBe(SUPPLY_FLOW.COMMERCE);
+    expect(getBarnSupplyFlow({ supplyFlow: SUPPLY_FLOW.CITY })).toBe(SUPPLY_FLOW.CITY);
+    expect(isCommerceBarn({ type: 'Barn-001' })).toBe(true);
+    expect(isCityBarn({ type: 'Barn-001', supplyFlow: SUPPLY_FLOW.CITY })).toBe(true);
   });
 });
 

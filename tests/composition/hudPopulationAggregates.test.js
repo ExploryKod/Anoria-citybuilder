@@ -40,5 +40,57 @@ describe('getHudPopulationScopeSnapshot', () => {
 
     expect(country.totalPop).toBe(8);
     expect(active.totalPop).toBe(5);
+    expect(country.popByGroup.merchants).toBe(8);
+    expect(active.popByGroup.merchants).toBe(5);
+  });
+
+  test('mapEmploymentGroupsForHud derives unemployment percentage and lack per group', async () => {
+    const { mapEmploymentGroupsForHud, laborSlotFromStats } = await import('../../src/composition/hudPopulationAggregates.js');
+
+    expect(
+      mapEmploymentGroupsForHud(
+        {
+          artisans: { workerPool: 5, assigned: 3, unemployed: 2 },
+          merchants: { workerPool: 0, assigned: 0, unemployed: 0 },
+        },
+        {
+          1: { need: 4 },
+          2: { need: 0 },
+        }
+      )
+    ).toEqual({
+      artisans: {
+        workerPool: 5,
+        assigned: 3,
+        unemployed: 2,
+        unemploymentPercentage: 40,
+        lack: 4,
+      },
+      merchants: {
+        workerPool: 0,
+        assigned: 0,
+        unemployed: 0,
+        unemploymentPercentage: 0,
+        lack: 0,
+      },
+      scholars: {
+        workerPool: 0,
+        assigned: 0,
+        unemployed: 0,
+        unemploymentPercentage: 0,
+        lack: 0,
+      },
+    });
+
+    expect(laborSlotFromStats({ lack: 3, unemployed: 2, unemploymentPercentage: 40 })).toEqual({
+      mode: 'lack',
+      display: '3',
+      count: 3,
+    });
+    expect(laborSlotFromStats({ lack: 0, unemployed: 2, unemploymentPercentage: 40 })).toEqual({
+      mode: 'unemployment',
+      display: '40%',
+      count: 2,
+    });
   });
 });

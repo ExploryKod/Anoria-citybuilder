@@ -3,6 +3,7 @@ import { isActiveHamletRow } from '../../../../core/persistence/hamlet/hamletSes
 import { createSupplyBuildingSnapshot } from '../../domain/SupplyBuildingSnapshot.js';
 import { createSupplyBuildingView } from '../../domain/SupplyBuildingView.js';
 import { createFoodStock } from '../../domain/value-objects/FoodStock.js';
+import { isCommerceBarn } from '../../domain/manufacturing/SupplyFlow.js';
 import {
   canonicalizeHouseRecord,
   instanceIdFromHouseRow,
@@ -295,7 +296,7 @@ export class DexieSupplyBuildingRepository {
     const rows = await this.#activeRows();
     return rows.filter((row) => {
       const type = row.type || '';
-      return type.includes('Barn');
+      return type.includes('Barn') && isCommerceBarn(row);
     });
   }
 
