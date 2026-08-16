@@ -4,7 +4,25 @@
 
 import { getOrCreateAccountingContext } from './createAccountingContext.js';
 import { getCumulativeDeaths } from './gameplayMortalityState.js';
-import { getHudPopulationScopeSnapshot } from './hudPopulationAggregates.js';
+import {
+  getHudPopulationScopeSnapshot,
+  mapEmploymentGroupsForHud,
+} from './hudPopulationAggregates.js';
+import { getHudResourceScopeSnapshot } from './hudResourceAggregates.js';
+import { allSocialGroups } from '../contexts/employment/domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
+
+/**
+ * @param {Record<string, { workerPool?: number }>} groups
+ * @returns {Record<string, number>}
+ */
+function workerCountsFromGroups(groups) {
+  /** @type {Record<string, number>} */
+  const counts = {};
+  for (const group of allSocialGroups()) {
+    counts[group] = Math.max(0, Math.floor(groups?.[group]?.workerPool) || 0);
+  }
+  return counts;
+}
 
 /**
  * Sync population rail: country totals + active hamlet (dual column).
@@ -13,8 +31,7 @@ import { getHudPopulationScopeSnapshot } from './hudPopulationAggregates.js';
  *   updateFamishedPopulation?: (country: number, hamlet?: number) => void,
  *   updateDeaths?: (n: number) => void,
  *   updatePopulationBreakdown?: Function,
- *   updateUnemployedPopulation?: Function,
- *   updateWorkerLack?: Function,
+ *   updateGroupHud?: Function,
  * }} gameUI
  */
 export async function syncPopRailHud(gameUI) {
@@ -46,19 +63,54 @@ export async function syncPopRailHud(gameUI) {
       }
     );
 
-    gameUI.updateUnemployedPopulation?.(
-      country.employment.unemployed ?? 0,
-      country.employment.unemploymentPercentage ?? 0,
-      hamlet.employment.unemployed ?? 0,
-      hamlet.employment.unemploymentPercentage ?? 0
+    const countryGroups = mapEmploymentGroupsForHud(
+      country.employment.byGroup,
+      country.employment.bySector
+    );
+    const hamletGroups = mapEmploymentGroupsForHud(
+      hamlet.employment.byGroup,
+      hamlet.employment.bySector
     );
 
-    gameUI.updateWorkerLack?.(
-      country.employment.lack ?? 0,
-      hamlet.employment.lack ?? 0
-    );
+    gameUI.updateGroupHud?.({
+      popCountry: country.popByGroup,
+      popHamlet: hamlet.popByGroup,
+      workersCountry: workerCountsFromGroups(countryGroups),
+      workersHamlet: workerCountsFromGroups(hamletGroups),
+      laborCountry: {
+        unemployed: country.employment.unemployed ?? 0,
+        unemploymentPercentage: country.employment.unemploymentPercentage ?? 0,
+        lack: country.employment.lack ?? 0,
+      },
+      laborHamlet: {
+        unemployed: hamlet.employment.unemployed ?? 0,
+        unemploymentPercentage: hamlet.employment.unemploymentPercentage ?? 0,
+        lack: hamlet.employment.lack ?? 0,
+      },
+      groupsCountry: countryGroups,
+      groupsHamlet: hamletGroups,
+    });
   } catch (err) {
     console.warn('[syncPopRailHud] population:', err);
+  }
+
+  try {
+    const [resourcesCountry, resourcesHamlet] = await Promise.all([
+      getHudResourceScopeSnapshot('country'),
+      getHudResourceScopeSnapshot('active'),
+    ]);
+    gameUI.updateResourcesHud?.({
+      cityCountry: resourcesCountry.city,
+      cityHamlet: resourcesHamlet.city,
+      commerceCountry: resourcesCountry.commerce,
+      commerceHamlet: resourcesHamlet.commerce,
+      cityTotalCountry: resourcesCountry.cityTotal,
+      cityTotalHamlet: resourcesHamlet.cityTotal,
+      commerceTotalCountry: resourcesCountry.commerceTotal,
+      commerceTotalHamlet: resourcesHamlet.commerceTotal,
+    });
+  } catch (err) {
+    console.warn('[syncPopRailHud] resources:', err);
   }
 
   try {

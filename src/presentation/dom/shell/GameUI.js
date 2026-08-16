@@ -24,12 +24,17 @@ import {
     displayHungerPop,
     displayHungerPopHamlet,
     displayDeathsPop,
-    displayUnemployedPop,
-    displayUnemployedPct,
-    displayUnemployedPopHamlet,
-    displayUnemployedPctHamlet,
-    displayWorkerLack,
-    displayWorkerLackHamlet,
+    displayLaborCountry,
+    displayLaborHamlet,
+    popGroupPopNodes,
+    popGroupWorkerNodes,
+    popGroupLaborNodes,
+    popResourceCityNodes,
+    popResourceCommerceNodes,
+    displayResourceCityTotal,
+    displayResourceCityTotalHamlet,
+    displayResourceCommerceTotal,
+    displayResourceCommerceTotalHamlet,
     displayFunds,
     infoObjectOverlay,
     infoObjectCloseBtn,
@@ -40,6 +45,13 @@ import {
 import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { SEASON_KEYS } from '../../../shared/time/TimeCalendar.js';
 import { msToSpeedLevel, SPEED_LEVEL_MAX } from '../../../shared/gameplay/SimulationDefaults.js';
+import { getResidentialGroupTitle } from './ResidentialGroupLabels.js';
+import { allSocialGroups } from '../../../contexts/employment/domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
+import { laborSlotFromStats } from '../../../composition/hudPopulationAggregates.js';
+import {
+    HUD_CITY_RESOURCE_PRODUCTS,
+} from '../../../composition/hudResourceAggregates.js';
+import { BARN_COMMERCE_PRODUCTS } from '../../../contexts/supply/domain/catalogs/BarnCommerceCatalog.js';
 
 /** @type {{ getScene?: () => { controls?: { enabled: boolean } } | null } | null} */
 let deps = null;
@@ -63,6 +75,65 @@ const HUD_SEASON_MODIFIER_CLASSES = [
 function setHudCount(el, value) {
     if (!el) return;
     el.textContent = String(Math.max(0, Math.floor(value) || 0));
+}
+
+/**
+ * @param {HTMLElement | null} el
+ * @param {{ mode: 'lack' | 'unemployment', display: string, count: number }} slot
+ * @param {string} scopeLabel
+ */
+function setLaborCell(el, slot, scopeLabel) {
+    if (!(el instanceof HTMLElement)) return;
+    el.textContent = slot.display;
+    el.classList.toggle('pop-detail-value--lack', slot.mode === 'lack');
+    const tooltip = slot.mode === 'lack'
+        ? `${scopeLabel} : manque de ${slot.count} travailleur${slot.count === 1 ? '' : 's'}`
+        : `${scopeLabel} : ${slot.count} chômeur${slot.count === 1 ? '' : 's'}`;
+    el.title = tooltip;
+    el.setAttribute('aria-label', tooltip);
+}
+
+/**
+ * @param {Record<string, { row: Element | null, country: Element | null, hamlet: Element | null }>} nodesByGroup
+ * @param {Record<string, number>} countryCounts
+ * @param {Record<string, number> | null} hamletCounts
+ */
+function setGroupCounts(nodesByGroup, countryCounts, hamletCounts) {
+    for (const group of allSocialGroups()) {
+        const nodes = nodesByGroup[group];
+        if (!nodes) continue;
+        setHudCount(nodes.country, countryCounts?.[group] ?? 0);
+        if (hamletCounts) {
+            setHudCount(nodes.hamlet, hamletCounts[group] ?? 0);
+        }
+    }
+}
+
+/**
+ * Visible HUD date stays abbreviated; screen readers get the full month name.
+ * @param {number | null | undefined} days
+ */
+function setHudDateDisplay(days) {
+    if (!displayTime) return;
+    const loading = typeof days !== 'number' || Number.isNaN(days) || days < 0;
+    const visual = loading ? 'Chargement...' : TimeManager.formatTime(days);
+    const accessible = loading
+        ? 'Chargement...'
+        : TimeManager.formatTime(days, { abbreviated: false });
+
+    const visualEl = displayTime.querySelector('.display-time__visual');
+    const srEl = displayTime.querySelector('.display-time__sr');
+    if (visualEl && srEl) {
+        visualEl.textContent = visual;
+        srEl.textContent = accessible;
+    } else {
+        displayTime.textContent = visual;
+    }
+
+    const clockBox = displayTime.closest('.clock-box');
+    if (clockBox) {
+        clockBox.title = loading ? 'Date en jeu' : accessible;
+    }
 }
 
 class GameUI {
@@ -126,23 +197,13 @@ class GameUI {
      */
     updateTimeDisplay(time, unit = 'jours') {
         if (displayTime) {
-            // Vérifier si time est un nombre valide
             if (typeof time === 'number' && !isNaN(time) && time >= 0) {
-                // Stocker le temps actuel pour pouvoir le réafficher même en pause
                 this.currentTime = time;
                 this.updateSeasonDisplay(time);
-                // Utiliser le TimeManager pour formater la date (sans la saison)
-                const formattedTime = TimeManager.formatTime(time);
-                // S'assurer que le formatage n'a pas retourné undefined
-                if (formattedTime && formattedTime !== 'undefined') {
-                    displayTime.textContent = formattedTime;
-                } else {
-                    displayTime.textContent = 'Chargement...';
-                }
+                setHudDateDisplay(time);
             } else {
                 this.updateSeasonDisplay(NaN);
-                // Si le temps n'est pas encore défini ou invalide, afficher "Chargement..."
-                displayTime.textContent = 'Chargement...';
+                setHudDateDisplay(null);
             }
         }
     }
@@ -199,7 +260,7 @@ class GameUI {
         // Réafficher le temps stocké si disponible (pour s'assurer qu'il est toujours affiché)
         if (this.currentTime !== null && displayTime) {
             this.updateSeasonDisplay(this.currentTime);
-            displayTime.textContent = TimeManager.formatTime(this.currentTime);
+            setHudDateDisplay(this.currentTime);
         }
     }
 
@@ -320,51 +381,71 @@ class GameUI {
     }
 
     /**
-     * Updates global worker shortage (lack).
-     * @param {number} lack - Country-wide missing workers
-     * @param {number} [hamletLack] - Active hamlet missing workers
+     * Population / workers / labor market by social group (country + hamlet).
+     * Labor cells show lack when present, otherwise unemployment %.
+     *
+     * @param {{
+     *   popCountry?: Record<string, number>,
+     *   popHamlet?: Record<string, number>,
+     *   workersCountry?: Record<string, number>,
+     *   workersHamlet?: Record<string, number>,
+     *   laborCountry?: { unemployed?: number, unemploymentPercentage?: number, lack?: number },
+     *   laborHamlet?: { unemployed?: number, unemploymentPercentage?: number, lack?: number },
+     *   groupsCountry?: Record<string, { workerPool?: number, assigned?: number, unemployed?: number, unemploymentPercentage?: number, lack?: number }>,
+     *   groupsHamlet?: Record<string, { workerPool?: number, assigned?: number, unemployed?: number, unemploymentPercentage?: number, lack?: number }>,
+     * }} payload
      */
-    updateWorkerLack(lack = 0, hamletLack = null) {
-        setHudCount(displayWorkerLack, lack);
-        if (hamletLack != null) {
-            setHudCount(displayWorkerLackHamlet, hamletLack);
+    updateGroupHud(payload = {}) {
+        setGroupCounts(popGroupPopNodes, payload.popCountry ?? {}, payload.popHamlet ?? null);
+        setGroupCounts(popGroupWorkerNodes, payload.workersCountry ?? {}, payload.workersHamlet ?? null);
+
+        const countrySlot = laborSlotFromStats(payload.laborCountry);
+        const hamletSlot = laborSlotFromStats(payload.laborHamlet);
+        setLaborCell(displayLaborCountry, countrySlot, 'Pays');
+        setLaborCell(displayLaborHamlet, hamletSlot, 'Hameau visible');
+
+        for (const group of allSocialGroups()) {
+            const nodes = popGroupLaborNodes[group];
+            if (!nodes) continue;
+            const country = payload.groupsCountry?.[group] ?? {};
+            const hamlet = payload.groupsHamlet?.[group] ?? {};
+            const groupTitle = getResidentialGroupTitle(group);
+            setLaborCell(nodes.country, laborSlotFromStats(country), `${groupTitle} — pays`);
+            setLaborCell(nodes.hamlet, laborSlotFromStats(hamlet), `${groupTitle} — hameau visible`);
         }
     }
 
     /**
-     * Updates unemployed population (country row + hamlet row).
-     * @param {number} unemployedPopulation
-     * @param {number|null} unemploymentPercentage
-     * @param {number} [hamletUnemployedPopulation]
-     * @param {number|null} [hamletUnemploymentPercentage]
+     * Barn (commerce) + windmill (city) stocks — country + active hamlet.
+     *
+     * @param {{
+     *   cityCountry?: Record<string, number>,
+     *   cityHamlet?: Record<string, number>,
+     *   commerceCountry?: Record<string, number>,
+     *   commerceHamlet?: Record<string, number>,
+     *   cityTotalCountry?: number,
+     *   cityTotalHamlet?: number,
+     *   commerceTotalCountry?: number,
+     *   commerceTotalHamlet?: number,
+     * }} payload
      */
-    updateUnemployedPopulation(
-        unemployedPopulation,
-        unemploymentPercentage = null,
-        hamletUnemployedPopulation = null,
-        hamletUnemploymentPercentage = null
-    ) {
-        const count = unemployedPopulation || 0;
-        setHudCount(displayUnemployedPop, count);
-        if (displayUnemployedPct) {
-            if (unemploymentPercentage !== null && unemploymentPercentage !== undefined) {
-                displayUnemployedPct.textContent = `${unemploymentPercentage}%`;
-                displayUnemployedPct.hidden = false;
-            } else {
-                displayUnemployedPct.hidden = true;
-            }
-        }
+    updateResourcesHud(payload = {}) {
+        setHudCount(displayResourceCityTotal, payload.cityTotalCountry ?? 0);
+        setHudCount(displayResourceCityTotalHamlet, payload.cityTotalHamlet ?? 0);
+        setHudCount(displayResourceCommerceTotal, payload.commerceTotalCountry ?? 0);
+        setHudCount(displayResourceCommerceTotalHamlet, payload.commerceTotalHamlet ?? 0);
 
-        if (hamletUnemployedPopulation != null) {
-            setHudCount(displayUnemployedPopHamlet, hamletUnemployedPopulation || 0);
-            if (displayUnemployedPctHamlet) {
-                if (hamletUnemploymentPercentage !== null && hamletUnemploymentPercentage !== undefined) {
-                    displayUnemployedPctHamlet.textContent = `${hamletUnemploymentPercentage}%`;
-                    displayUnemployedPctHamlet.hidden = false;
-                } else {
-                    displayUnemployedPctHamlet.hidden = true;
-                }
-            }
+        for (const product of HUD_CITY_RESOURCE_PRODUCTS) {
+            const nodes = popResourceCityNodes[product];
+            if (!nodes) continue;
+            setHudCount(nodes.country, payload.cityCountry?.[product] ?? 0);
+            setHudCount(nodes.hamlet, payload.cityHamlet?.[product] ?? 0);
+        }
+        for (const product of BARN_COMMERCE_PRODUCTS) {
+            const nodes = popResourceCommerceNodes[product];
+            if (!nodes) continue;
+            setHudCount(nodes.country, payload.commerceCountry?.[product] ?? 0);
+            setHudCount(nodes.hamlet, payload.commerceHamlet?.[product] ?? 0);
         }
     }
 

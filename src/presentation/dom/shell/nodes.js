@@ -5,7 +5,14 @@ export const displaySpeed = document.querySelector('.hud-actions .display-speed'
 
 // Initialiser l'affichage du temps avec "Chargement..." si l'élément existe
 if (displayTime) {
-    displayTime.textContent = 'Chargement...';
+    const visual = displayTime.querySelector('.display-time__visual');
+    const sr = displayTime.querySelector('.display-time__sr');
+    if (visual && sr) {
+        visual.textContent = 'Chargement...';
+        sr.textContent = 'Chargement...';
+    } else {
+        displayTime.textContent = 'Chargement...';
+    }
 }
 export const speedChangeIndicator = document.querySelector('.hud-actions .speed-change-indicator');
 export const overOverlay = document.querySelector('#over-overlay');
@@ -57,12 +64,80 @@ export const displayPopServantsHamlet = document.querySelector(
 export const displayHungerPop = document.querySelector(`${popHudRoot} .display-hunger-pop.pop-detail-value--country`);
 export const displayHungerPopHamlet = document.querySelector(`${popHudRoot} .display-hunger-pop--hamlet`);
 export const displayDeathsPop = document.querySelector(`${popHudRoot} .display-deaths-pop`);
-export const displayUnemployedPop = document.querySelector(`${popHudRoot} .pop-detail-unemployed--country .display-unemployed-pop`);
-export const displayUnemployedPct = document.querySelector(`${popHudRoot} .pop-detail-unemployed--country .display-unemployed-pct`);
-export const displayUnemployedPopHamlet = document.querySelector(`${popHudRoot} .pop-detail-unemployed--hamlet .display-unemployed-pop`);
-export const displayUnemployedPctHamlet = document.querySelector(`${popHudRoot} .pop-detail-unemployed--hamlet .display-unemployed-pct`);
-export const displayWorkerLack = document.querySelector(`${popHudRoot} .display-worker-lack.pop-detail-value--country`);
-export const displayWorkerLackHamlet = document.querySelector(`${popHudRoot} .display-worker-lack--hamlet`);
+export const displayLaborCountry = document.querySelector(`${popHudRoot} .pop-labor-value--country`);
+export const displayLaborHamlet = document.querySelector(`${popHudRoot} .pop-labor-value--hamlet`);
+
+const POP_SOCIAL_GROUPS = ['artisans', 'merchants', 'scholars'];
+
+/**
+ * @param {'pop' | 'workers' | 'labor'} metric
+ * @returns {Record<string, { row: Element | null, country: Element | null, hamlet: Element | null }>}
+ */
+function queryGroupMetricNodes(metric) {
+    return Object.fromEntries(
+        POP_SOCIAL_GROUPS.map((group) => {
+            const row = document.querySelector(
+                `${popHudRoot} [data-metric="${metric}"][data-social-group="${group}"]`
+            );
+            return [
+                group,
+                {
+                    row,
+                    country: row?.querySelector('.pop-detail-value--country') ?? null,
+                    hamlet: row?.querySelector('.pop-detail-value--hamlet') ?? null,
+                },
+            ];
+        })
+    );
+}
+
+export const popGroupPopNodes = queryGroupMetricNodes('pop');
+export const popGroupWorkerNodes = queryGroupMetricNodes('workers');
+export const popGroupLaborNodes = queryGroupMetricNodes('labor');
+
+const POP_RESOURCE_CITY_PRODUCTS = ['wheat', 'cabbage', 'carrot'];
+const POP_RESOURCE_COMMERCE_PRODUCTS = ['wood', 'furniture', 'figs'];
+
+/**
+ * @param {'city' | 'commerce'} destination
+ * @param {ReadonlyArray<string>} products
+ * @returns {Record<string, { row: Element | null, country: Element | null, hamlet: Element | null }>}
+ */
+function queryResourceProductNodes(destination, products) {
+    return Object.fromEntries(
+        products.map((product) => {
+            const row = document.querySelector(
+                `${popHudRoot} [data-metric="resource"][data-destination="${destination}"][data-product="${product}"]`
+            );
+            return [
+                product,
+                {
+                    row,
+                    country: row?.querySelector('.pop-detail-value--country') ?? null,
+                    hamlet: row?.querySelector('.pop-detail-value--hamlet') ?? null,
+                },
+            ];
+        })
+    );
+}
+
+export const popResourceCityNodes = queryResourceProductNodes('city', POP_RESOURCE_CITY_PRODUCTS);
+export const popResourceCommerceNodes = queryResourceProductNodes(
+    'commerce',
+    POP_RESOURCE_COMMERCE_PRODUCTS
+);
+export const displayResourceCityTotal = document.querySelector(
+    `${popHudRoot} .pop-resource-total--city.pop-detail-value--country`
+);
+export const displayResourceCityTotalHamlet = document.querySelector(
+    `${popHudRoot} .pop-resource-total--city--hamlet`
+);
+export const displayResourceCommerceTotal = document.querySelector(
+    `${popHudRoot} .pop-resource-total--commerce.pop-detail-value--country`
+);
+export const displayResourceCommerceTotalHamlet = document.querySelector(
+    `${popHudRoot} .pop-resource-total--commerce--hamlet`
+);
 export const displayDelay = document.querySelector('.info-panel .display-delay');
 export const displayDelayUI = document.querySelector('.delay-ui');
 export const bulldozeSelected = document.querySelector('.bulldoze-btn');

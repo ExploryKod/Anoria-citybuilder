@@ -12,6 +12,78 @@ import { createEmploymentBuildingSnapshot } from '../contexts/employment/domain/
 import { isResidentialHouseType } from '../contexts/housing/domain/policies/HouseCapacityPolicy.js';
 import { normalizeResidentialType } from '../contexts/housing/domain/HouseTypeCatalog.js';
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
+import {
+  allSocialGroups,
+  eligibleSectorsForGroup,
+  residentialGroupForType,
+} from '../contexts/employment/domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
+
+/**
+ * Lack replaces unemployment in the HUD on the same scope: they cannot both
+ * be the visible problem. A group may still have unemployment while another
+ * has lack.
+ *
+ * @param {{ lack?: number, unemployed?: number, unemploymentPercentage?: number }} [stats]
+ * @returns {{ mode: 'lack' | 'unemployment', display: string, count: number }}
+ */
+export function laborSlotFromStats(stats = {}) {
+  const lack = Math.max(0, Math.floor(stats.lack) || 0);
+  if (lack > 0) {
+    return { mode: 'lack', display: String(lack), count: lack };
+  }
+  const unemployed = Math.max(0, Math.floor(stats.unemployed) || 0);
+  const pct = Math.max(0, Math.floor(stats.unemploymentPercentage) || 0);
+  return { mode: 'unemployment', display: `${pct}%`, count: unemployed };
+}
+
+/**
+ * @param {ReadonlyArray<{ type?: string, pop?: number }>} houses
+ * @returns {Record<string, number>}
+ */
+export function popByGroupFromHouses(houses) {
+  /** @type {Record<string, number>} */
+  const mapped = {};
+  for (const group of allSocialGroups()) {
+    mapped[group] = 0;
+  }
+  for (const house of houses) {
+    const group = residentialGroupForType(house.type || '');
+    if (!group || mapped[group] == null) continue;
+    mapped[group] += house.pop || 0;
+  }
+  return mapped;
+}
+
+/**
+ * @param {Record<string, { workerPool?: number, assigned?: number, unemployed?: number }> | undefined} byGroup
+ * @param {Record<number, { need?: number }> | undefined} [bySector]
+ * @returns {Record<string, { workerPool: number, assigned: number, unemployed: number, unemploymentPercentage: number, lack: number }>}
+ */
+export function mapEmploymentGroupsForHud(byGroup, bySector) {
+  /** @type {Record<string, { workerPool: number, assigned: number, unemployed: number, unemploymentPercentage: number, lack: number }>} */
+  const mapped = {};
+
+  for (const group of allSocialGroups()) {
+    const stats = byGroup?.[group] ?? { workerPool: 0, assigned: 0, unemployed: 0 };
+    const workerPool = Math.max(0, Math.floor(stats.workerPool) || 0);
+    const assigned = Math.max(0, Math.floor(stats.assigned) || 0);
+    const unemployed = Math.max(0, Math.floor(stats.unemployed) || 0);
+    let lack = 0;
+    for (const sector of eligibleSectorsForGroup(group)) {
+      lack += Math.max(0, Math.floor(bySector?.[sector]?.need) || 0);
+    }
+
+    mapped[group] = {
+      workerPool,
+      assigned,
+      unemployed,
+      unemploymentPercentage: workerPool > 0 ? Math.round((unemployed / workerPool) * 100) : 0,
+      lack,
+    };
+  }
+
+  return mapped;
+}
 
 /**
  * @param {object} row
@@ -69,6 +141,7 @@ function rowMatchesScope(row, scope) {
  * @param {'country' | 'active' | string} [scope='active']
  * @returns {Promise<{
  *   totalPop: number,
+ *   popByGroup: Record<string, number>,
  *   famishedPopulation: number,
  *   employment: ReturnType<typeof computeCityEmploymentSummary>,
  * }>}
@@ -86,6 +159,7 @@ export async function getHudPopulationScopeSnapshot(scope = 'active') {
 
   return {
     totalPop,
+    popByGroup: popByGroupFromHouses(residential),
     famishedPopulation,
     employment,
   };

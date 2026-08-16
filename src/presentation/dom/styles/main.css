@@ -286,31 +286,6 @@ canvas {
     }
 }
 
-/* Bottom-right FAB stack — perf + cookie above command bar (game mobile) */
-@media (max-width: 1024px) {
-    #stats-js.perf-hud {
-        right: var(--fab-stack-right) !important;
-        bottom: calc(
-            var(--hud-bottom-height, 56px)
-            + env(safe-area-inset-bottom, 0px)
-            + var(--fab-stack-gap)
-            + var(--mobile-build-bar-offset, 0px)
-        ) !important;
-    }
-
-    #cookieConsentFab.cookie-consent-fab {
-        right: var(--fab-stack-right);
-        bottom: calc(
-            var(--hud-bottom-height, 56px)
-            + env(safe-area-inset-bottom, 0px)
-            + var(--fab-stack-gap)
-            + var(--mobile-build-bar-offset, 0px)
-            + var(--fab-stack-perf-size)
-            + var(--fab-stack-gap)
-        );
-    }
-}
-
 /* Ajuster le canvas pour mobile paysage */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
     canvas {
