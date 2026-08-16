@@ -8,7 +8,8 @@ import {
   getHudPopulationScopeSnapshot,
   mapEmploymentGroupsForHud,
 } from './hudPopulationAggregates.js';
-import { getHudResourceScopeSnapshot } from './hudResourceAggregates.js';
+import { getHudResourceScopeSnapshot, getHudNatureResourceScopeSnapshot } from './hudResourceAggregates.js';
+import { getSessionCity } from './sessionRuntime.js';
 import { allSocialGroups } from '../contexts/employment/domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
 
 /**
@@ -95,19 +96,20 @@ export async function syncPopRailHud(gameUI) {
   }
 
   try {
-    const [resourcesCountry, resourcesHamlet] = await Promise.all([
+    const city = getSessionCity();
+    const [resourcesCountry, resourcesHamlet, natureCountry, natureHamlet] = await Promise.all([
       getHudResourceScopeSnapshot('country'),
       getHudResourceScopeSnapshot('active'),
+      getHudNatureResourceScopeSnapshot('country', { city }),
+      getHudNatureResourceScopeSnapshot('active', { city }),
     ]);
     gameUI.updateResourcesHud?.({
       cityCountry: resourcesCountry.city,
       cityHamlet: resourcesHamlet.city,
       commerceCountry: resourcesCountry.commerce,
       commerceHamlet: resourcesHamlet.commerce,
-      cityTotalCountry: resourcesCountry.cityTotal,
-      cityTotalHamlet: resourcesHamlet.cityTotal,
-      commerceTotalCountry: resourcesCountry.commerceTotal,
-      commerceTotalHamlet: resourcesHamlet.commerceTotal,
+      natureCountry: natureCountry.nature,
+      natureHamlet: natureHamlet.nature,
     });
   } catch (err) {
     console.warn('[syncPopRailHud] resources:', err);

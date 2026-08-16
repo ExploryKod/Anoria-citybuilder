@@ -5,12 +5,16 @@
 
 export const HUD_POP_RAIL_TAB_IDS = Object.freeze({
   details: 'pop-details',
-  ressources: 'pop-ressources',
+  ressourcesVille: 'pop-ressources-ville',
+  ressourcesCommerce: 'pop-ressources-commerce',
+  ressourcesNature: 'pop-ressources-nature',
 });
 
 const TAB_ORDER = Object.freeze([
   HUD_POP_RAIL_TAB_IDS.details,
-  HUD_POP_RAIL_TAB_IDS.ressources,
+  HUD_POP_RAIL_TAB_IDS.ressourcesVille,
+  HUD_POP_RAIL_TAB_IDS.ressourcesCommerce,
+  HUD_POP_RAIL_TAB_IDS.ressourcesNature,
 ]);
 
 /**
