@@ -95,11 +95,19 @@ export const popGroupPopNodes = queryGroupMetricNodes('pop');
 export const popGroupWorkerNodes = queryGroupMetricNodes('workers');
 export const popGroupLaborNodes = queryGroupMetricNodes('labor');
 
-const POP_RESOURCE_CITY_PRODUCTS = ['wheat', 'cabbage', 'carrot'];
+const POP_RESOURCE_CITY_PRODUCTS = [
+    'wheat',
+    'cabbage',
+    'carrot',
+    'wood',
+    'furniture',
+    'figs',
+];
 const POP_RESOURCE_COMMERCE_PRODUCTS = ['wood', 'furniture', 'figs'];
+const POP_RESOURCE_NATURE_PRODUCTS = ['wood', 'rock', 'clay', 'iron', 'gold'];
 
 /**
- * @param {'city' | 'commerce'} destination
+ * @param {'city' | 'commerce' | 'nature'} destination
  * @param {ReadonlyArray<string>} products
  * @returns {Record<string, { row: Element | null, country: Element | null, hamlet: Element | null }>}
  */
@@ -126,17 +134,9 @@ export const popResourceCommerceNodes = queryResourceProductNodes(
     'commerce',
     POP_RESOURCE_COMMERCE_PRODUCTS
 );
-export const displayResourceCityTotal = document.querySelector(
-    `${popHudRoot} .pop-resource-total--city.pop-detail-value--country`
-);
-export const displayResourceCityTotalHamlet = document.querySelector(
-    `${popHudRoot} .pop-resource-total--city--hamlet`
-);
-export const displayResourceCommerceTotal = document.querySelector(
-    `${popHudRoot} .pop-resource-total--commerce.pop-detail-value--country`
-);
-export const displayResourceCommerceTotalHamlet = document.querySelector(
-    `${popHudRoot} .pop-resource-total--commerce--hamlet`
+export const popResourceNatureNodes = queryResourceProductNodes(
+    'nature',
+    POP_RESOURCE_NATURE_PRODUCTS
 );
 export const displayDelay = document.querySelector('.info-panel .display-delay');
 export const displayDelayUI = document.querySelector('.delay-ui');

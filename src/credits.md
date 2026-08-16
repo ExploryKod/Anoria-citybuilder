@@ -32,8 +32,8 @@
 ## Icones 
 
 ### Icones issues de <a href="https://lucide.dev">lucide.dev</a> :
-- Les icones marquées comme "lucide" dans le html (DOM) et qui se retrouve dans les barres de navigations, les panneaux d'administration (finance-board, commerce-board, etc.) :
-  - Icônes de navigation (maison, blé, salade, etc.)
+- Les icones marquées comme "lucide" dans le html (DOM) : navigation, HUD, rail population, panneaux d'admin (finance-board, commerce-board, etc.)
+  - Exemples HUD : `users` (population), `chess-knight` (voyager vers un hameau), `door-open`, `map`, `warehouse`, `wheat`
   - Icônes du finance-board (ship pour les importations, trending-down pour le solde, etc.)
   - Icônes des panneaux d'administration (settings, play, circle-x, etc.)
 
@@ -41,6 +41,14 @@ Auteurs :
 - Karsa Mistmere : https://github.com/karsa-mistmere
 - Jguddas : https://github.com/jguddas
 - Respository général de lucide : https://github.com/lucide-icons/lucide
+
+Licence : [ISC](https://lucide.dev/license)
+
+### Icônes originales Eraanurbs (HUD)
+- Bateau à voile — onglet ressources commerce
+
+### Moulin (HUD + construction)
+> Moulin à vent (onglet ressources ville + outil `Windmill-001` dans le carrousel) : <a href="https://www.magnific.com/icon/windmill_2102546">Icon by Magnific</a>
 
 ### Icones issues de DuckIcons
 
