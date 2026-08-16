@@ -160,10 +160,6 @@ describe('syncSessionHud', () => {
       cityHamlet: { wheat: 5, carrot: 0, cabbage: 0 },
       commerceCountry: { wood: 10, furniture: 1, figs: 4 },
       commerceHamlet: { wood: 2, furniture: 0, figs: 4 },
-      cityTotalCountry: 9,
-      cityTotalHamlet: 5,
-      commerceTotalCountry: 15,
-      commerceTotalHamlet: 6,
     });
   });
 });

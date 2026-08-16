@@ -20,6 +20,7 @@ import { initMobileToolbar } from './ToolbarShell.js';
 import { initHudTimeBarMinWidth } from '../shell/hudTimeBarSizing.js';
 import { initHudPopRailTabs } from '../shell/hudPopRailTabs.js';
 import { initHudPopRailCollapse } from '../shell/hudPopRailCollapse.js';
+import { initHudPopRailScope } from '../shell/hudPopRailScope.js';
 import { adoptHudFabDockChildren } from '../shell/hudFabDock.js';
 import { initHudShellMenus } from '../shell/HudShellMenus.js';
 import { initHamletTravelMenu } from '../shell/HamletTravelMenu.js';
@@ -75,6 +76,7 @@ export async function initAppBoot() {
   initMobileToolbar();
   initHudPopRailTabs();
   initHudPopRailCollapse();
+  initHudPopRailScope();
   initParametersPanel({
     pauseGame,
     playGame,
