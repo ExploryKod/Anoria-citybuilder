@@ -414,7 +414,8 @@
   overflow: visible;
   pointer-events: auto;
   box-sizing: border-box;
-  --hud-pop-tab-min-count: 5;
+  /* details + ville + commerce + nature */
+  --hud-pop-tab-min-count: 4;
   --hud-pop-tab-height: 46px;
   --hud-pop-tab-gap: 3px;
   --hud-pop-rail-panel-min-height: calc(
@@ -475,11 +476,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
   gap: 6px;
   flex-shrink: 0;
   margin-left: -1px;
-  padding-top: 0;
+  /* Hand at top-right of the rail, level with the panel top on desktop */
+  padding-top: 4px;
   z-index: 2;
+  align-self: flex-start;
 }
 
 .hud-pop-rail__panels {
@@ -493,6 +497,7 @@
   align-items: stretch;
   max-height: 100%;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .hud-pop-rail__tabs {
@@ -524,18 +529,35 @@
   transition: width 0.15s ease, filter 0.15s ease, min-height 0.15s ease;
 }
 
-.hud-pop-rail__tab svg {
+.hud-pop-rail__tab svg,
+.hud-pop-rail__tab .hud-pop-rail__tab-img {
   display: block;
   flex-shrink: 0;
   pointer-events: none;
+}
+
+.hud-pop-rail__tab .hud-pop-rail__tab-img {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  /* PNG silhouette noire → blanc sur l’intercalaire coloré */
+  filter: brightness(0) invert(1);
 }
 
 .hud-pop-rail__tab--details {
   --tab-color: #d45d6a;
 }
 
-.hud-pop-rail__tab--ressources {
+.hud-pop-rail__tab--ressources-ville {
+  --tab-color: #5b8fa8;
+}
+
+.hud-pop-rail__tab--ressources-commerce {
   --tab-color: #e8903a;
+}
+
+.hud-pop-rail__tab--ressources-nature {
+  --tab-color: #4a8f5c;
 }
 
 .hud-pop-rail__tab[aria-selected="true"] {
@@ -588,7 +610,27 @@
   cursor: grabbing;
 }
 
+/* Finger-friendly drag handle on phone / tablet — lifted above the white panel
+   so the larger target stays clear of the in-panel close control */
+@media screen and (max-width: 1024px) {
+  .hud-pop-rail .hud-pop-rail__drag {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    margin-top: -22px;
+  }
+
+  .hud-pop-rail__side {
+    padding-top: 0;
+  }
+
+  .hud-pop-rail--collapsed .hud-pop-rail__drag {
+    margin-top: 0;
+  }
+}
+
 .hud-pop-rail__collapse,
+.hud-pop-rail__scope,
 .hud-pop-rail__expand {
   appearance: none;
   flex-shrink: 0;
@@ -602,23 +644,57 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.hud-pop-rail__collapse {
-  width: 22px;
-  height: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 50%;
-  background: rgba(29, 34, 40, 0.85);
-  color: #fff;
+/* Close + scope sit together in the panel chrome (top-left) */
+.hud-pop-rail__chrome {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 0;
 }
 
-.hud-pop-rail__collapse:hover {
-  background: rgba(29, 34, 40, 1);
+.hud-pop-rail__collapse,
+.hud-pop-rail__scope {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: color-mix(in srgb, var(--primary) 48%, transparent);
+  box-shadow: none;
+  backdrop-filter: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.hud-pop-rail__collapse:hover,
+.hud-pop-rail__scope:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
 }
 
 .hud-pop-rail__collapse:focus-visible,
+.hud-pop-rail__scope:focus-visible,
 .hud-pop-rail__expand:focus-visible {
   outline: 3px solid var(--cta);
   outline-offset: 2px;
+}
+
+.hud-pop-rail__collapse svg,
+.hud-pop-rail__scope svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+
+.hud-pop-rail__scope svg[hidden] {
+  display: none;
 }
 
 .hud-pop-rail__expand {
@@ -659,7 +735,8 @@
   height: 100%;
   min-height: 0;
   max-height: 100%;
-  padding: 12px 10px;
+  /* Extra top padding so metrics clear the in-panel close control */
+  padding: 28px 10px 12px;
   background: var(--game-chrome-bg);
   border: 1px solid var(--game-chrome-border);
   border-radius: var(--game-chrome-radius);
@@ -741,6 +818,12 @@
   font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
 }
 
+.hud-pop-rail .pop-detail-emoji svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
 .hud-pop-rail .pop-detail-icon .unemployed-icon,
 .hud-pop-rail .pop-detail-icon .famished-icon,
 .hud-pop-rail .pop-detail-labor-icon .unemployed-icon {
@@ -795,6 +878,15 @@
 
 .hud-pop-rail .pop-detail-value--hamlet {
   color: var(--hud-hamlet-accent, #2d7a4f);
+}
+
+/* Metric scope: hide country and/or hamlet figures */
+.hud-pop-rail[data-pop-scope="country"] .pop-detail-value--hamlet {
+  display: none;
+}
+
+.hud-pop-rail[data-pop-scope="hamlet"] .pop-detail-value--country {
+  display: none;
 }
 
 .hud-pop-rail .pop-detail-active {
@@ -1356,7 +1448,7 @@
   .hud-pop-rail .hud-pop-rail__panel {
     min-width: 64px;
     max-width: 108px;
-    padding: 10px 8px;
+    padding: 26px 8px 10px;
   }
 
   .hud-pop-rail .infos-pop-detail > * + *,

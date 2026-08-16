@@ -371,13 +371,11 @@
                 >
                   <span class="toolbar-toggle-icon hamlet-travel__icon" aria-hidden="true">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M8 6v6"/>
-                      <path d="M15 6v6"/>
-                      <path d="M2 12h19.6"/>
-                      <path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/>
-                      <circle cx="7" cy="18" r="2"/>
-                      <path d="M9 18h5"/>
-                      <circle cx="16" cy="18" r="2"/>
+                      <path d="M5 20a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"/>
+                      <path d="M16.5 18c1-2 2.5-5 2.5-9a7 7 0 0 0-7-7H6.635a1 1 0 0 0-.768 1.64L7 5l-2.32 5.802a2 2 0 0 0 .95 2.526l2.87 1.456"/>
+                      <path d="m15 5 1.425-1.425"/>
+                      <path d="m17 8 1.53-1.53"/>
+                      <path d="M9.713 12.185 7 18"/>
                     </svg>
                   </span>
                   <span class="sr-only">Voyager</span>
@@ -515,19 +513,6 @@
                 <button type="button" id="hud-pop-rail-drag" class="hud-pop-rail__drag" title="Déplacer" aria-label="Déplacer le panneau">✋</button>
                 <button
                     type="button"
-                    id="hud-pop-rail-collapse"
-                    class="hud-pop-rail__collapse"
-                    title="Réduire"
-                    aria-label="Réduire le panneau indicateurs"
-                    aria-expanded="true"
-                    aria-controls="hud-pop-rail-panels"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-                    </svg>
-                </button>
-                <button
-                    type="button"
                     id="hud-pop-rail-expand"
                     class="hud-pop-rail__expand"
                     title="Population"
@@ -560,26 +545,106 @@
                     </button>
                     <button
                         type="button"
-                        class="hud-pop-rail__tab hud-pop-rail__tab--ressources"
-                        id="hud-pop-tab-ressources"
+                        class="hud-pop-rail__tab hud-pop-rail__tab--ressources-ville"
+                        id="hud-pop-tab-ressources-ville"
                         role="tab"
                         aria-selected="false"
-                        aria-controls="hud-pop-panel-ressources"
-                        data-tab="pop-ressources"
+                        aria-controls="hud-pop-panel-ressources-ville"
+                        data-tab="pop-ressources-ville"
                         tabindex="-1"
-                        title="Ressources"
-                        aria-label="Ressources"
+                        title="Ressources ville"
+                        aria-label="Ressources ville"
                     >
+                        <!-- Moulin — Icon by Magnific -->
+                        <img
+                            src="/icons/windmill.png"
+                            alt=""
+                            class="hud-pop-rail__tab-img"
+                            width="14"
+                            height="14"
+                            decoding="async"
+                        />
+                    </button>
+                    <button
+                        type="button"
+                        class="hud-pop-rail__tab hud-pop-rail__tab--ressources-commerce"
+                        id="hud-pop-tab-ressources-commerce"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="hud-pop-panel-ressources-commerce"
+                        data-tab="pop-ressources-commerce"
+                        tabindex="-1"
+                        title="Ressources commerce"
+                        aria-label="Ressources commerce"
+                    >
+                        <!-- Bateau marchand -->
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/>
-                            <path d="M12 22V12"/>
-                            <polyline points="3.29 7 12 12 20.71 7"/>
-                            <path d="m7.5 4.27 9 5.15"/>
+                            <path d="M3 17h18"/>
+                            <path d="M5 17c1.5 2.5 4 3.5 7 3.5s5.5-1 7-3.5"/>
+                            <path d="M12 3v11"/>
+                            <path d="M12 5c3 .5 5.5 2 7 5H5c1.5-3 4-4.5 7-5z"/>
+                        </svg>
+                    </button>
+                    <button
+                        type="button"
+                        class="hud-pop-rail__tab hud-pop-rail__tab--ressources-nature"
+                        id="hud-pop-tab-ressources-nature"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="hud-pop-panel-ressources-nature"
+                        data-tab="pop-ressources-nature"
+                        tabindex="-1"
+                        title="Ressources naturelles"
+                        aria-label="Ressources naturelles"
+                    >
+                        <!-- Arbre -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"/>
+                            <path d="M7 16v6"/>
+                            <path d="M13 19v3"/>
+                            <path d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5"/>
                         </svg>
                     </button>
                 </div>
             </div>
             <div id="hud-pop-rail-panels" class="hud-pop-rail__panels">
+                <div class="hud-pop-rail__chrome" role="toolbar" aria-label="Contrôles du panneau">
+                    <button
+                        type="button"
+                        id="hud-pop-rail-collapse"
+                        class="hud-pop-rail__collapse"
+                        title="Réduire"
+                        aria-label="Réduire le panneau indicateurs"
+                        aria-expanded="true"
+                        aria-controls="hud-pop-rail-panels"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                        </svg>
+                    </button>
+                    <button
+                        type="button"
+                        id="hud-pop-rail-scope"
+                        class="hud-pop-rail__scope"
+                        data-scope="both"
+                        title="Pays et hameau"
+                        aria-label="Pays et hameau — cliquer pour changer"
+                    >
+                        <svg data-scope-icon="both" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect width="7" height="16" x="3" y="4" rx="1"/>
+                            <rect width="7" height="16" x="14" y="4" rx="1"/>
+                        </svg>
+                        <svg data-scope-icon="country" hidden xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+                            <path d="M2 12h20"/>
+                        </svg>
+                        <svg data-scope-icon="hamlet" hidden xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>
+                            <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        </svg>
+                    </button>
+                </div>
             <section id="hud-pop-panel-details" class="info-box infos-pop-detail hud-pop-rail__panel" role="tabpanel" aria-labelledby="hud-pop-tab-details">
                 <div class="pop-detail-block">
                     <div class="pop-detail-metric pop-detail-total">
@@ -603,7 +668,7 @@
                             </span>
                         </div>
                         <div class="pop-detail-metric pop-group-row" data-metric="pop" data-social-group="merchants">
-                            <span class="pop-detail-emoji" title="Commerçants" aria-hidden="true">🛒</span>
+                            <span class="pop-detail-emoji" title="Commerçants" aria-hidden="true">⚖️</span>
                             <span class="pop-detail-values">
                                 <span class="pop-detail-value pop-detail-value--country">0</span>
                                 <span class="pop-detail-value pop-detail-value--hamlet">0</span>
@@ -652,7 +717,7 @@
                             </span>
                         </div>
                         <div class="pop-detail-metric pop-group-row" data-metric="workers" data-social-group="merchants">
-                            <span class="pop-detail-emoji" title="Commerçants" aria-hidden="true">🛒</span>
+                            <span class="pop-detail-emoji" title="Commerçants" aria-hidden="true">⚖️</span>
                             <span class="pop-detail-values">
                                 <span class="pop-detail-value pop-detail-value--country">0</span>
                                 <span class="pop-detail-value pop-detail-value--hamlet">0</span>
@@ -710,7 +775,7 @@
                             </span>
                         </div>
                         <div class="pop-detail-metric pop-group-row" data-metric="labor" data-social-group="merchants">
-                            <span class="pop-detail-emoji" title="Commerçants" aria-hidden="true">🛒</span>
+                            <span class="pop-detail-emoji" title="Commerçants" aria-hidden="true">⚖️</span>
                             <span class="pop-detail-values">
                                 <span class="pop-detail-value pop-detail-value--country">0%</span>
                                 <span class="pop-detail-value pop-detail-value--hamlet">0%</span>
@@ -727,75 +792,130 @@
                 </div>
             </section>
             <section
-                id="hud-pop-panel-ressources"
+                id="hud-pop-panel-ressources-ville"
                 class="info-box infos-pop-ressources hud-pop-rail__panel"
                 role="tabpanel"
-                aria-labelledby="hud-pop-tab-ressources"
+                aria-labelledby="hud-pop-tab-ressources-ville"
                 hidden
             >
-                <div class="pop-detail-block pop-resource-dest" data-destination="city">
-                    <div class="pop-detail-metric pop-resource-dest-head">
-                        <span class="pop-detail-emoji" title="Ville" aria-hidden="true">🏙</span>
-                        <span class="pop-detail-values" aria-label="Stocks ville (moulins et granges ville)">
-                            <span class="pop-detail-value pop-resource-total--city pop-detail-value--country">0</span>
-                            <span class="pop-detail-value pop-resource-total--city--hamlet pop-detail-value--hamlet">0</span>
+                <div class="pop-detail-groups" aria-label="Stocks réservés à la ville">
+                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="city" data-product="wheat">
+                        <span class="pop-detail-emoji" title="Blé" aria-hidden="true">🌾</span>
+                        <span class="pop-detail-values">
+                            <span class="pop-detail-value pop-detail-value--country">0</span>
+                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
                         </span>
                     </div>
-                    <div class="pop-detail-groups" aria-label="Ressources pour la ville">
-                        <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="city" data-product="wheat">
-                            <span class="pop-detail-emoji" title="Blé" aria-hidden="true">🌾</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
-                        </div>
-                        <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="city" data-product="cabbage">
-                            <span class="pop-detail-emoji" title="Choux" aria-hidden="true">🥬</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
-                        </div>
-                        <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="city" data-product="carrot">
-                            <span class="pop-detail-emoji" title="Carottes" aria-hidden="true">🥕</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
-                        </div>
+                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="city" data-product="cabbage">
+                        <span class="pop-detail-emoji" title="Choux" aria-hidden="true">🥬</span>
+                        <span class="pop-detail-values">
+                            <span class="pop-detail-value pop-detail-value--country">0</span>
+                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                        </span>
+                    </div>
+                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="city" data-product="carrot">
+                        <span class="pop-detail-emoji" title="Carottes" aria-hidden="true">🥕</span>
+                        <span class="pop-detail-values">
+                            <span class="pop-detail-value pop-detail-value--country">0</span>
+                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                        </span>
+                    </div>
+                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="city" data-product="wood">
+                        <span class="pop-detail-emoji" title="Bois" aria-hidden="true">🪵</span>
+                        <span class="pop-detail-values">
+                            <span class="pop-detail-value pop-detail-value--country">0</span>
+                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                        </span>
+                    </div>
+                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="city" data-product="furniture">
+                        <span class="pop-detail-emoji" title="Meubles" aria-hidden="true">🪑</span>
+                        <span class="pop-detail-values">
+                            <span class="pop-detail-value pop-detail-value--country">0</span>
+                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                        </span>
+                    </div>
+                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="city" data-product="figs">
+                        <span class="pop-detail-emoji" title="Figues" aria-hidden="true">🍇</span>
+                        <span class="pop-detail-values">
+                            <span class="pop-detail-value pop-detail-value--country">0</span>
+                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                        </span>
                     </div>
                 </div>
-                <div class="pop-detail-sep" role="separator" aria-hidden="true"></div>
-                <div class="pop-detail-block pop-resource-dest" data-destination="commerce">
-                    <div class="pop-detail-metric pop-resource-dest-head">
-                        <span class="pop-detail-emoji" title="Commerce" aria-hidden="true">📦</span>
-                        <span class="pop-detail-values" aria-label="Stocks commerce (granges commerce)">
-                            <span class="pop-detail-value pop-resource-total--commerce pop-detail-value--country">0</span>
-                            <span class="pop-detail-value pop-resource-total--commerce--hamlet pop-detail-value--hamlet">0</span>
+            </section>
+            <section
+                id="hud-pop-panel-ressources-commerce"
+                class="info-box infos-pop-ressources hud-pop-rail__panel"
+                role="tabpanel"
+                aria-labelledby="hud-pop-tab-ressources-commerce"
+                hidden
+            >
+                <div class="pop-detail-groups" aria-label="Stocks réservés au commerce">
+                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="commerce" data-product="wood">
+                        <span class="pop-detail-emoji" title="Bois" aria-hidden="true">🪵</span>
+                        <span class="pop-detail-values">
+                            <span class="pop-detail-value pop-detail-value--country">0</span>
+                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
                         </span>
                     </div>
-                    <div class="pop-detail-groups" aria-label="Ressources pour le commerce">
-                        <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="commerce" data-product="wood">
-                            <span class="pop-detail-emoji" title="Bois" aria-hidden="true">🪵</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
-                        </div>
-                        <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="commerce" data-product="furniture">
-                            <span class="pop-detail-emoji" title="Meubles" aria-hidden="true">🪑</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
-                        </div>
-                        <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="commerce" data-product="figs">
-                            <span class="pop-detail-emoji" title="Figues" aria-hidden="true">🍇</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
-                        </div>
+                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="commerce" data-product="furniture">
+                        <span class="pop-detail-emoji" title="Meubles" aria-hidden="true">🪑</span>
+                        <span class="pop-detail-values">
+                            <span class="pop-detail-value pop-detail-value--country">0</span>
+                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                        </span>
+                    </div>
+                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="commerce" data-product="figs">
+                        <span class="pop-detail-emoji" title="Figues" aria-hidden="true">🍇</span>
+                        <span class="pop-detail-values">
+                            <span class="pop-detail-value pop-detail-value--country">0</span>
+                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                        </span>
+                    </div>
+                </div>
+            </section>
+            <section
+                id="hud-pop-panel-ressources-nature"
+                class="info-box infos-pop-ressources hud-pop-rail__panel"
+                role="tabpanel"
+                aria-labelledby="hud-pop-tab-ressources-nature"
+                hidden
+            >
+                <div class="pop-detail-groups" aria-label="Ressources naturelles sur la carte">
+                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="nature" data-product="wood">
+                        <span class="pop-detail-emoji" title="Bois" aria-hidden="true">🪵</span>
+                        <span class="pop-detail-values">
+                            <span class="pop-detail-value pop-detail-value--country">0</span>
+                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                        </span>
+                    </div>
+                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="nature" data-product="rock">
+                        <span class="pop-detail-emoji" title="Pierre" aria-hidden="true">🪨</span>
+                        <span class="pop-detail-values">
+                            <span class="pop-detail-value pop-detail-value--country">0</span>
+                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                        </span>
+                    </div>
+                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="nature" data-product="clay">
+                        <span class="pop-detail-emoji" title="Argile" aria-hidden="true">🧱</span>
+                        <span class="pop-detail-values">
+                            <span class="pop-detail-value pop-detail-value--country">0</span>
+                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                        </span>
+                    </div>
+                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="nature" data-product="iron">
+                        <span class="pop-detail-emoji" title="Fer" aria-hidden="true">⚙️</span>
+                        <span class="pop-detail-values">
+                            <span class="pop-detail-value pop-detail-value--country">0</span>
+                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                        </span>
+                    </div>
+                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="nature" data-product="gold">
+                        <span class="pop-detail-emoji" title="Or" aria-hidden="true">🥇</span>
+                        <span class="pop-detail-values">
+                            <span class="pop-detail-value pop-detail-value--country">0</span>
+                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                        </span>
                     </div>
                 </div>
             </section>
