@@ -5,7 +5,14 @@ export const displaySpeed = document.querySelector('.hud-actions .display-speed'
 
 // Initialiser l'affichage du temps avec "Chargement..." si l'élément existe
 if (displayTime) {
-    displayTime.textContent = 'Chargement...';
+    const visual = displayTime.querySelector('.display-time__visual');
+    const sr = displayTime.querySelector('.display-time__sr');
+    if (visual && sr) {
+        visual.textContent = 'Chargement...';
+        sr.textContent = 'Chargement...';
+    } else {
+        displayTime.textContent = 'Chargement...';
+    }
 }
 export const speedChangeIndicator = document.querySelector('.hud-actions .speed-change-indicator');
 export const overOverlay = document.querySelector('#over-overlay');
@@ -32,22 +39,105 @@ export const gameWindow = document.getElementById('game-window');
 const popHudRoot = '#hud-pop-rail';
 
 export const displayPop = document.querySelector(`${popHudRoot} .pop-breakdown`);
-export const displayPopTotal = document.querySelector(`${popHudRoot} .pop-total`);
-export const displayPopActiveTotal = document.querySelector(`${popHudRoot} .pop-active-total`);
+export const displayPopTotal = document.querySelector(`${popHudRoot} .pop-total.pop-detail-value--country`);
+export const displayPopTotalHamlet = document.querySelector(`${popHudRoot} .pop-total--hamlet`);
+export const displayPopActiveTotal = document.querySelector(`${popHudRoot} .pop-active-total.pop-detail-value--country`);
+export const displayPopActiveTotalHamlet = document.querySelector(`${popHudRoot} .pop-active-total--hamlet`);
 export const displayPopCitizens = document.querySelector(
-    `${popHudRoot} .pop-segment--citizen .pop-segment-value`
+    `${popHudRoot} .pop-segment--citizen .pop-segment-value.pop-detail-value--country`
+);
+export const displayPopCitizensHamlet = document.querySelector(
+    `${popHudRoot} .pop-segment--citizen .pop-segment-value--hamlet`
 );
 export const displayPopElites = document.querySelector(
-    `${popHudRoot} .pop-segment--elite .pop-segment-value`
+    `${popHudRoot} .pop-segment--elite .pop-segment-value.pop-detail-value--country`
+);
+export const displayPopElitesHamlet = document.querySelector(
+    `${popHudRoot} .pop-segment--elite .pop-segment-value--hamlet`
 );
 export const displayPopServants = document.querySelector(
-    `${popHudRoot} .pop-segment--servant .pop-segment-value`
+    `${popHudRoot} .pop-segment--servant .pop-segment-value.pop-detail-value--country`
 );
-export const displayHungerPop = document.querySelector(`${popHudRoot} .display-hunger-pop`);
+export const displayPopServantsHamlet = document.querySelector(
+    `${popHudRoot} .pop-segment--servant .pop-segment-value--hamlet`
+);
+export const displayHungerPop = document.querySelector(`${popHudRoot} .display-hunger-pop.pop-detail-value--country`);
+export const displayHungerPopHamlet = document.querySelector(`${popHudRoot} .display-hunger-pop--hamlet`);
 export const displayDeathsPop = document.querySelector(`${popHudRoot} .display-deaths-pop`);
-export const displayUnemployedPop = document.querySelector(`${popHudRoot} .display-unemployed-pop`);
-export const displayUnemployedPct = document.querySelector(`${popHudRoot} .display-unemployed-pct`);
-export const displayWorkerLack = document.querySelector(`${popHudRoot} .display-worker-lack`);
+export const displayLaborCountry = document.querySelector(`${popHudRoot} .pop-labor-value--country`);
+export const displayLaborHamlet = document.querySelector(`${popHudRoot} .pop-labor-value--hamlet`);
+
+const POP_SOCIAL_GROUPS = ['artisans', 'merchants', 'scholars'];
+
+/**
+ * @param {'pop' | 'workers' | 'labor'} metric
+ * @returns {Record<string, { row: Element | null, country: Element | null, hamlet: Element | null }>}
+ */
+function queryGroupMetricNodes(metric) {
+    return Object.fromEntries(
+        POP_SOCIAL_GROUPS.map((group) => {
+            const row = document.querySelector(
+                `${popHudRoot} [data-metric="${metric}"][data-social-group="${group}"]`
+            );
+            return [
+                group,
+                {
+                    row,
+                    country: row?.querySelector('.pop-detail-value--country') ?? null,
+                    hamlet: row?.querySelector('.pop-detail-value--hamlet') ?? null,
+                },
+            ];
+        })
+    );
+}
+
+export const popGroupPopNodes = queryGroupMetricNodes('pop');
+export const popGroupWorkerNodes = queryGroupMetricNodes('workers');
+export const popGroupLaborNodes = queryGroupMetricNodes('labor');
+
+const POP_RESOURCE_CITY_PRODUCTS = [
+    'wheat',
+    'cabbage',
+    'carrot',
+    'wood',
+    'furniture',
+    'figs',
+];
+const POP_RESOURCE_COMMERCE_PRODUCTS = ['wood', 'furniture', 'figs'];
+const POP_RESOURCE_NATURE_PRODUCTS = ['wood', 'rock', 'clay', 'iron', 'gold'];
+
+/**
+ * @param {'city' | 'commerce' | 'nature'} destination
+ * @param {ReadonlyArray<string>} products
+ * @returns {Record<string, { row: Element | null, country: Element | null, hamlet: Element | null }>}
+ */
+function queryResourceProductNodes(destination, products) {
+    return Object.fromEntries(
+        products.map((product) => {
+            const row = document.querySelector(
+                `${popHudRoot} [data-metric="resource"][data-destination="${destination}"][data-product="${product}"]`
+            );
+            return [
+                product,
+                {
+                    row,
+                    country: row?.querySelector('.pop-detail-value--country') ?? null,
+                    hamlet: row?.querySelector('.pop-detail-value--hamlet') ?? null,
+                },
+            ];
+        })
+    );
+}
+
+export const popResourceCityNodes = queryResourceProductNodes('city', POP_RESOURCE_CITY_PRODUCTS);
+export const popResourceCommerceNodes = queryResourceProductNodes(
+    'commerce',
+    POP_RESOURCE_COMMERCE_PRODUCTS
+);
+export const popResourceNatureNodes = queryResourceProductNodes(
+    'nature',
+    POP_RESOURCE_NATURE_PRODUCTS
+);
 export const displayDelay = document.querySelector('.info-panel .display-delay');
 export const displayDelayUI = document.querySelector('.delay-ui');
 export const bulldozeSelected = document.querySelector('.bulldoze-btn');

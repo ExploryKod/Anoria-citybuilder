@@ -37,20 +37,16 @@
     --game-chrome-blur: blur(10px);
     --game-chrome-shadow: 0 4px 20px rgba(29, 34, 40, 0.1);
 
-    /* Top anchor shared by floating toolbar + pop rail when coupled (not portrait bottom-bar mode) */
-    --hud-floating-panel-top: max(12px, calc(env(safe-area-inset-top, 0px) + 8px));
-
-    /* Portrait: pop rail below HUD time/budget strip + camera row (barre du bas) */
-    --hud-pop-rail-top-portrait: calc(
-      env(safe-area-inset-top, 0px)
-      + 4px
-      + 4px
+    /* Pop rail starts just under the HUD status row (exit + time/budget) */
+    --hud-pop-rail-top: calc(
+      4px
       + var(--progress-bar-h)
-      + var(--hud-chip-height)
-      + var(--hud-vitals-row-gap)
       + var(--hud-chip-height)
       + 8px
     );
+
+    /* Portrait: same — under the door / time row (camera stays on the right) */
+    --hud-pop-rail-top-portrait: var(--hud-pop-rail-top);
 
     --house-red-color:var(--red-300);
     --house-purple-color: #a90aa9;
@@ -290,31 +286,6 @@ canvas {
     }
 }
 
-/* Bottom-right FAB stack — perf + cookie above command bar (game mobile) */
-@media (max-width: 1024px) {
-    #stats-js.perf-hud {
-        right: var(--fab-stack-right) !important;
-        bottom: calc(
-            var(--hud-bottom-height, 56px)
-            + env(safe-area-inset-bottom, 0px)
-            + var(--fab-stack-gap)
-            + var(--mobile-build-bar-offset, 0px)
-        ) !important;
-    }
-
-    #cookieConsentFab.cookie-consent-fab {
-        right: var(--fab-stack-right);
-        bottom: calc(
-            var(--hud-bottom-height, 56px)
-            + env(safe-area-inset-bottom, 0px)
-            + var(--fab-stack-gap)
-            + var(--mobile-build-bar-offset, 0px)
-            + var(--fab-stack-perf-size)
-            + var(--fab-stack-gap)
-        );
-    }
-}
-
 /* Ajuster le canvas pour mobile paysage */
 @media screen and (max-width: 1024px) and (orientation: landscape) {
     canvas {
@@ -457,6 +428,21 @@ canvas.pointer-events-disabled {
 
 .toolbar .toolbar-btn svg, .panel-layout .panel-btn svg {
     pointer-events: none;
+}
+
+.toolbar .toolbar-btn .tool-icon-img,
+.panel-layout .panel-btn .tool-icon-img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    pointer-events: none;
+    /* Silhouette noire → suit la couleur du bouton (blanc sur fond coloré) */
+    filter: brightness(0) invert(1);
+}
+
+.toolbar .toolbar-btn.selected .tool-icon-img,
+.panel-layout .panel-btn.selected .tool-icon-img {
+    filter: brightness(0) invert(1);
 }
 
 .toolbar .toolbar-btn .tool-emoji,
@@ -886,7 +872,8 @@ canvas.pointer-events-disabled {
     box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
 }
 
-.panel-layout .panel-inner #House-Red:hover {
+.panel-layout .panel-inner #House-Red:hover,
+.panel-layout .panel-inner #House-Red.selected {
     box-shadow: none;
     background: var(--house-red-color);
     color: #fafafa;
@@ -898,7 +885,8 @@ canvas.pointer-events-disabled {
     box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
 }
 
-.panel-layout .panel-inner #House-Purple:hover {
+.panel-layout .panel-inner #House-Purple:hover,
+.panel-layout .panel-inner #House-Purple.selected {
     box-shadow: none;
     background: var(--house-purple-color);
     color: #fafafa;
@@ -910,7 +898,8 @@ canvas.pointer-events-disabled {
     box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
 }
 
-.panel-layout .panel-inner #House-Blue:hover {
+.panel-layout .panel-inner #House-Blue:hover,
+.panel-layout .panel-inner #House-Blue.selected {
     box-shadow: none;
     background: var(--house-blue-color);
     color: #fafafa;
@@ -922,7 +911,8 @@ canvas.pointer-events-disabled {
     box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
 }
 
-.panel-layout .panel-inner #House-2Story:hover {
+.panel-layout .panel-inner #House-2Story:hover,
+.panel-layout .panel-inner #House-2Story.selected {
     box-shadow: none;
     background: var(--house-big-color);
     color: #fafafa;

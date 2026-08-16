@@ -12,15 +12,26 @@ import {
     gameWindow as gameWindowElement,
     displayPop,
     displayPopTotal,
+    displayPopTotalHamlet,
     displayPopActiveTotal,
+    displayPopActiveTotalHamlet,
     displayPopCitizens,
+    displayPopCitizensHamlet,
     displayPopElites,
+    displayPopElitesHamlet,
     displayPopServants,
+    displayPopServantsHamlet,
     displayHungerPop,
+    displayHungerPopHamlet,
     displayDeathsPop,
-    displayUnemployedPop,
-    displayUnemployedPct,
-    displayWorkerLack,
+    displayLaborCountry,
+    displayLaborHamlet,
+    popGroupPopNodes,
+    popGroupWorkerNodes,
+    popGroupLaborNodes,
+    popResourceCityNodes,
+    popResourceCommerceNodes,
+    popResourceNatureNodes,
     displayFunds,
     infoObjectOverlay,
     infoObjectCloseBtn,
@@ -31,6 +42,14 @@ import {
 import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { SEASON_KEYS } from '../../../shared/time/TimeCalendar.js';
 import { msToSpeedLevel, SPEED_LEVEL_MAX } from '../../../shared/gameplay/SimulationDefaults.js';
+import { getResidentialGroupTitle } from './ResidentialGroupLabels.js';
+import { allSocialGroups } from '../../../contexts/employment/domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
+import { laborSlotFromStats } from '../../../composition/hudPopulationAggregates.js';
+import {
+    HUD_CITY_RESOURCE_PRODUCTS,
+    HUD_FLOW_SHARED_PRODUCTS,
+    HUD_NATURE_RESOURCE_PRODUCTS,
+} from '../../../composition/hudResourceAggregates.js';
 
 /** @type {{ getScene?: () => { controls?: { enabled: boolean } } | null } | null} */
 let deps = null;
@@ -46,6 +65,74 @@ const HUD_SEASON_MODIFIER_CLASSES = [
     ...SEASON_KEYS.map((key) => `hud-season--${key}`),
     'hud-season--loading',
 ];
+
+/**
+ * @param {HTMLElement | null} el
+ * @param {number} value
+ */
+function setHudCount(el, value) {
+    if (!el) return;
+    el.textContent = String(Math.max(0, Math.floor(value) || 0));
+}
+
+/**
+ * @param {HTMLElement | null} el
+ * @param {{ mode: 'lack' | 'unemployment', display: string, count: number }} slot
+ * @param {string} scopeLabel
+ */
+function setLaborCell(el, slot, scopeLabel) {
+    if (!(el instanceof HTMLElement)) return;
+    el.textContent = slot.display;
+    el.classList.toggle('pop-detail-value--lack', slot.mode === 'lack');
+    const tooltip = slot.mode === 'lack'
+        ? `${scopeLabel} : manque de ${slot.count} travailleur${slot.count === 1 ? '' : 's'}`
+        : `${scopeLabel} : ${slot.count} chômeur${slot.count === 1 ? '' : 's'}`;
+    el.title = tooltip;
+    el.setAttribute('aria-label', tooltip);
+}
+
+/**
+ * @param {Record<string, { row: Element | null, country: Element | null, hamlet: Element | null }>} nodesByGroup
+ * @param {Record<string, number>} countryCounts
+ * @param {Record<string, number> | null} hamletCounts
+ */
+function setGroupCounts(nodesByGroup, countryCounts, hamletCounts) {
+    for (const group of allSocialGroups()) {
+        const nodes = nodesByGroup[group];
+        if (!nodes) continue;
+        setHudCount(nodes.country, countryCounts?.[group] ?? 0);
+        if (hamletCounts) {
+            setHudCount(nodes.hamlet, hamletCounts[group] ?? 0);
+        }
+    }
+}
+
+/**
+ * Visible HUD date stays abbreviated; screen readers get the full month name.
+ * @param {number | null | undefined} days
+ */
+function setHudDateDisplay(days) {
+    if (!displayTime) return;
+    const loading = typeof days !== 'number' || Number.isNaN(days) || days < 0;
+    const visual = loading ? 'Chargement...' : TimeManager.formatTime(days);
+    const accessible = loading
+        ? 'Chargement...'
+        : TimeManager.formatTime(days, { abbreviated: false });
+
+    const visualEl = displayTime.querySelector('.display-time__visual');
+    const srEl = displayTime.querySelector('.display-time__sr');
+    if (visualEl && srEl) {
+        visualEl.textContent = visual;
+        srEl.textContent = accessible;
+    } else {
+        displayTime.textContent = visual;
+    }
+
+    const clockBox = displayTime.closest('.clock-box');
+    if (clockBox) {
+        clockBox.title = loading ? 'Date en jeu' : accessible;
+    }
+}
 
 class GameUI {
     /**
@@ -108,23 +195,13 @@ class GameUI {
      */
     updateTimeDisplay(time, unit = 'jours') {
         if (displayTime) {
-            // Vérifier si time est un nombre valide
             if (typeof time === 'number' && !isNaN(time) && time >= 0) {
-                // Stocker le temps actuel pour pouvoir le réafficher même en pause
                 this.currentTime = time;
                 this.updateSeasonDisplay(time);
-                // Utiliser le TimeManager pour formater la date (sans la saison)
-                const formattedTime = TimeManager.formatTime(time);
-                // S'assurer que le formatage n'a pas retourné undefined
-                if (formattedTime && formattedTime !== 'undefined') {
-                    displayTime.textContent = formattedTime;
-                } else {
-                    displayTime.textContent = 'Chargement...';
-                }
+                setHudDateDisplay(time);
             } else {
                 this.updateSeasonDisplay(NaN);
-                // Si le temps n'est pas encore défini ou invalide, afficher "Chargement..."
-                displayTime.textContent = 'Chargement...';
+                setHudDateDisplay(null);
             }
         }
     }
@@ -181,7 +258,7 @@ class GameUI {
         // Réafficher le temps stocké si disponible (pour s'assurer qu'il est toujours affiché)
         if (this.currentTime !== null && displayTime) {
             this.updateSeasonDisplay(this.currentTime);
-            displayTime.textContent = TimeManager.formatTime(this.currentTime);
+            setHudDateDisplay(this.currentTime);
         }
     }
 
@@ -212,13 +289,21 @@ class GameUI {
      * @param {number} elitePopulation
      * @param {number} [civilServantCount=0]
      * @param {number} [activePopulationCount] — si omis : actifs + élites + fonctionnaires
+     * @param {{
+     *   totalPop?: number,
+     *   activeCitizenCount?: number,
+     *   elitePool?: number,
+     *   civilServantCount?: number,
+     *   activePopulationCount?: number,
+     * } | null} [hamletBreakdown]
      */
     updatePopulationBreakdown(
         totalPopulation,
         activeCitizenCount,
         elitePopulation,
         civilServantCount = 0,
-        activePopulationCount = null
+        activePopulationCount = null,
+        hamletBreakdown = null
     ) {
         const total = Math.max(0, Math.floor(totalPopulation) || 0);
         const activeCitizens = Math.max(0, Math.floor(activeCitizenCount) || 0);
@@ -228,20 +313,26 @@ class GameUI {
             ? Math.max(0, Math.floor(activePopulationCount) || 0)
             : activeCitizens + elites + servants;
 
-        if (displayPopTotal) {
-            displayPopTotal.textContent = String(total);
-        }
-        if (displayPopActiveTotal) {
-            displayPopActiveTotal.textContent = String(activeTotal);
-        }
-        if (displayPopCitizens) {
-            displayPopCitizens.textContent = String(activeCitizens);
-        }
-        if (displayPopElites) {
-            displayPopElites.textContent = String(elites);
-        }
-        if (displayPopServants) {
-            displayPopServants.textContent = String(servants);
+        setHudCount(displayPopTotal, total);
+        setHudCount(displayPopActiveTotal, activeTotal);
+        setHudCount(displayPopCitizens, activeCitizens);
+        setHudCount(displayPopElites, elites);
+        setHudCount(displayPopServants, servants);
+
+        if (hamletBreakdown) {
+            const hTotal = Math.max(0, Math.floor(hamletBreakdown.totalPop) || 0);
+            const hCitizens = Math.max(0, Math.floor(hamletBreakdown.activeCitizenCount) || 0);
+            const hElites = Math.max(0, Math.floor(hamletBreakdown.elitePool) || 0);
+            const hServants = Math.max(0, Math.floor(hamletBreakdown.civilServantCount) || 0);
+            const hActiveTotal = hamletBreakdown.activePopulationCount != null
+                ? Math.max(0, Math.floor(hamletBreakdown.activePopulationCount) || 0)
+                : hCitizens + hElites + hServants;
+
+            setHudCount(displayPopTotalHamlet, hTotal);
+            setHudCount(displayPopActiveTotalHamlet, hActiveTotal);
+            setHudCount(displayPopCitizensHamlet, hCitizens);
+            setHudCount(displayPopElitesHamlet, hElites);
+            setHudCount(displayPopServantsHamlet, hServants);
         }
 
         // Fallback if markup is missing (e.g. tests)
@@ -267,11 +358,13 @@ class GameUI {
 
     /**
      * Updates famished (hungry) population display
-     * @param {number} famishedPopulation - Number of famished people
+     * @param {number} famishedPopulation - Country-wide famished count
+     * @param {number} [hamletFamishedPopulation] - Active hamlet famished count
      */
-    updateFamishedPopulation(famishedPopulation) {
-        if (displayHungerPop) {
-            displayHungerPop.textContent = (famishedPopulation || 0).toString();
+    updateFamishedPopulation(famishedPopulation, hamletFamishedPopulation = null) {
+        setHudCount(displayHungerPop, famishedPopulation || 0);
+        if (hamletFamishedPopulation != null) {
+            setHudCount(displayHungerPopHamlet, hamletFamishedPopulation || 0);
         }
     }
 
@@ -286,33 +379,70 @@ class GameUI {
     }
 
     /**
-     * Updates global worker shortage (lack) — standalone number, no icon, always red.
-     * @param {number} lack - Missing workers on road-eligible workplaces
+     * Population / workers / labor market by social group (country + hamlet).
+     * Labor cells show lack when present, otherwise unemployment %.
+     *
+     * @param {{
+     *   popCountry?: Record<string, number>,
+     *   popHamlet?: Record<string, number>,
+     *   workersCountry?: Record<string, number>,
+     *   workersHamlet?: Record<string, number>,
+     *   laborCountry?: { unemployed?: number, unemploymentPercentage?: number, lack?: number },
+     *   laborHamlet?: { unemployed?: number, unemploymentPercentage?: number, lack?: number },
+     *   groupsCountry?: Record<string, { workerPool?: number, assigned?: number, unemployed?: number, unemploymentPercentage?: number, lack?: number }>,
+     *   groupsHamlet?: Record<string, { workerPool?: number, assigned?: number, unemployed?: number, unemploymentPercentage?: number, lack?: number }>,
+     * }} payload
      */
-    updateWorkerLack(lack = 0) {
-        if (displayWorkerLack) {
-            displayWorkerLack.textContent = String(Math.max(0, Math.floor(lack) || 0));
+    updateGroupHud(payload = {}) {
+        setGroupCounts(popGroupPopNodes, payload.popCountry ?? {}, payload.popHamlet ?? null);
+        setGroupCounts(popGroupWorkerNodes, payload.workersCountry ?? {}, payload.workersHamlet ?? null);
+
+        const countrySlot = laborSlotFromStats(payload.laborCountry);
+        const hamletSlot = laborSlotFromStats(payload.laborHamlet);
+        setLaborCell(displayLaborCountry, countrySlot, 'Pays');
+        setLaborCell(displayLaborHamlet, hamletSlot, 'Hameau visible');
+
+        for (const group of allSocialGroups()) {
+            const nodes = popGroupLaborNodes[group];
+            if (!nodes) continue;
+            const country = payload.groupsCountry?.[group] ?? {};
+            const hamlet = payload.groupsHamlet?.[group] ?? {};
+            const groupTitle = getResidentialGroupTitle(group);
+            setLaborCell(nodes.country, laborSlotFromStats(country), `${groupTitle} — pays`);
+            setLaborCell(nodes.hamlet, laborSlotFromStats(hamlet), `${groupTitle} — hameau visible`);
         }
     }
 
     /**
-     * Updates unemployed population display (chômage — surplus labor, with icon).
-     * @param {number} unemployedPopulation - Number of unemployed people
-     * @param {number} unemploymentPercentage - Unemployment percentage (optional)
+     * Dual-column resource rail: city, commerce, and map nature deposits.
+     *
+     * @param {{
+     *   cityCountry?: Record<string, number>,
+     *   cityHamlet?: Record<string, number>,
+     *   commerceCountry?: Record<string, number>,
+     *   commerceHamlet?: Record<string, number>,
+     *   natureCountry?: Record<string, number>,
+     *   natureHamlet?: Record<string, number>,
+     * }} payload
      */
-    updateUnemployedPopulation(unemployedPopulation, unemploymentPercentage = null) {
-        const count = unemployedPopulation || 0;
-        if (displayUnemployedPop) {
-            displayUnemployedPop.textContent = String(count);
-            displayUnemployedPop.style.color = '';
+    updateResourcesHud(payload = {}) {
+        for (const product of HUD_CITY_RESOURCE_PRODUCTS) {
+            const nodes = popResourceCityNodes[product];
+            if (!nodes) continue;
+            setHudCount(nodes.country, payload.cityCountry?.[product] ?? 0);
+            setHudCount(nodes.hamlet, payload.cityHamlet?.[product] ?? 0);
         }
-        if (displayUnemployedPct) {
-            if (unemploymentPercentage !== null && unemploymentPercentage !== undefined) {
-                displayUnemployedPct.textContent = `${unemploymentPercentage}%`;
-                displayUnemployedPct.hidden = false;
-            } else {
-                displayUnemployedPct.hidden = true;
-            }
+        for (const product of HUD_FLOW_SHARED_PRODUCTS) {
+            const nodes = popResourceCommerceNodes[product];
+            if (!nodes) continue;
+            setHudCount(nodes.country, payload.commerceCountry?.[product] ?? 0);
+            setHudCount(nodes.hamlet, payload.commerceHamlet?.[product] ?? 0);
+        }
+        for (const product of HUD_NATURE_RESOURCE_PRODUCTS) {
+            const nodes = popResourceNatureNodes[product];
+            if (!nodes) continue;
+            setHudCount(nodes.country, payload.natureCountry?.[product] ?? 0);
+            setHudCount(nodes.hamlet, payload.natureHamlet?.[product] ?? 0);
         }
     }
 

@@ -119,8 +119,8 @@ export class TimeManager {
     );
   }
 
-  static formatTime(days) {
-    return TimeCalendar.formatTime(days, this.DAYS_PER_MONTH);
+  static formatTime(days, options = {}) {
+    return TimeCalendar.formatTime(days, this.DAYS_PER_MONTH, options);
   }
 
   static formatTimeShort(days) {

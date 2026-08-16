@@ -1,4 +1,5 @@
 import db from '../../../../core/persistence/dexie/db.js';
+import { isActiveHamletRow } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { createHousingBuildingSnapshot } from '../../domain/HousingBuildingSnapshot.js';
 import { isResidentialHouseType } from '../../domain/policies/HouseCapacityPolicy.js';
 import {
@@ -63,6 +64,7 @@ export class DexieHousingBuildingRepository {
     const tileY = Math.floor(y);
     const rows = await db.houses.toArray();
     const house = rows.find((row) => {
+      if (!isActiveHamletRow(row)) return false;
       if (!isResidentialHouseType(normalizeResidentialType(row.type || ''))) {
         return false;
       }
@@ -75,7 +77,7 @@ export class DexieHousingBuildingRepository {
   async findResidentialHouses() {
     const rows = await db.houses.toArray();
     return rows
-      .filter((row) => isResidentialHouseType(row.type || ''))
+      .filter((row) => isActiveHamletRow(row) && isResidentialHouseType(row.type || ''))
       .map((row) => this.#toSnapshot(row));
   }
 
