@@ -5,7 +5,7 @@
 
 import { registerAppService, getMultiplayerManager, invokeStartTutorial, getObjectivesManager, getButtonStateManager } from '../../composition/sessionShell.js';
 import { createScene } from './scene.js';
-import { createCity } from './city.js';
+import { createCity, clearCityTiles } from './city.js';
 import { syncEmploymentAfterBuildingChange } from '../../composition/syncEmploymentAfterBuildingChange.js';
 import { syncSupplyLinksAfterBuildingChange } from '../../composition/syncSupplyLinksAfterBuildingChange.js';
 import { refreshSupplyPlacementIndex } from '../../contexts/supply/infrastructure/presentation/SupplyPlacementIndex.js';
@@ -13,6 +13,14 @@ import { ensureGameRuntimeBootstrapped } from '../../composition/ensureGameRunti
 import { bootGameContexts } from '../../composition/bootGameContexts.js';
 import { bootTreasuryHud } from '../../composition/bootTreasuryHud.js';
 import { resolveSelectedCitySize } from '../../composition/resolveCitySize.js';
+import { hydrateCityTilesFromRows } from '../../contexts/construction/application/services/HydrateCityTilesFromBuildings.js';
+import {
+  ensureHamletCatalog,
+  getActiveHamletId,
+  getHamlet,
+  markHamletNatureSeeded,
+  setActiveHamletId,
+} from '../../core/persistence/hamlet/hamletSession.js';
 import { runGameTick } from '../../composition/runGameTick.js';
 import { bindSessionRuntime } from '../../composition/sessionRuntime.js';
 import { syncSessionHud } from '../../composition/syncSessionHud.js';
@@ -264,6 +272,69 @@ export function createGame(gameStore, assetManager, citySize = null) {
     popupManager,
   });
   const city = createCity(resolveSelectedCitySize(citySize));
+  let isTraveling = false;
+  /** Serializes first boot and later hamlet swaps so two initialize() never overlap. */
+  let hamletSceneGate = Promise.resolve();
+
+  async function loadActiveHamletScene() {
+    await ensureHamletCatalog();
+    const rows = await constructionApi.listAllBuildingRows();
+    hydrateCityTilesFromRows(city, rows, assetsPrices);
+    const hamlet = await getHamlet(getActiveHamletId());
+    const seedNature = !hamlet?.natureSeeded && rows.length === 0;
+    await scene.initialize(city, { seedNature });
+    if (seedNature) {
+      await markHamletNatureSeeded(getActiveHamletId());
+    }
+    await scene.update(city, time);
+  }
+
+  /**
+   * Unload current 3D hamlet and hydrate another from Dexie (same canvas).
+   * @param {string} hamletId
+   */
+  async function travelToHamlet(hamletId) {
+    try {
+      await hamletSceneGate;
+    } catch {
+      /* First load failed; still attempt the swap. */
+    }
+    if (!hamletId || hamletId === getActiveHamletId() || isTraveling) {
+      return false;
+    }
+    isTraveling = true;
+    const wasPaused = Boolean(isPause);
+    try {
+      loaderManager.show();
+      if (!wasPaused) {
+        game?.pause?.();
+      }
+      closeBuildingInfoOverlay();
+      placementRotationHud?.hide();
+      scene.placementGhost?.clear?.();
+      touchPendingPlacement = null;
+
+      setActiveHamletId(hamletId);
+      clearCityTiles(city);
+      await loadActiveHamletScene();
+      await refreshPlacementPresentation();
+      await refreshEmploymentPresentationForCity();
+      return true;
+    } catch (error) {
+      console.error('[Game] travelToHamlet failed:', error);
+      showErrorToast(
+        'Le voyage vers l’autre hameau a échoué. Merci de réessayer.',
+        { timeout: 6000 }
+      );
+      return false;
+    } finally {
+      loaderManager.hide(280);
+      isTraveling = false;
+      if (!wasPaused) {
+        await game?.play?.();
+      }
+    }
+  }
 
   placementRotationHud = createPlacementRotationHud({
     getCamera: () => scene.camera?.camera ?? null,
@@ -334,7 +405,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     sessionApi,
   });
 
-  scene.initialize(city).then(async () => {
+  hamletSceneGate = loadActiveHamletScene().then(async () => {
     await refreshPlacementPresentation();
     loaderManager.hide(500);
     if (sessionStorage.getItem('anoria.startTutorial') === '1') {
@@ -872,6 +943,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
     scene,
     city,
     runtime,
+    travelToHamlet,
+    getActiveHamletId,
 
     async update(tick) {
       await runGameTick({

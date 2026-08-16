@@ -32,13 +32,6 @@ export function initNewsEventModal(deps) {
   const modal = document.getElementById('news-event-modal');
   if (!modal) return;
 
-  // Reset boot state — avoids FOUC leftover / stuck canvas block
-  modal.hidden = true;
-  modal.setAttribute('aria-hidden', 'true');
-  modal.classList.remove('active', 'visible', 'show');
-  deps.popupManager?.closePopup?.('news-event-modal');
-  deps.popupManager?.ensureEventsUnblocked?.();
-
   const titleEl = document.getElementById('news-event-title');
   const metaEl = document.getElementById('news-event-meta');
   const bodyEl = document.getElementById('news-event-body');
@@ -52,6 +45,37 @@ export function initNewsEventModal(deps) {
   let queue = [];
   let index = 0;
   let bodyRevealed = false;
+
+  function blurModalFocus() {
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && modal.contains(active)) {
+      active.blur();
+    }
+  }
+
+  function setModalClosed() {
+    blurModalFocus();
+    newsFocusSession?.release();
+    newsFocusSession = null;
+    modal.classList.remove('active', 'visible', 'show');
+    modal.hidden = true;
+    modal.setAttribute('aria-hidden', 'true');
+    modal.setAttribute('inert', '');
+    deps.popupManager?.closePopup?.('news-event-modal');
+    deps.popupManager?.ensureEventsUnblocked?.();
+    queue = [];
+    index = 0;
+    bodyRevealed = false;
+  }
+
+  function setModalOpen() {
+    modal.hidden = false;
+    modal.setAttribute('aria-hidden', 'false');
+    modal.removeAttribute('inert');
+  }
+
+  // Reset boot state — avoids FOUC leftover / stuck canvas block
+  setModalClosed();
 
   function currentItem() {
     return queue[index] ?? null;
@@ -67,16 +91,7 @@ export function initNewsEventModal(deps) {
   }
 
   function closeModal() {
-    newsFocusSession?.release();
-    newsFocusSession = null;
-    modal.classList.remove('active', 'visible', 'show');
-    modal.hidden = true;
-    modal.setAttribute('aria-hidden', 'true');
-    deps.popupManager?.closePopup?.('news-event-modal');
-    deps.popupManager?.ensureEventsUnblocked?.();
-    queue = [];
-    index = 0;
-    bodyRevealed = false;
+    setModalClosed();
   }
 
   async function render() {
@@ -225,8 +240,7 @@ export function initNewsEventModal(deps) {
     if (!queue.length) return;
     index = 0;
     bodyRevealed = false;
-    modal.hidden = false;
-    modal.setAttribute('aria-hidden', 'false');
+    setModalOpen();
     modal.classList.add('active', 'visible');
     await render();
     newsFocusSession?.release({ restoreFocus: false });

@@ -1,5 +1,9 @@
 import db from '../../../../core/persistence/dexie/db.js';
 import {
+  getActiveHamletId,
+  isActiveHamletRow,
+} from '../../../../core/persistence/hamlet/hamletSession.js';
+import {
   canonicalizeHouseRecord,
   createBuildingInstanceId,
   footprintFromRecord,
@@ -26,7 +30,8 @@ export class DexieConstructionBuildingRepository {
   async findByAnchor(x, y) {
     const tileX = Math.floor(x);
     const tileY = Math.floor(y);
-    return db.houses.where('[anchorX+anchorY]').equals([tileX, tileY]).first();
+    const matches = await db.houses.where('[anchorX+anchorY]').equals([tileX, tileY]).toArray();
+    return matches.find(isActiveHamletRow) ?? null;
   }
 
   async findAtTile(x, y) {
@@ -41,6 +46,7 @@ export class DexieConstructionBuildingRepository {
     const rows = await db.houses.toArray();
     return (
       rows.find((row) => {
+        if (!isActiveHamletRow(row)) return false;
         const footprint = footprintFromRecord(row);
         return footprint && footprintOccupiesTile(footprint, tileX, tileY);
       }) ?? null
@@ -60,10 +66,11 @@ export class DexieConstructionBuildingRepository {
     const atAnchor = await db.houses
       .where('[anchorX+anchorY]')
       .equals([anchorX, anchorY])
-      .first();
+      .toArray();
 
-    if (atAnchor && atAnchor.instanceId !== keepInstanceId) {
-      await db.houses.delete(atAnchor.instanceId);
+    const occupant = atAnchor.find(isActiveHamletRow);
+    if (occupant && occupant.instanceId !== keepInstanceId) {
+      await db.houses.delete(occupant.instanceId);
     }
   }
 
@@ -76,7 +83,11 @@ export class DexieConstructionBuildingRepository {
 
     let record;
     try {
-      record = canonicalizeHouseRecord({ ...data, instanceId });
+      record = canonicalizeHouseRecord({
+        ...data,
+        instanceId,
+        hamletId: data.hamletId || getActiveHamletId(),
+      });
     } catch (err) {
       return { success: false, error: err.message, reason: 'database_error' };
     }
@@ -167,7 +178,8 @@ export class DexieConstructionBuildingRepository {
   }
 
   async listAllRows() {
-    return db.houses.toArray();
+    const rows = await db.houses.toArray();
+    return rows.filter(isActiveHamletRow);
   }
 
   /** @param {string} instanceId */

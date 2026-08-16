@@ -33,10 +33,11 @@ Références utiles : [RGAA 4](https://accessibilite.numerique.gouv.fr/) (critè
 
 Ordre typique après fermeture du tutoriel (focus sur la porte de sortie) :
 
-1. Quitter (`#game-exit-home-btn`)
-2. Construction, démolir, sélectionner
-3. Rail population, Gestion, Admin, carte 2D, filtres, légende, tutoriel, objectifs…
-4. Commandes temps (pause / replay / vitesses), paramètres…
+1. Quitter (`#game-exit-home-btn`) — gauche de la barre HUD (même rangée que temps / budget)
+2. Rail population (sous la porte)
+3. Construction, voyage, démolir, sélectionner (FABs bas)
+4. Gestion, Admin, carte 2D, filtres, légende, tutoriel, objectifs…
+5. Commandes temps (pause / replay / vitesses), paramètres…
 
 ### Anti Tab fantômes
 
@@ -79,7 +80,24 @@ Dialogues **dans** `#game-window` (pause, info bâtiment, game over) : pas d’`
 Même avec le focus dans le dialogue, flèches / WASD / ZQSD / R·T / V / +/- ne doivent pas paner la scène :
 
 - `EventBlocker` les bloque encore (sauf `input` / `textarea` / `select` / `[contenteditable]`, et patterns APG `tablist` / `listbox` / `menu` / …)
-- `scene.isGameWorldInputLocked()` court-circuite `onKeyBoardDown` si popup, info bâtiment, paramètres, tutoriel, objectifs ou barre construction ouverts
+- `scene.isGameWorldInputLocked()` court-circuite `onKeyBoardDown` si popup, info bâtiment, paramètres, tutoriel, objectifs, menu voyage, loader ou barre construction ouverts
+
+---
+
+## Voyage entre hameaux (carrousel)
+
+Bouton charrette `#hamlet-travel-btn` (à côté de la construction, barre du bas) → `#hamlet-travel-menu` (`role="listbox"`).
+
+| Entrée | Effet |
+|---|---|
+| Entrée / Espace (sur le bouton) | Ouvre / ferme |
+| Tab (menu ouvert) | Cycle flèches (si visibles) ↔ destinations ↔ bouton |
+| ← → / ↑ ↓ | Destination précédente / suivante |
+| Home / End | Première / dernière destination |
+| Échap | Ferme et rend le focus au bouton |
+| Entrée sur une destination inactive | Charge cette scène (loader) |
+
+Les flèches n’apparaissent que si la liste dépasse le viewport. Le hameau **actif** est vert (`aria-checked="true"`). Menu fermé : `hidden` + `inert`. Fichier : `HamletTravelMenu.js`.
 
 ---
 

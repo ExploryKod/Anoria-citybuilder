@@ -26,6 +26,16 @@ db.version(1).stores(stores);
 db.version(2).stores({
   newsItems: 'id, turn, lifecycle, sourceId, revelation, [turn+sourceId]',
 });
+db.version(3).stores({
+  houses: 'instanceId, kind, type, hamletId, [anchorX+anchorY], [kind+type]',
+  hamlets: 'id',
+}).upgrade(async (tx) => {
+  await tx.table('houses').toCollection().modify((row) => {
+    if (!row.hamletId) {
+      row.hamletId = 'eraanurbs';
+    }
+  });
+});
 
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;

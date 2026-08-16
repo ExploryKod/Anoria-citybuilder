@@ -1,4 +1,5 @@
 import db from '../../../../core/persistence/dexie/db.js';
+import { isActiveHamletRow } from '../../../../core/persistence/hamlet/hamletSession.js';
 import {
   canonicalizeHouseRecord,
   instanceIdFromHouseRow,
@@ -27,6 +28,7 @@ export class DexieFactoryBuildingRepository {
   async findFactories() {
     const rows = await db.houses.toArray();
     return rows.filter((row) => {
+      if (!isActiveHamletRow(row)) return false;
       const type = row.type || '';
       return type.includes('Winery-001');
     });
@@ -43,11 +45,12 @@ export class DexieFactoryBuildingRepository {
 
   async listNatureItems() {
     const rows = await db.houses.toArray();
-    return rows.filter((row) => (row.category || '') === 'nature');
+    return rows.filter((row) => isActiveHamletRow(row) && (row.category || '') === 'nature');
   }
 
   async listAllRows() {
-    return db.houses.toArray();
+    const rows = await db.houses.toArray();
+    return rows.filter(isActiveHamletRow);
   }
 
   instanceId(row) {

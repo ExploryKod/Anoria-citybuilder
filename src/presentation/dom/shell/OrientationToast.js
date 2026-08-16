@@ -1,8 +1,8 @@
 /**
- * OrientationToast — mode portrait mobile/tablette (via js-toast-notifier).
+ * OrientationToast — info portrait mobile/tablette (via js-toast-notifier).
  */
 
-import { showWarningToast } from './ToastNotifier.js';
+import { showInfoToast } from './ToastNotifier.js';
 
 class OrientationToast {
   constructor() {
@@ -31,8 +31,8 @@ class OrientationToast {
 
     // Une seule annonce à l'entrée en portrait (évite le spam au resize).
     if (shouldWarn && !this.wasPortrait) {
-      showWarningToast(
-        'Mode paysage requis — Tournez votre téléphone pour jouer',
+      showInfoToast(
+        'Aussi disponible en mode paysage',
         { timeout: 3500 }
       );
     }

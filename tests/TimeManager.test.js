@@ -8,6 +8,7 @@
  */
 
 import { TimeManager } from '../src/shared/time/TimeManager.js';
+import { formatTime } from '../src/shared/time/TimeCalendar.js';
 
 describe('TimeManager', () => {
     
@@ -146,6 +147,20 @@ describe('TimeManager', () => {
             expect(september.seasonIndex).toBe(2);
             expect(october.seasonIndex).toBe(2);
             expect(november.seasonIndex).toBe(2);
+        });
+    });
+
+    describe('formatTime (HUD)', () => {
+        test('abrège le mois (sept., déc.) pour une largeur stable', () => {
+            expect(formatTime(8, 1)).toBe('sept. | 0 JC');
+            expect(formatTime(11, 1)).toBe('déc. | 0 JC');
+            expect(formatTime(0, 1)).toBe('janv. | 0 JC');
+            expect(formatTime(8 * 30, 30)).toBe('1 sept. | 0 JC');
+        });
+
+        test('expose le mois entier pour les lecteurs d’écran', () => {
+            expect(formatTime(8, 1, { abbreviated: false })).toBe('Septembre | 0 JC');
+            expect(formatTime(8 * 30, 30, { abbreviated: false })).toBe('1 Septembre | 0 JC');
         });
     });
 });

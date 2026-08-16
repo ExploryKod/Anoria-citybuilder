@@ -37,20 +37,16 @@
     --game-chrome-blur: blur(10px);
     --game-chrome-shadow: 0 4px 20px rgba(29, 34, 40, 0.1);
 
-    /* Top anchor shared by floating toolbar + pop rail when coupled (not portrait bottom-bar mode) */
-    --hud-floating-panel-top: max(12px, calc(env(safe-area-inset-top, 0px) + 8px));
-
-    /* Portrait: pop rail below HUD time/budget strip + camera row (barre du bas) */
-    --hud-pop-rail-top-portrait: calc(
-      env(safe-area-inset-top, 0px)
-      + 4px
-      + 4px
+    /* Pop rail starts just under the HUD status row (exit + time/budget) */
+    --hud-pop-rail-top: calc(
+      4px
       + var(--progress-bar-h)
-      + var(--hud-chip-height)
-      + var(--hud-vitals-row-gap)
       + var(--hud-chip-height)
       + 8px
     );
+
+    /* Portrait: same — under the door / time row (camera stays on the right) */
+    --hud-pop-rail-top-portrait: var(--hud-pop-rail-top);
 
     --house-red-color:var(--red-300);
     --house-purple-color: #a90aa9;
@@ -287,31 +283,6 @@ canvas {
 
     :root {
         --fab-stack-perf-size: 36px;
-    }
-}
-
-/* Bottom-right FAB stack — perf + cookie above command bar (game mobile) */
-@media (max-width: 1024px) {
-    #stats-js.perf-hud {
-        right: var(--fab-stack-right) !important;
-        bottom: calc(
-            var(--hud-bottom-height, 56px)
-            + env(safe-area-inset-bottom, 0px)
-            + var(--fab-stack-gap)
-            + var(--mobile-build-bar-offset, 0px)
-        ) !important;
-    }
-
-    #cookieConsentFab.cookie-consent-fab {
-        right: var(--fab-stack-right);
-        bottom: calc(
-            var(--hud-bottom-height, 56px)
-            + env(safe-area-inset-bottom, 0px)
-            + var(--fab-stack-gap)
-            + var(--mobile-build-bar-offset, 0px)
-            + var(--fab-stack-perf-size)
-            + var(--fab-stack-gap)
-        );
     }
 }
 
