@@ -48,6 +48,22 @@ export const MONTHS = Object.freeze([
   'Décembre',
 ]);
 
+/** Abréviations HUD (typographie française) — index aligné sur MONTHS. */
+export const MONTH_ABBREVS = Object.freeze([
+  'janv.',
+  'févr.',
+  'mars',
+  'avr.',
+  'mai',
+  'juin',
+  'juill.',
+  'août',
+  'sept.',
+  'oct.',
+  'nov.',
+  'déc.',
+]);
+
 /**
  * Calcule les informations de temps à partir du nombre de jours.
  *
@@ -111,8 +127,9 @@ export function getTimeInfo(days, daysPerMonth) {
 /**
  * @param {number|undefined|null} days
  * @param {number} daysPerMonth
+ * @param {{ abbreviated?: boolean }} [options]
  */
-export function formatTime(days, daysPerMonth) {
+export function formatTime(days, daysPerMonth, options = {}) {
   if (days === undefined || days === null || isNaN(days) || typeof days !== 'number') {
     return 'Chargement...';
   }
@@ -130,10 +147,14 @@ export function formatTime(days, daysPerMonth) {
     yearDisplay = `${timeInfo.year} ap JC`;
   }
 
+  const abbreviated = options.abbreviated !== false;
   const showDay = daysPerMonth > 1;
+  const monthLabel = abbreviated
+    ? (MONTH_ABBREVS[timeInfo.monthIndex] ?? timeInfo.month)
+    : timeInfo.month;
   const dateLabel = showDay
-    ? `${timeInfo.dayInMonth} ${timeInfo.month}`
-    : `${timeInfo.month}`;
+    ? `${timeInfo.dayInMonth} ${monthLabel}`
+    : `${monthLabel}`;
 
   return `${dateLabel} | ${yearDisplay}`;
 }
@@ -143,7 +164,7 @@ export function formatTime(days, daysPerMonth) {
  * @param {number} [maxDaysPerMonth=30]
  */
 export function getHudTimeBarLabelMaxSample(maxDaysPerMonth = 30) {
-  const longestMonth = MONTHS.reduce((best, month) => (month.length > best.length ? month : best));
+  const longestMonth = MONTH_ABBREVS.reduce((best, month) => (month.length > best.length ? month : best));
   const dayPrefix = maxDaysPerMonth > 1 ? `${maxDaysPerMonth} ` : '';
   return `${dayPrefix}${longestMonth} | 9999 ap JC`;
 }

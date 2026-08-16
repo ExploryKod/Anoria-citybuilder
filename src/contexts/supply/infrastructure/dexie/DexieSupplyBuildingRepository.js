@@ -1,7 +1,9 @@
 import db from '../../../../core/persistence/dexie/db.js';
+import { isActiveHamletRow } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { createSupplyBuildingSnapshot } from '../../domain/SupplyBuildingSnapshot.js';
 import { createSupplyBuildingView } from '../../domain/SupplyBuildingView.js';
 import { createFoodStock } from '../../domain/value-objects/FoodStock.js';
+import { isCommerceBarn } from '../../domain/manufacturing/SupplyFlow.js';
 import {
   canonicalizeHouseRecord,
   instanceIdFromHouseRow,
@@ -12,6 +14,11 @@ export class DexieSupplyBuildingRepository {
   #defaultMaxStock(type) {
     const t = type || '';
     return t.includes('Windmill') || t.includes('windmill') ? 1000 : 500;
+  }
+
+  async #activeRows() {
+    const rows = await db.houses.toArray();
+    return rows.filter(isActiveHamletRow);
   }
 
   #toSnapshot(house) {
@@ -101,7 +108,7 @@ export class DexieSupplyBuildingRepository {
   }
 
   async listAllSupplyViews() {
-    const rows = await db.houses.toArray();
+    const rows = await this.#activeRows();
     return rows.map((row) => this.#toView(row));
   }
 
@@ -194,7 +201,7 @@ export class DexieSupplyBuildingRepository {
 
   async resetFarmSalesForYear(currentYear) {
     const year = Number.isFinite(currentYear) ? Math.floor(currentYear) : 0;
-    const rows = await db.houses.toArray();
+    const rows = await this.#activeRows();
     const farms = rows.filter((row) => {
       const type = row.type || '';
       return type.includes('Farm') || type.includes('farm');
@@ -256,7 +263,7 @@ export class DexieSupplyBuildingRepository {
   }
 
   async findMarkets() {
-    const rows = await db.houses.toArray();
+    const rows = await this.#activeRows();
     return rows
       .filter((row) => {
         const type = row.type || '';
@@ -266,7 +273,7 @@ export class DexieSupplyBuildingRepository {
   }
 
   async findHouses() {
-    const rows = await db.houses.toArray();
+    const rows = await this.#activeRows();
     return rows
       .filter((row) => {
         const type = row.type || '';
@@ -276,7 +283,7 @@ export class DexieSupplyBuildingRepository {
   }
 
   async findWindmills() {
-    const rows = await db.houses.toArray();
+    const rows = await this.#activeRows();
     return rows
       .filter((row) => {
         const type = row.type || '';
@@ -286,10 +293,10 @@ export class DexieSupplyBuildingRepository {
   }
 
   async findCommerceBarns() {
-    const rows = await db.houses.toArray();
+    const rows = await this.#activeRows();
     return rows.filter((row) => {
       const type = row.type || '';
-      return type.includes('Barn');
+      return type.includes('Barn') && isCommerceBarn(row);
     });
   }
 
@@ -302,7 +309,7 @@ export class DexieSupplyBuildingRepository {
   }
 
   async findFarms() {
-    const rows = await db.houses.toArray();
+    const rows = await this.#activeRows();
     return rows
       .filter((row) => {
         const type = row.type || '';
@@ -312,7 +319,7 @@ export class DexieSupplyBuildingRepository {
   }
 
   async listAllBuildingRows() {
-    return db.houses.toArray();
+    return this.#activeRows();
   }
 
   async findBuildingRow(buildingId) {

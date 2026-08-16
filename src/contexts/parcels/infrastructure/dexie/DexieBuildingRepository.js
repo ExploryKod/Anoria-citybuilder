@@ -1,4 +1,5 @@
 import db from '../../../../core/persistence/dexie/db.js';
+import { isActiveHamletRow } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { createBuildingSnapshot } from '../../domain/BuildingSnapshot.js';
 import {
   assertBuildingInstanceId,
@@ -61,7 +62,7 @@ export class DexieBuildingRepository {
 
   async findAll() {
     const rows = await db.houses.toArray();
-    return rows.map((row) => this.#toSnapshot(row));
+    return rows.filter(isActiveHamletRow).map((row) => this.#toSnapshot(row));
   }
 
   async saveRoadAccess(instanceId, roadCount) {
