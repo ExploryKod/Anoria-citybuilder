@@ -24,3 +24,32 @@ export function normalizeSupplyFlow(value) {
 export function getBuildingSupplyFlow(building) {
   return normalizeSupplyFlow(building?.supplyFlow);
 }
+
+/**
+ * Barn destination flow. Legacy barns (no `supplyFlow`) are commerce hubs;
+ * factories use {@link getBuildingSupplyFlow} which defaults to city.
+ *
+ * @param {object|null|undefined} barn
+ * @returns {'city'|'commerce'}
+ */
+export function getBarnSupplyFlow(barn) {
+  return barn?.supplyFlow === SUPPLY_FLOW.CITY
+    ? SUPPLY_FLOW.CITY
+    : SUPPLY_FLOW.COMMERCE;
+}
+
+/**
+ * @param {object|null|undefined} barn
+ * @returns {boolean}
+ */
+export function isCommerceBarn(barn) {
+  return getBarnSupplyFlow(barn) === SUPPLY_FLOW.COMMERCE;
+}
+
+/**
+ * @param {object|null|undefined} barn
+ * @returns {boolean}
+ */
+export function isCityBarn(barn) {
+  return getBarnSupplyFlow(barn) === SUPPLY_FLOW.CITY;
+}

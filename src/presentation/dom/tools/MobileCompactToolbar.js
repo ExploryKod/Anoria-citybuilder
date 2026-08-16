@@ -149,6 +149,9 @@ export function open() {
   buildBarEl.setAttribute('aria-hidden', 'false');
   setBuildBarDocumentState(true);
   syncConstructionOpenButton();
+  // Always land on Habitations when opening the bar.
+  selectCategory('houses');
+  pillsEl?.scrollTo({ left: 0, behavior: 'auto' });
   buildBarFocusSession?.release({ restoreFocus: false });
   buildBarFocusSession = createModalFocusSession({
     panel: buildBarEl,

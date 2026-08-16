@@ -15,6 +15,7 @@ import {
   getHubProductRemainingInbound,
   normalizeHubStorageOrders,
 } from './HubStorageOrdersPolicy.js';
+import { isCommerceBarn } from '../manufacturing/SupplyFlow.js';
 
 /**
  * @param {object|null|undefined} barnRow
@@ -148,6 +149,7 @@ export function isOperationalCommerceBarn(barnRow) {
   if (!barnRow) return false;
   const type = barnRow.type || '';
   if (!type.includes('Barn')) return false;
+  if (!isCommerceBarn(barnRow)) return false;
   if (barnRow.isActive === false) return false;
   if ((barnRow.roads ?? 0) <= 0) return false;
   return getBarnWorkerCount(barnRow) > 0;

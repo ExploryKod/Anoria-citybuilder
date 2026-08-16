@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {createCamera} from './camera.js';
 import { createPerfHud } from './PerfHud.js';
+import { adoptHudFabDockChildren } from '../dom/shell/hudFabDock.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { AnimationMixer } from 'three';
@@ -25,11 +26,10 @@ import { setupRoadAccessIcons } from '../../contexts/parcels/infrastructure/pres
 import { TimeManager } from '../../shared/time/TimeManager.js';
 import { LightingManager } from './managers/LightingManager.js';
 import { BackdropManager } from './managers/BackdropManager.js';
-import { DecorativeVillageManager } from './managers/DecorativeVillageManager.js';
 import { ResourceManager } from './managers/ResourceManager.js';
 import { PerformanceManager } from './managers/PerformanceManager.js';
 import gameUIDefault from '../dom/shell/GameUI.js';
-import { getCumulativeDeaths } from '../../composition/gameplayMortalityState.js';
+import { syncPopRailHud } from '../../composition/syncSessionHud.js';
 import { CitizenManager } from './managers/CitizenManager.js';
 import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
 import { TileGridOverlay } from './managers/TileGridOverlay.js';
@@ -101,7 +101,6 @@ export function createScene(_gameStore, assetManager, deps) {
     // Initialize managers
     const lightingManager = new LightingManager(scene);
     const backdropManager = new BackdropManager(scene);
-    const decorativeVillageManager = new DecorativeVillageManager(scene, assetManager);
     const citizenManager = new CitizenManager(scene, assetManager);
     const tileGridOverlay = new TileGridOverlay();
     const mapOverlayVisibility = new MapOverlayVisibility();
@@ -169,6 +168,7 @@ export function createScene(_gameStore, assetManager, deps) {
     // (stats.js en CSS scale était flou et ne montrait qu'un panneau)
     const stats = createPerfHud({ widthRatio: 0.2, bottom: 96, right: 16 });
     document.body.appendChild(stats.dom);
+    adoptHudFabDockChildren();
     
     // Add WebGL error handling
     const canvas = renderer.domElement;
@@ -200,7 +200,8 @@ export function createScene(_gameStore, assetManager, deps) {
         webglContextLost = false;
         try {
             if (currentCity) {
-                await initialize(currentCity);
+                await initialize(currentCity, { seedNature: false });
+                await update(currentCity, lastSceneUpdateTime);
             }
             showInfoToast('Affichage 3D restauré.', { timeout: 3000 });
         } catch (error) {
@@ -268,6 +269,8 @@ export function createScene(_gameStore, assetManager, deps) {
         if (document.getElementById('parameters-panel')?.classList.contains('visible')) return true;
         if (document.getElementById('tutorial-panel')?.classList.contains('visible')) return true;
         if (document.getElementById('objectives-panel')?.classList.contains('visible')) return true;
+        if (document.getElementById('hamlet-travel-menu')?.classList.contains('is-open')) return true;
+        if (loaderManager.isShowing()) return true;
         return false;
     }
 
@@ -337,7 +340,9 @@ export function createScene(_gameStore, assetManager, deps) {
     // Variables de gameplay
     let delay = 0;
 
-    async function initialize(city) {
+    async function initialize(city, options = {}) {
+        const seedNature = options.seedNature === true;
+
         // Store world platform before clearing scene
         let worldPlatform = scene.getObjectByName('world-platform');
         
@@ -350,6 +355,8 @@ export function createScene(_gameStore, assetManager, deps) {
         }
         
         scene.clear();
+        zoneGroups.length = 0;
+        zoneGroupsInitialized = false;
         // Re-apply fog after clear
         try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
         
@@ -527,19 +534,23 @@ export function createScene(_gameStore, assetManager, deps) {
         // No backdrop needed - World platform provides sharp cutoff with sky background
         // addBackdrop(citySize); // Disabled to prevent visible edges at horizon
         
-        // Initialize resources (trees, boulders, clay, iron, gold) before decorative village
-        const resourceManager = new ResourceManager();
-        await resourceManager.initializeResources(
-          city,
-          assetManager,
-          buildings,
-          zoneGroups,
-          { placeBuildingRecord: (data) => construction.placeBuildingRecord(data) },
-          supply
-        );
+        // Initialize resources (trees, boulders) only on a virgin hamlet.
+        // Returning to a saved hamlet hydrates tiles from Dexie instead.
+        if (seedNature) {
+            const resourceManager = new ResourceManager();
+            await resourceManager.initializeResources(
+              city,
+              assetManager,
+              buildings,
+              zoneGroups,
+              { placeBuildingRecord: (data) => construction.placeBuildingRecord(data) },
+              supply
+            );
+        }
         
-        // Create decorative village around the playable area
-        decorativeVillageManager.createDecorativeVillage(citySize);
+        // Decorative outskirts hamlets disabled — real hamlets use Dexie + travel carousel.
+        // Previously called createDecorativeVillage() here, which spammed AssetManager
+        // (Market-Stall, Well-001, StonePath-001 load lazily after houses/nature).
         
         // Initialize PerformanceManager after zoneGroups are set up
         performanceManager = new PerformanceManager(scene, camera, zoneGroups, buildings);
@@ -1583,8 +1594,7 @@ export function createScene(_gameStore, assetManager, deps) {
 
         // Display results in UI — population read at start of update (ECS already applied)
         const currentPopulation = totalPop;
-        const { famishedPopulation } = await housing.getFamishedPopulation();
-        
+
         // Manage multiple citizens based on current population state (from IndexedDB)
         // Only update if citizenPathfinding is initialized
         if (citizenPathfinding) {
@@ -1598,9 +1608,7 @@ export function createScene(_gameStore, assetManager, deps) {
             );
         }
         
-        // Famished / deaths counters — funds/employment HUD owned by syncSessionHud / tick
-        gameUI.updateFamishedPopulation(famishedPopulation || 0);
-        gameUI.updateDeaths?.(getCumulativeDeaths());
+        // Famished / deaths / pop rail — owned by syncPopRailHud (tick + refreshEmploymentPresentation)
 
     }
 
@@ -1611,47 +1619,17 @@ export function createScene(_gameStore, assetManager, deps) {
      * @param {object} city
      */
     async function refreshEmploymentPresentation(city) {
-        let unemployedCount = 0;
-        let unemploymentPercentage = 0;
-        let employmentLack = 0;
-        let activeCitizenCount = 0;
-        let elitePopulation = 0;
-        let civilServantCount = 0;
-        let activePopulationCount = 0;
-        let totalPopulation = 0;
+        await syncPopRailHud(gameUI);
+
         /** @type {string[]} */
         let understaffedBuildingIds = [];
 
         try {
-            const popSummary = await housing.getCityPopulationSummary();
-            totalPopulation = popSummary.totalPop ?? 0;
-        } catch (error) {
-            console.warn('[scene.js] Error reading city population summary:', error);
-        }
-
-        try {
             const summary = await employment.getCityEmploymentSummary();
-            unemployedCount = summary.unemployed;
-            unemploymentPercentage = summary.unemploymentPercentage;
-            employmentLack = summary.lack;
-            activeCitizenCount = summary.activeCitizenCount;
-            elitePopulation = summary.elitePool;
-            civilServantCount = summary.civilServantCount;
-            activePopulationCount = summary.activePopulationCount;
             understaffedBuildingIds = summary.understaffedBuildingIds;
         } catch (error) {
             console.warn('[scene.js] Error calculating employment summary:', error);
         }
-
-        gameUI.updatePopulationBreakdown(
-            totalPopulation,
-            activeCitizenCount,
-            elitePopulation,
-            civilServantCount,
-            activePopulationCount
-        );
-        gameUI.updateUnemployedPopulation(unemployedCount, unemploymentPercentage);
-        gameUI.updateWorkerLack(employmentLack);
 
         const understaffed = new Set(understaffedBuildingIds);
         const noWorkSpriteColor = 0xFF0000;
