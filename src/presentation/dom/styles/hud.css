@@ -397,7 +397,7 @@
 
 .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
   position: fixed;
-  z-index: calc(var(--z-index-info-panel, 10020) - 1);
+  z-index: var(--z-index-hud-pop-rail);
   top: var(--hud-pop-rail-top);
   left: var(--hud-gutter);
   right: auto;
@@ -440,14 +440,7 @@
     top: var(--hud-pop-rail-top);
     left: var(--hud-gutter);
     right: auto;
-  }
-}
-
-@media screen and (max-width: 1024px) and (orientation: landscape) {
-  .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
-    top: var(--hud-pop-rail-top);
-    left: var(--hud-gutter);
-    right: auto;
+    bottom: auto;
   }
 }
 
@@ -963,7 +956,7 @@
   bottom: auto;
   left: auto;
   transform: translateY(-50%);
-  z-index: calc(var(--z-index-legend, 1000) + 2);
+  z-index: var(--z-index-hud-menu);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -990,7 +983,7 @@
   bottom: env(safe-area-inset-bottom, 0px);
   top: auto;
   transform: translateX(-50%);
-  z-index: calc(var(--z-index-legend, 1000) + 2);
+  z-index: var(--z-index-hud-menu);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -1180,7 +1173,7 @@
   bottom: env(safe-area-inset-bottom, 0px);
   left: auto;
   top: auto;
-  z-index: 99999;
+  z-index: var(--z-index-hud-fab-dock);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -1253,6 +1246,30 @@
 }
 
 /* -------------------------------------------------------------------------
+   Touch (phone / tablet) — pop rail anchored above bottom chrome
+   ------------------------------------------------------------------------- */
+
+@media screen and (max-width: 1024px) {
+  .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
+    top: auto;
+    bottom: var(--hud-pop-rail-bottom-touch);
+    left: var(--hud-gutter);
+    right: auto;
+    --hud-pop-rail-max-height: calc(
+      100svh
+      - var(--hud-pop-rail-bottom-touch)
+      - var(--hud-pop-rail-top-reserve-touch)
+      - env(safe-area-inset-top, 0px)
+    );
+    max-height: var(--hud-pop-rail-max-height);
+  }
+
+  .hud-pop-rail.hud-pop-rail--dragged {
+    max-height: calc(100svh - 24px - env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* -------------------------------------------------------------------------
    Portrait (phones / narrow tablets)
    ------------------------------------------------------------------------- */
 
@@ -1290,12 +1307,6 @@
 
   .info-panel > .info-box.infos-budget {
     flex: 0 0 auto;
-  }
-
-  .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
-    top: var(--hud-pop-rail-top-portrait);
-    left: var(--hud-gutter);
-    right: auto;
   }
 
   .hud-actions.info-box-stats {
@@ -1354,12 +1365,6 @@
     min-width: 34px;
     height: 34px;
     min-height: 34px;
-  }
-
-  .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
-    --hud-pop-rail-top: calc(2px + 12px + 34px + 8px);
-    top: var(--hud-pop-rail-top);
-    left: var(--hud-gutter);
   }
 
   .info-panel > .info-box {
