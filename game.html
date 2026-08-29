@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="./src/presentation/dom/styles/legends.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/hud.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/hud-shell-menus.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/cheat-code-prompt.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/toolbar-panel.css">
     
     <!-- Modal Styles -->
@@ -3687,6 +3688,22 @@
             </div>
         </div>
     </div>
+</div>
+
+<div id="cheat-code-prompt" class="cheat-code-prompt" hidden aria-hidden="true" inert>
+    <form id="cheat-code-form" autocomplete="off">
+        <input
+            id="cheat-code-input"
+            name="cheat-code"
+            type="text"
+            inputmode="text"
+            spellcheck="false"
+            aria-label="Code triche"
+            placeholder="Code…"
+        >
+        <button id="cheat-code-submit" type="submit">OK</button>
+    </form>
+    <p id="cheat-code-feedback" hidden></p>
 </div>
 
 <script type="module" src="/src/main.js"></script>
