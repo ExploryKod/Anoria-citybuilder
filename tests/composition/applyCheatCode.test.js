@@ -11,10 +11,6 @@ const recordCheatActivation = jest.fn(async (code, meta) => ({
 }));
 const getTimeManager = jest.fn(() => ({ getCurrentTurn: () => 4 }));
 
-jest.unstable_mockModule('../../src/config/cheatCodes.js', () => ({
-  isCheatCodesEnabled: () => true,
-}));
-
 jest.unstable_mockModule('../../src/composition/createAccountingContext.js', () => ({
   getOrCreateAccountingContext: () => ({ recordCommerceExportIncome }),
 }));

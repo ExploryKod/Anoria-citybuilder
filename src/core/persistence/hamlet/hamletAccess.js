@@ -55,6 +55,8 @@ export async function unlockHamlet(hamletId) {
   if (!proto) return;
 
   const row = await db.hamlets.get(hamletId);
+  const wasUnlocked = row ? Boolean(row.unlocked) : hamletId === DEFAULT_HAMLET_ID;
+
   if (row) {
     await db.hamlets.put({ ...row, unlocked: true });
   } else {
@@ -65,6 +67,22 @@ export async function unlockHamlet(hamletId) {
       unlocked: true,
     });
   }
+
+  if (!wasUnlocked) {
+    dispatchHamletAccessChanged();
+  }
+}
+
+/**
+ * Unlocked hamlets that should appear as outskirts deco (not the active playable grid).
+ * @returns {Promise<string[]>}
+ */
+export async function listUnlockedNeighborHamletIds() {
+  const activeId = getActiveHamletId();
+  const hamlets = await listHamletsWithAccess();
+  return hamlets
+    .filter((h) => h.id !== activeId && h.access === HAMLET_ACCESS.unlocked)
+    .map((h) => h.id);
 }
 
 /**

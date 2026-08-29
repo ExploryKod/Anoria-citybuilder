@@ -2,7 +2,6 @@
  * Cheat code registry and side effects.
  */
 
-import { isCheatCodesEnabled } from '../config/cheatCodes.js';
 import { recordCheatActivation, normalizeCheatCode } from '../core/persistence/cheat/cheatCodeRepository.js';
 import { unlockAllHamlets } from '../core/persistence/hamlet/hamletAccess.js';
 import { getOrCreateAccountingContext } from './createAccountingContext.js';
@@ -68,10 +67,6 @@ async function applyHamletsAllCheat() {
  * @returns {Promise<CheatApplyResult>}
  */
 export async function applyCheatCode(rawCode) {
-  if (!isCheatCodesEnabled()) {
-    return { ok: false, reason: 'disabled' };
-  }
-
   const key = resolveCheatKey(rawCode);
   if (!key) {
     return { ok: false, reason: 'empty' };

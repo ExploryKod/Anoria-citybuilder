@@ -11,10 +11,6 @@ const applyCheatCode = jest.fn(async (code) => {
   return { ok: false, reason: 'unknown' };
 });
 
-jest.unstable_mockModule('../../../../src/config/cheatCodes.js', () => ({
-  isCheatCodesEnabled: () => true,
-}));
-
 jest.unstable_mockModule('../../../../src/composition/applyCheatCode.js', () => ({
   applyCheatCode,
 }));

@@ -1,8 +1,7 @@
 /**
- * Discrete cheat-code input — Ctrl+Alt+K when cheats are enabled via env.
+ * Discrete cheat-code input — Ctrl+Alt+K.
  */
 
-import { isCheatCodesEnabled } from '../../../config/cheatCodes.js';
 import { applyCheatCode } from '../../../composition/applyCheatCode.js';
 
 /**
@@ -17,8 +16,6 @@ function setPromptOpen(root, open) {
 }
 
 export function initCheatCodePrompt() {
-  if (!isCheatCodesEnabled()) return;
-
   const root = document.getElementById('cheat-code-prompt');
   const form = document.getElementById('cheat-code-form');
   const input = document.getElementById('cheat-code-input');
@@ -72,7 +69,6 @@ export function initCheatCodePrompt() {
         return;
       }
       const messages = {
-        disabled: 'Codes désactivés.',
         empty: 'Saisissez un code.',
         unknown: 'Code inconnu.',
       };

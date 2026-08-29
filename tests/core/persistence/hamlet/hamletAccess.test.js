@@ -8,6 +8,7 @@ import {
   listHamletsWithAccess,
   unlockAllHamlets,
   unlockHamlet,
+  listUnlockedNeighborHamletIds,
 } from '../../../../src/core/persistence/hamlet/hamletAccess.js';
 import {
   DEFAULT_HAMLET_ID,
@@ -48,5 +49,28 @@ describe('hamletAccess', () => {
     const hamlets = await listHamletsWithAccess();
     const nonActive = hamlets.filter((h) => h.id !== DEFAULT_HAMLET_ID);
     expect(nonActive.every((h) => h.access === HAMLET_ACCESS.unlocked)).toBe(true);
+  });
+
+  test('listUnlockedNeighborHamletIds excludes active and locked hamlets', async () => {
+    await unlockHamlet('clairiere');
+    await unlockHamlet('pont-saules');
+
+    const neighbors = await listUnlockedNeighborHamletIds();
+    expect(neighbors).toContain('clairiere');
+    expect(neighbors).toContain('pont-saules');
+    expect(neighbors).not.toContain(DEFAULT_HAMLET_ID);
+    expect(neighbors).not.toContain('bruyeres');
+  });
+
+  test('natureSeeded does not imply travel unlock', async () => {
+    await db.hamlets.put({
+      id: 'clairiere',
+      name: 'Clairière',
+      natureSeeded: true,
+      unlocked: false,
+    });
+
+    expect(await canTravelToHamlet('clairiere')).toBe(false);
+    expect(await getHamletAccessState('clairiere')).toBe(HAMLET_ACCESS.locked);
   });
 });
