@@ -1,5 +1,4 @@
-import { renderTradeMapPanelForCity } from '../admin/commerce/renderTradeMap.js';
-import { renderWorldMapShell, renderWorldMapStats } from './renderWorldMap.js';
+import { renderWorldMapPanel, renderWorldMapShell, renderWorldMapStats } from './renderWorldMap.js';
 import { bootstrapWorldMap } from '../../phaser/world/bootstrapWorldMap.js';
 
 /**
@@ -16,6 +15,7 @@ export class WorldMapController {
     this.mapApi = mapApi;
     this.view = null;
     this.selectedCityId = 'anoria';
+    this.selectedHamletId = null;
     this.clickHandler = null;
     this.messageTimeout = null;
     /** @type {ReturnType<typeof bootstrapWorldMap> | null} */
@@ -26,14 +26,30 @@ export class WorldMapController {
 
   async init() {
     this.view = await this.mapApi.getWorldMapView();
+    const params = new URLSearchParams(window.location.search);
+    const hamletFromUrl = params.get('hamlet');
+    const validHamlet = hamletFromUrl
+      && this.view.hamlets.some((hamlet) => hamlet.id === hamletFromUrl);
+    if (validHamlet) {
+      this.selectedHamletId = hamletFromUrl;
+      this.selectedCityId = null;
+    }
     this.mountLayout();
+    this.updateStats();
     this.mountPhaser();
     this.bindEvents();
   }
 
+  getSelection() {
+    return {
+      cityId: this.selectedHamletId ? null : this.selectedCityId,
+      hamletId: this.selectedHamletId,
+    };
+  }
+
   mountLayout() {
     if (!this.view) return;
-    this.root.innerHTML = renderWorldMapShell(this.view, this.selectedCityId);
+    this.root.innerHTML = renderWorldMapShell(this.view, this.getSelection());
     this.phaserHost = this.root.querySelector('#world-phaser-root');
   }
 
@@ -44,10 +60,9 @@ export class WorldMapController {
     this.phaserHandle = bootstrapWorldMap(this.phaserHost, {
       view: this.view,
       selectedCityId: this.selectedCityId,
+      selectedHamletId: this.selectedHamletId,
       onCitySelected: (cityId) => this.handleCitySelected(cityId),
-      onKingdomNavigate: () => {
-        window.location.href = '/hamlets';
-      },
+      onHamletSelected: (hamletId) => this.handleHamletSelected(hamletId),
     });
   }
 
@@ -56,20 +71,31 @@ export class WorldMapController {
    */
   handleCitySelected(cityId) {
     this.selectedCityId = cityId;
+    this.selectedHamletId = null;
     this.updatePanel();
-    this.phaserHandle?.refresh(this.view, this.selectedCityId);
+    this.phaserHandle?.refresh(this.view, this.getSelection());
+  }
+
+  /**
+   * @param {string} hamletId
+   */
+  handleHamletSelected(hamletId) {
+    this.selectedHamletId = hamletId;
+    this.selectedCityId = null;
+    this.updatePanel();
+    this.phaserHandle?.refresh(this.view, this.getSelection());
   }
 
   async refresh() {
     this.view = await this.mapApi.getWorldMapView();
     this.updateStats();
     this.updatePanel();
-    this.phaserHandle?.refresh(this.view, this.selectedCityId);
+    this.phaserHandle?.refresh(this.view, this.getSelection());
   }
 
   updateStats() {
     if (!this.view) return;
-    const statsEl = this.root.querySelector('#world-map-stats');
+    const statsEl = document.getElementById('world-map-stats');
     if (statsEl) {
       statsEl.textContent = renderWorldMapStats(this.view);
     }
@@ -79,13 +105,25 @@ export class WorldMapController {
     if (!this.view) return;
     const panel = this.root.querySelector('#world-map-panel');
     if (panel) {
-      panel.innerHTML = renderTradeMapPanelForCity(this.selectedCityId, this.view.partners);
+      panel.innerHTML = renderWorldMapPanel(this.view, this.getSelection());
     }
   }
 
   bindEvents() {
     this.unbindEvents();
     this.clickHandler = async (event) => {
+      const travelBtn = event.target.closest('.world-map-travel-btn');
+      if (travelBtn) {
+        event.preventDefault();
+        const hamletId = travelBtn.dataset.hamletId;
+        if (!hamletId) return;
+        const result = await this.mapApi.travelToHamlet(hamletId);
+        if (result.success) {
+          window.location.href = '/game';
+        }
+        return;
+      }
+
       const activateBtn = event.target.closest('.trade-map-open-route-btn');
       if (activateBtn) {
         event.preventDefault();

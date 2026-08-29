@@ -7,9 +7,10 @@ import { setPendingWorldBootstrap } from './worldMapBootstrapState.js';
  * @param {HTMLElement} parent
  * @param {{
  *   view: object,
- *   selectedCityId?: string,
+ *   selectedCityId?: string | null,
+ *   selectedHamletId?: string | null,
  *   onCitySelected?: (cityId: string) => void,
- *   onKingdomNavigate?: () => void,
+ *   onHamletSelected?: (hamletId: string) => void,
  * }} options
  */
 export function bootstrapWorldMap(parent, options) {
@@ -22,13 +23,12 @@ export function bootstrapWorldMap(parent, options) {
   return {
     game,
     getScene: () => game.scene.getScene(WORLD_HEX_SCENE_KEY),
-    refresh(view, selectedCityId) {
+    refresh(view, selection) {
       const scene = game.scene.getScene(WORLD_HEX_SCENE_KEY);
-      scene?.refresh?.(view, selectedCityId);
+      scene?.refresh?.(view, selection);
     },
     destroy() {
       game.destroy(true);
     },
   };
 }
-

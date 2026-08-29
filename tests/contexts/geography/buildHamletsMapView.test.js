@@ -7,6 +7,7 @@ import {
   ensureHamletCatalog,
   setActiveHamletId,
 } from '../../../src/core/persistence/hamlet/hamletSession.js';
+import { HAMLET_MAP_SITES } from '../../../src/contexts/geography/domain/catalogs/HamletMapCatalog.js';
 import { buildHamletsMapView } from '../../../src/contexts/geography/application/queries/buildHamletsMapView.js';
 
 describe('buildHamletsMapView', () => {
@@ -33,13 +34,14 @@ describe('buildHamletsMapView', () => {
     expect(locked?.canTravel).toBe(false);
   });
 
-  test('includes map coordinates for every proto hamlet', async () => {
+  test('includes hex coordinates for every proto hamlet', async () => {
     const view = await buildHamletsMapView();
 
     expect(view.hamlets).toHaveLength(10);
     for (const hamlet of view.hamlets) {
-      expect(hamlet.map.x).toBeGreaterThanOrEqual(0);
-      expect(hamlet.map.y).toBeLessThanOrEqual(100);
+      const site = HAMLET_MAP_SITES.find((item) => item.id === hamlet.id);
+      expect(hamlet.map.hex).toEqual({ q: site?.q, r: site?.r });
+      expect(hamlet.map.sprite).toBe('hamlet');
     }
   });
 

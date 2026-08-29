@@ -269,7 +269,6 @@ export function createScene(_gameStore, assetManager, deps) {
         if (document.getElementById('parameters-panel')?.classList.contains('visible')) return true;
         if (document.getElementById('tutorial-panel')?.classList.contains('visible')) return true;
         if (document.getElementById('objectives-panel')?.classList.contains('visible')) return true;
-        if (document.getElementById('hamlet-travel-menu')?.classList.contains('is-open')) return true;
         if (loaderManager.isShowing()) return true;
         return false;
     }

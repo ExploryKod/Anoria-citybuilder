@@ -1,20 +1,20 @@
 /**
- * Internal kingdom map — proto hamlet positions (percent 0–100).
- * Layout mirrors 3D neighbor deco topology around the playable grid center.
+ * Internal kingdom map — proto hamlet positions on an axial hex grid.
+ * Layout mirrors 3D neighbor deco topology around Val d'Era (eraanurbs).
  */
 
-/** @type {ReadonlyArray<{ id: string, name: string, x: number, y: number, labelAnchor?: string }>} */
+/** @type {ReadonlyArray<{ id: string, name: string, q: number, r: number, sprite: string, labelAnchor?: string }>} */
 export const HAMLET_MAP_SITES = Object.freeze([
-  { id: 'eraanurbs', name: 'Val d’Era', x: 50, y: 50, labelAnchor: 'top' },
-  { id: 'clairiere', name: 'Clairière', x: 32, y: 32, labelAnchor: 'left' },
-  { id: 'pont-saules', name: 'Pont-aux-Saules', x: 68, y: 32, labelAnchor: 'right' },
-  { id: 'bruyeres', name: 'Les Bruyères', x: 32, y: 68, labelAnchor: 'left' },
-  { id: 'rochehaute', name: 'Rochehaute', x: 68, y: 68, labelAnchor: 'right' },
-  { id: 'prevert', name: 'Prévert', x: 50, y: 28, labelAnchor: 'top' },
-  { id: 'sourceclaire', name: 'Sourceclaire', x: 50, y: 72, labelAnchor: 'bottom' },
-  { id: 'bois-joli', name: 'Bois-Joli', x: 72, y: 50, labelAnchor: 'right' },
-  { id: 'marais-blanc', name: 'Marais-Blanc', x: 28, y: 50, labelAnchor: 'left' },
-  { id: 'colline-rouge', name: 'Colline-Rouge', x: 24, y: 42, labelAnchor: 'left' },
+  { id: 'eraanurbs', name: 'Val d’Era', q: 0, r: 0, sprite: 'hamlet', labelAnchor: 'top' },
+  { id: 'prevert', name: 'Prévert', q: 0, r: -2, sprite: 'hamlet', labelAnchor: 'top' },
+  { id: 'sourceclaire', name: 'Sourceclaire', q: 0, r: 2, sprite: 'hamlet', labelAnchor: 'bottom' },
+  { id: 'clairiere', name: 'Clairière', q: -2, r: -1, sprite: 'hamlet', labelAnchor: 'left' },
+  { id: 'pont-saules', name: 'Pont-aux-Saules', q: 2, r: -1, sprite: 'hamlet', labelAnchor: 'right' },
+  { id: 'bruyeres', name: 'Les Bruyères', q: -2, r: 1, sprite: 'hamlet', labelAnchor: 'left' },
+  { id: 'rochehaute', name: 'Rochehaute', q: 2, r: 1, sprite: 'hamlet', labelAnchor: 'right' },
+  { id: 'bois-joli', name: 'Bois-Joli', q: 2, r: 0, sprite: 'hamlet', labelAnchor: 'right' },
+  { id: 'marais-blanc', name: 'Marais-Blanc', q: -2, r: 0, sprite: 'hamlet', labelAnchor: 'left' },
+  { id: 'colline-rouge', name: 'Colline-Rouge', q: -3, r: -1, sprite: 'hamlet', labelAnchor: 'left' },
 ]);
 
 /**
@@ -22,4 +22,14 @@ export const HAMLET_MAP_SITES = Object.freeze([
  */
 export function getHamletMapSite(hamletId) {
   return HAMLET_MAP_SITES.find((site) => site.id === hamletId) ?? null;
+}
+
+/**
+ * World-map hex for a proto-hamlet — same axial grid as the kingdom map, centred on Anoria.
+ * @param {string} hamletId
+ */
+export function getHamletWorldHex(hamletId) {
+  const site = getHamletMapSite(hamletId);
+  if (!site) return null;
+  return { q: site.q, r: site.r, sprite: site.sprite };
 }

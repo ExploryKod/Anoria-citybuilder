@@ -1,5 +1,4 @@
 import { TimeManager } from '../shared/time/TimeManager.js';
-import { buildHamletsMapView } from '../contexts/geography/application/queries/buildHamletsMapView.js';
 import { buildWorldMapView } from '../contexts/geography/application/queries/buildWorldMapView.js';
 import {
   canTravelToHamlet,
@@ -61,8 +60,6 @@ export function createMapSessionApi({
   }
 
   return Object.freeze({
-    getHamletsMapView: () => buildHamletsMapView(),
-
     async getWorldMapView() {
       const activationByPartnerId = await buildActivationByPartnerId();
       return buildWorldMapView({ commerceApi, activationByPartnerId });

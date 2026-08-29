@@ -19,7 +19,7 @@ import { getHamletMapSite } from '../../domain/catalogs/HamletMapCatalog.js';
  *     access: 'active' | 'unlocked' | 'locked',
  *     natureSeeded?: boolean,
  *     canTravel: boolean,
- *     map: { x: number, y: number, labelAnchor?: string },
+ *     map: { hex: { q: number, r: number }, sprite: string, labelAnchor?: string },
  *   }>,
  * }>}
  */
@@ -36,8 +36,8 @@ export async function buildHamletsMapView() {
       natureSeeded: hamlet.natureSeeded,
       canTravel: hamlet.access === HAMLET_ACCESS.unlocked,
       map: {
-        x: site?.x ?? 50,
-        y: site?.y ?? 50,
+        hex: { q: site?.q ?? 0, r: site?.r ?? 0 },
+        sprite: site?.sprite ?? 'hamlet',
         labelAnchor: site?.labelAnchor,
       },
     };

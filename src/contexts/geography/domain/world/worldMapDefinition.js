@@ -12,8 +12,17 @@ const WORLD_CENTER = Object.freeze({ q: 0, r: 0 });
 
 /** @typedef {'grassland' | 'coast' | 'forest' | 'hill' | 'mountain' | 'desert'} WorldTerrainKey */
 
+const AXIAL_NEIGHBOR_DELTAS = Object.freeze([
+  [1, 0],
+  [1, -1],
+  [0, -1],
+  [-1, 0],
+  [-1, 1],
+  [0, 1],
+]);
+
 /**
- * Solid land disc that covers every trade city with a small coast margin.
+ * Solid land disc that covers every trade city with a grass shoreline buffer.
  * Ocean is never tiled — Phaser background colour only (Kenney has no water hexes).
  */
 const WORLD_LAND_RADIUS = (() => {
@@ -24,6 +33,11 @@ const WORLD_LAND_RADIUS = (() => {
   return Math.ceil(maxCityDist) + 2;
 })();
 
+/** Authored sand/coast hexes — plain sand fills look wrong against open ocean. */
+const WORLD_TERRAIN_OVERRIDES = Object.freeze({
+  [hexKey(WORLD_CITY_HEX_SITES.maris)]: 'coast',
+});
+
 /**
  * @param {number} q
  * @param {number} r
@@ -31,14 +45,12 @@ const WORLD_LAND_RADIUS = (() => {
  */
 function pickTerrainForHex(q, r) {
   const dist = hexDistance(WORLD_CENTER, { q, r });
-  const edgeGap = WORLD_LAND_RADIUS - dist;
 
-  if (edgeGap <= 1) return 'coast';
   if (dist < 2.2) return 'grassland';
   if (dist < 3.8) return 'forest';
   if (dist < 5.5) return 'grassland';
   if (dist < 7) return 'hill';
-  return 'coast';
+  return 'grassland';
 }
 
 /**
@@ -47,6 +59,20 @@ function pickTerrainForHex(q, r) {
  */
 function kenneyTerrainOrGrassland(terrain) {
   return resolveKenneyGameplaySprite(terrain) ? terrain : 'grassland';
+}
+
+/**
+ * @param {number} q
+ * @param {number} r
+ * @param {ReadonlySet<string>} landKeys
+ */
+function isShorelineHex(q, r, landKeys) {
+  for (const [dq, dr] of AXIAL_NEIGHBOR_DELTAS) {
+    if (!landKeys.has(hexKey({ q: q + dq, r: r + dr }))) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -79,9 +105,23 @@ function buildWorldLandTiles() {
     byKey.set(key, { q: site.q, r: site.r, terrain });
   }
 
+  const landKeys = new Set(byKey.keys());
+
+  for (const [key, tile] of byKey) {
+    const override = WORLD_TERRAIN_OVERRIDES[key];
+    if (override) {
+      byKey.set(key, { ...tile, terrain: kenneyTerrainOrGrassland(override) });
+      continue;
+    }
+
+    if (isShorelineHex(tile.q, tile.r, landKeys) && tile.terrain === 'coast') {
+      byKey.set(key, { ...tile, terrain: 'grassland' });
+    }
+  }
+
   return {
     tiles: Object.freeze([...byKey.values()]),
-    keys: Object.freeze(new Set(byKey.keys())),
+    keys: Object.freeze(landKeys),
   };
 }
 
@@ -98,4 +138,12 @@ export const WORLD_MAP_LAND_HEX_KEYS = worldLand.keys;
  */
 export function isWorldMapLandHex(hex) {
   return WORLD_MAP_LAND_HEX_KEYS.has(hexKey(hex));
+}
+
+/**
+ * @param {{ q: number, r: number }} hex
+ * @returns {boolean}
+ */
+export function isWorldMapShorelineHex(hex) {
+  return isShorelineHex(hex.q, hex.r, WORLD_MAP_LAND_HEX_KEYS);
 }

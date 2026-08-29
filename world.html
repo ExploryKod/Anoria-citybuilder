@@ -8,15 +8,31 @@
     <title>Eraanurbs — Carte du monde</title>
     <link rel="stylesheet" href="/src/presentation/pages/world/world.css">
 </head>
-<body>
-    <main class="site-page map-page map-page--dark">
-        <header class="site-header">
-            <a href="/" class="site-back">← Menu principal</a>
+<body class="map-page">
+    <header class="site-header map-page-header" id="world-map-header">
+        <a
+            href="/"
+            class="map-page-exit-btn"
+            title="Retour à l'accueil"
+            aria-label="Retour à l'accueil"
+        >
+            <span class="map-page-exit-btn__icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-door-open">
+                    <path d="M11 20H2"/>
+                    <path d="M11 4.562v16.157a1 1 0 0 0 1.242.97L19 20V5.562a2 2 0 0 0-1.515-1.94l-4-1A2 2 0 0 0 11 4.561z"/>
+                    <path d="M11 4H8a2 2 0 0 0-2 2v14"/>
+                    <path d="M14 12h.01"/>
+                    <path d="M22 20h-3"/>
+                </svg>
+            </span>
+        </a>
+        <div class="map-page-header__lead">
             <h1>Carte du monde</h1>
-        </header>
+            <p id="world-map-stats" class="map-page-header__stats" aria-live="polite"></p>
+        </div>
+    </header>
 
-        <div id="map-root" class="map-page-layout" aria-label="Carte commerciale du monde"></div>
-    </main>
+    <main id="map-root" class="site-page map-page-layout" aria-label="Carte hexagonale du monde"></main>
 
     <script type="module" src="/src/presentation/pages/world/main.js"></script>
 </body>
