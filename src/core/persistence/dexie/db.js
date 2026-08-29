@@ -5,6 +5,7 @@
  * Pas de CRUD métier ici.
  */
 import Dexie from 'dexie';
+import { reconcileHamletUnlockFlags } from '../hamlet/hamletUnlockMigration.js';
 
 const db = new Dexie('anoriaDb');
 
@@ -46,6 +47,9 @@ db.version(4).stores({
     }
   });
 });
+
+// v5: unlock is explicit (cheat / future rules) — not inferred from natureSeeded visits.
+db.version(5).stores({}).upgrade(reconcileHamletUnlockFlags);
 
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;

@@ -36,7 +36,7 @@ Document de conception et feuille de route pour **plusieurs hameaux jouables** a
 
 ```text
 Session
-  └── activeHamletId  (RAM + localStorage)
+  └── activeHamletId  (RAM cache + Dexie `game` row `hamlet-session`)
 
 Dexie
   ├── hamlets       { id, name, natureSeeded? }
@@ -134,7 +134,7 @@ Exemple chômage :
 | # | Tâche | Statut |
 |---|--------|--------|
 | 1.1 | Dexie v3 : `hamlets` + `hamletId` sur `houses` | ✅ |
-| 1.2 | Session `activeHamletId` | ✅ (localStorage, pas de table `countries` v1) |
+| 1.2 | Session `activeHamletId` | ✅ (Dexie `game` / `hamlet-session`, pas de localStorage) |
 | 1.3 | Repos : filtre hameau actif à l’écriture / lecture | ✅ |
 | 1.4 | Catalogue proto hameaux (seed noms) | ✅ (10 sites de test) |
 

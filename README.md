@@ -22,15 +22,9 @@ Se rendre ensuite sur localhost:5558
 
 Il y a aussi une version en ligne : voir sur ce repo en haut à droite.
 
-### Codes triche (développement)
+### Codes triche
 
-Les codes triche sont **désactivés par défaut en production**. Pour les activer en local, ajoutez dans un fichier `.env` à la racine du projet :
-
-```
-VITE_CHEAT_CODES_ENABLED=true
-```
-
-Relancez ensuite `npm run dev`. Une fois activés, ouvrez le champ de saisie avec **`Ctrl + Alt + K`**, tapez un code puis validez avec Entrée ou le bouton OK.
+Ouvrez le champ de saisie avec **`Ctrl + Alt + K`**, tapez un code puis validez avec Entrée ou le bouton OK.
 
 Codes disponibles :
 - `Treasury` — ajoute 5000 € au trésor

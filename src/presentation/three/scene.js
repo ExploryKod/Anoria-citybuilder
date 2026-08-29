@@ -28,6 +28,9 @@ import { LightingManager } from './managers/LightingManager.js';
 import { BackdropManager } from './managers/BackdropManager.js';
 import { ResourceManager } from './managers/ResourceManager.js';
 import { PerformanceManager } from './managers/PerformanceManager.js';
+import { DecorativeVillageManager } from './managers/DecorativeVillageManager.js';
+import { ensureNeighborHamletDecoAssets } from '../dom/boot/neighborHamletDecoAssets.js';
+import { listUnlockedNeighborHamletIds } from '../../core/persistence/hamlet/hamletAccess.js';
 import gameUIDefault from '../dom/shell/GameUI.js';
 import { syncPopRailHud } from '../../composition/syncSessionHud.js';
 import { CitizenManager } from './managers/CitizenManager.js';
@@ -336,6 +339,15 @@ export function createScene(_gameStore, assetManager, deps) {
 
     // Variables de gameplay
     let delay = 0;
+    const decorativeVillageManager = new DecorativeVillageManager(scene, assetManager);
+
+    async function syncNeighborHamletDeco(city) {
+        const citySize = city?.size;
+        if (typeof citySize !== 'number' || citySize <= 0) return;
+        await ensureNeighborHamletDecoAssets(assetManager);
+        const unlockedHamletIds = await listUnlockedNeighborHamletIds();
+        decorativeVillageManager.syncUnlockedNeighborHamlets(citySize, unlockedHamletIds);
+    }
 
     async function initialize(city, options = {}) {
         const seedNature = options.seedNature === true;
@@ -547,9 +559,7 @@ export function createScene(_gameStore, assetManager, deps) {
             );
         }
         
-        // Decorative outskirts hamlets disabled — real hamlets use Dexie + travel carousel.
-        // Previously called createDecorativeVillage() here, which spammed AssetManager
-        // (Market-Stall, Well-001, StonePath-001 load lazily after houses/nature).
+        await syncNeighborHamletDeco(city);
         
         // Initialize PerformanceManager after zoneGroups are set up
         performanceManager = new PerformanceManager(scene, camera, zoneGroups, buildings);
@@ -1915,7 +1925,7 @@ export function createScene(_gameStore, assetManager, deps) {
         renderer.setAnimationLoop(null);
     }
 
-    // Note: createDecorativeVillage() moved to DecorativeVillageManager
+    // Neighbor hamlet outskirts → DecorativeVillageManager.syncUnlockedNeighborHamlets()
     
     // Note: addBackdrop() moved to BackdropManager
 
@@ -2407,6 +2417,7 @@ function onTouchEnd(event) {
         onObjectSelected,
         initialize,
         update,
+        syncNeighborHamletDeco,
         start,
         stop,
         onMouseDown,
