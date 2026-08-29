@@ -1,7 +1,11 @@
 import Phaser from 'phaser';
 import { resolveKenneyPhaserFrame } from '../../../contexts/geography/domain/catalogs/HexAssetCatalog.js';
 import { TRADE_MAP_CITY_CATEGORIES } from '../../../contexts/commerce/domain/catalogs/TradeMapCityCatalog.js';
-import { WORLD_MAP_HEX_SIZE, WORLD_MAP_LAND_TILES } from '../../../contexts/geography/domain/world/worldMapDefinition.js';
+import {
+  WORLD_MAP_HEX_SIZE,
+  WORLD_MAP_LAND_TILES,
+  isWorldMapLandHex,
+} from '../../../contexts/geography/domain/world/worldMapDefinition.js';
 import { axialToPixel, hexCornerPoints, pixelToAxial } from '../../../shared/geography/hexCoordinates.js';
 import { loadKenneyHexAtlases } from '../shared/loadKenneyHexAtlases.js';
 import { consumePendingWorldBootstrap } from './worldMapBootstrapState.js';
@@ -253,6 +257,8 @@ export class WorldHexScene extends Phaser.Scene {
     this.hoverGraphics.clear();
 
     const hex = pixelToAxial(worldX, worldY, WORLD_MAP_HEX_SIZE);
+    if (!isWorldMapLandHex(hex)) return;
+
     const center = axialToPixel(hex, WORLD_MAP_HEX_SIZE);
     const corners = hexCornerPoints(WORLD_MAP_HEX_SIZE * 0.98);
 

@@ -1,51 +1,25 @@
-# Kenney Hexagon Pack — Phaser
+## Classify terrain tiles
 
-## Credit
+See `src/contexts/geography/domain/catalogs/kenneyTerrainTaxonomy.js` for the folder model.
 
-**[Hexagon Pack](https://kenney.nl/assets/hexagon-pack)** by [Kenney](https://www.kenney.nl) (Kenney Vleugels) — [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).  
-Also credited on the in-game [Credits](/credits) page (`/credits`).
+**Level 1:** `fill` (biome reaches hex edges) vs `framed` (bordered by another material → `framed/by_{material}` or `framed/on_empty`).
 
-## Spritesheets
+**Level 2 (under `fill/`):** objects and inner patches — `forest/`, `with-rock/`, `colline/`, `desert/`, `urban/`, `patch/{material}/`, `by_rocks/`, `by_cubes/`, …
 
-| Atlas | Phaser texture key | Files |
-|-------|-------------------|--------|
-| Terrain | `kenney-hex-terrain` | `hexagonTerrain_sheet.png` + `.xml` |
-| Buildings | `kenney-hex-buildings` | `hexagonBuildings_sheet.png` + `.xml` |
-| Objects | `kenney-hex-objects` | `hexagonObjects_sheet.png` + `.xml` |
-| All (dev only) | `kenney-hex-all` | `hexagonAll_sheet.png` + `.xml` |
+There is no `islet/` folder — a patch surrounded by another colour is **framed**.
 
-XML `imagePath` matches the PNG filename in this repo (required for some tools; Phaser uses the URL passed to `atlasXML`).
+**Biomes:** `Grass`, `Dirt`, `DarkDirt` (atlas `mars_XX`), `Sand`, `Stone` — each under `PNG/Tiles/Terrain/{Biome}/`.
 
-## Phaser preload
-
-```js
-import { loadKenneyHexAtlases } from '@/presentation/phaser/shared/loadKenneyHexAtlases.js';
-import { resolveKenneyPhaserFrame } from '@/contexts/geography/domain/catalogs/HexAssetCatalog.js';
-
-function preload() {
-  loadKenneyHexAtlases(this.load);
-}
-
-function create() {
-  const { textureKey, frame } = resolveKenneyPhaserFrame('grassland');
-  this.add.image(400, 300, textureKey, frame);
-}
+```text
+PNG/Tiles/Terrain/Grass/fill/plain_edges/grass_05.png
+PNG/Tiles/Terrain/Dirt/framed/by_stone/thin_stone_edges_on_dirt.png
+PNG/Tiles/Terrain/DarkDirt/fill/plain/mars_02.png
+PNG/Tiles/Terrain/Sand/framed/by_darkdirt/dirt_waves_edges_on_sand.png
+PNG/Tiles/Terrain/Stone/framed/by_dirt/darkdirt_edges_waves_on_stone.png
 ```
-
-## Gameplay frame keys
-
-See `src/contexts/geography/domain/catalogs/HexAssetCatalog.js` → `KENNEY_HEX_GAMEPLAY_SPRITES`.
-
-**Note:** this terrain set has no dedicated ocean hex — use a blue background and land tiles only, or tint `stone_01` for water in a later pass.
-
-## Verify assets
 
 ```bash
-pnpm test -- tests/contexts/geography/kenneyHexAtlas.test.js
-node scripts/verifyKenneyHexAtlases.js
+pnpm classify:kenney-hex
 ```
 
-## Tile metrics (pointy-top)
-
-- Frame size: **120 × 140** px  
-- Default hex radius for layout: **70** (`KENNEY_HEX_DEFAULT_RADIUS`)
+Refreshes `kenneyTerrainCatalog.json` from disk. All five biomes are scan-only (catalogs in `*TileCatalog.js`).
