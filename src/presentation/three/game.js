@@ -21,6 +21,7 @@ import {
   markHamletNatureSeeded,
   setActiveHamletId,
 } from '../../core/persistence/hamlet/hamletSession.js';
+import { HAMLET_ACCESS_CHANGED_EVENT, canTravelToHamlet } from '../../core/persistence/hamlet/hamletAccess.js';
 import { runGameTick } from '../../composition/runGameTick.js';
 import { bindSessionRuntime } from '../../composition/sessionRuntime.js';
 import { syncSessionHud } from '../../composition/syncSessionHud.js';
@@ -302,6 +303,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
     if (!hamletId || hamletId === getActiveHamletId() || isTraveling) {
       return false;
     }
+    if (!(await canTravelToHamlet(hamletId))) {
+      return false;
+    }
     isTraveling = true;
     const wasPaused = Boolean(isPause);
     try {
@@ -425,6 +429,12 @@ export function createGame(gameStore, assetManager, citySize = null) {
       { timeout: 8000 }
     );
   });
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener(HAMLET_ACCESS_CHANGED_EVENT, () => {
+      void scene.syncNeighborHamletDeco?.(city);
+    });
+  }
 
   async function refreshEmploymentPresentationForCity() {
     await scene.refreshEmploymentPresentation(city);

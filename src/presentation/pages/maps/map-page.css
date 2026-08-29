@@ -1,0 +1,183 @@
+body.map-page {
+  --game-chrome-bg: rgba(247, 246, 244, 0.95);
+  --game-chrome-shadow: 0 4px 20px rgba(29, 34, 40, 0.1);
+  --game-chrome-border: rgba(29, 34, 40, 0.08);
+
+  --trade-map-bg: var(--site-surface);
+  --trade-map-surface: var(--site-surface-header);
+  --trade-map-border: var(--site-border-light);
+  --trade-map-text: var(--site-text);
+  --trade-map-muted: var(--site-text-muted);
+  --trade-map-cta: var(--cta);
+  --trade-map-cta-soft: rgba(251, 129, 34, 0.18);
+  --trade-map-danger: #9c2939;
+  --trade-map-success: #28a745;
+
+  display: flex;
+  flex-direction: column;
+  max-width: none;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding:
+    16px
+    max(var(--site-page-gutter), env(safe-area-inset-right, 0px))
+    max(16px, env(safe-area-inset-bottom, 0px))
+    max(var(--site-page-gutter), env(safe-area-inset-left, 0px));
+  background: var(--site-bg);
+  color: var(--site-text);
+}
+
+body.map-page > .site-page {
+  flex: 1;
+  min-height: 0;
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.map-page .site-header {
+  border-bottom: none;
+  margin-bottom: 8px;
+  padding-bottom: 0;
+}
+
+.map-page-exit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: var(--hud-chip-height, 40px);
+  min-width: var(--hud-chip-height, 40px);
+  height: var(--hud-chip-height, 40px);
+  min-height: var(--hud-chip-height, 40px);
+  padding: 0;
+  border: none;
+  border-radius: var(--border-radius-small);
+  background: var(--game-chrome-bg);
+  box-shadow: var(--game-chrome-shadow);
+  color: var(--primary);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.map-page-exit-btn__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-page-exit-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+}
+
+.map-page-exit-btn:hover {
+  color: var(--cta);
+  background: var(--cta-tint);
+}
+
+.map-page-exit-btn:focus-visible {
+  outline: 3px solid var(--cta);
+  outline-offset: 2px;
+}
+
+.map-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  flex-shrink: 0;
+}
+
+.map-page-header__lead {
+  flex: 1;
+  min-width: 0;
+}
+
+.map-page-header__lead h1 {
+  margin: 0;
+  color: var(--site-text);
+}
+
+.map-page-header__stats {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--site-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.map-page-layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+  border: none;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  background: var(--site-surface);
+}
+
+.map-page-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+  min-height: 0;
+  flex: 1;
+}
+
+.map-page-canvas {
+  position: relative;
+  min-height: 320px;
+}
+
+.map-page-panel {
+  position: static;
+  max-height: none;
+  overflow: auto;
+}
+
+/* Side panel — light Anoria palette (world page, not in-game overlay) */
+.map-page .trade-map-panel {
+  background: var(--site-surface-header);
+  border-top: none;
+  padding: 16px 20px;
+}
+
+.map-page .trade-map-panel-category {
+  background: var(--cta-tint);
+  border-color: var(--site-border-light);
+}
+
+.map-page .trade-map-panel-route.potential {
+  background: var(--site-btn-bg);
+}
+
+.map-page .trade-map-trade-row {
+  background: #fff;
+  border-color: var(--site-border-light);
+}
+
+.map-page .trade-map-quota-square {
+  background: var(--site-btn-bg-disabled);
+}
+
+.map-page .trade-map-quota-square--partial {
+  background: linear-gradient(90deg, var(--cta) 50%, var(--site-btn-bg-disabled) 50%);
+}
+
+@media (max-width: 860px) {
+  .map-page-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(280px, 50vh) auto;
+  }
+
+  .map-page-panel {
+    max-height: 45vh;
+  }
+}

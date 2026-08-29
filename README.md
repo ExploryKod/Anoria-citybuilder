@@ -22,6 +22,16 @@ Se rendre ensuite sur localhost:5558
 
 Il y a aussi une version en ligne : voir sur ce repo en haut à droite.
 
+### Codes triche
+
+Ouvrez le champ de saisie avec **`Ctrl + Alt + K`**, tapez un code puis validez avec Entrée ou le bouton OK.
+
+Codes disponibles :
+- `Treasury` — ajoute 5000 € au trésor
+- `HamletsAll` — débloque tous les hameaux accessibles
+
+Les activations sont enregistrées dans IndexedDB (table `cheatCodes`).
+
 ### Le Projet 
 
 Je m'initie avec ce projet au en web 3D via Three JS. 

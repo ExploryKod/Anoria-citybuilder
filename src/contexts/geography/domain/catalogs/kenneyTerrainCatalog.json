@@ -1,0 +1,2394 @@
+{
+  "generatedAt": "2026-08-29T16:43:55.616Z",
+  "generator": "scripts/classifyKenneyHexTiles.js",
+  "layouts": {
+    "Grass": "PNG/Tiles/Terrain/Grass/{category}/{file}.png",
+    "Dirt": "PNG/Tiles/Terrain/Dirt/{category}/{file}.png",
+    "DarkDirt": "PNG/Tiles/Terrain/DarkDirt/{category}/{file}.png",
+    "Sand": "PNG/Tiles/Terrain/Sand/{category}/{file}.png",
+    "Stone": "PNG/Tiles/Terrain/Stone/{category}/{file}.png"
+  },
+  "gameplayFillDefaults": {
+    "grassland": "grass_05.png",
+    "forest": "grass_12.png",
+    "hill": "dirt_06.png",
+    "coast": "sand_02.png",
+    "desert": "mars_06.png",
+    "mountain": "stone_02.png"
+  },
+  "grass": {
+    "gameplay": {
+      "grassland": "grass_05.png",
+      "grasslandAlt": "grass_19.png",
+      "forest": "grass_12.png",
+      "forestFew": "grass_10.png",
+      "forestWithRock": "grass_14.png",
+      "hillAccent": "grass_17.png"
+    },
+    "byCategory": {
+      "framed/by_dirt": [
+        "dirt_02.png",
+        "grass_06.png",
+        "grass_08.png",
+        "mars_03.png"
+      ],
+      "fill/with-rock": [
+        "grass_01.png"
+      ],
+      "fill/patch/dirt": [
+        "grass_02.png",
+        "grass_04.png"
+      ],
+      "fill/patch/sand": [
+        "grass_03.png"
+      ],
+      "fill/plain_edges": [
+        "grass_05.png"
+      ],
+      "framed/by_sand": [
+        "grass_07.png"
+      ],
+      "framed/by_stone": [
+        "grass_09.png",
+        "stone_03.png"
+      ],
+      "fill/forest/few": [
+        "grass_10.png",
+        "grass_11.png"
+      ],
+      "fill/forest/numerous": [
+        "grass_12.png",
+        "grass_13.png"
+      ],
+      "fill/forest/with-rock": [
+        "grass_14.png",
+        "grass_15.png",
+        "grass_16.png"
+      ],
+      "fill/colline": [
+        "grass_17.png"
+      ],
+      "framed/by_empty": [
+        "grass_18.png"
+      ],
+      "fill/crenellated_edges": [
+        "grass_19.png"
+      ]
+    },
+    "tiles": [
+      {
+        "frame": "dirt_02.png",
+        "stem": "dirt_02",
+        "biome": "Grass",
+        "category": "framed/by_dirt",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Grass/framed/by_dirt/dirt_edges_on_grass.png"
+      },
+      {
+        "frame": "grass_01.png",
+        "stem": "grass_01",
+        "biome": "Grass",
+        "category": "fill/with-rock",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Grass/fill/with-rock/grass_01.png"
+      },
+      {
+        "frame": "grass_02.png",
+        "stem": "grass_02",
+        "biome": "Grass",
+        "category": "fill/patch/dirt",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Grass/fill/patch/dirt/grass_02.png"
+      },
+      {
+        "frame": "grass_03.png",
+        "stem": "grass_03",
+        "biome": "Grass",
+        "category": "fill/patch/sand",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Grass/fill/patch/sand/grass_03.png"
+      },
+      {
+        "frame": "grass_04.png",
+        "stem": "grass_04",
+        "biome": "Grass",
+        "category": "fill/patch/dirt",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Grass/fill/patch/dirt/grass_04.png"
+      },
+      {
+        "frame": "grass_05.png",
+        "stem": "grass_05",
+        "biome": "Grass",
+        "category": "fill/plain_edges",
+        "kind": "fill",
+        "role": "fill",
+        "path": "PNG/Tiles/Terrain/Grass/fill/plain_edges/grass_05.png"
+      },
+      {
+        "frame": "grass_06.png",
+        "stem": "grass_06",
+        "biome": "Grass",
+        "category": "framed/by_dirt",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Grass/framed/by_dirt/thin_dirt_on_grass.png"
+      },
+      {
+        "frame": "grass_07.png",
+        "stem": "grass_07",
+        "biome": "Grass",
+        "category": "framed/by_sand",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Grass/framed/by_sand/grass_07.png"
+      },
+      {
+        "frame": "grass_08.png",
+        "stem": "grass_08",
+        "biome": "Grass",
+        "category": "framed/by_dirt",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Grass/framed/by_dirt/thin_dirt_on_grass_v2.png"
+      },
+      {
+        "frame": "grass_09.png",
+        "stem": "grass_09",
+        "biome": "Grass",
+        "category": "framed/by_stone",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Grass/framed/by_stone/thin_stone_edges_on_grass.png"
+      },
+      {
+        "frame": "grass_10.png",
+        "stem": "grass_10",
+        "biome": "Grass",
+        "category": "fill/forest/few",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Grass/fill/forest/few/grass_10.png"
+      },
+      {
+        "frame": "grass_11.png",
+        "stem": "grass_11",
+        "biome": "Grass",
+        "category": "fill/forest/few",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Grass/fill/forest/few/grass_11.png"
+      },
+      {
+        "frame": "grass_12.png",
+        "stem": "grass_12",
+        "biome": "Grass",
+        "category": "fill/forest/numerous",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Grass/fill/forest/numerous/grass_12.png"
+      },
+      {
+        "frame": "grass_13.png",
+        "stem": "grass_13",
+        "biome": "Grass",
+        "category": "fill/forest/numerous",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Grass/fill/forest/numerous/grass_13.png"
+      },
+      {
+        "frame": "grass_14.png",
+        "stem": "grass_14",
+        "biome": "Grass",
+        "category": "fill/forest/with-rock",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Grass/fill/forest/with-rock/grass_14.png"
+      },
+      {
+        "frame": "grass_15.png",
+        "stem": "grass_15",
+        "biome": "Grass",
+        "category": "fill/forest/with-rock",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Grass/fill/forest/with-rock/grass_15.png"
+      },
+      {
+        "frame": "grass_16.png",
+        "stem": "grass_16",
+        "biome": "Grass",
+        "category": "fill/forest/with-rock",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Grass/fill/forest/with-rock/grass_16.png"
+      },
+      {
+        "frame": "grass_17.png",
+        "stem": "grass_17",
+        "biome": "Grass",
+        "category": "fill/colline",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Grass/fill/colline/grass_17.png"
+      },
+      {
+        "frame": "grass_18.png",
+        "stem": "grass_18",
+        "biome": "Grass",
+        "category": "framed/by_empty",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Grass/framed/by_empty/grass_18.png"
+      },
+      {
+        "frame": "grass_19.png",
+        "stem": "grass_19",
+        "biome": "Grass",
+        "category": "fill/crenellated_edges",
+        "kind": "fill",
+        "role": "fill",
+        "path": "PNG/Tiles/Terrain/Grass/fill/crenellated_edges/grass_19.png"
+      },
+      {
+        "frame": "mars_03.png",
+        "stem": "mars_03",
+        "biome": "Grass",
+        "category": "framed/by_dirt",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Grass/framed/by_dirt/darkdirt_edges_on_grass.png"
+      },
+      {
+        "frame": "stone_03.png",
+        "stem": "stone_03",
+        "biome": "Grass",
+        "category": "framed/by_stone",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Grass/framed/by_stone/stone_edges_on_grass.png"
+      }
+    ]
+  },
+  "dirt": {
+    "gameplay": {
+      "hill": "dirt_06.png",
+      "hillAlt": "dirt_19.png",
+      "dirtForest": "dirt_13.png",
+      "dirtForestFew": "dirt_11.png",
+      "rockyHill": "dirt_17.png"
+    },
+    "byCategory": {
+      "framed/by_empty": [
+        "thin_darkdirt_edge_on_empty.png"
+      ],
+      "framed/by_darkdirt": [
+        "light_dirt_edges_on_darkdirt.png",
+        "thin_darkdirt_edges_on_dirt.png"
+      ],
+      "fill/plain_edges": [
+        "plain_dirt_fill_06.png"
+      ],
+      "framed/by_grass": [
+        "thin_grass_edges_on_dirt.png"
+      ],
+      "framed/by_sand": [
+        "edged_dirt_scallop_08.png",
+        "sand_waves_edges_on_darkdirt.png"
+      ],
+      "framed/by_stone": [
+        "stone_edges_on_darkdirt.png",
+        "stone_edges_on_lightdirt.png",
+        "thin_stone_edges_on_dirt.png"
+      ],
+      "fill/forest/few": [
+        "few_pines_on_dirt_12.png",
+        "sparse_pines_on_dirt_11.png"
+      ],
+      "fill/forest/numerous": [
+        "dense_pines_on_dirt_13.png",
+        "pine_ring_on_dirt_14.png"
+      ],
+      "fill/with-rock": [
+        "rock_cluster_on_dirt_16.png",
+        "small_rocks_on_dirt_15.png"
+      ],
+      "fill/colline": [
+        "rocky_hill_with_pines_17.png",
+        "rocky_hill_with_trees_18.png"
+      ],
+      "fill/crenellated_edges": [
+        "crenellated_dirt_fill_19.png"
+      ]
+    },
+    "tiles": [
+      {
+        "id": "thin_darkdirt_edge_on_empty",
+        "frame": "dirt_01.png",
+        "file": "thin_darkdirt_edge_on_empty.png",
+        "stem": "dirt_01",
+        "biome": "Dirt",
+        "category": "framed/by_empty",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Dirt/framed/by_empty/thin_darkdirt_edge_on_empty.png"
+      },
+      {
+        "id": "light_dirt_edges_on_darkdirt",
+        "frame": "dirt_04.png",
+        "file": "light_dirt_edges_on_darkdirt.png",
+        "stem": "dirt_04",
+        "biome": "Dirt",
+        "category": "framed/by_darkdirt",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Dirt/framed/by_darkdirt/light_dirt_edges_on_darkdirt.png"
+      },
+      {
+        "id": "plain_dirt_fill_06",
+        "frame": "dirt_06.png",
+        "file": "plain_dirt_fill_06.png",
+        "stem": "dirt_06",
+        "biome": "Dirt",
+        "category": "fill/plain_edges",
+        "kind": "fill",
+        "role": "fill",
+        "path": "PNG/Tiles/Terrain/Dirt/fill/plain_edges/plain_dirt_fill_06.png"
+      },
+      {
+        "id": "thin_grass_edges_on_dirt",
+        "frame": "dirt_07.png",
+        "file": "thin_grass_edges_on_dirt.png",
+        "stem": "dirt_07",
+        "biome": "Dirt",
+        "category": "framed/by_grass",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Dirt/framed/by_grass/thin_grass_edges_on_dirt.png"
+      },
+      {
+        "id": "edged_dirt_scallop_08",
+        "frame": "dirt_08.png",
+        "file": "edged_dirt_scallop_08.png",
+        "stem": "dirt_08",
+        "biome": "Dirt",
+        "category": "framed/by_sand",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Dirt/framed/by_sand/edged_dirt_scallop_08.png"
+      },
+      {
+        "id": "thin_darkdirt_edges_on_dirt",
+        "frame": "dirt_09.png",
+        "file": "thin_darkdirt_edges_on_dirt.png",
+        "stem": "dirt_09",
+        "biome": "Dirt",
+        "category": "framed/by_darkdirt",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Dirt/framed/by_darkdirt/thin_darkdirt_edges_on_dirt.png"
+      },
+      {
+        "id": "thin_stone_edges_on_dirt",
+        "frame": "dirt_10.png",
+        "file": "thin_stone_edges_on_dirt.png",
+        "stem": "dirt_10",
+        "biome": "Dirt",
+        "category": "framed/by_stone",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Dirt/framed/by_stone/thin_stone_edges_on_dirt.png"
+      },
+      {
+        "id": "sparse_pines_on_dirt_11",
+        "frame": "dirt_11.png",
+        "file": "sparse_pines_on_dirt_11.png",
+        "stem": "dirt_11",
+        "biome": "Dirt",
+        "category": "fill/forest/few",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Dirt/fill/forest/few/sparse_pines_on_dirt_11.png"
+      },
+      {
+        "id": "few_pines_on_dirt_12",
+        "frame": "dirt_12.png",
+        "file": "few_pines_on_dirt_12.png",
+        "stem": "dirt_12",
+        "biome": "Dirt",
+        "category": "fill/forest/few",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Dirt/fill/forest/few/few_pines_on_dirt_12.png"
+      },
+      {
+        "id": "dense_pines_on_dirt_13",
+        "frame": "dirt_13.png",
+        "file": "dense_pines_on_dirt_13.png",
+        "stem": "dirt_13",
+        "biome": "Dirt",
+        "category": "fill/forest/numerous",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Dirt/fill/forest/numerous/dense_pines_on_dirt_13.png"
+      },
+      {
+        "id": "pine_ring_on_dirt_14",
+        "frame": "dirt_14.png",
+        "file": "pine_ring_on_dirt_14.png",
+        "stem": "dirt_14",
+        "biome": "Dirt",
+        "category": "fill/forest/numerous",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Dirt/fill/forest/numerous/pine_ring_on_dirt_14.png"
+      },
+      {
+        "id": "small_rocks_on_dirt_15",
+        "frame": "dirt_15.png",
+        "file": "small_rocks_on_dirt_15.png",
+        "stem": "dirt_15",
+        "biome": "Dirt",
+        "category": "fill/with-rock",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Dirt/fill/with-rock/small_rocks_on_dirt_15.png"
+      },
+      {
+        "id": "rock_cluster_on_dirt_16",
+        "frame": "dirt_16.png",
+        "file": "rock_cluster_on_dirt_16.png",
+        "stem": "dirt_16",
+        "biome": "Dirt",
+        "category": "fill/with-rock",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Dirt/fill/with-rock/rock_cluster_on_dirt_16.png"
+      },
+      {
+        "id": "rocky_hill_with_pines_17",
+        "frame": "dirt_17.png",
+        "file": "rocky_hill_with_pines_17.png",
+        "stem": "dirt_17",
+        "biome": "Dirt",
+        "category": "fill/colline",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Dirt/fill/colline/rocky_hill_with_pines_17.png"
+      },
+      {
+        "id": "rocky_hill_with_trees_18",
+        "frame": "dirt_18.png",
+        "file": "rocky_hill_with_trees_18.png",
+        "stem": "dirt_18",
+        "biome": "Dirt",
+        "category": "fill/colline",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Dirt/fill/colline/rocky_hill_with_trees_18.png"
+      },
+      {
+        "id": "crenellated_dirt_fill_19",
+        "frame": "dirt_19.png",
+        "file": "crenellated_dirt_fill_19.png",
+        "stem": "dirt_19",
+        "biome": "Dirt",
+        "category": "fill/crenellated_edges",
+        "kind": "fill",
+        "role": "fill",
+        "path": "PNG/Tiles/Terrain/Dirt/fill/crenellated_edges/crenellated_dirt_fill_19.png"
+      },
+      {
+        "id": "sand_waves_edges_on_darkdirt",
+        "frame": "sand_05.png",
+        "file": "sand_waves_edges_on_darkdirt.png",
+        "stem": "sand_05",
+        "biome": "Dirt",
+        "category": "framed/by_sand",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Dirt/framed/by_sand/sand_waves_edges_on_darkdirt.png"
+      },
+      {
+        "id": "stone_edges_on_darkdirt",
+        "frame": "stone_04.png",
+        "file": "stone_edges_on_darkdirt.png",
+        "stem": "stone_04",
+        "biome": "Dirt",
+        "category": "framed/by_stone",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Dirt/framed/by_stone/stone_edges_on_darkdirt.png"
+      },
+      {
+        "id": "stone_edges_on_lightdirt",
+        "frame": "stone_06.png",
+        "file": "stone_edges_on_lightdirt.png",
+        "stem": "stone_06",
+        "biome": "Dirt",
+        "category": "framed/by_stone",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Dirt/framed/by_stone/stone_edges_on_lightdirt.png"
+      }
+    ]
+  },
+  "darkDirt": {
+    "gameplay": {
+      "desert": "mars_06.png",
+      "desertAlt": "mars_07.png",
+      "darkDirtPlain": "mars_02.png"
+    },
+    "byCategory": {
+      "framed/on_empty": [
+        "mars_01.png"
+      ],
+      "fill/plain": [
+        "mars_02.png",
+        "mars_07.png",
+        "mars_09.png"
+      ],
+      "framed/by_darkdirt": [
+        "mars_06.png"
+      ],
+      "framed/by_grass": [
+        "mars_08.png"
+      ],
+      "framed/by_sand": [
+        "thin_sand_edges_on_darkdirt.png"
+      ],
+      "framed/by_stone": [
+        "thin_stone_edges_on_darkdirt.png"
+      ],
+      "fill/by_cubes": [
+        "dirt_with_numerous_purple_cubes.png",
+        "dirt_with_purple_cubes.png"
+      ],
+      "fill/by_rocks": [
+        "mars_15.png",
+        "mars_17.png",
+        "mars_18.png",
+        "mars_19.png",
+        "mars_filled_by_blue_rocks.png"
+      ],
+      "fill/by_lamps": [
+        "dirt_with_lamps.png"
+      ]
+    },
+    "tiles": [
+      {
+        "id": "mars_01",
+        "frame": "mars_01.png",
+        "file": "mars_01.png",
+        "stem": "mars_01",
+        "biome": "DarkDirt",
+        "category": "framed/on_empty",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/DarkDirt/framed/on_empty/mars_01.png"
+      },
+      {
+        "id": "mars_02",
+        "frame": "mars_02.png",
+        "file": "mars_02.png",
+        "stem": "mars_02",
+        "biome": "DarkDirt",
+        "category": "fill/plain",
+        "kind": "fill",
+        "role": "fill",
+        "path": "PNG/Tiles/Terrain/DarkDirt/fill/plain/mars_02.png"
+      },
+      {
+        "id": "mars_06",
+        "frame": "mars_06.png",
+        "file": "mars_06.png",
+        "stem": "mars_06",
+        "biome": "DarkDirt",
+        "category": "framed/by_darkdirt",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/DarkDirt/framed/by_darkdirt/mars_06.png"
+      },
+      {
+        "id": "mars_07",
+        "frame": "mars_07.png",
+        "file": "mars_07.png",
+        "stem": "mars_07",
+        "biome": "DarkDirt",
+        "category": "fill/plain",
+        "kind": "fill",
+        "role": "fill",
+        "path": "PNG/Tiles/Terrain/DarkDirt/fill/plain/mars_07.png"
+      },
+      {
+        "id": "mars_08",
+        "frame": "mars_08.png",
+        "file": "mars_08.png",
+        "stem": "mars_08",
+        "biome": "DarkDirt",
+        "category": "framed/by_grass",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/DarkDirt/framed/by_grass/mars_08.png"
+      },
+      {
+        "id": "mars_09",
+        "frame": "mars_09.png",
+        "file": "mars_09.png",
+        "stem": "mars_09",
+        "biome": "DarkDirt",
+        "category": "fill/plain",
+        "kind": "fill",
+        "role": "fill",
+        "path": "PNG/Tiles/Terrain/DarkDirt/fill/plain/mars_09.png"
+      },
+      {
+        "id": "thin_sand_edges_on_darkdirt",
+        "frame": "mars_10.png",
+        "file": "thin_sand_edges_on_darkdirt.png",
+        "stem": "mars_10",
+        "biome": "DarkDirt",
+        "category": "framed/by_sand",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/DarkDirt/framed/by_sand/thin_sand_edges_on_darkdirt.png"
+      },
+      {
+        "id": "thin_stone_edges_on_darkdirt",
+        "frame": "mars_11.png",
+        "file": "thin_stone_edges_on_darkdirt.png",
+        "stem": "mars_11",
+        "biome": "DarkDirt",
+        "category": "framed/by_stone",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/DarkDirt/framed/by_stone/thin_stone_edges_on_darkdirt.png"
+      },
+      {
+        "id": "dirt_with_purple_cubes",
+        "frame": "mars_12.png",
+        "file": "dirt_with_purple_cubes.png",
+        "stem": "mars_12",
+        "biome": "DarkDirt",
+        "category": "fill/by_cubes",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/DarkDirt/fill/by_cubes/dirt_with_purple_cubes.png"
+      },
+      {
+        "id": "dirt_with_numerous_purple_cubes",
+        "frame": "mars_13.png",
+        "file": "dirt_with_numerous_purple_cubes.png",
+        "stem": "mars_13",
+        "biome": "DarkDirt",
+        "category": "fill/by_cubes",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/DarkDirt/fill/by_cubes/dirt_with_numerous_purple_cubes.png"
+      },
+      {
+        "id": "mars_filled_by_blue_rocks",
+        "frame": "mars_14.png",
+        "file": "mars_filled_by_blue_rocks.png",
+        "stem": "mars_14",
+        "biome": "DarkDirt",
+        "category": "fill/by_rocks",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/DarkDirt/fill/by_rocks/mars_filled_by_blue_rocks.png"
+      },
+      {
+        "id": "mars_15",
+        "frame": "mars_15.png",
+        "file": "mars_15.png",
+        "stem": "mars_15",
+        "biome": "DarkDirt",
+        "category": "fill/by_rocks",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/DarkDirt/fill/by_rocks/mars_15.png"
+      },
+      {
+        "id": "dirt_with_lamps",
+        "frame": "mars_16.png",
+        "file": "dirt_with_lamps.png",
+        "stem": "mars_16",
+        "biome": "DarkDirt",
+        "category": "fill/by_lamps",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/DarkDirt/fill/by_lamps/dirt_with_lamps.png"
+      },
+      {
+        "id": "mars_17",
+        "frame": "mars_17.png",
+        "file": "mars_17.png",
+        "stem": "mars_17",
+        "biome": "DarkDirt",
+        "category": "fill/by_rocks",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/DarkDirt/fill/by_rocks/mars_17.png"
+      },
+      {
+        "id": "mars_18",
+        "frame": "mars_18.png",
+        "file": "mars_18.png",
+        "stem": "mars_18",
+        "biome": "DarkDirt",
+        "category": "fill/by_rocks",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/DarkDirt/fill/by_rocks/mars_18.png"
+      },
+      {
+        "id": "mars_19",
+        "frame": "mars_19.png",
+        "file": "mars_19.png",
+        "stem": "mars_19",
+        "biome": "DarkDirt",
+        "category": "fill/by_rocks",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/DarkDirt/fill/by_rocks/mars_19.png"
+      }
+    ]
+  },
+  "sand": {
+    "gameplay": {
+      "coast": "sand_02.png",
+      "coastAlt": "sand_07.png"
+    },
+    "byCategory": {
+      "framed/by_darkdirt": [
+        "dirt_waves_edges_on_sand.png"
+      ],
+      "framed/by_dirt": [
+        "darkdirt_edges_on_sand.png",
+        "thin_darkdirt_waves_edges_on_sand.png",
+        "thin_lightdirt_waves_edges_on_sand.png"
+      ],
+      "framed/by_empty": [
+        "thin_sand_edge_on_empty.png"
+      ],
+      "fill/plain_edges": [
+        "plain_sand_fill.png",
+        "plain_sand_fill_alt.png"
+      ],
+      "fill/patch/grass": [
+        "grass_islet_on_sand.png"
+      ],
+      "fill/with-rock": [
+        "large_grey_rock_on_sand.png",
+        "three_brown_rocks_on_sand.png",
+        "two_brown_rocks_on_sand.png"
+      ],
+      "fill/patch/dirt": [
+        "dirt_patch_on_sand.png"
+      ],
+      "framed/by_grass": [
+        "thin_grass_edges_on_sand.png"
+      ],
+      "framed/by_stone": [
+        "stone_edges_on_sand.png",
+        "thin_stone_edges_on_sand.png"
+      ],
+      "fill/desert/cacti/few": [
+        "two_cacti_on_sand.png",
+        "two_cacti_on_sand_fill.png"
+      ],
+      "fill/desert/cacti/numerous": [
+        "five_cacti_on_sand.png"
+      ],
+      "fill/desert/mixed": [
+        "cacti_and_skull_on_sand.png",
+        "rocks_and_cactus_on_sand.png"
+      ],
+      "fill/colline": [
+        "raised_sand_block.png"
+      ]
+    },
+    "tiles": [
+      {
+        "id": "dirt_waves_edges_on_sand",
+        "frame": "dirt_05.png",
+        "file": "dirt_waves_edges_on_sand.png",
+        "stem": "dirt_05",
+        "biome": "Sand",
+        "category": "framed/by_darkdirt",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Sand/framed/by_darkdirt/dirt_waves_edges_on_sand.png"
+      },
+      {
+        "id": "darkdirt_edges_on_sand",
+        "frame": "mars_05.png",
+        "file": "darkdirt_edges_on_sand.png",
+        "stem": "mars_05",
+        "biome": "Sand",
+        "category": "framed/by_dirt",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Sand/framed/by_dirt/darkdirt_edges_on_sand.png"
+      },
+      {
+        "id": "thin_sand_edge_on_empty",
+        "frame": "sand_01.png",
+        "file": "thin_sand_edge_on_empty.png",
+        "stem": "sand_01",
+        "biome": "Sand",
+        "category": "framed/by_empty",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Sand/framed/by_empty/thin_sand_edge_on_empty.png"
+      },
+      {
+        "id": "plain_sand_fill",
+        "frame": "sand_02.png",
+        "file": "plain_sand_fill.png",
+        "stem": "sand_02",
+        "biome": "Sand",
+        "category": "fill/plain_edges",
+        "kind": "fill",
+        "role": "fill",
+        "path": "PNG/Tiles/Terrain/Sand/fill/plain_edges/plain_sand_fill.png"
+      },
+      {
+        "id": "grass_islet_on_sand",
+        "frame": "sand_03.png",
+        "file": "grass_islet_on_sand.png",
+        "stem": "sand_03",
+        "biome": "Sand",
+        "category": "fill/patch/grass",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Sand/fill/patch/grass/grass_islet_on_sand.png"
+      },
+      {
+        "id": "large_grey_rock_on_sand",
+        "frame": "sand_04.png",
+        "file": "large_grey_rock_on_sand.png",
+        "stem": "sand_04",
+        "biome": "Sand",
+        "category": "fill/with-rock",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Sand/fill/with-rock/large_grey_rock_on_sand.png"
+      },
+      {
+        "id": "dirt_patch_on_sand",
+        "frame": "sand_06.png",
+        "file": "dirt_patch_on_sand.png",
+        "stem": "sand_06",
+        "biome": "Sand",
+        "category": "fill/patch/dirt",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Sand/fill/patch/dirt/dirt_patch_on_sand.png"
+      },
+      {
+        "id": "plain_sand_fill_alt",
+        "frame": "sand_07.png",
+        "file": "plain_sand_fill_alt.png",
+        "stem": "sand_07",
+        "biome": "Sand",
+        "category": "fill/plain_edges",
+        "kind": "fill",
+        "role": "fill",
+        "path": "PNG/Tiles/Terrain/Sand/fill/plain_edges/plain_sand_fill_alt.png"
+      },
+      {
+        "id": "thin_lightdirt_waves_edges_on_sand",
+        "frame": "sand_08.png",
+        "file": "thin_lightdirt_waves_edges_on_sand.png",
+        "stem": "sand_08",
+        "biome": "Sand",
+        "category": "framed/by_dirt",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Sand/framed/by_dirt/thin_lightdirt_waves_edges_on_sand.png"
+      },
+      {
+        "id": "thin_grass_edges_on_sand",
+        "frame": "sand_09.png",
+        "file": "thin_grass_edges_on_sand.png",
+        "stem": "sand_09",
+        "biome": "Sand",
+        "category": "framed/by_grass",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Sand/framed/by_grass/thin_grass_edges_on_sand.png"
+      },
+      {
+        "id": "thin_darkdirt_waves_edges_on_sand",
+        "frame": "sand_10.png",
+        "file": "thin_darkdirt_waves_edges_on_sand.png",
+        "stem": "sand_10",
+        "biome": "Sand",
+        "category": "framed/by_dirt",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Sand/framed/by_dirt/thin_darkdirt_waves_edges_on_sand.png"
+      },
+      {
+        "id": "thin_stone_edges_on_sand",
+        "frame": "sand_11.png",
+        "file": "thin_stone_edges_on_sand.png",
+        "stem": "sand_11",
+        "biome": "Sand",
+        "category": "framed/by_stone",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Sand/framed/by_stone/thin_stone_edges_on_sand.png"
+      },
+      {
+        "id": "two_cacti_on_sand_fill",
+        "frame": "sand_12.png",
+        "file": "two_cacti_on_sand_fill.png",
+        "stem": "sand_12",
+        "biome": "Sand",
+        "category": "fill/desert/cacti/few",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Sand/fill/desert/cacti/few/two_cacti_on_sand_fill.png"
+      },
+      {
+        "id": "two_cacti_on_sand",
+        "frame": "sand_13.png",
+        "file": "two_cacti_on_sand.png",
+        "stem": "sand_13",
+        "biome": "Sand",
+        "category": "fill/desert/cacti/few",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Sand/fill/desert/cacti/few/two_cacti_on_sand.png"
+      },
+      {
+        "id": "five_cacti_on_sand",
+        "frame": "sand_14.png",
+        "file": "five_cacti_on_sand.png",
+        "stem": "sand_14",
+        "biome": "Sand",
+        "category": "fill/desert/cacti/numerous",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Sand/fill/desert/cacti/numerous/five_cacti_on_sand.png"
+      },
+      {
+        "id": "cacti_and_skull_on_sand",
+        "frame": "sand_15.png",
+        "file": "cacti_and_skull_on_sand.png",
+        "stem": "sand_15",
+        "biome": "Sand",
+        "category": "fill/desert/mixed",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Sand/fill/desert/mixed/cacti_and_skull_on_sand.png"
+      },
+      {
+        "id": "two_brown_rocks_on_sand",
+        "frame": "sand_16.png",
+        "file": "two_brown_rocks_on_sand.png",
+        "stem": "sand_16",
+        "biome": "Sand",
+        "category": "fill/with-rock",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Sand/fill/with-rock/two_brown_rocks_on_sand.png"
+      },
+      {
+        "id": "three_brown_rocks_on_sand",
+        "frame": "sand_17.png",
+        "file": "three_brown_rocks_on_sand.png",
+        "stem": "sand_17",
+        "biome": "Sand",
+        "category": "fill/with-rock",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Sand/fill/with-rock/three_brown_rocks_on_sand.png"
+      },
+      {
+        "id": "rocks_and_cactus_on_sand",
+        "frame": "sand_18.png",
+        "file": "rocks_and_cactus_on_sand.png",
+        "stem": "sand_18",
+        "biome": "Sand",
+        "category": "fill/desert/mixed",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Sand/fill/desert/mixed/rocks_and_cactus_on_sand.png"
+      },
+      {
+        "id": "raised_sand_block",
+        "frame": "sand_19.png",
+        "file": "raised_sand_block.png",
+        "stem": "sand_19",
+        "biome": "Sand",
+        "category": "fill/colline",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Sand/fill/colline/raised_sand_block.png"
+      },
+      {
+        "id": "stone_edges_on_sand",
+        "frame": "stone_05.png",
+        "file": "stone_edges_on_sand.png",
+        "stem": "stone_05",
+        "biome": "Sand",
+        "category": "framed/by_stone",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Sand/framed/by_stone/stone_edges_on_sand.png"
+      }
+    ]
+  },
+  "stone": {
+    "gameplay": {
+      "mountain": "stone_02.png",
+      "mountainAlt": "stone_07.png",
+      "paved": "stone_14.png"
+    },
+    "byCategory": {
+      "framed/by_dirt": [
+        "darkdirt_edges_waves_on_stone.png",
+        "dirt_edges_on_stone.png",
+        "thin_dirt_edges_on_stone_v1.png",
+        "thin_dirt_edges_on_stone_v2.png"
+      ],
+      "framed/by_empty": [
+        "thin_stone_edge_on_empty.png"
+      ],
+      "fill/plain": [
+        "plain_stone_fill.png",
+        "plain_stone_fill_alt.png"
+      ],
+      "framed/by_grass": [
+        "thin_grass_edges_on_stone.png"
+      ],
+      "framed/by_sand": [
+        "thin_sand_edges_on_stone.png"
+      ],
+      "fill/forest": [
+        "few_trees_on_stone.png",
+        "three_trees_on_stone.png"
+      ],
+      "fill/urban/lamps": [
+        "two_streetlamps_on_stone.png"
+      ],
+      "fill/urban/plaza": [
+        "plaza_trees_blocks_on_stone.png"
+      ],
+      "fill/urban/fountain": [
+        "fountain_on_stone.png",
+        "fountain_with_trees_on_stone.png"
+      ],
+      "fill/camp": [
+        "camp_car_trees_on_stone.png"
+      ],
+      "fill/urban/parking": [
+        "parking_lot_cars_on_stone.png"
+      ]
+    },
+    "tiles": [
+      {
+        "id": "dirt_edges_on_stone",
+        "frame": "dirt_03.png",
+        "file": "dirt_edges_on_stone.png",
+        "stem": "dirt_03",
+        "biome": "Stone",
+        "category": "framed/by_dirt",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Stone/framed/by_dirt/dirt_edges_on_stone.png"
+      },
+      {
+        "id": "darkdirt_edges_waves_on_stone",
+        "frame": "mars_04.png",
+        "file": "darkdirt_edges_waves_on_stone.png",
+        "stem": "mars_04",
+        "biome": "Stone",
+        "category": "framed/by_dirt",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Stone/framed/by_dirt/darkdirt_edges_waves_on_stone.png"
+      },
+      {
+        "id": "thin_stone_edge_on_empty",
+        "frame": "stone_01.png",
+        "file": "thin_stone_edge_on_empty.png",
+        "stem": "stone_01",
+        "biome": "Stone",
+        "category": "framed/by_empty",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Stone/framed/by_empty/thin_stone_edge_on_empty.png"
+      },
+      {
+        "id": "plain_stone_fill",
+        "frame": "stone_02.png",
+        "file": "plain_stone_fill.png",
+        "stem": "stone_02",
+        "biome": "Stone",
+        "category": "fill/plain",
+        "kind": "fill",
+        "role": "fill",
+        "path": "PNG/Tiles/Terrain/Stone/fill/plain/plain_stone_fill.png"
+      },
+      {
+        "id": "plain_stone_fill_alt",
+        "frame": "stone_07.png",
+        "file": "plain_stone_fill_alt.png",
+        "stem": "stone_07",
+        "biome": "Stone",
+        "category": "fill/plain",
+        "kind": "fill",
+        "role": "fill",
+        "path": "PNG/Tiles/Terrain/Stone/fill/plain/plain_stone_fill_alt.png"
+      },
+      {
+        "id": "thin_grass_edges_on_stone",
+        "frame": "stone_08.png",
+        "file": "thin_grass_edges_on_stone.png",
+        "stem": "stone_08",
+        "biome": "Stone",
+        "category": "framed/by_grass",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Stone/framed/by_grass/thin_grass_edges_on_stone.png"
+      },
+      {
+        "id": "thin_dirt_edges_on_stone_v2",
+        "frame": "stone_09.png",
+        "file": "thin_dirt_edges_on_stone_v2.png",
+        "stem": "stone_09",
+        "biome": "Stone",
+        "category": "framed/by_dirt",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Stone/framed/by_dirt/thin_dirt_edges_on_stone_v2.png"
+      },
+      {
+        "id": "thin_sand_edges_on_stone",
+        "frame": "stone_10.png",
+        "file": "thin_sand_edges_on_stone.png",
+        "stem": "stone_10",
+        "biome": "Stone",
+        "category": "framed/by_sand",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Stone/framed/by_sand/thin_sand_edges_on_stone.png"
+      },
+      {
+        "id": "thin_dirt_edges_on_stone_v1",
+        "frame": "stone_11.png",
+        "file": "thin_dirt_edges_on_stone_v1.png",
+        "stem": "stone_11",
+        "biome": "Stone",
+        "category": "framed/by_dirt",
+        "kind": "framed",
+        "role": "framed",
+        "path": "PNG/Tiles/Terrain/Stone/framed/by_dirt/thin_dirt_edges_on_stone_v1.png"
+      },
+      {
+        "id": "few_trees_on_stone",
+        "frame": "stone_12.png",
+        "file": "few_trees_on_stone.png",
+        "stem": "stone_12",
+        "biome": "Stone",
+        "category": "fill/forest",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Stone/fill/forest/few_trees_on_stone.png"
+      },
+      {
+        "id": "three_trees_on_stone",
+        "frame": "stone_13.png",
+        "file": "three_trees_on_stone.png",
+        "stem": "stone_13",
+        "biome": "Stone",
+        "category": "fill/forest",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Stone/fill/forest/three_trees_on_stone.png"
+      },
+      {
+        "id": "two_streetlamps_on_stone",
+        "frame": "stone_14.png",
+        "file": "two_streetlamps_on_stone.png",
+        "stem": "stone_14",
+        "biome": "Stone",
+        "category": "fill/urban/lamps",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Stone/fill/urban/lamps/two_streetlamps_on_stone.png"
+      },
+      {
+        "id": "plaza_trees_blocks_on_stone",
+        "frame": "stone_15.png",
+        "file": "plaza_trees_blocks_on_stone.png",
+        "stem": "stone_15",
+        "biome": "Stone",
+        "category": "fill/urban/plaza",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Stone/fill/urban/plaza/plaza_trees_blocks_on_stone.png"
+      },
+      {
+        "id": "fountain_on_stone",
+        "frame": "stone_16.png",
+        "file": "fountain_on_stone.png",
+        "stem": "stone_16",
+        "biome": "Stone",
+        "category": "fill/urban/fountain",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Stone/fill/urban/fountain/fountain_on_stone.png"
+      },
+      {
+        "id": "fountain_with_trees_on_stone",
+        "frame": "stone_17.png",
+        "file": "fountain_with_trees_on_stone.png",
+        "stem": "stone_17",
+        "biome": "Stone",
+        "category": "fill/urban/fountain",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Stone/fill/urban/fountain/fountain_with_trees_on_stone.png"
+      },
+      {
+        "id": "camp_car_trees_on_stone",
+        "frame": "stone_18.png",
+        "file": "camp_car_trees_on_stone.png",
+        "stem": "stone_18",
+        "biome": "Stone",
+        "category": "fill/camp",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Stone/fill/camp/camp_car_trees_on_stone.png"
+      },
+      {
+        "id": "parking_lot_cars_on_stone",
+        "frame": "stone_19.png",
+        "file": "parking_lot_cars_on_stone.png",
+        "stem": "stone_19",
+        "biome": "Stone",
+        "category": "fill/urban/parking",
+        "kind": "fill",
+        "role": "prop",
+        "path": "PNG/Tiles/Terrain/Stone/fill/urban/parking/parking_lot_cars_on_stone.png"
+      }
+    ]
+  },
+  "byRole": {
+    "framed": [
+      "dirt_01.png",
+      "dirt_02.png",
+      "dirt_03.png",
+      "dirt_04.png",
+      "dirt_05.png",
+      "dirt_07.png",
+      "dirt_08.png",
+      "dirt_09.png",
+      "dirt_10.png",
+      "grass_06.png",
+      "grass_07.png",
+      "grass_08.png",
+      "grass_09.png",
+      "grass_18.png",
+      "mars_01.png",
+      "mars_03.png",
+      "mars_04.png",
+      "mars_05.png",
+      "mars_06.png",
+      "mars_08.png",
+      "mars_10.png",
+      "mars_11.png",
+      "sand_01.png",
+      "sand_05.png",
+      "sand_08.png",
+      "sand_09.png",
+      "sand_10.png",
+      "sand_11.png",
+      "stone_01.png",
+      "stone_03.png",
+      "stone_04.png",
+      "stone_05.png",
+      "stone_06.png",
+      "stone_08.png",
+      "stone_09.png",
+      "stone_10.png",
+      "stone_11.png"
+    ],
+    "fill": [
+      "dirt_06.png",
+      "dirt_19.png",
+      "grass_05.png",
+      "grass_19.png",
+      "mars_02.png",
+      "mars_07.png",
+      "mars_09.png",
+      "sand_02.png",
+      "sand_07.png",
+      "stone_02.png",
+      "stone_07.png"
+    ],
+    "prop": [
+      "dirt_11.png",
+      "dirt_12.png",
+      "dirt_13.png",
+      "dirt_14.png",
+      "dirt_15.png",
+      "dirt_16.png",
+      "dirt_17.png",
+      "dirt_18.png",
+      "grass_01.png",
+      "grass_02.png",
+      "grass_03.png",
+      "grass_04.png",
+      "grass_10.png",
+      "grass_11.png",
+      "grass_12.png",
+      "grass_13.png",
+      "grass_14.png",
+      "grass_15.png",
+      "grass_16.png",
+      "grass_17.png",
+      "mars_12.png",
+      "mars_13.png",
+      "mars_14.png",
+      "mars_15.png",
+      "mars_16.png",
+      "mars_17.png",
+      "mars_18.png",
+      "mars_19.png",
+      "sand_03.png",
+      "sand_04.png",
+      "sand_06.png",
+      "sand_12.png",
+      "sand_13.png",
+      "sand_14.png",
+      "sand_15.png",
+      "sand_16.png",
+      "sand_17.png",
+      "sand_18.png",
+      "sand_19.png",
+      "stone_12.png",
+      "stone_13.png",
+      "stone_14.png",
+      "stone_15.png",
+      "stone_16.png",
+      "stone_17.png",
+      "stone_18.png",
+      "stone_19.png"
+    ]
+  },
+  "terrain": [
+    {
+      "id": "thin_darkdirt_edge_on_empty",
+      "frame": "dirt_01.png",
+      "file": "thin_darkdirt_edge_on_empty.png",
+      "stem": "dirt_01",
+      "biome": "Dirt",
+      "category": "framed/by_empty",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Dirt/framed/by_empty/thin_darkdirt_edge_on_empty.png"
+    },
+    {
+      "frame": "dirt_02.png",
+      "stem": "dirt_02",
+      "biome": "Grass",
+      "category": "framed/by_dirt",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Grass/framed/by_dirt/dirt_edges_on_grass.png"
+    },
+    {
+      "id": "dirt_edges_on_stone",
+      "frame": "dirt_03.png",
+      "file": "dirt_edges_on_stone.png",
+      "stem": "dirt_03",
+      "biome": "Stone",
+      "category": "framed/by_dirt",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Stone/framed/by_dirt/dirt_edges_on_stone.png"
+    },
+    {
+      "id": "light_dirt_edges_on_darkdirt",
+      "frame": "dirt_04.png",
+      "file": "light_dirt_edges_on_darkdirt.png",
+      "stem": "dirt_04",
+      "biome": "Dirt",
+      "category": "framed/by_darkdirt",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Dirt/framed/by_darkdirt/light_dirt_edges_on_darkdirt.png"
+    },
+    {
+      "id": "dirt_waves_edges_on_sand",
+      "frame": "dirt_05.png",
+      "file": "dirt_waves_edges_on_sand.png",
+      "stem": "dirt_05",
+      "biome": "Sand",
+      "category": "framed/by_darkdirt",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Sand/framed/by_darkdirt/dirt_waves_edges_on_sand.png"
+    },
+    {
+      "id": "plain_dirt_fill_06",
+      "frame": "dirt_06.png",
+      "file": "plain_dirt_fill_06.png",
+      "stem": "dirt_06",
+      "biome": "Dirt",
+      "category": "fill/plain_edges",
+      "kind": "fill",
+      "role": "fill",
+      "path": "PNG/Tiles/Terrain/Dirt/fill/plain_edges/plain_dirt_fill_06.png"
+    },
+    {
+      "id": "thin_grass_edges_on_dirt",
+      "frame": "dirt_07.png",
+      "file": "thin_grass_edges_on_dirt.png",
+      "stem": "dirt_07",
+      "biome": "Dirt",
+      "category": "framed/by_grass",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Dirt/framed/by_grass/thin_grass_edges_on_dirt.png"
+    },
+    {
+      "id": "edged_dirt_scallop_08",
+      "frame": "dirt_08.png",
+      "file": "edged_dirt_scallop_08.png",
+      "stem": "dirt_08",
+      "biome": "Dirt",
+      "category": "framed/by_sand",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Dirt/framed/by_sand/edged_dirt_scallop_08.png"
+    },
+    {
+      "id": "thin_darkdirt_edges_on_dirt",
+      "frame": "dirt_09.png",
+      "file": "thin_darkdirt_edges_on_dirt.png",
+      "stem": "dirt_09",
+      "biome": "Dirt",
+      "category": "framed/by_darkdirt",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Dirt/framed/by_darkdirt/thin_darkdirt_edges_on_dirt.png"
+    },
+    {
+      "id": "thin_stone_edges_on_dirt",
+      "frame": "dirt_10.png",
+      "file": "thin_stone_edges_on_dirt.png",
+      "stem": "dirt_10",
+      "biome": "Dirt",
+      "category": "framed/by_stone",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Dirt/framed/by_stone/thin_stone_edges_on_dirt.png"
+    },
+    {
+      "id": "sparse_pines_on_dirt_11",
+      "frame": "dirt_11.png",
+      "file": "sparse_pines_on_dirt_11.png",
+      "stem": "dirt_11",
+      "biome": "Dirt",
+      "category": "fill/forest/few",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Dirt/fill/forest/few/sparse_pines_on_dirt_11.png"
+    },
+    {
+      "id": "few_pines_on_dirt_12",
+      "frame": "dirt_12.png",
+      "file": "few_pines_on_dirt_12.png",
+      "stem": "dirt_12",
+      "biome": "Dirt",
+      "category": "fill/forest/few",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Dirt/fill/forest/few/few_pines_on_dirt_12.png"
+    },
+    {
+      "id": "dense_pines_on_dirt_13",
+      "frame": "dirt_13.png",
+      "file": "dense_pines_on_dirt_13.png",
+      "stem": "dirt_13",
+      "biome": "Dirt",
+      "category": "fill/forest/numerous",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Dirt/fill/forest/numerous/dense_pines_on_dirt_13.png"
+    },
+    {
+      "id": "pine_ring_on_dirt_14",
+      "frame": "dirt_14.png",
+      "file": "pine_ring_on_dirt_14.png",
+      "stem": "dirt_14",
+      "biome": "Dirt",
+      "category": "fill/forest/numerous",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Dirt/fill/forest/numerous/pine_ring_on_dirt_14.png"
+    },
+    {
+      "id": "small_rocks_on_dirt_15",
+      "frame": "dirt_15.png",
+      "file": "small_rocks_on_dirt_15.png",
+      "stem": "dirt_15",
+      "biome": "Dirt",
+      "category": "fill/with-rock",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Dirt/fill/with-rock/small_rocks_on_dirt_15.png"
+    },
+    {
+      "id": "rock_cluster_on_dirt_16",
+      "frame": "dirt_16.png",
+      "file": "rock_cluster_on_dirt_16.png",
+      "stem": "dirt_16",
+      "biome": "Dirt",
+      "category": "fill/with-rock",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Dirt/fill/with-rock/rock_cluster_on_dirt_16.png"
+    },
+    {
+      "id": "rocky_hill_with_pines_17",
+      "frame": "dirt_17.png",
+      "file": "rocky_hill_with_pines_17.png",
+      "stem": "dirt_17",
+      "biome": "Dirt",
+      "category": "fill/colline",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Dirt/fill/colline/rocky_hill_with_pines_17.png"
+    },
+    {
+      "id": "rocky_hill_with_trees_18",
+      "frame": "dirt_18.png",
+      "file": "rocky_hill_with_trees_18.png",
+      "stem": "dirt_18",
+      "biome": "Dirt",
+      "category": "fill/colline",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Dirt/fill/colline/rocky_hill_with_trees_18.png"
+    },
+    {
+      "id": "crenellated_dirt_fill_19",
+      "frame": "dirt_19.png",
+      "file": "crenellated_dirt_fill_19.png",
+      "stem": "dirt_19",
+      "biome": "Dirt",
+      "category": "fill/crenellated_edges",
+      "kind": "fill",
+      "role": "fill",
+      "path": "PNG/Tiles/Terrain/Dirt/fill/crenellated_edges/crenellated_dirt_fill_19.png"
+    },
+    {
+      "frame": "grass_01.png",
+      "stem": "grass_01",
+      "biome": "Grass",
+      "category": "fill/with-rock",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Grass/fill/with-rock/grass_01.png"
+    },
+    {
+      "frame": "grass_02.png",
+      "stem": "grass_02",
+      "biome": "Grass",
+      "category": "fill/patch/dirt",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Grass/fill/patch/dirt/grass_02.png"
+    },
+    {
+      "frame": "grass_03.png",
+      "stem": "grass_03",
+      "biome": "Grass",
+      "category": "fill/patch/sand",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Grass/fill/patch/sand/grass_03.png"
+    },
+    {
+      "frame": "grass_04.png",
+      "stem": "grass_04",
+      "biome": "Grass",
+      "category": "fill/patch/dirt",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Grass/fill/patch/dirt/grass_04.png"
+    },
+    {
+      "frame": "grass_05.png",
+      "stem": "grass_05",
+      "biome": "Grass",
+      "category": "fill/plain_edges",
+      "kind": "fill",
+      "role": "fill",
+      "path": "PNG/Tiles/Terrain/Grass/fill/plain_edges/grass_05.png"
+    },
+    {
+      "frame": "grass_06.png",
+      "stem": "grass_06",
+      "biome": "Grass",
+      "category": "framed/by_dirt",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Grass/framed/by_dirt/thin_dirt_on_grass.png"
+    },
+    {
+      "frame": "grass_07.png",
+      "stem": "grass_07",
+      "biome": "Grass",
+      "category": "framed/by_sand",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Grass/framed/by_sand/grass_07.png"
+    },
+    {
+      "frame": "grass_08.png",
+      "stem": "grass_08",
+      "biome": "Grass",
+      "category": "framed/by_dirt",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Grass/framed/by_dirt/thin_dirt_on_grass_v2.png"
+    },
+    {
+      "frame": "grass_09.png",
+      "stem": "grass_09",
+      "biome": "Grass",
+      "category": "framed/by_stone",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Grass/framed/by_stone/thin_stone_edges_on_grass.png"
+    },
+    {
+      "frame": "grass_10.png",
+      "stem": "grass_10",
+      "biome": "Grass",
+      "category": "fill/forest/few",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Grass/fill/forest/few/grass_10.png"
+    },
+    {
+      "frame": "grass_11.png",
+      "stem": "grass_11",
+      "biome": "Grass",
+      "category": "fill/forest/few",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Grass/fill/forest/few/grass_11.png"
+    },
+    {
+      "frame": "grass_12.png",
+      "stem": "grass_12",
+      "biome": "Grass",
+      "category": "fill/forest/numerous",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Grass/fill/forest/numerous/grass_12.png"
+    },
+    {
+      "frame": "grass_13.png",
+      "stem": "grass_13",
+      "biome": "Grass",
+      "category": "fill/forest/numerous",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Grass/fill/forest/numerous/grass_13.png"
+    },
+    {
+      "frame": "grass_14.png",
+      "stem": "grass_14",
+      "biome": "Grass",
+      "category": "fill/forest/with-rock",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Grass/fill/forest/with-rock/grass_14.png"
+    },
+    {
+      "frame": "grass_15.png",
+      "stem": "grass_15",
+      "biome": "Grass",
+      "category": "fill/forest/with-rock",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Grass/fill/forest/with-rock/grass_15.png"
+    },
+    {
+      "frame": "grass_16.png",
+      "stem": "grass_16",
+      "biome": "Grass",
+      "category": "fill/forest/with-rock",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Grass/fill/forest/with-rock/grass_16.png"
+    },
+    {
+      "frame": "grass_17.png",
+      "stem": "grass_17",
+      "biome": "Grass",
+      "category": "fill/colline",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Grass/fill/colline/grass_17.png"
+    },
+    {
+      "frame": "grass_18.png",
+      "stem": "grass_18",
+      "biome": "Grass",
+      "category": "framed/by_empty",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Grass/framed/by_empty/grass_18.png"
+    },
+    {
+      "frame": "grass_19.png",
+      "stem": "grass_19",
+      "biome": "Grass",
+      "category": "fill/crenellated_edges",
+      "kind": "fill",
+      "role": "fill",
+      "path": "PNG/Tiles/Terrain/Grass/fill/crenellated_edges/grass_19.png"
+    },
+    {
+      "id": "mars_01",
+      "frame": "mars_01.png",
+      "file": "mars_01.png",
+      "stem": "mars_01",
+      "biome": "DarkDirt",
+      "category": "framed/on_empty",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/DarkDirt/framed/on_empty/mars_01.png"
+    },
+    {
+      "id": "mars_02",
+      "frame": "mars_02.png",
+      "file": "mars_02.png",
+      "stem": "mars_02",
+      "biome": "DarkDirt",
+      "category": "fill/plain",
+      "kind": "fill",
+      "role": "fill",
+      "path": "PNG/Tiles/Terrain/DarkDirt/fill/plain/mars_02.png"
+    },
+    {
+      "frame": "mars_03.png",
+      "stem": "mars_03",
+      "biome": "Grass",
+      "category": "framed/by_dirt",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Grass/framed/by_dirt/darkdirt_edges_on_grass.png"
+    },
+    {
+      "id": "darkdirt_edges_waves_on_stone",
+      "frame": "mars_04.png",
+      "file": "darkdirt_edges_waves_on_stone.png",
+      "stem": "mars_04",
+      "biome": "Stone",
+      "category": "framed/by_dirt",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Stone/framed/by_dirt/darkdirt_edges_waves_on_stone.png"
+    },
+    {
+      "id": "darkdirt_edges_on_sand",
+      "frame": "mars_05.png",
+      "file": "darkdirt_edges_on_sand.png",
+      "stem": "mars_05",
+      "biome": "Sand",
+      "category": "framed/by_dirt",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Sand/framed/by_dirt/darkdirt_edges_on_sand.png"
+    },
+    {
+      "id": "mars_06",
+      "frame": "mars_06.png",
+      "file": "mars_06.png",
+      "stem": "mars_06",
+      "biome": "DarkDirt",
+      "category": "framed/by_darkdirt",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/DarkDirt/framed/by_darkdirt/mars_06.png"
+    },
+    {
+      "id": "mars_07",
+      "frame": "mars_07.png",
+      "file": "mars_07.png",
+      "stem": "mars_07",
+      "biome": "DarkDirt",
+      "category": "fill/plain",
+      "kind": "fill",
+      "role": "fill",
+      "path": "PNG/Tiles/Terrain/DarkDirt/fill/plain/mars_07.png"
+    },
+    {
+      "id": "mars_08",
+      "frame": "mars_08.png",
+      "file": "mars_08.png",
+      "stem": "mars_08",
+      "biome": "DarkDirt",
+      "category": "framed/by_grass",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/DarkDirt/framed/by_grass/mars_08.png"
+    },
+    {
+      "id": "mars_09",
+      "frame": "mars_09.png",
+      "file": "mars_09.png",
+      "stem": "mars_09",
+      "biome": "DarkDirt",
+      "category": "fill/plain",
+      "kind": "fill",
+      "role": "fill",
+      "path": "PNG/Tiles/Terrain/DarkDirt/fill/plain/mars_09.png"
+    },
+    {
+      "id": "thin_sand_edges_on_darkdirt",
+      "frame": "mars_10.png",
+      "file": "thin_sand_edges_on_darkdirt.png",
+      "stem": "mars_10",
+      "biome": "DarkDirt",
+      "category": "framed/by_sand",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/DarkDirt/framed/by_sand/thin_sand_edges_on_darkdirt.png"
+    },
+    {
+      "id": "thin_stone_edges_on_darkdirt",
+      "frame": "mars_11.png",
+      "file": "thin_stone_edges_on_darkdirt.png",
+      "stem": "mars_11",
+      "biome": "DarkDirt",
+      "category": "framed/by_stone",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/DarkDirt/framed/by_stone/thin_stone_edges_on_darkdirt.png"
+    },
+    {
+      "id": "dirt_with_purple_cubes",
+      "frame": "mars_12.png",
+      "file": "dirt_with_purple_cubes.png",
+      "stem": "mars_12",
+      "biome": "DarkDirt",
+      "category": "fill/by_cubes",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/DarkDirt/fill/by_cubes/dirt_with_purple_cubes.png"
+    },
+    {
+      "id": "dirt_with_numerous_purple_cubes",
+      "frame": "mars_13.png",
+      "file": "dirt_with_numerous_purple_cubes.png",
+      "stem": "mars_13",
+      "biome": "DarkDirt",
+      "category": "fill/by_cubes",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/DarkDirt/fill/by_cubes/dirt_with_numerous_purple_cubes.png"
+    },
+    {
+      "id": "mars_filled_by_blue_rocks",
+      "frame": "mars_14.png",
+      "file": "mars_filled_by_blue_rocks.png",
+      "stem": "mars_14",
+      "biome": "DarkDirt",
+      "category": "fill/by_rocks",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/DarkDirt/fill/by_rocks/mars_filled_by_blue_rocks.png"
+    },
+    {
+      "id": "mars_15",
+      "frame": "mars_15.png",
+      "file": "mars_15.png",
+      "stem": "mars_15",
+      "biome": "DarkDirt",
+      "category": "fill/by_rocks",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/DarkDirt/fill/by_rocks/mars_15.png"
+    },
+    {
+      "id": "dirt_with_lamps",
+      "frame": "mars_16.png",
+      "file": "dirt_with_lamps.png",
+      "stem": "mars_16",
+      "biome": "DarkDirt",
+      "category": "fill/by_lamps",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/DarkDirt/fill/by_lamps/dirt_with_lamps.png"
+    },
+    {
+      "id": "mars_17",
+      "frame": "mars_17.png",
+      "file": "mars_17.png",
+      "stem": "mars_17",
+      "biome": "DarkDirt",
+      "category": "fill/by_rocks",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/DarkDirt/fill/by_rocks/mars_17.png"
+    },
+    {
+      "id": "mars_18",
+      "frame": "mars_18.png",
+      "file": "mars_18.png",
+      "stem": "mars_18",
+      "biome": "DarkDirt",
+      "category": "fill/by_rocks",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/DarkDirt/fill/by_rocks/mars_18.png"
+    },
+    {
+      "id": "mars_19",
+      "frame": "mars_19.png",
+      "file": "mars_19.png",
+      "stem": "mars_19",
+      "biome": "DarkDirt",
+      "category": "fill/by_rocks",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/DarkDirt/fill/by_rocks/mars_19.png"
+    },
+    {
+      "id": "thin_sand_edge_on_empty",
+      "frame": "sand_01.png",
+      "file": "thin_sand_edge_on_empty.png",
+      "stem": "sand_01",
+      "biome": "Sand",
+      "category": "framed/by_empty",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Sand/framed/by_empty/thin_sand_edge_on_empty.png"
+    },
+    {
+      "id": "plain_sand_fill",
+      "frame": "sand_02.png",
+      "file": "plain_sand_fill.png",
+      "stem": "sand_02",
+      "biome": "Sand",
+      "category": "fill/plain_edges",
+      "kind": "fill",
+      "role": "fill",
+      "path": "PNG/Tiles/Terrain/Sand/fill/plain_edges/plain_sand_fill.png"
+    },
+    {
+      "id": "grass_islet_on_sand",
+      "frame": "sand_03.png",
+      "file": "grass_islet_on_sand.png",
+      "stem": "sand_03",
+      "biome": "Sand",
+      "category": "fill/patch/grass",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Sand/fill/patch/grass/grass_islet_on_sand.png"
+    },
+    {
+      "id": "large_grey_rock_on_sand",
+      "frame": "sand_04.png",
+      "file": "large_grey_rock_on_sand.png",
+      "stem": "sand_04",
+      "biome": "Sand",
+      "category": "fill/with-rock",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Sand/fill/with-rock/large_grey_rock_on_sand.png"
+    },
+    {
+      "id": "sand_waves_edges_on_darkdirt",
+      "frame": "sand_05.png",
+      "file": "sand_waves_edges_on_darkdirt.png",
+      "stem": "sand_05",
+      "biome": "Dirt",
+      "category": "framed/by_sand",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Dirt/framed/by_sand/sand_waves_edges_on_darkdirt.png"
+    },
+    {
+      "id": "dirt_patch_on_sand",
+      "frame": "sand_06.png",
+      "file": "dirt_patch_on_sand.png",
+      "stem": "sand_06",
+      "biome": "Sand",
+      "category": "fill/patch/dirt",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Sand/fill/patch/dirt/dirt_patch_on_sand.png"
+    },
+    {
+      "id": "plain_sand_fill_alt",
+      "frame": "sand_07.png",
+      "file": "plain_sand_fill_alt.png",
+      "stem": "sand_07",
+      "biome": "Sand",
+      "category": "fill/plain_edges",
+      "kind": "fill",
+      "role": "fill",
+      "path": "PNG/Tiles/Terrain/Sand/fill/plain_edges/plain_sand_fill_alt.png"
+    },
+    {
+      "id": "thin_lightdirt_waves_edges_on_sand",
+      "frame": "sand_08.png",
+      "file": "thin_lightdirt_waves_edges_on_sand.png",
+      "stem": "sand_08",
+      "biome": "Sand",
+      "category": "framed/by_dirt",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Sand/framed/by_dirt/thin_lightdirt_waves_edges_on_sand.png"
+    },
+    {
+      "id": "thin_grass_edges_on_sand",
+      "frame": "sand_09.png",
+      "file": "thin_grass_edges_on_sand.png",
+      "stem": "sand_09",
+      "biome": "Sand",
+      "category": "framed/by_grass",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Sand/framed/by_grass/thin_grass_edges_on_sand.png"
+    },
+    {
+      "id": "thin_darkdirt_waves_edges_on_sand",
+      "frame": "sand_10.png",
+      "file": "thin_darkdirt_waves_edges_on_sand.png",
+      "stem": "sand_10",
+      "biome": "Sand",
+      "category": "framed/by_dirt",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Sand/framed/by_dirt/thin_darkdirt_waves_edges_on_sand.png"
+    },
+    {
+      "id": "thin_stone_edges_on_sand",
+      "frame": "sand_11.png",
+      "file": "thin_stone_edges_on_sand.png",
+      "stem": "sand_11",
+      "biome": "Sand",
+      "category": "framed/by_stone",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Sand/framed/by_stone/thin_stone_edges_on_sand.png"
+    },
+    {
+      "id": "two_cacti_on_sand_fill",
+      "frame": "sand_12.png",
+      "file": "two_cacti_on_sand_fill.png",
+      "stem": "sand_12",
+      "biome": "Sand",
+      "category": "fill/desert/cacti/few",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Sand/fill/desert/cacti/few/two_cacti_on_sand_fill.png"
+    },
+    {
+      "id": "two_cacti_on_sand",
+      "frame": "sand_13.png",
+      "file": "two_cacti_on_sand.png",
+      "stem": "sand_13",
+      "biome": "Sand",
+      "category": "fill/desert/cacti/few",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Sand/fill/desert/cacti/few/two_cacti_on_sand.png"
+    },
+    {
+      "id": "five_cacti_on_sand",
+      "frame": "sand_14.png",
+      "file": "five_cacti_on_sand.png",
+      "stem": "sand_14",
+      "biome": "Sand",
+      "category": "fill/desert/cacti/numerous",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Sand/fill/desert/cacti/numerous/five_cacti_on_sand.png"
+    },
+    {
+      "id": "cacti_and_skull_on_sand",
+      "frame": "sand_15.png",
+      "file": "cacti_and_skull_on_sand.png",
+      "stem": "sand_15",
+      "biome": "Sand",
+      "category": "fill/desert/mixed",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Sand/fill/desert/mixed/cacti_and_skull_on_sand.png"
+    },
+    {
+      "id": "two_brown_rocks_on_sand",
+      "frame": "sand_16.png",
+      "file": "two_brown_rocks_on_sand.png",
+      "stem": "sand_16",
+      "biome": "Sand",
+      "category": "fill/with-rock",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Sand/fill/with-rock/two_brown_rocks_on_sand.png"
+    },
+    {
+      "id": "three_brown_rocks_on_sand",
+      "frame": "sand_17.png",
+      "file": "three_brown_rocks_on_sand.png",
+      "stem": "sand_17",
+      "biome": "Sand",
+      "category": "fill/with-rock",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Sand/fill/with-rock/three_brown_rocks_on_sand.png"
+    },
+    {
+      "id": "rocks_and_cactus_on_sand",
+      "frame": "sand_18.png",
+      "file": "rocks_and_cactus_on_sand.png",
+      "stem": "sand_18",
+      "biome": "Sand",
+      "category": "fill/desert/mixed",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Sand/fill/desert/mixed/rocks_and_cactus_on_sand.png"
+    },
+    {
+      "id": "raised_sand_block",
+      "frame": "sand_19.png",
+      "file": "raised_sand_block.png",
+      "stem": "sand_19",
+      "biome": "Sand",
+      "category": "fill/colline",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Sand/fill/colline/raised_sand_block.png"
+    },
+    {
+      "id": "thin_stone_edge_on_empty",
+      "frame": "stone_01.png",
+      "file": "thin_stone_edge_on_empty.png",
+      "stem": "stone_01",
+      "biome": "Stone",
+      "category": "framed/by_empty",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Stone/framed/by_empty/thin_stone_edge_on_empty.png"
+    },
+    {
+      "id": "plain_stone_fill",
+      "frame": "stone_02.png",
+      "file": "plain_stone_fill.png",
+      "stem": "stone_02",
+      "biome": "Stone",
+      "category": "fill/plain",
+      "kind": "fill",
+      "role": "fill",
+      "path": "PNG/Tiles/Terrain/Stone/fill/plain/plain_stone_fill.png"
+    },
+    {
+      "frame": "stone_03.png",
+      "stem": "stone_03",
+      "biome": "Grass",
+      "category": "framed/by_stone",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Grass/framed/by_stone/stone_edges_on_grass.png"
+    },
+    {
+      "id": "stone_edges_on_darkdirt",
+      "frame": "stone_04.png",
+      "file": "stone_edges_on_darkdirt.png",
+      "stem": "stone_04",
+      "biome": "Dirt",
+      "category": "framed/by_stone",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Dirt/framed/by_stone/stone_edges_on_darkdirt.png"
+    },
+    {
+      "id": "stone_edges_on_sand",
+      "frame": "stone_05.png",
+      "file": "stone_edges_on_sand.png",
+      "stem": "stone_05",
+      "biome": "Sand",
+      "category": "framed/by_stone",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Sand/framed/by_stone/stone_edges_on_sand.png"
+    },
+    {
+      "id": "stone_edges_on_lightdirt",
+      "frame": "stone_06.png",
+      "file": "stone_edges_on_lightdirt.png",
+      "stem": "stone_06",
+      "biome": "Dirt",
+      "category": "framed/by_stone",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Dirt/framed/by_stone/stone_edges_on_lightdirt.png"
+    },
+    {
+      "id": "plain_stone_fill_alt",
+      "frame": "stone_07.png",
+      "file": "plain_stone_fill_alt.png",
+      "stem": "stone_07",
+      "biome": "Stone",
+      "category": "fill/plain",
+      "kind": "fill",
+      "role": "fill",
+      "path": "PNG/Tiles/Terrain/Stone/fill/plain/plain_stone_fill_alt.png"
+    },
+    {
+      "id": "thin_grass_edges_on_stone",
+      "frame": "stone_08.png",
+      "file": "thin_grass_edges_on_stone.png",
+      "stem": "stone_08",
+      "biome": "Stone",
+      "category": "framed/by_grass",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Stone/framed/by_grass/thin_grass_edges_on_stone.png"
+    },
+    {
+      "id": "thin_dirt_edges_on_stone_v2",
+      "frame": "stone_09.png",
+      "file": "thin_dirt_edges_on_stone_v2.png",
+      "stem": "stone_09",
+      "biome": "Stone",
+      "category": "framed/by_dirt",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Stone/framed/by_dirt/thin_dirt_edges_on_stone_v2.png"
+    },
+    {
+      "id": "thin_sand_edges_on_stone",
+      "frame": "stone_10.png",
+      "file": "thin_sand_edges_on_stone.png",
+      "stem": "stone_10",
+      "biome": "Stone",
+      "category": "framed/by_sand",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Stone/framed/by_sand/thin_sand_edges_on_stone.png"
+    },
+    {
+      "id": "thin_dirt_edges_on_stone_v1",
+      "frame": "stone_11.png",
+      "file": "thin_dirt_edges_on_stone_v1.png",
+      "stem": "stone_11",
+      "biome": "Stone",
+      "category": "framed/by_dirt",
+      "kind": "framed",
+      "role": "framed",
+      "path": "PNG/Tiles/Terrain/Stone/framed/by_dirt/thin_dirt_edges_on_stone_v1.png"
+    },
+    {
+      "id": "few_trees_on_stone",
+      "frame": "stone_12.png",
+      "file": "few_trees_on_stone.png",
+      "stem": "stone_12",
+      "biome": "Stone",
+      "category": "fill/forest",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Stone/fill/forest/few_trees_on_stone.png"
+    },
+    {
+      "id": "three_trees_on_stone",
+      "frame": "stone_13.png",
+      "file": "three_trees_on_stone.png",
+      "stem": "stone_13",
+      "biome": "Stone",
+      "category": "fill/forest",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Stone/fill/forest/three_trees_on_stone.png"
+    },
+    {
+      "id": "two_streetlamps_on_stone",
+      "frame": "stone_14.png",
+      "file": "two_streetlamps_on_stone.png",
+      "stem": "stone_14",
+      "biome": "Stone",
+      "category": "fill/urban/lamps",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Stone/fill/urban/lamps/two_streetlamps_on_stone.png"
+    },
+    {
+      "id": "plaza_trees_blocks_on_stone",
+      "frame": "stone_15.png",
+      "file": "plaza_trees_blocks_on_stone.png",
+      "stem": "stone_15",
+      "biome": "Stone",
+      "category": "fill/urban/plaza",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Stone/fill/urban/plaza/plaza_trees_blocks_on_stone.png"
+    },
+    {
+      "id": "fountain_on_stone",
+      "frame": "stone_16.png",
+      "file": "fountain_on_stone.png",
+      "stem": "stone_16",
+      "biome": "Stone",
+      "category": "fill/urban/fountain",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Stone/fill/urban/fountain/fountain_on_stone.png"
+    },
+    {
+      "id": "fountain_with_trees_on_stone",
+      "frame": "stone_17.png",
+      "file": "fountain_with_trees_on_stone.png",
+      "stem": "stone_17",
+      "biome": "Stone",
+      "category": "fill/urban/fountain",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Stone/fill/urban/fountain/fountain_with_trees_on_stone.png"
+    },
+    {
+      "id": "camp_car_trees_on_stone",
+      "frame": "stone_18.png",
+      "file": "camp_car_trees_on_stone.png",
+      "stem": "stone_18",
+      "biome": "Stone",
+      "category": "fill/camp",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Stone/fill/camp/camp_car_trees_on_stone.png"
+    },
+    {
+      "id": "parking_lot_cars_on_stone",
+      "frame": "stone_19.png",
+      "file": "parking_lot_cars_on_stone.png",
+      "stem": "stone_19",
+      "biome": "Stone",
+      "category": "fill/urban/parking",
+      "kind": "fill",
+      "role": "prop",
+      "path": "PNG/Tiles/Terrain/Stone/fill/urban/parking/parking_lot_cars_on_stone.png"
+    }
+  ]
+}
