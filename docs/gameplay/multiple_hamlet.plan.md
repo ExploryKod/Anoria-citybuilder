@@ -16,7 +16,7 @@ Document de conception et feuille de route pour **plusieurs hameaux jouables** a
 > Seuls changent : la **couche Three.js** (swap de scène) et **IndexedDB** (`hamletId` sur les bâtiments pour recréer ce que le joueur a construit ailleurs).
 
 - Gameplay 3D **inchangé** : construction, admin, pause, caméra, économie globale.
-- **Pas de carte pays** : voyage via le **carrousel de hameaux** (FAB bas, à côté de la construction).
+- **Pas de carte pays** : voyage via le **carrousel de hameaux** (FAB bas, à côté de la construction). Une **carte stratégique 2D** (`/hamlets`, `/world`) est prévue en complément — pas de remplacement du carrousel in-game en v1.
 - **Pas d’API debug** (`switchHamlet('b')`) : le voyage se fait **dans le jeu**.
 - Les **BC métier** (construction, housing, supply, emploi, compta…) **ne bougent pas** ou très peu : filtre `hamletId` sur les adapters Dexie + session `activeHamletId`.
 - Budget WebGL **identique** : une grille 12–18, un canvas, scène **remplacée** au voyage.
@@ -25,7 +25,7 @@ Document de conception et feuille de route pour **plusieurs hameaux jouables** a
 
 | Exclu | Reporté / jamais v1 |
 |--------|---------------------|
-| Carte pays 2D | Tick abstrait hameaux lointains |
+| Carte pays 2D | Tick abstrait hameaux lointains — **carte stratégique hex prévue** : voir [`map_pages.plan.md`](map_pages.plan.md) (`/world`, `/hamlets`) |
 | Graphe routes pays | Migration citoyens inter-hameaux |
 | Ledger / budget par hameau | Compta filtrée par hameau |
 | Monde 3D continu | Agents 3D inter-map |
@@ -36,7 +36,7 @@ Document de conception et feuille de route pour **plusieurs hameaux jouables** a
 
 ```text
 Session
-  └── activeHamletId  (RAM + localStorage)
+  └── activeHamletId  (RAM cache + Dexie `game` row `hamlet-session`)
 
 Dexie
   ├── hamlets       { id, name, natureSeeded? }
@@ -134,7 +134,7 @@ Exemple chômage :
 | # | Tâche | Statut |
 |---|--------|--------|
 | 1.1 | Dexie v3 : `hamlets` + `hamletId` sur `houses` | ✅ |
-| 1.2 | Session `activeHamletId` | ✅ (localStorage, pas de table `countries` v1) |
+| 1.2 | Session `activeHamletId` | ✅ (Dexie `game` / `hamlet-session`, pas de localStorage) |
 | 1.3 | Repos : filtre hameau actif à l’écriture / lecture | ✅ |
 | 1.4 | Catalogue proto hameaux (seed noms) | ✅ (10 sites de test) |
 

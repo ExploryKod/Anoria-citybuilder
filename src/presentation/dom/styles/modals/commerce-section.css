@@ -66,6 +66,7 @@
     transition: background 0.15s ease;
     flex-shrink: 0;
     white-space: nowrap;
+    text-decoration: none;
 }
 
 .commerce-open-map-btn:hover {

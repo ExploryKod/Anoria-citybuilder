@@ -1,0 +1,71 @@
+@import '../site/site.css';
+@import '../../dom/styles/modals/trade-map.css';
+@import '../maps/map-page.css';
+
+.world-phaser-host {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: #1a3a5c;
+}
+
+.world-phaser-root {
+  flex: 1;
+  min-height: 320px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.world-phaser-root canvas {
+  display: block;
+}
+
+.trade-map-city--player {
+  cursor: pointer;
+}
+
+.world-map-message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 30000;
+  max-width: 360px;
+  padding: 12px 16px;
+  border-radius: var(--border-radius-small);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: var(--game-chrome-shadow, 0 4px 20px rgba(29, 34, 40, 0.15));
+  background: var(--site-surface);
+  color: var(--site-text);
+  border: 2px solid #17a2b8;
+  border-left-width: 4px;
+}
+
+.world-map-message[data-type='success'] {
+  border-color: #28a745;
+  border-left-color: #28a745;
+}
+
+.world-map-enter-btn,
+.world-map-travel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: min(100%, 9.5rem);
+  margin-top: 10px;
+  padding: 5px 10px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  border-width: 1px;
+  border-radius: var(--border-radius-small);
+  box-shadow: none;
+  white-space: nowrap;
+}
+
+.world-map-enter-btn.site-btn--primary:hover:not(:disabled),
+.world-map-travel-btn.site-btn--primary:hover:not(:disabled) {
+  box-shadow: none;
+}

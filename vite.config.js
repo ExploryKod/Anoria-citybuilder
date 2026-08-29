@@ -4,6 +4,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 const cleanRoutes = [
   { path: '/game', file: '/game.html' },
+  { path: '/hamlets', file: '/hamlets.html' },
+  { path: '/world', file: '/world.html' },
   { path: '/missions', file: '/missions.html' },
   { path: '/settings', file: '/settings.html' },
   { path: '/privacy', file: '/privacy.html' },
@@ -22,9 +24,16 @@ export default defineConfig({
     assetsDir: 'assets',
     chunkSizeWarningLimit: 1600,
     rollupOptions: {
+      output: {
+        manualChunks: {
+          phaser: ['phaser'],
+        },
+      },
       input: {
         main: resolve(__dirname, 'index.html'),
         game: resolve(__dirname, 'game.html'),
+        hamlets: resolve(__dirname, 'hamlets.html'),
+        world: resolve(__dirname, 'world.html'),
         missions: resolve(__dirname, 'missions.html'),
         settings: resolve(__dirname, 'settings.html'),
         privacy: resolve(__dirname, 'privacy.html'),
@@ -79,7 +88,7 @@ export default defineConfig({
       clientsClaim: true,
       maximumFileSizeToCacheInBytes: 6000000,
       navigateFallback: '/index.html',
-      navigateFallbackDenylist: [/^\/assets\//, /^\/game/, /^\/privacy/, /^\/terms/, /^\/legal/, /^\/credits/],
+      navigateFallbackDenylist: [/^\/assets\//, /^\/game/, /^\/hamlets/, /^\/world/, /^\/privacy/, /^\/terms/, /^\/legal/, /^\/credits/],
       // Modèles 3D (.glb/.gltf/.fbx), leurs textures/JSON associés et les sprites de statut
       // pèsent plusieurs dizaines de Mo au total (village_town_assets_v2.glb, citizenCool...).
       // Les précacher bloquerait l'installation du SW ; on les met en cache à l'exécution

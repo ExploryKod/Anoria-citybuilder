@@ -1,10 +1,4 @@
-import { buildTradePartnersView } from '../../../../contexts/commerce/application/queries/GetTradePartnersView.js';
 import { buildTradeGoodsView } from '../../../../contexts/commerce/application/queries/GetTradeGoodsView.js';
-import {
-  renderTradeMapOverlay,
-  renderTradeMapPanelForCity,
-  renderTradeMapStageContent,
-} from './renderTradeMap.js';
 import { renderCommerceGoodsList, renderCommerceGoodModal } from './renderCommerceGoods.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import { createModalFocusSession } from '../../shell/modalFocus.js';
@@ -28,17 +22,10 @@ export class CommerceSectionPresenter {
         this.supply = deps.supply;
         this.updateDisplayedFunds = deps.updateDisplayedFunds ?? (() => {});
         this.partnersData = null;
-    this.partnersViewModel = null;
-    this.selectedCityId = 'anoria';
     this.clickHandler = null;
-    this.mapClickHandler = null;
-    this.escapeHandler = null;
-    this.isMapOpen = false;
     this.openGoodProductId = null;
     this.goodModalHandler = null;
     this.goodModalEscapeHandler = null;
-    /** @type {ReturnType<typeof createModalFocusSession> | null} */
-    this.tradeMapFocusSession = null;
     /** @type {ReturnType<typeof createModalFocusSession> | null} */
     this.goodModalFocusSession = null;
     }
@@ -188,33 +175,6 @@ export class CommerceSectionPresenter {
             }
         }, 5000);
     }
-
-  async buildPartnersViewModel() {
-        this.loadPartnersData();
-        const stats = this.commerce.loadCommerceStats();
-    const productConfig = this.commerce.loadOrSeedCommerceConfig();
-    const activationByPartnerId = {};
-
-    for (const partner of this.partnersData) {
-      const conditionCheck = await this.checkPartnerActivationConditions(partner);
-      activationByPartnerId[partner.id] = {
-        canActivate: conditionCheck.unmetConditions.length === 0,
-        unmetConditions: conditionCheck.unmetConditions,
-      };
-    }
-
-    return buildTradePartnersView({
-      partners: this.partnersData,
-      stats,
-      productConfig,
-      activationByPartnerId,
-    });
-  }
-
-  async refreshViewModel() {
-    this.partnersViewModel = await this.buildPartnersViewModel();
-    return this.partnersViewModel;
-  }
 
   async getStockByProductId() {
     const productConfig = this.commerce.loadOrSeedCommerceConfig();
@@ -368,158 +328,6 @@ export class CommerceSectionPresenter {
     this.renderGoodModal(good);
   }
 
-  async openTradeMap() {
-    const viewModel = await this.refreshViewModel();
-    if (!this.selectedCityId) {
-      this.selectedCityId = 'olivea';
-    }
-
-    this.closeTradeMap();
-
-    const container = document.createElement('div');
-    container.innerHTML = renderTradeMapOverlay(viewModel, this.selectedCityId);
-    const overlay = container.firstElementChild;
-    document.body.appendChild(overlay);
-
-    this.isMapOpen = true;
-    document.body.style.overflow = 'hidden';
-    this.setupMapEventListeners(overlay);
-    this.tradeMapFocusSession?.release({ restoreFocus: false });
-    this.tradeMapFocusSession = createModalFocusSession({
-      panel: overlay,
-      onEscape: () => {
-        this.closeTradeMap();
-        void this.renderAdminEntry();
-      },
-      initialFocus: '#trade-map-close-btn',
-      ensureDialogAttributes: false,
-    });
-  }
-
-  closeTradeMap() {
-    this.tradeMapFocusSession?.release();
-    this.tradeMapFocusSession = null;
-    const overlay = document.getElementById('trade-map-overlay');
-    if (overlay) {
-      overlay.remove();
-    }
-    if (this.mapClickHandler) {
-      document.removeEventListener('keydown', this.escapeHandler);
-      this.mapClickHandler = null;
-      this.escapeHandler = null;
-    }
-    this.isMapOpen = false;
-    document.body.style.overflow = '';
-  }
-
-  updateMapCanvas(viewModel) {
-    const overlay = document.getElementById('trade-map-overlay');
-    if (!overlay) return;
-
-    const canvas = overlay.querySelector('#trade-map-canvas');
-    if (canvas) {
-      canvas.innerHTML = renderTradeMapStageContent(viewModel, this.selectedCityId);
-    }
-  }
-
-  async selectCityOnMap(cityId) {
-    this.selectedCityId = cityId;
-    const viewModel = await this.refreshViewModel();
-    const overlay = document.getElementById('trade-map-overlay');
-    if (!overlay) return;
-
-    this.updateMapCanvas(viewModel);
-
-    const panel = overlay.querySelector('#trade-map-panel');
-    if (panel) {
-      panel.innerHTML = renderTradeMapPanelForCity(cityId, viewModel);
-    }
-  }
-
-  async refreshTradeMap() {
-    if (!this.isMapOpen) {
-      await this.renderAdminEntry();
-      return;
-    }
-
-    const viewModel = await this.refreshViewModel();
-    const overlay = document.getElementById('trade-map-overlay');
-    if (!overlay) return;
-
-    const openRoutes = viewModel.filter((p) => p.isActive).length;
-    const statsEl = overlay.querySelector('.trade-map-toolbar-stats');
-    if (statsEl) {
-      statsEl.textContent = `${openRoutes}/${viewModel.length} routes ouvertes`;
-    }
-
-    this.updateMapCanvas(viewModel);
-
-    const panel = overlay.querySelector('#trade-map-panel');
-    if (panel) {
-      panel.innerHTML = renderTradeMapPanelForCity(this.selectedCityId, viewModel);
-    }
-
-    await this.renderAdminEntry();
-  }
-
-  setupMapEventListeners(overlay) {
-    this.mapClickHandler = async (event) => {
-      const closeBtn = event.target.closest('#trade-map-close-btn');
-      if (closeBtn) {
-        event.preventDefault();
-        this.closeTradeMap();
-        await this.renderAdminEntry();
-        return;
-      }
-
-      const cityBtn = event.target.closest('.trade-map-city--settlement');
-      if (cityBtn?.dataset.cityId) {
-        event.preventDefault();
-        await this.selectCityOnMap(cityBtn.dataset.cityId);
-        return;
-      }
-
-      const activationBtn = event.target.closest('.partner-activation-btn');
-      if (activationBtn) {
-        event.preventDefault();
-        if (activationBtn.disabled) {
-          this.showPartnerMessage('Les conditions d\'activation ne sont pas remplies.', 'info');
-          return;
-        }
-
-        const partnerId = activationBtn.dataset.partnerId;
-        activationBtn.disabled = true;
-        activationBtn.textContent = 'Ouverture...';
-
-        try {
-          const result = await this.activatePartner(partnerId);
-          this.showPartnerMessage(result.message, result.success ? 'success' : 'error');
-          if (result.success) {
-            await this.refreshTradeMap();
-            } else {
-            activationBtn.disabled = false;
-            activationBtn.textContent = 'Ouvrir la route (500 €)';
-          }
-        } catch (error) {
-          console.error('[CommerceSectionPresenter] Error activating partner:', error);
-          this.showPartnerMessage('Erreur lors de l\'ouverture de la route', 'error');
-          activationBtn.disabled = false;
-          activationBtn.textContent = 'Ouvrir la route (500 €)';
-        }
-      }
-    };
-
-    this.escapeHandler = (event) => {
-      if (event.key === 'Escape') {
-        this.closeTradeMap();
-        this.renderAdminEntry();
-      }
-    };
-
-    overlay.addEventListener('click', this.mapClickHandler);
-    // Escape + Tab trap handled by tradeMapFocusSession (createModalFocusSession).
-  }
-
   setupEventListeners() {
     const commerceBoard = document.getElementById('admin-section-commerce');
     if (!commerceBoard) return;
@@ -529,13 +337,6 @@ export class CommerceSectionPresenter {
     }
 
     this.clickHandler = async (event) => {
-      const openMapBtn = event.target.closest('#commerce-open-map-btn');
-      if (openMapBtn) {
-        event.preventDefault();
-        await this.openTradeMap();
-        return;
-      }
-
       const goodRow = event.target.closest('.commerce-good-row');
       if (goodRow?.dataset.productId) {
         event.preventDefault();
