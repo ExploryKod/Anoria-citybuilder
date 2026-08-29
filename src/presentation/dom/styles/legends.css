@@ -33,8 +33,8 @@
     + 10px
   );
   transform: translateX(-50%);
-  /* Above hud-actions (legend+2) so FABs never sit behind the command bar */
-  z-index: calc(var(--z-index-legend, 1000) + 5);
+  /* Above command bar — construction FAB row */
+  z-index: var(--z-index-hud-menu-elevated);
   pointer-events: auto;
 }
 

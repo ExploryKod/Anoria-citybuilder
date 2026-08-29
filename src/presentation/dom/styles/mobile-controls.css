@@ -7,7 +7,7 @@
     right: auto;
     bottom: auto;
     transform: translateY(-50%);
-    z-index: var(--z-index-legend, 1000);
+    z-index: var(--z-index-hud-menu);
     display: none; /* Hidden by default */
     flex-direction: column;
     gap: 12px;
