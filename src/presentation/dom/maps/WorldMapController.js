@@ -1,8 +1,6 @@
-import {
-  renderTradeMapPanelForCity,
-  renderTradeMapStageContent,
-} from '../admin/commerce/renderTradeMap.js';
-import { renderWorldMapPage } from './renderWorldMap.js';
+import { renderTradeMapPanelForCity } from '../admin/commerce/renderTradeMap.js';
+import { renderWorldMapShell, renderWorldMapStats } from './renderWorldMap.js';
+import { bootstrapWorldMap } from '../../phaser/world/bootstrapWorldMap.js';
 
 /**
  * @param {HTMLElement} root
@@ -20,21 +18,69 @@ export class WorldMapController {
     this.selectedCityId = 'anoria';
     this.clickHandler = null;
     this.messageTimeout = null;
+    /** @type {ReturnType<typeof bootstrapWorldMap> | null} */
+    this.phaserHandle = null;
+    /** @type {HTMLElement | null} */
+    this.phaserHost = null;
   }
 
   async init() {
-    await this.refresh();
+    this.view = await this.mapApi.getWorldMapView();
+    this.mountLayout();
+    this.mountPhaser();
     this.bindEvents();
+  }
+
+  mountLayout() {
+    if (!this.view) return;
+    this.root.innerHTML = renderWorldMapShell(this.view, this.selectedCityId);
+    this.phaserHost = this.root.querySelector('#world-phaser-root');
+  }
+
+  mountPhaser() {
+    if (!this.phaserHost || !this.view) return;
+
+    this.phaserHandle?.destroy();
+    this.phaserHandle = bootstrapWorldMap(this.phaserHost, {
+      view: this.view,
+      selectedCityId: this.selectedCityId,
+      onCitySelected: (cityId) => this.handleCitySelected(cityId),
+      onKingdomNavigate: () => {
+        window.location.href = '/hamlets';
+      },
+    });
+  }
+
+  /**
+   * @param {string} cityId
+   */
+  handleCitySelected(cityId) {
+    this.selectedCityId = cityId;
+    this.updatePanel();
+    this.phaserHandle?.refresh(this.view, this.selectedCityId);
   }
 
   async refresh() {
     this.view = await this.mapApi.getWorldMapView();
-    this.render();
+    this.updateStats();
+    this.updatePanel();
+    this.phaserHandle?.refresh(this.view, this.selectedCityId);
   }
 
-  render() {
+  updateStats() {
     if (!this.view) return;
-    this.root.innerHTML = renderWorldMapPage(this.view, this.selectedCityId);
+    const statsEl = this.root.querySelector('#world-map-stats');
+    if (statsEl) {
+      statsEl.textContent = renderWorldMapStats(this.view);
+    }
+  }
+
+  updatePanel() {
+    if (!this.view) return;
+    const panel = this.root.querySelector('#world-map-panel');
+    if (panel) {
+      panel.innerHTML = renderTradeMapPanelForCity(this.selectedCityId, this.view.partners);
+    }
   }
 
   bindEvents() {
@@ -49,36 +95,10 @@ export class WorldMapController {
         if (result.success) {
           await this.refresh();
         }
-        return;
-      }
-
-      const cityBtn = event.target.closest('.trade-map-city[data-city-id]');
-      if (cityBtn) {
-        this.selectedCityId = cityBtn.dataset.cityId;
-        this.updateSelection();
-        return;
-      }
-
-      const kingdom = event.target.closest('.trade-map-city--player');
-      if (kingdom) {
-        window.location.href = '/hamlets';
       }
     };
 
     this.root.addEventListener('click', this.clickHandler);
-  }
-
-  updateSelection() {
-    if (!this.view) return;
-
-    const stage = this.root.querySelector('#world-map-canvas .trade-map-stage');
-    const panel = this.root.querySelector('#world-map-panel');
-    if (stage) {
-      stage.outerHTML = renderTradeMapStageContent(this.view.partners, this.selectedCityId);
-    }
-    if (panel) {
-      panel.innerHTML = renderTradeMapPanelForCity(this.selectedCityId, this.view.partners);
-    }
   }
 
   showMessage(message, type = 'info') {
@@ -111,6 +131,8 @@ export class WorldMapController {
 
   destroy() {
     this.unbindEvents();
+    this.phaserHandle?.destroy();
+    this.phaserHandle = null;
     if (this.messageTimeout) {
       clearTimeout(this.messageTimeout);
     }
