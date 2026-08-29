@@ -2,6 +2,34 @@
 @import '../../dom/styles/modals/trade-map.css';
 @import '../maps/map-page.css';
 
+.world-phaser-host {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: #1a3a5c;
+}
+
+.world-phaser-root {
+  flex: 1;
+  min-height: 320px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.world-phaser-root canvas {
+  display: block;
+}
+
+.world-phaser-hint {
+  margin: 0;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--trade-map-muted);
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid var(--trade-map-border);
+}
+
 .world-map-kingdom-ring {
   position: absolute;
   transform: translate(-50%, -50%);

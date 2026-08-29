@@ -4,6 +4,7 @@ import {
   TRADE_MAP_CONNECTIONS,
 } from '../../../commerce/domain/catalogs/TradeMapCityCatalog.js';
 import { WORLD_KINGDOM } from '../../domain/catalogs/WorldMapCatalog.js';
+import { getWorldCityHexSite } from '../../domain/catalogs/WorldCityHexCatalog.js';
 import { buildHamletsMapView } from './buildHamletsMapView.js';
 
 /**
@@ -32,18 +33,26 @@ export async function buildWorldMapView({ commerceApi, activationByPartnerId }) 
     ? hamletsView.unlockedCount / hamletsView.totalHamlets
     : 0;
 
-  const cities = TRADE_MAP_CITIES.map((city) => ({
-    id: city.id,
-    name: city.name,
-    category: city.category,
-    description: city.description,
-    labelAnchor: city.labelAnchor,
-    partnerId: city.partnerId ?? null,
-    map: { x: city.x, y: city.y },
-    partner: city.partnerId
-      ? partnerViews.find((item) => item.id === city.partnerId) ?? null
-      : null,
-  }));
+  const cities = TRADE_MAP_CITIES.map((city) => {
+    const hexSite = getWorldCityHexSite(city.id);
+    return {
+      id: city.id,
+      name: city.name,
+      category: city.category,
+      description: city.description,
+      labelAnchor: city.labelAnchor,
+      partnerId: city.partnerId ?? null,
+      map: {
+        x: city.x,
+        y: city.y,
+        hex: hexSite ? { q: hexSite.q, r: hexSite.r } : null,
+        sprite: hexSite?.sprite ?? null,
+      },
+      partner: city.partnerId
+        ? partnerViews.find((item) => item.id === city.partnerId) ?? null
+        : null,
+    };
+  });
 
   return {
     kingdom: {
