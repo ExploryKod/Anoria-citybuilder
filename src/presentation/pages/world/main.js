@@ -2,7 +2,7 @@ import { bootSiteChrome } from '../site/bootSiteChrome.js';
 import { bootMapContexts } from '../../../composition/bootMapContexts.js';
 import { WorldMapController } from '../../dom/maps/WorldMapController.js';
 
-bootSiteChrome();
+bootSiteChrome({ legalFooter: false });
 
 async function main() {
   const root = document.getElementById('map-root');

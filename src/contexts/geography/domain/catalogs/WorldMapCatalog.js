@@ -6,5 +6,4 @@ export const WORLD_KINGDOM = Object.freeze({
   id: 'anoria',
   name: 'Royaume d’Anoria',
   map: Object.freeze({ x: 50, y: 50 }),
-  hamletsPagePath: '/hamlets',
 });

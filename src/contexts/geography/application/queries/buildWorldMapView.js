@@ -3,6 +3,7 @@ import {
   TRADE_MAP_CITIES,
   TRADE_MAP_CONNECTIONS,
 } from '../../../commerce/domain/catalogs/TradeMapCityCatalog.js';
+import { DEFAULT_HAMLET_ID } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { WORLD_KINGDOM } from '../../domain/catalogs/WorldMapCatalog.js';
 import { getWorldCityHexSite } from '../../domain/catalogs/WorldCityHexCatalog.js';
 import { buildHamletsMapView } from './buildHamletsMapView.js';
@@ -33,6 +34,21 @@ export async function buildWorldMapView({ commerceApi, activationByPartnerId }) 
     ? hamletsView.unlockedCount / hamletsView.totalHamlets
     : 0;
 
+  /** Satellite hamlets around Anoria (castle = eraanurbs at centre, not duplicated). */
+  const hamlets = hamletsView.hamlets
+    .filter((hamlet) => hamlet.id !== DEFAULT_HAMLET_ID)
+    .map((hamlet) => ({
+      id: hamlet.id,
+      name: hamlet.name,
+      access: hamlet.access,
+      natureSeeded: hamlet.natureSeeded,
+      canTravel: hamlet.canTravel,
+      map: {
+        hex: hamlet.map.hex,
+        sprite: hamlet.map.sprite,
+      },
+    }));
+
   const cities = TRADE_MAP_CITIES.map((city) => {
     const hexSite = getWorldCityHexSite(city.id);
     return {
@@ -59,11 +75,12 @@ export async function buildWorldMapView({ commerceApi, activationByPartnerId }) 
       id: WORLD_KINGDOM.id,
       name: WORLD_KINGDOM.name,
       map: { ...WORLD_KINGDOM.map },
-      hamletsPagePath: WORLD_KINGDOM.hamletsPagePath,
+      activeHamletId: hamletsView.activeHamletId,
       influence,
       unlockedHamlets: hamletsView.unlockedCount,
       totalHamlets: hamletsView.totalHamlets,
     },
+    hamlets,
     cities,
     connections: TRADE_MAP_CONNECTIONS,
     partners: partnerViews,

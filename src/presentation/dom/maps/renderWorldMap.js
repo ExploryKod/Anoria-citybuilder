@@ -1,43 +1,96 @@
+import { HAMLET_ACCESS } from '../../../core/persistence/hamlet/hamletAccess.js';
 import { renderTradeMapPanelForCity } from '../admin/commerce/renderTradeMap.js';
 
 /**
  * @param {Awaited<ReturnType<import('../../../contexts/geography/application/queries/buildWorldMapView.js').buildWorldMapView>>} view
+ * @param {{ cityId?: string | null, hamletId?: string | null }} selection
  */
-export function renderWorldMapToolbar(view) {
-  const openRoutes = view.partners.filter((partner) => partner.isActive).length;
-  const influencePercent = Math.round(view.kingdom.influence * 100);
+export function renderWorldMapShell(view, selection = {}) {
+  const panelSelection = {
+    cityId: selection.hamletId ? null : (selection.cityId ?? 'anoria'),
+    hamletId: selection.hamletId ?? null,
+  };
 
   return `
-    <div class="map-page-toolbar trade-map-toolbar">
-      <span class="trade-map-toolbar-title">Carte du monde</span>
-      <span class="trade-map-toolbar-stats" id="world-map-stats">
-        ${openRoutes}/${view.partners.length} routes · Royaume ${influencePercent}%
-      </span>
-      <nav class="map-page-nav" aria-label="Navigation cartes">
-        <a href="/hamlets" class="map-page-nav-link">Royaume</a>
-        <a href="/game" class="map-page-nav-link">Partie</a>
-      </nav>
+    <div class="map-page-body">
+      <div class="map-page-canvas trade-map-canvas world-phaser-host" id="world-phaser-host">
+        <div id="world-phaser-root" class="world-phaser-root" aria-label="Carte hexagonale du monde"></div>
+      </div>
+      <div class="map-page-panel trade-map-panel" id="world-map-panel">
+        ${renderWorldMapPanel(view, panelSelection)}
+      </div>
     </div>`;
 }
 
 /**
  * @param {Awaited<ReturnType<import('../../../contexts/geography/application/queries/buildWorldMapView.js').buildWorldMapView>>} view
- * @param {string | null} selectedCityId
+ * @param {string | null} hamletId
  */
-export function renderWorldMapShell(view, selectedCityId) {
-  const selected = selectedCityId ?? 'anoria';
+export function renderWorldHamletPanel(view, hamletId) {
+  const hamlet = view.hamlets.find((item) => item.id === hamletId);
+  if (!hamlet) {
+    return `
+      <div class="trade-map-panel-empty">
+        <p>Sélectionnez un hameau sur la carte</p>
+      </div>`;
+  }
+
+  let statusText = 'Verrouillé';
+  let statusClass = 'closed';
+  let actionHtml = '<p class="trade-map-panel-active-note">Ce hameau n’est pas encore accessible.</p>';
+
+  if (hamlet.access === HAMLET_ACCESS.active) {
+    statusText = 'Hameau actif';
+    statusClass = 'open';
+    actionHtml = `
+      <a href="/game" class="site-btn site-btn--primary site-btn--inline world-map-enter-btn" title="Entrer dans le hameau">
+        Entrer
+      </a>`;
+  } else if (hamlet.access === HAMLET_ACCESS.unlocked) {
+    statusText = 'Accessible';
+    statusClass = 'open';
+    actionHtml = `
+      <button type="button" class="site-btn site-btn--primary site-btn--inline world-map-travel-btn" data-hamlet-id="${hamlet.id}" title="Voyager vers ce hameau">
+        Voyager
+      </button>`;
+  }
 
   return `
-    ${renderWorldMapToolbar(view)}
-    <div class="map-page-body">
-      <div class="map-page-canvas trade-map-canvas world-phaser-host" id="world-phaser-host">
-        <div id="world-phaser-root" class="world-phaser-root" aria-label="Carte hexagonale du monde"></div>
-        <p class="world-phaser-hint">Molette : zoom · Glisser : déplacer · Survol : coordonnées hex</p>
+    <div class="trade-map-panel-inner" data-hamlet-id="${hamlet.id}">
+      <div class="trade-map-panel-header">
+        <div class="trade-map-panel-title-group">
+          <h3 class="trade-map-panel-city">${hamlet.name}</h3>
+        </div>
+        <span class="trade-map-panel-route ${statusClass}">${statusText}</span>
       </div>
-      <div class="map-page-panel trade-map-panel" id="world-map-panel">
-        ${renderTradeMapPanelForCity(selected, view.partners)}
-      </div>
+      <p class="trade-map-panel-desc">
+        ${hamlet.natureSeeded ? 'Nature déjà semée sur ce site.' : 'Site encore vierge — la nature sera générée au premier voyage.'}
+      </p>
+      ${actionHtml}
     </div>`;
+}
+
+/**
+ * @param {Awaited<ReturnType<import('../../../contexts/geography/application/queries/buildWorldMapView.js').buildWorldMapView>>} view
+ * @param {{ cityId?: string | null, hamletId?: string | null }} selection
+ */
+export function renderWorldMapPanel(view, selection = {}) {
+  if (selection.hamletId) {
+    return renderWorldHamletPanel(view, selection.hamletId);
+  }
+
+  const cityId = selection.cityId ?? 'anoria';
+  const cityPanel = renderTradeMapPanelForCity(cityId, view.partners);
+
+  if (cityId !== 'anoria') {
+    return cityPanel;
+  }
+
+  return `
+    ${cityPanel}
+    <a href="/game" class="site-btn site-btn--primary site-btn--inline world-map-enter-btn" title="Entrer dans le hameau actif">
+      Entrer
+    </a>`;
 }
 
 /**
@@ -46,10 +99,10 @@ export function renderWorldMapShell(view, selectedCityId) {
 export function renderWorldMapStats(view) {
   const openRoutes = view.partners.filter((partner) => partner.isActive).length;
   const influencePercent = Math.round(view.kingdom.influence * 100);
-  return `${openRoutes}/${view.partners.length} routes · Royaume ${influencePercent}%`;
+  return `${openRoutes}/${view.partners.length} routes · ${view.kingdom.unlockedHamlets}/${view.kingdom.totalHamlets} hameaux · Royaume ${influencePercent}%`;
 }
 
-/** @deprecated Use renderWorldMapShell — Phaser canvas replaces SVG stage */
-export function renderWorldMapPage(view, selectedCityId) {
-  return renderWorldMapShell(view, selectedCityId);
+/** @deprecated Use renderWorldMapShell */
+export function renderWorldMapPage(view, selection) {
+  return renderWorldMapShell(view, selection);
 }

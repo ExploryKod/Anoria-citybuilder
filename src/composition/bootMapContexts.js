@@ -8,7 +8,7 @@ import { getOrCreateHousingContext } from './createHousingContext.js';
 import { createMapSessionApi } from './mapSessionApi.js';
 
 /**
- * Light bootstrap for /hamlets and /world — no game runtime or ECS tick.
+ * Light bootstrap for /world — no game runtime or ECS tick.
  * @returns {Promise<{ mapApi: ReturnType<typeof createMapSessionApi> }>}
  */
 export async function bootMapContexts() {
