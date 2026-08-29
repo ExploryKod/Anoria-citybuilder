@@ -30,18 +30,6 @@
   border-top: 1px solid var(--trade-map-border);
 }
 
-.world-map-kingdom-ring {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  width: calc(18% + var(--world-influence, 0.1) * 28%);
-  height: calc(18% + var(--world-influence, 0.1) * 28%);
-  border-radius: 50%;
-  border: 2px solid rgba(251, 129, 34, 0.45);
-  background: radial-gradient(circle, rgba(251, 129, 34, 0.14) 0%, transparent 68%);
-  pointer-events: none;
-  z-index: 0;
-}
-
 .trade-map-city--player {
   cursor: pointer;
 }

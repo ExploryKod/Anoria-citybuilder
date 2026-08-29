@@ -4,6 +4,8 @@ import { dirname, join } from 'node:path';
 import {
   KENNEY_HEX_ATLASES,
   KENNEY_HEX_GAMEPLAY_SPRITES,
+  KENNEY_TERRAIN_CATALOG,
+  getKenneyTerrainTileMeta,
   kenneyFrameName,
   resolveKenneyPhaserFrame,
 } from '../../../src/contexts/geography/domain/catalogs/HexAssetCatalog.js';
@@ -24,7 +26,7 @@ describe('Kenney hex atlases (Phaser)', () => {
     const grass = resolveKenneyPhaserFrame('grassland');
     expect(grass).toEqual({
       textureKey: KENNEY_HEX_ATLASES.terrain.key,
-      frame: 'grass_01.png',
+      frame: KENNEY_TERRAIN_CATALOG.gameplayFillDefaults.grassland,
     });
 
     const capital = resolveKenneyPhaserFrame('capital');
@@ -44,5 +46,25 @@ describe('Kenney hex atlases (Phaser)', () => {
       expect(KENNEY_HEX_ATLASES[sprite.atlas]).toBeDefined();
       expect(sprite.frame.endsWith('.png')).toBe(true);
     }
+  });
+
+  test('terrain gameplay keys map to curated catalog tiles', () => {
+    const fillKeys = ['grassland', 'coast', 'mountain'];
+    for (const key of fillKeys) {
+      const sprite = KENNEY_HEX_GAMEPLAY_SPRITES[key];
+      const meta = getKenneyTerrainTileMeta(sprite.frame);
+      expect(meta?.role).toBe('fill');
+    }
+
+    const hill = getKenneyTerrainTileMeta(KENNEY_HEX_GAMEPLAY_SPRITES.hill.frame);
+    expect(hill?.category).toBe('fill/plain_edges');
+
+    const forest = getKenneyTerrainTileMeta(KENNEY_HEX_GAMEPLAY_SPRITES.forest.frame);
+    expect(forest?.category).toBe('fill/forest/numerous');
+
+    const desert = getKenneyTerrainTileMeta(KENNEY_HEX_GAMEPLAY_SPRITES.desert.frame);
+    expect(desert?.biome).toBe('DarkDirt');
+    expect(desert?.role).toBe('framed');
+    expect(desert?.category).toBe('framed/by_darkdirt');
   });
 });

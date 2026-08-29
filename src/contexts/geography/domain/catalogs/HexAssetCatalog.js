@@ -5,7 +5,15 @@
  * Phaser loads them via `load.atlasXML(key, pngUrl, xmlUrl)` (Starling XML format).
  *
  * Frame names in XML include the `.png` suffix — use `kenneyFrameName()` when building from a stem.
+ *
+ * Map rendering policy: Kenney sprites are the visual source of truth. Only place hex tiles
+ * that resolve here; never invent placeholders (e.g. no water hex — ocean is a flat background).
+ *
+ * Terrain frame picks come from `kenneyTerrainCatalog.json` (run `pnpm classify:kenney-hex`).
+ * Grass, Dirt, DarkDirt, Sand, and Stone tiles are curated under `PNG/Tiles/Terrain/{Biome}/{category}/`.
  */
+
+import terrainCatalog from './kenneyTerrainCatalog.json' with { type: 'json' };
 
 /** Web path from site root (Vite `public/`). */
 export const KENNEY_HEX_SPRITESHEET_BASE = '/resources/kenney_hexagon-pack/Spritesheets';
@@ -46,21 +54,27 @@ export const KENNEY_HEX_ATLASES = Object.freeze({
 /** Default atlases for map scenes (avoid loading the 876 KB “all” sheet unless needed). */
 export const KENNEY_HEX_MAP_ATLAS_IDS = Object.freeze(['terrain', 'buildings']);
 
+/** Classified terrain catalog (auto-generated). */
+export const KENNEY_TERRAIN_CATALOG = Object.freeze(terrainCatalog);
+
 /**
  * @typedef {{ atlas: KenneyHexAtlasId, frame: string }} KenneyGameplaySprite
  */
 
+const terrainFillFrames = terrainCatalog.gameplayFillDefaults;
+
 /**
  * Gameplay terrain / entity keys → atlas + frame (frames include `.png` suffix).
+ * Terrain keys use `fill` tiles from the classified catalog for continuous biomes.
  * @type {Readonly<Record<string, KenneyGameplaySprite>>}
  */
 export const KENNEY_HEX_GAMEPLAY_SPRITES = Object.freeze({
-  grassland: { atlas: 'terrain', frame: 'grass_01.png' },
-  coast: { atlas: 'terrain', frame: 'sand_01.png' },
-  desert: { atlas: 'terrain', frame: 'mars_01.png' },
-  hill: { atlas: 'terrain', frame: 'dirt_01.png' },
-  mountain: { atlas: 'terrain', frame: 'stone_01.png' },
-  forest: { atlas: 'terrain', frame: 'grass_03.png' },
+  grassland: { atlas: 'terrain', frame: terrainFillFrames.grassland },
+  coast: { atlas: 'terrain', frame: terrainFillFrames.coast },
+  desert: { atlas: 'terrain', frame: terrainFillFrames.desert },
+  hill: { atlas: 'terrain', frame: terrainFillFrames.hill },
+  mountain: { atlas: 'terrain', frame: terrainFillFrames.mountain },
+  forest: { atlas: 'terrain', frame: terrainFillFrames.forest },
   hamlet: { atlas: 'buildings', frame: 'medieval_cabin.png' },
   village: { atlas: 'buildings', frame: 'medieval_house.png' },
   capital: { atlas: 'buildings', frame: 'medieval_largeCastle.png' },
@@ -69,6 +83,40 @@ export const KENNEY_HEX_GAMEPLAY_SPRITES = Object.freeze({
   farm: { atlas: 'buildings', frame: 'medieval_farm.png' },
   market: { atlas: 'buildings', frame: 'medieval_archery.png' },
 });
+
+/**
+ * @param {string} frame e.g. `grass_06.png`
+ */
+export function getKenneyTerrainTileMeta(frame) {
+  return terrainCatalog.terrain.find((entry) => entry.frame === frame)
+    ?? terrainCatalog.grass?.tiles?.find((entry) => entry.frame === frame)
+    ?? terrainCatalog.dirt?.tiles?.find((entry) => entry.frame === frame)
+    ?? terrainCatalog.darkDirt?.tiles?.find((entry) => entry.frame === frame)
+    ?? terrainCatalog.sand?.tiles?.find((entry) => entry.frame === frame)
+    ?? terrainCatalog.stone?.tiles?.find((entry) => entry.frame === frame)
+    ?? null;
+}
+
+/**
+ * @param {string} stem e.g. `grass_05`
+ */
+export function getGrassTileMeta(stem) {
+  const frame = kenneyFrameName(stem);
+  return terrainCatalog.grass?.tiles?.find((entry) => entry.frame === frame) ?? null;
+}
+
+/**
+ * @param {string} frameOrId Atlas frame (`dirt_06.png`) or descriptive id/file stem
+ */
+export function getDirtTileMeta(frameOrId) {
+  const frame = frameOrId.endsWith('.png') ? frameOrId : `${frameOrId}.png`;
+  return terrainCatalog.dirt?.tiles?.find(
+    (entry) => entry.frame === frame
+      || entry.file === frame
+      || entry.id === frameOrId
+      || entry.id === frame.replace(/\.png$/i, '')
+  ) ?? null;
+}
 
 /**
  * Normalise a Kenney frame stem to the XML SubTexture name.
