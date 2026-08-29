@@ -79,12 +79,13 @@
     --z-index-hud-menu-panel: 10014;
     --z-index-hud-menu-popover: 10016;
     --z-index-hud-fab-dock: 10017;
-    --z-index-hud-pop-rail: 10018;
 
     --z-index-panel: 10010;
     --z-index-legend: var(--z-index-hud-menu);
     --z-index-loader: 10020;
     --z-index-info-panel: 10020;
+    /* Draggable pop rail — above HUD chrome, below modals */
+    --z-index-hud-pop-rail: 10025;
     --z-index-modal: 10030;
     --z-index-notification: 10040;
 

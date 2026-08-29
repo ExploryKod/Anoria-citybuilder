@@ -28,7 +28,7 @@ const SCOPE_LABELS = Object.freeze({
  * @returns {'both' | 'country' | 'hamlet'}
  */
 export function normalizeHudPopRailScope(value) {
-  return SCOPE_ORDER.includes(value) ? value : HUD_POP_RAIL_SCOPES.both;
+  return SCOPE_ORDER.includes(value) ? value : HUD_POP_RAIL_SCOPES.hamlet;
 }
 
 /**
@@ -108,11 +108,11 @@ export function initHudPopRailScope(root = document.getElementById('hud-pop-rail
     cycleHudPopRailScope(root);
   });
 
-  let stored = HUD_POP_RAIL_SCOPES.both;
+  let stored = HUD_POP_RAIL_SCOPES.hamlet;
   try {
     stored = normalizeHudPopRailScope(localStorage.getItem(HUD_POP_RAIL_SCOPE_KEY));
   } catch {
-    stored = HUD_POP_RAIL_SCOPES.both;
+    stored = HUD_POP_RAIL_SCOPES.hamlet;
   }
   setHudPopRailScope(stored, root, { persist: false });
 }
