@@ -39,7 +39,7 @@ describe('hudPopRailScope', () => {
     expect(nextHudPopRailScope('both')).toBe('country');
     expect(nextHudPopRailScope('country')).toBe('hamlet');
     expect(nextHudPopRailScope('hamlet')).toBe('both');
-    expect(normalizeHudPopRailScope('nope')).toBe('both');
+    expect(normalizeHudPopRailScope('nope')).toBe('hamlet');
   });
 
   test('setHudPopRailScope updates data attribute, icon and label', () => {
@@ -56,17 +56,18 @@ describe('hudPopRailScope', () => {
     expect(localStorage.getItem(HUD_POP_RAIL_SCOPE_KEY)).toBe('hamlet');
   });
 
-  test('click cycles scope three times back to both', () => {
+  test('click cycles scope three times back to hamlet', () => {
     const root = document.getElementById('hud-pop-rail');
     initHudPopRailScope(root);
     const btn = root.querySelector('#hud-pop-rail-scope');
 
+    expect(getHudPopRailScope(root)).toBe('hamlet');
+    btn.click();
+    expect(getHudPopRailScope(root)).toBe('both');
     btn.click();
     expect(getHudPopRailScope(root)).toBe('country');
     btn.click();
     expect(getHudPopRailScope(root)).toBe('hamlet');
-    btn.click();
-    expect(getHudPopRailScope(root)).toBe('both');
   });
 
   test('init restores persisted scope', () => {

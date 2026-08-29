@@ -414,13 +414,18 @@
   overflow: visible;
   pointer-events: auto;
   box-sizing: border-box;
-  /* details + ville + commerce + nature */
-  --hud-pop-tab-min-count: 4;
+  /* drag + scope + details + emploi + ville + commerce + nature */
+  --hud-pop-tab-min-count: 7;
   --hud-pop-tab-height: 46px;
   --hud-pop-tab-gap: 3px;
+  --hud-pop-rail-tabs-inset-top: var(--game-chrome-radius);
+  /* Pop rail chrome header (close / scope) */
+  --hud-pop-rail-header-height: 36px;
+  --hud-pop-rail-chrome-btn-size: 28px;
+  --hud-pop-rail-chrome-icon-size: 16px;
+  --hud-pop-rail-panel-content-min-height: 424px;
   --hud-pop-rail-panel-min-height: calc(
-    22px
-    + 6px
+    var(--hud-pop-rail-tabs-inset-top)
     + (var(--hud-pop-tab-min-count) * var(--hud-pop-tab-height))
     + ((var(--hud-pop-tab-min-count) - 1) * var(--hud-pop-tab-gap))
   );
@@ -431,7 +436,10 @@
     - 16px
     - env(safe-area-inset-bottom, 0px)
   );
-  min-height: min(var(--hud-pop-rail-panel-min-height), var(--hud-pop-rail-max-height));
+  min-height: min(
+    max(var(--hud-pop-rail-panel-min-height), var(--hud-pop-rail-panel-content-min-height)),
+    var(--hud-pop-rail-max-height)
+  );
   max-height: var(--hud-pop-rail-max-height);
 }
 
@@ -473,8 +481,7 @@
   gap: 6px;
   flex-shrink: 0;
   margin-left: -1px;
-  /* Hand at top-right of the rail, level with the panel top on desktop */
-  padding-top: 4px;
+  padding-top: 0;
   z-index: 2;
   align-self: flex-start;
 }
@@ -484,7 +491,7 @@
   position: relative;
   z-index: 1;
   min-width: 0;
-  min-height: 0;
+  min-height: var(--hud-pop-rail-panel-content-min-height, 424px);
   flex: 1 1 auto;
   display: flex;
   align-items: stretch;
@@ -497,7 +504,16 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 3px;
+  gap: 20px;
+  padding-top: var(--hud-pop-rail-tabs-inset-top);
+  box-sizing: border-box;
+}
+
+.hud-pop-rail__tablist {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--hud-pop-tab-gap);
 }
 
 .hud-pop-rail__tab {
@@ -541,6 +557,15 @@
   --tab-color: #d45d6a;
 }
 
+.hud-pop-rail__tab--emploi {
+  --tab-color: #9b7a5c;
+}
+
+.hud-pop-rail__tab--emploi .hud-pop-rail__tab-img--unemployed {
+  filter: none;
+  opacity: 0.95;
+}
+
 .hud-pop-rail__tab--ressources-ville {
   --tab-color: #5b8fa8;
 }
@@ -551,6 +576,39 @@
 
 .hud-pop-rail__tab--ressources-nature {
   --tab-color: #4a8f5c;
+}
+
+.hud-pop-rail__tab--drag {
+  --tab-color: #e8a04a;
+  touch-action: none;
+  cursor: grab;
+  min-height: 40px;
+  font-size: 14px;
+  line-height: 1;
+  user-select: none;
+  -webkit-user-select: none;
+  filter: none;
+}
+
+.hud-pop-rail__tab--scope {
+  --tab-color: #6d7fa8;
+  touch-action: manipulation;
+  filter: none;
+}
+
+.hud-pop-rail__tab--scope svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+
+.hud-pop-rail__tab--scope svg[hidden] {
+  display: none;
+}
+
+.hud-pop-rail__tab--drag:active {
+  cursor: grabbing;
 }
 
 .hud-pop-rail__tab[aria-selected="true"] {
@@ -569,61 +627,7 @@
   outline-offset: 2px;
 }
 
-.hud-pop-rail__drag {
-  position: relative;
-  top: auto;
-  right: auto;
-  left: auto;
-  z-index: 2;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 50%;
-  background: rgba(29, 34, 40, 0.85);
-  color: #fff;
-  font-size: 11px;
-  line-height: 1;
-  cursor: grab;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: none;
-  transition: transform 0.15s ease, background-color 0.15s ease;
-}
-
-.hud-pop-rail__drag:hover {
-  transform: scale(1.08);
-  background: rgba(29, 34, 40, 1);
-}
-
-.hud-pop-rail__drag:active {
-  cursor: grabbing;
-}
-
-/* Finger-friendly drag handle on phone / tablet — lifted above the white panel
-   so the larger target stays clear of the in-panel close control */
-@media screen and (max-width: 1024px) {
-  .hud-pop-rail .hud-pop-rail__drag {
-    width: 40px;
-    height: 40px;
-    font-size: 18px;
-    margin-top: -22px;
-  }
-
-  .hud-pop-rail__side {
-    padding-top: 0;
-  }
-
-  .hud-pop-rail--collapsed .hud-pop-rail__drag {
-    margin-top: 0;
-  }
-}
-
 .hud-pop-rail__collapse,
-.hud-pop-rail__scope,
 .hud-pop-rail__expand {
   appearance: none;
   flex-shrink: 0;
@@ -633,64 +637,76 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Close + scope sit together in the panel chrome (top-left) */
+/* Panel header: close */
 .hud-pop-rail__chrome {
   position: absolute;
-  top: 4px;
-  left: 4px;
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 3;
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 6px;
+  height: var(--hud-pop-rail-header-height, 36px);
+  padding: 0 10px;
+  box-sizing: border-box;
+  border-bottom: 1px solid color-mix(in srgb, var(--game-chrome-border) 70%, transparent);
+  background: color-mix(in srgb, var(--game-chrome-bg) 94%, var(--cta) 6%);
+  border-radius: var(--game-chrome-radius) var(--game-chrome-radius) 0 0;
 }
 
-.hud-pop-rail__collapse,
-.hud-pop-rail__scope {
+.hud-pop-rail__collapse {
   position: relative;
   top: auto;
   left: auto;
   right: auto;
-  width: 22px;
-  height: 22px;
+  width: var(--hud-pop-rail-chrome-btn-size, 28px);
+  height: var(--hud-pop-rail-chrome-btn-size, 28px);
+  min-width: var(--hud-pop-rail-chrome-btn-size, 28px);
+  min-height: var(--hud-pop-rail-chrome-btn-size, 28px);
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
-  color: color-mix(in srgb, var(--primary) 48%, transparent);
+  color: color-mix(in srgb, var(--primary) 55%, transparent);
   box-shadow: none;
   backdrop-filter: none;
+  touch-action: manipulation;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.hud-pop-rail__collapse:hover,
-.hud-pop-rail__scope:hover {
-  background: color-mix(in srgb, var(--primary) 10%, transparent);
+.hud-pop-rail__collapse:hover {
+  background: color-mix(in srgb, var(--cta) 14%, transparent);
   color: var(--primary);
 }
 
 .hud-pop-rail__collapse:focus-visible,
-.hud-pop-rail__scope:focus-visible,
-.hud-pop-rail__expand:focus-visible {
+.hud-pop-rail__expand:focus-visible,
+.hud-pop-rail__tab--drag:focus-visible,
+.hud-pop-rail__tab--scope:focus-visible {
   outline: 3px solid var(--cta);
   outline-offset: 2px;
 }
 
-.hud-pop-rail__collapse svg,
-.hud-pop-rail__scope svg {
+.hud-pop-rail__collapse svg {
   display: block;
-  width: 14px;
-  height: 14px;
+  width: var(--hud-pop-rail-chrome-icon-size, 16px);
+  height: var(--hud-pop-rail-chrome-icon-size, 16px);
   pointer-events: none;
 }
 
-.hud-pop-rail__scope svg[hidden] {
-  display: none;
+@media screen and (max-width: 1024px) {
+  .hud-pop-rail {
+    --hud-pop-rail-header-height: 48px;
+    --hud-pop-rail-chrome-btn-size: 40px;
+    --hud-pop-rail-chrome-icon-size: 18px;
+  }
 }
 
 .hud-pop-rail__expand {
+  touch-action: manipulation;
   width: var(--hud-chip-height, 40px);
   height: var(--hud-chip-height, 40px);
   border: 1px solid var(--game-chrome-border);
@@ -726,10 +742,9 @@
   min-width: 88px;
   max-width: 168px;
   height: 100%;
-  min-height: 0;
+  min-height: var(--hud-pop-rail-panel-content-min-height, 424px);
   max-height: 100%;
-  /* Extra top padding so metrics clear the in-panel close control */
-  padding: 28px 10px 12px;
+  padding: calc(var(--hud-pop-rail-header-height, 36px) + 10px) 10px 12px;
   background: var(--game-chrome-bg);
   border: 1px solid var(--game-chrome-border);
   border-radius: var(--game-chrome-radius);
@@ -819,6 +834,7 @@
 
 .hud-pop-rail .pop-detail-icon .unemployed-icon,
 .hud-pop-rail .pop-detail-icon .famished-icon,
+.hud-pop-rail .pop-detail-icon .deaths-icon,
 .hud-pop-rail .pop-detail-labor-icon .unemployed-icon {
   width: 18px;
   height: 18px;
@@ -830,8 +846,7 @@
   color: var(--primary);
 }
 
-.hud-pop-rail .pop-detail-icon--users svg,
-.hud-pop-rail .pop-detail-icon--deaths svg {
+.hud-pop-rail .pop-detail-icon--users svg {
   width: 18px;
   height: 18px;
   display: block;
@@ -1453,7 +1468,7 @@
   .hud-pop-rail .hud-pop-rail__panel {
     min-width: 64px;
     max-width: 108px;
-    padding: 26px 8px 10px;
+    padding: calc(var(--hud-pop-rail-header-height, 48px) + 8px) 8px 10px;
   }
 
   .hud-pop-rail .infos-pop-detail > * + *,
