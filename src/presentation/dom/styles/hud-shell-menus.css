@@ -332,7 +332,28 @@
 .hamlet-travel__dest--active {
   background: #7dce82;
   color: #143018;
+  border-color: #5fb864;
   cursor: default;
+}
+
+.hud-pop-rail .hamlet-travel__dest--unlocked,
+.hamlet-travel__dest--unlocked {
+  background: rgba(29, 34, 40, 0.06);
+  border-color: rgba(29, 34, 40, 0.14);
+  color: var(--primary);
+}
+
+.hamlet-travel__dest--unlocked:hover:not(:disabled) {
+  background: rgba(29, 34, 40, 0.1);
+}
+
+.hamlet-travel__dest--locked {
+  background: rgba(29, 34, 40, 0.03);
+  border-style: dashed;
+  border-color: rgba(29, 34, 40, 0.22);
+  color: rgba(29, 34, 40, 0.42);
+  cursor: not-allowed;
+  opacity: 0.82;
 }
 
 .hamlet-travel__dest[aria-disabled="true"] {

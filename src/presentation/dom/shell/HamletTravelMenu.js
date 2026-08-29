@@ -4,10 +4,13 @@
  */
 
 import { getSessionGame } from '../../../composition/sessionRuntime.js';
+import { getActiveHamletId } from '../../../core/persistence/hamlet/hamletSession.js';
 import {
-  getActiveHamletId,
-  listHamlets,
-} from '../../../core/persistence/hamlet/hamletSession.js';
+  HAMLET_ACCESS,
+  HAMLET_ACCESS_CHANGED_EVENT,
+  canTravelToHamlet,
+  listHamletsWithAccess,
+} from '../../../core/persistence/hamlet/hamletAccess.js';
 
 function destinationButtons(track) {
   return [...(track?.querySelectorAll('[data-hamlet-id]') ?? [])].filter(
@@ -15,18 +18,39 @@ function destinationButtons(track) {
   );
 }
 
-function paintDestinations(track, activeId) {
+/**
+ * @param {HTMLElement} track
+ * @param {string} activeId
+ * @param {{ id: string, name: string, access: string }[]} hamlets
+ */
+function paintDestinations(track, activeId, hamlets) {
+  const byId = Object.fromEntries(hamlets.map((h) => [h.id, h]));
+
   destinationButtons(track).forEach((btn) => {
-    const isActive = btn.dataset.hamletId === activeId;
+    const hamlet = byId[btn.dataset.hamletId ?? ''];
+    const access = hamlet?.access ?? HAMLET_ACCESS.locked;
+    const isActive = access === HAMLET_ACCESS.active || btn.dataset.hamletId === activeId;
+    const isUnlocked = access === HAMLET_ACCESS.unlocked;
+    const isLocked = access === HAMLET_ACCESS.locked;
+
     btn.classList.toggle('hamlet-travel__dest--active', isActive);
+    btn.classList.toggle('hamlet-travel__dest--unlocked', isUnlocked);
+    btn.classList.toggle('hamlet-travel__dest--locked', isLocked);
+
     btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
     btn.setAttribute('aria-current', isActive ? 'true' : 'false');
-    btn.setAttribute('aria-disabled', isActive ? 'true' : 'false');
-    const name = btn.textContent.trim();
-    btn.setAttribute(
-      'aria-label',
-      isActive ? `${name}, hameau actuel` : name
-    );
+
+    const disabled = isActive || isLocked;
+    btn.disabled = disabled;
+    btn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+
+    const name = hamlet?.name ?? btn.textContent.trim();
+    let label = name;
+    if (isActive) label = `${name}, hameau actuel`;
+    else if (isLocked) label = `${name}, à débloquer`;
+    else label = `${name}, accessible`;
+    btn.setAttribute('aria-label', label);
+    btn.title = label;
   });
 }
 
@@ -68,6 +92,15 @@ export function initHamletTravelMenu() {
   if (!toggle || !menu || !track || !viewport || !prevBtn || !nextBtn) return;
 
   let open = false;
+  /** @type {{ id: string, name: string, access: string }[]} */
+  let hamlets = [];
+
+  async function refreshHamlets() {
+    hamlets = await listHamletsWithAccess();
+    renderTrack(track, hamlets);
+    paintDestinations(track, getActiveHamletId(), hamlets);
+    syncOverflow();
+  }
 
   function focusables() {
     const dests = destinationButtons(track);
@@ -90,7 +123,7 @@ export function initHamletTravelMenu() {
     prevBtn.tabIndex = overflowing && open ? 0 : -1;
     nextBtn.tabIndex = overflowing && open ? 0 : -1;
     destinationButtons(track).forEach((btn) => {
-      btn.tabIndex = open ? 0 : -1;
+      btn.tabIndex = open && !btn.disabled ? 0 : -1;
     });
   }
 
@@ -108,17 +141,19 @@ export function initHamletTravelMenu() {
     }
   }
 
-  function openMenu() {
+  async function openMenu() {
     open = true;
-    paintDestinations(track, getActiveHamletId());
+    await refreshHamlets();
     setOpenAttrs(menu, toggle, true);
     requestAnimationFrame(() => {
       syncOverflow();
       const dests = destinationButtons(track);
       const active = dests.find((btn) => btn.dataset.hamletId === getActiveHamletId());
       active?.scrollIntoView({ inline: 'center', block: 'nearest' });
-      const inactive = dests.find((btn) => btn.dataset.hamletId !== getActiveHamletId());
-      (inactive || dests[0])?.focus();
+      const focusTarget = dests.find((btn) => !btn.disabled && btn.dataset.hamletId !== getActiveHamletId())
+        || dests.find((btn) => !btn.disabled)
+        || dests[0];
+      focusTarget?.focus();
       requestAnimationFrame(syncOverflow);
     });
   }
@@ -128,10 +163,14 @@ export function initHamletTravelMenu() {
       close();
       return;
     }
+    if (!(await canTravelToHamlet(hamletId))) {
+      close();
+      return;
+    }
     close({ restoreFocus: false });
     const game = getSessionGame();
     await game?.travelToHamlet?.(hamletId);
-    paintDestinations(track, getActiveHamletId());
+    await refreshHamlets();
     toggle.focus();
   }
 
@@ -141,14 +180,14 @@ export function initHamletTravelMenu() {
     e.preventDefault();
     e.stopPropagation();
     if (open) close();
-    else openMenu();
+    else void openMenu();
   });
 
   toggle.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       if (open) close();
-      else openMenu();
+      else void openMenu();
       return;
     }
     if (open && e.key === 'Tab' && !e.shiftKey) {
@@ -159,7 +198,7 @@ export function initHamletTravelMenu() {
 
   track.addEventListener('click', (e) => {
     const btn = e.target instanceof Element ? e.target.closest('[data-hamlet-id]') : null;
-    if (!(btn instanceof HTMLButtonElement)) return;
+    if (!(btn instanceof HTMLButtonElement) || btn.disabled) return;
     e.preventDefault();
     void travel(btn.dataset.hamletId);
   });
@@ -181,7 +220,7 @@ export function initHamletTravelMenu() {
   }, { passive: true });
 
   menu.addEventListener('keydown', (e) => {
-    const dests = destinationButtons(track);
+    const dests = destinationButtons(track).filter((btn) => !btn.disabled);
     if (dests.length === 0) return;
     const items = focusables();
     const currentEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -265,13 +304,13 @@ export function initHamletTravelMenu() {
     if (open) syncOverflow();
   });
 
+  window.addEventListener(HAMLET_ACCESS_CHANGED_EVENT, () => {
+    void refreshHamlets();
+  });
+
   document.getElementById('toolbar-mobile-toggle')?.addEventListener('click', () => {
     if (open) close({ restoreFocus: false });
   });
 
-  void listHamlets().then((hamlets) => {
-    renderTrack(track, hamlets);
-    paintDestinations(track, getActiveHamletId());
-    syncOverflow();
-  });
+  void refreshHamlets();
 }

@@ -24,6 +24,7 @@ import { initHudPopRailScope } from '../shell/hudPopRailScope.js';
 import { adoptHudFabDockChildren } from '../shell/hudFabDock.js';
 import { initHudShellMenus } from '../shell/HudShellMenus.js';
 import { initHamletTravelMenu } from '../shell/HamletTravelMenu.js';
+import { initCheatCodePrompt } from '../shell/CheatCodePrompt.js';
 import { initMobileCompactToolbar } from '../tools/MobileCompactToolbar.js';
 import { initMobileClickStateFab } from '../tools/MobileClickStateFab.js';
 import { initMissingTooltips, observeMissingTooltips } from './TooltipTitles.js';
@@ -91,6 +92,7 @@ export async function initAppBoot() {
   );
   await bootstrapGameSession(assetManager);
   initHamletTravelMenu();
+  initCheatCodePrompt();
   initMapFiltersPanel({
     getScene: getSessionScene,
   });

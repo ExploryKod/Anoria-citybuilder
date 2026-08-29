@@ -91,17 +91,22 @@ export async function ensureHamletCatalog() {
         id: proto.id,
         name: proto.name,
         natureSeeded: false,
+        unlocked: proto.id === DEFAULT_HAMLET_ID,
       });
       continue;
     }
-    if (existing.name !== proto.name) {
-      await db.hamlets.put({ ...existing, name: proto.name });
+    const patch = { ...existing, name: proto.name };
+    if (existing.unlocked === undefined) {
+      patch.unlocked = existing.id === DEFAULT_HAMLET_ID;
+    }
+    if (patch.name !== existing.name || patch.unlocked !== existing.unlocked) {
+      await db.hamlets.put(patch);
     }
   }
 }
 
 /**
- * @returns {Promise<{ id: string, name: string, natureSeeded?: boolean }[]>}
+ * @returns {Promise<{ id: string, name: string, natureSeeded?: boolean, unlocked?: boolean }[]>}
  */
 export async function listHamlets() {
   const rows = await db.hamlets.toArray();
@@ -111,6 +116,7 @@ export async function listHamlets() {
       id: proto.id,
       name: row?.name || proto.name,
       natureSeeded: Boolean(row?.natureSeeded),
+      unlocked: row?.unlocked ?? proto.id === DEFAULT_HAMLET_ID,
     };
   });
 }

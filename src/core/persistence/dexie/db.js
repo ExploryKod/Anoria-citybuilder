@@ -37,6 +37,16 @@ db.version(3).stores({
   });
 });
 
+db.version(4).stores({
+  cheatCodes: 'code, activatedAt',
+}).upgrade(async (tx) => {
+  await tx.table('hamlets').toCollection().modify((row) => {
+    if (row.unlocked === undefined) {
+      row.unlocked = row.id === 'eraanurbs' || Boolean(row.natureSeeded);
+    }
+  });
+});
+
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;
 
