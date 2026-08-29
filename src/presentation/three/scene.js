@@ -48,8 +48,6 @@ import { createPlacementGhostController } from './placementGhost.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
 import { showWarningToast, showInfoToast } from '../dom/shell/ToastNotifier.js';
 
-const SKY_URL = '/resources/textures/skies/plain_sky.jpg';
-
 /** Terminaux tactiles / petits écrans — GPU plus souvent limité (mémoire, contexte WebGL). */
 function isMobileDevice() {
     const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches ?? false;
@@ -134,9 +132,8 @@ export function createScene(_gameStore, assetManager, deps) {
       }
     }
 
-    // Use simple scene background with sky texture - this ensures sky covers everything
-    // The backdrop (distant ground) will be positioned to match World platform exactly
-    backdropManager.initializeSky();
+    // Lowpoly day dome (follows camera in draw). Solid colour as horizon fallback.
+    void backdropManager.initializeSky();
     
     // Initialize citizen manager
     citizenManager.initialize();
@@ -346,7 +343,8 @@ export function createScene(_gameStore, assetManager, deps) {
         // Store world platform before clearing scene
         let worldPlatform = scene.getObjectByName('world-platform');
         
-        // Remove skybox sphere if it exists
+        // Drop sky before clear so BackdropManager does not keep a stale instance
+        backdropManager.detachSky();
         const skySphere = scene.getObjectByName('sky-sphere');
         if (skySphere) {
             scene.remove(skySphere);
@@ -360,8 +358,9 @@ export function createScene(_gameStore, assetManager, deps) {
         // Re-apply fog after clear
         try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
         
-        // Re-apply sky background
-        backdropManager.initializeSky();
+        // Re-attach sky dome (cached GLB template)
+        await backdropManager.initializeSky();
+        backdropManager.syncSkyToCamera(camera.camera);
         terrain = [];
         buildings = [];
         loadingPromises = [];
@@ -1894,6 +1893,8 @@ export function createScene(_gameStore, assetManager, deps) {
         }
         
         updateFocusedObject(); // Update focused object every frame
+        // Keep the sky dome locked to the camera (iso + perspective)
+        backdropManager.syncSkyToCamera(camera.camera);
         // OPTIMIZATION: Update frustum culling for zone groups (throttled)
         if (performanceManager) {
             performanceManager.updateFrustumCulling();

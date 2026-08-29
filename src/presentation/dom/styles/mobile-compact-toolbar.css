@@ -38,7 +38,7 @@
   bottom: var(--mobile-build-bar-bottom);
   width: var(--mobile-build-bar-width);
   max-width: calc(100vw - 24px);
-  z-index: calc(var(--z-index-legend, 1000) + 6);
+  z-index: var(--z-index-hud-menu-panel);
   padding: 10px 12px 12px;
   box-sizing: border-box;
   background: rgba(255, 255, 255, 0.88);
@@ -463,7 +463,7 @@
     + env(safe-area-inset-bottom, 0px)
     + 10px
   );
-  z-index: calc(var(--z-index-legend, 1000) + 5);
+  z-index: var(--z-index-hud-menu-elevated);
   pointer-events: auto;
 }
 

@@ -67,17 +67,43 @@
     --top-container-h: 10vh;
     --progress-bar-h: 2vh;
 
-    /* Z-index Management - Hierarchical System */
+    /* Z-index layers (ascending). HUD chrome stays below modals. */
     --z-index-base: 1;
     --z-index-canvas: 1;
     --z-index-toolbar: 1000;
     --z-index-tooltip: 1000;
+
+    /* In-game HUD chrome (10010–10019) */
+    --z-index-hud-menu: 10010;
+    --z-index-hud-menu-elevated: 10012;
+    --z-index-hud-menu-panel: 10014;
+    --z-index-hud-menu-popover: 10016;
+    --z-index-hud-fab-dock: 10017;
+
     --z-index-panel: 10010;
-    --z-index-legend: 1000;
+    --z-index-legend: var(--z-index-hud-menu);
     --z-index-loader: 10020;
     --z-index-info-panel: 10020;
-    --z-index-modal: 10030; /* Maximum z-index for modals */
-    --z-index-notification: 10040; /* Highest - for notifications that must appear above everything */
+    /* Draggable pop rail — above HUD chrome, below modals */
+    --z-index-hud-pop-rail: 10025;
+    --z-index-modal: 10030;
+    --z-index-notification: 10040;
+
+    /* Touch: pop rail above bottom command bar + construction FAB row */
+    --hud-fab-row-height: 48px;
+    --hud-fab-row-gap: 10px;
+    --hud-pop-rail-bottom-touch: calc(
+      var(--hud-bottom-height, 56px)
+      + env(safe-area-inset-bottom, 0px)
+      + var(--hud-fab-row-gap)
+      + var(--hud-fab-row-height)
+      + 12px
+    );
+    --hud-pop-rail-top-reserve-touch: calc(
+      var(--progress-bar-h, 2vh)
+      + var(--hud-chip-height, 40px)
+      + 24px
+    );
     /* Reserved bottom chrome: command bar (~56px) — used by legends / mobile offsets */
     --hud-bottom-height: 56px;
     /* Bottom-right FAB stack (perf + cookies) — above command bar on mobile */

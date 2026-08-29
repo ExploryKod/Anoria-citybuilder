@@ -1,10 +1,12 @@
 /**
  * Vertical APG tabs on the population rail (intercalaires).
+ * Two sub-lists: controls (drag / scope) and views (panel tabs).
  * ArrowUp / ArrowDown / Home / End switch views; Tab lands on the selected tab only.
  */
 
 export const HUD_POP_RAIL_TAB_IDS = Object.freeze({
   details: 'pop-details',
+  emploi: 'pop-emploi',
   ressourcesVille: 'pop-ressources-ville',
   ressourcesCommerce: 'pop-ressources-commerce',
   ressourcesNature: 'pop-ressources-nature',
@@ -12,18 +14,30 @@ export const HUD_POP_RAIL_TAB_IDS = Object.freeze({
 
 const TAB_ORDER = Object.freeze([
   HUD_POP_RAIL_TAB_IDS.details,
+  HUD_POP_RAIL_TAB_IDS.emploi,
   HUD_POP_RAIL_TAB_IDS.ressourcesVille,
   HUD_POP_RAIL_TAB_IDS.ressourcesCommerce,
   HUD_POP_RAIL_TAB_IDS.ressourcesNature,
 ]);
+
+const VIEW_TABLIST_SELECTOR = '.hud-pop-rail__tablist--views[role="tablist"]';
+
+/**
+ * @param {ParentNode | null | undefined} root
+ * @returns {HTMLElement | null}
+ */
+function getViewTablist(root) {
+  return root?.querySelector(VIEW_TABLIST_SELECTOR) ?? null;
+}
 
 /**
  * @param {ParentNode | null | undefined} root
  * @returns {HTMLElement[]}
  */
 function getTabs(root) {
-  if (!root) return [];
-  return [...root.querySelectorAll('.hud-pop-rail__tabs [role="tab"]')];
+  const tablist = getViewTablist(root);
+  if (!tablist) return [];
+  return [...tablist.querySelectorAll('[role="tab"]')];
 }
 
 /**
@@ -53,19 +67,19 @@ export function activateHudPopRailTab(tabId, root = document.getElementById('hud
  */
 export function initHudPopRailTabs(root = document.getElementById('hud-pop-rail')) {
   if (!root || root.dataset.popRailTabsReady === 'true') return;
-  const tablist = root.querySelector('.hud-pop-rail__tabs[role="tablist"]');
-  if (!tablist) return;
+  const viewTablist = getViewTablist(root);
+  if (!viewTablist) return;
 
   root.dataset.popRailTabsReady = 'true';
 
-  tablist.addEventListener('click', (event) => {
+  viewTablist.addEventListener('click', (event) => {
     const tab = event.target.closest('[role="tab"]');
     const tabId = tab?.dataset?.tab;
     if (!tabId) return;
     activateHudPopRailTab(tabId, root);
   });
 
-  tablist.addEventListener('keydown', (event) => {
+  viewTablist.addEventListener('keydown', (event) => {
     const tabs = getTabs(root);
     if (tabs.length === 0) return;
     const currentIndex = Math.max(
@@ -104,6 +118,6 @@ export function initHudPopRailTabs(root = document.getElementById('hud-pop-rail'
  * @returns {string | null}
  */
 function tabsSelectedId(root) {
-  const selected = root.querySelector('.hud-pop-rail__tabs [role="tab"][aria-selected="true"]');
+  const selected = root.querySelector(`${VIEW_TABLIST_SELECTOR} [role="tab"][aria-selected="true"]`);
   return selected?.dataset?.tab ?? null;
 }
