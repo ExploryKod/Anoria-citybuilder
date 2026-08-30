@@ -50,6 +50,10 @@ import {
 import { createPlacementGhostController } from './placementGhost.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
 import { showWarningToast, showInfoToast } from '../dom/shell/ToastNotifier.js';
+// Modified at lines 53-54 to test kenney fantasy
+import { getKenneyModularMeshAdapter } from './adapters/kenney-test/KenneyModularMeshAdapter.js';
+import { KENNEY_DEFAULT_RECIPE_ID } from './adapters/kenney-test/kenneyTestConfig.js';
+import { applyKenneyDebugBlackGround } from './adapters/kenney-test/kenneyDebugGround.js';
 
 /** Terminaux tactiles / petits écrans — GPU plus souvent limité (mémoire, contexte WebGL). */
 function isMobileDevice() {
@@ -559,6 +563,15 @@ export function createScene(_gameStore, assetManager, deps) {
         }
         
         await syncNeighborHamletDeco(city);
+
+        // Modified at lines 563-567 to test kenney fantasy
+        const interactiveGroupForKenney =
+            scene.interactiveGroup || scene.getObjectByName('interactive-objects');
+        if (interactiveGroupForKenney) {
+            await getKenneyModularMeshAdapter().spawnDemoBuilding(scene, interactiveGroupForKenney);
+        }
+
+        applyKenneyDebugBlackGround(scene, assetManager);
         
         // Initialize PerformanceManager after zoneGroups are set up
         performanceManager = new PerformanceManager(scene, camera, zoneGroups, buildings);
@@ -717,6 +730,33 @@ export function createScene(_gameStore, assetManager, deps) {
             const placementRotationStep = city.tiles[x]?.[y]?.placementRotationStep ?? 0;
 
             if (isOriginTile) {
+                // Modified at lines 728-748 to test kenney fantasy
+                if (getKenneyModularMeshAdapter().isKenneyBuildingId(newBuildingId)) {
+                    const kenneyMesh = await getKenneyModularMeshAdapter().createBuilding(x, y, {
+                        recipeId: KENNEY_DEFAULT_RECIPE_ID,
+                        rotationStep: placementRotationStep,
+                        buildingId: newBuildingId,
+                    });
+                    if (!kenneyMesh) {
+                        return;
+                    }
+                    removeInteractiveObject(buildings[x][y]);
+                    buildings[x][y] = kenneyMesh;
+                    scene.userData.requestShadowRefresh?.();
+                    const zoneX = Math.floor(x / ZONE_SIZE);
+                    const zoneY = Math.floor(y / ZONE_SIZE);
+                    const citySize = city.size || 16;
+                    const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
+                    const interactiveGroupRef =
+                        scene.interactiveGroup || scene.getObjectByName('interactive-objects');
+                    if (zoneGroups[zoneIndex]) {
+                        zoneGroups[zoneIndex].add(kenneyMesh);
+                    } else if (interactiveGroupRef) {
+                        interactiveGroupRef.add(kenneyMesh);
+                    }
+                    return;
+                }
+
                 const mesh = assetManager.createAsset(assetId, x, y, {
                     rotationStep: placementRotationStep,
                 });
