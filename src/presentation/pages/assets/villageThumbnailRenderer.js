@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 import { VILLAGE_NATURE_MESH_ALIASES } from '../../../shared/building-catalog/villageAssetSets.js';
+import { resolveTerrainDisplayColorCss } from '../../../shared/terrain-catalog/terrainDisplayColor.js';
 
 const VILLAGE_GLB_URL = '/resources/lowpoly/village_town_assets_v2.glb';
 
@@ -189,8 +190,9 @@ function renderGrassPlaceholder(canvas, size) {
   if (!ctx) return;
 
   const gradient = ctx.createLinearGradient(0, 0, 0, px);
-  gradient.addColorStop(0, '#86efac');
-  gradient.addColorStop(1, '#4ade80');
+  const grassColor = resolveTerrainDisplayColorCss('grass');
+  gradient.addColorStop(0, grassColor);
+  gradient.addColorStop(1, grassColor);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, px, px);
 }

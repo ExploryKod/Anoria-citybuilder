@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { getPlacementYawAngle, setPlacementRotationStep } from './placementRotation.js';
-import { isKenneyBuildingId } from './adapters/kenney-city-kit/kenneyCityKitConfig.js';
+import {
+  isKenneyBuildingId,
+  KENNEY_CITY_KIT_PLATFORM_HEIGHT,
+} from './adapters/kenney-city-kit/kenneyCityKitConfig.js';
 import { getKenneyCityKitMeshAdapter } from './adapters/kenney-city-kit/KenneyCityKitMeshAdapter.js';
 
 /**
@@ -127,6 +130,53 @@ export function createPlacementGhostController({ scene, assetManager }) {
 
   /**
    * @param {THREE.Object3D} mesh
+   * @param {number} x
+   * @param {number} y
+   * @param {{ gridSize?: number, footprintWidth?: number, footprintHeight?: number, rotationStep?: number }} [options]
+   */
+  function setKenneyTilePosition(mesh, x, y, options = {}) {
+    const rotationStep = options.rotationStep ?? 0;
+    let footprintWidth = options.footprintWidth ?? options.gridSize ?? 1;
+    let footprintDepth = options.footprintHeight ?? options.gridSize ?? 1;
+    if (rotationStep % 2 === 1) {
+      [footprintWidth, footprintDepth] = [footprintDepth, footprintWidth];
+    }
+
+    const centerX = (footprintWidth - 1) / 2;
+    const centerZ = (footprintDepth - 1) / 2;
+    mesh.position.set(
+      x + centerX,
+      KENNEY_CITY_KIT_PLATFORM_HEIGHT + 0.04,
+      y + centerZ
+    );
+    mesh.rotation.y = rotationStep * (Math.PI / 2);
+
+    if (mesh.userData) {
+      mesh.userData.x = x;
+      mesh.userData.y = y;
+      mesh.userData.gridSize = Math.max(footprintWidth, footprintDepth);
+      mesh.userData.footprintWidth = footprintWidth;
+      mesh.userData.footprintDepth = footprintDepth;
+    }
+  }
+
+  /**
+   * @param {THREE.Object3D} mesh
+   * @param {string} assetId
+   * @param {number} x
+   * @param {number} y
+   * @param {{ gridSize?: number, footprintWidth?: number, footprintHeight?: number, rotationStep?: number }} [options]
+   */
+  function repositionGhost(mesh, assetId, x, y, options = {}) {
+    if (isKenneyBuildingId(assetId)) {
+      setKenneyTilePosition(mesh, x, y, options);
+      return;
+    }
+    setTilePosition(mesh, x, y, options.gridSize ?? 1);
+  }
+
+  /**
+   * @param {THREE.Object3D} mesh
    * @param {string} assetId
    * @param {number} x
    * @param {number} y
@@ -247,12 +297,12 @@ export function createPlacementGhostController({ scene, assetManager }) {
       return;
     }
 
-    if (!isKenneyBuildingId(assetId)) {
-      setTilePosition(ghost, x, y, gridSize);
-    }
+    repositionGhost(ghost, assetId, x, y, options);
     lastX = x;
     lastY = y;
     lastGridSize = gridSize;
+    lastFootprintWidth = options.footprintWidth ?? gridSize;
+    lastFootprintHeight = options.footprintHeight ?? gridSize;
   }
 
   /**
