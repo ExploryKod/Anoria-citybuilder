@@ -5,6 +5,7 @@
 import { describe, test, expect } from '@jest/globals';
 import { canGenerateCaravanNews, CARAVAN_NEWS_PRICE } from '../../../src/contexts/intelligence/domain/policies/CaravanNewsAccessPolicy.js';
 import { planCaravanNewsDrafts } from '../../../src/contexts/intelligence/domain/policies/CaravanNewsGenerationPolicy.js';
+import { CARAVAN_NEWS_ENTRIES_MVP } from '../../../src/contexts/intelligence/domain/catalogs/NewsDraftCatalog.js';
 import { GenerateMonthlyCaravanNews } from '../../../src/contexts/intelligence/application/commands/GenerateMonthlyCaravanNews.js';
 import { PayForNewsItem } from '../../../src/contexts/intelligence/application/commands/PayForNewsItem.js';
 import { createNewsItem } from '../../../src/contexts/intelligence/domain/NewsItem.js';
@@ -54,7 +55,11 @@ describe('Intelligence — caravan Phase 2', () => {
   });
 
   test('planCaravanNewsDrafts yields unpaid priced drafts', () => {
-    const drafts = planCaravanNewsDrafts({ turn: 5, rng: () => 0 });
+    const drafts = planCaravanNewsDrafts({
+      turn: 5,
+      rng: () => 0,
+      entries: CARAVAN_NEWS_ENTRIES_MVP,
+    });
     expect(drafts.length).toBe(1);
     expect(drafts[0].revelation).toBe('unpaid');
     expect(drafts[0].price).toBe(CARAVAN_NEWS_PRICE);
@@ -72,7 +77,7 @@ describe('Intelligence — caravan Phase 2', () => {
     expect(created).toEqual([]);
   });
 
-  test('GenerateMonthlyCaravanNews creates unpaid item when eligible', async () => {
+  test('GenerateMonthlyCaravanNews does not create items while catalog is empty', async () => {
     const repo = new InMemoryNewsRepo();
     const cmd = new GenerateMonthlyCaravanNews(repo, {
       hasOperationalBarn: async () => true,
@@ -80,9 +85,7 @@ describe('Intelligence — caravan Phase 2', () => {
       rng: () => 0,
     });
     const created = await cmd.execute({ turn: 10 });
-    expect(created).toHaveLength(1);
-    expect(created[0].revelation).toBe('unpaid');
-    expect(created[0].access.price).toBe(CARAVAN_NEWS_PRICE);
+    expect(created).toEqual([]);
   });
 
   test('PayForNewsItem settles then reveals', async () => {

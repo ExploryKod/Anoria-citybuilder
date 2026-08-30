@@ -1,0 +1,1456 @@
+{
+  "version": 1,
+  "moduleUnit": 1,
+  "textureAtlas": "/resources/kenney_fantasy-town-modular/Models/GLB format/Textures/colormap.png",
+  "modules": {
+    "balcony-wall": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/balcony-wall.glb",
+      "tags": [
+        "balcony",
+        "wall"
+      ]
+    },
+    "balcony-wall-fence": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/balcony-wall-fence.glb",
+      "tags": [
+        "balcony",
+        "wall",
+        "fence"
+      ]
+    },
+    "banner-green": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/banner-green.glb",
+      "tags": [
+        "banner",
+        "green"
+      ]
+    },
+    "banner-red": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/banner-red.glb",
+      "tags": [
+        "banner",
+        "red"
+      ]
+    },
+    "blade": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/blade.glb",
+      "tags": [
+        "blade"
+      ]
+    },
+    "cart": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/cart.glb",
+      "tags": [
+        "cart"
+      ]
+    },
+    "cart-high": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/cart-high.glb",
+      "tags": [
+        "cart",
+        "high"
+      ]
+    },
+    "chimney": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/chimney.glb",
+      "tags": [
+        "chimney"
+      ]
+    },
+    "chimney-base": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/chimney-base.glb",
+      "tags": [
+        "chimney",
+        "base"
+      ]
+    },
+    "chimney-top": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/chimney-top.glb",
+      "tags": [
+        "chimney",
+        "top"
+      ]
+    },
+    "fence": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/fence.glb",
+      "tags": [
+        "fence"
+      ]
+    },
+    "fence-broken": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/fence-broken.glb",
+      "tags": [
+        "fence",
+        "broken"
+      ]
+    },
+    "fence-curved": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/fence-curved.glb",
+      "tags": [
+        "fence",
+        "curved"
+      ]
+    },
+    "fence-gate": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/fence-gate.glb",
+      "tags": [
+        "fence",
+        "gate"
+      ]
+    },
+    "fountain-center": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/fountain-center.glb",
+      "tags": [
+        "fountain",
+        "center"
+      ]
+    },
+    "fountain-corner": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/fountain-corner.glb",
+      "tags": [
+        "fountain",
+        "corner"
+      ]
+    },
+    "fountain-corner-inner": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/fountain-corner-inner.glb",
+      "tags": [
+        "fountain",
+        "corner",
+        "inner"
+      ]
+    },
+    "fountain-corner-inner-square": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/fountain-corner-inner-square.glb",
+      "tags": [
+        "fountain",
+        "corner",
+        "inner",
+        "square"
+      ]
+    },
+    "fountain-curved": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/fountain-curved.glb",
+      "tags": [
+        "fountain",
+        "curved"
+      ]
+    },
+    "fountain-edge": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/fountain-edge.glb",
+      "tags": [
+        "fountain",
+        "edge"
+      ]
+    },
+    "fountain-round": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/fountain-round.glb",
+      "tags": [
+        "fountain",
+        "round"
+      ]
+    },
+    "fountain-round-detail": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/fountain-round-detail.glb",
+      "tags": [
+        "fountain",
+        "round",
+        "detail"
+      ]
+    },
+    "fountain-square": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/fountain-square.glb",
+      "tags": [
+        "fountain",
+        "square"
+      ]
+    },
+    "fountain-square-detail": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/fountain-square-detail.glb",
+      "tags": [
+        "fountain",
+        "square",
+        "detail"
+      ]
+    },
+    "hedge": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/hedge.glb",
+      "tags": [
+        "hedge"
+      ]
+    },
+    "hedge-curved": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/hedge-curved.glb",
+      "tags": [
+        "hedge",
+        "curved"
+      ]
+    },
+    "hedge-gate": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/hedge-gate.glb",
+      "tags": [
+        "hedge",
+        "gate"
+      ]
+    },
+    "hedge-large": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/hedge-large.glb",
+      "tags": [
+        "hedge",
+        "large"
+      ]
+    },
+    "hedge-large-curved": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/hedge-large-curved.glb",
+      "tags": [
+        "hedge",
+        "large",
+        "curved"
+      ]
+    },
+    "hedge-large-gate": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/hedge-large-gate.glb",
+      "tags": [
+        "hedge",
+        "large",
+        "gate"
+      ]
+    },
+    "lantern": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/lantern.glb",
+      "tags": [
+        "lantern"
+      ]
+    },
+    "overhang": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/overhang.glb",
+      "tags": [
+        "overhang"
+      ]
+    },
+    "pillar-stone": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/pillar-stone.glb",
+      "tags": [
+        "pillar",
+        "stone"
+      ]
+    },
+    "pillar-wood": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/pillar-wood.glb",
+      "tags": [
+        "pillar",
+        "wood"
+      ]
+    },
+    "planks": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/planks.glb",
+      "tags": [
+        "planks"
+      ]
+    },
+    "planks-half": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/planks-half.glb",
+      "tags": [
+        "planks",
+        "half"
+      ]
+    },
+    "planks-opening": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/planks-opening.glb",
+      "tags": [
+        "planks",
+        "opening"
+      ]
+    },
+    "poles": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/poles.glb",
+      "tags": [
+        "poles"
+      ]
+    },
+    "poles-horizontal": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/poles-horizontal.glb",
+      "tags": [
+        "poles",
+        "horizontal"
+      ]
+    },
+    "road": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/road.glb",
+      "tags": [
+        "road"
+      ]
+    },
+    "road-bend": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/road-bend.glb",
+      "tags": [
+        "road",
+        "bend"
+      ]
+    },
+    "road-corner": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/road-corner.glb",
+      "tags": [
+        "road",
+        "corner"
+      ]
+    },
+    "road-corner-inner": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/road-corner-inner.glb",
+      "tags": [
+        "road",
+        "corner",
+        "inner"
+      ]
+    },
+    "road-curb": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/road-curb.glb",
+      "tags": [
+        "road",
+        "curb"
+      ]
+    },
+    "road-curb-end": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/road-curb-end.glb",
+      "tags": [
+        "road",
+        "curb",
+        "end"
+      ]
+    },
+    "road-edge": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/road-edge.glb",
+      "tags": [
+        "road",
+        "edge"
+      ]
+    },
+    "road-edge-slope": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/road-edge-slope.glb",
+      "tags": [
+        "road",
+        "edge",
+        "slope"
+      ]
+    },
+    "road-slope": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/road-slope.glb",
+      "tags": [
+        "road",
+        "slope"
+      ]
+    },
+    "rock-large": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/rock-large.glb",
+      "tags": [
+        "rock",
+        "large"
+      ]
+    },
+    "rock-small": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/rock-small.glb",
+      "tags": [
+        "rock",
+        "small"
+      ]
+    },
+    "rock-wide": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/rock-wide.glb",
+      "tags": [
+        "rock",
+        "wide"
+      ]
+    },
+    "roof": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof.glb",
+      "tags": [
+        "roof"
+      ]
+    },
+    "roof-corner": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-corner.glb",
+      "tags": [
+        "roof",
+        "corner"
+      ]
+    },
+    "roof-corner-inner": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-corner-inner.glb",
+      "tags": [
+        "roof",
+        "corner",
+        "inner"
+      ]
+    },
+    "roof-corner-round": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-corner-round.glb",
+      "tags": [
+        "roof",
+        "corner",
+        "round"
+      ]
+    },
+    "roof-flat": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-flat.glb",
+      "tags": [
+        "roof",
+        "flat"
+      ]
+    },
+    "roof-gable": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-gable.glb",
+      "tags": [
+        "roof",
+        "gable"
+      ]
+    },
+    "roof-gable-detail": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-gable-detail.glb",
+      "tags": [
+        "roof",
+        "gable",
+        "detail"
+      ]
+    },
+    "roof-gable-end": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-gable-end.glb",
+      "tags": [
+        "roof",
+        "gable",
+        "end"
+      ]
+    },
+    "roof-gable-top": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-gable-top.glb",
+      "tags": [
+        "roof",
+        "gable",
+        "top"
+      ]
+    },
+    "roof-high": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-high.glb",
+      "tags": [
+        "roof",
+        "high"
+      ]
+    },
+    "roof-high-corner": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-high-corner.glb",
+      "tags": [
+        "roof",
+        "high",
+        "corner"
+      ]
+    },
+    "roof-high-corner-round": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-high-corner-round.glb",
+      "tags": [
+        "roof",
+        "high",
+        "corner",
+        "round"
+      ]
+    },
+    "roof-high-cornerinner": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-high-cornerinner.glb",
+      "tags": [
+        "roof",
+        "high",
+        "cornerinner"
+      ]
+    },
+    "roof-high-flat": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-high-flat.glb",
+      "tags": [
+        "roof",
+        "high",
+        "flat"
+      ]
+    },
+    "roof-high-gable": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-high-gable.glb",
+      "tags": [
+        "roof",
+        "high",
+        "gable"
+      ]
+    },
+    "roof-high-gable-detail": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-high-gable-detail.glb",
+      "tags": [
+        "roof",
+        "high",
+        "gable",
+        "detail"
+      ]
+    },
+    "roof-high-gable-end": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-high-gable-end.glb",
+      "tags": [
+        "roof",
+        "high",
+        "gable",
+        "end"
+      ]
+    },
+    "roof-high-gable-top": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-high-gable-top.glb",
+      "tags": [
+        "roof",
+        "high",
+        "gable",
+        "top"
+      ]
+    },
+    "roof-high-left": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-high-left.glb",
+      "tags": [
+        "roof",
+        "high",
+        "left"
+      ]
+    },
+    "roof-high-point": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-high-point.glb",
+      "tags": [
+        "roof",
+        "high",
+        "point"
+      ]
+    },
+    "roof-high-right": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-high-right.glb",
+      "tags": [
+        "roof",
+        "high",
+        "right"
+      ]
+    },
+    "roof-high-window": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-high-window.glb",
+      "tags": [
+        "roof",
+        "high",
+        "window"
+      ]
+    },
+    "roof-left": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-left.glb",
+      "tags": [
+        "roof",
+        "left"
+      ]
+    },
+    "roof-point": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-point.glb",
+      "tags": [
+        "roof",
+        "point"
+      ]
+    },
+    "roof-right": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-right.glb",
+      "tags": [
+        "roof",
+        "right"
+      ]
+    },
+    "roof-window": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/roof-window.glb",
+      "tags": [
+        "roof",
+        "window"
+      ]
+    },
+    "stairs-full": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/stairs-full.glb",
+      "tags": [
+        "stairs",
+        "full"
+      ]
+    },
+    "stairs-full-corner-inner": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/stairs-full-corner-inner.glb",
+      "tags": [
+        "stairs",
+        "full",
+        "corner",
+        "inner"
+      ]
+    },
+    "stairs-full-corner-outer": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/stairs-full-corner-outer.glb",
+      "tags": [
+        "stairs",
+        "full",
+        "corner",
+        "outer"
+      ]
+    },
+    "stairs-stone": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/stairs-stone.glb",
+      "tags": [
+        "stairs",
+        "stone"
+      ]
+    },
+    "stairs-stone-corner": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/stairs-stone-corner.glb",
+      "tags": [
+        "stairs",
+        "stone",
+        "corner"
+      ]
+    },
+    "stairs-stone-handrail": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/stairs-stone-handrail.glb",
+      "tags": [
+        "stairs",
+        "stone",
+        "handrail"
+      ]
+    },
+    "stairs-stone-round": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/stairs-stone-round.glb",
+      "tags": [
+        "stairs",
+        "stone",
+        "round"
+      ]
+    },
+    "stairs-wide-stone": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/stairs-wide-stone.glb",
+      "tags": [
+        "stairs",
+        "wide",
+        "stone"
+      ]
+    },
+    "stairs-wide-stone-handrail": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/stairs-wide-stone-handrail.glb",
+      "tags": [
+        "stairs",
+        "wide",
+        "stone",
+        "handrail"
+      ]
+    },
+    "stairs-wide-wood": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/stairs-wide-wood.glb",
+      "tags": [
+        "stairs",
+        "wide",
+        "wood"
+      ]
+    },
+    "stairs-wide-wood-handrail": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/stairs-wide-wood-handrail.glb",
+      "tags": [
+        "stairs",
+        "wide",
+        "wood",
+        "handrail"
+      ]
+    },
+    "stairs-wood": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/stairs-wood.glb",
+      "tags": [
+        "stairs",
+        "wood"
+      ]
+    },
+    "stairs-wood-handrail": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/stairs-wood-handrail.glb",
+      "tags": [
+        "stairs",
+        "wood",
+        "handrail"
+      ]
+    },
+    "stall": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/stall.glb",
+      "tags": [
+        "stall"
+      ]
+    },
+    "stall-bench": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/stall-bench.glb",
+      "tags": [
+        "stall",
+        "bench"
+      ]
+    },
+    "stall-green": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/stall-green.glb",
+      "tags": [
+        "stall",
+        "green"
+      ]
+    },
+    "stall-red": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/stall-red.glb",
+      "tags": [
+        "stall",
+        "red"
+      ]
+    },
+    "stall-stool": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/stall-stool.glb",
+      "tags": [
+        "stall",
+        "stool"
+      ]
+    },
+    "tree": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/tree.glb",
+      "tags": [
+        "tree"
+      ]
+    },
+    "tree-crooked": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/tree-crooked.glb",
+      "tags": [
+        "tree",
+        "crooked"
+      ]
+    },
+    "tree-high": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/tree-high.glb",
+      "tags": [
+        "tree",
+        "high"
+      ]
+    },
+    "tree-high-crooked": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/tree-high-crooked.glb",
+      "tags": [
+        "tree",
+        "high",
+        "crooked"
+      ]
+    },
+    "tree-high-round": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/tree-high-round.glb",
+      "tags": [
+        "tree",
+        "high",
+        "round"
+      ]
+    },
+    "wall": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall.glb",
+      "tags": [
+        "wall"
+      ]
+    },
+    "wall-arch": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-arch.glb",
+      "tags": [
+        "wall",
+        "arch"
+      ]
+    },
+    "wall-arch-top": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-arch-top.glb",
+      "tags": [
+        "wall",
+        "arch",
+        "top"
+      ]
+    },
+    "wall-arch-top-detail": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-arch-top-detail.glb",
+      "tags": [
+        "wall",
+        "arch",
+        "top",
+        "detail"
+      ]
+    },
+    "wall-block": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-block.glb",
+      "tags": [
+        "wall",
+        "block"
+      ]
+    },
+    "wall-block-half": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-block-half.glb",
+      "tags": [
+        "wall",
+        "block",
+        "half"
+      ]
+    },
+    "wall-broken": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-broken.glb",
+      "tags": [
+        "wall",
+        "broken"
+      ]
+    },
+    "wall-corner": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-corner.glb",
+      "tags": [
+        "wall",
+        "corner"
+      ]
+    },
+    "wall-corner-detail": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-corner-detail.glb",
+      "tags": [
+        "wall",
+        "corner",
+        "detail"
+      ]
+    },
+    "wall-corner-diagonal": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-corner-diagonal.glb",
+      "tags": [
+        "wall",
+        "corner",
+        "diagonal"
+      ]
+    },
+    "wall-corner-diagonal-half": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-corner-diagonal-half.glb",
+      "tags": [
+        "wall",
+        "corner",
+        "diagonal",
+        "half"
+      ]
+    },
+    "wall-corner-edge": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-corner-edge.glb",
+      "tags": [
+        "wall",
+        "corner",
+        "edge"
+      ]
+    },
+    "wall-curved": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-curved.glb",
+      "tags": [
+        "wall",
+        "curved"
+      ]
+    },
+    "wall-detail-cross": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-detail-cross.glb",
+      "tags": [
+        "wall",
+        "detail",
+        "cross"
+      ]
+    },
+    "wall-detail-diagonal": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-detail-diagonal.glb",
+      "tags": [
+        "wall",
+        "detail",
+        "diagonal"
+      ]
+    },
+    "wall-detail-horizontal": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-detail-horizontal.glb",
+      "tags": [
+        "wall",
+        "detail",
+        "horizontal"
+      ]
+    },
+    "wall-diagonal": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-diagonal.glb",
+      "tags": [
+        "wall",
+        "diagonal"
+      ]
+    },
+    "wall-door": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-door.glb",
+      "tags": [
+        "wall",
+        "door"
+      ]
+    },
+    "wall-doorway-base": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-doorway-base.glb",
+      "tags": [
+        "wall",
+        "doorway",
+        "base"
+      ]
+    },
+    "wall-doorway-round": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-doorway-round.glb",
+      "tags": [
+        "wall",
+        "doorway",
+        "round"
+      ]
+    },
+    "wall-doorway-square": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-doorway-square.glb",
+      "tags": [
+        "wall",
+        "doorway",
+        "square"
+      ]
+    },
+    "wall-doorway-square-wide": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-doorway-square-wide.glb",
+      "tags": [
+        "wall",
+        "doorway",
+        "square",
+        "wide"
+      ]
+    },
+    "wall-doorway-square-wide-curved": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-doorway-square-wide-curved.glb",
+      "tags": [
+        "wall",
+        "doorway",
+        "square",
+        "wide",
+        "curved"
+      ]
+    },
+    "wall-half": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-half.glb",
+      "tags": [
+        "wall",
+        "half"
+      ]
+    },
+    "wall-rounded": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-rounded.glb",
+      "tags": [
+        "wall",
+        "rounded"
+      ]
+    },
+    "wall-side": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-side.glb",
+      "tags": [
+        "wall",
+        "side"
+      ]
+    },
+    "wall-slope": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-slope.glb",
+      "tags": [
+        "wall",
+        "slope"
+      ]
+    },
+    "wall-window-glass": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-window-glass.glb",
+      "tags": [
+        "wall",
+        "window",
+        "glass"
+      ]
+    },
+    "wall-window-round": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-window-round.glb",
+      "tags": [
+        "wall",
+        "window",
+        "round"
+      ]
+    },
+    "wall-window-shutters": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-window-shutters.glb",
+      "tags": [
+        "wall",
+        "window",
+        "shutters"
+      ]
+    },
+    "wall-window-small": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-window-small.glb",
+      "tags": [
+        "wall",
+        "window",
+        "small"
+      ]
+    },
+    "wall-window-stone": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-window-stone.glb",
+      "tags": [
+        "wall",
+        "window",
+        "stone"
+      ]
+    },
+    "wall-wood": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood.glb",
+      "tags": [
+        "wall",
+        "wood"
+      ]
+    },
+    "wall-wood-arch": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-arch.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "arch"
+      ]
+    },
+    "wall-wood-arch-top": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-arch-top.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "arch",
+        "top"
+      ]
+    },
+    "wall-wood-arch-top-detail": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-arch-top-detail.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "arch",
+        "top",
+        "detail"
+      ]
+    },
+    "wall-wood-block": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-block.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "block"
+      ]
+    },
+    "wall-wood-block-half": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-block-half.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "block",
+        "half"
+      ]
+    },
+    "wall-wood-broken": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-broken.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "broken"
+      ]
+    },
+    "wall-wood-corner": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-corner.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "corner"
+      ]
+    },
+    "wall-wood-corner-diagonal": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-corner-diagonal.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "corner",
+        "diagonal"
+      ]
+    },
+    "wall-wood-corner-diagonal-half": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-corner-diagonal-half.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "corner",
+        "diagonal",
+        "half"
+      ]
+    },
+    "wall-wood-corner-edge": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-corner-edge.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "corner",
+        "edge"
+      ]
+    },
+    "wall-wood-curved": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-curved.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "curved"
+      ]
+    },
+    "wall-wood-detail-cross": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-detail-cross.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "detail",
+        "cross"
+      ]
+    },
+    "wall-wood-detail-diagonal": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-detail-diagonal.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "detail",
+        "diagonal"
+      ]
+    },
+    "wall-wood-detail-horizontal": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-detail-horizontal.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "detail",
+        "horizontal"
+      ]
+    },
+    "wall-wood-diagonal": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-diagonal.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "diagonal"
+      ]
+    },
+    "wall-wood-door": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-door.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "door"
+      ]
+    },
+    "wall-wood-doorway-base": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-doorway-base.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "doorway",
+        "base"
+      ]
+    },
+    "wall-wood-doorway-round": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-doorway-round.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "doorway",
+        "round"
+      ]
+    },
+    "wall-wood-doorway-square": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-doorway-square.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "doorway",
+        "square"
+      ]
+    },
+    "wall-wood-doorway-square-wide": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-doorway-square-wide.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "doorway",
+        "square",
+        "wide"
+      ]
+    },
+    "wall-wood-doorway-square-wide-curved": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-doorway-square-wide-curved.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "doorway",
+        "square",
+        "wide",
+        "curved"
+      ]
+    },
+    "wall-wood-half": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-half.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "half"
+      ]
+    },
+    "wall-wood-rounded": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-rounded.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "rounded"
+      ]
+    },
+    "wall-wood-side": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-side.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "side"
+      ]
+    },
+    "wall-wood-slope": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-slope.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "slope"
+      ]
+    },
+    "wall-wood-window-glass": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-window-glass.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "window",
+        "glass"
+      ]
+    },
+    "wall-wood-window-round": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-window-round.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "window",
+        "round"
+      ]
+    },
+    "wall-wood-window-shutters": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-window-shutters.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "window",
+        "shutters"
+      ]
+    },
+    "wall-wood-window-small": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-window-small.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "window",
+        "small"
+      ]
+    },
+    "wall-wood-window-stone": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wall-wood-window-stone.glb",
+      "tags": [
+        "wall",
+        "wood",
+        "window",
+        "stone"
+      ]
+    },
+    "watermill": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/watermill.glb",
+      "tags": [
+        "watermill"
+      ]
+    },
+    "watermill-wide": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/watermill-wide.glb",
+      "tags": [
+        "watermill",
+        "wide"
+      ]
+    },
+    "wheel": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/wheel.glb",
+      "tags": [
+        "wheel"
+      ]
+    },
+    "windmill": {
+      "glb": "/resources/kenney_fantasy-town-modular/Models/GLB format/windmill.glb",
+      "tags": [
+        "windmill"
+      ]
+    }
+  },
+  "buildings": {
+    "kenney-house-l1-a-glass": {
+      "displayName": "Niveau 1 — Fenêtres verre",
+      "gridSize": 1,
+      "moduleHeight": 1,
+      "parts": [
+        {
+          "module": "wall-wood-window-glass",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "rot": 0
+        },
+        {
+          "module": "wall-wood-door",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "rot": 1
+        },
+        {
+          "module": "wall-wood-window-glass",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "rot": 2
+        },
+        {
+          "module": "wall-wood-window-glass",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "rot": 3
+        },
+        {
+          "module": "roof-point",
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "rot": 0
+        }
+      ]
+    },
+    "kenney-house-l1-b-shutters": {
+      "displayName": "Niveau 1 — Volets",
+      "gridSize": 1,
+      "moduleHeight": 1,
+      "parts": [
+        {
+          "module": "wall-wood-window-shutters",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "rot": 0
+        },
+        {
+          "module": "wall-wood-door",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "rot": 1
+        },
+        {
+          "module": "wall-wood-window-shutters",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "rot": 2
+        },
+        {
+          "module": "wall-wood-window-shutters",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "rot": 3
+        },
+        {
+          "module": "roof-point",
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "rot": 0
+        }
+      ]
+    },
+    "kenney-house-l1-c-round": {
+      "displayName": "Niveau 1 — Oeil-de-bœuf",
+      "gridSize": 1,
+      "moduleHeight": 1,
+      "parts": [
+        {
+          "module": "wall-wood-window-small",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "rot": 0
+        },
+        {
+          "module": "wall-wood-door",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "rot": 1
+        },
+        {
+          "module": "wall-wood-window-round",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "rot": 2
+        },
+        {
+          "module": "wall-wood-window-small",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "rot": 3
+        },
+        {
+          "module": "roof",
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "rot": 0
+        }
+      ]
+    },
+    "kenney-house-test-01": {
+      "displayName": "Kenney wood house (test)",
+      "gridSize": 1,
+      "moduleHeight": 1,
+      "parts": [
+        {
+          "module": "wall-wood-window-glass",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "rot": 0
+        },
+        {
+          "module": "wall-wood-door",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "rot": 1
+        },
+        {
+          "module": "wall-wood-window-glass",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "rot": 2
+        },
+        {
+          "module": "wall-wood-window-glass",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "rot": 3
+        },
+        {
+          "module": "roof-point",
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "rot": 0
+        }
+      ]
+    }
+  }
+}
