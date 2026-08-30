@@ -1,0 +1,40 @@
+/* Editor mode — dev terrain/nature layout (not shown in mission or tutorial). */
+
+.game-mode-editor .editor-mode-banner {
+  position: fixed;
+  top: calc(8px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(29, 34, 40, 0.88);
+  color: #fff;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 20px rgba(29, 34, 40, 0.25);
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+}
+
+.game-mode-editor .editor-mode-banner__label {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.game-mode-editor .editor-mode-banner__link {
+  color: #7ee8d8;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.game-mode-editor .editor-mode-banner__link:hover {
+  text-decoration: underline;
+}
+
+.game-mode-editor #tutorial-btn,
+.game-mode-editor #objectives-btn {
+  display: none !important;
+}

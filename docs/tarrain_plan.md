@@ -216,3 +216,11 @@ Le rivage Kenney (falaises, plage, masque organique) est **désactivé** (`islan
 Scène actuelle : grille `ground_grass` + plan herbe infini (`KENNEY_GROUND_GRASS_COLOR`).
 
 Le code reste dans `islandShoreLayout.js` / `spawnIslandShore.js` pour une réactivation ultérieure.
+
+---
+
+## Mode éditeur (terrain & nature)
+
+Entrée menu **Éditeur nature** → `/game` en `gameMode: editor` (ou `?mode=editor`).
+
+Plan détaillé : [`editor/nature-editor-plan.md`](./editor/nature-editor-plan.md).

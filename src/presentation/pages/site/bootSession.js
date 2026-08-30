@@ -2,7 +2,7 @@ const BOOT_MODE_KEY = 'anoria.bootMode';
 const MISSION_ID_KEY = 'anoria.missionId';
 const PROFILE_NAME_KEY = 'anoria.profileName';
 
-/** @typedef {'new' | 'tutorial' | 'load' | 'mission'} BootMode */
+/** @typedef {'new' | 'tutorial' | 'load' | 'mission' | 'editor'} BootMode */
 
 /** @param {BootMode} mode */
 export function setBootMode(mode) {
@@ -12,7 +12,7 @@ export function setBootMode(mode) {
 /** @returns {BootMode} */
 export function getBootMode() {
   const raw = sessionStorage.getItem(BOOT_MODE_KEY);
-  if (raw === 'tutorial' || raw === 'load' || raw === 'mission') {
+  if (raw === 'tutorial' || raw === 'load' || raw === 'mission' || raw === 'editor') {
     return raw;
   }
   return 'new';
