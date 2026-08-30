@@ -173,6 +173,10 @@ export function createPlacementGhostController({ scene, assetManager }) {
       return;
     }
     setTilePosition(mesh, x, y, options.gridSize ?? 1);
+    const step = options.rotationStep ?? rotationStep;
+    if (step) {
+      setPlacementRotationStep(mesh, baseYawAngle, step);
+    }
   }
 
   /**
@@ -266,7 +270,7 @@ export function createPlacementGhostController({ scene, assetManager }) {
 
     const mode = options.mode ?? 'hover';
     const gridSize = options.gridSize ?? 1;
-    const rotationStepOpt = options.rotationStep ?? 0;
+    const rotationStepOpt = options.rotationStep ?? rotationStep;
 
     if (isAnchored) {
       return;
@@ -318,6 +322,7 @@ export function createPlacementGhostController({ scene, assetManager }) {
   function setRotationStep(step) {
     if (!ghost || !currentAssetId) return;
     rotationStep = ((step % 4) + 4) % 4;
+    lastRotationStep = rotationStep;
 
     if (isKenneyBuildingId(currentAssetId)) {
       spawn(currentAssetId, lastX, lastY, lastValid, ghostMode, {
@@ -330,9 +335,20 @@ export function createPlacementGhostController({ scene, assetManager }) {
     }
 
     setPlacementRotationStep(ghost, baseYawAngle, rotationStep);
+    if (lastX != null && lastY != null) {
+      repositionGhost(ghost, currentAssetId, lastX, lastY, {
+        gridSize: lastGridSize,
+        footprintWidth: lastFootprintWidth,
+        footprintHeight: lastFootprintHeight,
+        rotationStep,
+      });
+    }
   }
 
   function rotateStep() {
+    if (!ghost || !currentAssetId) {
+      return rotationStep;
+    }
     setRotationStep(rotationStep + 1);
     return rotationStep;
   }

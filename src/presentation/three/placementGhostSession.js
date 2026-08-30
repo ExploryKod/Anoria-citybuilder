@@ -40,6 +40,23 @@ export function isPlaceableBuildingTool(toolId, assetCatalog) {
 }
 
 /**
+ * Whether R should spin the placement ghost instead of rotating the camera (build behavior).
+ * @param {string | null | undefined} toolId
+ * @param {Record<string, unknown>} assetCatalog
+ * @param {{ isEditorPlacementTool?: (id: string) => boolean }} [options]
+ * @returns {boolean}
+ */
+export function supportsPlacementGhostRotation(toolId, assetCatalog, options = {}) {
+  if (!toolId || NON_PLACEABLE_TOOL_IDS.has(toolId)) {
+    return false;
+  }
+  if (options.isEditorPlacementTool?.(toolId)) {
+    return true;
+  }
+  return isPlaceableBuildingTool(toolId, assetCatalog);
+}
+
+/**
  * @param {number} x
  * @param {number} y
  * @param {{ x: number, y: number, gridSize: number } | null} footprint
@@ -167,10 +184,31 @@ export function createPlacementGhostSession({
     sync(lastFocused ?? getFocusedObject());
   }
 
+  /**
+   * R key — rotate the visible ghost (90° steps). No-op when ghost is not shown.
+   * @returns {boolean} true if a ghost was rotated
+   */
+  function rotateGhostStep() {
+    const toolId = getActiveToolId();
+    if (!isPlaceableTool(toolId)) {
+      return false;
+    }
+
+    const ghostController = getGhost();
+    if (!ghostController?.active) {
+      return false;
+    }
+
+    ghostController.rotateStep();
+    sync(lastFocused ?? getFocusedObject());
+    return true;
+  }
+
   return {
     sync,
     clear,
     suppressGhostAtFootprint,
     onToolChanged,
+    rotateGhostStep,
   };
 }

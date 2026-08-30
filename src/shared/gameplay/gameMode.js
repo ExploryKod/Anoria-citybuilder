@@ -1,3 +1,24 @@
+/**
+ * Map mode (solo / editor / mission / tutorial) — orthogonal to behavior mode (select / build / erase).
+ *
+ * ## Source of truth
+ * `sessionStorage` key `anoria.gameMode` is the **only** runtime value. All gameplay code reads
+ * `getGameMode()` / `isEditorMode()`.
+ *
+ * ## When gameMode is written
+ * **Only** when the player explicitly enters from the landing menu:
+ * - landing menu → `setBootMode(...)` → bootstrap `consumeBootMode()` → `setGameMode(...)`
+ *
+ * Refreshing `game.html` without a new menu click does **not** call `setGameMode` — editor (etc.)
+ * survives until the tab/session ends or the user starts a new entry from the menu.
+ *
+ * There is no URL-vs-session fallback chain at bootstrap.
+ *
+ * ## Direct access
+ * `/game` without menu intent and without a stored `gameMode` redirects to `/` (landing).
+ * Refresh mid-session is allowed because `hasStoredGameMode()` is true.
+ */
+
 const GAME_MODE_KEY = 'anoria.gameMode';
 
 /** @typedef {'solo' | 'tutorial' | 'mission' | 'editor'} GameMode */
@@ -27,6 +48,11 @@ export function clearGameMode() {
   sessionStorage.removeItem(GAME_MODE_KEY);
 }
 
+/** True once the player has entered the game at least once this session (any map mode). */
+export function hasStoredGameMode() {
+  return sessionStorage.getItem(GAME_MODE_KEY) !== null;
+}
+
 export function isEditorMode() {
   return getGameMode() === GAME_MODES.EDITOR;
 }
@@ -40,15 +66,16 @@ export function isTutorialMode() {
 }
 
 /**
- * Optional `?mode=editor` on `/game` (dev / bookmark).
+ * One-shot boot intent from the landing menu (or URL promoted to boot).
  *
- * @returns {GameMode | null}
+ * @param {'new' | 'tutorial' | 'load' | 'mission' | 'editor'} bootMode
+ * @returns {GameMode}
  */
-export function resolveGameModeFromUrl() {
-  if (typeof window === 'undefined') return null;
-  const mode = new URLSearchParams(window.location.search).get('mode');
-  if (mode === GAME_MODES.EDITOR) return GAME_MODES.EDITOR;
-  return null;
+export function gameModeFromBootMode(bootMode) {
+  if (bootMode === 'tutorial') return GAME_MODES.TUTORIAL;
+  if (bootMode === 'mission') return GAME_MODES.MISSION;
+  if (bootMode === 'editor') return GAME_MODES.EDITOR;
+  return GAME_MODES.SOLO;
 }
 
 /**

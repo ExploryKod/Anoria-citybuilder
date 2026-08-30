@@ -8,9 +8,15 @@ import { assetsConfig, scenePresentation } from '../presentationConfig.js';
 import instancingManager from './InstancingManager.js';
 import { isKenneyBuildingId } from '../adapters/kenney-city-kit/kenneyCityKitConfig.js';
 import { registerKenneyCityKitTools } from '../adapters/kenney-city-kit/registerKenneyCityKitTools.js';
+import { registerKenneyEditorTools } from '../adapters/kenney-nature-props/registerKenneyEditorTools.js';
 import { attachSceneTilePort } from '../scene-board/SceneTilePort.js';
 import { createSceneTile } from '../scene-board/SceneObjectRegistry.js';
 import { registerTerrainSceneFactories } from '../scene-board/terrain/registerTerrainSceneFactories.js';
+import { registerNatureSceneFactories } from '../scene-board/nature/registerNatureSceneFactories.js';
+import {
+  EDITOR_NATURE_TOOL_IDS,
+  EDITOR_TERRAIN_TOOL_IDS,
+} from '../../../shared/editor-catalog/editorKenneyCatalog.js';
 
 /**
  * Gets the base URL for assets (similar to simcity's pattern)
@@ -99,6 +105,7 @@ class AssetManager extends MeshLoader {
     constructor(onLoad = null) {
         super()
         registerKenneyCityKitTools(this.toolIds, this.buttonData);
+        registerKenneyEditorTools(this.toolIds, this.buttonData);
         this.#baseUrl = getAssetBaseUrl();
         // Standardize model path using base URL
         this.#modelPath = `${this.#baseUrl}resources/lowpoly/village_town_assets_v2.glb`.replace('//', '/');
@@ -466,10 +473,23 @@ class AssetManager extends MeshLoader {
             getTerrainBoxGeometry: () => this.#geometry,
             getRoadPlaneGeometry: () => this.#roadGeometry,
         });
+        registerNatureSceneFactories();
 
         this.toolIds.zones.forEach(toolId => {
             this.#assets[toolId] = (x, y) => this.#createTerrain(x, y, toolId);
         });
+
+        for (const toolId of EDITOR_TERRAIN_TOOL_IDS) {
+            this.#assets[toolId] = (x, y) => this.#createTerrain(x, y, toolId);
+        }
+
+        for (const toolId of EDITOR_NATURE_TOOL_IDS) {
+            this.#assets[toolId] = (x, y) => {
+                const port = createSceneTile(toolId, x, y);
+                attachSceneTilePort(port);
+                return port.root;
+            };
+        }
     }
 
     async initializeBuildings(propertyKey) {

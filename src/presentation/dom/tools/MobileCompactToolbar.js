@@ -8,6 +8,7 @@ import {
 } from './ToolPanel.js';
 import { MOBILE_TOOLBAR_CATEGORIES } from './mobileToolbarCategories.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
+import { getSessionGame } from '../../../composition/sessionRuntime.js';
 
 /** Gap between build bar bottom edge and top of the round FAB container. */
 const BUILD_BAR_GAP_PX = 8;
@@ -157,6 +158,14 @@ export function open() {
     panel: buildBarEl,
     onEscape: () => {
       close();
+      const scene = getSessionGame()?.scene;
+      if (
+        typeof scene?.shouldEscapeToSelectMode === 'function'
+        && scene.shouldEscapeToSelectMode()
+        && typeof scene.onEnterSelectMode === 'function'
+      ) {
+        scene.onEnterSelectMode();
+      }
       document.getElementById('toolbar-mobile-toggle')?.focus();
     },
     initialFocus: () => {

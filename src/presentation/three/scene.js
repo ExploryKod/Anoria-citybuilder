@@ -61,6 +61,14 @@ import {
   applyRoadMaterialToTerrainTile,
   restoreGrassMaterialOnTerrainTile,
 } from './scene-board/terrain/terrainSceneTileOps.js';
+import { createKenneyNatureSceneTile } from './scene-board/nature/createKenneyNatureSceneTile.js';
+import { attachSceneTilePort } from './scene-board/SceneTilePort.js';
+import {
+  addEditorNatureObject,
+  getEditorNatureObjects,
+  removeEditorNatureObjectAt,
+  resetEditorNatureLayout,
+} from './editor/editorNatureLayout.js';
 
 /** Terminaux tactiles / petits écrans — GPU plus souvent limité (mémoire, contexte WebGL). */
 function isMobileDevice() {
@@ -327,6 +335,8 @@ export function createScene(_gameStore, assetManager, deps) {
     //  Variables de items
     let terrain = [];
     let buildings = [];
+    /** @type {Map<string, import('three').Object3D>} */
+    const naturePropMeshes = new Map();
     let loadingPromises = [];
     let currentCitySize = 16; // Store current city size for citizen pathfinding
     let currentCity = null; // Store current city object for citizen updates
@@ -376,6 +386,10 @@ export function createScene(_gameStore, assetManager, deps) {
         backdropManager.applyAtmosphere();
         terrain = [];
         buildings = [];
+        naturePropMeshes.clear();
+        if (isEditorMode()) {
+            resetEditorNatureLayout();
+        }
         loadingPromises = [];
         
         // Store city object and size for citizen pathfinding and World platform scaling
@@ -567,6 +581,8 @@ export function createScene(_gameStore, assetManager, deps) {
         if (loadingPromises.length > 0) {
             await Promise.all(loadingPromises);
         }
+
+        syncEditorNaturePropsFromLayout();
         
         // Set camera bounds based on city size (with small margins)
         if (camera.setBounds && city && typeof city.size === 'number') {
@@ -1800,6 +1816,102 @@ export function createScene(_gameStore, assetManager, deps) {
      * OPTIMIZATION: Ensures objects are properly cleaned up
      * Objects are now in zone groups (not directly in scene or interactive group)
      */
+    function addMeshToTileZone(mesh, x, y, citySize = currentCitySize) {
+        const zoneIndex = resolveTerrainZoneIndex(
+            x,
+            y,
+            citySize,
+            ZONE_SIZE,
+            terrainZonePadding
+        );
+        if (zoneGroups[zoneIndex]) {
+            zoneGroups[zoneIndex].add(mesh);
+        } else {
+            scene.add(mesh);
+        }
+    }
+
+    /**
+     * Replace the Kenney terrain mesh at (x, y). Updates `terrain[][]` only.
+     * @param {object} city
+     * @param {number} x
+     * @param {number} y
+     * @param {string} terrainId
+     * @param {number} [rotationStep=0]
+     * @returns {boolean}
+     */
+    function replaceTerrainAt(city, x, y, terrainId, rotationStep = 0) {
+        const oldMesh = terrain[x]?.[y];
+        if (oldMesh) {
+            removeInteractiveObject(oldMesh);
+        }
+
+        const mesh = assetManager.createAsset(terrainId, x, y);
+        if (!mesh) {
+            console.warn('[Scene] replaceTerrainAt: failed to create mesh', { terrainId, x, y });
+            return false;
+        }
+
+        const normalizedStep = ((rotationStep % 4) + 4) % 4;
+        mesh.rotation.y = normalizedStep * (Math.PI / 2);
+        mesh.name = terrainId;
+        if (!terrain[x]) {
+            terrain[x] = [];
+        }
+        terrain[x][y] = mesh;
+        addMeshToTileZone(mesh, x, y, city?.size ?? currentCitySize);
+        scene.userData.requestShadowRefresh?.();
+        return true;
+    }
+
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {string} propId
+     * @param {number} [rotationY=0]
+     * @returns {boolean}
+     */
+    function placeEditorNatureProp(x, y, propId, rotationY = 0) {
+        removeEditorNaturePropAt(x, y);
+        addEditorNatureObject(propId, x, y, rotationY);
+
+        const port = createKenneyNatureSceneTile(propId, x, y, rotationY);
+        attachSceneTilePort(port);
+        const mesh = port.root;
+        naturePropMeshes.set(`${x},${y}`, mesh);
+        addMeshToTileZone(mesh, x, y);
+        scene.userData.requestShadowRefresh?.();
+        return true;
+    }
+
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @returns {boolean}
+     */
+    function removeEditorNaturePropAt(x, y) {
+        const key = `${x},${y}`;
+        const mesh = naturePropMeshes.get(key);
+        if (mesh) {
+            removeInteractiveObject(mesh);
+            naturePropMeshes.delete(key);
+            scene.userData.requestShadowRefresh?.();
+        }
+        const removed = removeEditorNatureObjectAt(x, y);
+        return Boolean(removed || mesh);
+    }
+
+    /**
+     * Hydrate editor nature props from the in-memory layout (after initialize).
+     */
+    function syncEditorNaturePropsFromLayout() {
+        if (!isEditorMode()) return;
+        for (const obj of getEditorNatureObjects()) {
+            if (naturePropMeshes.has(`${obj.x},${obj.y}`)) continue;
+            placeEditorNatureProp(obj.x, obj.y, obj.assetId, obj.rotationY ?? 0);
+        }
+    }
+
     function removeInteractiveObject(object) {
         if (!object) return;
         
@@ -2363,10 +2475,21 @@ function onTouchEnd(event) {
 
 
     function onKeyBoardDown(event){
+        if (
+            event.key === 'Escape'
+            && typeof this.shouldEscapeToSelectMode === 'function'
+            && this.shouldEscapeToSelectMode()
+            && typeof this.onEnterSelectMode === 'function'
+        ) {
+            this.onEnterSelectMode();
+            event.preventDefault?.();
+            return;
+        }
+
         if (isGameWorldInputLocked()) {
             return;
         }
-        // StonePath tool: R rotates path orientation (Cesar-style), not the camera
+        // Build behavior: R rotates the ghost (or is reserved); camera R runs only in select behavior
         if (
             event.key
             && event.key.toLowerCase() === 'r'
@@ -2464,6 +2587,9 @@ function onTouchEnd(event) {
         onObjectSelected,
         initialize,
         update,
+        replaceTerrainAt,
+        placeEditorNatureProp,
+        removeEditorNaturePropAt,
         syncNeighborHamletDeco,
         start,
         stop,
@@ -2501,11 +2627,15 @@ function onTouchEnd(event) {
          */
         preferPlacementTouchDrag: undefined,
         /**
-         * Called before a right-click inspect selects a building.
-         * Should switch the active tool to select-object and update toolbar UI.
+         * Switch to select behavior (toolbar + activeToolId). Orthogonal to map mode (editor / solo).
          * @type {(() => void) | undefined}
          */
         onEnterSelectMode: undefined,
+        /**
+         * When true, Escape should switch back to select behavior (from build or erase).
+         * @type {(() => boolean) | undefined}
+         */
+        shouldEscapeToSelectMode: undefined,
         // Expose focused/selected for external access if needed
         get focusedObject() { return focusedObject; },
         get selectedObject() { return selectedObject; },
