@@ -4,10 +4,13 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { textures, meshNameMapping } from './data.js';
 import MeshLoader from "./MeshLoaderOptimized.js";
-import { assetsConfig } from '../presentationConfig.js';
+import { assetsConfig, scenePresentation } from '../presentationConfig.js';
 import instancingManager from './InstancingManager.js';
 import { isKenneyBuildingId } from '../adapters/kenney-city-kit/kenneyCityKitConfig.js';
 import { registerKenneyCityKitTools } from '../adapters/kenney-city-kit/registerKenneyCityKitTools.js';
+import { attachSceneTilePort } from '../scene-board/SceneTilePort.js';
+import { createSceneTile } from '../scene-board/SceneObjectRegistry.js';
+import { registerTerrainSceneFactories } from '../scene-board/terrain/registerTerrainSceneFactories.js';
 
 /**
  * Gets the base URL for assets (similar to simcity's pattern)
@@ -59,6 +62,7 @@ function isLocalYUpMesh(root) {
 
 class AssetManager extends MeshLoader {
     #geometry = new THREE.BoxGeometry(1, 1, 1);
+    #roadGeometry = new THREE.PlaneGeometry(1, 1);
     #assets = {};
     #modelPath = "";
     #baseUrl = '';
@@ -424,63 +428,9 @@ class AssetManager extends MeshLoader {
     }
 
     #createTerrain(x, y, buildingId = '') {
-        let mesh;
-        let material;
-
-        // Use shared materials instead of creating new ones each time
-        const materials = this.#getSharedTerrainMaterials();
-
-        // World platform is at y = 0.2
-        const worldPlatformHeight = 0.2;
-        
-        switch (buildingId) {
-            case 'roads':
-                material = materials['roads'];
-                // Use a flat plane geometry for roads instead of a cube
-                // This makes them visible as a flat surface above the World platform
-                const roadGeometry = new THREE.PlaneGeometry(1, 1);
-                mesh = new THREE.Mesh(roadGeometry, material);
-                mesh.userData = { id: buildingId, x, y, isBuilding: false, isRoad: true, time: 0 };
-                mesh.name = buildingId;
-                // Rotate the plane to be horizontal (lying flat on the ground)
-                mesh.rotation.x = -Math.PI / 2; // Rotate 90 degrees to lay flat
-                // Position well above grass - grass top is at (worldPlatformHeight - 0.48) + 0.5 = -0.28 + 0.5 = 0.22
-                // Set roads higher to be clearly elevated above grass
-                mesh.position.set(x, worldPlatformHeight + 0.5, y); // 0.2 + 0.5 = 0.7 (well above grass at ~0.22)
-                mesh.castShadow = false; // Planes don't cast shadows well
-                mesh.receiveShadow = true;
-                break;
-
-
-            case 'grass':
-                material = materials['grass'];
-                mesh = new THREE.Mesh(this.#geometry, material);
-                mesh.name = buildingId;
-                mesh.userData = { id: buildingId, x, y, isBuilding: false, time: 0 };
-                mesh.scale.set(1, 1, 1);
-                // Grass terrain below the World platform
-                mesh.position.set(x, worldPlatformHeight - 0.48, y);
-                mesh.castShadow = true;
-                mesh.receiveShadow = true;
-                break;
-
-            case 'terrain':
-                material = materials['terrain'] || materials['grass'];
-                mesh = new THREE.Mesh(this.#geometry, material);
-                mesh.name = buildingId;
-                mesh.userData = { id: buildingId, x, y, isBuilding: false, isPlaceholder: true, time: 0 };
-                mesh.scale.set(1, 1, 1);
-                // Terrain below the World platform
-                mesh.position.set(x, worldPlatformHeight - 0.4, y);
-                mesh.castShadow = true;
-                mesh.receiveShadow = true;
-                break;
-
-            default:
-                // Default terrain choice
-        }
-
-        return mesh;
+        const port = createSceneTile(buildingId, x, y);
+        attachSceneTilePort(port);
+        return port.root;
     }
 
     #getModelsObj(type) {
@@ -511,8 +461,12 @@ class AssetManager extends MeshLoader {
     }
 
     async initializeTerrains() {
+        registerTerrainSceneFactories({
+            getSharedTerrainMaterials: () => this.#getSharedTerrainMaterials(),
+            getTerrainBoxGeometry: () => this.#geometry,
+            getRoadPlaneGeometry: () => this.#roadGeometry,
+        });
 
-        // Zones (only grass now, roads are 3D meshes)
         this.toolIds.zones.forEach(toolId => {
             this.#assets[toolId] = (x, y) => this.#createTerrain(x, y, toolId);
         });
@@ -925,6 +879,10 @@ class AssetManager extends MeshLoader {
      * @returns {Promise<THREE.Object3D>} The loaded world platform mesh
      */
     async loadWorldPlatform(scene, citySize = 16) {
+        if (!scenePresentation.villageWorldPlatformEnabled) {
+            return null;
+        }
+
         return new Promise((resolve, reject) => {
             const gltfloader = new GLTFLoader();
             const dracoLoader = new DRACOLoader();
@@ -975,8 +933,6 @@ class AssetManager extends MeshLoader {
                             const worldPlatformHeight = 0.2;
                             const cityCenter = citySize / 2;
                             worldMesh.position.set(cityCenter, worldPlatformHeight, cityCenter);
-                            
-                            // Make it visible and ensure it's not too small
                             worldMesh.visible = true;
                             
                             // Make it non-interactive (not part of raycasting)
@@ -1023,6 +979,10 @@ class AssetManager extends MeshLoader {
      * @returns {Promise<void>}
      */
     async loadBoundaryFences(scene, citySize = 16) {
+        if (!scenePresentation.villageBoundaryFencesEnabled) {
+            return;
+        }
+
         return new Promise((resolve, reject) => {
             const gltfloader = new GLTFLoader();
             const dracoLoader = new DRACOLoader();
