@@ -18,6 +18,7 @@ import {
   consumeBootMode,
   getBootMode,
   isGameEntryAllowed,
+  isWorldEntryAllowed,
   setBootMode,
 } from '../../../src/presentation/pages/site/bootSession.js';
 
@@ -115,5 +116,29 @@ describe('bootSession map mode entry', () => {
     window.history.replaceState(null, '', '/game?mode=editor');
     expect(isGameEntryAllowed()).toBe(false);
     expect(getBootMode()).toBe(null);
+  });
+});
+
+describe('bootSession world map entry', () => {
+  beforeEach(() => {
+    clearGameMode();
+    clearBootMode();
+  });
+
+  test('direct /world access is not allowed without a game session', () => {
+    window.history.replaceState(null, '', '/world');
+    expect(isWorldEntryAllowed()).toBe(false);
+  });
+
+  test('world map is allowed after entering the game', () => {
+    setGameMode(GAME_MODES.EDITOR);
+    expect(isWorldEntryAllowed()).toBe(true);
+  });
+
+  test('world map is allowed for tutorial and solo sessions', () => {
+    setGameMode(GAME_MODES.TUTORIAL);
+    expect(isWorldEntryAllowed()).toBe(true);
+    setGameMode(GAME_MODES.SOLO);
+    expect(isWorldEntryAllowed()).toBe(true);
   });
 });
