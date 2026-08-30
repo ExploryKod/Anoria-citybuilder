@@ -67,6 +67,7 @@ export class PlaceBuildingAtTile {
       y,
       buildingType,
       assetCatalog: this.assetCatalog,
+      rotationStep: normalizedRotationStep,
     });
     if (!placement.ok) {
       return {
@@ -93,7 +94,7 @@ export class PlaceBuildingAtTile {
       }
     }
 
-    const { gridSize } = placement;
+    const { gridSize, footprintWidth, footprintHeight } = placement;
     const tile = city.tiles?.[x]?.[y];
     const isRoadTool = isRoadBuildingType(buildingType);
     const canPlaceRoad =
@@ -155,8 +156,8 @@ export class PlaceBuildingAtTile {
         x,
         y,
         gridSize,
-        footprintWidth: gridSize,
-        footprintHeight: gridSize,
+        footprintWidth,
+        footprintHeight: footprintHeight,
         placementRotationStep: normalizedRotationStep,
         employees: this.getDefaultEmployees(buildingType),
       };
@@ -177,7 +178,8 @@ export class PlaceBuildingAtTile {
       }
 
       const placedInstanceId = paymentResult.instanceId ?? instanceId;
-      stampBuildingFootprint(city, x, y, gridSize, buildingType, placedInstanceId, {
+      stampBuildingFootprint(city, x, y, footprintWidth, buildingType, placedInstanceId, {
+        footprintHeight,
         placementRotationStep: normalizedRotationStep,
       });
 

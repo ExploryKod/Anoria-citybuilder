@@ -34,6 +34,8 @@
  * @property {number} price
  * @property {string} category
  * @property {number} gridSize
+ * @property {number} [footprintWidth]
+ * @property {number} [footprintDepth]
  *
  * @typedef {Object} BuildingEmploymentFacts
  * @property {number} sector

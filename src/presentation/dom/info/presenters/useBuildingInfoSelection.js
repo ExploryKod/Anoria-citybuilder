@@ -30,6 +30,7 @@ import {
   setBuildingInfoTitle,
   syncBuildingInfoTabs,
 } from '../layout/buildingInfoLayout.js';
+import { playDoorOpenSound } from '../../../audio/SoundEffects.js';
 
 /**
  * @param {import('../buildingInfoTypes.js').BuildingInfoGroupId} groupId
@@ -119,6 +120,7 @@ export async function useBuildingInfoSelection(selectedObject, ctx) {
   clearHubInfoOverlayMode();
 
   if (shouldOpenInfo) {
+    playDoorOpenSound();
     openBuildingInfoOverlay(infoObjectOverlay);
     const canvas = document.querySelector('canvas');
     if (canvas) canvas.classList.add('pointer-events-disabled');

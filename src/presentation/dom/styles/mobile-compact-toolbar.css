@@ -336,6 +336,35 @@
   line-height: 1;
 }
 
+/* Kenney preview PNG — same charcoal tile as desktop panel */
+.mobile-build-bar .mobile-tool-btn.panel-btn--kenney-preview {
+  padding: 4px;
+  background-color: #2b2b30;
+  border: none;
+  box-shadow: none;
+  color: inherit;
+}
+
+.mobile-build-bar .mobile-tool-btn.panel-btn--kenney-preview:hover {
+  background-color: #38383f;
+}
+
+.mobile-build-bar .mobile-tool-btn.panel-btn--kenney-preview.selected {
+  background-color: #45454d;
+  color: inherit;
+}
+
+.mobile-build-bar .mobile-tool-btn.panel-btn--kenney-preview .tool-kenney-preview {
+  width: 100%;
+  height: 100%;
+  min-height: 36px;
+  max-height: 44px;
+  object-fit: contain;
+  pointer-events: none;
+  display: block;
+  filter: none;
+}
+
 .mobile-build-bar .mobile-tool-btn.selected {
   background: #fff;
   color: var(--primary);

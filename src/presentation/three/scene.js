@@ -48,8 +48,18 @@ import {
   getSessionGameUI,
 } from '../../composition/sessionRuntime.js';
 import { createPlacementGhostController } from './placementGhost.js';
+import { pickTileFromRaycast } from './scene-board/tileRaycast.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
 import { showWarningToast, showInfoToast } from '../dom/shell/ToastNotifier.js';
+import { getKenneyCityKitMeshAdapter } from './adapters/kenney-city-kit/KenneyCityKitMeshAdapter.js';
+import { scenePresentation } from './presentationConfig.js';
+import { createSceneFog } from '../../shared/terrain-catalog/terrainAtmosphere.js';
+import { getTerrainZoneCounts, resolveTerrainZoneIndex } from '../../shared/terrain-catalog/terrainZoneLayout.js';
+import { spawnIslandShore } from './scene-board/terrain/spawnIslandShore.js';
+import {
+  applyRoadMaterialToTerrainTile,
+  restoreGrassMaterialOnTerrainTile,
+} from './scene-board/terrain/terrainSceneTileOps.js';
 
 /** Terminaux tactiles / petits écrans — GPU plus souvent limité (mémoire, contexte WebGL). */
 function isMobileDevice() {
@@ -94,8 +104,7 @@ export function createScene(_gameStore, assetManager, deps) {
       construction.ensureBuildingEmployeesSchema(id, type);
 
     const scene = new THREE.Scene();
-    // Subtle atmospheric fog to blend far terrain and sky (tuned to match background)
-    try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
+    try { scene.fog = createSceneFog(); } catch (_) {}
 
     const placementGhost = createPlacementGhostController({ scene, assetManager });
     
@@ -135,8 +144,7 @@ export function createScene(_gameStore, assetManager, deps) {
       }
     }
 
-    // Lowpoly day dome (follows camera in draw). Solid colour as horizon fallback.
-    void backdropManager.initializeSky();
+    backdropManager.applyAtmosphere();
     
     // Initialize citizen manager
     citizenManager.initialize();
@@ -285,6 +293,8 @@ export function createScene(_gameStore, assetManager, deps) {
     const mouse = new THREE.Vector2();
     let selectedObject = undefined; // Object that is currently selected (clicked)
     let focusedObject = undefined; // Object currently under cursor (hover)
+    /** @type {((focused: object | null) => void) | undefined} */
+    let onPlacementHoverHandler = undefined;
     // Référence une fonction appelée si un objet est sélectionné
     let onObjectSelected = undefined;
 
@@ -334,6 +344,7 @@ export function createScene(_gameStore, assetManager, deps) {
     // Group buildings/terrain by zones (4x4 tiles per zone) for efficient frustum culling
     const zoneGroups = [];
     const ZONE_SIZE = 4; // 4x4 tiles per zone
+    let terrainZonePadding = 0;
     let zoneGroupsInitialized = false;
 
     // Variables de gameplay
@@ -351,27 +362,17 @@ export function createScene(_gameStore, assetManager, deps) {
     async function initialize(city, options = {}) {
         const seedNature = options.seedNature === true;
 
-        // Store world platform before clearing scene
-        let worldPlatform = scene.getObjectByName('world-platform');
-        
-        // Drop sky before clear so BackdropManager does not keep a stale instance
-        backdropManager.detachSky();
-        const skySphere = scene.getObjectByName('sky-sphere');
-        if (skySphere) {
-            scene.remove(skySphere);
-            if (skySphere.geometry) skySphere.geometry.dispose();
-            if (skySphere.material) skySphere.material.dispose();
-        }
+        // Store world platform before clearing scene (legacy village ground — optional)
+        let worldPlatform = scenePresentation.villageWorldPlatformEnabled
+            ? scene.getObjectByName('world-platform')
+            : null;
         
         scene.clear();
         zoneGroups.length = 0;
         zoneGroupsInitialized = false;
-        // Re-apply fog after clear
-        try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
-        
-        // Re-attach sky dome (cached GLB template)
-        await backdropManager.initializeSky();
-        backdropManager.syncSkyToCamera(camera.camera);
+        // Re-apply fog and flat background after clear
+        try { scene.fog = createSceneFog(); } catch (_) {}
+        backdropManager.applyAtmosphere();
         terrain = [];
         buildings = [];
         loadingPromises = [];
@@ -383,42 +384,45 @@ export function createScene(_gameStore, assetManager, deps) {
             currentCitySize = city.size;
         }
         
-        // Re-add world platform if it existed, otherwise load it
-        // If it exists but city size changed, remove and reload with new size
-        if (worldPlatform) {
-            // Check if we need to rescale (city size might have changed)
-            const existingScale = worldPlatform.scale.x;
-            const expectedScale = (citySize + 2) / (existingScale > 0 ? 1 / existingScale : 1);
-            if (Math.abs(existingScale - expectedScale) > 0.1) {
-                // City size changed, remove old and reload
-                scene.remove(worldPlatform);
-                worldPlatform = null;
-            } else {
-                scene.add(worldPlatform);
+        // Village world platform (legacy) — Kenney terrain tiles replace it when disabled.
+        if (scenePresentation.villageWorldPlatformEnabled) {
+            if (worldPlatform) {
+                const existingScale = worldPlatform.scale.x;
+                const expectedScale = (citySize + 2) / (existingScale > 0 ? 1 / existingScale : 1);
+                if (Math.abs(existingScale - expectedScale) > 0.1) {
+                    scene.remove(worldPlatform);
+                    worldPlatform = null;
+                } else {
+                    scene.add(worldPlatform);
+                }
+            }
+
+            if (!worldPlatform) {
+                try {
+                    await assetManager.loadWorldPlatform(scene, citySize);
+                } catch (error) {
+                    console.warn('[Scene] Could not load world platform:', error);
+                }
+            }
+        } else {
+            const stalePlatform = scene.getObjectByName('world-platform');
+            if (stalePlatform) {
+                scene.remove(stalePlatform);
             }
         }
         
-        if (!worldPlatform) {
-            // Load world platform (base ground) first, before other assets
-            // Pass city size to scale the World platform accordingly
-            try {
-                await assetManager.loadWorldPlatform(scene, citySize);
-            } catch (error) {
-                console.warn('[Scene] Could not load world platform:', error);
-            }
-        }
-        
-        // Load boundary fences at north, south, east, west limits
-        // Remove existing fences if they exist (in case of scene reset)
+        // Village boundary fences (legacy) — optional while Kenney scene is integrated.
         const existingFenceGroup = scene.getObjectByName('boundary-fences');
         if (existingFenceGroup) {
             scene.remove(existingFenceGroup);
         }
-        
-        try {
-            await assetManager.loadBoundaryFences(scene, citySize);
-        } catch (error) {
-            console.warn('[Scene] Could not load boundary fences:', error);
+
+        if (scenePresentation.villageBoundaryFencesEnabled) {
+            try {
+                await assetManager.loadBoundaryFences(scene, citySize);
+            } catch (error) {
+                console.warn('[Scene] Could not load boundary fences:', error);
+            }
         }
         
         // Reset citizen state
@@ -448,14 +452,28 @@ export function createScene(_gameStore, assetManager, deps) {
         
         // OPTIMIZATION: Initialize zone groups for frustum culling
         if (!zoneGroupsInitialized) {
-            const numZonesX = Math.ceil(city.size / ZONE_SIZE);
-            const numZonesY = Math.ceil(city.size / ZONE_SIZE);
-            
+            const organicPadding = scenePresentation.islandShoreOrganicPadding
+                ?? scenePresentation.islandBeachBorderRingWidth
+                ?? 4;
+            terrainZonePadding = scenePresentation.islandBeachBorderEnabled
+                ? Math.ceil((organicPadding + 1) / ZONE_SIZE)
+                : 0;
+            const { numZonesX, numZonesY } = getTerrainZoneCounts(
+                city.size,
+                ZONE_SIZE,
+                terrainZonePadding
+            );
+
             for (let zoneX = 0; zoneX < numZonesX; zoneX++) {
                 for (let zoneY = 0; zoneY < numZonesY; zoneY++) {
                     const zoneGroup = new THREE.Group();
                     zoneGroup.name = `zone_${zoneX}_${zoneY}`;
-                    zoneGroup.userData = { zoneX, zoneY, minX: zoneX * ZONE_SIZE, minY: zoneY * ZONE_SIZE };
+                    zoneGroup.userData = {
+                        zoneX,
+                        zoneY,
+                        minX: (zoneX - terrainZonePadding) * ZONE_SIZE,
+                        minY: (zoneY - terrainZonePadding) * ZONE_SIZE,
+                    };
                     scene.add(zoneGroup);
                     zoneGroups.push(zoneGroup);
                 }
@@ -483,9 +501,13 @@ export function createScene(_gameStore, assetManager, deps) {
                 
                 // OPTIMIZATION: Add to zone group (zone groups are in scene)
                 // This allows frustum culling to work properly
-                const zoneX = Math.floor(x / ZONE_SIZE);
-                const zoneY = Math.floor(y / ZONE_SIZE);
-                const zoneIndex = zoneX * Math.ceil(city.size / ZONE_SIZE) + zoneY;
+                const zoneIndex = resolveTerrainZoneIndex(
+                    x,
+                    y,
+                    city.size,
+                    ZONE_SIZE,
+                    terrainZonePadding
+                );
                 
                 // For roads, ensure they are properly positioned above World platform
                 // and force matrix update to ensure visibility
@@ -510,6 +532,26 @@ export function createScene(_gameStore, assetManager, deps) {
         lightingManager.setUpLights(city.size);
         scene.userData.requestShadowRefresh?.();
 
+        backdropManager.syncGroundFill(citySize);
+
+        if (scenePresentation.islandBeachBorderEnabled) {
+            const organicPadding = scenePresentation.islandShoreOrganicPadding
+                ?? scenePresentation.islandBeachBorderRingWidth
+                ?? 4;
+            const beach = spawnIslandShore({
+                citySize,
+                zoneSize: ZONE_SIZE,
+                zonePadding: terrainZonePadding,
+                zoneGroups,
+                scene,
+                padding: organicPadding,
+                seed: scenePresentation.islandShoreSeed ?? 42,
+            });
+            if (beach.tileCount === 0) {
+                console.warn('[Scene] Island beach border: no tiles spawned');
+            }
+        }
+
         // Visual tile grid (indication only — rebuilt after scene.clear())
         tileGridOverlay.rebuild(scene, city.size);
         
@@ -527,12 +569,17 @@ export function createScene(_gameStore, assetManager, deps) {
         
         // Set camera bounds based on city size (with small margins)
         if (camera.setBounds && city && typeof city.size === 'number') {
-            const margin = 2;
+            const organicPadding = scenePresentation.islandShoreOrganicPadding
+                ?? scenePresentation.islandBeachBorderRingWidth
+                ?? 4;
+            const beachMargin = scenePresentation.islandBeachBorderEnabled
+                ? organicPadding + 1
+                : 2;
             camera.setBounds({
-                minX: -margin,
-                maxX: city.size + margin,
-                minZ: -margin,
-                maxZ: city.size + margin
+                minX: -beachMargin,
+                maxX: city.size + beachMargin - 1,
+                minZ: -beachMargin,
+                maxZ: city.size + beachMargin - 1,
             });
             
             // Center camera on the city (critical for proper raycasting coordinates)
@@ -541,9 +588,8 @@ export function createScene(_gameStore, assetManager, deps) {
             }
         }
 
-        // No backdrop needed - World platform provides sharp cutoff with sky background
-        // addBackdrop(citySize); // Disabled to prevent visible edges at horizon
-        
+        // No extra backdrop — syncGroundFill covers the infinite ground aspect.
+
         // Initialize resources (trees, boulders) only on a virgin hamlet.
         // Returning to a saved hamlet hydrates tiles from Dexie instead.
         if (seedNature) {
@@ -626,10 +672,14 @@ export function createScene(_gameStore, assetManager, deps) {
                 }
                 buildings[x][y] = nextMesh;
                 scene.userData.requestShadowRefresh?.();
-                const zoneX = Math.floor(x / ZONE_SIZE);
-                const zoneY = Math.floor(y / ZONE_SIZE);
                 const citySize = city.size || 16;
-                const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
+                const zoneIndex = resolveTerrainZoneIndex(
+                    x,
+                    y,
+                    citySize,
+                    ZONE_SIZE,
+                    terrainZonePadding
+                );
                 if (zoneGroups[zoneIndex]) {
                     zoneGroups[zoneIndex].add(nextMesh);
                 } else {
@@ -655,18 +705,13 @@ export function createScene(_gameStore, assetManager, deps) {
             if (newBuildingId === 'roads') {
                 const placementRotationStep = city.tiles[x]?.[y]?.placementRotationStep ?? 0;
                 if (terrain[x] && terrain[x][y]) {
-                    const terrainMesh = terrain[x][y];
                     const sharedMaterials = assetManager.getSharedTerrainMaterials();
-                    if (sharedMaterials && sharedMaterials['roads']) {
-                        terrainMesh.material = sharedMaterials['roads'];
-                        terrainMesh.name = 'roads';
-                        terrainMesh.userData.id = 'roads';
-                        terrainMesh.userData.type = 'roads';
-                        terrainMesh.userData.isRoad = true;
-                        terrainMesh.userData.x = x;
-                        terrainMesh.userData.y = y;
-                        terrainMesh.rotation.y = placementRotationStep * (Math.PI / 2);
-                        terrainMesh.updateMatrixWorld(true);
+                    if (sharedMaterials?.roads) {
+                        applyRoadMaterialToTerrainTile(
+                            terrain[x][y],
+                            sharedMaterials.roads,
+                            { x, y, rotationStep: placementRotationStep }
+                        );
                     }
                 }
                 if (!buildings[x][y] || buildings[x][y] !== terrain[x][y]) {
@@ -717,6 +762,35 @@ export function createScene(_gameStore, assetManager, deps) {
             const placementRotationStep = city.tiles[x]?.[y]?.placementRotationStep ?? 0;
 
             if (isOriginTile) {
+                if (getKenneyCityKitMeshAdapter().isKenneyBuildingId(newBuildingId)) {
+                    const kenneyMesh = await getKenneyCityKitMeshAdapter().createBuilding(x, y, {
+                        rotationStep: placementRotationStep,
+                        buildingId: newBuildingId,
+                    });
+                    if (!kenneyMesh) {
+                        return;
+                    }
+                    removeInteractiveObject(buildings[x][y]);
+                    buildings[x][y] = kenneyMesh;
+                    scene.userData.requestShadowRefresh?.();
+                    const citySize = city.size || 16;
+                    const zoneIndex = resolveTerrainZoneIndex(
+                        x,
+                        y,
+                        citySize,
+                        ZONE_SIZE,
+                        terrainZonePadding
+                    );
+                    const interactiveGroupRef =
+                        scene.interactiveGroup || scene.getObjectByName('interactive-objects');
+                    if (zoneGroups[zoneIndex]) {
+                        zoneGroups[zoneIndex].add(kenneyMesh);
+                    } else if (interactiveGroupRef) {
+                        interactiveGroupRef.add(kenneyMesh);
+                    }
+                    return;
+                }
+
                 const mesh = assetManager.createAsset(assetId, x, y, {
                     rotationStep: placementRotationStep,
                 });
@@ -734,10 +808,13 @@ export function createScene(_gameStore, assetManager, deps) {
                     mesh.position.z += centerOffset;
                 }
                 scene.userData.requestShadowRefresh?.();
-                const zoneX = Math.floor(x / ZONE_SIZE);
-                const zoneY = Math.floor(y / ZONE_SIZE);
-                const citySize = city.size || 16;
-                const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
+                const zoneIndex = resolveTerrainZoneIndex(
+                    x,
+                    y,
+                    citySize,
+                    ZONE_SIZE,
+                    terrainZonePadding
+                );
                 if (zoneGroups[zoneIndex]) {
                     zoneGroups[zoneIndex].add(mesh);
                 } else {
@@ -869,15 +946,14 @@ export function createScene(_gameStore, assetManager, deps) {
                       }
                   } else {
                       // Terrain has road material but city.tiles doesn't - restore to grass
-                      const terrainMesh = terrain[x][y];
+                      const terrainNode = terrain[x][y];
                       const sharedMaterials = assetManager.getSharedTerrainMaterials();
-                      if (sharedMaterials && sharedMaterials['grass'] && terrainMesh.material) {
-                          terrainMesh.material = sharedMaterials['grass'];
-                          terrainMesh.name = 'grass';
-                          terrainMesh.userData.id = 'grass';
-                          terrainMesh.userData.type = 'grass';
-                          terrainMesh.userData.isRoad = false;
-                          terrainMesh.rotation.y = 0;
+                      if (sharedMaterials?.grass) {
+                          restoreGrassMaterialOnTerrainTile(
+                              terrainNode,
+                              sharedMaterials.grass,
+                              { x, y }
+                          );
                       }
                   }
               }
@@ -939,18 +1015,13 @@ export function createScene(_gameStore, assetManager, deps) {
                         );
                     if (!tileBuildingId && ghostIsRoad) {
                         if (terrain[x] && terrain[x][y]) {
-                            const terrainMesh = terrain[x][y];
                             const sharedMaterials = assetManager.getSharedTerrainMaterials();
-                            if (sharedMaterials?.['grass'] && terrainMesh.material) {
-                                terrainMesh.material = sharedMaterials['grass'];
-                                terrainMesh.name = 'grass';
-                                terrainMesh.userData.id = 'grass';
-                                terrainMesh.userData.type = 'grass';
-                                terrainMesh.userData.isRoad = false;
-                                terrainMesh.rotation.y = 0;
-                                terrainMesh.userData.x = x;
-                                terrainMesh.userData.y = y;
-                                delete terrainMesh.userData.instanceId;
+                            if (sharedMaterials?.grass) {
+                                restoreGrassMaterialOnTerrainTile(
+                                    terrain[x][y],
+                                    sharedMaterials.grass,
+                                    { x, y }
+                                );
                             }
                         }
                         if (ghostMesh && ghostMesh !== terrain[x]?.[y]) {
@@ -1009,18 +1080,13 @@ export function createScene(_gameStore, assetManager, deps) {
                         );
                     if (!tileHasRoad) {
                         if (terrain[x] && terrain[x][y]) {
-                            const terrainMesh = terrain[x][y];
                             const sharedMaterials = assetManager.getSharedTerrainMaterials();
-                            if (sharedMaterials && sharedMaterials['grass'] && terrainMesh.material) {
-                                terrainMesh.material = sharedMaterials['grass'];
-                                terrainMesh.name = 'grass';
-                                terrainMesh.userData.id = 'grass';
-                                terrainMesh.userData.type = 'grass';
-                                terrainMesh.userData.isRoad = false;
-                                terrainMesh.rotation.y = 0;
-                                terrainMesh.userData.x = x;
-                                terrainMesh.userData.y = y;
-                                delete terrainMesh.userData.instanceId;
+                            if (sharedMaterials?.grass) {
+                                restoreGrassMaterialOnTerrainTile(
+                                    terrain[x][y],
+                                    sharedMaterials.grass,
+                                    { x, y }
+                                );
                             }
                         }
                         const roadMesh = buildings[x][y];
@@ -1132,18 +1198,13 @@ export function createScene(_gameStore, assetManager, deps) {
                                 console.warn('[Scene] Failed parcels remove for road', currentInstanceId, err);
                             }
                             if (terrain[x] && terrain[x][y]) {
-                                const terrainMesh = terrain[x][y];
                                 const sharedMaterials = assetManager.getSharedTerrainMaterials();
-                                if (sharedMaterials && sharedMaterials['grass']) {
-                                    terrainMesh.material = sharedMaterials['grass'];
-                                    terrainMesh.name = 'grass';
-                                    terrainMesh.userData.id = 'grass';
-                                    terrainMesh.userData.type = 'grass';
-                                    terrainMesh.userData.isRoad = false;
-                                terrainMesh.rotation.y = 0;
-                                    terrainMesh.userData.x = x;
-                                    terrainMesh.userData.y = y;
-                                    delete terrainMesh.userData.instanceId;
+                                if (sharedMaterials?.grass) {
+                                    restoreGrassMaterialOnTerrainTile(
+                                        terrain[x][y],
+                                        sharedMaterials.grass,
+                                        { x, y }
+                                    );
                                 }
                             }
                             if (buildings[x][y] && buildings[x][y] !== terrain[x]?.[y]) {
@@ -1701,31 +1762,29 @@ export function createScene(_gameStore, assetManager, deps) {
      * Since objects are now in zone groups, we collect them from all zone groups
      */
     function getInteractiveObjects() {
-        // Collect all objects from zone groups (they contain buildings + terrain)
-        // Exclude decorative elements (non-interactive)
         const objects = [];
-        zoneGroups.forEach(zoneGroup => {
-            zoneGroup.children.forEach(child => {
-                if (child instanceof THREE.Mesh && 
-                    !child.userData.isDecorative && 
-                    !child.userData.nonInteractive &&
-                    child.name && !child.name.startsWith('decorative-')) {
-                    objects.push(child);
-                }
+        zoneGroups.forEach((zoneGroup) => {
+            zoneGroup.children.forEach((child) => {
+                if (child.userData?.isDecorative) return;
+                if (child.userData?.nonInteractive) return;
+                if (child.name?.startsWith('decorative-')) return;
+                objects.push(child);
             });
         });
-        // Fallback: filter scene children to exclude decorative elements
         if (objects.length === 0) {
-            scene.children.forEach(child => {
-                if (child instanceof THREE.Mesh && 
-                    !child.userData.isDecorative && 
-                    !child.userData.nonInteractive &&
-                    child.name && !child.name.startsWith('decorative-') &&
-                    child.name !== 'world-platform' &&
-                    child.name !== 'infinite-ground-base' &&
-                    child.name !== 'infinite-ground-large') {
-                    objects.push(child);
+            scene.children.forEach((child) => {
+                if (child.userData?.isDecorative) return;
+                if (child.userData?.nonInteractive) return;
+                if (child.name?.startsWith('decorative-')) return;
+                if (
+                    child.name === 'world-platform'
+                    || child.name === 'kenney-ground-fill'
+                    || child.name === 'infinite-ground-base'
+                    || child.name === 'infinite-ground-large'
+                ) {
+                    return;
                 }
+                objects.push(child);
             });
         }
         return objects;
@@ -1777,11 +1836,7 @@ export function createScene(_gameStore, assetManager, deps) {
         
         raycaster.setFromCamera(mouse, camera.camera);
         
-        // OPTIMIZATION: Only test interactive objects (buildings + terrain)
-        // This dramatically reduces raycast tests (from ~300+ objects to ~256 for 16×16 city)
-        const intersections = raycaster.intersectObjects(getInteractiveObjects(), false);
-        
-        const newFocusedObject = intersections.length > 0 ? intersections[0].object : null;
+        const newFocusedObject = pickTileFromRaycast(raycaster, getInteractiveObjects());
         
         // Only update if changed (prevent unnecessary updates)
         if (newFocusedObject !== focusedObject) {
@@ -1902,8 +1957,9 @@ export function createScene(_gameStore, assetManager, deps) {
         }
         
         updateFocusedObject(); // Update focused object every frame
-        // Keep the sky dome locked to the camera (iso + perspective)
-        backdropManager.syncSkyToCamera(camera.camera);
+        if (typeof onPlacementHoverHandler === 'function') {
+            onPlacementHoverHandler(focusedObject ?? null);
+        }
         // OPTIMIZATION: Update frustum culling for zone groups (throttled)
         if (performanceManager) {
             performanceManager.updateFrustumCulling();
@@ -1942,8 +1998,7 @@ export function createScene(_gameStore, assetManager, deps) {
             mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
             mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera.camera);
-            const intersections = raycaster.intersectObjects(getInteractiveObjects(), false);
-            objectToSelect = intersections.length > 0 ? intersections[0].object : null;
+            objectToSelect = pickTileFromRaycast(raycaster, getInteractiveObjects());
         }
         return objectToSelect;
     }
@@ -2071,15 +2126,8 @@ function onMouseMove(event) {
 
     // Perform raycasting (OPTIMIZED: only interactive objects)
     raycaster.setFromCamera(mouse, camera.camera);
-    const intersections = raycaster.intersectObjects(getInteractiveObjects(), false);
-
-    if(intersections.length) {
-        focusedObject = intersections[0].object;
-        hoveredObjectName = intersections[0]?.object?.name || ""
-    } else {
-        focusedObject = null;
-        hoveredObjectName = '';
-    }
+    focusedObject = pickTileFromRaycast(raycaster, getInteractiveObjects());
+    hoveredObjectName = focusedObject?.name || '';
 
     if (typeof this.onPlacementHover === 'function') {
         this.onPlacementHover(focusedObject);
@@ -2108,8 +2156,7 @@ function raycastTouchClient(clientX, clientY) {
     mouse.x = (clientX / renderer.domElement.clientWidth) * 2 - 1;
     mouse.y = -(clientY / renderer.domElement.clientHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, camera.camera);
-    const intersections = raycaster.intersectObjects(getInteractiveObjects(), false);
-    return intersections.length > 0 ? intersections[0].object : null;
+    return pickTileFromRaycast(raycaster, getInteractiveObjects());
 }
 
 function emitPlacementHoverFromTouch(object) {
@@ -2441,7 +2488,12 @@ function onTouchEnd(event) {
          */
         onPlacementKeyboard: undefined,
         /** @type {((focused: object | null) => void) | undefined} */
-        onPlacementHover: undefined,
+        get onPlacementHover() {
+            return onPlacementHoverHandler;
+        },
+        set onPlacementHover(handler) {
+            onPlacementHoverHandler = handler;
+        },
         /**
          * When true, single-finger drag updates the placement ghost instead of panning.
          * @type {(() => boolean) | undefined}

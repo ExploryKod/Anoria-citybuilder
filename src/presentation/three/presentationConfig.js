@@ -32,3 +32,11 @@ export const renderingConfig = {
     opacity: 0.45,
   },
 };
+
+/** Scene layers while Kenney terrain / backdrop are being integrated. */
+export const scenePresentation = {
+  villageWorldPlatformEnabled: false,
+  villageBoundaryFencesEnabled: false,
+  /** Kenney organic island shore — disabled; grass grid only. */
+  islandBeachBorderEnabled: false,
+};

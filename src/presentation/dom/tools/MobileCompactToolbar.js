@@ -630,22 +630,6 @@ function renderCarousel(categoryId) {
   listEl.innerHTML = '';
   let toolInfos = getToolButtonInfosForCategory(categoryId);
 
-  // Palace tools live under Habitations in the compact build bar.
-  if (categoryId === 'houses') {
-    const palaceUnlocked = !deps?.buttonStateManager?.isEnabled
-      || deps.buttonStateManager.isEnabled('palace-btn');
-    if (palaceUnlocked) {
-      const palaceInfos = getToolButtonInfosForCategory('palaces');
-      const seen = new Set(toolInfos.map((info) => info.tool));
-      palaceInfos.forEach((info) => {
-        if (!seen.has(info.tool)) {
-          seen.add(info.tool);
-          toolInfos.push(info);
-        }
-      });
-    }
-  }
-
   toolInfos.forEach((buttonInfo) => {
     const slide = document.createElement('li');
     slide.className = 'splide__slide mobile-build-bar__slide';

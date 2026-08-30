@@ -227,7 +227,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house-plus-icon lucide-house-plus"><path d="M12.35 21H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 .71-1.53l7-6a2 2 0 0 1 2.58 0l7 6A2 2 0 0 1 21 10v2.35"/><path d="M14.8 12.4A1 1 0 0 0 14 12h-4a1 1 0 0 0-1 1v8"/><path d="M15 18h6"/><path d="M18 15v6"/>
                         </svg>
                     </button>
-                    <button type="button" id="palace-btn" class="toolbar-btn" data-group="palaces" title="Palais" aria-label="Palais">
+                    <button type="button" id="palace-btn" class="toolbar-btn" data-group="palaces" title="Palais" aria-label="Palais" hidden>
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-castle-icon lucide-castle"><path d="M10 5V3"/><path d="M14 5V3"/><path d="M15 21v-3a3 3 0 0 0-6 0v3"/><path d="M18 3v8"/><path d="M18 5H6"/><path d="M22 11H2"/><path d="M22 9v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9"/><path d="M6 3v8"/></svg>
                     </button>
                   
@@ -256,7 +256,7 @@
                             <path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/>
                             <path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="12" x="6" y="10"/></svg>
                     </button>
-                    <button type="button" id="workshop-btn" class="toolbar-btn" data-group="industry" title="Industrie (incl. winery)" aria-label="Industrie (incl. winery)">
+                    <button type="button" id="workshop-btn" class="toolbar-btn" data-group="industry" title="Industrie (incl. winery)" aria-label="Industrie (incl. winery)" hidden>
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wine"><path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z"/></svg>
                     </button>
                 </div>
@@ -267,7 +267,7 @@
             <div class="toolbar__sub-container">
                 <div class="toolbar__label">Infrastructure</div>
                 <div class="toolbar__buttons">
-                    <button type="button" id="infrastructure-btn" class="toolbar-btn" data-group="infrastructure" title="Infrastructure" aria-label="Infrastructure">
+                    <button type="button" id="infrastructure-btn" class="toolbar-btn" data-group="infrastructure" title="Infrastructure" aria-label="Infrastructure" hidden>
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-utility-pole-icon lucide-utility-pole"><path d="M12 2v20"/><path d="M2 5h20"/><path d="M3 3v2"/><path d="M7 3v2"/><path d="M17 3v2"/><path d="M21 3v2"/><path d="m19 5-7 7-7-7"/></svg>
                     </button>
                     <button type="button" id="roads-btn" class="toolbar-btn" data-group="roads" title="Routes et chemins" aria-label="Routes et chemins">
@@ -282,24 +282,24 @@
 
                 <div class="toolbar__container">
                     <div class="toolbar__sub-container">
-                        <div class="toolbar__label">Services</div>
+                        <div class="toolbar__label">Commerce</div>
                         <div class="toolbar__buttons">
                             <button type="button" id="market-btn" class="toolbar-btn" data-group="markets" title="Commerce">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-store"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/>
                                 </svg>
                             </button>
-                            <button type="button" id="public-btn" class="toolbar-btn" data-group="public" title="Services publics">
+                            <button type="button" id="public-btn" class="toolbar-btn" data-group="public" title="Services publics" hidden>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <div class="toolbar__container">
+                <div class="toolbar__container" hidden>
                     <div class="toolbar__sub-container">
                         <div class="toolbar__label">Nature & décor</div>
                         <div class="toolbar__buttons">
-                            <button type="button" id="nature-btn" class="toolbar-btn" data-group="nature" title="Nature">
+                            <button type="button" id="nature-btn" class="toolbar-btn" data-group="nature" title="Nature" hidden>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trees">
                                     <path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-2.1-5.2l.3-.3h.2a2.5 2.5 0 0 1 2-4l.4-.4a2 2 0 0 1 2.9-.2 1 1 0 0 0 1.4 0"/>
                                     <path d="M14 10v.2A3 3 0 0 0 15.1 16H19a3 3 0 0 0 2.1-5.2l-.3-.3h-.2a2.5 2.5 0 0 0-2-4l-.4-.4a2 2 0 0 0-2.9-.2 1 1 0 0 1-1.4 0"/>
@@ -307,10 +307,10 @@
                                     <path d="M12 2v4"/>
                                 </svg>
                             </button>
-                            <button type="button" id="decoration-btn" class="toolbar-btn" data-group="decoration" title="Décor urbain">
+                            <button type="button" id="decoration-btn" class="toolbar-btn" data-group="decoration" title="Décor urbain" hidden>
                                 <span class="tool-emoji" aria-hidden="true">🏛️</span>
                             </button>
-                            <button type="button" id="tombs-btn" class="toolbar-btn" data-group="tombs" title="Cimetière">
+                            <button type="button" id="tombs-btn" class="toolbar-btn" data-group="tombs" title="Cimetière" hidden>
                                 <span class="tool-emoji" aria-hidden="true">🪦</span>
                             </button>
                         </div>

@@ -6,7 +6,7 @@
 
 import { describe, test, expect } from '@jest/globals';
 import { buildingCatalog, getBuildingDefinition } from '../../src/shared/building-catalog/buildingCatalog.js';
-import { assetsPrices } from '../../src/shared/building-catalog/assetsPrices.js';
+import { assetsPrices, playableAssetsPrices } from '../../src/shared/building-catalog/assetsPrices.js';
 import {
   BUILDING_SECTOR_MAP,
   BUILDING_EMPLOYEE_NEEDS,
@@ -100,6 +100,18 @@ describe('BuildingMaintenanceBreakdownPolicy — derived maintenance facts', () 
     expect(DEFAULT_MAINTENANCE_COSTS['House-Blue']).toBe(
       buildingCatalog['House-Blue'].accounting.maintenance
     );
+  });
+});
+
+describe('playableAssetsPrices — Kenney + farms + roads only', () => {
+  test('includes Kenney, farms, and roads but not legacy village houses', () => {
+    expect(playableAssetsPrices['Kenney-Suburban-building-type-a']).toBeDefined();
+    expect(playableAssetsPrices['Farm-Wheat']).toBeDefined();
+    expect(playableAssetsPrices.roads).toBeDefined();
+    expect(playableAssetsPrices['StonePath-001']).toBeDefined();
+    expect(playableAssetsPrices['House-Blue']).toBeUndefined();
+    expect(playableAssetsPrices['Market-Stall']).toBeUndefined();
+    expect(playableAssetsPrices['Barn-001']).toBeUndefined();
   });
 });
 
