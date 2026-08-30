@@ -25,6 +25,23 @@ function cliffStoneEntry(glbName, tags = ['cliff', 'shore']) {
   };
 }
 
+/**
+ * @param {string} glbName
+ * @param {number} displayColor
+ * @param {string[]} [tags]
+ */
+function flatGroundEntry(glbName, displayColor = 0x2fe7c5, tags = ['grass', 'flat']) {
+  return {
+    kind: 'terrain',
+    glb: `/resources/kenney_nature-kit/Models/GLTF format/${glbName}.glb`,
+    displayColor,
+    surfaceY: 0.02,
+    tier: 0,
+    tags,
+    legacyIds: [],
+  };
+}
+
 export const TERRAIN_CATALOG = {
   'nature:ground_grass': {
     kind: 'terrain',
@@ -36,6 +53,9 @@ export const TERRAIN_CATALOG = {
     tags: ['grass', 'flat'],
     legacyIds: ['grass'],
   },
+  'nature:ground_pathStraight': flatGroundEntry('ground_pathStraight', 0xc4a574, ['path', 'ground']),
+  'nature:ground_pathTile': flatGroundEntry('ground_pathTile', 0xc4a574, ['path', 'ground']),
+  'nature:ground_riverStraight': flatGroundEntry('ground_riverStraight', 0x5ec4e8, ['water', 'ground']),
   'nature:platform_beach': {
     kind: 'terrain',
     glb: '/resources/kenney_nature-kit/Models/GLTF format/platform_beach.glb',

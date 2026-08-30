@@ -2,6 +2,7 @@ import { setToolPanelAssets } from '../tools/ToolPanel.js';
 import { updateSpeedDisplay } from './SpeedControls.js';
 import { getKenneyCityKitMeshAdapter } from '../../three/adapters/kenney-city-kit/KenneyCityKitMeshAdapter.js';
 import { getKenneyNatureTerrainAdapter } from '../../three/adapters/kenney-nature-terrain/KenneyNatureTerrainAdapter.js';
+import { getKenneyNaturePropAdapter } from '../../three/adapters/kenney-nature-props/KenneyNaturePropAdapter.js';
 import { applyTerrainDisplayCssVariables } from '../../../shared/terrain-catalog/applyTerrainDisplayCssVariables.js';
 
 export async function loadGameAssets(assetManager) {
@@ -9,6 +10,7 @@ export async function loadGameAssets(assetManager) {
   await assetManager.initializeTerrains();
 
   await getKenneyNatureTerrainAdapter().initialize();
+  await getKenneyNaturePropAdapter().initialize();
   await getKenneyCityKitMeshAdapter().initialize();
 
   // Houses + nature are needed before scene.initialize / ResourceManager

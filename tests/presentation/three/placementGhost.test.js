@@ -60,4 +60,21 @@ describe('placementGhost', () => {
     expect(ghost.position.z).toBe(7);
     expect(scene.children).toHaveLength(1);
   });
+
+  test('rotateStep only applies when the ghost is visible', () => {
+    const syncController = createPlacementGhostController({
+      scene,
+      assetManager: {
+        createAsset: () => new THREE.Group(),
+      },
+    });
+
+    expect(syncController.rotationStep).toBe(0);
+    syncController.rotateStep();
+    expect(syncController.rotationStep).toBe(0);
+
+    syncController.show('House-Blue', 2, 3, true, { gridSize: 1 });
+    syncController.rotateStep();
+    expect(syncController.rotationStep).toBe(1);
+  });
 });

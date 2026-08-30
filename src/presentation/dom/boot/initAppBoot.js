@@ -25,6 +25,7 @@ import { adoptHudFabDockChildren } from '../shell/hudFabDock.js';
 import { initHudShellMenus } from '../shell/HudShellMenus.js';
 import { initCheatCodePrompt } from '../shell/CheatCodePrompt.js';
 import { initMobileCompactToolbar } from '../tools/MobileCompactToolbar.js';
+import { initEditorNatureToolbar } from '../editor/EditorNatureToolbar.js';
 import { initMobileClickStateFab } from '../tools/MobileClickStateFab.js';
 import { initMissingTooltips, observeMissingTooltips } from './TooltipTitles.js';
 import { bindToolPanelDeps } from '../tools/ToolPanel.js';
@@ -71,6 +72,7 @@ export async function initAppBoot() {
     invokeSetActiveTool,
     buttonStateManager,
   });
+  initEditorNatureToolbar({ invokeSetActiveTool });
   initMobileClickStateFab({ invokeSetActiveTool });
   initHudTimeBarMinWidth();
   initMobileToolbar();

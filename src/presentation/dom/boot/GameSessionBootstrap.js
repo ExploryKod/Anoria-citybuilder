@@ -22,18 +22,17 @@ import { waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
 import { createGame } from '../../three/game.js';
 import { DEFAULT_CITY_SIZE } from '../../../shared/gameplay/SimulationDefaults.js';
 import {
-  clearBootMode,
   clearMissionId,
   clearProfileName,
-  getBootMode,
+  consumeBootMode,
   getMissionId,
   getProfileName,
+  redirectToLandingUnlessEntryAllowed,
 } from '../../pages/site/bootSession.js';
 import { getMissionById } from '../../pages/missions/missionCatalog.js';
 import {
-  gameModeFromBootAction,
+  gameModeFromBootMode,
   isEditorMode,
-  resolveGameModeFromUrl,
   setGameMode,
 } from '../../../shared/gameplay/gameMode.js';
 import { applyEditorModeUi } from '../editor/applyEditorModeUi.js';
@@ -122,17 +121,22 @@ function resolveBootSelection(bootMode) {
 }
 
 export async function bootstrapGameSession(assetManager) {
+  if (redirectToLandingUnlessEntryAllowed()) {
+    return;
+  }
+
   await waitForDatabaseReady();
 
   loaderManager.show();
 
-  const bootMode = getBootMode();
-  const selectionResult = resolveBootSelection(bootMode);
-  const urlGameMode = resolveGameModeFromUrl();
-  setGameMode(urlGameMode ?? gameModeFromBootAction(selectionResult.action));
-  persistCitySize(selectionResult.size);
+  // Map mode: session is runtime SoT. Write only on explicit menu entry (consumeBootMode).
+  const bootMode = consumeBootMode();
+  if (bootMode !== null) {
+    setGameMode(gameModeFromBootMode(bootMode));
+  }
 
-  clearBootMode();
+  const selectionResult = resolveBootSelection(bootMode ?? 'new');
+  persistCitySize(selectionResult.size);
   const selectedCitySize = selectionResult.size || selectionResult;
   const multiplayerEnabled = selectionResult.multiplayer || false;
   const playerPseudo = selectionResult.pseudo || null;

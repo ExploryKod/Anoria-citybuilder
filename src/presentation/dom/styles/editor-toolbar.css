@@ -1,0 +1,22 @@
+/* Editor mode — terrain / nature FABs + build bar */
+
+.editor-toolbar-fab {
+  display: none;
+}
+
+body.game-mode-editor .editor-toolbar-fab {
+  display: flex;
+}
+
+#editor-build-bar {
+  display: none;
+}
+
+body.game-mode-editor #editor-build-bar.mobile-build-bar--open {
+  display: flex;
+}
+
+.editor-toolbar-fab .toolbar-toggle-btn.active {
+  outline: 2px solid var(--terrain-grass-display, #2fe7c5);
+  outline-offset: 2px;
+}
