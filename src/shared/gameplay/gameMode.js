@@ -16,6 +16,7 @@
  *
  * ## Direct access
  * `/game` without menu intent and without a stored `gameMode` redirects to `/` (landing).
+ * `/world` requires a stored `gameMode` (player must have entered the game this session).
  * Refresh mid-session is allowed because `hasStoredGameMode()` is true.
  */
 

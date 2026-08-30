@@ -66,6 +66,27 @@ export function redirectToLandingUnlessEntryAllowed() {
   return true;
 }
 
+/**
+ * World map is only available during an active game session (solo, tutorial, mission, editor).
+ *
+ * @returns {boolean}
+ */
+export function isWorldEntryAllowed() {
+  if (typeof window === 'undefined') return true;
+  return hasStoredGameMode();
+}
+
+/**
+ * @returns {boolean} true when redirecting (abort world bootstrap)
+ */
+export function redirectToLandingUnlessWorldEntryAllowed() {
+  if (isWorldEntryAllowed()) {
+    return false;
+  }
+  window.location.replace(LANDING_PATH);
+  return true;
+}
+
 /** @param {string} missionId */
 export function setMissionId(missionId) {
   sessionStorage.setItem(MISSION_ID_KEY, missionId);
