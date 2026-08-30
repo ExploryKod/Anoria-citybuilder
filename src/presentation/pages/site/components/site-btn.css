@@ -81,3 +81,16 @@
 .site-btn--beta:is(:disabled, .site-btn--disabled)::after {
   color: inherit;
 }
+
+/* Modificateur : outil dev (éditeur) */
+.site-btn--dev {
+  border-style: dashed;
+  font-size: 0.95rem;
+}
+
+.site-btn--dev::after {
+  content: ' (dev)';
+  font-size: 0.75em;
+  font-weight: 500;
+  color: var(--site-text-muted);
+}

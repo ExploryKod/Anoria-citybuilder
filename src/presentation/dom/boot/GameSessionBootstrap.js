@@ -31,6 +31,13 @@ import {
 } from '../../pages/site/bootSession.js';
 import { getMissionById } from '../../pages/missions/missionCatalog.js';
 import {
+  gameModeFromBootAction,
+  isEditorMode,
+  resolveGameModeFromUrl,
+  setGameMode,
+} from '../../../shared/gameplay/gameMode.js';
+import { applyEditorModeUi } from '../editor/applyEditorModeUi.js';
+import {
   initBudgetStatesPopup,
   refreshBudgetStatesModal,
 } from '../compta/compte-de-resultat/CompteDeResultatPanel.js';
@@ -95,6 +102,16 @@ function resolveBootSelection(bootMode) {
     };
   }
 
+  if (bootMode === 'editor') {
+    return {
+      size: DEFAULT_CITY_SIZE,
+      multiplayer: false,
+      pseudo: null,
+      roomId: null,
+      action: 'editor',
+    };
+  }
+
   return {
     size: DEFAULT_CITY_SIZE,
     multiplayer: false,
@@ -111,6 +128,8 @@ export async function bootstrapGameSession(assetManager) {
 
   const bootMode = getBootMode();
   const selectionResult = resolveBootSelection(bootMode);
+  const urlGameMode = resolveGameModeFromUrl();
+  setGameMode(urlGameMode ?? gameModeFromBootAction(selectionResult.action));
   persistCitySize(selectionResult.size);
 
   clearBootMode();
@@ -210,25 +229,31 @@ export async function bootstrapGameSession(assetManager) {
     getObjectivesManager,
     registerAppService,
   });
-  initObjectivesPanel({
-    accounting: sessionApi.accounting,
-    pauseGame,
-    playGame,
-    registerAppService,
-    registerAppFunction,
-    getObjectivesTracker,
-    getObjectivesHistory,
-    getObjectivesManager,
-    invokeStartObjectives,
-  });
-  initTutorialPanel({
-    pauseGame,
-    playGame,
-    registerAppService,
-    registerAppFunction,
-    getTutorialManager,
-    invokeStartTutorial,
-  });
+
+  if (!isEditorMode()) {
+    initObjectivesPanel({
+      accounting: sessionApi.accounting,
+      pauseGame,
+      playGame,
+      registerAppService,
+      registerAppFunction,
+      getObjectivesTracker,
+      getObjectivesHistory,
+      getObjectivesManager,
+      invokeStartObjectives,
+    });
+    initTutorialPanel({
+      pauseGame,
+      playGame,
+      registerAppService,
+      registerAppFunction,
+      getTutorialManager,
+      invokeStartTutorial,
+    });
+  } else {
+    applyEditorModeUi();
+    pauseGame();
+  }
 
   registerAppFunction('updateBudgetDisplay', updateBudgetDisplay);
   registerAppFunction('refreshBudgetStatesModal', refreshBudgetStatesModal);

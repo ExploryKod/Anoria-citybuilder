@@ -3,7 +3,7 @@
  * Context / treasury / tick wiring live in composition/.
  */
 
-import { registerAppService, getMultiplayerManager, invokeStartTutorial, getObjectivesManager, getButtonStateManager } from '../../composition/sessionShell.js';
+import { registerAppService, getMultiplayerManager, invokeStartTutorial, getObjectivesManager, getButtonStateManager, isEditorMode } from '../../composition/sessionShell.js';
 import { createScene } from './scene.js';
 import { createCity, clearCityTiles } from './city.js';
 import { syncEmploymentAfterBuildingChange } from '../../composition/syncEmploymentAfterBuildingChange.js';
@@ -291,7 +291,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     const rows = await constructionApi.listAllBuildingRows();
     hydrateCityTilesFromRows(city, rows, assetsPrices);
     const hamlet = await getHamlet(getActiveHamletId());
-    const seedNature = !hamlet?.natureSeeded && rows.length === 0;
+    const seedNature = !isEditorMode() && !hamlet?.natureSeeded && rows.length === 0;
     await scene.initialize(city, { seedNature });
     if (seedNature) {
       await markHamletNatureSeeded(getActiveHamletId());
