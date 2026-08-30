@@ -2,6 +2,10 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { meshNameMapping } from './data.js';
+import {
+    VILLAGE_PLAYABLE_TOOL_IDS_BY_CATEGORY,
+    VILLAGE_MESH_TOOL_IDS_BY_CATEGORY,
+} from '../../../shared/building-catalog/villageAssetSets.js';
 
 // Import JSON catalog - adjust path as needed
 let assetCatalog;
@@ -26,65 +30,11 @@ async function loadAssetCatalog() {
  */
 class MeshLoaderOptimized {
 
-    toolIds = {
-        zones: ['grass'],
-        houses: ['House-Blue', 'House-Red', 'House-Purple'],
-        tombs: ['Tombstone-1', 'Tombstone-2', 'Tombstone-3', 'Grave-1', 'Grave-2', 'Tomb', 'Coffin'],
-        farms: [
-            'Farm-Wheat',
-            'Farm-Carrot',
-            'Farm-Cabbage',
-            'Hay-Bale',
-            'Hay-Cart',
-            'Hay-Pile',
-        ],
-        industry: [
-            'Windmill-001',
-            'Barn-001',
-            'Crate-001',
-            'Winery-001',
-            'Cylinder',
-        ],
-        markets: ['Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red'],
-        infrastructure: [
-            'Well-001',
-            'Fountain-001',
-            'Streetlight-001',
-            'roads',
-            'StonePath-001',
-            'StonePath-Right-001',
-            'StonePath-Left-001',
-            'StonePath-Cross-001',
-            'Fence-001',
-            'Pond-001',
-            'Plane-001',
-            'Plane-004',
-            'Plane-007',
-            'Cube',
-            'Sphere-001',
-            'Sphere-002',
-        ],
-        public: ['Chapel', 'BookShop-001'],
-        palaces: ['House-2Story'],
-        nature: [
-            'Tree-Pine-001',
-            'Tree-Square-001',
-            'Tree-Tall-001',
-            'Boulder-001',
-        ],
-        decoration: [
-            'Bench',
-            'Picnic-Table',
-            'Potted-Bush',
-            'Daisy',
-            'Shroom',
-            'Arch',
-            'Obelisk',
-            'Pillar',
-            'Garland',
-            'Barrell',
-        ],
-    }
+    /** Toolbar / placement — farms + roads only from village pack; Kenney added in AssetManager. */
+    toolIds = structuredClone(VILLAGE_PLAYABLE_TOOL_IDS_BY_CATEGORY);
+
+    /** GLB meshes to load for legacy saves and procedural nature. */
+    meshToolIds = structuredClone(VILLAGE_MESH_TOOL_IDS_BY_CATEGORY);
 
     allAssetsNames = [
         { houses: [] },
@@ -233,8 +183,8 @@ class MeshLoaderOptimized {
                     this.categoryMeshSets['industry'].add(meshName);
                 }
                 
-                // Track which category this tool belongs to (use toolIds, not JSON folder)
-                for (const [cat, ids] of Object.entries(this.toolIds)) {
+                // Track which category this tool belongs to (mesh load list, not toolbar-only ids)
+                for (const [cat, ids] of Object.entries(this.meshToolIds)) {
                     if (ids.includes(toolName)) {
                         this.toolToCategory.set(toolName, cat);
                     }

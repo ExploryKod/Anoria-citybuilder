@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { getPlacementYawAngle, setPlacementRotationStep } from './placementRotation.js';
+import { isKenneyBuildingId } from './adapters/kenney-city-kit/kenneyCityKitConfig.js';
+import { getKenneyCityKitMeshAdapter } from './adapters/kenney-city-kit/KenneyCityKitMeshAdapter.js';
 
 /**
  * Semi-transparent placement preview (ghost) that follows the cursor tile.
@@ -64,6 +66,18 @@ export function applyGhostAppearance(root, { valid = true, mode = 'hover' } = {}
 }
 
 /**
+ * @param {THREE.Object3D} root
+ */
+function disposeGhostMaterials(root) {
+  root.traverse((obj) => {
+    if (obj instanceof THREE.Mesh) {
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      mats.forEach((m) => m?.dispose?.());
+    }
+  });
+}
+
+/**
  * @param {object} params
  * @param {import('three').Scene} params.scene
  * @param {{ createAsset: Function }} params.assetManager
@@ -76,21 +90,22 @@ export function createPlacementGhostController({ scene, assetManager }) {
   let lastY = null;
   let lastValid = true;
   let lastGridSize = 1;
+  let lastFootprintWidth = 1;
+  let lastFootprintHeight = 1;
+  let lastRotationStep = 0;
   let isAnchored = false;
   /** Authored yaw on the correct Euler axis (Y upright / Z tipped). */
   let baseYawAngle = 0;
   let rotationStep = 0;
   let ghostMode = 'hover';
+  /** Bumps on dispose to cancel in-flight Kenney GLB loads. */
+  let spawnGeneration = 0;
 
   function disposeGhost() {
+    spawnGeneration += 1;
     if (!ghost) return;
     scene.remove(ghost);
-    ghost.traverse((obj) => {
-      if (obj instanceof THREE.Mesh) {
-        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-        mats.forEach((m) => m?.dispose?.());
-      }
-    });
+    disposeGhostMaterials(ghost);
     ghost = null;
     currentAssetId = null;
     isAnchored = false;
@@ -110,14 +125,18 @@ export function createPlacementGhostController({ scene, assetManager }) {
     }
   }
 
-  function spawn(assetId, x, y, valid, mode = 'hover', gridSize = 1) {
-    disposeGhost();
-
-    const mesh = assetManager.createAsset(assetId, x, y);
-    if (!mesh) return;
-
+  /**
+   * @param {THREE.Object3D} mesh
+   * @param {string} assetId
+   * @param {number} x
+   * @param {number} y
+   * @param {boolean} valid
+   * @param {'hover' | 'anchored'} mode
+   * @param {{ gridSize?: number, rotationStep?: number }} options
+   */
+  function mountGhost(mesh, assetId, x, y, valid, mode, options = {}) {
     applyGhostAppearance(mesh, { valid, mode });
-    setTilePosition(mesh, x, y, gridSize);
+    mesh.position.y += 0.04;
     mesh.renderOrder = 999;
     scene.add(mesh);
 
@@ -126,11 +145,61 @@ export function createPlacementGhostController({ scene, assetManager }) {
     lastX = x;
     lastY = y;
     lastValid = valid;
-    lastGridSize = gridSize;
+    lastGridSize = options.gridSize ?? 1;
+    lastFootprintWidth = options.footprintWidth ?? lastGridSize;
+    lastFootprintHeight = options.footprintHeight ?? lastGridSize;
+    lastRotationStep = options.rotationStep ?? 0;
     isAnchored = mode === 'anchored';
     ghostMode = mode;
-    baseYawAngle = getPlacementYawAngle(mesh);
-    rotationStep = 0;
+    rotationStep = lastRotationStep;
+
+    if (isKenneyBuildingId(assetId)) {
+      baseYawAngle = 0;
+    } else {
+      baseYawAngle = getPlacementYawAngle(mesh);
+      if (rotationStep) {
+        setPlacementRotationStep(mesh, baseYawAngle, rotationStep);
+      }
+    }
+  }
+
+  /**
+   * @param {string} assetId
+   * @param {number} x
+   * @param {number} y
+   * @param {boolean} valid
+   * @param {'hover' | 'anchored'} mode
+   * @param {{ gridSize?: number, footprintWidth?: number, footprintHeight?: number, rotationStep?: number }} [options]
+   */
+  function spawn(assetId, x, y, valid, mode = 'hover', options = {}) {
+    disposeGhost();
+    const requestId = spawnGeneration;
+
+    if (isKenneyBuildingId(assetId)) {
+      getKenneyCityKitMeshAdapter()
+        .createBuilding(x, y, {
+          buildingId: assetId,
+          rotationStep: options.rotationStep ?? 0,
+        })
+        .then((mesh) => {
+          if (requestId !== spawnGeneration) {
+            disposeGhostMaterials(mesh);
+            return;
+          }
+          mountGhost(mesh, assetId, x, y, valid, mode, options);
+        })
+        .catch((error) => {
+          console.warn('[placementGhost] Kenney preview failed:', assetId, error);
+        });
+      return;
+    }
+
+    const gridSize = options.gridSize ?? 1;
+    const mesh = assetManager.createAsset(assetId, x, y);
+    if (!mesh) return;
+
+    setTilePosition(mesh, x, y, gridSize);
+    mountGhost(mesh, assetId, x, y, valid, mode, { ...options, gridSize });
   }
 
   /**
@@ -138,7 +207,7 @@ export function createPlacementGhostController({ scene, assetManager }) {
    * @param {number} x
    * @param {number} y
    * @param {boolean} [valid]
-   * @param {{ mode?: 'hover' | 'anchored', gridSize?: number }} [options]
+   * @param {{ mode?: 'hover' | 'anchored', gridSize?: number, footprintWidth?: number, footprintHeight?: number, rotationStep?: number }} [options]
    */
   function show(assetId, x, y, valid = true, options = {}) {
     if (!assetId || typeof x !== 'number' || typeof y !== 'number') {
@@ -147,6 +216,7 @@ export function createPlacementGhostController({ scene, assetManager }) {
 
     const mode = options.mode ?? 'hover';
     const gridSize = options.gridSize ?? 1;
+    const rotationStepOpt = options.rotationStep ?? 0;
 
     if (isAnchored) {
       return;
@@ -160,16 +230,26 @@ export function createPlacementGhostController({ scene, assetManager }) {
       && lastValid === valid
       && ghostMode === mode
       && lastGridSize === gridSize
+      && lastRotationStep === rotationStepOpt
     ) {
       return;
     }
 
-    if (!ghost || currentAssetId !== assetId || lastValid !== valid || ghostMode !== mode || lastGridSize !== gridSize) {
-      spawn(assetId, x, y, valid, mode, gridSize);
+    if (
+      !ghost
+      || currentAssetId !== assetId
+      || lastValid !== valid
+      || ghostMode !== mode
+      || lastGridSize !== gridSize
+      || lastRotationStep !== rotationStepOpt
+    ) {
+      spawn(assetId, x, y, valid, mode, options);
       return;
     }
 
-    setTilePosition(ghost, x, y, gridSize);
+    if (!isKenneyBuildingId(assetId)) {
+      setTilePosition(ghost, x, y, gridSize);
+    }
     lastX = x;
     lastY = y;
     lastGridSize = gridSize;
@@ -178,16 +258,27 @@ export function createPlacementGhostController({ scene, assetManager }) {
   /**
    * Lock ghost on tile for rotation step (touch flow).
    */
-  function anchor(assetId, x, y, valid = true, gridSize = 1) {
-    spawn(assetId, x, y, valid, 'anchored', gridSize);
+  function anchor(assetId, x, y, valid = true, gridSize = 1, options = {}) {
+    spawn(assetId, x, y, valid, 'anchored', { gridSize, ...options });
   }
 
   /**
    * @param {number} step 0–3
    */
   function setRotationStep(step) {
-    if (!ghost) return;
+    if (!ghost || !currentAssetId) return;
     rotationStep = ((step % 4) + 4) % 4;
+
+    if (isKenneyBuildingId(currentAssetId)) {
+      spawn(currentAssetId, lastX, lastY, lastValid, ghostMode, {
+        gridSize: lastGridSize,
+        footprintWidth: lastFootprintWidth,
+        footprintHeight: lastFootprintHeight,
+        rotationStep,
+      });
+      return;
+    }
+
     setPlacementRotationStep(ghost, baseYawAngle, rotationStep);
   }
 
@@ -202,6 +293,9 @@ export function createPlacementGhostController({ scene, assetManager }) {
     lastY = null;
     lastValid = true;
     lastGridSize = 1;
+    lastFootprintWidth = 1;
+    lastFootprintHeight = 1;
+    lastRotationStep = 0;
   }
 
   return {

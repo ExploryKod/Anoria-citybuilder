@@ -1,13 +1,11 @@
 import { setToolPanelAssets } from '../tools/ToolPanel.js';
 import { updateSpeedDisplay } from './SpeedControls.js';
-// Modified at lines 3-4 to test kenney fantasy
-import { getKenneyModularMeshAdapter } from '../../three/adapters/kenney-test/KenneyModularMeshAdapter.js';
+import { getKenneyCityKitMeshAdapter } from '../../three/adapters/kenney-city-kit/KenneyCityKitMeshAdapter.js';
 
 export async function loadGameAssets(assetManager) {
   await assetManager.initializeTerrains();
 
-  // Modified at lines 9-10 to test kenney fantasy
-  await getKenneyModularMeshAdapter().initialize();
+  await getKenneyCityKitMeshAdapter().initialize();
 
   // Houses + nature are needed before scene.initialize / ResourceManager
   // (trees write Tree-Sapin etc. into city.tiles; meshes must exist or every
@@ -17,16 +15,17 @@ export async function loadGameAssets(assetManager) {
     assetManager.initializeBuildings('nature'),
   ]);
 
+  // Legacy mesh categories still load in the background for saves and procedural nature.
   const loadNonCriticalAssets = () => {
     Promise.all([
       assetManager.initializeBuildings('palaces'),
       assetManager.initializeBuildings('markets'),
-      assetManager.initializeBuildings('farms'),
       assetManager.initializeBuildings('industry'),
-      assetManager.initializeBuildings('infrastructure'),
       assetManager.initializeBuildings('public'),
       assetManager.initializeBuildings('decoration'),
       assetManager.initializeBuildings('tombs'),
+      assetManager.initializeBuildings('farms'),
+      assetManager.initializeBuildings('infrastructure'),
     ])
       .then(() => {
         setToolPanelAssets(assetManager.getButtonData(), assetManager.getToolIds());
@@ -60,11 +59,4 @@ export function initButtonStateRegistry(buttonStateManager = null) {
     console.warn('⚠️ ButtonStateManager not available');
     return;
   }
-
-  ['palace-btn', 'infrastructure-btn', 'workshop-btn'].forEach((id) => {
-    const button = document.getElementById(id);
-    if (button) {
-      buttonStateManager.registerButton(id, button);
-    }
-  });
 }

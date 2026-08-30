@@ -6,6 +6,8 @@ import { textures, meshNameMapping } from './data.js';
 import MeshLoader from "./MeshLoaderOptimized.js";
 import { assetsConfig } from '../presentationConfig.js';
 import instancingManager from './InstancingManager.js';
+import { isKenneyBuildingId } from '../adapters/kenney-city-kit/kenneyCityKitConfig.js';
+import { registerKenneyCityKitTools } from '../adapters/kenney-city-kit/registerKenneyCityKitTools.js';
 
 /**
  * Gets the base URL for assets (similar to simcity's pattern)
@@ -92,6 +94,7 @@ class AssetManager extends MeshLoader {
      */
     constructor(onLoad = null) {
         super()
+        registerKenneyCityKitTools(this.toolIds, this.buttonData);
         this.#baseUrl = getAssetBaseUrl();
         // Standardize model path using base URL
         this.#modelPath = `${this.#baseUrl}resources/lowpoly/village_town_assets_v2.glb`.replace('//', '/');
@@ -520,7 +523,7 @@ class AssetManager extends MeshLoader {
         if(Object.hasOwn(this.modelMetas, propertyKey) && Object.hasOwn(this.toolIds, propertyKey)) {
             if (propertyKey === 'public') {
                 // Public category has Chapel from main GLB and BookShop-001 as standalone
-                const loadMainPromise = this.loadAssets(this.assetFullName, propertyKey, this.modelsObj, this.allAssetsNames, this.assetNames, this.toolIds, this.buttonData);
+                const loadMainPromise = this.loadAssets(this.assetFullName, propertyKey, this.modelsObj, this.allAssetsNames, this.assetNames, this.meshToolIds, this.buttonData);
                 this.#loadingPromises.push(loadMainPromise);
                 await loadMainPromise;
 
@@ -536,7 +539,7 @@ class AssetManager extends MeshLoader {
             } else if (propertyKey === 'industry') {
                 // Industry category has assets from main GLB and Winery-001 as standalone (autonomous button)
                 // Load main GLB assets first (Windmill-001, Barn-001, Crate-001)
-                const loadMainPromise = this.loadAssets(this.assetFullName, propertyKey, this.modelsObj, this.allAssetsNames, this.assetNames, this.toolIds, this.buttonData);
+                const loadMainPromise = this.loadAssets(this.assetFullName, propertyKey, this.modelsObj, this.allAssetsNames, this.assetNames, this.meshToolIds, this.buttonData);
                 this.#loadingPromises.push(loadMainPromise);
                 await loadMainPromise;
                 
@@ -546,14 +549,17 @@ class AssetManager extends MeshLoader {
                 await loadWineryPromise;
             } else {
                 // Track loading promise for completion signaling
-                const loadPromise = this.loadAssets(this.assetFullName, propertyKey, this.modelsObj, this.allAssetsNames, this.assetNames, this.toolIds, this.buttonData);
+                const loadPromise = this.loadAssets(this.assetFullName, propertyKey, this.modelsObj, this.allAssetsNames, this.assetNames, this.meshToolIds, this.buttonData);
                 this.#loadingPromises.push(loadPromise);
                 
                 await loadPromise;
             }
             
-            // Houses
-            this.toolIds[propertyKey].forEach(toolId => {
+            // Register mesh factories for legacy + playable village ids (Kenney uses its adapter).
+            this.meshToolIds[propertyKey].forEach(toolId => {
+                if (isKenneyBuildingId(toolId)) {
+                    return;
+                }
                 // Check for per-asset size override, otherwise use category size
                 const size = this.assetSizeOverrides?.[toolId] ?? this.modelMetas[propertyKey].size;
                 this.#assets[toolId] = (x, y, z = 0) =>
@@ -597,7 +603,7 @@ class AssetManager extends MeshLoader {
                 this.#assets['StonePath-Cross-001'] = (x, y, z = 0) =>
                     this.#createBuilding(x, y, z, size, 'StonePath-Cross-001', modelsObj);
             }
-            
+
             // Check if all loading is complete asynchronously (fires after all promises resolve)
             // Note: This is called after each building category loads, but will only fire callback once all complete
             this.#checkLoadingComplete();
@@ -634,7 +640,7 @@ class AssetManager extends MeshLoader {
                 toolIds = ['Winery-001'];
                 targetPropertyKey = 'industry'; // Store in industry modelsObj but as standalone
             } else {
-                toolIds = this.toolIds[propertyKey] || [];
+                toolIds = this.meshToolIds[propertyKey] || [];
             }
 
             const loadPromises = [];
