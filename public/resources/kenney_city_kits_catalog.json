@@ -1,0 +1,384 @@
+{
+  "version": 1,
+  "platformHeight": 0.2,
+  "kits": {
+    "commercial": {
+      "displayName": "commercial",
+      "baseUrl": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format",
+      "buildings": {
+        "building-a": {
+          "glb": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format/building-a.glb",
+          "footprintWidth": 1,
+          "footprintDepth": 1,
+          "gridSize": 1
+        },
+        "building-b": {
+          "glb": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format/building-b.glb",
+          "footprintWidth": 1,
+          "footprintDepth": 1,
+          "gridSize": 1
+        },
+        "building-c": {
+          "glb": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format/building-c.glb",
+          "footprintWidth": 1,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-d": {
+          "glb": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format/building-d.glb",
+          "footprintWidth": 1,
+          "footprintDepth": 1,
+          "gridSize": 1
+        },
+        "building-e": {
+          "glb": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format/building-e.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 1,
+          "gridSize": 2
+        },
+        "building-f": {
+          "glb": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format/building-f.glb",
+          "footprintWidth": 1,
+          "footprintDepth": 1,
+          "gridSize": 1
+        },
+        "building-g": {
+          "glb": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format/building-g.glb",
+          "footprintWidth": 1,
+          "footprintDepth": 1,
+          "gridSize": 1
+        },
+        "building-h": {
+          "glb": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format/building-h.glb",
+          "footprintWidth": 1,
+          "footprintDepth": 1,
+          "gridSize": 1
+        },
+        "building-i": {
+          "glb": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format/building-i.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-j": {
+          "glb": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format/building-j.glb",
+          "footprintWidth": 3,
+          "footprintDepth": 2,
+          "gridSize": 3
+        },
+        "building-k": {
+          "glb": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format/building-k.glb",
+          "footprintWidth": 3,
+          "footprintDepth": 1,
+          "gridSize": 3
+        },
+        "building-l": {
+          "glb": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format/building-l.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-m": {
+          "glb": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format/building-m.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-n": {
+          "glb": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format/building-n.glb",
+          "footprintWidth": 3,
+          "footprintDepth": 2,
+          "gridSize": 3
+        },
+        "building-skyscraper-a": {
+          "glb": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format/building-skyscraper-a.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-skyscraper-b": {
+          "glb": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format/building-skyscraper-b.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-skyscraper-c": {
+          "glb": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format/building-skyscraper-c.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-skyscraper-d": {
+          "glb": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format/building-skyscraper-d.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-skyscraper-e": {
+          "glb": "/resources/kenney_city-kit-commercial_2.1/Models/GLB format/building-skyscraper-e.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        }
+      }
+    },
+    "industrial": {
+      "displayName": "industrial",
+      "baseUrl": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format",
+      "buildings": {
+        "building-a": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-a.glb",
+          "footprintWidth": 3,
+          "footprintDepth": 2,
+          "gridSize": 3
+        },
+        "building-b": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-b.glb",
+          "footprintWidth": 3,
+          "footprintDepth": 2,
+          "gridSize": 3
+        },
+        "building-c": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-c.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 3,
+          "gridSize": 3
+        },
+        "building-d": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-d.glb",
+          "footprintWidth": 1,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-e": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-e.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-f": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-f.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-g": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-g.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-h": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-h.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-i": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-i.glb",
+          "footprintWidth": 1,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-j": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-j.glb",
+          "footprintWidth": 1,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-k": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-k.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 1,
+          "gridSize": 2
+        },
+        "building-l": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-l.glb",
+          "footprintWidth": 3,
+          "footprintDepth": 2,
+          "gridSize": 3
+        },
+        "building-m": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-m.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-n": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-n.glb",
+          "footprintWidth": 1,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-o": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-o.glb",
+          "footprintWidth": 1,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-p": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-p.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 1,
+          "gridSize": 2
+        },
+        "building-q": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-q.glb",
+          "footprintWidth": 3,
+          "footprintDepth": 2,
+          "gridSize": 3
+        },
+        "building-r": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-r.glb",
+          "footprintWidth": 3,
+          "footprintDepth": 2,
+          "gridSize": 3
+        },
+        "building-s": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-s.glb",
+          "footprintWidth": 3,
+          "footprintDepth": 1,
+          "gridSize": 3
+        },
+        "building-t": {
+          "glb": "/resources/kenney_city-kit-industrial_1.0/Models/GLB format/building-t.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        }
+      }
+    },
+    "suburban": {
+      "displayName": "suburban",
+      "baseUrl": "/resources/kenney_city-kit-suburban_20/Models/GLB format",
+      "buildings": {
+        "building-type-a": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-a.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 1,
+          "gridSize": 2
+        },
+        "building-type-b": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-b.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-type-c": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-c.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 1,
+          "gridSize": 2
+        },
+        "building-type-d": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-d.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 1,
+          "gridSize": 2
+        },
+        "building-type-e": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-e.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 1,
+          "gridSize": 2
+        },
+        "building-type-f": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-f.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-type-g": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-g.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-type-h": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-h.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 1,
+          "gridSize": 2
+        },
+        "building-type-i": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-i.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 1,
+          "gridSize": 2
+        },
+        "building-type-j": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-j.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 1,
+          "gridSize": 2
+        },
+        "building-type-k": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-k.glb",
+          "footprintWidth": 1,
+          "footprintDepth": 1,
+          "gridSize": 1
+        },
+        "building-type-l": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-l.glb",
+          "footprintWidth": 1,
+          "footprintDepth": 1,
+          "gridSize": 1
+        },
+        "building-type-m": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-m.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-type-n": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-n.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-type-o": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-o.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 1,
+          "gridSize": 2
+        },
+        "building-type-p": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-p.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 1,
+          "gridSize": 2
+        },
+        "building-type-q": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-q.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 1,
+          "gridSize": 2
+        },
+        "building-type-r": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-r.glb",
+          "footprintWidth": 1,
+          "footprintDepth": 1,
+          "gridSize": 1
+        },
+        "building-type-s": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-s.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-type-t": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-t.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        },
+        "building-type-u": {
+          "glb": "/resources/kenney_city-kit-suburban_20/Models/GLB format/building-type-u.glb",
+          "footprintWidth": 2,
+          "footprintDepth": 2,
+          "gridSize": 2
+        }
+      }
+    }
+  }
+}

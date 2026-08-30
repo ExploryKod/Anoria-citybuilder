@@ -15,8 +15,8 @@ const NON_PLACEABLE_TOOL_IDS = new Set([
 ]);
 
 /**
- * Visual mesh for ghost preview. Domain still validates with the real tool id.
- * Modern `roads` are terrain-textured in-scene; preview reuses StonePath mesh.
+ * Visual mesh id for ghost preview. Domain still validates with the real tool id.
+ * Roads reuse StonePath mesh; Kenney buildings use their own GLB via placementGhost.
  * @param {string} assetId
  * @returns {string}
  */
@@ -40,20 +40,6 @@ export function isPlaceableBuildingTool(toolId, assetCatalog) {
 }
 
 /**
- * Orchestrates placement ghost: tool + tile → domain canPlace → visual show/clear.
- * Owns no Three.js meshes; no city writes.
- *
- * @param {object} deps
- * @param {() => { show: Function, clear: Function } | null | undefined} deps.getGhost
- * @param {() => { size: number, tiles: object[][] } | null | undefined} deps.getCity
- * @param {() => string} deps.getActiveToolId
- * @param {() => string} deps.getEffectiveAssetId
- * @param {Record<string, { gridSize?: number, price?: number, category?: string }>} deps.assetCatalog
- * @param {(toolId: string) => boolean} [deps.isPlaceableTool]
- * @param {(params: object) => { ok: boolean, reason?: string, gridSize: number }} deps.canPlaceBuildingAtTile
- * @param {() => object | null | undefined} [deps.getFocusedObject]
- */
-/**
  * @param {number} x
  * @param {number} y
  * @param {{ x: number, y: number, gridSize: number } | null} footprint
@@ -64,6 +50,19 @@ function isTileInFootprint(x, y, footprint) {
   return x >= footprint.x && x < footprint.x + size && y >= footprint.y && y < footprint.y + size;
 }
 
+/**
+ * Orchestrates placement ghost: tool + tile → domain canPlace → visual show/clear.
+ *
+ * @param {object} deps
+ * @param {() => { show: Function, clear: Function, rotationStep?: number } | null | undefined} deps.getGhost
+ * @param {() => { size: number, tiles: object[][] } | null | undefined} deps.getCity
+ * @param {() => string} deps.getActiveToolId
+ * @param {() => string} deps.getEffectiveAssetId
+ * @param {Record<string, { gridSize?: number, price?: number, category?: string }>} deps.assetCatalog
+ * @param {(toolId: string) => boolean} [deps.isPlaceableTool]
+ * @param {(params: object) => { ok: boolean, reason?: string, gridSize: number, footprintWidth?: number, footprintHeight?: number }} deps.canPlaceBuildingAtTile
+ * @param {() => object | null | undefined} [deps.getFocusedObject]
+ */
 export function createPlacementGhostSession({
   getGhost,
   getCity,
@@ -85,7 +84,6 @@ export function createPlacementGhostSession({
   }
 
   /**
-   * Hide preview on tiles where a building was just placed (avoids red ghost on success).
    * @param {number} x
    * @param {number} y
    * @param {number} [gridSize]
@@ -120,7 +118,6 @@ export function createPlacementGhostSession({
     const x = resolved?.userData?.x;
     const y = resolved?.userData?.y;
     if (typeof x !== 'number' || typeof y !== 'number') {
-      // No tile under pointer/finger — clear hover ghost (desktop leave / touch lift off-map).
       ghost.clear();
       return;
     }
@@ -140,16 +137,28 @@ export function createPlacementGhostSession({
       return;
     }
 
+    const rotationStep = getGhost()?.rotationStep ?? 0;
+
     const placement = canPlaceBuildingAtTile({
       city,
       x,
       y,
       buildingType: assetId,
       assetCatalog,
+      rotationStep,
     });
 
+    const ghostGridSize = Math.max(
+      placement.footprintWidth ?? 1,
+      placement.footprintHeight ?? 1,
+      placement.gridSize ?? assetCatalog?.[assetId]?.gridSize ?? 1,
+    );
+
     ghost.show(resolveGhostVisualAssetId(assetId), x, y, placement.ok, {
-      gridSize: placement.gridSize ?? assetCatalog?.[assetId]?.gridSize ?? 1,
+      gridSize: ghostGridSize,
+      footprintWidth: placement.footprintWidth,
+      footprintHeight: placement.footprintHeight,
+      rotationStep,
     });
   }
 

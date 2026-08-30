@@ -34,6 +34,8 @@
  * @property {number} price
  * @property {string} category
  * @property {number} gridSize
+ * @property {number} [footprintWidth]
+ * @property {number} [footprintDepth]
  *
  * @typedef {Object} BuildingEmploymentFacts
  * @property {number} sector
@@ -130,12 +132,6 @@ const RAW_CATALOG = {
   'Grave-2': { displayName: 'Tombe', construction: { price: 3, category: 'tombs', gridSize: 1 } },
   Tomb: { displayName: 'Tombeau', construction: { price: 5, category: 'tombs', gridSize: 1 } },
   Coffin: { displayName: 'Cercueil', construction: { price: 4, category: 'tombs', gridSize: 1 } },
-
-  // Modified at lines 133-137 to test kenney fantasy
-  'Kenney-House-Test': {
-    displayName: 'Maison Kenney (test)',
-    construction: { price: 0, category: 'decoration', gridSize: 1 },
-  },
 
   // Farms
   'Farm-Wheat': {

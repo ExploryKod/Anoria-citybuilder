@@ -48,6 +48,10 @@ import InputManager from './InputManager.js';
 import gameUI, {
   bindGameUIDeps,
 } from '../dom/shell/GameUI.js';
+import {
+  playBulldozeSound,
+  playPlaceBuildingSound,
+} from '../audio/SoundEffects.js';
 import { popupManager } from '../dom/shell/PopupManager.js';
 import {
   showInsufficientFundsNotification,
@@ -56,12 +60,11 @@ import {
 } from '../dom/shell/BuildingNotifications.js';
 import { showErrorToast } from '../dom/shell/ToastNotifier.js';
 import { presentBuildingInfoSelection } from '../dom/info/presenters/useBuildingInfoSelection.js';
-import { assetsPrices } from '../../shared/building-catalog/index.js';
+import { assetsPrices, playableAssetsPrices } from '../../shared/building-catalog/index.js';
 import { isWindmillBuildingType, isMarketBuildingType } from '../../shared/building-catalog/BuildingSupplyTypes.js';
 import {
   createPlacementGhostSession,
   isPlaceableBuildingTool,
-  resolveGhostVisualAssetId,
 } from './placementGhostSession.js';
 import {
   isPlacementNudgeArrowKey,
@@ -70,6 +73,7 @@ import {
 } from './placementKeyboardNudge.js';
 import { prefersTouchPlacementFlow } from './touchPlacementInput.js';
 import { canPlaceBuildingAtTileWithSupplyRules } from '../../composition/canPlaceBuildingAtTileWithSupplyRules.js';
+import { isRoadBuildingType } from '../../contexts/construction/domain/policies/FootprintAvailabilityPolicy.js';
 import { createPlacementRotationHud } from './placementRotationHud.js';
 
 ensureGameRuntimeBootstrapped();
@@ -104,7 +108,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
   function usesTouchPlacementRotationFlow(toolId) {
     return prefersTouchPlacementFlow()
-      && isPlaceableBuildingTool(toolId, assetsPrices);
+      && isPlaceableBuildingTool(toolId, playableAssetsPrices);
   }
 
   /** Touch placement always uses base mesh + placementRotationStep (roads included). */
@@ -136,8 +140,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
   function beginTouchPendingPlacement(placeX, placeY, toolId) {
     const buildingType = resolveTouchPlacementBuildingType(toolId);
-    const gridSize = assetsPrices[toolId]?.gridSize ?? assetsPrices[buildingType]?.gridSize ?? 1;
-    const visualAssetId = resolveGhostVisualAssetId(buildingType);
+    const gridSize = playableAssetsPrices[toolId]?.gridSize ?? playableAssetsPrices[buildingType]?.gridSize ?? 1;
     touchPendingPlacement = {
       x: placeX,
       y: placeY,
@@ -146,7 +149,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
       rotationStep: 0,
       gridSize,
     };
-    scene.placementGhost.anchor(visualAssetId, placeX, placeY, true, gridSize);
+    scene.placementGhost.anchor(buildingType, placeX, placeY, true, gridSize, {
+      rotationStep: 0,
+    });
     placementRotationHud?.show({
       x: placeX,
       y: placeY,
@@ -174,6 +179,10 @@ export function createGame(gameStore, assetManager, citySize = null) {
         showGenericErrorNotification(buildingType, result.reason);
       }
       return false;
+    }
+
+    if (!isRoadBuildingType(buildingType)) {
+      playPlaceBuildingSound();
     }
 
     await scene.update(city, time);
@@ -377,7 +386,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       }
       return getEffectiveBuildingToolId();
     },
-    assetCatalog: assetsPrices,
+    assetCatalog: playableAssetsPrices,
     getFocusedObject: () => scene.focusedObject,
     canPlaceBuildingAtTile,
   });
@@ -657,6 +666,10 @@ export function createGame(gameStore, assetManager, citySize = null) {
         meshInstanceId: removedInstanceId,
       });
 
+      if (buildingId) {
+        playBulldozeSound();
+      }
+
       if (isWindmill && cascadeOutcome?.destroyed?.length) {
         showWindmillCascadeNotification(cascadeOutcome.destroyed);
       }
@@ -709,7 +722,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
           x,
           y,
           buildingType: activeToolId,
-          assetCatalog: assetsPrices,
+          assetCatalog: playableAssetsPrices,
         });
         if (!placementCheck.ok) {
           if (placementCheck.reason) {
@@ -760,7 +773,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
           x: placeX,
           y: placeY,
           buildingType: activeToolId,
-          assetCatalog: assetsPrices,
+          assetCatalog: playableAssetsPrices,
         });
         if (!placementCheck.ok) {
           if (placementCheck.reason) {
@@ -776,7 +789,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       if (placed) {
         const effectiveType = getEffectiveBuildingToolId();
         const gridSize =
-          assetsPrices[activeToolId]?.gridSize ?? assetsPrices[effectiveType]?.gridSize ?? 1;
+          playableAssetsPrices[activeToolId]?.gridSize ?? playableAssetsPrices[effectiveType]?.gridSize ?? 1;
         placementGhostSession.suppressGhostAtFootprint(placeX, placeY, gridSize);
       } else {
         placementGhostSession.sync(selectedObject);
@@ -814,7 +827,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     if (touchPendingPlacement) {
       return false;
     }
-    return isPlaceableBuildingTool(activeToolId, assetsPrices);
+    return isPlaceableBuildingTool(activeToolId, playableAssetsPrices);
   };
 
   /**
@@ -839,7 +852,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
    * @returns {boolean}
    */
   scene.onPlacementKeyboard = (event) => {
-    if (!isPlaceableBuildingTool(activeToolId, assetsPrices)) {
+    if (!isPlaceableBuildingTool(activeToolId, playableAssetsPrices)) {
       return false;
     }
     if (touchPendingPlacement || scene.placementGhost?.anchored) {

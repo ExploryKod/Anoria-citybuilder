@@ -12,6 +12,7 @@ const cleanRoutes = [
   { path: '/terms', file: '/terms.html' },
   { path: '/legal', file: '/legal.html' },
   { path: '/credits', file: '/credits.html' },
+  { path: '/assets', file: '/assets.html' },
 ]
 
 // https://vitejs.dev/config/
@@ -40,6 +41,7 @@ export default defineConfig({
         terms: resolve(__dirname, 'terms.html'),
         legal: resolve(__dirname, 'legal.html'),
         credits: resolve(__dirname, 'credits.html'),
+        assets: resolve(__dirname, 'assets.html'),
       },
     },
   },
@@ -88,7 +90,7 @@ export default defineConfig({
       clientsClaim: true,
       maximumFileSizeToCacheInBytes: 6000000,
       navigateFallback: '/index.html',
-      navigateFallbackDenylist: [/^\/assets\//, /^\/game/, /^\/hamlets/, /^\/world/, /^\/privacy/, /^\/terms/, /^\/legal/, /^\/credits/],
+      navigateFallbackDenylist: [/^\/assets\//, /^\/game/, /^\/hamlets/, /^\/world/, /^\/privacy/, /^\/terms/, /^\/legal/, /^\/credits/, /^\/assets/],
       // Modèles 3D (.glb/.gltf/.fbx), leurs textures/JSON associés et les sprites de statut
       // pèsent plusieurs dizaines de Mo au total (village_town_assets_v2.glb, citizenCool...).
       // Les précacher bloquerait l'installation du SW ; on les met en cache à l'exécution

@@ -884,6 +884,37 @@ canvas.pointer-events-disabled {
     height: 75%;
 }
 
+/* Kenney city-kit — official preview PNG on soft charcoal (no border/shadow) */
+.panel-layout .panel-btn.panel-btn--kenney-preview {
+    padding: 6px;
+    background-color: #2b2b30;
+    border: none;
+    box-shadow: none;
+    color: inherit;
+}
+
+.panel-layout .panel-btn.panel-btn--kenney-preview:hover {
+    background-color: #38383f;
+    box-shadow: none;
+    color: inherit;
+}
+
+.panel-layout .panel-btn.panel-btn--kenney-preview.selected {
+    background-color: #45454d;
+    box-shadow: none;
+    color: inherit;
+}
+
+.panel-layout .panel-btn.panel-btn--kenney-preview .tool-kenney-preview {
+    width: 100%;
+    height: 100%;
+    min-height: 40px;
+    max-height: 52px;
+    object-fit: contain;
+    pointer-events: none;
+    display: block;
+}
+
 .panel-layout .panel-btn:hover {
     box-shadow: none;
     color: #FAFAFA;

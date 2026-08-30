@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="description" content="Catalogue visuel des assets jouables — noms techniques Kenney et catégories.">
+    <meta name="theme-color" content="#fb8122" />
+    <title>Eraanurbs — Catalogue assets</title>
+    <link rel="stylesheet" href="/src/presentation/pages/assets/assets.css">
+</head>
+<body>
+    <main class="assets-page">
+        <header class="assets-header">
+            <a href="/" class="assets-back">← Menu principal</a>
+            <h1>Catalogue des assets</h1>
+            <p class="assets-intro">
+                Tous les assets du jeu (placeables et nature procédurale), avec leurs noms techniques uniques.
+                Les previews Kenney sont affichées à <strong>2×</strong> la taille de la barre d’outils en jeu.
+                Cliquez sur un nom pour le copier ; les images peuvent être enregistrées via le clic droit.
+            </p>
+            <p class="assets-summary" id="assets-summary">Chargement…</p>
+        </header>
+
+        <div id="assets-root" aria-live="polite"></div>
+    </main>
+
+    <div id="assets-toast" class="assets-toast" role="status" aria-live="polite"></div>
+
+    <script type="module" src="/src/presentation/pages/assets/main.js"></script>
+</body>
+</html>

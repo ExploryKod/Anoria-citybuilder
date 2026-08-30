@@ -93,17 +93,20 @@ export class PlaceBuildingWithPayment {
     this.pendingAdditions.add(instanceId);
     this.#setPendingTimeout(instanceId, 5000);
 
-    const expenseResult = await this.recordExpense(
-      data.price,
-      `Building: ${data.type}`,
-      { buildingInstanceId: instanceId }
-    );
+    let expenseResult = { success: true, budget: null };
+    if (data.price > 0) {
+      expenseResult = await this.recordExpense(
+        data.price,
+        `Building: ${data.type}`,
+        { buildingInstanceId: instanceId }
+      );
 
-    if (!expenseResult.success) {
-      this.pendingAdditions.delete(instanceId);
-      this.#clearPendingTimeout(instanceId);
-      console.warn(`Cannot build ${data.type}: ${expenseResult.message}`);
-      return expenseResult;
+      if (!expenseResult.success) {
+        this.pendingAdditions.delete(instanceId);
+        this.#clearPendingTimeout(instanceId);
+        console.warn(`Cannot build ${data.type}: ${expenseResult.message}`);
+        return expenseResult;
+      }
     }
 
     const addResult = await this.repository.addRecord({ ...data, instanceId });
