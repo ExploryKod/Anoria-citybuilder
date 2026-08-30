@@ -1,8 +1,10 @@
 import * as THREE from 'three';
+import { isEditorMode } from '../../../shared/gameplay/gameMode.js';
 import { WORLD_PLATFORM_Y } from '../../../shared/terrain-catalog/terrainWorldContract.js';
 import {
   createSceneFog,
   KENNEY_GROUND_GRASS_COLOR,
+  SCENE_SEA_COLOR,
   SCENE_SKY_COLOR,
 } from '../../../shared/terrain-catalog/terrainAtmosphere.js';
 
@@ -19,7 +21,7 @@ export class BackdropManager {
 
     applyAtmosphere() {
         this.scene.background = new THREE.Color(SCENE_SKY_COLOR);
-        this.scene.fog = createSceneFog();
+        this.scene.fog = createSceneFog({ editor: isEditorMode() });
     }
 
     /**
@@ -28,15 +30,20 @@ export class BackdropManager {
      */
     syncGroundFill(citySize = 16) {
         const cityCenter = citySize / 2;
+        const editor = isEditorMode();
         // Extend well past the buildable grid so the iso camera never sees the plane edge.
         const margin = Math.max(citySize * 2, 48);
         const planeSize = citySize + margin * 2;
+        const fillColor = editor ? SCENE_SEA_COLOR : KENNEY_GROUND_GRASS_COLOR;
+        const groundY = editor ? WORLD_PLATFORM_Y - 0.12 : WORLD_PLATFORM_Y;
 
         if (!this._groundFillMaterial) {
             this._groundFillMaterial = new THREE.MeshBasicMaterial({
-                color: KENNEY_GROUND_GRASS_COLOR,
+                color: fillColor,
                 fog: true,
             });
+        } else {
+            this._groundFillMaterial.color.setHex(fillColor);
         }
 
         let groundFill = this.scene.getObjectByName('kenney-ground-fill');
@@ -55,7 +62,7 @@ export class BackdropManager {
             groundFill.geometry = new THREE.PlaneGeometry(planeSize, planeSize, 1, 1);
         }
 
-        groundFill.position.set(cityCenter, WORLD_PLATFORM_Y, cityCenter);
+        groundFill.position.set(cityCenter, groundY, cityCenter);
     }
 
     /** @deprecated use applyAtmosphere */

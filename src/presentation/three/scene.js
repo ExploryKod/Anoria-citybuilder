@@ -54,6 +54,7 @@ import { showWarningToast, showInfoToast } from '../dom/shell/ToastNotifier.js';
 import { getKenneyCityKitMeshAdapter } from './adapters/kenney-city-kit/KenneyCityKitMeshAdapter.js';
 import { scenePresentation } from './presentationConfig.js';
 import { createSceneFog } from '../../shared/terrain-catalog/terrainAtmosphere.js';
+import { isEditorMode } from '../../composition/sessionShell.js';
 import { getTerrainZoneCounts, resolveTerrainZoneIndex } from '../../shared/terrain-catalog/terrainZoneLayout.js';
 import { spawnIslandShore } from './scene-board/terrain/spawnIslandShore.js';
 import {
@@ -104,7 +105,7 @@ export function createScene(_gameStore, assetManager, deps) {
       construction.ensureBuildingEmployeesSchema(id, type);
 
     const scene = new THREE.Scene();
-    try { scene.fog = createSceneFog(); } catch (_) {}
+    try { scene.fog = createSceneFog({ editor: isEditorMode() }); } catch (_) {}
 
     const placementGhost = createPlacementGhostController({ scene, assetManager });
     
@@ -371,7 +372,7 @@ export function createScene(_gameStore, assetManager, deps) {
         zoneGroups.length = 0;
         zoneGroupsInitialized = false;
         // Re-apply fog and flat background after clear
-        try { scene.fog = createSceneFog(); } catch (_) {}
+        try { scene.fog = createSceneFog({ editor: isEditorMode() }); } catch (_) {}
         backdropManager.applyAtmosphere();
         terrain = [];
         buildings = [];

@@ -1,7 +1,7 @@
 # Nature editor — plan d’implémentation
 
 Mode éditeur accessible depuis le menu (**Éditeur nature**) ou `/game?mode=editor`.
-Hors mission / tutoriel : pas d’objectifs, pas de tutoriel auto, simulation en pause.
+Différences actuelles : fond mer + simulation en pause au démarrage.
 
 ## Déjà en place
 
@@ -9,8 +9,7 @@ Hors mission / tutoriel : pas d’objectifs, pas de tutoriel auto, simulation en
 |-------|---------|
 | Boot menu → `game.html` | `index.html`, `bootSession.js` (`editor`) |
 | Session `gameMode` | `src/shared/gameplay/gameMode.js` |
-| UI éditeur (bandeau, masquage) | `src/presentation/dom/editor/applyEditorModeUi.js` |
-| Bootstrap | `GameSessionBootstrap.js` |
+| Bootstrap | `GameSessionBootstrap.js` (editor: sea backdrop + pause) |
 
 ## À faire (phases)
 
