@@ -8,15 +8,23 @@
  */
 
 import { buildingCatalog } from './buildingCatalog.js';
+import { KENNEY_BUILDING_CATALOG_ENTRIES } from './kenneyCityKitRegistry.generated.js';
+import { isPlayableBuildingId } from './playableBuildings.js';
 
-function buildAssetsPrices() {
-  /** @type {Record<string, { price: number, category: string, gridSize: number }>} */
+function buildAssetsPrices({ playableOnly = false } = {}) {
+  /** @type {Record<string, { price: number, category: string, gridSize: number, footprintWidth?: number, footprintDepth?: number }>} */
   const prices = {};
-  for (const [id, definition] of Object.entries(buildingCatalog)) {
+  const mergedCatalog = { ...buildingCatalog, ...KENNEY_BUILDING_CATALOG_ENTRIES };
+  for (const [id, definition] of Object.entries(mergedCatalog)) {
     if (!definition.construction) continue;
+    if (playableOnly && !isPlayableBuildingId(id)) continue;
     prices[id] = { ...definition.construction };
   }
   return Object.freeze(prices);
 }
 
+/** Full catalog — legacy saves, hydration, economy lookups. */
 export const assetsPrices = buildAssetsPrices();
+
+/** Subset the player can place (Kenney + farms + roads). */
+export const playableAssetsPrices = buildAssetsPrices({ playableOnly: true });

@@ -2,11 +2,10 @@
  * Presentation — which placement tool buttons exist and which stay always on.
  */
 
-import { buildingCatalog } from '../../../shared/building-catalog/buildingCatalog.js';
-import { houses } from '../../../shared/building-catalog/buildingCategories.js';
+import { getPlayableBuildingIds } from '../../../shared/building-catalog/playableBuildings.js';
+import { farms } from '../../../shared/building-catalog/buildingCategories.js';
 
-export const ALWAYS_ENABLED_PLACEMENT_TOOLS = Object.freeze([
-  ...houses,
+const ROAD_TOOL_IDS = Object.freeze([
   'roads',
   'StonePath-001',
   'StonePath-Right-001',
@@ -14,12 +13,19 @@ export const ALWAYS_ENABLED_PLACEMENT_TOOLS = Object.freeze([
   'StonePath-Cross-001',
 ]);
 
+export const ALWAYS_ENABLED_PLACEMENT_TOOLS = Object.freeze([
+  ...farms,
+  'Hay-Bale',
+  'Hay-Cart',
+  'Hay-Pile',
+  ...ROAD_TOOL_IDS,
+]);
+
 /** @returns {ReadonlyArray<string>} */
 export function allGatedPlacementTools() {
   return Object.freeze(
-    Object.keys(buildingCatalog).filter(
-      (id) => !['grass', 'terrain'].includes(id)
-        && !ALWAYS_ENABLED_PLACEMENT_TOOLS.includes(id),
+    getPlayableBuildingIds().filter(
+      (id) => !ALWAYS_ENABLED_PLACEMENT_TOOLS.includes(id),
     ),
   );
 }

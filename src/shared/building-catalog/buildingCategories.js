@@ -3,7 +3,14 @@
  * Pure data — no DOM / Three. Prefer these over lists in ui/shell/nodes.
  */
 
-export const houses = Object.freeze(['House-Red', 'House-Purple', 'House-Blue']);
+import { KENNEY_CITY_KIT_BUILDING_IDS, KENNEY_CITY_KIT_TOOLS_BY_CATEGORY } from './kenneyCityKitRegistry.generated.js';
+
+export const houses = Object.freeze([
+  'House-Red',
+  'House-Purple',
+  'House-Blue',
+  ...KENNEY_CITY_KIT_TOOLS_BY_CATEGORY.houses,
+]);
 
 /** @deprecated Alias of `houses` — kept for call sites that still name “first houses”. */
 export const firstHouses = houses;
@@ -16,6 +23,7 @@ export const commerce = Object.freeze([
   'Market-Stall',
   'Market-Stall-Blue',
   'Market-Stall-Red',
+  ...KENNEY_CITY_KIT_TOOLS_BY_CATEGORY.markets,
 ]);
 
 export const factories = Object.freeze(['Winery-001']);
@@ -43,4 +51,5 @@ export const buildingsObjects = Object.freeze([
   'House-2Story',
   'Windmill-001',
   'Barn-001',
+  ...KENNEY_CITY_KIT_BUILDING_IDS,
 ]);

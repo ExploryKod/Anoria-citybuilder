@@ -1,8 +1,11 @@
 import * as THREE from 'three';
+import { getSceneTilePortFromObject } from '../scene-board/SceneTilePort.js';
 
 /**
  * Manages performance optimizations (frustum culling, shadow casting)
  */
+const MIN_ZONE_BOUNDS_HEIGHT = 0.5;
+
 export class PerformanceManager {
     constructor(scene, camera, zoneGroups, buildings) {
         this.scene = scene;
@@ -40,11 +43,32 @@ export class PerformanceManager {
             }
 
             const box = new THREE.Box3();
-            zoneGroup.children.forEach(child => {
-                if (child instanceof THREE.Mesh) {
-                    box.expandByObject(child);
+            zoneGroup.children.forEach((child) => {
+                const port = getSceneTilePortFromObject(child);
+                if (port) {
+                    const tileBounds = port.getBounds();
+                    if (!tileBounds.isEmpty()) {
+                        box.union(tileBounds);
+                    }
+                    return;
                 }
+                box.expandByObject(child);
             });
+
+            if (!box.isEmpty()) {
+                const height = box.max.y - box.min.y;
+                if (height < MIN_ZONE_BOUNDS_HEIGHT) {
+                    const centerY = (box.min.y + box.max.y) * 0.5;
+                    const halfHeight = MIN_ZONE_BOUNDS_HEIGHT * 0.5;
+                    box.min.y = centerY - halfHeight;
+                    box.max.y = centerY + halfHeight;
+                }
+            }
+
+            if (box.isEmpty()) {
+                zoneGroup.visible = false;
+                return;
+            }
 
             zoneGroup.visible = frustum.intersectsBox(box);
         });

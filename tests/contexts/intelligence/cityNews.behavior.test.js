@@ -4,6 +4,7 @@
 
 import { describe, test, expect } from '@jest/globals';
 import { planCityNewsDrafts } from '../../../src/contexts/intelligence/domain/policies/CityNewsGenerationPolicy.js';
+import { CITY_NEWS_ENTRIES_MVP } from '../../../src/contexts/intelligence/domain/catalogs/NewsDraftCatalog.js';
 import { createNewsItem } from '../../../src/contexts/intelligence/domain/NewsItem.js';
 import { GenerateMonthlyCityNews } from '../../../src/contexts/intelligence/application/commands/GenerateMonthlyCityNews.js';
 import { ArchiveNewsItem } from '../../../src/contexts/intelligence/application/commands/ArchiveNewsItem.js';
@@ -50,6 +51,7 @@ describe('Intelligence — city news', () => {
         lack: 12,
       },
       rng: () => 0,
+      entries: CITY_NEWS_ENTRIES_MVP,
     });
     expect(drafts.length).toBeLessThanOrEqual(2);
     expect(drafts[0].categoryId).toBe('revelation');
@@ -72,9 +74,9 @@ describe('Intelligence — city news', () => {
 
     const first = await cmd.execute({ turn: 10 });
     const second = await cmd.execute({ turn: 10 });
-    expect(first.length).toBeGreaterThan(0);
-    expect(second.length).toBe(0);
-    expect(await repo.listIncoming()).toHaveLength(first.length);
+    expect(first).toEqual([]);
+    expect(second).toEqual([]);
+    expect(await repo.listIncoming()).toHaveLength(0);
   });
 
   test('ArchiveNewsItem moves incoming to archived', async () => {

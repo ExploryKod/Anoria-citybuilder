@@ -1,3 +1,4 @@
+import { CARAVAN_NEWS_ENTRIES } from '../catalogs/NewsDraftCatalog.js';
 import { CARAVAN_NEWS_PRICE } from './CaravanNewsAccessPolicy.js';
 
 /**
@@ -6,6 +7,7 @@ import { CARAVAN_NEWS_PRICE } from './CaravanNewsAccessPolicy.js';
  * @param {object} params
  * @param {number} params.turn
  * @param {() => number} [params.rng]
+ * @param {import('../catalogs/NewsDraftCatalog.js').CaravanNewsEntry[]} [params.entries]
  * @returns {Array<{
  *   sourceId: 'caravan',
  *   categoryId: string,
@@ -16,47 +18,45 @@ import { CARAVAN_NEWS_PRICE } from './CaravanNewsAccessPolicy.js';
  *   price: number,
  * }>}
  */
-export function planCaravanNewsDrafts({ turn, rng = Math.random }) {
+export function planCaravanNewsDrafts({ turn, rng = Math.random, entries = CARAVAN_NEWS_ENTRIES }) {
   void turn;
+
+  if (!entries.length) {
+    return [];
+  }
+
   // Une chance élevée si éligible (gates déjà validés par l'appelant)
   if (rng() >= 0.7) {
     return [];
   }
 
   const roll = rng();
-  if (roll < 0.34) {
-    return [
-      {
-        sourceId: 'caravan',
-        categoryId: 'trade_rumor',
-        title: 'Rumeur sur les marchés étrangers',
-        body: 'Un commerçant de passage affirme que le blé se vend cher chez un partenaire voisin. Vérifiez vos stocks avant d’ouvrir de nouveaux échanges.',
-        teaser: 'Un caravanier murmure des nouvelles des routes…',
-        revelation: 'unpaid',
-        price: CARAVAN_NEWS_PRICE,
-      },
-    ];
+  let cumulative = 0;
+  for (const entry of entries) {
+    cumulative += entry.weight;
+    if (roll < cumulative) {
+      return [
+        {
+          sourceId: 'caravan',
+          categoryId: entry.categoryId,
+          title: entry.title,
+          body: entry.body,
+          teaser: entry.teaser,
+          revelation: 'unpaid',
+          price: CARAVAN_NEWS_PRICE,
+        },
+      ];
+    }
   }
-  if (roll < 0.67) {
-    return [
-      {
-        sourceId: 'caravan',
-        categoryId: 'partner_news',
-        title: 'Tension chez un partenaire',
-        body: 'Des voyageurs rapportent des troubles politiques chez l’un de vos partenaires commerciaux. Les prochaines caravanes pourraient être moins régulières.',
-        teaser: 'Des nouvelles inquiétantes arrivent avec les mulets…',
-        revelation: 'unpaid',
-        price: CARAVAN_NEWS_PRICE,
-      },
-    ];
-  }
+
+  const fallback = entries[entries.length - 1];
   return [
     {
       sourceId: 'caravan',
-      categoryId: 'foreign_market',
-      title: 'Opportunité sur un marché extérieur',
-      body: 'Un négociant propose une piste d’export rentable pour le bois, si vos granges et quotas le permettent. L’information seule ne crée pas le contrat.',
-      teaser: 'Un négociant veut vendre une information…',
+      categoryId: fallback.categoryId,
+      title: fallback.title,
+      body: fallback.body,
+      teaser: fallback.teaser,
       revelation: 'unpaid',
       price: CARAVAN_NEWS_PRICE,
     },

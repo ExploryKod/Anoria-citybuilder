@@ -10,6 +10,9 @@ import {
 } from '../help/legendHelpContent.js';
 import { getBuildingDisplayName } from '../shell/BuildingNotifications.js';
 import { syncMobileClickStateFab } from './MobileClickStateFab.js';
+import {
+  KENNEY_CITY_KIT_TOOL_META,
+} from '../../three/adapters/kenney-city-kit/kenneyCityKitConfig.js';
 
 /** @type {{
  *   popupManager?: object | null,
@@ -246,11 +249,19 @@ function fillPanelFromToolIds(category, opts = {}) {
     seen.add(toolId);
 
     const fromData = buttonData.find((b) => b.tool === toolId);
-    const buttonInfo = fromData || {
-      text: toolId,
-      tool: toolId,
-      group: category,
-    };
+    const meta = KENNEY_CITY_KIT_TOOL_META[toolId];
+    const buttonInfo = fromData
+      ? {
+          ...fromData,
+          ...(meta?.tooltip && !fromData.title ? { title: meta.tooltip } : {}),
+          ...(meta?.shortLabel && fromData.text === toolId ? { text: meta.shortLabel } : {}),
+        }
+      : {
+          text: meta?.shortLabel ?? toolId,
+          tool: toolId,
+          group: category,
+          ...(meta?.tooltip ? { title: meta.tooltip } : {}),
+        };
     makeNewButton(buttonInfo, resolveIcon(toolId));
   }
 
@@ -298,6 +309,10 @@ function createRoadsButtons() {
 
 function resolveIcon(toolId) {
   if (TOOL_SVG[toolId]) return TOOL_SVG[toolId];
+  const kenneyMeta = KENNEY_CITY_KIT_TOOL_META[toolId];
+  if (kenneyMeta?.previewUrl) {
+    return kenneyPreviewIconHtml(kenneyMeta.previewUrl);
+  }
   if (TOOL_EMOJI[toolId]) return TOOL_EMOJI[toolId];
   return '📦';
 }
@@ -361,11 +376,13 @@ export function getToolButtonInfosForCategory(categoryKey) {
     if (seen.has(toolId)) continue;
     seen.add(toolId);
     const fromData = buttonData.find((b) => b.tool === toolId);
+    const meta = KENNEY_CITY_KIT_TOOL_META[toolId];
     infos.push(
       fromData || {
-        text: toolId,
+        text: meta?.shortLabel ?? toolId,
         tool: toolId,
         group: categoryKey,
+        ...(meta?.tooltip ? { title: meta.tooltip } : {}),
       },
     );
   }
@@ -399,6 +416,10 @@ export function createToolButton(buttonInfo, icon = '', options = {}) {
   button.classList.add('toolbar-btn');
   if (extraClass) {
     button.classList.add(extraClass);
+  }
+
+  if (KENNEY_CITY_KIT_TOOL_META[buttonInfo.tool]?.previewUrl) {
+    button.classList.add('panel-btn--kenney-preview');
   }
 
   const isEmoji = typeof icon === 'string' && icon.length <= 4 && !icon.includes('<');
@@ -491,4 +512,9 @@ function stonePathSvg() {
 }
 function marketStallSvg(stroke = 'currentColor') {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/></svg>`;
+}
+
+/** Kenney pack preview PNG — cut-out render on charcoal tile (see main.css). */
+function kenneyPreviewIconHtml(previewUrl) {
+  return `<img src="${previewUrl}" alt="" class="tool-kenney-preview" decoding="async" loading="lazy" />`;
 }
