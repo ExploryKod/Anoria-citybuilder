@@ -230,27 +230,27 @@ export async function bootstrapGameSession(assetManager) {
     registerAppService,
   });
 
-  if (!isEditorMode()) {
-    initObjectivesPanel({
-      accounting: sessionApi.accounting,
-      pauseGame,
-      playGame,
-      registerAppService,
-      registerAppFunction,
-      getObjectivesTracker,
-      getObjectivesHistory,
-      getObjectivesManager,
-      invokeStartObjectives,
-    });
-    initTutorialPanel({
-      pauseGame,
-      playGame,
-      registerAppService,
-      registerAppFunction,
-      getTutorialManager,
-      invokeStartTutorial,
-    });
-  } else {
+  initObjectivesPanel({
+    accounting: sessionApi.accounting,
+    pauseGame,
+    playGame,
+    registerAppService,
+    registerAppFunction,
+    getObjectivesTracker,
+    getObjectivesHistory,
+    getObjectivesManager,
+    invokeStartObjectives,
+  });
+  initTutorialPanel({
+    pauseGame,
+    playGame,
+    registerAppService,
+    registerAppFunction,
+    getTutorialManager,
+    invokeStartTutorial,
+  });
+
+  if (isEditorMode()) {
     applyEditorModeUi();
     pauseGame();
   }
