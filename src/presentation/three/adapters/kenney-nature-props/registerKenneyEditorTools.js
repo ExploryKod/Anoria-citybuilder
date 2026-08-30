@@ -1,6 +1,7 @@
 import {
   EDITOR_TOOL_META,
   EDITOR_TOOLS_BY_CATEGORY,
+  KENNEY_EDITOR_CATEGORY_DEFS,
 } from '../../../../shared/editor-catalog/editorKenneyCatalog.js';
 
 /**
@@ -8,13 +9,14 @@ import {
  * @param {{ text: string, tool: string, group: string, title?: string }[]} buttonData
  */
 export function registerKenneyEditorTools(toolIds, buttonData) {
-  for (const [category, ids] of Object.entries(EDITOR_TOOLS_BY_CATEGORY)) {
-    if (!Array.isArray(toolIds[category])) {
-      toolIds[category] = [];
+  for (const category of KENNEY_EDITOR_CATEGORY_DEFS) {
+    const ids = EDITOR_TOOLS_BY_CATEGORY[category.id] ?? [];
+    if (!Array.isArray(toolIds[category.id])) {
+      toolIds[category.id] = [];
     }
     for (const toolId of ids) {
-      if (!toolIds[category].includes(toolId)) {
-        toolIds[category].push(toolId);
+      if (!toolIds[category.id].includes(toolId)) {
+        toolIds[category.id].push(toolId);
       }
 
       const meta = EDITOR_TOOL_META[toolId];
@@ -25,7 +27,7 @@ export function registerKenneyEditorTools(toolIds, buttonData) {
       buttonData.push({
         text: meta.shortLabel,
         tool: toolId,
-        group: category === 'editorTerrain' ? 'Terrain' : 'Nature',
+        group: category.tooltip,
         title: meta.tooltip ?? meta.shortLabel,
       });
     }

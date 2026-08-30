@@ -1,0 +1,74 @@
+/* Center-screen preview when hovering a build-carousel asset */
+
+.build-tool-hover-preview {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-index-hud-menu, 10010) + 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.16s ease;
+}
+
+.build-tool-hover-preview[hidden] {
+  display: none !important;
+}
+
+.build-tool-hover-preview--visible {
+  opacity: 1;
+}
+
+.build-tool-hover-preview__frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  height: fit-content;
+  padding: 4px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 6px 24px rgba(15, 23, 42, 0.18),
+    0 0 0 1px rgba(29, 34, 40, 0.06);
+  backdrop-filter: blur(10px);
+}
+
+.build-tool-hover-preview__img {
+  display: block;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* 512×512 isometric / windmill previews — compact center card */
+.build-tool-hover-preview--high-res .build-tool-hover-preview__img {
+  max-width: min(256px, 67vw);
+  max-height: min(256px, 45vh);
+  image-rendering: auto;
+}
+
+/* 64×64 Kenney city-kit sprites — smooth browser upscale (no pixel-crisp rendering). */
+.build-tool-hover-preview--city-kit .build-tool-hover-preview__frame {
+  padding: 12px;
+  background: #2b2b30;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 10px 32px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.build-tool-hover-preview--city-kit .build-tool-hover-preview__img {
+  width: auto;
+  height: auto;
+  max-width: min(299px, 77vw);
+  max-height: min(299px, 53vh);
+  image-rendering: auto;
+  -ms-interpolation-mode: bicubic;
+}

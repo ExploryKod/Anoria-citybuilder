@@ -78,6 +78,8 @@ import {
   isEditorPlacementTool,
   isEditorTerrainTool,
 } from '../../shared/editor-catalog/editorToolIds.js';
+import { getKenneyNatureTerrainAdapter } from './adapters/kenney-nature-terrain/KenneyNatureTerrainAdapter.js';
+import { getKenneyNaturePropAdapter } from './adapters/kenney-nature-props/KenneyNaturePropAdapter.js';
 import {
   isPlacementNudgeArrowKey,
   gridDeltaForArrowKey,
@@ -696,6 +698,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       if (behaviorMode === BEHAVIOR_MODE.BUILD) {
         if (isEditorTerrainTool(activeToolId)) {
           const rotationStep = getPlacementRotationStep();
+          await getKenneyNatureTerrainAdapter().ensureTerrainTemplate(activeToolId);
           city.tiles[x][y].terrainId = activeToolId;
           scene.replaceTerrainAt(city, x, y, activeToolId, rotationStep);
           placementGhostSession.suppressGhostAtFootprint(x, y, 1);
@@ -703,7 +706,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
         }
 
         if (isEditorNatureTool(activeToolId)) {
-          scene.placeEditorNatureProp(x, y, activeToolId, getPlacementRotationY());
+          await scene.placeEditorNatureProp(x, y, activeToolId, getPlacementRotationY());
           placementGhostSession.suppressGhostAtFootprint(x, y, 1);
           return;
         }
@@ -1209,6 +1212,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
         updateStonePathToolHint();
       }
       placementGhostSession.onToolChanged();
+      if (isEditorTerrainTool(toolId)) {
+        void getKenneyNatureTerrainAdapter().ensureTerrainTemplate(toolId);
+      } else if (isEditorNatureTool(toolId)) {
+        void getKenneyNaturePropAdapter().ensurePropLoaded(toolId);
+      }
       if (!isRoadBuildingType(toolId) && roadPaint.active) {
         void finalizeRoadPaintSession();
       }

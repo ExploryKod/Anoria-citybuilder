@@ -20,3 +20,30 @@ body.game-mode-editor #editor-build-bar.mobile-build-bar--open {
   outline: 2px solid var(--terrain-grass-display, #2fe7c5);
   outline-offset: 2px;
 }
+
+/* Reuse mobile build-bar pill layout — emoji/ASCII only, label in tooltip (like house carousels). */
+.editor-build-bar__pills-row {
+  padding: 0 12px 8px;
+}
+
+.editor-build-bar__pill {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  padding: 0;
+  justify-content: center;
+  gap: 0;
+}
+
+.editor-build-bar__pill .mobile-build-bar__pill-label {
+  display: none;
+}
+
+.editor-build-bar__pill .mobile-build-bar__pill-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.editor-build-bar__pill .mobile-build-bar__pill-icon .tool-emoji {
+  font-size: 16px;
+}

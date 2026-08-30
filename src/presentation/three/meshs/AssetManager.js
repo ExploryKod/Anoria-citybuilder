@@ -480,7 +480,11 @@ class AssetManager extends MeshLoader {
         });
 
         for (const toolId of EDITOR_TERRAIN_TOOL_IDS) {
-            this.#assets[toolId] = (x, y) => this.#createTerrain(x, y, toolId);
+            this.#assets[toolId] = (x, y) => {
+                const port = createSceneTile(toolId, x, y, { presentation: 'gltf' });
+                attachSceneTilePort(port);
+                return port.root;
+            };
         }
 
         for (const toolId of EDITOR_NATURE_TOOL_IDS) {
