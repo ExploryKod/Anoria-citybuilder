@@ -5,6 +5,20 @@ import {
   KENNEY_CITY_KIT_PLATFORM_HEIGHT,
 } from './adapters/kenney-city-kit/kenneyCityKitConfig.js';
 import { getKenneyCityKitMeshAdapter } from './adapters/kenney-city-kit/KenneyCityKitMeshAdapter.js';
+import {
+  isEditorNatureTool,
+  isEditorTerrainTool,
+} from '../../shared/editor-catalog/editorToolIds.js';
+import { getKenneyNatureTerrainAdapter } from './adapters/kenney-nature-terrain/KenneyNatureTerrainAdapter.js';
+import { getKenneyNaturePropAdapter } from './adapters/kenney-nature-props/KenneyNaturePropAdapter.js';
+
+/**
+ * @param {string} assetId
+ * @returns {boolean}
+ */
+function isLazyKenneyEditorAsset(assetId) {
+  return isEditorTerrainTool(assetId) || isEditorNatureTool(assetId);
+}
 
 /**
  * Semi-transparent placement preview (ghost) that follows the cursor tile.
@@ -29,6 +43,8 @@ function createGhostMaterial(valid, mode = 'hover') {
     transparent: true,
     opacity: anchored ? 0.52 : valid ? 0.55 : 0.65,
     depthWrite: false,
+    fog: false,
+    toneMapped: false,
     polygonOffset: true,
     polygonOffsetFactor: -1,
     polygonOffsetUnits: -1,
@@ -103,9 +119,20 @@ export function createPlacementGhostController({ scene, assetManager }) {
   let ghostMode = 'hover';
   /** Bumps on dispose to cancel in-flight Kenney GLB loads. */
   let spawnGeneration = 0;
+  /** In-flight async spawn — avoids restarting load every animation frame. */
+  let pendingAsyncSpawn = null;
+
+  function getSpawnSignature(assetId, valid, mode, options = {}) {
+    const gridSize = options.gridSize ?? 1;
+    const rotationStep = options.rotationStep ?? 0;
+    const footprintWidth = options.footprintWidth ?? gridSize;
+    const footprintHeight = options.footprintHeight ?? gridSize;
+    return `${assetId}|${mode}|${valid}|${gridSize}|${footprintWidth}|${footprintHeight}|${rotationStep}`;
+  }
 
   function disposeGhost() {
     spawnGeneration += 1;
+    pendingAsyncSpawn = null;
     if (!ghost) return;
     scene.remove(ghost);
     disposeGhostMaterials(ghost);
@@ -226,8 +253,51 @@ export function createPlacementGhostController({ scene, assetManager }) {
    * @param {{ gridSize?: number, footprintWidth?: number, footprintHeight?: number, rotationStep?: number }} [options]
    */
   function spawn(assetId, x, y, valid, mode = 'hover', options = {}) {
+    const signature = getSpawnSignature(assetId, valid, mode, options);
+
+    if (pendingAsyncSpawn?.signature === signature) {
+      pendingAsyncSpawn.x = x;
+      pendingAsyncSpawn.y = y;
+      pendingAsyncSpawn.valid = valid;
+      pendingAsyncSpawn.options = options;
+      return;
+    }
+
     disposeGhost();
     const requestId = spawnGeneration;
+    pendingAsyncSpawn = { signature, assetId, x, y, valid, mode, options };
+
+    const finishAsyncSpawn = (buildMesh) => {
+      if (requestId !== spawnGeneration) {
+        disposeGhostMaterials(buildMesh);
+        return;
+      }
+      const target = pendingAsyncSpawn;
+      if (!target || target.signature !== signature) {
+        disposeGhostMaterials(buildMesh);
+        return;
+      }
+      pendingAsyncSpawn = null;
+
+      const gridSize = target.options.gridSize ?? 1;
+      setTilePosition(buildMesh, target.x, target.y, gridSize);
+      mountGhost(
+        buildMesh,
+        target.assetId,
+        target.x,
+        target.y,
+        target.valid,
+        target.mode,
+        { ...target.options, gridSize }
+      );
+    };
+
+    const failAsyncSpawn = (error, label) => {
+      if (requestId === spawnGeneration && pendingAsyncSpawn?.signature === signature) {
+        pendingAsyncSpawn = null;
+      }
+      console.warn(`[placementGhost] ${label} failed:`, assetId, error);
+    };
 
     if (isKenneyBuildingId(assetId)) {
       getKenneyCityKitMeshAdapter()
@@ -235,19 +305,40 @@ export function createPlacementGhostController({ scene, assetManager }) {
           buildingId: assetId,
           rotationStep: options.rotationStep ?? 0,
         })
-        .then((mesh) => {
-          if (requestId !== spawnGeneration) {
-            disposeGhostMaterials(mesh);
-            return;
-          }
-          mountGhost(mesh, assetId, x, y, valid, mode, options);
-        })
+        .then(finishAsyncSpawn)
         .catch((error) => {
-          console.warn('[placementGhost] Kenney preview failed:', assetId, error);
+          failAsyncSpawn(error, 'Kenney preview');
         });
       return;
     }
 
+    if (isLazyKenneyEditorAsset(assetId)) {
+      const gridSize = options.gridSize ?? 1;
+      const loadPromise = isEditorTerrainTool(assetId)
+        ? getKenneyNatureTerrainAdapter().ensureTerrainTemplate(assetId)
+        : getKenneyNaturePropAdapter().ensurePropLoaded(assetId);
+
+      loadPromise
+        .then(() => {
+          if (requestId !== spawnGeneration) return;
+          const target = pendingAsyncSpawn;
+          if (!target || target.signature !== signature) return;
+          const mesh = assetManager.createAsset(assetId, target.x, target.y);
+          if (!mesh) {
+            if (requestId === spawnGeneration && pendingAsyncSpawn?.signature === signature) {
+              pendingAsyncSpawn = null;
+            }
+            return;
+          }
+          finishAsyncSpawn(mesh);
+        })
+        .catch((error) => {
+          failAsyncSpawn(error, 'Kenney editor preview');
+        });
+      return;
+    }
+
+    pendingAsyncSpawn = null;
     const gridSize = options.gridSize ?? 1;
     const mesh = assetManager.createAsset(assetId, x, y);
     if (!mesh) return;

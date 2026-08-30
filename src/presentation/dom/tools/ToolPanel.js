@@ -17,6 +17,10 @@ import {
   EDITOR_TOOL_META,
   EDITOR_TOOL_PREVIEW_URLS,
 } from '../../../shared/editor-catalog/editorKenneyCatalog.js';
+import {
+  attachBuildToolHoverPreview,
+  hideBuildToolHoverPreview,
+} from './BuildToolHoverPreview.js';
 
 /** @type {{
  *   popupManager?: object | null,
@@ -139,6 +143,7 @@ const GROUP_CREATORS = {
 };
 
 export function getButtonsUnactive() {
+  hideBuildToolHoverPreview();
   toolBarButtons.forEach((button) => {
     button.classList.remove('selected');
   });
@@ -443,6 +448,7 @@ export function createToolButton(buttonInfo, icon = '', options = {}) {
   }
 
   button.addEventListener('click', (e) => {
+    hideBuildToolHoverPreview();
     if (deps?.buttonStateManager && !deps.buttonStateManager.isEnabled(buttonInfo.tool)) {
       return;
     }
@@ -452,6 +458,10 @@ export function createToolButton(buttonInfo, icon = '', options = {}) {
       deps.invokeSetActiveTool?.(e);
     }
   });
+
+  if (extraClass === 'mobile-tool-btn' || extraClass === 'panel-btn') {
+    attachBuildToolHoverPreview(button, buttonInfo.tool);
+  }
 
   const target = container || panelLayoutInner;
   target.appendChild(button);

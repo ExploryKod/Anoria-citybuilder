@@ -4,38 +4,18 @@ import {
   getNaturePropCatalogEntry,
   resolveNaturePropGlbName,
 } from '../../../../shared/editor-catalog/naturePropCatalog.js';
-import { resolveTerrainDisplayColorHex } from '../../../../shared/terrain-catalog/terrainDisplayColor.js';
 import { WORLD_PLATFORM_Y } from '../../../../shared/terrain-catalog/terrainWorldContract.js';
+import { applyEditorKenneyGltfPresentation } from '../kenney-nature/kenneyGltfPresentation.js';
 
 const loader = new GLTFLoader();
+const PROP_RENDER_ORDER = 5;
+
 /** @type {Map<string, THREE.Object3D>} */
 const templateCache = new Map();
 /** @type {Map<string, Promise<THREE.Object3D>>} */
 const loadingCache = new Map();
 
 let adapterInstance = null;
-
-/**
- * @param {THREE.Mesh} mesh
- * @param {string} propId
- */
-function applyPropMeshPresentation(mesh, propId) {
-  const entry = getNaturePropCatalogEntry(propId);
-  const color = entry?.displayColor ?? resolveTerrainDisplayColorHex('nature:ground_grass');
-  mesh.castShadow = false;
-  mesh.receiveShadow = false;
-  mesh.renderOrder = 5;
-  const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-  const unlit = materials.map((material) => {
-    material?.dispose?.();
-    return new THREE.MeshBasicMaterial({
-      color,
-      side: THREE.DoubleSide,
-      fog: true,
-    });
-  });
-  mesh.material = unlit.length > 1 ? unlit : unlit[0];
-}
 
 /**
  * @param {string} propId
@@ -58,11 +38,7 @@ async function loadPropTemplate(propId) {
   const promise = loader.loadAsync(glbUrl).then((gltf) => {
     const template = gltf.scene;
     template.name = `kenney-nature-prop-${resolveNaturePropGlbName(propId)}`;
-    template.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        applyPropMeshPresentation(child, propId);
-      }
-    });
+    applyEditorKenneyGltfPresentation(template, { renderOrder: PROP_RENDER_ORDER });
     templateCache.set(propId, template);
     loadingCache.delete(propId);
     return template;
@@ -92,13 +68,14 @@ export class KenneyNaturePropAdapter {
   }
 
   async _load() {
-    const { NATURE_PROP_CATALOG } = await import(
-      '../../../../shared/editor-catalog/naturePropCatalog.js'
-    );
-    await Promise.all(
-      Object.keys(NATURE_PROP_CATALOG).map((propId) => loadPropTemplate(propId))
-    );
     this.ready = true;
+  }
+
+  /**
+   * @param {string} propId
+   */
+  async ensurePropLoaded(propId) {
+    await loadPropTemplate(propId);
   }
 
   /**
@@ -132,7 +109,7 @@ export class KenneyNaturePropAdapter {
       rotationY,
       layer: 'nature',
     };
-    group.renderOrder = 5;
+    group.renderOrder = PROP_RENDER_ORDER;
     return group;
   }
 }

@@ -582,7 +582,7 @@ export function createScene(_gameStore, assetManager, deps) {
             await Promise.all(loadingPromises);
         }
 
-        syncEditorNaturePropsFromLayout();
+        await syncEditorNaturePropsFromLayout();
         
         // Set camera bounds based on city size (with small margins)
         if (camera.setBounds && city && typeof city.size === 'number') {
@@ -1871,7 +1871,12 @@ export function createScene(_gameStore, assetManager, deps) {
      * @param {number} [rotationY=0]
      * @returns {boolean}
      */
-    function placeEditorNatureProp(x, y, propId, rotationY = 0) {
+    async function placeEditorNatureProp(x, y, propId, rotationY = 0) {
+        const { getKenneyNaturePropAdapter } = await import(
+            './adapters/kenney-nature-props/KenneyNaturePropAdapter.js'
+        );
+        await getKenneyNaturePropAdapter().ensurePropLoaded(propId);
+
         removeEditorNaturePropAt(x, y);
         addEditorNatureObject(propId, x, y, rotationY);
 
@@ -1904,11 +1909,11 @@ export function createScene(_gameStore, assetManager, deps) {
     /**
      * Hydrate editor nature props from the in-memory layout (after initialize).
      */
-    function syncEditorNaturePropsFromLayout() {
+    async function syncEditorNaturePropsFromLayout() {
         if (!isEditorMode()) return;
         for (const obj of getEditorNatureObjects()) {
             if (naturePropMeshes.has(`${obj.x},${obj.y}`)) continue;
-            placeEditorNatureProp(obj.x, obj.y, obj.assetId, obj.rotationY ?? 0);
+            await placeEditorNatureProp(obj.x, obj.y, obj.assetId, obj.rotationY ?? 0);
         }
     }
 

@@ -12,15 +12,17 @@ const boundsScratch = new THREE.Box3();
  * @param {string} logicalId
  * @param {number} x
  * @param {number} y
+ * @param {{ presentation?: 'gltf' | 'flat' }} [options]
  * @returns {import('../SceneTilePort.js').SceneTilePort}
  */
-export function createKenneyTerrainSceneTile(logicalId, x, y) {
+export function createKenneyTerrainSceneTile(logicalId, x, y, options = {}) {
   const canonicalId = resolveTerrainId(logicalId);
   const root = getKenneyNatureTerrainAdapter().createTerrainTile(
     canonicalId,
     x,
     y,
-    logicalId
+    logicalId,
+    options
   );
 
   return {

@@ -1,26 +1,40 @@
 import { kenneyNatureGlbUrl } from './editorKenneyCatalog.js';
+import { KENNEY_NATURE_ASSETS } from './kenneyNatureKitManifest.generated.js';
+
+const PROP_COLOR_BY_CATEGORY = Object.freeze({
+  editorTrees: 0x2fe7c5,
+  editorPlants: 0x6ecf8a,
+  editorRocks: 0xb8dce8,
+  editorStructures: 0xd4c4a8,
+  editorDetails: 0xc9b896,
+});
 
 /**
  * @param {string} glbName
- * @param {number} [displayColor=0x8fd4c4]
+ * @param {string} categoryId
  */
-function naturePropEntry(glbName, displayColor = 0x8fd4c4) {
+function naturePropEntry(glbName, categoryId) {
   return {
     kind: 'nature-prop',
     glb: kenneyNatureGlbUrl(glbName),
     glbName,
-    displayColor,
+    displayColor: PROP_COLOR_BY_CATEGORY[categoryId] ?? 0x8fd4c4,
     surfaceY: 0.02,
-    tags: ['nature', 'prop'],
+    tags: ['nature', 'prop', categoryId],
   };
 }
 
-export const NATURE_PROP_CATALOG = Object.freeze({
-  'nature-prop:tree_pineDefaultA': naturePropEntry('tree_pineDefaultA', 0x2fe7c5),
-  'nature-prop:tree_simple': naturePropEntry('tree_simple', 0x2fe7c5),
-  'nature-prop:rock_smallA': naturePropEntry('rock_smallA', 0xb8dce8),
-  'nature-prop:rock_largeA': naturePropEntry('rock_largeA', 0xb8dce8),
-});
+/** @type {Record<string, ReturnType<typeof naturePropEntry>>} */
+export const NATURE_PROP_CATALOG = Object.freeze(
+  Object.fromEntries(
+    KENNEY_NATURE_ASSETS
+      .filter((asset) => asset.layer === 'prop')
+      .map((asset) => [
+        asset.toolId,
+        naturePropEntry(asset.glbName, asset.categoryId),
+      ])
+  )
+);
 
 /**
  * @param {string} propId

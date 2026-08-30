@@ -6,6 +6,7 @@ import {
   getButtonsUnactive,
   resolveIcon,
 } from './ToolPanel.js';
+import { hideBuildToolHoverPreview } from './BuildToolHoverPreview.js';
 import { MOBILE_TOOLBAR_CATEGORIES } from './mobileToolbarCategories.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
 import { getSessionGame } from '../../../composition/sessionRuntime.js';
@@ -184,6 +185,7 @@ export function open() {
 
 export function close() {
   if (!buildBarEl) return;
+  hideBuildToolHoverPreview();
   isOpen = false;
   buildBarFocusSession?.release({ restoreFocus: false });
   buildBarFocusSession = null;
