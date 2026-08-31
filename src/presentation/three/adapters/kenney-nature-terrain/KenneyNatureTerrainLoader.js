@@ -6,9 +6,10 @@ import { getTerrainCatalogEntry } from '../../../../shared/terrain-catalog/terra
 import { resolveTerrainDisplayColorHex } from '../../../../shared/terrain-catalog/terrainDisplayColor.js';
 import {
   applyEditorKenneyGltfPresentation,
+  applyLitKenneyGltfPresentation,
 } from '../kenney-nature/kenneyGltfPresentation.js';
 
-/** @typedef {'gltf' | 'flat'} KenneyTerrainPresentation */
+/** @typedef {'gltf' | 'flat' | 'lit'} KenneyTerrainPresentation */
 
 const loader = new GLTFLoader();
 /** @type {Map<string, THREE.Object3D>} */
@@ -104,6 +105,11 @@ export async function loadKenneyNatureTerrainTemplate(terrainKey, glbUrl, presen
     if (presentation === 'gltf') {
       applyEditorKenneyGltfPresentation(template, {
         renderOrder: resolveTerrainRenderOrder(terrainKey),
+      });
+    } else if (presentation === 'lit') {
+      applyLitKenneyGltfPresentation(template, {
+        renderOrder: resolveTerrainRenderOrder(terrainKey),
+        role: 'terrain',
       });
     } else {
       template.traverse((child) => {
