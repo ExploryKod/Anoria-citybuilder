@@ -57,6 +57,7 @@ import { scenePresentation } from './presentationConfig.js';
 import { createSceneFog } from '../../shared/terrain-catalog/terrainAtmosphere.js';
 import { isEditorMode } from '../../composition/sessionShell.js';
 import { isCustomMapLayoutActive } from '../../shared/gameplay/customMapLayout.js';
+import { resolveKenneyGltfPresentationMode } from './adapters/kenney-nature/kenneyGltfPresentation.js';
 import { getTerrainZoneCounts, resolveTerrainZoneIndex } from '../../shared/terrain-catalog/terrainZoneLayout.js';
 import { spawnIslandShore } from './scene-board/terrain/spawnIslandShore.js';
 import {
@@ -1896,14 +1897,17 @@ export function createScene(_gameStore, assetManager, deps) {
      */
     async function createEditorStackMesh(entry) {
         const { assetId, x, y, rotationY, baseLocalY, id } = entry;
+        const kenneyPresentation = resolveKenneyGltfPresentationMode();
+
         if (assetId.startsWith('nature-prop:')) {
             const { getKenneyNaturePropAdapter } = await import(
                 './adapters/kenney-nature-props/KenneyNaturePropAdapter.js'
             );
-            await getKenneyNaturePropAdapter().ensurePropLoaded(assetId);
+            await getKenneyNaturePropAdapter().ensurePropLoaded(assetId, kenneyPresentation);
             const port = createKenneyNatureSceneTile(assetId, x, y, rotationY ?? 0, {
                 baseLocalY,
                 editorStackId: id,
+                presentation: kenneyPresentation,
             });
             attachSceneTilePort(port);
             port.root.traverse((child) => {
@@ -1915,9 +1919,9 @@ export function createScene(_gameStore, assetManager, deps) {
         const { getKenneyNatureTerrainAdapter } = await import(
             './adapters/kenney-nature-terrain/KenneyNatureTerrainAdapter.js'
         );
-        await getKenneyNatureTerrainAdapter().ensureTerrainTemplate(assetId);
+        await getKenneyNatureTerrainAdapter().ensureTerrainTemplate(assetId, kenneyPresentation);
         const port = createKenneyTerrainSceneTile(assetId, x, y, {
-            presentation: 'gltf',
+            presentation: kenneyPresentation,
             baseLocalY,
             editorStackId: id,
             rotationY: rotationY ?? 0,

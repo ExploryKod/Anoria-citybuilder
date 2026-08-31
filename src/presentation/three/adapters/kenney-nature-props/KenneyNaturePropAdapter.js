@@ -6,7 +6,12 @@ import {
 } from '../../../../shared/editor-catalog/naturePropCatalog.js';
 import { WORLD_PLATFORM_Y } from '../../../../shared/terrain-catalog/terrainWorldContract.js';
 import { propGroupWorldY } from '../../../../shared/editor-catalog/kenneyPlacementProfile.js';
-import { applyEditorKenneyGltfPresentation } from '../kenney-nature/kenneyGltfPresentation.js';
+import {
+  applyEditorKenneyGltfPresentation,
+  applyLitKenneyGltfPresentation,
+} from '../kenney-nature/kenneyGltfPresentation.js';
+
+/** @typedef {import('../kenney-nature/kenneyGltfPresentation.js').KenneyGltfPresentationMode} KenneyGltfPresentationMode */
 
 const loader = new GLTFLoader();
 const PROP_RENDER_ORDER = 5;
@@ -20,14 +25,25 @@ let adapterInstance = null;
 
 /**
  * @param {string} propId
+ * @param {KenneyGltfPresentationMode} presentation
+ * @returns {string}
+ */
+function templateCacheKey(propId, presentation) {
+  return `${propId}::${presentation}`;
+}
+
+/**
+ * @param {string} propId
+ * @param {KenneyGltfPresentationMode} [presentation='lit']
  * @returns {Promise<THREE.Object3D>}
  */
-async function loadPropTemplate(propId) {
-  if (templateCache.has(propId)) {
-    return templateCache.get(propId);
+async function loadPropTemplate(propId, presentation = 'lit') {
+  const cacheKey = templateCacheKey(propId, presentation);
+  if (templateCache.has(cacheKey)) {
+    return templateCache.get(cacheKey);
   }
-  if (loadingCache.has(propId)) {
-    return loadingCache.get(propId);
+  if (loadingCache.has(cacheKey)) {
+    return loadingCache.get(cacheKey);
   }
 
   const entry = getNaturePropCatalogEntry(propId);
@@ -39,13 +55,20 @@ async function loadPropTemplate(propId) {
   const promise = loader.loadAsync(glbUrl).then((gltf) => {
     const template = gltf.scene;
     template.name = `kenney-nature-prop-${resolveNaturePropGlbName(propId)}`;
-    applyEditorKenneyGltfPresentation(template, { renderOrder: PROP_RENDER_ORDER });
-    templateCache.set(propId, template);
-    loadingCache.delete(propId);
+    if (presentation === 'lit') {
+      applyLitKenneyGltfPresentation(template, {
+        renderOrder: PROP_RENDER_ORDER,
+        role: 'prop',
+      });
+    } else {
+      applyEditorKenneyGltfPresentation(template, { renderOrder: PROP_RENDER_ORDER });
+    }
+    templateCache.set(cacheKey, template);
+    loadingCache.delete(cacheKey);
     return template;
   });
 
-  loadingCache.set(propId, promise);
+  loadingCache.set(cacheKey, promise);
   return promise;
 }
 
@@ -74,9 +97,10 @@ export class KenneyNaturePropAdapter {
 
   /**
    * @param {string} propId
+   * @param {KenneyGltfPresentationMode} [presentation='lit']
    */
-  async ensurePropLoaded(propId) {
-    await loadPropTemplate(propId);
+  async ensurePropLoaded(propId, presentation = 'lit') {
+    await loadPropTemplate(propId, presentation);
   }
 
   /**
@@ -84,14 +108,15 @@ export class KenneyNaturePropAdapter {
    * @param {number} x
    * @param {number} y
    * @param {number} [rotationY=0]
-   * @param {{ baseLocalY?: number, editorStackId?: string }} [options]
+   * @param {{ baseLocalY?: number, editorStackId?: string, presentation?: KenneyGltfPresentationMode }} [options]
    * @returns {THREE.Object3D}
    */
   createPropInstance(propId, x, y, rotationY = 0, options = {}) {
     if (!this.ready) {
       throw new Error('[Kenney nature prop] Adapter not initialized');
     }
-    const template = templateCache.get(propId);
+    const presentation = options.presentation ?? 'lit';
+    const template = templateCache.get(templateCacheKey(propId, presentation));
     if (!template) {
       throw new Error(`[Kenney nature prop] Template not loaded: ${propId}`);
     }

@@ -45,14 +45,14 @@ export class KenneyNatureTerrainAdapter {
     this.ready = true;
   }
 
-  /** Editor paint tools — GLB materials as authored. */
-  async ensureTerrainTemplate(terrainId) {
+  /** Editor / custom-map stack tiles — lit GLBs. Carousel icons are Isometric PNGs. */
+  async ensureTerrainTemplate(terrainId, presentation = 'lit') {
     const entry = getTerrainCatalogEntry(terrainId);
     if (!entry?.glb) {
       throw new Error(`[Kenney nature terrain] Unknown terrain: ${terrainId}`);
     }
-    if (!getKenneyNatureTerrainTemplate(terrainId, 'gltf')) {
-      await loadKenneyNatureTerrainTemplate(terrainId, entry.glb, 'gltf');
+    if (!getKenneyNatureTerrainTemplate(terrainId, presentation)) {
+      await loadKenneyNatureTerrainTemplate(terrainId, entry.glb, presentation);
     }
   }
 
@@ -61,7 +61,7 @@ export class KenneyNatureTerrainAdapter {
    * @param {number} x
    * @param {number} y
    * @param {string} [legacyId='grass']
-   * @param {{ compass?: import('../../../../shared/terrain-catalog/beachBorderCompass.js').BeachBorderCompass, surfaceY?: number, presentation?: 'gltf' | 'flat', baseLocalY?: number, editorStackId?: string, rotationY?: number }} [options]
+   * @param {{ compass?: import('../../../../shared/terrain-catalog/beachBorderCompass.js').BeachBorderCompass, surfaceY?: number, presentation?: 'gltf' | 'flat' | 'lit', baseLocalY?: number, editorStackId?: string, rotationY?: number }} [options]
    * @returns {import('three').Object3D}
    */
   createTerrainTile(terrainId, x, y, legacyId = 'grass', options = {}) {
