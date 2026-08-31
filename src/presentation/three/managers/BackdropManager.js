@@ -1,16 +1,18 @@
 import * as THREE from 'three';
+import { isCustomMapLayoutActive } from '../../../shared/gameplay/customMapLayout.js';
 import { isEditorMode } from '../../../shared/gameplay/gameMode.js';
 import { WORLD_PLATFORM_Y } from '../../../shared/terrain-catalog/terrainWorldContract.js';
 import {
   createSceneFog,
   KENNEY_GROUND_GRASS_COLOR,
-  SCENE_SEA_COLOR,
+  SCENE_EDITOR_BACKDROP_COLOR,
   SCENE_SKY_COLOR,
 } from '../../../shared/terrain-catalog/terrainAtmosphere.js';
 
 /**
  * Cheap infinite ground + sky colors (no GLB sky dome).
  * Playable grid uses 3D Kenney tiles; this fills the rest in 1–2 draw calls.
+ * Editor mode: flat backdrop color only — no Kenney ground plane.
  */
 export class BackdropManager {
     constructor(scene) {
@@ -20,8 +22,22 @@ export class BackdropManager {
     }
 
     applyAtmosphere() {
+        if (isEditorMode() || isCustomMapLayoutActive()) {
+            this.scene.background = new THREE.Color(SCENE_EDITOR_BACKDROP_COLOR);
+            this.scene.fog = null;
+            this._removeGroundFill();
+            return;
+        }
+
         this.scene.background = new THREE.Color(SCENE_SKY_COLOR);
-        this.scene.fog = createSceneFog({ editor: isEditorMode() });
+        this.scene.fog = createSceneFog({ editor: false });
+    }
+
+    _removeGroundFill() {
+        const groundFill = this.scene.getObjectByName('kenney-ground-fill');
+        if (!groundFill) return;
+        groundFill.geometry?.dispose();
+        this.scene.remove(groundFill);
     }
 
     /**
@@ -29,13 +45,16 @@ export class BackdropManager {
      * @param {number} citySize
      */
     syncGroundFill(citySize = 16) {
+        if (isEditorMode() || isCustomMapLayoutActive()) {
+            this._removeGroundFill();
+            return;
+        }
+
         const cityCenter = citySize / 2;
-        const editor = isEditorMode();
-        // Extend well past the buildable grid so the iso camera never sees the plane edge.
         const margin = Math.max(citySize * 2, 48);
         const planeSize = citySize + margin * 2;
-        const fillColor = editor ? SCENE_SEA_COLOR : KENNEY_GROUND_GRASS_COLOR;
-        const groundY = editor ? WORLD_PLATFORM_Y - 0.12 : WORLD_PLATFORM_Y;
+        const fillColor = KENNEY_GROUND_GRASS_COLOR;
+        const groundY = WORLD_PLATFORM_Y;
 
         if (!this._groundFillMaterial) {
             this._groundFillMaterial = new THREE.MeshBasicMaterial({

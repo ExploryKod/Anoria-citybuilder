@@ -1,6 +1,8 @@
 import { describe, expect, test } from '@jest/globals';
 import {
   KENNEY_GROUND_GRASS_COLOR,
+  SCENE_EDITOR_BACKDROP_COLOR,
+  SCENE_EDITOR_FOG_COLOR,
   SCENE_FOG_COLOR,
   SCENE_SEA_COLOR,
   SCENE_SKY_COLOR,
@@ -19,11 +21,10 @@ describe('terrainAtmosphere', () => {
     );
   });
 
-  test('editor fog color is blended from sea and sky', () => {
+  test('editor fog color matches unified editor backdrop', () => {
     const fog = createSceneFog({ editor: true });
-    expect(fog.color.getHex()).toBe(
-      blendTerrainColorHex(SCENE_SEA_COLOR, SCENE_SKY_COLOR, 0.35)
-    );
+    expect(fog.color.getHex()).toBe(SCENE_EDITOR_FOG_COLOR);
+    expect(fog.color.getHex()).toBe(SCENE_EDITOR_BACKDROP_COLOR);
   });
 
   test('createSceneFog returns FogExp2', () => {

@@ -78,6 +78,7 @@ function isTileInFootprint(x, y, footprint) {
  * @param {Record<string, { gridSize?: number, price?: number, category?: string }>} deps.assetCatalog
  * @param {(toolId: string) => boolean} [deps.isPlaceableTool]
  * @param {(params: object) => { ok: boolean, reason?: string, gridSize: number, footprintWidth?: number, footprintHeight?: number }} deps.canPlaceBuildingAtTile
+ * @param {(x: number, y: number) => number | null | undefined} [deps.getPlacementAnchorLocalY]
  * @param {() => object | null | undefined} [deps.getFocusedObject]
  */
 export function createPlacementGhostSession({
@@ -88,6 +89,7 @@ export function createPlacementGhostSession({
   assetCatalog,
   isPlaceableTool = (toolId) => isPlaceableBuildingTool(toolId, assetCatalog),
   canPlaceBuildingAtTile,
+  getPlacementAnchorLocalY = () => null,
   getFocusedObject = () => null,
 }) {
   /** @type {object | null} */
@@ -171,11 +173,14 @@ export function createPlacementGhostSession({
       placement.gridSize ?? assetCatalog?.[assetId]?.gridSize ?? 1,
     );
 
+    const placementBaseLocalY = getPlacementAnchorLocalY(x, y);
+
     ghost.show(resolveGhostVisualAssetId(assetId), x, y, placement.ok, {
       gridSize: ghostGridSize,
       footprintWidth: placement.footprintWidth,
       footprintHeight: placement.footprintHeight,
       rotationStep,
+      placementBaseLocalY: placementBaseLocalY ?? undefined,
     });
   }
 

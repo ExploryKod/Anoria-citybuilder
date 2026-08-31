@@ -4,7 +4,13 @@ import { KENNEY_NATURE_ASSETS } from './kenneyNatureKitManifest.generated.js';
 const PROP_COLOR_BY_CATEGORY = Object.freeze({
   editorTrees: 0x2fe7c5,
   editorPlants: 0x6ecf8a,
-  editorRocks: 0xb8dce8,
+  editorRockSmall: 0xb8dce8,
+  editorRockLarge: 0xb8dce8,
+  editorRockTall: 0xb8dce8,
+  editorStoneSmall: 0xc8ccd0,
+  editorStoneLarge: 0xc8ccd0,
+  editorStoneTall: 0xc8ccd0,
+  editorStumps: 0xa08060,
   editorStructures: 0xd4c4a8,
   editorDetails: 0xc9b896,
 });

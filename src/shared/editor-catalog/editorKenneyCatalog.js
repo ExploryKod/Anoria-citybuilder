@@ -11,6 +11,7 @@ import {
   KENNEY_NATURE_EDITOR_CATEGORY_DEFS,
   KENNEY_NATURE_KIT_GLB_COUNT,
 } from './kenneyNatureKitManifest.generated.js';
+import { sortKenneyCarouselToolIds } from './kenneyEditorCarouselSort.js';
 
 export { KENNEY_EDITOR_CATEGORY_DEFS, KENNEY_EDITOR_NATURE_CATEGORY_DEFS, KENNEY_EDITOR_TERRAIN_CATEGORY_DEFS, KENNEY_NATURE_EDITOR_CATEGORY_DEFS, KENNEY_NATURE_KIT_GLB_COUNT };
 
@@ -67,9 +68,10 @@ export const EDITOR_TOOLS_BY_CATEGORY = Object.freeze(
     KENNEY_EDITOR_CATEGORY_DEFS.map((category) => [
       category.id,
       Object.freeze(
-        KENNEY_NATURE_ASSETS
-          .filter((asset) => asset.categoryId === category.id)
-          .map((asset) => asset.toolId)
+        sortKenneyCarouselToolIds(
+          category.id,
+          KENNEY_NATURE_ASSETS.filter((asset) => asset.categoryId === category.id)
+        )
       ),
     ])
   )

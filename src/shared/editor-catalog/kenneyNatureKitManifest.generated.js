@@ -14,12 +14,6 @@ export const KENNEY_NATURE_EDITOR_CATEGORY_DEFS = [
     "fabGroup": "terrain"
   },
   {
-    "id": "editorPath",
-    "icon": "🛤",
-    "tooltip": "Chemins",
-    "fabGroup": "terrain"
-  },
-  {
     "id": "editorRiver",
     "icon": "💧",
     "tooltip": "Eau",
@@ -32,9 +26,39 @@ export const KENNEY_NATURE_EDITOR_CATEGORY_DEFS = [
     "fabGroup": "terrain"
   },
   {
-    "id": "editorCliff",
-    "icon": "⛰",
-    "tooltip": "Falaises",
+    "id": "editorCliffQuarterRock",
+    "icon": "◽",
+    "tooltip": "Falaises quart roche",
+    "fabGroup": "terrain"
+  },
+  {
+    "id": "editorCliffQuarterStone",
+    "icon": "◽",
+    "tooltip": "Falaises quart pierre",
+    "fabGroup": "terrain"
+  },
+  {
+    "id": "editorCliffHalfRock",
+    "icon": "◾",
+    "tooltip": "Falaises demi roche",
+    "fabGroup": "terrain"
+  },
+  {
+    "id": "editorCliffHalfStone",
+    "icon": "◾",
+    "tooltip": "Falaises demi pierre",
+    "fabGroup": "terrain"
+  },
+  {
+    "id": "editorCliffRock",
+    "icon": "🪨",
+    "tooltip": "Falaises roche",
+    "fabGroup": "terrain"
+  },
+  {
+    "id": "editorCliffStone",
+    "icon": "🏔️",
+    "tooltip": "Falaises pierre",
     "fabGroup": "terrain"
   },
   {
@@ -50,9 +74,45 @@ export const KENNEY_NATURE_EDITOR_CATEGORY_DEFS = [
     "fabGroup": "nature"
   },
   {
-    "id": "editorRocks",
+    "id": "editorRockSmall",
     "icon": "🪨",
-    "tooltip": "Rochers",
+    "tooltip": "Rochers petits",
+    "fabGroup": "nature"
+  },
+  {
+    "id": "editorRockLarge",
+    "icon": "🗿",
+    "tooltip": "Rochers grands",
+    "fabGroup": "nature"
+  },
+  {
+    "id": "editorRockTall",
+    "icon": "⛰",
+    "tooltip": "Rochers hauts",
+    "fabGroup": "nature"
+  },
+  {
+    "id": "editorStoneSmall",
+    "icon": "◽",
+    "tooltip": "Pierres petites",
+    "fabGroup": "nature"
+  },
+  {
+    "id": "editorStoneLarge",
+    "icon": "◾",
+    "tooltip": "Pierres grandes",
+    "fabGroup": "nature"
+  },
+  {
+    "id": "editorStoneTall",
+    "icon": "🏔️",
+    "tooltip": "Pierres hautes",
+    "fabGroup": "nature"
+  },
+  {
+    "id": "editorStumps",
+    "icon": "🪵",
+    "tooltip": "Souches",
     "fabGroup": "nature"
   },
   {
@@ -255,392 +315,392 @@ export const KENNEY_NATURE_ASSETS = Object.freeze([
   },
   {
     "glbName": "cliff_block_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_block_rock",
     "shortLabel": "Cliff Block Rock"
   },
   {
     "glbName": "cliff_block_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_block_stone",
     "shortLabel": "Cliff Block Stone"
   },
   {
     "glbName": "cliff_blockCave_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_blockCave_rock",
     "shortLabel": "Cliff Block Cave Rock"
   },
   {
     "glbName": "cliff_blockCave_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_blockCave_stone",
     "shortLabel": "Cliff Block Cave Stone"
   },
   {
     "glbName": "cliff_blockDiagonal_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_blockDiagonal_rock",
     "shortLabel": "Cliff Block Diagonal…"
   },
   {
     "glbName": "cliff_blockDiagonal_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_blockDiagonal_stone",
     "shortLabel": "Cliff Block Diagonal…"
   },
   {
     "glbName": "cliff_blockHalf_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffHalfRock",
     "layer": "terrain",
     "toolId": "nature:cliff_blockHalf_rock",
     "shortLabel": "Cliff Block Half Rock"
   },
   {
     "glbName": "cliff_blockHalf_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffHalfStone",
     "layer": "terrain",
     "toolId": "nature:cliff_blockHalf_stone",
     "shortLabel": "Cliff Block Half Stone"
   },
   {
     "glbName": "cliff_blockQuarter_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffQuarterRock",
     "layer": "terrain",
     "toolId": "nature:cliff_blockQuarter_rock",
     "shortLabel": "Cliff Block Quarter …"
   },
   {
     "glbName": "cliff_blockQuarter_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffQuarterStone",
     "layer": "terrain",
     "toolId": "nature:cliff_blockQuarter_stone",
     "shortLabel": "Cliff Block Quarter …"
   },
   {
     "glbName": "cliff_blockSlope_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_blockSlope_rock",
     "shortLabel": "Cliff Block Slope Rock"
   },
   {
     "glbName": "cliff_blockSlope_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_blockSlope_stone",
     "shortLabel": "Cliff Block Slope St…"
   },
   {
     "glbName": "cliff_blockSlopeHalfWalls_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffHalfRock",
     "layer": "terrain",
     "toolId": "nature:cliff_blockSlopeHalfWalls_rock",
     "shortLabel": "Cliff Block Slope Ha…"
   },
   {
     "glbName": "cliff_blockSlopeHalfWalls_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffHalfStone",
     "layer": "terrain",
     "toolId": "nature:cliff_blockSlopeHalfWalls_stone",
     "shortLabel": "Cliff Block Slope Ha…"
   },
   {
     "glbName": "cliff_blockSlopeWalls_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_blockSlopeWalls_rock",
     "shortLabel": "Cliff Block Slope Wa…"
   },
   {
     "glbName": "cliff_blockSlopeWalls_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_blockSlopeWalls_stone",
     "shortLabel": "Cliff Block Slope Wa…"
   },
   {
     "glbName": "cliff_cave_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_cave_rock",
     "shortLabel": "Cliff Cave Rock"
   },
   {
     "glbName": "cliff_cave_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_cave_stone",
     "shortLabel": "Cliff Cave Stone"
   },
   {
     "glbName": "cliff_corner_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_corner_rock",
     "shortLabel": "Cliff Corner Rock"
   },
   {
     "glbName": "cliff_corner_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_corner_stone",
     "shortLabel": "Cliff Corner Stone"
   },
   {
     "glbName": "cliff_cornerInner_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_cornerInner_rock",
     "shortLabel": "Cliff Corner Inner R…"
   },
   {
     "glbName": "cliff_cornerInner_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_cornerInner_stone",
     "shortLabel": "Cliff Corner Inner S…"
   },
   {
     "glbName": "cliff_cornerInnerLarge_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_cornerInnerLarge_rock",
     "shortLabel": "Cliff Corner Inner L…"
   },
   {
     "glbName": "cliff_cornerInnerLarge_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_cornerInnerLarge_stone",
     "shortLabel": "Cliff Corner Inner L…"
   },
   {
     "glbName": "cliff_cornerInnerTop_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_cornerInnerTop_rock",
     "shortLabel": "Cliff Corner Inner T…"
   },
   {
     "glbName": "cliff_cornerInnerTop_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_cornerInnerTop_stone",
     "shortLabel": "Cliff Corner Inner T…"
   },
   {
     "glbName": "cliff_cornerLarge_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_cornerLarge_rock",
     "shortLabel": "Cliff Corner Large R…"
   },
   {
     "glbName": "cliff_cornerLarge_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_cornerLarge_stone",
     "shortLabel": "Cliff Corner Large S…"
   },
   {
     "glbName": "cliff_cornerTop_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_cornerTop_rock",
     "shortLabel": "Cliff Corner Top Rock"
   },
   {
     "glbName": "cliff_cornerTop_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_cornerTop_stone",
     "shortLabel": "Cliff Corner Top Stone"
   },
   {
     "glbName": "cliff_diagonal_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_diagonal_rock",
     "shortLabel": "Cliff Diagonal Rock"
   },
   {
     "glbName": "cliff_diagonal_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_diagonal_stone",
     "shortLabel": "Cliff Diagonal Stone"
   },
   {
     "glbName": "cliff_half_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffHalfRock",
     "layer": "terrain",
     "toolId": "nature:cliff_half_rock",
     "shortLabel": "Cliff Half Rock"
   },
   {
     "glbName": "cliff_half_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffHalfStone",
     "layer": "terrain",
     "toolId": "nature:cliff_half_stone",
     "shortLabel": "Cliff Half Stone"
   },
   {
     "glbName": "cliff_halfCorner_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffHalfRock",
     "layer": "terrain",
     "toolId": "nature:cliff_halfCorner_rock",
     "shortLabel": "Cliff Half Corner Rock"
   },
   {
     "glbName": "cliff_halfCorner_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffHalfStone",
     "layer": "terrain",
     "toolId": "nature:cliff_halfCorner_stone",
     "shortLabel": "Cliff Half Corner St…"
   },
   {
     "glbName": "cliff_halfCornerInner_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffHalfRock",
     "layer": "terrain",
     "toolId": "nature:cliff_halfCornerInner_rock",
     "shortLabel": "Cliff Half Corner In…"
   },
   {
     "glbName": "cliff_halfCornerInner_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffHalfStone",
     "layer": "terrain",
     "toolId": "nature:cliff_halfCornerInner_stone",
     "shortLabel": "Cliff Half Corner In…"
   },
   {
     "glbName": "cliff_large_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_large_rock",
     "shortLabel": "Cliff Large Rock"
   },
   {
     "glbName": "cliff_large_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_large_stone",
     "shortLabel": "Cliff Large Stone"
   },
   {
     "glbName": "cliff_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_rock",
     "shortLabel": "Cliff Rock"
   },
   {
     "glbName": "cliff_steps_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_steps_rock",
     "shortLabel": "Cliff Steps Rock"
   },
   {
     "glbName": "cliff_steps_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_steps_stone",
     "shortLabel": "Cliff Steps Stone"
   },
   {
     "glbName": "cliff_stepsCorner_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_stepsCorner_rock",
     "shortLabel": "Cliff Steps Corner R…"
   },
   {
     "glbName": "cliff_stepsCorner_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_stepsCorner_stone",
     "shortLabel": "Cliff Steps Corner S…"
   },
   {
     "glbName": "cliff_stepsCornerInner_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_stepsCornerInner_rock",
     "shortLabel": "Cliff Steps Corner I…"
   },
   {
     "glbName": "cliff_stepsCornerInner_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_stepsCornerInner_stone",
     "shortLabel": "Cliff Steps Corner I…"
   },
   {
     "glbName": "cliff_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_stone",
     "shortLabel": "Cliff Stone"
   },
   {
     "glbName": "cliff_top_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_top_rock",
     "shortLabel": "Cliff Top Rock"
   },
   {
     "glbName": "cliff_top_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_top_stone",
     "shortLabel": "Cliff Top Stone"
   },
   {
     "glbName": "cliff_topDiagonal_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_topDiagonal_rock",
     "shortLabel": "Cliff Top Diagonal R…"
   },
   {
     "glbName": "cliff_topDiagonal_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_topDiagonal_stone",
     "shortLabel": "Cliff Top Diagonal S…"
   },
   {
     "glbName": "cliff_waterfall_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_waterfall_rock",
     "shortLabel": "Cliff Waterfall Rock"
   },
   {
     "glbName": "cliff_waterfall_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_waterfall_stone",
     "shortLabel": "Cliff Waterfall Stone"
   },
   {
     "glbName": "cliff_waterfallTop_rock",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffRock",
     "layer": "terrain",
     "toolId": "nature:cliff_waterfallTop_rock",
     "shortLabel": "Cliff Waterfall Top …"
   },
   {
     "glbName": "cliff_waterfallTop_stone",
-    "categoryId": "editorCliff",
+    "categoryId": "editorCliffStone",
     "layer": "terrain",
     "toolId": "nature:cliff_waterfallTop_stone",
     "shortLabel": "Cliff Waterfall Top …"
@@ -976,98 +1036,98 @@ export const KENNEY_NATURE_ASSETS = Object.freeze([
   },
   {
     "glbName": "ground_pathBend",
-    "categoryId": "editorPath",
+    "categoryId": "editorGround",
     "layer": "terrain",
     "toolId": "nature:ground_pathBend",
     "shortLabel": "Ground Path Bend"
   },
   {
     "glbName": "ground_pathBendBank",
-    "categoryId": "editorPath",
+    "categoryId": "editorGround",
     "layer": "terrain",
     "toolId": "nature:ground_pathBendBank",
     "shortLabel": "Ground Path Bend Bank"
   },
   {
     "glbName": "ground_pathCorner",
-    "categoryId": "editorPath",
+    "categoryId": "editorGround",
     "layer": "terrain",
     "toolId": "nature:ground_pathCorner",
     "shortLabel": "Ground Path Corner"
   },
   {
     "glbName": "ground_pathCornerSmall",
-    "categoryId": "editorPath",
+    "categoryId": "editorGround",
     "layer": "terrain",
     "toolId": "nature:ground_pathCornerSmall",
     "shortLabel": "Ground Path Corner S…"
   },
   {
     "glbName": "ground_pathCross",
-    "categoryId": "editorPath",
+    "categoryId": "editorGround",
     "layer": "terrain",
     "toolId": "nature:ground_pathCross",
     "shortLabel": "Ground Path Cross"
   },
   {
     "glbName": "ground_pathEnd",
-    "categoryId": "editorPath",
+    "categoryId": "editorGround",
     "layer": "terrain",
     "toolId": "nature:ground_pathEnd",
     "shortLabel": "Ground Path End"
   },
   {
     "glbName": "ground_pathEndClosed",
-    "categoryId": "editorPath",
+    "categoryId": "editorGround",
     "layer": "terrain",
     "toolId": "nature:ground_pathEndClosed",
     "shortLabel": "Ground Path End Closed"
   },
   {
     "glbName": "ground_pathOpen",
-    "categoryId": "editorPath",
+    "categoryId": "editorGround",
     "layer": "terrain",
     "toolId": "nature:ground_pathOpen",
     "shortLabel": "Ground Path Open"
   },
   {
     "glbName": "ground_pathRocks",
-    "categoryId": "editorPath",
+    "categoryId": "editorGround",
     "layer": "terrain",
     "toolId": "nature:ground_pathRocks",
     "shortLabel": "Ground Path Rocks"
   },
   {
     "glbName": "ground_pathSide",
-    "categoryId": "editorPath",
+    "categoryId": "editorGround",
     "layer": "terrain",
     "toolId": "nature:ground_pathSide",
     "shortLabel": "Ground Path Side"
   },
   {
     "glbName": "ground_pathSideOpen",
-    "categoryId": "editorPath",
+    "categoryId": "editorGround",
     "layer": "terrain",
     "toolId": "nature:ground_pathSideOpen",
     "shortLabel": "Ground Path Side Open"
   },
   {
     "glbName": "ground_pathSplit",
-    "categoryId": "editorPath",
+    "categoryId": "editorGround",
     "layer": "terrain",
     "toolId": "nature:ground_pathSplit",
     "shortLabel": "Ground Path Split"
   },
   {
     "glbName": "ground_pathStraight",
-    "categoryId": "editorPath",
+    "categoryId": "editorGround",
     "layer": "terrain",
     "toolId": "nature:ground_pathStraight",
     "shortLabel": "Ground Path Straight"
   },
   {
     "glbName": "ground_pathTile",
-    "categoryId": "editorPath",
+    "categoryId": "editorGround",
     "layer": "terrain",
     "toolId": "nature:ground_pathTile",
     "shortLabel": "Ground Path Tile"
@@ -1263,51 +1323,51 @@ export const KENNEY_NATURE_ASSETS = Object.freeze([
   },
   {
     "glbName": "path_stone",
-    "categoryId": "editorStructures",
-    "layer": "prop",
-    "toolId": "nature-prop:path_stone",
+    "categoryId": "editorGround",
+    "layer": "terrain",
+    "toolId": "nature:path_stone",
     "shortLabel": "Path Stone"
   },
   {
     "glbName": "path_stoneCircle",
-    "categoryId": "editorStructures",
-    "layer": "prop",
-    "toolId": "nature-prop:path_stoneCircle",
+    "categoryId": "editorGround",
+    "layer": "terrain",
+    "toolId": "nature:path_stoneCircle",
     "shortLabel": "Path Stone Circle"
   },
   {
     "glbName": "path_stoneCorner",
-    "categoryId": "editorStructures",
-    "layer": "prop",
-    "toolId": "nature-prop:path_stoneCorner",
+    "categoryId": "editorGround",
+    "layer": "terrain",
+    "toolId": "nature:path_stoneCorner",
     "shortLabel": "Path Stone Corner"
   },
   {
     "glbName": "path_stoneEnd",
-    "categoryId": "editorStructures",
-    "layer": "prop",
-    "toolId": "nature-prop:path_stoneEnd",
+    "categoryId": "editorGround",
+    "layer": "terrain",
+    "toolId": "nature:path_stoneEnd",
     "shortLabel": "Path Stone End"
   },
   {
     "glbName": "path_wood",
-    "categoryId": "editorStructures",
-    "layer": "prop",
-    "toolId": "nature-prop:path_wood",
+    "categoryId": "editorGround",
+    "layer": "terrain",
+    "toolId": "nature:path_wood",
     "shortLabel": "Path Wood"
   },
   {
     "glbName": "path_woodCorner",
-    "categoryId": "editorStructures",
-    "layer": "prop",
-    "toolId": "nature-prop:path_woodCorner",
+    "categoryId": "editorGround",
+    "layer": "terrain",
+    "toolId": "nature:path_woodCorner",
     "shortLabel": "Path Wood Corner"
   },
   {
     "glbName": "path_woodEnd",
-    "categoryId": "editorStructures",
-    "layer": "prop",
-    "toolId": "nature-prop:path_woodEnd",
+    "categoryId": "editorGround",
+    "layer": "terrain",
+    "toolId": "nature:path_woodEnd",
     "shortLabel": "Path Wood End"
   },
   {
@@ -1403,210 +1463,210 @@ export const KENNEY_NATURE_ASSETS = Object.freeze([
   },
   {
     "glbName": "rock_largeA",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockLarge",
     "layer": "prop",
     "toolId": "nature-prop:rock_largeA",
     "shortLabel": "Rock Large A"
   },
   {
     "glbName": "rock_largeB",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockLarge",
     "layer": "prop",
     "toolId": "nature-prop:rock_largeB",
     "shortLabel": "Rock Large B"
   },
   {
     "glbName": "rock_largeC",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockLarge",
     "layer": "prop",
     "toolId": "nature-prop:rock_largeC",
     "shortLabel": "Rock Large C"
   },
   {
     "glbName": "rock_largeD",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockLarge",
     "layer": "prop",
     "toolId": "nature-prop:rock_largeD",
     "shortLabel": "Rock Large D"
   },
   {
     "glbName": "rock_largeE",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockLarge",
     "layer": "prop",
     "toolId": "nature-prop:rock_largeE",
     "shortLabel": "Rock Large E"
   },
   {
     "glbName": "rock_largeF",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockLarge",
     "layer": "prop",
     "toolId": "nature-prop:rock_largeF",
     "shortLabel": "Rock Large F"
   },
   {
     "glbName": "rock_smallA",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockSmall",
     "layer": "prop",
     "toolId": "nature-prop:rock_smallA",
     "shortLabel": "Rock Small A"
   },
   {
     "glbName": "rock_smallB",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockSmall",
     "layer": "prop",
     "toolId": "nature-prop:rock_smallB",
     "shortLabel": "Rock Small B"
   },
   {
     "glbName": "rock_smallC",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockSmall",
     "layer": "prop",
     "toolId": "nature-prop:rock_smallC",
     "shortLabel": "Rock Small C"
   },
   {
     "glbName": "rock_smallD",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockSmall",
     "layer": "prop",
     "toolId": "nature-prop:rock_smallD",
     "shortLabel": "Rock Small D"
   },
   {
     "glbName": "rock_smallE",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockSmall",
     "layer": "prop",
     "toolId": "nature-prop:rock_smallE",
     "shortLabel": "Rock Small E"
   },
   {
     "glbName": "rock_smallF",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockSmall",
     "layer": "prop",
     "toolId": "nature-prop:rock_smallF",
     "shortLabel": "Rock Small F"
   },
   {
     "glbName": "rock_smallFlatA",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockSmall",
     "layer": "prop",
     "toolId": "nature-prop:rock_smallFlatA",
     "shortLabel": "Rock Small Flat A"
   },
   {
     "glbName": "rock_smallFlatB",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockSmall",
     "layer": "prop",
     "toolId": "nature-prop:rock_smallFlatB",
     "shortLabel": "Rock Small Flat B"
   },
   {
     "glbName": "rock_smallFlatC",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockSmall",
     "layer": "prop",
     "toolId": "nature-prop:rock_smallFlatC",
     "shortLabel": "Rock Small Flat C"
   },
   {
     "glbName": "rock_smallG",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockSmall",
     "layer": "prop",
     "toolId": "nature-prop:rock_smallG",
     "shortLabel": "Rock Small G"
   },
   {
     "glbName": "rock_smallH",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockSmall",
     "layer": "prop",
     "toolId": "nature-prop:rock_smallH",
     "shortLabel": "Rock Small H"
   },
   {
     "glbName": "rock_smallI",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockSmall",
     "layer": "prop",
     "toolId": "nature-prop:rock_smallI",
     "shortLabel": "Rock Small I"
   },
   {
     "glbName": "rock_smallTopA",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockSmall",
     "layer": "prop",
     "toolId": "nature-prop:rock_smallTopA",
     "shortLabel": "Rock Small Top A"
   },
   {
     "glbName": "rock_smallTopB",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockSmall",
     "layer": "prop",
     "toolId": "nature-prop:rock_smallTopB",
     "shortLabel": "Rock Small Top B"
   },
   {
     "glbName": "rock_tallA",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockTall",
     "layer": "prop",
     "toolId": "nature-prop:rock_tallA",
     "shortLabel": "Rock Tall A"
   },
   {
     "glbName": "rock_tallB",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockTall",
     "layer": "prop",
     "toolId": "nature-prop:rock_tallB",
     "shortLabel": "Rock Tall B"
   },
   {
     "glbName": "rock_tallC",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockTall",
     "layer": "prop",
     "toolId": "nature-prop:rock_tallC",
     "shortLabel": "Rock Tall C"
   },
   {
     "glbName": "rock_tallD",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockTall",
     "layer": "prop",
     "toolId": "nature-prop:rock_tallD",
     "shortLabel": "Rock Tall D"
   },
   {
     "glbName": "rock_tallE",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockTall",
     "layer": "prop",
     "toolId": "nature-prop:rock_tallE",
     "shortLabel": "Rock Tall E"
   },
   {
     "glbName": "rock_tallF",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockTall",
     "layer": "prop",
     "toolId": "nature-prop:rock_tallF",
     "shortLabel": "Rock Tall F"
   },
   {
     "glbName": "rock_tallG",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockTall",
     "layer": "prop",
     "toolId": "nature-prop:rock_tallG",
     "shortLabel": "Rock Tall G"
   },
   {
     "glbName": "rock_tallH",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockTall",
     "layer": "prop",
     "toolId": "nature-prop:rock_tallH",
     "shortLabel": "Rock Tall H"
   },
   {
     "glbName": "rock_tallI",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockTall",
     "layer": "prop",
     "toolId": "nature-prop:rock_tallI",
     "shortLabel": "Rock Tall I"
   },
   {
     "glbName": "rock_tallJ",
-    "categoryId": "editorRocks",
+    "categoryId": "editorRockTall",
     "layer": "prop",
     "toolId": "nature-prop:rock_tallJ",
     "shortLabel": "Rock Tall J"
@@ -1662,259 +1722,259 @@ export const KENNEY_NATURE_ASSETS = Object.freeze([
   },
   {
     "glbName": "stone_largeA",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneLarge",
     "layer": "prop",
     "toolId": "nature-prop:stone_largeA",
     "shortLabel": "Stone Large A"
   },
   {
     "glbName": "stone_largeB",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneLarge",
     "layer": "prop",
     "toolId": "nature-prop:stone_largeB",
     "shortLabel": "Stone Large B"
   },
   {
     "glbName": "stone_largeC",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneLarge",
     "layer": "prop",
     "toolId": "nature-prop:stone_largeC",
     "shortLabel": "Stone Large C"
   },
   {
     "glbName": "stone_largeD",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneLarge",
     "layer": "prop",
     "toolId": "nature-prop:stone_largeD",
     "shortLabel": "Stone Large D"
   },
   {
     "glbName": "stone_largeE",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneLarge",
     "layer": "prop",
     "toolId": "nature-prop:stone_largeE",
     "shortLabel": "Stone Large E"
   },
   {
     "glbName": "stone_largeF",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneLarge",
     "layer": "prop",
     "toolId": "nature-prop:stone_largeF",
     "shortLabel": "Stone Large F"
   },
   {
     "glbName": "stone_smallA",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneSmall",
     "layer": "prop",
     "toolId": "nature-prop:stone_smallA",
     "shortLabel": "Stone Small A"
   },
   {
     "glbName": "stone_smallB",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneSmall",
     "layer": "prop",
     "toolId": "nature-prop:stone_smallB",
     "shortLabel": "Stone Small B"
   },
   {
     "glbName": "stone_smallC",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneSmall",
     "layer": "prop",
     "toolId": "nature-prop:stone_smallC",
     "shortLabel": "Stone Small C"
   },
   {
     "glbName": "stone_smallD",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneSmall",
     "layer": "prop",
     "toolId": "nature-prop:stone_smallD",
     "shortLabel": "Stone Small D"
   },
   {
     "glbName": "stone_smallE",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneSmall",
     "layer": "prop",
     "toolId": "nature-prop:stone_smallE",
     "shortLabel": "Stone Small E"
   },
   {
     "glbName": "stone_smallF",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneSmall",
     "layer": "prop",
     "toolId": "nature-prop:stone_smallF",
     "shortLabel": "Stone Small F"
   },
   {
     "glbName": "stone_smallFlatA",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneSmall",
     "layer": "prop",
     "toolId": "nature-prop:stone_smallFlatA",
     "shortLabel": "Stone Small Flat A"
   },
   {
     "glbName": "stone_smallFlatB",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneSmall",
     "layer": "prop",
     "toolId": "nature-prop:stone_smallFlatB",
     "shortLabel": "Stone Small Flat B"
   },
   {
     "glbName": "stone_smallFlatC",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneSmall",
     "layer": "prop",
     "toolId": "nature-prop:stone_smallFlatC",
     "shortLabel": "Stone Small Flat C"
   },
   {
     "glbName": "stone_smallG",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneSmall",
     "layer": "prop",
     "toolId": "nature-prop:stone_smallG",
     "shortLabel": "Stone Small G"
   },
   {
     "glbName": "stone_smallH",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneSmall",
     "layer": "prop",
     "toolId": "nature-prop:stone_smallH",
     "shortLabel": "Stone Small H"
   },
   {
     "glbName": "stone_smallI",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneSmall",
     "layer": "prop",
     "toolId": "nature-prop:stone_smallI",
     "shortLabel": "Stone Small I"
   },
   {
     "glbName": "stone_smallTopA",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneSmall",
     "layer": "prop",
     "toolId": "nature-prop:stone_smallTopA",
     "shortLabel": "Stone Small Top A"
   },
   {
     "glbName": "stone_smallTopB",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneSmall",
     "layer": "prop",
     "toolId": "nature-prop:stone_smallTopB",
     "shortLabel": "Stone Small Top B"
   },
   {
     "glbName": "stone_tallA",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneTall",
     "layer": "prop",
     "toolId": "nature-prop:stone_tallA",
     "shortLabel": "Stone Tall A"
   },
   {
     "glbName": "stone_tallB",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneTall",
     "layer": "prop",
     "toolId": "nature-prop:stone_tallB",
     "shortLabel": "Stone Tall B"
   },
   {
     "glbName": "stone_tallC",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneTall",
     "layer": "prop",
     "toolId": "nature-prop:stone_tallC",
     "shortLabel": "Stone Tall C"
   },
   {
     "glbName": "stone_tallD",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneTall",
     "layer": "prop",
     "toolId": "nature-prop:stone_tallD",
     "shortLabel": "Stone Tall D"
   },
   {
     "glbName": "stone_tallE",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneTall",
     "layer": "prop",
     "toolId": "nature-prop:stone_tallE",
     "shortLabel": "Stone Tall E"
   },
   {
     "glbName": "stone_tallF",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneTall",
     "layer": "prop",
     "toolId": "nature-prop:stone_tallF",
     "shortLabel": "Stone Tall F"
   },
   {
     "glbName": "stone_tallG",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneTall",
     "layer": "prop",
     "toolId": "nature-prop:stone_tallG",
     "shortLabel": "Stone Tall G"
   },
   {
     "glbName": "stone_tallH",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneTall",
     "layer": "prop",
     "toolId": "nature-prop:stone_tallH",
     "shortLabel": "Stone Tall H"
   },
   {
     "glbName": "stone_tallI",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneTall",
     "layer": "prop",
     "toolId": "nature-prop:stone_tallI",
     "shortLabel": "Stone Tall I"
   },
   {
     "glbName": "stone_tallJ",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStoneTall",
     "layer": "prop",
     "toolId": "nature-prop:stone_tallJ",
     "shortLabel": "Stone Tall J"
   },
   {
     "glbName": "stump_old",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStumps",
     "layer": "prop",
     "toolId": "nature-prop:stump_old",
     "shortLabel": "Stump Old"
   },
   {
     "glbName": "stump_oldTall",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStumps",
     "layer": "prop",
     "toolId": "nature-prop:stump_oldTall",
     "shortLabel": "Stump Old Tall"
   },
   {
     "glbName": "stump_round",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStumps",
     "layer": "prop",
     "toolId": "nature-prop:stump_round",
     "shortLabel": "Stump Round"
   },
   {
     "glbName": "stump_roundDetailed",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStumps",
     "layer": "prop",
     "toolId": "nature-prop:stump_roundDetailed",
     "shortLabel": "Stump Round Detailed"
   },
   {
     "glbName": "stump_square",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStumps",
     "layer": "prop",
     "toolId": "nature-prop:stump_square",
     "shortLabel": "Stump Square"
   },
   {
     "glbName": "stump_squareDetailed",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStumps",
     "layer": "prop",
     "toolId": "nature-prop:stump_squareDetailed",
     "shortLabel": "Stump Square Detailed"
   },
   {
     "glbName": "stump_squareDetailedWide",
-    "categoryId": "editorRocks",
+    "categoryId": "editorStumps",
     "layer": "prop",
     "toolId": "nature-prop:stump_squareDetailedWide",
     "shortLabel": "Stump Square Detaile…"
@@ -2376,5 +2436,5 @@ export const KENNEY_NATURE_ASSETS = Object.freeze([
   }
 ]);
 
-export const KENNEY_NATURE_TERRAIN_COUNT = 88;
-export const KENNEY_NATURE_PROP_COUNT = 241;
+export const KENNEY_NATURE_TERRAIN_COUNT = 95;
+export const KENNEY_NATURE_PROP_COUNT = 234;

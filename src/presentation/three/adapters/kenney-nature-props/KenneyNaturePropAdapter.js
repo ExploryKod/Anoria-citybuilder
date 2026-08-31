@@ -5,6 +5,7 @@ import {
   resolveNaturePropGlbName,
 } from '../../../../shared/editor-catalog/naturePropCatalog.js';
 import { WORLD_PLATFORM_Y } from '../../../../shared/terrain-catalog/terrainWorldContract.js';
+import { propGroupWorldY } from '../../../../shared/editor-catalog/kenneyPlacementProfile.js';
 import { applyEditorKenneyGltfPresentation } from '../kenney-nature/kenneyGltfPresentation.js';
 
 const loader = new GLTFLoader();
@@ -83,9 +84,10 @@ export class KenneyNaturePropAdapter {
    * @param {number} x
    * @param {number} y
    * @param {number} [rotationY=0]
+   * @param {{ baseLocalY?: number, editorStackId?: string }} [options]
    * @returns {THREE.Object3D}
    */
-  createPropInstance(propId, x, y, rotationY = 0) {
+  createPropInstance(propId, x, y, rotationY = 0, options = {}) {
     if (!this.ready) {
       throw new Error('[Kenney nature prop] Adapter not initialized');
     }
@@ -94,22 +96,26 @@ export class KenneyNaturePropAdapter {
       throw new Error(`[Kenney nature prop] Template not loaded: ${propId}`);
     }
 
+    const baseLocalY = options.baseLocalY ?? 0.02;
     const root = template.clone(true);
     const group = new THREE.Group();
     group.name = resolveNaturePropGlbName(propId);
     group.add(root);
     group.rotation.y = rotationY;
-    group.position.set(x, WORLD_PLATFORM_Y + 0.02, y);
+    group.position.set(x, WORLD_PLATFORM_Y + propGroupWorldY(propId, baseLocalY), y);
     group.userData = {
       isEditorNatureProp: true,
       isKenneyNatureProp: true,
       propId,
+      editorStackId: options.editorStackId ?? null,
+      baseLocalY,
       x,
       y,
       rotationY,
       layer: 'nature',
     };
     group.renderOrder = PROP_RENDER_ORDER;
+    group.frustumCulled = false;
     return group;
   }
 }

@@ -30,6 +30,9 @@ import {
   redirectToLandingUnlessEntryAllowed,
 } from '../../pages/site/bootSession.js';
 import { getMissionById } from '../../pages/missions/missionCatalog.js';
+import { loadEditorMapLayout } from '../../../contexts/world-layout/application/queries/LoadEditorMapLayout.js';
+import { getEditorMapRepository } from '../../../composition/editorMapRepository.js';
+import { setMissionMapLayoutId, getMissionMapLayoutId, clearMissionMapLayout } from '../../../shared/gameplay/customMapLayout.js';
 import {
   gameModeFromBootMode,
   isEditorMode,
@@ -72,6 +75,7 @@ function persistCitySize(size) {
 
 function resolveBootSelection(bootMode) {
   if (bootMode === 'tutorial') {
+    clearMissionMapLayout();
     try {
       sessionStorage.setItem('anoria.startTutorial', '1');
     } catch {
@@ -89,6 +93,7 @@ function resolveBootSelection(bootMode) {
   if (bootMode === 'mission') {
     const mission = getMissionById(getMissionId() ?? '');
     const profileName = getProfileName();
+    const mapLayoutId = getMissionMapLayoutId();
     clearMissionId();
     clearProfileName();
     return {
@@ -98,10 +103,12 @@ function resolveBootSelection(bootMode) {
       roomId: null,
       action: 'mission',
       missionId: mission.id,
+      mapLayoutId,
     };
   }
 
   if (bootMode === 'editor') {
+    clearMissionMapLayout();
     return {
       size: DEFAULT_CITY_SIZE,
       multiplayer: false,
@@ -109,6 +116,10 @@ function resolveBootSelection(bootMode) {
       roomId: null,
       action: 'editor',
     };
+  }
+
+  if (bootMode === 'new' || bootMode === 'load') {
+    clearMissionMapLayout();
   }
 
   return {
@@ -136,8 +147,22 @@ export async function bootstrapGameSession(assetManager) {
   }
 
   const selectionResult = resolveBootSelection(bootMode ?? 'new');
-  persistCitySize(selectionResult.size);
-  const selectedCitySize = selectionResult.size || selectionResult;
+  let selectedCitySize = selectionResult.size || selectionResult;
+
+  if (selectionResult.mapLayoutId) {
+    setMissionMapLayoutId(selectionResult.mapLayoutId);
+    try {
+      const layout = await loadEditorMapLayout(
+        getEditorMapRepository(),
+        selectionResult.mapLayoutId
+      );
+      selectedCitySize = layout.citySize;
+    } catch (error) {
+      console.error('[Bootstrap] Failed to resolve custom map size:', error);
+    }
+  }
+
+  persistCitySize(selectedCitySize);
   const multiplayerEnabled = selectionResult.multiplayer || false;
   const playerPseudo = selectionResult.pseudo || null;
 

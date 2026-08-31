@@ -6,18 +6,20 @@ import {
 } from './adapters/kenney-city-kit/kenneyCityKitConfig.js';
 import { getKenneyCityKitMeshAdapter } from './adapters/kenney-city-kit/KenneyCityKitMeshAdapter.js';
 import {
-  isEditorNatureTool,
+  isEditorPlacementTool,
   isEditorTerrainTool,
 } from '../../shared/editor-catalog/editorToolIds.js';
 import { getKenneyNatureTerrainAdapter } from './adapters/kenney-nature-terrain/KenneyNatureTerrainAdapter.js';
 import { getKenneyNaturePropAdapter } from './adapters/kenney-nature-props/KenneyNaturePropAdapter.js';
+import { propGroupWorldY } from '../../shared/editor-catalog/kenneyPlacementProfile.js';
+import { WORLD_PLATFORM_Y } from '../../shared/terrain-catalog/terrainWorldContract.js';
 
 /**
  * @param {string} assetId
  * @returns {boolean}
  */
 function isLazyKenneyEditorAsset(assetId) {
-  return isEditorTerrainTool(assetId) || isEditorNatureTool(assetId);
+  return isEditorPlacementTool(assetId);
 }
 
 /**
@@ -127,7 +129,8 @@ export function createPlacementGhostController({ scene, assetManager }) {
     const rotationStep = options.rotationStep ?? 0;
     const footprintWidth = options.footprintWidth ?? gridSize;
     const footprintHeight = options.footprintHeight ?? gridSize;
-    return `${assetId}|${mode}|${valid}|${gridSize}|${footprintWidth}|${footprintHeight}|${rotationStep}`;
+    const anchorY = options.placementBaseLocalY ?? '';
+    return `${assetId}|${mode}|${valid}|${gridSize}|${footprintWidth}|${footprintHeight}|${rotationStep}|${anchorY}`;
   }
 
   function disposeGhost() {
@@ -152,6 +155,23 @@ export function createPlacementGhostController({ scene, assetManager }) {
       mesh.userData.x = x;
       mesh.userData.y = y;
       mesh.userData.gridSize = gridSize;
+    }
+  }
+
+  /**
+   * @param {THREE.Object3D} mesh
+   * @param {number} x
+   * @param {number} y
+   * @param {number} baseLocalY
+   * @param {string} propId
+   */
+  function setEditorStackGhostPosition(mesh, x, y, baseLocalY, assetId, rotationStep = 0) {
+    mesh.position.set(x, WORLD_PLATFORM_Y + propGroupWorldY(assetId, baseLocalY) + 0.04, y);
+    mesh.rotation.y = rotationStep * (Math.PI / 2);
+    if (mesh.userData) {
+      mesh.userData.x = x;
+      mesh.userData.y = y;
+      mesh.userData.gridSize = 1;
     }
   }
 
@@ -199,6 +219,17 @@ export function createPlacementGhostController({ scene, assetManager }) {
       setKenneyTilePosition(mesh, x, y, options);
       return;
     }
+    if (isEditorPlacementTool(assetId) && options.placementBaseLocalY != null) {
+      setEditorStackGhostPosition(
+        mesh,
+        x,
+        y,
+        options.placementBaseLocalY,
+        assetId,
+        options.rotationStep ?? rotationStep
+      );
+      return;
+    }
     setTilePosition(mesh, x, y, options.gridSize ?? 1);
     const step = options.rotationStep ?? rotationStep;
     if (step) {
@@ -217,7 +248,18 @@ export function createPlacementGhostController({ scene, assetManager }) {
    */
   function mountGhost(mesh, assetId, x, y, valid, mode, options = {}) {
     applyGhostAppearance(mesh, { valid, mode });
-    mesh.position.y += 0.04;
+    if (isEditorPlacementTool(assetId) && options.placementBaseLocalY != null) {
+      setEditorStackGhostPosition(
+        mesh,
+        x,
+        y,
+        options.placementBaseLocalY,
+        assetId,
+        options.rotationStep ?? rotationStep
+      );
+    } else {
+      mesh.position.y += 0.04;
+    }
     mesh.renderOrder = 999;
     scene.add(mesh);
 
@@ -280,7 +322,18 @@ export function createPlacementGhostController({ scene, assetManager }) {
       pendingAsyncSpawn = null;
 
       const gridSize = target.options.gridSize ?? 1;
-      setTilePosition(buildMesh, target.x, target.y, gridSize);
+      if (isEditorPlacementTool(target.assetId) && target.options.placementBaseLocalY != null) {
+        setEditorStackGhostPosition(
+          buildMesh,
+          target.x,
+          target.y,
+          target.options.placementBaseLocalY,
+          target.assetId,
+          target.options.rotationStep ?? 0
+        );
+      } else {
+        setTilePosition(buildMesh, target.x, target.y, gridSize);
+      }
       mountGhost(
         buildMesh,
         target.assetId,
