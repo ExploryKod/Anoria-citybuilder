@@ -15,6 +15,9 @@
  * @property {number} baseLocalY
  * @property {string | null} parentId
  * @property {EditorStackAnchor} anchor
+ * @property {import('../../shared/editor-catalog/editorKenneyAssetBehavior.js').EditorAssetMountMode} [mountMode]
+ * @property {import('../../shared/editor-catalog/editorKenneyAssetBehavior.js').EditorVerticalFaceDirection | null} [faceDirection]
+ * @property {string | null} [hostAssetId]
  */
 
 /**

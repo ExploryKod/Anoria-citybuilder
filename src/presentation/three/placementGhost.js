@@ -12,6 +12,8 @@ import {
 import { getKenneyNatureTerrainAdapter } from './adapters/kenney-nature-terrain/KenneyNatureTerrainAdapter.js';
 import { getKenneyNaturePropAdapter } from './adapters/kenney-nature-props/KenneyNaturePropAdapter.js';
 import { propGroupWorldY } from '../../shared/editor-catalog/kenneyPlacementProfile.js';
+import { maxEditorPlacementRotationSteps, isEditorRiverAsset, resolveRiverMountFromRotationStep, resolveVerticalFaceRiverAssetId } from '../../shared/editor-catalog/editorKenneyAssetBehavior.js';
+import { applyKenneyVerticalEdgeMountToObject } from '../../shared/editor-catalog/editorVerticalFaceMount.js';
 import { WORLD_PLATFORM_Y } from '../../shared/terrain-catalog/terrainWorldContract.js';
 
 /**
@@ -123,6 +125,25 @@ export function createPlacementGhostController({ scene, assetManager }) {
   let spawnGeneration = 0;
   /** In-flight async spawn — avoids restarting load every animation frame. */
   let pendingAsyncSpawn = null;
+  let lastMountKey = 'surface';
+  /** Active editor tool id (may differ from visual mesh id, e.g. river → waterfall). */
+  let placementToolId = null;
+
+  function resolvePlacementToolId(assetId, options = {}) {
+    return options.placementToolId ?? placementToolId ?? assetId;
+  }
+
+  function isEditorGhostPlacement(assetId, options = {}) {
+    return isEditorPlacementTool(resolvePlacementToolId(assetId, options));
+  }
+
+  function resolveEditorMountKey(options = {}) {
+    const preview = options.editorGhostPreview;
+    if (preview?.mountMode === 'verticalFace') {
+      return `vf|${preview.faceDirection}|${preview.hostAssetId ?? ''}`;
+    }
+    return 'surface';
+  }
 
   function getSpawnSignature(assetId, valid, mode, options = {}) {
     const gridSize = options.gridSize ?? 1;
@@ -130,7 +151,8 @@ export function createPlacementGhostController({ scene, assetManager }) {
     const footprintWidth = options.footprintWidth ?? gridSize;
     const footprintHeight = options.footprintHeight ?? gridSize;
     const anchorY = options.placementBaseLocalY ?? '';
-    return `${assetId}|${mode}|${valid}|${gridSize}|${footprintWidth}|${footprintHeight}|${rotationStep}|${anchorY}`;
+    const mountKey = resolveEditorMountKey(options);
+    return `${assetId}|${mode}|${valid}|${gridSize}|${footprintWidth}|${footprintHeight}|${rotationStep}|${anchorY}|${mountKey}`;
   }
 
   function disposeGhost() {
@@ -141,6 +163,7 @@ export function createPlacementGhostController({ scene, assetManager }) {
     disposeGhostMaterials(ghost);
     ghost = null;
     currentAssetId = null;
+    placementToolId = null;
     isAnchored = false;
     baseYawAngle = 0;
     rotationStep = 0;
@@ -173,6 +196,56 @@ export function createPlacementGhostController({ scene, assetManager }) {
       mesh.userData.y = y;
       mesh.userData.gridSize = 1;
     }
+  }
+
+  /**
+   * @param {THREE.Object3D} mesh
+   * @param {number} x
+   * @param {number} y
+   * @param {string} assetId
+   * @param {{ placementBaseLocalY?: number, rotationStep?: number, editorGhostPreview?: { ok?: boolean, baseLocalY?: number, x?: number, y?: number, mountMode?: string, faceDirection?: string | null, hostAssetId?: string } }} [options]
+   */
+  function applyEditorStackGhostTransform(mesh, x, y, assetId, options = {}) {
+    const preview = options.editorGhostPreview;
+    const tileX = preview?.x ?? x;
+    const tileY = preview?.y ?? y;
+    const baseLocalY = preview?.baseLocalY ?? options.placementBaseLocalY;
+
+    if (
+      preview?.mountMode === 'verticalFace'
+      && preview.faceDirection
+      && baseLocalY != null
+    ) {
+      const childAssetId = resolveVerticalFaceRiverAssetId(
+        preview.hostAssetId ?? 'nature:cliff_rock'
+      );
+      applyKenneyVerticalEdgeMountToObject(
+        mesh,
+        preview.faceDirection,
+        childAssetId,
+        tileX,
+        tileY,
+        baseLocalY,
+        WORLD_PLATFORM_Y
+      );
+      mesh.position.y += 0.04;
+      if (mesh.userData) {
+        mesh.userData.x = tileX;
+        mesh.userData.y = tileY;
+        mesh.userData.gridSize = 1;
+      }
+      return;
+    }
+
+    if (baseLocalY == null) {
+      return;
+    }
+
+    const step = options.rotationStep ?? rotationStep;
+    const surfaceStep = isEditorRiverAsset(assetId)
+      ? resolveRiverMountFromRotationStep(step).surfaceRotationStep
+      : step;
+    setEditorStackGhostPosition(mesh, tileX, tileY, baseLocalY, assetId, surfaceStep);
   }
 
   /**
@@ -219,14 +292,13 @@ export function createPlacementGhostController({ scene, assetManager }) {
       setKenneyTilePosition(mesh, x, y, options);
       return;
     }
-    if (isEditorPlacementTool(assetId) && options.placementBaseLocalY != null) {
-      setEditorStackGhostPosition(
+    if (isEditorGhostPlacement(assetId, options) && options.placementBaseLocalY != null) {
+      applyEditorStackGhostTransform(
         mesh,
         x,
         y,
-        options.placementBaseLocalY,
-        assetId,
-        options.rotationStep ?? rotationStep
+        resolvePlacementToolId(assetId, options),
+        options
       );
       return;
     }
@@ -248,14 +320,13 @@ export function createPlacementGhostController({ scene, assetManager }) {
    */
   function mountGhost(mesh, assetId, x, y, valid, mode, options = {}) {
     applyGhostAppearance(mesh, { valid, mode });
-    if (isEditorPlacementTool(assetId) && options.placementBaseLocalY != null) {
-      setEditorStackGhostPosition(
+    if (isEditorGhostPlacement(assetId, options) && options.placementBaseLocalY != null) {
+      applyEditorStackGhostTransform(
         mesh,
         x,
         y,
-        options.placementBaseLocalY,
-        assetId,
-        options.rotationStep ?? rotationStep
+        resolvePlacementToolId(assetId, options),
+        options
       );
     } else {
       mesh.position.y += 0.04;
@@ -265,6 +336,7 @@ export function createPlacementGhostController({ scene, assetManager }) {
 
     ghost = mesh;
     currentAssetId = assetId;
+    placementToolId = resolvePlacementToolId(assetId, options);
     lastX = x;
     lastY = y;
     lastValid = valid;
@@ -275,10 +347,11 @@ export function createPlacementGhostController({ scene, assetManager }) {
     isAnchored = mode === 'anchored';
     ghostMode = mode;
     rotationStep = lastRotationStep;
+    lastMountKey = resolveEditorMountKey(options);
 
     if (isKenneyBuildingId(assetId)) {
       baseYawAngle = 0;
-    } else {
+    } else if (!isEditorGhostPlacement(assetId, options)) {
       baseYawAngle = getPlacementYawAngle(mesh);
       if (rotationStep) {
         setPlacementRotationStep(mesh, baseYawAngle, rotationStep);
@@ -295,6 +368,7 @@ export function createPlacementGhostController({ scene, assetManager }) {
    * @param {{ gridSize?: number, footprintWidth?: number, footprintHeight?: number, rotationStep?: number }} [options]
    */
   function spawn(assetId, x, y, valid, mode = 'hover', options = {}) {
+    placementToolId = resolvePlacementToolId(assetId, options);
     const signature = getSpawnSignature(assetId, valid, mode, options);
 
     if (pendingAsyncSpawn?.signature === signature) {
@@ -322,14 +396,14 @@ export function createPlacementGhostController({ scene, assetManager }) {
       pendingAsyncSpawn = null;
 
       const gridSize = target.options.gridSize ?? 1;
-      if (isEditorPlacementTool(target.assetId) && target.options.placementBaseLocalY != null) {
-        setEditorStackGhostPosition(
+      const toolId = resolvePlacementToolId(target.assetId, target.options);
+      if (isEditorGhostPlacement(target.assetId, target.options) && target.options.placementBaseLocalY != null) {
+        applyEditorStackGhostTransform(
           buildMesh,
           target.x,
           target.y,
-          target.options.placementBaseLocalY,
-          target.assetId,
-          target.options.rotationStep ?? 0
+          toolId,
+          target.options
         );
       } else {
         setTilePosition(buildMesh, target.x, target.y, gridSize);
@@ -365,7 +439,7 @@ export function createPlacementGhostController({ scene, assetManager }) {
       return;
     }
 
-    if (isLazyKenneyEditorAsset(assetId)) {
+    if (isLazyKenneyEditorAsset(assetId) || isLazyKenneyEditorAsset(placementToolId ?? assetId)) {
       const gridSize = options.gridSize ?? 1;
       const loadPromise = isEditorTerrainTool(assetId)
         ? getKenneyNatureTerrainAdapter().ensureTerrainTemplate(assetId)
@@ -412,9 +486,12 @@ export function createPlacementGhostController({ scene, assetManager }) {
       return;
     }
 
+    placementToolId = resolvePlacementToolId(assetId, options);
+
     const mode = options.mode ?? 'hover';
     const gridSize = options.gridSize ?? 1;
     const rotationStepOpt = options.rotationStep ?? rotationStep;
+    const mountKey = resolveEditorMountKey(options);
 
     if (isAnchored) {
       return;
@@ -429,6 +506,7 @@ export function createPlacementGhostController({ scene, assetManager }) {
       && ghostMode === mode
       && lastGridSize === gridSize
       && lastRotationStep === rotationStepOpt
+      && lastMountKey === mountKey
     ) {
       return;
     }
@@ -440,6 +518,7 @@ export function createPlacementGhostController({ scene, assetManager }) {
       || ghostMode !== mode
       || lastGridSize !== gridSize
       || lastRotationStep !== rotationStepOpt
+      || lastMountKey !== mountKey
     ) {
       spawn(assetId, x, y, valid, mode, options);
       return;
@@ -448,6 +527,7 @@ export function createPlacementGhostController({ scene, assetManager }) {
     repositionGhost(ghost, assetId, x, y, options);
     lastX = x;
     lastY = y;
+    lastMountKey = mountKey;
     lastGridSize = gridSize;
     lastFootprintWidth = options.footprintWidth ?? gridSize;
     lastFootprintHeight = options.footprintHeight ?? gridSize;
@@ -463,9 +543,9 @@ export function createPlacementGhostController({ scene, assetManager }) {
   /**
    * @param {number} step 0–3
    */
-  function setRotationStep(step) {
+  function setRotationStep(step, maxSteps = 4) {
     if (!ghost || !currentAssetId) return;
-    rotationStep = ((step % 4) + 4) % 4;
+    rotationStep = ((step % maxSteps) + maxSteps) % maxSteps;
     lastRotationStep = rotationStep;
 
     if (isKenneyBuildingId(currentAssetId)) {
@@ -478,6 +558,10 @@ export function createPlacementGhostController({ scene, assetManager }) {
       return;
     }
 
+    if (isEditorGhostPlacement(placementToolId)) {
+      return;
+    }
+
     setPlacementRotationStep(ghost, baseYawAngle, rotationStep);
     if (lastX != null && lastY != null) {
       repositionGhost(ghost, currentAssetId, lastX, lastY, {
@@ -485,6 +569,7 @@ export function createPlacementGhostController({ scene, assetManager }) {
         footprintWidth: lastFootprintWidth,
         footprintHeight: lastFootprintHeight,
         rotationStep,
+        placementToolId,
       });
     }
   }
@@ -493,7 +578,9 @@ export function createPlacementGhostController({ scene, assetManager }) {
     if (!ghost || !currentAssetId) {
       return rotationStep;
     }
-    setRotationStep(rotationStep + 1);
+    const toolId = placementToolId ?? currentAssetId;
+    const maxSteps = maxEditorPlacementRotationSteps(toolId);
+    setRotationStep(rotationStep + 1, maxSteps);
     return rotationStep;
   }
 
@@ -506,6 +593,7 @@ export function createPlacementGhostController({ scene, assetManager }) {
     lastFootprintWidth = 1;
     lastFootprintHeight = 1;
     lastRotationStep = 0;
+    lastMountKey = 'surface';
   }
 
   return {

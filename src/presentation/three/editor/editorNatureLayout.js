@@ -6,6 +6,10 @@
  * @typedef {'terrain' | 'stack' | 'sea'} EditorStackAnchor
  */
 
+/** @typedef {import('../../shared/editor-catalog/editorKenneyAssetBehavior.js').EditorAssetMountMode} EditorAssetMountMode */
+
+/** @typedef {import('../../shared/editor-catalog/editorKenneyAssetBehavior.js').EditorVerticalFaceDirection | null} EditorVerticalFaceDirection */
+
 /**
  * @typedef {object} EditorStackObject
  * @property {string} id
@@ -16,6 +20,9 @@
  * @property {number} baseLocalY — feet surface height relative to WORLD_PLATFORM_Y
  * @property {string | null} parentId — stacked object id, or null when anchored to tile base
  * @property {EditorStackAnchor} anchor — tile terrain / sea / another stack piece
+ * @property {EditorAssetMountMode} mountMode — `surface` (default) or `verticalFace` (river on cliff)
+ * @property {EditorVerticalFaceDirection} faceDirection — set when mountMode is verticalFace
+ * @property {string | null} hostAssetId — cliff asset id when grafted on a vertical face
  */
 
 /** @type {EditorStackObject[]} */
@@ -33,7 +40,12 @@ export function resetEditorNatureLayout() {
  * @param {readonly import('../../../contexts/world-layout/domain/EditorMapLayout.js').EditorStackObjectSnapshot[]} objects
  */
 export function importEditorStackObjects(objects) {
-  stackObjects = objects.map((obj) => ({ ...obj }));
+  stackObjects = objects.map((obj) => ({
+    mountMode: 'surface',
+    faceDirection: null,
+    hostAssetId: null,
+    ...obj,
+  }));
   const maxId = stackObjects.reduce((max, obj) => {
     const match = /^stack-(\d+)$/.exec(obj.id);
     if (!match) return max;
@@ -87,6 +99,9 @@ export function addEditorStackObject(assetId, x, y, rotationY, placement) {
     baseLocalY: placement.baseLocalY,
     parentId: placement.parentId,
     anchor: placement.anchor,
+    mountMode: placement.mountMode ?? 'surface',
+    faceDirection: placement.faceDirection ?? null,
+    hostAssetId: placement.hostAssetId ?? null,
   };
   nextId += 1;
   stackObjects.push(entry);
