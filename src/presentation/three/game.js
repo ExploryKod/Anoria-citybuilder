@@ -94,6 +94,10 @@ import {
   isEditorPlacementTool,
   isEditorTerrainTool,
 } from '../../shared/editor-catalog/editorToolIds.js';
+import {
+  isEditorRiverAsset,
+  resolveRiverMountFromRotationStep,
+} from '../../shared/editor-catalog/editorKenneyAssetBehavior.js';
 import { getKenneyNatureTerrainAdapter } from './adapters/kenney-nature-terrain/KenneyNatureTerrainAdapter.js';
 import { getKenneyNaturePropAdapter } from './adapters/kenney-nature-props/KenneyNaturePropAdapter.js';
 import {
@@ -315,7 +319,24 @@ export function createGame(gameStore, assetManager, citySize = null) {
     return scene.placementGhost?.rotationStep ?? 0;
   }
 
+  function getEditorStackMountOptions() {
+    const step = getPlacementRotationStep();
+    if (!isEditorRiverAsset(activeToolId)) {
+      return { mountMode: 'surface', faceDirection: 'north', rotationStep: step };
+    }
+    const resolved = resolveRiverMountFromRotationStep(step);
+    return {
+      mountMode: resolved.mountMode,
+      faceDirection: resolved.faceDirection,
+      rotationStep: step,
+    };
+  }
+
   function getPlacementRotationY() {
+    if (isEditorRiverAsset(activeToolId)) {
+      const { surfaceRotationStep } = resolveRiverMountFromRotationStep(getPlacementRotationStep());
+      return surfaceRotationStep * (Math.PI / 2);
+    }
     return getPlacementRotationStep() * (Math.PI / 2);
   }
 
@@ -483,7 +504,19 @@ export function createGame(gameStore, assetManager, citySize = null) {
     getFocusedObject: () => scene.focusedObject,
     canPlaceBuildingAtTile: (params) => {
       if (isEditorPlacementTool(params.buildingType)) {
-        return { ok: true, gridSize: 1, footprintWidth: 1, footprintHeight: 1 };
+        const preview = scene.resolveEditorGhostPlacementPreview?.(
+          params.x,
+          params.y,
+          scene.focusedObject,
+          params.buildingType,
+          params.rotationStep ?? 0
+        );
+        return {
+          ok: preview?.ok ?? false,
+          gridSize: 1,
+          footprintWidth: 1,
+          footprintHeight: 1,
+        };
       }
       return canPlaceBuildingAtTile(params);
     },
@@ -496,6 +529,18 @@ export function createGame(gameStore, assetManager, citySize = null) {
         y,
         scene.focusedObject,
         activeToolId
+      ) ?? null;
+    },
+    getEditorGhostPreview: (x, y, rotationStep) => {
+      if (!isEditorPlacementTool(activeToolId)) {
+        return null;
+      }
+      return scene.resolveEditorGhostPlacementPreview?.(
+        x,
+        y,
+        scene.focusedObject,
+        activeToolId,
+        rotationStep
       ) ?? null;
     },
   });
@@ -767,7 +812,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
             y,
             activeToolId,
             getPlacementRotationY(),
-            selectedObject
+            selectedObject,
+            getEditorStackMountOptions()
           );
           placementGhostSession.suppressGhostAtFootprint(x, y, 1);
           return;

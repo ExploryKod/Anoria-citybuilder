@@ -78,7 +78,10 @@ import {
 import {
   resolveEditorPlacementTarget,
   resolveEditorStackPlacement,
+  resolveEditorGhostPlacementPreview as computeEditorGhostPlacementPreview,
 } from '../../shared/editor-catalog/editorStackPlacement.js';
+import { applyKenneyVerticalEdgeMountToObject } from '../../shared/editor-catalog/editorVerticalFaceMount.js';
+import { WORLD_PLATFORM_Y } from '../../shared/terrain-catalog/terrainWorldContract.js';
 import { EDITOR_SEA_TERRAIN_ID, isEditorSeaTerrain } from '../../shared/terrain-catalog/editorSeaTerrain.js';
 
 /** Terminaux tactiles / petits écrans — GPU plus souvent limité (mémoire, contexte WebGL). */
@@ -1896,7 +1899,17 @@ export function createScene(_gameStore, assetManager, deps) {
      * @returns {Promise<import('three').Object3D | null>}
      */
     async function createEditorStackMesh(entry) {
-        const { assetId, x, y, rotationY, baseLocalY, id } = entry;
+        const {
+            assetId,
+            x,
+            y,
+            rotationY,
+            baseLocalY,
+            id,
+            mountMode,
+            faceDirection,
+            hostAssetId,
+        } = entry;
         const kenneyPresentation = resolveKenneyGltfPresentationMode();
 
         if (assetId.startsWith('nature-prop:')) {
@@ -1930,6 +1943,20 @@ export function createScene(_gameStore, assetManager, deps) {
         port.root.traverse((child) => {
             child.frustumCulled = false;
         });
+
+        if (mountMode === 'verticalFace' && faceDirection) {
+            port.root.rotation.set(0, 0, 0);
+            applyKenneyVerticalEdgeMountToObject(
+                port.root,
+                faceDirection,
+                assetId,
+                x,
+                y,
+                baseLocalY,
+                WORLD_PLATFORM_Y
+            );
+        }
+
         return port.root;
     }
 
@@ -1956,12 +1983,36 @@ export function createScene(_gameStore, assetManager, deps) {
     /**
      * @param {number} x
      * @param {number} y
+     * @param {object | null | undefined} pickedObject
+     * @param {string} childToolId
+     * @param {number} [rotationStep=0]
+     */
+    function resolveEditorGhostPlacementPreview(x, y, pickedObject, childToolId, rotationStep = 0) {
+        const terrainId = currentCity?.tiles?.[x]?.[y]?.terrainId ?? 'grass';
+        const citySize = currentCity?.size ?? 0;
+        return computeEditorGhostPlacementPreview(
+            pickedObject,
+            x,
+            y,
+            terrainId,
+            childToolId,
+            getEditorStackObjects(),
+            rotationStep,
+            citySize,
+            (tx, ty) => currentCity?.tiles?.[tx]?.[ty]?.terrainId ?? 'grass'
+        );
+    }
+
+    /**
+     * @param {number} x
+     * @param {number} y
      * @param {string} assetId
      * @param {number} [rotationY=0]
      * @param {object | null | undefined} [pickedObject]
+     * @param {{ mountMode?: import('../../shared/editor-catalog/editorKenneyAssetBehavior.js').EditorAssetMountMode, faceDirection?: import('../../shared/editor-catalog/editorKenneyAssetBehavior.js').EditorVerticalFaceDirection }} [mountOptions]
      * @returns {Promise<boolean>}
      */
-    async function placeEditorStackObject(x, y, assetId, rotationY = 0, pickedObject = null) {
+    async function placeEditorStackObject(x, y, assetId, rotationY = 0, pickedObject = null, mountOptions = {}) {
         const terrainId = currentCity?.tiles?.[x]?.[y]?.terrainId ?? 'grass';
         const target = resolveEditorPlacementTarget(
             pickedObject,
@@ -1970,12 +2021,28 @@ export function createScene(_gameStore, assetManager, deps) {
             terrainId,
             getEditorStackObjects()
         );
-        const placement = resolveEditorStackPlacement(target, assetId, getEditorStackObjects());
+        const placement = resolveEditorStackPlacement(
+            target,
+            assetId,
+            getEditorStackObjects(),
+            {
+                ...mountOptions,
+                citySize: currentCity?.size ?? 0,
+                getTerrainIdAt: (tx, ty) => currentCity?.tiles?.[tx]?.[ty]?.terrainId ?? 'grass',
+            }
+        );
         if (!placement.ok) {
             return false;
         }
 
-        const entry = addEditorStackObject(assetId, x, y, rotationY, placement);
+        const placedAssetId = placement.placedAssetId ?? assetId;
+        const entry = addEditorStackObject(
+            placedAssetId,
+            placement.x,
+            placement.y,
+            rotationY,
+            placement
+        );
         const mesh = await createEditorStackMesh(entry);
         if (!mesh) {
             removeEditorStackObjectById(entry.id);
@@ -1983,7 +2050,7 @@ export function createScene(_gameStore, assetManager, deps) {
         }
 
         editorStackMeshes.set(entry.id, mesh);
-        addMeshToTileZone(mesh, x, y);
+        addMeshToTileZone(mesh, placement.x, placement.y);
         scene.userData.requestShadowRefresh?.();
         return true;
     }
@@ -2763,6 +2830,7 @@ function onTouchEnd(event) {
         removeEditorStackById,
         clearEditorTileBaseToSea,
         resolveEditorPlacementAnchorLocalY,
+        resolveEditorGhostPlacementPreview,
         syncNeighborHamletDeco,
         start,
         stop,

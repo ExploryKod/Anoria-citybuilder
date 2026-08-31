@@ -83,6 +83,15 @@ export function parseEditorMapLayout(raw) {
       baseLocalY: typeof obj.baseLocalY === 'number' ? obj.baseLocalY : 0,
       parentId: typeof obj.parentId === 'string' ? obj.parentId : null,
       anchor: obj.anchor === 'stack' || obj.anchor === 'sea' ? obj.anchor : 'terrain',
+      mountMode: obj.mountMode === 'verticalFace' ? 'verticalFace' : 'surface',
+      faceDirection:
+        obj.faceDirection === 'north'
+        || obj.faceDirection === 'east'
+        || obj.faceDirection === 'south'
+        || obj.faceDirection === 'west'
+          ? obj.faceDirection
+          : null,
+      hostAssetId: typeof obj.hostAssetId === 'string' ? obj.hostAssetId : null,
     };
   });
 

@@ -1,3 +1,5 @@
+import { resolveVerticalFaceRiverAssetId, isEditorRiverAsset, resolveRiverMountFromRotationStep } from '../../shared/editor-catalog/editorKenneyAssetBehavior.js';
+
 /** Tools that must never drive a placement ghost (UI / zones / non-mesh). */
 const NON_PLACEABLE_TOOL_IDS = new Set([
   'bulldoze',
@@ -25,6 +27,26 @@ export function resolveGhostVisualAssetId(assetId) {
     return 'StonePath-001';
   }
   return assetId;
+}
+
+/**
+ * @param {string} assetId — active placement tool id
+ * @param {number} rotationStep
+ * @param {{ mountMode?: string, hostAssetId?: string } | null | undefined} editorGhostPreview
+ * @returns {string}
+ */
+export function resolveEditorGhostVisualAssetId(assetId, rotationStep, editorGhostPreview) {
+  if (!isEditorRiverAsset(assetId)) {
+    return resolveGhostVisualAssetId(assetId);
+  }
+  const mount = resolveRiverMountFromRotationStep(rotationStep);
+  if (mount.mountMode !== 'verticalFace') {
+    return assetId;
+  }
+  if (editorGhostPreview?.hostAssetId) {
+    return resolveVerticalFaceRiverAssetId(editorGhostPreview.hostAssetId);
+  }
+  return 'nature:cliff_waterfall_rock';
 }
 
 /**
@@ -79,6 +101,7 @@ function isTileInFootprint(x, y, footprint) {
  * @param {(toolId: string) => boolean} [deps.isPlaceableTool]
  * @param {(params: object) => { ok: boolean, reason?: string, gridSize: number, footprintWidth?: number, footprintHeight?: number }} deps.canPlaceBuildingAtTile
  * @param {(x: number, y: number) => number | null | undefined} [deps.getPlacementAnchorLocalY]
+ * @param {(x: number, y: number, rotationStep: number) => object | null | undefined} [deps.getEditorGhostPreview]
  * @param {() => object | null | undefined} [deps.getFocusedObject]
  */
 export function createPlacementGhostSession({
@@ -90,6 +113,7 @@ export function createPlacementGhostSession({
   isPlaceableTool = (toolId) => isPlaceableBuildingTool(toolId, assetCatalog),
   canPlaceBuildingAtTile,
   getPlacementAnchorLocalY = () => null,
+  getEditorGhostPreview = () => null,
   getFocusedObject = () => null,
 }) {
   /** @type {object | null} */
@@ -174,13 +198,24 @@ export function createPlacementGhostSession({
     );
 
     const placementBaseLocalY = getPlacementAnchorLocalY(x, y);
+    const editorGhostPreview = getEditorGhostPreview(x, y, rotationStep) ?? undefined;
 
-    ghost.show(resolveGhostVisualAssetId(assetId), x, y, placement.ok, {
+    const ghostX = editorGhostPreview?.x ?? x;
+    const ghostY = editorGhostPreview?.y ?? y;
+
+    ghost.show(
+      resolveEditorGhostVisualAssetId(assetId, rotationStep, editorGhostPreview),
+      ghostX,
+      ghostY,
+      placement.ok,
+      {
       gridSize: ghostGridSize,
       footprintWidth: placement.footprintWidth,
       footprintHeight: placement.footprintHeight,
       rotationStep,
-      placementBaseLocalY: placementBaseLocalY ?? undefined,
+      placementToolId: assetId,
+      placementBaseLocalY: editorGhostPreview?.baseLocalY ?? placementBaseLocalY ?? undefined,
+      editorGhostPreview,
     });
   }
 

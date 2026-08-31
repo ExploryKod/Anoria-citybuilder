@@ -67,6 +67,7 @@ function buildKenneyTerrainCatalogEntry(glbName) {
   }
 
   if (glbName.includes('river') || glbName.startsWith('lily_')) {
+    // Mount rules: editorKenneyAssetBehavior.js (surface + verticalFace on large cliffs).
     return flatGroundEntry(glbName, 0x5ec4e8, ['water', 'ground', 'editor']);
   }
 
