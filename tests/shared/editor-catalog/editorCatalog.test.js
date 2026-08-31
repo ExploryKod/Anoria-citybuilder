@@ -4,9 +4,9 @@ import {
   isEditorTerrainTool,
 } from '../../../src/shared/editor-catalog/editorToolIds.js';
 import {
-  addEditorNatureObject,
-  getEditorNatureObjects,
-  removeEditorNatureObjectAt,
+  addEditorStackObject,
+  getEditorStackObjects,
+  removeTopEditorStackObjectAt,
   resetEditorNatureLayout,
   serializeEditorLayout,
 } from '../../../src/presentation/three/editor/editorNatureLayout.js';
@@ -35,17 +35,31 @@ describe('editorNatureLayout', () => {
     resetEditorNatureLayout();
   });
 
-  test('tracks sparse nature objects', () => {
-    const entry = addEditorNatureObject('nature-prop:tree_simple', 2, 3, 0);
-    expect(entry.assetId).toBe('nature-prop:tree_simple');
-    expect(getEditorNatureObjects()).toHaveLength(1);
+  test('tracks stacked objects at the same tile', () => {
+    const first = addEditorStackObject('nature-prop:rock_smallA', 2, 3, 0, {
+      baseLocalY: -0.03,
+      parentId: null,
+      anchor: 'terrain',
+    });
+    const second = addEditorStackObject('nature-prop:tree_simple', 2, 3, 0, {
+      baseLocalY: 0.2,
+      parentId: first.id,
+      anchor: 'stack',
+    });
+    expect(first.parentId).toBeNull();
+    expect(second.parentId).toBe(first.id);
+    expect(getEditorStackObjects()).toHaveLength(2);
 
-    const removed = removeEditorNatureObjectAt(2, 3);
-    expect(removed?.id).toBe(entry.id);
-    expect(getEditorNatureObjects()).toHaveLength(0);
+    const removedTop = removeTopEditorStackObjectAt(2, 3);
+    expect(removedTop?.id).toBe(second.id);
+    expect(getEditorStackObjects()).toHaveLength(1);
+
+    const removedLast = removeTopEditorStackObjectAt(2, 3);
+    expect(removedLast?.id).toBe(first.id);
+    expect(getEditorStackObjects()).toHaveLength(0);
   });
 
-  test('serializeEditorLayout includes terrain matrix and nature props', () => {
+  test('serializeEditorLayout includes stack metadata', () => {
     const city = {
       size: 2,
       tiles: [
@@ -53,13 +67,18 @@ describe('editorNatureLayout', () => {
         [{ terrainId: 'grass' }, { terrainId: 'grass' }],
       ],
     };
-    addEditorNatureObject('nature-prop:rock_smallA', 1, 0);
+    addEditorStackObject('nature-prop:rock_smallA', 1, 0, 0, {
+      baseLocalY: -0.03,
+      parentId: null,
+      anchor: 'terrain',
+    });
 
     const json = serializeEditorLayout(city);
-    expect(json.version).toBe(1);
+    expect(json.version).toBe(3);
     expect(json.citySize).toBe(2);
     expect(json.terrain[0][1]).toBe('nature:ground_pathStraight');
-    expect(json.natureObjects).toHaveLength(1);
-    expect(json.natureObjects[0].assetId).toBe('nature-prop:rock_smallA');
+    expect(json.stackObjects).toHaveLength(1);
+    expect(json.stackObjects[0].baseLocalY).toBe(-0.03);
+    expect(json.stackObjects[0].anchor).toBe('terrain');
   });
 });

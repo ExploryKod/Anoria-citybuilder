@@ -3,9 +3,25 @@
  * Context / treasury / tick wiring live in composition/.
  */
 
-import { registerAppService, getMultiplayerManager, invokeStartTutorial, getObjectivesManager, getButtonStateManager, isEditorMode } from '../../composition/sessionShell.js';
+import {
+  registerAppService,
+  getMultiplayerManager,
+  invokeStartTutorial,
+  getObjectivesManager,
+  getButtonStateManager,
+  isEditorMode,
+} from '../../composition/sessionShell.js';
+import {
+  getMissionMapLayoutId,
+  isCustomMapLayoutActive,
+  setCustomMapLayoutActive,
+} from '../../shared/gameplay/customMapLayout.js';
+import { loadEditorMapLayout } from '../../contexts/world-layout/application/queries/LoadEditorMapLayout.js';
+import { applyEditorMapLayoutToCity } from '../../contexts/world-layout/application/services/ApplyEditorMapLayoutToCity.js';
+import { createEditorNatureStackLayoutPort } from '../../contexts/world-layout/infrastructure/adapters/presentation/EditorNatureStackLayoutAdapter.js';
+import { getEditorMapRepository } from '../../composition/editorMapRepository.js';
 import { createScene } from './scene.js';
-import { createCity, clearCityTiles } from './city.js';
+import { createCity, clearCityTiles, initializeEditorCityTiles } from './city.js';
 import { syncEmploymentAfterBuildingChange } from '../../composition/syncEmploymentAfterBuildingChange.js';
 import { syncSupplyLinksAfterBuildingChange } from '../../composition/syncSupplyLinksAfterBuildingChange.js';
 import { refreshSupplyPlacementIndex } from '../../contexts/supply/infrastructure/presentation/SupplyPlacementIndex.js';
@@ -89,6 +105,22 @@ import { prefersTouchPlacementFlow } from './touchPlacementInput.js';
 import { canPlaceBuildingAtTileWithSupplyRules } from '../../composition/canPlaceBuildingAtTileWithSupplyRules.js';
 import { isRoadBuildingType } from '../../contexts/construction/domain/policies/FootprintAvailabilityPolicy.js';
 import { createPlacementRotationHud } from './placementRotationHud.js';
+
+/**
+ * @param {object | null | undefined} object
+ * @returns {string | null}
+ */
+function resolveEditorStackIdFromObject(object) {
+  let current = object ?? null;
+  while (current) {
+    const stackId = current.userData?.editorStackId;
+    if (typeof stackId === 'string' && stackId.length > 0) {
+      return stackId;
+    }
+    current = current.parent ?? null;
+  }
+  return null;
+}
 
 ensureGameRuntimeBootstrapped();
 
@@ -324,10 +356,32 @@ export function createGame(gameStore, assetManager, citySize = null) {
   async function loadActiveHamletScene() {
     await ensureHamletCatalog();
     const rows = await constructionApi.listAllBuildingRows();
-    hydrateCityTilesFromRows(city, rows, assetsPrices);
+    const mapLayoutId = getMissionMapLayoutId();
+    let hydrateEditorLayout = false;
+
+    if (mapLayoutId) {
+      setCustomMapLayoutActive(true);
+      const layout = await loadEditorMapLayout(getEditorMapRepository(), mapLayoutId);
+      if (city.size !== layout.citySize) {
+        throw new Error(
+          `City size ${city.size} does not match custom map ${layout.citySize}`
+        );
+      }
+      applyEditorMapLayoutToCity(city, layout, createEditorNatureStackLayoutPort());
+      hydrateEditorLayout = true;
+    } else if (isEditorMode()) {
+      initializeEditorCityTiles(city);
+    } else {
+      hydrateCityTilesFromRows(city, rows, assetsPrices);
+    }
+
     const hamlet = await getHamlet(getActiveHamletId());
-    const seedNature = !isEditorMode() && !hamlet?.natureSeeded && rows.length === 0;
-    await scene.initialize(city, { seedNature });
+    const seedNature = !isEditorMode()
+      && !hydrateEditorLayout
+      && !isCustomMapLayoutActive()
+      && !hamlet?.natureSeeded
+      && rows.length === 0;
+    await scene.initialize(city, { seedNature, hydrateEditorLayout });
     if (seedNature) {
       await markHamletNatureSeeded(getActiveHamletId());
     }
@@ -432,6 +486,17 @@ export function createGame(gameStore, assetManager, citySize = null) {
         return { ok: true, gridSize: 1, footprintWidth: 1, footprintHeight: 1 };
       }
       return canPlaceBuildingAtTile(params);
+    },
+    getPlacementAnchorLocalY: (x, y) => {
+      if (!isEditorPlacementTool(activeToolId)) {
+        return null;
+      }
+      return scene.resolveEditorPlacementAnchorLocalY?.(
+        x,
+        y,
+        scene.focusedObject,
+        activeToolId
+      ) ?? null;
     },
   });
 
@@ -696,22 +761,33 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
     if (isEditorMode()) {
       if (behaviorMode === BEHAVIOR_MODE.BUILD) {
-        if (isEditorTerrainTool(activeToolId)) {
-          const rotationStep = getPlacementRotationStep();
-          await getKenneyNatureTerrainAdapter().ensureTerrainTemplate(activeToolId);
-          city.tiles[x][y].terrainId = activeToolId;
-          scene.replaceTerrainAt(city, x, y, activeToolId, rotationStep);
-          placementGhostSession.suppressGhostAtFootprint(x, y, 1);
-          return;
-        }
-
-        if (isEditorNatureTool(activeToolId)) {
-          await scene.placeEditorNatureProp(x, y, activeToolId, getPlacementRotationY());
+        if (isEditorPlacementTool(activeToolId)) {
+          await scene.placeEditorStackObject(
+            x,
+            y,
+            activeToolId,
+            getPlacementRotationY(),
+            selectedObject
+          );
           placementGhostSession.suppressGhostAtFootprint(x, y, 1);
           return;
         }
         // Playable buildings / roads use the standard build handlers below.
       } else if (behaviorMode === BEHAVIOR_MODE.ERASE) {
+        const stackId = resolveEditorStackIdFromObject(selectedObject);
+        if (stackId && scene.removeEditorStackById(stackId)) {
+          placementGhostSession.sync(selectedObject);
+          return;
+        }
+        if (
+          selectedObject?.userData?.isKenneyNatureTerrain
+          && !selectedObject?.userData?.editorStackId
+        ) {
+          if (scene.clearEditorTileBaseToSea(city, x, y)) {
+            placementGhostSession.sync(selectedObject);
+            return;
+          }
+        }
         if (scene.removeEditorNaturePropAt(x, y)) {
           placementGhostSession.sync(selectedObject);
           return;

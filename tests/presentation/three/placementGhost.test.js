@@ -31,6 +31,8 @@ jest.unstable_mockModule(
   () => ({
     isEditorTerrainTool: (id) => id === 'nature:ground_grass',
     isEditorNatureTool: (id) => id === 'nature-prop:tree_cone_dark',
+    isEditorPlacementTool: (id) =>
+      id === 'nature:ground_grass' || id === 'nature-prop:tree_cone_dark',
   })
 );
 

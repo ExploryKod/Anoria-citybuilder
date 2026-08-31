@@ -21,9 +21,20 @@ export const KENNEY_GROUND_GRASS_COLOR_CSS = terrainColorHexToCss(
 export const SCENE_SEA_COLOR = 0x5ec4e8;
 export const SCENE_SEA_COLOR_CSS = terrainColorHexToCss(SCENE_SEA_COLOR);
 
-/** Flat scene background (sky) until a Kenney sky is added. */
+/** Flat scene background (sky) until a Kenney sky dome is added. */
 export const SCENE_SKY_COLOR = 0xb7d4ea;
 export const SCENE_SKY_COLOR_CSS = terrainColorHexToCss(SCENE_SKY_COLOR);
+
+/**
+ * Editor empty map — sky, fog, and infinite sea plane share one backdrop family
+ * so zooming out never reveals a contrasting rectangle around the build area.
+ */
+export const SCENE_EDITOR_BACKDROP_COLOR = 0x4aafc9;
+export const SCENE_EDITOR_BACKDROP_COLOR_CSS = terrainColorHexToCss(SCENE_EDITOR_BACKDROP_COLOR);
+export const SCENE_EDITOR_SKY_COLOR = SCENE_EDITOR_BACKDROP_COLOR;
+export const SCENE_EDITOR_SKY_COLOR_CSS = SCENE_EDITOR_BACKDROP_COLOR_CSS;
+export const SCENE_EDITOR_SEA_COLOR = SCENE_EDITOR_BACKDROP_COLOR;
+export const SCENE_EDITOR_SEA_COLOR_CSS = SCENE_EDITOR_BACKDROP_COLOR_CSS;
 
 /**
  * Fog tint at the horizon — blended from grass + sky (default gameplay).
@@ -35,12 +46,9 @@ export const SCENE_FOG_COLOR = blendTerrainColorHex(
 );
 export const SCENE_FOG_COLOR_CSS = terrainColorHexToCss(SCENE_FOG_COLOR);
 
-/** Editor mode — sea plane behind the grass grid. */
-export const SCENE_EDITOR_FOG_COLOR = blendTerrainColorHex(
-  SCENE_SEA_COLOR,
-  SCENE_SKY_COLOR,
-  0.35
-);
+/** Editor mode — matches backdrop so the sea plane edge is invisible. */
+export const SCENE_EDITOR_FOG_COLOR = SCENE_EDITOR_BACKDROP_COLOR;
+export const SCENE_EDITOR_FOG_COLOR_CSS = SCENE_EDITOR_BACKDROP_COLOR_CSS;
 
 /** FogExp2 density — raise slightly if the substrate edge is still visible. */
 export const SCENE_FOG_DENSITY = 0.012;

@@ -8,6 +8,7 @@ import {
 import { hideBuildToolHoverPreview } from '../tools/BuildToolHoverPreview.js';
 import { serializeEditorLayout } from '../../three/editor/editorNatureLayout.js';
 import { getSessionCity } from '../../../composition/sessionRuntime.js';
+import { v4 as uuidv4 } from 'uuid';
 import {
   getDefaultCategoryForFabGroup,
   getKenneyEditorCategoriesForFabGroup,
@@ -293,12 +294,20 @@ function exportEditorLayout() {
     return;
   }
 
-  const payload = serializeEditorLayout(city);
+  const defaultName = 'Ma carte';
+  const nameInput = window.prompt('Nom de la carte (affiché dans les missions)', defaultName);
+  if (nameInput === null) {
+    return;
+  }
+  const name = nameInput.trim() || defaultName;
+  const mapId = uuidv4();
+
+  const payload = serializeEditorLayout(city, { id: mapId, name });
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = `anoria-editor-layout-${Date.now()}.json`;
+  anchor.download = `${mapId}.json`;
   anchor.click();
   URL.revokeObjectURL(url);
 }

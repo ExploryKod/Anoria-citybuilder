@@ -9,10 +9,11 @@ const boundsScratch = new THREE.Box3();
  * @param {number} x
  * @param {number} y
  * @param {number} [rotationY=0]
+ * @param {{ baseLocalY?: number, editorStackId?: string }} [options]
  * @returns {import('../SceneTilePort.js').SceneTilePort}
  */
-export function createKenneyNatureSceneTile(propId, x, y, rotationY = 0) {
-  const root = getKenneyNaturePropAdapter().createPropInstance(propId, x, y, rotationY);
+export function createKenneyNatureSceneTile(propId, x, y, rotationY = 0, options = {}) {
+  const root = getKenneyNaturePropAdapter().createPropInstance(propId, x, y, rotationY, options);
   const entry = getNaturePropCatalogEntry(propId);
 
   return {

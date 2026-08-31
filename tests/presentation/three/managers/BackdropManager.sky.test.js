@@ -11,7 +11,7 @@ import {
 } from '../../../../src/shared/gameplay/gameMode.js';
 import {
   KENNEY_GROUND_GRASS_COLOR,
-  SCENE_SEA_COLOR,
+  SCENE_EDITOR_BACKDROP_COLOR,
 } from '../../../../src/shared/terrain-catalog/terrainAtmosphere.js';
 
 const { BackdropManager } = await import(
@@ -37,12 +37,13 @@ describe('BackdropManager', () => {
     expect(scene.getObjectByName('sky-dome')).toBeFalsy();
   });
 
-  test('uses sea ground fill in editor mode', () => {
+  test('editor mode uses flat backdrop only (no sea plane, no fog)', () => {
     setGameMode(GAME_MODES.EDITOR);
+    manager.applyAtmosphere();
     manager.syncGroundFill(16);
-    const groundFill = scene.getObjectByName('kenney-ground-fill');
-    expect(groundFill).toBeTruthy();
-    expect(groundFill.material.color.getHex()).toBe(SCENE_SEA_COLOR);
+    expect(scene.background.getHex()).toBe(SCENE_EDITOR_BACKDROP_COLOR);
+    expect(scene.fog).toBeNull();
+    expect(scene.getObjectByName('kenney-ground-fill')).toBeFalsy();
   });
 
   test('uses grass ground fill in gameplay mode', () => {

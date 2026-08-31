@@ -13,7 +13,8 @@
     "verify:kenney-hex": "node scripts/verifyKenneyHexAtlases.js",
     "classify:kenney-hex": "node scripts/classifyKenneyHexTiles.js",
     "kenney:scan-city-kits": "node scripts/kenney/scanKenneyCityKits.mjs",
-    "kenney:scan-nature-kit": "node scripts/kenney/scanKenneyNatureKit.mjs"
+    "kenney:scan-nature-kit": "node scripts/kenney/scanKenneyNatureKit.mjs",
+    "kenney:scan-placement-profiles": "node scripts/kenney/scanKenneyPlacementProfiles.mjs"
   },
   "dependencies": {
     "@splidejs/splide": "^4.1.4",

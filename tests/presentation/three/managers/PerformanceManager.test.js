@@ -39,9 +39,24 @@ describe('PerformanceManager zone frustum culling', () => {
     scene.add(zoneGroup);
   });
 
+  test('editor mode keeps non-empty zones visible without frustum hiding', () => {
+    zoneGroups[0].visible = false;
+    const manager = new PerformanceManager(scene, cameraWrapper, zoneGroups, []);
+    manager.updateFrustumCulling(true);
+    expect(zoneGroups[0].visible).toBe(true);
+  });
+
+  test('invalidateFrustumCache forces next culling pass', () => {
+    const manager = new PerformanceManager(scene, cameraWrapper, zoneGroups, []);
+    manager.lastFrustumUpdateCameraPosition.copy(cameraWrapper.camera.position);
+    manager.invalidateFrustumCache();
+    manager.updateFrustumCulling(false);
+    expect(zoneGroups[0].visible).toBe(true);
+  });
+
   test('keeps zones visible when terrain children are Groups', () => {
     const manager = new PerformanceManager(scene, cameraWrapper, zoneGroups, []);
-    manager.updateFrustumCulling();
+    manager.updateFrustumCulling(false);
     expect(zoneGroups[0].visible).toBe(true);
   });
 });

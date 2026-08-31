@@ -19,9 +19,22 @@ export class PerformanceManager {
     }
 
     /**
-     * Update frustum culling for zone groups
+     * Force the next frustum pass to run (e.g. after placing editor tiles into an empty zone).
      */
-    updateFrustumCulling() {
+    invalidateFrustumCache() {
+        this.lastFrustumUpdateCameraPosition.set(Infinity, Infinity, Infinity);
+    }
+
+    /**
+     * @param {boolean} [editorMode=false] — editor keeps all zones visible (no aggressive culling).
+     */
+    updateFrustumCulling(editorMode = false) {
+        if (editorMode) {
+            this.zoneGroups.forEach((zoneGroup) => {
+                zoneGroup.visible = zoneGroup.children.length > 0;
+            });
+            return;
+        }
         const currentCameraPos = this.camera.camera.position.clone();
         const distanceMoved = currentCameraPos.distanceTo(this.lastFrustumUpdateCameraPosition);
 

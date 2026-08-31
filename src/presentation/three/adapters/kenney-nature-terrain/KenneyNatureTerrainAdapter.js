@@ -10,6 +10,7 @@ import {
   resolveTerrainRenderOrder,
 } from './KenneyNatureTerrainLoader.js';
 import { getTerrainSurfaceMesh } from './terrainSurfaceMesh.js';
+import { propGroupWorldY } from '../../../../shared/editor-catalog/kenneyPlacementProfile.js';
 
 let adapterInstance = null;
 
@@ -60,7 +61,7 @@ export class KenneyNatureTerrainAdapter {
    * @param {number} x
    * @param {number} y
    * @param {string} [legacyId='grass']
-   * @param {{ compass?: import('../../../../shared/terrain-catalog/beachBorderCompass.js').BeachBorderCompass, surfaceY?: number, presentation?: 'gltf' | 'flat' }} [options]
+   * @param {{ compass?: import('../../../../shared/terrain-catalog/beachBorderCompass.js').BeachBorderCompass, surfaceY?: number, presentation?: 'gltf' | 'flat', baseLocalY?: number, editorStackId?: string, rotationY?: number }} [options]
    * @returns {import('three').Object3D}
    */
   createTerrainTile(terrainId, x, y, legacyId = 'grass', options = {}) {
@@ -89,10 +90,18 @@ export class KenneyNatureTerrainAdapter {
     const group = new THREE.Group();
     group.name = legacyId;
     group.renderOrder = resolveTerrainRenderOrder(terrainId);
+    group.frustumCulled = false;
     group.add(root);
 
     const surfaceY = options.surfaceY ?? entry.surfaceY ?? 0;
-    group.position.set(x, WORLD_PLATFORM_Y + surfaceY, y);
+    if (options.baseLocalY != null) {
+      group.position.set(x, WORLD_PLATFORM_Y + propGroupWorldY(terrainId, options.baseLocalY), y);
+    } else {
+      group.position.set(x, WORLD_PLATFORM_Y + surfaceY, y);
+    }
+    if (typeof options.rotationY === 'number') {
+      group.rotation.y = options.rotationY;
+    }
 
     const surfaceMesh = getTerrainSurfaceMesh(group);
     group.userData = {
@@ -102,6 +111,7 @@ export class KenneyNatureTerrainAdapter {
       isBuilding: false,
       isKenneyNatureTerrain: true,
       terrainId,
+      editorStackId: options.editorStackId ?? null,
       time: 0,
       kenneyTerrainSurfaceMesh: surfaceMesh,
     };

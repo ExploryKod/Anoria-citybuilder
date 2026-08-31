@@ -8,20 +8,33 @@
  * @property {'terrain' | 'nature'} fabGroup
  */
 
+import { classifyCliffCategoryId } from './classifyKenneyCliff.js';
+import { classifyRockStoneCategoryId } from './classifyKenneyRockStone.js';
+
 /** Terrain paint tools — opened from the terrain FAB only. */
 export const KENNEY_EDITOR_TERRAIN_CATEGORY_DEFS = Object.freeze([
   { id: 'editorGround', icon: '🟩', tooltip: 'Terrain', fabGroup: 'terrain' },
-  { id: 'editorPath', icon: '🛤', tooltip: 'Chemins', fabGroup: 'terrain' },
   { id: 'editorRiver', icon: '💧', tooltip: 'Eau', fabGroup: 'terrain' },
   { id: 'editorPlatform', icon: '🏖', tooltip: 'Plateformes', fabGroup: 'terrain' },
-  { id: 'editorCliff', icon: '⛰', tooltip: 'Falaises', fabGroup: 'terrain' },
+  { id: 'editorCliffQuarterRock', icon: '◽', tooltip: 'Falaises quart roche', fabGroup: 'terrain' },
+  { id: 'editorCliffQuarterStone', icon: '◽', tooltip: 'Falaises quart pierre', fabGroup: 'terrain' },
+  { id: 'editorCliffHalfRock', icon: '◾', tooltip: 'Falaises demi roche', fabGroup: 'terrain' },
+  { id: 'editorCliffHalfStone', icon: '◾', tooltip: 'Falaises demi pierre', fabGroup: 'terrain' },
+  { id: 'editorCliffRock', icon: '🪨', tooltip: 'Falaises roche', fabGroup: 'terrain' },
+  { id: 'editorCliffStone', icon: '🏔️', tooltip: 'Falaises pierre', fabGroup: 'terrain' },
 ]);
 
 /** Nature prop tools — opened from the nature FAB only. */
 export const KENNEY_EDITOR_NATURE_CATEGORY_DEFS = Object.freeze([
   { id: 'editorTrees', icon: '🌲', tooltip: 'Arbres', fabGroup: 'nature' },
   { id: 'editorPlants', icon: '🌿', tooltip: 'Plantes', fabGroup: 'nature' },
-  { id: 'editorRocks', icon: '🪨', tooltip: 'Rochers', fabGroup: 'nature' },
+  { id: 'editorRockSmall', icon: '🪨', tooltip: 'Rochers petits', fabGroup: 'nature' },
+  { id: 'editorRockLarge', icon: '🗿', tooltip: 'Rochers grands', fabGroup: 'nature' },
+  { id: 'editorRockTall', icon: '⛰', tooltip: 'Rochers hauts', fabGroup: 'nature' },
+  { id: 'editorStoneSmall', icon: '◽', tooltip: 'Pierres petites', fabGroup: 'nature' },
+  { id: 'editorStoneLarge', icon: '◾', tooltip: 'Pierres grandes', fabGroup: 'nature' },
+  { id: 'editorStoneTall', icon: '🏔️', tooltip: 'Pierres hautes', fabGroup: 'nature' },
+  { id: 'editorStumps', icon: '🪵', tooltip: 'Souches', fabGroup: 'nature' },
   { id: 'editorStructures', icon: '🏗', tooltip: 'Structures', fabGroup: 'nature' },
   { id: 'editorDetails', icon: '🧺', tooltip: 'Détails', fabGroup: 'nature' },
 ]);
@@ -36,8 +49,9 @@ export const KENNEY_EDITOR_CATEGORY_DEFS = Object.freeze([
  * @returns {{ categoryId: string, layer: KenneyEditorLayer }}
  */
 export function classifyKenneyGlbName(glbName) {
-  if (glbName.startsWith('cliff_')) {
-    return { categoryId: 'editorCliff', layer: 'terrain' };
+  const cliffCategoryId = classifyCliffCategoryId(glbName);
+  if (cliffCategoryId) {
+    return { categoryId: cliffCategoryId, layer: 'terrain' };
   }
   if (glbName.startsWith('platform_')) {
     return { categoryId: 'editorPlatform', layer: 'terrain' };
@@ -45,10 +59,10 @@ export function classifyKenneyGlbName(glbName) {
   if (glbName.startsWith('ground_river')) {
     return { categoryId: 'editorRiver', layer: 'terrain' };
   }
-  if (glbName.startsWith('ground_path')) {
-    return { categoryId: 'editorPath', layer: 'terrain' };
+  if (glbName.startsWith('ground_path') || glbName.startsWith('ground_')) {
+    return { categoryId: 'editorGround', layer: 'terrain' };
   }
-  if (glbName.startsWith('ground_')) {
+  if (glbName.startsWith('path_')) {
     return { categoryId: 'editorGround', layer: 'terrain' };
   }
   if (glbName.startsWith('tree_')) {
@@ -65,17 +79,13 @@ export function classifyKenneyGlbName(glbName) {
   ) {
     return { categoryId: 'editorPlants', layer: 'prop' };
   }
-  if (
-    glbName.startsWith('rock_')
-    || glbName.startsWith('stone_')
-    || glbName.startsWith('stump_')
-  ) {
-    return { categoryId: 'editorRocks', layer: 'prop' };
+  const rockStoneCategoryId = classifyRockStoneCategoryId(glbName);
+  if (rockStoneCategoryId) {
+    return { categoryId: rockStoneCategoryId, layer: 'prop' };
   }
   if (
     glbName.startsWith('bridge_')
     || glbName.startsWith('fence_')
-    || glbName.startsWith('path_')
     || glbName.startsWith('tent_')
     || glbName.startsWith('campfire_')
     || glbName.startsWith('statue_')

@@ -1,6 +1,6 @@
 # Nature editor — plan d’implémentation
 
-Mode éditeur accessible depuis le menu (**Éditeur nature**) ou `/game?mode=editor`.
+Mode éditeur accessible depuis le menu (**Éditeur nature**) via `setBootMode('editor')` → `/game`.
 Différences actuelles : fond mer + simulation en pause au démarrage.
 
 ## Déjà en place

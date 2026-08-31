@@ -29,7 +29,11 @@ describe('classifyKenneyNatureAsset', () => {
       layer: 'terrain',
     });
     expect(classifyKenneyGlbName('ground_pathStraight')).toEqual({
-      categoryId: 'editorPath',
+      categoryId: 'editorGround',
+      layer: 'terrain',
+    });
+    expect(classifyKenneyGlbName('path_stone')).toEqual({
+      categoryId: 'editorGround',
       layer: 'terrain',
     });
     expect(classifyKenneyGlbName('ground_riverStraight')).toEqual({
@@ -41,7 +45,15 @@ describe('classifyKenneyNatureAsset', () => {
       layer: 'terrain',
     });
     expect(classifyKenneyGlbName('cliff_block_stone')).toEqual({
-      categoryId: 'editorCliff',
+      categoryId: 'editorCliffStone',
+      layer: 'terrain',
+    });
+    expect(classifyKenneyGlbName('cliff_blockQuarter_rock')).toEqual({
+      categoryId: 'editorCliffQuarterRock',
+      layer: 'terrain',
+    });
+    expect(classifyKenneyGlbName('cliff_half_rock')).toEqual({
+      categoryId: 'editorCliffHalfRock',
       layer: 'terrain',
     });
     expect(classifyKenneyGlbName('tree_simple')).toEqual({
@@ -80,8 +92,8 @@ describe('kenneyNatureKitManifest', () => {
   });
 
   test('organizes tools into emoji category carousels', () => {
-    expect(KENNEY_EDITOR_TERRAIN_CATEGORY_DEFS).toHaveLength(5);
-    expect(KENNEY_EDITOR_NATURE_CATEGORY_DEFS).toHaveLength(5);
+    expect(KENNEY_EDITOR_TERRAIN_CATEGORY_DEFS).toHaveLength(9);
+    expect(KENNEY_EDITOR_NATURE_CATEGORY_DEFS).toHaveLength(11);
 
     for (const category of KENNEY_EDITOR_CATEGORY_DEFS) {
       const ids = EDITOR_TOOLS_BY_CATEGORY[category.id];
