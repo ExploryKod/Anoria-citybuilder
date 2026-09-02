@@ -1,14 +1,16 @@
+import { HOUSE_FOOD_CONSUMPTION_CIRCUIT } from '../../../domain/catalogs/FoodCircuits.js';
+
 /**
  * Orchestration: monthly food consumption for every house in the city.
  */
 export class ConsumeAllHouseFood {
   /**
    * @param {import('../../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
-   * @param {import('./ConsumeHouseFood.js').ConsumeHouseFood} consumeHouseFood
+   * @param {import('./ConsumeResource.js').ConsumeResource} consumeResource
    */
-  constructor(supplyBuildingRepository, consumeHouseFood) {
+  constructor(supplyBuildingRepository, consumeResource) {
     this.supplyBuildingRepository = supplyBuildingRepository;
-    this.consumeHouseFood = consumeHouseFood;
+    this.consumeResource = consumeResource;
   }
 
   /**
@@ -21,12 +23,13 @@ export class ConsumeAllHouseFood {
     const consumptions = [];
 
     for (const house of houses) {
-      const outcome = await this.consumeHouseFood.execute({
-        houseId: house.id,
-        monthIndex,
+      const outcome = await this.consumeResource.execute({
+        buildingId: house.id,
+        period: { monthIndex },
+        circuit: HOUSE_FOOD_CONSUMPTION_CIRCUIT,
       });
       if (outcome.consumed) {
-        consumptions.push(outcome);
+        consumptions.push({ ...outcome, houseId: outcome.buildingId });
       }
     }
 

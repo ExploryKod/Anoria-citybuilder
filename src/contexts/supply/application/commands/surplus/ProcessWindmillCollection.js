@@ -1,4 +1,5 @@
 import { isOperational } from '../../../domain/policies/OperationalGatePolicy.js';
+import { WINDMILL_COLLECT_CIRCUIT } from '../../../domain/catalogs/FoodCircuits.js';
 
 /**
  * Command: collect surplus from all farms for one windmill (December).
@@ -7,18 +8,18 @@ import { isOperational } from '../../../domain/policies/OperationalGatePolicy.js
 export class ProcessWindmillCollection {
   /**
    * @param {import('../../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
-   * @param {import('./WindmillCollectsFromAllFarms.js').WindmillCollectsFromAllFarms} windmillCollectsFromAllFarms
+   * @param {import('./CollectResourceToHub.js').CollectResourceToHub} collectResourceToHub
    * @param {import('./SetWindmillCollectingFlag.js').SetWindmillCollectingFlag} setWindmillCollectingFlag
    * @param {import('./MarkFarmSoldToWindmill.js').MarkFarmSoldToWindmill} markFarmSoldToWindmill
    */
   constructor(
     supplyBuildingRepository,
-    windmillCollectsFromAllFarms,
+    collectResourceToHub,
     setWindmillCollectingFlag,
     markFarmSoldToWindmill
   ) {
     this.supplyBuildingRepository = supplyBuildingRepository;
-    this.windmillCollectsFromAllFarms = windmillCollectsFromAllFarms;
+    this.collectResourceToHub = collectResourceToHub;
     this.setWindmillCollectingFlag = setWindmillCollectingFlag;
     this.markFarmSoldToWindmill = markFarmSoldToWindmill;
   }
@@ -68,14 +69,15 @@ export class ProcessWindmillCollection {
       isCollecting: true,
     });
 
-    const outcome = await this.windmillCollectsFromAllFarms.execute({
-      windmillId,
-      farmRefs,
-      month,
+    const outcome = await this.collectResourceToHub.execute({
+      hubId: windmillId,
+      sourceRefs: farmRefs,
+      period: { month },
+      circuit: WINDMILL_COLLECT_CIRCUIT,
     });
 
     if (!outcome.collected) {
-      if (outcome.reason === 'windmill_not_operational') {
+      if (outcome.reason === 'hub_not_operational') {
         await this.setWindmillCollectingFlag.execute({
           windmillId,
           isCollecting: false,
@@ -102,24 +104,25 @@ export class ProcessWindmillCollection {
       wheat: 0,
       carrot: 0,
       cabbage: 0,
-      total: outcome.totalBaskets,
+      total: outcome.totalUnits,
     };
 
     for (const transfer of outcome.transfers) {
-      if (transfer.crop === 'wheat' || transfer.crop === 'cabbage') {
+      const crop = transfer.category;
+      if (crop === 'wheat' || crop === 'cabbage') {
         await this.markFarmSoldToWindmill.execute({
-          farmId: transfer.farmId,
+          farmId: transfer.sourceId,
           soldToWindmill: true,
         });
       }
 
-      if (lastCollection[transfer.crop] != null) {
-        lastCollection[transfer.crop] += transfer.amount;
+      if (lastCollection[crop] != null) {
+        lastCollection[crop] += transfer.amount;
       }
 
-      await this.supplyBuildingRepository.recordFarmSaleToWindmill(transfer.farmId, {
+      await this.supplyBuildingRepository.recordFarmSaleToWindmill(transfer.sourceId, {
         year: harvestYear,
-        productType: transfer.crop,
+        productType: crop,
         quantity: transfer.amount,
         windmillId,
       });
@@ -134,8 +137,8 @@ export class ProcessWindmillCollection {
       processed: true,
       collected: true,
       windmillId,
-      totalBaskets: outcome.totalBaskets,
-      transfers: outcome.transfers,
+      totalBaskets: outcome.totalUnits,
+      transfers: outcome.transfers.map((t) => ({ farmId: t.sourceId, crop: t.category, amount: t.amount })),
     };
   }
 }

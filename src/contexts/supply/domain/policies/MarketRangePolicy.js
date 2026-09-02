@@ -1,3 +1,5 @@
+import { FOOD_CIRCUIT } from '../catalogs/FoodCircuitCatalog.js';
+
 /**
  * Manhattan distance in tiles.
  */
@@ -13,8 +15,8 @@ export function manhattanDistance(a, b) {
  * @param {{ x: number, y: number }} b
  * @param {number} maxDistance
  */
-export function isWithinMarketRange(a, b, maxDistance = 5) {
-  const max = Number.isFinite(maxDistance) && maxDistance > 0 ? maxDistance : 5;
+export function isWithinMarketRange(a, b, maxDistance = FOOD_CIRCUIT.marketRangeTiles) {
+  const max = Number.isFinite(maxDistance) && maxDistance > 0 ? maxDistance : FOOD_CIRCUIT.marketRangeTiles;
   return manhattanDistance(a, b) <= max;
 }
 
@@ -26,7 +28,7 @@ export function isWithinMarketRange(a, b, maxDistance = 5) {
  * @param {number} maxDistance
  * @returns {object[]}
  */
-export function findHousesInMarketRange(market, buildings, maxDistance = 5) {
+export function findHousesInMarketRange(market, buildings, maxDistance = FOOD_CIRCUIT.marketRangeTiles) {
   if (!market || market.x == null || market.y == null) {
     return [];
   }
@@ -101,7 +103,7 @@ export function isMarketNeighborRef(neighbor) {
  * @param {number} maxDistance
  * @returns {object[]}
  */
-export function findWindmillsInMarketRange(market, buildings, maxDistance = 5) {
+export function findWindmillsInMarketRange(market, buildings, maxDistance = FOOD_CIRCUIT.marketRangeTiles) {
   if (!market || market.x == null || market.y == null) {
     return [];
   }

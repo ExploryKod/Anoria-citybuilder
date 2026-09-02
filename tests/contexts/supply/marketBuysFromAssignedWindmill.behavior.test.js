@@ -5,7 +5,8 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
-import { MarketBuysFromAssignedWindmill } from '../../../src/contexts/supply/application/commands/procurement/MarketBuysFromAssignedWindmill.js';
+import { MARKET_WINDMILL_TRANSFER_CIRCUIT } from '../../../src/contexts/supply/domain/catalogs/FoodCircuits.js';
+import { TransferHubToHub } from '../../../src/contexts/supply/application/commands/procurement/TransferHubToHub.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 
 class InMemorySupplyBuildingRepository {
@@ -81,14 +82,18 @@ describe('Supply — market buys from assigned windmill', () => {
       ]),
       market(marketId, { wheat: 0, carrot: 0, cabbage: 0, food: 0 }, windmillId),
     ]);
-    command = new MarketBuysFromAssignedWindmill(repo);
+    command = new TransferHubToHub(repo);
   });
 
   test('transfers only allocated amount to linked market', async () => {
-    const outcome = await command.execute({ marketId });
+    const outcome = await command.execute({
+      targetId: marketId,
+      period: {},
+      circuit: MARKET_WINDMILL_TRANSFER_CIRCUIT,
+    });
 
-    expect(outcome.bought).toBe(true);
-    expect(outcome.totalBaskets).toBe(6);
+    expect(outcome.transferred).toBe(true);
+    expect(outcome.totalUnits).toBe(6);
 
     const mill = await repo.findById(windmillId);
     const stall = await repo.findById(marketId);
@@ -105,8 +110,12 @@ describe('Supply — market buys from assigned windmill', () => {
       market(orphanId, { wheat: 0, carrot: 0, cabbage: 0, food: 0 }, null)
     );
 
-    const outcome = await command.execute({ marketId: orphanId });
-    expect(outcome.bought).toBe(false);
-    expect(outcome.reason).toBe('no_windmill_link');
+    const outcome = await command.execute({
+      targetId: orphanId,
+      period: {},
+      circuit: MARKET_WINDMILL_TRANSFER_CIRCUIT,
+    });
+    expect(outcome.transferred).toBe(false);
+    expect(outcome.reason).toBe('no_source_link');
   });
 });

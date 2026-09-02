@@ -2,6 +2,10 @@ import { isOperational } from '../../../domain/policies/OperationalGatePolicy.js
 import {
   findHousesInMarketRange,
 } from '../../../domain/policies/MarketRangePolicy.js';
+import {
+  MARKET_WINDMILL_TRANSFER_CIRCUIT,
+  MARKET_DISTRIBUTE_CIRCUIT,
+} from '../../../domain/catalogs/FoodCircuits.js';
 
 /**
  * Orchestration: windmill procurement + distribution for every market in the city.
@@ -9,21 +13,21 @@ import {
 export class RunCityMarketFoodCycle {
   /**
    * @param {import('../../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
-   * @param {import('./MarketBuysFromAssignedWindmill.js').MarketBuysFromAssignedWindmill} marketBuysFromAssignedWindmill
-   * @param {import('../distribution/DistributeFoodFromMarketToHouses.js').DistributeFoodFromMarketToHouses} distributeFoodFromMarketToHouses
+   * @param {import('./TransferHubToHub.js').TransferHubToHub} transferHubToHub
+   * @param {import('../distribution/DistributeResourceToConsumers.js').DistributeResourceToConsumers} distributeResourceToConsumers
    * @param {import('./UpdateMarketWindmillLink.js').UpdateMarketWindmillLink} updateMarketWindmillLink
    * @param {import('../../../infrastructure/presentation/SupplyFoodTraceability.js').SupplyFoodTraceability} traceability
    */
   constructor(
     supplyBuildingRepository,
-    marketBuysFromAssignedWindmill,
-    distributeFoodFromMarketToHouses,
+    transferHubToHub,
+    distributeResourceToConsumers,
     updateMarketWindmillLink,
     traceability
   ) {
     this.supplyBuildingRepository = supplyBuildingRepository;
-    this.marketBuysFromAssignedWindmill = marketBuysFromAssignedWindmill;
-    this.distributeFoodFromMarketToHouses = distributeFoodFromMarketToHouses;
+    this.transferHubToHub = transferHubToHub;
+    this.distributeResourceToConsumers = distributeResourceToConsumers;
     this.updateMarketWindmillLink = updateMarketWindmillLink;
     this.traceability = traceability;
   }
@@ -75,32 +79,34 @@ export class RunCityMarketFoodCycle {
       hasWindmillLink: Boolean(market.supplyWindmillId),
     });
 
-    const buyOutcome = await this.marketBuysFromAssignedWindmill.execute({
-      marketId: market.id,
-      month,
+    const buyOutcome = await this.transferHubToHub.execute({
+      targetId: market.id,
+      period: { month },
+      circuit: MARKET_WINDMILL_TRANSFER_CIRCUIT,
     });
 
-    if (buyOutcome.bought) {
+    if (buyOutcome.transferred) {
       await this.traceability.recordWindmillToMarketTransfers(
         timeInfo,
         market.id,
-        buyOutcome.transfers
+        buyOutcome.transfers.map((t) => ({ windmillId: t.sourceId, crop: t.category, amount: t.amount }))
       );
     }
 
     const housesInRange = findHousesInMarketRange(marketRow, allBuildings, maxDistance);
     if (housesInRange.length > 0) {
-      const distributeOutcome = await this.distributeFoodFromMarketToHouses.execute({
-        marketId: market.id,
-        houseRefs: housesInRange,
-        season,
+      const distributeOutcome = await this.distributeResourceToConsumers.execute({
+        sourceId: market.id,
+        consumerRefs: housesInRange,
+        period: { season },
+        circuit: MARKET_DISTRIBUTE_CIRCUIT,
       });
 
       if (distributeOutcome.distributed) {
         await this.traceability.recordMarketToHouseTransfers(
           timeInfo,
           market.id,
-          distributeOutcome.transfers
+          distributeOutcome.transfers.map((t) => ({ houseId: t.consumerId, crop: t.category, amount: t.amount }))
         );
       }
     }

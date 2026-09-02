@@ -7,7 +7,8 @@ import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domai
 import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
 import { canFarmHarvest } from '../../../src/contexts/supply/domain/policies/HarvestSeasonPolicy.js';
 import { annualFarmYield } from '../../../src/contexts/supply/domain/policies/FarmYieldPolicy.js';
-import { HarvestFarmCrop } from '../../../src/contexts/supply/application/commands/harvest/HarvestFarmCrop.js';
+import { FARM_HARVEST_CIRCUIT } from '../../../src/contexts/supply/domain/catalogs/FoodCircuits.js';
+import { ProduceResource } from '../../../src/contexts/supply/application/commands/harvest/ProduceResource.js';
 import { HarvestAllFarmCrops } from '../../../src/contexts/supply/application/commands/harvest/HarvestAllFarmCrops.js';
 
 class InMemorySupplyBuildingRepository {
@@ -38,11 +39,12 @@ class InMemorySupplyBuildingRepository {
     if (b) b.stocks = { ...createFoodStock(stocks) };
   }
 
-  async saveHarvestMetadata(id, { lastProductionYear, lastProductionMonth }) {
+  async updateBuildingFields(id, fields) {
     const b = this.raw.get(id);
     if (!b) return;
-    if (lastProductionYear !== undefined) b.lastProductionYear = lastProductionYear;
-    if (lastProductionMonth !== undefined) b.lastProductionMonth = lastProductionMonth;
+    for (const key of Object.keys(fields)) {
+      if (fields[key] !== undefined) b[key] = fields[key];
+    }
   }
 
   async findFarms() {
@@ -82,7 +84,7 @@ describe('Supply — farm harvest', () => {
     });
   });
 
-  describe('HarvestFarmCrop', () => {
+  describe('ProduceResource (farm harvest circuit)', () => {
     let repo;
     let useCase;
 
@@ -91,21 +93,20 @@ describe('Supply — farm harvest', () => {
         farm('Farm-Wheat-2-3', 'Farm-Wheat'),
         farm('Farm-Carrot-4-5', 'Farm-Carrot'),
       ]);
-      useCase = new HarvestFarmCrop(repo);
+      useCase = new ProduceResource(repo);
     });
 
     test('adds 78 baskets of crop in autumn once per year', async () => {
       const outcome = await useCase.execute({
-        farmId: 'Farm-Wheat-2-3',
-        season: 'autumn',
-        year: 3,
-        monthIndex: 9,
+        buildingId: 'Farm-Wheat-2-3',
+        period: { season: 'autumn', year: 3, monthIndex: 9 },
+        circuit: FARM_HARVEST_CIRCUIT,
       });
 
       expect(outcome).toEqual({
-        harvested: true,
-        farmId: 'Farm-Wheat-2-3',
-        crop: 'wheat',
+        produced: true,
+        buildingId: 'Farm-Wheat-2-3',
+        category: 'wheat',
         amount: 78,
       });
 
@@ -117,37 +118,45 @@ describe('Supply — farm harvest', () => {
 
     test('refuses second harvest in same year', async () => {
       await useCase.execute({
-        farmId: 'Farm-Wheat-2-3',
-        season: 'autumn',
-        year: 3,
+        buildingId: 'Farm-Wheat-2-3',
+        period: { season: 'autumn', year: 3 },
+        circuit: FARM_HARVEST_CIRCUIT,
       });
 
       const second = await useCase.execute({
-        farmId: 'Farm-Wheat-2-3',
-        season: 'autumn',
-        year: 3,
+        buildingId: 'Farm-Wheat-2-3',
+        period: { season: 'autumn', year: 3 },
+        circuit: FARM_HARVEST_CIRCUIT,
       });
 
-      expect(second.harvested).toBe(false);
-      expect(second.reason).toBe('already_harvested_this_year');
+      expect(second.produced).toBe(false);
+      expect(second.reason).toBe('already_produced_this_period');
       expect((await repo.findById('Farm-Wheat-2-3')).stocks.wheat).toBe(78);
     });
 
     test('allows harvest again next year', async () => {
-      await useCase.execute({ farmId: 'Farm-Wheat-2-3', season: 'autumn', year: 3 });
-      await useCase.execute({ farmId: 'Farm-Wheat-2-3', season: 'autumn', year: 4 });
+      await useCase.execute({
+        buildingId: 'Farm-Wheat-2-3',
+        period: { season: 'autumn', year: 3 },
+        circuit: FARM_HARVEST_CIRCUIT,
+      });
+      await useCase.execute({
+        buildingId: 'Farm-Wheat-2-3',
+        period: { season: 'autumn', year: 4 },
+        circuit: FARM_HARVEST_CIRCUIT,
+      });
 
       expect((await repo.findById('Farm-Wheat-2-3')).stocks.wheat).toBe(156);
     });
 
     test('refuses outside autumn', async () => {
       const outcome = await useCase.execute({
-        farmId: 'Farm-Wheat-2-3',
-        season: 'summer',
-        year: 3,
+        buildingId: 'Farm-Wheat-2-3',
+        period: { season: 'summer', year: 3 },
+        circuit: FARM_HARVEST_CIRCUIT,
       });
-      expect(outcome.harvested).toBe(false);
-      expect(outcome.reason).toBe('not_harvest_season');
+      expect(outcome.produced).toBe(false);
+      expect(outcome.reason).toBe('not_production_period');
     });
 
     test('refuses farm without road access or workers', async () => {
@@ -155,16 +164,26 @@ describe('Supply — farm harvest', () => {
         farm('Farm-Wheat-2-3', 'Farm-Wheat', { roadCount: 0 }),
         farm('Farm-Carrot-4-5', 'Farm-Carrot', { worker: 0, workerNeed: 1 }),
       ]);
-      useCase = new HarvestFarmCrop(repo);
+      useCase = new ProduceResource(repo);
 
       expect(
-        (await useCase.execute({ farmId: 'Farm-Wheat-2-3', season: 'autumn', year: 1 }))
-          .reason
-      ).toBe('farm_not_operational');
+        (
+          await useCase.execute({
+            buildingId: 'Farm-Wheat-2-3',
+            period: { season: 'autumn', year: 1 },
+            circuit: FARM_HARVEST_CIRCUIT,
+          })
+        ).reason
+      ).toBe('not_operational');
       expect(
-        (await useCase.execute({ farmId: 'Farm-Carrot-4-5', season: 'autumn', year: 1 }))
-          .reason
-      ).toBe('farm_not_operational');
+        (
+          await useCase.execute({
+            buildingId: 'Farm-Carrot-4-5',
+            period: { season: 'autumn', year: 1 },
+            circuit: FARM_HARVEST_CIRCUIT,
+          })
+        ).reason
+      ).toBe('not_operational');
     });
   });
 
@@ -175,8 +194,8 @@ describe('Supply — farm harvest', () => {
         farm('Farm-Carrot-4-5', 'Farm-Carrot'),
         farm('Farm-Cabbage-6-7', 'Farm-Cabbage', { worker: 0, workerNeed: 1 }),
       ]);
-      const harvestOne = new HarvestFarmCrop(repo);
-      const harvestAll = new HarvestAllFarmCrops(repo, harvestOne);
+      const produceResource = new ProduceResource(repo);
+      const harvestAll = new HarvestAllFarmCrops(repo, produceResource);
 
       const outcome = await harvestAll.execute({
         season: 'autumn',

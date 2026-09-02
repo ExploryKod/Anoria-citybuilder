@@ -1,9 +1,8 @@
+import { FOOD_CIRCUIT } from '../catalogs/FoodCircuitCatalog.js';
+
 /**
- * Annual farm crop yield in baskets.
- *
- * 6 citizens × 12 months = 72 baskets/year for consumption,
- * plus 6 baskets buffer while the market procures the next load.
+ * Annual farm crop yield in baskets. See FoodCircuitCatalog for the value.
  */
 export function annualFarmYield() {
-  return 78;
+  return FOOD_CIRCUIT.farmAnnualYield;
 }

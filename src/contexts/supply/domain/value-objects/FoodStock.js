@@ -1,11 +1,20 @@
 import { CROPS } from './CropType.js';
+import {
+  createResourceStock,
+  getCategoryAmount,
+  takeCategoryAmount,
+  addCategoryAmount,
+  capResourceStockAt,
+} from './ResourceStock.js';
 
 /** @typedef {'wheat' | 'carrot' | 'cabbage' | 'fruit' | 'game'} FoodCategory */
 
 export const FOOD_CATEGORIES = Object.freeze([...CROPS, 'fruit', 'game']);
+const TOTAL_KEY = 'food';
 
 /**
  * Building food stock (farm crops, gathering/hunting, total food).
+ * Food's own instantiation of the generic ResourceStock mechanic.
  *
  * @param {object} [raw]
  * @returns {Readonly<{
@@ -18,18 +27,7 @@ export const FOOD_CATEGORIES = Object.freeze([...CROPS, 'fruit', 'game']);
  * }>}
  */
 export function createFoodStock(raw = {}) {
-  const wheat = nonNegInt(raw.wheat);
-  const carrot = nonNegInt(raw.carrot);
-  const cabbage = nonNegInt(raw.cabbage);
-  const fruit = nonNegInt(raw.fruit);
-  const game = nonNegInt(raw.game);
-  const explicitFood = raw.food;
-  const food =
-    explicitFood === undefined || explicitFood === null
-      ? wheat + carrot + cabbage + fruit + game
-      : nonNegInt(explicitFood);
-
-  return Object.freeze({ wheat, carrot, cabbage, fruit, game, food });
+  return createResourceStock(raw, FOOD_CATEGORIES, TOTAL_KEY);
 }
 
 export function emptyFoodStock() {
@@ -41,7 +39,7 @@ export function emptyFoodStock() {
  * @param {FoodCategory} category
  */
 export function getFoodCategoryAmount(stock, category) {
-  return stock?.[category] ?? 0;
+  return getCategoryAmount(stock, category);
 }
 
 /**
@@ -57,19 +55,7 @@ export function getCropAmount(stock, crop) {
  * @returns {ReturnType<typeof createFoodStock>}
  */
 export function takeFoodCategory(stock, category, amount) {
-  const n = nonNegInt(amount);
-  const current = createFoodStock(stock);
-  const available = getFoodCategoryAmount(current, category);
-  const taken = Math.min(available, n);
-  return createFoodStock({
-    wheat: current.wheat,
-    carrot: current.carrot,
-    cabbage: current.cabbage,
-    fruit: current.fruit,
-    game: current.game,
-    [category]: available - taken,
-    food: Math.max(0, current.food - taken),
-  });
+  return takeCategoryAmount(stock, category, amount, FOOD_CATEGORIES, TOTAL_KEY);
 }
 
 /**
@@ -85,17 +71,7 @@ export function takeCrop(stock, crop, amount) {
  * @returns {ReturnType<typeof createFoodStock>}
  */
 export function addCrop(stock, crop, amount) {
-  const n = nonNegInt(amount);
-  const current = createFoodStock(stock);
-  return createFoodStock({
-    wheat: current.wheat,
-    carrot: current.carrot,
-    cabbage: current.cabbage,
-    fruit: current.fruit,
-    game: current.game,
-    [crop]: getCropAmount(current, crop) + n,
-    food: current.food + n,
-  });
+  return addCategoryAmount(stock, crop, amount, FOOD_CATEGORIES, TOTAL_KEY);
 }
 
 /**
@@ -103,31 +79,5 @@ export function addCrop(stock, crop, amount) {
  * @returns {ReturnType<typeof createFoodStock>}
  */
 export function capStockAt(stock, maxStock) {
-  const cap = nonNegInt(maxStock);
-  const normalized = createFoodStock(stock);
-  if (normalized.food <= cap) {
-    return normalized;
-  }
-
-  const totalUnits = FOOD_CATEGORIES.reduce(
-    (sum, category) => sum + getFoodCategoryAmount(normalized, category),
-    0,
-  );
-  if (totalUnits <= 0) {
-    return createFoodStock({ ...normalized, food: cap });
-  }
-
-  const factor = cap / normalized.food;
-  /** @type {Record<FoodCategory, number>} */
-  const next = { wheat: 0, carrot: 0, cabbage: 0, fruit: 0, game: 0 };
-  for (const category of FOOD_CATEGORIES) {
-    next[category] = Math.round(getFoodCategoryAmount(normalized, category) * factor);
-  }
-  return createFoodStock(next);
-}
-
-function nonNegInt(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n) || n <= 0) return 0;
-  return Math.floor(n);
+  return capResourceStockAt(stock, maxStock, FOOD_CATEGORIES, TOTAL_KEY);
 }

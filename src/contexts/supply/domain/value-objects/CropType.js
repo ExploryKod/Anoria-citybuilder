@@ -1,6 +1,8 @@
+import { FOOD_CIRCUIT } from '../catalogs/FoodCircuitCatalog.js';
+
 /** @typedef {'wheat' | 'carrot' | 'cabbage'} Crop */
 
-export const CROPS = Object.freeze(['wheat', 'carrot', 'cabbage']);
+export const CROPS = FOOD_CIRCUIT.crops;
 
 /**
  * @param {string} farmType
@@ -8,10 +10,8 @@ export const CROPS = Object.freeze(['wheat', 'carrot', 'cabbage']);
  */
 export function cropFromFarmType(farmType) {
   const type = typeof farmType === 'string' ? farmType : '';
-  if (type.includes('Wheat') || type.includes('wheat')) return 'wheat';
-  if (type.includes('Carrot') || type.includes('carrot')) return 'carrot';
-  if (type.includes('Cabbage') || type.includes('cabbage')) return 'cabbage';
-  return null;
+  const entry = FOOD_CIRCUIT.farmTypeToCrop.find(({ match }) => match.test(type));
+  return entry ? entry.crop : null;
 }
 
 /**

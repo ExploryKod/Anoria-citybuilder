@@ -3,7 +3,7 @@
  *
  * Every inhabited house gains foraged fruit and hunted game each month,
  * independent from farms and markets. Level 2 houses still consume farm
- * crops via `ConsumeHouseFood`.
+ * crops via `ConsumeResource`.
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
@@ -41,10 +41,12 @@ class InMemorySupplyBuildingRepository {
     if (b) b.stocks = { ...createFoodStock(stocks) };
   }
 
-  async saveSubsistenceMetadata(id, { lastSubsistenceMonth }) {
+  async updateBuildingFields(id, fields) {
     const b = this.raw.get(id);
     if (!b) return;
-    if (lastSubsistenceMonth !== undefined) b.lastSubsistenceMonth = lastSubsistenceMonth;
+    for (const key of Object.keys(fields)) {
+      if (fields[key] !== undefined) b[key] = fields[key];
+    }
   }
 
   async findHouses() {

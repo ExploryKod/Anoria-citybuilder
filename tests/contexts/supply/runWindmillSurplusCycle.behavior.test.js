@@ -5,7 +5,7 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
-import { WindmillCollectsFromAllFarms } from '../../../src/contexts/supply/application/commands/surplus/WindmillCollectsFromAllFarms.js';
+import { CollectResourceToHub } from '../../../src/contexts/supply/application/commands/surplus/CollectResourceToHub.js';
 import { SetWindmillCollectingFlag } from '../../../src/contexts/supply/application/commands/surplus/SetWindmillCollectingFlag.js';
 import { MarkFarmSoldToWindmill } from '../../../src/contexts/supply/application/commands/surplus/MarkFarmSoldToWindmill.js';
 import { MarkWindmillCollectingSeason } from '../../../src/contexts/supply/application/commands/surplus/MarkWindmillCollectingSeason.js';
@@ -155,7 +155,7 @@ describe('Supply — windmill surplus cycle', () => {
       }),
     ]);
 
-    const collect = new WindmillCollectsFromAllFarms(repo);
+    const collect = new CollectResourceToHub(repo);
     const setCollecting = new SetWindmillCollectingFlag(repo);
     const markSold = new MarkFarmSoldToWindmill(repo);
     const process = new ProcessWindmillCollection(
