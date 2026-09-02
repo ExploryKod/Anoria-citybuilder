@@ -6,6 +6,8 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { AnimationMixer } from 'three';
 import {applyHoverColor, resetHoveredObject, resetObjectColor} from './meshUtils.js';
+import { resolveIconAppearance } from './meshs/resolveStatusIconAnchor.js';
+import { STATUS_ICON_DEFAULTS } from './meshs/StatusIconDefaults.js';
 import {  textures  } from './meshs/data.js'
 import {
     bulldozeSelected,
@@ -52,8 +54,8 @@ import { pickTileFromRaycast } from './scene-board/tileRaycast.js';
 import { pickEditorTileOnGroundPlane } from './scene-board/editorTileGroundPick.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
 import { showWarningToast, showInfoToast } from '../dom/shell/ToastNotifier.js';
-import { getKenneyCityKitMeshAdapter } from './adapters/kenney-city-kit/KenneyCityKitMeshAdapter.js';
 import { BUILDING_ASSET_CATALOG } from './meshs/BuildingAssetCatalog.js';
+import { resolveAndCreateBuildingMesh } from './meshs/resolveBuildingMesh.js';
 import { scenePresentation } from './presentationConfig.js';
 import { createSceneFog } from '../../shared/terrain-catalog/terrainAtmosphere.js';
 import { isEditorMode } from '../../composition/sessionShell.js';
@@ -810,18 +812,15 @@ export function createScene(_gameStore, assetManager, deps) {
                 if (!catalogEntry) {
                     throw new Error(`[BuildingAssetCatalog] No catalog entry for "${newBuildingId}"`);
                 }
-                const resolvedAssetId = catalogEntry.asset;
 
                 if (catalogEntry.adapter === 'kenneyCityKit') {
-                    const kenneyMesh = await getKenneyCityKitMeshAdapter().createBuilding(x, y, {
+                    const kenneyMesh = await resolveAndCreateBuildingMesh({
+                        buildingId: newBuildingId,
+                        x,
+                        y,
                         rotationStep: placementRotationStep,
-                        buildingId: resolvedAssetId,
+                        assetManager,
                     });
-                    if (!kenneyMesh) {
-                        throw new Error(
-                            `[BuildingAssetCatalog] No Kenney mesh produced for "${newBuildingId}" (asset "${resolvedAssetId}")`
-                        );
-                    }
                     removeInteractiveObject(buildings[x][y]);
                     buildings[x][y] = kenneyMesh;
                     scene.userData.requestShadowRefresh?.();
@@ -843,22 +842,13 @@ export function createScene(_gameStore, assetManager, deps) {
                     return;
                 }
 
-                if (catalogEntry.adapter !== 'villageTown') {
-                    throw new Error(
-                        `[BuildingAssetCatalog] Unknown adapter "${catalogEntry.adapter}" for "${newBuildingId}"`
-                    );
-                }
-
-                const mesh = assetManager.createAsset(resolvedAssetId, x, y, {
+                const mesh = await resolveAndCreateBuildingMesh({
+                    buildingId: newBuildingId,
+                    x,
+                    y,
                     rotationStep: placementRotationStep,
+                    assetManager,
                 });
-                // Asset pas encore chargé / id inconnu : ne pas écraser ni .add(undefined)
-                // (sinon spam THREE à chaque tick via needsMeshPlacement).
-                if (!mesh) {
-                    throw new Error(
-                        `[BuildingAssetCatalog] No village-town mesh produced for "${newBuildingId}" (asset "${resolvedAssetId}")`
-                    );
-                }
                 removeInteractiveObject(buildings[x][y]);
                 buildings[x][y] = mesh;
                 // Center multi-tile meshes on their footprint (anchor is NW corner).
@@ -920,65 +910,8 @@ export function createScene(_gameStore, assetManager, deps) {
             }
         }
 
-        // Define status icons metadata for all buildings
-        const statutsIconsMeta = {
-            road: {
-                position : {x: -1, y: 1, z: 1},
-                scale : {x: 1.2, y: 1.2, z: 1},
-                spriteColor: null,
-                backgroundColor: null
-            },
-            food: {
-                position : {x: -0.5, y: 1, z: 0},
-                scale : {x: 1.0, y: 1.0, z: 1},
-                spriteColor: null,
-                backgroundColor: null
-            },
-            // Different positions for different farm sprites
-            'no-food': {
-                position : {x: -0.5, y: 1, z: 0},
-                scale : {x: 1.0, y: 1.0, z: 1},
-                spriteColor: null,
-                backgroundColor: null
-            },
-            'no-food-farm': {
-                position : {x: -0.8, y: 0.5, z: -0.2},
-                scale : {x: 0.6, y: 0.6, z: 0.6},
-                spriteColor: 0xFFFF00, // Yellow
-                backgroundColor: null
-            },
-            'grow-food': {
-                position : {x: -0.8, y: 0.5, z: -0.2},
-                scale : {x: 0.4, y: 0.4, z: 0.4},
-                spriteColor: null, // Keep original colors
-                backgroundColor: 0xFFE8E8 
-            },
-            'harvest': {
-                position : {x: -0.8, y: 0.5, z: -0.2},
-                scale : {x: 0.4, y: 0.4, z: 0.4},
-                spriteColor: null, // Keep original colors
-                backgroundColor: 0xFFE8E8
-            },
-            'sell-food': {
-                position : {x: -0.8, y: 0.5, z: -0.2},
-                scale : {x: 0.4, y: 0.4, z: 0.4},
-                spriteColor: null, // Keep original colors
-                backgroundColor: 0xFFE8E8
-            },
-            'isBuying': {
-                position : {x: -0.5, y: 0.5, z: 0},
-                scale : {x: 0.6, y: 0.6, z: 1},
-                spriteColor: 0x00FF00, // Green color
-                backgroundColor: 0xFFFFFF // White background
-            },
-            // No worker sprite (red) - shown when farm has no employees
-            'no-work': {
-                position : {x: -0.8, y: 0.5, z: -0.2},
-                scale : {x: 0.5, y: 0.5, z: 0.5},
-                spriteColor: 0xFF0000, // Red color
-                backgroundColor: 0xFFE8E8 // Light red background
-            }
-        };
+        // Status icon defaults — shared with /placement.html, see StatusIconDefaults.js
+        const statutsIconsMeta = STATUS_ICON_DEFAULTS;
 
         for(let x = 0; x < city.size; x++) {
             for(let y = 0; y < city.size; y++) {
@@ -1319,11 +1252,14 @@ export function createScene(_gameStore, assetManager, deps) {
                     };
 
                     if (buildings[x][y]) {
+                        const marketRoadIcon = resolveIconAppearance(
+                            buildings[x][y], 'road', statutsIconsMeta.road.position, marketRoadScale
+                        );
                         await syncRoadAccess({
                             instanceId: currentInstanceId,
                             mesh: buildings[x][y],
-                            position: statutsIconsMeta.road.position,
-                            scale: marketRoadScale,
+                            position: marketRoadIcon.position,
+                            scale: marketRoadIcon.scale,
                         });
                     }
 
@@ -1334,14 +1270,17 @@ export function createScene(_gameStore, assetManager, deps) {
 
                         if (isBuying === true) {
                             const buyingMeta = statutsIconsMeta['isBuying'];
+                            const buyingIcon = resolveIconAppearance(
+                                buildings[x][y], 'isBuying', buyingMeta.position, buyingMeta.scale
+                            );
 
                             if (!noFarmsNearby) {
                                 assetManager.setStatusSprite(
                                     buildings[x][y],
                                     textures['isBuying'],
                                     'isBuying',
-                                    buyingMeta.scale,
-                                    buyingMeta.position,
+                                    buyingIcon.scale,
+                                    buyingIcon.position,
                                     productionSpriteVisible(true),
                                     buyingMeta.spriteColor,
                                     buyingMeta.backgroundColor
@@ -1351,20 +1290,26 @@ export function createScene(_gameStore, assetManager, deps) {
                                     buildings[x][y],
                                     textures['isBuying'],
                                     'isBuying',
-                                    buyingMeta.scale,
-                                    buyingMeta.position,
+                                    buyingIcon.scale,
+                                    buyingIcon.position,
                                     productionSpriteVisible(true),
                                     0xFF6600,
                                     0xFFCCCC
                                 );
                             }
                         } else {
+                            const buyingIcon = resolveIconAppearance(
+                                buildings[x][y],
+                                'isBuying',
+                                statutsIconsMeta['isBuying'].position,
+                                statutsIconsMeta['isBuying'].scale
+                            );
                             assetManager.setStatusSprite(
                                 buildings[x][y],
                                 textures['isBuying'],
                                 'isBuying',
-                                statutsIconsMeta['isBuying'].scale,
-                                statutsIconsMeta['isBuying'].position,
+                                buyingIcon.scale,
+                                buyingIcon.position,
                                 false,
                                 null,
                                 null
@@ -1378,12 +1323,15 @@ export function createScene(_gameStore, assetManager, deps) {
                             (marketSupplyStocks.cabbage || 0) > 0 ||
                             (marketSupplyStocks.food || 0) > 0;
 
+                        const marketNoFoodIcon = resolveIconAppearance(
+                            buildings[x][y], 'no-food', statutsIconsMeta['no-food'].position, statutsIconsMeta['no-food'].scale
+                        );
                         assetManager.setStatusSprite(
                             buildings[x][y],
                             textures['nofood'],
                             'no-food',
-                            statutsIconsMeta['no-food'].scale,
-                            statutsIconsMeta['no-food'].position,
+                            marketNoFoodIcon.scale,
+                            marketNoFoodIcon.position,
                             productionSpriteVisible(!hasFoodBaskets)
                         );
                     }
@@ -1407,31 +1355,32 @@ export function createScene(_gameStore, assetManager, deps) {
                     };
 
                     if (buildings[x][y]) {
+                        const windmillRoadIcon = resolveIconAppearance(
+                            buildings[x][y], 'road', statutsIconsMeta.road.position, windmillRoadScale
+                        );
                         await syncRoadAccess({
                             instanceId: currentInstanceId,
                             mesh: buildings[x][y],
-                            position: statutsIconsMeta.road.position,
-                            scale: windmillRoadScale,
+                            position: windmillRoadIcon.position,
+                            scale: windmillRoadIcon.scale,
                         });
                     }
 
                     if (buildings[x][y]) {
                         const windmillSupply = await supply.getBuildingSupplyView(currentInstanceId);
                         const isCollecting = windmillSupply?.isCollecting === true;
+                        const collectingMeta = statutsIconsMeta.isCollecting;
+                        const collectingIcon = resolveIconAppearance(
+                            buildings[x][y], 'isCollecting', collectingMeta.position, collectingMeta.scale
+                        );
 
                         if (isCollecting === true) {
-                            const collectingMeta = {
-                                position: {x: -0.5, y: 0.5, z: 0},
-                                scale: {x: 0.6, y: 0.6, z: 1},
-                                spriteColor: 0x00FF00,
-                                backgroundColor: 0xFFFFFF
-                            };
                             assetManager.setStatusSprite(
                                 buildings[x][y],
                                 textures['isCollecting'],
                                 'isCollecting',
-                                collectingMeta.scale,
-                                collectingMeta.position,
+                                collectingIcon.scale,
+                                collectingIcon.position,
                                 productionSpriteVisible(true),
                                 collectingMeta.spriteColor,
                                 collectingMeta.backgroundColor
@@ -1441,8 +1390,8 @@ export function createScene(_gameStore, assetManager, deps) {
                                 buildings[x][y],
                                 textures['isCollecting'],
                                 'isCollecting',
-                                {x: 0.6, y: 0.6, z: 1},
-                                {x: -0.5, y: 0.5, z: 0},
+                                collectingIcon.scale,
+                                collectingIcon.position,
                                 false,
                                 null,
                                 null
@@ -1461,11 +1410,14 @@ export function createScene(_gameStore, assetManager, deps) {
                         y: statutsIconsMeta.road.scale.y * 0.714,
                         z: statutsIconsMeta.road.scale.z * 0.714,
                     };
+                    const barnRoadIcon = resolveIconAppearance(
+                        buildings[x][y], 'road', statutsIconsMeta.road.position, barnRoadScale
+                    );
                     await syncRoadAccess({
                         instanceId: currentInstanceId,
                         mesh: buildings[x][y],
-                        position: statutsIconsMeta.road.position,
-                        scale: barnRoadScale,
+                        position: barnRoadIcon.position,
+                        scale: barnRoadIcon.scale,
                     });
                 }
 
@@ -1523,38 +1475,36 @@ export function createScene(_gameStore, assetManager, deps) {
                     
                     // Show the appropriate sprite for the current season (only one sprite per season)
                     if(buildings[x][y] && spriteTexture) {
+                        const seasonIcon = resolveIconAppearance(buildings[x][y], spriteName, spritePosition, spriteScale);
                         assetManager.setStatusSprite(
                             buildings[x][y],
                             spriteTexture,
                             spriteName,
-                            spriteScale,
-                            spritePosition,
+                            seasonIcon.scale,
+                            seasonIcon.position,
                             productionSpriteVisible(true),
                             spriteColor,
                             backgroundColor
                         );
                     }
-                    
+
                     // In December, show additional sprite if farm sold to windmill
                     // This sprite appears alongside the winter season sprite to indicate windmill collection
                     if (buildings[x][y] && season === 'Hiver' && timeInfo.monthIndex === 11) {
                         const farmSupply = await supply.getBuildingSupplyView(currentInstanceId);
                         const soldToWindmill = farmSupply?.soldToWindmill === true;
+                        const windmillSaleMeta = statutsIconsMeta['sold-to-windmill'];
+                        const windmillSaleIcon = resolveIconAppearance(
+                            buildings[x][y], 'sold-to-windmill', windmillSaleMeta.position, windmillSaleMeta.scale
+                        );
                         if (soldToWindmill === true) {
                             // Show windmill collection sprite (green, similar to windmill's isCollecting)
-                            // Position it differently from the season sprite to avoid overlap
-                            const windmillSaleMeta = {
-                                position: {x: 0.5, y: 0.5, z: 0}, // Different position from season sprite (top-right)
-                                scale: {x: 0.5, y: 0.5, z: 1},
-                                spriteColor: 0x00FF00, // Green color
-                                backgroundColor: 0xFFFFFF // White background
-                            };
                             assetManager.setStatusSprite(
                                 buildings[x][y],
                                 textures['isCollecting'], // Reuse windmill collecting icon
                                 'sold-to-windmill',
-                                windmillSaleMeta.scale,
-                                windmillSaleMeta.position,
+                                windmillSaleIcon.scale,
+                                windmillSaleIcon.position,
                                 productionSpriteVisible(true),
                                 windmillSaleMeta.spriteColor,
                                 windmillSaleMeta.backgroundColor
@@ -1565,8 +1515,8 @@ export function createScene(_gameStore, assetManager, deps) {
                                 buildings[x][y],
                                 textures['isCollecting'],
                                 'sold-to-windmill',
-                                {x: 0.5, y: 0.5, z: 1},
-                                {x: 0.5, y: 0.5, z: 0},
+                                windmillSaleIcon.scale,
+                                windmillSaleIcon.position,
                                 false,
                                 null,
                                 null
@@ -1628,12 +1578,15 @@ export function createScene(_gameStore, assetManager, deps) {
                     // hasFood is computed above from IndexedDB stocks (source of truth)
                     if(buildings[x][y]) {
                         const showNoFoodIcon = !hasFood; // Show icon when NO food
+                        const houseNoFoodIcon = resolveIconAppearance(
+                            buildings[x][y], 'no-food', statutsIconsMeta.food.position, statutsIconsMeta.food.scale
+                        );
                         assetManager.setStatusSprite(
                             buildings[x][y],
                             textures['nofood'],
                             'no-food',
-                            statutsIconsMeta.food.scale,
-                            statutsIconsMeta.food.position,
+                            houseNoFoodIcon.scale,
+                            houseNoFoodIcon.position,
                             productionSpriteVisible(showNoFoodIcon)
                         );
                     }
@@ -1682,18 +1635,19 @@ export function createScene(_gameStore, assetManager, deps) {
                 }
                 const mesh = buildings[nx]?.[ny];
                 if (!mesh?.userData) continue;
-                const roadScale = isBarn
+                const roadFallbackScale = isBarn
                     ? {
                         x: statutsIconsMeta.road.scale.x * 0.714,
                         y: statutsIconsMeta.road.scale.y * 0.714,
                         z: statutsIconsMeta.road.scale.z * 0.714,
                       }
                     : statutsIconsMeta.road.scale;
+                const residentialRoadIcon = resolveIconAppearance(mesh, 'road', statutsIconsMeta.road.position, roadFallbackScale);
                 await syncRoadAccess({
                     instanceId,
                     mesh,
-                    position: statutsIconsMeta.road.position,
-                    scale: roadScale,
+                    position: residentialRoadIcon.position,
+                    scale: residentialRoadIcon.scale,
                 });
             }
         }
@@ -1788,19 +1742,17 @@ export function createScene(_gameStore, assetManager, deps) {
                 if (!isMarket && !isFarm && !isWindmill && !isFactory) continue;
 
                 if (understaffed.has(instanceId)) {
-                    let position = { x: -0.8, y: 0.5, z: -0.2 };
-                    let scale = { x: 0.5, y: 0.5, z: 0.5 };
-                    if (isMarket || isWindmill) {
-                        position = { x: -0.5, y: 0.5, z: 0 };
-                        scale = { x: 0.6, y: 0.6, z: 1 };
-                    }
+                    const noWorkMeta = (isMarket || isWindmill)
+                        ? STATUS_ICON_DEFAULTS['no-work-market-windmill']
+                        : STATUS_ICON_DEFAULTS['no-work'];
+                    const noWorkIcon = resolveIconAppearance(mesh, 'no-work', noWorkMeta.position, noWorkMeta.scale);
 
                     assetManager.setStatusSprite(
                         mesh,
                         textures['no-work'],
                         'no-work',
-                        scale,
-                        position,
+                        noWorkIcon.scale,
+                        noWorkIcon.position,
                         productionSpriteVisible(true),
                         noWorkSpriteColor,
                         noWorkBackgroundColor
