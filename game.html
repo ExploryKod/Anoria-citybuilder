@@ -21,12 +21,13 @@
     <link rel="stylesheet" href="./src/presentation/dom/styles/hud-shell-menus.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/cheat-code-prompt.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/toolbar-panel.css">
-    
-    <!-- Modal Styles -->
+    <link rel="stylesheet" href="./src/presentation/dom/styles/editor-mode.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/global.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/loader-modal.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/mobile-controls.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/mobile-compact-toolbar.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/build-tool-hover-preview.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/editor-toolbar.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/placement-rotation-hud.css">
     
     <!-- OPTIMIZATION: Load non-critical modal CSS asynchronously using media="print" trick -->
@@ -406,6 +407,61 @@
                     </svg>
                   </span>
                   <span class="sr-only">Ouvrir la barre de construction</span>
+                </button>
+              </div>
+
+              <div class="legend-btns editor-toolbar-fab editor-toolbar-fab--terrain">
+                <button
+                  type="button"
+                  id="editor-terrain-fab"
+                  class="toolbar-toggle-btn"
+                  title="Peindre le terrain"
+                  aria-label="Outils terrain"
+                  aria-expanded="false"
+                  aria-controls="editor-build-bar"
+                >
+                  <span class="toolbar-toggle-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="m8 3 4 8 5-5 5 15H2L8 3z"/>
+                      <path d="M4.14 15.08c2.62-1.57 5.24-1.43 7.86.42 2.74 1.94 5.49 2 8.23.19"/>
+                    </svg>
+                  </span>
+                </button>
+              </div>
+
+              <div class="legend-btns editor-toolbar-fab editor-toolbar-fab--nature">
+                <button
+                  type="button"
+                  id="editor-nature-fab"
+                  class="toolbar-toggle-btn"
+                  title="Placer objets nature"
+                  aria-label="Outils nature"
+                  aria-expanded="false"
+                  aria-controls="editor-build-bar"
+                >
+                  <span class="toolbar-toggle-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-2.1-5.2l.3-.3h.2a2.5 2.5 0 0 1 2-4l.4-.4a2 2 0 0 1 2.9-.2 1 1 0 0 0 1.4 0"/>
+                      <path d="M14 10v.2A3 3 0 0 0 15.1 16H19a3 3 0 0 0 2.1-5.2l-.3-.3h-.2a2.5 2.5 0 0 0-2-4l-.4-.4a2 2 0 0 0-2.9-.2 1 1 0 0 1-1.4 0"/>
+                      <path d="M12 22v-8"/><path d="M12 2v4"/>
+                    </svg>
+                  </span>
+                </button>
+              </div>
+
+              <div class="legend-btns editor-toolbar-fab editor-toolbar-fab--export">
+                <button
+                  type="button"
+                  id="editor-export-fab"
+                  class="toolbar-toggle-btn"
+                  title="Exporter la carte (JSON)"
+                  aria-label="Exporter la carte"
+                >
+                  <span class="toolbar-toggle-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M20 21H4"/>
+                    </svg>
+                  </span>
                 </button>
               </div>
 
@@ -1268,6 +1324,60 @@
                     </button>
                 </div>
                 <div class="mobile-build-bar__carousel splide" id="mobile-build-bar-tools" role="tabpanel" aria-label="Outils">
+                    <div class="splide__arrows mobile-build-bar__arrows">
+                        <button type="button" class="splide__arrow splide__arrow--prev mobile-build-bar__arrow" aria-label="Outils précédents">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="m15 18-6-6 6-6"/>
+                            </svg>
+                        </button>
+                        <button type="button" class="splide__arrow splide__arrow--next mobile-build-bar__arrow" aria-label="Outils suivants">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="m9 18 6-6-6-6"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="splide__track">
+                        <ul class="splide__list"></ul>
+                    </div>
+                </div>
+            </section>
+
+            <section
+                id="editor-build-bar"
+                class="mobile-build-bar editor-build-bar"
+                hidden
+                role="dialog"
+                aria-modal="true"
+                aria-hidden="true"
+                aria-label="Éditeur"
+            >
+                <header class="mobile-build-bar__header">
+                    <span class="mobile-build-bar__title">Éditeur</span>
+                    <button type="button" id="editor-build-bar-close" class="mobile-build-bar__close" title="Fermer" aria-label="Fermer la barre éditeur">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m18 6-12 12"/>
+                            <path d="m6 6 12 12"/>
+                        </svg>
+                    </button>
+                </header>
+                <div class="mobile-build-bar__pills-row editor-build-bar__pills-row">
+                    <button type="button" id="editor-build-bar-pills-prev" class="mobile-build-bar__arrow mobile-build-bar__pills-arrow" aria-label="Catégories précédentes">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m15 18-6-6 6-6"/>
+                        </svg>
+                    </button>
+                    <nav
+                        class="mobile-build-bar__pills editor-build-bar__pills"
+                        role="tablist"
+                        aria-label="Catégories éditeur"
+                    ></nav>
+                    <button type="button" id="editor-build-bar-pills-next" class="mobile-build-bar__arrow mobile-build-bar__pills-arrow" aria-label="Catégories suivantes">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m9 18 6-6-6-6"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="mobile-build-bar__carousel splide" id="editor-build-bar-tools" role="tabpanel" aria-label="Outils éditeur">
                     <div class="splide__arrows mobile-build-bar__arrows">
                         <button type="button" class="splide__arrow splide__arrow--prev mobile-build-bar__arrow" aria-label="Outils précédents">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

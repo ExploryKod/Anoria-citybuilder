@@ -36,6 +36,14 @@ export {
   getGameCity,
 };
 
+export {
+  getGameMode,
+  isEditorMode,
+  isMissionMode,
+  isTutorialMode,
+  GAME_MODES,
+} from '../shared/gameplay/gameMode.js';
+
 export function getGameUI() {
   return getSessionGameUI();
 }

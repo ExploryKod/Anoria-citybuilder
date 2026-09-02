@@ -1,5 +1,5 @@
 /**
- * Assembles playable asset metadata for the /assets reference page.
+ * Assembles asset metadata for the /assets reference page.
  */
 
 import {
@@ -7,8 +7,14 @@ import {
   KENNEY_CITY_KIT_TOOLS_BY_CATEGORY,
   KENNEY_CITY_KIT_PREFAB_BY_BUILDING_ID,
 } from '../../../shared/building-catalog/kenneyCityKitRegistry.generated.js';
-import { VILLAGE_PLAYABLE_TOOL_IDS_BY_CATEGORY, VILLAGE_NATURE_GAME_IDS, VILLAGE_NATURE_MESH_ALIASES } from '../../../shared/building-catalog/villageAssetSets.js';
+import {
+  VILLAGE_PLAYABLE_TOOL_IDS_BY_CATEGORY,
+  VILLAGE_NATURE_GAME_IDS,
+  VILLAGE_NATURE_MESH_ALIASES,
+} from '../../../shared/building-catalog/villageAssetSets.js';
 import { buildingCatalog } from '../../../shared/building-catalog/buildingCatalog.js';
+import { buildKenneyNatureKitSections } from './kenneyNatureAssetsCatalog.js';
+import { PLAYABLE_CATEGORY_FILTER_GROUP } from './assetsPageFilters.js';
 
 /** @type {Readonly<Record<string, string>>} */
 const KENNEY_KIT_RESOURCE_DIRS = Object.freeze({
@@ -17,6 +23,11 @@ const KENNEY_KIT_RESOURCE_DIRS = Object.freeze({
   suburban: 'kenney_city-kit-suburban_20',
 });
 
+export const KENNEY_CITY_PACK_ID = 'kenney-city-kits';
+export const KENNEY_CITY_PACK_LABEL = 'Kenney City Kits';
+export const VILLAGE_PACK_ID = 'village-legacy';
+export const VILLAGE_PACK_LABEL = 'Village (legacy GLB)';
+
 /** @type {Readonly<Record<string, string>>} */
 export const ASSET_CATEGORY_LABELS = Object.freeze({
   houses: 'Habitations',
@@ -24,7 +35,7 @@ export const ASSET_CATEGORY_LABELS = Object.freeze({
   industry: 'Industrie',
   markets: 'Commerce',
   infrastructure: 'Infrastructure & routes',
-  nature: 'Nature',
+  nature: 'Nature procédurale',
   zones: 'Zones',
 });
 
@@ -53,28 +64,23 @@ function resolveKenneyGlbPath(prefabKey) {
 
 /**
  * @returns {ReadonlyArray<{
- *   category: string,
- *   label: string,
- *   items: ReadonlyArray<{
- *     id: string,
- *     category: string,
- *     source: 'kenney' | 'village',
- *     displayName?: string,
- *     previewUrl?: string,
- *     kenneyPrefabKey?: string,
- *     kenneyGlbPath?: string | null,
- *     kitId?: string,
- *   }>,
+ *   filterGroup: import('./assetsPageFilters.js').AssetsPageFilterGroup,
+ *   packId: string,
+ *   packLabel: string,
+ *   sectionId: string,
+ *   sectionLabel: string,
+ *   items: ReadonlyArray<object>,
  * }>}
  */
-export function buildAssetsPageSections() {
-  /** @type {Array<{ category: string, label: string, items: object[] }>} */
+function buildPlayableAssetSections() {
+  /** @type {Array<object>} */
   const sections = [];
 
   for (const category of ASSET_CATEGORY_ORDER) {
     /** @type {object[]} */
     const items = [];
     const seen = new Set();
+    const filterGroup = PLAYABLE_CATEGORY_FILTER_GROUP[category] ?? 'buildings';
 
     const kenneyIds = KENNEY_CITY_KIT_TOOLS_BY_CATEGORY[category] || [];
     for (const id of kenneyIds) {
@@ -86,7 +92,10 @@ export function buildAssetsPageSections() {
       items.push({
         id,
         category,
-        source: 'kenney',
+        source: 'kenney-city',
+        filterGroup,
+        packId: KENNEY_CITY_PACK_ID,
+        packLabel: KENNEY_CITY_PACK_LABEL,
         displayName: buildingCatalog[id]?.displayName ?? meta.shortLabel,
         previewUrl: meta.previewUrl,
         kenneyPrefabKey: prefabKey,
@@ -107,6 +116,9 @@ export function buildAssetsPageSections() {
         id,
         category,
         source: 'village',
+        filterGroup,
+        packId: VILLAGE_PACK_ID,
+        packLabel: VILLAGE_PACK_LABEL,
         displayName: buildingCatalog[id]?.displayName ?? id,
         ...(meshAssetId ? { meshAssetId } : {}),
         ...(category === 'nature' ? { proceduralOnly: true } : {}),
@@ -115,15 +127,36 @@ export function buildAssetsPageSections() {
     }
 
     if (items.length > 0) {
+      const villageOnly = items.every((item) => item.source === 'village');
       sections.push({
-        category,
-        label: ASSET_CATEGORY_LABELS[category] ?? category,
+        filterGroup,
+        packId: villageOnly ? VILLAGE_PACK_ID : KENNEY_CITY_PACK_ID,
+        packLabel: villageOnly ? VILLAGE_PACK_LABEL : KENNEY_CITY_PACK_LABEL,
+        sectionId: category,
+        sectionLabel: ASSET_CATEGORY_LABELS[category] ?? category,
         items: Object.freeze(items),
       });
     }
   }
 
   return Object.freeze(sections);
+}
+
+/**
+ * @returns {ReadonlyArray<{
+ *   filterGroup: import('./assetsPageFilters.js').AssetsPageFilterGroup,
+ *   packId: string,
+ *   packLabel: string,
+ *   sectionId: string,
+ *   sectionLabel: string,
+ *   items: ReadonlyArray<object>,
+ * }>}
+ */
+export function buildAssetsPageSections() {
+  return Object.freeze([
+    ...buildKenneyNatureKitSections(),
+    ...buildPlayableAssetSections(),
+  ]);
 }
 
 /**

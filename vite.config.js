@@ -1,6 +1,9 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { createMapsApiPlugin, resolveMapsDirectory } from './scripts/dev/mapsApiPlugin.mjs'
+
+const mapsDir = resolveMapsDirectory(__dirname)
 
 const cleanRoutes = [
   { path: '/game', file: '/game.html' },
@@ -46,6 +49,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    createMapsApiPlugin(mapsDir),
     {
       name: 'rewrite-clean-routes',
       configureServer(server) {

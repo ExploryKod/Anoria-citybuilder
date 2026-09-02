@@ -41,6 +41,10 @@
     --terrain-grass-color: #2fe7c5;
     --terrain-sky-color: #b7d4ea;
     --terrain-fog-color: #68dfd5;
+    --terrain-editor-backdrop-color: #4aafc9;
+    --terrain-editor-sky-color: var(--terrain-editor-backdrop-color);
+    --terrain-editor-sea-color: var(--terrain-editor-backdrop-color);
+    --terrain-editor-fog-color: var(--terrain-editor-backdrop-color);
 
     /* Pop rail starts just under the HUD status row (exit + time/budget) */
     --hud-pop-rail-top: calc(
@@ -209,6 +213,10 @@ html, body {
     max-width: 100vw;
     min-height: 100vh !important;
     overflow-x: hidden;
+}
+
+body.game-mode-editor {
+    background-color: var(--terrain-editor-backdrop-color, #4aafc9);
 }
 
 @media screen and (max-width: 1024px) and (orientation: landscape) {

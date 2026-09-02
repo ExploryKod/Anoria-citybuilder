@@ -1,3 +1,5 @@
+import { EDITOR_SEA_TERRAIN_ID } from '../../shared/terrain-catalog/editorSeaTerrain.js';
+
 export function createTile(x, y) {
     return {
         x,
@@ -33,6 +35,28 @@ export function clearCityTiles(city) {
             tile.instanceId = undefined;
             tile.buildingCoord = undefined;
             delete tile.placementRotationStep;
+        }
+    }
+}
+
+/**
+ * Empty editor grid — every cell is sea (no base Kenney terrain mesh).
+ * @param {{ size: number, tiles: object[][] }} city
+ */
+export function initializeEditorCityTiles(city) {
+    if (!city?.tiles) return;
+    for (let x = 0; x < city.size; x += 1) {
+        for (let y = 0; y < city.size; y += 1) {
+            const tile = city.tiles[x]?.[y];
+            if (!tile) {
+                city.tiles[x][y] = createTile(x, y);
+            }
+            const cell = city.tiles[x][y];
+            cell.terrainId = EDITOR_SEA_TERRAIN_ID;
+            cell.buildingId = undefined;
+            cell.instanceId = undefined;
+            cell.buildingCoord = undefined;
+            delete cell.placementRotationStep;
         }
     }
 }
