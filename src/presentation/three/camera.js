@@ -540,7 +540,7 @@ export function createCamera(gameWindow) {
                 const cityCenter = citySize / 2;
                 cameraOrigin.set(cityCenter, 0, cityCenter);
                 
-                // Calculate World platform size (same formula as AssetManager)
+                // Calculate World platform size (same formula as VillageTownAssetManager)
                 const margin = Math.max(citySize * 0.5, 20);
                 const worldPlatformSize = citySize + (margin * 2);
                 

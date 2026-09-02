@@ -53,6 +53,7 @@ import { pickEditorTileOnGroundPlane } from './scene-board/editorTileGroundPick.
 import loaderManager from '../dom/shell/LoaderManager.js';
 import { showWarningToast, showInfoToast } from '../dom/shell/ToastNotifier.js';
 import { getKenneyCityKitMeshAdapter } from './adapters/kenney-city-kit/KenneyCityKitMeshAdapter.js';
+import { BUILDING_ASSET_CATALOG } from './meshs/BuildingAssetCatalog.js';
 import { scenePresentation } from './presentationConfig.js';
 import { createSceneFog } from '../../shared/terrain-catalog/terrainAtmosphere.js';
 import { isEditorMode } from '../../composition/sessionShell.js';
@@ -802,17 +803,24 @@ export function createScene(_gameStore, assetManager, deps) {
                 }
             }
 
-            const assetId = newBuildingId === 'roads' ? 'StonePath-001' : newBuildingId;
             const placementRotationStep = city.tiles[x]?.[y]?.placementRotationStep ?? 0;
 
             if (isOriginTile) {
-                if (getKenneyCityKitMeshAdapter().isKenneyBuildingId(newBuildingId)) {
+                const catalogEntry = BUILDING_ASSET_CATALOG[newBuildingId];
+                if (!catalogEntry) {
+                    throw new Error(`[BuildingAssetCatalog] No catalog entry for "${newBuildingId}"`);
+                }
+                const resolvedAssetId = catalogEntry.asset;
+
+                if (catalogEntry.adapter === 'kenneyCityKit') {
                     const kenneyMesh = await getKenneyCityKitMeshAdapter().createBuilding(x, y, {
                         rotationStep: placementRotationStep,
-                        buildingId: newBuildingId,
+                        buildingId: resolvedAssetId,
                     });
                     if (!kenneyMesh) {
-                        return;
+                        throw new Error(
+                            `[BuildingAssetCatalog] No Kenney mesh produced for "${newBuildingId}" (asset "${resolvedAssetId}")`
+                        );
                     }
                     removeInteractiveObject(buildings[x][y]);
                     buildings[x][y] = kenneyMesh;
@@ -835,13 +843,21 @@ export function createScene(_gameStore, assetManager, deps) {
                     return;
                 }
 
-                const mesh = assetManager.createAsset(assetId, x, y, {
+                if (catalogEntry.adapter !== 'villageTown') {
+                    throw new Error(
+                        `[BuildingAssetCatalog] Unknown adapter "${catalogEntry.adapter}" for "${newBuildingId}"`
+                    );
+                }
+
+                const mesh = assetManager.createAsset(resolvedAssetId, x, y, {
                     rotationStep: placementRotationStep,
                 });
                 // Asset pas encore chargé / id inconnu : ne pas écraser ni .add(undefined)
                 // (sinon spam THREE à chaque tick via needsMeshPlacement).
                 if (!mesh) {
-                    return;
+                    throw new Error(
+                        `[BuildingAssetCatalog] No village-town mesh produced for "${newBuildingId}" (asset "${resolvedAssetId}")`
+                    );
                 }
                 removeInteractiveObject(buildings[x][y]);
                 buildings[x][y] = mesh;
