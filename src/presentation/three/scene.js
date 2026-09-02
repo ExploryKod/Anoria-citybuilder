@@ -868,6 +868,7 @@ export function createScene(_gameStore, assetManager, deps) {
                     mesh.position.z += centerOffset;
                 }
                 scene.userData.requestShadowRefresh?.();
+                const citySize = city.size || 16;
                 const zoneIndex = resolveTerrainZoneIndex(
                     x,
                     y,
