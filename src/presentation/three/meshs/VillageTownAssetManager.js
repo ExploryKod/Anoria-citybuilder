@@ -66,7 +66,7 @@ function isLocalYUpMesh(root) {
     return yIsHeight && !zIsHeight;
 }
 
-class AssetManager extends MeshLoader {
+class VillageTownAssetManager extends MeshLoader {
     #geometry = new THREE.BoxGeometry(1, 1, 1);
     #roadGeometry = new THREE.PlaneGeometry(1, 1);
     #assets = {};
@@ -265,7 +265,7 @@ class AssetManager extends MeshLoader {
         
         const sourceObject = objectsData[sourceMeshName];
         if (!sourceObject) {
-            console.warn(`[AssetManager] Missing mesh for tool "${meshName}" (source "${sourceMeshName}")`);
+            console.warn(`[VillageTownAssetManager] Missing mesh for tool "${meshName}" (source "${sourceMeshName}")`);
             return null;
         }
         
@@ -392,7 +392,7 @@ class AssetManager extends MeshLoader {
         if (!this.#sharedTerrainMaterials) {
             // Vérifier que les textures sont chargées
             if (!textures['roads'] || !textures['grass']) {
-                console.error('[AssetManager] Textures not loaded yet!', { 
+                console.error('[VillageTownAssetManager] Textures not loaded yet!', { 
                     roads: !!textures['roads'], 
                     grass: !!textures['grass'] 
                 });
@@ -807,10 +807,10 @@ class AssetManager extends MeshLoader {
                                 this.#assets[toolId] = (x, y, z = 0) =>
                                     this.#createBuilding(x, y, z, size, toolId, this.#getModelsObj(targetPropertyKey));
 
-                                console.log(`[AssetManager] Loaded standalone asset: ${toolId} from ${glbPath}`);
+                                console.log(`[VillageTownAssetManager] Loaded standalone asset: ${toolId} from ${glbPath}`);
                                 resolveAsset();
                             } else {
-                                console.error(`[AssetManager] No mesh found in ${glbPath}`);
+                                console.error(`[VillageTownAssetManager] No mesh found in ${glbPath}`);
                                 rejectAsset(new Error(`No mesh found in ${glbPath}`));
                             }
                         },
@@ -818,7 +818,7 @@ class AssetManager extends MeshLoader {
                             // Progress callback
                         },
                         (error) => {
-                            console.error(`[AssetManager] Error loading ${glbPath}:`, error);
+                            console.error(`[VillageTownAssetManager] Error loading ${glbPath}:`, error);
                             rejectAsset(error);
                         }
                     );
@@ -836,7 +836,7 @@ class AssetManager extends MeshLoader {
                         resolve();
                     })
                     .catch((error) => {
-                        console.error('[AssetManager] Error loading standalone GLB files:', error);
+                        console.error('[VillageTownAssetManager] Error loading standalone GLB files:', error);
                         reject(error);
                     });
             }
@@ -884,7 +884,7 @@ class AssetManager extends MeshLoader {
         } else if (assetId in this.#assets) {
             mesh = this.#assets[assetId](x, y);
         } else {
-            console.warn(`[AssetManager] Asset ${assetId} (resolved: ${resolvedId}) does not exist`);
+            console.warn(`[VillageTownAssetManager] Asset ${assetId} (resolved: ${resolvedId}) does not exist`);
             return undefined;
         }
 
@@ -970,7 +970,7 @@ class AssetManager extends MeshLoader {
                             
                             // Log final state
                             const bbox = new THREE.Box3().setFromObject(worldMesh);
-                            console.info('[AssetManager] World platform loaded and added to scene:', {
+                            console.info('[VillageTownAssetManager] World platform loaded and added to scene:', {
                                 position: worldMesh.position,
                                 rotation: worldMesh.rotation,
                                 scale: worldMesh.scale,
@@ -983,13 +983,13 @@ class AssetManager extends MeshLoader {
                     if (worldMesh) {
                         resolve(worldMesh);
                     } else {
-                        console.warn('[AssetManager] World_Material005_0 not found in GLB file');
+                        console.warn('[VillageTownAssetManager] World_Material005_0 not found in GLB file');
                         resolve(null);
                     }
                 },
                 undefined,
                 (error) => {
-                    console.error('[AssetManager] Error loading world platform:', error);
+                    console.error('[VillageTownAssetManager] Error loading world platform:', error);
                     reject(error);
                 }
             );
@@ -1034,7 +1034,7 @@ class AssetManager extends MeshLoader {
                     });
 
                     if (fenceModels.length === 0) {
-                        console.warn('[AssetManager] No fence models found in GLB file');
+                        console.warn('[VillageTownAssetManager] No fence models found in GLB file');
                         resolve();
                         return;
                     }
@@ -1119,7 +1119,7 @@ class AssetManager extends MeshLoader {
                 },
                 undefined,
                 (error) => {
-                    console.error('[AssetManager] Error loading boundary fences:', error);
+                    console.error('[VillageTownAssetManager] Error loading boundary fences:', error);
                     reject(error);
                 }
             );
@@ -1321,4 +1321,4 @@ class AssetManager extends MeshLoader {
     }
 }
 
-export default AssetManager;
+export default VillageTownAssetManager;

@@ -3,7 +3,7 @@
  */
 
 /**
- * @param {import('../../three/meshs/AssetManager.js').default} assetManager
+ * @param {import('../../three/meshs/VillageTownAssetManager.js').default} assetManager
  * @returns {Promise<void>}
  */
 export async function ensureNeighborHamletDecoAssets(assetManager) {

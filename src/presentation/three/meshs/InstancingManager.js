@@ -124,7 +124,7 @@ class InstancingManager {
         // Créer la matrice de transformation pour cette instance
         const matrix = new THREE.Matrix4();
         // Position: x, z (y dans Three.js), y (hauteur)
-        // Rotation: 90° sur X, 180° sur Y et Z (comme dans AssetManager)
+        // Rotation: 90° sur X, 180° sur Y et Z (comme dans VillageTownAssetManager)
         matrix.compose(
             new THREE.Vector3(x, 0, y), // Position
             new THREE.Quaternion().setFromEuler(

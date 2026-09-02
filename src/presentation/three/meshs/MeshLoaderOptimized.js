@@ -30,7 +30,7 @@ async function loadAssetCatalog() {
  */
 class MeshLoaderOptimized {
 
-    /** Toolbar / placement — farms + roads only from village pack; Kenney added in AssetManager. */
+    /** Toolbar / placement — farms + roads only from village pack; Kenney added in VillageTownAssetManager. */
     toolIds = structuredClone(VILLAGE_PLAYABLE_TOOL_IDS_BY_CATEGORY);
 
     /** GLB meshes to load for legacy saves and procedural nature. */
