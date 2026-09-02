@@ -47,7 +47,7 @@ export class ProduceHouseSubsistenceFood {
     });
 
     await this.supplyBuildingRepository.saveStocks(houseId, nextStock);
-    await this.supplyBuildingRepository.saveSubsistenceMetadata(houseId, {
+    await this.supplyBuildingRepository.updateBuildingFields(houseId, {
       lastSubsistenceMonth: month,
     });
 

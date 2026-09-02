@@ -126,41 +126,6 @@ export class DexieSupplyBuildingRepository {
     });
   }
 
-  async saveHarvestMetadata(buildingId, { lastProductionYear, lastProductionMonth }) {
-    const fields = {};
-    if (lastProductionYear !== undefined) {
-      fields.lastProductionYear = lastProductionYear;
-    }
-    if (lastProductionMonth !== undefined && lastProductionMonth !== null) {
-      fields.lastProductionMonth = lastProductionMonth;
-    }
-    if (Object.keys(fields).length === 0) return;
-    await this.#putFields(buildingId, fields);
-  }
-
-  async saveConsumptionMetadata(buildingId, { lastConsumptionMonth }) {
-    if (lastConsumptionMonth === undefined || lastConsumptionMonth === null) return;
-    await this.#putFields(buildingId, { lastConsumptionMonth });
-  }
-
-  async saveConsumptionRecord(buildingId, consumptionRecord) {
-    if (!consumptionRecord) return;
-    await this.#putFields(buildingId, {
-      lastConsumption: {
-        month: consumptionRecord.month,
-        consumed: { ...consumptionRecord.consumed },
-        demanded: { ...consumptionRecord.demanded },
-        unfed: { ...consumptionRecord.unfed },
-        totalUnfed: consumptionRecord.totalUnfed,
-      },
-    });
-  }
-
-  async saveSubsistenceMetadata(buildingId, { lastSubsistenceMonth }) {
-    if (lastSubsistenceMonth === undefined || lastSubsistenceMonth === null) return;
-    await this.#putFields(buildingId, { lastSubsistenceMonth });
-  }
-
   async saveWindmillLastCollection(windmillId, lastCollection) {
     await this.#putFields(windmillId, { lastCollection });
   }

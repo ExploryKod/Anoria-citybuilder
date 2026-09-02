@@ -6,7 +6,8 @@ import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
 import { canWindmillCollectFromFarms } from '../../../src/contexts/supply/domain/policies/CollectingMonthPolicy.js';
-import { WindmillCollectsFromAllFarms } from '../../../src/contexts/supply/application/commands/surplus/WindmillCollectsFromAllFarms.js';
+import { WINDMILL_COLLECT_CIRCUIT } from '../../../src/contexts/supply/domain/catalogs/FoodCircuits.js';
+import { CollectResourceToHub } from '../../../src/contexts/supply/application/commands/surplus/CollectResourceToHub.js';
 import { toSupplyMonth } from '../../../src/composition/supplyOps.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 
@@ -66,7 +67,7 @@ describe('Supply — windmill collection', () => {
     });
   });
 
-  describe('WindmillCollectsFromAllFarms', () => {
+  describe('CollectResourceToHub (windmill collect circuit)', () => {
     let repo;
     let useCase;
     let windmillId;
@@ -85,14 +86,15 @@ describe('Supply — windmill collection', () => {
         farm(carrotFarmId, 'Farm-Carrot', { carrot: 5, food: 5 }),
         farm(cabbageFarmId, 'Farm-Cabbage', { cabbage: 3, food: 3 }),
       ]);
-      useCase = new WindmillCollectsFromAllFarms(repo);
+      useCase = new CollectResourceToHub(repo);
     });
 
     test('collects from all farms in december', async () => {
       const outcome = await useCase.execute({
-        windmillId,
-        month: 'december',
-        farmRefs: [
+        hubId: windmillId,
+        period: { month: 'december' },
+        circuit: WINDMILL_COLLECT_CIRCUIT,
+        sourceRefs: [
           { instanceId: wheatFarmId },
           { instanceId: carrotFarmId },
           { instanceId: cabbageFarmId },
@@ -100,7 +102,7 @@ describe('Supply — windmill collection', () => {
       });
 
       expect(outcome.collected).toBe(true);
-      expect(outcome.totalBaskets).toBe(18);
+      expect(outcome.totalUnits).toBe(18);
       expect(outcome.transfers).toHaveLength(3);
 
       const mill = await repo.findById(windmillId);
@@ -115,13 +117,14 @@ describe('Supply — windmill collection', () => {
 
     test('refuses outside december', async () => {
       const outcome = await useCase.execute({
-        windmillId,
-        month: 'november',
-        farmRefs: [{ instanceId: wheatFarmId }],
+        hubId: windmillId,
+        period: { month: 'november' },
+        circuit: WINDMILL_COLLECT_CIRCUIT,
+        sourceRefs: [{ instanceId: wheatFarmId }],
       });
 
       expect(outcome.collected).toBe(false);
-      expect(outcome.reason).toBe('not_collecting_month');
+      expect(outcome.reason).toBe('not_collection_period');
       expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(10);
     });
 
@@ -130,12 +133,13 @@ describe('Supply — windmill collection', () => {
         windmill(windmillId, { food: 0 }),
         farm(wheatFarmId, 'Farm-Wheat', { wheat: 10, food: 10 }, 0),
       ]);
-      useCase = new WindmillCollectsFromAllFarms(repo);
+      useCase = new CollectResourceToHub(repo);
 
       const outcome = await useCase.execute({
-        windmillId,
-        month: 'december',
-        farmRefs: [{ instanceId: wheatFarmId }],
+        hubId: windmillId,
+        period: { month: 'december' },
+        circuit: WINDMILL_COLLECT_CIRCUIT,
+        sourceRefs: [{ instanceId: wheatFarmId }],
       });
 
       expect(outcome.collected).toBe(false);
@@ -148,16 +152,17 @@ describe('Supply — windmill collection', () => {
         windmill(windmillId, { food: 0 }, { roadCount: 0 }),
         farm(wheatFarmId, 'Farm-Wheat', { wheat: 10, food: 10 }),
       ]);
-      useCase = new WindmillCollectsFromAllFarms(repo);
+      useCase = new CollectResourceToHub(repo);
 
       const outcome = await useCase.execute({
-        windmillId,
-        month: 'december',
-        farmRefs: [{ instanceId: wheatFarmId }],
+        hubId: windmillId,
+        period: { month: 'december' },
+        circuit: WINDMILL_COLLECT_CIRCUIT,
+        sourceRefs: [{ instanceId: wheatFarmId }],
       });
 
       expect(outcome.collected).toBe(false);
-      expect(outcome.reason).toBe('windmill_not_operational');
+      expect(outcome.reason).toBe('hub_not_operational');
     });
 
     test('respects windmill capacity', async () => {
@@ -166,16 +171,17 @@ describe('Supply — windmill collection', () => {
         farm(wheatFarmId, 'Farm-Wheat', { wheat: 10, food: 10 }),
         farm(carrotFarmId, 'Farm-Carrot', { carrot: 5, food: 5 }),
       ]);
-      useCase = new WindmillCollectsFromAllFarms(repo);
+      useCase = new CollectResourceToHub(repo);
 
       const outcome = await useCase.execute({
-        windmillId,
-        month: 'december',
-        farmRefs: [{ instanceId: wheatFarmId }, { instanceId: carrotFarmId }],
+        hubId: windmillId,
+        period: { month: 'december' },
+        circuit: WINDMILL_COLLECT_CIRCUIT,
+        sourceRefs: [{ instanceId: wheatFarmId }, { instanceId: carrotFarmId }],
       });
 
       expect(outcome.collected).toBe(true);
-      expect(outcome.totalBaskets).toBe(4);
+      expect(outcome.totalUnits).toBe(4);
       expect((await repo.findById(windmillId)).stocks.food).toBe(4);
       expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(6);
       expect((await repo.findById(carrotFarmId)).stocks.carrot).toBe(5);

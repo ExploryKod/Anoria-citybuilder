@@ -1,7 +1,4 @@
-import { 
-  resolveCitizenStatusFromLevel,
-  getSkills 
-} from '../../../../shared/population/CitizenStatusCatalog.js';
+import { FOOD_CIRCUIT } from '../catalogs/FoodCircuitCatalog.js';
 
 /**
  * Définit les besoins alimentaires selon le statut social (niveau de maison).
@@ -25,35 +22,7 @@ import {
  * @returns {FoodRequirement}
  */
 export function getHouseFoodRequirements(level) {
-  const statusKey = resolveCitizenStatusFromLevel(level);
-  const skills = getSkills(statusKey);
-  
-  // Niveau 1: Hunter-gatherer
-  // Besoins = ce qu'ils produisent (subsistance)
-  if (level === 1) {
-    return {
-      essential: ['fruit', 'game'],  // Obligatoires pour survivre
-      desired: [],                    // Pas d'exigences supplémentaires
-      basketsPerCitizen: 1,           // 1 panier total/habitant/mois
-    };
-  }
-  
-  // Niveau 2: Worker (artisan)
-  // Garde les besoins de base + exige variété (crops du marché)
-  if (level === 2) {
-    return {
-      essential: ['fruit', 'game'],   // Garde les besoins ancestraux
-      desired: ['wheat', 'carrot', 'cabbage'],  // Veut variété alimentaire
-      basketsPerCitizen: 1,
-    };
-  }
-  
-  // Fallback (ne devrait pas arriver)
-  return {
-    essential: ['fruit', 'game'],
-    desired: [],
-    basketsPerCitizen: 1,
-  };
+  return FOOD_CIRCUIT.houseFoodRequirementsByLevel[level] ?? FOOD_CIRCUIT.houseFoodRequirementsFallback;
 }
 
 /**
