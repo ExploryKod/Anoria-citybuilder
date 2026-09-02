@@ -1,11 +1,27 @@
-import { MISSIONS, getMissionById } from './missionCatalog.js';
+import {
+  STORY_MISSIONS,
+  OPEN_MISSIONS,
+  getMissionById,
+  isOpenMission,
+} from './missionCatalog.js';
 import { addProfile, listProfiles } from './profileStore.js';
 import {
   setBootMode,
   setMissionId,
   setProfileName,
 } from '../site/bootSession.js';
+import {
+  setMissionMapLayoutId,
+  clearMissionMapLayout,
+} from '../../../shared/gameplay/customMapLayout.js';
 import { bootSiteChrome } from '../site/bootSiteChrome.js';
+import {
+  deleteEditorMapById,
+  loadAvailableEditorMaps,
+  renderMapGrid,
+  renderMyMapSection,
+  uploadEditorMapFile,
+} from './mapLayoutPanel.js';
 
 bootSiteChrome();
 
@@ -17,9 +33,18 @@ const profileModalList = document.getElementById('profile-modal-list');
 const profileModalClose = document.getElementById('profile-modal-close');
 const profileModalConfirm = document.getElementById('profile-modal-confirm');
 
-let selectedMissionId = MISSIONS[0]?.id ?? '';
+/** @type {import('../../../contexts/world-layout/domain/EditorMapLayout.js').EditorMapSummary[]} */
+let mapSummaries = [];
+
+let selectedMissionId = STORY_MISSIONS[0]?.id ?? '';
+/** Carte choisie pour la mission open (public/maps), indépendante de l'id mission. */
+let selectedMapLayoutId = null;
 let profileMode = 'new';
 let selectedExistingProfile = '';
+
+function getSelectedMission() {
+  return getMissionById(selectedMissionId);
+}
 
 function getProfileNewInput() {
   return document.getElementById('profile-new-name');
@@ -34,8 +59,10 @@ function getActiveProfileName() {
 
 function updateStartButtonState() {
   if (!startBtn) return;
+  const mission = getSelectedMission();
   const name = getActiveProfileName();
-  startBtn.disabled = !name;
+  const openReady = !isOpenMission(mission) || Boolean(selectedMapLayoutId);
+  startBtn.disabled = !name || !openReady;
 }
 
 function setProfileMode(mode) {
@@ -99,12 +126,87 @@ function closeProfileModal() {
   updateStartButtonState();
 }
 
+function selectMapLayout(mapId) {
+  selectedMapLayoutId = mapId;
+  renderDetail(getSelectedMission());
+}
+
+function bindMyMapPanel() {
+  const uploadInput = document.getElementById('mission-map-upload');
+  const statusEl = document.getElementById('mission-map-upload-status');
+  const gridEl = document.getElementById('mission-map-grid');
+  const openEditorBtn = document.getElementById('mission-map-open-editor');
+
+  openEditorBtn?.addEventListener('click', () => {
+    setBootMode('editor');
+    window.location.href = '/game';
+  });
+
+  const showStatus = (message, isError = false) => {
+    if (!statusEl) return;
+    statusEl.hidden = false;
+    statusEl.textContent = message;
+    statusEl.classList.toggle('is-error', isError);
+  };
+
+  renderMapGrid(
+    gridEl,
+    mapSummaries,
+    selectedMapLayoutId,
+    selectMapLayout,
+    async (mapId) => {
+      if (!window.confirm('Supprimer cette carte ?')) {
+        return;
+      }
+      try {
+        await deleteEditorMapById(mapId);
+        if (selectedMapLayoutId === mapId) {
+          selectedMapLayoutId = null;
+        }
+        await refreshMaps();
+        renderDetail(getSelectedMission());
+      } catch (error) {
+        showStatus(
+          error instanceof Error ? error.message : 'Suppression impossible',
+          true
+        );
+      }
+    }
+  );
+
+  uploadInput?.addEventListener('change', async () => {
+    const file = uploadInput.files?.[0];
+    uploadInput.value = '';
+    if (!file) return;
+
+    try {
+      const summary = await uploadEditorMapFile(file);
+      showStatus(`Carte « ${summary.name} » enregistrée.`);
+      await refreshMaps();
+      selectMapLayout(summary.id);
+    } catch (error) {
+      showStatus(
+        error instanceof Error ? error.message : 'Téléversement impossible',
+        true
+      );
+    }
+  });
+}
+
 function renderDetail(mission) {
   if (!detailEl) return;
 
   const winHtml = mission.winConditions
     .map((c) => `<li>${c.label} : <strong>${c.value}</strong></li>`)
     .join('');
+
+  const buildingsHtml = mission.buildings?.length
+    ? `<p class="missions-buildings">Bâtiments notables : ${mission.buildings.join(', ')}</p>`
+    : '';
+
+  const myMapHtml = isOpenMission(mission)
+    ? renderMyMapSection(selectedMapLayoutId)
+    : '';
 
   detailEl.innerHTML = `
     <div class="missions-detail-header">
@@ -117,16 +219,13 @@ function renderDetail(mission) {
     <ul class="missions-meta">
       <li><strong>${mission.date}</strong></li>
       <li>${mission.climate}</li>
-      <li>${mission.land}</li>
       <li>Taille de la cité : <strong>${mission.citySize} × ${mission.citySize}</strong></li>
       <li>${mission.combat}</li>
       <li>${mission.difficulty}</li>
     </ul>
     <p class="site-section-title">Conditions de victoire</p>
     <ul class="missions-win-list">${winHtml}</ul>
-    <p class="missions-buildings">
-      Bâtiments notables : ${mission.buildings.join(', ')}
-    </p>
+    ${buildingsHtml}
     <div class="mission-profile">
       <p class="site-section-title" id="mission-profile-label">Profil</p>
       <div
@@ -153,7 +252,7 @@ function renderDetail(mission) {
           Profil existant
         </label>
       </div>
-      <p class="mission-profile-modes-hint">Utilisez les flèches du clavier pour changer d’option.</p>
+      <p class="mission-profile-modes-hint">Utilisez les flèches du clavier pour changer d'option.</p>
       <div id="profile-new-panel" class="mission-profile-panel" ${profileMode !== 'new' ? 'hidden' : ''}>
         <input
           type="text"
@@ -171,6 +270,7 @@ function renderDetail(mission) {
         <p id="profile-selected-name" class="mission-profile-selected">${selectedExistingProfile ? `Profil : ${selectedExistingProfile}` : ''}</p>
       </div>
     </div>
+    ${myMapHtml}
   `;
 
   document.querySelectorAll('input[name="profile-mode"]').forEach((input) => {
@@ -187,24 +287,17 @@ function renderDetail(mission) {
     pickBtn.addEventListener('click', openProfileModal);
   }
 
+  if (isOpenMission(mission)) {
+    bindMyMapPanel();
+  }
+
   updateStartButtonState();
 }
 
-function selectMission(id) {
-  selectedMissionId = id;
-  const mission = getMissionById(id);
-
-  listEl?.querySelectorAll('.missions-list-item').forEach((item) => {
-    item.classList.toggle('is-selected', item.dataset.id === id);
-  });
-
-  renderDetail(mission);
-}
-
-function initList() {
+function renderMissionList() {
   if (!listEl) return;
 
-  listEl.innerHTML = MISSIONS.map((mission) => `
+  const storyItems = STORY_MISSIONS.map((mission) => `
     <li
       class="missions-list-item${mission.id === selectedMissionId ? ' is-selected' : ''}"
       data-id="${mission.id}"
@@ -212,6 +305,22 @@ function initList() {
       tabindex="0"
     >${mission.name}</li>
   `).join('');
+
+  const openItems = OPEN_MISSIONS.map((mission) => `
+    <li
+      class="missions-list-item${mission.id === selectedMissionId ? ' is-selected' : ''}"
+      data-id="${mission.id}"
+      role="button"
+      tabindex="0"
+    >${mission.name}</li>
+  `).join('');
+
+  listEl.innerHTML = `
+    <li class="missions-list-section" aria-hidden="true">Missions scénarisées</li>
+    ${storyItems}
+    <li class="missions-list-section" aria-hidden="true">Open mission</li>
+    ${openItems}
+  `;
 
   listEl.querySelectorAll('.missions-list-item').forEach((item) => {
     item.addEventListener('click', () => selectMission(item.dataset.id));
@@ -224,17 +333,44 @@ function initList() {
   });
 }
 
+function selectMission(id) {
+  if (!id) return;
+  selectedMissionId = id;
+  if (!isOpenMission(getMissionById(id))) {
+    selectedMapLayoutId = null;
+  }
+  renderMissionList();
+  renderDetail(getSelectedMission());
+}
+
+async function refreshMaps() {
+  mapSummaries = await loadAvailableEditorMaps();
+  if (selectedMapLayoutId && !mapSummaries.some((m) => m.id === selectedMapLayoutId)) {
+    selectedMapLayoutId = null;
+  }
+}
+
 function startMission() {
   const profileName = getActiveProfileName();
   if (!profileName) return;
+
+  const mission = getSelectedMission();
+  if (isOpenMission(mission) && !selectedMapLayoutId) {
+    return;
+  }
 
   if (profileMode === 'new') {
     addProfile(profileName);
   }
 
   setBootMode('mission');
-  setMissionId(selectedMissionId);
+  setMissionId(mission.id);
   setProfileName(profileName);
+  if (isOpenMission(mission) && selectedMapLayoutId) {
+    setMissionMapLayoutId(selectedMapLayoutId);
+  } else {
+    clearMissionMapLayout();
+  }
   window.location.href = '/game';
 }
 
@@ -261,5 +397,6 @@ if (profileModal) {
   });
 }
 
-initList();
+await refreshMaps();
+renderMissionList();
 selectMission(selectedMissionId);

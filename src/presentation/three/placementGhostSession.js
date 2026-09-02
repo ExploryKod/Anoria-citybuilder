@@ -1,3 +1,5 @@
+import { resolveVerticalFaceRiverAssetId, isEditorRiverAsset, resolveRiverMountFromRotationStep } from '../../shared/editor-catalog/editorKenneyAssetBehavior.js';
+
 /** Tools that must never drive a placement ghost (UI / zones / non-mesh). */
 const NON_PLACEABLE_TOOL_IDS = new Set([
   'bulldoze',
@@ -28,6 +30,26 @@ export function resolveGhostVisualAssetId(assetId) {
 }
 
 /**
+ * @param {string} assetId — active placement tool id
+ * @param {number} rotationStep
+ * @param {{ mountMode?: string, hostAssetId?: string } | null | undefined} editorGhostPreview
+ * @returns {string}
+ */
+export function resolveEditorGhostVisualAssetId(assetId, rotationStep, editorGhostPreview) {
+  if (!isEditorRiverAsset(assetId)) {
+    return resolveGhostVisualAssetId(assetId);
+  }
+  const mount = resolveRiverMountFromRotationStep(rotationStep);
+  if (mount.mountMode !== 'verticalFace') {
+    return assetId;
+  }
+  if (editorGhostPreview?.hostAssetId) {
+    return resolveVerticalFaceRiverAssetId(editorGhostPreview.hostAssetId);
+  }
+  return 'nature:cliff_waterfall_rock';
+}
+
+/**
  * @param {string | null | undefined} toolId
  * @param {Record<string, unknown>} assetCatalog
  * @returns {boolean}
@@ -37,6 +59,23 @@ export function isPlaceableBuildingTool(toolId, assetCatalog) {
     return false;
   }
   return Boolean(assetCatalog?.[toolId]);
+}
+
+/**
+ * Whether R should spin the placement ghost instead of rotating the camera (build behavior).
+ * @param {string | null | undefined} toolId
+ * @param {Record<string, unknown>} assetCatalog
+ * @param {{ isEditorPlacementTool?: (id: string) => boolean }} [options]
+ * @returns {boolean}
+ */
+export function supportsPlacementGhostRotation(toolId, assetCatalog, options = {}) {
+  if (!toolId || NON_PLACEABLE_TOOL_IDS.has(toolId)) {
+    return false;
+  }
+  if (options.isEditorPlacementTool?.(toolId)) {
+    return true;
+  }
+  return isPlaceableBuildingTool(toolId, assetCatalog);
 }
 
 /**
@@ -61,6 +100,8 @@ function isTileInFootprint(x, y, footprint) {
  * @param {Record<string, { gridSize?: number, price?: number, category?: string }>} deps.assetCatalog
  * @param {(toolId: string) => boolean} [deps.isPlaceableTool]
  * @param {(params: object) => { ok: boolean, reason?: string, gridSize: number, footprintWidth?: number, footprintHeight?: number }} deps.canPlaceBuildingAtTile
+ * @param {(x: number, y: number) => number | null | undefined} [deps.getPlacementAnchorLocalY]
+ * @param {(x: number, y: number, rotationStep: number) => object | null | undefined} [deps.getEditorGhostPreview]
  * @param {() => object | null | undefined} [deps.getFocusedObject]
  */
 export function createPlacementGhostSession({
@@ -71,6 +112,8 @@ export function createPlacementGhostSession({
   assetCatalog,
   isPlaceableTool = (toolId) => isPlaceableBuildingTool(toolId, assetCatalog),
   canPlaceBuildingAtTile,
+  getPlacementAnchorLocalY = () => null,
+  getEditorGhostPreview = () => null,
   getFocusedObject = () => null,
 }) {
   /** @type {object | null} */
@@ -154,11 +197,25 @@ export function createPlacementGhostSession({
       placement.gridSize ?? assetCatalog?.[assetId]?.gridSize ?? 1,
     );
 
-    ghost.show(resolveGhostVisualAssetId(assetId), x, y, placement.ok, {
+    const placementBaseLocalY = getPlacementAnchorLocalY(x, y);
+    const editorGhostPreview = getEditorGhostPreview(x, y, rotationStep) ?? undefined;
+
+    const ghostX = editorGhostPreview?.x ?? x;
+    const ghostY = editorGhostPreview?.y ?? y;
+
+    ghost.show(
+      resolveEditorGhostVisualAssetId(assetId, rotationStep, editorGhostPreview),
+      ghostX,
+      ghostY,
+      placement.ok,
+      {
       gridSize: ghostGridSize,
       footprintWidth: placement.footprintWidth,
       footprintHeight: placement.footprintHeight,
       rotationStep,
+      placementToolId: assetId,
+      placementBaseLocalY: editorGhostPreview?.baseLocalY ?? placementBaseLocalY ?? undefined,
+      editorGhostPreview,
     });
   }
 
@@ -167,10 +224,31 @@ export function createPlacementGhostSession({
     sync(lastFocused ?? getFocusedObject());
   }
 
+  /**
+   * R key — rotate the visible ghost (90° steps). No-op when ghost is not shown.
+   * @returns {boolean} true if a ghost was rotated
+   */
+  function rotateGhostStep() {
+    const toolId = getActiveToolId();
+    if (!isPlaceableTool(toolId)) {
+      return false;
+    }
+
+    const ghostController = getGhost();
+    if (!ghostController?.active) {
+      return false;
+    }
+
+    ghostController.rotateStep();
+    sync(lastFocused ?? getFocusedObject());
+    return true;
+  }
+
   return {
     sync,
     clear,
     suppressGhostAtFootprint,
     onToolChanged,
+    rotateGhostStep,
   };
 }

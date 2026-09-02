@@ -23,7 +23,7 @@ export function registerTerrainSceneFactories(deps) {
       const canonical = resolveTerrainId(logicalId);
       return Boolean(getTerrainCatalogEntry(canonical));
     },
-    (logicalId, x, y) => createKenneyTerrainSceneTile(logicalId, x, y)
+    (logicalId, x, y, options) => createKenneyTerrainSceneTile(logicalId, x, y, options)
   );
 
   registerSceneObjectFactory(

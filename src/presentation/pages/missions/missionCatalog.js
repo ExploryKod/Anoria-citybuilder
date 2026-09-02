@@ -1,8 +1,28 @@
 /** Catalogue de missions — données de démo (style Pharaon / César). */
 
-export const MISSIONS = [
+/** @typedef {'story' | 'open'} MissionCategory */
+
+/**
+ * @typedef {object} StoryMission
+ * @property {string} id
+ * @property {'story'} category
+ * @property {string} name
+ * @property {string} title
+ * @property {string} date
+ * @property {string} climate
+ * @property {string} land
+ * @property {string} combat
+ * @property {string} difficulty
+ * @property {number} citySize
+ * @property {{ label: string, value: string | number }[]} winConditions
+ * @property {string[]} buildings
+ * @property {string} previewEmoji
+ */
+
+export const STORY_MISSIONS = [
   {
     id: 'anoria-prime',
+    category: 'story',
     name: 'Anoria Prime',
     title: 'Une affaire citadine',
     date: '400 av. J.-C.',
@@ -23,6 +43,7 @@ export const MISSIONS = [
   },
   {
     id: 'delta-trade',
+    category: 'story',
     name: 'Delta des échanges',
     title: 'Routes du delta',
     date: '350 av. J.-C.',
@@ -41,6 +62,7 @@ export const MISSIONS = [
   },
   {
     id: 'northern-front',
+    category: 'story',
     name: 'Frontière du nord',
     title: 'Les convois du nord',
     date: '280 av. J.-C.',
@@ -59,6 +81,7 @@ export const MISSIONS = [
   },
   {
     id: 'sacred-valley',
+    category: 'story',
     name: 'Vallée sacrée',
     title: 'Offrandes du delta',
     date: '500 av. J.-C.',
@@ -77,7 +100,38 @@ export const MISSIONS = [
   },
 ];
 
+/** Missions jouables avec une carte JSON — la liste des cartes est dans le panneau « Ma carte ». */
+export const OPEN_MISSIONS = [
+  {
+    id: 'open-terrain',
+    category: 'open',
+    name: 'Open mission',
+    title: 'Terrain personnalisé',
+    date: 'Carte éditeur',
+    climate: '—',
+    land: 'Selon la carte',
+    combat: '—',
+    difficulty: 'Open mission',
+    citySize: 12,
+    winConditions: [
+      { label: 'Objectif', value: 'Construire sur votre terrain' },
+    ],
+    buildings: [],
+    previewEmoji: '🗺️',
+  },
+];
+
+export const ALL_MISSIONS = Object.freeze([...STORY_MISSIONS, ...OPEN_MISSIONS]);
+
+/** @deprecated use STORY_MISSIONS */
+export const MISSIONS = STORY_MISSIONS;
+
 /** @param {string} id */
 export function getMissionById(id) {
-  return MISSIONS.find((m) => m.id === id) ?? MISSIONS[0];
+  return ALL_MISSIONS.find((m) => m.id === id) ?? STORY_MISSIONS[0];
+}
+
+/** @param {object | null | undefined} mission */
+export function isOpenMission(mission) {
+  return mission?.category === 'open';
 }

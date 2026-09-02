@@ -22,14 +22,23 @@ import { waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
 import { createGame } from '../../three/game.js';
 import { DEFAULT_CITY_SIZE } from '../../../shared/gameplay/SimulationDefaults.js';
 import {
-  clearBootMode,
   clearMissionId,
   clearProfileName,
-  getBootMode,
+  consumeBootMode,
   getMissionId,
   getProfileName,
+  redirectToLandingUnlessEntryAllowed,
 } from '../../pages/site/bootSession.js';
 import { getMissionById } from '../../pages/missions/missionCatalog.js';
+import { loadEditorMapLayout } from '../../../contexts/world-layout/application/queries/LoadEditorMapLayout.js';
+import { getEditorMapRepository } from '../../../composition/editorMapRepository.js';
+import { setMissionMapLayoutId, getMissionMapLayoutId, clearMissionMapLayout } from '../../../shared/gameplay/customMapLayout.js';
+import {
+  gameModeFromBootMode,
+  isEditorMode,
+  setGameMode,
+} from '../../../shared/gameplay/gameMode.js';
+import { applyEditorModeUi } from '../editor/applyEditorModeUi.js';
 import {
   initBudgetStatesPopup,
   refreshBudgetStatesModal,
@@ -66,6 +75,7 @@ function persistCitySize(size) {
 
 function resolveBootSelection(bootMode) {
   if (bootMode === 'tutorial') {
+    clearMissionMapLayout();
     try {
       sessionStorage.setItem('anoria.startTutorial', '1');
     } catch {
@@ -83,6 +93,7 @@ function resolveBootSelection(bootMode) {
   if (bootMode === 'mission') {
     const mission = getMissionById(getMissionId() ?? '');
     const profileName = getProfileName();
+    const mapLayoutId = getMissionMapLayoutId();
     clearMissionId();
     clearProfileName();
     return {
@@ -92,7 +103,23 @@ function resolveBootSelection(bootMode) {
       roomId: null,
       action: 'mission',
       missionId: mission.id,
+      mapLayoutId,
     };
+  }
+
+  if (bootMode === 'editor') {
+    clearMissionMapLayout();
+    return {
+      size: DEFAULT_CITY_SIZE,
+      multiplayer: false,
+      pseudo: null,
+      roomId: null,
+      action: 'editor',
+    };
+  }
+
+  if (bootMode === 'new' || bootMode === 'load') {
+    clearMissionMapLayout();
   }
 
   return {
@@ -105,16 +132,37 @@ function resolveBootSelection(bootMode) {
 }
 
 export async function bootstrapGameSession(assetManager) {
+  if (redirectToLandingUnlessEntryAllowed()) {
+    return;
+  }
+
   await waitForDatabaseReady();
 
   loaderManager.show();
 
-  const bootMode = getBootMode();
-  const selectionResult = resolveBootSelection(bootMode);
-  persistCitySize(selectionResult.size);
+  // Map mode: session is runtime SoT. Write only on explicit menu entry (consumeBootMode).
+  const bootMode = consumeBootMode();
+  if (bootMode !== null) {
+    setGameMode(gameModeFromBootMode(bootMode));
+  }
 
-  clearBootMode();
-  const selectedCitySize = selectionResult.size || selectionResult;
+  const selectionResult = resolveBootSelection(bootMode ?? 'new');
+  let selectedCitySize = selectionResult.size || selectionResult;
+
+  if (selectionResult.mapLayoutId) {
+    setMissionMapLayoutId(selectionResult.mapLayoutId);
+    try {
+      const layout = await loadEditorMapLayout(
+        getEditorMapRepository(),
+        selectionResult.mapLayoutId
+      );
+      selectedCitySize = layout.citySize;
+    } catch (error) {
+      console.error('[Bootstrap] Failed to resolve custom map size:', error);
+    }
+  }
+
+  persistCitySize(selectedCitySize);
   const multiplayerEnabled = selectionResult.multiplayer || false;
   const playerPseudo = selectionResult.pseudo || null;
 
@@ -210,6 +258,7 @@ export async function bootstrapGameSession(assetManager) {
     getObjectivesManager,
     registerAppService,
   });
+
   initObjectivesPanel({
     accounting: sessionApi.accounting,
     pauseGame,
@@ -229,6 +278,11 @@ export async function bootstrapGameSession(assetManager) {
     getTutorialManager,
     invokeStartTutorial,
   });
+
+  if (isEditorMode()) {
+    applyEditorModeUi();
+    pauseGame();
+  }
 
   registerAppFunction('updateBudgetDisplay', updateBudgetDisplay);
   registerAppFunction('refreshBudgetStatesModal', refreshBudgetStatesModal);

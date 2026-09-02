@@ -13,6 +13,14 @@ import { syncMobileClickStateFab } from './MobileClickStateFab.js';
 import {
   KENNEY_CITY_KIT_TOOL_META,
 } from '../../three/adapters/kenney-city-kit/kenneyCityKitConfig.js';
+import {
+  EDITOR_TOOL_META,
+  EDITOR_TOOL_PREVIEW_URLS,
+} from '../../../shared/editor-catalog/editorKenneyCatalog.js';
+import {
+  attachBuildToolHoverPreview,
+  hideBuildToolHoverPreview,
+} from './BuildToolHoverPreview.js';
 
 /** @type {{
  *   popupManager?: object | null,
@@ -135,6 +143,7 @@ const GROUP_CREATORS = {
 };
 
 export function getButtonsUnactive() {
+  hideBuildToolHoverPreview();
   toolBarButtons.forEach((button) => {
     button.classList.remove('selected');
   });
@@ -249,7 +258,7 @@ function fillPanelFromToolIds(category, opts = {}) {
     seen.add(toolId);
 
     const fromData = buttonData.find((b) => b.tool === toolId);
-    const meta = KENNEY_CITY_KIT_TOOL_META[toolId];
+    const meta = KENNEY_CITY_KIT_TOOL_META[toolId] ?? EDITOR_TOOL_META[toolId];
     const buttonInfo = fromData
       ? {
           ...fromData,
@@ -309,6 +318,10 @@ function createRoadsButtons() {
 
 function resolveIcon(toolId) {
   if (TOOL_SVG[toolId]) return TOOL_SVG[toolId];
+  const editorPreview = EDITOR_TOOL_PREVIEW_URLS[toolId];
+  if (editorPreview) {
+    return kenneyPreviewIconHtml(editorPreview);
+  }
   const kenneyMeta = KENNEY_CITY_KIT_TOOL_META[toolId];
   if (kenneyMeta?.previewUrl) {
     return kenneyPreviewIconHtml(kenneyMeta.previewUrl);
@@ -376,7 +389,7 @@ export function getToolButtonInfosForCategory(categoryKey) {
     if (seen.has(toolId)) continue;
     seen.add(toolId);
     const fromData = buttonData.find((b) => b.tool === toolId);
-    const meta = KENNEY_CITY_KIT_TOOL_META[toolId];
+    const meta = KENNEY_CITY_KIT_TOOL_META[toolId] ?? EDITOR_TOOL_META[toolId];
     infos.push(
       fromData || {
         text: meta?.shortLabel ?? toolId,
@@ -418,7 +431,8 @@ export function createToolButton(buttonInfo, icon = '', options = {}) {
     button.classList.add(extraClass);
   }
 
-  if (KENNEY_CITY_KIT_TOOL_META[buttonInfo.tool]?.previewUrl) {
+  if (KENNEY_CITY_KIT_TOOL_META[buttonInfo.tool]?.previewUrl
+    || EDITOR_TOOL_PREVIEW_URLS[buttonInfo.tool]) {
     button.classList.add('panel-btn--kenney-preview');
   }
 
@@ -434,6 +448,7 @@ export function createToolButton(buttonInfo, icon = '', options = {}) {
   }
 
   button.addEventListener('click', (e) => {
+    hideBuildToolHoverPreview();
     if (deps?.buttonStateManager && !deps.buttonStateManager.isEnabled(buttonInfo.tool)) {
       return;
     }
@@ -443,6 +458,10 @@ export function createToolButton(buttonInfo, icon = '', options = {}) {
       deps.invokeSetActiveTool?.(e);
     }
   });
+
+  if (extraClass === 'mobile-tool-btn' || extraClass === 'panel-btn') {
+    attachBuildToolHoverPreview(button, buttonInfo.tool);
+  }
 
   const target = container || panelLayoutInner;
   target.appendChild(button);

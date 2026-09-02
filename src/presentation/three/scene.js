@@ -49,17 +49,40 @@ import {
 } from '../../composition/sessionRuntime.js';
 import { createPlacementGhostController } from './placementGhost.js';
 import { pickTileFromRaycast } from './scene-board/tileRaycast.js';
+import { pickEditorTileOnGroundPlane } from './scene-board/editorTileGroundPick.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
 import { showWarningToast, showInfoToast } from '../dom/shell/ToastNotifier.js';
 import { getKenneyCityKitMeshAdapter } from './adapters/kenney-city-kit/KenneyCityKitMeshAdapter.js';
 import { scenePresentation } from './presentationConfig.js';
 import { createSceneFog } from '../../shared/terrain-catalog/terrainAtmosphere.js';
+import { isEditorMode } from '../../composition/sessionShell.js';
+import { isCustomMapLayoutActive } from '../../shared/gameplay/customMapLayout.js';
+import { resolveKenneyGltfPresentationMode } from './adapters/kenney-nature/kenneyGltfPresentation.js';
 import { getTerrainZoneCounts, resolveTerrainZoneIndex } from '../../shared/terrain-catalog/terrainZoneLayout.js';
 import { spawnIslandShore } from './scene-board/terrain/spawnIslandShore.js';
 import {
   applyRoadMaterialToTerrainTile,
   restoreGrassMaterialOnTerrainTile,
 } from './scene-board/terrain/terrainSceneTileOps.js';
+import { createKenneyNatureSceneTile } from './scene-board/nature/createKenneyNatureSceneTile.js';
+import { createKenneyTerrainSceneTile } from './scene-board/terrain/createKenneyTerrainSceneTile.js';
+import { attachSceneTilePort } from './scene-board/SceneTilePort.js';
+import {
+  addEditorStackObject,
+  getEditorStackObjects,
+  removeEditorStackObjectById,
+  removeEditorStackObjectsAtTile,
+  removeTopEditorStackObjectAt,
+  resetEditorNatureLayout,
+} from './editor/editorNatureLayout.js';
+import {
+  resolveEditorPlacementTarget,
+  resolveEditorStackPlacement,
+  resolveEditorGhostPlacementPreview as computeEditorGhostPlacementPreview,
+} from '../../shared/editor-catalog/editorStackPlacement.js';
+import { applyKenneyVerticalEdgeMountToObject } from '../../shared/editor-catalog/editorVerticalFaceMount.js';
+import { WORLD_PLATFORM_Y } from '../../shared/terrain-catalog/terrainWorldContract.js';
+import { EDITOR_SEA_TERRAIN_ID, isEditorSeaTerrain } from '../../shared/terrain-catalog/editorSeaTerrain.js';
 
 /** Terminaux tactiles / petits écrans — GPU plus souvent limité (mémoire, contexte WebGL). */
 function isMobileDevice() {
@@ -104,7 +127,9 @@ export function createScene(_gameStore, assetManager, deps) {
       construction.ensureBuildingEmployeesSchema(id, type);
 
     const scene = new THREE.Scene();
-    try { scene.fog = createSceneFog(); } catch (_) {}
+    try {
+        scene.fog = usesEditorLikePresentation() ? null : createSceneFog({ editor: false });
+    } catch (_) {}
 
     const placementGhost = createPlacementGhostController({ scene, assetManager });
     
@@ -326,6 +351,8 @@ export function createScene(_gameStore, assetManager, deps) {
     //  Variables de items
     let terrain = [];
     let buildings = [];
+    /** @type {Map<string, import('three').Object3D>} */
+    const editorStackMeshes = new Map();
     let loadingPromises = [];
     let currentCitySize = 16; // Store current city size for citizen pathfinding
     let currentCity = null; // Store current city object for citizen updates
@@ -346,6 +373,11 @@ export function createScene(_gameStore, assetManager, deps) {
     const ZONE_SIZE = 4; // 4x4 tiles per zone
     let terrainZonePadding = 0;
     let zoneGroupsInitialized = false;
+    let editorStackHydrationEnabled = false;
+
+    function usesEditorLikePresentation() {
+        return isEditorMode() || isCustomMapLayoutActive();
+    }
 
     // Variables de gameplay
     let delay = 0;
@@ -361,6 +393,7 @@ export function createScene(_gameStore, assetManager, deps) {
 
     async function initialize(city, options = {}) {
         const seedNature = options.seedNature === true;
+        editorStackHydrationEnabled = usesEditorLikePresentation() || options.hydrateEditorLayout === true;
 
         // Store world platform before clearing scene (legacy village ground — optional)
         let worldPlatform = scenePresentation.villageWorldPlatformEnabled
@@ -371,10 +404,16 @@ export function createScene(_gameStore, assetManager, deps) {
         zoneGroups.length = 0;
         zoneGroupsInitialized = false;
         // Re-apply fog and flat background after clear
-        try { scene.fog = createSceneFog(); } catch (_) {}
+        try {
+            scene.fog = usesEditorLikePresentation() ? null : createSceneFog({ editor: false });
+        } catch (_) {}
         backdropManager.applyAtmosphere();
         terrain = [];
         buildings = [];
+        editorStackMeshes.clear();
+        if (isEditorMode()) {
+            resetEditorNatureLayout();
+        }
         loadingPromises = [];
         
         // Store city object and size for citizen pathfinding and World platform scaling
@@ -490,12 +529,15 @@ export function createScene(_gameStore, assetManager, deps) {
             buildings.push([...Array(city.size)]);
         }
         
-        // Create terrain efficiently
+        // Create terrain efficiently — editor starts empty (sea tiles, no base meshes).
         for(let x = 0; x < city.size; x++) {
             let column = [];
             for(let y = 0; y < city.size; y++) {
-                // Grass
                 const terrainId = city.tiles[x][y].terrainId;
+                if (usesEditorLikePresentation() || isEditorSeaTerrain(terrainId)) {
+                    column.push(null);
+                    continue;
+                }
                 const mesh = assetManager.createAsset(terrainId, x, y);
                 mesh.name = terrainId;
                 
@@ -534,7 +576,7 @@ export function createScene(_gameStore, assetManager, deps) {
 
         backdropManager.syncGroundFill(citySize);
 
-        if (scenePresentation.islandBeachBorderEnabled) {
+        if (scenePresentation.islandBeachBorderEnabled && !usesEditorLikePresentation()) {
             const organicPadding = scenePresentation.islandShoreOrganicPadding
                 ?? scenePresentation.islandBeachBorderRingWidth
                 ?? 4;
@@ -566,6 +608,8 @@ export function createScene(_gameStore, assetManager, deps) {
         if (loadingPromises.length > 0) {
             await Promise.all(loadingPromises);
         }
+
+        await syncEditorStackFromLayout();
         
         // Set camera bounds based on city size (with small margins)
         if (camera.setBounds && city && typeof city.size === 'number') {
@@ -1799,6 +1843,304 @@ export function createScene(_gameStore, assetManager, deps) {
      * OPTIMIZATION: Ensures objects are properly cleaned up
      * Objects are now in zone groups (not directly in scene or interactive group)
      */
+    function addMeshToTileZone(mesh, x, y, citySize = currentCitySize) {
+        const zoneIndex = resolveTerrainZoneIndex(
+            x,
+            y,
+            citySize,
+            ZONE_SIZE,
+            terrainZonePadding
+        );
+        if (zoneGroups[zoneIndex]) {
+            zoneGroups[zoneIndex].add(mesh);
+            zoneGroups[zoneIndex].visible = true;
+        } else {
+            scene.add(mesh);
+        }
+        mesh.updateMatrixWorld(true);
+        performanceManager?.invalidateFrustumCache();
+    }
+
+    /**
+     * Replace the Kenney terrain mesh at (x, y). Updates `terrain[][]` only.
+     * @param {object} city
+     * @param {number} x
+     * @param {number} y
+     * @param {string} terrainId
+     * @param {number} [rotationStep=0]
+     * @returns {boolean}
+     */
+    function replaceTerrainAt(city, x, y, terrainId, rotationStep = 0) {
+        const oldMesh = terrain[x]?.[y];
+        if (oldMesh) {
+            removeInteractiveObject(oldMesh);
+        }
+
+        const mesh = assetManager.createAsset(terrainId, x, y);
+        if (!mesh) {
+            console.warn('[Scene] replaceTerrainAt: failed to create mesh', { terrainId, x, y });
+            return false;
+        }
+
+        const normalizedStep = ((rotationStep % 4) + 4) % 4;
+        mesh.rotation.y = normalizedStep * (Math.PI / 2);
+        mesh.name = terrainId;
+        if (!terrain[x]) {
+            terrain[x] = [];
+        }
+        terrain[x][y] = mesh;
+        addMeshToTileZone(mesh, x, y, city?.size ?? currentCitySize);
+        scene.userData.requestShadowRefresh?.();
+        return true;
+    }
+
+    /**
+     * @param {import('./editor/editorNatureLayout.js').EditorStackObject} entry
+     * @returns {Promise<import('three').Object3D | null>}
+     */
+    async function createEditorStackMesh(entry) {
+        const {
+            assetId,
+            x,
+            y,
+            rotationY,
+            baseLocalY,
+            id,
+            mountMode,
+            faceDirection,
+            hostAssetId,
+        } = entry;
+        const kenneyPresentation = resolveKenneyGltfPresentationMode();
+
+        if (assetId.startsWith('nature-prop:')) {
+            const { getKenneyNaturePropAdapter } = await import(
+                './adapters/kenney-nature-props/KenneyNaturePropAdapter.js'
+            );
+            await getKenneyNaturePropAdapter().ensurePropLoaded(assetId, kenneyPresentation);
+            const port = createKenneyNatureSceneTile(assetId, x, y, rotationY ?? 0, {
+                baseLocalY,
+                editorStackId: id,
+                presentation: kenneyPresentation,
+            });
+            attachSceneTilePort(port);
+            port.root.traverse((child) => {
+                child.frustumCulled = false;
+            });
+            return port.root;
+        }
+
+        const { getKenneyNatureTerrainAdapter } = await import(
+            './adapters/kenney-nature-terrain/KenneyNatureTerrainAdapter.js'
+        );
+        await getKenneyNatureTerrainAdapter().ensureTerrainTemplate(assetId, kenneyPresentation);
+        const port = createKenneyTerrainSceneTile(assetId, x, y, {
+            presentation: kenneyPresentation,
+            baseLocalY,
+            editorStackId: id,
+            rotationY: rotationY ?? 0,
+        });
+        attachSceneTilePort(port);
+        port.root.traverse((child) => {
+            child.frustumCulled = false;
+        });
+
+        if (mountMode === 'verticalFace' && faceDirection) {
+            port.root.rotation.set(0, 0, 0);
+            applyKenneyVerticalEdgeMountToObject(
+                port.root,
+                faceDirection,
+                assetId,
+                x,
+                y,
+                baseLocalY,
+                WORLD_PLATFORM_Y
+            );
+        }
+
+        return port.root;
+    }
+
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {object | null | undefined} pickedObject
+     * @param {string} childToolId
+     * @returns {number | null}
+     */
+    function resolveEditorPlacementAnchorLocalY(x, y, pickedObject, childToolId) {
+        const terrainId = currentCity?.tiles?.[x]?.[y]?.terrainId ?? 'grass';
+        const target = resolveEditorPlacementTarget(
+            pickedObject,
+            x,
+            y,
+            terrainId,
+            getEditorStackObjects()
+        );
+        const placement = resolveEditorStackPlacement(target, childToolId, getEditorStackObjects());
+        return placement.ok ? placement.baseLocalY : null;
+    }
+
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {object | null | undefined} pickedObject
+     * @param {string} childToolId
+     * @param {number} [rotationStep=0]
+     */
+    function resolveEditorGhostPlacementPreview(x, y, pickedObject, childToolId, rotationStep = 0) {
+        const terrainId = currentCity?.tiles?.[x]?.[y]?.terrainId ?? 'grass';
+        const citySize = currentCity?.size ?? 0;
+        return computeEditorGhostPlacementPreview(
+            pickedObject,
+            x,
+            y,
+            terrainId,
+            childToolId,
+            getEditorStackObjects(),
+            rotationStep,
+            citySize,
+            (tx, ty) => currentCity?.tiles?.[tx]?.[ty]?.terrainId ?? 'grass'
+        );
+    }
+
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {string} assetId
+     * @param {number} [rotationY=0]
+     * @param {object | null | undefined} [pickedObject]
+     * @param {{ mountMode?: import('../../shared/editor-catalog/editorKenneyAssetBehavior.js').EditorAssetMountMode, faceDirection?: import('../../shared/editor-catalog/editorKenneyAssetBehavior.js').EditorVerticalFaceDirection }} [mountOptions]
+     * @returns {Promise<boolean>}
+     */
+    async function placeEditorStackObject(x, y, assetId, rotationY = 0, pickedObject = null, mountOptions = {}) {
+        const terrainId = currentCity?.tiles?.[x]?.[y]?.terrainId ?? 'grass';
+        const target = resolveEditorPlacementTarget(
+            pickedObject,
+            x,
+            y,
+            terrainId,
+            getEditorStackObjects()
+        );
+        const placement = resolveEditorStackPlacement(
+            target,
+            assetId,
+            getEditorStackObjects(),
+            {
+                ...mountOptions,
+                citySize: currentCity?.size ?? 0,
+                getTerrainIdAt: (tx, ty) => currentCity?.tiles?.[tx]?.[ty]?.terrainId ?? 'grass',
+            }
+        );
+        if (!placement.ok) {
+            return false;
+        }
+
+        const placedAssetId = placement.placedAssetId ?? assetId;
+        const entry = addEditorStackObject(
+            placedAssetId,
+            placement.x,
+            placement.y,
+            rotationY,
+            placement
+        );
+        const mesh = await createEditorStackMesh(entry);
+        if (!mesh) {
+            removeEditorStackObjectById(entry.id);
+            return false;
+        }
+
+        editorStackMeshes.set(entry.id, mesh);
+        addMeshToTileZone(mesh, placement.x, placement.y);
+        scene.userData.requestShadowRefresh?.();
+        return true;
+    }
+
+    /** @deprecated use placeEditorStackObject */
+    async function placeEditorNatureProp(x, y, propId, rotationY = 0) {
+        return placeEditorStackObject(x, y, propId, rotationY, null);
+    }
+
+    /**
+     * Bulldoze tile base terrain to editor sea. Removes all stack pieces on the tile.
+     * @param {object} city
+     * @param {number} x
+     * @param {number} y
+     * @returns {boolean}
+     */
+    function clearEditorTileBaseToSea(city, x, y) {
+        const terrainId = city?.tiles?.[x]?.[y]?.terrainId;
+        if (!terrainId || isEditorSeaTerrain(terrainId)) {
+            return false;
+        }
+
+        const removedStacks = removeEditorStackObjectsAtTile(x, y);
+        for (const obj of removedStacks) {
+            const mesh = editorStackMeshes.get(obj.id);
+            if (mesh) {
+                removeInteractiveObject(mesh);
+                editorStackMeshes.delete(obj.id);
+            }
+        }
+
+        const oldMesh = terrain[x]?.[y];
+        if (oldMesh) {
+            removeInteractiveObject(oldMesh);
+        }
+        if (!terrain[x]) {
+            terrain[x] = [];
+        }
+        terrain[x][y] = null;
+        city.tiles[x][y].terrainId = EDITOR_SEA_TERRAIN_ID;
+        scene.userData.requestShadowRefresh?.();
+        return true;
+    }
+
+    /**
+     * @param {string} stackId
+     * @returns {boolean}
+     */
+    function removeEditorStackById(stackId) {
+        const mesh = editorStackMeshes.get(stackId);
+        if (mesh) {
+            removeInteractiveObject(mesh);
+            editorStackMeshes.delete(stackId);
+            scene.userData.requestShadowRefresh?.();
+        }
+        const removed = removeEditorStackObjectById(stackId);
+        return Boolean(removed || mesh);
+    }
+
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @returns {boolean}
+     */
+    function removeEditorNaturePropAt(x, y) {
+        const top = removeTopEditorStackObjectAt(x, y);
+        if (!top) return false;
+        return removeEditorStackById(top.id);
+    }
+
+    /**
+     * Hydrate editor stack meshes from the in-memory layout (after initialize).
+     */
+    async function syncEditorStackFromLayout() {
+        if (!editorStackHydrationEnabled) return;
+        for (const obj of getEditorStackObjects()) {
+            if (editorStackMeshes.has(obj.id)) continue;
+            const mesh = await createEditorStackMesh(obj);
+            if (!mesh) continue;
+            editorStackMeshes.set(obj.id, mesh);
+            addMeshToTileZone(mesh, obj.x, obj.y);
+        }
+        scene.userData.requestShadowRefresh?.();
+    }
+
+    /** @deprecated */
+    async function syncEditorNaturePropsFromLayout() {
+        return syncEditorStackFromLayout();
+    }
+
     function removeInteractiveObject(object) {
         if (!object) return;
         
@@ -1824,6 +2166,13 @@ export function createScene(_gameStore, assetManager, deps) {
      * OPTIMIZED: Only raycast against interactive objects (buildings + terrain)
      * instead of all scene children (backdrop, lights, etc.)
      */
+    function pickInteractiveTile(raycaster) {
+        return pickTileFromRaycast(raycaster, getInteractiveObjects())
+            ?? (isEditorMode() && currentCity
+                ? pickEditorTileOnGroundPlane(raycaster, currentCity.size)
+                : null);
+    }
+
     function updateFocusedObject() {
         const inputMouse = (getSessionService('inputManager')?.mouse ?? null);
         if (!inputMouse) {
@@ -1836,7 +2185,7 @@ export function createScene(_gameStore, assetManager, deps) {
         
         raycaster.setFromCamera(mouse, camera.camera);
         
-        const newFocusedObject = pickTileFromRaycast(raycaster, getInteractiveObjects());
+        const newFocusedObject = pickInteractiveTile(raycaster);
         
         // Only update if changed (prevent unnecessary updates)
         if (newFocusedObject !== focusedObject) {
@@ -1962,7 +2311,7 @@ export function createScene(_gameStore, assetManager, deps) {
         }
         // OPTIMIZATION: Update frustum culling for zone groups (throttled)
         if (performanceManager) {
-            performanceManager.updateFrustumCulling();
+            performanceManager.updateFrustumCulling(usesEditorLikePresentation());
             // OPTIMIZATION: Update shadow casting based on camera distance (throttled, not every frame)
             performanceManager.updateShadowCasting(50); // 50 unit distance threshold - objects beyond this won't cast shadows
         }
@@ -1998,7 +2347,7 @@ export function createScene(_gameStore, assetManager, deps) {
             mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
             mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera.camera);
-            objectToSelect = pickTileFromRaycast(raycaster, getInteractiveObjects());
+            objectToSelect = pickInteractiveTile(raycaster);
         }
         return objectToSelect;
     }
@@ -2126,7 +2475,7 @@ function onMouseMove(event) {
 
     // Perform raycasting (OPTIMIZED: only interactive objects)
     raycaster.setFromCamera(mouse, camera.camera);
-    focusedObject = pickTileFromRaycast(raycaster, getInteractiveObjects());
+    focusedObject = pickInteractiveTile(raycaster);
     hoveredObjectName = focusedObject?.name || '';
 
     if (typeof this.onPlacementHover === 'function') {
@@ -2156,7 +2505,7 @@ function raycastTouchClient(clientX, clientY) {
     mouse.x = (clientX / renderer.domElement.clientWidth) * 2 - 1;
     mouse.y = -(clientY / renderer.domElement.clientHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, camera.camera);
-    return pickTileFromRaycast(raycaster, getInteractiveObjects());
+    return pickInteractiveTile(raycaster);
 }
 
 function emitPlacementHoverFromTouch(object) {
@@ -2362,10 +2711,21 @@ function onTouchEnd(event) {
 
 
     function onKeyBoardDown(event){
+        if (
+            event.key === 'Escape'
+            && typeof this.shouldEscapeToSelectMode === 'function'
+            && this.shouldEscapeToSelectMode()
+            && typeof this.onEnterSelectMode === 'function'
+        ) {
+            this.onEnterSelectMode();
+            event.preventDefault?.();
+            return;
+        }
+
         if (isGameWorldInputLocked()) {
             return;
         }
-        // StonePath tool: R rotates path orientation (Cesar-style), not the camera
+        // Build behavior: R rotates the ghost (or is reserved); camera R runs only in select behavior
         if (
             event.key
             && event.key.toLowerCase() === 'r'
@@ -2463,6 +2823,14 @@ function onTouchEnd(event) {
         onObjectSelected,
         initialize,
         update,
+        replaceTerrainAt,
+        placeEditorStackObject,
+        placeEditorNatureProp,
+        removeEditorNaturePropAt,
+        removeEditorStackById,
+        clearEditorTileBaseToSea,
+        resolveEditorPlacementAnchorLocalY,
+        resolveEditorGhostPlacementPreview,
         syncNeighborHamletDeco,
         start,
         stop,
@@ -2500,11 +2868,15 @@ function onTouchEnd(event) {
          */
         preferPlacementTouchDrag: undefined,
         /**
-         * Called before a right-click inspect selects a building.
-         * Should switch the active tool to select-object and update toolbar UI.
+         * Switch to select behavior (toolbar + activeToolId). Orthogonal to map mode (editor / solo).
          * @type {(() => void) | undefined}
          */
         onEnterSelectMode: undefined,
+        /**
+         * When true, Escape should switch back to select behavior (from build or erase).
+         * @type {(() => boolean) | undefined}
+         */
+        shouldEscapeToSelectMode: undefined,
         // Expose focused/selected for external access if needed
         get focusedObject() { return focusedObject; },
         get selectedObject() { return selectedObject; },
