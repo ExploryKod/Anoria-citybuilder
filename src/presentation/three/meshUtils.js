@@ -474,3 +474,54 @@ export function resetObjectColor(object) {
         object.material.emissive.setHex(0x000000); // Reset to default color
     }
 }
+
+/**
+ * Local-space bounding box of `object3D` — relative to the object itself,
+ * ignoring its own position/rotation/scale (but including its children's),
+ * so it's valid regardless of where/how the object is placed in the scene.
+ * Cached on the object: geometry doesn't change after a mesh is placed.
+ *
+ * @param {THREE.Object3D} object3D
+ * @returns {THREE.Box3}
+ */
+export function getLocalBoundingBox(object3D) {
+    if (object3D.userData.__localBoundingBox) {
+        return object3D.userData.__localBoundingBox;
+    }
+    object3D.updateWorldMatrix(true, false);
+    const worldBox = new THREE.Box3().setFromObject(object3D);
+    const inverse = new THREE.Matrix4().copy(object3D.matrixWorld).invert();
+    const localBox = worldBox.clone().applyMatrix4(inverse);
+    object3D.userData.__localBoundingBox = localBox;
+    return localBox;
+}
+
+/**
+ * Resolves a status-icon anchor to an actual local position on `mesh`,
+ * regardless of which adapter/glb produced it — this is what lets a status
+ * sprite (no-food, no-road, ...) land in the same relative spot on a
+ * building no matter its real-world size (village_town vs. Kenney vs.
+ * whatever comes next).
+ *
+ * `offset` is a FRACTION of the mesh's own bounding box, not an absolute
+ * unit:
+ *  - x/z: fraction of width/depth, relative to the box's horizontal center
+ *    (negative = left/back, positive = right/front)
+ *  - y: fraction of height, relative to the box's base (0 = ground, 1 = roof)
+ *
+ * @param {THREE.Object3D} mesh
+ * @param {{x: number, y: number, z: number}} offset
+ * @returns {{x: number, y: number, z: number}}
+ */
+export function resolveStatusIconPosition(mesh, offset) {
+    const box = getLocalBoundingBox(mesh);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    return {
+        x: center.x + offset.x * size.x,
+        y: box.min.y + offset.y * size.y,
+        z: center.z + offset.z * size.z,
+    };
+}

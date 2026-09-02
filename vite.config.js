@@ -45,6 +45,7 @@ export default defineConfig({
         legal: resolve(__dirname, 'legal.html'),
         credits: resolve(__dirname, 'credits.html'),
         assets: resolve(__dirname, 'assets.html'),
+        placement: resolve(__dirname, 'placement.html'),
       },
     },
   },
