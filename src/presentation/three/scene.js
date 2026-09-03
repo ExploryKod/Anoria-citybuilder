@@ -17,7 +17,6 @@ import {
 import {
     buildingPlacementCatalog,
     buildingsObjects,
-    factories,
     farms,
     palaces,
 } from '../../shared/building-catalog/index.js';
@@ -35,6 +34,7 @@ import gameUIDefault from '../dom/shell/GameUI.js';
 import { syncPopRailHud } from '../../composition/syncSessionHud.js';
 import { CitizenManager } from './managers/CitizenManager.js';
 import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
+import { createWalkerSpawnController } from './walkers/WalkerSpawnController.js';
 import { TileGridOverlay } from './managers/TileGridOverlay.js';
 import {
   MapOverlayVisibility,
@@ -176,6 +176,7 @@ export function createScene(_gameStore, assetManager, deps) {
     // PerformanceManager and CitizenPathfinding will be created in initialize() after zoneGroups/buildings/terrain are set up
     let performanceManager = null;
     let citizenPathfinding = null;
+    let walkerSpawnController = null;
 
     const camera = createCamera(gameWindow);
     const runningOnMobile = isMobileDevice();
@@ -654,6 +655,19 @@ export function createScene(_gameStore, assetManager, deps) {
         
         // Initialize CitizenPathfinding after buildings and terrain are created
         citizenPathfinding = new CitizenPathfinding(buildings, terrain);
+
+        // Catalog-driven walkers: spawns a character whenever a placed
+        // 'origin' building can reach a placed 'destination' building by
+        // road (see buildingEconomy.js `walker` facts). See
+        // src/presentation/three/walkers/WalkerSpawnController.js.
+        walkerSpawnController = createWalkerSpawnController({
+            scene,
+            citizenManager,
+            citizenPathfinding,
+            buildings,
+            city: currentCity,
+            getCitySize: () => currentCity?.size ?? currentCitySize,
+        });
     }
 
     /** @type {Promise<void>} */
@@ -1363,27 +1377,6 @@ export function createScene(_gameStore, assetManager, deps) {
                     }
                 }
 
-                // Accès routier grange (BC Parcels + icône no-road, même mécanisme que maisons / moulin)
-                if (
-                    (currentBuildingId.includes('Barn') || currentBuildingId === 'Barn-001')
-                    && buildings[x][y]
-                ) {
-                    const barnRoadScale = {
-                        x: statutsIconsMeta.road.scale.x * 0.714,
-                        y: statutsIconsMeta.road.scale.y * 0.714,
-                        z: statutsIconsMeta.road.scale.z * 0.714,
-                    };
-                    const barnRoadIcon = resolveIconAppearance(
-                        buildings[x][y], 'road', statutsIconsMeta.road.position, barnRoadScale
-                    );
-                    await syncRoadAccess({
-                        instanceId: currentInstanceId,
-                        mesh: buildings[x][y],
-                        position: barnRoadIcon.position,
-                        scale: barnRoadIcon.scale,
-                    });
-                }
-
                 // Process farms: season-specific sprites (harvest stocks → Supply BC)
                 if(farms.includes(currentBuildingId) && buildings[x][y]) {
                     // First, clean up ALL possible farm sprites to prevent any leftover sprites
@@ -1583,29 +1576,19 @@ export function createScene(_gameStore, assetManager, deps) {
           updateBuildingFields,
         });
 
-        // Sync residential + barn road icons after neighbors (evolution may have run in ECS)
+        // Sync residential road icons after neighbors (evolution may have run in ECS)
         for (let nx = 0; nx < city.size; nx++) {
             for (let ny = 0; ny < city.size; ny++) {
                 const tileType = city.tiles[nx]?.[ny]?.buildingId;
                 const instanceId = city.tiles[nx]?.[ny]?.instanceId;
                 if (!instanceId || !tileType) continue;
                 const isResidential = houses.includes(tileType) || palaces.includes(tileType);
-                const isBarn = tileType.includes('Barn') || tileType === 'Barn-001';
-                if (!isResidential && !isBarn) continue;
-                if (isResidential) {
-                    const meshType = buildings[nx]?.[ny]?.userData?.type || buildings[nx]?.[ny]?.userData?.id;
-                    await syncResidentialHouseMeshFromDb(nx, ny, meshType || tileType);
-                }
+                if (!isResidential) continue;
+                const meshType = buildings[nx]?.[ny]?.userData?.type || buildings[nx]?.[ny]?.userData?.id;
+                await syncResidentialHouseMeshFromDb(nx, ny, meshType || tileType);
                 const mesh = buildings[nx]?.[ny];
                 if (!mesh?.userData) continue;
-                const roadFallbackScale = isBarn
-                    ? {
-                        x: statutsIconsMeta.road.scale.x * 0.714,
-                        y: statutsIconsMeta.road.scale.y * 0.714,
-                        z: statutsIconsMeta.road.scale.z * 0.714,
-                      }
-                    : statutsIconsMeta.road.scale;
-                const residentialRoadIcon = resolveIconAppearance(mesh, 'road', statutsIconsMeta.road.position, roadFallbackScale);
+                const residentialRoadIcon = resolveIconAppearance(mesh, 'road', statutsIconsMeta.road.position, statutsIconsMeta.road.scale);
                 await syncRoadAccess({
                     instanceId,
                     mesh,
@@ -1640,23 +1623,13 @@ export function createScene(_gameStore, assetManager, deps) {
 
 
         // Display results in UI — population read at start of update (ECS already applied)
-        const currentPopulation = totalPop;
-
-        // Manage multiple citizens based on current population state (from IndexedDB)
-        // Only update if citizenPathfinding is initialized
-        if (citizenPathfinding) {
-            await citizenManager.updateCitizens(
-                currentPopulation,
-                city,
-                citizenPathfinding.findBorderRoads.bind(citizenPathfinding),
-                citizenPathfinding.createRoadPath.bind(citizenPathfinding),
-                (citizen) => citizenPathfinding.recalculateCitizenPath(citizen, citizenManager),
-                citizenPathfinding.validatePath.bind(citizenPathfinding)
-            );
-        }
-        
         // Famished / deaths / pop rail — owned by syncPopRailHud (tick + refreshEmploymentPresentation)
 
+        // Catalog-driven walkers: scan for origin buildings that can now
+        // reach a destination building, once per turn.
+        if (walkerSpawnController) {
+            walkerSpawnController.scanForJourneys();
+        }
     }
 
     /**
@@ -1700,9 +1673,8 @@ export function createScene(_gameStore, assetManager, deps) {
                 const isFarm = farms.includes(currentBuildingId);
                 const isWindmill =
                     currentBuildingId.includes('Windmill') || currentBuildingId.includes('windmill');
-                const isFactory = factories.includes(currentBuildingId);
 
-                if (!isMarket && !isFarm && !isWindmill && !isFactory) continue;
+                if (!isMarket && !isFarm && !isWindmill) continue;
 
                 if (understaffed.has(instanceId)) {
                     const noWorkMeta = (isMarket || isWindmill)
@@ -2221,22 +2193,13 @@ export function createScene(_gameStore, assetManager, deps) {
         const deltaTime = (currentTime - lastFrameTime) / 1000; // Convert to seconds
         lastFrameTime = currentTime;
         
-        // Update all citizens (skip while game is paused)
-        if (citizenPathfinding && currentCity && !gameUI.isPaused) {
-            citizenManager.updateAllCitizens(
-                deltaTime,
-                currentCity,
-                citizenPathfinding.isRoadTile.bind(citizenPathfinding),
-                citizenPathfinding.hasBuilding.bind(citizenPathfinding),
-                citizenPathfinding.worldToTile.bind(citizenPathfinding),
-                citizenPathfinding.getAdjacentRoads.bind(citizenPathfinding),
-                citizenPathfinding.createRoadPath.bind(citizenPathfinding),
-                (citizen) => citizenPathfinding.recalculateCitizenPath(citizen, citizenManager),
-                citizenPathfinding.validatePath.bind(citizenPathfinding),
-                citizenPathfinding.findBorderRoads.bind(citizenPathfinding)
-            );
+        // Legacy border-bounce citizen spawn/update (CitizenManager.updateCitizens /
+        // updateAllCitizens) retired — superseded by walkerSpawnController below.
+
+        if (walkerSpawnController && !gameUI.isPaused) {
+            walkerSpawnController.update(deltaTime);
         }
-        
+
         updateFocusedObject(); // Update focused object every frame
         if (typeof onPlacementHoverHandler === 'function') {
             onPlacementHoverHandler(focusedObject ?? null);
