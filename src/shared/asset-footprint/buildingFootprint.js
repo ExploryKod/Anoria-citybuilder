@@ -1,12 +1,31 @@
 /**
- * Collision footprint (in tiles) for every villageTown-sourced/reassigned
- * building id — see resolveFootprint.js. Explicit for every id, no default:
- * changing a building's footprint (e.g. making Barn-001 bigger) means
- * editing exactly this one line, in this one file, nothing else.
+ * Collision footprint (in tiles) for every building id — see
+ * resolveFootprint.js, which only ever imports this (and its nature/terrain
+ * siblings) and knows nothing about where any number came from. Explicit
+ * for every hand-authored id, no default: changing a building's footprint
+ * (e.g. making Barn-001 bigger) means editing exactly this one line, in
+ * this one file, nothing else.
+ *
+ * Kenney building ids are folded in from their own auto-generated registry
+ * (scanned from the real GLB bounding box) — this file is the one place
+ * that's allowed to know Kenney exists; resolveFootprint.js isn't.
  *
  * @type {Readonly<Record<string, { width: number, depth: number }>>}
  */
+
+import { KENNEY_BUILDING_CATALOG_ENTRIES } from '../building-catalog/kenneyCityKitRegistry.generated.js';
+
+const KENNEY_BUILDING_FOOTPRINT = Object.freeze(
+  Object.fromEntries(
+    Object.entries(KENNEY_BUILDING_CATALOG_ENTRIES).map(([id, entry]) => [
+      id,
+      Object.freeze({ width: entry.construction.footprintWidth, depth: entry.construction.footprintDepth }),
+    ])
+  )
+);
+
 export const BUILDING_FOOTPRINT = Object.freeze({
+  ...KENNEY_BUILDING_FOOTPRINT,
   'Barn-001': Object.freeze({ width: 2, depth: 2 }),
   'BookShop-001': Object.freeze({ width: 1, depth: 1 }),
   'Chapel': Object.freeze({ width: 1, depth: 1 }),
