@@ -6,7 +6,7 @@ import {
   cityHasCommercialRoute,
   cityShowsOnTradeMapRoutes,
   getTradeMapCityById,
-} from '../../../../contexts/commerce/domain/catalogs/TradeMapCityCatalog.js';
+} from '../../../../composition/tradeMapCatalog.js';
 
 const UNITS_PER_QUOTA_SQUARE = 5;
 

@@ -1,9 +1,10 @@
 /**
  * Behavior tests — Supply: monthly house gathering (fruit + game).
  *
- * Every inhabited house gains foraged fruit and hunted game each month,
- * independent from farms and markets. Level 2 houses still consume farm
- * crops via `ConsumeResource`.
+ * Every inhabited house gains a FIXED basket of foraged fruit and hunted
+ * game each month (1 each, regardless of population size — see
+ * HouseSubsistencePolicy.js), independent from farms and markets. Level 2
+ * houses still consume farm crops via `ConsumeResource`.
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
@@ -70,25 +71,25 @@ function house(id, extras = {}) {
 
 describe('Supply — house gathering (fruit & game)', () => {
   describe('HouseSubsistencePolicy.computeMonthlyGatheringCredit', () => {
-    test('adds fruit and game baskets per inhabitant each month', () => {
+    test('adds a fixed fruit and game basket per house each month, regardless of population', () => {
       const result = computeMonthlyGatheringCredit({
         pop: 4,
         stocks: { food: 1, wheat: 1, fruit: 2, game: 1 },
       });
 
-      expect(result.credited).toEqual({ fruit: 4, game: 4 });
-      expect(result.nextStock.fruit).toBe(6);
-      expect(result.nextStock.game).toBe(5);
+      expect(result.credited).toEqual({ fruit: 1, game: 1 });
+      expect(result.nextStock.fruit).toBe(3);
+      expect(result.nextStock.game).toBe(2);
       expect(result.nextStock.wheat).toBe(1);
-      expect(result.nextStock.food).toBe(12);
+      expect(result.nextStock.food).toBe(6);
     });
 
     test('accumulates on top of existing gathering stocks', () => {
       const first = computeMonthlyGatheringCredit({ pop: 2, stocks: { fruit: 0, game: 0 } });
       const second = computeMonthlyGatheringCredit({ pop: 2, stocks: first.nextStock });
 
-      expect(second.nextStock.fruit).toBe(4);
-      expect(second.nextStock.game).toBe(4);
+      expect(second.nextStock.fruit).toBe(2);
+      expect(second.nextStock.game).toBe(2);
     });
 
     test('zero population credits nothing', () => {
@@ -99,9 +100,9 @@ describe('Supply — house gathering (fruit & game)', () => {
 
     test('legacy computeSubsistenceFoodCredit sums fruit + game credited', () => {
       const result = computeSubsistenceFoodCredit({ pop: 3, stocks: { food: 0 } });
-      expect(result.credited).toBe(6);
-      expect(result.nextStock.fruit).toBe(3);
-      expect(result.nextStock.game).toBe(3);
+      expect(result.credited).toBe(2);
+      expect(result.nextStock.fruit).toBe(1);
+      expect(result.nextStock.game).toBe(1);
     });
   });
 
@@ -120,13 +121,13 @@ describe('Supply — house gathering (fruit & game)', () => {
       const outcome = await useCase.execute({ houseId: 'House-Blue-1-2', monthIndex: 4 });
 
       expect(outcome.produced).toBe(true);
-      expect(outcome.credited).toEqual({ fruit: 3, game: 3 });
-      expect(outcome.food).toBe(6);
+      expect(outcome.credited).toEqual({ fruit: 1, game: 1 });
+      expect(outcome.food).toBe(2);
 
       const updated = await repo.findById('House-Blue-1-2');
-      expect(updated.stocks.fruit).toBe(3);
-      expect(updated.stocks.game).toBe(3);
-      expect(updated.stocks.food).toBe(6);
+      expect(updated.stocks.fruit).toBe(1);
+      expect(updated.stocks.game).toBe(1);
+      expect(updated.stocks.food).toBe(2);
       expect(updated.lastSubsistenceMonth).toBe(4);
     });
 
@@ -146,7 +147,7 @@ describe('Supply — house gathering (fruit & game)', () => {
 
       const outcome = await useCase.execute({ houseId: 'House-Blue-1-2', monthIndex: 4 });
       expect(outcome.produced).toBe(true);
-      expect(outcome.credited).toEqual({ fruit: 3, game: 3 });
+      expect(outcome.credited).toEqual({ fruit: 1, game: 1 });
     });
 
     test('skips houses with zero population', async () => {
@@ -175,9 +176,9 @@ describe('Supply — house gathering (fruit & game)', () => {
       const outcome = await produceAll.execute({ monthIndex: 2 });
 
       expect(outcome.producedCount).toBe(3);
-      expect((await repo.findById('House-Blue-1-2')).stocks).toMatchObject({ fruit: 2, game: 2 });
+      expect((await repo.findById('House-Blue-1-2')).stocks).toMatchObject({ fruit: 1, game: 1 });
       expect((await repo.findById('House-Purple-3-4')).stocks).toMatchObject({ fruit: 1, game: 1 });
-      expect((await repo.findById('House-Red-5-6')).stocks).toMatchObject({ fruit: 3, game: 3 });
+      expect((await repo.findById('House-Red-5-6')).stocks).toMatchObject({ fruit: 1, game: 1 });
       expect((await repo.findById('House-Blue-7-8')).stocks.food).toBe(0);
     });
   });

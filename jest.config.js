@@ -36,6 +36,11 @@ export default {
     
     // Module name mapping for imports
     moduleNameMapper: {
+        // Jest has no CSS transform configured (no test needs real styling) —
+        // stub out any .css import anywhere in a test's module graph instead
+        // of failing to parse it (e.g. a UI library's own stylesheet pulled
+        // in transitively, like js-toast-notifier's dist/index.css).
+        '\\.css$': '<rootDir>/tests/__mocks__/styleMock.js',
         '^(\\.{1,2}/.*)\\.js$': '$1'
     },
     

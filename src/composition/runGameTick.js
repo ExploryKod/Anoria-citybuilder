@@ -10,7 +10,6 @@ import {
 import { syncSessionHud } from './syncSessionHud.js';
 import { isLoseMode } from '../config/loseMode.js';
 import { isDeathGameOverReached } from './gameplayMortalityState.js';
-import { presentIncomingNewsEvents } from '../presentation/dom/intelligence/NewsEventModal.js';
 
 /**
  * @param {object} params
@@ -28,6 +27,7 @@ import { presentIncomingNewsEvents } from '../presentation/dom/intelligence/News
  * @param {(cleanupResult?: { deleted?: number, deletedTurns?: number[] }) => void | Promise<void>} [params.notifyBudgetCleanup]
  * @param {(params: { housing: object }) => void | Promise<void>} [params.refreshPlacementToolGating]
  * @param {() => void} [params.onGameOver]
+ * @param {() => Promise<void>} [params.presentIncomingNewsEvents] — injected at the edge (presentation owns the modal)
  */
 export async function runGameTick({
   time,
@@ -44,6 +44,7 @@ export async function runGameTick({
   notifyBudgetCleanup,
   refreshPlacementToolGating,
   onGameOver,
+  presentIncomingNewsEvents,
 }) {
   if (shouldAbort()) {
     return;
@@ -106,10 +107,12 @@ export async function runGameTick({
     return;
   }
 
-  try {
-    await presentIncomingNewsEvents();
-  } catch (err) {
-    console.error('[Game] News event presentation error:', err?.message || err);
+  if (presentIncomingNewsEvents) {
+    try {
+      await presentIncomingNewsEvents();
+    } catch (err) {
+      console.error('[Game] News event presentation error:', err?.message || err);
+    }
   }
 
   if (isLoseMode() && isDeathGameOverReached()) {

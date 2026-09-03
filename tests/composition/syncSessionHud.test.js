@@ -103,6 +103,12 @@ jest.unstable_mockModule('../../src/composition/hudResourceAggregates.js', () =>
       commerceTotal: 6,
     };
   }),
+  getHudNatureResourceScopeSnapshot: jest.fn(async (scope) => {
+    if (scope === 'country') {
+      return { nature: { wood: 3, stone: 1 } };
+    }
+    return { nature: { wood: 1, stone: 0 } };
+  }),
 }));
 
 const { syncSessionHud } = await import('../../src/composition/syncSessionHud.js');
@@ -160,6 +166,8 @@ describe('syncSessionHud', () => {
       cityHamlet: { wheat: 5, carrot: 0, cabbage: 0 },
       commerceCountry: { wood: 10, furniture: 1, figs: 4 },
       commerceHamlet: { wood: 2, furniture: 0, figs: 4 },
+      natureCountry: { wood: 3, stone: 1 },
+      natureHamlet: { wood: 1, stone: 0 },
     });
   });
 });

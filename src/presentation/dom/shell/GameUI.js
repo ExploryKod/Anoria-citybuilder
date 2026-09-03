@@ -43,7 +43,7 @@ import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { SEASON_KEYS } from '../../../shared/time/TimeCalendar.js';
 import { msToSpeedLevel, SPEED_LEVEL_MAX } from '../../../shared/gameplay/SimulationDefaults.js';
 import { getResidentialGroupTitle } from './ResidentialGroupLabels.js';
-import { allSocialGroups } from '../../../contexts/employment/domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
+import { allSocialGroups } from '../../../composition/employmentCatalog.js';
 import { laborSlotFromStats } from '../../../composition/hudPopulationAggregates.js';
 import {
     HUD_CITY_RESOURCE_PRODUCTS,
