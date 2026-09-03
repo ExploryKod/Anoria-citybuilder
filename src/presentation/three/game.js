@@ -84,7 +84,7 @@ import {
 } from '../dom/shell/BuildingNotifications.js';
 import { showErrorToast } from '../dom/shell/ToastNotifier.js';
 import { presentBuildingInfoSelection } from '../dom/info/presenters/useBuildingInfoSelection.js';
-import { assetsPrices, playableAssetsPrices } from '../../shared/building-catalog/index.js';
+import { assetsPrices } from '../../shared/building-catalog/index.js';
 import { isWindmillBuildingType, isMarketBuildingType } from '../../shared/building-catalog/BuildingSupplyTypes.js';
 import {
   createPlacementGhostSession,
@@ -159,7 +159,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
   function usesTouchPlacementRotationFlow(toolId) {
     return prefersTouchPlacementFlow()
-      && isPlaceableBuildingTool(toolId, playableAssetsPrices);
+      && isPlaceableBuildingTool(toolId, assetsPrices);
   }
 
   /** Touch placement always uses base mesh + placementRotationStep (roads included). */
@@ -191,7 +191,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
   function beginTouchPendingPlacement(placeX, placeY, toolId) {
     const buildingType = resolveTouchPlacementBuildingType(toolId);
-    const gridSize = playableAssetsPrices[toolId]?.gridSize ?? playableAssetsPrices[buildingType]?.gridSize ?? 1;
+    const gridSize = assetsPrices[toolId]?.gridSize ?? assetsPrices[buildingType]?.gridSize ?? 1;
     const rotationStep = scene.placementGhost?.rotationStep ?? 0;
     touchPendingPlacement = {
       x: placeX,
@@ -344,7 +344,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
   /** Build behavior: playable buildings + editor terrain/props (ghost, R rotation, placement). */
   function isActivePlacementTool(toolId = activeToolId) {
     return isEditorPlacementTool(toolId)
-      || isPlaceableBuildingTool(toolId, playableAssetsPrices);
+      || isPlaceableBuildingTool(toolId, assetsPrices);
   }
 
   const behaviorModeOptions = { isPlacementTool: isActivePlacementTool };
@@ -500,7 +500,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       }
       return getEffectiveBuildingToolId();
     },
-    assetCatalog: playableAssetsPrices,
+    assetCatalog: assetsPrices,
     isPlaceableTool: (toolId) => isActivePlacementTool(toolId),
     getFocusedObject: () => scene.focusedObject,
     canPlaceBuildingAtTile: (params) => {
@@ -955,7 +955,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
           x,
           y,
           buildingType: activeToolId,
-          assetCatalog: playableAssetsPrices,
+          assetCatalog: assetsPrices,
         });
         if (!placementCheck.ok) {
           if (placementCheck.reason) {
@@ -1006,7 +1006,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
           x: placeX,
           y: placeY,
           buildingType: activeToolId,
-          assetCatalog: playableAssetsPrices,
+          assetCatalog: assetsPrices,
         });
         if (!placementCheck.ok) {
           if (placementCheck.reason) {
@@ -1027,7 +1027,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       if (placed) {
         const effectiveType = getEffectiveBuildingToolId();
         const gridSize =
-          playableAssetsPrices[activeToolId]?.gridSize ?? playableAssetsPrices[effectiveType]?.gridSize ?? 1;
+          assetsPrices[activeToolId]?.gridSize ?? assetsPrices[effectiveType]?.gridSize ?? 1;
         placementGhostSession.suppressGhostAtFootprint(placeX, placeY, gridSize);
       } else {
         placementGhostSession.sync(selectedObject);

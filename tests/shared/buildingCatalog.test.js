@@ -6,7 +6,7 @@
 
 import { describe, test, expect } from '@jest/globals';
 import { buildingCatalog, getBuildingDefinition } from '../../src/shared/building-catalog/buildingCatalog.js';
-import { assetsPrices, playableAssetsPrices } from '../../src/shared/building-catalog/assetsPrices.js';
+import { assetsPrices } from '../../src/shared/building-catalog/assetsPrices.js';
 import { KENNEY_BUILDING_CATALOG_ENTRIES } from '../../src/shared/building-catalog/kenneyCityKitRegistry.generated.js';
 import {
   BUILDING_SECTOR_MAP,
@@ -129,15 +129,15 @@ describe('BuildingMaintenanceBreakdownPolicy — derived maintenance facts', () 
   });
 });
 
-describe('playableAssetsPrices — every id with a real economy entry', () => {
-  test('includes Kenney, village buildings, and StonePath — playability is derived, not a fixed allowlist', () => {
-    expect(playableAssetsPrices['Kenney-Suburban-building-type-a']).toBeDefined();
-    expect(playableAssetsPrices['Farm-Wheat']).toBeDefined();
-    expect(playableAssetsPrices['StonePath-001']).toBeDefined();
-    expect(playableAssetsPrices.roads).toBeUndefined();
-    expect(playableAssetsPrices['House-Blue']).toBeDefined();
-    expect(playableAssetsPrices['Market-Stall']).toBeDefined();
-    expect(playableAssetsPrices['Barn-001']).toBeDefined();
+describe('assetsPrices — every buildingCatalog entry with a construction fact is playable', () => {
+  test('includes Kenney, village buildings, and StonePath — no separate playable allowlist', () => {
+    expect(assetsPrices['Kenney-Suburban-building-type-a']).toBeDefined();
+    expect(assetsPrices['Farm-Wheat']).toBeDefined();
+    expect(assetsPrices['StonePath-001']).toBeDefined();
+    expect(assetsPrices.roads).toBeUndefined();
+    expect(assetsPrices['House-Blue']).toBeDefined();
+    expect(assetsPrices['Market-Stall']).toBeDefined();
+    expect(assetsPrices['Barn-001']).toBeDefined();
   });
 });
 
