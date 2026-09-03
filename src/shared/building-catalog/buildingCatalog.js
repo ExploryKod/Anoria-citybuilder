@@ -14,16 +14,14 @@
  *      duplicated fact justifies one).
  *
  * The raw per-id entries live in shared/asset-economy/ (buildingEconomy.js /
- * natureEconomy.js / terrainEconomy.js) for hand-authored village ids, split
- * by the same theme every other declarative catalog in this codebase uses,
- * plus Kenney's own auto-generated registry (kenneyCityKitRegistry.
- * generated.js) for its ~900 building ids. This file only merges them and
- * re-exports under the historic name — edit a village id's facts in its
- * theme file, never here; Kenney facts are auto-generated, never hand-edited
- * anywhere. `buildingCatalog` is the ONE place both are merged — nothing
- * else needs to import KENNEY_BUILDING_CATALOG_ENTRIES to get economy facts
- * (compare shared/asset-footprint/buildingFootprint.js, which does the same
- * for footprint).
+ * natureEconomy.js / terrainEconomy.js), split by the same theme every other
+ * declarative catalog in this codebase uses. This file only merges the three
+ * theme catalogs and re-exports under the historic name — it has NO idea
+ * Kenney exists, or any other source; that knowledge lives inside
+ * buildingEconomy.js itself (which folds Kenney's auto-generated registry
+ * into the building theme, same pattern as
+ * shared/asset-footprint/buildingFootprint.js). Edit an id's facts in its
+ * theme file, never here.
  *
  * Each bounded context keeps its own accessor/policy file (e.g.
  * `EmploymentSectorCatalog.js`, `BuildingMaintenanceBreakdownPolicy.js`,
@@ -74,7 +72,6 @@
 import { BUILDING_ECONOMY } from '../asset-economy/buildingEconomy.js';
 import { NATURE_ECONOMY } from '../asset-economy/natureEconomy.js';
 import { TERRAIN_ECONOMY } from '../asset-economy/terrainEconomy.js';
-import { KENNEY_BUILDING_CATALOG_ENTRIES } from './kenneyCityKitRegistry.generated.js';
 
 /** @param {any} value */
 function deepFreeze(value) {
@@ -86,15 +83,12 @@ function deepFreeze(value) {
 }
 
 /**
- * Merge of the three theme-split village economy catalogs (asset-economy/)
- * plus Kenney's auto-generated registry — kept as one compat export so
- * every existing bounded-context derivation point
+ * Merge of the three theme-split economy catalogs (asset-economy/) — kept
+ * as one compat export so every existing bounded-context derivation point
  * (EmploymentSectorCatalog.js, BuildingMaintenanceBreakdownPolicy.js,
  * HouseTypeCatalog.js, BuildingNotifications.js, ...) needs zero changes.
- * Add/edit a village id's facts in its theme file (buildingEconomy.js /
- * natureEconomy.js / terrainEconomy.js), never here; Kenney ids only have
- * `displayName`/`construction` (no employment/accounting/residentialGroup —
- * those sections are village-only facts today).
+ * Add/edit an entry in its theme file (buildingEconomy.js / natureEconomy.js
+ * / terrainEconomy.js), never here — this file itself never names a source.
  *
  * @type {Readonly<Record<string, BuildingDefinition>>}
  */
@@ -102,7 +96,6 @@ export const buildingCatalog = deepFreeze({
   ...BUILDING_ECONOMY,
   ...NATURE_ECONOMY,
   ...TERRAIN_ECONOMY,
-  ...KENNEY_BUILDING_CATALOG_ENTRIES,
 });
 
 /**

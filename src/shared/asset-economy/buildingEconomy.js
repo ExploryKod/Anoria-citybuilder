@@ -1,13 +1,22 @@
+import { KENNEY_BUILDING_CATALOG_ENTRIES } from '../building-catalog/kenneyCityKitRegistry.generated.js';
+
 /**
  * Economy facts (price, category, employment, accounting, residentialGroup,
  * displayName) for the playable-building theme — houses, farms, industry,
  * markets, infrastructure, public, palaces. See buildingCatalog.js for the
  * merged, compat-shaped export every bounded context still reads.
  *
+ * Kenney building ids are folded in from their own auto-generated registry
+ * (scanned from the real GLB bounding box) — this file is the one place
+ * that's allowed to know Kenney exists; buildingCatalog.js isn't. Same
+ * pattern as shared/asset-footprint/buildingFootprint.js.
+ *
  * Same hard rules as buildingCatalog.js: data only, no behavior, no
  * `src/contexts/**` imports.
  */
 export const BUILDING_ECONOMY = {
+  ...KENNEY_BUILDING_CATALOG_ENTRIES,
+
   // StonePath variants reuse one mesh with different rotations — the sole
   // road tool. The old separate procedural 'roads' tile/mesh (a different,
   // now-retired asset) has been removed entirely, not just hidden — its
