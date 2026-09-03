@@ -2,7 +2,7 @@
  * Presentation — which placement tool buttons exist and which stay always on.
  */
 
-import { assetsPrices } from '../../../shared/building-catalog/assetsPrices.js';
+import { assetsPrices } from '../../../shared/building-catalog/buildingPlacementCatalog.js';
 import { farms } from '../../../shared/building-catalog/buildingCategories.js';
 
 const ROAD_TOOL_IDS = Object.freeze([
