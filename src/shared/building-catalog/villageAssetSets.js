@@ -5,9 +5,10 @@
  * There used to be a second, narrower "playable" list here (only farms +
  * roads), disconnected from the actual rendering/economy catalogs — it
  * silently drifted out of sync (see git history) and blocked real,
- * priced, rendered buildings from ever being placed. Playability is now
- * derived — see assetsPrices.js's isPlayableBuildingId — so this file only needs to declare
- * the one real fact: every village mesh id that exists.
+ * priced, rendered buildings from ever being placed. Every buildingCatalog
+ * entry with a construction fact is playable, full stop — see
+ * assetsPrices.js — so this file only needs to declare the one real fact:
+ * every village mesh id that exists.
  */
 
 /**

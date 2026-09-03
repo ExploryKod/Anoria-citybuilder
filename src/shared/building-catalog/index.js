@@ -1,10 +1,5 @@
 export { buildingCatalog, getBuildingDefinition } from './buildingCatalog.js';
-export {
-  assetsPrices,
-  playableAssetsPrices,
-  isPlayableBuildingId,
-  getPlayableBuildingIds,
-} from './assetsPrices.js';
+export { assetsPrices } from './assetsPrices.js';
 export {
   houses,
   firstHouses,
