@@ -3,7 +3,8 @@
  * which ids are playable at all.
  * Pure data — no Three.js. Source of truth for construction cost lookups.
  *
- * Derived from `buildingCatalog.js` (price/category) and
+ * Derived from `buildingCatalog.js` (price/category — already merged village
+ * + Kenney, no separate Kenney import needed here) and
  * `asset-footprint/resolveFootprint.js` (gridSize/footprintWidth/
  * footprintDepth — single-sourced there, not duplicated here). This file
  * keeps its historic export name/shape so existing call sites (construction,
@@ -18,12 +19,9 @@
  */
 
 import { buildingCatalog } from './buildingCatalog.js';
-import { KENNEY_BUILDING_CATALOG_ENTRIES } from './kenneyCityKitRegistry.generated.js';
 import { resolveFootprint, resolveGridSize } from '../asset-footprint/resolveFootprint.js';
 
-const MERGED_CATALOG = { ...buildingCatalog, ...KENNEY_BUILDING_CATALOG_ENTRIES };
-
-const PLAYABLE_BUILDING_IDS = Object.freeze(Object.keys(MERGED_CATALOG));
+const PLAYABLE_BUILDING_IDS = Object.freeze(Object.keys(buildingCatalog));
 const PLAYABLE_BUILDING_ID_SET = new Set(PLAYABLE_BUILDING_IDS);
 
 /**
@@ -42,7 +40,7 @@ export function getPlayableBuildingIds() {
 function buildAssetsPrices({ playableOnly = false } = {}) {
   /** @type {Record<string, { price: number, category: string, gridSize: number, footprintWidth?: number, footprintDepth?: number }>} */
   const prices = {};
-  for (const [id, definition] of Object.entries(MERGED_CATALOG)) {
+  for (const [id, definition] of Object.entries(buildingCatalog)) {
     if (!definition.construction) continue;
     if (playableOnly && !isPlayableBuildingId(id)) continue;
     const footprint = resolveFootprint(id);
