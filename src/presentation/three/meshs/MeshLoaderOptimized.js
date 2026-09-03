@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { meshNameMapping } from './data.js';
+import { resolveMeshAlias } from './resolveMeshAlias.js';
 import {
     VILLAGE_MESH_TOOL_IDS_BY_CATEGORY,
 } from '../../../shared/building-catalog/villageAssetSets.js';
@@ -225,25 +225,14 @@ class MeshLoaderOptimized {
             if (numberedPrim[1] === 'Cylinder') return 'Cylinder';
             return `${numberedPrim[1]}-${numberedPrim[2].padStart(3, '0')}`;
         }
-        // Check if base name or any variant needs special mapping (check BEFORE standard parsing)
-        // Sort mappings by length (descending) to check most specific first
-        const sortedMappings = Object.entries(meshNameMapping).sort((a, b) => b[0].length - a[0].length);
-        
-        for (const [variant, mappedName] of sortedMappings) {
-            // Check exact match
-            if (baseName === variant) {
-                return mappedName;
-            }
-            // Check if it starts with variant (for numbered variants like House_2Story_Purple001)
-            // Avoid short prefixes that collide (e.g. Tomb vs Tombstone)
-            if (variant.length >= 4 && baseName.startsWith(variant)) {
-                const next = baseName[variant.length];
-                if (!next || /\d/.test(next) || next === '_') {
-                    return mappedName;
-                }
-            }
+        // Check if base name is a raw GLB alias of some catalog id (Windmill001 →
+        // Windmill-001, House_2Story_Purple001 → House-2Story, ...) — reads
+        // straight off each id's geometry.aliases, no separate mapping table.
+        const aliasMatch = resolveMeshAlias(baseName);
+        if (aliasMatch !== baseName) {
+            return aliasMatch;
         }
-        
+
         // Check if it's already a mapped tree name (Tree-Sapin, Tree-Arbuste, Tree-Chene)
         if (baseName === 'Tree-Sapin') return 'Tree-Pine-001';
         if (baseName === 'Tree-Arbuste') return 'Tree-Square-001';
@@ -317,13 +306,8 @@ class MeshLoaderOptimized {
         }
         
         let toolName = `${parts[0]}-${parts[1] || ''}`.replace(/-$/, '');
-        
-        // Apply mapping if needed
-        if (meshNameMapping[toolName]) {
-            return meshNameMapping[toolName];
-        }
-        
-        return toolName;
+
+        return resolveMeshAlias(toolName);
     }
 
     /**
