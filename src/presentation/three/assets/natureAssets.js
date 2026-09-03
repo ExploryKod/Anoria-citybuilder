@@ -1160,6 +1160,7 @@ export const NATURE_ASSETS = Object.freeze({
       renderOrder: null,
       frustumCulled: true,
       displayColor: null,
+      instanceable: true,
     },
     button: {
       group: 'tombs',
@@ -1196,6 +1197,7 @@ export const NATURE_ASSETS = Object.freeze({
       renderOrder: null,
       frustumCulled: true,
       displayColor: null,
+      instanceable: true,
     },
     button: {
       group: 'tombs',
@@ -1232,6 +1234,7 @@ export const NATURE_ASSETS = Object.freeze({
       renderOrder: null,
       frustumCulled: true,
       displayColor: null,
+      instanceable: true,
     },
     button: {
       group: 'tombs',
