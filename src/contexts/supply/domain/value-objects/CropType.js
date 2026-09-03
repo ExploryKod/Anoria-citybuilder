@@ -1,4 +1,5 @@
 import { FOOD_CIRCUIT } from '../catalogs/FoodCircuitCatalog.js';
+import { getCategoriesForRole } from '../policies/ResourceRolePolicy.js';
 
 /** @typedef {'wheat' | 'carrot' | 'cabbage'} Crop */
 
@@ -9,9 +10,7 @@ export const CROPS = FOOD_CIRCUIT.crops;
  * @returns {Crop | null}
  */
 export function cropFromFarmType(farmType) {
-  const type = typeof farmType === 'string' ? farmType : '';
-  const entry = FOOD_CIRCUIT.farmTypeToCrop.find(({ match }) => match.test(type));
-  return entry ? entry.crop : null;
+  return getCategoriesForRole(farmType, 'producer')[0] ?? null;
 }
 
 /**

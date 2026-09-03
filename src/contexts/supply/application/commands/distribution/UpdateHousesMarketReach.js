@@ -1,4 +1,5 @@
-import { isWithinMarketRange } from '../../../domain/policies/MarketRangePolicy.js';
+import { isWithinRange } from '../../../domain/policies/ResourceRangePolicy.js';
+import { getRangeForRole } from '../../../domain/policies/ResourceRolePolicy.js';
 
 /**
  * Command: mark each house `marketTooFar` if it is outside range of every
@@ -46,10 +47,10 @@ export class UpdateHousesMarketReach {
       if (!Number.isFinite(house.x) || !Number.isFinite(house.y)) continue;
 
       const within = marketsWithRoad.some((market) =>
-        isWithinMarketRange(
+        isWithinRange(
           { x: house.x, y: house.y },
           { x: market.x, y: market.y },
-          maxDistance
+          getRangeForRole(market.type, 'distributor') ?? maxDistance
         )
       );
 

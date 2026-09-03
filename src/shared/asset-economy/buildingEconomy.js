@@ -54,21 +54,21 @@ export const BUILDING_ECONOMY = {
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'merchants',
-    walker: { role: 'origin' },
+    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'] }],
   },
   'House-Red': {
     displayName: 'Maison rouge',
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'artisans',
-    walker: { role: 'origin' },
+    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'] }],
   },
   'House-Purple': {
     displayName: 'Maison violette',
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'scholars',
-    walker: { role: 'origin' },
+    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'] }],
   },
 
   // Palaces
@@ -76,6 +76,7 @@ export const BUILDING_ECONOMY = {
     displayName: 'Palais',
     construction: { price: 20, category: 'palaces' },
     accounting: { maintenance: 6 },
+    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'] }],
   },
 
   // Farms
@@ -83,17 +84,19 @@ export const BUILDING_ECONOMY = {
     displayName: 'Champ de blé',
     construction: { price: 10, category: 'farms' },
     employment: { sector: 1, workerNeed: 3, eliteNeed: 0 },
-    walker: { role: 'destination' },
+    resourceRoles: [{ role: 'producer', categories: ['wheat'] }],
   },
   'Farm-Carrot': {
     displayName: 'Champ de carottes',
     construction: { price: 20, category: 'farms' },
     employment: { sector: 1, workerNeed: 3, eliteNeed: 0 },
+    resourceRoles: [{ role: 'producer', categories: ['carrot'] }],
   },
   'Farm-Cabbage': {
     displayName: 'Champ de choux',
     construction: { price: 30, category: 'farms' },
     employment: { sector: 1, workerNeed: 3, eliteNeed: 0 },
+    resourceRoles: [{ role: 'producer', categories: ['cabbage'] }],
   },
   'Hay-Bale': { displayName: 'Botte de foin', construction: { price: 2, category: 'farms' } },
   'Hay-Cart': { displayName: 'Chariot de foin', construction: { price: 5, category: 'farms' } },
@@ -104,6 +107,13 @@ export const BUILDING_ECONOMY = {
     displayName: 'Moulin',
     construction: { price: 50, category: 'industry' },
     employment: { sector: 4, workerNeed: 4, eliteNeed: 2 },
+    // No `range` on 'collector': today it collects city-wide (matches
+    // RunWindmillSurplusCycle passing every farm, unfiltered by distance).
+    // A future resource can cap this with a range; food doesn't today.
+    resourceRoles: [
+      { role: 'collector', categories: ['wheat', 'carrot', 'cabbage'] },
+      { role: 'hub', categories: ['wheat', 'carrot', 'cabbage'] },
+    ],
   },
   'Crate-001': { displayName: 'Caisse', construction: { price: 2, category: 'industry' } },
   // Wheat silo (all Cylinder* meshes pool to this one tool)
@@ -114,16 +124,19 @@ export const BUILDING_ECONOMY = {
     displayName: 'Étal',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, eliteNeed: 1 },
+    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5 }],
   },
   'Market-Stall-Blue': {
     displayName: 'Étal bleu',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, eliteNeed: 1 },
+    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5 }],
   },
   'Market-Stall-Red': {
     displayName: 'Étal rouge',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, eliteNeed: 1 },
+    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5 }],
   },
 
   // Public (Chapel only — Church-002 mesh discarded as broken duplicate)

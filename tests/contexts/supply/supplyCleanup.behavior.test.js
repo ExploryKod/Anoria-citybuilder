@@ -12,7 +12,7 @@ import { ListSupplyStockSnapshots } from '../../../src/contexts/supply/applicati
 import { MarkWindmillCollectingSeason } from '../../../src/contexts/supply/application/commands/surplus/MarkWindmillCollectingSeason.js';
 import { ResetFarmsSoldToWindmill } from '../../../src/contexts/supply/application/commands/surplus/ResetFarmsSoldToWindmill.js';
 import { UpdateMarketFarmProximity } from '../../../src/contexts/supply/application/commands/procurement/UpdateMarketFarmProximity.js';
-import { isWithinMarketRange } from '../../../src/composition/supplyOps.js';
+import { isWithinRange } from '../../../src/composition/supplyOps.js';
 
 class InMemorySupplyBuildingRepository {
   constructor({ snapshots = [], views = [] } = {}) {
@@ -77,9 +77,9 @@ class InMemorySupplyBuildingRepository {
 }
 
 describe('Supply — cleanup queries and flag commands', () => {
-  test('ACL exports isWithinMarketRange', () => {
-    expect(isWithinMarketRange({ x: 0, y: 0 }, { x: 2, y: 2 }, 5)).toBe(true);
-    expect(isWithinMarketRange({ x: 0, y: 0 }, { x: 5, y: 1 }, 5)).toBe(false);
+  test('ACL exports isWithinRange', () => {
+    expect(isWithinRange({ x: 0, y: 0 }, { x: 2, y: 2 }, 5)).toBe(true);
+    expect(isWithinRange({ x: 0, y: 0 }, { x: 5, y: 1 }, 5)).toBe(false);
   });
 
   test('ListSupplyMapBuildings exposes hasFood and marketTooFar', async () => {

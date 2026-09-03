@@ -1,5 +1,5 @@
 import { CROPS } from '../value-objects/CropType.js';
-import { isWithinMarketRange, manhattanDistance } from './MarketRangePolicy.js';
+import { isWithinRange, manhattanDistance } from './ResourceRangePolicy.js';
 
 export const MAX_MARKETS_PER_WINDMILL = 2;
 export const WINDMILL_MARKET_RANGE = 5;
@@ -43,7 +43,7 @@ export function isMarketType(type) {
  * @param {number} [maxDistance]
  */
 export function isWithinWindmillMarketRange(a, b, maxDistance = WINDMILL_MARKET_RANGE) {
-  return isWithinMarketRange(a, b, maxDistance);
+  return isWithinRange(a, b, maxDistance);
 }
 
 /**

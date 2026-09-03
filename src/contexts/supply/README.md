@@ -63,7 +63,7 @@ Supply Chain owns every **source → hub → sink** flow inside the city:
 - `ConsumeAllHouseFood` — city-wide orchestration
 
 ### Procurement
-- `MarketBuysFromNearbyFarms` — farm → market (autumn)
+- `TransferHubToHub` — hub restocks from its linked source hub (windmill → market)
 - `MarkMarketBuyingSeason` — persist `isBuying` UI flag
 
 ### Distribution
