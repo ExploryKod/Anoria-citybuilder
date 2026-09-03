@@ -8,7 +8,7 @@ export const HOUSE_TYPE_PALACE = 'House-2Story';
 /**
  * @type {Readonly<Record<string, number>>}
  * Derived from `buildingCatalog` — previously duplicated the price already
- * declared in `shared/building-catalog/buildingPlacementCatalog.js`, which could drift.
+ * declared in `shared/asset-placement/buildingPlacementCatalog.js`, which could drift.
  */
 export const RESIDENTIAL_HOUSE_PRICES = Object.freeze({
   [HOUSE_TYPE_BLUE]: buildingCatalog[HOUSE_TYPE_BLUE].construction.price,

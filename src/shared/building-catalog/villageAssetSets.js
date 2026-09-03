@@ -7,7 +7,7 @@
  * silently drifted out of sync (see git history) and blocked real,
  * priced, rendered buildings from ever being placed. Every buildingCatalog
  * entry with a construction fact is playable, full stop — see
- * buildingPlacementCatalog.js — so this file only needs to declare the one real fact:
+ * asset-placement/buildingPlacementCatalog.js — so this file only needs to declare the one real fact:
  * every village mesh id that exists.
  */
 

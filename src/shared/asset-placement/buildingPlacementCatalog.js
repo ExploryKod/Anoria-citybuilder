@@ -18,7 +18,7 @@
  * filter here.
  */
 
-import { buildingCatalog } from './buildingCatalog.js';
+import { buildingCatalog } from '../building-catalog/buildingCatalog.js';
 import { resolveFootprint, resolveGridSize } from '../asset-footprint/resolveFootprint.js';
 
 /**
