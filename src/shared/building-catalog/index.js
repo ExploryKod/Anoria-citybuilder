@@ -4,6 +4,5 @@ export {
   palaces,
   farms,
   factories,
-  wantedHouses,
   buildingsObjects,
 } from './buildingCategories.js';

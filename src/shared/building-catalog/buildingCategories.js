@@ -15,14 +15,6 @@ export const farms = Object.freeze(['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage']
 
 export const factories = Object.freeze(['Winery-001']);
 
-/** Residential meshes the loader treats as house variants (incl. palace). */
-export const wantedHouses = Object.freeze([
-  'House-Blue',
-  'House-Red',
-  'House-Purple',
-  'House-2Story',
-]);
-
 /** Types that open the building info overlay when selected. */
 export const buildingsObjects = Object.freeze([
   'House-Red',
