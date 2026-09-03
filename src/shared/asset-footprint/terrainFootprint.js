@@ -1,10 +1,13 @@
 /**
- * Collision footprint overrides for terrain/zone ids whose placement size
- * isn't the 1×1 default — see resolveFootprint.js.
- *
- * Sparse by design: empty today (grass/terrain are both 1×1) — add an entry
- * only when a real id needs a real override.
+ * Collision footprint (in tiles) for every villageTown-sourced terrain/zone
+ * id — see resolveFootprint.js. Explicit for every id, no default: changing
+ * a tile's footprint means editing exactly this one line, in this one file,
+ * nothing else.
  *
  * @type {Readonly<Record<string, { width: number, depth: number }>>}
  */
-export const TERRAIN_FOOTPRINT_OVERRIDES = Object.freeze({});
+export const TERRAIN_FOOTPRINT = Object.freeze({
+  'grass': Object.freeze({ width: 1, depth: 1 }),
+  'roads': Object.freeze({ width: 1, depth: 1 }),
+  'terrain': Object.freeze({ width: 1, depth: 1 }),
+});
