@@ -6,8 +6,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { AnimationMixer } from 'three';
 import {applyHoverColor, resetHoveredObject, resetObjectColor} from './meshUtils.js';
-import { resolveIconAppearance } from './meshs/resolveStatusIconAnchor.js';
-import { STATUS_ICON_DEFAULTS } from './meshs/StatusIconDefaults.js';
+import { resolveIconAppearance, STATUS_ICON_DEFAULTS } from './meshs/statusIconAnchors.js';
 import {  textures  } from './meshs/data.js'
 import {
     bulldozeSelected,
@@ -910,7 +909,7 @@ export function createScene(_gameStore, assetManager, deps) {
             }
         }
 
-        // Status icon defaults — shared with /placement.html, see StatusIconDefaults.js
+        // Status icon defaults — shared with /placement.html, see meshs/statusIconAnchors.js
         const statutsIconsMeta = STATUS_ICON_DEFAULTS;
 
         for(let x = 0; x < city.size; x++) {
