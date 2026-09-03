@@ -68,16 +68,19 @@ describe('assetsPrices — derived from buildingCatalog', () => {
     expect(assetsPrices.roads).toBeUndefined();
   });
 
-  test('has exactly the entries that declare a construction fact (village + Kenney)', () => {
-    const expectedIds = [
-      ...Object.entries(buildingCatalog)
-        .filter(([, def]) => def.construction)
-        .map(([id]) => id),
-      ...Object.entries(KENNEY_BUILDING_CATALOG_ENTRIES)
-        .filter(([, def]) => def.construction)
-        .map(([id]) => id),
-    ].sort();
+  test('has exactly the entries that declare a construction fact (buildingCatalog already merges village + Kenney)', () => {
+    const expectedIds = Object.entries(buildingCatalog)
+      .filter(([, def]) => def.construction)
+      .map(([id]) => id)
+      .sort();
     expect(Object.keys(assetsPrices).sort()).toEqual(expectedIds);
+  });
+
+  test('buildingCatalog itself includes Kenney ids — no separate merge needed downstream', () => {
+    expect(buildingCatalog['Kenney-Commercial-building-a']).toBeDefined();
+    expect(
+      Object.keys(KENNEY_BUILDING_CATALOG_ENTRIES).every((id) => buildingCatalog[id] !== undefined)
+    ).toBe(true);
   });
 });
 
