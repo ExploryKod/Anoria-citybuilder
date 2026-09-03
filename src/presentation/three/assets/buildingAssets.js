@@ -686,7 +686,10 @@ export const BUILDING_ASSETS = Object.freeze({
         y: 180,
         z: 180,
       },
-      positionOffsetY: 0.2,
+      // A near-flat ground mesh, coplanar with the World platform's own top
+      // surface at 0.2 — a hair higher than every other id (0.2) so it clears
+      // the platform instead of z-fighting into invisibility.
+      positionOffsetY: 0.24,
       scale: 0.8,
     },
     presentation: {
@@ -722,7 +725,7 @@ export const BUILDING_ASSETS = Object.freeze({
         y: 180,
         z: 270,
       },
-      positionOffsetY: 0.2,
+      positionOffsetY: 0.24,
       scale: 0.8,
     },
     presentation: {
@@ -752,7 +755,7 @@ export const BUILDING_ASSETS = Object.freeze({
         y: 180,
         z: 90,
       },
-      positionOffsetY: 0.2,
+      positionOffsetY: 0.24,
       scale: 0.8,
     },
     presentation: {
@@ -782,7 +785,7 @@ export const BUILDING_ASSETS = Object.freeze({
         y: 180,
         z: 180,
       },
-      positionOffsetY: 0.2,
+      positionOffsetY: 0.24,
       scale: 0.8,
     },
     presentation: {
