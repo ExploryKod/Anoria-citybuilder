@@ -1,35 +1,14 @@
 /**
- * Village GLB asset sets: playable (toolbar) vs mesh-only (legacy saves / world gen).
- * Kenney buildings are registered separately; see kenneyCityKitRegistry.generated.js.
+ * Village GLB asset sets. Kenney buildings are registered separately; see
+ * kenneyCityKitRegistry.generated.js.
+ *
+ * There used to be a second, narrower "playable" list here (only farms +
+ * roads), disconnected from the actual rendering/economy catalogs — it
+ * silently drifted out of sync (see git history) and blocked real,
+ * priced, rendered buildings from ever being placed. Playability is now
+ * derived — see playableBuildings.js — so this file only needs to declare
+ * the one real fact: every village mesh id that exists.
  */
-
-/** @type {Readonly<Record<string, ReadonlyArray<string>>>} */
-export const VILLAGE_PLAYABLE_TOOL_IDS_BY_CATEGORY = Object.freeze({
-  zones: Object.freeze(['grass']),
-  houses: Object.freeze([]),
-  tombs: Object.freeze([]),
-  farms: Object.freeze([
-    'Farm-Wheat',
-    'Farm-Carrot',
-    'Farm-Cabbage',
-    'Hay-Bale',
-    'Hay-Cart',
-    'Hay-Pile',
-  ]),
-  industry: Object.freeze([]),
-  markets: Object.freeze([]),
-  infrastructure: Object.freeze([
-    'roads',
-    'StonePath-001',
-    'StonePath-Right-001',
-    'StonePath-Left-001',
-    'StonePath-Cross-001',
-  ]),
-  public: Object.freeze([]),
-  palaces: Object.freeze([]),
-  nature: Object.freeze([]),
-  decoration: Object.freeze([]),
-});
 
 /**
  * Nature ids written to tiles / Dexie during world generation (not in the placement toolbar).

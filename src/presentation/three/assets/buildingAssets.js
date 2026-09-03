@@ -6,8 +6,10 @@
  * render it: geometry origin, transform, and presentation.
  *
  * NOT included here (stays separate, per explicit decision): game mechanics
- * (price, gridSize, employment, maintenance — see
- * src/shared/building-catalog/buildingCatalog.js) and status-icon anchors
+ * (price, employment, maintenance — see
+ * src/shared/building-catalog/buildingCatalog.js), collision footprint
+ * (single-sourced in src/shared/asset-footprint/resolveFootprint.js), and
+ * status-icon anchors
  * (already consolidated separately in
  * src/presentation/three/meshs/statusIconAnchors.js).
  *
@@ -40,7 +42,7 @@
  *    (/resources/kenney_city_kits_catalog.json via kenneyCityKitConfig.js),
  *    not duplicated here.
  *  - kenneyNatureProp / kenneyNatureTerrain entries: transform fields beyond
- *    footprint/surfaceY are null — actual per-GLB bbox placement offsets are
+ *    surfaceY are null — actual per-GLB bbox placement offsets are
  *    scanned and generated in
  *    src/shared/editor-catalog/kenneyPlacementProfiles.generated.js; this
  *    file intentionally does not re-duplicate that generated, auto-scanned
@@ -71,8 +73,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 0.5,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -109,8 +109,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 0.5,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -147,8 +145,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 0.5,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -185,8 +181,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 1,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -223,8 +217,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 1,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -261,8 +253,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 1,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -299,8 +289,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 1,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -337,8 +325,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 1,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -375,8 +361,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 1,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -413,8 +397,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 0.5,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -454,8 +436,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 0.5,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -492,8 +472,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 0.5,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -530,8 +508,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 0.009,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -568,8 +544,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 5,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -606,8 +580,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 0.7,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -644,8 +616,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 0.7,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -682,8 +652,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 0.7,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -720,8 +688,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 0.8,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -758,8 +724,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 0.8,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -790,8 +754,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 0.8,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -822,8 +784,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 0.8,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -854,8 +814,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 0.8,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -892,8 +850,6 @@ export const BUILDING_ASSETS = Object.freeze({
       },
       positionOffsetY: 0.2,
       scale: 0.002,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -926,8 +882,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: 'AUTO_DETECTED_AT_RUNTIME',
       positionOffsetY: 0.2,
       scale: 0.8,
-      footprintWidth: null,
-      footprintDepth: null,
     },
     presentation: {
       mode: 'lit',
@@ -956,8 +910,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -991,8 +943,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1025,8 +975,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1059,8 +1007,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1093,8 +1039,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1127,8 +1071,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1161,8 +1103,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1195,8 +1135,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1229,8 +1167,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1263,8 +1199,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1297,8 +1231,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 3,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1331,8 +1263,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 3,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1365,8 +1295,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1399,8 +1327,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1433,8 +1359,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 3,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1467,8 +1391,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1501,8 +1423,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1535,8 +1455,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1569,8 +1487,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1603,8 +1519,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1637,8 +1551,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 3,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1671,8 +1583,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 3,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1705,8 +1615,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 3,
     },
     presentation: {
       mode: 'lit',
@@ -1739,8 +1647,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1773,8 +1679,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1807,8 +1711,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1841,8 +1743,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1875,8 +1775,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1909,8 +1807,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1943,8 +1839,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -1977,8 +1871,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2011,8 +1903,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 3,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -2045,8 +1935,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -2079,8 +1967,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -2113,8 +1999,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -2147,8 +2031,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2181,8 +2063,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 3,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -2215,8 +2095,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 3,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -2249,8 +2127,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 3,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2283,8 +2159,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -2317,8 +2191,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2351,8 +2223,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -2385,8 +2255,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2419,8 +2287,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2453,8 +2319,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2487,8 +2351,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -2521,8 +2383,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -2555,8 +2415,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2589,8 +2447,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2623,8 +2479,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2657,8 +2511,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2691,8 +2543,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2725,8 +2575,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -2759,8 +2607,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -2793,8 +2639,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2827,8 +2671,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2861,8 +2703,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2895,8 +2735,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2929,8 +2767,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -2963,8 +2799,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
@@ -2997,8 +2831,6 @@ export const BUILDING_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.2,
       scale: null,
-      footprintWidth: 2,
-      footprintDepth: 2,
     },
     presentation: {
       mode: 'lit',
