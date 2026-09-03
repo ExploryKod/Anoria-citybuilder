@@ -2,7 +2,7 @@ import { tryCreateTileCoord } from './TileCoord.js';
 import {
   isBuildingInstanceId,
   assertBuildingInstanceId,
-} from '../../../../shared/building-identity/BuildingInstanceId.js';
+} from '../../../../shared/building-identity/BuildingIdentifiers.js';
 
 /**
  * Voisin sur la grille (domaine Parcels).
@@ -46,7 +46,7 @@ export function createNeighbor({
  * Ignore les entrées sans UUID (pas de fallback type-x-y).
  *
  * @param {unknown} raw
- * @returns {import('../../../../shared/building-identity/BuildingInstanceId.js').BuildingInstanceId | null}
+ * @returns {import('../../../../shared/building-identity/BuildingIdentifiers.js').BuildingInstanceId | null}
  */
 export function resolveNeighborInstanceId(raw) {
   if (!raw || typeof raw !== 'object') return null;

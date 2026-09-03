@@ -6,7 +6,7 @@
  * roads), disconnected from the actual rendering/economy catalogs — it
  * silently drifted out of sync (see git history) and blocked real,
  * priced, rendered buildings from ever being placed. Playability is now
- * derived — see playableBuildings.js — so this file only needs to declare
+ * derived — see assetsPrices.js's isPlayableBuildingId — so this file only needs to declare
  * the one real fact: every village mesh id that exists.
  */
 

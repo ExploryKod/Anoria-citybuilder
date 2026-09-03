@@ -1,7 +1,7 @@
 import { normalizeNeighborFromRef } from './value-objects/Neighbor.js';
 import { tryCreateBuildingId } from './value-objects/BuildingId.js';
 import { tryCreateTileCoord } from './value-objects/TileCoord.js';
-import { assertBuildingInstanceId } from '../../../shared/building-identity/BuildingInstanceId.js';
+import { assertBuildingInstanceId } from '../../../shared/building-identity/BuildingIdentifiers.js';
 
 /**
  * Lecture immuable d'un bâtiment pour les use cases Parcels.
