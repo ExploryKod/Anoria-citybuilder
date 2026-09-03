@@ -5,7 +5,7 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
-import { isWithinMarketRange } from '../../../src/contexts/supply/domain/policies/MarketRangePolicy.js';
+import { isWithinRange } from '../../../src/contexts/supply/domain/policies/ResourceRangePolicy.js';
 import { UpdateHousesMarketReach } from '../../../src/contexts/supply/application/commands/distribution/UpdateHousesMarketReach.js';
 
 class InMemorySupplyBuildingRepository {
@@ -68,9 +68,9 @@ function house(id, x, y) {
 }
 
 describe('Supply — house market reach', () => {
-  test('isWithinMarketRange uses Manhattan distance', () => {
-    expect(isWithinMarketRange({ x: 0, y: 0 }, { x: 3, y: 2 }, 5)).toBe(true);
-    expect(isWithinMarketRange({ x: 0, y: 0 }, { x: 4, y: 2 }, 5)).toBe(false);
+  test('isWithinRange uses Manhattan distance', () => {
+    expect(isWithinRange({ x: 0, y: 0 }, { x: 3, y: 2 }, 5)).toBe(true);
+    expect(isWithinRange({ x: 0, y: 0 }, { x: 4, y: 2 }, 5)).toBe(false);
   });
 
   describe('UpdateHousesMarketReach', () => {

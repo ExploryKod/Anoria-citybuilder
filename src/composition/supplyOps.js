@@ -12,7 +12,7 @@ import { DEFAULT_FOOD_DISTRIBUTION_DISTANCE } from '../contexts/supply/domain/ca
 
 export { createSupplyContext, getOrCreateSupplyContext };
 
-export { isWithinMarketRange, manhattanDistance, findHousesInMarketRange } from '../contexts/supply/domain/policies/MarketRangePolicy.js';
+export { isWithinRange, manhattanDistance, findBuildingsWithRoleInRange } from '../contexts/supply/domain/policies/ResourceRangePolicy.js';
 
 export { DEFAULT_FOOD_DISTRIBUTION_DISTANCE };
 

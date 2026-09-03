@@ -7,6 +7,7 @@ import {
   canonicalizeHouseRecord,
   instanceIdFromHouseRow,
 } from '../../../../shared/building-identity/index.js';
+import { hasResourceRole } from '../../domain/policies/ResourceRolePolicy.js';
 
 /** Supply port adapter — accès direct Dexie (table `houses`). */
 export class DexieSupplyBuildingRepository {
@@ -229,30 +230,21 @@ export class DexieSupplyBuildingRepository {
   async findMarkets() {
     const rows = await this.#activeRows();
     return rows
-      .filter((row) => {
-        const type = row.type || '';
-        return type.includes('Market');
-      })
+      .filter((row) => hasResourceRole(row.type, 'distributor'))
       .map((row) => this.#toSnapshot(row));
   }
 
   async findHouses() {
     const rows = await this.#activeRows();
     return rows
-      .filter((row) => {
-        const type = row.type || '';
-        return type.includes('House') || type.includes('house');
-      })
+      .filter((row) => hasResourceRole(row.type, 'consumer'))
       .map((row) => this.#toSnapshot(row));
   }
 
   async findWindmills() {
     const rows = await this.#activeRows();
     return rows
-      .filter((row) => {
-        const type = row.type || '';
-        return type.includes('Windmill') || type.includes('windmill');
-      })
+      .filter((row) => hasResourceRole(row.type, 'hub'))
       .map((row) => this.#toSnapshot(row));
   }
 
@@ -264,10 +256,7 @@ export class DexieSupplyBuildingRepository {
   async findFarms() {
     const rows = await this.#activeRows();
     return rows
-      .filter((row) => {
-        const type = row.type || '';
-        return type.includes('Farm') || type.includes('farm');
-      })
+      .filter((row) => hasResourceRole(row.type, 'producer'))
       .map((row) => this.#toSnapshot(row));
   }
 

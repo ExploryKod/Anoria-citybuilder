@@ -39,11 +39,16 @@
  *   residentialGroup → permanent social group tied to a house color (Housing +
  *     Employment). Never changes after placement — unlike `level`, which is
  *     mutable per-instance state persisted on the house row, not a catalog fact.
- *   walker           → presentation walker spawn/pathfinding (which building
- *     types emit a walker on this turn's scan, and which ones a walker can
- *     travel to). Purely a role label — see shared/gameplay/walkerCatalogRoles.js
- *     and presentation/three/walkers/WalkerSpawnController.js for the
- *     (agnostic) code that reads it. No behavior lives here.
+ *   resourceRoles    → Supply BC (which resource categories this building type
+ *     produces/collects/holds/distributes/consumes, and at what range). Structural
+ *     facts about the TYPE (a farm always produces wheat) — unlike a walker
+ *     journey, which is conditional and belongs to an event, not a type.
+ *     See contexts/supply/domain/policies/ResourceRolePolicy.js.
+ *
+ * No `walker` section here on purpose: a walker never exists without a
+ * triggering domain event, so origin/destination/road-requirement are
+ * facts about that EVENT, not about a building type — see
+ * shared/gameplay/walkerEventCatalog.js.
  *
  * Collision footprint (gridSize/footprintWidth/footprintDepth) does NOT live
  * here — it's a single-sourced fact in shared/asset-footprint/resolveFootprint.js
@@ -66,22 +71,24 @@
  *
  * @typedef {'artisans' | 'merchants' | 'scholars'} ResidentialGroup
  *
- * @typedef {Object} BuildingWalkerFacts
- * @property {'origin' | 'destination'} role
- * @property {boolean} [requiresRoad] Whether this endpoint must have road
- *   access for a walker to use it. Defaults to true when omitted. Set to
- *   false for a building a walker can reach off-road (e.g. a nature prop
- *   like a tree or a rock) — that leg of the journey skips the road
- *   network entirely instead of being rejected for lacking road access.
+ * @typedef {'producer' | 'collector' | 'hub' | 'distributor' | 'consumer'} ResourceRoleKind
  *
-
+ * @typedef {Object} ResourceRoleFacts
+ * @property {ResourceRoleKind} role
+ * @property {string[]} categories Resource categories this role applies to (e.g. ['wheat']).
+ * @property {number} [range] Manhattan tiles this role reaches — only meaningful for
+ *   'collector' (pulls from nearby producer/hub) and 'distributor' (pushes to
+ *   nearby consumers). Omitted for 'producer'/'hub'/'consumer', which don't reach.
+ *
  * @typedef {Object} BuildingDefinition
  * @property {string} [displayName]
  * @property {BuildingConstructionFacts} construction
  * @property {BuildingEmploymentFacts} [employment]
  * @property {BuildingAccountingFacts} [accounting]
  * @property {ResidentialGroup} [residentialGroup]
- * @property {BuildingWalkerFacts} [walker]
+ * @property {ResourceRoleFacts[]} [resourceRoles] A building can hold more than
+ *   one role at once (e.g. a windmill both collects from farms and holds a hub
+ *   stock for markets to pull from).
  */
 
 import { BUILDING_ECONOMY } from '../asset-economy/buildingEconomy.js';

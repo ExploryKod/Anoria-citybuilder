@@ -1,7 +1,6 @@
 import { isOperational } from '../../../domain/policies/OperationalGatePolicy.js';
-import {
-  findHousesInMarketRange,
-} from '../../../domain/policies/MarketRangePolicy.js';
+import { findBuildingsWithRoleInRange } from '../../../domain/policies/ResourceRangePolicy.js';
+import { getRangeForRole } from '../../../domain/policies/ResourceRolePolicy.js';
 import {
   MARKET_WINDMILL_TRANSFER_CIRCUIT,
   MARKET_DISTRIBUTE_CIRCUIT,
@@ -17,19 +16,26 @@ export class RunCityMarketFoodCycle {
    * @param {import('../distribution/DistributeResourceToConsumers.js').DistributeResourceToConsumers} distributeResourceToConsumers
    * @param {import('./UpdateMarketWindmillLink.js').UpdateMarketWindmillLink} updateMarketWindmillLink
    * @param {import('../../../infrastructure/presentation/SupplyFoodTraceability.js').SupplyFoodTraceability} traceability
+   * @param {{ publish: (event: object) => void }} [eventPublisher] Optional —
+   *   when given, one 'supply.resourceDelivered' domain event is published
+   *   per market→house transfer (see shared/gameplay/walkerEventCatalog.js).
+   *   Purely a side-channel notification; distribution itself does not
+   *   depend on it.
    */
   constructor(
     supplyBuildingRepository,
     transferHubToHub,
     distributeResourceToConsumers,
     updateMarketWindmillLink,
-    traceability
+    traceability,
+    eventPublisher
   ) {
     this.supplyBuildingRepository = supplyBuildingRepository;
     this.transferHubToHub = transferHubToHub;
     this.distributeResourceToConsumers = distributeResourceToConsumers;
     this.updateMarketWindmillLink = updateMarketWindmillLink;
     this.traceability = traceability;
+    this.eventPublisher = eventPublisher;
   }
 
   /**
@@ -93,7 +99,12 @@ export class RunCityMarketFoodCycle {
       );
     }
 
-    const housesInRange = findHousesInMarketRange(marketRow, allBuildings, maxDistance);
+    // The market's own catalog-declared distributor range is authoritative;
+    // `maxDistance` is only a fallback for a type that doesn't declare one.
+    const housesInRange = findBuildingsWithRoleInRange(marketRow, allBuildings, {
+      role: 'consumer',
+      maxDistance: getRangeForRole(market.type, 'distributor') ?? maxDistance,
+    });
     if (housesInRange.length > 0) {
       const distributeOutcome = await this.distributeResourceToConsumers.execute({
         sourceId: market.id,
@@ -108,6 +119,16 @@ export class RunCityMarketFoodCycle {
           market.id,
           distributeOutcome.transfers.map((t) => ({ houseId: t.consumerId, crop: t.category, amount: t.amount }))
         );
+
+        for (const transfer of distributeOutcome.transfers) {
+          this.eventPublisher?.publish({
+            type: 'supply.resourceDelivered',
+            sourceId: market.id,
+            consumerId: transfer.consumerId,
+            category: transfer.category,
+            amount: transfer.amount,
+          });
+        }
       }
     }
 

@@ -8,21 +8,11 @@ export const FOOD_CIRCUIT = Object.freeze({
   crops: Object.freeze(['wheat', 'carrot', 'cabbage']),
   gatheredCategories: Object.freeze(['fruit', 'game']),
 
-  /** Ordered farm-type → crop matchers; first match wins. */
-  farmTypeToCrop: Object.freeze([
-    Object.freeze({ match: /wheat/i, crop: 'wheat' }),
-    Object.freeze({ match: /carrot/i, crop: 'carrot' }),
-    Object.freeze({ match: /cabbage/i, crop: 'cabbage' }),
-  ]),
-
   /** 6 citizens x 12 months = 72 baskets/year, plus a 6-basket buffer. */
   farmAnnualYield: 78,
 
   /** Farms harvest their annual crop only once per year, in this season. */
   harvestSeason: 'autumn',
-
-  /** Manhattan tiles a market can reach to distribute to houses. */
-  marketRangeTiles: 5,
 
   /** Food requirements per house level: essential (must-have) vs desired (variety). */
   houseFoodRequirementsByLevel: Object.freeze({
