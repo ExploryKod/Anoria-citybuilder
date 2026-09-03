@@ -1,6 +1,7 @@
 import { BUILDING_ASSETS } from '../../three/assets/buildingAssets.js';
 import { NATURE_ASSETS } from '../../three/assets/natureAssets.js';
 import { TERRAIN_ASSETS } from '../../three/assets/terrainAssets.js';
+import { assetsPrices } from '../../../shared/building-catalog/index.js';
 
 /**
  * Same catalog ToolPanel.js resolves carousel icons from — a tool's large
@@ -15,8 +16,19 @@ let overlayEl = null;
 /** @type {HTMLImageElement | null} */
 let imageEl = null;
 
+/** @type {HTMLElement | null} */
+let priceEl = null;
+
 /** @type {string | null} */
 let visibleToolId = null;
+
+/**
+ * @param {string} toolId
+ * @returns {number | null}
+ */
+function catalogPrice(toolId) {
+  return assetsPrices[toolId]?.price ?? null;
+}
 
 /**
  * @param {string} toolId
@@ -85,10 +97,16 @@ export function initBuildToolHoverPreview() {
     imageEl.alt = '';
     imageEl.decoding = 'async';
     frame.appendChild(imageEl);
+
+    priceEl = document.createElement('div');
+    priceEl.className = 'build-tool-hover-preview__price';
+    frame.appendChild(priceEl);
+
     overlayEl.appendChild(frame);
     document.body.appendChild(overlayEl);
   } else {
     imageEl = overlayEl.querySelector('.build-tool-hover-preview__img');
+    priceEl = overlayEl.querySelector('.build-tool-hover-preview__price');
   }
 
   window.addEventListener('anoria:mobile-build-bar-change', (event) => {
@@ -112,6 +130,17 @@ function showBuildToolHoverPreview(toolId, previewUrl) {
   if (!overlayEl || !imageEl) return;
 
   applyPreviewProfile(toolId);
+
+  const price = catalogPrice(toolId);
+  if (priceEl) {
+    if (price === null) {
+      priceEl.hidden = true;
+      priceEl.textContent = '';
+    } else {
+      priceEl.hidden = false;
+      priceEl.textContent = `${price.toLocaleString('fr-FR')}€`;
+    }
+  }
 
   if (visibleToolId === toolId && imageEl.getAttribute('src') === previewUrl) {
     overlayEl.hidden = false;
