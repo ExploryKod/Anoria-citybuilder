@@ -53,7 +53,7 @@ export const BUILDING_ASSET_CATALOG = Object.freeze({
   'Hay-Cart': { adapter: 'villageTown', asset: 'Hay-Cart' },
   'Hay-Pile': { adapter: 'villageTown', asset: 'Hay-Pile' },
   'House-2Story': { adapter: 'villageTown', asset: 'House-2Story' },
-  'House-Blue': { adapter: 'villageTown', asset: 'House-Blue' },
+  'House-Blue': { adapter: 'kenneyCityKit', asset: 'Kenney-Suburban-building-type-a' },
   'House-Purple': { adapter: 'villageTown', asset: 'House-Purple' },
   'House-Red': { adapter: 'villageTown', asset: 'House-Red' },
   'Market-Stall': { adapter: 'villageTown', asset: 'Market-Stall' },
