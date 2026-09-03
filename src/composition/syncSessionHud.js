@@ -106,8 +106,6 @@ export async function syncPopRailHud(gameUI) {
     gameUI.updateResourcesHud?.({
       cityCountry: resourcesCountry.city,
       cityHamlet: resourcesHamlet.city,
-      commerceCountry: resourcesCountry.commerce,
-      commerceHamlet: resourcesHamlet.commerce,
       natureCountry: natureCountry.nature,
       natureHamlet: natureHamlet.nature,
     });

@@ -3,7 +3,7 @@
  * resolveFootprint.js, which only ever imports this (and its nature/terrain
  * siblings) and knows nothing about where any number came from. Explicit
  * for every hand-authored id, no default: changing a building's footprint
- * (e.g. making Barn-001 bigger) means editing exactly this one line, in
+ * (e.g. making Windmill-001 bigger) means editing exactly this one line, in
  * this one file, nothing else.
  *
  * Kenney building ids are folded in from their own auto-generated registry
@@ -22,7 +22,6 @@ export const BUILDING_FOOTPRINT = Object.freeze({
       Object.freeze({ width: entry.construction.footprintWidth, depth: entry.construction.footprintDepth }),
     ])
   ),
-  'Barn-001': Object.freeze({ width: 2, depth: 2 }),
   'BookShop-001': Object.freeze({ width: 1, depth: 1 }),
   'Chapel': Object.freeze({ width: 1, depth: 1 }),
   'Church-002': Object.freeze({ width: 1, depth: 1 }),
@@ -46,5 +45,4 @@ export const BUILDING_FOOTPRINT = Object.freeze({
   'StonePath-Left-001': Object.freeze({ width: 1, depth: 1 }),
   'StonePath-Right-001': Object.freeze({ width: 1, depth: 1 }),
   'Windmill-001': Object.freeze({ width: 1, depth: 1 }),
-  'Winery-001': Object.freeze({ width: 1, depth: 1 }),
 });

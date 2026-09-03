@@ -1,5 +1,34 @@
 import { HAMLET_ACCESS } from '../../../core/persistence/hamlet/hamletAccess.js';
-import { renderTradeMapPanelForCity } from '../admin/commerce/renderTradeMap.js';
+import {
+  WORLD_CITY_CATEGORY_LABELS,
+  getWorldCityById,
+} from '../../../composition/worldCityCatalog.js';
+
+/**
+ * @param {string} cityId
+ */
+function renderCityPanel(cityId) {
+  const city = getWorldCityById(cityId);
+  if (!city) {
+    return `
+      <div class="trade-map-panel-empty">
+        <p>Sélectionnez une ville sur la carte</p>
+      </div>`;
+  }
+
+  const categoryLabel = WORLD_CITY_CATEGORY_LABELS[city.category] ?? '';
+
+  return `
+    <div class="trade-map-panel-inner" data-city-id="${city.id}">
+      <div class="trade-map-panel-header">
+        <div class="trade-map-panel-title-group">
+          <h3 class="trade-map-panel-city">${city.name}</h3>
+        </div>
+        ${categoryLabel ? `<span class="trade-map-panel-category">${categoryLabel}</span>` : ''}
+      </div>
+      ${city.description ? `<p class="trade-map-panel-desc">${city.description}</p>` : ''}
+    </div>`;
+}
 
 /**
  * @param {Awaited<ReturnType<import('../../../contexts/geography/application/queries/buildWorldMapView.js').buildWorldMapView>>} view
@@ -80,7 +109,7 @@ export function renderWorldMapPanel(view, selection = {}) {
   }
 
   const cityId = selection.cityId ?? 'anoria';
-  const cityPanel = renderTradeMapPanelForCity(cityId, view.partners);
+  const cityPanel = renderCityPanel(cityId);
 
   if (cityId !== 'anoria') {
     return cityPanel;
@@ -97,9 +126,8 @@ export function renderWorldMapPanel(view, selection = {}) {
  * @param {Awaited<ReturnType<import('../../../contexts/geography/application/queries/buildWorldMapView.js').buildWorldMapView>>} view
  */
 export function renderWorldMapStats(view) {
-  const openRoutes = view.partners.filter((partner) => partner.isActive).length;
   const influencePercent = Math.round(view.kingdom.influence * 100);
-  return `${openRoutes}/${view.partners.length} routes · ${view.kingdom.unlockedHamlets}/${view.kingdom.totalHamlets} hameaux · Royaume ${influencePercent}%`;
+  return `${view.kingdom.unlockedHamlets}/${view.kingdom.totalHamlets} hameaux · Royaume ${influencePercent}%`;
 }
 
 /** @deprecated Use renderWorldMapShell */

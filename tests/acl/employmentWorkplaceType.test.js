@@ -12,7 +12,6 @@ describe('ACL Employment — isEmploymentWorkplaceType', () => {
     expect(isEmploymentWorkplaceType('Farm-Wheat')).toBe(true);
     expect(isEmploymentWorkplaceType('Market-Stall')).toBe(true);
     expect(isEmploymentWorkplaceType('Windmill-001')).toBe(true);
-    expect(isEmploymentWorkplaceType('Winery-001')).toBe(true);
   });
 
   test('houses and roads are excluded', () => {

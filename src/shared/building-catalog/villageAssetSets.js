@@ -56,9 +56,7 @@ export const VILLAGE_MESH_TOOL_IDS_BY_CATEGORY = Object.freeze({
   ]),
   industry: Object.freeze([
     'Windmill-001',
-    'Barn-001',
     'Crate-001',
-    'Winery-001',
     'Cylinder',
   ]),
   markets: Object.freeze(['Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red']),

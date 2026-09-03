@@ -5,13 +5,6 @@ import { createSupplyMonthlyFoodSystem } from '../contexts/supply/infrastructure
 import { createHousingPopulationGrowthSystem } from '../contexts/housing/infrastructure/runtime/housingPopulationGrowthSystem.js';
 import { createHousingEvolutionSystem } from '../contexts/housing/infrastructure/runtime/housingEvolutionSystem.js';
 import { createEmploymentRedistributeSystem } from '../contexts/employment/infrastructure/runtime/employmentRedistributeSystem.js';
-import { createFactoryProductionSystem } from '../contexts/supply/infrastructure/runtime/supplyFactoryProductionSystem.js';
-import {
-  createSupplySyncFactoryWorkerDemandSystem,
-  createSupplyAllocateFactoryWorkersSystem,
-} from '../contexts/supply/infrastructure/runtime/supplyFactoryWorkerPlanSystems.js';
-import { createSupplyMonthlyCommerceSystem } from '../contexts/supply/infrastructure/runtime/supplyMonthlyCommerceSystem.js';
-import { createCommerceTurnSystem } from '../contexts/commerce/infrastructure/runtime/commerceTurnSystem.js';
 import { createRandomEventsSystem } from '../contexts/gameplay/infrastructure/runtime/randomEventsSystem.js';
 import { createIntelligenceMonthlyNewsSystem } from '../contexts/intelligence/infrastructure/runtime/intelligenceMonthlyNewsSystem.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
@@ -27,7 +20,6 @@ import { recordDeaths } from './gameplayMortalityState.js';
  * @param {ReturnType<import('./createSupplyContext.js').createSupplyContext>} deps.supply
  * @param {ReturnType<import('./createHousingContext.js').createHousingContext>} deps.housing
  * @param {ReturnType<import('./createEmploymentContext.js').createEmploymentContext>} deps.employment
- * @param {ReturnType<import('./createCommerceContext.js').createCommerceContext>} deps.commerce
  * @param {ReturnType<import('./createGameplayContext.js').createGameplayContext>} deps.gameplay
  * @param {ReturnType<import('./createIntelligenceContext.js').createIntelligenceContext>} deps.intelligence
  * @param {(time: number) => object} [deps.getTimeInfo]
@@ -41,7 +33,6 @@ export function createGameRuntime({
   supply,
   housing,
   employment,
-  commerce,
   gameplay,
   intelligence,
   getTimeInfo: getTimeInfoDep,
@@ -61,9 +52,6 @@ export function createGameRuntime({
   }
   if (!employment) {
     throw new Error('createGameRuntime: employment context required');
-  }
-  if (!commerce) {
-    throw new Error('createGameRuntime: commerce context required');
   }
   if (!gameplay) {
     throw new Error('createGameRuntime: gameplay context required');
@@ -98,26 +86,13 @@ export function createGameRuntime({
     employment,
     getSectorPriorities,
   });
-  const supplySyncFactoryWorkerDemand = createSupplySyncFactoryWorkerDemandSystem({ supply });
-  const supplyAllocateFactoryWorkers = createSupplyAllocateFactoryWorkersSystem({ supply });
-  const supplyFactoryProduction = createFactoryProductionSystem({ supply });
-  const supplyMonthlyCommerce = createSupplyMonthlyCommerceSystem({
-    supply,
-    getTimeInfo,
-  });
-
   pipeline
     .group('simulation')
     .register('parcels.roadAccess', createParcelsRoadAccessSystem(parcels))
     .register('supply.monthlyFood', supplyMonthlyFood)
     .register('housing.populationGrowth', housingPopulationGrowth)
     .register('housing.evolution', housingEvolution)
-    .register('supply.syncFactoryWorkerDemand', supplySyncFactoryWorkerDemand)
     .register('employment.redistribute', employmentRedistribute)
-    .register('supply.allocateFactoryWorkers', supplyAllocateFactoryWorkers)
-    .register('supply.factoryProduction', supplyFactoryProduction)
-    .register('supply.monthlyCommerce', supplyMonthlyCommerce)
-    .register('commerce.turn', createCommerceTurnSystem({ commerce }))
     .register('gameplay.randomEvents', createRandomEventsSystem({ gameplay }))
     .register(
       'intelligence.monthlyNews',

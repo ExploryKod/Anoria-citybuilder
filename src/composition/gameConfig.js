@@ -13,10 +13,6 @@ import {
   BUILDING_SECTOR_MAP,
   BUILDING_EMPLOYEE_NEEDS,
 } from '../contexts/employment/domain/catalogs/EmploymentSectorCatalog.js';
-import {
-  buildFactoryEmployeeNeedsConfig,
-  buildFactoryMaxStorageConfig,
-} from '../contexts/supply/domain/manufacturing/ProductRecipeCatalog.js';
 import { DEFAULT_FOOD_DISTRIBUTION_DISTANCE } from '../contexts/supply/domain/catalogs/SupplySimulationCatalog.js';
 import {
   MIN_WORKING_AGE,
@@ -41,8 +37,6 @@ export function getLegacyEmploymentConfigSection() {
     defaultPriorities: DEFAULT_SECTOR_PRIORITIES,
     buildingSectorMap: BUILDING_SECTOR_MAP,
     buildingNeeds: BUILDING_EMPLOYEE_NEEDS,
-    factoryEmployeeNeeds: buildFactoryEmployeeNeedsConfig(),
-    factoryMaxStorage: buildFactoryMaxStorageConfig(),
   };
 }
 

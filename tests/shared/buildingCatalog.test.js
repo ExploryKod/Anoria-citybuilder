@@ -55,9 +55,6 @@ describe('buildingPlacementCatalog — derived from buildingCatalog', () => {
     expect(buildingPlacementCatalog['House-Blue']).toEqual({
       price: 10, category: 'houses', gridSize: 1, footprintWidth: 1, footprintDepth: 1,
     });
-    expect(buildingPlacementCatalog['Barn-001']).toEqual({
-      price: 40, category: 'industry', gridSize: 2, footprintWidth: 2, footprintDepth: 2,
-    });
     expect(buildingPlacementCatalog['StonePath-001']).toEqual({
       price: 5, category: 'infrastructure', gridSize: 1, footprintWidth: 1, footprintDepth: 1,
     });
@@ -96,8 +93,6 @@ describe('EmploymentSectorCatalog — derived employment facts', () => {
   test('sector map matches catalog for a sample of types', () => {
     expect(BUILDING_SECTOR_MAP['Farm-Wheat']).toBe(1);
     expect(BUILDING_SECTOR_MAP['Market-Stall']).toBe(2);
-    expect(BUILDING_SECTOR_MAP['Winery-001']).toBe(3);
-    expect(BUILDING_SECTOR_MAP['Barn-001']).toBe(4);
     expect(BUILDING_SECTOR_MAP['StonePath-001']).toBe(5);
   });
 
@@ -110,11 +105,6 @@ describe('EmploymentSectorCatalog — derived employment facts', () => {
     expect(BUILDING_EMPLOYEE_NEEDS['Farm-Wheat']).toEqual({ worker_need: 3, elite_need: 0 });
     expect(BUILDING_EMPLOYEE_NEEDS['Windmill-001']).toEqual({ worker_need: 4, elite_need: 2 });
     expect(BUILDING_EMPLOYEE_NEEDS['StonePath-001']).toEqual({ worker_need: 0, elite_need: 0 });
-  });
-
-  test('Barn-001 needs stay dynamic (not baked into the static catalog)', () => {
-    expect(buildingCatalog['Barn-001'].employment.workerNeed).toBeUndefined();
-    expect(BUILDING_EMPLOYEE_NEEDS['Barn-001'].worker_need).toBeGreaterThan(0);
   });
 });
 
@@ -137,7 +127,6 @@ describe('buildingPlacementCatalog — every buildingCatalog entry with a constr
     expect(buildingPlacementCatalog.roads).toBeUndefined();
     expect(buildingPlacementCatalog['House-Blue']).toBeDefined();
     expect(buildingPlacementCatalog['Market-Stall']).toBeDefined();
-    expect(buildingPlacementCatalog['Barn-001']).toBeDefined();
   });
 });
 

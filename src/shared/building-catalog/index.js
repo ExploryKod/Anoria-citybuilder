@@ -3,6 +3,5 @@ export { buildingPlacementCatalog } from '../asset-placement/buildingPlacementCa
 export {
   palaces,
   farms,
-  factories,
   buildingsObjects,
 } from './buildingCategories.js';

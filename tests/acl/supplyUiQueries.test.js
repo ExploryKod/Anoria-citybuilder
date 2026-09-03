@@ -1,5 +1,5 @@
 /**
- * ACL Supply — UI read helpers (commerce-section, factory-section)
+ * ACL Supply — UI read helpers (storage-section)
  */
 
 import 'fake-indexeddb/auto';
@@ -10,10 +10,7 @@ import {
   listWindmillSupplyViews,
   listCommercializableWindmills,
   listSupplyMapBuildings,
-  listCityFactories,
   listNatureResources,
-  getFactoryById,
-  updateFactoryFields,
 } from '../../src/composition/supplyOps.js';
 import { makeHouseRecord } from '../fixtures/buildingRecord.js';
 
@@ -106,29 +103,6 @@ describe('ACL Supply UI queries', () => {
     const map = await listSupplyMapBuildings();
     const farms = map.filter((b) => b.kind === 'farm');
     expect(farms).toHaveLength(2);
-  });
-
-  test('factory ACL helpers read and patch factory rows', async () => {
-    const factory = makeHouseRecord({
-      type: 'Winery-001',
-      x: 4,
-      y: 4,
-      extra: { isActive: true, productWorkerDistribution: { wood: 1 } },
-    });
-    await db.houses.add(factory);
-
-    const factories = await listCityFactories();
-    expect(factories).toHaveLength(1);
-
-    const row = await getFactoryById(factory.instanceId);
-    expect(row?.productWorkerDistribution?.wood).toBe(1);
-
-    await updateFactoryFields(factory.instanceId, {
-      productWorkerDistribution: { wood: 2 },
-    });
-
-    const updated = await getFactoryById(factory.instanceId);
-    expect(updated?.productWorkerDistribution?.wood).toBe(2);
   });
 
   test('listNatureResources returns nature category rows only', async () => {

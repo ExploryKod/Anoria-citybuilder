@@ -14,12 +14,6 @@ export { createSupplyContext, getOrCreateSupplyContext };
 
 export { isWithinMarketRange, manhattanDistance, findHousesInMarketRange } from '../contexts/supply/domain/policies/MarketRangePolicy.js';
 
-export {
-  getFactoryMaxStorage,
-  getFactoryWorkerNeed,
-  getFactoryEmployeeRoleType,
-} from '../contexts/supply/domain/manufacturing/ProductRecipeCatalog.js';
-
 export { DEFAULT_FOOD_DISTRIBUTION_DISTANCE };
 
 export { toSupplySeason, toSupplyMonth } from './supplyTimeLabels.js';
@@ -39,24 +33,9 @@ export async function listSupplyMapBuildings() {
   return getOrCreateSupplyContext().listSupplyMapBuildings();
 }
 
-/** Factory rows (Winery-001) for factory-section UI. */
-export async function listCityFactories() {
-  return getOrCreateSupplyContext().listCityFactories();
-}
-
-/** Nature spawns (trees, boulders) for factory-section UI. */
+/** Nature spawns (trees, boulders) for placement UI. */
 export async function listNatureResources() {
   return getOrCreateSupplyContext().listNatureResources();
-}
-
-/** Full factory row for admin UI edits. */
-export async function getFactoryById(factoryId) {
-  return getOrCreateSupplyContext().getFactoryById(factoryId);
-}
-
-/** Patch factory row fields (settings, worker distribution). */
-export async function updateFactoryFields(factoryId, fields) {
-  return getOrCreateSupplyContext().updateFactoryFields(factoryId, fields);
 }
 
 /** Windmills eligible for partner export (active + commercialize enabled). */
@@ -75,16 +54,6 @@ export async function getSupplyBuildingRow(buildingId) {
 /** Patch supply-related row fields (stocks, lastImport, market flags, …). */
 export async function updateSupplyBuildingFields(buildingId, fields) {
   return getOrCreateSupplyContext().updateSupplyBuildingFields(buildingId, fields);
-}
-
-/** Production journal entries (factory-section UI). */
-export async function listProductionJournalEntries(factoryId = null, turn = null) {
-  return getOrCreateSupplyContext().listProductionJournalEntries(factoryId, turn);
-}
-
-/** Production journal entries for one factory. */
-export async function getFactoryProductionJournalEntries(factoryId) {
-  return getOrCreateSupplyContext().getFactoryProductionJournalEntries(factoryId);
 }
 
 /** All food traceability audit rows (admin panel, commerce consumption badges). */

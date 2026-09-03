@@ -125,14 +125,6 @@ export function getFinancesSectionPresenter() {
   return getSessionService('financesSectionPresenter');
 }
 
-export function getCommerceSectionPresenter() {
-  return getSessionService('commerceSectionPresenter');
-}
-
-export function getFactorySectionPresenter() {
-  return getSessionService('factorySectionPresenter');
-}
-
 export function getStorageSectionPresenter() {
   return getSessionService('storageSectionPresenter');
 }

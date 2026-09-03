@@ -6,7 +6,7 @@ import {
   WORLD_MAP_LAND_TILES,
   isWorldMapLandHex,
 } from '../../../composition/geographyCatalog.js';
-import { TRADE_MAP_CITY_CATEGORIES } from '../../../composition/tradeMapCatalog.js';
+import { WORLD_CITY_CATEGORIES } from '../../../composition/worldCityCatalog.js';
 import { axialToPixel, hexCornerPoints, hexKey, pixelToAxial } from '../../../shared/geography/hexCoordinates.js';
 import { loadKenneyHexAtlases } from '../shared/loadKenneyHexAtlases.js';
 import { consumePendingWorldBootstrap } from './worldMapBootstrapState.js';
@@ -379,7 +379,7 @@ export class WorldHexScene extends Phaser.Scene {
       return;
     }
 
-    if (category === TRADE_MAP_CITY_CATEGORIES.enemy) {
+    if (category === WORLD_CITY_CATEGORIES.enemy) {
       building.setTint(0xcc6666);
     } else if (cityId === 'anoria') {
       building.setTint(0xffd4a8);

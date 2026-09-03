@@ -282,7 +282,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
     supply,
     housing,
     employment,
-    commerce,
     gameplay,
     construction,
     accounting,
@@ -567,7 +566,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
     supply,
     housing,
     employment,
-    commerce,
     gameplay,
     ecsRuntime: runtime,
     sessionApi,
@@ -1284,7 +1282,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
       resetCumulativeDeaths();
 
       try {
-        sessionApi.commerce.clearCommercePersistence();
         localStorage.removeItem('journal_year_end_balances');
         localStorage.removeItem('citizen_tax_amount');
         localStorage.removeItem('work_salary_per_month');

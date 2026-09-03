@@ -121,18 +121,6 @@ export class WorldMapController {
         if (result.success) {
           window.location.href = '/game';
         }
-        return;
-      }
-
-      const activateBtn = event.target.closest('.trade-map-open-route-btn');
-      if (activateBtn) {
-        event.preventDefault();
-        const partnerId = activateBtn.dataset.partnerId;
-        const result = await this.mapApi.activateTradePartner(partnerId);
-        this.showMessage(result.message, result.success ? 'success' : 'error');
-        if (result.success) {
-          await this.refresh();
-        }
       }
     };
 
