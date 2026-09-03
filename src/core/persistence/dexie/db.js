@@ -51,6 +51,15 @@ db.version(4).stores({
 // v5: unlock is explicit (cheat / future rules) — not inferred from natureSeeded visits.
 db.version(5).stores({}).upgrade(reconcileHamletUnlockFlags);
 
+// v6: the legacy procedural 'roads' tile/mesh is retired — StonePath-001 is
+// the only road tool now (see buildingEconomy.js). Any house row still
+// carrying the old type would throw on scene render (no catalog entry).
+db.version(6).stores({}).upgrade(async (tx) => {
+  await tx.table('houses').where('type').equals('roads').modify((row) => {
+    row.type = 'StonePath-001';
+  });
+});
+
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;
 
