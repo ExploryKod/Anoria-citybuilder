@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { applyPlacementRotationStep } from '../placementRotation.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { textures, meshNameMapping } from './data.js';
+import { textures } from './data.js';
+import { resolveMeshAlias } from './resolveMeshAlias.js';
 import MeshLoader from "./MeshLoaderOptimized.js";
 import { assetsConfig, scenePresentation } from '../presentationConfig.js';
 import instancingManager from './InstancingManager.js';
@@ -864,7 +865,7 @@ class VillageTownAssetManager extends MeshLoader {
     createAsset(assetId, x, y, options = null) {
         // city.tiles / Dexie stockent parfois un id logique (Tree-Sapin, Boulder…)
         // alors que le factory est enregistré sous le nom de mesh GLB (Tree-Pine-001).
-        const resolvedId = meshNameMapping[assetId] ?? assetId;
+        const resolvedId = resolveMeshAlias(assetId);
         let mesh;
         if (resolvedId in this.#assets) {
             mesh = this.#assets[resolvedId](x, y);

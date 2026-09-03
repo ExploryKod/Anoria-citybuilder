@@ -162,7 +162,7 @@ export const NATURE_ASSETS = Object.freeze({
     },
     tags: ['nature', 'decoration'],
   },
-  // Sapin (id FR legacy → alias meshNameMapping vers Tree-Pine-001)
+  // Sapin (id FR legacy → alias VILLAGE_NATURE_MESH_ALIASES vers Tree-Pine-001)
   'Tree-Sapin': {
     source: 'villageTown',
     geometry: {
@@ -198,7 +198,7 @@ export const NATURE_ASSETS = Object.freeze({
     },
     tags: ['nature', 'decoration', 'legacy-alias'],
   },
-  // Arbuste (id FR legacy → alias meshNameMapping vers Tree-Square-001)
+  // Arbuste (id FR legacy → alias VILLAGE_NATURE_MESH_ALIASES vers Tree-Square-001)
   'Tree-Arbuste': {
     source: 'villageTown',
     geometry: {
@@ -234,7 +234,7 @@ export const NATURE_ASSETS = Object.freeze({
     },
     tags: ['nature', 'decoration', 'legacy-alias'],
   },
-  // Chêne (id FR legacy → alias meshNameMapping vers Tree-Tall-001)
+  // Chêne (id FR legacy → alias VILLAGE_NATURE_MESH_ALIASES vers Tree-Tall-001)
   'Tree-Chene': {
     source: 'villageTown',
     geometry: {
