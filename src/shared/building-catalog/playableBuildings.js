@@ -1,27 +1,32 @@
 /**
- * Which building types the player can place in the current Kenney-focused game.
- * Legacy village types remain in buildingCatalog for saves; only farms + roads stay playable.
+ * Which building types the player can place — derived purely from whether
+ * the merged economy catalog (buildingCatalog + Kenney registry) has a real
+ * entry for the id. No separate allowlist: a missing economy entry means
+ * "not a real buildable type," not "temporarily hidden." Whether an id also
+ * gets a carousel button is a presentation-layer decision (see
+ * buildingAssets.js/natureAssets.js `button` field) — this file only knows
+ * "is there a price for this," which is all economy code needs.
  */
 
-import { KENNEY_CITY_KIT_BUILDING_IDS } from './kenneyCityKitRegistry.generated.js';
-import { VILLAGE_PLAYABLE_TOOL_IDS_BY_CATEGORY } from './villageAssetSets.js';
+import { buildingCatalog } from './buildingCatalog.js';
+import { KENNEY_BUILDING_CATALOG_ENTRIES } from './kenneyCityKitRegistry.generated.js';
 
-const KENNEY_PLAYABLE = new Set(KENNEY_CITY_KIT_BUILDING_IDS);
+const PLAYABLE_BUILDING_IDS = Object.freeze([
+  ...Object.keys(buildingCatalog),
+  ...Object.keys(KENNEY_BUILDING_CATALOG_ENTRIES),
+]);
 
-const VILLAGE_PLAYABLE = new Set(
-  Object.values(VILLAGE_PLAYABLE_TOOL_IDS_BY_CATEGORY).flat(),
-);
+const PLAYABLE_BUILDING_ID_SET = new Set(PLAYABLE_BUILDING_IDS);
 
 /**
  * @param {string | null | undefined} buildingId
  * @returns {boolean}
  */
 export function isPlayableBuildingId(buildingId) {
-  if (!buildingId) return false;
-  return KENNEY_PLAYABLE.has(buildingId) || VILLAGE_PLAYABLE.has(buildingId);
+  return Boolean(buildingId) && PLAYABLE_BUILDING_ID_SET.has(buildingId);
 }
 
 /** @returns {ReadonlyArray<string>} */
 export function getPlayableBuildingIds() {
-  return Object.freeze([...KENNEY_CITY_KIT_BUILDING_IDS, ...VILLAGE_PLAYABLE]);
+  return PLAYABLE_BUILDING_IDS;
 }

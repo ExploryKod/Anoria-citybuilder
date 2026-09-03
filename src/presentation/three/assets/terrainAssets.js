@@ -6,8 +6,10 @@
  * render it: geometry origin, transform, and presentation.
  *
  * NOT included here (stays separate, per explicit decision): game mechanics
- * (price, gridSize, employment, maintenance — see
- * src/shared/building-catalog/buildingCatalog.js) and status-icon anchors
+ * (price, employment, maintenance — see
+ * src/shared/building-catalog/buildingCatalog.js), collision footprint
+ * (single-sourced in src/shared/asset-footprint/resolveFootprint.js), and
+ * status-icon anchors
  * (already consolidated separately in
  * src/presentation/three/meshs/statusIconAnchors.js).
  *
@@ -39,7 +41,7 @@
  *    (/resources/kenney_city_kits_catalog.json via kenneyCityKitConfig.js),
  *    not duplicated here.
  *  - kenneyNatureProp / kenneyNatureTerrain entries: transform fields beyond
- *    footprint/surfaceY are null — actual per-GLB bbox placement offsets are
+ *    surfaceY are null — actual per-GLB bbox placement offsets are
  *    scanned and generated in
  *    src/shared/editor-catalog/kenneyPlacementProfiles.generated.js; this
  *    file intentionally does not re-duplicate that generated, auto-scanned
@@ -66,8 +68,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -94,8 +94,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -128,8 +126,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -159,8 +155,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -195,8 +189,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -231,8 +223,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -267,8 +257,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -303,8 +291,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -339,8 +325,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -375,8 +359,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -411,8 +393,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -447,8 +427,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -483,8 +461,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -519,8 +495,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -555,8 +529,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -591,8 +563,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -627,8 +597,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -663,8 +631,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -699,8 +665,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -735,8 +699,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -771,8 +733,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -807,8 +767,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -843,8 +801,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -879,8 +835,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -915,8 +869,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -951,8 +903,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -987,8 +937,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1023,8 +971,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1059,8 +1005,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1095,8 +1039,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1131,8 +1073,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1167,8 +1107,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1203,8 +1141,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1239,8 +1175,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1275,8 +1209,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1311,8 +1243,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1347,8 +1277,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1383,8 +1311,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1419,8 +1345,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1455,8 +1379,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1491,8 +1413,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1527,8 +1447,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1563,8 +1481,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1599,8 +1515,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1635,8 +1549,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1671,8 +1583,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1707,8 +1617,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1743,8 +1651,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1779,8 +1685,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1815,8 +1719,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1851,8 +1753,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1887,8 +1787,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1923,8 +1821,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1959,8 +1855,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -1995,8 +1889,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2031,8 +1923,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2067,8 +1957,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2103,8 +1991,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2139,8 +2025,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2175,8 +2059,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2211,8 +2093,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2247,8 +2127,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2283,8 +2161,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2319,8 +2195,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2355,8 +2229,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2391,8 +2263,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2427,8 +2297,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2463,8 +2331,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2499,8 +2365,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2535,8 +2399,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2571,8 +2433,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2607,8 +2467,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2643,8 +2501,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2679,8 +2535,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2715,8 +2569,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2751,8 +2603,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2787,8 +2637,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2823,8 +2671,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2859,8 +2705,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2895,8 +2739,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2931,8 +2773,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -2967,8 +2807,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -3003,8 +2841,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -3039,8 +2875,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -3075,8 +2909,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -3111,8 +2943,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -3147,8 +2977,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -3183,8 +3011,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -3219,8 +3045,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -3255,8 +3079,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -3291,8 +3113,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -3327,8 +3147,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -3363,8 +3181,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -3399,8 +3215,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -3435,8 +3249,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -3471,8 +3283,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -3507,8 +3317,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',
@@ -3543,8 +3351,6 @@ export const TERRAIN_ASSETS = Object.freeze({
       rotationDeg: null,
       positionOffsetY: 0.02,
       scale: null,
-      footprintWidth: 1,
-      footprintDepth: 1,
     },
     presentation: {
       mode: 'lit',

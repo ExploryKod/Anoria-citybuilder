@@ -8,7 +8,7 @@ import {
   KENNEY_CITY_KIT_PREFAB_BY_BUILDING_ID,
 } from '../../../shared/building-catalog/kenneyCityKitRegistry.generated.js';
 import {
-  VILLAGE_PLAYABLE_TOOL_IDS_BY_CATEGORY,
+  VILLAGE_MESH_TOOL_IDS_BY_CATEGORY,
   VILLAGE_NATURE_GAME_IDS,
   VILLAGE_NATURE_MESH_ALIASES,
 } from '../../../shared/building-catalog/villageAssetSets.js';
@@ -108,7 +108,7 @@ function buildPlayableAssetSections() {
 
     const villageIds = category === 'nature'
       ? VILLAGE_NATURE_GAME_IDS
-      : (VILLAGE_PLAYABLE_TOOL_IDS_BY_CATEGORY[category] || []);
+      : (VILLAGE_MESH_TOOL_IDS_BY_CATEGORY[category] || []);
     for (const id of villageIds) {
       if (seen.has(id)) continue;
       const meshAssetId = VILLAGE_NATURE_MESH_ALIASES[id] ?? null;

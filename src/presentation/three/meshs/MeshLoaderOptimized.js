@@ -3,7 +3,6 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { meshNameMapping } from './data.js';
 import {
-    VILLAGE_PLAYABLE_TOOL_IDS_BY_CATEGORY,
     VILLAGE_MESH_TOOL_IDS_BY_CATEGORY,
 } from '../../../shared/building-catalog/villageAssetSets.js';
 
@@ -30,8 +29,8 @@ async function loadAssetCatalog() {
  */
 class MeshLoaderOptimized {
 
-    /** Toolbar / placement — farms + roads only from village pack; Kenney added in VillageTownAssetManager. */
-    toolIds = structuredClone(VILLAGE_PLAYABLE_TOOL_IDS_BY_CATEGORY);
+    /** Internal category/id bookkeeping used while loading — every village mesh id (Kenney added separately in VillageTownAssetManager). */
+    toolIds = structuredClone(VILLAGE_MESH_TOOL_IDS_BY_CATEGORY);
 
     /** GLB meshes to load for legacy saves and procedural nature. */
     meshToolIds = structuredClone(VILLAGE_MESH_TOOL_IDS_BY_CATEGORY);

@@ -2,14 +2,17 @@
  * Placement / economy catalog: price, UI category, footprint size.
  * Pure data — no Three.js. Source of truth for construction cost lookups.
  *
- * Derived from `buildingCatalog.js` (the single source of truth for static
- * per-building facts). This file keeps its historic export name/shape so
- * existing call sites (construction, scene, mesh loader) don't change.
+ * Derived from `buildingCatalog.js` (price/category) and
+ * `asset-footprint/resolveFootprint.js` (gridSize/footprintWidth/
+ * footprintDepth — single-sourced there, not duplicated here). This file
+ * keeps its historic export name/shape so existing call sites (construction,
+ * scene, mesh loader) don't change.
  */
 
 import { buildingCatalog } from './buildingCatalog.js';
 import { KENNEY_BUILDING_CATALOG_ENTRIES } from './kenneyCityKitRegistry.generated.js';
 import { isPlayableBuildingId } from './playableBuildings.js';
+import { resolveFootprint, resolveGridSize } from '../asset-footprint/resolveFootprint.js';
 
 function buildAssetsPrices({ playableOnly = false } = {}) {
   /** @type {Record<string, { price: number, category: string, gridSize: number, footprintWidth?: number, footprintDepth?: number }>} */
@@ -18,7 +21,14 @@ function buildAssetsPrices({ playableOnly = false } = {}) {
   for (const [id, definition] of Object.entries(mergedCatalog)) {
     if (!definition.construction) continue;
     if (playableOnly && !isPlayableBuildingId(id)) continue;
-    prices[id] = { ...definition.construction };
+    const footprint = resolveFootprint(id);
+    prices[id] = {
+      price: definition.construction.price,
+      category: definition.construction.category,
+      gridSize: resolveGridSize(id),
+      footprintWidth: footprint.width,
+      footprintDepth: footprint.depth,
+    };
   }
   return Object.freeze(prices);
 }
