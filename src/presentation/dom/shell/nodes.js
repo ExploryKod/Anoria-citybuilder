@@ -21,13 +21,11 @@ export const infoObjectOverlay = document.querySelector('.info-building-overlay'
 export const infoObjectCloseBtn = document.querySelector('.info-building-overlay .panel-close-btn');
 export {
     buildingsObjects,
-    houses,
-    firstHouses,
     palaces,
     farms,
-    commerce,
     factories,
 } from '../../../shared/building-catalog/index.js';
+export { houses, commerce } from '../../three/assets/buildingCategories.js';
 
 export const infoPanelClock = document.querySelector('.info-panel .clock-box');
 export const infoPanelClockIcon = document.querySelector('.info-panel svg.lucide-clock-4')

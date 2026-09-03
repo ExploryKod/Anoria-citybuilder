@@ -1,30 +1,17 @@
 /**
  * Building type id sets used by scene tick filters, info panel, mesh loader.
  * Pure data — no DOM / Three. Prefer these over lists in ui/shell/nodes.
+ *
+ * `houses`/`commerce` moved to presentation/three/assets/buildingCategories.js
+ * — they're pure derivations of BUILDING_ASSETS's button.group (a
+ * presentation fact), and shared/ must not depend on presentation/.
  */
 
-import { KENNEY_CITY_KIT_BUILDING_IDS, KENNEY_CITY_KIT_TOOLS_BY_CATEGORY } from './kenneyCityKitRegistry.generated.js';
-
-export const houses = Object.freeze([
-  'House-Red',
-  'House-Purple',
-  'House-Blue',
-  ...KENNEY_CITY_KIT_TOOLS_BY_CATEGORY.houses,
-]);
-
-/** @deprecated Alias of `houses` — kept for call sites that still name “first houses”. */
-export const firstHouses = houses;
+import { KENNEY_CITY_KIT_BUILDING_IDS } from './kenneyCityKitRegistry.generated.js';
 
 export const palaces = Object.freeze(['House-2Story']);
 
 export const farms = Object.freeze(['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage']);
-
-export const commerce = Object.freeze([
-  'Market-Stall',
-  'Market-Stall-Blue',
-  'Market-Stall-Red',
-  ...KENNEY_CITY_KIT_TOOLS_BY_CATEGORY.markets,
-]);
 
 export const factories = Object.freeze(['Winery-001']);
 
