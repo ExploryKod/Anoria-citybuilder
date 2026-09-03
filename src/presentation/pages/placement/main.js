@@ -4,8 +4,7 @@ import VillageTownAssetManager from '../../three/meshs/VillageTownAssetManager.j
 import { getKenneyCityKitMeshAdapter } from '../../three/adapters/kenney-city-kit/KenneyCityKitMeshAdapter.js';
 import { BUILDING_ASSET_CATALOG } from '../../three/meshs/BuildingAssetCatalog.js';
 import { resolveAndCreateBuildingMesh } from '../../three/meshs/resolveBuildingMesh.js';
-import { STATUS_ICON_DEFAULTS } from '../../three/meshs/StatusIconDefaults.js';
-import { STATUS_ICON_ANCHOR_OVERRIDES } from '../../three/meshs/StatusIconAnchorCatalog.js';
+import { STATUS_ICON_DEFAULTS, STATUS_ICON_ANCHOR_OVERRIDES } from '../../three/meshs/statusIconAnchors.js';
 import { getLocalBoundingBox, resolveStatusIconPosition } from '../../three/meshUtils.js';
 import { textures } from '../../three/meshs/data.js';
 
