@@ -1,10 +1,7 @@
 import * as THREE from 'three';
 import { getPlacementYawAngle, setPlacementRotationStep } from './placementRotation.js';
-import {
-  isKenneyBuildingId,
-  KENNEY_CITY_KIT_PLATFORM_HEIGHT,
-} from './adapters/kenney-city-kit/kenneyCityKitConfig.js';
-import { getKenneyCityKitMeshAdapter } from './adapters/kenney-city-kit/KenneyCityKitMeshAdapter.js';
+import { ASSET_CATALOG } from './meshs/resolveBuildingMesh.js';
+import { getBuildingSourceAdapter } from './adapters/buildingSourceAdapterRegistry.js';
 import {
   isEditorPlacementTool,
   isEditorTerrainTool,
@@ -22,6 +19,19 @@ import { WORLD_PLATFORM_Y } from '../../shared/terrain-catalog/terrainWorldContr
  */
 function isLazyKenneyEditorAsset(assetId) {
   return isEditorPlacementTool(assetId);
+}
+
+/**
+ * The registered BuildingSourceAdapter for `assetId`'s catalog source, if
+ * any — this file must never branch on a source name itself (see
+ * adapters/buildingSourceAdapterRegistry.js); a nature/terrain editor asset
+ * (no registered building adapter) falls through to the editor-stack path
+ * below instead.
+ * @param {string} assetId
+ * @returns {import('./adapters/buildingSourceAdapterRegistry.js').BuildingSourceAdapter | null}
+ */
+function getGhostAdapter(assetId) {
+  return getBuildingSourceAdapter(ASSET_CATALOG[assetId]?.source);
 }
 
 /**
@@ -250,46 +260,15 @@ export function createPlacementGhostController({ scene, assetManager }) {
 
   /**
    * @param {THREE.Object3D} mesh
-   * @param {number} x
-   * @param {number} y
-   * @param {{ gridSize?: number, footprintWidth?: number, footprintHeight?: number, rotationStep?: number }} [options]
-   */
-  function setKenneyTilePosition(mesh, x, y, options = {}) {
-    const rotationStep = options.rotationStep ?? 0;
-    let footprintWidth = options.footprintWidth ?? options.gridSize ?? 1;
-    let footprintDepth = options.footprintHeight ?? options.gridSize ?? 1;
-    if (rotationStep % 2 === 1) {
-      [footprintWidth, footprintDepth] = [footprintDepth, footprintWidth];
-    }
-
-    const centerX = (footprintWidth - 1) / 2;
-    const centerZ = (footprintDepth - 1) / 2;
-    mesh.position.set(
-      x + centerX,
-      KENNEY_CITY_KIT_PLATFORM_HEIGHT + 0.04,
-      y + centerZ
-    );
-    mesh.rotation.y = rotationStep * (Math.PI / 2);
-
-    if (mesh.userData) {
-      mesh.userData.x = x;
-      mesh.userData.y = y;
-      mesh.userData.gridSize = Math.max(footprintWidth, footprintDepth);
-      mesh.userData.footprintWidth = footprintWidth;
-      mesh.userData.footprintDepth = footprintDepth;
-    }
-  }
-
-  /**
-   * @param {THREE.Object3D} mesh
    * @param {string} assetId
    * @param {number} x
    * @param {number} y
    * @param {{ gridSize?: number, footprintWidth?: number, footprintHeight?: number, rotationStep?: number }} [options]
    */
   function repositionGhost(mesh, assetId, x, y, options = {}) {
-    if (isKenneyBuildingId(assetId)) {
-      setKenneyTilePosition(mesh, x, y, options);
+    const adapter = getGhostAdapter(assetId);
+    if (adapter) {
+      adapter.repositionGhost(mesh, x, y, { ...options, baseYawAngle, controllerRotationStep: rotationStep });
       return;
     }
     if (isEditorGhostPlacement(assetId, options) && options.placementBaseLocalY != null) {
@@ -349,8 +328,12 @@ export function createPlacementGhostController({ scene, assetManager }) {
     rotationStep = lastRotationStep;
     lastMountKey = resolveEditorMountKey(options);
 
-    if (isKenneyBuildingId(assetId)) {
-      baseYawAngle = 0;
+    const adapter = getGhostAdapter(assetId);
+    if (adapter) {
+      baseYawAngle = adapter.resolveBaseYawAngle(mesh);
+      if (!adapter.rotationRequiresRespawn && rotationStep) {
+        setPlacementRotationStep(mesh, baseYawAngle, rotationStep);
+      }
     } else if (!isEditorGhostPlacement(assetId, options)) {
       baseYawAngle = getPlacementYawAngle(mesh);
       if (rotationStep) {
@@ -426,16 +409,29 @@ export function createPlacementGhostController({ scene, assetManager }) {
       console.warn(`[placementGhost] ${label} failed:`, assetId, error);
     };
 
-    if (isKenneyBuildingId(assetId)) {
-      getKenneyCityKitMeshAdapter()
-        .createBuilding(x, y, {
-          buildingId: assetId,
-          rotationStep: options.rotationStep ?? 0,
-        })
-        .then(finishAsyncSpawn)
-        .catch((error) => {
-          failAsyncSpawn(error, 'Kenney preview');
+    const adapter = getGhostAdapter(assetId);
+    if (adapter) {
+      // Rotation is baked into the created mesh only when the adapter can't
+      // rotate it in place afterwards (rotationRequiresRespawn) — otherwise
+      // spawn produces a neutral mesh and mountGhost/repositionGhost own
+      // rotation, so a later in-place rotate doesn't need a full respawn.
+      const rotationStepForCreate = adapter.rotationRequiresRespawn ? (options.rotationStep ?? 0) : 0;
+      const result = adapter.createMesh(x, y, {
+        catalogEntry: ASSET_CATALOG[assetId],
+        rotationStep: rotationStepForCreate,
+        assetManager,
+      });
+      if (result && typeof result.then === 'function') {
+        result.then(finishAsyncSpawn).catch((error) => {
+          failAsyncSpawn(error, 'ghost mesh');
         });
+        return;
+      }
+      if (!result) {
+        pendingAsyncSpawn = null;
+        return;
+      }
+      finishAsyncSpawn(result);
       return;
     }
 
@@ -465,6 +461,9 @@ export function createPlacementGhostController({ scene, assetManager }) {
       return;
     }
 
+    // Neither a registered building-source adapter nor a lazy editor asset —
+    // last-resort attempt straight through the asset manager, for whatever
+    // isn't (yet) declared in a catalog/adapter.
     pendingAsyncSpawn = null;
     const gridSize = options.gridSize ?? 1;
     const mesh = assetManager.createAsset(assetId, x, y);
@@ -548,7 +547,7 @@ export function createPlacementGhostController({ scene, assetManager }) {
     rotationStep = ((step % maxSteps) + maxSteps) % maxSteps;
     lastRotationStep = rotationStep;
 
-    if (isKenneyBuildingId(currentAssetId)) {
+    if (getGhostAdapter(currentAssetId)?.rotationRequiresRespawn) {
       spawn(currentAssetId, lastX, lastY, lastValid, ghostMode, {
         gridSize: lastGridSize,
         footprintWidth: lastFootprintWidth,

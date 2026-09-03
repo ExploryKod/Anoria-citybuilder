@@ -1,4 +1,3 @@
-import { setToolPanelAssets } from '../tools/ToolPanel.js';
 import { updateSpeedDisplay } from './SpeedControls.js';
 import { getKenneyCityKitMeshAdapter } from '../../three/adapters/kenney-city-kit/KenneyCityKitMeshAdapter.js';
 import { getKenneyNatureTerrainAdapter } from '../../three/adapters/kenney-nature-terrain/KenneyNatureTerrainAdapter.js';
@@ -32,11 +31,7 @@ export async function loadGameAssets(assetManager) {
       assetManager.initializeBuildings('tombs'),
       assetManager.initializeBuildings('farms'),
       assetManager.initializeBuildings('infrastructure'),
-    ])
-      .then(() => {
-        setToolPanelAssets(assetManager.getButtonData(), assetManager.getToolIds());
-      })
-      .catch(() => {});
+    ]).catch(() => {});
   };
 
   if (typeof requestIdleCallback !== 'undefined') {
@@ -45,11 +40,7 @@ export async function loadGameAssets(assetManager) {
     setTimeout(loadNonCriticalAssets, 500);
   }
 
-  const initUI = () => {
-    setToolPanelAssets(assetManager.getButtonData(), assetManager.getToolIds());
-    updateSpeedDisplay();
-  };
-
+  const initUI = () => updateSpeedDisplay();
   if (typeof requestIdleCallback !== 'undefined') {
     requestIdleCallback(initUI, { timeout: 1000 });
   } else {

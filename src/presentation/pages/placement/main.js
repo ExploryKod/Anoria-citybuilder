@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import VillageTownAssetManager from '../../three/meshs/VillageTownAssetManager.js';
 import { getKenneyCityKitMeshAdapter } from '../../three/adapters/kenney-city-kit/KenneyCityKitMeshAdapter.js';
-import { BUILDING_ASSET_CATALOG } from '../../three/meshs/BuildingAssetCatalog.js';
+import { BUILDING_ASSETS } from '../../three/assets/buildingAssets.js';
 import { resolveAndCreateBuildingMesh } from '../../three/meshs/resolveBuildingMesh.js';
 import { STATUS_ICON_DEFAULTS, STATUS_ICON_ANCHOR_OVERRIDES } from '../../three/meshs/statusIconAnchors.js';
 import { getLocalBoundingBox, resolveStatusIconPosition } from '../../three/meshUtils.js';
@@ -12,7 +12,7 @@ import { textures } from '../../three/meshs/data.js';
  * Standalone status-icon placement tuning tool (/placement.html).
  *
  * Loads one building at a time via the exact same mesh resolver the real
- * game uses (resolveAndCreateBuildingMesh — reads BUILDING_ASSET_CATALOG),
+ * game uses (resolveAndCreateBuildingMesh — reads BUILDING_ASSETS),
  * so whatever anchor you tune here is guaranteed to apply to what actually
  * renders in-game. Deliberately does NOT run scene.js/createScene or any
  * economy tick — this only needs a scene, a camera, and one mesh.
@@ -46,7 +46,7 @@ const scaleZInput = document.getElementById('scale-z');
 const showBoxCheckbox = document.getElementById('show-box');
 const outputEl = document.getElementById('output');
 
-for (const buildingId of Object.keys(BUILDING_ASSET_CATALOG).sort()) {
+for (const buildingId of Object.keys(BUILDING_ASSETS).sort()) {
   const option = document.createElement('option');
   option.value = buildingId;
   option.textContent = buildingId;
