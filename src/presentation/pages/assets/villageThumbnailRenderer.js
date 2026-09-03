@@ -81,11 +81,6 @@ async function loadVillageMeshes() {
  * @param {number} size
  */
 export async function renderVillageThumbnail(toolId, canvas, size = 104) {
-  if (toolId === 'roads') {
-    renderRoadsPlaceholder(canvas, size);
-    return;
-  }
-
   if (toolId === 'grass') {
     renderGrassPlaceholder(canvas, size);
     return;
@@ -153,30 +148,6 @@ export async function renderVillageThumbnail(toolId, canvas, size = 104) {
   renderer.dispose();
 }
 
-/**
- * @param {HTMLCanvasElement} canvas
- * @param {number} size
- */
-function renderRoadsPlaceholder(canvas, size) {
-  const px = size * 2;
-  canvas.width = px;
-  canvas.height = px;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-
-  ctx.fillStyle = '#e8eaed';
-  ctx.fillRect(0, 0, px, px);
-  ctx.fillStyle = '#6b7280';
-  const roadW = px * 0.35;
-  ctx.fillRect((px - roadW) / 2, 0, roadW, px);
-  ctx.strokeStyle = '#fbbf24';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([8, 10]);
-  ctx.beginPath();
-  ctx.moveTo(px / 2, 8);
-  ctx.lineTo(px / 2, px - 8);
-  ctx.stroke();
-}
 
 /**
  * @param {HTMLCanvasElement} canvas

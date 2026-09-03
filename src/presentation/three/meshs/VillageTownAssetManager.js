@@ -68,7 +68,6 @@ function isLocalYUpMesh(root) {
 
 class VillageTownAssetManager extends MeshLoader {
     #geometry = new THREE.BoxGeometry(1, 1, 1);
-    #roadGeometry = new THREE.PlaneGeometry(1, 1);
     #assets = {};
     #modelPath = "";
     #baseUrl = '';
@@ -383,23 +382,16 @@ class VillageTownAssetManager extends MeshLoader {
     #getSharedTerrainMaterials() {
         if (!this.#sharedTerrainMaterials) {
             // Vérifier que les textures sont chargées
-            if (!textures['roads'] || !textures['grass']) {
-                console.error('[VillageTownAssetManager] Textures not loaded yet!', { 
-                    roads: !!textures['roads'], 
-                    grass: !!textures['grass'] 
+            if (!textures['grass']) {
+                console.error('[VillageTownAssetManager] Textures not loaded yet!', {
+                    grass: !!textures['grass']
                 });
             }
-            
+
             // Create shared materials once - these will be reused for all terrain tiles
             // This prevents exceeding WebGL texture unit limit (32 max)
             // NOTE: Removed specularMap to save texture units (not critical for visual quality)
             this.#sharedTerrainMaterials = {
-                'roads': new THREE.MeshLambertMaterial({
-                    map: textures['roads'],
-                    // S'assurer que la texture est correctement configurée
-                    transparent: false,
-                    side: THREE.FrontSide
-                }),
                 'grass': new THREE.MeshLambertMaterial({
                     // map: textures['grass'],  // Texture commented out - using solid color instead
                     color: 0x6DB973,  // Match world platform color #6DB973
@@ -414,11 +406,8 @@ class VillageTownAssetManager extends MeshLoader {
                     side: THREE.FrontSide
                 })
             };
-            
+
             // S'assurer que les textures sont marquées pour mise à jour
-            if (this.#sharedTerrainMaterials['roads'].map) {
-                this.#sharedTerrainMaterials['roads'].map.needsUpdate = true;
-            }
             if (this.#sharedTerrainMaterials['grass'].map) {
                 this.#sharedTerrainMaterials['grass'].map.needsUpdate = true;
             }
@@ -463,7 +452,6 @@ class VillageTownAssetManager extends MeshLoader {
         registerTerrainSceneFactories({
             getSharedTerrainMaterials: () => this.#getSharedTerrainMaterials(),
             getTerrainBoxGeometry: () => this.#geometry,
-            getRoadPlaneGeometry: () => this.#roadGeometry,
         });
         registerNatureSceneFactories();
 

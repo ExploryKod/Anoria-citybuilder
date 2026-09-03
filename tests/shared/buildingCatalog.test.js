@@ -51,9 +51,20 @@ describe('buildingCatalog — pure data contract', () => {
 
 describe('assetsPrices — derived from buildingCatalog', () => {
   test('matches construction facts for a sample of types', () => {
-    expect(assetsPrices['House-Blue']).toEqual({ price: 10, category: 'houses', gridSize: 1 });
-    expect(assetsPrices['Barn-001']).toEqual({ price: 40, category: 'industry', gridSize: 2 });
-    expect(assetsPrices['roads']).toEqual({ price: 5, category: 'infrastructure', gridSize: 1 });
+    expect(assetsPrices['House-Blue']).toEqual({
+      price: 10, category: 'houses', gridSize: 1, footprintWidth: 1, footprintDepth: 1,
+    });
+    expect(assetsPrices['Barn-001']).toEqual({
+      price: 40, category: 'industry', gridSize: 2, footprintWidth: 2, footprintDepth: 2,
+    });
+    expect(assetsPrices['StonePath-001']).toEqual({
+      price: 5, category: 'infrastructure', gridSize: 1, footprintWidth: 1, footprintDepth: 1,
+    });
+  });
+
+  test('the legacy roads id is fully retired — StonePath is the only road tool', () => {
+    expect(buildingCatalog.roads).toBeUndefined();
+    expect(assetsPrices.roads).toBeUndefined();
   });
 
   test('has exactly the entries that declare a construction fact', () => {
@@ -79,13 +90,18 @@ describe('EmploymentSectorCatalog — derived employment facts', () => {
     expect(BUILDING_SECTOR_MAP['Market-Stall']).toBe(2);
     expect(BUILDING_SECTOR_MAP['Winery-001']).toBe(3);
     expect(BUILDING_SECTOR_MAP['Barn-001']).toBe(4);
-    expect(BUILDING_SECTOR_MAP['roads']).toBe(5);
+    expect(BUILDING_SECTOR_MAP['StonePath-001']).toBe(5);
+  });
+
+  test('roads is aliased to StonePath-001 — every placed road, whichever rotation variant, gets its runtime type marker set to \'roads\' for connectivity', () => {
+    expect(BUILDING_SECTOR_MAP['roads']).toBe(BUILDING_SECTOR_MAP['StonePath-001']);
+    expect(BUILDING_EMPLOYEE_NEEDS['roads']).toEqual(BUILDING_EMPLOYEE_NEEDS['StonePath-001']);
   });
 
   test('static employee needs match catalog values', () => {
     expect(BUILDING_EMPLOYEE_NEEDS['Farm-Wheat']).toEqual({ worker_need: 3, elite_need: 0 });
     expect(BUILDING_EMPLOYEE_NEEDS['Windmill-001']).toEqual({ worker_need: 4, elite_need: 2 });
-    expect(BUILDING_EMPLOYEE_NEEDS['roads']).toEqual({ worker_need: 0, elite_need: 0 });
+    expect(BUILDING_EMPLOYEE_NEEDS['StonePath-001']).toEqual({ worker_need: 0, elite_need: 0 });
   });
 
   test('Barn-001 needs stay dynamic (not baked into the static catalog)', () => {
@@ -95,23 +111,25 @@ describe('EmploymentSectorCatalog — derived employment facts', () => {
 });
 
 describe('BuildingMaintenanceBreakdownPolicy — derived maintenance facts', () => {
-  test('matches catalog for roads and houses', () => {
-    expect(DEFAULT_MAINTENANCE_COSTS.roads).toBe(buildingCatalog.roads.accounting.maintenance);
+  test('matches catalog for roads (aliased to StonePath-001) and houses', () => {
+    expect(DEFAULT_MAINTENANCE_COSTS.roads).toBe(
+      buildingCatalog['StonePath-001'].accounting.maintenance
+    );
     expect(DEFAULT_MAINTENANCE_COSTS['House-Blue']).toBe(
       buildingCatalog['House-Blue'].accounting.maintenance
     );
   });
 });
 
-describe('playableAssetsPrices — Kenney + farms + roads only', () => {
-  test('includes Kenney, farms, and roads but not legacy village houses', () => {
+describe('playableAssetsPrices — every id with a real economy entry', () => {
+  test('includes Kenney, village buildings, and StonePath — playability is derived, not a fixed allowlist', () => {
     expect(playableAssetsPrices['Kenney-Suburban-building-type-a']).toBeDefined();
     expect(playableAssetsPrices['Farm-Wheat']).toBeDefined();
-    expect(playableAssetsPrices.roads).toBeDefined();
     expect(playableAssetsPrices['StonePath-001']).toBeDefined();
-    expect(playableAssetsPrices['House-Blue']).toBeUndefined();
-    expect(playableAssetsPrices['Market-Stall']).toBeUndefined();
-    expect(playableAssetsPrices['Barn-001']).toBeUndefined();
+    expect(playableAssetsPrices.roads).toBeUndefined();
+    expect(playableAssetsPrices['House-Blue']).toBeDefined();
+    expect(playableAssetsPrices['Market-Stall']).toBeDefined();
+    expect(playableAssetsPrices['Barn-001']).toBeDefined();
   });
 });
 

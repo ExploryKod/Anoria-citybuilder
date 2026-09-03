@@ -4,9 +4,15 @@ import { buildingCatalog } from '../../../../shared/building-catalog/buildingCat
  * Per-building-type maintenance costs derived from `buildingCatalog` where a
  * real building id exists. `Farm` and `Market` are category-level defaults
  * (no single building type owns them), so they stay declared locally.
+ *
+ * `roads` is aliased to StonePath-001's fact: every placed road (any
+ * StonePath rotation variant) gets its runtime type marker set to the
+ * string 'roads' for connectivity (see BuildingKind.js), which is the key
+ * `classifyMaintenanceBuilding` below actually matches on — 'roads' itself
+ * is not a real building id, StonePath-001 is the one true road tool.
  */
 const DEFAULT_MAINTENANCE_COSTS = Object.freeze({
-  roads: buildingCatalog.roads.accounting.maintenance,
+  roads: buildingCatalog['StonePath-001'].accounting.maintenance,
   'House-Blue': buildingCatalog['House-Blue'].accounting.maintenance,
   'House-Red': buildingCatalog['House-Red'].accounting.maintenance,
   'House-Purple': buildingCatalog['House-Purple'].accounting.maintenance,

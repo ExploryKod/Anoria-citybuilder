@@ -6,7 +6,6 @@ import { getPlayableBuildingIds } from '../../../shared/building-catalog/assetsP
 import { farms } from '../../../shared/building-catalog/buildingCategories.js';
 
 const ROAD_TOOL_IDS = Object.freeze([
-  'roads',
   'StonePath-001',
   'StonePath-Right-001',
   'StonePath-Left-001',

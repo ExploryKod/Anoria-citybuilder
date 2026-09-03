@@ -8,6 +8,5 @@
  */
 export const TERRAIN_FOOTPRINT = Object.freeze({
   'grass': Object.freeze({ width: 1, depth: 1 }),
-  'roads': Object.freeze({ width: 1, depth: 1 }),
   'terrain': Object.freeze({ width: 1, depth: 1 }),
 });
