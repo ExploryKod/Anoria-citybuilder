@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 
-import { blendTerrainColorHex } from './terrainColorBlend.js';
-import { terrainColorHexToCss } from './terrainDisplayColor.js';
+import { blendTerrainColorHex, terrainColorHexToCss } from './terrainColorBlend.js';
 
 /**
  * Kenney `ground_grass` unlit display color — calibrated from

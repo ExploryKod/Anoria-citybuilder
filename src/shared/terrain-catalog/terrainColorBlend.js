@@ -31,3 +31,11 @@ export function blendTerrainColorHex(hexA, hexB, t) {
     Math.round(ab + (bb - ab) * t),
   ]);
 }
+
+/**
+ * @param {number} hex
+ * @returns {string}
+ */
+export function terrainColorHexToCss(hex) {
+  return `#${hex.toString(16).padStart(6, '0')}`;
+}

@@ -1,14 +1,7 @@
 import { getTerrainCatalogEntry } from './terrainCatalog.js';
 import { KENNEY_GROUND_GRASS_COLOR } from './terrainAtmosphere.js';
 import { resolveTerrainId } from './resolveTerrainId.js';
-
-/**
- * @param {number} hex
- * @returns {string}
- */
-export function terrainColorHexToCss(hex) {
-  return `#${hex.toString(16).padStart(6, '0')}`;
-}
+import { terrainColorHexToCss } from './terrainColorBlend.js';
 
 /**
  * Canonical unlit display color for a terrain type (Three.js hex).
