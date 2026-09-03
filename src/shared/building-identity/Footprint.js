@@ -1,4 +1,4 @@
-import { createTileCoord, tryCreateTileCoord } from './TileCoord.js';
+import { createTileCoord, tryCreateTileCoord } from './BuildingIdentifiers.js';
 
 /**
  * Occupied tiles for one building instance (1×1 today; multi-tile ready).

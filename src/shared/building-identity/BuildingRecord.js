@@ -1,5 +1,9 @@
-import { assertBuildingInstanceId, isBuildingInstanceId } from './BuildingInstanceId.js';
-import { formatInstanceIdForLog } from './BuildingInstanceId.js';
+import {
+  assertBuildingInstanceId,
+  isBuildingInstanceId,
+  formatInstanceIdForLog,
+  toBuildingIdString,
+} from './BuildingIdentifiers.js';
 import {
   footprintFromRecord,
   footprintTilesAsPairs,
@@ -10,7 +14,6 @@ import {
   resolveBuildingKind,
   tierForResidentialType,
 } from './BuildingKind.js';
-import { toBuildingIdString } from './BuildingId.js';
 
 /**
  * Normalize a Dexie building row before persistence.

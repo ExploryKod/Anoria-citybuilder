@@ -1,4 +1,4 @@
-import { assertBuildingInstanceId } from '../../../../shared/building-identity/BuildingInstanceId.js';
+import { assertBuildingInstanceId } from '../../../../shared/building-identity/BuildingIdentifiers.js';
 
 /**
  * Événement de domaine : l'accès routier d'un bâtiment a changé.
