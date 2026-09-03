@@ -6,7 +6,7 @@
 
 import { describe, test, expect } from '@jest/globals';
 import { buildingCatalog, getBuildingDefinition } from '../../src/shared/building-catalog/buildingCatalog.js';
-import { assetsPrices } from '../../src/shared/building-catalog/buildingPlacementCatalog.js';
+import { assetsPrices } from '../../src/shared/asset-placement/buildingPlacementCatalog.js';
 import { KENNEY_BUILDING_CATALOG_ENTRIES } from '../../src/shared/building-catalog/kenneyCityKitRegistry.generated.js';
 import {
   BUILDING_SECTOR_MAP,
