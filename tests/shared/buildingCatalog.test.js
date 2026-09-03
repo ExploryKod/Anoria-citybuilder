@@ -7,6 +7,7 @@
 import { describe, test, expect } from '@jest/globals';
 import { buildingCatalog, getBuildingDefinition } from '../../src/shared/building-catalog/buildingCatalog.js';
 import { assetsPrices, playableAssetsPrices } from '../../src/shared/building-catalog/assetsPrices.js';
+import { KENNEY_BUILDING_CATALOG_ENTRIES } from '../../src/shared/building-catalog/kenneyCityKitRegistry.generated.js';
 import {
   BUILDING_SECTOR_MAP,
   BUILDING_EMPLOYEE_NEEDS,
@@ -67,11 +68,15 @@ describe('assetsPrices — derived from buildingCatalog', () => {
     expect(assetsPrices.roads).toBeUndefined();
   });
 
-  test('has exactly the entries that declare a construction fact', () => {
-    const expectedIds = Object.entries(buildingCatalog)
-      .filter(([, def]) => def.construction)
-      .map(([id]) => id)
-      .sort();
+  test('has exactly the entries that declare a construction fact (village + Kenney)', () => {
+    const expectedIds = [
+      ...Object.entries(buildingCatalog)
+        .filter(([, def]) => def.construction)
+        .map(([id]) => id),
+      ...Object.entries(KENNEY_BUILDING_CATALOG_ENTRIES)
+        .filter(([, def]) => def.construction)
+        .map(([id]) => id),
+    ].sort();
     expect(Object.keys(assetsPrices).sort()).toEqual(expectedIds);
   });
 });

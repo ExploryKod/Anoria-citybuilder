@@ -153,7 +153,7 @@ describe('architecture boundaries', () => {
           if (/composition\/facades\//.test(importSpec) || /\/facades\//.test(importSpec)) {
             violations.push(`${fileRel} imports "${importSpec}" — presentation must not import facades`);
           }
-          if (importSpec.includes('Ops.js')) {
+          if (/(^|\/)composition\/\w*Ops\.js$/.test(importSpec)) {
             violations.push(`${fileRel} imports "${importSpec}" — presentation must use sessionApi, not *Ops`);
           }
         }

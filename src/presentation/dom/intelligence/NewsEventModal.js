@@ -1,5 +1,4 @@
-import { labelForNewsSource } from '../../../contexts/intelligence/domain/catalogs/NewsSourceCatalog.js';
-import { labelForNewsCategory } from '../../../contexts/intelligence/domain/catalogs/NewsCategoryCatalog.js';
+import { labelForNewsSource, labelForNewsCategory } from '../../../composition/intelligenceCatalog.js';
 import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
 

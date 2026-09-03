@@ -2,7 +2,7 @@ import {
   KENNEY_HEX_ATLASES,
   KENNEY_HEX_MAP_ATLAS_IDS,
   resolveKenneyPhaserFrame,
-} from '../../../contexts/geography/domain/catalogs/HexAssetCatalog.js';
+} from '../../../composition/geographyCatalog.js';
 
 /**
  * Queue Kenney hex XML atlases on a Phaser loader.

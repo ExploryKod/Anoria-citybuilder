@@ -13,8 +13,8 @@ import {
   getResidentialGroupTitle,
   residentialGroupForType,
 } from '../../../shell/ResidentialGroupLabels.js';
-import { getHouseFoodRequirements } from '../../../../../contexts/supply/domain/policies/HouseFoodRequirementsPolicy.js';
-import { computeHouseCitizenComposition } from '../../../../../contexts/housing/domain/policies/HouseCitizenCompositionPolicy.js';
+import { getHouseFoodRequirements } from '../../../../../composition/supplyFoodCatalog.js';
+import { computeHouseCitizenComposition } from '../../../../../composition/housingCatalog.js';
 import { formatHousePopulationPresentation } from '../../population/formatHousePopulationPresentation.js';
 
 /**

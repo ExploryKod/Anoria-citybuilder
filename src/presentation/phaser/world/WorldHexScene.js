@@ -1,12 +1,12 @@
 import Phaser from 'phaser';
 import { HAMLET_ACCESS } from '../../../core/persistence/hamlet/hamletAccess.js';
-import { resolveKenneyPhaserFrame } from '../../../contexts/geography/domain/catalogs/HexAssetCatalog.js';
-import { TRADE_MAP_CITY_CATEGORIES } from '../../../contexts/commerce/domain/catalogs/TradeMapCityCatalog.js';
 import {
+  resolveKenneyPhaserFrame,
   WORLD_MAP_HEX_SIZE,
   WORLD_MAP_LAND_TILES,
   isWorldMapLandHex,
-} from '../../../contexts/geography/domain/world/worldMapDefinition.js';
+} from '../../../composition/geographyCatalog.js';
+import { TRADE_MAP_CITY_CATEGORIES } from '../../../composition/tradeMapCatalog.js';
 import { axialToPixel, hexCornerPoints, hexKey, pixelToAxial } from '../../../shared/geography/hexCoordinates.js';
 import { loadKenneyHexAtlases } from '../shared/loadKenneyHexAtlases.js';
 import { consumePendingWorldBootstrap } from './worldMapBootstrapState.js';

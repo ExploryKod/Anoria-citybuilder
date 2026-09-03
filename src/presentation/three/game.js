@@ -39,6 +39,7 @@ import {
 } from '../../core/persistence/hamlet/hamletSession.js';
 import { HAMLET_ACCESS_CHANGED_EVENT, canTravelToHamlet } from '../../core/persistence/hamlet/hamletAccess.js';
 import { runGameTick } from '../../composition/runGameTick.js';
+import { presentIncomingNewsEvents } from '../dom/intelligence/NewsEventModal.js';
 import { bindSessionRuntime } from '../../composition/sessionRuntime.js';
 import { syncSessionHud } from '../../composition/syncSessionHud.js';
 import { resetCumulativeDeaths } from '../../composition/gameplayMortalityState.js';
@@ -107,7 +108,7 @@ import {
 } from './placementKeyboardNudge.js';
 import { prefersTouchPlacementFlow } from './touchPlacementInput.js';
 import { canPlaceBuildingAtTileWithSupplyRules } from '../../composition/canPlaceBuildingAtTileWithSupplyRules.js';
-import { isRoadBuildingType } from '../../contexts/construction/domain/policies/FootprintAvailabilityPolicy.js';
+import { isRoadBuildingType } from '../../composition/constructionCatalog.js';
 import { createPlacementRotationHud } from './placementRotationHud.js';
 
 /**
@@ -1247,6 +1248,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
         onGameOver: () => {
           isOver = true;
         },
+        presentIncomingNewsEvents,
       });
     },
 
