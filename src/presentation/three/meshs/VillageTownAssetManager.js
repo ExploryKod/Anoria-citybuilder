@@ -299,16 +299,15 @@ class VillageTownAssetManager extends MeshLoader {
         }
 
         object3D.name = `${meshName}`;
-        // Position assets above the World platform (World is at y = 0.2)
-        // Buildings should be on top of the World, so we add an offset
-        const worldPlatformHeight = 0.2;
-        // StonePath is a near-flat ground mesh, coplanar with the World platform's
-        // top surface at exactly y = 0.2 — that causes z-fighting and makes it
-        // disappear. Houses etc. have volume rising above that base, so they don't
-        // need this; nudge roads up the same tiny amount the ghost preview already
-        // uses (villageTownBuildingAdapter.js's setTilePosition) to clear the platform.
-        const isRoadMesh = meshName.startsWith('StonePath-');
-        const yOffset = placerPos.z + worldPlatformHeight + (isRoadMesh ? 0.04 : 0);
+        // Height above the World platform is a per-id catalog fact
+        // (buildingAssets.js transform.positionOffsetY) — most ids sit at 0.2,
+        // flat ground meshes like StonePath declare a hair more to clear the
+        // platform's coplanar top surface and avoid z-fighting.
+        const catalogEntry = ASSET_CATALOG[meshName];
+        if (!catalogEntry) {
+            throw new Error(`[VillageTownAssetManager] No catalog entry for "${meshName}"`);
+        }
+        const yOffset = placerPos.z + catalogEntry.transform.positionOffsetY;
         object3D.position.set(placerPos.x, yOffset, placerPos.y);
         object3D.scale.set(size, size, size);
         
