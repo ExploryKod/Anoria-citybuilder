@@ -17,12 +17,11 @@ import {
 import {
     buildingPlacementCatalog,
     buildingsObjects,
-    commerce,
     factories,
     farms,
-    houses,
     palaces,
 } from '../../shared/building-catalog/index.js';
+import { commerce, houses } from './assets/buildingCategories.js';
 import { setupRoadAccessIcons } from '../../contexts/parcels/infrastructure/presentation/roadAccessIcons.js';
 import { TimeManager } from '../../shared/time/TimeManager.js';
 import { LightingManager } from './managers/LightingManager.js';
