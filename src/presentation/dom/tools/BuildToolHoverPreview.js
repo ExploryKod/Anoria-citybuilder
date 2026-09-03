@@ -1,5 +1,13 @@
-import { KENNEY_CITY_KIT_TOOL_META } from '../../three/adapters/kenney-city-kit/kenneyCityKitConfig.js';
-import { EDITOR_TOOL_PREVIEW_URLS } from '../../../shared/editor-catalog/editorKenneyCatalog.js';
+import { BUILDING_ASSETS } from '../../three/assets/buildingAssets.js';
+import { NATURE_ASSETS } from '../../three/assets/natureAssets.js';
+import { TERRAIN_ASSETS } from '../../three/assets/terrainAssets.js';
+
+/**
+ * Same catalog ToolPanel.js resolves carousel icons from — a tool's large
+ * hover preview must show the exact PNG its button icon uses, not a second,
+ * independently-sourced guess.
+ */
+const ASSET_CATALOG = { ...BUILDING_ASSETS, ...NATURE_ASSETS, ...TERRAIN_ASSETS };
 
 /** @type {HTMLElement | null} */
 let overlayEl = null;
@@ -10,9 +18,13 @@ let imageEl = null;
 /** @type {string | null} */
 let visibleToolId = null;
 
-const EXTRA_PREVIEW_URLS = Object.freeze({
-  'Windmill-001': '/icons/windmill.png',
-});
+/**
+ * @param {string} toolId
+ * @returns {{ kind: string, value: string } | null}
+ */
+function catalogIcon(toolId) {
+  return ASSET_CATALOG[toolId]?.button?.icon ?? null;
+}
 
 /**
  * Kenney city-kit carousel PNGs are 64×64 — show them larger with smooth HTML scaling.
@@ -22,7 +34,7 @@ const EXTRA_PREVIEW_URLS = Object.freeze({
  * @returns {'city-kit' | 'high-res'}
  */
 export function resolveToolPreviewProfile(toolId) {
-  if (KENNEY_CITY_KIT_TOOL_META[toolId]?.previewUrl) {
+  if (BUILDING_ASSETS[toolId]?.geometry?.kit) {
     return 'city-kit';
   }
   return 'high-res';
@@ -50,12 +62,8 @@ function applyPreviewProfile(toolId) {
  * @returns {string | null}
  */
 export function resolveToolPreviewUrl(toolId) {
-  return (
-    EDITOR_TOOL_PREVIEW_URLS[toolId]
-    ?? KENNEY_CITY_KIT_TOOL_META[toolId]?.previewUrl
-    ?? EXTRA_PREVIEW_URLS[toolId]
-    ?? null
-  );
+  const icon = catalogIcon(toolId);
+  return icon?.kind === 'png' || icon?.kind === 'icon' ? icon.value : null;
 }
 
 export function initBuildToolHoverPreview() {

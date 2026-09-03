@@ -53,8 +53,7 @@ import { pickTileFromRaycast } from './scene-board/tileRaycast.js';
 import { pickEditorTileOnGroundPlane } from './scene-board/editorTileGroundPick.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
 import { showWarningToast, showInfoToast } from '../dom/shell/ToastNotifier.js';
-import { BUILDING_ASSET_CATALOG } from './meshs/BuildingAssetCatalog.js';
-import { resolveAndCreateBuildingMesh } from './meshs/resolveBuildingMesh.js';
+import { ASSET_CATALOG, resolveAndCreateBuildingMesh } from './meshs/resolveBuildingMesh.js';
 import { scenePresentation } from './presentationConfig.js';
 import { createSceneFog } from '../../shared/terrain-catalog/terrainAtmosphere.js';
 import { isEditorMode } from '../../composition/sessionShell.js';
@@ -807,12 +806,12 @@ export function createScene(_gameStore, assetManager, deps) {
             const placementRotationStep = city.tiles[x]?.[y]?.placementRotationStep ?? 0;
 
             if (isOriginTile) {
-                const catalogEntry = BUILDING_ASSET_CATALOG[newBuildingId];
+                const catalogEntry = ASSET_CATALOG[newBuildingId];
                 if (!catalogEntry) {
-                    throw new Error(`[BuildingAssetCatalog] No catalog entry for "${newBuildingId}"`);
+                    throw new Error(`[buildingAssets] No catalog entry for "${newBuildingId}"`);
                 }
 
-                if (catalogEntry.adapter === 'kenneyCityKit') {
+                if (catalogEntry.source === 'kenneyCityKit') {
                     const kenneyMesh = await resolveAndCreateBuildingMesh({
                         buildingId: newBuildingId,
                         x,

@@ -8,7 +8,6 @@ import * as THREE from 'three';
 jest.unstable_mockModule(
   '../../../src/presentation/three/adapters/kenney-city-kit/kenneyCityKitConfig.js',
   () => ({
-    isKenneyBuildingId: (id) => id === 'kenney:test-house',
     KENNEY_CITY_KIT_PLATFORM_HEIGHT: 0.2,
   })
 );
@@ -75,7 +74,10 @@ describe('placementGhost', () => {
   });
 
   test('moves Kenney ghost mesh when hover tile changes', async () => {
-    controller.show('kenney:test-house', 2, 3, true, { gridSize: 1 });
+    // House-Blue is villageTown-labelled but catalog-reassigned to a Kenney
+    // mesh (buildingAssets.js) — this is the exact case that must take the
+    // Kenney branch by catalog `source`, not by an id-prefix guess.
+    controller.show('House-Blue', 2, 3, true, { gridSize: 1 });
     await Promise.resolve();
 
     const ghost = scene.children.find((child) => child.name === 'placement-ghost');
@@ -83,7 +85,7 @@ describe('placementGhost', () => {
     expect(ghost.position.x).toBe(2);
     expect(ghost.position.z).toBe(3);
 
-    controller.show('kenney:test-house', 5, 7, true, { gridSize: 1 });
+    controller.show('House-Blue', 5, 7, true, { gridSize: 1 });
     expect(ghost.position.x).toBe(5);
     expect(ghost.position.z).toBe(7);
     expect(scene.children).toHaveLength(1);
@@ -101,7 +103,9 @@ describe('placementGhost', () => {
     syncController.rotateStep();
     expect(syncController.rotationStep).toBe(0);
 
-    syncController.show('House-Blue', 2, 3, true, { gridSize: 1 });
+    // House-Purple stays villageTown-sourced (unlike House-Blue) — the
+    // synchronous createAsset path, not the async Kenney adapter.
+    syncController.show('House-Purple', 2, 3, true, { gridSize: 1 });
     syncController.rotateStep();
     expect(syncController.rotationStep).toBe(1);
   });

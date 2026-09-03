@@ -6,7 +6,7 @@ import { textures, meshNameMapping } from './data.js';
 import MeshLoader from "./MeshLoaderOptimized.js";
 import { assetsConfig, scenePresentation } from '../presentationConfig.js';
 import instancingManager from './InstancingManager.js';
-import { isKenneyBuildingId } from '../adapters/kenney-city-kit/kenneyCityKitConfig.js';
+import { ASSET_CATALOG } from './resolveBuildingMesh.js';
 import { registerKenneyCityKitTools } from '../adapters/kenney-city-kit/registerKenneyCityKitTools.js';
 import { registerKenneyEditorTools } from '../adapters/kenney-nature-props/registerKenneyEditorTools.js';
 import { attachSceneTilePort } from '../scene-board/SceneTilePort.js';
@@ -154,14 +154,6 @@ class VillageTownAssetManager extends MeshLoader {
         return Promise.all(this.#loadingPromises);
     }
 
-    getButtonData() {
-        return this.buttonData
-    }
-
-    getToolIds() {
-        return this.toolIds
-    }
-    
     // Public method to get shared terrain materials (for updating terrain meshes)
     getSharedTerrainMaterials() {
         return this.#getSharedTerrainMaterials();
@@ -533,9 +525,13 @@ class VillageTownAssetManager extends MeshLoader {
                 await loadPromise;
             }
             
-            // Register mesh factories for legacy + playable village ids (Kenney uses its adapter).
+            // Register mesh factories for legacy + playable village ids — skip any id the
+            // catalog says is NOT villageTown-sourced (Kenney uses its own adapter instead;
+            // this is catalog-driven, not an id-prefix guess, so reassigning an id's source
+            // in buildingAssets.js/natureAssets.js/terrainAssets.js is enough on its own —
+            // no stale village-mesh factory gets registered underneath it).
             this.meshToolIds[propertyKey].forEach(toolId => {
-                if (isKenneyBuildingId(toolId)) {
+                if (ASSET_CATALOG[toolId] && ASSET_CATALOG[toolId].source !== 'villageTown') {
                     return;
                 }
                 // Check for per-asset size override, otherwise use category size
