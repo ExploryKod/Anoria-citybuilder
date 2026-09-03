@@ -9,38 +9,40 @@
  */
 
 import * as THREE from 'three';
+import { BUILDING_ASSETS } from '../assets/buildingAssets.js';
+import { NATURE_ASSETS } from '../assets/natureAssets.js';
+import { TERRAIN_ASSETS } from '../assets/terrainAssets.js';
+
+const ASSET_CATALOG = { ...BUILDING_ASSETS, ...NATURE_ASSETS, ...TERRAIN_ASSETS };
+
+/**
+ * Ids opted into GPU instancing — declared per id via
+ * presentation.instanceable in buildingAssets.js/natureAssets.js, not a
+ * second hand-typed list here. Only very repetitive types (houses, farms,
+ * markets, tombstones) opt in.
+ */
+const INSTANCABLE_TYPES = new Set(
+    Object.entries(ASSET_CATALOG)
+        .filter(([, entry]) => entry.presentation?.instanceable === true)
+        .map(([id]) => id)
+);
 
 class InstancingManager {
     constructor() {
         // Map des InstancedMesh par type de bâtiment
         // Format: { 'House-Blue': InstancedMesh, 'House-Red': InstancedMesh, ... }
         this.instancedMeshes = new Map();
-        
+
         // Map des instances actives par type
         // Format: { 'House-Blue': Map<instanceId, {x, y, matrix}>, ... }
         this.instances = new Map();
-        
+
         // Compteur d'instances par type (pour générer des IDs uniques)
         this.instanceCounters = new Map();
-        
-        // Types de bâtiments qui bénéficient de l'instancing
-        // Seulement les bâtiments très répétitifs (maisons, fermes, marchés)
-        this.instancableTypes = new Set([
-            'House-Blue',
-            'House-Red', 
-            'House-Purple',
-            'House-2Story',
-            'Market-Stall',
-            'Market-Stall-Blue',
-            'Market-Stall-Red',
-            'Farm-Wheat',
-            'Farm-Carrot',
-            'Farm-Cabbage',
-            'Tombstone-1',
-            'Tombstone-2',
-            'Tombstone-3'
-        ]);
-        
+
+        // Types de bâtiments qui bénéficient de l'instancing — dérivé du catalogue
+        this.instancableTypes = INSTANCABLE_TYPES;
+
         // Taille maximale d'une InstancedMesh (limite WebGL)
         this.MAX_INSTANCES = 10000; // Limite sûre pour la plupart des GPUs
     }

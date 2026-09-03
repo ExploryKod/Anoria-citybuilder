@@ -81,6 +81,7 @@ export const BUILDING_ASSETS = Object.freeze({
       renderOrder: null,
       frustumCulled: true,
       displayColor: null,
+      instanceable: true,
     },
     button: {
       group: 'houses',
@@ -191,6 +192,7 @@ export const BUILDING_ASSETS = Object.freeze({
       renderOrder: null,
       frustumCulled: true,
       displayColor: null,
+      instanceable: true,
     },
     button: {
       group: 'farms',
@@ -227,6 +229,7 @@ export const BUILDING_ASSETS = Object.freeze({
       renderOrder: null,
       frustumCulled: true,
       displayColor: null,
+      instanceable: true,
     },
     button: {
       group: 'farms',
@@ -263,6 +266,7 @@ export const BUILDING_ASSETS = Object.freeze({
       renderOrder: null,
       frustumCulled: true,
       displayColor: null,
+      instanceable: true,
     },
     button: {
       group: 'farms',
@@ -627,6 +631,7 @@ export const BUILDING_ASSETS = Object.freeze({
       renderOrder: null,
       frustumCulled: true,
       displayColor: null,
+      instanceable: true,
     },
     button: {
       group: 'markets',
@@ -663,6 +668,7 @@ export const BUILDING_ASSETS = Object.freeze({
       renderOrder: null,
       frustumCulled: true,
       displayColor: null,
+      instanceable: true,
     },
     button: {
       group: 'markets',
@@ -954,6 +960,7 @@ export const BUILDING_ASSETS = Object.freeze({
       renderOrder: null,
       frustumCulled: true,
       displayColor: null,
+      instanceable: true,
     },
     button: {
       group: 'markets',
@@ -2233,6 +2240,7 @@ export const BUILDING_ASSETS = Object.freeze({
       renderOrder: null,
       frustumCulled: true,
       displayColor: null,
+      instanceable: true,
     },
     button: {
       group: 'houses',
@@ -2293,6 +2301,7 @@ export const BUILDING_ASSETS = Object.freeze({
       renderOrder: null,
       frustumCulled: true,
       displayColor: null,
+      instanceable: true,
     },
     button: {
       group: 'houses',
@@ -2353,6 +2362,7 @@ export const BUILDING_ASSETS = Object.freeze({
       renderOrder: null,
       frustumCulled: true,
       displayColor: null,
+      instanceable: true,
     },
     button: {
       group: 'houses',
