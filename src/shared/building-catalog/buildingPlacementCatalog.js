@@ -1,13 +1,14 @@
 /**
- * Placement / economy catalog: price, UI category, footprint size for every
- * building type. Pure data — no Three.js. Source of truth for construction
- * cost lookups.
+ * Building placement catalog: merges two catalog families into one flat
+ * per-id lookup — price/category from `buildingCatalog.js` and
+ * gridSize/footprintWidth/footprintDepth from
+ * `asset-footprint/resolveFootprint.js` (single-sourced there, not
+ * duplicated here). Pure data — no Three.js.
  *
- * Derived from `buildingCatalog.js` (price/category) and
- * `asset-footprint/resolveFootprint.js` (gridSize/footprintWidth/
- * footprintDepth — single-sourced there, not duplicated here). This file
- * keeps its historic export name/shape so existing call sites (construction,
- * scene, mesh loader) don't change.
+ * Exists so construction, scene, and the mesh loader can read one flat
+ * shape instead of each re-deriving `{...construction, ...footprint}`
+ * itself. Keeps the historic `assetsPrices` export name/shape so those
+ * call sites don't change.
  *
  * Every building catalog entry is playable — there is no separate
  * "playable" subset. An id either has a real construction fact (and shows
