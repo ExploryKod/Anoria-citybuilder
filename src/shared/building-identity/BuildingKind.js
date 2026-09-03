@@ -1,7 +1,6 @@
 export const BUILDING_KIND_HOUSE = 'house';
 export const BUILDING_KIND_FARM = 'farm';
 export const BUILDING_KIND_MARKET = 'market';
-export const BUILDING_KIND_FACTORY = 'factory';
 export const BUILDING_KIND_WINDMILL = 'windmill';
 export const BUILDING_KIND_ROAD = 'road';
 export const BUILDING_KIND_NATURE = 'nature';
@@ -52,7 +51,6 @@ export function resolveBuildingKind(toolOrTypeId) {
   if (t.includes('House') || t.includes('2Story')) return BUILDING_KIND_HOUSE;
   if (t.includes('Farm')) return BUILDING_KIND_FARM;
   if (t.includes('Market')) return BUILDING_KIND_MARKET;
-  if (t.includes('Winery') || t.includes('Factory')) return BUILDING_KIND_FACTORY;
   if (t.includes('Windmill') || t.includes('windmill')) return BUILDING_KIND_WINDMILL;
   if (t === 'roads' || t === 'Road' || t.startsWith('StonePath')) return BUILDING_KIND_ROAD;
   if (t.includes('Tree') || t.includes('Boulder')) return BUILDING_KIND_NATURE;

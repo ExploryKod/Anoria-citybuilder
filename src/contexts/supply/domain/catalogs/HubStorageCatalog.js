@@ -1,7 +1,4 @@
-import { BARN_COMMERCE_PRODUCTS, BARN_COMMERCE_PRODUCT_LABELS } from './BarnCommerceCatalog.js';
-
 export const HUB_KIND = Object.freeze({
-  BARN: 'barn',
   WINDMILL: 'windmill',
 });
 
@@ -20,8 +17,6 @@ export const HUB_PRODUCT_EMOJI = Object.freeze({
   carrot: '🥕',
   dattes: '🌴',
   wood: '🪵',
-  furniture: '🪑',
-  figs: '🍇',
 });
 
 export const WINDMILL_HUB_PRODUCT_LABELS = Object.freeze({
@@ -33,24 +28,21 @@ export const WINDMILL_HUB_PRODUCT_LABELS = Object.freeze({
 });
 
 /**
- * @param {'barn'|'windmill'} hubKind
+ * @param {'windmill'} hubKind
  * @returns {ReadonlyArray<string>}
  */
 export function listHubProducts(hubKind) {
-  if (hubKind === HUB_KIND.BARN) {
-    return BARN_COMMERCE_PRODUCTS;
+  if (hubKind === HUB_KIND.WINDMILL) {
+    return WINDMILL_HUB_PRODUCTS;
   }
-  return WINDMILL_HUB_PRODUCTS;
+  return [];
 }
 
 /**
- * @param {'barn'|'windmill'} hubKind
+ * @param {'windmill'} hubKind
  * @param {string} productId
  */
 export function getHubProductLabel(hubKind, productId) {
-  if (hubKind === HUB_KIND.BARN) {
-    return BARN_COMMERCE_PRODUCT_LABELS[productId] ?? productId;
-  }
   return WINDMILL_HUB_PRODUCT_LABELS[productId] ?? productId;
 }
 

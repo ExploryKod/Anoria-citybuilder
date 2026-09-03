@@ -244,7 +244,6 @@ export async function bootstrapGameSession(assetManager) {
 
   await initAdminSections({
     ...panelDeps,
-    commerce: sessionApi.commerce,
     employment: sessionApi.employment,
     intelligence: sessionApi.intelligence,
     registerAppService,

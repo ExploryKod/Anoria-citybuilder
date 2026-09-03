@@ -44,10 +44,6 @@ describe('getBuildingSector', () => {
         test('Windmill-001 appartient au secteur 4 (stockage, pas production)', () => {
             expect(getBuildingSector('Windmill-001')).toBe(4);
         });
-
-        test('Barn-001 appartient au secteur 4', () => {
-            expect(getBuildingSector('Barn-001')).toBe(4);
-        });
     });
 
     describe('Secteur 5 : Infrastructure', () => {

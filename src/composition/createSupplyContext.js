@@ -30,66 +30,39 @@ import {
   MARKET_DISTRIBUTE_CIRCUIT,
   HOUSE_FOOD_CONSUMPTION_CIRCUIT,
 } from '../contexts/supply/domain/catalogs/FoodCircuits.js';
-import { CollectFactoryResources } from '../contexts/supply/application/commands/manufacturing/CollectFactoryResources.js';
-import { TransformFactoryMaterials } from '../contexts/supply/application/commands/manufacturing/TransformFactoryMaterials.js';
-import { ProduceFactoryGoods } from '../contexts/supply/application/commands/manufacturing/ProduceFactoryGoods.js';
-import { ProcessFactoryProductionStep } from '../contexts/supply/application/commands/manufacturing/ProcessFactoryProductionStep.js';
-import { RunCityFactoryProductionCycle } from '../contexts/supply/application/commands/manufacturing/RunCityFactoryProductionCycle.js';
-import { GetCityFactoryResources } from '../contexts/supply/application/queries/GetCityFactoryResources.js';
-import { DexieFactoryBuildingRepository } from '../contexts/supply/infrastructure/dexie/DexieFactoryBuildingRepository.js';
 import { DexieFoodTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieFoodTraceabilityRepository.js';
-import { SupplyProductionJournal } from '../contexts/supply/infrastructure/presentation/SupplyProductionJournal.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { SupplyFoodTraceability } from '../contexts/supply/infrastructure/presentation/SupplyFoodTraceability.js';
 import { GetBuildingSupplyView } from '../contexts/supply/application/queries/GetBuildingSupplyView.js';
 import { ListSupplyMapBuildings } from '../contexts/supply/application/queries/ListSupplyMapBuildings.js';
 import { ListWindmillSupplyViews } from '../contexts/supply/application/queries/ListWindmillSupplyViews.js';
 import { ListSupplyStockSnapshots } from '../contexts/supply/application/queries/ListSupplyStockSnapshots.js';
-import { BarnStockOperations } from '../contexts/supply/application/services/BarnStockOperations.js';
-import { TransferFactoryToBarn } from '../contexts/supply/application/commands/commerce/TransferFactoryToBarn.js';
-import { RunMonthlyCommerceSupplyCycle } from '../contexts/supply/application/workflows/RunMonthlyCommerceSupplyCycle.js';
-import { UpdateFactoryWorkerDemandFromCaps } from '../contexts/supply/application/commands/manufacturing/UpdateFactoryWorkerDemandFromCaps.js';
-import { AllocateFactoryWorkersToCommodityLines } from '../contexts/supply/application/commands/manufacturing/AllocateFactoryWorkersToCommodityLines.js';
-import { GetFactoryWorkerPlanView } from '../contexts/supply/application/queries/GetFactoryWorkerPlanView.js';
 import { GetHubStorageInfoView } from '../contexts/supply/application/queries/GetHubStorageInfoView.js';
-import { ExecuteHubFetchOrders } from '../contexts/supply/application/commands/commerce/ExecuteHubFetchOrders.js';
 import {
   cycleHubStorageMode,
   normalizeHubStorageOrders,
   tryAdjustHubStoragePercent,
 } from '../contexts/supply/domain/policies/HubStorageOrdersPolicy.js';
-import { HUB_KIND, listHubProducts } from '../contexts/supply/domain/catalogs/HubStorageCatalog.js';
-import { createEmptyCommerceStocks } from '../contexts/supply/domain/catalogs/BarnCommerceCatalog.js';
-import {
-  getBarnProductStock,
-  getBarnTotalCapacity,
-} from '../contexts/supply/domain/policies/BarnStockPolicy.js';
+import { listHubProducts } from '../contexts/supply/domain/catalogs/HubStorageCatalog.js';
 
 /**
  * Composition root — Supply bounded context.
  *
  * @param {object} [deps]
  * @param {import('../contexts/supply/application/ports/SupplyBuildingRepository.js').SupplyBuildingRepository} [deps.supplyBuildingRepository]
- * @param {import('../contexts/supply/application/ports/FactoryBuildingRepository.js').FactoryBuildingRepository} [deps.factoryBuildingRepository]
  * @param {import('../contexts/supply/infrastructure/dexie/DexieFoodTraceabilityRepository.js').DexieFoodTraceabilityRepository} [deps.foodTraceabilityRepository]
  * @param {(turn: number) => object} [deps.getTimeInfo]
  */
 export function createSupplyContext({
   supplyBuildingRepository,
-  factoryBuildingRepository,
   foodTraceabilityRepository,
   getTimeInfo: getTimeInfoDep,
 } = {}) {
   const getTimeInfo = getTimeInfoDep ?? resolveGetTimeInfo();
   const supplyBuildingRepositoryImpl =
     supplyBuildingRepository ?? new DexieSupplyBuildingRepository();
-  const factoryBuildingRepositoryImpl =
-    factoryBuildingRepository ?? new DexieFactoryBuildingRepository();
   const foodTraceabilityRepositoryImpl =
     foodTraceabilityRepository ?? new DexieFoodTraceabilityRepository();
-  const productionJournal = new SupplyProductionJournal({
-    resolveTimeInfo: (turn) => getTimeInfo(turn) ?? null,
-  });
   const transferHubToHub = new TransferHubToHub(
     supplyBuildingRepositoryImpl
   );
@@ -182,31 +155,6 @@ export function createSupplyContext({
     traceability,
     produceAllHouseSubsistenceFood
   );
-  const collectFactoryResources = new CollectFactoryResources(
-    factoryBuildingRepositoryImpl,
-    productionJournal
-  );
-  const transformFactoryMaterials = new TransformFactoryMaterials(
-    factoryBuildingRepositoryImpl,
-    productionJournal
-  );
-  const produceFactoryGoods = new ProduceFactoryGoods(
-    factoryBuildingRepositoryImpl,
-    productionJournal
-  );
-  const processFactoryProductionStep = new ProcessFactoryProductionStep(
-    factoryBuildingRepositoryImpl,
-    collectFactoryResources,
-    transformFactoryMaterials,
-    produceFactoryGoods
-  );
-  const runCityFactoryProductionCycle = new RunCityFactoryProductionCycle(
-    factoryBuildingRepositoryImpl,
-    processFactoryProductionStep
-  );
-  const getCityFactoryResourcesQuery = new GetCityFactoryResources(
-    factoryBuildingRepositoryImpl
-  );
   const getBuildingSupplyViewQuery = new GetBuildingSupplyView(
     supplyBuildingRepositoryImpl
   );
@@ -219,27 +167,7 @@ export function createSupplyContext({
   const listSupplyStockSnapshotsQuery = new ListSupplyStockSnapshots(
     supplyBuildingRepositoryImpl
   );
-  const barnStockOperations = new BarnStockOperations(supplyBuildingRepositoryImpl);
-  const transferFactoryToBarn = new TransferFactoryToBarn(
-    factoryBuildingRepositoryImpl,
-    supplyBuildingRepositoryImpl,
-    barnStockOperations
-  );
-  const runMonthlyCommerceSupplyCycle = new RunMonthlyCommerceSupplyCycle(
-    transferFactoryToBarn
-  );
-  const updateFactoryWorkerDemandFromCaps = new UpdateFactoryWorkerDemandFromCaps(
-    factoryBuildingRepositoryImpl
-  );
-  const allocateFactoryWorkersToCommodityLines = new AllocateFactoryWorkersToCommodityLines(
-    factoryBuildingRepositoryImpl
-  );
-  const getFactoryWorkerPlanView = new GetFactoryWorkerPlanView();
   const getHubStorageInfoView = new GetHubStorageInfoView();
-  const executeHubFetchOrders = new ExecuteHubFetchOrders(
-    supplyBuildingRepositoryImpl,
-    factoryBuildingRepositoryImpl
-  );
 
   return {
     supplyBuildingRepository: supplyBuildingRepositoryImpl,
@@ -266,26 +194,10 @@ export function createSupplyContext({
     runWindmillSurplusCycle,
     runCityMarketFoodCycle,
     runMonthlyFoodSupplyCycle,
-    runCityFactoryProductionCycle,
-    collectFactoryResources,
-    transformFactoryMaterials,
-    produceFactoryGoods,
-    processFactoryProductionStep,
-    getCityFactoryResourcesQuery,
-    factoryBuildingRepository: factoryBuildingRepositoryImpl,
     getBuildingSupplyViewQuery,
     listSupplyMapBuildingsQuery,
     listWindmillSupplyViewsQuery,
     listSupplyStockSnapshotsQuery,
-    barnStockOperations,
-    async hasOperationalCommerceBarn() {
-      return barnStockOperations.hasOperationalCommerceBarn();
-    },
-    transferFactoryToBarn,
-    runMonthlyCommerceSupplyCycle,
-    updateFactoryWorkerDemandFromCaps,
-    allocateFactoryWorkersToCommodityLines,
-    getFactoryWorkerPlanView,
 
     async buyFromAssignedWindmill(marketId, month = null) {
       return transferHubToHub.execute({
@@ -413,26 +325,6 @@ export function createSupplyContext({
       });
     },
 
-    async runCityFactoryProductionCycle({ city, time = 0 }) {
-      return runCityFactoryProductionCycle.execute({ city, time });
-    },
-
-    async runMonthlyCommerceSupplyCycle({ monthIndex, time = 0 }) {
-      return runMonthlyCommerceSupplyCycle.execute({ monthIndex, time });
-    },
-
-    async syncFactoryWorkerDemandFromCaps() {
-      return updateFactoryWorkerDemandFromCaps.execute();
-    },
-
-    async allocateFactoryWorkersToCommodityLines() {
-      return allocateFactoryWorkersToCommodityLines.execute();
-    },
-
-    getFactoryWorkerPlanView(factory, options = {}) {
-      return getFactoryWorkerPlanView.execute({ factory, ...options });
-    },
-
     getHubStorageInfoView(hubKind, buildingRow, options = {}) {
       return getHubStorageInfoView.execute({ hubKind, buildingRow, ...options });
     },
@@ -448,9 +340,6 @@ export function createSupplyContext({
       await supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, {
         hubStorageOrders: orders,
       });
-      if (hubKind === HUB_KIND.BARN && orders[productId].mode === 'fetch') {
-        await executeHubFetchOrders.execute({ hubKind, buildingId });
-      }
       return orders;
     },
 
@@ -458,17 +347,10 @@ export function createSupplyContext({
       const row = await supplyBuildingRepositoryImpl.findRowById(buildingId);
       const productIds = listHubProducts(hubKind);
       const orders = normalizeHubStorageOrders(row?.hubStorageOrders, productIds);
-      const stocks =
-        hubKind === HUB_KIND.BARN
-          ? createEmptyCommerceStocks(row?.commerceStocks)
-          : row?.stocks ?? {};
-      const totalCapacity =
-        hubKind === HUB_KIND.BARN ? getBarnTotalCapacity(row) : row?.maxStock ?? 1000;
+      const stocks = row?.stocks ?? {};
+      const totalCapacity = row?.maxStock ?? 1000;
 
-      const currentAmount =
-        hubKind === HUB_KIND.BARN
-          ? getBarnProductStock(stocks, productId)
-          : Math.max(0, Math.floor(Number(stocks[productId]) || 0));
+      const currentAmount = Math.max(0, Math.floor(Number(stocks[productId]) || 0));
 
       const attempt = tryAdjustHubStoragePercent({
         order: orders[productId],
@@ -485,22 +367,7 @@ export function createSupplyContext({
       await supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, {
         hubStorageOrders: orders,
       });
-      if (hubKind === HUB_KIND.BARN && orders[productId].mode === 'fetch') {
-        await executeHubFetchOrders.execute({ hubKind, buildingId });
-      }
       return { ok: true, orders };
-    },
-
-    async executeHubFetchOrders(hubKind, buildingId) {
-      return executeHubFetchOrders.execute({ hubKind, buildingId });
-    },
-
-    async getCommerceHubStocks() {
-      return barnStockOperations.getAllCommerceStocks();
-    },
-
-    async getCityFactoryResources(city) {
-      return getCityFactoryResourcesQuery.execute({ city });
     },
 
     async getBuildingSupplyView(buildingId) {
@@ -519,20 +386,8 @@ export function createSupplyContext({
       return listSupplyStockSnapshotsQuery.execute();
     },
 
-    async listCityFactories() {
-      return factoryBuildingRepositoryImpl.findFactories();
-    },
-
     async listNatureResources() {
-      return factoryBuildingRepositoryImpl.listNatureItems();
-    },
-
-    async getFactoryById(factoryId) {
-      return factoryBuildingRepositoryImpl.findById(factoryId);
-    },
-
-    async updateFactoryFields(factoryId, fields) {
-      return factoryBuildingRepositoryImpl.updateFields(factoryId, fields);
+      return supplyBuildingRepositoryImpl.listNatureItems();
     },
 
     async getSupplyBuildingRow(buildingId) {
@@ -541,14 +396,6 @@ export function createSupplyContext({
 
     async updateSupplyBuildingFields(buildingId, fields) {
       return supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, fields);
-    },
-
-    async listProductionJournalEntries(factoryId = null, turn = null) {
-      return productionJournal.getProductionEntries(factoryId, turn);
-    },
-
-    async getFactoryProductionJournalEntries(factoryId) {
-      return productionJournal.getFactoryProductionEntries(factoryId);
     },
 
     async getAllFoodTraceabilityTransactions(maxAge = null) {

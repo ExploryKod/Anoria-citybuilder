@@ -424,42 +424,6 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     tags: ['industry', 'building'],
   },
-  // Grange
-  'Barn-001': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Barn-001',
-      aliases: ['Barn', 'Barn001'],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'Barn 001',
-      tooltip: 'Barn 001',
-      icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="12" x="6" y="10"/></svg>' },
-    },
-    tags: ['industry', 'building'],
-  },
   // Caisse
   'Crate-001': {
     source: 'villageTown',
@@ -495,42 +459,6 @@ export const BUILDING_ASSETS = Object.freeze({
       icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>' },
     },
     tags: ['industry', 'building'],
-  },
-  // Chai — chargé depuis winery_v3.glb (hors GLB partagé)
-  'Winery-001': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Winery-001',
-      aliases: [],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.009,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: true,
-      receiveShadow: true,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'Winery 001',
-      tooltip: 'Winery 001',
-      icon: { kind: 'emoji', value: '🍷' },
-    },
-    tags: ['industry', 'building', 'standalone-glb'],
   },
   // Silo à blé
   'Cylinder': {

@@ -8,7 +8,6 @@ import { getOrCreateParcelsContext } from './createParcelsContext.js';
 import { getOrCreateSupplyContext } from './createSupplyContext.js';
 import { getOrCreateHousingContext } from './createHousingContext.js';
 import { getOrCreateEmploymentContext } from './createEmploymentContext.js';
-import { getOrCreateCommerceContext } from './createCommerceContext.js';
 import { getOrCreateGameplayContext } from './createGameplayContext.js';
 import { getOrCreateConstructionContext } from './createConstructionContext.js';
 import { getOrCreateAccountingContext } from './createAccountingContext.js';
@@ -24,7 +23,6 @@ import { assembleSessionApi } from './sessionApi.js';
  *   supply: object,
  *   housing: object,
  *   employment: object,
- *   commerce: object,
  *   gameplay: object,
  *   construction: object,
  *   accounting: object,
@@ -41,9 +39,6 @@ export function bootGameContexts() {
     citizenProvidesSkill: (house, skillKey) => housing.citizenProvidesSkill(house, skillKey),
   });
   employment.ensureSectorPrioritiesInitialized();
-  const commerce = getOrCreateCommerceContext({
-    barnStockOperations: supply.barnStockOperations,
-  });
   const gameplay = getOrCreateGameplayContext();
   const construction = getOrCreateConstructionContext();
   const cityAssets = getOrCreateCityAssetsContext();
@@ -56,7 +51,6 @@ export function bootGameContexts() {
     supply,
     employment,
     housing,
-    commerce,
     parcels,
     intelligence,
   });
@@ -65,7 +59,6 @@ export function bootGameContexts() {
     supply,
     housing,
     employment,
-    commerce,
     gameplay,
     intelligence,
     getTimeInfo: (turn) => TimeManager.getTimeInfo(turn),
@@ -80,7 +73,6 @@ export function bootGameContexts() {
     supply,
     housing,
     employment,
-    commerce,
     gameplay,
     construction,
     accounting,

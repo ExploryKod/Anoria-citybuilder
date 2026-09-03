@@ -23,7 +23,6 @@ export {
     buildingsObjects,
     palaces,
     farms,
-    factories,
 } from '../../../shared/building-catalog/index.js';
 export { houses, commerce } from '../../three/assets/buildingCategories.js';
 
@@ -97,15 +96,11 @@ const POP_RESOURCE_CITY_PRODUCTS = [
     'wheat',
     'cabbage',
     'carrot',
-    'wood',
-    'furniture',
-    'figs',
 ];
-const POP_RESOURCE_COMMERCE_PRODUCTS = ['wood', 'furniture', 'figs'];
 const POP_RESOURCE_NATURE_PRODUCTS = ['wood', 'rock', 'clay', 'iron', 'gold'];
 
 /**
- * @param {'city' | 'commerce' | 'nature'} destination
+ * @param {'city' | 'nature'} destination
  * @param {ReadonlyArray<string>} products
  * @returns {Record<string, { row: Element | null, country: Element | null, hamlet: Element | null }>}
  */
@@ -128,10 +123,6 @@ function queryResourceProductNodes(destination, products) {
 }
 
 export const popResourceCityNodes = queryResourceProductNodes('city', POP_RESOURCE_CITY_PRODUCTS);
-export const popResourceCommerceNodes = queryResourceProductNodes(
-    'commerce',
-    POP_RESOURCE_COMMERCE_PRODUCTS
-);
 export const popResourceNatureNodes = queryResourceProductNodes(
     'nature',
     POP_RESOURCE_NATURE_PRODUCTS
@@ -163,7 +154,6 @@ export const farmsButton = document.getElementById('farm-btn');
 export const industryButton = document.getElementById('industry-btn');
 export const marketButton = document.getElementById('market-btn');
 export const infrastructureButton = document.getElementById('infrastructure-btn');
-export const workshopButton = document.getElementById('workshop-btn');
 export const bookshopButton = document.getElementById('bookshop-btn');
 
 export const panelLayoutCloseBtn = document.querySelector('.panel-layout .panel-close-btn')

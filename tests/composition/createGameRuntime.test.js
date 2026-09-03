@@ -21,30 +21,10 @@ function fakeParcels() {
 
 function fakeSupply() {
   let foodCalls = 0;
-  let factoryCalls = 0;
-  let syncDemandCalls = 0;
-  let allocateWorkersCalls = 0;
-  let commerceCalls = 0;
   return {
     foodCalls: () => foodCalls,
-    factoryCalls: () => factoryCalls,
-    syncDemandCalls: () => syncDemandCalls,
-    allocateWorkersCalls: () => allocateWorkersCalls,
-    commerceCalls: () => commerceCalls,
     runMonthlyFoodSupplyCycle: async () => {
       foodCalls += 1;
-    },
-    syncFactoryWorkerDemandFromCaps: async () => {
-      syncDemandCalls += 1;
-    },
-    allocateFactoryWorkersToCommodityLines: async () => {
-      allocateWorkersCalls += 1;
-    },
-    runCityFactoryProductionCycle: async () => {
-      factoryCalls += 1;
-    },
-    runMonthlyCommerceSupplyCycle: async () => {
-      commerceCalls += 1;
     },
   };
 }
@@ -73,18 +53,6 @@ function fakeEmployment() {
     distributeCityWorkers: async () => {
       redistributeCalls += 1;
       return { assigned: 0, workplacesProcessed: 0 };
-    },
-  };
-}
-
-function fakeCommerce() {
-  let turnCalls = 0;
-  return {
-    turnCalls: () => turnCalls,
-    simulation: {
-      simulate: async () => {
-        turnCalls += 1;
-      },
     },
   };
 }
@@ -118,7 +86,6 @@ function baseRuntimeDeps(overrides = {}) {
     supply: fakeSupply(),
     housing: fakeHousing(),
     employment: fakeEmployment(),
-    commerce: fakeCommerce(),
     gameplay: fakeGameplay(),
     intelligence: fakeIntelligence(),
     getTimeInfo: (turn) => TimeManager.getTimeInfo(turn),
@@ -139,12 +106,7 @@ describe('createGameRuntime', () => {
       'supply.monthlyFood',
       'housing.populationGrowth',
       'housing.evolution',
-      'supply.syncFactoryWorkerDemand',
       'employment.redistribute',
-      'supply.allocateFactoryWorkers',
-      'supply.factoryProduction',
-      'supply.monthlyCommerce',
-      'commerce.turn',
       'gameplay.randomEvents',
       'intelligence.monthlyNews',
     ]);
@@ -156,7 +118,6 @@ describe('createGameRuntime', () => {
     const supply = fakeSupply();
     const housing = fakeHousing();
     const employment = fakeEmployment();
-    const commerce = fakeCommerce();
     const gameplay = fakeGameplay();
     const intelligence = fakeIntelligence();
     const runtime = createGameRuntime(
@@ -165,7 +126,6 @@ describe('createGameRuntime', () => {
         supply,
         housing,
         employment,
-        commerce,
         gameplay,
         intelligence,
         // Jour 1 du mois → déclenche la génération mensuelle intelligence
@@ -182,12 +142,7 @@ describe('createGameRuntime', () => {
     expect(supply.foodCalls()).toBe(1);
     expect(housing.growthCalls()).toBe(1);
     expect(housing.evolutionCalls()).toBe(1);
-    expect(supply.syncDemandCalls()).toBe(1);
     expect(employment.redistributeCalls()).toBe(1);
-    expect(supply.allocateWorkersCalls()).toBe(1);
-    expect(supply.factoryCalls()).toBe(1);
-    expect(supply.commerceCalls()).toBe(1);
-    expect(commerce.turnCalls()).toBe(1);
     expect(gameplay.eventCalls()).toBe(1);
     expect(intelligence.newsCalls()).toBe(1);
   });
@@ -225,15 +180,6 @@ describe('createGameRuntime', () => {
         housing: fakeHousing(),
         employment: fakeEmployment(),
       })
-    ).toThrow(/commerce/);
-    expect(() =>
-      createGameRuntime({
-        parcels: fakeParcels(),
-        supply: fakeSupply(),
-        housing: fakeHousing(),
-        employment: fakeEmployment(),
-        commerce: fakeCommerce(),
-      })
     ).toThrow(/gameplay/);
     expect(() =>
       createGameRuntime({
@@ -241,7 +187,6 @@ describe('createGameRuntime', () => {
         supply: fakeSupply(),
         housing: fakeHousing(),
         employment: fakeEmployment(),
-        commerce: fakeCommerce(),
         gameplay: fakeGameplay(),
       })
     ).toThrow(/intelligence/);
