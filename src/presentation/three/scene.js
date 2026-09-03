@@ -62,7 +62,6 @@ import { resolveKenneyGltfPresentationMode } from './adapters/kenney-nature/kenn
 import { getTerrainZoneCounts, resolveTerrainZoneIndex } from '../../shared/terrain-catalog/terrainZoneLayout.js';
 import { spawnIslandShore } from './scene-board/terrain/spawnIslandShore.js';
 import {
-  applyRoadMaterialToTerrainTile,
   restoreGrassMaterialOnTerrainTile,
 } from './scene-board/terrain/terrainSceneTileOps.js';
 import { createKenneyNatureSceneTile } from './scene-board/nature/createKenneyNatureSceneTile.js';
@@ -747,39 +746,6 @@ export function createScene(_gameStore, assetManager, deps) {
                 return;
             }
             const newBuildingId = tileBuildingId;
-            if (newBuildingId === 'roads') {
-                const placementRotationStep = city.tiles[x]?.[y]?.placementRotationStep ?? 0;
-                if (terrain[x] && terrain[x][y]) {
-                    const sharedMaterials = assetManager.getSharedTerrainMaterials();
-                    if (sharedMaterials?.roads) {
-                        applyRoadMaterialToTerrainTile(
-                            terrain[x][y],
-                            sharedMaterials.roads,
-                            { x, y, rotationStep: placementRotationStep }
-                        );
-                    }
-                }
-                if (!buildings[x][y] || buildings[x][y] !== terrain[x][y]) {
-                    buildings[x][y] = terrain[x][y];
-                }
-                const roadInstanceId = city.tiles[x]?.[y]?.instanceId;
-                if (roadInstanceId && terrain[x]?.[y]) {
-                    terrain[x][y].userData.instanceId = roadInstanceId;
-                }
-                if (roadInstanceId) {
-                    try {
-                        await parcels.syncPlacedBuilding({
-                            instanceId: roadInstanceId,
-                            x,
-                            y,
-                            type: 'roads',
-                        });
-                    } catch (err) {
-                        console.warn('[Scene] Failed parcels place for road', roadInstanceId, err);
-                    }
-                }
-                return;
-            }
 
             const buildingData = assetsPrices[newBuildingId];
             const gridSize = buildingData?.gridSize || 1;

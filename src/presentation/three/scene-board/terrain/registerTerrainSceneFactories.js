@@ -3,7 +3,6 @@ import { getTerrainCatalogEntry } from '../../../../shared/terrain-catalog/terra
 import { registerSceneObjectFactory } from '../SceneObjectRegistry.js';
 import { createKenneyTerrainSceneTile } from './createKenneyTerrainSceneTile.js';
 import { createLegacyPlaceholderTerrainSceneTile } from './createLegacyPlaceholderTerrainSceneTile.js';
-import { createLegacyRoadSceneTile } from './createLegacyRoadSceneTile.js';
 
 let registered = false;
 
@@ -11,7 +10,6 @@ let registered = false;
  * @param {{
  *   getSharedTerrainMaterials: () => Record<string, import('three').Material>,
  *   getTerrainBoxGeometry: () => import('three').BoxGeometry,
- *   getRoadPlaneGeometry?: () => import('three').PlaneGeometry,
  * }} deps
  */
 export function registerTerrainSceneFactories(deps) {
@@ -24,14 +22,6 @@ export function registerTerrainSceneFactories(deps) {
       return Boolean(getTerrainCatalogEntry(canonical));
     },
     (logicalId, x, y, options) => createKenneyTerrainSceneTile(logicalId, x, y, options)
-  );
-
-  registerSceneObjectFactory(
-    (logicalId) => logicalId === 'roads',
-    (logicalId, x, y) => createLegacyRoadSceneTile(logicalId, x, y, {
-      materials: deps.getSharedTerrainMaterials(),
-      roadGeometry: deps.getRoadPlaneGeometry?.(),
-    })
   );
 
   registerSceneObjectFactory(

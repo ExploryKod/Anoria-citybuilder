@@ -47,7 +47,7 @@
  *    src/shared/editor-catalog/kenneyPlacementProfiles.generated.js; this
  *    file intentionally does not re-duplicate that generated, auto-scanned
  *    data by hand.
- *  - villageTown 'grass'/'roads'/'terrain' use geometry.sourceKey as a
+ *  - villageTown 'grass'/'terrain' use geometry.sourceKey as a
  *    procedural-material key instead of a GLB mesh name — these three are
  *    procedural THREE geometry
  *    with a shared Lambert material, not cloned GLB meshes.

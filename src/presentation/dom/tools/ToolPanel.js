@@ -89,7 +89,6 @@ const GROUP_CREATORS = {
   infrastructure: () =>
     fillPanelFromToolIds('infrastructure', {
       exclude: [
-        'roads',
         'StonePath-001',
         'StonePath-Right-001',
         'StonePath-Left-001',
@@ -234,11 +233,6 @@ function createRoadsButtons() {
   hint.innerHTML = '<kbd>R</kbd> = rotation du chemin';
   panelLayoutInner.appendChild(hint);
 
-  if (ASSET_CATALOG.roads?.button) {
-    const catalog = catalogButton('roads');
-    makeNewButton({ text: catalog.label, tool: 'roads', group: catalog.group, title: catalog.tooltip }, resolveIcon('roads'));
-  }
-
   if (ASSET_CATALOG['StonePath-001']?.button) {
     const catalog = catalogButton('StonePath-001');
     const btn = makeNewButton(
@@ -266,7 +260,6 @@ function resolveIcon(toolId) {
 const CATEGORY_EXCLUDES = {
   markets: ['Market-Stall'],
   infrastructure: [
-    'roads',
     'StonePath-001',
     'StonePath-Right-001',
     'StonePath-Left-001',
@@ -297,10 +290,6 @@ export function getToolButtonInfosForCategory(categoryKey) {
 
   if (categoryKey === 'roads') {
     const infos = [];
-    if (ASSET_CATALOG.roads?.button) {
-      const catalog = catalogButton('roads');
-      infos.push({ text: catalog.label, tool: 'roads', group: catalog.group, title: catalog.tooltip });
-    }
     if (ASSET_CATALOG['StonePath-001']?.button) {
       const catalog = catalogButton('StonePath-001');
       infos.push({

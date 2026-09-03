@@ -65,7 +65,6 @@ export const VILLAGE_MESH_TOOL_IDS_BY_CATEGORY = Object.freeze({
     'Well-001',
     'Fountain-001',
     'Streetlight-001',
-    'roads',
     'StonePath-001',
     'StonePath-Right-001',
     'StonePath-Left-001',

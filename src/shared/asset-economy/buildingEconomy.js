@@ -1,18 +1,28 @@
 /**
  * Economy facts (price, category, employment, accounting, residentialGroup,
  * displayName) for the playable-building theme — houses, farms, industry,
- * markets, infrastructure, public, palaces, roads. See buildingCatalog.js
- * for the merged, compat-shaped export every bounded context still reads.
+ * markets, infrastructure, public, palaces. See buildingCatalog.js for the
+ * merged, compat-shaped export every bounded context still reads.
  *
  * Same hard rules as buildingCatalog.js: data only, no behavior, no
  * `src/contexts/**` imports.
  */
 export const BUILDING_ECONOMY = {
-  // StonePath variants reuse one mesh with different rotations. 'roads' (the
-  // other road tool) is terrain-themed — see terrainEconomy.js.
+  // StonePath variants reuse one mesh with different rotations — the sole
+  // road tool. The old separate procedural 'roads' tile/mesh (a different,
+  // now-retired asset) has been removed entirely, not just hidden — its
+  // employment/accounting facts moved here, onto the canonical variant,
+  // since "the road" now means StonePath. (Every placed road, whichever
+  // variant, still gets its runtime type/name marker set to the string
+  // 'roads' for connectivity — see BuildingKind.js /
+  // VillageTownAssetManager#createBuilding — so EmploymentSectorCatalog.js
+  // and BuildingMaintenanceBreakdownPolicy.js alias that marker to this
+  // entry's facts instead of expecting a 'roads' catalog id.)
   'StonePath-001': {
     displayName: 'Chemin de pierre',
     construction: { price: 5, category: 'infrastructure' },
+    employment: { sector: 5, workerNeed: 0, eliteNeed: 0 },
+    accounting: { maintenance: 4 },
   },
   'StonePath-Right-001': {
     displayName: 'Chemin de pierre',
