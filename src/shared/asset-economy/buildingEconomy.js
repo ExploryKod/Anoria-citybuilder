@@ -54,18 +54,21 @@ export const BUILDING_ECONOMY = {
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'merchants',
+    walker: { role: 'origin' },
   },
   'House-Red': {
     displayName: 'Maison rouge',
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'artisans',
+    walker: { role: 'origin' },
   },
   'House-Purple': {
     displayName: 'Maison violette',
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'scholars',
+    walker: { role: 'origin' },
   },
 
   // Palaces
@@ -80,6 +83,7 @@ export const BUILDING_ECONOMY = {
     displayName: 'Champ de blé',
     construction: { price: 10, category: 'farms' },
     employment: { sector: 1, workerNeed: 3, eliteNeed: 0 },
+    walker: { role: 'destination' },
   },
   'Farm-Carrot': {
     displayName: 'Champ de carottes',
@@ -101,20 +105,7 @@ export const BUILDING_ECONOMY = {
     construction: { price: 50, category: 'industry' },
     employment: { sector: 4, workerNeed: 4, eliteNeed: 2 },
   },
-  'Barn-001': {
-    displayName: 'Grange',
-    construction: { price: 40, category: 'industry' },
-    // Worker capacity is derived from storage rules owned by the supply
-    // bounded context (see BarnCommerceCatalog.getBarnMaxWorkers) — not a
-    // fixed catalog fact, so workerNeed/eliteNeed are intentionally absent.
-    employment: { sector: 4 },
-  },
   'Crate-001': { displayName: 'Caisse', construction: { price: 2, category: 'industry' } },
-  'Winery-001': {
-    displayName: 'Chai',
-    construction: { price: 50, category: 'industry' },
-    employment: { sector: 3, workerNeed: 18, eliteNeed: 0 },
-  },
   // Wheat silo (all Cylinder* meshes pool to this one tool)
   Cylinder: { displayName: 'Silo à blé', construction: { price: 15, category: 'industry' } },
 

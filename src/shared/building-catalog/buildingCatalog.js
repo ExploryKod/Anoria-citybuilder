@@ -39,6 +39,11 @@
  *   residentialGroup → permanent social group tied to a house color (Housing +
  *     Employment). Never changes after placement — unlike `level`, which is
  *     mutable per-instance state persisted on the house row, not a catalog fact.
+ *   walker           → presentation walker spawn/pathfinding (which building
+ *     types emit a walker on this turn's scan, and which ones a walker can
+ *     travel to). Purely a role label — see shared/gameplay/walkerCatalogRoles.js
+ *     and presentation/three/walkers/WalkerSpawnController.js for the
+ *     (agnostic) code that reads it. No behavior lives here.
  *
  * Collision footprint (gridSize/footprintWidth/footprintDepth) does NOT live
  * here — it's a single-sourced fact in shared/asset-footprint/resolveFootprint.js
@@ -53,7 +58,7 @@
  * @typedef {Object} BuildingEmploymentFacts
  * @property {number} sector
  * @property {number} [workerNeed] Omitted when computed dynamically by the
- *   owning bounded context (see Barn-001 below).
+ *   owning bounded context.
  * @property {number} [eliteNeed]
  *
  * @typedef {Object} BuildingAccountingFacts
@@ -61,12 +66,22 @@
  *
  * @typedef {'artisans' | 'merchants' | 'scholars'} ResidentialGroup
  *
+ * @typedef {Object} BuildingWalkerFacts
+ * @property {'origin' | 'destination'} role
+ * @property {boolean} [requiresRoad] Whether this endpoint must have road
+ *   access for a walker to use it. Defaults to true when omitted. Set to
+ *   false for a building a walker can reach off-road (e.g. a nature prop
+ *   like a tree or a rock) — that leg of the journey skips the road
+ *   network entirely instead of being rejected for lacking road access.
+ *
+
  * @typedef {Object} BuildingDefinition
  * @property {string} [displayName]
  * @property {BuildingConstructionFacts} construction
  * @property {BuildingEmploymentFacts} [employment]
  * @property {BuildingAccountingFacts} [accounting]
  * @property {ResidentialGroup} [residentialGroup]
+ * @property {BuildingWalkerFacts} [walker]
  */
 
 import { BUILDING_ECONOMY } from '../asset-economy/buildingEconomy.js';
