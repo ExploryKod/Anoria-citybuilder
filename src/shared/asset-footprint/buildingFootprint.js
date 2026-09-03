@@ -15,17 +15,13 @@
 
 import { KENNEY_BUILDING_CATALOG_ENTRIES } from '../building-catalog/kenneyCityKitRegistry.generated.js';
 
-const KENNEY_BUILDING_FOOTPRINT = Object.freeze(
-  Object.fromEntries(
+export const BUILDING_FOOTPRINT = Object.freeze({
+  ...Object.fromEntries(
     Object.entries(KENNEY_BUILDING_CATALOG_ENTRIES).map(([id, entry]) => [
       id,
       Object.freeze({ width: entry.construction.footprintWidth, depth: entry.construction.footprintDepth }),
     ])
-  )
-);
-
-export const BUILDING_FOOTPRINT = Object.freeze({
-  ...KENNEY_BUILDING_FOOTPRINT,
+  ),
   'Barn-001': Object.freeze({ width: 2, depth: 2 }),
   'BookShop-001': Object.freeze({ width: 1, depth: 1 }),
   'Chapel': Object.freeze({ width: 1, depth: 1 }),
