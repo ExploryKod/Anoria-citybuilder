@@ -243,7 +243,7 @@ export function getBuildingNeighbors(building, instanceIds = []) {
     return neighborIdFound ? neighborIdFound : false;
 }
 
-export function getAssetPrice(buildingId, assetsPrices) {
+export function getAssetPrice(buildingId, priceCatalog) {
     // Developer warnings in non-production environments
     if (process.env.NODE_ENV !== 'production') {
         // Warn if parameters are missing
@@ -254,9 +254,9 @@ export function getAssetPrice(buildingId, assetsPrices) {
             );
         }
 
-        if (assetsPrices === undefined) {
+        if (priceCatalog === undefined) {
             console.warn(
-                '[getAssetPrice] Warning: assetsPrices is required but received undefined'
+                '[getAssetPrice] Warning: priceCatalog is required but received undefined'
             );
             return null;
         }
@@ -269,16 +269,16 @@ export function getAssetPrice(buildingId, assetsPrices) {
             );
         }
 
-        if (typeof assetsPrices !== 'object' || assetsPrices === null) {
+        if (typeof priceCatalog !== 'object' || priceCatalog === null) {
             console.warn(
-                '[getAssetPrice] Warning: assetsPrices should be an object but received:',
-                typeof assetsPrices
+                '[getAssetPrice] Warning: priceCatalog should be an object but received:',
+                typeof priceCatalog
             );
             return null;
         }
 
         // Existence checking
-        if (buildingId && !assetsPrices[buildingId]) {
+        if (buildingId && !priceCatalog[buildingId]) {
             console.warn(
                 `[getAssetPrice] Warning: No price found for buildingId: "${buildingId}"`
             );
@@ -286,22 +286,22 @@ export function getAssetPrice(buildingId, assetsPrices) {
 
         // Price type checking
         if (buildingId &&
-            assetsPrices[buildingId] &&
-            typeof assetsPrices[buildingId].price !== 'number'
+            priceCatalog[buildingId] &&
+            typeof priceCatalog[buildingId].price !== 'number'
         ) {
             console.warn(
                 `[getAssetPrice] Warning: Invalid price type for buildingId "${buildingId}":`,
-                typeof assetsPrices[buildingId].price
+                typeof priceCatalog[buildingId].price
             );
         }
     }
 
     // Original function logic remains unchanged
-    if (!assetsPrices) {
+    if (!priceCatalog) {
         return null;
     }
 
-    return assetsPrices[buildingId]?.price;
+    return priceCatalog[buildingId]?.price;
 }
 
 // Example usage:
@@ -315,7 +315,7 @@ getAssetPrice('house', prices);           // Returns 100
 getAssetPrice('farm', prices);            // Returns undefined, warns about missing price
 getAssetPrice('invalid', prices);         // Returns '100', warns about invalid price type
 getAssetPrice(123, prices);               // Returns undefined, warns about invalid buildingId type
-getAssetPrice('house', null);             // Returns null, warns about invalid assetsPrices
+getAssetPrice('house', null);             // Returns null, warns about invalid priceCatalog
 getAssetPrice(undefined, prices);         // Returns undefined, warns about missing buildingId
 */
 

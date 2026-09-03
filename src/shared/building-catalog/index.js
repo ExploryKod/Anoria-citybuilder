@@ -1,5 +1,5 @@
 export { buildingCatalog, getBuildingDefinition } from './buildingCatalog.js';
-export { assetsPrices } from '../asset-placement/buildingPlacementCatalog.js';
+export { buildingPlacementCatalog } from '../asset-placement/buildingPlacementCatalog.js';
 export {
   houses,
   firstHouses,

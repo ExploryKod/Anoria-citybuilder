@@ -1,7 +1,7 @@
 import { BUILDING_ASSETS } from '../../three/assets/buildingAssets.js';
 import { NATURE_ASSETS } from '../../three/assets/natureAssets.js';
 import { TERRAIN_ASSETS } from '../../three/assets/terrainAssets.js';
-import { assetsPrices } from '../../../shared/building-catalog/index.js';
+import { buildingPlacementCatalog } from '../../../shared/building-catalog/index.js';
 
 /**
  * Same catalog ToolPanel.js resolves carousel icons from — a tool's large
@@ -27,7 +27,7 @@ let visibleToolId = null;
  * @returns {number | null}
  */
 function catalogPrice(toolId) {
-  return assetsPrices[toolId]?.price ?? null;
+  return buildingPlacementCatalog[toolId]?.price ?? null;
 }
 
 /**

@@ -1,12 +1,12 @@
 /**
  * Regression tests for the central building catalog and its BC-owned
  * derivations. Guards against the exact drift this file was created to fix
- * (e.g. house price duplicated between `assetsPrices` and `HouseTypeCatalog`).
+ * (e.g. house price duplicated between `buildingPlacementCatalog` and `HouseTypeCatalog`).
  */
 
 import { describe, test, expect } from '@jest/globals';
 import { buildingCatalog, getBuildingDefinition } from '../../src/shared/building-catalog/buildingCatalog.js';
-import { assetsPrices } from '../../src/shared/asset-placement/buildingPlacementCatalog.js';
+import { buildingPlacementCatalog } from '../../src/shared/asset-placement/buildingPlacementCatalog.js';
 import { KENNEY_BUILDING_CATALOG_ENTRIES } from '../../src/shared/building-catalog/kenneyCityKitRegistry.generated.js';
 import {
   BUILDING_SECTOR_MAP,
@@ -50,22 +50,22 @@ describe('buildingCatalog — pure data contract', () => {
   });
 });
 
-describe('assetsPrices — derived from buildingCatalog', () => {
+describe('buildingPlacementCatalog — derived from buildingCatalog', () => {
   test('matches construction facts for a sample of types', () => {
-    expect(assetsPrices['House-Blue']).toEqual({
+    expect(buildingPlacementCatalog['House-Blue']).toEqual({
       price: 10, category: 'houses', gridSize: 1, footprintWidth: 1, footprintDepth: 1,
     });
-    expect(assetsPrices['Barn-001']).toEqual({
+    expect(buildingPlacementCatalog['Barn-001']).toEqual({
       price: 40, category: 'industry', gridSize: 2, footprintWidth: 2, footprintDepth: 2,
     });
-    expect(assetsPrices['StonePath-001']).toEqual({
+    expect(buildingPlacementCatalog['StonePath-001']).toEqual({
       price: 5, category: 'infrastructure', gridSize: 1, footprintWidth: 1, footprintDepth: 1,
     });
   });
 
   test('the legacy roads id is fully retired — StonePath is the only road tool', () => {
     expect(buildingCatalog.roads).toBeUndefined();
-    expect(assetsPrices.roads).toBeUndefined();
+    expect(buildingPlacementCatalog.roads).toBeUndefined();
   });
 
   test('has exactly the entries that declare a construction fact (buildingCatalog already merges village + Kenney)', () => {
@@ -73,7 +73,7 @@ describe('assetsPrices — derived from buildingCatalog', () => {
       .filter(([, def]) => def.construction)
       .map(([id]) => id)
       .sort();
-    expect(Object.keys(assetsPrices).sort()).toEqual(expectedIds);
+    expect(Object.keys(buildingPlacementCatalog).sort()).toEqual(expectedIds);
   });
 
   test('buildingCatalog itself includes Kenney ids — no separate merge needed downstream', () => {
@@ -85,9 +85,9 @@ describe('assetsPrices — derived from buildingCatalog', () => {
 });
 
 describe('HouseTypeCatalog — no more duplicated house prices', () => {
-  test('RESIDENTIAL_HOUSE_PRICES matches assetsPrices for every house type', () => {
+  test('RESIDENTIAL_HOUSE_PRICES matches buildingPlacementCatalog for every house type', () => {
     for (const type of [HOUSE_TYPE_BLUE, HOUSE_TYPE_RED, HOUSE_TYPE_PURPLE, HOUSE_TYPE_PALACE]) {
-      expect(RESIDENTIAL_HOUSE_PRICES[type]).toBe(assetsPrices[type].price);
+      expect(RESIDENTIAL_HOUSE_PRICES[type]).toBe(buildingPlacementCatalog[type].price);
     }
   });
 });
@@ -129,15 +129,15 @@ describe('BuildingMaintenanceBreakdownPolicy — derived maintenance facts', () 
   });
 });
 
-describe('assetsPrices — every buildingCatalog entry with a construction fact is playable', () => {
+describe('buildingPlacementCatalog — every buildingCatalog entry with a construction fact is playable', () => {
   test('includes Kenney, village buildings, and StonePath — no separate playable allowlist', () => {
-    expect(assetsPrices['Kenney-Suburban-building-type-a']).toBeDefined();
-    expect(assetsPrices['Farm-Wheat']).toBeDefined();
-    expect(assetsPrices['StonePath-001']).toBeDefined();
-    expect(assetsPrices.roads).toBeUndefined();
-    expect(assetsPrices['House-Blue']).toBeDefined();
-    expect(assetsPrices['Market-Stall']).toBeDefined();
-    expect(assetsPrices['Barn-001']).toBeDefined();
+    expect(buildingPlacementCatalog['Kenney-Suburban-building-type-a']).toBeDefined();
+    expect(buildingPlacementCatalog['Farm-Wheat']).toBeDefined();
+    expect(buildingPlacementCatalog['StonePath-001']).toBeDefined();
+    expect(buildingPlacementCatalog.roads).toBeUndefined();
+    expect(buildingPlacementCatalog['House-Blue']).toBeDefined();
+    expect(buildingPlacementCatalog['Market-Stall']).toBeDefined();
+    expect(buildingPlacementCatalog['Barn-001']).toBeDefined();
   });
 });
 

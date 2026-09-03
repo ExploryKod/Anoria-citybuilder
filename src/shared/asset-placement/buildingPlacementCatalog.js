@@ -7,8 +7,7 @@
  *
  * Exists so construction, scene, and the mesh loader can read one flat
  * shape instead of each re-deriving `{...construction, ...footprint}`
- * itself. Keeps the historic `assetsPrices` export name/shape so those
- * call sites don't change.
+ * itself.
  *
  * Every building catalog entry is playable — there is no separate
  * "playable" subset. An id either has a real construction fact (and shows
@@ -24,7 +23,7 @@ import { resolveFootprint, resolveGridSize } from '../asset-footprint/resolveFoo
 /**
  * @type {Readonly<Record<string, { price: number, category: string, gridSize: number, footprintWidth?: number, footprintDepth?: number }>>}
  */
-export const assetsPrices = Object.freeze(
+export const buildingPlacementCatalog = Object.freeze(
   Object.fromEntries(
     Object.entries(buildingCatalog)
       .filter(([, definition]) => definition.construction)

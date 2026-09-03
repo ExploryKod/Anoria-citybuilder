@@ -2,7 +2,7 @@
  * Presentation — which placement tool buttons exist and which stay always on.
  */
 
-import { assetsPrices } from '../../../shared/asset-placement/buildingPlacementCatalog.js';
+import { buildingPlacementCatalog } from '../../../shared/asset-placement/buildingPlacementCatalog.js';
 import { farms } from '../../../shared/building-catalog/buildingCategories.js';
 
 const ROAD_TOOL_IDS = Object.freeze([
@@ -23,7 +23,7 @@ export const ALWAYS_ENABLED_PLACEMENT_TOOLS = Object.freeze([
 /** @returns {ReadonlyArray<string>} */
 export function allGatedPlacementTools() {
   return Object.freeze(
-    Object.keys(assetsPrices).filter(
+    Object.keys(buildingPlacementCatalog).filter(
       (id) => !ALWAYS_ENABLED_PLACEMENT_TOOLS.includes(id),
     ),
   );

@@ -54,11 +54,11 @@ describe('getAssetPrice', () => {
     });
 
     describe('Validation des paramètres', () => {
-        test('retourne null si assetsPrices est null', () => {
+        test('retourne null si priceCatalog est null', () => {
             expect(getAssetPrice('House-Blue', null)).toBe(null);
         });
 
-        test('retourne null si assetsPrices est undefined', () => {
+        test('retourne null si priceCatalog est undefined', () => {
             expect(getAssetPrice('House-Blue', undefined)).toBe(null);
         });
     });
