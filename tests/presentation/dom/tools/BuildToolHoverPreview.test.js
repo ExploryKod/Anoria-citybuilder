@@ -6,7 +6,10 @@ import {
 
 describe('BuildToolHoverPreview', () => {
   test('resolves Kenney city kit preview URLs', () => {
-    const url = resolveToolPreviewUrl('Kenney-Commercial-building-a');
+    // Market-Stall is the reassigned, buttoned id for this Kenney mesh — the
+    // raw Kenney-Commercial-building-a entry stays button: null (fallback
+    // only), so it has no preview of its own anymore.
+    const url = resolveToolPreviewUrl('Market-Stall');
     expect(url).toMatch(/kenney_city-kit-commercial/);
     expect(url).toMatch(/building-a\.png$/);
   });

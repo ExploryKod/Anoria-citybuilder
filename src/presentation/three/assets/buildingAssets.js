@@ -92,7 +92,7 @@ export const BUILDING_ASSETS = Object.freeze({
     tags: ['palaces', 'building'],
   },
   // Maison rouge
-  'House-Red': {
+  'House-Red-Legacy': {
     source: 'villageTown',
     geometry: {
       glb: 'village_town_assets_v2.glb',
@@ -118,17 +118,18 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'House Red',
-      tooltip: 'House Red',
-      icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' },
-    },
+    button: null,
+    // button: {
+    //   group: 'houses',
+    //   editorGroup: null,
+    //   label: 'House Red',
+    //   tooltip: 'House Red',
+    //   icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' },
+    // },
     tags: ['houses', 'building'],
   },
   // Maison violette
-  'House-Purple': {
+  'House-Purple-Legacy': {
     source: 'villageTown',
     geometry: {
       glb: 'village_town_assets_v2.glb',
@@ -154,13 +155,14 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'House Purple',
-      tooltip: 'House Purple',
-      icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' },
-    },
+    button: null,
+    // button: {
+    //   group: 'houses',
+    //   editorGroup: null,
+    //   label: 'House Purple',
+    //   tooltip: 'House Purple',
+    //   icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' },
+    // },
     tags: ['houses', 'building'],
   },
   // Champ de blé
@@ -563,7 +565,7 @@ export const BUILDING_ASSETS = Object.freeze({
     tags: ['industry', 'building'],
   },
   // Étal (alias legacy → mesh bleu)
-  'Market-Stall': {
+  'Market-Stall-Legacy': {
     source: 'villageTown',
     geometry: {
       glb: 'village_town_assets_v2.glb',
@@ -589,17 +591,18 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'markets',
-      editorGroup: null,
-      label: 'Market Stall',
-      tooltip: 'Market Stall',
-      icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/></svg>' },
-    },
+    button: null,
+    // button: {
+    //   group: 'markets',
+    //   editorGroup: null,
+    //   label: 'Market Stall',
+    //   tooltip: 'Market Stall',
+    //   icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/></svg>' },
+    // },
     tags: ['markets', 'building', 'legacy-alias'],
   },
   // Étal bleu
-  'Market-Stall-Blue': {
+  'Market-Stall-Blue-Legacy': {
     source: 'villageTown',
     geometry: {
       glb: 'village_town_assets_v2.glb',
@@ -625,17 +628,18 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'markets',
-      editorGroup: null,
-      label: 'Market Stall Blue',
-      tooltip: 'Market Stall Blue',
-      icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/></svg>' },
-    },
+    button: null,
+    // button: {
+    //   group: 'markets',
+    //   editorGroup: null,
+    //   label: 'Market Stall Blue',
+    //   tooltip: 'Market Stall Blue',
+    //   icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/></svg>' },
+    // },
     tags: ['markets', 'building'],
   },
   // Étal rouge
-  'Market-Stall-Red': {
+  'Market-Stall-Red-Legacy': {
     source: 'villageTown',
     geometry: {
       glb: 'village_town_assets_v2.glb',
@@ -661,13 +665,14 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'markets',
-      editorGroup: null,
-      label: 'Market Stall Red',
-      tooltip: 'Market Stall Red',
-      icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/></svg>' },
-    },
+    button: null,
+    // button: {
+    //   group: 'markets',
+    //   editorGroup: null,
+    //   label: 'Market Stall Red',
+    //   tooltip: 'Market Stall Red',
+    //   icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/></svg>' },
+    // },
     tags: ['markets', 'building'],
   },
   // Chemin de pierre
@@ -897,17 +902,19 @@ export const BUILDING_ASSETS = Object.freeze({
     button: null, // not a placeable tool — legacy save-compatibility id only (old saves referencing Church-002 render via the Chapel mesh), never exposed as a carousel button
     tags: ['public', 'building', 'legacy-alias'],
   },
-  // Maison bleue — RÉASSIGNÉE au kit Kenney Suburban. Icon below still shows the old
-  // village house — this is the exact identity/mesh split the catalog now makes visible
-  // and fixable in one place (see file header).
-  'House-Blue': {
+  // ---- kenneyCityKit ----
+  // Commerce — building-a — kept as its own entry (button: null) so its own
+  // economy/footprint facts (auto-folded from kenneyCityKitRegistry.generated.js,
+  // unrenameable) always have a renderer. Market-Stall below borrows its
+  // geometry (copy, not move) to reassign the transverse "Market-Stall" id.
+  'Kenney-Commercial-building-a': {
     source: 'kenneyCityKit',
     geometry: {
       glb: null,
       sourceKey: null,
       aliases: [],
-      kit: 'suburban',
-      buildingId: 'Kenney-Suburban-building-type-a',
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-building-a',
     },
     transform: {
       rotationDeg: null,
@@ -922,18 +929,13 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'House Blue',
-      tooltip: 'House Blue',
-      icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' },
-    },
-    tags: ['houses', 'building', 'reassigned-to-kenney'],
+    button: null, // not a distinct carousel entry — Market-Stall (below) is the placeable id for this mesh
+    tags: ['commercial', 'building'],
   },
-  // ---- kenneyCityKit ----
-  // Commerce — building-a
-  'Kenney-Commercial-building-a': {
+  // Étal — RÉASSIGNÉ au kit Kenney Commercial building-a (geometry copied from
+  // Kenney-Commercial-building-a above; economy/footprint stay keyed to
+  // 'Market-Stall', untouched).
+  'Market-Stall': {
     source: 'kenneyCityKit',
     geometry: {
       glb: null,
@@ -2180,8 +2182,39 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     tags: ['industrial', 'building'],
   },
-  // Maison — building-type-a
+  // Maison — building-type-a — kept as its own entry (button: null) so its own
+  // economy/footprint facts (auto-folded from kenneyCityKitRegistry.generated.js,
+  // unrenameable) always have a renderer. House-Red below borrows its geometry
+  // (copy, not move) to reassign the transverse "House-Red" id.
   'Kenney-Suburban-building-type-a': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-building-type-a',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — House-Red (below) is the placeable id for this mesh
+    tags: ['suburban', 'building'],
+  },
+  // Maison rouge — RÉASSIGNÉE au kit Kenney Suburban building-type-a (geometry
+  // copied from Kenney-Suburban-building-type-a above; economy/footprint stay
+  // keyed to 'House-Red', untouched).
+  'House-Red': {
     source: 'kenneyCityKit',
     geometry: {
       glb: null,
@@ -2207,13 +2240,41 @@ export const BUILDING_ASSETS = Object.freeze({
       group: 'houses',
       editorGroup: null,
       label: 'type-a',
-      tooltip: 'Kenney suburban — building-type-a (2×1, 18€)',
+      tooltip: 'Maison d\' artisants (2×1, 18€)',
       icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-a.png' },
     },
     tags: ['suburban', 'building'],
   },
-  // Maison — building-type-b
+  // Maison — building-type-b — kept as its own entry (button: null), same reason as type-a above.
   'Kenney-Suburban-building-type-b': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-building-type-b',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — House-Blue (below) is the placeable id for this mesh
+    tags: ['suburban', 'building'],
+  },
+  // Maison bleue — RÉASSIGNÉE au kit Kenney Suburban building-type-b (geometry
+  // copied from Kenney-Suburban-building-type-b above; economy/footprint stay
+  // keyed to 'House-Blue', untouched).
+  'House-Blue': {
     source: 'kenneyCityKit',
     geometry: {
       glb: null,
@@ -2239,13 +2300,41 @@ export const BUILDING_ASSETS = Object.freeze({
       group: 'houses',
       editorGroup: null,
       label: 'type-b',
-      tooltip: 'Kenney suburban — building-type-b (2×2, 34€)',
+      tooltip: 'Maison de commerçant (2×2, 34€)',
       icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-b.png' },
     },
     tags: ['suburban', 'building'],
   },
-  // Maison — building-type-c
+  // Maison — building-type-c — kept as its own entry (button: null), same reason as type-a above.
   'Kenney-Suburban-building-type-c': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-building-type-c',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — House-Purple (below) is the placeable id for this mesh
+    tags: ['suburban', 'building'],
+  },
+  // Maison violette — RÉASSIGNÉE au kit Kenney Suburban building-type-c (geometry
+  // copied from Kenney-Suburban-building-type-c above; economy/footprint stay
+  // keyed to 'House-Purple', untouched).
+  'House-Purple': {
     source: 'kenneyCityKit',
     geometry: {
       glb: null,
@@ -2271,7 +2360,7 @@ export const BUILDING_ASSETS = Object.freeze({
       group: 'houses',
       editorGroup: null,
       label: 'type-c',
-      tooltip: 'Kenney suburban — building-type-c (2×1, 18€)',
+      tooltip: 'Maison de Savant (2×1, 18€)',
       icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-c.png' },
     },
     tags: ['suburban', 'building'],

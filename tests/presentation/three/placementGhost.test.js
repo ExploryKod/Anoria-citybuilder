@@ -103,9 +103,10 @@ describe('placementGhost', () => {
     syncController.rotateStep();
     expect(syncController.rotationStep).toBe(0);
 
-    // House-Purple stays villageTown-sourced (unlike House-Blue) — the
-    // synchronous createAsset path, not the async Kenney adapter.
-    syncController.show('House-Purple', 2, 3, true, { gridSize: 1 });
+    // Farm-Wheat stays villageTown-sourced (House-Blue/Red/Purple are all
+    // reassigned to Kenney now) — the synchronous createAsset path, not the
+    // async Kenney adapter.
+    syncController.show('Farm-Wheat', 2, 3, true, { gridSize: 1 });
     syncController.rotateStep();
     expect(syncController.rotationStep).toBe(1);
   });
