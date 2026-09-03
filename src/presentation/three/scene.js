@@ -15,7 +15,7 @@ import {
     gameWindow,
 } from '../dom/shell/nodes.js';
 import {
-    assetsPrices,
+    buildingPlacementCatalog,
     buildingsObjects,
     commerce,
     factories,
@@ -747,7 +747,7 @@ export function createScene(_gameStore, assetManager, deps) {
             }
             const newBuildingId = tileBuildingId;
 
-            const buildingData = assetsPrices[newBuildingId];
+            const buildingData = buildingPlacementCatalog[newBuildingId];
             const gridSize = buildingData?.gridSize || 1;
             const placedInstanceId = city.tiles[x]?.[y]?.instanceId;
 

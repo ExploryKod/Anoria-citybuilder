@@ -7,7 +7,7 @@ import { BulldozeBuildingAtTile } from '../contexts/construction/application/ser
 import { ReclaimStaleBuildingRecords } from '../contexts/construction/application/services/ReclaimStaleBuildingRecords.js';
 import { SceneBuildingInventoryAdapter } from '../contexts/construction/infrastructure/adapters/three/SceneBuildingInventoryAdapter.js';
 import { getDefaultEmployees } from '../contexts/employment/domain/policies/BuildingEmploymentDefaults.js';
-import { assetsPrices } from '../shared/building-catalog/index.js';
+import { buildingPlacementCatalog } from '../shared/building-catalog/index.js';
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
 import { canPlaceBuildingAtTileWithSupplyRules } from './canPlaceBuildingAtTileWithSupplyRules.js';
 import {
@@ -49,7 +49,7 @@ export function createConstructionContext({
 } = {}) {
   const repository = buildingRepository ?? new DexieConstructionBuildingRepository();
   const sceneInventory = sceneBuildingInventory ?? new SceneBuildingInventoryAdapter();
-  const catalog = assetCatalog ?? assetsPrices;
+  const catalog = assetCatalog ?? buildingPlacementCatalog;
   const getBuildingAtTile = new GetBuildingAtTile(repository);
   const listSceneBuildingTypes = new ListSceneBuildingTypes(sceneInventory);
   const placeBuildingWithPayment = new PlaceBuildingWithPayment({

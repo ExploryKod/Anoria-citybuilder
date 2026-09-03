@@ -33,7 +33,7 @@ export const textures = Object.freeze({
     'no-work': loadTextures(`/resources/textures/status/no-work.png`, true)
 })
 
-// Economy catalog (assetsPrices, type lists) → src/shared/building-catalog/
+// Economy catalog (buildingPlacementCatalog, type lists) → src/shared/building-catalog/
 
 // Mapping of GLB mesh names to tool names
 // From the GLTF export, we have mesh names like:
