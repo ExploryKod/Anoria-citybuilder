@@ -1,13 +1,35 @@
 /**
- * Collision footprint overrides for villageTown-sourced building ids whose
- * placement size isn't the 1×1 default — see resolveFootprint.js for how
- * this combines with Kenney's auto-generated footprint and the default.
- *
- * Sparse by design: an id not listed here is 1×1. Don't add an entry that
- * just restates the default.
+ * Collision footprint (in tiles) for every villageTown-sourced/reassigned
+ * building id — see resolveFootprint.js. Explicit for every id, no default:
+ * changing a building's footprint (e.g. making Barn-001 bigger) means
+ * editing exactly this one line, in this one file, nothing else.
  *
  * @type {Readonly<Record<string, { width: number, depth: number }>>}
  */
-export const BUILDING_FOOTPRINT_OVERRIDES = Object.freeze({
+export const BUILDING_FOOTPRINT = Object.freeze({
   'Barn-001': Object.freeze({ width: 2, depth: 2 }),
+  'BookShop-001': Object.freeze({ width: 1, depth: 1 }),
+  'Chapel': Object.freeze({ width: 1, depth: 1 }),
+  'Church-002': Object.freeze({ width: 1, depth: 1 }),
+  'Crate-001': Object.freeze({ width: 1, depth: 1 }),
+  'Cylinder': Object.freeze({ width: 1, depth: 1 }),
+  'Farm-Cabbage': Object.freeze({ width: 1, depth: 1 }),
+  'Farm-Carrot': Object.freeze({ width: 1, depth: 1 }),
+  'Farm-Wheat': Object.freeze({ width: 1, depth: 1 }),
+  'Hay-Bale': Object.freeze({ width: 1, depth: 1 }),
+  'Hay-Cart': Object.freeze({ width: 1, depth: 1 }),
+  'Hay-Pile': Object.freeze({ width: 1, depth: 1 }),
+  'House-2Story': Object.freeze({ width: 1, depth: 1 }),
+  'House-Blue': Object.freeze({ width: 1, depth: 1 }),
+  'House-Purple': Object.freeze({ width: 1, depth: 1 }),
+  'House-Red': Object.freeze({ width: 1, depth: 1 }),
+  'Market-Stall': Object.freeze({ width: 1, depth: 1 }),
+  'Market-Stall-Blue': Object.freeze({ width: 1, depth: 1 }),
+  'Market-Stall-Red': Object.freeze({ width: 1, depth: 1 }),
+  'StonePath-001': Object.freeze({ width: 1, depth: 1 }),
+  'StonePath-Cross-001': Object.freeze({ width: 1, depth: 1 }),
+  'StonePath-Left-001': Object.freeze({ width: 1, depth: 1 }),
+  'StonePath-Right-001': Object.freeze({ width: 1, depth: 1 }),
+  'Windmill-001': Object.freeze({ width: 1, depth: 1 }),
+  'Winery-001': Object.freeze({ width: 1, depth: 1 }),
 });
