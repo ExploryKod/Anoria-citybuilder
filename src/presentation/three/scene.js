@@ -34,7 +34,8 @@ import gameUIDefault from '../dom/shell/GameUI.js';
 import { syncPopRailHud } from '../../composition/syncSessionHud.js';
 import { CitizenManager } from './managers/CitizenManager.js';
 import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
-import { createWalkerSpawnController } from './walkers/WalkerSpawnController.js';
+import { createWalkerEventController } from './walkers/WalkerEventController.js';
+import { getSharedEventBus } from '../../composition/sharedEventBus.js';
 import { TileGridOverlay } from './managers/TileGridOverlay.js';
 import {
   MapOverlayVisibility,
@@ -176,7 +177,7 @@ export function createScene(_gameStore, assetManager, deps) {
     // PerformanceManager and CitizenPathfinding will be created in initialize() after zoneGroups/buildings/terrain are set up
     let performanceManager = null;
     let citizenPathfinding = null;
-    let walkerSpawnController = null;
+    let walkerEventController = null;
 
     const camera = createCamera(gameWindow);
     const runningOnMobile = isMobileDevice();
@@ -656,17 +657,18 @@ export function createScene(_gameStore, assetManager, deps) {
         // Initialize CitizenPathfinding after buildings and terrain are created
         citizenPathfinding = new CitizenPathfinding(buildings, terrain);
 
-        // Catalog-driven walkers: spawns a character whenever a placed
-        // 'origin' building can reach a placed 'destination' building by
-        // road (see buildingEconomy.js `walker` facts). See
-        // src/presentation/three/walkers/WalkerSpawnController.js.
-        walkerSpawnController = createWalkerSpawnController({
+        // Event-driven walkers: spawns a character whenever a bounded
+        // context publishes an event listed in WALKER_EVENT_CATALOG (e.g.
+        // Supply's 'supply.resourceDelivered') through the shared event
+        // bus. See src/presentation/three/walkers/WalkerEventController.js
+        // and shared/gameplay/walkerEventCatalog.js.
+        walkerEventController = createWalkerEventController({
             scene,
             citizenManager,
             citizenPathfinding,
             buildings,
             city: currentCity,
-            getCitySize: () => currentCity?.size ?? currentCitySize,
+            eventPublisher: getSharedEventBus(),
         });
     }
 
@@ -1625,11 +1627,8 @@ export function createScene(_gameStore, assetManager, deps) {
         // Display results in UI — population read at start of update (ECS already applied)
         // Famished / deaths / pop rail — owned by syncPopRailHud (tick + refreshEmploymentPresentation)
 
-        // Catalog-driven walkers: scan for origin buildings that can now
-        // reach a destination building, once per turn.
-        if (walkerSpawnController) {
-            walkerSpawnController.scanForJourneys();
-        }
+        // Walkers are event-driven now (see walkerEventController above) —
+        // no per-turn scan needed here.
     }
 
     /**
@@ -2194,10 +2193,10 @@ export function createScene(_gameStore, assetManager, deps) {
         lastFrameTime = currentTime;
         
         // Legacy border-bounce citizen spawn/update (CitizenManager.updateCitizens /
-        // updateAllCitizens) retired — superseded by walkerSpawnController below.
+        // updateAllCitizens) retired — superseded by walkerEventController below.
 
-        if (walkerSpawnController && !gameUI.isPaused) {
-            walkerSpawnController.update(deltaTime);
+        if (walkerEventController && !gameUI.isPaused) {
+            walkerEventController.update(deltaTime);
         }
 
         updateFocusedObject(); // Update focused object every frame

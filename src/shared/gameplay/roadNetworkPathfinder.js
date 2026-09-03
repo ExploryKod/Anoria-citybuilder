@@ -59,7 +59,7 @@ export function findAdjacentRoadTile(buildingTile, isRoadTile) {
  * Breadth-first shortest path between two road tiles. Exported so callers
  * that resolve "which road tile does this building enter from" using their
  * own rule (e.g. the game's 2-tile road-access radius — see
- * presentation/three/walkers/WalkerSpawnController.js) can still reuse this
+ * presentation/three/walkers/WalkerEventController.js) can still reuse this
  * for the walk itself, without going through `findRoadPathBetweenBuildings`'s
  * stricter direct-touch default.
  *
