@@ -3,12 +3,12 @@
  *
  * Worker distribution is skill-based: each pass staffs workplaces that
  * require a given skill using only level-2 citizens of the matching group.
- * See WorkplaceSkillRequirementPolicy.js and Housing GroupLevel2SkillPolicy (via composition).
+ * See WorkplaceSkillRequirementPolicy.js and Housing GroupSkillPolicy (via composition).
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createEmploymentBuildingSnapshot } from '../../../src/contexts/employment/domain/EmploymentBuildingSnapshot.js';
-import { houseCitizenHasSkill } from '../../../src/contexts/housing/domain/policies/GroupLevel2SkillPolicy.js';
+import { houseCitizenHasSkill } from '../../../src/contexts/housing/domain/policies/GroupSkillPolicy.js';
 import { residentialGroupForType } from '../../../src/contexts/employment/domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
 import {
   hasRoadAccess,
@@ -225,6 +225,27 @@ describe('Employment — DistributeCityWorkers', () => {
 
       expect(repo.get('Farm-Wheat-a').worker).toBe(3);
       expect(repo.get('Market-Stall-b').worker).toBe(1);
+    });
+
+    test('a skill shared by two groups lets both staff the same workplace', async () => {
+      // No group pre-filter — citizenProvidesSkill alone decides eligibility,
+      // so a skill catalog that grants 'fermier' to more than one group (not
+      // the case in production data today, but a supported shape) must let
+      // both groups' houses staff a fermier-requiring workplace.
+      const sharedSkill = (house, skillKey) =>
+        skillKey === 'fermier' && (house.type === 'House-Red' || house.type === 'House-Blue');
+
+      const repo = new InMemoryEmploymentBuildingRepository([
+        house('House-Red-1-1', 2, 1, 'House-Red'),
+        house('House-Blue-2-2', 2, 1, 'House-Blue'),
+        workplace('Farm-Wheat-a', { workerNeed: 4, sector: 1 }),
+      ]);
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkill: sharedSkill });
+
+      const result = await useCase.execute({ sectorPriorities: { 1: 1 } });
+
+      expect(result.availableWorkers).toBe(4);
+      expect(repo.get('Farm-Wheat-a').worker).toBe(4);
     });
   });
 });

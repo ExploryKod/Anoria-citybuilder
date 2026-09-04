@@ -1,9 +1,8 @@
 import { describe, test, expect } from '@jest/globals';
 import {
-  GROUP_LEVEL2_SKILL,
   getCitizenSkillsForHouse,
   houseCitizenHasSkill,
-} from '../../../src/contexts/housing/domain/policies/GroupLevel2SkillPolicy.js';
+} from '../../../src/contexts/housing/domain/policies/GroupSkillPolicy.js';
 import {
   GROUP_LEVEL2_UNLOCKED_BUILDINGS,
   evaluateGroupLevel2UnlockStatus,
@@ -12,8 +11,9 @@ import {
 } from '../../../src/contexts/housing/domain/policies/GroupLevel2PlacementUnlockPolicy.js';
 import { computeHouseCitizenComposition } from '../../../src/contexts/housing/domain/policies/HouseCitizenCompositionPolicy.js';
 import { resolveHouseLevel } from '../../../src/contexts/housing/domain/policies/HouseLevelPolicy.js';
+import { SOCIAL_CATEGORY } from '../../../src/shared/population/socialCategoryCatalog.js';
 
-describe('Housing — GroupLevel2SkillPolicy', () => {
+describe('Housing — GroupSkillPolicy', () => {
   test('level 1 houses only have chasse-cueillette', () => {
     expect(getCitizenSkillsForHouse({ level: 1, residentialGroup: 'merchants' })).toEqual([
       'subsistence-forager',
@@ -73,7 +73,7 @@ describe('Housing — GroupLevel2PlacementUnlockPolicy', () => {
 
   test('unlock lists align with skill keys', () => {
     for (const group of Object.keys(GROUP_LEVEL2_UNLOCKED_BUILDINGS)) {
-      expect(GROUP_LEVEL2_SKILL[group]).toBeTruthy();
+      expect(SOCIAL_CATEGORY[group]).toBeTruthy();
     }
   });
 });

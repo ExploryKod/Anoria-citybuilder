@@ -3,7 +3,7 @@
  */
 
 import { buildingCatalog } from '../../../../shared/building-catalog/buildingCatalog.js';
-import { GROUP_LEVEL2_SKILL } from './GroupLevel2SkillPolicy.js';
+import { SOCIAL_CATEGORY } from '../../../../shared/population/socialCategoryCatalog.js';
 
 /**
  * @type {Readonly<Record<string, ReadonlyArray<string>>>}
@@ -56,5 +56,5 @@ export function unlockGroupForBuilding(buildingId) {
 
 /** @returns {ReadonlyArray<string>} */
 export function allUnlockableSocialGroups() {
-  return Object.freeze(Object.keys(GROUP_LEVEL2_SKILL));
+  return Object.freeze(Object.keys(SOCIAL_CATEGORY));
 }

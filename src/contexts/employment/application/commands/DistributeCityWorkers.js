@@ -8,18 +8,19 @@ import {
   allocateWorkers,
   orderWorkplacesByPriority,
 } from '../../domain/policies/WorkerAllocationPolicy.js';
-import { residentialGroupForType } from '../../domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
 import {
   allWorkplaceEmploymentSkills,
   getRequiredSkillForBuilding,
-  residentialGroupForSkill,
 } from '../../domain/policies/WorkplaceSkillRequirementPolicy.js';
 
 /**
  * Command: monthly city-wide worker redistribution.
  *
  * Skill-based recruitment: each pass staffs workplaces that require a given
- * skill using citizens from the matching social group (via injected Housing port).
+ * skill using citizens whose house actually provides that skill (via
+ * injected Housing port) — no assumption that a skill belongs to exactly
+ * one social group, since the housing skill catalog can grant the same
+ * skill to more than one group.
  */
 export class DistributeCityWorkers {
   /**
@@ -53,13 +54,9 @@ export class DistributeCityWorkers {
     let totalAvailableWorkers = 0;
 
     for (const skillKey of allWorkplaceEmploymentSkills()) {
-      const group = residentialGroupForSkill(skillKey);
-      if (!group) continue;
-
       const skillWorkers = laborSources
         .filter((building) => {
           if (!isLaborSource(building) || !hasRoadAccess(building)) return false;
-          if (residentialGroupForType(building.type) !== group) return false;
           return this.citizenProvidesSkill(building, skillKey);
         })
         .reduce((sum, building) => sum + workerPopFromHouse(building.type, building.pop, building.level), 0);

@@ -4,7 +4,7 @@
 
 import { getSkills, resolveCitizenStatusFromLevel } from '../../../../shared/population/CitizenStatusCatalog.js';
 import { HOUSE_CITIZEN_CAP } from './HouseCapacityPolicy.js';
-import { getCitizenSkillsForHouse } from './GroupLevel2SkillPolicy.js';
+import { getCitizenSkillsForHouse } from './GroupSkillPolicy.js';
 
 /**
  * @param {number} pop

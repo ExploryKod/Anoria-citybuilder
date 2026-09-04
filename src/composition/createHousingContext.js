@@ -18,7 +18,7 @@ import {
 import {
   getCitizenSkillsForHouse,
   houseCitizenHasSkill,
-} from '../contexts/housing/domain/policies/GroupLevel2SkillPolicy.js';
+} from '../contexts/housing/domain/policies/GroupSkillPolicy.js';
 import { computeHouseCitizenComposition } from '../contexts/housing/domain/policies/HouseCitizenCompositionPolicy.js';
 
 /**
