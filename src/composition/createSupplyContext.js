@@ -46,6 +46,7 @@ import {
 } from '../contexts/supply/domain/policies/HubStorageOrdersPolicy.js';
 import { listHubProducts } from '../contexts/supply/domain/catalogs/HubStorageCatalog.js';
 import { getSharedEventBus } from './sharedEventBus.js';
+import { hasResourceRole, getPlacementRequirements } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
 
 /**
  * Composition root — Supply bounded context.
@@ -218,6 +219,8 @@ export function createSupplyContext({
     listSupplyMapBuildingsQuery,
     listWindmillSupplyViewsQuery,
     listSupplyStockSnapshotsQuery,
+    hasResourceRole,
+    getPlacementRequirements,
 
     async buyFromAssignedWindmill(marketId, month = null) {
       return transferHubToHub.execute({
