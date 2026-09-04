@@ -397,6 +397,8 @@ if (profileModal) {
   });
 }
 
-await refreshMaps();
-renderMissionList();
-selectMission(selectedMissionId);
+(async () => {
+  await refreshMaps();
+  renderMissionList();
+  selectMission(selectedMissionId);
+})();
