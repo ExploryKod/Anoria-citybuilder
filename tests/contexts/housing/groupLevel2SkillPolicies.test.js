@@ -2,16 +2,9 @@ import { describe, test, expect } from '@jest/globals';
 import {
   getCitizenSkillsForHouse,
   houseCitizenHasSkill,
-} from '../../../src/contexts/housing/domain/policies/GroupSkillPolicy.js';
-import {
-  GROUP_LEVEL2_UNLOCKED_BUILDINGS,
-  evaluateGroupLevel2UnlockStatus,
-  unlockGroupForBuilding,
   residentialGroupForHouseType,
-} from '../../../src/contexts/housing/domain/policies/GroupLevel2PlacementUnlockPolicy.js';
+} from '../../../src/contexts/housing/domain/policies/GroupSkillPolicy.js';
 import { computeHouseCitizenComposition } from '../../../src/contexts/housing/domain/policies/HouseCitizenCompositionPolicy.js';
-import { resolveHouseLevel } from '../../../src/contexts/housing/domain/policies/HouseLevelPolicy.js';
-import { SOCIAL_CATEGORY } from '../../../src/shared/population/socialCategoryCatalog.js';
 
 describe('Housing — GroupSkillPolicy', () => {
   test('level 1 houses only have chasse-cueillette', () => {
@@ -31,50 +24,11 @@ describe('Housing — GroupSkillPolicy', () => {
     expect(houseCitizenHasSkill({ level: 2, residentialGroup: 'scholars' }, 'stockage-alimentaire')).toBe(true);
     expect(houseCitizenHasSkill({ level: 1, residentialGroup: 'scholars' }, 'stockage-alimentaire')).toBe(false);
   });
-});
 
-describe('Housing — GroupLevel2PlacementUnlockPolicy', () => {
-  test('House-Blue catalog group matches merchants unlock key', () => {
+  test('resolves residential group from house type', () => {
     expect(residentialGroupForHouseType('House-Blue')).toBe('merchants');
-  });
-
-  test('evaluates unlock per group at level 2', () => {
-    const status = evaluateGroupLevel2UnlockStatus([
-      { type: 'House-Red', level: 2 },
-      { type: 'House-Blue', level: 1 },
-    ]);
-
-    expect(status['artisans']).toBe(true);
-    expect(status.merchants).toBe(false);
-  });
-
-  test('road + pop on House-Blue unlocks markets via level 2', () => {
-    const level = resolveHouseLevel({ level: 1, pop: 2, roadCount: 1 });
-    expect(level.targetLevel).toBe(2);
-
-    const status = evaluateGroupLevel2UnlockStatus([
-      { type: 'House-Blue', level: level.targetLevel },
-    ]);
-    expect(status.merchants).toBe(true);
-    expect(unlockGroupForBuilding('Market-Stall-Blue')).toBe('merchants');
-    expect(
-      getCitizenSkillsForHouse({
-        level: 2,
-        residentialGroup: residentialGroupForHouseType('House-Blue'),
-      }),
-    ).toContain('vente-alimentaire');
-  });
-
-  test('maps buildings to unlock groups', () => {
-    expect(unlockGroupForBuilding('Farm-Wheat')).toBe('artisans');
-    expect(unlockGroupForBuilding('Market-Stall-Red')).toBe('merchants');
-    expect(unlockGroupForBuilding('Barn-001')).toBeNull();
-  });
-
-  test('unlock lists align with skill keys', () => {
-    for (const group of Object.keys(GROUP_LEVEL2_UNLOCKED_BUILDINGS)) {
-      expect(SOCIAL_CATEGORY[group]).toBeTruthy();
-    }
+    expect(residentialGroupForHouseType('House-Red')).toBe('artisans');
+    expect(residentialGroupForHouseType('Barn-001')).toBeNull();
   });
 });
 

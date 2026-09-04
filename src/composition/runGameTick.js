@@ -25,7 +25,6 @@ import { isDeathGameOverReached } from './gameplayMortalityState.js';
  * @param {() => Promise<void>} params.refreshEmploymentPresentation
  * @param {{ enabled?: boolean, checkObjectives: Function }} params.objectivesTracker
  * @param {(cleanupResult?: { deleted?: number, deletedTurns?: number[] }) => void | Promise<void>} [params.notifyBudgetCleanup]
- * @param {(params: { housing: object }) => void | Promise<void>} [params.refreshPlacementToolGating]
  * @param {() => void} [params.onGameOver]
  * @param {() => Promise<void>} [params.presentIncomingNewsEvents] — injected at the edge (presentation owns the modal)
  */
@@ -42,7 +41,6 @@ export async function runGameTick({
   refreshEmploymentPresentation,
   objectivesTracker,
   notifyBudgetCleanup,
-  refreshPlacementToolGating,
   onGameOver,
   presentIncomingNewsEvents,
 }) {
@@ -97,10 +95,6 @@ export async function runGameTick({
 
   if (objectivesTracker.enabled) {
     await objectivesTracker.checkObjectives(time);
-  }
-
-  if (refreshPlacementToolGating) {
-    await refreshPlacementToolGating({ housing });
   }
 
   if (shouldAbort()) {

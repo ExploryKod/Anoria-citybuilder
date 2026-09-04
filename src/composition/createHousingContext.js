@@ -11,13 +11,9 @@ import { GetResidentialHouseAtTile } from '../contexts/housing/application/queri
 import { EvaluateHouseFoodAffluence } from '../contexts/housing/application/queries/EvaluateHouseFoodAffluence.js';
 import { PreviewHouseEvolution } from '../contexts/housing/application/queries/PreviewHouseEvolution.js';
 import {
-  evaluateGroupLevel2UnlockStatus,
-  residentialGroupForHouseType,
-  unlockGroupForBuilding,
-} from '../contexts/housing/domain/policies/GroupLevel2PlacementUnlockPolicy.js';
-import {
   getCitizenSkillsForHouse,
   houseCitizenHasSkill,
+  residentialGroupForHouseType,
 } from '../contexts/housing/domain/policies/GroupSkillPolicy.js';
 import { computeHouseCitizenComposition } from '../contexts/housing/domain/policies/HouseCitizenCompositionPolicy.js';
 
@@ -125,20 +121,6 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
         buildingType,
         hasRoadAccess,
       });
-    },
-
-    /** @returns {Promise<Readonly<Record<string, boolean>>>} */
-    async getGroupLevel2UnlockStatus() {
-      const houses = await housingBuildingRepositoryImpl.findResidentialHouses();
-      return evaluateGroupLevel2UnlockStatus(houses);
-    },
-
-    /**
-     * @param {string} buildingId
-     * @returns {string | null}
-     */
-    getPlacementUnlockGroupForBuilding(buildingId) {
-      return unlockGroupForBuilding(buildingId);
     },
 
     /**

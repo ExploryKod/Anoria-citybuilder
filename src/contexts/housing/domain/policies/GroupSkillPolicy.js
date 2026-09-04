@@ -8,7 +8,20 @@
  * not a code change. Employment and presentation consume this via housing
  * application queries / composition.
  */
+import { buildingCatalog } from '../../../../shared/building-catalog/buildingCatalog.js';
 import { SOCIAL_CATEGORY } from '../../../../shared/population/socialCategoryCatalog.js';
+
+/**
+ * @param {string} buildingType
+ * @returns {string | null}
+ */
+export function residentialGroupForHouseType(buildingType) {
+  if (!buildingType) return null;
+  const direct = buildingCatalog[buildingType]?.residentialGroup;
+  if (direct) return direct;
+  const matchKey = Object.keys(buildingCatalog).find((key) => buildingType.startsWith(key));
+  return matchKey ? buildingCatalog[matchKey]?.residentialGroup ?? null : null;
+}
 
 /**
  * @param {{ level: number, residentialGroup: string | null }} params

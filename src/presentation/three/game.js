@@ -45,10 +45,6 @@ import { syncSessionHud } from '../../composition/syncSessionHud.js';
 import { resetCumulativeDeaths } from '../../composition/gameplayMortalityState.js';
 import { notifyBudgetCleanupIfNeeded } from '../dom/compta/tresorerie/CleanupNotificationPresenter.js';
 import {
-  disableGatedPlacementTools,
-  refreshSkillPlacementGating,
-} from '../dom/shell/SkillPlacementGating.js';
-import {
   BEHAVIOR_MODE,
   resolveBehaviorMode,
   shouldReturnToSelectOnEscape,
@@ -505,15 +501,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
     },
   });
 
-  disableGatedPlacementTools(getButtonStateManager());
-
   async function refreshPlacementPresentation() {
     const rows = await constructionApi.listAllBuildingRows();
     refreshSupplyPlacementIndex(rows);
-    await refreshSkillPlacementGating({
-      housing,
-      buttonStateManager: getButtonStateManager(),
-    });
   }
 
   bindGameUIDeps({ getScene: () => scene });
@@ -1178,11 +1168,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
         refreshEmploymentPresentation: refreshEmploymentPresentationForCity,
         objectivesTracker,
         notifyBudgetCleanup: notifyBudgetCleanupIfNeeded,
-        refreshPlacementToolGating: ({ housing: housingCtx }) =>
-          refreshSkillPlacementGating({
-            housing: housingCtx,
-            buttonStateManager: getButtonStateManager(),
-          }),
         onGameOver: () => {
           isOver = true;
         },
