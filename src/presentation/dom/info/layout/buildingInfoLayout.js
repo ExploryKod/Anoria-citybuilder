@@ -246,35 +246,6 @@ export function appendIconStatRow(container, items) {
 
 /**
  * @param {HTMLElement} container
- * @param {ReadonlyArray<{ emoji: string, value: number, label: string, ariaLabel: string }>} profiles
- */
-export function appendHouseholdProfiles(container, profiles) {
-  if (!profiles?.length) return null;
-
-  const wrap = document.createElement('div');
-  wrap.className = 'building-info-household';
-
-  const title = document.createElement('h3');
-  title.className = 'building-info-section-label';
-  title.textContent = 'Profils du foyer';
-  wrap.appendChild(title);
-
-  appendIconStatRow(
-    wrap,
-    profiles.map((profile) => ({
-      emoji: profile.emoji,
-      value: profile.count,
-      label: profile.label,
-      ariaLabel: profile.ariaLabel,
-    })),
-  );
-
-  container.appendChild(wrap);
-  return wrap;
-}
-
-/**
- * @param {HTMLElement} container
  * @param {ReadonlyArray<{ emoji: string, count: number, label: string, ariaLabel: string }>} skills
  */
 export function appendHouseholdSkills(container, skills) {
@@ -300,6 +271,32 @@ export function appendHouseholdSkills(container, skills) {
 
   container.appendChild(wrap);
   return wrap;
+}
+
+/**
+ * Generic requirement-card grid — one card shape for any requirement kind
+ * (see formatTierRequirementCards.js). Adding a new kind never touches this
+ * function: it only reads {icon, label, met, valueText, ariaLabel}.
+ * @param {HTMLElement} container
+ * @param {ReadonlyArray<{ kind: string, icon: string, label: string, met: boolean, valueText: string, ariaLabel: string }>} cards
+ */
+export function appendRequirementCards(container, cards) {
+  if (!cards?.length) return null;
+
+  const grid = document.createElement('div');
+  grid.className = 'building-info-requirements';
+
+  for (const card of cards) {
+    const el = document.createElement('div');
+    el.className = `building-info-requirement-card${card.met ? ' building-info-requirement-card--met' : ''}`;
+    el.title = card.ariaLabel;
+    el.setAttribute('aria-label', card.ariaLabel);
+    el.innerHTML = `<span class="building-info-requirement-card__icon" aria-hidden="true">${card.icon}</span><span class="building-info-requirement-card__label">${card.label}</span><span class="building-info-requirement-card__value">${card.valueText}</span>`;
+    grid.appendChild(el);
+  }
+
+  container.appendChild(grid);
+  return grid;
 }
 
 /**

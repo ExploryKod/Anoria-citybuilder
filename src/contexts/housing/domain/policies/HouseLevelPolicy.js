@@ -16,7 +16,7 @@
  */
 
 import { maxPopulationForLevel } from './HouseCapacityPolicy.js';
-import { meetsTierRequirements } from './HouseTierRequirementPolicy.js';
+import { meetsTierRequirements, describeTierRequirements } from './HouseTierRequirementPolicy.js';
 import { SOCIAL_CATEGORY } from '../../../../shared/population/socialCategoryCatalog.js';
 
 export const HOUSE_LEVEL_AUTARKY = 1;
@@ -90,5 +90,40 @@ export function resolveHouseLevel({ level, pop, roadCount, residentialGroup }) {
     previousPop,
     changed,
     reason,
+  };
+}
+
+/**
+ * Requirements for a house's NEXT tier — info-panel read model, no
+ * persistence. Same catalog lookup as `resolveHouseLevel` (tiers[level + 1]),
+ * described rather than just met/not-met so a UI can render progress
+ * ("3/1 ✓", "0/1"). Empty when the house is already at its category's top
+ * tier (no `tiers[level + 1]` declared).
+ *
+ * @param {object} params
+ * @param {number} params.level
+ * @param {number} params.pop
+ * @param {number} params.roadCount
+ * @param {string | null} params.residentialGroup
+ * @returns {{
+ *   hasNextTier: boolean,
+ *   nextLevel: number | null,
+ *   items: ReadonlyArray<{ kind: string, current: number, target: number, met: boolean }>,
+ * }}
+ */
+export function describeNextTierRequirements({ level, pop, roadCount, residentialGroup }) {
+  const currentLevel = normalizeLevel(level);
+  const tiers = residentialGroup ? SOCIAL_CATEGORY[residentialGroup]?.tiers : null;
+  const nextTier = tiers?.[currentLevel + 1];
+
+  if (!nextTier) {
+    return { hasNextTier: false, nextLevel: null, items: [] };
+  }
+
+  const context = { pop: clampPop(pop), roadCount: roadCount ?? 0 };
+  return {
+    hasNextTier: true,
+    nextLevel: currentLevel + 1,
+    items: describeTierRequirements(nextTier.requirements, context),
   };
 }

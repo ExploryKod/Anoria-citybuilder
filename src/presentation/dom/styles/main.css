@@ -1541,11 +1541,53 @@ footer .footer-links a:hover {
     font-size: 16px;
 }
 
-.building-info-household,
 .building-info-skills,
 .building-info-stocks {
     margin-bottom: 20px;
     text-align: center;
+}
+
+.building-info-requirements {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 10px;
+}
+
+.building-info-requirement-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 6px;
+    border-radius: var(--border-radius-small);
+    background: rgba(120, 144, 156, 0.08);
+    text-align: center;
+}
+
+.building-info-requirement-card--met {
+    background: rgba(40, 167, 69, 0.1);
+}
+
+.building-info-requirement-card__icon {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.building-info-requirement-card__label {
+    font-size: 11px;
+    color: #78909c;
+    text-transform: lowercase;
+}
+
+.building-info-requirement-card__value {
+    font-size: 15px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: #1b1b1b;
+}
+
+.building-info-requirement-card--met .building-info-requirement-card__value {
+    color: var(--success);
 }
 
 .building-info-stock-groups {

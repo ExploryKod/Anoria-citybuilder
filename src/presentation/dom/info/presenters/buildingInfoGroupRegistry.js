@@ -28,7 +28,8 @@ import {
   formatGenericLayoutOptions,
 } from './formats/genericInfoFormat.js';
 import {
-  formatHouseFoyerModel,
+  formatHouseSkillsModel,
+  formatHouseNeedsModel,
   formatHouseDietModel,
   formatHouseLayoutHeader,
   formatHouseLayoutOptions,
@@ -51,7 +52,7 @@ import {
   formatNatureLayoutHeader,
   formatNatureLayoutOptions,
 } from './formats/natureInfoFormat.js';
-import { renderHouseFoyerView } from '../views/houseInfoView.js';
+import { renderHouseSkillsView, renderHouseNeedsView } from '../views/houseInfoView.js';
 import { renderDietTab } from '../views/dietInfoView.js';
 import { renderHubStorageFoyerView } from '../views/hub/hubStorageFoyerView.js';
 import { renderKvPanelView } from '../views/kvPanelView.js';
@@ -66,14 +67,19 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
     tabs: [
       {
         id: BUILDING_INFO_TAB_IDS.foyer,
-        label: '🏠 Foyer',
-        format: formatHouseFoyerModel,
-        render: (container, model) => renderHouseFoyerView(container, model),
+        label: '🧠 Savoirs',
+        format: formatHouseSkillsModel,
+        render: (container, model) => renderHouseSkillsView(container, model),
       },
       {
         id: BUILDING_INFO_TAB_IDS.diet,
         format: formatHouseDietModel,
         render: (container, model) => renderDietTab(container, model),
+      },
+      {
+        id: BUILDING_INFO_TAB_IDS.needs,
+        format: formatHouseNeedsModel,
+        render: (container, model) => renderHouseNeedsView(container, model),
       },
       ...COMMON_BUILDING_INFO_TAB_SPECS,
     ],

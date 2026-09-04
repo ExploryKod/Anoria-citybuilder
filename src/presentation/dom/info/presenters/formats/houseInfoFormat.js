@@ -13,8 +13,12 @@ import {
   getResidentialGroupTitle,
   residentialGroupForType,
 } from '../../../shell/ResidentialGroupLabels.js';
-import { computeHouseCitizenComposition } from '../../../../../composition/housingCatalog.js';
+import {
+  computeHouseCitizenComposition,
+  describeNextTierRequirements,
+} from '../../../../../composition/housingCatalog.js';
 import { formatHousePopulationPresentation } from '../../population/formatHousePopulationPresentation.js';
+import { formatTierRequirementCards } from '../../population/formatTierRequirementCards.js';
 
 /**
  * "Fed or not" — total quantity only. Diet variety (which food types) is a
@@ -72,12 +76,12 @@ export function formatHouseLayoutOptions() {
 }
 
 /**
+ * Savoirs tab — skills grid only. No group/pop chips here: the panel header
+ * already shows the residential group and "x/max hab.", so repeating them
+ * in the tab body would be pure duplication.
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  */
-export function formatHouseFoyerModel(vm) {
-  const hasRoadAccess = vm.roadAccess.hasAccess;
-  const variant = vm.houseLevel === 2 && !hasRoadAccess ? 'warning' : 'neutral';
-
+export function formatHouseSkillsModel(vm) {
   const residentialGroup = residentialGroupForType(vm.buildingType);
   const composition = computeHouseCitizenComposition({
     level: vm.houseLevel,
@@ -85,18 +89,41 @@ export function formatHouseFoyerModel(vm) {
     buildingType: vm.buildingType,
     residentialGroup,
   });
-  const { profiles, skills } = formatHousePopulationPresentation(composition, residentialGroup);
+  const { skills } = formatHousePopulationPresentation(composition, residentialGroup);
 
-  const model = {
-    statusMessage: resolveHouseDwellingStatusMessage(vm.houseLevel, vm.buildingPop, hasRoadAccess),
-    statusVariant: variant,
-    profiles,
+  return {
     skills,
     anchorX: vm.anchorX,
     anchorY: vm.anchorY,
   };
+}
 
-  return model;
+/**
+ * Besoins tab — requirement cards for the house's next tier, derived
+ * entirely from the declarative catalog (see
+ * HouseLevelPolicy.describeNextTierRequirements + REQUIREMENT_KIND_PRESENTATION).
+ * A new requirement kind on a tier shows up here automatically once it has
+ * a presentation entry — nothing here names a specific kind.
+ * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
+ */
+export function formatHouseNeedsModel(vm) {
+  const hasRoadAccess = vm.roadAccess.hasAccess;
+  const variant = vm.houseLevel === 2 && !hasRoadAccess ? 'warning' : 'neutral';
+  const residentialGroup = residentialGroupForType(vm.buildingType);
+
+  const { hasNextTier, items } = describeNextTierRequirements({
+    level: vm.houseLevel,
+    pop: vm.buildingPop,
+    roadCount: vm.roadAccess.roadCount,
+    residentialGroup,
+  });
+
+  return {
+    statusMessage: resolveHouseDwellingStatusMessage(vm.houseLevel, vm.buildingPop, hasRoadAccess),
+    statusVariant: variant,
+    hasNextTier,
+    cards: formatTierRequirementCards(items),
+  };
 }
 
 /**

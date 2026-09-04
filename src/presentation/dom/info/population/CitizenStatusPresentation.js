@@ -70,3 +70,22 @@ export const SKILL_DISPLAY_ORDER = Object.freeze([
   'elder-wisdom',
   'learning',
 ]);
+
+/**
+ * Presentation for a tier requirement `kind` (see
+ * contexts/housing/domain/policies/HouseTierRequirementPolicy.js) — icon,
+ * label, and how to render its current/target numbers. A `kind` with no
+ * entry here falls back to a neutral placeholder in the renderer rather
+ * than crashing — domain and presentation catalogs can drift out of sync
+ * when a new requirement kind ships without its icon yet.
+ *
+ * `format`:
+ *   'boolean'   — current/target are 0|1, render met/unmet only (no "3/1").
+ *   'threshold' — render "current/target" (e.g. "0/1 habitant").
+ *
+ * @type {Readonly<Record<string, { icon: string, label: string, format: 'boolean' | 'threshold', unit?: string }>>}
+ */
+export const REQUIREMENT_KIND_PRESENTATION = Object.freeze({
+  roadAccess: Object.freeze({ icon: '🛣️', label: 'Accès route', format: 'boolean' }),
+  population: Object.freeze({ icon: '👥', label: 'Habitants', format: 'threshold', unit: 'hab.' }),
+});

@@ -14,11 +14,42 @@
  * always met".
  */
 
-/** @type {Readonly<Record<string, (requirement: object, context: object) => boolean>>} */
-const REQUIREMENT_EVALUATORS = Object.freeze({
-  roadAccess: (requirement, context) => (context.roadCount ?? 0) > 0,
-  population: (requirement, context) => (context.pop ?? 0) >= (requirement.min ?? 0),
+/**
+ * One table, keyed by requirement `kind`: each entry describes the
+ * requirement against a context — met/not, plus the current vs. target
+ * numbers a UI needs to render "3/1 ✓" style progress. `meetsTierRequirements`
+ * is just `every(item => item.met)` over this — one source of truth, not two
+ * parallel tables that can drift.
+ *
+ * @type {Readonly<Record<string, (requirement: object, context: object) => { current: number, target: number, met: boolean }>>}
+ */
+const REQUIREMENT_DESCRIPTORS = Object.freeze({
+  roadAccess: (requirement, context) => {
+    const current = context.roadCount ?? 0;
+    return { current, target: 1, met: current > 0 };
+  },
+  population: (requirement, context) => {
+    const current = context.pop ?? 0;
+    const target = requirement.min ?? 0;
+    return { current, target, met: current >= target };
+  },
 });
+
+/**
+ * @param {ReadonlyArray<{ kind: string }>} requirements
+ * @param {{ pop?: number, roadCount?: number }} context
+ * @returns {ReadonlyArray<{ kind: string, current: number, target: number, met: boolean }>}
+ */
+export function describeTierRequirements(requirements, context) {
+  if (!requirements) return [];
+  return requirements.map((requirement) => {
+    const describe = REQUIREMENT_DESCRIPTORS[requirement.kind];
+    const described = describe
+      ? describe(requirement, context)
+      : { current: 0, target: 0, met: false };
+    return { kind: requirement.kind, ...described };
+  });
+}
 
 /**
  * @param {ReadonlyArray<{ kind: string }>} requirements
@@ -27,8 +58,5 @@ const REQUIREMENT_EVALUATORS = Object.freeze({
  */
 export function meetsTierRequirements(requirements, context) {
   if (!requirements || requirements.length === 0) return true;
-  return requirements.every((requirement) => {
-    const evaluate = REQUIREMENT_EVALUATORS[requirement.kind];
-    return evaluate ? evaluate(requirement, context) : false;
-  });
+  return describeTierRequirements(requirements, context).every((item) => item.met);
 }
