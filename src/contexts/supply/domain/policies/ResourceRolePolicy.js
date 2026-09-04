@@ -19,12 +19,15 @@ export function getResourceRoles(buildingType) {
 /**
  * @param {string} buildingType
  * @param {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleKind} role
- * @param {string} [category] When given, also require this role to cover the category.
+ * @param {string | string[]} [category] When given, also require this role
+ *   to cover the category — an array matches if any category overlaps
+ *   (e.g. selecting "any food distributor" by passing all crop names).
  * @returns {boolean}
  */
 export function hasResourceRole(buildingType, role, category) {
+  const wanted = category == null ? null : Array.isArray(category) ? category : [category];
   return getResourceRoles(buildingType).some(
-    (entry) => entry.role === role && (!category || entry.categories.includes(category))
+    (entry) => entry.role === role && (!wanted || wanted.some((c) => entry.categories.includes(c)))
   );
 }
 
@@ -45,4 +48,22 @@ export function getCategoriesForRole(buildingType, role) {
  */
 export function getRangeForRole(buildingType, role) {
   return getResourceRoles(buildingType).find((entry) => entry.role === role)?.range;
+}
+
+/**
+ * @param {string} buildingType
+ * @param {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleKind} role
+ * @returns {number | undefined} Max linked distributors for that role (only
+ *   meaningful for 'hub'), or undefined when the catalog doesn't declare one.
+ */
+export function getLinkCapacityForRole(buildingType, role) {
+  return getResourceRoles(buildingType).find((entry) => entry.role === role)?.linkCapacity;
+}
+
+/**
+ * @param {string} buildingType
+ * @returns {import('../../../../shared/building-catalog/buildingCatalog.js').PlacementRequirement[]}
+ */
+export function getPlacementRequirements(buildingType) {
+  return getBuildingDefinition(buildingType)?.placementRequires ?? [];
 }

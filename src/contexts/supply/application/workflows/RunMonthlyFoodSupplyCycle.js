@@ -1,10 +1,16 @@
+import { FOOD_CIRCUIT } from '../../domain/catalogs/FoodCircuitCatalog.js';
+import {
+  MARKET_WINDMILL_TRANSFER_CIRCUIT,
+  MARKET_DISTRIBUTE_CIRCUIT,
+} from '../../domain/catalogs/FoodCircuits.js';
+
 /**
  * Orchestration: full monthly food supply chain tick.
  */
 export class RunMonthlyFoodSupplyCycle {
   /**
    * @param {import('../commands/harvest/HarvestAllFarmCrops.js').HarvestAllFarmCrops} harvestAllFarmCrops
-   * @param {import('../commands/procurement/RunCityMarketFoodCycle.js').RunCityMarketFoodCycle} runCityMarketFoodCycle
+   * @param {import('../commands/procurement/RunCityResourceCycle.js').RunCityResourceCycle} runCityResourceCycle
    * @param {import('../commands/distribution/UpdateHousesMarketReach.js').UpdateHousesMarketReach} updateHousesMarketReach
    * @param {import('../commands/surplus/RunWindmillSurplusCycle.js').RunWindmillSurplusCycle} runWindmillSurplusCycle
    * @param {import('../commands/consumption/ConsumeAllHouseFood.js').ConsumeAllHouseFood} consumeAllHouseFood
@@ -13,7 +19,7 @@ export class RunMonthlyFoodSupplyCycle {
    */
   constructor(
     harvestAllFarmCrops,
-    runCityMarketFoodCycle,
+    runCityResourceCycle,
     updateHousesMarketReach,
     runWindmillSurplusCycle,
     consumeAllHouseFood,
@@ -21,7 +27,7 @@ export class RunMonthlyFoodSupplyCycle {
     produceAllHouseSubsistenceFood
   ) {
     this.harvestAllFarmCrops = harvestAllFarmCrops;
-    this.runCityMarketFoodCycle = runCityMarketFoodCycle;
+    this.runCityResourceCycle = runCityResourceCycle;
     this.updateHousesMarketReach = updateHousesMarketReach;
     this.runWindmillSurplusCycle = runWindmillSurplusCycle;
     this.consumeAllHouseFood = consumeAllHouseFood;
@@ -53,7 +59,10 @@ export class RunMonthlyFoodSupplyCycle {
       year: timeInfo.year ?? 0,
     });
 
-    await this.runCityMarketFoodCycle.execute({
+    await this.runCityResourceCycle.execute({
+      categories: FOOD_CIRCUIT.crops,
+      distributeCircuit: MARKET_DISTRIBUTE_CIRCUIT,
+      hubTransferCircuit: MARKET_WINDMILL_TRANSFER_CIRCUIT,
       season,
       month,
       timeInfo,

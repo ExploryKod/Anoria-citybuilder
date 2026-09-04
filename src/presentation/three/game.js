@@ -85,7 +85,6 @@ import {
 import { showErrorToast } from '../dom/shell/ToastNotifier.js';
 import { presentBuildingInfoSelection } from '../dom/info/presenters/useBuildingInfoSelection.js';
 import { buildingPlacementCatalog } from '../../shared/building-catalog/index.js';
-import { isWindmillBuildingType, isMarketBuildingType } from '../../shared/building-catalog/BuildingSupplyTypes.js';
 import {
   createPlacementGhostSession,
   isPlaceableBuildingTool,
@@ -862,23 +861,12 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
     if (behaviorMode === BEHAVIOR_MODE.ERASE) {
       const removedInstanceId = selectedObject.userData?.instanceId ?? tile.instanceId ?? null;
-      const isWindmill = isWindmillBuildingType(tile.buildingId);
-      const isMarket = isMarketBuildingType(tile.buildingId);
+      const isHub = supply.hasResourceRole(tile.buildingId, 'hub');
+      const hasPlacementRequirements = supply.getPlacementRequirements(tile.buildingId).length > 0;
 
       let cascadeOutcome = null;
-      if (isWindmill && removedInstanceId) {
+      if ((isHub || hasPlacementRequirements) && removedInstanceId) {
         cascadeOutcome = await syncSupplyLinksAfterBuildingChange({
-          supply,
-          construction: constructionApi,
-          city,
-          event: 'bulldozed',
-          buildingType: tile.buildingId,
-          instanceId: removedInstanceId,
-          x,
-          y,
-        });
-      } else if (isMarket && removedInstanceId) {
-        await syncSupplyLinksAfterBuildingChange({
           supply,
           construction: constructionApi,
           city,
@@ -901,7 +889,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
         playBulldozeSound();
       }
 
-      if (isWindmill && cascadeOutcome?.destroyed?.length) {
+      if (cascadeOutcome?.destroyed?.length) {
         showWindmillCascadeNotification(cascadeOutcome.destroyed);
       }
 

@@ -234,6 +234,13 @@ export class DexieSupplyBuildingRepository {
       .map((row) => this.#toSnapshot(row));
   }
 
+  async findByResourceRole(role, categories) {
+    const rows = await this.#activeRows();
+    return rows
+      .filter((row) => hasResourceRole(row.type, role, categories))
+      .map((row) => this.#toSnapshot(row));
+  }
+
   async findHouses() {
     const rows = await this.#activeRows();
     return rows

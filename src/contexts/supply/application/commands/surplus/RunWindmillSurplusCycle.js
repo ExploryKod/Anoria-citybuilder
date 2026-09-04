@@ -7,7 +7,9 @@ export class RunWindmillSurplusCycle {
    * @param {import('./MarkWindmillCollectingSeason.js').MarkWindmillCollectingSeason} markWindmillCollectingSeason
    * @param {import('./ResetFarmsSoldToWindmill.js').ResetFarmsSoldToWindmill} resetFarmsSoldToWindmill
    * @param {import('./ProcessWindmillCollection.js').ProcessWindmillCollection} processWindmillCollection
-   * @param {import('../links/RebalanceWindmillMarketAllocations.js').RebalanceWindmillMarketAllocations} [rebalanceWindmillMarketAllocations]
+   * @param {{ execute: (params: { windmillId: string }) => Promise<unknown> }} [rebalanceWindmillMarketAllocations]
+   *   Any collaborator with this shape — composition wires the generic
+   *   RebalanceHubAllocations behind an adapter that supplies food's categories.
    */
   constructor(
     supplyBuildingRepository,

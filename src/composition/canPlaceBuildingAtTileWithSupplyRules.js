@@ -1,10 +1,12 @@
 import { canPlaceBuildingAtTile } from '../contexts/construction/domain/policies/FootprintAvailabilityPolicy.js';
-import { isMarketBuildingType } from '../shared/building-catalog/BuildingSupplyTypes.js';
-import { canPlaceMarketAt } from '../contexts/supply/domain/policies/WindmillMarketLinkPolicy.js';
-import { getSupplyPlacementWindmills } from '../contexts/supply/infrastructure/presentation/SupplyPlacementIndex.js';
+import { canPlaceBuildingAt } from '../contexts/supply/domain/policies/PlacementRequirementPolicy.js';
+import { getSupplyPlacementHubs } from '../contexts/supply/infrastructure/presentation/SupplyPlacementIndex.js';
 
 /**
- * Footprint + supply-link placement gate (sync, for ghost preview).
+ * Footprint + supply placement-requirement gate (sync, for ghost preview).
+ * Generic — driven by the building's own `placementRequires` catalog fact
+ * (see buildingCatalog.js / PlacementRequirementPolicy.js), not a hardcoded
+ * "is this a market" check. A type with no requirement just passes through.
  *
  * @param {object} params
  * @param {{ size: number, tiles: object[][] }} params.city
@@ -20,27 +22,24 @@ export function canPlaceBuildingAtTileWithSupplyRules(params) {
     return base;
   }
 
-  if (!isMarketBuildingType(params.buildingType)) {
-    return base;
-  }
-
-  const marketCheck = canPlaceMarketAt({
+  const requirementCheck = canPlaceBuildingAt({
     x: params.x,
     y: params.y,
-    windmills: getSupplyPlacementWindmills(),
+    buildingType: params.buildingType,
+    candidates: getSupplyPlacementHubs(),
   });
 
-  if (!marketCheck.ok) {
+  if (!requirementCheck.ok) {
     return {
       ...base,
       ok: false,
-      reason: marketCheck.reason,
+      reason: requirementCheck.reason,
     };
   }
 
   return {
     ...base,
     ok: true,
-    ownerWindmillId: marketCheck.ownerWindmillId,
+    ownerWindmillId: requirementCheck.ownerId,
   };
 }

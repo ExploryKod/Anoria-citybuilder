@@ -4,10 +4,10 @@ import { DistributeResourceToConsumers } from '../contexts/supply/application/co
 import { CollectResourceToHub } from '../contexts/supply/application/commands/surplus/CollectResourceToHub.js';
 import { UpdateHousesMarketReach } from '../contexts/supply/application/commands/distribution/UpdateHousesMarketReach.js';
 import { UpdateMarketWindmillLink } from '../contexts/supply/application/commands/procurement/UpdateMarketWindmillLink.js';
-import { RebalanceWindmillMarketAllocations } from '../contexts/supply/application/commands/links/RebalanceWindmillMarketAllocations.js';
-import { AssignMarketToWindmill } from '../contexts/supply/application/commands/links/AssignMarketToWindmill.js';
-import { DetachMarketFromWindmill } from '../contexts/supply/application/commands/links/DetachMarketFromWindmill.js';
-import { CascadeDestroyWindmillMarkets } from '../contexts/supply/application/commands/links/CascadeDestroyWindmillMarkets.js';
+import { RebalanceHubAllocations } from '../contexts/supply/application/commands/links/RebalanceHubAllocations.js';
+import { AssignDistributorToHub } from '../contexts/supply/application/commands/links/AssignDistributorToHub.js';
+import { DetachDistributorFromHub } from '../contexts/supply/application/commands/links/DetachDistributorFromHub.js';
+import { CascadeDestroyHubDistributors } from '../contexts/supply/application/commands/links/CascadeDestroyHubDistributors.js';
 import { UpdateMarketFarmProximity } from '../contexts/supply/application/commands/procurement/UpdateMarketFarmProximity.js';
 import { MarkWindmillCollectingSeason } from '../contexts/supply/application/commands/surplus/MarkWindmillCollectingSeason.js';
 import { ResetFarmsSoldToWindmill } from '../contexts/supply/application/commands/surplus/ResetFarmsSoldToWindmill.js';
@@ -21,7 +21,7 @@ import { ProduceHouseSubsistenceFood } from '../contexts/supply/application/comm
 import { ProduceAllHouseSubsistenceFood } from '../contexts/supply/application/commands/subsistence/ProduceAllHouseSubsistenceFood.js';
 import { ProcessWindmillCollection } from '../contexts/supply/application/commands/surplus/ProcessWindmillCollection.js';
 import { RunWindmillSurplusCycle } from '../contexts/supply/application/commands/surplus/RunWindmillSurplusCycle.js';
-import { RunCityMarketFoodCycle } from '../contexts/supply/application/commands/procurement/RunCityMarketFoodCycle.js';
+import { RunCityResourceCycle } from '../contexts/supply/application/commands/procurement/RunCityResourceCycle.js';
 import { RunMonthlyFoodSupplyCycle } from '../contexts/supply/application/workflows/RunMonthlyFoodSupplyCycle.js';
 import {
   FARM_HARVEST_CIRCUIT,
@@ -30,6 +30,7 @@ import {
   MARKET_DISTRIBUTE_CIRCUIT,
   HOUSE_FOOD_CONSUMPTION_CIRCUIT,
 } from '../contexts/supply/domain/catalogs/FoodCircuits.js';
+import { FOOD_CIRCUIT } from '../contexts/supply/domain/catalogs/FoodCircuitCatalog.js';
 import { DexieFoodTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieFoodTraceabilityRepository.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { SupplyFoodTraceability } from '../contexts/supply/infrastructure/presentation/SupplyFoodTraceability.js';
@@ -67,20 +68,20 @@ export function createSupplyContext({
   const transferHubToHub = new TransferHubToHub(
     supplyBuildingRepositoryImpl
   );
-  const rebalanceWindmillMarketAllocations = new RebalanceWindmillMarketAllocations(
+  const rebalanceHubAllocations = new RebalanceHubAllocations(
     supplyBuildingRepositoryImpl
   );
-  const assignMarketToWindmill = new AssignMarketToWindmill(
+  const assignDistributorToHub = new AssignDistributorToHub(
     supplyBuildingRepositoryImpl,
-    rebalanceWindmillMarketAllocations
+    rebalanceHubAllocations,
+    FOOD_CIRCUIT.crops
   );
-  const detachMarketFromWindmill = new DetachMarketFromWindmill(
+  const detachDistributorFromHub = new DetachDistributorFromHub(
     supplyBuildingRepositoryImpl,
-    rebalanceWindmillMarketAllocations
+    rebalanceHubAllocations
   );
-  const cascadeDestroyWindmillMarkets = new CascadeDestroyWindmillMarkets(
-    supplyBuildingRepositoryImpl,
-    detachMarketFromWindmill
+  const cascadeDestroyHubDistributors = new CascadeDestroyHubDistributors(
+    supplyBuildingRepositoryImpl
   );
   const distributeResourceToConsumers = new DistributeResourceToConsumers(
     supplyBuildingRepositoryImpl
@@ -134,23 +135,40 @@ export function createSupplyContext({
     markWindmillCollectingSeason,
     resetFarmsSoldToWindmill,
     processWindmillCollection,
-    rebalanceWindmillMarketAllocations
+    {
+      execute: ({ windmillId }) =>
+        rebalanceHubAllocations.execute({ hubId: windmillId, categories: FOOD_CIRCUIT.crops }),
+    }
   );
   const traceability = new SupplyFoodTraceability({
     foodTraceabilityRepository: foodTraceabilityRepositoryImpl,
     supplyBuildingRepository: supplyBuildingRepositoryImpl,
   });
-  const runCityMarketFoodCycle = new RunCityMarketFoodCycle(
+  const runCityResourceCycle = new RunCityResourceCycle(
     supplyBuildingRepositoryImpl,
-    transferHubToHub,
     distributeResourceToConsumers,
-    updateMarketWindmillLink,
-    traceability,
-    getSharedEventBus()
+    getSharedEventBus(),
+    {
+      transferHubToHub,
+      onHubLinkResolved: (marketId, hasWindmillLink) =>
+        updateMarketWindmillLink.execute({ marketId, hasWindmillLink }),
+      onHubTransfer: (marketId, transfers, timeInfo) =>
+        traceability.recordWindmillToMarketTransfers(
+          timeInfo,
+          marketId,
+          transfers.map((t) => ({ windmillId: t.sourceId, crop: t.category, amount: t.amount }))
+        ),
+      onDistribute: (marketId, transfers, timeInfo) =>
+        traceability.recordMarketToHouseTransfers(
+          timeInfo,
+          marketId,
+          transfers.map((t) => ({ houseId: t.consumerId, crop: t.category, amount: t.amount }))
+        ),
+    }
   );
   const runMonthlyFoodSupplyCycle = new RunMonthlyFoodSupplyCycle(
     harvestAllFarmCrops,
-    runCityMarketFoodCycle,
+    runCityResourceCycle,
     updateHousesMarketReach,
     runWindmillSurplusCycle,
     consumeAllHouseFood,
@@ -174,10 +192,10 @@ export function createSupplyContext({
   return {
     supplyBuildingRepository: supplyBuildingRepositoryImpl,
     transferHubToHub,
-    assignMarketToWindmill,
-    detachMarketFromWindmill,
-    cascadeDestroyWindmillMarkets,
-    rebalanceWindmillMarketAllocations,
+    assignDistributorToHub,
+    detachDistributorFromHub,
+    cascadeDestroyHubDistributors,
+    rebalanceHubAllocations,
     distributeResourceToConsumers,
     collectResourceToHub,
     updateHousesMarketReach,
@@ -194,7 +212,7 @@ export function createSupplyContext({
     produceAllHouseSubsistenceFood,
     processWindmillCollection,
     runWindmillSurplusCycle,
-    runCityMarketFoodCycle,
+    runCityResourceCycle,
     runMonthlyFoodSupplyCycle,
     getBuildingSupplyViewQuery,
     listSupplyMapBuildingsQuery,
@@ -209,25 +227,25 @@ export function createSupplyContext({
       });
     },
 
-    async assignMarketToWindmill(params) {
-      return assignMarketToWindmill.execute(params);
+    async assignDistributorToHub({ distributorId, distributorType, x, y, ownerHubId }) {
+      return assignDistributorToHub.execute({ distributorId, distributorType, x, y, ownerHubId });
     },
 
-    async detachMarketFromWindmill(params) {
-      return detachMarketFromWindmill.execute(params);
+    async detachDistributorFromHub({ distributorId }) {
+      return detachDistributorFromHub.execute({ distributorId, categories: FOOD_CIRCUIT.crops });
     },
 
-    async cascadeDestroyWindmillMarkets(params) {
-      return cascadeDestroyWindmillMarkets.execute(params);
+    async cascadeDestroyHubDistributors({ hubId, city, bulldozeBuildingAtTile }) {
+      return cascadeDestroyHubDistributors.execute({ hubId, city, bulldozeBuildingAtTile });
     },
 
     async rebalanceWindmillAllocations(windmillId) {
-      return rebalanceWindmillMarketAllocations.execute({ windmillId });
+      return rebalanceHubAllocations.execute({ hubId: windmillId, categories: FOOD_CIRCUIT.crops });
     },
 
-    async initializeWindmillLinks({ windmillId }) {
-      await supplyBuildingRepositoryImpl.saveLinkedMarkets(windmillId, []);
-      return { initialized: true, windmillId };
+    async initializeHubLinks({ hubId }) {
+      await supplyBuildingRepositoryImpl.saveLinkedMarkets(hubId, []);
+      return { initialized: true, hubId };
     },
 
     async hasOperationalWindmill() {

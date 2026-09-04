@@ -112,7 +112,7 @@ export const BUILDING_ECONOMY = {
     // A future resource can cap this with a range; food doesn't today.
     resourceRoles: [
       { role: 'collector', categories: ['wheat', 'carrot', 'cabbage'] },
-      { role: 'hub', categories: ['wheat', 'carrot', 'cabbage'] },
+      { role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], linkCapacity: 2 },
     ],
   },
   'Crate-001': { displayName: 'Caisse', construction: { price: 2, category: 'industry' } },
@@ -125,18 +125,21 @@ export const BUILDING_ECONOMY = {
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, eliteNeed: 1 },
     resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5 }],
+    placementRequires: [{ role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], range: 5, requiresCapacity: true }],
   },
   'Market-Stall-Blue': {
     displayName: 'Étal bleu',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, eliteNeed: 1 },
     resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5 }],
+    placementRequires: [{ role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], range: 5, requiresCapacity: true }],
   },
   'Market-Stall-Red': {
     displayName: 'Étal rouge',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, eliteNeed: 1 },
     resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5 }],
+    placementRequires: [{ role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], range: 5, requiresCapacity: true }],
   },
 
   // Public (Chapel only — Church-002 mesh discarded as broken duplicate)

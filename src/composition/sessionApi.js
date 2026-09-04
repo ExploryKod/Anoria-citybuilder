@@ -34,6 +34,10 @@ import {
 import {
   canPlaceBuildingAtTileWithSupplyRules,
 } from './canPlaceBuildingAtTileWithSupplyRules.js';
+import {
+  hasResourceRole,
+  getPlacementRequirements,
+} from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { isRoadBuildingType } from '../contexts/construction/domain/policies/FootprintAvailabilityPolicy.js';
 import { listRoadPaintCells } from '../contexts/construction/domain/policies/RoadPaintPolicy.js';
 import {
@@ -168,6 +172,8 @@ export function createSupplySessionApi(supply) {
       supply.updateHubStorageOrderMode(hubKind, buildingId, productId),
     adjustHubStorageOrderShare: (hubKind, buildingId, productId, delta) =>
       supply.adjustHubStorageOrderShare(hubKind, buildingId, productId, delta),
+    hasResourceRole: (buildingType, role, category) => hasResourceRole(buildingType, role, category),
+    getPlacementRequirements: (buildingType) => getPlacementRequirements(buildingType),
   });
 }
 
