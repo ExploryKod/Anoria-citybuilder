@@ -14,52 +14,17 @@ function houseVm(overrides = {}) {
 }
 
 describe('formatHouseDietModel', () => {
-  test('exposes zero shortages before any consumption month', () => {
-    const model = formatHouseDietModel(houseVm({ houseLevel: 2 }));
+  test('exposes zero shortage before any consumption month', () => {
+    const model = formatHouseDietModel(houseVm());
 
-    expect(model.shortages).toEqual({
-      month: null,
-      totalUnfed: 0,
-      unfed: {
-        fruit: 0,
-        game: 0,
-        wheat: 0,
-        carrot: 0,
-        cabbage: 0,
-      },
-    });
+    expect(model.shortages).toEqual({ month: null, totalUnfed: 0 });
   });
 
-  test('level 1 house only tracks subsistence shortages', () => {
-    const model = formatHouseDietModel(houseVm({ houseLevel: 1 }));
-
-    expect(model.shortages.unfed).toEqual({
-      fruit: 0,
-      game: 0,
-    });
-    expect(model.shortages.totalUnfed).toBe(0);
-  });
-
-  test('merges last consumption shortages while keeping zero-valued types', () => {
+  test('reports total unfed from last consumption, regardless of house level', () => {
     const model = formatHouseDietModel(houseVm({
-      lastConsumption: {
-        month: 4,
-        consumed: { fruit: 1, game: 0, wheat: 0, carrot: 0, cabbage: 0 },
-        unfed: { fruit: 0, game: 0.5, wheat: 0, carrot: 0, cabbage: 0 },
-        totalUnfed: 1,
-      },
+      lastConsumption: { month: 4, totalUnfed: 1 },
     }));
 
-    expect(model.shortages).toEqual({
-      month: 4,
-      totalUnfed: 1,
-      unfed: {
-        fruit: 0,
-        game: 0.5,
-        wheat: 0,
-        carrot: 0,
-        cabbage: 0,
-      },
-    });
+    expect(model.shortages).toEqual({ month: 4, totalUnfed: 1 });
   });
 });

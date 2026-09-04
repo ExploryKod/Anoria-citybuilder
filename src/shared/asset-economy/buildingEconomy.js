@@ -54,21 +54,21 @@ export const BUILDING_ECONOMY = {
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'merchants',
-    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food' }],
+    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food', amount: 1, schedule: { unit: 'always' } }],
   },
   'House-Red': {
     displayName: 'Maison rouge',
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'artisans',
-    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food' }],
+    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food', amount: 1, schedule: { unit: 'always' } }],
   },
   'House-Purple': {
     displayName: 'Maison violette',
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'scholars',
-    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food' }],
+    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food', amount: 1, schedule: { unit: 'always' } }],
   },
 
   // Palaces
@@ -76,7 +76,7 @@ export const BUILDING_ECONOMY = {
     displayName: 'Palais',
     construction: { price: 20, category: 'palaces' },
     accounting: { maintenance: 6 },
-    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food' }],
+    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food', amount: 1, schedule: { unit: 'always' } }],
   },
 
   // Farms

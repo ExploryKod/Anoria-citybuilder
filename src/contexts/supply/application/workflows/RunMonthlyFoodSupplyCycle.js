@@ -1,4 +1,4 @@
-import { FOOD_CIRCUIT } from '../../domain/catalogs/FoodCircuitCatalog.js';
+import { CROPS } from '../../domain/value-objects/CropType.js';
 import { MARKET_WINDMILL_TRANSFER_BOOKKEEPING } from '../../domain/catalogs/FoodCircuits.js';
 
 /**
@@ -59,7 +59,7 @@ export class RunMonthlyFoodSupplyCycle {
     });
 
     await this.runCityResourceCycle.execute({
-      categories: FOOD_CIRCUIT.crops,
+      categories: CROPS,
       hubTransferBookkeeping: MARKET_WINDMILL_TRANSFER_BOOKKEEPING,
       season,
       month,

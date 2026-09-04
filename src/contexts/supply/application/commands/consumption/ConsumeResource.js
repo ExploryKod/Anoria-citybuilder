@@ -1,8 +1,20 @@
+import { takeAcrossCategories } from '../../../domain/value-objects/ResourceStock.js';
+import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
+import {
+  getAmountForRole,
+  getCategoriesForRole,
+  getScheduleForRole,
+  getTotalKeyForRole,
+} from '../../../domain/policies/ResourceRolePolicy.js';
+
 /**
  * Command: a building consumes resource units for its population (once per
- * period). Resource-agnostic — the demand/consumption math and repository
- * bookkeeping come entirely from the `circuit` descriptor (see
- * domain/catalogs/FoodCircuits.js for the house food consumer).
+ * period), gated by its 'consumer' role's declarative `schedule` and a
+ * once-per-period lock. `amount` on that role is read as a per-capita rate
+ * (demand = pop × amount) — the only way 'consumer' interprets `amount`
+ * differently from producer/collector/distributor, which treat it as a flat
+ * quantity. Drains the total (whichever categories have stock), not a
+ * specific one — this only answers "was demand met," not "which food."
  */
 export class ConsumeResource {
   /**
@@ -16,25 +28,30 @@ export class ConsumeResource {
    * @param {object} params
    * @param {string} params.buildingId
    * @param {object} params.period
-   * @param {object} params.circuit
+   * @param {object} params.bookkeeping - { periodKey(period), lastConsumedField, saveConsumptionMetadata(repo, buildingId, periodKey, period, record) }
    * @returns {Promise<{
    *   consumed: boolean,
    *   reason?: string,
    *   buildingId?: string,
    *   pop?: number,
    *   demand?: number,
-   *   unfed?: number,
-   *   consumedByCategory?: Record<string, number>,
+   *   taken?: number,
+   *   totalUnfed?: number,
    * }>}
    */
-  async execute({ buildingId, period, circuit }) {
+  async execute({ buildingId, period, bookkeeping }) {
     const building = await this.supplyBuildingRepository.findById(buildingId);
     if (!building) {
       return { consumed: false, reason: 'building_not_found' };
     }
 
-    const periodKey = circuit.periodKey(period);
-    if (building[circuit.lastConsumedField] === periodKey) {
+    const schedule = getScheduleForRole(building.type, 'consumer');
+    if (!matchesSchedule(schedule, period)) {
+      return { consumed: false, reason: 'not_consumption_period' };
+    }
+
+    const periodKey = bookkeeping.periodKey(period);
+    if (building[bookkeeping.lastConsumedField] === periodKey) {
       return { consumed: false, reason: 'already_consumed_this_period' };
     }
 
@@ -43,28 +60,21 @@ export class ConsumeResource {
       return { consumed: false, reason: 'no_population' };
     }
 
-    const level = building.level ?? 1;
-    const { nextStock, consumed, demanded, unfed, totalUnfed } = circuit.applyConsumption({
-      stock: building.stocks,
-      population: pop,
-      level,
-    });
+    const perCapita = getAmountForRole(building.type, 'consumer') ?? 0;
+    const categories = getCategoriesForRole(building.type, 'consumer');
+    const totalKey = getTotalKeyForRole(building.type, 'consumer');
+    const demand = pop * perCapita;
+
+    const { nextStock, taken } = takeAcrossCategories(building.stocks, categories, totalKey, demand);
+    const totalUnfed = Math.max(0, Math.ceil(demand - taken));
 
     await this.supplyBuildingRepository.saveStocks(buildingId, nextStock);
-    await circuit.saveConsumptionMetadata(this.supplyBuildingRepository, buildingId, periodKey, period, {
-      consumed,
-      demanded,
-      unfed,
+    await bookkeeping.saveConsumptionMetadata(this.supplyBuildingRepository, buildingId, periodKey, period, {
+      demand,
+      taken,
       totalUnfed,
     });
 
-    return {
-      consumed: true,
-      buildingId,
-      pop,
-      demand: Object.values(demanded).reduce((sum, qty) => sum + qty, 0),
-      unfed: totalUnfed,
-      consumedByCategory: consumed,
-    };
+    return { consumed: true, buildingId, pop, demand, taken, totalUnfed };
   }
 }

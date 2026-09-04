@@ -1,5 +1,3 @@
-import { applyHouseFoodConsumption } from '../policies/HouseConsumptionPolicy.js';
-
 /**
  * What each generic command still needs beyond the building's own catalog
  * facts (categories/schedule/amount/totalKey — see buildingEconomy.js and
@@ -34,11 +32,16 @@ export const MARKET_WINDMILL_TRANSFER_BOOKKEEPING = Object.freeze({
   saveLinks: (repository, sourceId, links) => repository.saveLinkedMarkets(sourceId, links),
 });
 
-/** House consumes food baskets for its population (monthly) — hunger/subsistence, not a schedule. */
-export const HOUSE_FOOD_CONSUMPTION_CIRCUIT = Object.freeze({
-  periodKey: (period) => (Number.isFinite(period.monthIndex) ? Math.floor(period.monthIndex) : 0),
+/**
+ * House consumes food for its population (monthly) — bookkeeping only, same
+ * shape as FARM_HARVEST_BOOKKEEPING. What/when/how-much comes from the
+ * house's own 'consumer' resourceRoles entry (see buildingEconomy.js) —
+ * total quantity only, "fed or not"; per-category diet variety is a
+ * separate feature, not modeled here.
+ */
+export const HOUSE_FOOD_CONSUMPTION_BOOKKEEPING = Object.freeze({
   lastConsumedField: 'lastConsumptionMonth',
-  applyConsumption: applyHouseFoodConsumption,
+  periodKey: (period) => (Number.isFinite(period.monthIndex) ? Math.floor(period.monthIndex) : 0),
   saveConsumptionMetadata: (repository, buildingId, periodKey, period, record) =>
     repository.updateBuildingFields(buildingId, {
       lastConsumptionMonth: periodKey,

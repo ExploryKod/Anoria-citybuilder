@@ -59,9 +59,8 @@ export function createSupplyBuildingSnapshot({
     lastConsumption: lastConsumption
       ? Object.freeze({
           month: Number.isFinite(lastConsumption.month) ? Math.floor(lastConsumption.month) : 0,
-          consumed: Object.freeze({ ...lastConsumption.consumed }),
-          demanded: Object.freeze({ ...lastConsumption.demanded }),
-          unfed: Object.freeze({ ...lastConsumption.unfed }),
+          demand: Number.isFinite(lastConsumption.demand) ? lastConsumption.demand : 0,
+          taken: Number.isFinite(lastConsumption.taken) ? lastConsumption.taken : 0,
           totalUnfed: Number.isFinite(lastConsumption.totalUnfed) ? lastConsumption.totalUnfed : 0,
         })
       : null,

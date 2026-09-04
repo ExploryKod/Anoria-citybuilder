@@ -13,36 +13,17 @@ import {
   getResidentialGroupTitle,
   residentialGroupForType,
 } from '../../../shell/ResidentialGroupLabels.js';
-import { getHouseFoodRequirements } from '../../../../../composition/supplyFoodCatalog.js';
 import { computeHouseCitizenComposition } from '../../../../../composition/housingCatalog.js';
 import { formatHousePopulationPresentation } from '../../population/formatHousePopulationPresentation.js';
 
 /**
- * @param {1 | 2} level
- * @returns {string[]}
- */
-function foodTypesForLevel(level) {
-  const requirements = getHouseFoodRequirements(level);
-  return [...requirements.essential, ...requirements.desired];
-}
-
-/**
+ * "Fed or not" — total quantity only. Diet variety (which food types) is a
+ * separate, not-yet-built feature.
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
- * @returns {{ unfed: Record<string, number>, totalUnfed: number, month: number | null }}
+ * @returns {{ totalUnfed: number, month: number | null }}
  */
 function resolveHouseDietShortages(vm) {
-  const types = foodTypesForLevel(vm.houseLevel);
-  /** @type {Record<string, number>} */
-  const unfed = Object.fromEntries(types.map((type) => [type, 0]));
-
-  if (vm.lastConsumption?.unfed) {
-    for (const type of types) {
-      unfed[type] = vm.lastConsumption.unfed[type] ?? 0;
-    }
-  }
-
   return {
-    unfed,
     totalUnfed: vm.lastConsumption?.totalUnfed ?? 0,
     month: vm.lastConsumption?.month ?? null,
   };
@@ -126,7 +107,6 @@ export function formatHouseDietModel(vm) {
   const model = {
     stockGroups: null,
     shortages: resolveHouseDietShortages(vm),
-    lastConsumption: null,
   };
 
   // Stocks actuels (déplacé depuis foyer)
@@ -138,24 +118,5 @@ export function formatHouseDietModel(vm) {
     };
   }
 
-  // Consommation du mois dernier (si disponible)
-  if (vm.lastConsumption) {
-    model.lastConsumption = {
-      month: vm.lastConsumption.month,
-      consumed: normalizeFoodRecord(vm.lastConsumption.consumed, vm.houseLevel),
-      totalUnfed: vm.lastConsumption.totalUnfed || 0,
-    };
-  }
-
   return model;
-}
-
-/**
- * @param {Record<string, number> | null | undefined} record
- * @param {1 | 2} level
- * @returns {Record<string, number>}
- */
-function normalizeFoodRecord(record, level) {
-  const types = foodTypesForLevel(level);
-  return Object.fromEntries(types.map((type) => [type, record?.[type] ?? 0]));
 }

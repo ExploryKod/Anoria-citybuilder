@@ -92,7 +92,9 @@
  *   the owning command runs, e.g. a market restocking/distributing monthly).
  * @property {number} [amount] Units this role produces/moves per scheduled
  *   occurrence (a farm's annual yield, a distributor's batch size) — the
- *   same concept regardless of role, not a "yield" special case.
+ *   same concept regardless of role, not a "yield" special case. On a
+ *   'consumer' role only, read as a per-capita rate (demand = pop × amount),
+ *   not a flat quantity — see ConsumeResource.js.
  * @property {string} [totalKey] Which stock field aggregates this role's
  *   categories (e.g. 'food' for wheat/carrot/cabbage/fruit/game). Required
  *   when `categories` has more than one entry — a role with 0 or 1 category

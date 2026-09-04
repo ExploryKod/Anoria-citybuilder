@@ -1,4 +1,4 @@
-import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
+import { buildingCatalog, getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
 
 /**
  * Supply's derivation point for `resourceRoles` (see buildingCatalog.js) —
@@ -58,6 +58,25 @@ export function getRangeForRole(buildingType, role) {
  */
 export function getLinkCapacityForRole(buildingType, role) {
   return getResourceRoles(buildingType).find((entry) => entry.role === role)?.linkCapacity;
+}
+
+/**
+ * Every distinct category any building declares for a given role, derived
+ * from the whole catalog — e.g. "a crop" is just "whatever some building
+ * declares as a 'producer' category," not a hand-maintained list that can
+ * drift from what farms actually produce.
+ * @param {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleKind} role
+ * @returns {ReadonlyArray<string>}
+ */
+export function getAllCategoriesForRole(role) {
+  const categories = new Set();
+  for (const definition of Object.values(buildingCatalog)) {
+    for (const entry of definition.resourceRoles ?? []) {
+      if (entry.role !== role) continue;
+      for (const category of entry.categories) categories.add(category);
+    }
+  }
+  return Object.freeze([...categories]);
 }
 
 /**

@@ -26,9 +26,9 @@ import { RunMonthlyFoodSupplyCycle } from '../contexts/supply/application/workfl
 import {
   FARM_HARVEST_BOOKKEEPING,
   MARKET_WINDMILL_TRANSFER_BOOKKEEPING,
-  HOUSE_FOOD_CONSUMPTION_CIRCUIT,
+  HOUSE_FOOD_CONSUMPTION_BOOKKEEPING,
 } from '../contexts/supply/domain/catalogs/FoodCircuits.js';
-import { FOOD_CIRCUIT } from '../contexts/supply/domain/catalogs/FoodCircuitCatalog.js';
+import { CROPS } from '../contexts/supply/domain/value-objects/CropType.js';
 import { DexieFoodTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieFoodTraceabilityRepository.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { SupplyFoodTraceability } from '../contexts/supply/infrastructure/presentation/SupplyFoodTraceability.js';
@@ -73,7 +73,7 @@ export function createSupplyContext({
   const assignDistributorToHub = new AssignDistributorToHub(
     supplyBuildingRepositoryImpl,
     rebalanceHubAllocations,
-    FOOD_CIRCUIT.crops
+    CROPS
   );
   const detachDistributorFromHub = new DetachDistributorFromHub(
     supplyBuildingRepositoryImpl,
@@ -136,7 +136,7 @@ export function createSupplyContext({
     processWindmillCollection,
     {
       execute: ({ windmillId }) =>
-        rebalanceHubAllocations.execute({ hubId: windmillId, categories: FOOD_CIRCUIT.crops }),
+        rebalanceHubAllocations.execute({ hubId: windmillId, categories: CROPS }),
     }
   );
   const traceability = new SupplyFoodTraceability({
@@ -233,7 +233,7 @@ export function createSupplyContext({
     },
 
     async detachDistributorFromHub({ distributorId }) {
-      return detachDistributorFromHub.execute({ distributorId, categories: FOOD_CIRCUIT.crops });
+      return detachDistributorFromHub.execute({ distributorId, categories: CROPS });
     },
 
     async cascadeDestroyHubDistributors({ hubId, city, bulldozeBuildingAtTile }) {
@@ -241,7 +241,7 @@ export function createSupplyContext({
     },
 
     async rebalanceWindmillAllocations(windmillId) {
-      return rebalanceHubAllocations.execute({ hubId: windmillId, categories: FOOD_CIRCUIT.crops });
+      return rebalanceHubAllocations.execute({ hubId: windmillId, categories: CROPS });
     },
 
     async initializeHubLinks({ hubId }) {
@@ -310,7 +310,7 @@ export function createSupplyContext({
       return consumeResource.execute({
         buildingId: houseId,
         period: { monthIndex },
-        circuit: HOUSE_FOOD_CONSUMPTION_CIRCUIT,
+        bookkeeping: HOUSE_FOOD_CONSUMPTION_BOOKKEEPING,
       });
     },
 

@@ -1,4 +1,4 @@
-import { HOUSE_FOOD_CONSUMPTION_CIRCUIT } from '../../../domain/catalogs/FoodCircuits.js';
+import { HOUSE_FOOD_CONSUMPTION_BOOKKEEPING } from '../../../domain/catalogs/FoodCircuits.js';
 
 /**
  * Orchestration: monthly food consumption for every house in the city.
@@ -26,7 +26,7 @@ export class ConsumeAllHouseFood {
       const outcome = await this.consumeResource.execute({
         buildingId: house.id,
         period: { monthIndex },
-        circuit: HOUSE_FOOD_CONSUMPTION_CIRCUIT,
+        bookkeeping: HOUSE_FOOD_CONSUMPTION_BOOKKEEPING,
       });
       if (outcome.consumed) {
         consumptions.push({ ...outcome, houseId: outcome.buildingId });

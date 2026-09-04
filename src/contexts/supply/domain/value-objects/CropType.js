@@ -1,8 +1,9 @@
-import { FOOD_CIRCUIT } from '../catalogs/FoodCircuitCatalog.js';
+import { getAllCategoriesForRole } from '../policies/ResourceRolePolicy.js';
 
 /** @typedef {'wheat' | 'carrot' | 'cabbage'} Crop */
 
-export const CROPS = FOOD_CIRCUIT.crops;
+/** A crop is whatever some building declares as a 'producer' category — derived, not a hand list. */
+export const CROPS = getAllCategoriesForRole('producer');
 
 /**
  * @param {unknown} value

@@ -63,6 +63,33 @@ export function addCategoryAmount(stock, category, amount, categories, totalKey 
 }
 
 /**
+ * Drain up to `amount` units from the aggregate total, taking from whichever
+ * categories have stock (in declared order) rather than a specific one —
+ * for a need that only cares about the total (e.g. "fed or not"), not which
+ * category satisfied it.
+ *
+ * @param {Record<string, number>} stock
+ * @param {readonly string[]} categories
+ * @param {string} totalKey
+ * @param {number} amount
+ * @returns {{ nextStock: Readonly<Record<string, number>>, taken: number }}
+ */
+export function takeAcrossCategories(stock, categories, totalKey, amount) {
+  let remaining = nonNegInt(amount);
+  let current = createResourceStock(stock, categories, totalKey);
+  for (const category of categories) {
+    if (remaining <= 0) break;
+    const available = getCategoryAmount(current, category);
+    const taken = Math.min(available, remaining);
+    if (taken > 0) {
+      current = takeCategoryAmount(current, category, taken, categories, totalKey);
+      remaining -= taken;
+    }
+  }
+  return { nextStock: current, taken: nonNegInt(amount) - remaining };
+}
+
+/**
  * Cap the total at maxTotal; scale all categories down proportionally if needed.
  */
 export function capResourceStockAt(stock, maxTotal, categories, totalKey = 'total') {

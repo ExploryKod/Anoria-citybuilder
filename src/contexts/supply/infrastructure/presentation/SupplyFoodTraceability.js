@@ -134,6 +134,8 @@ export class SupplyFoodTraceability {
     if (consumptions.length === 0) return;
 
     for (const entry of consumptions) {
+      if (!(entry.taken > 0)) continue;
+
       const houseData = await this.supplyBuildingRepository.findRowById(entry.houseId);
       if (!houseData) continue;
 
@@ -143,22 +145,16 @@ export class SupplyFoodTraceability {
         y: houseData.y,
         type: houseData.type,
       };
-      const crops = entry.crops || entry.consumedByCategory || {};
 
-      for (const foodType of ['fruit', 'game', 'wheat', 'carrot', 'cabbage']) {
-        const amount = crops[foodType] || 0;
-        if (amount <= 0) continue;
-
-        await this.foodTraceabilityRepository.recordHouseConsumption(
-          timeInfo.turn || 0,
-          timeInfo.monthIndex,
-          timeInfo.year || 0,
-          houseRef,
-          foodType,
-          amount,
-          entry.pop
-        );
-      }
+      await this.foodTraceabilityRepository.recordHouseConsumption(
+        timeInfo.turn || 0,
+        timeInfo.monthIndex,
+        timeInfo.year || 0,
+        houseRef,
+        'food',
+        entry.taken,
+        entry.pop
+      );
     }
   }
 }
