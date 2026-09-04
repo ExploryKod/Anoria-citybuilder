@@ -7,12 +7,20 @@ import {
 } from '../../../domain/value-objects/ResourceStock.js';
 import { resolveInstanceIdFromNeighborRef } from '../../../../../shared/building-identity/BuildingRecord.js';
 import { distributeRoundRobin } from '../../services/RoundRobinDistribution.js';
+import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
+import {
+  getCategoriesForRole,
+  getScheduleForRole,
+  getTotalKeyForRole,
+} from '../../../domain/policies/ResourceRolePolicy.js';
 
 /**
  * Command: a source building distributes resource units to consumers in
  * range (market-to-houses monthly food sale today; resource-agnostic
- * otherwise via the `circuit` descriptor). Round-robin: each pass, every
- * eligible consumer may take 1 unit per still-available category.
+ * otherwise). Round-robin: each pass, every eligible consumer may take 1
+ * unit per still-available category. Every fact about WHAT is distributed
+ * and WHEN comes from the source's own 'distributor' role in the catalog —
+ * no circuit descriptor needed.
  */
 export class DistributeResourceToConsumers {
   /**
@@ -27,7 +35,6 @@ export class DistributeResourceToConsumers {
    * @param {string} params.sourceId
    * @param {object[]} params.consumerRefs
    * @param {object} params.period
-   * @param {object} params.circuit
    * @returns {Promise<{
    *   distributed: boolean,
    *   reason?: string,
@@ -35,14 +42,15 @@ export class DistributeResourceToConsumers {
    *   totalUnits: number,
    * }>}
    */
-  async execute({ sourceId, consumerRefs = [], period, circuit }) {
-    if (!circuit.canDistribute(period)) {
-      return { distributed: false, reason: 'not_distribution_period', transfers: [], totalUnits: 0 };
-    }
-
+  async execute({ sourceId, consumerRefs = [], period }) {
     const source = await this.supplyBuildingRepository.findById(sourceId);
     if (!source) {
       return { distributed: false, reason: 'source_not_found', transfers: [], totalUnits: 0 };
+    }
+
+    const schedule = getScheduleForRole(source.type, 'distributor');
+    if (!matchesSchedule(schedule, period)) {
+      return { distributed: false, reason: 'not_distribution_period', transfers: [], totalUnits: 0 };
     }
 
     if (
@@ -55,8 +63,10 @@ export class DistributeResourceToConsumers {
       return { distributed: false, reason: 'source_not_operational', transfers: [], totalUnits: 0 };
     }
 
-    const sourceStock = createResourceStock(source.stocks, circuit.categories, circuit.totalKey);
-    const availableTotal = circuit.categories.reduce(
+    const categories = getCategoriesForRole(source.type, 'distributor');
+    const totalKey = getTotalKeyForRole(source.type, 'distributor');
+    const sourceStock = createResourceStock(source.stocks, categories, totalKey);
+    const availableTotal = categories.reduce(
       (sum, category) => sum + getCategoryAmount(sourceStock, category),
       0,
     );
@@ -74,16 +84,16 @@ export class DistributeResourceToConsumers {
     }
 
     const { transfers, sourceStock: nextSourceStock } = await distributeRoundRobin({
-      categories: circuit.categories,
+      categories,
       sourceStock,
       consumerIds,
       isEligible: (consumer) => consumer.roadCount > 0,
       repository: this.supplyBuildingRepository,
-      createStock: (raw) => createResourceStock(raw, circuit.categories, circuit.totalKey),
+      createStock: (raw) => createResourceStock(raw, categories, totalKey),
       takeCategory: (stock, category, amount) =>
-        takeCategoryAmount(stock, category, amount, circuit.categories, circuit.totalKey),
+        takeCategoryAmount(stock, category, amount, categories, totalKey),
       addCategory: (stock, category, amount) =>
-        addCategoryAmount(stock, category, amount, circuit.categories, circuit.totalKey),
+        addCategoryAmount(stock, category, amount, categories, totalKey),
       getAmount: getCategoryAmount,
     });
 

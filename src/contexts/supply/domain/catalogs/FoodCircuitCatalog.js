@@ -8,12 +8,6 @@ export const FOOD_CIRCUIT = Object.freeze({
   crops: Object.freeze(['wheat', 'carrot', 'cabbage']),
   gatheredCategories: Object.freeze(['fruit', 'game']),
 
-  /** 6 citizens x 12 months = 72 baskets/year, plus a 6-basket buffer. */
-  farmAnnualYield: 78,
-
-  /** Farms harvest their annual crop only once per year, in this season. */
-  harvestSeason: 'autumn',
-
   /** Food requirements per house level: essential (must-have) vs desired (variety). */
   houseFoodRequirementsByLevel: Object.freeze({
     1: Object.freeze({ essential: ['fruit', 'game'], desired: [], basketsPerCitizen: 1 }),

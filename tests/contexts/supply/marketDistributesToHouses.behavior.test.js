@@ -5,7 +5,6 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
-import { MARKET_DISTRIBUTE_CIRCUIT } from '../../../src/contexts/supply/domain/catalogs/FoodCircuits.js';
 import { DistributeResourceToConsumers } from '../../../src/contexts/supply/application/commands/distribution/DistributeResourceToConsumers.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 
@@ -77,7 +76,6 @@ describe('Supply — market distribution to houses', () => {
     const outcome = await useCase.execute({
       sourceId: marketId,
       period: { season: 'winter' },
-      circuit: MARKET_DISTRIBUTE_CIRCUIT,
       consumerRefs: [{ instanceId: house1Id }, { instanceId: house2Id }],
     });
 
@@ -97,7 +95,6 @@ describe('Supply — market distribution to houses', () => {
     const outcome = await useCase.execute({
       sourceId: marketId,
       period: { season: 'autumn' },
-      circuit: MARKET_DISTRIBUTE_CIRCUIT,
       consumerRefs: [{ instanceId: house1Id }],
     });
     expect(outcome.distributed).toBe(true);
@@ -114,7 +111,6 @@ describe('Supply — market distribution to houses', () => {
     const outcome = await useCase.execute({
       sourceId: marketId,
       period: { season: 'spring' },
-      circuit: MARKET_DISTRIBUTE_CIRCUIT,
       consumerRefs: [{ instanceId: house1Id }],
     });
 
@@ -126,7 +122,6 @@ describe('Supply — market distribution to houses', () => {
     const outcome = await useCase.execute({
       sourceId: marketId,
       period: { season: 'summer' },
-      circuit: MARKET_DISTRIBUTE_CIRCUIT,
       consumerRefs: [{ instanceId: house1Id }],
     });
 
@@ -138,7 +133,6 @@ describe('Supply — market distribution to houses', () => {
     const outcome = await useCase.execute({
       sourceId: marketId,
       period: { season: 'winter' },
-      circuit: MARKET_DISTRIBUTE_CIRCUIT,
       consumerRefs: [{ name: 'House-Purple-3-7', type: 'House-Purple', x: 3, y: 7 }],
     });
     expect(outcome.distributed).toBe(false);

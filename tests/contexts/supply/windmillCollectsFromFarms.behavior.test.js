@@ -5,8 +5,8 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
-import { canWindmillCollectFromFarms } from '../../../src/contexts/supply/domain/policies/CollectingMonthPolicy.js';
-import { WINDMILL_COLLECT_CIRCUIT } from '../../../src/contexts/supply/domain/catalogs/FoodCircuits.js';
+import { matchesSchedule } from '../../../src/contexts/supply/domain/policies/ResourceSchedulePolicy.js';
+import { getScheduleForRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { CollectResourceToHub } from '../../../src/contexts/supply/application/commands/surplus/CollectResourceToHub.js';
 import { toSupplyMonth } from '../../../src/composition/supplyOps.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
@@ -59,9 +59,10 @@ function farm(id, type, stocks, roadCount = 1) {
 describe('Supply — windmill collection', () => {
   describe('domain policies', () => {
     test('collecting month is december only', () => {
-      expect(canWindmillCollectFromFarms('december')).toBe(true);
-      expect(canWindmillCollectFromFarms('october')).toBe(false);
-      expect(canWindmillCollectFromFarms('november')).toBe(false);
+      const schedule = getScheduleForRole('Windmill-001', 'collector');
+      expect(matchesSchedule(schedule, { month: 'december' })).toBe(true);
+      expect(matchesSchedule(schedule, { month: 'october' })).toBe(false);
+      expect(matchesSchedule(schedule, { month: 'november' })).toBe(false);
       expect(toSupplyMonth('Décembre')).toBe('december');
       expect(toSupplyMonth('Octobre')).toBe('october');
     });
@@ -93,7 +94,6 @@ describe('Supply — windmill collection', () => {
       const outcome = await useCase.execute({
         hubId: windmillId,
         period: { month: 'december' },
-        circuit: WINDMILL_COLLECT_CIRCUIT,
         sourceRefs: [
           { instanceId: wheatFarmId },
           { instanceId: carrotFarmId },
@@ -119,7 +119,6 @@ describe('Supply — windmill collection', () => {
       const outcome = await useCase.execute({
         hubId: windmillId,
         period: { month: 'november' },
-        circuit: WINDMILL_COLLECT_CIRCUIT,
         sourceRefs: [{ instanceId: wheatFarmId }],
       });
 
@@ -138,7 +137,6 @@ describe('Supply — windmill collection', () => {
       const outcome = await useCase.execute({
         hubId: windmillId,
         period: { month: 'december' },
-        circuit: WINDMILL_COLLECT_CIRCUIT,
         sourceRefs: [{ instanceId: wheatFarmId }],
       });
 
@@ -157,7 +155,6 @@ describe('Supply — windmill collection', () => {
       const outcome = await useCase.execute({
         hubId: windmillId,
         period: { month: 'december' },
-        circuit: WINDMILL_COLLECT_CIRCUIT,
         sourceRefs: [{ instanceId: wheatFarmId }],
       });
 
@@ -176,7 +173,6 @@ describe('Supply — windmill collection', () => {
       const outcome = await useCase.execute({
         hubId: windmillId,
         period: { month: 'december' },
-        circuit: WINDMILL_COLLECT_CIRCUIT,
         sourceRefs: [{ instanceId: wheatFarmId }, { instanceId: carrotFarmId }],
       });
 

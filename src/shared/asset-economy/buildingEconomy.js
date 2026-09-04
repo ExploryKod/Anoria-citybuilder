@@ -54,21 +54,21 @@ export const BUILDING_ECONOMY = {
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'merchants',
-    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'] }],
+    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food' }],
   },
   'House-Red': {
     displayName: 'Maison rouge',
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'artisans',
-    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'] }],
+    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food' }],
   },
   'House-Purple': {
     displayName: 'Maison violette',
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'scholars',
-    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'] }],
+    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food' }],
   },
 
   // Palaces
@@ -76,27 +76,45 @@ export const BUILDING_ECONOMY = {
     displayName: 'Palais',
     construction: { price: 20, category: 'palaces' },
     accounting: { maintenance: 6 },
-    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'] }],
+    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food' }],
   },
 
   // Farms
+  // `schedule`/`amount` below: farms harvest their annual crop once, in
+  // autumn (see ResourceSchedulePolicy.js for the schedule shape). 78 =
+  // 6 citizens x 12 months + a 6-basket buffer.
   'Farm-Wheat': {
     displayName: 'Champ de blé',
     construction: { price: 10, category: 'farms' },
     employment: { sector: 1, workerNeed: 3, eliteNeed: 0, requiredSkill: 'fermier' },
-    resourceRoles: [{ role: 'producer', categories: ['wheat'] }],
+    resourceRoles: [{
+      role: 'producer',
+      categories: ['wheat'],
+      schedule: { unit: 'season', values: ['autumn'] },
+      amount: 78,
+    }],
   },
   'Farm-Carrot': {
     displayName: 'Champ de carottes',
     construction: { price: 20, category: 'farms' },
     employment: { sector: 1, workerNeed: 3, eliteNeed: 0, requiredSkill: 'fermier' },
-    resourceRoles: [{ role: 'producer', categories: ['carrot'] }],
+    resourceRoles: [{
+      role: 'producer',
+      categories: ['carrot'],
+      schedule: { unit: 'season', values: ['autumn'] },
+      amount: 78,
+    }],
   },
   'Farm-Cabbage': {
     displayName: 'Champ de choux',
     construction: { price: 30, category: 'farms' },
     employment: { sector: 1, workerNeed: 3, eliteNeed: 0, requiredSkill: 'fermier' },
-    resourceRoles: [{ role: 'producer', categories: ['cabbage'] }],
+    resourceRoles: [{
+      role: 'producer',
+      categories: ['cabbage'],
+      schedule: { unit: 'season', values: ['autumn'] },
+      amount: 78,
+    }],
   },
   'Hay-Bale': { displayName: 'Botte de foin', construction: { price: 2, category: 'farms' } },
   'Hay-Cart': { displayName: 'Chariot de foin', construction: { price: 5, category: 'farms' } },
@@ -111,8 +129,13 @@ export const BUILDING_ECONOMY = {
     // RunWindmillSurplusCycle passing every farm, unfiltered by distance).
     // A future resource can cap this with a range; food doesn't today.
     resourceRoles: [
-      { role: 'collector', categories: ['wheat', 'carrot', 'cabbage'] },
-      { role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], linkCapacity: 2 },
+      {
+        role: 'collector',
+        categories: ['wheat', 'carrot', 'cabbage'],
+        totalKey: 'food',
+        schedule: { unit: 'month', values: ['december'] },
+      },
+      { role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], totalKey: 'food', linkCapacity: 2 },
     ],
   },
   'Crate-001': { displayName: 'Caisse', construction: { price: 2, category: 'industry' } },
@@ -124,21 +147,21 @@ export const BUILDING_ECONOMY = {
     displayName: 'Étal',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, eliteNeed: 1 },
-    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5 }],
+    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5, totalKey: 'food', schedule: { unit: 'always' } }],
     placementRequires: [{ role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], range: 5, requiresCapacity: true }],
   },
   'Market-Stall-Blue': {
     displayName: 'Étal bleu',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, eliteNeed: 1 },
-    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5 }],
+    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5, totalKey: 'food', schedule: { unit: 'always' } }],
     placementRequires: [{ role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], range: 5, requiresCapacity: true }],
   },
   'Market-Stall-Red': {
     displayName: 'Étal rouge',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, eliteNeed: 1, requiredSkill: 'vente-alimentaire' },
-    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5 }],
+    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5, totalKey: 'food', schedule: { unit: 'always' } }],
     placementRequires: [{ role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], range: 5, requiresCapacity: true }],
   },
 

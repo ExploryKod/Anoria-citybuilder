@@ -5,7 +5,7 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
-import { MARKET_WINDMILL_TRANSFER_CIRCUIT } from '../../../src/contexts/supply/domain/catalogs/FoodCircuits.js';
+import { MARKET_WINDMILL_TRANSFER_BOOKKEEPING } from '../../../src/contexts/supply/domain/catalogs/FoodCircuits.js';
 import { TransferHubToHub } from '../../../src/contexts/supply/application/commands/procurement/TransferHubToHub.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 
@@ -89,7 +89,7 @@ describe('Supply — market buys from assigned windmill', () => {
     const outcome = await command.execute({
       targetId: marketId,
       period: {},
-      circuit: MARKET_WINDMILL_TRANSFER_CIRCUIT,
+      bookkeeping: MARKET_WINDMILL_TRANSFER_BOOKKEEPING,
     });
 
     expect(outcome.transferred).toBe(true);
@@ -113,7 +113,7 @@ describe('Supply — market buys from assigned windmill', () => {
     const outcome = await command.execute({
       targetId: orphanId,
       period: {},
-      circuit: MARKET_WINDMILL_TRANSFER_CIRCUIT,
+      bookkeeping: MARKET_WINDMILL_TRANSFER_BOOKKEEPING,
     });
     expect(outcome.transferred).toBe(false);
     expect(outcome.reason).toBe('no_source_link');

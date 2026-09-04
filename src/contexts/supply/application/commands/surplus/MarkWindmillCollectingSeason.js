@@ -1,8 +1,10 @@
-import { canWindmillCollectFromFarms } from '../../../domain/policies/CollectingMonthPolicy.js';
+import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
+import { getScheduleForRole } from '../../../domain/policies/ResourceRolePolicy.js';
 
 /**
- * Command: set windmill `isCollecting` from English month (UI flag).
- * December → true for all windmills; other months → false.
+ * Command: set windmill `isCollecting` (UI flag) from its own 'collector'
+ * role schedule (see buildingEconomy.js) — December today, whatever the
+ * catalog declares tomorrow.
  */
 export class MarkWindmillCollectingSeason {
   /**
@@ -17,12 +19,15 @@ export class MarkWindmillCollectingSeason {
    * @returns {Promise<{ windmills: number, isCollecting: boolean }>}
    */
   async execute(month) {
-    const isCollecting = canWindmillCollectFromFarms(month);
     const windmills = await this.supplyBuildingRepository.findWindmills();
+    let isCollecting = false;
 
     for (const windmill of windmills) {
+      const schedule = getScheduleForRole(windmill.type, 'collector');
+      const windmillIsCollecting = matchesSchedule(schedule, { month });
+      isCollecting = isCollecting || windmillIsCollecting;
       await this.supplyBuildingRepository.saveMarketFlags(windmill.id, {
-        isCollecting,
+        isCollecting: windmillIsCollecting,
       });
     }
 

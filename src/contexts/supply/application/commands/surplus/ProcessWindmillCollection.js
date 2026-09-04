@@ -1,5 +1,4 @@
 import { isOperational } from '../../../domain/policies/OperationalGatePolicy.js';
-import { WINDMILL_COLLECT_CIRCUIT } from '../../../domain/catalogs/FoodCircuits.js';
 
 /**
  * Command: collect surplus from all farms for one windmill (December).
@@ -73,7 +72,6 @@ export class ProcessWindmillCollection {
       hubId: windmillId,
       sourceRefs: farmRefs,
       period: { month },
-      circuit: WINDMILL_COLLECT_CIRCUIT,
     });
 
     if (!outcome.collected) {

@@ -7,11 +7,19 @@ import {
   addCategoryAmount,
 } from '../../../domain/value-objects/ResourceStock.js';
 import { resolveInstanceIdFromNeighborRef } from '../../../../../shared/building-identity/BuildingRecord.js';
+import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
+import {
+  getCategoriesForRole,
+  getScheduleForRole,
+  getTotalKeyForRole,
+} from '../../../domain/policies/ResourceRolePolicy.js';
 
 /**
  * Command: a hub building collects resource units from a list of source
  * building refs, up to its own remaining capacity (December-only windmill
- * collection today; resource-agnostic otherwise via the `circuit` descriptor).
+ * collection today; resource-agnostic otherwise). WHAT/WHEN come from the
+ * hub's own 'collector' role; each source's own 'producer' role says which
+ * single category it contributes.
  */
 export class CollectResourceToHub {
   /**
@@ -26,7 +34,6 @@ export class CollectResourceToHub {
    * @param {string} params.hubId
    * @param {object[]} params.sourceRefs
    * @param {object} params.period
-   * @param {object} params.circuit
    * @returns {Promise<{
    *   collected: boolean,
    *   reason?: string,
@@ -34,14 +41,15 @@ export class CollectResourceToHub {
    *   totalUnits: number,
    * }>}
    */
-  async execute({ hubId, sourceRefs = [], period, circuit }) {
-    if (!circuit.canCollect(period)) {
-      return { collected: false, reason: 'not_collection_period', transfers: [], totalUnits: 0 };
-    }
-
+  async execute({ hubId, sourceRefs = [], period }) {
     const hub = await this.supplyBuildingRepository.findById(hubId);
     if (!hub) {
       return { collected: false, reason: 'hub_not_found', transfers: [], totalUnits: 0 };
+    }
+
+    const schedule = getScheduleForRole(hub.type, 'collector');
+    if (!matchesSchedule(schedule, period)) {
+      return { collected: false, reason: 'not_collection_period', transfers: [], totalUnits: 0 };
     }
 
     if (
@@ -54,7 +62,10 @@ export class CollectResourceToHub {
       return { collected: false, reason: 'hub_not_operational', transfers: [], totalUnits: 0 };
     }
 
-    let capacity = remainingMarketCapacity(hub.stocks[circuit.totalKey], hub.maxStock);
+    const categories = getCategoriesForRole(hub.type, 'collector');
+    const totalKey = getTotalKeyForRole(hub.type, 'collector');
+
+    let capacity = remainingMarketCapacity(hub.stocks[totalKey], hub.maxStock);
     if (capacity <= 0) {
       return { collected: false, reason: 'hub_full', transfers: [], totalUnits: 0 };
     }
@@ -72,14 +83,14 @@ export class CollectResourceToHub {
 
       if (source.roadCount <= 0) continue;
 
-      const category = circuit.resourceCategoryForBuilding(source.type);
+      const category = getCategoriesForRole(source.type, 'producer')[0] ?? null;
       if (!category) continue;
 
       const available = getCategoryAmount(source.stocks, category);
       const amount = Math.min(available, capacity);
       if (amount <= 0) continue;
 
-      const nextSourceStock = takeCategoryAmount(source.stocks, category, amount, circuit.categories, circuit.totalKey);
+      const nextSourceStock = takeCategoryAmount(source.stocks, category, amount, categories, totalKey);
       await this.supplyBuildingRepository.saveStocks(sourceId, nextSourceStock);
 
       capacity -= amount;
@@ -91,15 +102,15 @@ export class CollectResourceToHub {
     }
 
     const freshHub = await this.supplyBuildingRepository.findById(hubId);
-    let merged = createResourceStock(freshHub?.stocks ?? hub.stocks, circuit.categories, circuit.totalKey);
+    let merged = createResourceStock(freshHub?.stocks ?? hub.stocks, categories, totalKey);
     for (const transfer of transfers) {
-      merged = addCategoryAmount(merged, transfer.category, transfer.amount, circuit.categories, circuit.totalKey);
+      merged = addCategoryAmount(merged, transfer.category, transfer.amount, categories, totalKey);
     }
-    const cappedTotal = Math.min(freshHub?.maxStock ?? hub.maxStock, merged[circuit.totalKey]);
+    const cappedTotal = Math.min(freshHub?.maxStock ?? hub.maxStock, merged[totalKey]);
     const finalStock = createResourceStock(
-      { ...merged, [circuit.totalKey]: cappedTotal },
-      circuit.categories,
-      circuit.totalKey,
+      { ...merged, [totalKey]: cappedTotal },
+      categories,
+      totalKey,
     );
     await this.supplyBuildingRepository.saveStocks(hubId, finalStock);
 

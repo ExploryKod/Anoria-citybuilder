@@ -5,9 +5,9 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
-import { canFarmHarvest } from '../../../src/contexts/supply/domain/policies/HarvestSeasonPolicy.js';
-import { annualFarmYield } from '../../../src/contexts/supply/domain/policies/FarmYieldPolicy.js';
-import { FARM_HARVEST_CIRCUIT } from '../../../src/contexts/supply/domain/catalogs/FoodCircuits.js';
+import { matchesSchedule } from '../../../src/contexts/supply/domain/policies/ResourceSchedulePolicy.js';
+import { getAmountForRole, getScheduleForRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
+import { FARM_HARVEST_BOOKKEEPING } from '../../../src/contexts/supply/domain/catalogs/FoodCircuits.js';
 import { ProduceResource } from '../../../src/contexts/supply/application/commands/harvest/ProduceResource.js';
 import { HarvestAllFarmCrops } from '../../../src/contexts/supply/application/commands/harvest/HarvestAllFarmCrops.js';
 
@@ -75,12 +75,13 @@ function farm(id, type, extras = {}) {
 describe('Supply — farm harvest', () => {
   describe('domain policies', () => {
     test('harvest season is autumn only', () => {
-      expect(canFarmHarvest('autumn')).toBe(true);
-      expect(canFarmHarvest('summer')).toBe(false);
+      const schedule = getScheduleForRole('Farm-Wheat', 'producer');
+      expect(matchesSchedule(schedule, { season: 'autumn' })).toBe(true);
+      expect(matchesSchedule(schedule, { season: 'summer' })).toBe(false);
     });
 
     test('annual yield is 78 baskets', () => {
-      expect(annualFarmYield()).toBe(78);
+      expect(getAmountForRole('Farm-Wheat', 'producer')).toBe(78);
     });
   });
 
@@ -100,7 +101,7 @@ describe('Supply — farm harvest', () => {
       const outcome = await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'autumn', year: 3, monthIndex: 9 },
-        circuit: FARM_HARVEST_CIRCUIT,
+        bookkeeping: FARM_HARVEST_BOOKKEEPING,
       });
 
       expect(outcome).toEqual({
@@ -120,13 +121,13 @@ describe('Supply — farm harvest', () => {
       await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'autumn', year: 3 },
-        circuit: FARM_HARVEST_CIRCUIT,
+        bookkeeping: FARM_HARVEST_BOOKKEEPING,
       });
 
       const second = await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'autumn', year: 3 },
-        circuit: FARM_HARVEST_CIRCUIT,
+        bookkeeping: FARM_HARVEST_BOOKKEEPING,
       });
 
       expect(second.produced).toBe(false);
@@ -138,12 +139,12 @@ describe('Supply — farm harvest', () => {
       await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'autumn', year: 3 },
-        circuit: FARM_HARVEST_CIRCUIT,
+        bookkeeping: FARM_HARVEST_BOOKKEEPING,
       });
       await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'autumn', year: 4 },
-        circuit: FARM_HARVEST_CIRCUIT,
+        bookkeeping: FARM_HARVEST_BOOKKEEPING,
       });
 
       expect((await repo.findById('Farm-Wheat-2-3')).stocks.wheat).toBe(156);
@@ -153,7 +154,7 @@ describe('Supply — farm harvest', () => {
       const outcome = await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'summer', year: 3 },
-        circuit: FARM_HARVEST_CIRCUIT,
+        bookkeeping: FARM_HARVEST_BOOKKEEPING,
       });
       expect(outcome.produced).toBe(false);
       expect(outcome.reason).toBe('not_production_period');
@@ -171,7 +172,7 @@ describe('Supply — farm harvest', () => {
           await useCase.execute({
             buildingId: 'Farm-Wheat-2-3',
             period: { season: 'autumn', year: 1 },
-            circuit: FARM_HARVEST_CIRCUIT,
+            bookkeeping: FARM_HARVEST_BOOKKEEPING,
           })
         ).reason
       ).toBe('not_operational');
@@ -180,7 +181,7 @@ describe('Supply — farm harvest', () => {
           await useCase.execute({
             buildingId: 'Farm-Carrot-4-5',
             period: { season: 'autumn', year: 1 },
-            circuit: FARM_HARVEST_CIRCUIT,
+            bookkeeping: FARM_HARVEST_BOOKKEEPING,
           })
         ).reason
       ).toBe('not_operational');

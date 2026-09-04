@@ -24,10 +24,8 @@ import { RunWindmillSurplusCycle } from '../contexts/supply/application/commands
 import { RunCityResourceCycle } from '../contexts/supply/application/commands/procurement/RunCityResourceCycle.js';
 import { RunMonthlyFoodSupplyCycle } from '../contexts/supply/application/workflows/RunMonthlyFoodSupplyCycle.js';
 import {
-  FARM_HARVEST_CIRCUIT,
-  WINDMILL_COLLECT_CIRCUIT,
-  MARKET_WINDMILL_TRANSFER_CIRCUIT,
-  MARKET_DISTRIBUTE_CIRCUIT,
+  FARM_HARVEST_BOOKKEEPING,
+  MARKET_WINDMILL_TRANSFER_BOOKKEEPING,
   HOUSE_FOOD_CONSUMPTION_CIRCUIT,
 } from '../contexts/supply/domain/catalogs/FoodCircuits.js';
 import { FOOD_CIRCUIT } from '../contexts/supply/domain/catalogs/FoodCircuitCatalog.js';
@@ -226,7 +224,7 @@ export function createSupplyContext({
       return transferHubToHub.execute({
         targetId: marketId,
         period: { month },
-        circuit: MARKET_WINDMILL_TRANSFER_CIRCUIT,
+        bookkeeping: MARKET_WINDMILL_TRANSFER_BOOKKEEPING,
       });
     },
 
@@ -261,7 +259,6 @@ export function createSupplyContext({
         sourceId: marketId,
         consumerRefs: houseRefs,
         period: { season },
-        circuit: MARKET_DISTRIBUTE_CIRCUIT,
       });
     },
 
@@ -270,7 +267,6 @@ export function createSupplyContext({
         hubId: windmillId,
         sourceRefs: farmRefs,
         period: { month },
-        circuit: WINDMILL_COLLECT_CIRCUIT,
       });
     },
 
@@ -302,7 +298,7 @@ export function createSupplyContext({
       return produceResource.execute({
         buildingId: farmId,
         period: { season, year, monthIndex },
-        circuit: FARM_HARVEST_CIRCUIT,
+        bookkeeping: FARM_HARVEST_BOOKKEEPING,
       });
     },
 

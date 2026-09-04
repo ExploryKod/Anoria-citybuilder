@@ -67,3 +67,48 @@ export function getLinkCapacityForRole(buildingType, role) {
 export function getPlacementRequirements(buildingType) {
   return getBuildingDefinition(buildingType)?.placementRequires ?? [];
 }
+
+/**
+ * @param {string} buildingType
+ * @param {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleKind} role
+ * @returns {{ unit: string } | undefined} When this role only fires on a
+ *   schedule (see ResourceSchedulePolicy.js) — undefined means unconditional.
+ */
+export function getScheduleForRole(buildingType, role) {
+  return getResourceRoles(buildingType).find((entry) => entry.role === role)?.schedule;
+}
+
+/**
+ * @param {string} buildingType
+ * @param {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleKind} role
+ * @returns {number | undefined} Units this role produces/moves per scheduled
+ *   occurrence (e.g. a farm's annual yield), or undefined when not applicable.
+ */
+export function getAmountForRole(buildingType, role) {
+  return getResourceRoles(buildingType).find((entry) => entry.role === role)?.amount;
+}
+
+/**
+ * Resolves which stock field aggregates this role's categories.
+ *
+ * Explicit in the catalog when the role spans more than one category (e.g.
+ * a house consuming wheat/carrot/cabbage/fruit/game under one 'food' total)
+ * — required in that case, since nothing safe can be inferred. A role with
+ * zero or exactly one category needs no `totalKey` at all: it's its own
+ * total (or there's nothing to total), so a catalog author can't get this
+ * wrong by omission the way they could with an ambiguous multi-category role.
+ *
+ * @param {string} buildingType
+ * @param {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleKind} role
+ * @returns {string} The resolved total key.
+ * @throws {Error} When more than one category is declared and no `totalKey` is set.
+ */
+export function getTotalKeyForRole(buildingType, role) {
+  const entry = getResourceRoles(buildingType).find((e) => e.role === role);
+  const categories = entry?.categories ?? [];
+  if (entry?.totalKey) return entry.totalKey;
+  if (categories.length <= 1) return categories[0] ?? 'total';
+  throw new Error(
+    `[ResourceRolePolicy] "${buildingType}" role "${role}" spans multiple categories (${categories.join(', ')}) but declares no totalKey`
+  );
+}

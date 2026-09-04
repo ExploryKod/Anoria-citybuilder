@@ -1,4 +1,4 @@
-import { FARM_HARVEST_CIRCUIT } from '../../../domain/catalogs/FoodCircuits.js';
+import { FARM_HARVEST_BOOKKEEPING } from '../../../domain/catalogs/FoodCircuits.js';
 
 /**
  * Orchestration: run annual harvest for every farm in the city.
@@ -28,7 +28,7 @@ export class HarvestAllFarmCrops {
       const outcome = await this.produceResource.execute({
         buildingId: farm.id,
         period: { season, year, monthIndex },
-        circuit: FARM_HARVEST_CIRCUIT,
+        bookkeeping: FARM_HARVEST_BOOKKEEPING,
       });
       if (outcome.produced) {
         harvests.push({ ...outcome, farmId: outcome.buildingId, crop: outcome.category });

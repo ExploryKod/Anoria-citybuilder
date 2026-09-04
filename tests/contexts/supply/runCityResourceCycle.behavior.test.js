@@ -13,19 +13,14 @@ import { createResourceStock } from '../../../src/contexts/supply/domain/value-o
 import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 
-const CATEGORIES = ['wheat'];
+// Market-Stall/Windmill-001/House-Blue are real catalog types — schedule,
+// categories, and totalKey now come from buildingCatalog.js (see
+// buildingEconomy.js), not a test-local circuit. Only the hub-link field
+// names (not yet generalized across resources) are still passed in.
+const CATEGORIES = ['wheat', 'carrot', 'cabbage'];
 const TOTAL_KEY = 'food';
 
-const DISTRIBUTE_CIRCUIT = {
-  categories: CATEGORIES,
-  totalKey: TOTAL_KEY,
-  canDistribute: () => true,
-};
-
-const HUB_TRANSFER_CIRCUIT = {
-  categories: CATEGORIES,
-  totalKey: TOTAL_KEY,
-  canTransfer: () => true,
+const HUB_TRANSFER_BOOKKEEPING = {
   sourceLinkField: 'supplyWindmillId',
   linksField: 'linkedMarkets',
   allocationField: 'allocatedStocks',
@@ -128,7 +123,6 @@ describe('RunCityResourceCycle', () => {
 
     const result = await cycle.execute({
       categories: CATEGORIES,
-      distributeCircuit: DISTRIBUTE_CIRCUIT,
       season: 'summer',
       timeInfo: { turn: 1 },
       maxDistance: 5,
@@ -181,8 +175,7 @@ describe('RunCityResourceCycle', () => {
 
     await cycle.execute({
       categories: CATEGORIES,
-      distributeCircuit: DISTRIBUTE_CIRCUIT,
-      hubTransferCircuit: HUB_TRANSFER_CIRCUIT,
+      hubTransferBookkeeping: HUB_TRANSFER_BOOKKEEPING,
       season: 'summer',
       month: 'January',
       timeInfo: { turn: 1 },

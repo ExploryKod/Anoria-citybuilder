@@ -6,11 +6,20 @@ import {
   takeCategoryAmount,
   addCategoryAmount,
 } from '../../../domain/value-objects/ResourceStock.js';
+import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
+import {
+  getCategoriesForRole,
+  getScheduleForRole,
+  getTotalKeyForRole,
+} from '../../../domain/policies/ResourceRolePolicy.js';
 
 /**
  * Command: a target hub restocks from its linked source hub's allocation
  * bucket (monthly market-from-windmill restock today; resource-agnostic
- * otherwise via the `circuit` descriptor).
+ * otherwise). WHAT/WHEN come from the target's own 'distributor' role in
+ * the catalog; `bookkeeping` only carries the hub-link field names, which
+ * still vary by caller (see FoodCircuits.js) since the link storage itself
+ * isn't generalized across resources yet.
  */
 export class TransferHubToHub {
   /**
@@ -24,7 +33,7 @@ export class TransferHubToHub {
    * @param {object} params
    * @param {string} params.targetId
    * @param {object} params.period
-   * @param {object} params.circuit
+   * @param {object} params.bookkeeping - { sourceLinkField, linksField, linkTargetIdField, allocationField, saveLinks(repo, sourceId, links) }
    * @returns {Promise<{
    *   transferred: boolean,
    *   reason?: string,
@@ -32,14 +41,15 @@ export class TransferHubToHub {
    *   totalUnits: number,
    * }>}
    */
-  async execute({ targetId, period, circuit }) {
-    if (!circuit.canTransfer(period)) {
-      return { transferred: false, reason: 'not_transfer_period', transfers: [], totalUnits: 0 };
-    }
-
+  async execute({ targetId, period, bookkeeping }) {
     const target = await this.supplyBuildingRepository.findById(targetId);
     if (!target) {
       return { transferred: false, reason: 'target_not_found', transfers: [], totalUnits: 0 };
+    }
+
+    const schedule = getScheduleForRole(target.type, 'distributor');
+    if (!matchesSchedule(schedule, period)) {
+      return { transferred: false, reason: 'not_transfer_period', transfers: [], totalUnits: 0 };
     }
 
     if (
@@ -52,7 +62,7 @@ export class TransferHubToHub {
       return { transferred: false, reason: 'target_not_operational', transfers: [], totalUnits: 0 };
     }
 
-    const sourceId = target[circuit.sourceLinkField];
+    const sourceId = target[bookkeeping.sourceLinkField];
     if (!sourceId) {
       return { transferred: false, reason: 'no_source_link', transfers: [], totalUnits: 0 };
     }
@@ -72,27 +82,30 @@ export class TransferHubToHub {
       return { transferred: false, reason: 'source_not_operational', transfers: [], totalUnits: 0 };
     }
 
-    const links = [...(source[circuit.linksField] ?? [])];
-    const linkIndex = links.findIndex((entry) => entry[circuit.linkTargetIdField] === targetId);
+    const links = [...(source[bookkeeping.linksField] ?? [])];
+    const linkIndex = links.findIndex((entry) => entry[bookkeeping.linkTargetIdField] === targetId);
     if (linkIndex < 0) {
       return { transferred: false, reason: 'target_not_linked', transfers: [], totalUnits: 0 };
     }
 
-    let targetCapacity = remainingMarketCapacity(target.stocks[circuit.totalKey], target.maxStock);
+    const categories = getCategoriesForRole(target.type, 'distributor');
+    const totalKey = getTotalKeyForRole(target.type, 'distributor');
+
+    let targetCapacity = remainingMarketCapacity(target.stocks[totalKey], target.maxStock);
     if (targetCapacity <= 0) {
       return { transferred: false, reason: 'target_full', transfers: [], totalUnits: 0 };
     }
 
     const allocation = links[linkIndex];
     const transfers = [];
-    let sourceStock = createResourceStock(source.stocks, circuit.categories, circuit.totalKey);
-    let targetStock = createResourceStock(target.stocks, circuit.categories, circuit.totalKey);
+    let sourceStock = createResourceStock(source.stocks, categories, totalKey);
+    let targetStock = createResourceStock(target.stocks, categories, totalKey);
     const nextAllocated = {};
-    for (const category of circuit.categories) {
-      nextAllocated[category] = Math.max(0, Math.floor(allocation[circuit.allocationField]?.[category] ?? 0));
+    for (const category of categories) {
+      nextAllocated[category] = Math.max(0, Math.floor(allocation[bookkeeping.allocationField]?.[category] ?? 0));
     }
 
-    for (const category of circuit.categories) {
+    for (const category of categories) {
       if (targetCapacity <= 0) break;
 
       const allocated = nextAllocated[category];
@@ -100,8 +113,8 @@ export class TransferHubToHub {
       const amount = Math.min(allocated, availableOnSource, targetCapacity);
       if (amount <= 0) continue;
 
-      sourceStock = takeCategoryAmount(sourceStock, category, amount, circuit.categories, circuit.totalKey);
-      targetStock = addCategoryAmount(targetStock, category, amount, circuit.categories, circuit.totalKey);
+      sourceStock = takeCategoryAmount(sourceStock, category, amount, categories, totalKey);
+      targetStock = addCategoryAmount(targetStock, category, amount, categories, totalKey);
       nextAllocated[category] = allocated - amount;
       targetCapacity -= amount;
       transfers.push({ sourceId, category, amount });
@@ -111,10 +124,10 @@ export class TransferHubToHub {
       return { transferred: false, reason: 'nothing_to_transfer', transfers: [], totalUnits: 0 };
     }
 
-    links[linkIndex] = { ...allocation, [circuit.allocationField]: nextAllocated };
+    links[linkIndex] = { ...allocation, [bookkeeping.allocationField]: nextAllocated };
 
     await this.supplyBuildingRepository.saveStocks(sourceId, sourceStock);
-    await circuit.saveLinks(this.supplyBuildingRepository, sourceId, links);
+    await bookkeeping.saveLinks(this.supplyBuildingRepository, sourceId, links);
     await this.supplyBuildingRepository.saveStocks(targetId, targetStock);
 
     const totalUnits = transfers.reduce((sum, transfer) => sum + transfer.amount, 0);

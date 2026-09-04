@@ -1,8 +1,5 @@
 import { FOOD_CIRCUIT } from '../../domain/catalogs/FoodCircuitCatalog.js';
-import {
-  MARKET_WINDMILL_TRANSFER_CIRCUIT,
-  MARKET_DISTRIBUTE_CIRCUIT,
-} from '../../domain/catalogs/FoodCircuits.js';
+import { MARKET_WINDMILL_TRANSFER_BOOKKEEPING } from '../../domain/catalogs/FoodCircuits.js';
 
 /**
  * Orchestration: full monthly food supply chain tick.
@@ -44,13 +41,15 @@ export class RunMonthlyFoodSupplyCycle {
    * @returns {Promise<void>}
    */
   async execute({ season, month, timeInfo, maxDistance = 5 }) {
-    if (season === 'autumn') {
-      await this.harvestAllFarmCrops.execute({
-        season,
-        year: timeInfo.year ?? 0,
-        monthIndex: timeInfo.monthIndex,
-      });
-    }
+    // No season gate here — each farm's own 'producer' schedule (see
+    // buildingEconomy.js) decides whether it's a harvest period; the
+    // once-per-year lock in ProduceResource still prevents double-harvests
+    // across the months autumn spans.
+    await this.harvestAllFarmCrops.execute({
+      season,
+      year: timeInfo.year ?? 0,
+      monthIndex: timeInfo.monthIndex,
+    });
 
     await this.runWindmillSurplusCycle.execute({
       month,
@@ -61,8 +60,7 @@ export class RunMonthlyFoodSupplyCycle {
 
     await this.runCityResourceCycle.execute({
       categories: FOOD_CIRCUIT.crops,
-      distributeCircuit: MARKET_DISTRIBUTE_CIRCUIT,
-      hubTransferCircuit: MARKET_WINDMILL_TRANSFER_CIRCUIT,
+      hubTransferBookkeeping: MARKET_WINDMILL_TRANSFER_BOOKKEEPING,
       season,
       month,
       timeInfo,

@@ -85,6 +85,18 @@
  * @property {number} [linkCapacity] Max number of distributors a 'hub' can
  *   stay linked to at once (e.g. how many markets one windmill can serve).
  *   Only meaningful for 'hub'.
+ * @property {{ unit: string }} [schedule] When this role only acts on a
+ *   schedule (a farm harvesting once a year, a windmill collecting only in
+ *   December) — see contexts/supply/domain/policies/ResourceSchedulePolicy.js
+ *   for the shape per `unit`. Omitted means unconditional (fires whenever
+ *   the owning command runs, e.g. a market restocking/distributing monthly).
+ * @property {number} [amount] Units this role produces/moves per scheduled
+ *   occurrence (a farm's annual yield, a distributor's batch size) — the
+ *   same concept regardless of role, not a "yield" special case.
+ * @property {string} [totalKey] Which stock field aggregates this role's
+ *   categories (e.g. 'food' for wheat/carrot/cabbage/fruit/game). Required
+ *   when `categories` has more than one entry — a role with 0 or 1 category
+ *   needs none, it's its own total. See ResourceRolePolicy.getTotalKeyForRole.
  *
  * @typedef {Object} PlacementRequirement
  * @property {ResourceRoleKind} role Role another, already-placed building must
