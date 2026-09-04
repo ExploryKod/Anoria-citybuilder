@@ -5,7 +5,7 @@ import { adoptHudFabDockChildren } from '../dom/shell/hudFabDock.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { AnimationMixer } from 'three';
-import {applyHoverColor, resetHoveredObject, resetObjectColor} from './meshUtils.js';
+import {applyHoverColor, resetHoveredObject, resetObjectColor} from './meshs/meshUtils.js';
 import { resolveIconAppearance, STATUS_ICON_DEFAULTS } from './meshs/statusIconAnchors.js';
 import {  textures  } from './meshs/data.js'
 import {
@@ -48,7 +48,7 @@ import {
   getSessionService,
   getSessionGameUI,
 } from '../../composition/sessionRuntime.js';
-import { createPlacementGhostController } from './placementGhost.js';
+import { createPlacementGhostController } from './placement/placementGhost.js';
 import { pickTileFromRaycast } from './scene-board/tileRaycast.js';
 import { pickEditorTileOnGroundPlane } from './scene-board/editorTileGroundPick.js';
 import loaderManager from '../dom/shell/LoaderManager.js';

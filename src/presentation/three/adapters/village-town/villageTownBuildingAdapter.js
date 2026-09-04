@@ -3,7 +3,7 @@
 // No other file (resolveBuildingMesh.js, placementGhost.js) may know this
 // source's name or behavior.
 
-import { getPlacementYawAngle, setPlacementRotationStep } from '../../placementRotation.js';
+import { getPlacementYawAngle, setPlacementRotationStep } from '../../placement/placementRotation.js';
 import { registerBuildingSourceAdapter } from '../buildingSourceAdapterRegistry.js';
 
 /**

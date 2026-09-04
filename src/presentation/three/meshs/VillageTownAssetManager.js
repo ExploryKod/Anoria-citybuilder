@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { applyPlacementRotationStep } from '../placementRotation.js';
+import { applyPlacementRotationStep } from '../placement/placementRotation.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { textures } from './data.js';

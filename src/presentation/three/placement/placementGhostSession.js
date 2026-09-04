@@ -1,4 +1,4 @@
-import { resolveVerticalFaceRiverAssetId, isEditorRiverAsset, resolveRiverMountFromRotationStep } from '../../shared/editor-catalog/editorKenneyAssetBehavior.js';
+import { resolveVerticalFaceRiverAssetId, isEditorRiverAsset, resolveRiverMountFromRotationStep } from '../../../shared/editor-catalog/editorKenneyAssetBehavior.js';
 
 /** Tools that must never drive a placement ghost (UI / zones / non-mesh). */
 const NON_PLACEABLE_TOOL_IDS = new Set([

@@ -40,13 +40,6 @@ import {
 } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { isRoadBuildingType } from '../contexts/construction/domain/policies/FootprintAvailabilityPolicy.js';
 import { listRoadPaintCells } from '../contexts/construction/domain/policies/RoadPaintPolicy.js';
-import {
-  cycleStonePathOrientationIndex,
-  isStonePathTool,
-  stonePathOrientationIndex,
-  stonePathOrientationLabel,
-  stonePathTypeForIndex,
-} from '../contexts/construction/domain/policies/StonePathOrientationPolicy.js';
 
 /**
  * @param {ReturnType<import('./createConstructionContext.js').createConstructionContext>} construction
@@ -74,11 +67,6 @@ export function createConstructionSessionApi(construction) {
     canPlaceBuildingAtTile: (params) => canPlaceBuildingAtTileWithSupplyRules(params),
     isRoadBuildingType: (buildingType) => isRoadBuildingType(buildingType),
     listRoadPaintCells: (...args) => listRoadPaintCells(...args),
-    isStonePathTool: (buildingType) => isStonePathTool(buildingType),
-    stonePathTypeForIndex: (index) => stonePathTypeForIndex(index),
-    stonePathOrientationLabel: (index) => stonePathOrientationLabel(index),
-    cycleStonePathOrientationIndex: (index) => cycleStonePathOrientationIndex(index),
-    stonePathOrientationIndex: (buildingType) => stonePathOrientationIndex(buildingType),
   });
 }
 

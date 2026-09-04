@@ -1,4 +1,4 @@
-import { resolveStatusIconPosition } from '../meshUtils.js';
+import { resolveStatusIconPosition } from './meshUtils.js';
 
 /**
  * Default status-icon anchor offsets and scales — fractions of the mesh's

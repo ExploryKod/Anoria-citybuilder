@@ -54,7 +54,7 @@ jest.unstable_mockModule(
 );
 
 const { createPlacementGhostController } = await import(
-  '../../../src/presentation/three/placementGhost.js'
+  '../../../src/presentation/three/placement/placementGhost.js'
 );
 
 describe('placementGhost', () => {

@@ -24,7 +24,7 @@ Références utiles : [RGAA 4](https://accessibilite.numerique.gouv.fr/) (critè
 | `src/presentation/dom/shell/PopupManager.js` | Suit les popups actives, sync EventBlocker, pose `inert` sur `#game-window` pour les dialogues hors fenêtre de jeu |
 | `src/presentation/three/scene.js` | `isGameWorldInputLocked()` — refuse clavier caméra / placement si overlay ouverte |
 | `src/presentation/dom/admin/AdministratorPanel.js` | Onglets APG des catégories admin |
-| `src/presentation/three/placementRotationHud.js` | HUD tourner / confirmer : `hidden` + `inert` + `tabindex="-1"` hors pose |
+| `../src/presentation/three/placement/placementRotationHud.js` | HUD tourner / confirmer : `hidden` + `inert` + `tabindex="-1"` hors pose |
 | `src/presentation/dom/styles/main.css` | Tokens `--focus-ring` ; `visibility: hidden` sur overlays inactifs |
 
 ---

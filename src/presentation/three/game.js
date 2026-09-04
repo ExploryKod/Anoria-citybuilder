@@ -88,7 +88,7 @@ import { buildingPlacementCatalog } from '../../shared/building-catalog/index.js
 import {
   createPlacementGhostSession,
   isPlaceableBuildingTool,
-} from './placementGhostSession.js';
+} from './placement/placementGhostSession.js';
 import {
   isEditorNatureTool,
   isEditorPlacementTool,
@@ -104,11 +104,11 @@ import {
   isPlacementNudgeArrowKey,
   gridDeltaForArrowKey,
   clampGridTile,
-} from './placementKeyboardNudge.js';
+} from './placement/placementKeyboardNudge.js';
 import { prefersTouchPlacementFlow } from './touchPlacementInput.js';
 import { canPlaceBuildingAtTileWithSupplyRules } from '../../composition/canPlaceBuildingAtTileWithSupplyRules.js';
 import { isRoadBuildingType } from '../../composition/constructionCatalog.js';
-import { createPlacementRotationHud } from './placementRotationHud.js';
+import { createPlacementRotationHud } from './placement/placementRotationHud.js';
 
 /**
  * @param {object | null | undefined} object
@@ -150,23 +150,12 @@ export function createGame(gameStore, assetManager, citySize = null) {
     busy: false,
   };
 
-  /** 0 = horizontal (StonePath-001), 1 = vertical (StonePath-Right-001). */
-  let stonePathOrientation = 0;
-
   /** Touch/tablet: anchor ghost + rotation HUD before confirming placement. */
   let touchPendingPlacement = null;
 
   function usesTouchPlacementRotationFlow(toolId) {
     return prefersTouchPlacementFlow()
       && isPlaceableBuildingTool(toolId, buildingPlacementCatalog);
-  }
-
-  /** Touch placement always uses base mesh + placementRotationStep (roads included). */
-  function resolveTouchPlacementBuildingType(toolId) {
-    if (isStonePathTool(toolId)) {
-      return 'StonePath-001';
-    }
-    return toolId;
   }
 
   /** @type {ReturnType<typeof createPlacementRotationHud> | null} */
@@ -189,8 +178,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
   }
 
   function beginTouchPendingPlacement(placeX, placeY, toolId) {
-    const buildingType = resolveTouchPlacementBuildingType(toolId);
-    const gridSize = buildingPlacementCatalog[toolId]?.gridSize ?? buildingPlacementCatalog[buildingType]?.gridSize ?? 1;
+    const buildingType = toolId;
+    const gridSize = buildingPlacementCatalog[toolId]?.gridSize ?? 1;
     const rotationStep = scene.placementGhost?.rotationStep ?? 0;
     touchPendingPlacement = {
       x: placeX,
@@ -291,28 +280,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
   const {
     isRoadBuildingType,
     listRoadPaintCells,
-    isStonePathTool,
-    stonePathTypeForIndex,
-    stonePathOrientationLabel,
-    cycleStonePathOrientationIndex,
-    stonePathOrientationIndex,
     canPlaceBuildingAtTile,
   } = constructionApi;
-
-  function getEffectiveBuildingToolId() {
-    if (isStonePathTool(activeToolId)) {
-      return stonePathTypeForIndex(stonePathOrientation);
-    }
-    return activeToolId;
-  }
-
-  function updateStonePathToolHint() {
-    const btn = document.querySelector('[data-stone-path-tool="1"]');
-    if (!btn) return;
-    const label = stonePathOrientationLabel(stonePathOrientation);
-    btn.title = `Chemin de pierre (${label}) — touche R pour tourner`;
-    btn.dataset.orientation = String(stonePathOrientation);
-  }
 
   function getPlacementRotationStep() {
     return scene.placementGhost?.rotationStep ?? 0;
@@ -489,15 +458,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     getGhost: () => scene.placementGhost,
     getCity: () => city,
     getActiveToolId: () => activeToolId,
-    getEffectiveAssetId: () => {
-      if (isEditorPlacementTool(activeToolId)) {
-        return activeToolId;
-      }
-      if (prefersTouchPlacementFlow() && isStonePathTool(activeToolId)) {
-        return 'StonePath-001';
-      }
-      return getEffectiveBuildingToolId();
-    },
+    getEffectiveAssetId: () => activeToolId,
     assetCatalog: buildingPlacementCatalog,
     isPlaceableTool: (toolId) => isActivePlacementTool(toolId),
     getFocusedObject: () => scene.focusedObject,
@@ -641,7 +602,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       return 'skip';
     }
 
-    const buildingType = getEffectiveBuildingToolId();
+    const buildingType = activeToolId;
     const tile = city.tiles[x][y];
     const canOverwriteRoad = !tile.buildingId || isRoadBuildingType(tile.buildingId);
     if (!canOverwriteRoad) {
@@ -654,6 +615,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       y,
       buildingType,
       gameTurn: time,
+      placementRotationStep: getPlacementRotationStep(),
     });
 
     if (!result.success) {
@@ -1007,13 +969,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
       const placed = await finalizeBuildingPlacement(
         placeX,
         placeY,
-        getEffectiveBuildingToolId(),
+        activeToolId,
         getPlacementRotationStep(),
       );
       if (placed) {
-        const effectiveType = getEffectiveBuildingToolId();
-        const gridSize =
-          buildingPlacementCatalog[activeToolId]?.gridSize ?? buildingPlacementCatalog[effectiveType]?.gridSize ?? 1;
+        const gridSize = buildingPlacementCatalog[activeToolId]?.gridSize ?? 1;
         placementGhostSession.suppressGhostAtFootprint(placeX, placeY, gridSize);
       } else {
         placementGhostSession.sync(selectedObject);
@@ -1068,15 +1028,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
       if (scene.placementGhost?.active) {
         scene.placementGhost.rotateStep();
         touchPendingPlacement.rotationStep = scene.placementGhost.rotationStep;
-      }
-      return true;
-    }
-
-    if (isStonePathTool(activeToolId)) {
-      if (scene.placementGhost?.active) {
-        stonePathOrientation = cycleStonePathOrientationIndex(stonePathOrientation);
-        updateStonePathToolHint();
-        placementGhostSession.sync();
       }
       return true;
     }
@@ -1310,16 +1261,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
       cancelTouchPendingPlacement();
       activeToolId = toolId;
       gameUI.activeToolId = toolId;
-      if (isStonePathTool(toolId)) {
-        // Selecting the single StonePath button keeps current orientation;
-        // legacy Left/Right ids normalize to the matching index.
-        if (toolId !== 'StonePath-001') {
-          stonePathOrientation = stonePathOrientationIndex(toolId);
-          activeToolId = 'StonePath-001';
-          gameUI.activeToolId = 'StonePath-001';
-        }
-        updateStonePathToolHint();
-      }
       placementGhostSession.onToolChanged();
       if (isEditorTerrainTool(toolId)) {
         void getKenneyNatureTerrainAdapter().ensureTerrainTemplate(toolId);

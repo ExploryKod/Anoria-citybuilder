@@ -1,17 +1,17 @@
 import * as THREE from 'three';
 import { getPlacementYawAngle, setPlacementRotationStep } from './placementRotation.js';
-import { ASSET_CATALOG } from './meshs/resolveBuildingMesh.js';
-import { getBuildingSourceAdapter } from './adapters/buildingSourceAdapterRegistry.js';
+import { ASSET_CATALOG } from '../meshs/resolveBuildingMesh.js';
+import { getBuildingSourceAdapter } from '../adapters/buildingSourceAdapterRegistry.js';
 import {
   isEditorPlacementTool,
   isEditorTerrainTool,
-} from '../../shared/editor-catalog/editorToolIds.js';
-import { getKenneyNatureTerrainAdapter } from './adapters/kenney-nature-terrain/KenneyNatureTerrainAdapter.js';
-import { getKenneyNaturePropAdapter } from './adapters/kenney-nature-props/KenneyNaturePropAdapter.js';
-import { propGroupWorldY } from '../../shared/editor-catalog/kenneyPlacementProfile.js';
-import { maxEditorPlacementRotationSteps, isEditorRiverAsset, resolveRiverMountFromRotationStep, resolveVerticalFaceRiverAssetId } from '../../shared/editor-catalog/editorKenneyAssetBehavior.js';
-import { applyKenneyVerticalEdgeMountToObject } from '../../shared/editor-catalog/editorVerticalFaceMount.js';
-import { WORLD_PLATFORM_Y } from '../../shared/terrain-catalog/terrainWorldContract.js';
+} from '../../../shared/editor-catalog/editorToolIds.js';
+import { getKenneyNatureTerrainAdapter } from '../adapters/kenney-nature-terrain/KenneyNatureTerrainAdapter.js';
+import { getKenneyNaturePropAdapter } from '../adapters/kenney-nature-props/KenneyNaturePropAdapter.js';
+import { propGroupWorldY } from '../../../shared/editor-catalog/kenneyPlacementProfile.js';
+import { maxEditorPlacementRotationSteps, isEditorRiverAsset, resolveRiverMountFromRotationStep, resolveVerticalFaceRiverAssetId } from '../../../shared/editor-catalog/editorKenneyAssetBehavior.js';
+import { applyKenneyVerticalEdgeMountToObject } from '../../../shared/editor-catalog/editorVerticalFaceMount.js';
+import { WORLD_PLATFORM_Y } from '../../../shared/terrain-catalog/terrainWorldContract.js';
 
 /**
  * @param {string} assetId
@@ -28,7 +28,7 @@ function isLazyKenneyEditorAsset(assetId) {
  * (no registered building adapter) falls through to the editor-stack path
  * below instead.
  * @param {string} assetId
- * @returns {import('./adapters/buildingSourceAdapterRegistry.js').BuildingSourceAdapter | null}
+ * @returns {import('../adapters/buildingSourceAdapterRegistry.js').BuildingSourceAdapter | null}
  */
 function getGhostAdapter(assetId) {
   return getBuildingSourceAdapter(ASSET_CATALOG[assetId]?.source);
@@ -176,7 +176,6 @@ export function createPlacementGhostController({ scene, assetManager }) {
     placementToolId = null;
     isAnchored = false;
     baseYawAngle = 0;
-    rotationStep = 0;
     ghostMode = 'hover';
   }
 
@@ -592,6 +591,7 @@ export function createPlacementGhostController({ scene, assetManager }) {
     lastFootprintWidth = 1;
     lastFootprintHeight = 1;
     lastRotationStep = 0;
+    rotationStep = 0;
     lastMountKey = 'surface';
   }
 

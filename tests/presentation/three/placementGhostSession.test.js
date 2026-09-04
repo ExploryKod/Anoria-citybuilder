@@ -3,7 +3,7 @@ import {
   isPlaceableBuildingTool,
   resolveEditorGhostVisualAssetId,
   supportsPlacementGhostRotation,
-} from '../../../src/presentation/three/placementGhostSession.js';
+} from '../../../src/presentation/three/placement/placementGhostSession.js';
 
 describe('placementGhostSession helpers', () => {
   const catalog = { 'House-Blue': { gridSize: 1 } };

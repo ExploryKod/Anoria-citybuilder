@@ -5,7 +5,7 @@ import { getKenneyCityKitMeshAdapter } from '../../three/adapters/kenney-city-ki
 import { BUILDING_ASSETS } from '../../three/assets/buildingAssets.js';
 import { resolveAndCreateBuildingMesh } from '../../three/meshs/resolveBuildingMesh.js';
 import { STATUS_ICON_DEFAULTS, STATUS_ICON_ANCHOR_OVERRIDES } from '../../three/meshs/statusIconAnchors.js';
-import { getLocalBoundingBox, resolveStatusIconPosition } from '../../three/meshUtils.js';
+import { getLocalBoundingBox, resolveStatusIconPosition } from '../../three/meshs/meshUtils.js';
 import { textures } from '../../three/meshs/data.js';
 
 /**
