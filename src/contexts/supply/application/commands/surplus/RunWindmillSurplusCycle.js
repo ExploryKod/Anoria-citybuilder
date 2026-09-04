@@ -53,8 +53,8 @@ export class RunWindmillSurplusCycle {
       await this.markWindmillCollectingSeason.execute(month);
     }
 
-    const windmills = await this.supplyBuildingRepository.findWindmills();
-    const farms = await this.supplyBuildingRepository.findFarms();
+    const windmills = await this.supplyBuildingRepository.findByResourceRole('hub');
+    const farms = await this.supplyBuildingRepository.findByResourceRole('producer');
     const farmRefs = farms.map((farm) => ({
       id: farm.id,
       type: farm.type,

@@ -6,6 +6,7 @@ import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
 import { isWithinRange } from '../../../src/contexts/supply/domain/policies/ResourceRangePolicy.js';
+import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { UpdateHousesMarketReach } from '../../../src/contexts/supply/application/commands/distribution/UpdateHousesMarketReach.js';
 
 class InMemorySupplyBuildingRepository {
@@ -30,14 +31,8 @@ class InMemorySupplyBuildingRepository {
     if (b) b.flags = { ...b.flags, ...flags };
   }
 
-  async findMarkets() {
-    return [...this.raw.values()].filter((b) => b.type.includes('Market'));
-  }
-
-  async findHouses() {
-    return [...this.raw.values()].filter(
-      (b) => b.type.includes('House') || b.type.includes('house')
-    );
+  async findByResourceRole(role, categories) {
+    return [...this.raw.values()].filter((b) => hasResourceRole(b.type, role, categories));
   }
 
   flag(id, key) {

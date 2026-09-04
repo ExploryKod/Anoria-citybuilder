@@ -27,10 +27,6 @@ class InMemorySupplyBuildingRepository {
   }
 
   async saveMarketFlags() {}
-
-  async findMarkets() {
-    return [];
-  }
 }
 
 function windmill(id, stocks, extras = {}) {

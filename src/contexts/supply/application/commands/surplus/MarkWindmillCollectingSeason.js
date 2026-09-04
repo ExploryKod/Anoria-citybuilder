@@ -19,7 +19,7 @@ export class MarkWindmillCollectingSeason {
    * @returns {Promise<{ windmills: number, isCollecting: boolean }>}
    */
   async execute(month) {
-    const windmills = await this.supplyBuildingRepository.findWindmills();
+    const windmills = await this.supplyBuildingRepository.findByResourceRole('hub');
     let isCollecting = false;
 
     for (const windmill of windmills) {

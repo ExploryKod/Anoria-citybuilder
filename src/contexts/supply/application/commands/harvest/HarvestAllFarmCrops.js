@@ -21,7 +21,7 @@ export class HarvestAllFarmCrops {
    * @returns {Promise<{ harvestedCount: number, harvests: object[] }>}
    */
   async execute({ season, year, monthIndex = null }) {
-    const farms = await this.supplyBuildingRepository.findFarms();
+    const farms = await this.supplyBuildingRepository.findByResourceRole('producer');
     const harvests = [];
 
     for (const farm of farms) {

@@ -10,7 +10,7 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
-import { getAmountForRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
+import { getAmountForRole, hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { HOUSE_FOOD_CONSUMPTION_BOOKKEEPING } from '../../../src/contexts/supply/domain/catalogs/FoodCircuits.js';
 import { ConsumeResource } from '../../../src/contexts/supply/application/commands/consumption/ConsumeResource.js';
 import { ConsumeAllHouseFood } from '../../../src/contexts/supply/application/commands/consumption/ConsumeAllHouseFood.js';
@@ -52,9 +52,9 @@ class InMemorySupplyBuildingRepository {
     }
   }
 
-  async findHouses() {
+  async findByResourceRole(role, categories) {
     return [...this.raw.values()]
-      .filter((b) => b.type.includes('House'))
+      .filter((b) => hasResourceRole(b.type, role, categories))
       .map((b) =>
         createSupplyBuildingSnapshot({
           ...b,

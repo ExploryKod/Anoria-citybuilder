@@ -19,7 +19,7 @@ export class ConsumeAllHouseFood {
    * @returns {Promise<{ consumedCount: number, consumptions: object[] }>}
    */
   async execute({ monthIndex }) {
-    const houses = await this.supplyBuildingRepository.findHouses();
+    const houses = await this.supplyBuildingRepository.findByResourceRole('consumer');
     const consumptions = [];
 
     for (const house of houses) {

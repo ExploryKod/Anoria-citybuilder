@@ -13,6 +13,7 @@ import { ResetFarmsSoldToWindmill } from '../../../src/contexts/supply/applicati
 import { ProcessWindmillCollection } from '../../../src/contexts/supply/application/commands/surplus/ProcessWindmillCollection.js';
 import { RunWindmillSurplusCycle } from '../../../src/contexts/supply/application/commands/surplus/RunWindmillSurplusCycle.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
+import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {
@@ -84,15 +85,9 @@ class InMemorySupplyBuildingRepository {
     }
   }
 
-  async findWindmills() {
+  async findByResourceRole(role, categories) {
     return [...this.raw.values()]
-      .filter((b) => b.type.includes('Windmill'))
-      .map((b) => this.#snapshot(b));
-  }
-
-  async findFarms() {
-    return [...this.raw.values()]
-      .filter((b) => b.type.includes('Farm'))
+      .filter((b) => hasResourceRole(b.type, role, categories))
       .map((b) => this.#snapshot(b));
   }
 

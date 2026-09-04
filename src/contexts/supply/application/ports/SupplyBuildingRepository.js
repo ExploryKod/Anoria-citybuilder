@@ -54,30 +54,15 @@ export class SupplyBuildingRepository {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
-  async findMarkets() {
-    throw new Error('SupplyBuildingRepository: port not implemented');
-  }
-
   /**
-   * Generic role/category building selection (see ResourceRolePolicy) —
-   * the one every resource cycle uses; findMarkets/findHouses/etc. above
-   * stay as convenience shortcuts for food's own steps.
+   * Generic role/category building selection (see ResourceRolePolicy) — the
+   * one every resource cycle uses. No named shortcuts (findMarkets/
+   * findHouses/findWindmills/findFarms) — callers pass the role they mean
+   * ('distributor'/'consumer'/'hub'/'producer').
    * @param {import('../../domain/policies/ResourceRolePolicy.js').ResourceRoleKind} _role
    * @param {string | string[]} [_categories]
    */
   async findByResourceRole(_role, _categories) {
-    throw new Error('SupplyBuildingRepository: port not implemented');
-  }
-
-  async findHouses() {
-    throw new Error('SupplyBuildingRepository: port not implemented');
-  }
-
-  async findWindmills() {
-    throw new Error('SupplyBuildingRepository: port not implemented');
-  }
-
-  async findFarms() {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 

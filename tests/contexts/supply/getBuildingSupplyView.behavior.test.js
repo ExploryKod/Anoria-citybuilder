@@ -23,12 +23,6 @@ class InMemorySupplyBuildingRepository {
 
   async saveStocks() {}
   async saveMarketFlags() {}
-  async findMarkets() {
-    return [];
-  }
-  async findHouses() {
-    return [];
-  }
 }
 
 describe('Supply — GetBuildingSupplyView', () => {

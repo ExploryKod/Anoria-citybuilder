@@ -227,13 +227,6 @@ export class DexieSupplyBuildingRepository {
     await this.#putFields(buildingId, fields);
   }
 
-  async findMarkets() {
-    const rows = await this.#activeRows();
-    return rows
-      .filter((row) => hasResourceRole(row.type, 'distributor'))
-      .map((row) => this.#toSnapshot(row));
-  }
-
   async findByResourceRole(role, categories) {
     const rows = await this.#activeRows();
     return rows
@@ -241,30 +234,9 @@ export class DexieSupplyBuildingRepository {
       .map((row) => this.#toSnapshot(row));
   }
 
-  async findHouses() {
-    const rows = await this.#activeRows();
-    return rows
-      .filter((row) => hasResourceRole(row.type, 'consumer'))
-      .map((row) => this.#toSnapshot(row));
-  }
-
-  async findWindmills() {
-    const rows = await this.#activeRows();
-    return rows
-      .filter((row) => hasResourceRole(row.type, 'hub'))
-      .map((row) => this.#toSnapshot(row));
-  }
-
   async listNatureItems() {
     const rows = await this.#activeRows();
     return rows.filter((row) => (row.category || '') === 'nature');
-  }
-
-  async findFarms() {
-    const rows = await this.#activeRows();
-    return rows
-      .filter((row) => hasResourceRole(row.type, 'producer'))
-      .map((row) => this.#toSnapshot(row));
   }
 
   async listAllBuildingRows() {

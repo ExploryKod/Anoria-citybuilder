@@ -6,7 +6,7 @@ import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
 import { matchesSchedule } from '../../../src/contexts/supply/domain/policies/ResourceSchedulePolicy.js';
-import { getAmountForRole, getScheduleForRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
+import { getAmountForRole, getScheduleForRole, hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { FARM_HARVEST_BOOKKEEPING } from '../../../src/contexts/supply/domain/catalogs/FoodCircuits.js';
 import { ProduceResource } from '../../../src/contexts/supply/application/commands/harvest/ProduceResource.js';
 import { HarvestAllFarmCrops } from '../../../src/contexts/supply/application/commands/harvest/HarvestAllFarmCrops.js';
@@ -47,9 +47,9 @@ class InMemorySupplyBuildingRepository {
     }
   }
 
-  async findFarms() {
+  async findByResourceRole(role, categories) {
     return [...this.raw.values()]
-      .filter((b) => b.type.includes('Farm'))
+      .filter((b) => hasResourceRole(b.type, role, categories))
       .map((b) =>
         createSupplyBuildingSnapshot({
           ...b,

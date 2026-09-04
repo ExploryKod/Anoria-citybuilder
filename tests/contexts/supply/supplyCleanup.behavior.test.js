@@ -13,6 +13,7 @@ import { MarkWindmillCollectingSeason } from '../../../src/contexts/supply/appli
 import { ResetFarmsSoldToWindmill } from '../../../src/contexts/supply/application/commands/surplus/ResetFarmsSoldToWindmill.js';
 import { UpdateMarketFarmProximity } from '../../../src/contexts/supply/application/commands/procurement/UpdateMarketFarmProximity.js';
 import { isWithinRange } from '../../../src/composition/supplyOps.js';
+import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 
 class InMemorySupplyBuildingRepository {
   constructor({ snapshots = [], views = [] } = {}) {
@@ -55,24 +56,8 @@ class InMemorySupplyBuildingRepository {
     }
   }
 
-  async findMarkets() {
-    return [...this.snapshots.values()].filter((b) => b.type.includes('Market'));
-  }
-
-  async findHouses() {
-    return [...this.snapshots.values()].filter((b) => b.type.includes('House'));
-  }
-
-  async findWindmills() {
-    return [...this.snapshots.values()].filter(
-      (b) => b.type.includes('Windmill') || b.type.includes('windmill')
-    );
-  }
-
-  async findFarms() {
-    return [...this.snapshots.values()].filter(
-      (b) => b.type.includes('Farm') || b.type.includes('farm')
-    );
+  async findByResourceRole(role, categories) {
+    return [...this.snapshots.values()].filter((b) => hasResourceRole(b.type, role, categories));
   }
 }
 

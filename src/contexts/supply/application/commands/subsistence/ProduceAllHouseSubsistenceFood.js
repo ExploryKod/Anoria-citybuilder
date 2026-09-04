@@ -17,7 +17,7 @@ export class ProduceAllHouseSubsistenceFood {
    * @returns {Promise<{ producedCount: number, productions: object[] }>}
    */
   async execute({ monthIndex }) {
-    const houses = await this.supplyBuildingRepository.findHouses();
+    const houses = await this.supplyBuildingRepository.findByResourceRole('consumer');
     const productions = [];
 
     for (const house of houses) {

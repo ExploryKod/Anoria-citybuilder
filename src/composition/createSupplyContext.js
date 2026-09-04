@@ -250,7 +250,7 @@ export function createSupplyContext({
     },
 
     async hasOperationalWindmill() {
-      const windmills = await supplyBuildingRepositoryImpl.findWindmills();
+      const windmills = await supplyBuildingRepositoryImpl.findByResourceRole('hub');
       return windmills.length > 0;
     },
 

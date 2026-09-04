@@ -15,7 +15,7 @@ export class ResetFarmsSoldToWindmill {
    * @returns {Promise<{ farms: number, cleared: number }>}
    */
   async execute({ onlyIfSet = true } = {}) {
-    const farms = await this.supplyBuildingRepository.findFarms();
+    const farms = await this.supplyBuildingRepository.findByResourceRole('producer');
     let cleared = 0;
 
     for (const farm of farms) {

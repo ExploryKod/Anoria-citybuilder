@@ -24,10 +24,6 @@ class InMemorySupplyBuildingRepository {
   }
 
   async saveMarketFlags() {}
-
-  async findMarkets() {
-    return [...this.raw.values()].filter((b) => b.type.includes('Market'));
-  }
 }
 
 function market(id, stocks, extras = {}) {

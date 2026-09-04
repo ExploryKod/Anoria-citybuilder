@@ -14,6 +14,7 @@ import {
   computeMonthlyGatheringCredit,
   computeSubsistenceFoodCredit,
 } from '../../../src/contexts/supply/domain/policies/HouseSubsistencePolicy.js';
+import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { ProduceHouseSubsistenceFood } from '../../../src/contexts/supply/application/commands/subsistence/ProduceHouseSubsistenceFood.js';
 import { ProduceAllHouseSubsistenceFood } from '../../../src/contexts/supply/application/commands/subsistence/ProduceAllHouseSubsistenceFood.js';
 
@@ -50,9 +51,9 @@ class InMemorySupplyBuildingRepository {
     }
   }
 
-  async findHouses() {
+  async findByResourceRole(role, categories) {
     return [...this.raw.values()]
-      .filter((b) => b.type.includes('House'))
+      .filter((b) => hasResourceRole(b.type, role, categories))
       .map((b) => createSupplyBuildingSnapshot({ ...b, stocks: createFoodStock(b.stocks) }));
   }
 }

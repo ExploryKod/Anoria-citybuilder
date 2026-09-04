@@ -27,8 +27,8 @@ export class UpdateHousesMarketReach {
    * }>}
    */
   async execute({ maxDistance = 5 } = {}) {
-    const markets = await this.supplyBuildingRepository.findMarkets();
-    const houses = await this.supplyBuildingRepository.findHouses();
+    const markets = await this.supplyBuildingRepository.findByResourceRole('distributor');
+    const houses = await this.supplyBuildingRepository.findByResourceRole('consumer');
 
     const marketsWithRoad = markets.filter(
       (m) =>
