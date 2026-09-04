@@ -95,36 +95,42 @@ describe('Housing — house progression', () => {
 
   describe('HouseLevelPolicy.resolveHouseLevel (Blue/Red/Purple)', () => {
     test('level 1 -> 2 requires road access and a positive population', () => {
-      const result = resolveHouseLevel({ level: 1, pop: 3, roadCount: 1 });
+      const result = resolveHouseLevel({ level: 1, pop: 3, roadCount: 1, residentialGroup: 'artisans' });
       expect(result.targetLevel).toBe(HOUSE_LEVEL_SPECIALIZED);
       expect(result.changed).toBe(true);
       expect(result.reason).toBe('level1_to_level2');
     });
 
     test('level 1 stays autarkic without road access', () => {
-      const result = resolveHouseLevel({ level: 1, pop: 3, roadCount: 0 });
+      const result = resolveHouseLevel({ level: 1, pop: 3, roadCount: 0, residentialGroup: 'artisans' });
       expect(result.targetLevel).toBe(HOUSE_LEVEL_AUTARKY);
       expect(result.changed).toBe(false);
     });
 
     test('level 1 stays autarkic when uninhabited, even with road access', () => {
-      const result = resolveHouseLevel({ level: 1, pop: 0, roadCount: 1 });
+      const result = resolveHouseLevel({ level: 1, pop: 0, roadCount: 1, residentialGroup: 'artisans' });
       expect(result.targetLevel).toBe(HOUSE_LEVEL_AUTARKY);
       expect(result.changed).toBe(false);
     });
 
     test('level 2 regresses to level 1 when road access is lost, population clamped to the level-1 cap', () => {
-      const result = resolveHouseLevel({ level: 2, pop: 10, roadCount: 0 });
+      const result = resolveHouseLevel({ level: 2, pop: 10, roadCount: 0, residentialGroup: 'artisans' });
       expect(result.targetLevel).toBe(HOUSE_LEVEL_AUTARKY);
       expect(result.targetPop).toBe(HOUSE_LEVEL_1_MAX_POP);
       expect(result.changed).toBe(true);
-      expect(result.reason).toBe('level2_to_level1_no_road');
+      expect(result.reason).toBe('level2_to_level1_requirements_lost');
     });
 
     test('level 2 stays specialized while road access is kept', () => {
-      const result = resolveHouseLevel({ level: 2, pop: 10, roadCount: 1 });
+      const result = resolveHouseLevel({ level: 2, pop: 10, roadCount: 1, residentialGroup: 'artisans' });
       expect(result.changed).toBe(false);
       expect(result.targetLevel).toBe(HOUSE_LEVEL_SPECIALIZED);
+    });
+
+    test('unknown residential group never advances past tier 1', () => {
+      const result = resolveHouseLevel({ level: 1, pop: 3, roadCount: 1, residentialGroup: null });
+      expect(result.targetLevel).toBe(HOUSE_LEVEL_AUTARKY);
+      expect(result.changed).toBe(false);
     });
   });
 

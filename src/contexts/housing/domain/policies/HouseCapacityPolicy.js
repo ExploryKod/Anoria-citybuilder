@@ -13,14 +13,21 @@ export const HOUSE_LEVEL_1_MAX_POP = REGULAR_HOUSE_MAX_POP;
 /** Level 2 (group profession, road required): double the level-1 cap. */
 export const HOUSE_LEVEL_2_MAX_POP = HOUSE_LEVEL_1_MAX_POP * 2;
 
+/** Population cap per house tier — add a key here for a new tier, no code change. */
+const HOUSE_TIER_MAX_POP = Object.freeze({
+  1: HOUSE_LEVEL_1_MAX_POP,
+  2: HOUSE_LEVEL_2_MAX_POP,
+});
+
 /**
- * Max population for a Blue/Red/Purple house at a given level (1 or 2).
+ * Max population for a Blue/Red/Purple house at a given tier. An unknown
+ * tier (including none reached yet) falls back to tier 1's cap.
  * Palace capacity stays governed by `maxPopulationForHouseType` (frozen path).
- * @param {1 | 2} level
+ * @param {number} level
  * @returns {number}
  */
 export function maxPopulationForLevel(level) {
-  return level === 2 ? HOUSE_LEVEL_2_MAX_POP : HOUSE_LEVEL_1_MAX_POP;
+  return HOUSE_TIER_MAX_POP[level] ?? HOUSE_LEVEL_1_MAX_POP;
 }
 
 /**

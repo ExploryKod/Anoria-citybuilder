@@ -32,9 +32,9 @@ export function getCitizenSkillsForHouse({ level, residentialGroup }) {
   if (!facts) return [];
 
   const skills = new Set();
-  for (const [tierLevel, tierSkills] of Object.entries(facts.skillsByLevel)) {
+  for (const [tierLevel, tier] of Object.entries(facts.tiers)) {
     if (Number(tierLevel) <= level) {
-      tierSkills.forEach((skill) => skills.add(skill));
+      tier.skills.forEach((skill) => skills.add(skill));
     }
   }
   return Object.freeze([...skills]);

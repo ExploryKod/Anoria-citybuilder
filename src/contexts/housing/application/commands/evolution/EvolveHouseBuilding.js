@@ -1,6 +1,7 @@
 import { resolveHouseEvolution } from '../../../domain/policies/HouseEvolutionPolicy.js';
 import { resolveHouseLevel } from '../../../domain/policies/HouseLevelPolicy.js';
 import { isPalaceHouseType } from '../../../domain/policies/HouseCapacityPolicy.js';
+import { residentialGroupForHouseType } from '../../../domain/policies/GroupSkillPolicy.js';
 
 /**
  * Command: evaluate and persist house progression for one residential building.
@@ -92,6 +93,7 @@ export class EvolveHouseBuilding {
       level: house.level,
       pop: house.pop,
       roadCount: house.roadCount,
+      residentialGroup: residentialGroupForHouseType(house.type),
     });
 
     if (!resolution.changed) {

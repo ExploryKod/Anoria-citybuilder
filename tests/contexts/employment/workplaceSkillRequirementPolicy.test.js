@@ -15,7 +15,9 @@ describe('Employment — WorkplaceSkillRequirementPolicy', () => {
 
   test('workplace skills use Housing profession skill vocabulary (contract)', () => {
     const housingSkillValues = new Set(
-      Object.values(SOCIAL_CATEGORY).flatMap((facts) => Object.values(facts.skillsByLevel).flat())
+      Object.values(SOCIAL_CATEGORY).flatMap((facts) =>
+        Object.values(facts.tiers).flatMap((tier) => tier.skills)
+      )
     );
     for (const skill of Object.values(WORKPLACE_REQUIRED_SKILL)) {
       expect(housingSkillValues.has(skill)).toBe(true);
