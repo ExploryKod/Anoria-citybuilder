@@ -84,6 +84,7 @@ export class PlaceBuildingAtTile {
         y,
         buildingType,
         assetCatalog: this.assetCatalog,
+        rotationStep: normalizedRotationStep,
       });
       if (!extra.ok) {
         return {

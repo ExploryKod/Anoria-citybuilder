@@ -955,6 +955,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
           y: placeY,
           buildingType: activeToolId,
           assetCatalog: buildingPlacementCatalog,
+          rotationStep: getPlacementRotationStep(),
         });
         if (!placementCheck.ok) {
           if (placementCheck.reason) {
