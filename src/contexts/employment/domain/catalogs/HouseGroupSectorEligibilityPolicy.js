@@ -6,20 +6,24 @@
  * in. Sector 5 (Infrastructure/roads) is intentionally absent — it is open
  * to everyone, but `roads` needs 0 workers today so it never manifests as an
  * actual workplace (see `BuildingRolePolicy.isWorkplace`).
+ *
+ * Derived from shared/population/socialCategoryCatalog.js, the single
+ * source for this category-level fact — see that file's header.
  */
 
 import { buildingCatalog } from '../../../../shared/building-catalog/buildingCatalog.js';
+import { SOCIAL_CATEGORY } from '../../../../shared/population/socialCategoryCatalog.js';
 
 export const SOCIAL_GROUP_ARTISANS = 'artisans';
 export const SOCIAL_GROUP_MERCHANTS = 'merchants';
 export const SOCIAL_GROUP_SCHOLARS = 'scholars';
 
 /** @type {Readonly<Record<string, ReadonlyArray<number>>>} */
-export const GROUP_ELIGIBLE_SECTORS = Object.freeze({
-  [SOCIAL_GROUP_ARTISANS]: Object.freeze([1, 3, 4]),
-  [SOCIAL_GROUP_MERCHANTS]: Object.freeze([2]),
-  [SOCIAL_GROUP_SCHOLARS]: Object.freeze([6]),
-});
+export const GROUP_ELIGIBLE_SECTORS = Object.freeze(
+  Object.fromEntries(
+    Object.entries(SOCIAL_CATEGORY).map(([group, facts]) => [group, facts.eligibleSectors])
+  )
+);
 
 /**
  * Derived from `buildingCatalog` (single source of truth for the static

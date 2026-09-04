@@ -1,29 +1,33 @@
 /**
  * Employment BC — which citizen skill is required to staff each workplace.
  *
- * Kept separate from Housing placement unlocks so recruitment rules can evolve
- * independently (e.g. barn vs windmill, future artisan tier).
+ * Both maps below are derived, not hand-authored: `WORKPLACE_REQUIRED_SKILL`
+ * reads each building's own `employment.requiredSkill` fact (buildingCatalog
+ * — see buildingEconomy.js), and `SKILL_TO_RESIDENTIAL_GROUP` inverts the
+ * category → skill fact in shared/population/socialCategoryCatalog.js. One
+ * edit point for each fact instead of two hand-kept-in-sync copies.
  */
+import { buildingCatalog } from '../../../../shared/building-catalog/buildingCatalog.js';
+import { SOCIAL_CATEGORY } from '../../../../shared/population/socialCategoryCatalog.js';
 
 /** @type {Readonly<Record<string, string>>} */
-export const WORKPLACE_REQUIRED_SKILL = Object.freeze({
-  'Farm-Wheat': 'fermier',
-  'Farm-Carrot': 'fermier',
-  'Farm-Cabbage': 'fermier',
-  'Market-Stall-Red': 'vente-alimentaire',
-  'Windmill-001': 'stockage-alimentaire',
-});
+export const WORKPLACE_REQUIRED_SKILL = Object.freeze(
+  Object.fromEntries(
+    Object.entries(buildingCatalog)
+      .filter(([, def]) => def.employment?.requiredSkill)
+      .map(([id, def]) => [id, def.employment.requiredSkill])
+  )
+);
 
 /**
- * Inverse map for allocation passes (skill → social group id).
- * Must stay aligned with Housing `GROUP_LEVEL2_SKILL`.
+ * Inverse of `SOCIAL_CATEGORY`'s skill fact (skill → social group id).
  * @type {Readonly<Record<string, string>>}
  */
-export const SKILL_TO_RESIDENTIAL_GROUP = Object.freeze({
-  fermier: 'artisans',
-  'vente-alimentaire': 'merchants',
-  'stockage-alimentaire': 'scholars',
-});
+export const SKILL_TO_RESIDENTIAL_GROUP = Object.freeze(
+  Object.fromEntries(
+    Object.entries(SOCIAL_CATEGORY).map(([group, facts]) => [facts.skill, group])
+  )
+);
 
 /**
  * @param {string} buildingType

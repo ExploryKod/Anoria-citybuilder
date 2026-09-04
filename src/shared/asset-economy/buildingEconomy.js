@@ -83,19 +83,19 @@ export const BUILDING_ECONOMY = {
   'Farm-Wheat': {
     displayName: 'Champ de blé',
     construction: { price: 10, category: 'farms' },
-    employment: { sector: 1, workerNeed: 3, eliteNeed: 0 },
+    employment: { sector: 1, workerNeed: 3, eliteNeed: 0, requiredSkill: 'fermier' },
     resourceRoles: [{ role: 'producer', categories: ['wheat'] }],
   },
   'Farm-Carrot': {
     displayName: 'Champ de carottes',
     construction: { price: 20, category: 'farms' },
-    employment: { sector: 1, workerNeed: 3, eliteNeed: 0 },
+    employment: { sector: 1, workerNeed: 3, eliteNeed: 0, requiredSkill: 'fermier' },
     resourceRoles: [{ role: 'producer', categories: ['carrot'] }],
   },
   'Farm-Cabbage': {
     displayName: 'Champ de choux',
     construction: { price: 30, category: 'farms' },
-    employment: { sector: 1, workerNeed: 3, eliteNeed: 0 },
+    employment: { sector: 1, workerNeed: 3, eliteNeed: 0, requiredSkill: 'fermier' },
     resourceRoles: [{ role: 'producer', categories: ['cabbage'] }],
   },
   'Hay-Bale': { displayName: 'Botte de foin', construction: { price: 2, category: 'farms' } },
@@ -106,7 +106,7 @@ export const BUILDING_ECONOMY = {
   'Windmill-001': {
     displayName: 'Moulin',
     construction: { price: 50, category: 'industry' },
-    employment: { sector: 4, workerNeed: 4, eliteNeed: 2 },
+    employment: { sector: 4, workerNeed: 4, eliteNeed: 2, requiredSkill: 'stockage-alimentaire' },
     // No `range` on 'collector': today it collects city-wide (matches
     // RunWindmillSurplusCycle passing every farm, unfiltered by distance).
     // A future resource can cap this with a range; food doesn't today.
@@ -137,7 +137,7 @@ export const BUILDING_ECONOMY = {
   'Market-Stall-Red': {
     displayName: 'Étal rouge',
     construction: { price: 10, category: 'markets' },
-    employment: { sector: 2, workerNeed: 2, eliteNeed: 1 },
+    employment: { sector: 2, workerNeed: 2, eliteNeed: 1, requiredSkill: 'vente-alimentaire' },
     resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5 }],
     placementRequires: [{ role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], range: 5, requiresCapacity: true }],
   },

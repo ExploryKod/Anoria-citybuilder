@@ -3,14 +3,18 @@
  *
  * Swappable gameplay tuning for early profession skills. Employment and
  * presentation consume this via housing application queries / composition.
+ *
+ * Derived from shared/population/socialCategoryCatalog.js, the single
+ * source for the category → skill fact — see that file's header.
  */
+import { SOCIAL_CATEGORY } from '../../../../shared/population/socialCategoryCatalog.js';
 
 /** @type {Readonly<Record<string, string>>} */
-export const GROUP_LEVEL2_SKILL = Object.freeze({
-  'artisans': 'fermier',
-  merchants: 'vente-alimentaire',
-  scholars: 'stockage-alimentaire',
-});
+export const GROUP_LEVEL2_SKILL = Object.freeze(
+  Object.fromEntries(
+    Object.entries(SOCIAL_CATEGORY).map(([group, facts]) => [group, facts.skill])
+  )
+);
 
 /**
  * @param {string} residentialGroup

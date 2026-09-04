@@ -65,6 +65,9 @@
  * @property {number} [workerNeed] Omitted when computed dynamically by the
  *   owning bounded context.
  * @property {number} [eliteNeed]
+ * @property {string} [requiredSkill] Citizen skill a worker must have to staff
+ *   this workplace (see shared/population/socialCategoryCatalog.js). Omitted
+ *   means any worker can staff it.
  *
  * @typedef {Object} BuildingAccountingFacts
  * @property {number} maintenance
