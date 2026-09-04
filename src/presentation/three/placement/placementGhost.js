@@ -387,7 +387,10 @@ export function createPlacementGhostController({ scene, assetManager }) {
           toolId,
           target.options
         );
-      } else {
+      } else if (!getGhostAdapter(target.assetId)) {
+        // Adapter-created meshes already position themselves in createMesh
+        // (footprint-aware, possibly non-square) — this isotropic fallback
+        // is only correct for assets with no adapter.
         setTilePosition(buildMesh, target.x, target.y, gridSize);
       }
       mountGhost(

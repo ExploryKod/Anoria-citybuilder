@@ -53,7 +53,7 @@ describe('buildingCatalog — pure data contract', () => {
 describe('buildingPlacementCatalog — derived from buildingCatalog', () => {
   test('matches construction facts for a sample of types', () => {
     expect(buildingPlacementCatalog['House-Blue']).toEqual({
-      price: 10, category: 'houses', gridSize: 1, footprintWidth: 1, footprintDepth: 1,
+      price: 10, category: 'houses', gridSize: 2, footprintWidth: 2, footprintDepth: 2,
     });
     expect(buildingPlacementCatalog['StonePath-001']).toEqual({
       price: 5, category: 'infrastructure', gridSize: 1, footprintWidth: 1, footprintDepth: 1,

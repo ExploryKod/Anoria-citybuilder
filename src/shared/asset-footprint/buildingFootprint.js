@@ -34,9 +34,12 @@ export const BUILDING_FOOTPRINT = Object.freeze({
   'Hay-Cart': Object.freeze({ width: 1, depth: 1 }),
   'Hay-Pile': Object.freeze({ width: 1, depth: 1 }),
   'House-2Story': Object.freeze({ width: 1, depth: 1 }),
-  'House-Blue': Object.freeze({ width: 1, depth: 1 }),
-  'House-Purple': Object.freeze({ width: 1, depth: 1 }),
-  'House-Red': Object.freeze({ width: 1, depth: 1 }),
+  // House-Blue/Purple/Red reassign their geometry to Kenney suburban
+  // building-type-b/c/a (see buildingAssets.js) — footprint must match that
+  // prefab's real size, not the villageTown-era 1x1 these ids used to be.
+  'House-Blue': Object.freeze({ width: 2, depth: 2 }),
+  'House-Purple': Object.freeze({ width: 2, depth: 1 }),
+  'House-Red': Object.freeze({ width: 2, depth: 1 }),
   'Market-Stall': Object.freeze({ width: 1, depth: 1 }),
   'Market-Stall-Blue': Object.freeze({ width: 1, depth: 1 }),
   'Market-Stall-Red': Object.freeze({ width: 1, depth: 1 }),
