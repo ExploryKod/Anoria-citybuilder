@@ -58,6 +58,17 @@ export class SupplyBuildingRepository {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
+  /**
+   * Generic role/category building selection (see ResourceRolePolicy) —
+   * the one every resource cycle uses; findMarkets/findHouses/etc. above
+   * stay as convenience shortcuts for food's own steps.
+   * @param {import('../../domain/policies/ResourceRolePolicy.js').ResourceRoleKind} _role
+   * @param {string | string[]} [_categories]
+   */
+  async findByResourceRole(_role, _categories) {
+    throw new Error('SupplyBuildingRepository: port not implemented');
+  }
+
   async findHouses() {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }

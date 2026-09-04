@@ -1,26 +1,27 @@
 /**
- * Bulldoze all markets linked to a windmill before the windmill itself is removed.
+ * Bulldoze all distributors linked to a hub before the hub itself is
+ * removed. Generic — replaces the old windmill/market-only
+ * CascadeDestroyWindmillMarkets (which also took an unused
+ * DetachMarketFromWindmill dependency — dropped, it never called it).
  */
-export class CascadeDestroyWindmillMarkets {
+export class CascadeDestroyHubDistributors {
   /**
    * @param {import('../../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
-   * @param {import('./DetachMarketFromWindmill.js').DetachMarketFromWindmill} detachMarketFromWindmill
    */
-  constructor(supplyBuildingRepository, detachMarketFromWindmill) {
+  constructor(supplyBuildingRepository) {
     this.supplyBuildingRepository = supplyBuildingRepository;
-    this.detachMarketFromWindmill = detachMarketFromWindmill;
   }
 
   /**
    * @param {object} params
-   * @param {string} params.windmillId
+   * @param {string} params.hubId
    * @param {{ size: number, tiles: object[][] }} params.city
    * @param {(args: { city: object, x: number, y: number }) => Promise<unknown>} params.bulldozeBuildingAtTile
    * @returns {Promise<{ destroyed: Array<{ marketId: string, x: number, y: number }> }>}
    */
-  async execute({ windmillId, city, bulldozeBuildingAtTile }) {
-    const windmill = await this.supplyBuildingRepository.findById(windmillId);
-    const linkedMarkets = windmill?.linkedMarkets ?? [];
+  async execute({ hubId, city, bulldozeBuildingAtTile }) {
+    const hub = await this.supplyBuildingRepository.findById(hubId);
+    const linkedMarkets = hub?.linkedMarkets ?? [];
     const destroyed = [];
 
     for (const link of linkedMarkets) {
@@ -39,7 +40,7 @@ export class CascadeDestroyWindmillMarkets {
       });
     }
 
-    await this.supplyBuildingRepository.saveLinkedMarkets(windmillId, []);
+    await this.supplyBuildingRepository.saveLinkedMarkets(hubId, []);
 
     return { destroyed };
   }

@@ -79,6 +79,18 @@
  * @property {number} [range] Manhattan tiles this role reaches — only meaningful for
  *   'collector' (pulls from nearby producer/hub) and 'distributor' (pushes to
  *   nearby consumers). Omitted for 'producer'/'hub'/'consumer', which don't reach.
+ * @property {number} [linkCapacity] Max number of distributors a 'hub' can
+ *   stay linked to at once (e.g. how many markets one windmill can serve).
+ *   Only meaningful for 'hub'.
+ *
+ * @typedef {Object} PlacementRequirement
+ * @property {ResourceRoleKind} role Role another, already-placed building must
+ *   hold (e.g. 'hub') for this placement to be allowed.
+ * @property {string[]} categories Which of that role's categories satisfy it.
+ * @property {number} [range] Manhattan tiles to search within. Omitted means
+ *   anywhere in the city (no distance limit).
+ * @property {boolean} [requiresCapacity] When true, the found building must
+ *   also have room under its own `linkCapacity` (not already at its cap).
  *
  * @typedef {Object} BuildingDefinition
  * @property {string} [displayName]
@@ -89,6 +101,10 @@
  * @property {ResourceRoleFacts[]} [resourceRoles] A building can hold more than
  *   one role at once (e.g. a windmill both collects from farms and holds a hub
  *   stock for markets to pull from).
+ * @property {PlacementRequirement[]} [placementRequires] One or more other
+ *   buildings that must already be placed (and, if `requiresCapacity`, have
+ *   room) before this building can be placed at all — e.g. a market can't be
+ *   placed without a windmill hub in range. Omitted/empty means unconstrained.
  */
 
 import { BUILDING_ECONOMY } from '../asset-economy/buildingEconomy.js';
