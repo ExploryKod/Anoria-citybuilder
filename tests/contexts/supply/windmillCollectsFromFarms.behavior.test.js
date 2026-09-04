@@ -4,7 +4,7 @@
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
-import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
+import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import { matchesSchedule } from '../../../src/contexts/supply/domain/policies/ResourceSchedulePolicy.js';
 import { getScheduleForRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { CollectResourceToHub } from '../../../src/contexts/supply/application/commands/surplus/CollectResourceToHub.js';
@@ -18,15 +18,15 @@ class InMemorySupplyBuildingRepository {
 
   async findById(id) {
     const b = this.raw.get(id);
-    return b ? { ...b, stocks: createFoodStock(b.stocks) } : null;
+    return b ? { ...b, stocks: createSupplyStock(b.stocks) } : null;
   }
 
   async saveStocks(id, stocks) {
     const b = this.raw.get(id);
-    if (b) b.stocks = { ...createFoodStock(stocks) };
+    if (b) b.stocks = { ...createSupplyStock(stocks) };
   }
 
-  async saveMarketFlags() {}
+  async saveSupplyFlags() {}
 }
 
 function windmill(id, stocks, extras = {}) {

@@ -14,7 +14,7 @@ import {
  * ResourceSchedulePolicy.js) and a once-per-period lock. Resource-agnostic —
  * every fact about WHAT is produced and WHEN comes from the building's own
  * catalog entry; `bookkeeping` only carries the once-per-period lock's
- * storage shape, which still varies by caller (see FoodCircuits.js).
+ * storage shape, which still varies by caller (see ResourceBookkeepingCatalog.js).
  */
 export class ProduceResource {
   /**

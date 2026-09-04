@@ -23,7 +23,7 @@ function fakeSupply() {
   let foodCalls = 0;
   return {
     foodCalls: () => foodCalls,
-    runMonthlyFoodSupplyCycle: async () => {
+    runMonthlyResourceCycle: async () => {
       foodCalls += 1;
     },
   };
@@ -103,7 +103,7 @@ describe('createGameRuntime', () => {
     expect(runtime.pipeline.getGroupNames()).toEqual(['simulation']);
     expect(runtime.pipeline.getSystemNames('simulation')).toEqual([
       'parcels.roadAccess',
-      'supply.monthlyFood',
+      'supply.monthlyResourceCycle',
       'housing.populationGrowth',
       'housing.evolution',
       'employment.redistribute',

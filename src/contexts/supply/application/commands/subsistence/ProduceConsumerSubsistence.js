@@ -4,7 +4,7 @@ import { computeMonthlyGatheringCredit } from '../../../domain/policies/HouseSub
  * Command: inhabited house gains monthly foraged fruit and hunted game —
  * bypasses farms/markets entirely (see `HouseSubsistencePolicy`).
  */
-export class ProduceHouseSubsistenceFood {
+export class ProduceConsumerSubsistence {
   /**
    * @param {import('../../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
    */

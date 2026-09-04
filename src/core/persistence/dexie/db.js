@@ -60,6 +60,47 @@ db.version(6).stores({}).upgrade(async (tx) => {
   });
 });
 
+// v7: Supply's stored fields are renamed off resource-specific words
+// (windmill/market/farm) to their generic hub/distributor/producer-source
+// role names — the Supply mechanism itself no longer names any resource in
+// code, only in declarative catalog data (see ResourceRolePolicy.js).
+const SUPPLY_FIELD_RENAMES = {
+  supplyWindmillId: 'supplyHubId',
+  linkedMarkets: 'linkedDistributors',
+  soldToWindmill: 'collectedByHub',
+  marketTooFar: 'distributorTooFar',
+  noFarmsNearby: 'noSourcesNearby',
+  salesToMarket: 'salesToDistributor',
+  salesToWindmill: 'salesToHub',
+};
+db.version(7).stores({}).upgrade(async (tx) => {
+  await tx.table('houses').toCollection().modify((row) => {
+    for (const [oldField, newField] of Object.entries(SUPPLY_FIELD_RENAMES)) {
+      if (oldField in row) {
+        row[newField] = row[oldField];
+        delete row[oldField];
+      }
+    }
+    if (Array.isArray(row.linkedDistributors)) {
+      row.linkedDistributors = row.linkedDistributors.map((entry) =>
+        entry && 'marketId' in entry
+          ? { ...entry, distributorId: entry.marketId, marketId: undefined }
+          : entry
+      );
+    }
+    if (Array.isArray(row.salesToHub)) {
+      row.salesToHub = row.salesToHub.map((sale) =>
+        sale && 'windmillId' in sale ? { ...sale, hubId: sale.windmillId, windmillId: undefined } : sale
+      );
+    }
+    if (Array.isArray(row.salesToDistributor)) {
+      row.salesToDistributor = row.salesToDistributor.map((sale) =>
+        sale && 'marketId' in sale ? { ...sale, distributorId: sale.marketId, marketId: undefined } : sale
+      );
+    }
+  });
+});
+
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;
 

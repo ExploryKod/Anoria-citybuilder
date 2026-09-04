@@ -1495,7 +1495,7 @@ export function createScene(_gameStore, assetManager, deps) {
                     }
 
                     // IMPORTANT: IndexedDB is the source of truth for stocks
-                    // Supply BC updates IndexedDB first (ECS supply.monthlyFood), then we read from it
+                    // Supply BC updates IndexedDB first (ECS supply.monthlyResourceCycle), then we read from it
                     // DO NOT write userData.stocks back to IndexedDB - it would overwrite service updates!
                     
                     // Removed old code that wrote userData.stocks to IndexedDB:

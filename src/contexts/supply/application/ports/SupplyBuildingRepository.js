@@ -29,35 +29,35 @@ export class SupplyBuildingRepository {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
-  async saveWindmillLastCollection(_buildingId, _lastCollection) {
+  async saveHubLastCollection(_hubId, _lastCollection) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
-  async recordFarmSaleToWindmill(_farmId, _sale) {
+  async recordSourceSaleToHub(_sourceId, _sale) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
-  async resetFarmSalesForYear(_year) {
+  async resetSourceSalesForYear(_year) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
-  /** Persist UI / status flags (isBuying, marketTooFar, …). */
-  async saveMarketFlags(_buildingId, _flags) {
+  /** Persist UI / status flags (isBuying, distributorTooFar, …). */
+  async saveSupplyFlags(_buildingId, _flags) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
-  async saveSupplyWindmillId(_marketId, _windmillId) {
+  async saveDistributorHubId(_distributorId, _hubId) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
-  async saveLinkedMarkets(_windmillId, _linkedMarkets) {
+  async saveHubLinkedDistributors(_hubId, _linkedDistributors) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
   /**
    * Generic role/category building selection (see ResourceRolePolicy) — the
-   * one every resource cycle uses. No named shortcuts (findMarkets/
-   * findHouses/findWindmills/findFarms) — callers pass the role they mean
+   * one every resource cycle uses. No named shortcuts (findDistributors/
+   * findConsumers/findHubs/findProducers) — callers pass the role they mean
    * ('distributor'/'consumer'/'hub'/'producer').
    * @param {import('../../domain/policies/ResourceRolePolicy.js').ResourceRoleKind} _role
    * @param {string | string[]} [_categories]
@@ -75,7 +75,7 @@ export class SupplyBuildingRepository {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
-  async recordFarmSaleToMarket(_farmId, _sale) {
+  async recordSourceSaleToDistributor(_sourceId, _sale) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 }

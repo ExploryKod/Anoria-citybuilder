@@ -41,7 +41,7 @@ export class StorageSectionPresenter {
      */
     async loadWindmills() {
         try {
-            const supplyViews = await this.supply.listWindmillSupplyViews();
+            const supplyViews = await this.supply.listHubSupplyViews();
 
             this.windmills = [];
             for (const view of supplyViews) {

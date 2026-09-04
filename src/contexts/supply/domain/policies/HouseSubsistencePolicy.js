@@ -1,4 +1,4 @@
-import { createFoodStock } from '../value-objects/FoodStock.js';
+import { createSupplyStock } from '../value-objects/SupplyStock.js';
 
 /** Baskets of foraged fruit credited per house each month (TOTAL, not per inhabitant). */
 export function fruitBasketsPerHousePerMonth() {
@@ -17,15 +17,15 @@ export function gameBasketsPerHousePerMonth() {
  *
  * @param {object} params
  * @param {number} params.pop
- * @param {import('../value-objects/FoodStock.js').ReturnType<typeof createFoodStock> | null | undefined} params.stocks
+ * @param {import('../value-objects/SupplyStock.js').ReturnType<typeof createSupplyStock> | null | undefined} params.stocks
  * @returns {{
- *   nextStock: ReturnType<typeof createFoodStock>,
+ *   nextStock: ReturnType<typeof createSupplyStock>,
  *   credited: { fruit: number, game: number },
  * }}
  */
 export function computeMonthlyGatheringCredit({ pop, stocks }) {
   const population = Number.isFinite(pop) ? Math.max(0, Math.floor(pop)) : 0;
-  const current = createFoodStock(stocks);
+  const current = createSupplyStock(stocks);
 
   if (population <= 0) {
     return { nextStock: current, credited: { fruit: 0, game: 0 } };
@@ -35,7 +35,7 @@ export function computeMonthlyGatheringCredit({ pop, stocks }) {
   const fruitAdded = fruitBasketsPerHousePerMonth();
   const gameAdded = gameBasketsPerHousePerMonth();
 
-  const nextStock = createFoodStock({
+  const nextStock = createSupplyStock({
     wheat: current.wheat,
     carrot: current.carrot,
     cabbage: current.cabbage,

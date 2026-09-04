@@ -21,11 +21,11 @@ const CATEGORIES = ['wheat', 'carrot', 'cabbage'];
 const TOTAL_KEY = 'food';
 
 const HUB_TRANSFER_BOOKKEEPING = {
-  sourceLinkField: 'supplyWindmillId',
-  linksField: 'linkedMarkets',
+  sourceLinkField: 'supplyHubId',
+  linksField: 'linkedDistributors',
   allocationField: 'allocatedStocks',
-  linkTargetIdField: 'marketId',
-  saveLinks: async (repository, sourceId, links) => repository.saveLinkedMarkets(sourceId, links),
+  linkTargetIdField: 'distributorId',
+  saveLinks: async (repository, sourceId, links) => repository.saveHubLinkedDistributors(sourceId, links),
 };
 
 function toSnapshot(b) {
@@ -37,8 +37,8 @@ function toSnapshot(b) {
     workerNeed: b.workerNeed,
     stocks: createResourceStock(b.stocks, CATEGORIES, TOTAL_KEY),
     maxStock: b.maxStock,
-    supplyWindmillId: b.supplyWindmillId,
-    linkedMarkets: b.linkedMarkets,
+    supplyHubId: b.supplyHubId,
+    linkedDistributors: b.linkedDistributors,
   });
 }
 
@@ -70,9 +70,9 @@ class FakeSupplyBuildingRepository {
     if (b) b.stocks = { ...createResourceStock(stocks, CATEGORIES, TOTAL_KEY) };
   }
 
-  async saveLinkedMarkets(windmillId, linkedMarkets) {
-    const b = this.rows.get(windmillId);
-    if (b) b.linkedMarkets = linkedMarkets;
+  async saveHubLinkedDistributors(hubId, linkedDistributors) {
+    const b = this.rows.get(hubId);
+    if (b) b.linkedDistributors = linkedDistributors;
   }
 }
 
@@ -158,9 +158,9 @@ describe('RunCityResourceCycle', () => {
         workerNeed: 0,
         maxStock: 1000,
         stocks: { wheat: 20, food: 20 },
-        linkedMarkets: [{ marketId: MARKET_ID, allocatedStocks: { wheat: 10 } }],
+        linkedDistributors: [{ distributorId: MARKET_ID, allocatedStocks: { wheat: 10 } }],
       },
-      market({ supplyWindmillId: WINDMILL_ID, stocks: { wheat: 0, food: 0 } }),
+      market({ supplyHubId: WINDMILL_ID, stocks: { wheat: 0, food: 0 } }),
       house(HOUSE_ID),
     ]);
     const distribute = new DistributeResourceToConsumers(repo);

@@ -5,7 +5,7 @@
 
 import db from '../core/persistence/dexie/db.js';
 import { hamletIdOf, getActiveHamletId } from '../core/persistence/hamlet/hamletSession.js';
-import { createFoodStock } from '../contexts/supply/domain/value-objects/FoodStock.js';
+import { createSupplyStock } from '../contexts/supply/domain/value-objects/SupplyStock.js';
 
 /** Food lines shown only in the city block (moulins + granges ville). */
 export const HUD_CITY_FOOD_PRODUCTS = Object.freeze(['wheat', 'carrot', 'cabbage']);
@@ -76,7 +76,7 @@ export function sumCityStocksFromRows(rows) {
 
   for (const row of rows) {
     if (!isHudWindmillRow(row)) continue;
-    const food = createFoodStock(row.stocks || {});
+    const food = createSupplyStock(row.stocks || {});
     for (const id of HUD_CITY_FOOD_PRODUCTS) {
       totals[id] += stockAmount(food[id]);
     }

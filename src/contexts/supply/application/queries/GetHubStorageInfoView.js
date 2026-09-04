@@ -52,9 +52,9 @@ export class GetHubStorageInfoView {
         totalCapacity,
       }),
       linkedMarkets: Object.freeze(
-        (buildingRow.linkedMarkets ?? []).map((entry) =>
+        (buildingRow.linkedDistributors ?? []).map((entry) =>
           Object.freeze({
-            marketId: entry.marketId,
+            marketId: entry.distributorId,
             x: entry.x,
             y: entry.y,
             allocatedStocks: Object.freeze({ ...entry.allocatedStocks }),

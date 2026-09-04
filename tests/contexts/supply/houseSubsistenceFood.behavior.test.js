@@ -9,14 +9,14 @@
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
-import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
+import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import {
   computeMonthlyGatheringCredit,
   computeSubsistenceFoodCredit,
 } from '../../../src/contexts/supply/domain/policies/HouseSubsistencePolicy.js';
 import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
-import { ProduceHouseSubsistenceFood } from '../../../src/contexts/supply/application/commands/subsistence/ProduceHouseSubsistenceFood.js';
-import { ProduceAllHouseSubsistenceFood } from '../../../src/contexts/supply/application/commands/subsistence/ProduceAllHouseSubsistenceFood.js';
+import { ProduceConsumerSubsistence } from '../../../src/contexts/supply/application/commands/subsistence/ProduceConsumerSubsistence.js';
+import { RunResourceCommandForRole } from '../../../src/contexts/supply/application/commands/RunResourceCommandForRole.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {
@@ -35,12 +35,12 @@ class InMemorySupplyBuildingRepository {
   async findById(id) {
     const b = this.raw.get(id);
     if (!b) return null;
-    return createSupplyBuildingSnapshot({ ...b, stocks: createFoodStock(b.stocks) });
+    return createSupplyBuildingSnapshot({ ...b, stocks: createSupplyStock(b.stocks) });
   }
 
   async saveStocks(id, stocks) {
     const b = this.raw.get(id);
-    if (b) b.stocks = { ...createFoodStock(stocks) };
+    if (b) b.stocks = { ...createSupplyStock(stocks) };
   }
 
   async updateBuildingFields(id, fields) {
@@ -54,7 +54,7 @@ class InMemorySupplyBuildingRepository {
   async findByResourceRole(role, categories) {
     return [...this.raw.values()]
       .filter((b) => hasResourceRole(b.type, role, categories))
-      .map((b) => createSupplyBuildingSnapshot({ ...b, stocks: createFoodStock(b.stocks) }));
+      .map((b) => createSupplyBuildingSnapshot({ ...b, stocks: createSupplyStock(b.stocks) }));
   }
 }
 
@@ -107,7 +107,7 @@ describe('Supply — house gathering (fruit & game)', () => {
     });
   });
 
-  describe('ProduceHouseSubsistenceFood', () => {
+  describe('ProduceConsumerSubsistence', () => {
     let repo;
     let useCase;
 
@@ -115,7 +115,7 @@ describe('Supply — house gathering (fruit & game)', () => {
       repo = new InMemorySupplyBuildingRepository([
         house('House-Blue-1-2', { pop: 3, stocks: { food: 0 } }),
       ]);
-      useCase = new ProduceHouseSubsistenceFood(repo);
+      useCase = new ProduceConsumerSubsistence(repo);
     });
 
     test('credits fruit and game for an inhabited house and marks the month', async () => {
@@ -144,7 +144,7 @@ describe('Supply — house gathering (fruit & game)', () => {
       repo = new InMemorySupplyBuildingRepository([
         house('House-Blue-1-2', { pop: 3, level: 2, stocks: { food: 0 } }),
       ]);
-      useCase = new ProduceHouseSubsistenceFood(repo);
+      useCase = new ProduceConsumerSubsistence(repo);
 
       const outcome = await useCase.execute({ houseId: 'House-Blue-1-2', monthIndex: 4 });
       expect(outcome.produced).toBe(true);
@@ -155,7 +155,7 @@ describe('Supply — house gathering (fruit & game)', () => {
       repo = new InMemorySupplyBuildingRepository([
         house('House-Blue-1-2', { pop: 0, stocks: { food: 0 } }),
       ]);
-      useCase = new ProduceHouseSubsistenceFood(repo);
+      useCase = new ProduceConsumerSubsistence(repo);
 
       const outcome = await useCase.execute({ houseId: 'House-Blue-1-2', monthIndex: 4 });
       expect(outcome.produced).toBe(false);
@@ -163,7 +163,7 @@ describe('Supply — house gathering (fruit & game)', () => {
     });
   });
 
-  describe('ProduceAllHouseSubsistenceFood', () => {
+  describe('RunResourceCommandForRole (subsistence gathering)', () => {
     test('produces for every inhabited house, skips uninhabited ones', async () => {
       const repo = new InMemorySupplyBuildingRepository([
         house('House-Blue-1-2', { pop: 2, stocks: { food: 0 } }),
@@ -171,12 +171,16 @@ describe('Supply — house gathering (fruit & game)', () => {
         house('House-Red-5-6', { type: 'House-Red', pop: 3, level: 2, stocks: { food: 0 } }),
         house('House-Blue-7-8', { pop: 0, stocks: { food: 0 } }),
       ]);
-      const produceOne = new ProduceHouseSubsistenceFood(repo);
-      const produceAll = new ProduceAllHouseSubsistenceFood(repo, produceOne);
+      const produceOne = new ProduceConsumerSubsistence(repo);
+      const runSubsistenceCommand = new RunResourceCommandForRole(repo, produceOne);
 
-      const outcome = await produceAll.execute({ monthIndex: 2 });
+      const { count } = await runSubsistenceCommand.execute({
+        role: 'consumer',
+        buildParams: (house) => ({ houseId: house.id, monthIndex: 2 }),
+        successKey: 'produced',
+      });
 
-      expect(outcome.producedCount).toBe(3);
+      expect(count).toBe(3);
       expect((await repo.findById('House-Blue-1-2')).stocks).toMatchObject({ fruit: 1, game: 1 });
       expect((await repo.findById('House-Purple-3-4')).stocks).toMatchObject({ fruit: 1, game: 1 });
       expect((await repo.findById('House-Red-5-6')).stocks).toMatchObject({ fruit: 1, game: 1 });

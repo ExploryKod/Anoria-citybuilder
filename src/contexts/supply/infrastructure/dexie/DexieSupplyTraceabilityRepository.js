@@ -3,7 +3,7 @@ import db from '../../../../core/persistence/dexie/db.js';
 /**
  * Dexie adapter — food supply chain audit log (`foodTraceability` table).
  */
-export class DexieFoodTraceabilityRepository {
+export class DexieSupplyTraceabilityRepository {
   constructor(database = db) {
     this.db = database;
   }
@@ -49,32 +49,32 @@ export class DexieFoodTraceabilityRepository {
         totalPrice: quantity * price,
       });
     } catch (error) {
-      console.error('[DexieFoodTraceabilityRepository] Error adding transaction:', error);
+      console.error('[DexieSupplyTraceabilityRepository] Error adding transaction:', error);
     }
   }
 
-  async recordFarmToMarket(turn, month, year, farm, market, foodType, quantity, price = 1) {
+  async recordSourceToDistributor(turn, month, year, source, distributor, foodType, quantity, price = 1) {
     await this.addTransaction(
       turn,
       month,
       year,
       'farm_to_market',
-      farm,
-      market,
+      source,
+      distributor,
       foodType,
       quantity,
       price
     );
   }
 
-  async recordMarketToHouse(turn, month, year, market, house, foodType, quantity, price = 1) {
+  async recordDistributorToConsumer(turn, month, year, distributor, consumer, foodType, quantity, price = 1) {
     await this.addTransaction(
       turn,
       month,
       year,
       'market_to_house',
-      market,
-      house,
+      distributor,
+      consumer,
       foodType,
       quantity,
       price
@@ -159,7 +159,7 @@ export class DexieFoodTraceabilityRepository {
         await this.db.foodTraceability.bulkDelete(ids);
       }
     } catch (error) {
-      console.error('[DexieFoodTraceabilityRepository] Error cleaning up:', error);
+      console.error('[DexieSupplyTraceabilityRepository] Error cleaning up:', error);
     }
   }
 }

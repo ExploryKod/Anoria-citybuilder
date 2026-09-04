@@ -4,7 +4,7 @@
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
-import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
+import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import { DistributeResourceToConsumers } from '../../../src/contexts/supply/application/commands/distribution/DistributeResourceToConsumers.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 
@@ -15,15 +15,15 @@ class InMemorySupplyBuildingRepository {
 
   async findById(id) {
     const b = this.raw.get(id);
-    return b ? { ...b, stocks: createFoodStock(b.stocks) } : null;
+    return b ? { ...b, stocks: createSupplyStock(b.stocks) } : null;
   }
 
   async saveStocks(id, stocks) {
     const b = this.raw.get(id);
-    if (b) b.stocks = { ...createFoodStock(stocks) };
+    if (b) b.stocks = { ...createSupplyStock(stocks) };
   }
 
-  async saveMarketFlags() {}
+  async saveSupplyFlags() {}
 }
 
 function market(id, stocks, extras = {}) {

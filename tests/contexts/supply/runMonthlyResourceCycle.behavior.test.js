@@ -12,7 +12,7 @@ import { makeHouseRecord } from '../../fixtures/buildingRecord.js';
 import { clearBuildingsTable, seedBuilding, getBuildingRow } from '../../helpers/buildingDb.js';
 import { updateBuildingFields } from '../../../src/composition/constructionOps.js';
 
-describe('Supply — RunMonthlyFoodSupplyCycle', () => {
+describe('Supply — RunMonthlyResourceCycle', () => {
   let supply;
   let marketId;
 
@@ -30,7 +30,7 @@ describe('Supply — RunMonthlyFoodSupplyCycle', () => {
 
   async function runAtTime(time) {
     const timeInfo = TimeManager.getTimeInfo(time);
-    await supply.runMonthlyFoodSupplyCycle({
+    await supply.runMonthlyResourceCycle({
       season: toSupplySeason(timeInfo.season),
       month: toSupplyMonth(timeInfo.month),
       timeInfo,
@@ -56,7 +56,7 @@ describe('Supply — RunMonthlyFoodSupplyCycle', () => {
     await runAtTime(6);
 
     const marketData = await getBuildingRow(marketId);
-    expect(marketData.marketTooFar).toBe(true);
+    expect(marketData.distributorTooFar).toBe(true);
   });
 
   test('clears noFarmsNearby flag on markets', async () => {
@@ -76,7 +76,7 @@ describe('Supply — RunMonthlyFoodSupplyCycle', () => {
 
     await runAtTime(6);
 
-    expect((await getBuildingRow(marketId)).noFarmsNearby).toBe(false);
+    expect((await getBuildingRow(marketId)).noSourcesNearby).toBe(false);
 
     const farmNeighborId = createBuildingInstanceId();
     await updateBuildingFields(marketId, {
@@ -95,6 +95,6 @@ describe('Supply — RunMonthlyFoodSupplyCycle', () => {
 
     await runAtTime(7);
 
-    expect((await getBuildingRow(marketId)).noFarmsNearby).toBe(false);
+    expect((await getBuildingRow(marketId)).noSourcesNearby).toBe(false);
   });
 });

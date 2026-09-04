@@ -1,4 +1,4 @@
-import { remainingMarketCapacity } from '../../../domain/policies/MarketCapacityPolicy.js';
+import { remainingHubCapacity } from '../../../domain/policies/HubCapacityPolicy.js';
 import { isOperational } from '../../../domain/policies/OperationalGatePolicy.js';
 import {
   createResourceStock,
@@ -18,7 +18,7 @@ import {
  * bucket (monthly market-from-windmill restock today; resource-agnostic
  * otherwise). WHAT/WHEN come from the target's own 'distributor' role in
  * the catalog; `bookkeeping` only carries the hub-link field names, which
- * still vary by caller (see FoodCircuits.js) since the link storage itself
+ * still vary by caller (see ResourceBookkeepingCatalog.js) since the link storage itself
  * isn't generalized across resources yet.
  */
 export class TransferHubToHub {
@@ -91,7 +91,7 @@ export class TransferHubToHub {
     const categories = getCategoriesForRole(target.type, 'distributor');
     const totalKey = getTotalKeyForRole(target.type, 'distributor');
 
-    let targetCapacity = remainingMarketCapacity(target.stocks[totalKey], target.maxStock);
+    let targetCapacity = remainingHubCapacity(target.stocks[totalKey], target.maxStock);
     if (targetCapacity <= 0) {
       return { transferred: false, reason: 'target_full', transfers: [], totalUnits: 0 };
     }

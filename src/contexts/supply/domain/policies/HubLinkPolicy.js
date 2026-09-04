@@ -1,14 +1,12 @@
 /**
- * Generic hub↔distributor link mechanics — the pattern behind "market
- * restocks from its windmill" generalized to any hub/distributor pair
+ * Generic hub↔distributor link mechanics — the pattern behind "distributor
+ * restocks from its hub" generalized to any hub/distributor pair
  * (warehouse, granary, ...). Resource-agnostic: categories are always a
  * parameter, never a hardcoded crop list.
  *
- * The persisted link shape (`{ marketId, x, y, allocatedStocks }`, saved
- * via `saveLinkedMarkets`) keeps its field names as-is — that's the actual
- * Dexie schema, and renaming persisted keys is a save-game migration
- * concern, not a refactor. Only the algorithm around it is generic; a
- * `distributorId` parameter here still writes into a `marketId` key.
+ * The persisted link shape is `{ distributorId, x, y, allocatedStocks }`,
+ * saved via `saveHubLinkedDistributors` — fully generic, no resource or
+ * building-role word in the stored keys.
  *
  * Placement-time owner discovery (picking which hub a newly placed
  * distributor belongs to, `WindmillMarketLinkPolicy.canPlaceMarketAt`) is
@@ -21,9 +19,9 @@
  * remainder gets the leftover units first, stable by link order).
  *
  * @param {Record<string, number>} hubStocks
- * @param {Array<{ marketId: string, x: number, y: number, allocatedStocks: Record<string, number> }>} linkedDistributors
+ * @param {Array<{ distributorId: string, x: number, y: number, allocatedStocks: Record<string, number> }>} linkedDistributors
  * @param {string[]} categories
- * @returns {Array<{ marketId: string, x: number, y: number, allocatedStocks: Record<string, number> }>}
+ * @returns {Array<{ distributorId: string, x: number, y: number, allocatedStocks: Record<string, number> }>}
  */
 export function computeHubAllocations(hubStocks, linkedDistributors, categories) {
   const links = Array.isArray(linkedDistributors) ? linkedDistributors : [];
@@ -40,7 +38,7 @@ export function computeHubAllocations(hubStocks, linkedDistributors, categories)
     }
 
     return {
-      marketId: link.marketId,
+      distributorId: link.distributorId,
       x: link.x,
       y: link.y,
       allocatedStocks,
@@ -57,12 +55,12 @@ export function computeHubAllocations(hubStocks, linkedDistributors, categories)
  * @returns {Array<object>}
  */
 export function addHubLink(linkedDistributors, distributorId, x, y, categories) {
-  const existing = (linkedDistributors ?? []).filter((entry) => entry.marketId !== distributorId);
+  const existing = (linkedDistributors ?? []).filter((entry) => entry.distributorId !== distributorId);
   const allocatedStocks = {};
   for (const category of categories) {
     allocatedStocks[category] = 0;
   }
-  return [...existing, { marketId: distributorId, x, y, allocatedStocks }];
+  return [...existing, { distributorId, x, y, allocatedStocks }];
 }
 
 /**
@@ -71,5 +69,5 @@ export function addHubLink(linkedDistributors, distributorId, x, y, categories) 
  * @returns {Array<object>}
  */
 export function removeHubLink(linkedDistributors, distributorId) {
-  return (linkedDistributors ?? []).filter((entry) => entry.marketId !== distributorId);
+  return (linkedDistributors ?? []).filter((entry) => entry.distributorId !== distributorId);
 }

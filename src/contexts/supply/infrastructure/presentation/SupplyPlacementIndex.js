@@ -8,11 +8,11 @@ import { instanceIdFromHouseRow } from '../../../../shared/building-identity/ind
  * ('hub', 'distributor'), not a hardcoded windmill/market type check, so a
  * future hub type (warehouse, granary, ...) needs no new index.
  *
- * @type {Array<{ id: string, type: string, x: number, y: number, roadCount: number, linkedMarkets: object[] }>}
+ * @type {Array<{ id: string, type: string, x: number, y: number, roadCount: number, linkedDistributors: object[] }>}
  */
 let hubs = [];
 
-/** @type {Array<{ id: string, type: string, x: number, y: number, supplyWindmillId: string | null }>} */
+/** @type {Array<{ id: string, type: string, x: number, y: number, supplyHubId: string | null }>} */
 let distributors = [];
 
 /**
@@ -27,7 +27,7 @@ export function refreshSupplyPlacementIndex(rows = []) {
       x: row.x ?? 0,
       y: row.y ?? 0,
       roadCount: row.roads ?? 0,
-      linkedMarkets: row.linkedMarkets ?? [],
+      linkedDistributors: row.linkedDistributors ?? [],
     }));
 
   distributors = rows
@@ -37,7 +37,7 @@ export function refreshSupplyPlacementIndex(rows = []) {
       type: row.type,
       x: row.x ?? 0,
       y: row.y ?? 0,
-      supplyWindmillId: row.supplyWindmillId ?? null,
+      supplyHubId: row.supplyHubId ?? null,
     }));
 }
 

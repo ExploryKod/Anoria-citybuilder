@@ -31,7 +31,10 @@ export function isWithinRange(a, b, maxDistance) {
  * @param {object} params
  * @param {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleKind} params.role
  * @param {string} [params.category]
- * @param {number} params.maxDistance
+ * @param {number | ((building: object) => number)} params.maxDistance A flat
+ *   range, or a function resolving it per candidate (e.g. that candidate's
+ *   own catalog range) — for the caller that scans many candidates whose
+ *   range can differ per type, not just one already-resolved distance.
  * @returns {object[]}
  */
 export function findBuildingsWithRoleInRange(origin, buildings, { role, category, maxDistance }) {
@@ -42,7 +45,8 @@ export function findBuildingsWithRoleInRange(origin, buildings, { role, category
   return buildings.filter((building) => {
     if (!hasResourceRole(building.type, role, category)) return false;
     if (building.x == null || building.y == null) return false;
-    if (!isWithinRange(origin, { x: building.x, y: building.y }, maxDistance)) return false;
+    const distance = typeof maxDistance === 'function' ? maxDistance(building) : maxDistance;
+    if (!isWithinRange(origin, { x: building.x, y: building.y }, distance)) return false;
     const roadCount = building.roads ?? building.roadCount ?? 0;
     return roadCount > 0;
   });

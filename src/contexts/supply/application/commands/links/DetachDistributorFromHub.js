@@ -2,8 +2,7 @@ import { removeHubLink } from '../../../domain/policies/HubLinkPolicy.js';
 
 /**
  * Command: unlink a demolished distributor from its hub and rebalance
- * leftovers. Generic — replaces the old windmill/market-only
- * DetachMarketFromWindmill.
+ * leftovers.
  */
 export class DetachDistributorFromHub {
   /**
@@ -22,7 +21,7 @@ export class DetachDistributorFromHub {
    * @param {string} [params.hubLinkField] Field on the distributor row holding its hub id.
    * @returns {Promise<{ detached: boolean, reason?: string, hubId?: string | null }>}
    */
-  async execute({ distributorId, categories, hubLinkField = 'supplyWindmillId' }) {
+  async execute({ distributorId, categories, hubLinkField = 'supplyHubId' }) {
     if (!distributorId) {
       return { detached: false, reason: 'distributor_id_required' };
     }
@@ -35,8 +34,8 @@ export class DetachDistributorFromHub {
 
     const hub = await this.supplyBuildingRepository.findById(hubId);
     if (hub) {
-      const nextLinks = removeHubLink(hub.linkedMarkets ?? [], distributorId);
-      await this.supplyBuildingRepository.saveLinkedMarkets(hubId, nextLinks);
+      const nextLinks = removeHubLink(hub.linkedDistributors ?? [], distributorId);
+      await this.supplyBuildingRepository.saveHubLinkedDistributors(hubId, nextLinks);
       await this.rebalanceHubAllocations.execute({ hubId, categories });
     }
 

@@ -142,18 +142,18 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
  */
 export function createSupplySessionApi(supply) {
   return Object.freeze({
-    listWindmillSupplyViews: () => supply.listWindmillSupplyViews(),
+    listHubSupplyViews: () => supply.listHubSupplyViews(),
     listSupplyMapBuildings: () => supply.listSupplyMapBuildings(),
     listSupplyStockSnapshots: () => supply.listSupplyStockSnapshots(),
     listNatureResources: () => supply.listNatureResources(),
     listCommercializableWindmills: async () => {
-      const windmills = await supply.listWindmillSupplyViews();
+      const windmills = await supply.listHubSupplyViews();
       return windmills.filter((w) => w.isActive && w.commercializeEnabled);
     },
     updateSupplyBuildingFields: (id, fields) => supply.updateSupplyBuildingFields(id, fields),
     getSupplyBuildingRow: (id) => supply.getSupplyBuildingRow(id),
-    getAllFoodTraceabilityTransactions: (maxAge = null) =>
-      supply.getAllFoodTraceabilityTransactions(maxAge),
+    getAllSupplyTraceabilityTransactions: (maxAge = null) =>
+      supply.getAllSupplyTraceabilityTransactions(maxAge),
     getHubStorageInfoView: (hubKind, buildingRow, options = {}) =>
       supply.getHubStorageInfoView(hubKind, buildingRow, options),
     updateHubStorageOrderMode: (hubKind, buildingId, productId) =>

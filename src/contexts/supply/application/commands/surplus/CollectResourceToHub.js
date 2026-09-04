@@ -1,4 +1,4 @@
-import { remainingMarketCapacity } from '../../../domain/policies/MarketCapacityPolicy.js';
+import { remainingHubCapacity } from '../../../domain/policies/HubCapacityPolicy.js';
 import { isOperational } from '../../../domain/policies/OperationalGatePolicy.js';
 import {
   createResourceStock,
@@ -65,7 +65,7 @@ export class CollectResourceToHub {
     const categories = getCategoriesForRole(hub.type, 'collector');
     const totalKey = getTotalKeyForRole(hub.type, 'collector');
 
-    let capacity = remainingMarketCapacity(hub.stocks[totalKey], hub.maxStock);
+    let capacity = remainingHubCapacity(hub.stocks[totalKey], hub.maxStock);
     if (capacity <= 0) {
       return { collected: false, reason: 'hub_full', transfers: [], totalUnits: 0 };
     }

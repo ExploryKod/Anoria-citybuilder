@@ -2,7 +2,7 @@
  * What each generic command still needs beyond the building's own catalog
  * facts (categories/schedule/amount/totalKey — see buildingEconomy.js and
  * ResourceRolePolicy.js): a resource's own "once per period" lock field
- * names and, for the windmill-to-market leg, its hub-link storage field
+ * names and, for the hub-to-distributor leg, its hub-link storage field
  * names. Neither of those is generalized across resources yet (a second
  * producer/collector needs its own lock field; a second hub-and-spoke
  * resource needs its own link storage) — that's real, separate follow-up
@@ -10,8 +10,8 @@
  * distributor pair with no hub leg, like a school, needs neither).
  */
 
-/** Farm harvest — once-per-year lock. */
-export const FARM_HARVEST_BOOKKEEPING = Object.freeze({
+/** Producer harvest/output — once-per-year lock. */
+export const PRODUCER_BOOKKEEPING = Object.freeze({
   lastProducedField: 'lastProductionYear',
   periodKey: (period) => (Number.isFinite(period.year) ? Math.floor(period.year) : 0),
   saveProductionMetadata: (repository, buildingId, period) => {
@@ -23,23 +23,23 @@ export const FARM_HARVEST_BOOKKEEPING = Object.freeze({
   },
 });
 
-/** Market restocks from its assigned windmill — hub-link storage field names. */
-export const MARKET_WINDMILL_TRANSFER_BOOKKEEPING = Object.freeze({
-  sourceLinkField: 'supplyWindmillId',
-  linksField: 'linkedMarkets',
-  linkTargetIdField: 'marketId',
+/** Distributor restocks from its assigned hub — hub-link storage field names. */
+export const HUB_TRANSFER_BOOKKEEPING = Object.freeze({
+  sourceLinkField: 'supplyHubId',
+  linksField: 'linkedDistributors',
+  linkTargetIdField: 'distributorId',
   allocationField: 'allocatedStocks',
-  saveLinks: (repository, sourceId, links) => repository.saveLinkedMarkets(sourceId, links),
+  saveLinks: (repository, sourceId, links) => repository.saveHubLinkedDistributors(sourceId, links),
 });
 
 /**
- * House consumes food for its population (monthly) — bookkeeping only, same
- * shape as FARM_HARVEST_BOOKKEEPING. What/when/how-much comes from the
- * house's own 'consumer' resourceRoles entry (see buildingEconomy.js) —
- * total quantity only, "fed or not"; per-category diet variety is a
- * separate feature, not modeled here.
+ * Consumer draws down its need (monthly) — bookkeeping only, same shape as
+ * PRODUCER_BOOKKEEPING. What/when/how-much comes from the consumer's own
+ * 'consumer' resourceRoles entry (see buildingEconomy.js) — total quantity
+ * only, "satisfied or not"; per-category variety is a separate feature, not
+ * modeled here.
  */
-export const HOUSE_FOOD_CONSUMPTION_BOOKKEEPING = Object.freeze({
+export const CONSUMER_BOOKKEEPING = Object.freeze({
   lastConsumedField: 'lastConsumptionMonth',
   periodKey: (period) => (Number.isFinite(period.monthIndex) ? Math.floor(period.monthIndex) : 0),
   saveConsumptionMetadata: (repository, buildingId, periodKey, period, record) =>

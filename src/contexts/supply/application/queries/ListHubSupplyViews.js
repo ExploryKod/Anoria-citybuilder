@@ -1,9 +1,9 @@
 import { classifySupplyKind } from './GetBuildingSupplyView.js';
 
 /**
- * Query: windmill supply DTOs for storage UI (stocks / collection — not commerce settings).
+ * Query: hub supply DTOs for storage UI (stocks / collection — not commerce settings).
  */
-export class ListWindmillSupplyViews {
+export class ListHubSupplyViews {
   /**
    * @param {import('../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
    */

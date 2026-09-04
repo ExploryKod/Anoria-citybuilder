@@ -4,14 +4,14 @@
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
-import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
+import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import { CollectResourceToHub } from '../../../src/contexts/supply/application/commands/surplus/CollectResourceToHub.js';
-import { SetWindmillCollectingFlag } from '../../../src/contexts/supply/application/commands/surplus/SetWindmillCollectingFlag.js';
-import { MarkFarmSoldToWindmill } from '../../../src/contexts/supply/application/commands/surplus/MarkFarmSoldToWindmill.js';
-import { MarkWindmillCollectingSeason } from '../../../src/contexts/supply/application/commands/surplus/MarkWindmillCollectingSeason.js';
-import { ResetFarmsSoldToWindmill } from '../../../src/contexts/supply/application/commands/surplus/ResetFarmsSoldToWindmill.js';
-import { ProcessWindmillCollection } from '../../../src/contexts/supply/application/commands/surplus/ProcessWindmillCollection.js';
-import { RunWindmillSurplusCycle } from '../../../src/contexts/supply/application/commands/surplus/RunWindmillSurplusCycle.js';
+import { SetHubCollectingFlag } from '../../../src/contexts/supply/application/commands/surplus/SetHubCollectingFlag.js';
+import { MarkSourceCollectedByHub } from '../../../src/contexts/supply/application/commands/surplus/MarkSourceCollectedByHub.js';
+import { MarkHubCollectingSchedule } from '../../../src/contexts/supply/application/commands/surplus/MarkHubCollectingSchedule.js';
+import { ResetSourcesCollectedFlag } from '../../../src/contexts/supply/application/commands/surplus/ResetSourcesCollectedFlag.js';
+import { ProcessHubCollection } from '../../../src/contexts/supply/application/commands/surplus/ProcessHubCollection.js';
+import { RunHubSurplusCycle } from '../../../src/contexts/supply/application/commands/surplus/RunHubSurplusCycle.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 
@@ -24,8 +24,8 @@ class InMemorySupplyBuildingRepository {
           ...b,
           stocks: { ...b.stocks },
           flags: { ...(b.flags || {}) },
-          salesToWindmill: [...(b.salesToWindmill || [])],
-          salesToMarket: [...(b.salesToMarket || [])],
+          salesToHub: [...(b.salesToHub || [])],
+          salesToDistributor: [...(b.salesToDistributor || [])],
           lastCollection: b.lastCollection ?? null,
         },
       ])
@@ -41,7 +41,7 @@ class InMemorySupplyBuildingRepository {
       roadCount: b.roadCount,
       worker: b.worker,
       workerNeed: b.workerNeed,
-      stocks: createFoodStock(b.stocks),
+      stocks: createSupplyStock(b.stocks),
       maxStock: b.maxStock,
     });
   }
@@ -51,37 +51,37 @@ class InMemorySupplyBuildingRepository {
     if (!b) return null;
     return {
       id: b.id,
-      soldToWindmill: b.flags.soldToWindmill === true,
+      collectedByHub: b.flags.collectedByHub === true,
       isCollecting: b.flags.isCollecting === true,
     };
   }
 
   async saveStocks(id, stocks) {
     const b = this.raw.get(id);
-    if (b) b.stocks = { ...createFoodStock(stocks) };
+    if (b) b.stocks = { ...createSupplyStock(stocks) };
   }
 
-  async saveMarketFlags(id, flags) {
+  async saveSupplyFlags(id, flags) {
     const b = this.raw.get(id);
     if (b) b.flags = { ...b.flags, ...flags };
   }
 
-  async saveWindmillLastCollection(id, lastCollection) {
+  async saveHubLastCollection(id, lastCollection) {
     const b = this.raw.get(id);
     if (b) b.lastCollection = { ...lastCollection };
   }
 
-  async recordFarmSaleToWindmill(farmId, { year, productType, quantity, windmillId }) {
-    const b = this.raw.get(farmId);
+  async recordSourceSaleToHub(sourceId, { year, productType, quantity, hubId }) {
+    const b = this.raw.get(sourceId);
     if (!b) return;
-    b.salesToWindmill.push({ year, productType, quantity, windmillId, count: 1 });
+    b.salesToHub.push({ year, productType, quantity, hubId, count: 1 });
   }
 
-  async resetFarmSalesForYear(year) {
+  async resetSourceSalesForYear(year) {
     for (const b of this.raw.values()) {
-      if (!b.type.includes('Farm')) continue;
-      b.salesToMarket = b.salesToMarket.filter((sale) => sale.year === year);
-      b.salesToWindmill = b.salesToWindmill.filter((sale) => sale.year === year);
+      if (!hasResourceRole(b.type, 'producer')) continue;
+      b.salesToDistributor = b.salesToDistributor.filter((sale) => sale.year === year);
+      b.salesToHub = b.salesToHub.filter((sale) => sale.year === year);
     }
   }
 
@@ -100,7 +100,7 @@ class InMemorySupplyBuildingRepository {
       roadCount: b.roadCount,
       worker: b.worker,
       workerNeed: b.workerNeed,
-      stocks: createFoodStock(b.stocks),
+      stocks: createSupplyStock(b.stocks),
       maxStock: b.maxStock,
     });
   }
@@ -126,7 +126,7 @@ function farm(id, type, stocks, extras = {}) {
     roadCount: 1,
     stocks,
     maxStock: 100,
-    flags: { soldToWindmill: false },
+    flags: { collectedByHub: false },
     ...extras,
   };
 }
@@ -146,22 +146,22 @@ describe('Supply — windmill surplus cycle', () => {
       windmill(windmillId),
       farm(wheatFarmId, 'Farm-Wheat', { wheat: 10, food: 10 }),
       farm(cabbageFarmId, 'Farm-Cabbage', { cabbage: 4, food: 4 }, {
-        flags: { soldToWindmill: true },
+        flags: { collectedByHub: true },
       }),
     ]);
 
     const collect = new CollectResourceToHub(repo);
-    const setCollecting = new SetWindmillCollectingFlag(repo);
-    const markSold = new MarkFarmSoldToWindmill(repo);
-    const process = new ProcessWindmillCollection(
+    const setCollecting = new SetHubCollectingFlag(repo);
+    const markSold = new MarkSourceCollectedByHub(repo);
+    const process = new ProcessHubCollection(
       repo,
       collect,
       setCollecting,
       markSold
     );
-    const markSeason = new MarkWindmillCollectingSeason(repo);
-    const resetSold = new ResetFarmsSoldToWindmill(repo);
-    runCycle = new RunWindmillSurplusCycle(
+    const markSeason = new MarkHubCollectingSchedule(repo);
+    const resetSold = new ResetSourcesCollectedFlag(repo);
+    runCycle = new RunHubSurplusCycle(
       repo,
       markSeason,
       resetSold,
@@ -178,7 +178,7 @@ describe('Supply — windmill surplus cycle', () => {
     });
 
     expect(outcome.ranCollection).toBe(false);
-    expect((await repo.findSupplyView(cabbageFarmId)).soldToWindmill).toBe(false);
+    expect((await repo.findSupplyView(cabbageFarmId)).collectedByHub).toBe(false);
     expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(10);
   });
 
@@ -191,19 +191,19 @@ describe('Supply — windmill surplus cycle', () => {
     });
 
     expect(outcome.ranCollection).toBe(true);
-    expect(outcome.windmills).toHaveLength(1);
-    expect(outcome.windmills[0].collected).toBe(true);
-    expect(outcome.windmills[0].totalBaskets).toBe(14);
+    expect(outcome.hubs).toHaveLength(1);
+    expect(outcome.hubs[0].collected).toBe(true);
+    expect(outcome.hubs[0].totalUnits).toBe(14);
 
     const mill = await repo.findById(windmillId);
     expect(mill.stocks.food).toBe(14);
-    expect((await repo.findSupplyView(wheatFarmId)).soldToWindmill).toBe(true);
-    expect((await repo.findSupplyView(cabbageFarmId)).soldToWindmill).toBe(true);
-    expect(repo.raw.get(wheatFarmId).salesToWindmill).toHaveLength(1);
+    expect((await repo.findSupplyView(wheatFarmId)).collectedByHub).toBe(true);
+    expect((await repo.findSupplyView(cabbageFarmId)).collectedByHub).toBe(true);
+    expect(repo.raw.get(wheatFarmId).salesToHub).toHaveLength(1);
   });
 
   test('December day 1 resets farm sales for the year', async () => {
-    repo.raw.get(wheatFarmId).salesToWindmill = [
+    repo.raw.get(wheatFarmId).salesToHub = [
       { year: 1, productType: 'wheat', quantity: 5 },
       { year: 2, productType: 'wheat', quantity: 3 },
     ];
@@ -215,7 +215,7 @@ describe('Supply — windmill surplus cycle', () => {
       year: 2,
     });
 
-    const sales = repo.raw.get(wheatFarmId).salesToWindmill;
+    const sales = repo.raw.get(wheatFarmId).salesToHub;
     expect(sales.find((sale) => sale.year === 1)).toBeUndefined();
     expect(sales.some((sale) => sale.year === 2)).toBe(true);
   });

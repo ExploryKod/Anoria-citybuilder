@@ -22,7 +22,7 @@ class InMemorySupplyBuildingRepository {
   }
 
   async saveStocks() {}
-  async saveMarketFlags() {}
+  async saveSupplyFlags() {}
 }
 
 describe('Supply — GetBuildingSupplyView', () => {
@@ -37,7 +37,7 @@ describe('Supply — GetBuildingSupplyView', () => {
         stocks: { wheat: 10, food: 10 },
         maxStock: 500,
         isBuying: true,
-        noFarmsNearby: false,
+        noSourcesNearby: false,
         neighbors: [
           { name: 'House-Blue', type: 'House-Blue', x: 5, y: 6 },
           { name: 'Farm-Wheat', type: 'Farm-Wheat', x: 4, y: 5 },
@@ -47,14 +47,14 @@ describe('Supply — GetBuildingSupplyView', () => {
         id: 'House-Blue-0-0',
         type: 'House-Blue',
         stocks: { wheat: 2, food: 2 },
-        marketTooFar: true,
+        distributorTooFar: true,
       }),
       createSupplyBuildingView({
         id: 'Farm-Wheat-3-3',
         type: 'Farm-Wheat',
         stocks: { wheat: 5, food: 5 },
-        salesToMarket: [{ year: 1, productType: 'wheat', quantity: 3 }],
-        salesToWindmill: [],
+        salesToDistributor: [{ year: 1, productType: 'wheat', quantity: 3 }],
+        salesToHub: [],
       }),
       createSupplyBuildingView({
         id: 'Windmill-001-8-8',

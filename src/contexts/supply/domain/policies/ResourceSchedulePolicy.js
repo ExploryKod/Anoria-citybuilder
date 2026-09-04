@@ -1,40 +1,45 @@
 /**
  * Supply BC — evaluates a `resourceRoles` entry's declarative `schedule`
- * against the current time context. One small lookup table, keyed by
- * schedule `unit`, shared by every resource (food today, any future one —
- * see buildingEconomy.js).
+ * against the current time context, shared by every resource (food today,
+ * any future one — see buildingEconomy.js).
  *
- * `season`/`month` take a `values` array of accepted names — a cyclic,
- * enumerable unit is fully expressed by "which of these fire", no interval
- * math needed (quarterly production is just the right 4 months named).
- * `everyNDays`/`everyNYears` take an `interval` instead, because an
- * absolute, ever-increasing count can't be enumerated as a finite list.
- * `always` fires every time it's checked — for a role with no gating at
- * all (e.g. a market that restocks/distributes on every monthly tick).
+ * `unit` is not a fixed vocabulary of calendar concepts — it's just the name
+ * of whichever field of the time context this schedule cares about
+ * ('season', 'month', 'year', 'totalDays', or any future one the caller
+ * supplies, e.g. 'weekday'). What shape the check takes depends on what the
+ * schedule declares alongside it, not on which unit was named:
+ *   - `values` (an array): membership check — `context[unit]` must be one of
+ *     them. Fits any cyclic, enumerable unit (season, month, a future
+ *     'moonPhase', ...) — no interval math needed, "quarterly" is just the
+ *     right 4 months named.
+ *   - `interval` (a number): modulo check — `context[unit] % interval === 0`.
+ *     Fits any unbounded, ever-increasing unit (year, totalDays, a future
+ *     running turn count) that can't be enumerated as a finite list.
+ *   - `unit: 'always'`: fires unconditionally — a role with no gating at all
+ *     (e.g. a market that restocks/distributes on every monthly tick).
  *
- * Adding a new unit later is one function added here plus a catalog value;
- * nothing about how a schedule is declared or resolved elsewhere changes.
- * An unrecognized unit fails closed (never silently fires).
+ * Adding a new calendar concept later needs no code here — only a new field
+ * on whatever time context object callers already build, and a catalog
+ * value naming it. Season is not privileged over any other unit.
  */
 
-/** @type {Readonly<Record<string, (schedule: object, context: object) => boolean>>} */
-const SCHEDULE_EVALUATORS = Object.freeze({
-  season: (schedule, context) => (schedule.values ?? []).includes(context.season),
-  month: (schedule, context) => (schedule.values ?? []).includes(context.month),
-  everyNDays: (schedule, context) =>
-    Number.isFinite(context.totalDays) && schedule.interval > 0 && context.totalDays % schedule.interval === 0,
-  everyNYears: (schedule, context) =>
-    Number.isFinite(context.year) && schedule.interval > 0 && context.year % schedule.interval === 0,
-  always: () => true,
-});
-
 /**
- * @param {{ unit: string } | null | undefined} schedule
- * @param {{ season?: string, month?: string, year?: number, totalDays?: number }} context
+ * @param {{ unit: string, values?: string[], interval?: number } | null | undefined} schedule
+ * @param {Record<string, string | number | undefined>} context
  * @returns {boolean}
  */
 export function matchesSchedule(schedule, context) {
   if (!schedule) return false;
-  const evaluate = SCHEDULE_EVALUATORS[schedule.unit];
-  return evaluate ? evaluate(schedule, context) : false;
+  if (schedule.unit === 'always') return true;
+
+  if (Array.isArray(schedule.values)) {
+    return schedule.values.includes(context[schedule.unit]);
+  }
+
+  if (Number.isFinite(schedule.interval)) {
+    const value = context[schedule.unit];
+    return Number.isFinite(value) && schedule.interval > 0 && value % schedule.interval === 0;
+  }
+
+  return false;
 }

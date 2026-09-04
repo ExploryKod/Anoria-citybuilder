@@ -85,6 +85,10 @@
  * @property {number} [linkCapacity] Max number of distributors a 'hub' can
  *   stay linked to at once (e.g. how many markets one windmill can serve).
  *   Only meaningful for 'hub'.
+ * @property {number} [maxStock] Max total units a 'hub' can hold before it's
+ *   full. Omitted falls back to a small default (see
+ *   DexieSupplyBuildingRepository#defaultMaxStock) — declare it explicitly
+ *   for a hub that should hold more (or less) than that default.
  * @property {{ unit: string }} [schedule] When this role only acts on a
  *   schedule (a farm harvesting once a year, a windmill collecting only in
  *   December) — see contexts/supply/domain/policies/ResourceSchedulePolicy.js

@@ -131,7 +131,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
     `;
     
     try {
-        let transactions = await deps.supply.getAllFoodTraceabilityTransactions();
+        let transactions = await deps.supply.getAllSupplyTraceabilityTransactions();
         
         // Filter by period
         if (period !== 'all') {
@@ -611,7 +611,7 @@ export async function loadFoodCharts() {
     `;
     
     try {
-        const transactions = await deps.supply.getAllFoodTraceabilityTransactions();
+        const transactions = await deps.supply.getAllSupplyTraceabilityTransactions();
         
         // House pop via Supply BC (not raw Dexie)
         const allHouses = (await deps.supply.listSupplyStockSnapshots()).filter(

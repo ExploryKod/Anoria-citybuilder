@@ -2,18 +2,22 @@ import db from '../../../../core/persistence/dexie/db.js';
 import { isActiveHamletRow } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { createSupplyBuildingSnapshot } from '../../domain/SupplyBuildingSnapshot.js';
 import { createSupplyBuildingView } from '../../domain/SupplyBuildingView.js';
-import { createFoodStock } from '../../domain/value-objects/FoodStock.js';
+import { createSupplyStock } from '../../domain/value-objects/SupplyStock.js';
 import {
   canonicalizeHouseRecord,
   instanceIdFromHouseRow,
 } from '../../../../shared/building-identity/index.js';
-import { hasResourceRole } from '../../domain/policies/ResourceRolePolicy.js';
+import {
+  getResourceRoles,
+  hasResourceRole,
+  getAllCategoriesForRole,
+} from '../../domain/policies/ResourceRolePolicy.js';
 
 /** Supply port adapter — accès direct Dexie (table `houses`). */
 export class DexieSupplyBuildingRepository {
   #defaultMaxStock(type) {
-    const t = type || '';
-    return t.includes('Windmill') || t.includes('windmill') ? 1000 : 500;
+    const hubEntry = getResourceRoles(type).find((entry) => entry.role === 'hub');
+    return hubEntry?.maxStock ?? 500;
   }
 
   async #activeRows() {
@@ -41,8 +45,8 @@ export class DexieSupplyBuildingRepository {
       lastConsumption: house.lastConsumption ?? null,
       pop: house.pop ?? 0,
       level: house.level ?? 1,
-      supplyWindmillId: house.supplyWindmillId ?? null,
-      linkedMarkets: house.linkedMarkets ?? [],
+      supplyHubId: house.supplyHubId ?? null,
+      linkedDistributors: house.linkedDistributors ?? [],
     });
   }
 
@@ -59,19 +63,19 @@ export class DexieSupplyBuildingRepository {
       neighbors: house.neighbors || [],
       pop: house.pop ?? 0,
       isBuying: house.isBuying === true,
-      noFarmsNearby: house.noFarmsNearby === true,
-      marketTooFar: house.marketTooFar === true,
+      noSourcesNearby: house.noSourcesNearby === true,
+      distributorTooFar: house.distributorTooFar === true,
       isCollecting: house.isCollecting === true,
-      soldToWindmill: house.soldToWindmill === true,
+      collectedByHub: house.collectedByHub === true,
       lastCollection: house.lastCollection ?? null,
       lastImport: house.lastImport ?? null,
       lastImportDetails: house.lastImportDetails ?? null,
-      salesToMarket: house.salesToMarket || [],
-      salesToWindmill: house.salesToWindmill || [],
+      salesToDistributor: house.salesToDistributor || [],
+      salesToHub: house.salesToHub || [],
       isActive: house.isActive !== false,
       commercializeEnabled: house.commercializeEnabled !== false,
-      supplyWindmillId: house.supplyWindmillId ?? null,
-      linkedMarkets: house.linkedMarkets ?? [],
+      supplyHubId: house.supplyHubId ?? null,
+      linkedDistributors: house.linkedDistributors ?? [],
     });
   }
 
@@ -113,106 +117,95 @@ export class DexieSupplyBuildingRepository {
   }
 
   async saveStocks(buildingId, stocks) {
-    const normalized = createFoodStock(stocks);
-    await this.#putFields(buildingId, {
-      stocks: {
-        fruit: normalized.fruit,
-        game: normalized.game,
-        wheat: normalized.wheat,
-        carrot: normalized.carrot,
-        cabbage: normalized.cabbage,
-        food: normalized.food,
-      },
-    });
+    await this.#putFields(buildingId, { stocks: createSupplyStock(stocks) });
   }
 
-  async saveWindmillLastCollection(windmillId, lastCollection) {
-    await this.#putFields(windmillId, { lastCollection });
+  async saveHubLastCollection(hubId, lastCollection) {
+    await this.#putFields(hubId, { lastCollection });
   }
 
-  async recordFarmSaleToWindmill(farmId, { year, productType, quantity, windmillId }) {
-    const farmData = await db.houses.get(farmId);
-    if (!farmData) return;
+  async recordSourceSaleToHub(sourceId, { year, productType, quantity, hubId }) {
+    const sourceData = await db.houses.get(sourceId);
+    if (!sourceData) return;
 
-    const salesToMarket = farmData.salesToMarket || [];
-    const salesToWindmill = farmData.salesToWindmill || [];
+    const salesToDistributor = sourceData.salesToDistributor || [];
+    const salesToHub = sourceData.salesToHub || [];
     const currentYear = Number.isFinite(year) ? Math.floor(year) : 0;
 
-    const existingSaleIndex = salesToWindmill.findIndex(
+    const existingSaleIndex = salesToHub.findIndex(
       (sale) => sale.year === currentYear && sale.productType === productType
     );
 
     if (existingSaleIndex >= 0) {
-      salesToWindmill[existingSaleIndex].quantity += quantity;
-      salesToWindmill[existingSaleIndex].count += 1;
+      salesToHub[existingSaleIndex].quantity += quantity;
+      salesToHub[existingSaleIndex].count += 1;
     } else {
-      salesToWindmill.push({
+      salesToHub.push({
         year: currentYear,
         productType,
         quantity,
         count: 1,
-        windmillId,
+        hubId,
         date: new Date().toISOString(),
       });
     }
 
-    const filteredSales = salesToWindmill.filter((sale) => sale.year === currentYear);
+    const filteredSales = salesToHub.filter((sale) => sale.year === currentYear);
 
-    await this.#putFields(farmId, {
-      salesToMarket,
-      salesToWindmill: filteredSales,
+    await this.#putFields(sourceId, {
+      salesToDistributor,
+      salesToHub: filteredSales,
     });
   }
 
-  async resetFarmSalesForYear(currentYear) {
+  async resetSourceSalesForYear(currentYear) {
     const year = Number.isFinite(currentYear) ? Math.floor(currentYear) : 0;
     const rows = await this.#activeRows();
-    const farms = rows.filter((row) => {
-      const type = row.type || '';
-      return type.includes('Farm') || type.includes('farm');
-    });
+    const sources = rows.filter((row) => hasResourceRole(row.type, 'producer'));
 
-    for (const farm of farms) {
-      const farmId = instanceIdFromHouseRow(farm);
-      const farmData = await db.houses.get(farmId);
-      if (!farmData) continue;
+    for (const source of sources) {
+      const sourceId = instanceIdFromHouseRow(source);
+      const sourceData = await db.houses.get(sourceId);
+      if (!sourceData) continue;
 
-      const salesToMarket = (farmData.salesToMarket || []).filter(
+      const salesToDistributor = (sourceData.salesToDistributor || []).filter(
         (sale) => sale.year === year
       );
-      const salesToWindmill = (farmData.salesToWindmill || []).filter(
+      const salesToHub = (sourceData.salesToHub || []).filter(
         (sale) => sale.year === year
       );
 
-      await this.#putFields(farmId, {
-        salesToMarket,
-        salesToWindmill,
+      await this.#putFields(sourceId, {
+        salesToDistributor,
+        salesToHub,
       });
     }
   }
 
-  async saveMarketFlags(buildingId, flags) {
+  async saveSupplyFlags(buildingId, flags) {
     await this.#putFields(buildingId, flags);
   }
 
-  async saveSupplyWindmillId(marketId, windmillId) {
-    await this.#putFields(marketId, {
-      supplyWindmillId: windmillId || null,
+  async saveDistributorHubId(distributorId, hubId) {
+    await this.#putFields(distributorId, {
+      supplyHubId: hubId || null,
     });
   }
 
-  async saveLinkedMarkets(windmillId, linkedMarkets) {
-    await this.#putFields(windmillId, {
-      linkedMarkets: Array.isArray(linkedMarkets)
-        ? linkedMarkets.map((entry) => ({
-            marketId: entry.marketId,
+  async saveHubLinkedDistributors(hubId, linkedDistributors) {
+    const producerCategories = getAllCategoriesForRole('producer');
+    await this.#putFields(hubId, {
+      linkedDistributors: Array.isArray(linkedDistributors)
+        ? linkedDistributors.map((entry) => ({
+            distributorId: entry.distributorId,
             x: entry.x,
             y: entry.y,
-            allocatedStocks: {
-              wheat: Math.max(0, Math.floor(entry.allocatedStocks?.wheat ?? 0)),
-              carrot: Math.max(0, Math.floor(entry.allocatedStocks?.carrot ?? 0)),
-              cabbage: Math.max(0, Math.floor(entry.allocatedStocks?.cabbage ?? 0)),
-            },
+            allocatedStocks: Object.fromEntries(
+              producerCategories.map((category) => [
+                category,
+                Math.max(0, Math.floor(entry.allocatedStocks?.[category] ?? 0)),
+              ])
+            ),
           }))
         : [],
     });
@@ -248,30 +241,30 @@ export class DexieSupplyBuildingRepository {
     return db.houses.get(buildingId);
   }
 
-  async recordFarmSaleToMarket(farmId, sale) {
-    const farmData = await db.houses.get(farmId);
-    if (!farmData) return;
+  async recordSourceSaleToDistributor(sourceId, sale) {
+    const sourceData = await db.houses.get(sourceId);
+    if (!sourceData) return;
 
-    const salesToMarket = farmData.salesToMarket || [];
-    const salesToWindmill = farmData.salesToWindmill || [];
+    const salesToDistributor = sourceData.salesToDistributor || [];
+    const salesToHub = sourceData.salesToHub || [];
     const currentYear = sale.year ?? 0;
 
-    salesToMarket.push({
+    salesToDistributor.push({
       year: currentYear,
       month: sale.month ?? 0,
       monthName: sale.monthName || '',
       turn: sale.turn ?? 0,
       productType: sale.productType,
       quantity: sale.quantity,
-      marketId: sale.marketId,
+      distributorId: sale.distributorId,
       date: new Date().toISOString(),
     });
 
-    const filteredSales = salesToMarket.filter((entry) => entry.year === currentYear);
+    const filteredSales = salesToDistributor.filter((entry) => entry.year === currentYear);
 
-    await this.#putFields(farmId, {
-      salesToMarket: filteredSales,
-      salesToWindmill,
+    await this.#putFields(sourceId, {
+      salesToDistributor: filteredSales,
+      salesToHub,
     });
   }
 }

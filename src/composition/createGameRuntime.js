@@ -1,7 +1,7 @@
 import { World } from '../engine/ecs/World.js';
 import { Pipeline } from '../engine/loop/Pipeline.js';
 import { createParcelsRoadAccessSystem } from '../contexts/parcels/infrastructure/runtime/parcelsRoadAccessSystem.js';
-import { createSupplyMonthlyFoodSystem } from '../contexts/supply/infrastructure/runtime/supplyMonthlyFoodSystem.js';
+import { createSupplyMonthlyResourceSystem } from '../contexts/supply/infrastructure/runtime/supplyMonthlyResourceSystem.js';
 import { createHousingPopulationGrowthSystem } from '../contexts/housing/infrastructure/runtime/housingPopulationGrowthSystem.js';
 import { createHousingEvolutionSystem } from '../contexts/housing/infrastructure/runtime/housingEvolutionSystem.js';
 import { createEmploymentRedistributeSystem } from '../contexts/employment/infrastructure/runtime/employmentRedistributeSystem.js';
@@ -68,12 +68,12 @@ export function createGameRuntime({
   const world = new World();
   const pipeline = new Pipeline();
 
-  const supplyMonthlyFood = createSupplyMonthlyFoodSystem({
+  const supplyMonthlyResourceCycle = createSupplyMonthlyResourceSystem({
     supply,
     getTimeInfo,
     toSupplySeason,
     toSupplyMonth,
-    foodDistributionDistance,
+    resourceDistributionDistance: foodDistributionDistance,
   });
   const housingPopulationGrowth = createHousingPopulationGrowthSystem({
     housing,
@@ -89,7 +89,7 @@ export function createGameRuntime({
   pipeline
     .group('simulation')
     .register('parcels.roadAccess', createParcelsRoadAccessSystem(parcels))
-    .register('supply.monthlyFood', supplyMonthlyFood)
+    .register('supply.monthlyResourceCycle', supplyMonthlyResourceCycle)
     .register('housing.populationGrowth', housingPopulationGrowth)
     .register('housing.evolution', housingEvolution)
     .register('employment.redistribute', employmentRedistribute)

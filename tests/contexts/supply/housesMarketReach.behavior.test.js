@@ -4,10 +4,10 @@
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
-import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
+import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import { isWithinRange } from '../../../src/contexts/supply/domain/policies/ResourceRangePolicy.js';
 import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
-import { UpdateHousesMarketReach } from '../../../src/contexts/supply/application/commands/distribution/UpdateHousesMarketReach.js';
+import { UpdateConsumerDistributorReach } from '../../../src/contexts/supply/application/commands/distribution/UpdateConsumerDistributorReach.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {
@@ -18,15 +18,15 @@ class InMemorySupplyBuildingRepository {
 
   async findById(id) {
     const b = this.raw.get(id);
-    return b ? { ...b, stocks: createFoodStock(b.stocks) } : null;
+    return b ? { ...b, stocks: createSupplyStock(b.stocks) } : null;
   }
 
   async saveStocks(id, stocks) {
     const b = this.raw.get(id);
-    if (b) b.stocks = { ...createFoodStock(stocks) };
+    if (b) b.stocks = { ...createSupplyStock(stocks) };
   }
 
-  async saveMarketFlags(id, flags) {
+  async saveSupplyFlags(id, flags) {
     const b = this.raw.get(id);
     if (b) b.flags = { ...b.flags, ...flags };
   }
@@ -68,7 +68,7 @@ describe('Supply — house market reach', () => {
     expect(isWithinRange({ x: 0, y: 0 }, { x: 4, y: 2 }, 5)).toBe(false);
   });
 
-  describe('UpdateHousesMarketReach', () => {
+  describe('UpdateConsumerDistributorReach', () => {
     let repo;
     let useCase;
 
@@ -78,7 +78,7 @@ describe('Supply — house market reach', () => {
         house('House-Blue-5-6', 5, 6), // distance 1
         house('House-Blue-0-0', 0, 0), // distance 10
       ]);
-      useCase = new UpdateHousesMarketReach(repo);
+      useCase = new UpdateConsumerDistributorReach(repo);
     });
 
     test('marks houses outside range as marketTooFar', async () => {
@@ -88,8 +88,8 @@ describe('Supply — house market reach', () => {
       expect(outcome.marketsWithRoad).toBe(1);
       expect(outcome.inRange).toBe(1);
       expect(outcome.tooFar).toBe(1);
-      expect(repo.flag('House-Blue-5-6', 'marketTooFar')).toBe(false);
-      expect(repo.flag('House-Blue-0-0', 'marketTooFar')).toBe(true);
+      expect(repo.flag('House-Blue-5-6', 'distributorTooFar')).toBe(false);
+      expect(repo.flag('House-Blue-0-0', 'distributorTooFar')).toBe(true);
     });
 
     test('ignores markets without road access', async () => {
@@ -97,13 +97,13 @@ describe('Supply — house market reach', () => {
         market('Market-Stall-5-5', 5, 5, 0),
         house('House-Blue-5-6', 5, 6),
       ]);
-      useCase = new UpdateHousesMarketReach(repo);
+      useCase = new UpdateConsumerDistributorReach(repo);
 
       const outcome = await useCase.execute({ maxDistance: 5 });
 
       expect(outcome.marketsWithRoad).toBe(0);
       expect(outcome.tooFar).toBe(1);
-      expect(repo.flag('House-Blue-5-6', 'marketTooFar')).toBe(true);
+      expect(repo.flag('House-Blue-5-6', 'distributorTooFar')).toBe(true);
     });
 
     test('in range of any road-connected market is enough', async () => {
@@ -112,11 +112,11 @@ describe('Supply — house market reach', () => {
         market('Market-Stall-1-1', 1, 1, 1),
         house('House-Blue-1-2', 1, 2),
       ]);
-      useCase = new UpdateHousesMarketReach(repo);
+      useCase = new UpdateConsumerDistributorReach(repo);
 
       await useCase.execute({ maxDistance: 5 });
 
-      expect(repo.flag('House-Blue-1-2', 'marketTooFar')).toBe(false);
+      expect(repo.flag('House-Blue-1-2', 'distributorTooFar')).toBe(false);
     });
   });
 });

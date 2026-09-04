@@ -9,11 +9,11 @@
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
-import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
+import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import { getAmountForRole, hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
-import { HOUSE_FOOD_CONSUMPTION_BOOKKEEPING } from '../../../src/contexts/supply/domain/catalogs/FoodCircuits.js';
+import { CONSUMER_BOOKKEEPING } from '../../../src/contexts/supply/domain/catalogs/ResourceBookkeepingCatalog.js';
 import { ConsumeResource } from '../../../src/contexts/supply/application/commands/consumption/ConsumeResource.js';
-import { ConsumeAllHouseFood } from '../../../src/contexts/supply/application/commands/consumption/ConsumeAllHouseFood.js';
+import { RunResourceCommandForRole } from '../../../src/contexts/supply/application/commands/RunResourceCommandForRole.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {
@@ -35,13 +35,13 @@ class InMemorySupplyBuildingRepository {
     if (!b) return null;
     return createSupplyBuildingSnapshot({
       ...b,
-      stocks: createFoodStock(b.stocks),
+      stocks: createSupplyStock(b.stocks),
     });
   }
 
   async saveStocks(id, stocks) {
     const b = this.raw.get(id);
-    if (b) b.stocks = { ...createFoodStock(stocks) };
+    if (b) b.stocks = { ...createSupplyStock(stocks) };
   }
 
   async updateBuildingFields(id, fields) {
@@ -58,7 +58,7 @@ class InMemorySupplyBuildingRepository {
       .map((b) =>
         createSupplyBuildingSnapshot({
           ...b,
-          stocks: createFoodStock(b.stocks),
+          stocks: createSupplyStock(b.stocks),
         })
       );
   }
@@ -101,7 +101,7 @@ describe('Supply — house consumption', () => {
       const outcome = await useCase.execute({
         buildingId: 'House-Blue-1-2',
         period: { monthIndex: 5 },
-        bookkeeping: HOUSE_FOOD_CONSUMPTION_BOOKKEEPING,
+        bookkeeping: CONSUMER_BOOKKEEPING,
       });
 
       expect(outcome.consumed).toBe(true);
@@ -119,12 +119,12 @@ describe('Supply — house consumption', () => {
       await useCase.execute({
         buildingId: 'House-Blue-1-2',
         period: { monthIndex: 5 },
-        bookkeeping: HOUSE_FOOD_CONSUMPTION_BOOKKEEPING,
+        bookkeeping: CONSUMER_BOOKKEEPING,
       });
       const second = await useCase.execute({
         buildingId: 'House-Blue-1-2',
         period: { monthIndex: 5 },
-        bookkeeping: HOUSE_FOOD_CONSUMPTION_BOOKKEEPING,
+        bookkeeping: CONSUMER_BOOKKEEPING,
       });
 
       expect(second.consumed).toBe(false);
@@ -140,7 +140,7 @@ describe('Supply — house consumption', () => {
       const outcome = await useCase.execute({
         buildingId: 'House-Blue-1-2',
         period: { monthIndex: 1 },
-        bookkeeping: HOUSE_FOOD_CONSUMPTION_BOOKKEEPING,
+        bookkeeping: CONSUMER_BOOKKEEPING,
       });
       expect(outcome.consumed).toBe(true);
       expect(outcome.totalUnfed).toBe(2);
@@ -156,7 +156,7 @@ describe('Supply — house consumption', () => {
       const outcome = await useCase.execute({
         buildingId: 'House-Blue-1-2',
         period: { monthIndex: 1 },
-        bookkeeping: HOUSE_FOOD_CONSUMPTION_BOOKKEEPING,
+        bookkeeping: CONSUMER_BOOKKEEPING,
       });
 
       expect(outcome.taken).toBe(2);
@@ -173,7 +173,7 @@ describe('Supply — house consumption', () => {
       const outcome = await useCase.execute({
         buildingId: 'House-Blue-1-2',
         period: { monthIndex: 1 },
-        bookkeeping: HOUSE_FOOD_CONSUMPTION_BOOKKEEPING,
+        bookkeeping: CONSUMER_BOOKKEEPING,
       });
       expect(outcome.consumed).toBe(false);
       expect(outcome.reason).toBe('no_population');
@@ -181,7 +181,7 @@ describe('Supply — house consumption', () => {
     });
   });
 
-  describe('ConsumeAllHouseFood', () => {
+  describe('RunResourceCommandForRole (consumer)', () => {
     test('consumes for every house with population', async () => {
       const repo = new InMemorySupplyBuildingRepository([
         house('House-Blue-1-2', {
@@ -196,11 +196,19 @@ describe('Supply — house consumption', () => {
         house('House-Blue-5-6', { pop: 0, stocks: { wheat: 5, food: 5 } }),
       ]);
       const consumeOne = new ConsumeResource(repo);
-      const consumeAll = new ConsumeAllHouseFood(repo, consumeOne);
+      const runConsumerCommand = new RunResourceCommandForRole(repo, consumeOne);
 
-      const outcome = await consumeAll.execute({ monthIndex: 7 });
+      const { count } = await runConsumerCommand.execute({
+        role: 'consumer',
+        buildParams: (house) => ({
+          buildingId: house.id,
+          period: { monthIndex: 7 },
+          bookkeeping: CONSUMER_BOOKKEEPING,
+        }),
+        successKey: 'consumed',
+      });
 
-      expect(outcome.consumedCount).toBe(2);
+      expect(count).toBe(2);
       expect((await repo.findById('House-Blue-1-2')).stocks.food).toBe(2);
       expect((await repo.findById('House-Purple-3-4')).stocks.food).toBe(1);
       expect((await repo.findById('House-Blue-5-6')).stocks.wheat).toBe(5);

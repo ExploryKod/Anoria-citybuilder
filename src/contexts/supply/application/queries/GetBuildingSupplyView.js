@@ -6,6 +6,7 @@
  * isBuying / isCollecting are gated by OperationalGatePolicy (route + staff).
  */
 import { isOperational } from '../../domain/policies/OperationalGatePolicy.js';
+import { hasResourceRole } from '../../domain/policies/ResourceRolePolicy.js';
 
 export class GetBuildingSupplyView {
   /**
@@ -47,25 +48,25 @@ export class GetBuildingSupplyView {
       return {
         ...base,
         isBuying: operational === true && view.isBuying,
-        noFarmsNearby: view.noFarmsNearby,
+        noFarmsNearby: view.noSourcesNearby,
         hasHousesNearby: neighborsMatch(view.neighbors, isHouseNeighbor),
-        marketTooFar: view.marketTooFar,
+        marketTooFar: view.distributorTooFar,
       };
     }
 
     if (kind === 'house') {
       return {
         ...base,
-        marketTooFar: view.marketTooFar,
+        marketTooFar: view.distributorTooFar,
       };
     }
 
     if (kind === 'farm') {
       return {
         ...base,
-        salesToMarket: [...view.salesToMarket],
-        salesToWindmill: [...view.salesToWindmill],
-        soldToWindmill: view.soldToWindmill,
+        salesToMarket: [...view.salesToDistributor],
+        salesToWindmill: [...view.salesToHub],
+        soldToWindmill: view.collectedByHub,
       };
     }
 
@@ -85,13 +86,18 @@ export class GetBuildingSupplyView {
   }
 }
 
-/** @param {string} type */
+/**
+ * @param {string} type
+ * @returns {'market' | 'windmill' | 'farm' | 'house' | 'other'} UI/DTO
+ *   vocabulary kept as-is for presentation compatibility — derived from the
+ *   type's declarative resourceRoles (see ResourceRolePolicy.js), not a
+ *   name-string match.
+ */
 export function classifySupplyKind(type) {
-  const t = type || '';
-  if (t.includes('Market') || t.includes('market')) return 'market';
-  if (t.includes('Windmill') || t.includes('windmill')) return 'windmill';
-  if (t.includes('Farm') || t.includes('farm')) return 'farm';
-  if (t.includes('House') || t.includes('house')) return 'house';
+  if (hasResourceRole(type, 'distributor')) return 'market';
+  if (hasResourceRole(type, 'hub')) return 'windmill';
+  if (hasResourceRole(type, 'producer')) return 'farm';
+  if (hasResourceRole(type, 'consumer')) return 'house';
   return 'other';
 }
 

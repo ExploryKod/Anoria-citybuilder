@@ -1,10 +1,8 @@
 import { computeHubAllocations } from '../../../domain/policies/HubLinkPolicy.js';
 
 /**
- * Command: split a hub's stock across its linked distributors. Generic —
- * replaces the old windmill/market-only RebalanceWindmillMarketAllocations;
- * works for any hub (windmill, warehouse, granary, ...) given its
- * category list.
+ * Command: split a hub's stock across its linked distributors — works for
+ * any hub given its category list.
  */
 export class RebalanceHubAllocations {
   /**
@@ -18,7 +16,7 @@ export class RebalanceHubAllocations {
    * @param {object} params
    * @param {string} params.hubId
    * @param {string[]} params.categories
-   * @returns {Promise<{ rebalanced: boolean, reason?: string, linkedMarkets?: object[] }>}
+   * @returns {Promise<{ rebalanced: boolean, reason?: string, linkedDistributors?: object[] }>}
    */
   async execute({ hubId, categories }) {
     if (!hubId) {
@@ -30,14 +28,14 @@ export class RebalanceHubAllocations {
       return { rebalanced: false, reason: 'hub_not_found' };
     }
 
-    const linkedMarkets = hub.linkedMarkets ?? [];
-    if (linkedMarkets.length === 0) {
-      return { rebalanced: false, reason: 'no_linked_distributors', linkedMarkets: [] };
+    const linkedDistributors = hub.linkedDistributors ?? [];
+    if (linkedDistributors.length === 0) {
+      return { rebalanced: false, reason: 'no_linked_distributors', linkedDistributors: [] };
     }
 
-    const nextLinks = computeHubAllocations(hub.stocks, linkedMarkets, categories);
-    await this.supplyBuildingRepository.saveLinkedMarkets(hubId, nextLinks);
+    const nextLinks = computeHubAllocations(hub.stocks, linkedDistributors, categories);
+    await this.supplyBuildingRepository.saveHubLinkedDistributors(hubId, nextLinks);
 
-    return { rebalanced: true, linkedMarkets: nextLinks };
+    return { rebalanced: true, linkedDistributors: nextLinks };
   }
 }

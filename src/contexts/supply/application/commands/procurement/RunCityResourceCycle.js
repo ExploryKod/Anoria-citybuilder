@@ -18,7 +18,7 @@ import { getRangeForRole } from '../../../domain/policies/ResourceRolePolicy.js'
  * second resource would have needed its own copy-pasted orchestrator class.
  *
  * Traceability/UI-flag side effects stay entirely out of this class via
- * optional callbacks — it doesn't know SupplyFoodTraceability exists, or
+ * optional callbacks — it doesn't know SupplyTraceability exists, or
  * what a market's UI flags are called; food's own composition wiring
  * supplies closures that adapt the generic transfer shape to those.
  */

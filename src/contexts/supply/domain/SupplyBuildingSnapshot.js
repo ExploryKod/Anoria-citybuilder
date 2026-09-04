@@ -1,4 +1,4 @@
-import { createFoodStock } from './value-objects/FoodStock.js';
+import { createSupplyStock } from './value-objects/SupplyStock.js';
 
 /**
  * Read model for Supply use cases.
@@ -20,8 +20,8 @@ export function createSupplyBuildingSnapshot({
   lastConsumption = null,
   pop = 0,
   level = 1,
-  supplyWindmillId = null,
-  linkedMarkets = [],
+  supplyHubId = null,
+  linkedDistributors = [],
 } = {}) {
   if (!id || typeof id !== 'string') {
     throw new Error('SupplyBuildingSnapshot: id is required');
@@ -33,7 +33,7 @@ export function createSupplyBuildingSnapshot({
     x: typeof x === 'number' ? x : null,
     y: typeof y === 'number' ? y : null,
     roadCount: Number.isInteger(roadCount) ? roadCount : 0,
-    stocks: createFoodStock(stocks),
+    stocks: createSupplyStock(stocks),
     maxStock: Number.isFinite(maxStock) && maxStock > 0 ? Math.floor(maxStock) : 500,
     worker: Number.isFinite(worker) ? worker : 0,
     workerNeed: Number.isFinite(workerNeed) ? workerNeed : 0,
@@ -67,22 +67,18 @@ export function createSupplyBuildingSnapshot({
     pop: Number.isFinite(pop) ? Math.max(0, Math.floor(pop)) : 0,
     // Houses only (1 = autarky). Unused by non-residential buildings.
     level: level === 2 ? 2 : 1,
-    supplyWindmillId:
-      typeof supplyWindmillId === 'string' && supplyWindmillId.length > 0
-        ? supplyWindmillId
+    supplyHubId:
+      typeof supplyHubId === 'string' && supplyHubId.length > 0
+        ? supplyHubId
         : null,
-    linkedMarkets: Object.freeze(
-      Array.isArray(linkedMarkets)
-        ? linkedMarkets.map((entry) =>
+    linkedDistributors: Object.freeze(
+      Array.isArray(linkedDistributors)
+        ? linkedDistributors.map((entry) =>
             Object.freeze({
-              marketId: entry.marketId,
+              distributorId: entry.distributorId,
               x: Number.isFinite(entry.x) ? Math.floor(entry.x) : 0,
               y: Number.isFinite(entry.y) ? Math.floor(entry.y) : 0,
-              allocatedStocks: Object.freeze({
-                wheat: Math.max(0, Math.floor(entry.allocatedStocks?.wheat ?? 0)),
-                carrot: Math.max(0, Math.floor(entry.allocatedStocks?.carrot ?? 0)),
-                cabbage: Math.max(0, Math.floor(entry.allocatedStocks?.cabbage ?? 0)),
-              }),
+              allocatedStocks: Object.freeze({ ...entry.allocatedStocks }),
             })
           )
         : []

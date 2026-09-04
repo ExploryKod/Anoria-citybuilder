@@ -4,11 +4,10 @@ import { getLinkCapacityForRole } from '../../../domain/policies/ResourceRolePol
 import { RebalanceHubAllocations } from './RebalanceHubAllocations.js';
 
 /**
- * Command: link a newly placed distributor (market, ...) to its owning hub
- * (windmill, ...), event-driven. Generic — replaces the old
- * windmill/market-only AssignMarketToWindmill: which hub role/category to
- * search for comes from the distributor's own `placementRequires` catalog
- * fact (see PlacementRequirementPolicy.js), not hardcoded windmill logic.
+ * Command: link a newly placed distributor to its owning hub, event-driven.
+ * Generic — which hub role/category to search for comes from the
+ * distributor's own `placementRequires` catalog fact (see
+ * PlacementRequirementPolicy.js), not a hardcoded building-type check.
  */
 export class AssignDistributorToHub {
   /**
@@ -52,16 +51,16 @@ export class AssignDistributorToHub {
       return { assigned: false, reason: 'hub_not_found' };
     }
 
-    const linkedMarkets = hub.linkedMarkets ?? [];
-    const alreadyLinked = linkedMarkets.some((m) => m.marketId === distributorId);
+    const linkedDistributors = hub.linkedDistributors ?? [];
+    const alreadyLinked = linkedDistributors.some((d) => d.distributorId === distributorId);
     const capacity = getLinkCapacityForRole(hub.type, 'hub');
-    if (capacity != null && linkedMarkets.length >= capacity && !alreadyLinked) {
+    if (capacity != null && linkedDistributors.length >= capacity && !alreadyLinked) {
       return { assigned: false, reason: 'hub_full' };
     }
 
-    const nextLinks = addHubLink(linkedMarkets, distributorId, x, y, this.categories);
-    await this.supplyBuildingRepository.saveLinkedMarkets(hubId, nextLinks);
-    await this.supplyBuildingRepository.saveSupplyWindmillId(distributorId, hubId);
+    const nextLinks = addHubLink(linkedDistributors, distributorId, x, y, this.categories);
+    await this.supplyBuildingRepository.saveHubLinkedDistributors(hubId, nextLinks);
+    await this.supplyBuildingRepository.saveDistributorHubId(distributorId, hubId);
     await this.rebalanceHubAllocations.execute({ hubId, categories: this.categories });
 
     return { assigned: true, hubId };

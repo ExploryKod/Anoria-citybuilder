@@ -2,39 +2,35 @@ import { DexieSupplyBuildingRepository } from '../contexts/supply/infrastructure
 import { TransferHubToHub } from '../contexts/supply/application/commands/procurement/TransferHubToHub.js';
 import { DistributeResourceToConsumers } from '../contexts/supply/application/commands/distribution/DistributeResourceToConsumers.js';
 import { CollectResourceToHub } from '../contexts/supply/application/commands/surplus/CollectResourceToHub.js';
-import { UpdateHousesMarketReach } from '../contexts/supply/application/commands/distribution/UpdateHousesMarketReach.js';
-import { UpdateMarketWindmillLink } from '../contexts/supply/application/commands/procurement/UpdateMarketWindmillLink.js';
+import { UpdateConsumerDistributorReach } from '../contexts/supply/application/commands/distribution/UpdateConsumerDistributorReach.js';
+import { UpdateDistributorHubLink } from '../contexts/supply/application/commands/procurement/UpdateDistributorHubLink.js';
 import { RebalanceHubAllocations } from '../contexts/supply/application/commands/links/RebalanceHubAllocations.js';
 import { AssignDistributorToHub } from '../contexts/supply/application/commands/links/AssignDistributorToHub.js';
 import { DetachDistributorFromHub } from '../contexts/supply/application/commands/links/DetachDistributorFromHub.js';
 import { CascadeDestroyHubDistributors } from '../contexts/supply/application/commands/links/CascadeDestroyHubDistributors.js';
-import { UpdateMarketFarmProximity } from '../contexts/supply/application/commands/procurement/UpdateMarketFarmProximity.js';
-import { MarkWindmillCollectingSeason } from '../contexts/supply/application/commands/surplus/MarkWindmillCollectingSeason.js';
-import { ResetFarmsSoldToWindmill } from '../contexts/supply/application/commands/surplus/ResetFarmsSoldToWindmill.js';
-import { SetWindmillCollectingFlag } from '../contexts/supply/application/commands/surplus/SetWindmillCollectingFlag.js';
-import { MarkFarmSoldToWindmill } from '../contexts/supply/application/commands/surplus/MarkFarmSoldToWindmill.js';
+import { MarkHubCollectingSchedule } from '../contexts/supply/application/commands/surplus/MarkHubCollectingSchedule.js';
+import { ResetSourcesCollectedFlag } from '../contexts/supply/application/commands/surplus/ResetSourcesCollectedFlag.js';
+import { SetHubCollectingFlag } from '../contexts/supply/application/commands/surplus/SetHubCollectingFlag.js';
+import { MarkSourceCollectedByHub } from '../contexts/supply/application/commands/surplus/MarkSourceCollectedByHub.js';
 import { ProduceResource } from '../contexts/supply/application/commands/harvest/ProduceResource.js';
-import { HarvestAllFarmCrops } from '../contexts/supply/application/commands/harvest/HarvestAllFarmCrops.js';
 import { ConsumeResource } from '../contexts/supply/application/commands/consumption/ConsumeResource.js';
-import { ConsumeAllHouseFood } from '../contexts/supply/application/commands/consumption/ConsumeAllHouseFood.js';
-import { ProduceHouseSubsistenceFood } from '../contexts/supply/application/commands/subsistence/ProduceHouseSubsistenceFood.js';
-import { ProduceAllHouseSubsistenceFood } from '../contexts/supply/application/commands/subsistence/ProduceAllHouseSubsistenceFood.js';
-import { ProcessWindmillCollection } from '../contexts/supply/application/commands/surplus/ProcessWindmillCollection.js';
-import { RunWindmillSurplusCycle } from '../contexts/supply/application/commands/surplus/RunWindmillSurplusCycle.js';
+import { ProduceConsumerSubsistence } from '../contexts/supply/application/commands/subsistence/ProduceConsumerSubsistence.js';
+import { RunResourceCommandForRole } from '../contexts/supply/application/commands/RunResourceCommandForRole.js';
+import { ProcessHubCollection } from '../contexts/supply/application/commands/surplus/ProcessHubCollection.js';
+import { RunHubSurplusCycle } from '../contexts/supply/application/commands/surplus/RunHubSurplusCycle.js';
 import { RunCityResourceCycle } from '../contexts/supply/application/commands/procurement/RunCityResourceCycle.js';
-import { RunMonthlyFoodSupplyCycle } from '../contexts/supply/application/workflows/RunMonthlyFoodSupplyCycle.js';
+import { RunMonthlyResourceCycle } from '../contexts/supply/application/workflows/RunMonthlyResourceCycle.js';
 import {
-  FARM_HARVEST_BOOKKEEPING,
-  MARKET_WINDMILL_TRANSFER_BOOKKEEPING,
-  HOUSE_FOOD_CONSUMPTION_BOOKKEEPING,
-} from '../contexts/supply/domain/catalogs/FoodCircuits.js';
-import { CROPS } from '../contexts/supply/domain/value-objects/CropType.js';
-import { DexieFoodTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieFoodTraceabilityRepository.js';
+  PRODUCER_BOOKKEEPING,
+  HUB_TRANSFER_BOOKKEEPING,
+  CONSUMER_BOOKKEEPING,
+} from '../contexts/supply/domain/catalogs/ResourceBookkeepingCatalog.js';
+import { DexieSupplyTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
-import { SupplyFoodTraceability } from '../contexts/supply/infrastructure/presentation/SupplyFoodTraceability.js';
+import { SupplyTraceability } from '../contexts/supply/infrastructure/presentation/SupplyTraceability.js';
 import { GetBuildingSupplyView } from '../contexts/supply/application/queries/GetBuildingSupplyView.js';
 import { ListSupplyMapBuildings } from '../contexts/supply/application/queries/ListSupplyMapBuildings.js';
-import { ListWindmillSupplyViews } from '../contexts/supply/application/queries/ListWindmillSupplyViews.js';
+import { ListHubSupplyViews } from '../contexts/supply/application/queries/ListHubSupplyViews.js';
 import { ListSupplyStockSnapshots } from '../contexts/supply/application/queries/ListSupplyStockSnapshots.js';
 import { GetHubStorageInfoView } from '../contexts/supply/application/queries/GetHubStorageInfoView.js';
 import {
@@ -44,14 +40,21 @@ import {
 } from '../contexts/supply/domain/policies/HubStorageOrdersPolicy.js';
 import { listHubProducts } from '../contexts/supply/domain/catalogs/HubStorageCatalog.js';
 import { getSharedEventBus } from './sharedEventBus.js';
-import { hasResourceRole, getPlacementRequirements } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
+import {
+  hasResourceRole,
+  getPlacementRequirements,
+  getAllCategoriesForRole,
+} from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
 
 /**
- * Composition root — Supply bounded context.
+ * Composition root — Supply bounded context. The only place allowed to name
+ * a resource (food) or wire its declarative bookkeeping — every class below
+ * (RunMonthlyResourceCycle, RunHubSurplusCycle, ...) is resource-agnostic
+ * and takes that config as a parameter.
  *
  * @param {object} [deps]
  * @param {import('../contexts/supply/application/ports/SupplyBuildingRepository.js').SupplyBuildingRepository} [deps.supplyBuildingRepository]
- * @param {import('../contexts/supply/infrastructure/dexie/DexieFoodTraceabilityRepository.js').DexieFoodTraceabilityRepository} [deps.foodTraceabilityRepository]
+ * @param {import('../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js').DexieSupplyTraceabilityRepository} [deps.foodTraceabilityRepository]
  * @param {(turn: number) => object} [deps.getTimeInfo]
  */
 export function createSupplyContext({
@@ -60,10 +63,11 @@ export function createSupplyContext({
   getTimeInfo: getTimeInfoDep,
 } = {}) {
   const getTimeInfo = getTimeInfoDep ?? resolveGetTimeInfo();
+  const producerCategories = getAllCategoriesForRole('producer');
   const supplyBuildingRepositoryImpl =
     supplyBuildingRepository ?? new DexieSupplyBuildingRepository();
   const foodTraceabilityRepositoryImpl =
-    foodTraceabilityRepository ?? new DexieFoodTraceabilityRepository();
+    foodTraceabilityRepository ?? new DexieSupplyTraceabilityRepository();
   const transferHubToHub = new TransferHubToHub(
     supplyBuildingRepositoryImpl
   );
@@ -73,7 +77,7 @@ export function createSupplyContext({
   const assignDistributorToHub = new AssignDistributorToHub(
     supplyBuildingRepositoryImpl,
     rebalanceHubAllocations,
-    CROPS
+    producerCategories
   );
   const detachDistributorFromHub = new DetachDistributorFromHub(
     supplyBuildingRepositoryImpl,
@@ -88,58 +92,52 @@ export function createSupplyContext({
   const collectResourceToHub = new CollectResourceToHub(
     supplyBuildingRepositoryImpl
   );
-  const updateHousesMarketReach = new UpdateHousesMarketReach(
+  const updateConsumerDistributorReach = new UpdateConsumerDistributorReach(
     supplyBuildingRepositoryImpl
   );
-  const updateMarketWindmillLink = new UpdateMarketWindmillLink(
+  const updateDistributorHubLink = new UpdateDistributorHubLink(
     supplyBuildingRepositoryImpl
   );
-  const markWindmillCollectingSeason = new MarkWindmillCollectingSeason(
+  const markHubCollectingSchedule = new MarkHubCollectingSchedule(
     supplyBuildingRepositoryImpl
   );
-  const resetFarmsSoldToWindmill = new ResetFarmsSoldToWindmill(
+  const resetSourcesCollectedFlag = new ResetSourcesCollectedFlag(
     supplyBuildingRepositoryImpl
   );
-  const setWindmillCollectingFlag = new SetWindmillCollectingFlag(
+  const setHubCollectingFlag = new SetHubCollectingFlag(
     supplyBuildingRepositoryImpl
   );
-  const markFarmSoldToWindmill = new MarkFarmSoldToWindmill(
+  const markSourceCollectedByHub = new MarkSourceCollectedByHub(
     supplyBuildingRepositoryImpl
   );
   const produceResource = new ProduceResource(supplyBuildingRepositoryImpl);
-  const harvestAllFarmCrops = new HarvestAllFarmCrops(
-    supplyBuildingRepositoryImpl,
-    produceResource
-  );
+  const runProducerCommand = new RunResourceCommandForRole(supplyBuildingRepositoryImpl, produceResource);
   const consumeResource = new ConsumeResource(supplyBuildingRepositoryImpl);
-  const consumeAllHouseFood = new ConsumeAllHouseFood(
-    supplyBuildingRepositoryImpl,
-    consumeResource
-  );
-  const produceHouseSubsistenceFood = new ProduceHouseSubsistenceFood(
+  const runConsumerCommand = new RunResourceCommandForRole(supplyBuildingRepositoryImpl, consumeResource);
+  const produceConsumerSubsistence = new ProduceConsumerSubsistence(
     supplyBuildingRepositoryImpl
   );
-  const produceAllHouseSubsistenceFood = new ProduceAllHouseSubsistenceFood(
+  const runSubsistenceCommand = new RunResourceCommandForRole(
     supplyBuildingRepositoryImpl,
-    produceHouseSubsistenceFood
+    produceConsumerSubsistence
   );
-  const processWindmillCollection = new ProcessWindmillCollection(
+  const processHubCollection = new ProcessHubCollection(
     supplyBuildingRepositoryImpl,
     collectResourceToHub,
-    setWindmillCollectingFlag,
-    markFarmSoldToWindmill
+    setHubCollectingFlag,
+    markSourceCollectedByHub
   );
-  const runWindmillSurplusCycle = new RunWindmillSurplusCycle(
+  const runHubSurplusCycle = new RunHubSurplusCycle(
     supplyBuildingRepositoryImpl,
-    markWindmillCollectingSeason,
-    resetFarmsSoldToWindmill,
-    processWindmillCollection,
+    markHubCollectingSchedule,
+    resetSourcesCollectedFlag,
+    processHubCollection,
     {
-      execute: ({ windmillId }) =>
-        rebalanceHubAllocations.execute({ hubId: windmillId, categories: CROPS }),
+      execute: ({ hubId }) =>
+        rebalanceHubAllocations.execute({ hubId, categories: producerCategories }),
     }
   );
-  const traceability = new SupplyFoodTraceability({
+  const traceability = new SupplyTraceability({
     foodTraceabilityRepository: foodTraceabilityRepositoryImpl,
     supplyBuildingRepository: supplyBuildingRepositoryImpl,
   });
@@ -149,30 +147,36 @@ export function createSupplyContext({
     getSharedEventBus(),
     {
       transferHubToHub,
-      onHubLinkResolved: (marketId, hasWindmillLink) =>
-        updateMarketWindmillLink.execute({ marketId, hasWindmillLink }),
-      onHubTransfer: (marketId, transfers, timeInfo) =>
-        traceability.recordWindmillToMarketTransfers(
+      onHubLinkResolved: (distributorId, hasHubLink) =>
+        updateDistributorHubLink.execute({ distributorId, hasHubLink }),
+      onHubTransfer: (distributorId, transfers, timeInfo) =>
+        traceability.recordHubToDistributorTransfers(
           timeInfo,
-          marketId,
-          transfers.map((t) => ({ windmillId: t.sourceId, crop: t.category, amount: t.amount }))
+          distributorId,
+          transfers.map((t) => ({ hubId: t.sourceId, category: t.category, amount: t.amount }))
         ),
-      onDistribute: (marketId, transfers, timeInfo) =>
-        traceability.recordMarketToHouseTransfers(
+      onDistribute: (distributorId, transfers, timeInfo) =>
+        traceability.recordDistributorToConsumerTransfers(
           timeInfo,
-          marketId,
-          transfers.map((t) => ({ houseId: t.consumerId, crop: t.category, amount: t.amount }))
+          distributorId,
+          transfers.map((t) => ({ houseId: t.consumerId, category: t.category, amount: t.amount }))
         ),
     }
   );
-  const runMonthlyFoodSupplyCycle = new RunMonthlyFoodSupplyCycle(
-    harvestAllFarmCrops,
+  const runMonthlyResourceCycle = new RunMonthlyResourceCycle(
+    runProducerCommand,
     runCityResourceCycle,
-    updateHousesMarketReach,
-    runWindmillSurplusCycle,
-    consumeAllHouseFood,
+    updateConsumerDistributorReach,
+    runHubSurplusCycle,
+    runConsumerCommand,
     traceability,
-    produceAllHouseSubsistenceFood
+    runSubsistenceCommand,
+    {
+      categories: producerCategories,
+      producerBookkeeping: PRODUCER_BOOKKEEPING,
+      hubTransferBookkeeping: HUB_TRANSFER_BOOKKEEPING,
+      consumerBookkeeping: CONSUMER_BOOKKEEPING,
+    }
   );
   const getBuildingSupplyViewQuery = new GetBuildingSupplyView(
     supplyBuildingRepositoryImpl
@@ -180,7 +184,7 @@ export function createSupplyContext({
   const listSupplyMapBuildingsQuery = new ListSupplyMapBuildings(
     supplyBuildingRepositoryImpl
   );
-  const listWindmillSupplyViewsQuery = new ListWindmillSupplyViews(
+  const listHubSupplyViewsQuery = new ListHubSupplyViews(
     supplyBuildingRepositoryImpl
   );
   const listSupplyStockSnapshotsQuery = new ListSupplyStockSnapshots(
@@ -197,146 +201,44 @@ export function createSupplyContext({
     rebalanceHubAllocations,
     distributeResourceToConsumers,
     collectResourceToHub,
-    updateHousesMarketReach,
-    updateMarketWindmillLink,
-    markWindmillCollectingSeason,
-    resetFarmsSoldToWindmill,
-    setWindmillCollectingFlag,
-    markFarmSoldToWindmill,
+    updateConsumerDistributorReach,
+    updateDistributorHubLink,
+    markHubCollectingSchedule,
+    resetSourcesCollectedFlag,
+    setHubCollectingFlag,
+    markSourceCollectedByHub,
     produceResource,
-    harvestAllFarmCrops,
     consumeResource,
-    consumeAllHouseFood,
-    produceHouseSubsistenceFood,
-    produceAllHouseSubsistenceFood,
-    processWindmillCollection,
-    runWindmillSurplusCycle,
+    produceConsumerSubsistence,
+    processHubCollection,
+    runHubSurplusCycle,
     runCityResourceCycle,
-    runMonthlyFoodSupplyCycle,
     getBuildingSupplyViewQuery,
     listSupplyMapBuildingsQuery,
-    listWindmillSupplyViewsQuery,
+    listHubSupplyViewsQuery,
     listSupplyStockSnapshotsQuery,
     hasResourceRole,
     getPlacementRequirements,
-
-    async buyFromAssignedWindmill(marketId, month = null) {
-      return transferHubToHub.execute({
-        targetId: marketId,
-        period: { month },
-        bookkeeping: MARKET_WINDMILL_TRANSFER_BOOKKEEPING,
-      });
-    },
 
     async assignDistributorToHub({ distributorId, distributorType, x, y, ownerHubId }) {
       return assignDistributorToHub.execute({ distributorId, distributorType, x, y, ownerHubId });
     },
 
     async detachDistributorFromHub({ distributorId }) {
-      return detachDistributorFromHub.execute({ distributorId, categories: CROPS });
+      return detachDistributorFromHub.execute({ distributorId, categories: producerCategories });
     },
 
     async cascadeDestroyHubDistributors({ hubId, city, bulldozeBuildingAtTile }) {
       return cascadeDestroyHubDistributors.execute({ hubId, city, bulldozeBuildingAtTile });
     },
 
-    async rebalanceWindmillAllocations(windmillId) {
-      return rebalanceHubAllocations.execute({ hubId: windmillId, categories: CROPS });
-    },
-
     async initializeHubLinks({ hubId }) {
-      await supplyBuildingRepositoryImpl.saveLinkedMarkets(hubId, []);
+      await supplyBuildingRepositoryImpl.saveHubLinkedDistributors(hubId, []);
       return { initialized: true, hubId };
     },
 
-    async hasOperationalWindmill() {
-      const windmills = await supplyBuildingRepositoryImpl.findByResourceRole('hub');
-      return windmills.length > 0;
-    },
-
-    async distributeToHouses(marketId, houseRefs, season) {
-      return distributeResourceToConsumers.execute({
-        sourceId: marketId,
-        consumerRefs: houseRefs,
-        period: { season },
-      });
-    },
-
-    async collectFromAllFarms(windmillId, farmRefs, month) {
-      return collectResourceToHub.execute({
-        hubId: windmillId,
-        sourceRefs: farmRefs,
-        period: { month },
-      });
-    },
-
-    async updateMarketReach(maxDistance) {
-      return updateHousesMarketReach.execute({ maxDistance });
-    },
-
-    async updateWindmillLink(marketId, hasWindmillLink) {
-      return updateMarketWindmillLink.execute({ marketId, hasWindmillLink });
-    },
-
-    async markCollectingSeason(month) {
-      return markWindmillCollectingSeason.execute(month);
-    },
-
-    async resetSoldToWindmill(options) {
-      return resetFarmsSoldToWindmill.execute(options);
-    },
-
-    async setWindmillCollecting(windmillId, isCollecting) {
-      return setWindmillCollectingFlag.execute({ windmillId, isCollecting });
-    },
-
-    async markFarmSoldToWindmill(farmId, soldToWindmill = true) {
-      return markFarmSoldToWindmill.execute({ farmId, soldToWindmill });
-    },
-
-    async harvestFarmCrop(farmId, season, year, monthIndex = null) {
-      return produceResource.execute({
-        buildingId: farmId,
-        period: { season, year, monthIndex },
-        bookkeeping: FARM_HARVEST_BOOKKEEPING,
-      });
-    },
-
-    async harvestAllFarmCrops({ season, year, monthIndex = null }) {
-      return harvestAllFarmCrops.execute({ season, year, monthIndex });
-    },
-
-    async consumeHouseFood(houseId, monthIndex) {
-      return consumeResource.execute({
-        buildingId: houseId,
-        period: { monthIndex },
-        bookkeeping: HOUSE_FOOD_CONSUMPTION_BOOKKEEPING,
-      });
-    },
-
-    async consumeAllHouseFood({ monthIndex }) {
-      return consumeAllHouseFood.execute({ monthIndex });
-    },
-
-    async produceHouseSubsistenceFood(houseId, monthIndex) {
-      return produceHouseSubsistenceFood.execute({ houseId, monthIndex });
-    },
-
-    async produceAllHouseSubsistenceFood({ monthIndex }) {
-      return produceAllHouseSubsistenceFood.execute({ monthIndex });
-    },
-
-    async runWindmillSurplusCycle({ month, monthIndex, dayInMonth, year }) {
-      return runWindmillSurplusCycle.execute({
-        month,
-        monthIndex,
-        dayInMonth,
-        year,
-      });
-    },
-
-    async runMonthlyFoodSupplyCycle({ season, month, timeInfo, maxDistance = 5 }) {
-      return runMonthlyFoodSupplyCycle.execute({
+    async runMonthlyResourceCycle({ season, month, timeInfo, maxDistance = 5 }) {
+      return runMonthlyResourceCycle.execute({
         season,
         month,
         timeInfo,
@@ -397,8 +299,8 @@ export function createSupplyContext({
       return listSupplyMapBuildingsQuery.execute();
     },
 
-    async listWindmillSupplyViews() {
-      return listWindmillSupplyViewsQuery.execute();
+    async listHubSupplyViews() {
+      return listHubSupplyViewsQuery.execute();
     },
 
     async listSupplyStockSnapshots() {
@@ -417,19 +319,19 @@ export function createSupplyContext({
       return supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, fields);
     },
 
-    async getAllFoodTraceabilityTransactions(maxAge = null) {
+    async getAllSupplyTraceabilityTransactions(maxAge = null) {
       return foodTraceabilityRepositoryImpl.getAllTransactions(maxAge);
     },
 
-    async getFoodTraceabilityTransactionsForMonth(turn, month = null) {
+    async getSupplyTraceabilityTransactionsForMonth(turn, month = null) {
       return foodTraceabilityRepositoryImpl.getTransactionsForMonth(turn, month);
     },
 
-    async getFoodTraceabilityTransactionsByMonth(turn) {
+    async getSupplyTraceabilityTransactionsByMonth(turn) {
       return foodTraceabilityRepositoryImpl.getTransactionsByMonth(turn);
     },
 
-    async cleanupOldFoodTraceabilityTransactions(maxAge = 60) {
+    async cleanupOldSupplyTraceabilityTransactions(maxAge = 60) {
       return foodTraceabilityRepositoryImpl.cleanupOldTransactions(maxAge);
     },
   };

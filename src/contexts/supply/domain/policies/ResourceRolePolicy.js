@@ -80,6 +80,27 @@ export function getAllCategoriesForRole(role) {
 }
 
 /**
+ * The one stock shape shared by every building row today: every category any
+ * building declares as a 'consumer' category, aggregated under the totalKey
+ * those entries declare (categories/totalKey are still a catalog fact, not a
+ * hand list — see buildingEconomy.js). A second, independently-tracked
+ * resource would need its own totalKey partition here; not needed yet.
+ * @returns {{ categories: ReadonlyArray<string>, totalKey: string }}
+ */
+export function getResourceStockShape() {
+  const categories = new Set();
+  let totalKey;
+  for (const definition of Object.values(buildingCatalog)) {
+    for (const entry of definition.resourceRoles ?? []) {
+      if (entry.role !== 'consumer') continue;
+      for (const category of entry.categories) categories.add(category);
+      if (entry.totalKey) totalKey = entry.totalKey;
+    }
+  }
+  return { categories: Object.freeze([...categories]), totalKey: totalKey ?? 'total' };
+}
+
+/**
  * @param {string} buildingType
  * @returns {import('../../../../shared/building-catalog/buildingCatalog.js').PlacementRequirement[]}
  */

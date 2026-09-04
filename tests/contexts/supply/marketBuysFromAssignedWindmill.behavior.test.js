@@ -4,8 +4,8 @@
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
-import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
-import { MARKET_WINDMILL_TRANSFER_BOOKKEEPING } from '../../../src/contexts/supply/domain/catalogs/FoodCircuits.js';
+import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
+import { HUB_TRANSFER_BOOKKEEPING } from '../../../src/contexts/supply/domain/catalogs/ResourceBookkeepingCatalog.js';
 import { TransferHubToHub } from '../../../src/contexts/supply/application/commands/procurement/TransferHubToHub.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 
@@ -19,24 +19,24 @@ class InMemorySupplyBuildingRepository {
     if (!b) return null;
     return createSupplyBuildingSnapshot({
       ...b,
-      stocks: createFoodStock(b.stocks),
-      linkedMarkets: b.linkedMarkets ?? [],
-      supplyWindmillId: b.supplyWindmillId ?? null,
+      stocks: createSupplyStock(b.stocks),
+      linkedDistributors: b.linkedDistributors ?? [],
+      supplyHubId: b.supplyHubId ?? null,
     });
   }
 
   async saveStocks(id, stocks) {
     const b = this.raw.get(id);
-    if (b) b.stocks = { ...createFoodStock(stocks) };
+    if (b) b.stocks = { ...createSupplyStock(stocks) };
   }
 
-  async saveLinkedMarkets(id, linkedMarkets) {
+  async saveHubLinkedDistributors(id, linkedDistributors) {
     const b = this.raw.get(id);
-    if (b) b.linkedMarkets = linkedMarkets.map((entry) => ({ ...entry, allocatedStocks: { ...entry.allocatedStocks } }));
+    if (b) b.linkedDistributors = linkedDistributors.map((entry) => ({ ...entry, allocatedStocks: { ...entry.allocatedStocks } }));
   }
 }
 
-function windmill(id, stocks, linkedMarkets) {
+function windmill(id, stocks, linkedDistributors) {
   return {
     id,
     type: 'Windmill-001',
@@ -45,11 +45,11 @@ function windmill(id, stocks, linkedMarkets) {
     workerNeed: 1,
     stocks,
     maxStock: 1000,
-    linkedMarkets,
+    linkedDistributors,
   };
 }
 
-function market(id, stocks, supplyWindmillId) {
+function market(id, stocks, supplyHubId) {
   return {
     id,
     type: 'Market-Stall',
@@ -58,7 +58,7 @@ function market(id, stocks, supplyWindmillId) {
     workerNeed: 1,
     stocks,
     maxStock: 500,
-    supplyWindmillId,
+    supplyHubId,
   };
 }
 
@@ -74,7 +74,7 @@ describe('Supply — market buys from assigned windmill', () => {
     repo = new InMemorySupplyBuildingRepository([
       windmill(windmillId, { wheat: 10, carrot: 0, cabbage: 0, food: 10 }, [
         {
-          marketId,
+          distributorId: marketId,
           x: 5,
           y: 5,
           allocatedStocks: { wheat: 6, carrot: 0, cabbage: 0 },
@@ -89,7 +89,7 @@ describe('Supply — market buys from assigned windmill', () => {
     const outcome = await command.execute({
       targetId: marketId,
       period: {},
-      bookkeeping: MARKET_WINDMILL_TRANSFER_BOOKKEEPING,
+      bookkeeping: HUB_TRANSFER_BOOKKEEPING,
     });
 
     expect(outcome.transferred).toBe(true);
@@ -100,7 +100,7 @@ describe('Supply — market buys from assigned windmill', () => {
 
     expect(mill.stocks.wheat).toBe(4);
     expect(stall.stocks.wheat).toBe(6);
-    expect(mill.linkedMarkets[0].allocatedStocks.wheat).toBe(0);
+    expect(mill.linkedDistributors[0].allocatedStocks.wheat).toBe(0);
   });
 
   test('refuses when market has no windmill link', async () => {
@@ -113,7 +113,7 @@ describe('Supply — market buys from assigned windmill', () => {
     const outcome = await command.execute({
       targetId: orphanId,
       period: {},
-      bookkeeping: MARKET_WINDMILL_TRANSFER_BOOKKEEPING,
+      bookkeeping: HUB_TRANSFER_BOOKKEEPING,
     });
     expect(outcome.transferred).toBe(false);
     expect(outcome.reason).toBe('no_source_link');

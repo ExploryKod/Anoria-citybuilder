@@ -24,8 +24,8 @@ export function getDefaultFoodDistributionDistance() {
 }
 
 /** Windmill DTOs for storage / commerce UI (stocks + export flags). */
-export async function listWindmillSupplyViews() {
-  return getOrCreateSupplyContext().listWindmillSupplyViews();
+export async function listHubSupplyViews() {
+  return getOrCreateSupplyContext().listHubSupplyViews();
 }
 
 /** City map cells with Supply fields (farms, markets, houses, …). */
@@ -40,7 +40,7 @@ export async function listNatureResources() {
 
 /** Windmills eligible for partner export (active + commercialize enabled). */
 export async function listCommercializableWindmills() {
-  const windmills = await listWindmillSupplyViews();
+  const windmills = await listHubSupplyViews();
   return windmills.filter(
     (windmill) => windmill.isActive && windmill.commercializeEnabled
   );
@@ -57,11 +57,11 @@ export async function updateSupplyBuildingFields(buildingId, fields) {
 }
 
 /** All food traceability audit rows (admin panel, commerce consumption badges). */
-export async function getAllFoodTraceabilityTransactions(maxAge = null) {
-  return getOrCreateSupplyContext().getAllFoodTraceabilityTransactions(maxAge);
+export async function getAllSupplyTraceabilityTransactions(maxAge = null) {
+  return getOrCreateSupplyContext().getAllSupplyTraceabilityTransactions(maxAge);
 }
 
 /** Food traceability rows for one game turn (optional month filter). */
-export async function getFoodTraceabilityTransactionsForMonth(turn, month = null) {
-  return getOrCreateSupplyContext().getFoodTraceabilityTransactionsForMonth(turn, month);
+export async function getSupplyTraceabilityTransactionsForMonth(turn, month = null) {
+  return getOrCreateSupplyContext().getSupplyTraceabilityTransactionsForMonth(turn, month);
 }

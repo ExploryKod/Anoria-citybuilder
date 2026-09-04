@@ -11,8 +11,8 @@ import {
 } from '../../../src/contexts/supply/domain/policies/PlacementRequirementPolicy.js';
 
 describe('canPlaceBuildingAt', () => {
-  const windmillA = { id: 'windmill-a', type: 'Windmill-001', x: 10, y: 10, roadCount: 1, linkedMarkets: [] };
-  const windmillB = { id: 'windmill-b', type: 'Windmill-001', x: 12, y: 10, roadCount: 1, linkedMarkets: [] };
+  const windmillA = { id: 'windmill-a', type: 'Windmill-001', x: 10, y: 10, roadCount: 1, linkedDistributors: [] };
+  const windmillB = { id: 'windmill-b', type: 'Windmill-001', x: 12, y: 10, roadCount: 1, linkedDistributors: [] };
 
   test('a building with no placementRequires is always placeable', () => {
     expect(canPlaceBuildingAt({ x: 0, y: 0, buildingType: 'House-Blue', candidates: [] })).toEqual({ ok: true });
@@ -41,9 +41,9 @@ describe('canPlaceBuildingAt', () => {
   test('rejects when nearby hubs are all at capacity', () => {
     const fullWindmill = {
       ...windmillA,
-      linkedMarkets: [
-        { marketId: 'm1', x: 1, y: 1, allocatedStocks: {} },
-        { marketId: 'm2', x: 2, y: 2, allocatedStocks: {} },
+      linkedDistributors: [
+        { distributorId: 'm1', x: 1, y: 1, allocatedStocks: {} },
+        { distributorId: 'm2', x: 2, y: 2, allocatedStocks: {} },
       ],
     };
 
@@ -54,7 +54,7 @@ describe('canPlaceBuildingAt', () => {
   test('ignores candidates without road access', () => {
     const owner = pickRequirementOwner(
       { x: 0, y: 0 },
-      [{ id: 'w1', type: 'Windmill-001', x: 1, y: 0, roadCount: 0, linkedMarkets: [] }],
+      [{ id: 'w1', type: 'Windmill-001', x: 1, y: 0, roadCount: 0, linkedDistributors: [] }],
       { role: 'hub', categories: ['wheat'], range: 5, requiresCapacity: true }
     );
     expect(owner).toBeNull();

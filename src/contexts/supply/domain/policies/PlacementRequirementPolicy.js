@@ -14,7 +14,7 @@ import { isWithinRange, manhattanDistance } from './ResourceRangePolicy.js';
  * Rank candidates satisfying one requirement (closest first, stable tie-break).
  *
  * @param {{ x: number, y: number }} pos
- * @param {Array<{ id: string, type: string, x?: number, y?: number, roadCount?: number, linkedMarkets?: object[] }>} candidates
+ * @param {Array<{ id: string, type: string, x?: number, y?: number, roadCount?: number, linkedDistributors?: object[] }>} candidates
  * @param {import('../../../../shared/building-catalog/buildingCatalog.js').PlacementRequirement} requirement
  */
 export function rankRequirementCandidates(pos, candidates, requirement) {
@@ -27,7 +27,7 @@ export function rankRequirementCandidates(pos, candidates, requirement) {
 
       if (requirement.requiresCapacity) {
         const capacity = getLinkCapacityForRole(candidate.type, requirement.role);
-        const linkedCount = candidate.linkedMarkets?.length ?? 0;
+        const linkedCount = candidate.linkedDistributors?.length ?? 0;
         if (capacity != null && linkedCount >= capacity) return false;
       }
 

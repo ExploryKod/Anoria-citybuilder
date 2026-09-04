@@ -1,8 +1,6 @@
 /**
  * Bulldoze all distributors linked to a hub before the hub itself is
- * removed. Generic — replaces the old windmill/market-only
- * CascadeDestroyWindmillMarkets (which also took an unused
- * DetachMarketFromWindmill dependency — dropped, it never called it).
+ * removed.
  */
 export class CascadeDestroyHubDistributors {
   /**
@@ -17,15 +15,15 @@ export class CascadeDestroyHubDistributors {
    * @param {string} params.hubId
    * @param {{ size: number, tiles: object[][] }} params.city
    * @param {(args: { city: object, x: number, y: number }) => Promise<unknown>} params.bulldozeBuildingAtTile
-   * @returns {Promise<{ destroyed: Array<{ marketId: string, x: number, y: number }> }>}
+   * @returns {Promise<{ destroyed: Array<{ distributorId: string, x: number, y: number }> }>}
    */
   async execute({ hubId, city, bulldozeBuildingAtTile }) {
     const hub = await this.supplyBuildingRepository.findById(hubId);
-    const linkedMarkets = hub?.linkedMarkets ?? [];
+    const linkedDistributors = hub?.linkedDistributors ?? [];
     const destroyed = [];
 
-    for (const link of linkedMarkets) {
-      if (!link?.marketId) continue;
+    for (const link of linkedDistributors) {
+      if (!link?.distributorId) continue;
 
       await bulldozeBuildingAtTile({
         city,
@@ -34,13 +32,13 @@ export class CascadeDestroyHubDistributors {
       });
 
       destroyed.push({
-        marketId: link.marketId,
+        distributorId: link.distributorId,
         x: link.x,
         y: link.y,
       });
     }
 
-    await this.supplyBuildingRepository.saveLinkedMarkets(hubId, []);
+    await this.supplyBuildingRepository.saveHubLinkedDistributors(hubId, []);
 
     return { destroyed };
   }

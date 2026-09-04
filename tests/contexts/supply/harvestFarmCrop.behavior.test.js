@@ -4,12 +4,12 @@
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
-import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
+import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import { matchesSchedule } from '../../../src/contexts/supply/domain/policies/ResourceSchedulePolicy.js';
 import { getAmountForRole, getScheduleForRole, hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
-import { FARM_HARVEST_BOOKKEEPING } from '../../../src/contexts/supply/domain/catalogs/FoodCircuits.js';
+import { PRODUCER_BOOKKEEPING } from '../../../src/contexts/supply/domain/catalogs/ResourceBookkeepingCatalog.js';
 import { ProduceResource } from '../../../src/contexts/supply/application/commands/harvest/ProduceResource.js';
-import { HarvestAllFarmCrops } from '../../../src/contexts/supply/application/commands/harvest/HarvestAllFarmCrops.js';
+import { RunResourceCommandForRole } from '../../../src/contexts/supply/application/commands/RunResourceCommandForRole.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {
@@ -30,13 +30,13 @@ class InMemorySupplyBuildingRepository {
     if (!b) return null;
     return createSupplyBuildingSnapshot({
       ...b,
-      stocks: createFoodStock(b.stocks),
+      stocks: createSupplyStock(b.stocks),
     });
   }
 
   async saveStocks(id, stocks) {
     const b = this.raw.get(id);
-    if (b) b.stocks = { ...createFoodStock(stocks) };
+    if (b) b.stocks = { ...createSupplyStock(stocks) };
   }
 
   async updateBuildingFields(id, fields) {
@@ -53,7 +53,7 @@ class InMemorySupplyBuildingRepository {
       .map((b) =>
         createSupplyBuildingSnapshot({
           ...b,
-          stocks: createFoodStock(b.stocks),
+          stocks: createSupplyStock(b.stocks),
         })
       );
   }
@@ -101,7 +101,7 @@ describe('Supply — farm harvest', () => {
       const outcome = await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'autumn', year: 3, monthIndex: 9 },
-        bookkeeping: FARM_HARVEST_BOOKKEEPING,
+        bookkeeping: PRODUCER_BOOKKEEPING,
       });
 
       expect(outcome).toEqual({
@@ -121,13 +121,13 @@ describe('Supply — farm harvest', () => {
       await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'autumn', year: 3 },
-        bookkeeping: FARM_HARVEST_BOOKKEEPING,
+        bookkeeping: PRODUCER_BOOKKEEPING,
       });
 
       const second = await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'autumn', year: 3 },
-        bookkeeping: FARM_HARVEST_BOOKKEEPING,
+        bookkeeping: PRODUCER_BOOKKEEPING,
       });
 
       expect(second.produced).toBe(false);
@@ -139,12 +139,12 @@ describe('Supply — farm harvest', () => {
       await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'autumn', year: 3 },
-        bookkeeping: FARM_HARVEST_BOOKKEEPING,
+        bookkeeping: PRODUCER_BOOKKEEPING,
       });
       await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'autumn', year: 4 },
-        bookkeeping: FARM_HARVEST_BOOKKEEPING,
+        bookkeeping: PRODUCER_BOOKKEEPING,
       });
 
       expect((await repo.findById('Farm-Wheat-2-3')).stocks.wheat).toBe(156);
@@ -154,7 +154,7 @@ describe('Supply — farm harvest', () => {
       const outcome = await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'summer', year: 3 },
-        bookkeeping: FARM_HARVEST_BOOKKEEPING,
+        bookkeeping: PRODUCER_BOOKKEEPING,
       });
       expect(outcome.produced).toBe(false);
       expect(outcome.reason).toBe('not_production_period');
@@ -172,7 +172,7 @@ describe('Supply — farm harvest', () => {
           await useCase.execute({
             buildingId: 'Farm-Wheat-2-3',
             period: { season: 'autumn', year: 1 },
-            bookkeeping: FARM_HARVEST_BOOKKEEPING,
+            bookkeeping: PRODUCER_BOOKKEEPING,
           })
         ).reason
       ).toBe('not_operational');
@@ -181,14 +181,14 @@ describe('Supply — farm harvest', () => {
           await useCase.execute({
             buildingId: 'Farm-Carrot-4-5',
             period: { season: 'autumn', year: 1 },
-            bookkeeping: FARM_HARVEST_BOOKKEEPING,
+            bookkeeping: PRODUCER_BOOKKEEPING,
           })
         ).reason
       ).toBe('not_operational');
     });
   });
 
-  describe('HarvestAllFarmCrops', () => {
+  describe('RunResourceCommandForRole (producer)', () => {
     test('harvests every operational farm in autumn', async () => {
       const repo = new InMemorySupplyBuildingRepository([
         farm('Farm-Wheat-2-3', 'Farm-Wheat'),
@@ -196,16 +196,21 @@ describe('Supply — farm harvest', () => {
         farm('Farm-Cabbage-6-7', 'Farm-Cabbage', { worker: 0, workerNeed: 1 }),
       ]);
       const produceResource = new ProduceResource(repo);
-      const harvestAll = new HarvestAllFarmCrops(repo, produceResource);
+      const runProducerCommand = new RunResourceCommandForRole(repo, produceResource);
 
-      const outcome = await harvestAll.execute({
-        season: 'autumn',
-        year: 2,
-        monthIndex: 9,
+      const { count, results } = await runProducerCommand.execute({
+        role: 'producer',
+        buildParams: (farm) => ({
+          buildingId: farm.id,
+          period: { season: 'autumn', year: 2, monthIndex: 9 },
+          bookkeeping: PRODUCER_BOOKKEEPING,
+        }),
+        successKey: 'produced',
       });
+      const harvests = results.map((r) => ({ ...r, farmId: r.buildingId, crop: r.category }));
 
-      expect(outcome.harvestedCount).toBe(2);
-      expect(outcome.harvests).toEqual(
+      expect(count).toBe(2);
+      expect(harvests).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ farmId: 'Farm-Wheat-2-3', crop: 'wheat', amount: 78 }),
           expect.objectContaining({ farmId: 'Farm-Carrot-4-5', crop: 'carrot', amount: 78 }),

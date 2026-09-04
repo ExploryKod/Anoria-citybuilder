@@ -126,7 +126,7 @@ export const BUILDING_ECONOMY = {
     construction: { price: 50, category: 'industry' },
     employment: { sector: 4, workerNeed: 4, eliteNeed: 2, requiredSkill: 'stockage-alimentaire' },
     // No `range` on 'collector': today it collects city-wide (matches
-    // RunWindmillSurplusCycle passing every farm, unfiltered by distance).
+    // RunHubSurplusCycle passing every source, unfiltered by distance).
     // A future resource can cap this with a range; food doesn't today.
     resourceRoles: [
       {
@@ -135,7 +135,7 @@ export const BUILDING_ECONOMY = {
         totalKey: 'food',
         schedule: { unit: 'month', values: ['december'] },
       },
-      { role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], totalKey: 'food', linkCapacity: 2 },
+      { role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], totalKey: 'food', linkCapacity: 2, maxStock: 1000 },
     ],
   },
   'Crate-001': { displayName: 'Caisse', construction: { price: 2, category: 'industry' } },

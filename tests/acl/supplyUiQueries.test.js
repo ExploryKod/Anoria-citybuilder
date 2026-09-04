@@ -7,7 +7,7 @@ import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import db from '../../src/core/persistence/dexie/db.js';
 import { resetSupplyContextForTests } from '../../src/composition/createSupplyContext.js';
 import {
-  listWindmillSupplyViews,
+  listHubSupplyViews,
   listCommercializableWindmills,
   listSupplyMapBuildings,
   listNatureResources,
@@ -30,7 +30,7 @@ describe('ACL Supply UI queries', () => {
     await clearHousesTable();
   });
 
-  test('listWindmillSupplyViews exposes commerce flags and stocks', async () => {
+  test('listHubSupplyViews exposes commerce flags and stocks', async () => {
     const windmillId = makeHouseRecord({
       type: 'Windmill-001',
       x: 1,
@@ -56,7 +56,7 @@ describe('ACL Supply UI queries', () => {
       })
     );
 
-    const views = await listWindmillSupplyViews();
+    const views = await listHubSupplyViews();
     expect(views).toHaveLength(1);
     expect(views[0].buildingId).toBe(windmillId);
     expect(views[0].instanceId).toBe(windmillId);
