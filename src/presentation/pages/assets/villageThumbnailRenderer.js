@@ -3,6 +3,7 @@
  */
 
 import * as THREE from 'three';
+import { WebGPURenderer } from 'three/webgpu';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 import { VILLAGE_NATURE_MESH_ALIASES } from '../../../shared/building-catalog/villageAssetSets.js';
@@ -99,12 +100,13 @@ export async function renderVillageThumbnail(toolId, canvas, size = 104) {
   canvas.width = width;
   canvas.height = height;
 
-  const renderer = new THREE.WebGLRenderer({
+  const renderer = new WebGPURenderer({
     canvas,
     antialias: true,
     alpha: true,
     preserveDrawingBuffer: true,
   });
+  await renderer.init();
   renderer.setSize(width, height, false);
   renderer.setClearColor(0x000000, 0);
 
@@ -137,7 +139,7 @@ export async function renderVillageThumbnail(toolId, canvas, size = 104) {
   key.position.set(2, 4, 3);
   scene.add(ambient, key);
 
-  renderer.render(scene, camera);
+  await renderer.renderAsync(scene, camera);
 
   mesh.geometry?.dispose();
   if (Array.isArray(mesh.material)) {

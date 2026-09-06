@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { WebGPURenderer } from 'three/webgpu';
 import {createCamera} from './camera.js';
 import { createPerfHud } from './PerfHud.js';
 import { adoptHudFabDockChildren } from '../dom/shell/hudFabDock.js';
@@ -181,7 +182,10 @@ export function createScene(_gameStore, assetManager, deps) {
 
     const camera = createCamera(gameWindow);
     const runningOnMobile = isMobileDevice();
-    const renderer = new THREE.WebGLRenderer({
+    // WebGPURenderer bascule automatiquement sur un backend WebGL2 si le
+    // navigateur n'expose pas `navigator.gpu` (Safari en retard, contexte
+    // restreint, etc.) — pas de détection manuelle à faire ici.
+    const renderer = new WebGPURenderer({
         // Sur mobile, on désactive l'antialiasing (coûteux en mémoire GPU) et on
         // évite que le navigateur refuse purement et simplement le contexte WebGL
         // sur un GPU jugé "faible" (failIfMajorPerformanceCaveat bloquerait sinon
@@ -191,6 +195,9 @@ export function createScene(_gameStore, assetManager, deps) {
         failIfMajorPerformanceCaveat: false,
         preserveDrawingBuffer: false,
     });
+    // Le backend (WebGPU ou WebGL2 de secours) n'est prêt qu'après cette
+    // promesse : tout rendu avant résolution serait silencieusement ignoré.
+    let rendererReady = renderer.init();
     renderer.setSize(gameWindow.offsetWidth, gameWindow.offsetHeight);
     if (runningOnMobile) {
         // Cap le pixel ratio sur mobile pour limiter la pression mémoire GPU
@@ -246,6 +253,20 @@ export function createScene(_gameStore, assetManager, deps) {
             );
         }
     });
+
+    // Pendant, `onDeviceLost` couvre les deux backends (natif WebGPU et
+    // fallback WebGL2) ; les listeners 'webglcontextlost/restored' ci-dessus
+    // ne se déclenchent que sous le backend WebGL2.
+    renderer.onDeviceLost = (info) => {
+        if (webglContextLost) return;
+        webglContextLost = true;
+        console.error('[WebGPU] Device lost — ressources GPU insuffisantes.', info);
+        loaderManager.hide(0);
+        showWarningToast(
+            "Le rendu 3D a rencontré un problème (ressources graphiques insuffisantes). Tentative de récupération automatique…",
+            { timeout: 6000 }
+        );
+    };
 
     renderer.setClearColor(0x000000, 0);
     if (!runningOnMobile) {
@@ -393,6 +414,7 @@ export function createScene(_gameStore, assetManager, deps) {
     }
 
     async function initialize(city, options = {}) {
+        await rendererReady;
         const seedNature = options.seedNature === true;
         editorStackHydrationEnabled = usesEditorLikePresentation() || options.hydrateEditorLayout === true;
 
