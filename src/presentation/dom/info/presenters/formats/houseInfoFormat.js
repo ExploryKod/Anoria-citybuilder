@@ -6,19 +6,18 @@ import {
   getHouseDwellingLevelAriaLabel,
   getHouseDwellingLevelLabel,
   maxPopulationForLevel,
-  resolveHouseDwellingStatusMessage,
 } from '../../../../../contexts/housing/application/queries/HouseDwellingLevelPresentation.js';
 import { getBuildingDefinition } from '../../../../../shared/building-catalog/index.js';
 import {
   getResidentialGroupTitle,
   residentialGroupForType,
 } from '../../../shell/ResidentialGroupLabels.js';
+import { computeHouseCitizenComposition } from '../../../../../composition/housingCatalog.js';
 import {
-  computeHouseCitizenComposition,
-  describeNextTierRequirements,
-} from '../../../../../composition/housingCatalog.js';
+  getResourceStockShape,
+  getResourceCategoryPresentation,
+} from '../../../../../composition/supplyCatalog.js';
 import { formatHousePopulationPresentation } from '../../population/formatHousePopulationPresentation.js';
-import { formatTierRequirementCards } from '../../population/formatTierRequirementCards.js';
 
 /**
  * "Fed or not" — total quantity only. Diet variety (which food types) is a
@@ -99,30 +98,55 @@ export function formatHouseSkillsModel(vm) {
 }
 
 /**
- * Besoins tab — requirement cards for the house's next tier, derived
- * entirely from the declarative catalog (see
- * HouseLevelPolicy.describeNextTierRequirements + REQUIREMENT_KIND_PRESENTATION).
- * A new requirement kind on a tier shows up here automatically once it has
- * a presentation entry — nothing here names a specific kind.
+ * Ressources tab — one tiny card per resource category the house's stock
+ * declares (icon + current amount), plus one card for the aggregate total
+ * (have vs. this period's consumption need). Icons/labels come from
+ * ResourceCategoryCatalog.js, the category list from the stock itself (see
+ * SupplyStock.js / ResourceRolePolicy.getResourceStockShape) — a new
+ * resource category needs a catalog entry, never a change here.
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  */
-export function formatHouseNeedsModel(vm) {
-  const hasRoadAccess = vm.roadAccess.hasAccess;
-  const variant = vm.houseLevel === 2 && !hasRoadAccess ? 'warning' : 'neutral';
-  const residentialGroup = residentialGroupForType(vm.buildingType);
+export function formatHouseResourcesModel(vm) {
+  const stocks = vm.stocks || {};
+  const { categories, totalKey } = getResourceStockShape();
+  const need = vm.lastConsumption?.demand ?? null;
 
-  const { hasNextTier, items } = describeNextTierRequirements({
-    level: vm.houseLevel,
-    pop: vm.buildingPop,
-    roadCount: vm.roadAccess.roadCount,
-    residentialGroup,
+  const categoryCards = categories.map((category) => {
+    const have = Math.max(0, Math.floor(Number(stocks[category]) || 0));
+    const { emoji, label } = getResourceCategoryPresentation(category);
+    return {
+      kind: category,
+      icon: emoji,
+      label,
+      met: have > 0,
+      valueText: String(have),
+      ariaLabel: `${label} : ${have}`,
+    };
   });
 
+  const have = Math.max(0, Math.floor(Number(stocks[totalKey]) || 0));
+  const { emoji, label } = getResourceCategoryPresentation(totalKey);
+  const totalCard =
+    need == null
+      ? {
+          kind: totalKey,
+          icon: emoji,
+          label,
+          met: have > 0,
+          valueText: String(have),
+          ariaLabel: `${label} : ${have}`,
+        }
+      : {
+          kind: totalKey,
+          icon: emoji,
+          label,
+          met: have >= need,
+          valueText: `${have}/${need}`,
+          ariaLabel: `${label} : ${have} sur ${need} nécessaires${have >= need ? ', besoin couvert' : ', besoin non couvert'}`,
+        };
+
   return {
-    statusMessage: resolveHouseDwellingStatusMessage(vm.houseLevel, vm.buildingPop, hasRoadAccess),
-    statusVariant: variant,
-    hasNextTier,
-    cards: formatTierRequirementCards(items),
+    cards: [...categoryCards, totalCard],
   };
 }
 

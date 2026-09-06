@@ -8,11 +8,11 @@ function tabIds(groupId) {
 }
 
 describe('buildingInfoGroupRegistry tabs', () => {
-  test('house exposes foyer, diet, needs and common context tabs', () => {
+  test('house exposes foyer, diet, resources (stocks) and common context tabs', () => {
     expect(tabIds(BUILDING_INFO_GROUPS.house)).toEqual([
       BUILDING_INFO_TAB_IDS.foyer,
       BUILDING_INFO_TAB_IDS.diet,
-      BUILDING_INFO_TAB_IDS.needs,
+      BUILDING_INFO_TAB_IDS.stocks,
       BUILDING_INFO_TAB_IDS.services,
       BUILDING_INFO_TAB_IDS.neighbors,
       BUILDING_INFO_TAB_IDS.messages,

@@ -68,7 +68,13 @@ export const BUILDING_ECONOMY = {
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'scholars',
-    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food', amount: 1, schedule: { unit: 'always' } }],
+    resourceRoles: [
+      { role: 'consumer', 
+        categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], 
+        totalKey: 'food', amount: 1, 
+        schedule: { unit: 'always' } 
+      }
+    ]
   },
 
   // Palaces

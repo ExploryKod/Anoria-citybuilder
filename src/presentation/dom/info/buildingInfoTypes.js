@@ -79,7 +79,7 @@
  * @property {object} accounting
  * @property {object} construction
  * @property {number} [currentYear]
- * @property {'barn' | 'windmill' | null} [hubKind]
+ * @property {'windmill' | null} [hubKind]
  * @property {object | null} [hubView]
  */
 

@@ -1,7 +1,4 @@
-import {
-  getHubProductEmoji,
-  getHubProductLabel,
-} from '../../domain/catalogs/HubStorageCatalog.js';
+import { getResourceCategoryPresentation } from '../../domain/catalogs/ResourceCategoryCatalog.js';
 import { buildHubStorageLines } from '../../domain/policies/HubStorageOrdersPolicy.js';
 import { buildHubStoragePieSegments } from '../../domain/policies/HubStoragePiePolicy.js';
 
@@ -24,20 +21,17 @@ export class GetHubStorageInfoView {
     const hubStocks = stocks ?? buildingRow.stocks ?? {};
     const totalCapacity = maxStock ?? buildingRow.maxStock ?? 1000;
     const storage = buildHubStorageLines({
-      hubKind,
+      buildingType: buildingRow.type,
       stocks: hubStocks,
       rawOrders: buildingRow.hubStorageOrders,
       totalCapacity,
     });
 
     const lines = Object.freeze(
-      storage.lines.map((line) =>
-        Object.freeze({
-          ...line,
-          emoji: getHubProductEmoji(line.productId),
-          label: getHubProductLabel(hubKind, line.productId),
-        })
-      )
+      storage.lines.map((line) => {
+        const { emoji, label } = getResourceCategoryPresentation(line.productId);
+        return Object.freeze({ ...line, emoji, label });
+      })
     );
 
     return Object.freeze({

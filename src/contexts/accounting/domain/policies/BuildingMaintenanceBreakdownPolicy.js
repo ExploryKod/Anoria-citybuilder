@@ -140,7 +140,7 @@ export function accumulateBuildingMaintenanceBreakdown(
     ) {
       cost = 2;
       maintenanceBreakdown.infrastructure += cost;
-    } else if (type.includes('Windmill') || type.includes('Barn')) {
+    } else if (type.includes('Windmill')) {
       cost = 2;
       maintenanceBreakdown.industry += cost;
     }

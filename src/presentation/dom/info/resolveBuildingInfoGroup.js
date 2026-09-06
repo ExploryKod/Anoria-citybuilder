@@ -24,10 +24,7 @@ export function resolveBuildingInfoGroup({ buildingRow, supplyView }) {
   if (supplyView?.kind === 'house') {
     return BUILDING_INFO_GROUPS.house;
   }
-  if (
-    supplyView?.kind === 'windmill'
-    || buildingRow?.type?.includes('Barn')
-  ) {
+  if (supplyView?.kind === 'windmill') {
     return BUILDING_INFO_GROUPS.hubStorage;
   }
   if (supplyView?.kind === 'farm') {

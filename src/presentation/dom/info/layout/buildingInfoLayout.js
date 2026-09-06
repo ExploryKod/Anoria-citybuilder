@@ -274,24 +274,25 @@ export function appendHouseholdSkills(container, skills) {
 }
 
 /**
- * Generic requirement-card grid — one card shape for any requirement kind
- * (see formatTierRequirementCards.js). Adding a new kind never touches this
- * function: it only reads {icon, label, met, valueText, ariaLabel}.
+ * Generic metric-card grid — one card shape for any icon+value fact (a
+ * resource's have/need, a tier requirement's current/target, ...). Adding a
+ * new one never touches this function: it only reads
+ * {icon, label, met, valueText, ariaLabel}.
  * @param {HTMLElement} container
  * @param {ReadonlyArray<{ kind: string, icon: string, label: string, met: boolean, valueText: string, ariaLabel: string }>} cards
  */
-export function appendRequirementCards(container, cards) {
+export function appendMetricCards(container, cards) {
   if (!cards?.length) return null;
 
   const grid = document.createElement('div');
-  grid.className = 'building-info-requirements';
+  grid.className = 'building-info-metrics';
 
   for (const card of cards) {
     const el = document.createElement('div');
-    el.className = `building-info-requirement-card${card.met ? ' building-info-requirement-card--met' : ''}`;
+    el.className = `building-info-metric-card${card.met ? ' building-info-metric-card--met' : ''}`;
     el.title = card.ariaLabel;
     el.setAttribute('aria-label', card.ariaLabel);
-    el.innerHTML = `<span class="building-info-requirement-card__icon" aria-hidden="true">${card.icon}</span><span class="building-info-requirement-card__label">${card.label}</span><span class="building-info-requirement-card__value">${card.valueText}</span>`;
+    el.innerHTML = `<span class="building-info-metric-card__icon" aria-hidden="true">${card.icon}</span><span class="building-info-metric-card__label">${card.label}</span><span class="building-info-metric-card__value">${card.valueText}</span>`;
     grid.appendChild(el);
   }
 

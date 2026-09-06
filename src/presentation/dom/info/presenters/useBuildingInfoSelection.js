@@ -12,7 +12,6 @@
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import { buildingsObjects } from '../../../../shared/building-catalog/index.js';
 import { infoObjectOverlay } from '../../shell/nodes.js';
-import { clearHubInfoOverlayMode } from '../views/hub/hubStorageInfoDom.js';
 import { createBuildingInfoViewModel } from '../buildingInfoTypes.js';
 import { resolveBuildingInfoGroup, BUILDING_INFO_GROUPS } from '../resolveBuildingInfoGroup.js';
 import { resolveTerrainDisplay } from '../shared/buildingInfoTerrain.js';
@@ -57,11 +56,7 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
   }
 
   if (groupId === BUILDING_INFO_GROUPS.hubStorage) {
-    const hubKind = vm.buildingRow?.type?.includes('Barn')
-      ? 'barn'
-      : vm.supplyView?.kind === 'windmill'
-        ? 'windmill'
-        : null;
+    const hubKind = vm.supplyView?.kind === 'windmill' ? 'windmill' : null;
     if (hubKind) {
       extra.hubKind = hubKind;
       if (hubKind === 'windmill' && !Object.hasOwn(vm.stocks || {}, 'food')) {
@@ -117,7 +112,6 @@ export async function useBuildingInfoSelection(selectedObject, ctx) {
   const shouldOpenInfo = buildingsObjects.includes(selectedObject.userData.id);
 
   resetBuildingInfoLayout();
-  clearHubInfoOverlayMode();
 
   if (shouldOpenInfo) {
     playDoorOpenSound();

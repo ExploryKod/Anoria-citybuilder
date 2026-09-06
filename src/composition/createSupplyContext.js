@@ -38,7 +38,7 @@ import {
   normalizeHubStorageOrders,
   tryAdjustHubStoragePercent,
 } from '../contexts/supply/domain/policies/HubStorageOrdersPolicy.js';
-import { listHubProducts } from '../contexts/supply/domain/catalogs/HubStorageCatalog.js';
+import { getCategoriesForRole } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { getSharedEventBus } from './sharedEventBus.js';
 import {
   hasResourceRole,
@@ -252,7 +252,7 @@ export function createSupplyContext({
 
     async updateHubStorageOrderMode(hubKind, buildingId, productId) {
       const row = await supplyBuildingRepositoryImpl.findRowById(buildingId);
-      const productIds = listHubProducts(hubKind);
+      const productIds = getCategoriesForRole(row?.type, 'hub');
       const orders = normalizeHubStorageOrders(row?.hubStorageOrders, productIds);
       orders[productId] = {
         ...orders[productId],
@@ -266,7 +266,7 @@ export function createSupplyContext({
 
     async adjustHubStorageOrderShare(hubKind, buildingId, productId, delta) {
       const row = await supplyBuildingRepositoryImpl.findRowById(buildingId);
-      const productIds = listHubProducts(hubKind);
+      const productIds = getCategoriesForRole(row?.type, 'hub');
       const orders = normalizeHubStorageOrders(row?.hubStorageOrders, productIds);
       const stocks = row?.stocks ?? {};
       const totalCapacity = row?.maxStock ?? 1000;

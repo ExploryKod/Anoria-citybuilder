@@ -29,7 +29,7 @@ import {
 } from './formats/genericInfoFormat.js';
 import {
   formatHouseSkillsModel,
-  formatHouseNeedsModel,
+  formatHouseResourcesModel,
   formatHouseDietModel,
   formatHouseLayoutHeader,
   formatHouseLayoutOptions,
@@ -52,7 +52,7 @@ import {
   formatNatureLayoutHeader,
   formatNatureLayoutOptions,
 } from './formats/natureInfoFormat.js';
-import { renderHouseSkillsView, renderHouseNeedsView } from '../views/houseInfoView.js';
+import { renderHouseSkillsView, renderHouseResourcesView } from '../views/houseInfoView.js';
 import { renderDietTab } from '../views/dietInfoView.js';
 import { renderHubStorageFoyerView } from '../views/hub/hubStorageFoyerView.js';
 import { renderKvPanelView } from '../views/kvPanelView.js';
@@ -77,9 +77,10 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         render: (container, model) => renderDietTab(container, model),
       },
       {
-        id: BUILDING_INFO_TAB_IDS.needs,
-        format: formatHouseNeedsModel,
-        render: (container, model) => renderHouseNeedsView(container, model),
+        id: BUILDING_INFO_TAB_IDS.stocks,
+        label: '📦 Ressources',
+        format: formatHouseResourcesModel,
+        render: (container, model) => renderHouseResourcesView(container, model),
       },
       ...COMMON_BUILDING_INFO_TAB_SPECS,
     ],

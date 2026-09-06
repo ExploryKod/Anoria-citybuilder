@@ -1547,13 +1547,13 @@ footer .footer-links a:hover {
     text-align: center;
 }
 
-.building-info-requirements {
+.building-info-metrics {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
     gap: 10px;
 }
 
-.building-info-requirement-card {
+.building-info-metric-card {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1564,29 +1564,29 @@ footer .footer-links a:hover {
     text-align: center;
 }
 
-.building-info-requirement-card--met {
+.building-info-metric-card--met {
     background: rgba(40, 167, 69, 0.1);
 }
 
-.building-info-requirement-card__icon {
+.building-info-metric-card__icon {
     font-size: 22px;
     line-height: 1;
 }
 
-.building-info-requirement-card__label {
+.building-info-metric-card__label {
     font-size: 11px;
     color: #78909c;
     text-transform: lowercase;
 }
 
-.building-info-requirement-card__value {
+.building-info-metric-card__value {
     font-size: 15px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     color: #1b1b1b;
 }
 
-.building-info-requirement-card--met .building-info-requirement-card__value {
+.building-info-metric-card--met .building-info-metric-card__value {
     color: var(--success);
 }
 

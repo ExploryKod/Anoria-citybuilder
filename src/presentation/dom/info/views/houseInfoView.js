@@ -5,8 +5,7 @@
 import {
   appendHouseholdSkills,
   appendLocationFootnote,
-  appendRequirementCards,
-  appendStatusMessage,
+  appendMetricCards,
 } from '../layout/buildingInfoLayout.js';
 
 /**
@@ -36,28 +35,16 @@ export function renderHouseSkillsView(container, model) {
 }
 
 /**
- * @typedef {object} HouseNeedsViewModel
- * @property {string} statusMessage
- * @property {'neutral'|'success'|'warning'|'error'} statusVariant
- * @property {boolean} hasNextTier
+ * @typedef {object} HouseResourcesViewModel
  * @property {ReadonlyArray<{ kind: string, icon: string, label: string, met: boolean, valueText: string, ariaLabel: string }>} cards
  */
 
 /**
  * @param {HTMLElement} container
- * @param {HouseNeedsViewModel} model
+ * @param {HouseResourcesViewModel} model
  */
-export function renderHouseNeedsView(container, model) {
+export function renderHouseResourcesView(container, model) {
   container.innerHTML = '';
 
-  appendStatusMessage(container, model.statusMessage, model.statusVariant);
-
-  if (model.hasNextTier) {
-    appendRequirementCards(container, model.cards);
-  } else {
-    const p = document.createElement('p');
-    p.className = 'building-info-status';
-    p.textContent = 'Niveau maximal atteint.';
-    container.appendChild(p);
-  }
+  appendMetricCards(container, model.cards);
 }
