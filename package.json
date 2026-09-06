@@ -23,7 +23,7 @@
     "js-toast-notifier": "^1.0.14",
     "phaser": "4.2.1",
     "stats.js": "^0.17.0",
-    "three": "^0.162.0",
+    "three": "^0.185.1",
     "uuid": "^14.0.1"
   },
   "devDependencies": {
