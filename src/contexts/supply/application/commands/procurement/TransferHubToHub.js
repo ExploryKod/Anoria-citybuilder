@@ -11,15 +11,17 @@ import {
   getCategoriesForRole,
   getScheduleForRole,
   getTotalKeyForRole,
+  getHubLinkForRole,
 } from '../../../domain/policies/ResourceRolePolicy.js';
 
 /**
  * Command: a target hub restocks from its linked source hub's allocation
  * bucket (monthly market-from-windmill restock today; resource-agnostic
  * otherwise). WHAT/WHEN come from the target's own 'distributor' role in
- * the catalog; `bookkeeping` only carries the hub-link field names, which
- * still vary by caller (see ResourceBookkeepingCatalog.js) since the link storage itself
- * isn't generalized across resources yet.
+ * the catalog; hub-link storage field names come from each side's own
+ * `hubLink` catalog fact (target's 'distributor' role, source's 'hub' role)
+ * — see ResourceRolePolicy.getHubLinkForRole. This command never names a
+ * resource or a link field itself.
  */
 export class TransferHubToHub {
   /**
@@ -33,7 +35,6 @@ export class TransferHubToHub {
    * @param {object} params
    * @param {string} params.targetId
    * @param {object} params.period
-   * @param {object} params.bookkeeping - { sourceLinkField, linksField, linkTargetIdField, allocationField, saveLinks(repo, sourceId, links) }
    * @returns {Promise<{
    *   transferred: boolean,
    *   reason?: string,
@@ -41,7 +42,7 @@ export class TransferHubToHub {
    *   totalUnits: number,
    * }>}
    */
-  async execute({ targetId, period, bookkeeping }) {
+  async execute({ targetId, period }) {
     const target = await this.supplyBuildingRepository.findById(targetId);
     if (!target) {
       return { transferred: false, reason: 'target_not_found', transfers: [], totalUnits: 0 };
@@ -62,7 +63,8 @@ export class TransferHubToHub {
       return { transferred: false, reason: 'target_not_operational', transfers: [], totalUnits: 0 };
     }
 
-    const sourceId = target[bookkeeping.sourceLinkField];
+    const targetHubLink = getHubLinkForRole(target.type, 'distributor');
+    const sourceId = targetHubLink ? target[targetHubLink.sourceLinkField] : undefined;
     if (!sourceId) {
       return { transferred: false, reason: 'no_source_link', transfers: [], totalUnits: 0 };
     }
@@ -71,6 +73,8 @@ export class TransferHubToHub {
     if (!source) {
       return { transferred: false, reason: 'source_not_found', transfers: [], totalUnits: 0 };
     }
+
+    const sourceHubLink = getHubLinkForRole(source.type, 'hub');
 
     if (
       !isOperational({
@@ -82,8 +86,8 @@ export class TransferHubToHub {
       return { transferred: false, reason: 'source_not_operational', transfers: [], totalUnits: 0 };
     }
 
-    const links = [...(source[bookkeeping.linksField] ?? [])];
-    const linkIndex = links.findIndex((entry) => entry[bookkeeping.linkTargetIdField] === targetId);
+    const links = [...(source[sourceHubLink.linksField] ?? [])];
+    const linkIndex = links.findIndex((entry) => entry[sourceHubLink.linkTargetIdField] === targetId);
     if (linkIndex < 0) {
       return { transferred: false, reason: 'target_not_linked', transfers: [], totalUnits: 0 };
     }
@@ -102,7 +106,7 @@ export class TransferHubToHub {
     let targetStock = createResourceStock(target.stocks, categories, totalKey);
     const nextAllocated = {};
     for (const category of categories) {
-      nextAllocated[category] = Math.max(0, Math.floor(allocation[bookkeeping.allocationField]?.[category] ?? 0));
+      nextAllocated[category] = Math.max(0, Math.floor(allocation[sourceHubLink.allocationField]?.[category] ?? 0));
     }
 
     for (const category of categories) {
@@ -124,10 +128,10 @@ export class TransferHubToHub {
       return { transferred: false, reason: 'nothing_to_transfer', transfers: [], totalUnits: 0 };
     }
 
-    links[linkIndex] = { ...allocation, [bookkeeping.allocationField]: nextAllocated };
+    links[linkIndex] = { ...allocation, [sourceHubLink.allocationField]: nextAllocated };
 
     await this.supplyBuildingRepository.saveStocks(sourceId, sourceStock);
-    await bookkeeping.saveLinks(this.supplyBuildingRepository, sourceId, links);
+    await this.supplyBuildingRepository.saveHubLinkedDistributors(sourceId, links);
     await this.supplyBuildingRepository.saveStocks(targetId, targetStock);
 
     const totalUnits = transfers.reduce((sum, transfer) => sum + transfer.amount, 0);

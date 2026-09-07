@@ -1,20 +1,23 @@
 import { takeAcrossCategories } from '../../../domain/value-objects/ResourceStock.js';
 import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
+import { isLockedForPeriod, buildLockUpdate } from '../../../domain/policies/PeriodLockPolicy.js';
 import {
   getAmountForRole,
   getCategoriesForRole,
   getScheduleForRole,
   getTotalKeyForRole,
+  getPeriodLockForRole,
 } from '../../../domain/policies/ResourceRolePolicy.js';
 
 /**
  * Command: a building consumes resource units for its population (once per
- * period), gated by its 'consumer' role's declarative `schedule` and a
- * once-per-period lock. `amount` on that role is read as a per-capita rate
- * (demand = pop × amount) — the only way 'consumer' interprets `amount`
- * differently from producer/collector/distributor, which treat it as a flat
- * quantity. Drains the total (whichever categories have stock), not a
- * specific one — this only answers "was demand met," not "which food."
+ * period), gated by its 'consumer' role's declarative `schedule` and
+ * `periodLock` (see PeriodLockPolicy.js). `amount` on that role is read as a
+ * per-capita rate (demand = pop × amount) — the only way 'consumer'
+ * interprets `amount` differently from producer/collector/distributor, which
+ * treat it as a flat quantity. Drains the total (whichever categories have
+ * stock), not a specific one — this only answers "was demand met," not
+ * "which food."
  */
 export class ConsumeResource {
   /**
@@ -28,7 +31,6 @@ export class ConsumeResource {
    * @param {object} params
    * @param {string} params.buildingId
    * @param {object} params.period
-   * @param {object} params.bookkeeping - { periodKey(period), lastConsumedField, saveConsumptionMetadata(repo, buildingId, periodKey, period, record) }
    * @returns {Promise<{
    *   consumed: boolean,
    *   reason?: string,
@@ -39,7 +41,7 @@ export class ConsumeResource {
    *   totalUnfed?: number,
    * }>}
    */
-  async execute({ buildingId, period, bookkeeping }) {
+  async execute({ buildingId, period }) {
     const building = await this.supplyBuildingRepository.findById(buildingId);
     if (!building) {
       return { consumed: false, reason: 'building_not_found' };
@@ -50,8 +52,8 @@ export class ConsumeResource {
       return { consumed: false, reason: 'not_consumption_period' };
     }
 
-    const periodKey = bookkeeping.periodKey(period);
-    if (building[bookkeeping.lastConsumedField] === periodKey) {
+    const periodLock = getPeriodLockForRole(building.type, 'consumer');
+    if (isLockedForPeriod(building, periodLock, period)) {
       return { consumed: false, reason: 'already_consumed_this_period' };
     }
 
@@ -69,11 +71,12 @@ export class ConsumeResource {
     const totalUnfed = Math.max(0, Math.ceil(demand - taken));
 
     await this.supplyBuildingRepository.saveStocks(buildingId, nextStock);
-    await bookkeeping.saveConsumptionMetadata(this.supplyBuildingRepository, buildingId, periodKey, period, {
-      demand,
-      taken,
-      totalUnfed,
-    });
+    if (periodLock) {
+      await this.supplyBuildingRepository.updateBuildingFields(
+        buildingId,
+        buildLockUpdate(periodLock, period, { lastConsumption: { month: period.monthIndex, demand, taken, totalUnfed } })
+      );
+    }
 
     return { consumed: true, buildingId, pop, demand, taken, totalUnfed };
   }

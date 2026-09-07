@@ -3,11 +3,13 @@
  * hub surplus collection, hub-to-distributor transfer, distributor reach,
  * subsistence gathering, and consumption. Every step is the generic
  * RunResourceCommandForRole/RunCityResourceCycle/RunHubSurplusCycle/
- * UpdateConsumerDistributorReach mechanism — this class only sequences them and
- * carries the one piece nothing else can infer: which bookkeeping and
- * categories belong to which step, given to it as config (composition root
- * reads that from the declarative catalogs, e.g. ResourceBookkeepingCatalog.js
- * — this class never imports one).
+ * UpdateConsumerDistributorReach mechanism — this class only sequences them.
+ * Producer/consumer once-per-period locking and the hub-transfer leg's
+ * link-storage field names are both self-resolved by each command from the
+ * building's own catalog facts now (`periodLock` — see PeriodLockPolicy.js;
+ * `hubLink` — see ResourceRolePolicy.getHubLinkForRole) — this class no
+ * longer threads any bookkeeping config through at all. See
+ * docs/period-lock-catalog-refactor.md.
  */
 export class RunMonthlyResourceCycle {
   /**
@@ -20,9 +22,6 @@ export class RunMonthlyResourceCycle {
    * @param {import('../commands/RunResourceCommandForRole.js').RunResourceCommandForRole} [runSubsistenceCommand]
    * @param {object} config
    * @param {ReadonlyArray<string>} config.categories
-   * @param {object} config.producerBookkeeping
-   * @param {object} config.hubTransferBookkeeping
-   * @param {object} config.consumerBookkeeping
    */
   constructor(
     runProducerCommand,
@@ -62,7 +61,6 @@ export class RunMonthlyResourceCycle {
       buildParams: (source) => ({
         buildingId: source.id,
         period: { season, year: timeInfo.year ?? 0, monthIndex: timeInfo.monthIndex },
-        bookkeeping: this.config.producerBookkeeping,
       }),
       successKey: 'produced',
     });
@@ -76,7 +74,6 @@ export class RunMonthlyResourceCycle {
 
     await this.runCityResourceCycle.execute({
       categories: this.config.categories,
-      hubTransferBookkeeping: this.config.hubTransferBookkeeping,
       season,
       month,
       timeInfo,
@@ -98,7 +95,6 @@ export class RunMonthlyResourceCycle {
       buildParams: (house) => ({
         buildingId: house.id,
         period: { monthIndex: timeInfo.monthIndex },
-        bookkeeping: this.config.consumerBookkeeping,
       }),
       successKey: 'consumed',
     });

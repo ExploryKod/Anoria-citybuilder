@@ -11,7 +11,6 @@ import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import { getAmountForRole, hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
-import { CONSUMER_BOOKKEEPING } from '../../../src/contexts/supply/domain/catalogs/ResourceBookkeepingCatalog.js';
 import { ConsumeResource } from '../../../src/contexts/supply/application/commands/consumption/ConsumeResource.js';
 import { RunResourceCommandForRole } from '../../../src/contexts/supply/application/commands/RunResourceCommandForRole.js';
 
@@ -101,7 +100,6 @@ describe('Supply — house consumption', () => {
       const outcome = await useCase.execute({
         buildingId: 'House-Blue-1-2',
         period: { monthIndex: 5 },
-        bookkeeping: CONSUMER_BOOKKEEPING,
       });
 
       expect(outcome.consumed).toBe(true);
@@ -119,12 +117,10 @@ describe('Supply — house consumption', () => {
       await useCase.execute({
         buildingId: 'House-Blue-1-2',
         period: { monthIndex: 5 },
-        bookkeeping: CONSUMER_BOOKKEEPING,
       });
       const second = await useCase.execute({
         buildingId: 'House-Blue-1-2',
         period: { monthIndex: 5 },
-        bookkeeping: CONSUMER_BOOKKEEPING,
       });
 
       expect(second.consumed).toBe(false);
@@ -140,7 +136,6 @@ describe('Supply — house consumption', () => {
       const outcome = await useCase.execute({
         buildingId: 'House-Blue-1-2',
         period: { monthIndex: 1 },
-        bookkeeping: CONSUMER_BOOKKEEPING,
       });
       expect(outcome.consumed).toBe(true);
       expect(outcome.totalUnfed).toBe(2);
@@ -156,7 +151,6 @@ describe('Supply — house consumption', () => {
       const outcome = await useCase.execute({
         buildingId: 'House-Blue-1-2',
         period: { monthIndex: 1 },
-        bookkeeping: CONSUMER_BOOKKEEPING,
       });
 
       expect(outcome.taken).toBe(2);
@@ -173,7 +167,6 @@ describe('Supply — house consumption', () => {
       const outcome = await useCase.execute({
         buildingId: 'House-Blue-1-2',
         period: { monthIndex: 1 },
-        bookkeeping: CONSUMER_BOOKKEEPING,
       });
       expect(outcome.consumed).toBe(false);
       expect(outcome.reason).toBe('no_population');
@@ -203,7 +196,6 @@ describe('Supply — house consumption', () => {
         buildParams: (house) => ({
           buildingId: house.id,
           period: { monthIndex: 7 },
-          bookkeeping: CONSUMER_BOOKKEEPING,
         }),
         successKey: 'consumed',
       });

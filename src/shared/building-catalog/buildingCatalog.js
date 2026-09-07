@@ -103,6 +103,24 @@
  *   categories (e.g. 'food' for wheat/carrot/cabbage/fruit/game). Required
  *   when `categories` has more than one entry — a role with 0 or 1 category
  *   needs none, it's its own total. See ResourceRolePolicy.getTotalKeyForRole.
+ * @property {{ field: string, unit: 'year' | 'month' }} [periodLock] Once-per-period
+ *   lock for this role (which building field remembers "already ran this
+ *   period", and at what granularity) — e.g. a farm's annual harvest lock,
+ *   a house's monthly consumption lock. Omitted means the role never locks
+ *   (nothing to gate, e.g. an unconditional distributor). This is the ONLY
+ *   place a lock field name is declared — see
+ *   contexts/supply/domain/policies/PeriodLockPolicy.js, which knows
+ *   nothing about "producer" or "consumer", only "a field, a unit".
+ * @property {{ sourceLinkField?: string, linksField?: string, linkTargetIdField?: string, allocationField?: string }} [hubLink]
+ *   Hub-to-distributor link storage field names for this role — the
+ *   'distributor' side declares `sourceLinkField` (which of its own fields
+ *   points at its assigned hub); the 'hub' side declares `linksField`/
+ *   `linkTargetIdField`/`allocationField` (its own linked-distributors list
+ *   shape). Omitted means this role never participates in a hub link (e.g.
+ *   a distributor with no hub leg, like a school). Resolved via
+ *   ResourceRolePolicy.getHubLinkForRole — no separate policy module, since
+ *   there's nothing to compute here, only field names to read (unlike
+ *   periodLock's unit-resolution logic).
  *
  * @typedef {Object} PlacementRequirement
  * @property {ResourceRoleKind} role Role another, already-placed building must

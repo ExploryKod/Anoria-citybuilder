@@ -20,11 +20,6 @@ import { ProcessHubCollection } from '../contexts/supply/application/commands/su
 import { RunHubSurplusCycle } from '../contexts/supply/application/commands/surplus/RunHubSurplusCycle.js';
 import { RunCityResourceCycle } from '../contexts/supply/application/commands/procurement/RunCityResourceCycle.js';
 import { RunMonthlyResourceCycle } from '../contexts/supply/application/workflows/RunMonthlyResourceCycle.js';
-import {
-  PRODUCER_BOOKKEEPING,
-  HUB_TRANSFER_BOOKKEEPING,
-  CONSUMER_BOOKKEEPING,
-} from '../contexts/supply/domain/catalogs/ResourceBookkeepingCatalog.js';
 import { DexieSupplyTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { SupplyTraceability } from '../contexts/supply/infrastructure/presentation/SupplyTraceability.js';
@@ -48,9 +43,12 @@ import {
 
 /**
  * Composition root — Supply bounded context. The only place allowed to name
- * a resource (food) or wire its declarative bookkeeping — every class below
- * (RunMonthlyResourceCycle, RunHubSurplusCycle, ...) is resource-agnostic
- * and takes that config as a parameter.
+ * a resource (food) — every class below (RunMonthlyResourceCycle,
+ * RunHubSurplusCycle, ...) is resource-agnostic and only takes the resulting
+ * category list as config. Once-per-period locking and hub-link storage
+ * field names are no longer wired here at all — each command self-resolves
+ * them from the building's own catalog facts (`periodLock`/`hubLink` — see
+ * docs/period-lock-catalog-refactor.md in the supply context).
  *
  * @param {object} [deps]
  * @param {import('../contexts/supply/application/ports/SupplyBuildingRepository.js').SupplyBuildingRepository} [deps.supplyBuildingRepository]
@@ -171,12 +169,7 @@ export function createSupplyContext({
     runConsumerCommand,
     traceability,
     runSubsistenceCommand,
-    {
-      categories: producerCategories,
-      producerBookkeeping: PRODUCER_BOOKKEEPING,
-      hubTransferBookkeeping: HUB_TRANSFER_BOOKKEEPING,
-      consumerBookkeeping: CONSUMER_BOOKKEEPING,
-    }
+    { categories: producerCategories }
   );
   const getBuildingSupplyViewQuery = new GetBuildingSupplyView(
     supplyBuildingRepositoryImpl

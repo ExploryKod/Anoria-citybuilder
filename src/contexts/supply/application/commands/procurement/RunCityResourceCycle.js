@@ -1,21 +1,20 @@
 import { isOperational } from '../../../domain/policies/OperationalGatePolicy.js';
 import { findBuildingsWithRoleInRange } from '../../../domain/policies/ResourceRangePolicy.js';
-import { getRangeForRole } from '../../../domain/policies/ResourceRolePolicy.js';
+import { getRangeForRole, getHubLinkForRole } from '../../../domain/policies/ResourceRolePolicy.js';
 
 /**
  * Orchestration: generic resource cycle. Every building holding the
  * 'distributor' role for the given categories optionally restocks from a
  * linked hub, then distributes to nearby 'consumer'-role buildings.
  *
- * Which legs run is entirely config, not per-resource code — food passes
- * hub-transfer bookkeeping (market restocks from its linked windmill) and a
- * hub-link callback (market UI flag); a service with no hub (e.g. a
- * school distributing 'education' straight from its own capacity) simply
- * omits both. What/when each leg moves comes from the building's own
- * `resourceRoles` facts (see buildingCatalog.js), not a circuit descriptor —
- * this is why RunCityMarketFoodCycle got replaced: it hardcoded
- * `findMarkets()` and a food-specific distribute circuit by name, so a
- * second resource would have needed its own copy-pasted orchestrator class.
+ * Which legs run is entirely config/catalog, not per-resource code — a
+ * distributor's own `hubLink` catalog fact (see buildingCatalog.js /
+ * ResourceRolePolicy.getHubLinkForRole) decides whether it has a restock
+ * leg at all; a service with no hub (e.g. a school distributing
+ * 'education' straight from its own capacity) simply omits `hubLink`. This
+ * is why RunCityMarketFoodCycle got replaced: it hardcoded `findMarkets()`
+ * and a food-specific distribute circuit by name, so a second resource
+ * would have needed its own copy-pasted orchestrator class.
  *
  * Traceability/UI-flag side effects stay entirely out of this class via
  * optional callbacks — it doesn't know SupplyTraceability exists, or
@@ -49,15 +48,13 @@ export class RunCityResourceCycle {
   /**
    * @param {object} params
    * @param {string | string[]} params.categories Resource categories this cycle moves.
-   * @param {object} [params.hubTransferBookkeeping] Hub-link field names for the
-   *   restock leg (see TransferHubToHub.js) — omit for a resource with no hub leg.
    * @param {string | null} [params.season]
    * @param {string | null} [params.month]
    * @param {object} params.timeInfo
    * @param {number} [params.maxDistance] Fallback when a distributor's own catalog range is undeclared.
    * @returns {Promise<{ distributorsProcessed: number }>}
    */
-  async execute({ categories, hubTransferBookkeeping, season, month = null, timeInfo, maxDistance }) {
+  async execute({ categories, season, month = null, timeInfo, maxDistance }) {
     const distributors = await this.supplyBuildingRepository.findByResourceRole('distributor', categories);
     const allBuildings = await this.supplyBuildingRepository.listAllBuildingRows();
     let distributorsProcessed = 0;
@@ -70,7 +67,6 @@ export class RunCityResourceCycle {
         month,
         timeInfo,
         maxDistance,
-        hubTransferBookkeeping,
       });
       if (processed) distributorsProcessed += 1;
     }
@@ -78,7 +74,7 @@ export class RunCityResourceCycle {
     return { distributorsProcessed };
   }
 
-  async #processDistributor({ distributor, allBuildings, season, month, timeInfo, maxDistance, hubTransferBookkeeping }) {
+  async #processDistributor({ distributor, allBuildings, season, month, timeInfo, maxDistance }) {
     const distributorRow = await this.supplyBuildingRepository.findBuildingRow(distributor.id);
     if (!distributorRow) return false;
 
@@ -92,15 +88,15 @@ export class RunCityResourceCycle {
       return false;
     }
 
-    if (this.transferHubToHub && hubTransferBookkeeping) {
+    const distributorHubLink = getHubLinkForRole(distributor.type, 'distributor');
+    if (this.transferHubToHub && distributorHubLink) {
       const hubOutcome = await this.transferHubToHub.execute({
         targetId: distributor.id,
         period: { month },
-        bookkeeping: hubTransferBookkeeping,
       });
 
       if (this.onHubLinkResolved) {
-        await this.onHubLinkResolved(distributor.id, Boolean(distributor[hubTransferBookkeeping.sourceLinkField]));
+        await this.onHubLinkResolved(distributor.id, Boolean(distributor[distributorHubLink.sourceLinkField]));
       }
 
       if (hubOutcome.transferred && this.onHubTransfer) {

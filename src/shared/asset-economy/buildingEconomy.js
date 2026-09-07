@@ -54,14 +54,14 @@ export const BUILDING_ECONOMY = {
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'merchants',
-    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food', amount: 1, schedule: { unit: 'always' } }],
+    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food', amount: 1, schedule: { unit: 'always' }, periodLock: { field: 'lastConsumptionMonth', unit: 'month' } }],
   },
   'House-Red': {
     displayName: 'Maison rouge',
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'artisans',
-    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food', amount: 1, schedule: { unit: 'always' } }],
+    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food', amount: 1, schedule: { unit: 'always' }, periodLock: { field: 'lastConsumptionMonth', unit: 'month' } }],
   },
   'House-Purple': {
     displayName: 'Maison violette',
@@ -69,10 +69,11 @@ export const BUILDING_ECONOMY = {
     accounting: { maintenance: 6 },
     residentialGroup: 'scholars',
     resourceRoles: [
-      { role: 'consumer', 
-        categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], 
-        totalKey: 'food', amount: 1, 
-        schedule: { unit: 'always' } 
+      { role: 'consumer',
+        categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'],
+        totalKey: 'food', amount: 1,
+        schedule: { unit: 'always' },
+        periodLock: { field: 'lastConsumptionMonth', unit: 'month' }
       }
     ]
   },
@@ -82,7 +83,7 @@ export const BUILDING_ECONOMY = {
     displayName: 'Palais',
     construction: { price: 20, category: 'palaces' },
     accounting: { maintenance: 6 },
-    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food', amount: 1, schedule: { unit: 'always' } }],
+    resourceRoles: [{ role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food', amount: 1, schedule: { unit: 'always' }, periodLock: { field: 'lastConsumptionMonth', unit: 'month' } }],
   },
 
   // Farms
@@ -98,6 +99,7 @@ export const BUILDING_ECONOMY = {
       categories: ['wheat'],
       schedule: { unit: 'season', values: ['autumn'] },
       amount: 78,
+      periodLock: { field: 'lastProductionYear', unit: 'year' },
     }],
   },
   'Farm-Carrot': {
@@ -109,6 +111,7 @@ export const BUILDING_ECONOMY = {
       categories: ['carrot'],
       schedule: { unit: 'season', values: ['autumn'] },
       amount: 78,
+      periodLock: { field: 'lastProductionYear', unit: 'year' },
     }],
   },
   'Farm-Cabbage': {
@@ -120,6 +123,7 @@ export const BUILDING_ECONOMY = {
       categories: ['cabbage'],
       schedule: { unit: 'season', values: ['autumn'] },
       amount: 78,
+      periodLock: { field: 'lastProductionYear', unit: 'year' },
     }],
   },
   'Hay-Bale': { displayName: 'Botte de foin', construction: { price: 2, category: 'farms' } },
@@ -141,7 +145,14 @@ export const BUILDING_ECONOMY = {
         totalKey: 'food',
         schedule: { unit: 'month', values: ['december'] },
       },
-      { role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], totalKey: 'food', linkCapacity: 2, maxStock: 1000 },
+      {
+        role: 'hub',
+        categories: ['wheat', 'carrot', 'cabbage'],
+        totalKey: 'food',
+        linkCapacity: 2,
+        maxStock: 1000,
+        hubLink: { linksField: 'linkedDistributors', linkTargetIdField: 'distributorId', allocationField: 'allocatedStocks' },
+      },
     ],
   },
   'Crate-001': { displayName: 'Caisse', construction: { price: 2, category: 'industry' } },
@@ -153,21 +164,21 @@ export const BUILDING_ECONOMY = {
     displayName: 'Étal',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, eliteNeed: 1 },
-    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5, totalKey: 'food', schedule: { unit: 'always' } }],
+    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5, totalKey: 'food', schedule: { unit: 'always' }, hubLink: { sourceLinkField: 'supplyHubId' } }],
     placementRequires: [{ role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], range: 5, requiresCapacity: true }],
   },
   'Market-Stall-Blue': {
     displayName: 'Étal bleu',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, eliteNeed: 1 },
-    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5, totalKey: 'food', schedule: { unit: 'always' } }],
+    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5, totalKey: 'food', schedule: { unit: 'always' }, hubLink: { sourceLinkField: 'supplyHubId' } }],
     placementRequires: [{ role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], range: 5, requiresCapacity: true }],
   },
   'Market-Stall-Red': {
     displayName: 'Étal rouge',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, eliteNeed: 1, requiredSkill: 'vente-alimentaire' },
-    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5, totalKey: 'food', schedule: { unit: 'always' } }],
+    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5, totalKey: 'food', schedule: { unit: 'always' }, hubLink: { sourceLinkField: 'supplyHubId' } }],
     placementRequires: [{ role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], range: 5, requiresCapacity: true }],
   },
 

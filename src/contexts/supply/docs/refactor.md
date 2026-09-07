@@ -12,6 +12,7 @@
 - **Manufacturing (S7):** factory production cycle + ECS `supply.factoryProduction`
 - **Manufacturing split (S7b):** `CollectFactoryResources`, `TransformFactoryMaterials`, `ProduceFactoryGoods`, `ProcessFactoryProductionStep`, `RunCityFactoryProductionCycle`; domain `FactoryTransformPolicy`
 - **CQRS layout (S8):** `commands/{leg}/`, `queries/`, `workflows/` — business legs nested under commands, not alongside
+- **Period-lock + hub-link genericization (S9):** once-per-period lock (producer/consumer) and hub-to-distributor link storage field names both moved from named `ResourceBookkeepingCatalog.js` exports (`PRODUCER_BOOKKEEPING`/`CONSUMER_BOOKKEEPING`/`HUB_TRANSFER_BOOKKEEPING`) to declarative `periodLock`/`hubLink` facts per `resourceRoles` entry — see [`period-lock-catalog-refactor.md`](period-lock-catalog-refactor.md). `ResourceBookkeepingCatalog.js` deleted; nothing named remains outside `buildingCatalog.js`.
 
 ## ECS simulation order
 

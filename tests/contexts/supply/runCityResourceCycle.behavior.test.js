@@ -14,19 +14,11 @@ import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/Re
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 
 // Market-Stall/Windmill-001/House-Blue are real catalog types — schedule,
-// categories, and totalKey now come from buildingCatalog.js (see
-// buildingEconomy.js), not a test-local circuit. Only the hub-link field
-// names (not yet generalized across resources) are still passed in.
+// categories, totalKey, and hub-link field names all come from
+// buildingCatalog.js (see buildingEconomy.js `hubLink` facts), not a
+// test-local circuit.
 const CATEGORIES = ['wheat', 'carrot', 'cabbage'];
 const TOTAL_KEY = 'food';
-
-const HUB_TRANSFER_BOOKKEEPING = {
-  sourceLinkField: 'supplyHubId',
-  linksField: 'linkedDistributors',
-  allocationField: 'allocatedStocks',
-  linkTargetIdField: 'distributorId',
-  saveLinks: async (repository, sourceId, links) => repository.saveHubLinkedDistributors(sourceId, links),
-};
 
 function toSnapshot(b) {
   return createSupplyBuildingSnapshot({
@@ -175,7 +167,6 @@ describe('RunCityResourceCycle', () => {
 
     await cycle.execute({
       categories: CATEGORIES,
-      hubTransferBookkeeping: HUB_TRANSFER_BOOKKEEPING,
       season: 'summer',
       month: 'January',
       timeInfo: { turn: 1 },

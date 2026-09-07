@@ -111,6 +111,28 @@ export function getPlacementRequirements(buildingType) {
 /**
  * @param {string} buildingType
  * @param {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleKind} role
+ * @returns {{ field: string, unit: 'year' | 'month' } | undefined} Once-per-period
+ *   lock field/unit for this role, or undefined when the role doesn't lock
+ *   (e.g. a distributor with no schedule). See PeriodLockPolicy.js.
+ */
+export function getPeriodLockForRole(buildingType, role) {
+  return getResourceRoles(buildingType).find((entry) => entry.role === role)?.periodLock;
+}
+
+/**
+ * @param {string} buildingType
+ * @param {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleKind} role
+ * @returns {{ sourceLinkField?: string, linksField?: string, linkTargetIdField?: string, allocationField?: string } | undefined}
+ *   Hub-link storage field names for this role, or undefined when the role
+ *   doesn't participate in a hub link. See TransferHubToHub.js.
+ */
+export function getHubLinkForRole(buildingType, role) {
+  return getResourceRoles(buildingType).find((entry) => entry.role === role)?.hubLink;
+}
+
+/**
+ * @param {string} buildingType
+ * @param {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleKind} role
  * @returns {{ unit: string } | undefined} When this role only fires on a
  *   schedule (see ResourceSchedulePolicy.js) — undefined means unconditional.
  */

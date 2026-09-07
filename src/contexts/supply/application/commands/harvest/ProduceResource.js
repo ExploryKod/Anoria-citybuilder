@@ -1,20 +1,22 @@
 import { isOperational } from '../../../domain/policies/OperationalGatePolicy.js';
 import { addCategoryAmount } from '../../../domain/value-objects/ResourceStock.js';
 import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
+import { isLockedForPeriod, buildLockUpdate } from '../../../domain/policies/PeriodLockPolicy.js';
 import {
   getAmountForRole,
   getCategoriesForRole,
   getScheduleForRole,
   getTotalKeyForRole,
+  getPeriodLockForRole,
 } from '../../../domain/policies/ResourceRolePolicy.js';
 
 /**
  * Command: a building produces resource units into its own stock, gated by
- * its 'producer' role's declarative `schedule` (see buildingEconomy.js /
- * ResourceSchedulePolicy.js) and a once-per-period lock. Resource-agnostic —
- * every fact about WHAT is produced and WHEN comes from the building's own
- * catalog entry; `bookkeeping` only carries the once-per-period lock's
- * storage shape, which still varies by caller (see ResourceBookkeepingCatalog.js).
+ * its 'producer' role's declarative `schedule` and `periodLock` (see
+ * buildingEconomy.js / ResourceSchedulePolicy.js / PeriodLockPolicy.js).
+ * Fully resource-agnostic — every fact about WHAT is produced, WHEN, and the
+ * once-per-period lock field come from the building's own catalog entry;
+ * this command never names a resource or a lock field itself.
  */
 export class ProduceResource {
   /**
@@ -28,7 +30,6 @@ export class ProduceResource {
    * @param {object} params
    * @param {string} params.buildingId
    * @param {object} params.period - time context (season, month, year, monthIndex, ...)
-   * @param {object} params.bookkeeping - { periodKey(period), lastProducedField, saveProductionMetadata(repo, buildingId, period) }
    * @returns {Promise<{
    *   produced: boolean,
    *   reason?: string,
@@ -37,7 +38,7 @@ export class ProduceResource {
    *   amount?: number,
    * }>}
    */
-  async execute({ buildingId, period, bookkeeping }) {
+  async execute({ buildingId, period }) {
     const building = await this.supplyBuildingRepository.findById(buildingId);
     if (!building) {
       return { produced: false, reason: 'building_not_found' };
@@ -58,8 +59,8 @@ export class ProduceResource {
       return { produced: false, reason: 'not_operational' };
     }
 
-    const periodKey = bookkeeping.periodKey(period);
-    if (building[bookkeeping.lastProducedField] === periodKey) {
+    const periodLock = getPeriodLockForRole(building.type, 'producer');
+    if (isLockedForPeriod(building, periodLock, period)) {
       return { produced: false, reason: 'already_produced_this_period' };
     }
 
@@ -73,7 +74,9 @@ export class ProduceResource {
     const totalKey = getTotalKeyForRole(building.type, 'producer');
     const nextStock = addCategoryAmount(building.stocks, category, amount, categories, totalKey);
     await this.supplyBuildingRepository.saveStocks(buildingId, nextStock);
-    await bookkeeping.saveProductionMetadata(this.supplyBuildingRepository, buildingId, period);
+    if (periodLock) {
+      await this.supplyBuildingRepository.updateBuildingFields(buildingId, buildLockUpdate(periodLock, period));
+    }
 
     return { produced: true, buildingId, category, amount };
   }
